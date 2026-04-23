@@ -6,6 +6,7 @@
 import React, { useState } from "react";
 import { BrowserRouter, Routes, Route, Link, useLocation } from "react-router-dom";
 import { Phone, Users, Settings, Activity, MessageSquare, Calendar, PhoneOutgoing, ServerCog, PlugZap, History, MessageCircle, Mail, Menu, X } from "lucide-react";
+import ErrorBoundary from "./components/ErrorBoundary";
 import DashboardHome from "./components/DashboardHome";
 import AgentTraining from "./components/AgentTraining";
 import AppointmentsView from "./components/Appointments";
@@ -102,6 +103,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <ErrorBoundary>
       <div className="flex h-screen bg-[#FDFDFD] text-ink font-sans overflow-hidden relative">
         <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
         
@@ -144,6 +146,7 @@ export default function App() {
            </div>
         </main>
       </div>
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }

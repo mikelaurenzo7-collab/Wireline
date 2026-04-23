@@ -5,6 +5,7 @@ import { cn } from "../lib/utils";
 export default function FleetTaskBridge() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'completed'>('pending');
 
   const fetchTasks = async () => {
     try {
@@ -35,9 +36,14 @@ export default function FleetTaskBridge() {
     } catch(e) {}
   };
 
+  const filteredTasks = tasks.filter(t => {
+    if (activeFilter === 'all') return true;
+    return t.status === activeFilter;
+  });
+
   return (
     <div className="space-y-16">
-      <div className="flex justify-between items-end border-b-8 border-ink pb-10">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end border-b-8 border-ink pb-10 gap-8">
         <div>
           <div className="flex items-center gap-2 mb-4">
              <span className="bg-ink text-brand text-[10px] font-black px-2 py-0.5 uppercase tracking-widest brutal-border shadow-none italic font-sans animate-pulse">Relay Service Active</span>
@@ -48,12 +54,28 @@ export default function FleetTaskBridge() {
           </h2>
           <p className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-[0.3em] mt-5">Handoff management between voice and email channels.</p>
         </div>
-        <button 
-          onClick={fetchTasks}
-          className="w-20 h-20 brutal-border bg-white flex items-center justify-center text-ink hover:bg-brand transition-all shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1"
-        >
-          <Clock className={cn("w-10 h-10", loading && "animate-spin")} />
-        </button>
+        <div className="flex items-center gap-4 w-full lg:w-auto">
+          <div className="flex bg-ink p-1 brutal-border shadow-none w-full lg:w-auto">
+            {(['pending', 'completed', 'all'] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setActiveFilter(f)}
+                className={cn(
+                  "flex-1 px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all italic",
+                  activeFilter === f ? "bg-brand text-ink" : "text-white/40 hover:text-white"
+                )}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={fetchTasks}
+            className="w-14 h-14 brutal-border bg-white flex items-center justify-center text-ink hover:bg-brand transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 shrink-0"
+          >
+            <Clock className={cn("w-6 h-6", loading && "animate-spin")} />
+          </button>
+        </div>
       </div>
 
       <div className="grid gap-12">
@@ -61,7 +83,7 @@ export default function FleetTaskBridge() {
           <div className="p-32 flex justify-center bg-white brutal-border border-ink/10 shadow-none">
             <Loader2 className="w-24 h-24 animate-spin text-brand" />
           </div>
-        ) : tasks.length === 0 ? (
+        ) : filteredTasks.length === 0 ? (
           <div className="p-32 text-center bg-white brutal-border shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
             <div className="w-32 h-32 bg-brand brutal-border flex items-center justify-center mx-auto mb-10 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
                <CheckCircle2 className="w-16 h-16 text-ink" />
@@ -70,7 +92,7 @@ export default function FleetTaskBridge() {
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-4">All tasks have been processed.</p>
           </div>
         ) : (
-          tasks.map(task => (
+          filteredTasks.map(task => (
             <div 
               key={task.id} 
               className={cn(

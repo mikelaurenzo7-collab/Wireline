@@ -119,13 +119,18 @@ export default function CallLogs() {
                     <div className="font-black text-ink text-lg font-display uppercase italic leading-none">{call.customer_number || "WEB SIM"}</div>
                   </td>
                   <td className="px-8 py-6 text-center">
-                    <div className={cn(
-                      "inline-flex items-center justify-center w-12 h-12 brutal-border font-black text-sm italic shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]",
-                      (call.lead_score || 0) >= 80 ? "bg-rose-500 text-white" :
-                      (call.lead_score || 0) >= 50 ? "bg-brand text-ink" :
-                      "bg-white text-slate-400"
-                    )}>
-                      {call.lead_score || 0}
+                    <div className="flex flex-col items-center gap-1">
+                      <div className={cn(
+                        "inline-flex items-center justify-center w-12 h-12 brutal-border font-black text-sm italic shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]",
+                        (call.lead_score || 0) >= 80 ? "bg-rose-500 text-white" :
+                        (call.lead_score || 0) >= 50 ? "bg-brand text-ink" :
+                        "bg-white text-slate-400"
+                      )}>
+                        {call.lead_score || 0}
+                      </div>
+                      {call.intent_label && (
+                        <span className="text-[7px] font-black uppercase tracking-tighter text-slate-400">{call.intent_label}</span>
+                      )}
                     </div>
                   </td>
                   <td className="px-8 py-6 max-w-sm">
@@ -204,7 +209,14 @@ export default function CallLogs() {
               </div>
 
               {/* Stats Grid */}
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                <div className="brutal-border bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                  <div className="text-[9px] text-slate-400 uppercase font-black tracking-widest mb-2">Intent Label</div>
+                  <div className={cn(
+                    "text-lg font-black font-display italic leading-none uppercase",
+                    selectedCall.intent_label === 'high' ? "text-rose-500" : "text-ink"
+                  )}>{selectedCall.intent_label || "NONE"}</div>
+                </div>
                 <div className="brutal-border bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                   <div className="text-[9px] text-slate-400 uppercase font-black tracking-widest mb-2">Duration</div>
                   <div className="text-2xl font-black text-ink font-display italic leading-none">{formatDuration(selectedCall.duration_seconds || 0)}</div>

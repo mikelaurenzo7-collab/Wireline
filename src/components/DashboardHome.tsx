@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { PhoneCall, ShieldCheck, Zap, Mic, Square, Loader2, PlayCircle, Clock, Calendar, Users, TrendingUp, DollarSign, ArrowUpRight, BarChart3, Mail, ChevronRight, Bot } from "lucide-react";
+import { PhoneCall, ShieldCheck, Zap, Mic, Square, Loader2, PlayCircle, Clock, Calendar, Users, TrendingUp, DollarSign, ArrowUpRight, BarChart3, Mail, ChevronRight, Bot, Sparkles, Activity as ActivityIcon } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import Vapi from "@vapi-ai/web";
 import { cn } from "../lib/utils";
 import FleetTaskBridge from "./FleetTaskBridge";
+import NeuralVisualizer from "./NeuralVisualizer";
 
 const vapi = new Vapi("604f664f-283f-4024-b950-4a4414dc69d5");
 
@@ -14,6 +15,7 @@ export default function DashboardHome() {
   
   const [stats, setStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTranscript, setActiveTranscript] = useState<string>("");
 
   useEffect(() => {
     fetchStats();
@@ -21,12 +23,24 @@ export default function DashboardHome() {
     vapi.on("call-start", () => {
       setIsConnecting(false);
       setIsConnected(true);
+      setActiveTranscript("Waiting for signal...");
     });
 
     vapi.on("call-end", () => {
       setIsConnecting(false);
       setIsConnected(false);
+      setActiveTranscript("");
       setTimeout(() => fetchStats(), 3000);
+    });
+
+    vapi.on("speech-start", () => {
+      // Logic for when agent or user starts speaking if needed
+    });
+
+    vapi.on("message", (message) => {
+       if (message.type === "transcript") {
+          setActiveTranscript(message.transcript);
+       }
     });
 
     return () => {
@@ -75,7 +89,8 @@ export default function DashboardHome() {
   const recentLogs = stats?.recentLogs || [];
 
   return (
-    <div className="h-full overflow-y-auto p-4 md:p-12 bg-[#FBFBFB] space-y-8 md:space-y-12 pb-32">
+    <div className="h-full overflow-y-auto p-4 md:p-12 bg-[#FBFBFB] space-y-8 md:space-y-12 pb-32 relative">
+      <NeuralVisualizer />
       <header className="flex flex-col xl:flex-row xl:justify-between xl:items-end gap-8 border-b-4 border-ink pb-8 md:pb-12">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
@@ -86,6 +101,16 @@ export default function DashboardHome() {
           <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[8px] md:text-xs max-w-2xl leading-relaxed">View real-time performance and insights for your automated agent fleet.</p>
         </div>
         
+        {isConnected && activeTranscript && (
+          <div className="flex-1 brutal-card !p-4 bg-ink text-brand border-brand animate-pulse overflow-hidden h-16 flex items-center gap-4">
+             <ActivityIcon className="w-5 h-5 shrink-0" />
+             <div className="text-[10px] font-black uppercase tracking-widest truncate">
+               <span className="text-white opacity-40 mr-2">LIVE_TRANSCRIPT:</span>
+               {activeTranscript}
+             </div>
+          </div>
+        )}
+
         <button 
           onClick={toggleCall}
           disabled={isConnecting}
@@ -147,7 +172,7 @@ export default function DashboardHome() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 relative z-10">
              <section className="brutal-card !p-0 overflow-hidden flex flex-col bg-white">
                 <div className="p-6 border-b-2 border-ink flex justify-between items-center bg-brand shadow-[inset_0px_-4px_0px_rgba(0,0,0,0.1)]">
                    <h2 className="text-xl font-black text-ink flex items-center gap-3 uppercase font-display italic">
@@ -170,9 +195,18 @@ export default function DashboardHome() {
                               <div className="min-w-0">
                                  <div className="flex items-center gap-2 md:gap-3 mb-1">
                                     <span className="font-black text-sm md:text-lg text-ink font-display uppercase tracking-tight leading-none">{lead.contact}</span>
-                                    <span className="px-2 py-0.5 bg-ink text-brand text-[8px] md:text-[10px] font-black uppercase tracking-tighter shadow-none">{lead.score}% INTENT</span>
+                                    <span className={cn(
+                                      "px-2 py-0.5 text-[8px] md:text-[10px] font-black uppercase tracking-tighter shadow-none brutal-border",
+                                      lead.score >= 90 ? "bg-rose-500 text-white" : "bg-ink text-brand"
+                                    )}>{lead.score}% INTENT</span>
                                  </div>
-                                 <p className="text-[9px] md:text-xs text-slate-500 font-bold truncate max-w-[150px] md:max-w-[280px] uppercase tracking-wide">{lead.summary}</p>
+                                 <div className="flex flex-col gap-1">
+                                    <p className="text-[9px] md:text-xs text-slate-500 font-bold truncate max-w-[150px] md:max-w-[280px] uppercase tracking-wide italic">{lead.summary}</p>
+                                    <div className="flex items-center gap-2 text-[8px] font-black text-brand bg-ink w-max px-1.5 py-0.5 brutal-border shadow-none">
+                                       <Sparkles className="w-2.5 h-2.5" />
+                                       NEXT ACTION: {lead.score >= 85 ? "URGENT FOLLOW-UP" : "MONITOR SIGNAL"}
+                                    </div>
+                                 </div>
                               </div>
                            </div>
                            <Link to={lead.type === 'call' ? "/logs" : "/inbox"} className="w-10 h-10 md:w-12 md:h-12 brutal-border bg-white flex items-center justify-center hover:bg-brand transition-all">

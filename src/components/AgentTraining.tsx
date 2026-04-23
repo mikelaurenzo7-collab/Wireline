@@ -29,14 +29,10 @@ export default function AgentTraining() {
 
   const fetchKnowledge = async () => {
     try {
-      const [kRes, dRes] = await Promise.all([
-        fetch(`/api/knowledge/${selectedAgentId}`),
-        fetch(`/api/directives/${selectedAgentId}`)
-      ]);
-      const kData = await kRes.json();
-      const dData = await dRes.json();
-      setKnowledge(kData.knowledge || []);
-      setDirectives(dData.directives || []);
+      const res = await fetch(`/api/agent-config/${selectedAgentId}`);
+      const data = await res.json();
+      setKnowledge(data.knowledge || []);
+      setDirectives(data.directives || []);
     } catch(e) {}
   };
 

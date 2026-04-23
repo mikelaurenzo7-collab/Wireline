@@ -14,7 +14,7 @@ const PORT = 3000;
 app.use(express.json());
 
 // Initialize AI and DB
-const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
 // Google Workspace OAuth Setup
 const SCOPES = [
@@ -129,7 +129,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
           backgroundSound: agentConfig?.data?.ambient_noise || 'off',
           model: {
             provider: "google",
-            model: "gemini-3-flash-preview", 
+            model: "gemini-2.0-flash",
             systemPrompt: systemPrompt,
             temperature: llmTemp
           },
@@ -194,7 +194,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
       return res.json({
          assistant: {
            firstMessage: "I'm sorry, my memory banks are currently offline.",
-           model: { provider: "google", model: "gemini-3-flash-preview", systemPrompt: "Apologize and hang up." }
+             model: { provider: "google", model: "gemini-2.0-flash", systemPrompt: "Apologize and hang up." }
          }
       });
     }
@@ -415,8 +415,8 @@ app.post("/api/vapi-webhook", async (req, res) => {
         `;
         try {
            const scoreRes = await genAI.models.generateContent({
-             model: "gemini-3-flash-preview",
-             contents: scoringPrompt,
+             model: "gemini-2.0-flash",
+             contents: [{ role: 'user', parts: [{ text: scoringPrompt }] }],
              config: { responseMimeType: "application/json" }
            });
            const scoreObj = JSON.parse(scoreRes.text || "{}");
@@ -443,6 +443,19 @@ app.post("/api/vapi-webhook", async (req, res) => {
   }
 
   res.json({ status: "ok" });
+});
+
+// ==========================================
+// 0. HEALTH CHECK
+// ==========================================
+app.get("/api/health", async (req, res) => {
+   try {
+      const { data, error } = await db.from('wireline_agents').select('count', { count: 'exact', head: true });
+      if (error) throw error;
+      res.json({ status: "healthy", db: "connected", agents: data || 0 });
+   } catch(e: any) {
+      res.status(500).json({ status: "degraded", error: e.message });
+   }
 });
 
 // ==========================================
@@ -606,6 +619,25 @@ app.get("/api/agent-config/:id", async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch config" });
+  }
+});
+
+// Backward compatibility or alternate access
+app.get("/api/knowledge/:id", async (req, res) => {
+  try {
+    const { data } = await db.from('wireline_knowledge').select('*').eq('agent_id', req.params.id);
+    res.json({ knowledge: data || [] });
+  } catch(e) {
+    res.status(500).json({ error: "Error" });
+  }
+});
+
+app.get("/api/directives/:id", async (req, res) => {
+  try {
+    const { data } = await db.from('wireline_directives').select('*').eq('agent_id', req.params.id).order('priority', { ascending: false });
+    res.json({ directives: data || [] });
+  } catch(e) {
+    res.status(500).json({ error: "Error" });
   }
 });
 
@@ -784,7 +816,7 @@ app.post("/api/outbound/dial", async (req, res) => {
         backgroundSound: agentConfig?.data?.ambient_noise || 'off',
         model: {
           provider: "google",
-          model: "gemini-3-flash-preview",
+          model: "gemini-2.0-flash",
           systemPrompt: systemPrompt,
           temperature: llmTemp
         },
@@ -881,8 +913,8 @@ app.post("/api/train", async (req, res) => {
     `;
 
     const response = await genAI.models.generateContent({
-      model: "gemini-2.5-pro",
-      contents: prompt,
+      model: "gemini-2.0-flash",
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config: {
         responseMimeType: "application/json"
       }
@@ -1150,8 +1182,8 @@ app.post("/api/emails/sync", async (req, res) => {
            `;
 
            const aiRes = await genAI.models.generateContent({
-              model: "gemini-3-flash-preview",
-              contents: prompt
+              model: "gemini-2.0-flash",
+              contents: [{ role: 'user', parts: [{ text: prompt }] }]
            });
            const aiText = aiRes.text || "I've received your email and will follow up shortly.";
            const finalReply = activeAgent?.email_signature ? `${aiText}\n\n${activeAgent.email_signature}` : aiText;
@@ -1187,6 +1219,17 @@ app.post("/api/emails/sync", async (req, res) => {
            const lowerSnippet = snippet.toLowerCase();
            if (lowerSnippet.includes('call') || lowerSnippet.includes('phone') || lowerSnippet.includes('callback') || lowerSnippet.includes('number')) {
               try {
+                 // Generate a context for the outbound call
+                 const contextPrompt = `Analyze this email snippet and provide a 1-sentence context for an outbound call follow-up.
+                 Email snippet: "${snippet}"
+                 Response format: Just the sentence.`;
+
+                 const contextRes = await genAI.models.generateContent({
+                    model: "gemini-2.0-flash",
+                    contents: [{ role: 'user', parts: [{ text: contextPrompt }] }]
+                 });
+                 const callContext = contextRes.text || `Lead requested callback via email mailroom. Lead Contact: ${from}`;
+
                  await db.from('wireline_fleet_tasks').insert({
                     source_type: 'email_thread',
                     source_id: threadId,
@@ -1194,7 +1237,7 @@ app.post("/api/emails/sync", async (req, res) => {
                     agent_id: activeAgent?.id || null,
                     customer_info: { email: from, subject: subject },
                     task_type: 'callback_required',
-                    description: `Lead requested callback via email mailroom. Lead Contact: ${from}`,
+                    description: callContext,
                     status: 'pending'
                  });
               } catch(handoffErr) {
@@ -1218,8 +1261,8 @@ app.post("/api/emails/sync", async (req, res) => {
                 RESPONSE FORMAT (JSON): { "score": number, "label": string }
               `;
               const sRes = await genAI.models.generateContent({
-                model: "gemini-3-flash-preview",
-                contents: emailScoringPrompt,
+                model: "gemini-2.0-flash",
+                contents: [{ role: 'user', parts: [{ text: emailScoringPrompt }] }],
                 config: { responseMimeType: "application/json" }
               });
               const sObj = JSON.parse(sRes.text || "{}");
