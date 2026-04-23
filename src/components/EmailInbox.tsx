@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Mail, Send, Loader2, User, Search, Filter, History, ChevronRight, Inbox, CheckCircle2, RotateCw, Trash2, Bot } from "lucide-react";
+import { Mail, Send, Loader2, User, Search, Filter, History, ChevronRight, Inbox, CheckCircle2, RotateCw, Trash2, Bot, Phone } from "lucide-react";
 import { cn } from "../lib/utils";
 
 export default function EmailInbox() {
@@ -69,6 +69,27 @@ export default function EmailInbox() {
     }
   };
 
+  const handlePhoneHandoff = async (thread: any) => {
+    try {
+      await fetch('/api/fleet/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          source_type: 'email_thread',
+          source_id: thread.thread_id || thread.id,
+          target_channel: 'phone',
+          customer_info: { email: thread.customer_email, subject: thread.subject },
+          task_type: 'callback_required',
+          description: `Manual handoff requested from inbox. Subject: ${thread.subject}`
+        })
+      });
+      alert('Handed off to Voice Fleet! Task is now pending in the Transfer Hub.');
+    } catch(e) {
+      console.error(e);
+      alert('Failed to handoff.');
+    }
+  };
+
   return (
     <div className="h-full flex flex-col space-y-8 md:space-y-12 pb-24 p-4 md:p-0">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8 border-b-4 border-ink pb-8 md:pb-12">
@@ -94,9 +115,9 @@ export default function EmailInbox() {
         </div>
       </div>
 
-      <div className="flex-1 flex gap-10 min-h-0">
+      <div className="flex-1 flex flex-col md:flex-row gap-10 min-h-0">
         {/* Thread List */}
-        <div className="w-[440px] flex flex-col bg-white brutal-border !p-0 overflow-hidden shrink-0">
+        <div className="w-full md:w-[440px] flex flex-col bg-white brutal-border !p-0 overflow-hidden shrink-0">
           <div className="p-6 border-b-2 border-ink flex items-center justify-between bg-zinc-950 text-white">
             <span className="text-xs font-black uppercase tracking-widest flex items-center gap-3">
               <Inbox className="w-5 h-5 text-brand" /> Email Threads
@@ -107,7 +128,7 @@ export default function EmailInbox() {
             {loading ? (
               <div className="p-24 text-center"><Loader2 className="w-12 h-12 animate-spin text-brand mx-auto" /></div>
             ) : threads.length === 0 ? (
-              <div className="p-24 text-center text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px] italic">No active signals detected.</div>
+              <div className="p-24 text-center text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px] italic">No active conversations.</div>
             ) : threads.map(thread => (
               <button 
                 key={thread.id}
@@ -149,14 +170,17 @@ export default function EmailInbox() {
         </div>
 
         {/* Message View */}
-        <div className="flex-1 flex flex-col bg-white brutal-border !p-0 overflow-hidden relative">
+        <div className={cn("flex-1 flex flex-col bg-white brutal-border !p-0 overflow-hidden relative", !selectedThread ? "hidden md:flex" : "flex")}>
           {selectedThread ? (
             <>
-              <div className="p-10 border-b-2 border-ink bg-white sticky top-0 z-10">
-                <div className="flex items-center justify-between">
-                   <div className="flex items-center gap-8">
+              <div className="p-6 md:p-10 border-b-2 border-ink bg-white sticky top-0 z-10">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                   <div className="flex items-center gap-6 md:gap-8 w-full md:w-auto">
+                     <button className="md:hidden p-2 brutal-border bg-brand text-ink shadow-none" onClick={() => setSelectedThread(null)}>
+                        <ChevronRight className="w-6 h-6 rotate-180" />
+                     </button>
                      <div className={cn(
-                        "w-20 h-20 brutal-border flex flex-col items-center justify-center font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]",
+                        "w-16 h-16 md:w-20 md:h-20 brutal-border flex flex-col items-center justify-center font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] shrink-0",
                         (selectedThread.lead_score || 0) >= 80 ? "bg-rose-500 text-white" :
                         (selectedThread.lead_score || 0) >= 50 ? "bg-brand text-ink" :
                         "bg-white text-slate-400"
@@ -164,16 +188,22 @@ export default function EmailInbox() {
                         <span className="text-[9px] uppercase tracking-tighter leading-none mb-1">INTENT</span>
                         <span className="text-3xl leading-none font-display italic">{selectedThread.lead_score || 0}</span>
                      </div>
-                     <div>
-                       <h2 className="text-3xl font-black text-ink uppercase tracking-tight font-display leading-tight italic">{selectedThread.subject}</h2>
-                       <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2 flex items-center gap-3">
-                         <User className="w-4 h-4" /> {selectedThread.customer_email}
+                     <div className="min-w-0">
+                       <h2 className="text-xl md:text-3xl font-black text-ink uppercase tracking-tight font-display leading-tight italic truncate">{selectedThread.subject}</h2>
+                       <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest mt-1 md:mt-2 flex items-center gap-2 md:gap-3 truncate">
+                         <User className="w-3 h-3 md:w-4 md:h-4 shrink-0" /> <span className="truncate">{selectedThread.customer_email}</span>
                        </p>
                      </div>
                    </div>
-                   <div>
+                   <div className="w-full md:w-auto flex flex-col md:flex-row items-center gap-4">
+                     <button 
+                       onClick={() => handlePhoneHandoff(selectedThread)}
+                       className="w-full md:w-auto brutal-btn !bg-ink text-brand !py-2 !px-4 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 active:translate-y-1 active:translate-x-1 active:shadow-none shadow-[2px_2px_0px_0px_rgba(250,204,21,1)]"
+                     >
+                       <Phone className="w-4 h-4" /> DISPATCH CALL FLEET
+                     </button>
                      <span className={cn(
-                       "px-4 py-2 brutal-border shadow-none text-xs font-black uppercase tracking-widest",
+                       "w-full md:w-auto px-4 py-2 brutal-border shadow-none text-xs font-black uppercase tracking-widest flex items-center justify-center",
                        selectedThread.status === 'open' ? "bg-emerald-500 text-white border-ink" : "bg-white text-slate-400 border-ink"
                      )}>
                        STATUS: {selectedThread.status}
@@ -182,11 +212,11 @@ export default function EmailInbox() {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-12 space-y-12">
+              <div className="flex-1 overflow-y-auto p-4 md:p-12 space-y-8 md:space-y-12">
                 {messages.map(msg => (
-                  <div key={msg.id} className={cn("flex flex-col max-w-[80%]", msg.role === 'ai' ? "ml-auto items-end" : "items-start")}>
+                  <div key={msg.id} className={cn("flex flex-col max-w-[90%] md:max-w-[80%]", msg.role === 'ai' ? "ml-auto items-end" : "items-start")}>
                     <div className={cn(
-                      "p-8 brutal-border font-bold leading-relaxed shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]",
+                      "p-6 md:p-8 brutal-border font-bold leading-relaxed shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]",
                       msg.role === 'ai' 
                         ? "bg-ink text-white" 
                         : "bg-white text-ink"
@@ -205,16 +235,16 @@ export default function EmailInbox() {
                 ))}
               </div>
 
-              <div className="p-10 bg-slate-50 border-t-2 border-ink">
+              <div className="p-4 md:p-10 bg-slate-50 border-t-2 border-ink">
                 <div className="bg-white brutal-border !p-4 flex flex-col shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] group">
                   <textarea 
                     value={replyText}
                     onChange={e => setReplyText(e.target.value)}
-                    placeholder="TYPE RESPONSE OVERRIDE OR INSTRUCT AI..."
+                    placeholder="TYPE RESPONSE OR INSTRUCT YOUR AI AGENT..."
                     className="flex-1 p-6 min-h-[120px] outline-none font-black text-ink uppercase tracking-tight text-lg resize-none bg-transparent placeholder:text-slate-200"
                   />
-                  <div className="flex justify-between items-center p-4 border-t-2 border-ink/5">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Signal will be grounded in current training dataset.</p>
+                  <div className="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-0 p-4 border-t-2 border-ink/5">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">The agent will use its training data to assist you.</p>
                       <button 
                         onClick={sendReply}
                         className="brutal-btn !bg-ink text-brand !py-2 !px-6 md:!px-8 flex items-center gap-3 active:translate-x-1 active:translate-y-1 active:shadow-none text-xs"

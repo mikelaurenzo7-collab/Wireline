@@ -138,8 +138,8 @@ export default function Integrations() {
             <div className="w-32 h-32 bg-zinc-50 brutal-border border-ink flex items-center justify-center mb-10 shadow-none">
               <Mail className="w-16 h-16 text-slate-200" />
             </div>
-            <p className="font-black text-3xl uppercase font-display italic text-ink mb-4">No Active Bridges</p>
-            <p className="text-slate-400 font-bold text-xs uppercase tracking-widest max-w-sm leading-loose">Establish a Google Workspace uplink to initiate autonomous fleet deployment.</p>
+            <p className="font-black text-3xl uppercase font-display italic text-ink mb-4">No Accounts Linked</p>
+            <p className="text-slate-400 font-bold text-xs uppercase tracking-widest max-w-sm leading-loose">Connect a Google Workspace account to enable your AI email integrations.</p>
           </div>
         ) : (
           <div className="divide-y-4 divide-ink bg-white">
@@ -152,8 +152,8 @@ export default function Integrations() {
                   <div>
                     <div className="font-black text-ink text-4xl font-display uppercase tracking-tighter italic border-b-4 border-transparent group-hover:border-brand transition-all">{acc.email_address}</div>
                     <div className="flex items-center gap-6 mt-4">
-                      <span className="px-4 py-1 bg-ink text-brand text-[10px] font-black uppercase tracking-widest brutal-border shadow-none italic h-6 flex items-center">LINKED</span>
-                      <span className="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em]">SECURE_PROTOCOL: G_WORKSPACE_X1</span>
+                      <span className="px-4 py-1 bg-ink text-brand text-[10px] font-black uppercase tracking-widest brutal-border shadow-none italic h-6 flex items-center">CONNECTED</span>
+                      <span className="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em]">WORKSPACE ACCOUNT</span>
                     </div>
                   </div>
                 </div>
@@ -161,16 +161,16 @@ export default function Integrations() {
                 <div className="flex items-center gap-10 w-full lg:w-auto">
                    <div className="flex flex-col items-start lg:items-end flex-1 lg:flex-none">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4 flex items-center gap-3 italic">
-                        <Bot className="w-4 h-4 text-brand" /> Assign Dispatch Unit
+                        <Bot className="w-4 h-4 text-brand" /> Assign Routing Agent
                       </label>
                       <select 
                         value={acc.agent_id || "none"}
                         onChange={(e) => updateAccountAgent(acc.id, e.target.value)}
                         className="text-xs font-black bg-zinc-50 brutal-border border-zinc-200 p-5 outline-none focus:bg-brand focus:border-ink min-w-[300px] appearance-none cursor-pointer uppercase tracking-widest shadow-none"
                       >
-                         <option value="none">UNASSIGNED / MONITORING</option>
+                         <option value="none">UNASSIGNED</option>
                          {agents.map(agent => (
-                           <option key={agent.id} value={agent.id}>{agent.name.toUpperCase()} UNIT</option>
+                           <option key={agent.id} value={agent.id}>{agent.name.toUpperCase()} AGENT</option>
                          ))}
                       </select>
                    </div>
@@ -178,7 +178,7 @@ export default function Integrations() {
                    <button
                       onClick={() => handleDisconnect(acc.id)}
                       className="w-16 h-16 brutal-border bg-white text-slate-200 hover:text-rose-500 hover:bg-rose-50 flex items-center justify-center transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,0.05)] hover:shadow-none translate-y-0 hover:translate-y-1 hover:translate-x-1"
-                      title="TERMINATE BRIDGE"
+                      title="DISCONNECT ACCOUNT"
                    >
                       <Trash2 className="w-6 h-6" />
                    </button>
@@ -196,7 +196,7 @@ export default function Integrations() {
           className="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em] hover:text-ink transition-all flex items-center gap-4 group"
         >
           {showTechnical ? <span className="rotate-90">×</span> : <ChevronDown className="w-4 h-4" />}
-          {showTechnical ? "TERMINATE CONFIG SESSION" : "INITIATE BRIDGE PROTOCOL (FOUNDER)"}
+          {showTechnical ? "CLOSE DEVELOPER SETTINGS" : "DEVELOPER SETTINGS"}
         </button>
 
         {showTechnical && (
@@ -208,14 +208,14 @@ export default function Integrations() {
                     <Webhook className="w-8 h-8 text-brand" />
                   </div>
                   <div>
-                     <h3 className="text-4xl font-black uppercase tracking-tight italic font-display">Engineering Access</h3>
-                     <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.4em] mt-2">Platform Gateway Configuration Module</p>
+                     <h3 className="text-4xl font-black uppercase tracking-tight italic font-display">OAuth Settings</h3>
+                     <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.4em] mt-2">API Callback Details</p>
                   </div>
                </div>
                
                <div className="space-y-6">
                  <p className="text-slate-400 text-sm font-bold uppercase tracking-tight leading-relaxed max-w-3xl">
-                    CROSS-DOMAIN AUTHENTICATION REQUIRES VALID GOOGLE CLOUD HANDSHAKE. VERIFY PRODUCTION CLIENT_ID/SECRET SETTINGS IN THE SYSTEM KERNEL.
+                    ENSURE THIS REDIRECT URI IS CONFIGURED IN YOUR GOOGLE CLOUD CONSOLE TO ALLOW AUTHENTICATION TO SUCCEED.
                  </p>
                  <div className="bg-white/5 p-8 brutal-border border-white/10 flex flex-col md:flex-row items-center justify-between gap-8 group">
                     <div className="space-y-2 flex-1">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Phone, PhoneIncoming, PhoneOutgoing, Clock, User, FileText, Play, Pause, Download, Search, Filter, Loader2, MessageCircle, ChevronRight, X } from "lucide-react";
+import { Phone, PhoneIncoming, PhoneOutgoing, Clock, User, FileText, Play, Pause, Download, Search, Filter, Loader2, MessageCircle, ChevronRight, X, Database } from "lucide-react";
 import { cn } from "../lib/utils";
 
 export default function CallLogs() {
@@ -38,67 +38,67 @@ export default function CallLogs() {
   };
 
   return (
-    <div className="h-full flex flex-col space-y-8 md:space-y-12 pb-24 relative overflow-hidden p-4 md:p-0">
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8 border-b-4 border-ink pb-8 md:pb-12">
-        <div>
-          <div className="flex items-center gap-2 mb-4">
-             <span className="bg-brand text-ink text-[10px] font-black px-2 py-0.5 uppercase tracking-widest brutal-border shadow-none italic">History</span>
+    <div className="flex flex-col space-y-6 md:space-y-8 pb-32 max-w-7xl mx-auto w-full p-4 md:p-8 lg:p-10">
+      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 border-b-8 border-ink pb-6 md:pb-8">
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+             <span className="bg-brand text-ink text-[10px] font-black px-2 py-0.5 uppercase tracking-widest brutal-border shadow-none italic animate-pulse">Relay: Active</span>
+             <div className="flex items-center gap-1.5 px-2 py-0.5 bg-ink text-brand brutal-border shadow-none">
+                <Database className="w-3 h-3" />
+                <span className="text-[9px] font-black uppercase tracking-tighter italic">Signal Sync: Real-time</span>
+             </div>
           </div>
-          <h1 className="text-3xl md:text-7xl font-black text-ink uppercase tracking-tight font-display italic leading-none">
-            Call Logs
+          <h1 className="text-4xl md:text-7xl font-black text-ink uppercase tracking-tight font-display italic leading-none block">
+            Signal Archives
           </h1>
-          <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[8px] md:text-xs mt-3 leading-relaxed">A complete record of every call handled by your agents.</p>
+          <p className="text-slate-400 font-bold uppercase tracking-[0.3em] text-[10px] md:text-xs mt-4 max-w-lg leading-relaxed">Intelligence repository for all carrier signals and tactical fleet operations.</p>
         </div>
         
-        <div className="flex flex-col lg:flex-row items-center gap-4 w-full lg:w-auto">
-          <div className="relative w-full lg:w-80 group">
-            <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-ink transition-colors" />
+        <div className="flex flex-col lg:flex-row items-center gap-3 w-full lg:w-auto">
+          <div className="relative w-full lg:w-72 group">
+            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-ink transition-colors" />
             <input 
               type="text" 
-              placeholder="SEARCH SIGNAL..." 
-              className="w-full pl-12 pr-6 py-4 bg-white border-4 border-ink font-black text-ink outline-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:bg-brand transition-colors uppercase tracking-widest text-xs"
+              placeholder="SEARCH SIGNALS..." 
+              className="w-full pl-10 pr-4 h-12 bg-white border-4 border-ink font-black text-ink outline-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:bg-brand transition-colors uppercase tracking-widest text-[10px]"
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
           </div>
           
           <select 
-            className="w-full lg:w-auto p-4 bg-white border-4 border-ink font-black text-ink outline-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:bg-brand transition-colors uppercase tracking-widest text-xs cursor-pointer appearance-none px-8 italic"
+            className="w-full lg:w-auto h-12 bg-white border-4 border-ink font-black text-ink outline-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:bg-brand transition-colors uppercase tracking-widest text-[10px] cursor-pointer appearance-none px-6 italic"
             value={filter}
             onChange={e => setFilter(e.target.value)}
           >
-            <option value="all">ALL FREQUENCIES</option>
-            <option value="inbound">INBOUND ONLY</option>
-            <option value="outbound">OUTBOUND ONLY</option>
+            <option value="all">ALL SIGNALS</option>
+            <option value="inbound">INBOUND RELAY</option>
+            <option value="outbound">OUTBOUND DISPATCH</option>
           </select>
-          
-          <button onClick={fetchCalls} className="hidden lg:flex w-14 h-14 brutal-border bg-white items-center justify-center text-ink hover:bg-brand transition-all">
-            <Clock className="w-6 h-6" />
-          </button>
         </div>
-      </div>
+      </header>
 
-      <div className="flex-1 bg-white brutal-border !p-0 overflow-hidden flex flex-col shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+      <div className="bg-white brutal-border !p-0 overflow-hidden flex flex-col shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] max-h-[800px]">
+        <div className="overflow-x-auto overflow-y-auto">
+          <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
-              <tr className="bg-zinc-950 text-white border-b-4 border-ink">
-                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em]">Direction</th>
-                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em]">Number</th>
-                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-center">Score</th>
-                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em]">Summary</th>
-                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em]">Time</th>
-                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-right">Action</th>
+              <tr className="bg-zinc-950 text-white border-b-4 border-ink sticky top-0 z-10">
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] italic border-r border-white/10">Signal Direction</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] italic border-r border-white/10">Carrier Origin</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] italic text-center border-r border-white/10">Intent Score</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] italic border-r border-white/10">Signal Payload</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] italic border-r border-white/10">Temporal Sync</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] italic text-right">Access Detail</th>
               </tr>
             </thead>
             <tbody className="divide-y-2 divide-ink">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-24"><Loader2 className="w-12 h-12 animate-spin text-brand mx-auto" /></td>
+                  <td colSpan={6} className="text-center py-20"><Loader2 className="w-10 h-10 animate-spin text-brand mx-auto" /></td>
                 </tr>
               ) : filteredCalls.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-24 text-slate-400 font-bold uppercase text-xs italic">Call history is currently empty.</td>
+                  <td colSpan={6} className="text-center py-20 text-slate-400 font-bold uppercase text-[9px] tracking-widest italic">Signal history is current empty. Waiting for relay...</td>
                 </tr>
               ) : filteredCalls.map(call => (
                 <tr 
@@ -106,21 +106,21 @@ export default function CallLogs() {
                   className={cn("hover:bg-brand/5 cursor-pointer transition-all group", selectedCall?.id === call.id && "bg-brand/10")}
                   onClick={() => setSelectedCall(call)}
                 >
-                  <td className="px-8 py-6">
+                  <td className="px-6 py-4 border-r border-ink/5">
                     <div className={cn(
-                      "flex items-center gap-2 font-black text-[9px] uppercase tracking-widest px-3 py-1.5 brutal-border shadow-none w-fit leading-none italic",
+                      "flex items-center gap-2 font-black text-[8px] uppercase tracking-widest px-2 py-1 brutal-border shadow-none w-fit leading-none italic",
                       call.direction === "inbound" ? "bg-cyan-100 text-ink" : "bg-brand text-ink"
                     )}>
                       {call.direction === "inbound" ? <PhoneIncoming className="w-3 h-3" /> : <PhoneOutgoing className="w-3 h-3" />}
-                      {call.direction}
+                      {call.direction === "inbound" ? "INBOUND_RELAY" : "OUTBOUND_DISPATCH"}
                     </div>
                   </td>
-                  <td className="px-8 py-6">
-                    <div className="font-black text-ink text-lg font-display uppercase italic leading-none">{call.customer_number || "WEB SIM"}</div>
+                  <td className="px-6 py-4 border-r border-ink/5">
+                    <div className="font-black text-ink text-sm font-display uppercase italic leading-none">{call.customer_number || "SIM_EMULATED"}</div>
                   </td>
-                  <td className="px-8 py-6 text-center">
+                  <td className="px-6 py-4 text-center border-r border-ink/5">
                     <div className={cn(
-                      "inline-flex items-center justify-center w-12 h-12 brutal-border font-black text-sm italic shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]",
+                      "inline-flex items-center justify-center w-8 h-8 brutal-border font-black text-[10px] italic shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]",
                       (call.lead_score || 0) >= 80 ? "bg-rose-500 text-white" :
                       (call.lead_score || 0) >= 50 ? "bg-brand text-ink" :
                       "bg-white text-slate-400"
@@ -128,16 +128,21 @@ export default function CallLogs() {
                       {call.lead_score || 0}
                     </div>
                   </td>
-                  <td className="px-8 py-6 max-w-sm">
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide truncate">{call.summary}</p>
+                  <td className="px-6 py-4 max-w-xs border-r border-ink/5">
+                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tight truncate leading-none mb-1">{call.summary}</p>
+                    <p className="text-[8px] font-black text-zinc-300 uppercase italic truncate">{call.id}</p>
                   </td>
-                  <td className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                    {new Date(call.created_at).toLocaleDateString()}<br/>
-                    {new Date(call.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'})}
+                  <td className="px-6 py-4 border-r border-ink/5">
+                    <div className="text-[9px] font-black text-slate-500 uppercase tracking-tighter leading-none mb-1">
+                      {new Date(call.created_at).toLocaleDateString()}
+                    </div>
+                    <div className="text-[8px] font-bold text-slate-300 uppercase">
+                      {new Date(call.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'})}
+                    </div>
                   </td>
-                  <td className="px-8 py-6 text-right">
-                    <div className="w-10 h-10 brutal-border bg-white flex items-center justify-center group-hover:bg-brand transition-all ml-auto">
-                      <ChevronRight className="w-5 h-5" />
+                  <td className="px-6 py-4 text-right">
+                    <div className="w-8 h-8 brutal-border bg-white flex items-center justify-center group-hover:bg-brand transition-all ml-auto shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] group-hover:shadow-none">
+                      <ChevronRight className="w-4 h-4" />
                     </div>
                   </td>
                 </tr>
@@ -188,7 +193,7 @@ export default function CallLogs() {
                 </div>
               ) : (
                 <div className="bg-slate-50 brutal-border border-dashed p-10 text-center font-bold text-slate-400 uppercase text-[10px] tracking-widest italic">
-                  Signal recording is being decrypted...
+                  Recording is processing...
                 </div>
               )}
 
@@ -219,10 +224,10 @@ export default function CallLogs() {
               <div className="space-y-4">
                 <h3 className="text-xl font-black text-ink uppercase tracking-tight font-display italic flex items-center gap-3">
                   <MessageCircle className="w-6 h-6 text-indigo-500" />
-                  Raw Signal Transcript
+                  Transcript
                 </h3>
                 <div className="bg-zinc-50 brutal-border p-8 text-ink font-bold leading-loose max-h-[500px] overflow-y-auto uppercase tracking-wide text-xs">
-                  {selectedCall.transcript || "SIGNAL LOG PURGED OR UNAVAILABLE."}
+                  {selectedCall.transcript || "TRANSCRIPT UNAVAILABLE."}
                 </div>
               </div>
             </div>

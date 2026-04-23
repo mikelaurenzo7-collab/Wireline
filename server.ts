@@ -43,7 +43,7 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SU
 const db = createClient(supabaseUrl, supabaseKey);
 
 // ==========================================
-// 1. VAPI WEBHOOK (TELEPHONY BRIDGE)
+// 1. API WEBHOOK (CARRIER CONNECTION)
 // ==========================================
 app.post("/api/vapi-webhook", async (req, res) => {
   const payload = req.body;
@@ -51,6 +51,28 @@ app.post("/api/vapi-webhook", async (req, res) => {
   
   console.log("--- INCOMING VAPI WEBHOOK ---");
   console.log("Message Type:", message?.type);
+
+  // SECURITY ENFORCEMENT ON CONNECTION: 
+  // Before spinning up the LLM or doing any work, check if the account is active.
+  const { data: globalSettings } = await db.from('wireline_settings').select('subscription_status').eq('id', 'global').single();
+  const subscriptionStatus = globalSettings?.subscription_status || 'active';
+  
+  if (subscriptionStatus !== 'active') {
+    console.log("Connection rejected: Account subscription is not active.");
+    if (message && message.type === "assistant-request") {
+        return res.json({
+            assistant: {
+                firstMessage: "We're sorry, but the automated service for this line is currently suspended. Please contact the administrator.",
+                model: {
+                    provider: "google",
+                    model: "gemini-3-flash-preview",
+                    systemPrompt: "Tell the user the service is suspended, and gracefully end the call."
+                }
+            }
+        });
+    }
+    return res.status(403).json({ error: "Access Denied: Inactive Subscription" });
+  }
   
   // Try to pull agent ID from query params (e.g. ?agentId=support-bot) or default 
   const webhookAgentId = req.query.agentId as string || "default-agent";
@@ -71,14 +93,17 @@ app.post("/api/vapi-webhook", async (req, res) => {
       // TEMPORAL AWARENESS: Inject exact current time so the agent knows what "Today" and "Tomorrow" mean
       const currentDateTime = new Date().toLocaleString('en-US', { timeZone: 'America/New_York', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-      // Determine Archetype Behavior
-      const archetype = agentConfig?.data?.archetype || 'Receptionist';
+      // Determine Call Direction and Archetype Behavior
+      const isOutbound = message.type === 'outboundPhoneCall' || message.call?.type === 'outboundPhoneCall';
+      // Force 'The Closer' archetype on outbound calls, use user configuration on inbound calls.
+      const archetype = isOutbound ? 'The Closer' : (agentConfig?.data?.archetype || 'Receptionist');
+      
       let archetypeRules = "";
       let llmTemp = 0.4;
       
       switch(archetype) {
          case 'The Closer':
-            archetypeRules = "You are highly persuasive, confident, and goal-oriented. You smoothly overcome objections and always try to guide the conversation toward booking an appointment or clarifying the sale.";
+            archetypeRules = "You are a high-stakes closer. Use a confident tone. If a lead hesitates, offer a limited-time incentive to book now.";
             llmTemp = 0.7;
             break;
          case 'Support Tech':
@@ -86,38 +111,52 @@ app.post("/api/vapi-webhook", async (req, res) => {
             llmTemp = 0.2;
             break;
          case 'The Empath':
-            archetypeRules = "You are warm, highly agreeable, and sympathetic. You validate the caller's concerns frequently (e.g. 'I completely understand why that's frustrating').";
+            archetypeRules = "If a caller sounds frustrated, your first words must be a validating statement like 'I completely hear you, that's incredibly stressful. Let me fix this for you.'";
             llmTemp = 0.6;
             break;
          default: // Receptionist
-            archetypeRules = "You are cheerful, polite, and highly efficient. You keep the conversation moving and focus on gathering the necessary information quickly.";
+            archetypeRules = "You are an expert at handling phone calls where people are often in a hurry. Never use platitudes like 'I hope you're having a wonderful day.' Get straight to the value. You are cheerful, polite, and highly efficient.";
             llmTemp = 0.4;
       }
 
-      const systemPrompt = `
-      # CORE IDENTITY & ARCHETYPE: ${archetype}
-      ${archetypeRules}
-      ${personalityData?.data?.content || "You are a professional, helpful Wireline assistant for a Home Services company."}
+      const ambientNoiseActive = agentConfig?.data?.ambient_noise && agentConfig?.data?.ambient_noise !== 'off';
 
-      ${agentConfig?.data?.website_url ? `# KNOWLEDGE GROUNDING\nYour company's official website is: ${agentConfig.data.website_url}. If asked for more details or deep info not in your knowledge base, refer them back to the site.` : ""}
+      const systemPrompt = `
+      ## BLOCK 1: IDENTITY & ARCHETYPE (THE "MOAT")
+      Persona: You are ${agentConfig?.data?.name || 'Wireline Agent'}, a representative for our company.
+      Tone: Snappy, concise, low-friction.
+      The "Secret Sauce": ${archetypeRules}
+      Base Personality: ${personalityData?.data?.content || "You are a professional, helpful assistant."}
+      ${ambientNoiseActive ? "Ambient Realism: You are working in a busy location. Speak with a slight sense of professional urgency." : ""}
+
+      ${agentConfig?.data?.website_url ? `## KNOWLEDGE GROUNDING\nYour company's official website is: ${agentConfig.data.website_url}. If asked for more details or deep info not in your knowledge base, refer them back to the site.` : ""}
+
+      ## BLOCK 2: TEMPORAL & CONTEXTUAL ANCHORS
+      You unmistakably know that today is ${currentDateTime} (Eastern Time). If a customer asks for "tomorrow" or "next week", calculate the date silently and confirm it back to them (e.g., "So that would be Tuesday the 24th at 2pm?").
+
+      ## BLOCK 3: CONVERSATIONAL LOOP & GUARDRAILS
+      Response Length: Keep every response under 20 words unless you are explaining a complex process. Long AI monologues feel like robots.
+      The "Anti-Echo" Rule: Do not repeat back what the user just said. If they say "My heater is broken", do not say "I understand your heater is broken." Instead, say "Got it. Let's get a tech out there. Is it blowing cold air or not turning on at all?"
+      Question Limit: Never ask more than one question at a time.
+      Number Formatting: Spell out important numbers if they sound robotic (e.g., "Two zero two" instead of "Two hundred and two").
+
+      ## BLOCK 4: TOOL EXECUTION LOGIC & PROTOCOLS
+      Sequence Requirements:
+      1. If a user wants a slot, you MUST check calendar availability first.
+      2. If the slot is open, book the appointment.
+      3. Confirm the Reference ID provided by the system before hanging up.
+      
+      Escalation Transfer Rule: If a user asks for a "real person" twice, or asks to transfer, immediately inform them you are transferring them and use the tools.
 
       # CROSS-CHANNEL HANDOFF (OMNICHANNEL)
       If a customer needs a detailed follow-up, a reminder, or a document sent that you cannot speak entirely over the phone, use the 'send_email' tool. 
-      This 'passes the task' to our AI Email Hub where they can continue the conversation via text. 
-      Tell the caller: 'I'll hand this over to our email team to send you that info right now.'
+      Tell the caller: "I'll hand this over to our email team to send you that info right now."
 
-      # TEMPORAL CONTEXT (CRITICAL)
-      The current live date and time is: ${currentDateTime} (Eastern Time).
-      Always use this exact date as your anchor point when a customer says "tomorrow", "next week", etc.
-      
-      # ABSOLUTE RULES
+      ## ABSOLUTE RULES
       ${(directivesData?.data || []).map((d: any) => `[PRIORITY ${d.priority}] ${d.content}`).join('\n')}
       
-      # KNOWLEDGE BASE
+      ## KNOWLEDGE BASE
       ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n')}
-      
-      # MISSION
-      Your goal is to be incredibly efficient, polite, and helpful. You are powered by Gemini. Respond quickly and concisely to avoid dead-air pauses.
       `;
 
       const responsePayload = {
@@ -135,8 +174,8 @@ app.post("/api/vapi-webhook", async (req, res) => {
           },
           recordingEnabled: true,
           voice: {
-            provider: agentConfig?.data?.voice_provider || "11labs",
-            voiceId: agentConfig?.data?.voice_id || "bIHbv24MWmeRgasZH58o" // Configurable Voice
+            provider: isOutbound ? (agentConfig?.data?.voice_provider_outbound || agentConfig?.data?.voice_provider || "11labs") : (agentConfig?.data?.voice_provider_inbound || agentConfig?.data?.voice_provider || "11labs"),
+            voiceId: isOutbound ? (agentConfig?.data?.voice_id_outbound || agentConfig?.data?.voice_id || "bIHbv24MWmeRgasZH58o") : (agentConfig?.data?.voice_id_inbound || agentConfig?.data?.voice_id || "bIHbv24MWmeRgasZH58o") 
           },
           functions: [
             {
@@ -275,7 +314,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
          });
       }
 
-      // TOOL 4: FLEET HANDOFF (PHONE -> EMAIL)
+      // TOOL 4: ROUTING HANDOFF (PHONE -> EMAIL)
       if (toolCall.function.name === "send_email") {
          try {
            const { to_email, subject, body } = toolCall.function.arguments;
@@ -544,6 +583,24 @@ app.get("/api/agents", async (req, res) => {
 
 app.post("/api/agents", async (req, res) => {
   try {
+    // SECURITY ENFORCEMENT: Check Subscription Status
+    // In a production environment, this would verify the user's active plan based on their JWT/session
+    const { data: globalSettings } = await db.from('wireline_settings').select('subscription_status, max_agents').eq('id', 'global').single();
+    
+    // Gating mechanism: Prevent agent creation if the account is unpaid
+    const subscriptionStatus = globalSettings?.subscription_status || 'active'; // Default to active for dev environment
+    if (subscriptionStatus !== 'active') {
+       return res.status(403).json({ error: "Access Denied: Please upgrade your billing plan to access this feature." });
+    }
+
+    // Agent Limit Check
+    const maxAgents = globalSettings?.max_agents || 3; // Default free tier limit
+    const { count: agentCount } = await db.from('wireline_agents').select('*', { count: 'exact', head: true });
+    
+    if (agentCount !== null && agentCount >= maxAgents) {
+      return res.status(403).json({ error: `Quota Exceeded: Your plan only allows ${maxAgents} agents. Please upgrade.` });
+    }
+
     const { id, name, voice_id, channel } = req.body;
     await db.from('wireline_agents').insert({
       id: id || `agent-${Date.now()}`,
@@ -570,10 +627,12 @@ app.post("/api/agents", async (req, res) => {
 // Update agent settings
 app.put("/api/agents/:id", async (req, res) => {
   try {
-    const { name, voice_id, voice_provider, first_message, archetype, ambient_noise, website_url, transfer_phone, email_auto_respond, email_agent_tone, email_signature, channel } = req.body;
+    const { name, voice_id, voice_id_inbound, voice_id_outbound, voice_provider, first_message, archetype, ambient_noise, website_url, transfer_phone, email_auto_respond, email_agent_tone, email_signature, channel } = req.body;
     await db.from('wireline_agents').update({ 
       name, 
       voice_id, 
+      voice_id_inbound,
+      voice_id_outbound,
       voice_provider, 
       first_message, 
       archetype, 
@@ -610,7 +669,40 @@ app.get("/api/agent-config/:id", async (req, res) => {
 });
 
 // ==========================================
-// 1.5.5 FLEET TASK BRIDGE (INTER-AGENT)
+// 1.5.4 PHONE NUMBER MANAGEMENT
+// ==========================================
+app.get("/api/phone-numbers", async (req, res) => {
+  try {
+    const { data, error } = await db.from('wireline_phone_numbers').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    res.json({ numbers: data || [] });
+  } catch (error) {
+    res.json({ numbers: [] });
+  }
+});
+
+app.post("/api/phone-numbers", async (req, res) => {
+  try {
+    const { phone_number, vapi_number_id } = req.body;
+    await db.from('wireline_phone_numbers').insert({ phone_number, vapi_number_id });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to add phone number" });
+  }
+});
+
+app.patch("/api/phone-numbers/:id", async (req, res) => {
+  try {
+    const { agent_id } = req.body;
+    await db.from('wireline_phone_numbers').update({ agent_id }).eq('id', req.params.id);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update phone number assignment" });
+  }
+});
+
+// ==========================================
+// 1.5.5 TASK ROUTING HUB
 // ==========================================
 app.get("/api/fleet/tasks", async (req, res) => {
   try {
@@ -621,6 +713,18 @@ app.get("/api/fleet/tasks", async (req, res) => {
     res.json({ tasks: data || [] });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch fleet tasks" });
+  }
+});
+
+app.post("/api/fleet/tasks", async (req, res) => {
+  try {
+    const { source_type, source_id, target_channel, customer_info, task_type, description, agent_id } = req.body;
+    await db.from('wireline_fleet_tasks').insert({
+       source_type, source_id, target_channel, customer_info, task_type, description, agent_id, status: 'pending'
+    });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to create fleet task" });
   }
 });
 
@@ -679,6 +783,9 @@ app.delete("/api/agent-config/:id/:type/:rowId", async (req, res) => {
 app.get("/api/settings", async (req, res) => {
   try {
     const { data } = await db.from('wireline_settings').select('*').eq('id', 'global').single();
+    if (data) {
+       delete data.vapi_private_key; // Never send secret to client
+    }
     res.json(data || {});
   } catch (error) {
     res.json({});
@@ -687,11 +794,12 @@ app.get("/api/settings", async (req, res) => {
 
 app.post("/api/settings", async (req, res) => {
   try {
-    const { vapi_private_key, vapi_phone_number_id } = req.body;
+    const { vapi_phone_number_id, subscription_status, max_agents } = req.body;
     await db.from('wireline_settings').upsert({
       id: 'global',
-      vapi_private_key,
       vapi_phone_number_id,
+      subscription_status,
+      max_agents,
       updated_at: new Date().toISOString()
     });
     res.json({ success: true });
@@ -713,10 +821,19 @@ app.post("/api/outbound/dial", async (req, res) => {
   try {
     const { agentId, customerName, customerNumber, context } = req.body;
     
-    // 1. Fetch settings (we need the API key and Phone ID to dispatch a call)
-    const { data: settings } = await db.from('wireline_settings').select('*').eq('id', 'global').single();
-    if (!settings?.vapi_private_key || !settings?.vapi_phone_number_id) {
-       return res.status(400).json({ error: "Platform Error: Master telecom carrier not configured. Please contact the administrator (Founder)." });
+    // 0. SECURITY ENFORCEMENT: Check Subscription Status
+    const { data: globalSettings } = await db.from('wireline_settings').select('*').eq('id', 'global').single();
+    const subscriptionStatus = globalSettings?.subscription_status || 'active';
+    if (subscriptionStatus !== 'active') {
+       return res.status(403).json({ error: "Access Denied: Please upgrade your billing plan to access outbound dialing." });
+    }
+
+    // 1. Fetch settings (we need Phone ID and use env for API key)
+    const settings = globalSettings;
+    const vapiSecret = process.env.VAPI_PRIVATE_KEY;
+    
+    if (!vapiSecret || !settings?.vapi_phone_number_id) {
+       return res.status(400).json({ error: "Platform Error: Master telecom carrier not configured. Please ensure VAPI_PRIVATE_KEY is set in environment secrets." });
     }
 
     // 2. Fetch agent config
@@ -736,7 +853,7 @@ app.post("/api/outbound/dial", async (req, res) => {
     
     switch(archetype) {
        case 'The Closer':
-          archetypeRules = "You are highly persuasive, confident, and goal-oriented. You smoothly overcome objections and always try to guide the conversation toward booking an appointment or clarifying the sale.";
+          archetypeRules = "You are a high-stakes closer. Use a confident tone. If a lead hesitates, offer a limited-time incentive to book now.";
           llmTemp = 0.7;
           break;
        case 'Support Tech':
@@ -744,31 +861,45 @@ app.post("/api/outbound/dial", async (req, res) => {
           llmTemp = 0.2;
           break;
        case 'The Empath':
-          archetypeRules = "You are warm, highly agreeable, and sympathetic. You validate the caller's concerns frequently (e.g. 'I completely understand why that's frustrating').";
+          archetypeRules = "If a caller sounds frustrated, your first words must be a validating statement like 'I completely hear you, that's incredibly stressful. Let me fix this for you.'";
           llmTemp = 0.6;
           break;
        default: // Receptionist
-          archetypeRules = "You are cheerful, polite, and highly efficient. You keep the conversation moving and focus on gathering the necessary information quickly.";
+          archetypeRules = "You are an expert at handling phone calls where people are often in a hurry. Never use platitudes like 'I hope you're having a wonderful day.' Get straight to the value. You are cheerful, polite, and highly efficient.";
           llmTemp = 0.4;
     }
 
-    const systemPrompt = `
-    # CORE IDENTITY & ARCHETYPE: ${archetype}
-    ${archetypeRules}
-    ${personalityData?.data?.content || "You are a professional, helpful Wireline assistant for a Home Services company."}
+    const ambientNoiseActive = agentConfig?.data?.ambient_noise && agentConfig?.data?.ambient_noise !== 'off';
 
-    # CRITICAL OUTBOUND MISSION CONTEXT
+    const systemPrompt = `
+    ## BLOCK 1: IDENTITY & ARCHETYPE (THE "MOAT")
+    Persona: You are ${agentConfig?.data?.name || "a scheduling agent"}, a representative for our company.
+    Tone: Snappy, concise, low-friction.
+    The "Secret Sauce": ${archetypeRules}
+    Base Personality: ${personalityData?.data?.content || "You are a professional, helpful assistant."}
+    ${ambientNoiseActive ? "Ambient Realism: You are working in a busy location. Speak with a slight sense of professional urgency." : ""}
+
+    ## CRITICAL OUTBOUND MISSION CONTEXT
     You are making an OUTBOUND call to a customer named ${customerName || "a customer"}.
     Outbound Call Context / Objective: ${context || "Just checking in on them."}
     You must address this objective naturally during the conversation.
 
-    # TEMPORAL CONTEXT
-    The current live date and time is: ${currentDateTime} (Eastern Time).
-    
-    # ABSOLUTE RULES
+    ## BLOCK 2: TEMPORAL & CONTEXTUAL ANCHORS
+    You unmistakably know that today is ${currentDateTime} (Eastern Time). If a customer asks for "tomorrow" or "next week", calculate the date silently and confirm it back to them.
+
+    ## BLOCK 3: CONVERSATIONAL LOOP & GUARDRAILS
+    Response Length: Keep every response under 20 words unless explaining a complex process. Long AI monologues feel like robots.
+    The "Anti-Echo" Rule: Do not repeat back what the user just said.
+    Question Limit: Never ask more than one question at a time.
+    Number Formatting: Spell out important numbers if they sound robotic (e.g., "Two zero two" instead of "Two hundred and two").
+
+    ## BLOCK 4: TOOL EXECUTION LOGIC & PROTOCOLS
+    Escalation Transfer Rule: If a user asks for a "real person" twice, or asks to transfer, immediately inform them you are transferring them and use the tools.
+
+    ## ABSOLUTE RULES
     ${(directivesData?.data || []).map((d: any) => `[PRIORITY ${d.priority}] ${d.content}`).join('\n')}
     
-    # KNOWLEDGE BASE
+    ## KNOWLEDGE BASE
     ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n')}
     `;
 
@@ -800,7 +931,7 @@ app.post("/api/outbound/dial", async (req, res) => {
     const vapiResponse = await fetch("https://api.vapi.ai/call/phone", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${settings.vapi_private_key}`,
+        "Authorization": `Bearer ${vapiSecret}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify(vapiPayload)
@@ -834,6 +965,12 @@ app.post("/api/outbound/bulk", async (req, res) => {
   try {
      const { leads } = req.body;
      if (!leads || !leads.length) return res.status(400).json({ error: "No leads provided" });
+
+     // SECURITY ENFORCEMENT
+     const { data: globalSettings } = await db.from('wireline_settings').select('subscription_status').eq('id', 'global').single();
+     if (globalSettings?.subscription_status !== 'active') {
+        return res.status(403).json({ error: "Access Denied: Inactive billing plan." });
+     }
 
      const { data, error } = await db.from('wireline_outbound_leads').insert(leads).select('id');
      if (error) throw error;
@@ -1052,7 +1189,7 @@ app.post("/api/emails/sync", async (req, res) => {
      const { data: accounts } = await db.from('wireline_email_accounts').select('*');
      if (!accounts || accounts.length === 0) return res.json({ success: true, count: 0 });
 
-     // 2. Fetch primary agent for grounding
+     // Fleet Synchronization
      const { data: agent } = await db.from('wireline_agents').select('*').limit(1).single();
 
      let totalNew = 0;
@@ -1131,21 +1268,28 @@ app.post("/api/emails/sync", async (req, res) => {
            // 3. GENERATE AI RESPONSE (Sales/CS focus)
            // Grounded in agent's context
            const prompt = `
-             You are the AI Email Agent for Wireline. 
-             Tone: ${activeAgent?.email_agent_tone || 'Professional'}
-             Personality: ${activeAgent?.archetype || 'Receptionist'}
-             Company Site: ${activeAgent?.website_url || 'Home Services Platform'}
-             Signature: ${activeAgent?.email_signature || 'The Wireline Team'}
+             ## BLOCK 1: IDENTITY & ARCHETYPE
+             Persona: You are the AI Email Agent for our company.
+             Tone: ${activeAgent?.email_agent_tone || 'Professional'}. Concise and helpful.
+             Personality: ${activeAgent?.archetype || 'Receptionist'}.
+             Company Site: ${activeAgent?.website_url || 'Home Services Platform'}.
+             Signature: ${activeAgent?.email_signature || 'The Wireline Team'}.
 
+             ## BLOCK 2: CONTEXT
              INCOMING EMAIL FROM: ${from}
              SUBJECT: ${subject}
              CONTENT: ${snippet}
 
-             TASK: Write a Sales or Customer Service response. 
-             If they are asking for a callback, acknowledge. 
-             If they want an appointment, provide basic info.
-             Keep it professional and concise.
-             
+             ## BLOCK 3: CONVERSATIONAL LOOP & GUARDRAILS
+             Response Length: Keep it professional and concise. Do not write a novel.
+             Goal: Write a Sales or Customer Service response.
+             - If they are asking for a callback, acknowledge and tell them a representative will call them soon.
+             - If they want an appointment, provide basic info and ask them to call or utilize the website.
+             - Do not repeat their entire message back to them. Get straight to the value.
+
+             ## KNOWLEDGE BASE
+             ${activeAgent?.knowledge ? activeAgent.knowledge.map((k: any) => `- ${k.content}`).join('\n') : "Rely on standard professional knowledge."}
+
              RESPONSE:
            `;
 
@@ -1183,7 +1327,7 @@ app.post("/api/emails/sync", async (req, res) => {
                }
            }
 
-           // 5. CROSS-FLEET HANDOFF DETECTION (EMAIL -> PHONE)
+           // 5. OMNICHANNEL TASK ROUTING (EMAIL -> PHONE)
            const lowerSnippet = snippet.toLowerCase();
            if (lowerSnippet.includes('call') || lowerSnippet.includes('phone') || lowerSnippet.includes('callback') || lowerSnippet.includes('number')) {
               try {

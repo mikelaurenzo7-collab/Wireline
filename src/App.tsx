@@ -46,47 +46,63 @@ function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) =>
             <X className="w-6 h-6" />
           </button>
         </div>
-        <nav className="flex-1 px-4 space-y-2 mt-8 overflow-y-auto">
-          <Link to="/" onClick={() => setOpen(false)} className={cn("flex items-center gap-3 px-4 py-3 border-2 transition-all group", isActive("/") ? "bg-brand border-ink shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -translate-x-1 -translate-y-1" : "border-transparent hover:bg-slate-50")}>
-            <Activity className={cn("w-5 h-5", isActive("/") ? "text-ink" : "text-slate-400")} />
-            <span className={cn("font-bold text-sm uppercase tracking-wider", isActive("/") ? "text-ink" : "text-slate-500")}>Dashboard</span>
-          </Link>
-          <Link to="/logs" onClick={() => setOpen(false)} className={cn("flex items-center gap-3 px-4 py-3 border-2 transition-all group", isActive("/logs") ? "bg-brand border-ink shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -translate-x-1 -translate-y-1" : "border-transparent hover:bg-slate-50")}>
-            <History className={cn("w-5 h-5", isActive("/logs") ? "text-ink" : "text-slate-400")} />
-            <span className={cn("font-bold text-sm uppercase tracking-wider", isActive("/logs") ? "text-ink" : "text-slate-500")}>Call Logs</span>
-          </Link>
-          <Link to="/inbox" onClick={() => setOpen(false)} className={cn("flex items-center gap-3 px-4 py-3 border-2 transition-all group", isActive("/inbox") ? "bg-brand border-ink shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -translate-x-1 -translate-y-1" : "border-transparent hover:bg-slate-50")}>
-            <Mail className={cn("w-5 h-5", isActive("/inbox") ? "text-ink" : "text-slate-400")} />
-            <span className={cn("font-bold text-sm uppercase tracking-wider", isActive("/inbox") ? "text-ink" : "text-slate-500")}>Email Inbox</span>
-          </Link>
-          <Link to="/outbound" onClick={() => setOpen(false)} className={cn("flex items-center gap-3 px-4 py-3 border-2 transition-all group", isActive("/outbound") ? "bg-brand border-ink shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -translate-x-1 -translate-y-1" : "border-transparent hover:bg-slate-50")}>
-            <PhoneOutgoing className={cn("w-5 h-5", isActive("/outbound") ? "text-ink" : "text-slate-400")} />
-            <span className={cn("font-bold text-sm uppercase tracking-wider", isActive("/outbound") ? "text-ink" : "text-slate-500")}>Outbound</span>
-          </Link>
-          <Link to="/appointments" onClick={() => setOpen(false)} className={cn("flex items-center gap-3 px-4 py-3 border-2 transition-all group", isActive("/appointments") ? "bg-brand border-ink shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -translate-x-1 -translate-y-1" : "border-transparent hover:bg-slate-50")}>
-            <Calendar className={cn("w-5 h-5", isActive("/appointments") ? "text-ink" : "text-slate-400")} />
-            <span className={cn("font-bold text-sm uppercase tracking-wider", isActive("/appointments") ? "text-ink" : "text-slate-500")}>Appointments</span>
-          </Link>
-          <Link to="/train" onClick={() => setOpen(false)} className={cn("flex items-center gap-3 px-4 py-3 border-2 transition-all group", isActive("/train") ? "bg-brand border-ink shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -translate-x-1 -translate-y-1" : "border-transparent hover:bg-slate-50")}>
-            <MessageSquare className={cn("w-5 h-5", isActive("/train") ? "text-ink" : "text-slate-400")} />
-            <span className={cn("font-bold text-sm uppercase tracking-wider", isActive("/train") ? "text-ink" : "text-slate-500")}>AI Training</span>
-          </Link>
-          <Link to="/agents" onClick={() => setOpen(false)} className={cn("flex items-center gap-3 px-4 py-3 border-2 transition-all group", isActive("/agents") ? "bg-brand border-ink shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -translate-x-1 -translate-y-1" : "border-transparent hover:bg-slate-50")}>
-            <Users className={cn("w-5 h-5", isActive("/agents") ? "text-ink" : "text-slate-400")} />
-            <span className={cn("font-bold text-sm uppercase tracking-wider", isActive("/agents") ? "text-ink" : "text-slate-500")}>Agents</span>
-          </Link>
-          <Link to="/integrations" onClick={() => setOpen(false)} className={cn("flex items-center gap-3 px-4 py-3 border-2 transition-all group", isActive("/integrations") ? "bg-brand border-ink shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -translate-x-1 -translate-y-1" : "border-transparent hover:bg-slate-50")}>
-            <PlugZap className={cn("w-5 h-5", isActive("/integrations") ? "text-ink" : "text-slate-400")} />
-            <span className={cn("font-bold text-sm uppercase tracking-wider", isActive("/integrations") ? "text-ink" : "text-slate-500")}>Integrations</span>
-          </Link>
-          
-          <div className="pt-8 border-t-2 border-slate-100 mt-8 px-4">
-             <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Management</span>
+        <nav className="flex-1 px-4 space-y-6 mt-10 overflow-y-auto pb-12 scrollbar-hide">
+          <div>
+            <span className="px-4 text-[8px] font-black text-slate-400 uppercase tracking-widest mb-3 block italic">Operations Hub</span>
+            <div className="space-y-1">
+              <Link to="/" onClick={() => setOpen(false)} className={cn("flex items-center gap-3 px-4 py-2.5 border-2 transition-all group", isActive("/") ? "bg-brand border-ink shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] -translate-x-1 -translate-y-1" : "border-transparent hover:bg-slate-50")}>
+                <Activity className={cn("w-4 h-4", isActive("/") ? "text-ink" : "text-slate-400")} />
+                <span className={cn("font-bold text-[10px] uppercase tracking-wider", isActive("/") ? "text-ink" : "text-slate-500")}>Command Center</span>
+              </Link>
+              <Link to="/appointments" onClick={() => setOpen(false)} className={cn("flex items-center gap-3 px-4 py-2.5 border-2 transition-all group", isActive("/appointments") ? "bg-brand border-ink shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] -translate-x-1 -translate-y-1" : "border-transparent hover:bg-slate-50")}>
+                <Calendar className={cn("w-4 h-4", isActive("/appointments") ? "text-ink" : "text-slate-400")} />
+                <span className={cn("font-bold text-[10px] uppercase tracking-wider", isActive("/appointments") ? "text-ink" : "text-slate-500")}>Commitments</span>
+              </Link>
+            </div>
           </div>
-          <Link to="/admin" onClick={() => setOpen(false)} className={cn("flex items-center gap-3 px-4 py-3 border-2 mt-4 transition-all group", isActive("/admin") ? "bg-brand border-ink shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -translate-x-1 -translate-y-1" : "border-transparent hover:bg-slate-50")}>
-            <ServerCog className={cn("w-5 h-5 font-bold", isActive("/admin") ? "text-ink" : "text-slate-400")} />
-            <span className={cn("font-bold text-sm uppercase tracking-wider", isActive("/admin") ? "text-ink" : "text-slate-500")}>Settings</span>
-          </Link>
+
+          <div>
+             <span className="px-4 text-[8px] font-black text-slate-400 uppercase tracking-widest mb-3 block italic">Intelligence Feed</span>
+             <div className="space-y-1">
+                <Link to="/logs" onClick={() => setOpen(false)} className={cn("flex items-center gap-3 px-4 py-2.5 border-2 transition-all group", isActive("/logs") ? "bg-brand border-ink shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] -translate-x-1 -translate-y-1" : "border-transparent hover:bg-slate-50")}>
+                  <History className={cn("w-4 h-4", isActive("/logs") ? "text-ink" : "text-slate-400")} />
+                  <span className={cn("font-bold text-[10px] uppercase tracking-wider", isActive("/logs") ? "text-ink" : "text-slate-500")}>Signal Archives</span>
+                </Link>
+                <Link to="/inbox" onClick={() => setOpen(false)} className={cn("flex items-center gap-3 px-4 py-2.5 border-2 transition-all group", isActive("/inbox") ? "bg-brand border-ink shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] -translate-x-1 -translate-y-1" : "border-transparent hover:bg-slate-50")}>
+                  <Mail className={cn("w-4 h-4", isActive("/inbox") ? "text-ink" : "text-slate-400")} />
+                  <span className={cn("font-bold text-[10px] uppercase tracking-wider", isActive("/inbox") ? "text-ink" : "text-slate-500")}>Email Relay</span>
+                </Link>
+                <Link to="/outbound" onClick={() => setOpen(false)} className={cn("flex items-center gap-3 px-4 py-2.5 border-2 transition-all group", isActive("/outbound") ? "bg-brand border-ink shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] -translate-x-1 -translate-y-1" : "border-transparent hover:bg-slate-50")}>
+                  <PhoneOutgoing className={cn("w-4 h-4", isActive("/outbound") ? "text-ink" : "text-slate-400")} />
+                  <span className={cn("font-bold text-[10px] uppercase tracking-wider", isActive("/outbound") ? "text-ink" : "text-slate-500")}>Signal Batch</span>
+                </Link>
+             </div>
+          </div>
+
+          <div>
+             <span className="px-4 text-[8px] font-black text-slate-400 uppercase tracking-widest mb-3 block italic">Engine Bay</span>
+             <div className="space-y-1">
+                <Link to="/train" onClick={() => setOpen(false)} className={cn("flex items-center gap-3 px-4 py-2.5 border-2 transition-all group", isActive("/train") ? "bg-brand border-ink shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] -translate-x-1 -translate-y-1" : "border-transparent hover:bg-slate-50")}>
+                  <MessageSquare className={cn("w-4 h-4", isActive("/train") ? "text-ink" : "text-slate-400")} />
+                  <span className={cn("font-bold text-[10px] uppercase tracking-wider", isActive("/train") ? "text-ink" : "text-slate-500")}>Tactical Training</span>
+                </Link>
+                <Link to="/agents" onClick={() => setOpen(false)} className={cn("flex items-center gap-3 px-4 py-2.5 border-2 transition-all group", isActive("/agents") ? "bg-brand border-ink shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] -translate-x-1 -translate-y-1" : "border-transparent hover:bg-slate-50")}>
+                  <Users className={cn("w-4 h-4", isActive("/agents") ? "text-ink" : "text-slate-400")} />
+                  <span className={cn("font-bold text-[10px] uppercase tracking-wider", isActive("/agents") ? "text-ink" : "text-slate-500")}>Fleet Manager</span>
+                </Link>
+                <Link to="/integrations" onClick={() => setOpen(false)} className={cn("flex items-center gap-3 px-4 py-2.5 border-2 transition-all group", isActive("/integrations") ? "bg-brand border-ink shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] -translate-x-1 -translate-y-1" : "border-transparent hover:bg-slate-50")}>
+                  <PlugZap className={cn("w-4 h-4", isActive("/integrations") ? "text-ink" : "text-slate-400")} />
+                  <span className={cn("font-bold text-[10px] uppercase tracking-wider", isActive("/integrations") ? "text-ink" : "text-slate-500")}>Network Links</span>
+                </Link>
+             </div>
+          </div>
+          
+          <div className="pt-6 border-t font-sans">
+            <Link to="/admin" onClick={() => setOpen(false)} className={cn("flex items-center gap-3 px-4 py-2.5 border-2 transition-all group", isActive("/admin") ? "bg-brand border-ink shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] -translate-x-1 -translate-y-1" : "border-transparent hover:bg-slate-50")}>
+              <ServerCog className={cn("w-4 h-4 font-bold", isActive("/admin") ? "text-ink" : "text-slate-400")} />
+              <span className={cn("font-bold text-[10px] uppercase tracking-wider", isActive("/admin") ? "text-ink" : "text-slate-500")}>System Core</span>
+            </Link>
+          </div>
         </nav>
         <div className="p-6 border-t-2 border-ink bg-slate-50 text-[10px] font-black text-ink uppercase tracking-widest flex justify-between">
           <span>Version 1.0</span>
@@ -123,12 +139,12 @@ export default function App() {
               <div className="w-10" /> {/* Spacer */}
            </div>
 
-           <div className="flex-1 relative overflow-hidden">
+          <div className="flex-1 relative flex flex-col min-h-0">
               {/* Dynamic Background Element */}
-              <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-brand/5 blur-[120px] rounded-full pointer-events-none" />
-              <div className="absolute bottom-0 left-0 w-1/4 h-1/4 bg-brand/10 blur-[100px] rounded-full pointer-events-none" />
+              <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-brand/5 blur-[120px] rounded-full pointer-events-none z-0" />
+              <div className="absolute bottom-0 left-0 w-1/4 h-1/4 bg-brand/10 blur-[100px] rounded-full pointer-events-none z-0" />
 
-              <div className="absolute inset-0 overflow-y-auto p-4 md:p-12 h-full z-10 transition-all">
+              <div className="flex-1 overflow-y-auto relative z-10 scrollbar-hide">
                 <Routes>
                   <Route path="/" element={<DashboardHome />} />
                   <Route path="/logs" element={<CallLogs />} />
