@@ -1,12 +1,13 @@
 import { Calendar as CalendarIcon, Clock, User, Wrench, Loader2, CheckCircle2 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { authFetch } from "../lib/api";
 
 export default function AppointmentsView() {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/appointments')
+    authFetch('/api/appointments')
       .then(res => res.json())
       .then(data => {
         setAppointments(data.appointments || []);

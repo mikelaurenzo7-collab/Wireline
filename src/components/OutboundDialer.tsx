@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { PhoneOutgoing, Loader2, PlayCircle, Clock, Plus, Phone, UploadCloud, Users, Bot } from "lucide-react";
 import Papa from "papaparse";
 import { cn } from "../lib/utils";
+import { authFetch } from "../lib/api";
 
 export default function OutboundDialer() {
   const [isLoading, setIsLoading] = useState(true);
@@ -30,12 +31,12 @@ export default function OutboundDialer() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const agentsRes = await fetch("/api/agents");
+      const agentsRes = await authFetch("/api/agents");
       const agentsData = await agentsRes.json();
       setAgents(agentsData.agents || []);
       if (agentsData.agents?.length > 0) setSelectedAgentId(agentsData.agents[0].id);
 
-      const leadsRes = await fetch("/api/outbound");
+      const leadsRes = await authFetch("/api/outbound");
       const leadsData = await leadsRes.json();
       setLeads(leadsData.leads || []);
     } catch (e) {
@@ -49,7 +50,7 @@ export default function OutboundDialer() {
     setIsDialing(true);
     setDialError("");
     try {
-      const res = await fetch("/api/outbound/dial", {
+      const res = await authFetch("/api/outbound/dial", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ agentId: selectedAgentId, customerName, customerNumber, context })
@@ -95,7 +96,7 @@ export default function OutboundDialer() {
            }
 
            try {
-              const res = await fetch("/api/outbound/bulk", {
+              const res = await authFetch("/api/outbound/bulk", {
                  method: "POST",
                  headers: { "Content-Type": "application/json" },
                  body: JSON.stringify({ leads: parsedLeads })
@@ -130,7 +131,7 @@ export default function OutboundDialer() {
 
      for (const lead of queued) {
         try {
-           const res = await fetch("/api/outbound/dial", {
+           const res = await authFetch("/api/outbound/dial", {
              method: "POST",
              headers: { "Content-Type": "application/json" },
              body: JSON.stringify({ 

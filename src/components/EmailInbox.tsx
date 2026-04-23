@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Mail, Send, Loader2, User, Search, Filter, History, ChevronRight, Inbox, CheckCircle2, RotateCw, Trash2, Bot, Phone } from "lucide-react";
 import { cn } from "../lib/utils";
+import { authFetch } from "../lib/api";
 
 export default function EmailInbox() {
   const [threads, setThreads] = useState<any[]>([]);
@@ -12,7 +13,7 @@ export default function EmailInbox() {
 
   const fetchThreads = async () => {
     try {
-      const res = await fetch("/api/emails/threads");
+      const res = await authFetch("/api/emails/threads");
       const data = await res.json();
       setThreads(data.threads || []);
     } catch (e) {
@@ -25,7 +26,7 @@ export default function EmailInbox() {
   const syncInbox = async () => {
     setSyncing(true);
     try {
-      await fetch("/api/emails/sync", { method: "POST" });
+      await authFetch("/api/emails/sync", { method: "POST" });
       await fetchThreads();
     } catch (e) {
       console.error("Sync failed:", e);
@@ -40,7 +41,7 @@ export default function EmailInbox() {
 
   const fetchMessages = async (threadId: string) => {
     try {
-       const res = await fetch(`/api/emails/threads/${threadId}/messages`);
+       const res = await authFetch(`/api/emails/threads/${threadId}/messages`);
        const data = await res.json();
        setMessages(data.messages || []);
     } catch (e) {
@@ -57,7 +58,7 @@ export default function EmailInbox() {
   const sendReply = async () => {
     if (!replyText.trim() || !selectedThread) return;
     try {
-      await fetch(`/api/emails/threads/${selectedThread.id}/reply`, {
+      await authFetch(`/api/emails/threads/${selectedThread.id}/reply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ body: replyText })
@@ -71,7 +72,7 @@ export default function EmailInbox() {
 
   const handlePhoneHandoff = async (thread: any) => {
     try {
-      await fetch('/api/fleet/tasks', {
+      await authFetch('/api/fleet/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

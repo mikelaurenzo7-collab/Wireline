@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { ServerCog, KeyRound, Loader2, ShieldCheck, Phone, Plus, Link as LinkIcon, Save } from "lucide-react";
 import { cn } from "../lib/utils";
+import { authFetch } from "../lib/api";
 
 export default function AdminSettings() {
   const [settings, setSettings] = useState({ vapi_phone_number_id: "", subscription_status: "active", max_agents: 3 });
@@ -15,6 +16,9 @@ export default function AdminSettings() {
 
   const [activeTab, setActiveTab] = useState<"carrier" | "subscription">("carrier");
 
+  const [carrierNumbers, setCarrierNumbers] = useState<any[]>([]);
+  const [isSyncing, setIsSyncing] = useState(false);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -23,9 +27,9 @@ export default function AdminSettings() {
     setIsLoading(true);
     try {
       const [settingsRes, agentsRes, numbersRes] = await Promise.all([
-         fetch("/api/settings").then(r => r.json()),
-         fetch("/api/agents").then(r => r.json()),
-         fetch("/api/phone-numbers").then(r => r.json()).catch(() => ({ numbers: [] }))
+         authFetch("/api/settings").then(r => r.json()),
+         authFetch("/api/agents").then(r => r.json()),
+         authFetch("/api/phone-numbers").then(r => r.json()).catch(() => ({ numbers: [] }))
       ]);
       
       if (settingsRes) {
@@ -43,11 +47,23 @@ export default function AdminSettings() {
     setIsLoading(false);
   };
 
+  const syncCarrierNumbers = async () => {
+    setIsSyncing(true);
+    try {
+      const res = await authFetch("/api/carrier/numbers");
+      const data = await res.json();
+      setCarrierNumbers(data.numbers || []);
+    } catch (e) {
+      console.error(e);
+    }
+    setIsSyncing(false);
+  };
+
   const saveSettings = async () => {
     setIsSaving(true);
     setSaveMessage("");
     try {
-        await fetch("/api/settings", {
+        await authFetch("/api/settings", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(settings)
@@ -63,7 +79,7 @@ export default function AdminSettings() {
   const addPhoneNumber = async () => {
     if (!newNumber || !newNumberVapiId) return;
     try {
-       await fetch("/api/phone-numbers", {
+       await authFetch("/api/phone-numbers", {
          method: "POST",
          headers: { "Content-Type": "application/json" },
          body: JSON.stringify({ phone_number: newNumber, vapi_number_id: newNumberVapiId })
@@ -78,7 +94,7 @@ export default function AdminSettings() {
   
   const updateNumberAgent = async (id: string, agent_id: string) => {
      try {
-        await fetch(`/api/phone-numbers/${id}`, {
+        await authFetch(`/api/phone-numbers/${id}`, {
            method: "PATCH",
            headers: { "Content-Type": "application/json" },
            body: JSON.stringify({ agent_id })
@@ -134,15 +150,28 @@ export default function AdminSettings() {
               </div>
               
               <div className="space-y-8">
-                <div className="p-4 bg-zinc-950 brutal-border border-brand shadow-none flex items-center justify-between group">
-                  <div className="flex items-center gap-3">
-                    <ShieldCheck className="w-5 h-5 text-brand" />
-                    <div>
-                      <p className="text-[10px] font-black text-white uppercase tracking-widest italic leading-none mb-1">Carrier Key: Encrypted</p>
-                      <p className="text-[8px] font-bold text-white/40 uppercase tracking-widest">Managed via Platform Environment</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="p-6 bg-zinc-950 brutal-border border-brand shadow-none flex items-center justify-between group">
+                    <div className="flex items-center gap-3">
+                      <ShieldCheck className="w-5 h-5 text-brand" />
+                      <div>
+                        <p className="text-[10px] font-black text-white uppercase tracking-widest italic leading-none mb-1">Carrier Key: Encrypted</p>
+                        <p className="text-[8px] font-bold text-white/40 uppercase tracking-widest">Managed via Platform Environment</p>
+                      </div>
                     </div>
+                    <div className="px-2 py-1 bg-brand text-ink text-[7px] font-black uppercase tracking-widest animate-pulse">Protected</div>
                   </div>
-                  <div className="px-2 py-1 bg-brand text-ink text-[7px] font-black uppercase tracking-widest animate-pulse">Protected</div>
+
+                  <div className={cn("p-6 brutal-border shadow-none flex items-center justify-between", import.meta.env.VITE_VAPI_PUBLIC_KEY ? "bg-emerald-500/10 border-emerald-500" : "bg-rose-500/10 border-rose-500")}>
+                    <div className="flex items-center gap-3">
+                      <ServerCog className={cn("w-5 h-5", import.meta.env.VITE_VAPI_PUBLIC_KEY ? "text-emerald-500" : "text-rose-500")} />
+                      <div>
+                        <p className="text-[10px] font-black text-ink uppercase tracking-widest italic leading-none mb-1">Signal Relay: {import.meta.env.VITE_VAPI_PUBLIC_KEY ? "Online" : "Missing Public Key"}</p>
+                        <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Public Token Status Check</p>
+                      </div>
+                    </div>
+                    <div className={cn("w-2 h-2 rounded-full animate-ping", import.meta.env.VITE_VAPI_PUBLIC_KEY ? "bg-emerald-500" : "bg-rose-500")} />
+                  </div>
                 </div>
 
                 <div>
@@ -206,7 +235,38 @@ export default function AdminSettings() {
                  )}
                  
                  <div className="pt-6 border-t border-dashed border-ink/20">
-                    <h3 className="text-[9px] font-black uppercase tracking-widest text-ink mb-3 italic">Register New Line</h3>
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-[9px] font-black uppercase tracking-widest text-ink italic leading-none">Register New Line</h3>
+                        <button 
+                          onClick={syncCarrierNumbers}
+                          disabled={isSyncing}
+                          className="text-[8px] font-black uppercase text-brand bg-ink px-2 py-1 brutal-border shadow-none hover:bg-brand hover:text-ink transition-colors flex items-center gap-2"
+                        >
+                           {isSyncing ? <Loader2 className="w-3 h-3 animate-spin" /> : <LinkIcon className="w-3 h-3" />}
+                           {carrierNumbers.length > 0 ? "REFRESH DISCOVERY" : "DISCOVER AVAILABLE LINES"}
+                        </button>
+                    </div>
+
+                    {carrierNumbers.length > 0 && (
+                        <div className="mb-6 space-y-2 max-h-40 overflow-y-auto pr-2 scrollbar-hide border-b border-dashed border-ink/10 pb-4">
+                           {carrierNumbers.map(cn => (
+                              <button 
+                                key={cn.id}
+                                onClick={() => {
+                                  setNewNumber(cn.number);
+                                  setNewNumberVapiId(cn.id);
+                                }}
+                                className="w-full p-4 bg-zinc-50 brutal-border shadow-none flex justify-between items-center group hover:bg-brand transition-colors text-[9px] font-bold"
+                              >
+                                 <span className="group-hover:text-ink font-mono">{cn.number}</span>
+                                 <div className="flex items-center gap-2">
+                                    <span className="text-[7px] text-slate-400 group-hover:text-ink/60 uppercase">PID: {cn.id.substring(0,8)}</span>
+                                    <Plus className="w-2.5 h-2.5 text-brand group-hover:text-ink" />
+                                 </div>
+                              </button>
+                           ))}
+                        </div>
+                    )}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                        <input 
                          type="text" 

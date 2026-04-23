@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Phone, PhoneIncoming, PhoneOutgoing, Clock, User, FileText, Play, Pause, Download, Search, Filter, Loader2, MessageCircle, ChevronRight, X, Database } from "lucide-react";
 import { cn } from "../lib/utils";
+import { authFetch } from "../lib/api";
 
 export default function CallLogs() {
   const [calls, setCalls] = useState<any[]>([]);
@@ -11,7 +12,7 @@ export default function CallLogs() {
 
   const fetchCalls = async () => {
     try {
-      const res = await fetch("/api/calls");
+      const res = await authFetch("/api/calls");
       const data = await res.json();
       setCalls(data.calls || []);
     } catch (e) {

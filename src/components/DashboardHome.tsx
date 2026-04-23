@@ -6,6 +6,7 @@ import { motion } from "motion/react";
 import Vapi from "@vapi-ai/web";
 import { cn } from "../lib/utils";
 import FleetTaskBridge from "./FleetTaskBridge";
+import { authFetch } from "../lib/api";
 
 const vapi = new Vapi(import.meta.env.VITE_VAPI_PUBLIC_KEY || "");
 
@@ -39,7 +40,7 @@ export default function DashboardHome() {
   const fetchStats = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/dashboard/stats");
+      const res = await authFetch("/api/dashboard/stats");
       const data = await res.json();
       setStats(data);
     } catch (e) {
@@ -54,16 +55,28 @@ export default function DashboardHome() {
     } else {
       setIsConnecting(true);
       try {
-        const res = await fetch("/api/vapi-webhook", {
+        // Try to find the first voice agent to use for the test relay
+        let targetAgentId = "default-agent";
+        if (stats?.agents?.length > 0) {
+           const voiceAgent = stats.agents.find((a: any) => a.channel === 'voice' || a.channel === 'omnichannel');
+           if (voiceAgent) targetAgentId = voiceAgent.id;
+        }
+
+        const res = await authFetch(`/api/vapi-webhook?agentId=${targetAgentId}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: { type: "assistant-request" }, agentId: "default-agent" }) // Falls back to first agent if default-agent doesn't exist
+          body: JSON.stringify({ message: { type: "assistant-request" } })
         });
         const data = await res.json();
-        await vapi.start(data.assistant);
+        if (data.assistant) {
+          await vapi.start(data.assistant);
+        } else {
+           throw new Error("No assistant configuration returned");
+        }
       } catch (e) {
         console.error("Failed to start call", e);
         setIsConnecting(false);
+        alert("Carrier connection failed. Ensure at least one agent is configured and Vapi key is valid.");
       }
     }
   };

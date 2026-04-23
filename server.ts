@@ -43,19 +43,44 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SU
 const db = createClient(supabaseUrl, supabaseKey);
 
 // ==========================================
-// 1. API WEBHOOK (CARRIER CONNECTION)
+// AUTH MIDDLEWARE
+// ==========================================
+async function authenticateUser(req: any, res: any, next: any) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+     return res.status(401).json({ error: "No authorization header provided" });
+  }
+
+  const token = authHeader.split(' ')[1];
+  const { data: { user }, error } = await db.auth.getUser(token);
+
+  if (error || !user) {
+     return res.status(401).json({ error: "Invalid or expired session" });
+  }
+
+  req.user = user;
+  next();
+}
+
+// ==========================================
+// 1. API WEBHOOK (CARRIER CONNECTION) - NO AUTH (SYSTEM TO SYSTEM)
 // ==========================================
 app.post("/api/vapi-webhook", async (req, res) => {
   const payload = req.body;
   const { message } = payload;
   
   console.log("--- INCOMING VAPI WEBHOOK ---");
-  console.log("Message Type:", message?.type);
+  
+  // For webhooks, we need to know WHICH user this is for.
+  // We'll extract agentId from query and fetch the agent and its user_id.
+  const webhookAgentId = req.query.agentId as string || "default-agent";
+  
+  // 0. Fetch the agent's owner and their settings
+  const { data: agent } = await db.from('wireline_agents').select('user_id').eq('id', webhookAgentId).single();
+  if (!agent) return res.status(404).json({ error: "Agent not found" });
 
-  // SECURITY ENFORCEMENT ON CONNECTION: 
-  // Before spinning up the LLM or doing any work, check if the account is active.
-  const { data: globalSettings } = await db.from('wireline_settings').select('subscription_status').eq('id', 'global').single();
-  const subscriptionStatus = globalSettings?.subscription_status || 'active';
+  const { data: userSettings } = await db.from('wireline_settings').select('subscription_status').eq('user_id', agent.user_id).single();
+  const subscriptionStatus = userSettings?.subscription_status || 'active';
   
   if (subscriptionStatus !== 'active') {
     console.log("Connection rejected: Account subscription is not active.");
@@ -65,7 +90,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
                 firstMessage: "We're sorry, but the automated service for this line is currently suspended. Please contact the administrator.",
                 model: {
                     provider: "google",
-                    model: "gemini-3-flash-preview",
+                    model: "gemini-2.0-flash",
                     systemPrompt: "Tell the user the service is suspended, and gracefully end the call."
                 }
             }
@@ -74,9 +99,6 @@ app.post("/api/vapi-webhook", async (req, res) => {
     return res.status(403).json({ error: "Access Denied: Inactive Subscription" });
   }
   
-  // Try to pull agent ID from query params (e.g. ?agentId=support-bot) or default 
-  const webhookAgentId = req.query.agentId as string || "default-agent";
-  
   // Vapi calls this prior to connecting the agent
   if (message && message.type === "assistant-request") {
     console.log("Assistant request received for Agent ID:", webhookAgentId);
@@ -84,11 +106,12 @@ app.post("/api/vapi-webhook", async (req, res) => {
     try {
       // 1. Assemble memory from Supabase
       const [agentConfig, directivesData, knowledgeData, personalityData] = await Promise.all([
-        db.from('wireline_agents').select('*').eq('id', webhookAgentId).single().then(r => r),
-        db.from('wireline_directives').select('content, priority').eq('agent_id', webhookAgentId).order('priority', { ascending: false }).then(r => r),
-        db.from('wireline_knowledge').select('content').eq('agent_id', webhookAgentId).then(r => r),
-        db.from('wireline_personality').select('content').eq('agent_id', webhookAgentId).single().then(r => r)
+        db.from('wireline_agents').select('*').eq('id', webhookAgentId).single(),
+        db.from('wireline_directives').select('content, priority').eq('agent_id', webhookAgentId).order('priority', { ascending: false }),
+        db.from('wireline_knowledge').select('content').eq('agent_id', webhookAgentId),
+        db.from('wireline_personality').select('content').eq('agent_id', webhookAgentId).single()
       ]);
+
 
       // TEMPORAL AWARENESS: Inject exact current time so the agent knows what "Today" and "Tomorrow" mean
       const currentDateTime = new Date().toLocaleString('en-US', { timeZone: 'America/New_York', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -168,7 +191,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
           backgroundSound: agentConfig?.data?.ambient_noise || 'off',
           model: {
             provider: "google",
-            model: "gemini-3-flash-preview", 
+            model: "gemini-2.0-flash", 
             systemPrompt: systemPrompt,
             temperature: llmTemp
           },
@@ -487,11 +510,12 @@ app.post("/api/vapi-webhook", async (req, res) => {
 // ==========================================
 // 1.5 CALL LOG RETRIEVAL ENDPOINT
 // ==========================================
-app.get("/api/calls", async (req, res) => {
+app.get("/api/calls", authenticateUser, async (req: any, res: any) => {
   try {
     const { data: calls, error } = await db
       .from('wireline_call_logs')
       .select('*')
+      .eq('user_id', req.user.id)
       .order('created_at', { ascending: false })
       .limit(50);
       
@@ -506,12 +530,12 @@ app.get("/api/calls", async (req, res) => {
 // ==========================================
 // 1.8 DASHBOARD STATS ENDPOINT
 // ==========================================
-app.get("/api/dashboard/stats", async (req, res) => {
+app.get("/api/dashboard/stats", authenticateUser, async (req: any, res: any) => {
    try {
       const [apptRes, leadsRes, logsRes] = await Promise.all([
-          db.from('wireline_appointments').select('id', { count: 'exact' }),
-          db.from('wireline_outbound_leads').select('id', { count: 'exact' }),
-          db.from('wireline_call_logs').select('cost, duration_seconds, direction, created_at').order('created_at', { ascending: false }).limit(200) // limit for MVP performance
+          db.from('wireline_appointments').select('id', { count: 'exact' }).eq('user_id', req.user.id),
+          db.from('wireline_outbound_leads').select('id', { count: 'exact' }).eq('user_id', req.user.id),
+          db.from('wireline_call_logs').select('cost, duration_seconds, direction, created_at').eq('user_id', req.user.id).order('created_at', { ascending: false }).limit(200)
       ]);
       
       const totalAppointments = apptRes.count || 0;
@@ -525,8 +549,8 @@ app.get("/api/dashboard/stats", async (req, res) => {
       const conversionRate = logs.length > 0 ? ((totalAppointments / logs.length) * 100).toFixed(1) : 0;
 
       // FETCH "HOT LEADS" (AI-Scored High Intent)
-      const { data: hotCalls } = await db.from('wireline_call_logs').select('*').gte('lead_score', 75).order('created_at', { ascending: false }).limit(5);
-      const { data: hotEmails } = await db.from('wireline_email_threads').select('*').gte('lead_score', 75).order('created_at', { ascending: false }).limit(5);
+      const { data: hotCalls } = await db.from('wireline_call_logs').select('*').eq('user_id', req.user.id).gte('lead_score', 75).order('created_at', { ascending: false }).limit(5);
+      const { data: hotEmails } = await db.from('wireline_email_threads').select('*').eq('user_id', req.user.id).gte('lead_score', 75).order('created_at', { ascending: false }).limit(5);
 
       const hotLeads = [
         ...(hotCalls || []).map(c => ({ id: c.id, type: 'call', contact: c.customer_number, score: c.lead_score, intent: c.intent_label, summary: c.summary, date: c.created_at })),
@@ -554,11 +578,12 @@ app.get("/api/dashboard/stats", async (req, res) => {
 // ==========================================
 // 1.6 APPOINTMENTS RETRIEVAL ENDPOINT
 // ==========================================
-app.get("/api/appointments", async (req, res) => {
+app.get("/api/appointments", authenticateUser, async (req: any, res: any) => {
   try {
     const { data: appointments, error } = await db
       .from('wireline_appointments')
       .select('*')
+      .eq('user_id', req.user.id)
       .order('created_at', { ascending: false });
       
     if (error) throw error;
@@ -572,38 +597,38 @@ app.get("/api/appointments", async (req, res) => {
 // ==========================================
 // 1.7 AGENTS MANAGEMENT ENDPOINTS
 // ==========================================
-app.get("/api/agents", async (req, res) => {
+app.get("/api/agents", authenticateUser, async (req: any, res: any) => {
   try {
-    const { data: agents, error } = await db.from('wireline_agents').select('*').order('created_at', { ascending: false });
+    const { data: agents, error } = await db.from('wireline_agents').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false });
     res.json({ agents: agents || [] });
   } catch (error) {
     res.json({ agents: [] }); 
   }
 });
 
-app.post("/api/agents", async (req, res) => {
+app.post("/api/agents", authenticateUser, async (req: any, res: any) => {
   try {
-    // SECURITY ENFORCEMENT: Check Subscription Status
-    // In a production environment, this would verify the user's active plan based on their JWT/session
-    const { data: globalSettings } = await db.from('wireline_settings').select('subscription_status, max_agents').eq('id', 'global').single();
+    // SECURITY ENFORCEMENT: Check Subscription Status for this specific user
+    const { data: userSettings } = await db.from('wireline_settings').select('subscription_status, max_agents').eq('user_id', req.user.id).single();
     
     // Gating mechanism: Prevent agent creation if the account is unpaid
-    const subscriptionStatus = globalSettings?.subscription_status || 'active'; // Default to active for dev environment
+    const subscriptionStatus = userSettings?.subscription_status || 'active'; 
     if (subscriptionStatus !== 'active') {
-       return res.status(403).json({ error: "Access Denied: Please upgrade your billing plan to access this feature." });
+       return res.status(403).json({ error: "Access Denied: Please upgrade your billing plan." });
     }
 
     // Agent Limit Check
-    const maxAgents = globalSettings?.max_agents || 3; // Default free tier limit
-    const { count: agentCount } = await db.from('wireline_agents').select('*', { count: 'exact', head: true });
+    const maxAgents = userSettings?.max_agents || 3;
+    const { count: agentCount } = await db.from('wireline_agents').select('*', { count: 'exact', head: true }).eq('user_id', req.user.id);
     
     if (agentCount !== null && agentCount >= maxAgents) {
-      return res.status(403).json({ error: `Quota Exceeded: Your plan only allows ${maxAgents} agents. Please upgrade.` });
+      return res.status(403).json({ error: `Quota Exceeded: Your plan only allows ${maxAgents} agents.` });
     }
 
     const { id, name, voice_id, channel } = req.body;
     await db.from('wireline_agents').insert({
       id: id || `agent-${Date.now()}`,
+      user_id: req.user.id,
       name: name || "New Agent",
       voice_id: voice_id || 'bIHbv24MWmeRgasZH58o',
       channel: channel || 'voice'
@@ -612,6 +637,7 @@ app.post("/api/agents", async (req, res) => {
     // Seed default personality
     await db.from('wireline_personality').insert({
        agent_id: id,
+       user_id: req.user.id,
        content: channel === 'email' 
          ? "You are a professional email agent specialized in clear, efficient communication." 
          : "You are a helpful assistant serving as a phone agent."
@@ -625,7 +651,7 @@ app.post("/api/agents", async (req, res) => {
 });
 
 // Update agent settings
-app.put("/api/agents/:id", async (req, res) => {
+app.put("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
   try {
     const { name, voice_id, voice_id_inbound, voice_id_outbound, voice_provider, first_message, archetype, ambient_noise, website_url, transfer_phone, email_auto_respond, email_agent_tone, email_signature, channel } = req.body;
     await db.from('wireline_agents').update({ 
@@ -643,20 +669,20 @@ app.put("/api/agents/:id", async (req, res) => {
       email_agent_tone, 
       email_signature,
       channel
-    }).eq('id', req.params.id);
+    }).eq('id', req.params.id).eq('user_id', req.user.id);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: "Failed to update agent" });
   }
 });
 
-app.get("/api/agent-config/:id", async (req, res) => {
+app.get("/api/agent-config/:id", authenticateUser, async (req: any, res: any) => {
   try {
     const agentId = req.params.id;
     const [directives, knowledge, personality] = await Promise.all([
-      db.from('wireline_directives').select('*').eq('agent_id', agentId).order('priority', { ascending: false }).then(r => r),
-      db.from('wireline_knowledge').select('*').eq('agent_id', agentId).then(r => r),
-      db.from('wireline_personality').select('content').eq('agent_id', agentId).single().then(r => r)
+      db.from('wireline_directives').select('*').eq('agent_id', agentId).eq('user_id', req.user.id).order('priority', { ascending: false }),
+      db.from('wireline_knowledge').select('*').eq('agent_id', agentId).eq('user_id', req.user.id),
+      db.from('wireline_personality').select('content').eq('agent_id', agentId).eq('user_id', req.user.id).single()
     ]);
     res.json({
       directives: directives.data || [],
@@ -671,9 +697,9 @@ app.get("/api/agent-config/:id", async (req, res) => {
 // ==========================================
 // 1.5.4 PHONE NUMBER MANAGEMENT
 // ==========================================
-app.get("/api/phone-numbers", async (req, res) => {
+app.get("/api/phone-numbers", authenticateUser, async (req: any, res: any) => {
   try {
-    const { data, error } = await db.from('wireline_phone_numbers').select('*').order('created_at', { ascending: false });
+    const { data, error } = await db.from('wireline_phone_numbers').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false });
     if (error) throw error;
     res.json({ numbers: data || [] });
   } catch (error) {
@@ -681,20 +707,20 @@ app.get("/api/phone-numbers", async (req, res) => {
   }
 });
 
-app.post("/api/phone-numbers", async (req, res) => {
+app.post("/api/phone-numbers", authenticateUser, async (req: any, res: any) => {
   try {
     const { phone_number, vapi_number_id } = req.body;
-    await db.from('wireline_phone_numbers').insert({ phone_number, vapi_number_id });
+    await db.from('wireline_phone_numbers').insert({ phone_number, vapi_number_id, user_id: req.user.id });
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: "Failed to add phone number" });
   }
 });
 
-app.patch("/api/phone-numbers/:id", async (req, res) => {
+app.patch("/api/phone-numbers/:id", authenticateUser, async (req: any, res: any) => {
   try {
     const { agent_id } = req.body;
-    await db.from('wireline_phone_numbers').update({ agent_id }).eq('id', req.params.id);
+    await db.from('wireline_phone_numbers').update({ agent_id }).eq('id', req.params.id).eq('user_id', req.user.id);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: "Failed to update phone number assignment" });
@@ -702,12 +728,36 @@ app.patch("/api/phone-numbers/:id", async (req, res) => {
 });
 
 // ==========================================
-// 1.5.5 TASK ROUTING HUB
+// 1.5.6 CARRIER SYNC (VAPI PROXY)
 // ==========================================
-app.get("/api/fleet/tasks", async (req, res) => {
+app.get("/api/carrier/numbers", authenticateUser, async (req: any, res: any) => {
+  try {
+    const vapiSecret = process.env.VAPI_PRIVATE_KEY;
+    if (!vapiSecret) return res.json({ numbers: [] });
+
+    const response = await fetch("https://api.vapi.ai/phone-number", {
+      headers: { "Authorization": `Bearer ${vapiSecret}` }
+    });
+    const data = await response.json();
+    
+    // The Vapi response is usually an array of phone number objects
+    const formatted = (data || []).map((num: any) => ({
+      id: num.id,
+      number: num.number,
+      provider: num.provider
+    }));
+
+    res.json({ numbers: formatted });
+  } catch (error) {
+    console.error("Vapi sync error:", error);
+    res.json({ numbers: [] });
+  }
+});
+app.get("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => {
   try {
     const { data, error } = await db.from('wireline_fleet_tasks')
                                      .select('*, wireline_agents(name)')
+                                     .eq('user_id', req.user.id)
                                      .order('created_at', { ascending: false });
     if (error) throw error;
     res.json({ tasks: data || [] });
@@ -716,11 +766,11 @@ app.get("/api/fleet/tasks", async (req, res) => {
   }
 });
 
-app.post("/api/fleet/tasks", async (req, res) => {
+app.post("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => {
   try {
     const { source_type, source_id, target_channel, customer_info, task_type, description, agent_id } = req.body;
     await db.from('wireline_fleet_tasks').insert({
-       source_type, source_id, target_channel, customer_info, task_type, description, agent_id, status: 'pending'
+       source_type, source_id, target_channel, customer_info, task_type, description, agent_id, status: 'pending', user_id: req.user.id
     });
     res.json({ success: true });
   } catch (error) {
@@ -728,34 +778,35 @@ app.post("/api/fleet/tasks", async (req, res) => {
   }
 });
 
-app.patch("/api/fleet/tasks/:id", async (req, res) => {
+app.patch("/api/fleet/tasks/:id", authenticateUser, async (req: any, res: any) => {
   try {
     const { status } = req.body;
-    await db.from('wireline_fleet_tasks').update({ status }).eq('id', req.params.id);
+    await db.from('wireline_fleet_tasks').update({ status }).eq('id', req.params.id).eq('user_id', req.user.id);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: "Failed to update task status" });
   }
 });
 
-app.post("/api/agent-config/:id/manual", async (req, res) => {
+app.post("/api/agent-config/:id/manual", authenticateUser, async (req: any, res: any) => {
   try {
     const agentId = req.params.id;
     const { type, content, overrideId } = req.body; // type is 'personality', 'directive', or 'knowledge'
+    const userId = req.user.id;
     
     if (type === 'personality') {
-       await db.from('wireline_personality').upsert({ agent_id: agentId, content });
+       await db.from('wireline_personality').upsert({ agent_id: agentId, content, user_id: userId });
     } else if (type === 'directive') {
        if (overrideId) {
-          await db.from('wireline_directives').update({ content }).eq('id', overrideId);
+          await db.from('wireline_directives').update({ content }).eq('id', overrideId).eq('user_id', userId);
        } else {
-          await db.from('wireline_directives').insert({ agent_id: agentId, content, priority: 5 });
+          await db.from('wireline_directives').insert({ agent_id: agentId, content, priority: 5, user_id: userId });
        }
     } else if (type === 'knowledge') {
        if (overrideId) {
-          await db.from('wireline_knowledge').update({ content }).eq('id', overrideId);
+          await db.from('wireline_knowledge').update({ content }).eq('id', overrideId).eq('user_id', userId);
        } else {
-          await db.from('wireline_knowledge').insert({ agent_id: agentId, content });
+          await db.from('wireline_knowledge').insert({ agent_id: agentId, content, user_id: userId });
        }
     }
     
@@ -766,16 +817,17 @@ app.post("/api/agent-config/:id/manual", async (req, res) => {
   }
 });
 
-app.delete("/api/agent-config/:id/:type/:rowId", async (req, res) => {
-   try {
-     const { type, rowId } = req.params;
-     if (type === 'directive') await db.from('wireline_directives').delete().eq('id', rowId);
-     if (type === 'knowledge') await db.from('wireline_knowledge').delete().eq('id', rowId);
-     res.json({ success: true });
-   } catch(e) {
-     res.status(500).json({ error: "Failed to delete" });
-   }
-});
+app.delete("/api/agent-config/:id/:type/:rowId", authenticateUser, async (req: any, res: any) => {
+    try {
+      const { type, rowId } = req.params;
+      const userId = req.user.id;
+      if (type === 'directive') await db.from('wireline_directives').delete().eq('id', rowId).eq('user_id', userId);
+      if (type === 'knowledge') await db.from('wireline_knowledge').delete().eq('id', rowId).eq('user_id', userId);
+      res.json({ success: true });
+    } catch(e) {
+      res.status(500).json({ error: "Failed to delete" });
+    }
+ });
 
 // ==========================================
 // 1.8 SETTINGS & OUTBOUND DIALER ENDPOINTS
@@ -817,19 +869,19 @@ app.get("/api/outbound", async (req, res) => {
   }
 });
 
-app.post("/api/outbound/dial", async (req, res) => {
+app.post("/api/outbound/dial", authenticateUser, async (req: any, res: any) => {
   try {
     const { agentId, customerName, customerNumber, context } = req.body;
     
     // 0. SECURITY ENFORCEMENT: Check Subscription Status
-    const { data: globalSettings } = await db.from('wireline_settings').select('*').eq('id', 'global').single();
-    const subscriptionStatus = globalSettings?.subscription_status || 'active';
+    const { data: userSettings } = await db.from('wireline_settings').select('*').eq('user_id', req.user.id).single();
+    const subscriptionStatus = userSettings?.subscription_status || 'active';
     if (subscriptionStatus !== 'active') {
        return res.status(403).json({ error: "Access Denied: Please upgrade your billing plan to access outbound dialing." });
     }
 
     // 1. Fetch settings (we need Phone ID and use env for API key)
-    const settings = globalSettings;
+    const settings = userSettings;
     const vapiSecret = process.env.VAPI_PRIVATE_KEY;
     
     if (!vapiSecret || !settings?.vapi_phone_number_id) {
@@ -915,7 +967,7 @@ app.post("/api/outbound/dial", async (req, res) => {
         backgroundSound: agentConfig?.data?.ambient_noise || 'off',
         model: {
           provider: "google",
-          model: "gemini-3-flash-preview",
+          model: "gemini-2.0-flash",
           systemPrompt: systemPrompt,
           temperature: llmTemp
         },
@@ -984,23 +1036,13 @@ app.post("/api/outbound/bulk", async (req, res) => {
 // ==========================================
 // 2. AGENT TRAINING ENDPOINT (ADMIN AI)
 // ==========================================
-app.post("/api/train", async (req, res) => {
+app.post("/api/train", authenticateUser, async (req: any, res: any) => {
   const { userMessage, agentId = "default-agent" } = req.body;
-
-  if (!userMessage) return res.status(400).json({ error: "userMessage required" });
-
+  
   try {
-    // Determine agent type for better context
-    let agentContext = "phone agent";
-    if (agentId !== 'default-agent') {
-      const { data: agent } = await db.from('wireline_agents').select('channel').eq('id', agentId).single();
-      if (agent?.channel === 'email') agentContext = "email agent";
-      if (agent?.channel === 'omnichannel') agentContext = "omnichannel (phone & email) agent";
-    }
-
     const prompt = `
     You are the Wireline Configuration Engine. The business owner is training their AI fleet.
-    Current Training Target: ${agentContext}
+    Current Training Target: ${agentId}
     User Message: "${userMessage}"
 
     Task: Extract any new instructions, rules, or knowledge. 
@@ -1121,10 +1163,11 @@ app.get(['/api/oauth/google/callback', '/api/oauth/google/callback/'], async (re
 });
 
 // Get connected accounts
-app.get("/api/emails/accounts", async (req, res) => {
+app.get("/api/emails/accounts", authenticateUser, async (req: any, res: any) => {
   try {
     const { data: accounts, error } = await db.from('wireline_email_accounts')
                                                .select('*')
+                                               .eq('user_id', req.user.id)
                                                .order('created_at', { ascending: false });
     if (error) throw error;
     res.json({ accounts: accounts || [] });
@@ -1133,19 +1176,19 @@ app.get("/api/emails/accounts", async (req, res) => {
   }
 });
 
-app.patch("/api/emails/accounts/:id", async (req, res) => {
+app.patch("/api/emails/accounts/:id", authenticateUser, async (req: any, res: any) => {
   try {
     const { agent_id } = req.body;
-    await db.from('wireline_email_accounts').update({ agent_id }).eq('id', req.params.id);
+    await db.from('wireline_email_accounts').update({ agent_id }).eq('id', req.params.id).eq('user_id', req.user.id);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: "Failed to update account mapping" });
   }
 });
 
-app.delete("/api/emails/accounts/:id", async (req, res) => {
+app.delete("/api/emails/accounts/:id", authenticateUser, async (req: any, res: any) => {
   try {
-    await db.from('wireline_email_accounts').delete().eq('id', req.params.id);
+    await db.from('wireline_email_accounts').delete().eq('id', req.params.id).eq('user_id', req.user.id);
     res.json({ success: true });
   } catch(e) {
     res.status(500).json({ error: "Failed to disconnect account" });
@@ -1157,10 +1200,11 @@ app.delete("/api/emails/accounts/:id", async (req, res) => {
 // 2.3 EMAIL THREAD & SYNC ENDPOINTS
 // ==========================================
 
-app.get("/api/emails/threads", async (req, res) => {
+app.get("/api/emails/threads", authenticateUser, async (req: any, res: any) => {
   try {
     const { data: threads, error } = await db.from('wireline_email_threads')
                                            .select('*')
+                                           .eq('user_id', req.user.id)
                                            .order('last_message_at', { ascending: false });
     if (error) throw error;
     res.json({ threads: threads || [] });
@@ -1169,11 +1213,12 @@ app.get("/api/emails/threads", async (req, res) => {
   }
 });
 
-app.get("/api/emails/threads/:id/messages", async (req, res) => {
+app.get("/api/emails/threads/:id/messages", authenticateUser, async (req: any, res: any) => {
   try {
     const { data: messages, error } = await db.from('wireline_email_messages')
                                              .select('*')
                                              .eq('thread_id', req.params.id)
+                                             .eq('user_id', req.user.id)
                                              .order('created_at', { ascending: true });
     if (error) throw error;
     res.json({ messages: messages || [] });
@@ -1183,14 +1228,15 @@ app.get("/api/emails/threads/:id/messages", async (req, res) => {
 });
 
 // The "AI Intelligence" Sync
-app.post("/api/emails/sync", async (req, res) => {
+app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
   try {
+     const userId = req.user.id;
      // 1. Fetch connected accounts
-     const { data: accounts } = await db.from('wireline_email_accounts').select('*');
+     const { data: accounts } = await db.from('wireline_email_accounts').select('*').eq('user_id', userId);
      if (!accounts || accounts.length === 0) return res.json({ success: true, count: 0 });
 
      // Fleet Synchronization
-     const { data: agent } = await db.from('wireline_agents').select('*').limit(1).single();
+     const { data: agent } = await db.from('wireline_agents').select('*').eq('user_id', userId).limit(1).single();
 
      let totalNew = 0;
 
@@ -1384,10 +1430,10 @@ app.post("/api/emails/sync", async (req, res) => {
   }
 });
 
-app.post("/api/emails/threads/:id/reply", async (req, res) => {
+app.post("/api/emails/threads/:id/reply", authenticateUser, async (req: any, res: any) => {
    try {
       const { body } = req.body;
-      const { data: thread } = await db.from('wireline_email_threads').select('*, wireline_email_accounts(*)').eq('id', req.params.id).single();
+      const { data: thread } = await db.from('wireline_email_threads').select('*, wireline_email_accounts(*)').eq('id', req.params.id).eq('user_id', req.user.id).single();
       
       if (!thread) throw new Error("Thread not found");
 

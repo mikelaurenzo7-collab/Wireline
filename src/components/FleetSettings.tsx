@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Users, Plus, Phone, Bot, Save, Loader2, Link as LinkIcon, Copy, Trash2, Megaphone, Mail, Pencil, Sparkles } from "lucide-react";
 import { cn } from "../lib/utils";
+import { authFetch } from "../lib/api";
 
 const PREMIUM_VOICES = [
   // 11labs
@@ -37,8 +38,8 @@ export default function FleetSettings() {
     setIsLoading(true);
     try {
       const [agentsRes, settingsRes] = await Promise.all([
-        fetch("/api/agents").then(r => r.json()),
-        fetch("/api/settings").then(r => r.json())
+        authFetch("/api/agents").then(r => r.json()),
+        authFetch("/api/settings").then(r => r.json())
       ]);
       
       setAgents(agentsRes.agents || []);
@@ -69,7 +70,7 @@ export default function FleetSettings() {
   const fetchAgentConfig = async (id: string) => {
     setIsConfigLoading(true);
     try {
-       const res = await fetch(`/api/agent-config/${id}`);
+       const res = await authFetch(`/api/agent-config/${id}`);
        const data = await res.json();
        setAgentConfig(data);
     } catch (e) {
@@ -94,7 +95,7 @@ export default function FleetSettings() {
 
     setIsCreating(true);
     try {
-      const resp = await fetch("/api/agents", {
+      const resp = await authFetch("/api/agents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: newAgentId, name: newAgentName, channel: newAgentChannel })
@@ -118,7 +119,7 @@ export default function FleetSettings() {
   const updateAgentMeta = async (updates: any) => {
     if (!selectedAgent) return;
     const body = { ...selectedAgent, ...updates };
-    await fetch(`/api/agents/${selectedAgent.id}`, {
+    await authFetch(`/api/agents/${selectedAgent.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
@@ -129,7 +130,7 @@ export default function FleetSettings() {
 
   const updatePersonality = async (val: string) => {
     setAgentConfig({ ...agentConfig, personality: val });
-    await fetch(`/api/agent-config/${selectedAgent.id}/manual`, {
+    await authFetch(`/api/agent-config/${selectedAgent.id}/manual`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type: "personality", content: val })
@@ -140,7 +141,7 @@ export default function FleetSettings() {
     if (!content.trim()) return;
     setIsSavingEntry(true);
     try {
-        const resp = await fetch(`/api/agent-config/${selectedAgent.id}/manual`, {
+        const resp = await authFetch(`/api/agent-config/${selectedAgent.id}/manual`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ type, content, overrideId })
@@ -157,7 +158,7 @@ export default function FleetSettings() {
   };
 
   const deleteRule = async (type: string, rowId: string) => {
-    await fetch(`/api/agent-config/${selectedAgent.id}/${type}/${rowId}`, { method: "DELETE" });
+    await authFetch(`/api/agent-config/${selectedAgent.id}/${type}/${rowId}`, { method: "DELETE" });
     fetchAgentConfig(selectedAgent.id);
   };
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Send, Bot, User, CheckCircle2, Loader2, Users, Database, PlayCircle, MessageSquare, Trash2, Mail, Phone, Search, Activity, Plus, Pencil, Save, X, Sparkles } from "lucide-react";
 import { cn } from "../lib/utils";
+import { authFetch } from "../lib/api";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -30,7 +31,7 @@ export default function AgentTraining() {
   const [isSavingEntry, setIsSavingEntry] = useState(false);
 
   useEffect(() => {
-    fetch("/api/agents").then(res => res.json()).then(data => {
+    authFetch("/api/agents").then(res => res.json()).then(data => {
       setAgents(data.agents || []);
     });
     fetchKnowledge();
@@ -39,8 +40,8 @@ export default function AgentTraining() {
   const fetchKnowledge = async () => {
     try {
       const [kRes, dRes] = await Promise.all([
-        fetch(`/api/knowledge/${selectedAgentId}`),
-        fetch(`/api/directives/${selectedAgentId}`)
+        authFetch(`/api/knowledge/${selectedAgentId}`),
+        authFetch(`/api/directives/${selectedAgentId}`)
       ]);
       const kData = await kRes.json();
       const dData = await dRes.json();
@@ -60,7 +61,7 @@ export default function AgentTraining() {
     setIsLoading(true);
 
     try {
-      const res = await fetch("/api/train", {
+      const res = await authFetch("/api/train", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userMessage: currentInput, agentId: selectedAgentId })
@@ -94,7 +95,7 @@ export default function AgentTraining() {
 
   const deleteItem = async (id: string, type: 'knowledge' | 'directive') => {
      try {
-       await fetch(`/api/agent-config/${selectedAgentId}/${type}/${id}`, { method: 'DELETE' });
+       await authFetch(`/api/agent-config/${selectedAgentId}/${type}/${id}`, { method: 'DELETE' });
        fetchKnowledge();
      } catch(e) {}
   };
@@ -103,7 +104,7 @@ export default function AgentTraining() {
     if (!content.trim()) return;
     setIsSavingEntry(true);
     try {
-        const resp = await fetch(`/api/agent-config/${selectedAgentId}/manual`, {
+        const resp = await authFetch(`/api/agent-config/${selectedAgentId}/manual`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ type, content, overrideId })

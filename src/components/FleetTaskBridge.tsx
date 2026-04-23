@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { ArrowRight, Phone, Mail, CheckCircle2, Clock, Loader2, Bot, User, ChevronRight } from "lucide-react";
 import { cn } from "../lib/utils";
+import { authFetch } from "../lib/api";
 
 export default function FleetTaskBridge() {
   const [tasks, setTasks] = useState<any[]>([]);
@@ -8,7 +9,7 @@ export default function FleetTaskBridge() {
 
   const fetchTasks = async () => {
     try {
-      const res = await fetch("/api/fleet/tasks");
+      const res = await authFetch("/api/fleet/tasks");
       const data = await res.json();
       setTasks(data.tasks || []);
     } catch (e) {
@@ -26,7 +27,7 @@ export default function FleetTaskBridge() {
 
   const updateStatus = async (id: string, status: string) => {
     try {
-      await fetch(`/api/fleet/tasks/${id}`, {
+      await authFetch(`/api/fleet/tasks/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })

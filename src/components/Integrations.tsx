@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Mail, CheckCircle2, AlertCircle, Plus, Trash2, Webhook, Loader2, Bot, ChevronDown, Activity } from "lucide-react";
 import { cn } from "../lib/utils";
+import { authFetch } from "../lib/api";
 
 export default function Integrations() {
   const [accounts, setAccounts] = useState<any[]>([]);
@@ -9,7 +10,7 @@ export default function Integrations() {
 
   const fetchAccounts = async () => {
     try {
-      const res = await fetch("/api/emails/accounts");
+      const res = await authFetch("/api/emails/accounts");
       const data = await res.json();
       setAccounts(data.accounts || []);
     } catch (e) {
@@ -19,7 +20,7 @@ export default function Integrations() {
 
   const fetchAgents = async () => {
     try {
-      const res = await fetch("/api/agents");
+      const res = await authFetch("/api/agents");
       const data = await res.json();
       setAgents(data.agents || []);
     } catch (e) {
@@ -47,7 +48,7 @@ export default function Integrations() {
 
   const handleConnectGmail = async () => {
     try {
-      const res = await fetch('/api/oauth/google/url');
+      const res = await authFetch('/api/oauth/google/url');
       const { url } = await res.json();
       
       const authWindow = window.open(
@@ -67,7 +68,7 @@ export default function Integrations() {
 
   const handleDisconnect = async (id: string) => {
     try {
-      await fetch(`/api/emails/accounts/${id}`, { method: 'DELETE' });
+      await authFetch(`/api/emails/accounts/${id}`, { method: 'DELETE' });
       fetchAccounts();
     } catch (e) {
       console.error(e);
@@ -76,7 +77,7 @@ export default function Integrations() {
 
   const updateAccountAgent = async (accountId: string, agentId: string) => {
     try {
-      await fetch(`/api/emails/accounts/${accountId}`, {
+      await authFetch(`/api/emails/accounts/${accountId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ agent_id: agentId === 'none' ? null : agentId })
@@ -89,7 +90,7 @@ export default function Integrations() {
 
   const syncAll = async () => {
      try {
-       await fetch('/api/emails/sync', { method: 'POST' });
+       await authFetch('/api/emails/sync', { method: 'POST' });
        alert("Global Email Fleet Sync Triggered");
      } catch(e) {}
   };
