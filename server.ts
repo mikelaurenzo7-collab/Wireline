@@ -115,7 +115,33 @@ function normalizePhoneNumber(value: unknown) {
 }
 
 function isValidEmailAddress(value: unknown) {
-  return typeof value === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+  if (typeof value !== "string") {
+    return false;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.length > 320) {
+    return false;
+  }
+
+  for (const character of trimmed) {
+    if (character <= " ") {
+      return false;
+    }
+  }
+
+  const atIndex = trimmed.indexOf("@");
+  if (atIndex <= 0 || atIndex !== trimmed.lastIndexOf("@") || atIndex === trimmed.length - 1) {
+    return false;
+  }
+
+  const local = trimmed.slice(0, atIndex);
+  const domain = trimmed.slice(atIndex + 1);
+  if (!local || !domain || domain.startsWith(".") || domain.endsWith(".") || !domain.includes(".")) {
+    return false;
+  }
+
+  return true;
 }
 
 function sanitizeLikeInput(value: string) {
@@ -179,6 +205,29 @@ function hasValidWebhookSecret(req: Request) {
   const expected = Buffer.from(configuredSecret);
   const provided = Buffer.from(providedSecret);
   return expected.length === provided.length && timingSafeEqual(expected, provided);
+}
+
+const rateLimitBuckets = new Map<string, { count: number; resetsAt: number }>();
+
+function rateLimit(maxRequests: number, windowMs: number) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const key = `${req.ip}:${req.path}`;
+    const now = Date.now();
+    const bucket = rateLimitBuckets.get(key);
+
+    if (!bucket || bucket.resetsAt <= now) {
+      rateLimitBuckets.set(key, { count: 1, resetsAt: now + windowMs });
+      return next();
+    }
+
+    if (bucket.count >= maxRequests) {
+      res.setHeader("Retry-After", Math.ceil((bucket.resetsAt - now) / 1000));
+      return res.status(429).json({ error: "Too many requests. Please try again later." });
+    }
+
+    bucket.count += 1;
+    next();
+  };
 }
 
 if (!geminiApiKey) {
@@ -1314,7 +1363,7 @@ app.post("/api/train", authenticateUser, async (req: any, res: any) => {
 // Google Workspace OAuth Endpoints
 // ==========================================
 
-app.get('/api/oauth/google/url', authenticateUser, (req: any, res) => {
+app.get('/api/oauth/google/url', rateLimit(10, 10 * 60 * 1000), authenticateUser, (req: any, res) => {
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
      return res.status(500).json({ error: "Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET in environment variables." });
   }
@@ -1331,7 +1380,7 @@ app.get('/api/oauth/google/url', authenticateUser, (req: any, res) => {
   res.json({ url: authUrl });
 });
 
-app.get(['/api/oauth/google/callback', '/api/oauth/google/callback/'], async (req, res) => {
+app.get(['/api/oauth/google/callback', '/api/oauth/google/callback/'], rateLimit(20, 10 * 60 * 1000), async (req, res) => {
   const { code, state } = req.query;
   
   if (!code || typeof code !== 'string') {
@@ -1368,14 +1417,12 @@ app.get(['/api/oauth/google/callback', '/api/oauth/google/callback/'], async (re
     }, { onConflict: 'email' });
 
     // Send success to popup
-    const targetOrigin = JSON.stringify(verifiedState.origin);
-    const serializedEmail = JSON.stringify(emailAddress);
     res.send(`
       <html>
         <body>
           <script>
             if (window.opener) {
-              window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS', email: ${serializedEmail} }, ${targetOrigin});
+              window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS' }, window.location.origin);
               window.close();
             } else {
               window.location.href = '/';
@@ -1387,7 +1434,7 @@ app.get(['/api/oauth/google/callback', '/api/oauth/google/callback/'], async (re
     `);
   } catch (error) {
     console.error("OAuth Callback Error:", error);
-    res.status(500).send("Authentication failed. " + String(error));
+    res.status(500).send("Authentication failed.");
   }
 });
 
