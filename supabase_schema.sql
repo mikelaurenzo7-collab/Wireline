@@ -93,6 +93,7 @@ CREATE TABLE IF NOT EXISTS wireline_email_accounts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID DEFAULT auth.uid(),
     email TEXT UNIQUE NOT NULL,
+    agent_id TEXT REFERENCES wireline_agents(id) ON DELETE SET NULL,
     access_token TEXT,
     refresh_token TEXT,
     expires_at BIGINT,
@@ -154,8 +155,9 @@ CREATE TABLE IF NOT EXISTS wireline_outbound_leads (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id UUID DEFAULT auth.uid(),
     agent_id TEXT REFERENCES wireline_agents(id),
-    phone_number TEXT,
+    customer_number TEXT,
     customer_name TEXT,
+    context TEXT,
     status TEXT DEFAULT 'Pending',
     call_id TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
@@ -195,4 +197,3 @@ CREATE POLICY "Users can manage their own email messages" ON wireline_email_mess
 CREATE POLICY "Users can manage their own fleet tasks" ON wireline_fleet_tasks FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "Users can manage their own phone numbers" ON wireline_phone_numbers FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "Users can manage their own leads" ON wireline_outbound_leads FOR ALL USING (auth.uid() = user_id);
-

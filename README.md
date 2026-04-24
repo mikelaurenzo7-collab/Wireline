@@ -15,6 +15,14 @@ View your app in AI Studio: https://ai.studio/apps/2c926e67-8bf1-499b-be5e-023dd
 
 1. Install dependencies:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+2. Set the required environment variables in `.env.local`:
+   - `GEMINI_API_KEY`
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `GOOGLE_CLIENT_ID`
+   - `GOOGLE_CLIENT_SECRET`
+   - `APP_URL`
+   - `WIRELINE_WEBHOOK_SECRET` (shared secret for Vapi webhook verification; generate with `openssl rand -hex 32`)
 3. Run the app:
    `npm run dev`
