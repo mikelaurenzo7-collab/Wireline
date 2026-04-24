@@ -12,6 +12,7 @@ dotenv.config();
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || "0.0.0.0";
+const GRACEFUL_SHUTDOWN_TIMEOUT_MS = 10_000;
 
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
@@ -1424,8 +1425,9 @@ app.get(['/api/oauth/google/callback', '/api/oauth/google/callback/'], rateLimit
       <html>
         <body>
           <script>
+            const targetOrigin = ${JSON.stringify(verifiedState.origin)};
             if (window.opener) {
-              window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS' }, ${JSON.stringify(verifiedState.origin)});
+              window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS' }, targetOrigin);
               window.close();
             } else {
               window.location.href = '/';
@@ -1802,7 +1804,7 @@ async function startServer() {
   });
 
   const shutdown = () => {
-    const forceCloseTimer = setTimeout(() => process.exit(1), 10000);
+    const forceCloseTimer = setTimeout(() => process.exit(1), GRACEFUL_SHUTDOWN_TIMEOUT_MS);
     server.close(() => {
       clearTimeout(forceCloseTimer);
       process.exit(0);
