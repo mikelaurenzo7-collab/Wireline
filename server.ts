@@ -1,6 +1,7 @@
-import express from "express";
+import express, { type NextFunction, type Request, type Response } from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { GoogleGenAI } from "@google/genai";
 import { createClient } from "@supabase/supabase-js";
 import { google } from "googleapis";
@@ -9,12 +10,19 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT || 3000);
+const HOST = process.env.HOST || "0.0.0.0";
 
-app.use(express.json());
-
-// Initialize AI and DB
-const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+app.disable("x-powered-by");
+app.set("trust proxy", 1);
+app.use((req, res, next) => {
+  res.setHeader("Referrer-Policy", "no-referrer");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  next();
+});
+app.use(express.json({ limit: "1mb" }));
 
 // Google Workspace OAuth Setup
 const SCOPES = [
@@ -23,39 +31,170 @@ const SCOPES = [
   'https://www.googleapis.com/auth/userinfo.profile'
 ];
 
-function getGoogleOAuthClient(req: express.Request) {
-   // According to oauth-integration skill, we determine the exact redirect URI based on the request origin or APP_URL.
-   // But because we might be behind a proxy, trusting process.env.APP_URL is safest, but AI Studio passes it as a header or similar, or we can just infer from req.headers.referer if needed, but for OAuth callback absolute URL is needed.
-   // Wait, oauth-integration says: use `process.env.APP_URL` or dynamically construct from req.headers.host but in container getting the external host is tricky.
-   // Wait! `req.protocol + '://' + req.get('host')` might work if proxied correctly. Let's do that for now but fallback if missing.
-   // "always use the APP_URL environment variable to get the URL of the container."
-   const baseUrl = process.env.APP_URL || `https://${req.get('host')}`;
-   return new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      `${baseUrl}/api/oauth/google/callback`
-   );
+function getRequiredEnv(name: string) {
+  const value = process.env[name]?.trim();
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
 }
 
-// Note: Backend uses Service Role for secure modifications across the DB if needed
-const supabaseUrl = process.env.VITE_SUPABASE_URL || "https://placeholder-url.supabase.co";
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || "placeholder-key";
+const supabaseUrl = getRequiredEnv("VITE_SUPABASE_URL");
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() || process.env.VITE_SUPABASE_ANON_KEY?.trim();
+if (!supabaseKey) {
+  throw new Error("Missing required environment variable: SUPABASE_SERVICE_ROLE_KEY or VITE_SUPABASE_ANON_KEY");
+}
+
+const geminiApiKey = process.env.GEMINI_API_KEY?.trim();
+const genAI = geminiApiKey ? new GoogleGenAI({ apiKey: geminiApiKey }) : null;
 const db = createClient(supabaseUrl, supabaseKey);
+
+function getGeminiClient() {
+  if (!genAI) {
+    throw new Error("GEMINI_API_KEY is not configured.");
+  }
+  return genAI;
+}
+
+function getConfiguredBaseUrl(req: Request) {
+  const configured = process.env.APP_URL?.trim();
+  if (configured) {
+    return configured.replace(/\/+$/, "");
+  }
+
+  const host = req.get("host");
+  if (!host) {
+    throw new Error("Unable to determine application base URL.");
+  }
+
+  const forwardedProto = req.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  const protocol = forwardedProto || req.protocol;
+  return `${protocol}://${host}`;
+}
+
+function getGoogleOAuthClient(req: Request) {
+  const baseUrl = getConfiguredBaseUrl(req);
+  return new google.auth.OAuth2(
+    getRequiredEnv("GOOGLE_CLIENT_ID"),
+    getRequiredEnv("GOOGLE_CLIENT_SECRET"),
+    `${baseUrl}/api/oauth/google/callback`
+  );
+}
+
+function getBearerToken(req: Request) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer ")) {
+    return null;
+  }
+
+  const token = authHeader.slice("Bearer ".length).trim();
+  return token || null;
+}
+
+async function getAuthenticatedUser(req: Request) {
+  const token = getBearerToken(req);
+  if (!token) {
+    return null;
+  }
+
+  const { data: { user }, error } = await db.auth.getUser(token);
+  if (error || !user) {
+    return null;
+  }
+
+  return user;
+}
+
+function normalizePhoneNumber(value: unknown) {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value.replace(/[^\d+]/g, "");
+  return /^\+?[1-9]\d{9,14}$/.test(normalized) ? normalized : null;
+}
+
+function isValidEmailAddress(value: unknown) {
+  return typeof value === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
+function sanitizeLikeInput(value: string) {
+  return value.replace(/[%_]/g, "").trim();
+}
+
+function getOAuthStateSecret() {
+  return process.env.OAUTH_STATE_SECRET?.trim() || getRequiredEnv("GOOGLE_CLIENT_SECRET");
+}
+
+function createOAuthState(userId: string, origin: string) {
+  const payload = Buffer.from(JSON.stringify({
+    userId,
+    origin,
+    issuedAt: Date.now(),
+  })).toString("base64url");
+  const signature = createHmac("sha256", getOAuthStateSecret()).update(payload).digest("base64url");
+  return `${payload}.${signature}`;
+}
+
+function verifyOAuthState(state: string) {
+  const [payload, signature] = state.split(".");
+  if (!payload || !signature) {
+    return null;
+  }
+
+  const expected = createHmac("sha256", getOAuthStateSecret()).update(payload).digest();
+  const provided = Buffer.from(signature, "base64url");
+  if (expected.length !== provided.length || !timingSafeEqual(expected, provided)) {
+    return null;
+  }
+
+  const decoded = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as {
+    userId?: string;
+    origin?: string;
+    issuedAt?: number;
+  };
+
+  if (!decoded.userId || !decoded.origin || !decoded.issuedAt) {
+    return null;
+  }
+
+  if (Date.now() - decoded.issuedAt > 15 * 60 * 1000) {
+    return null;
+  }
+
+  return decoded;
+}
+
+function hasValidWebhookSecret(req: Request) {
+  const configuredSecret = process.env.WIRELINE_WEBHOOK_SECRET?.trim();
+  if (!configuredSecret) {
+    return false;
+  }
+
+  const providedSecret = req.get("x-vapi-secret")?.trim();
+  if (!providedSecret) {
+    return false;
+  }
+
+  const expected = Buffer.from(configuredSecret);
+  const provided = Buffer.from(providedSecret);
+  return expected.length === provided.length && timingSafeEqual(expected, provided);
+}
+
+if (!geminiApiKey) {
+  console.warn("GEMINI_API_KEY is not configured; AI-powered endpoints will return configuration errors.");
+}
+if (!process.env.WIRELINE_WEBHOOK_SECRET?.trim()) {
+  console.warn("WIRELINE_WEBHOOK_SECRET is not configured; Vapi server-to-server webhook verification is disabled.");
+}
 
 // ==========================================
 // AUTH MIDDLEWARE
 // ==========================================
-async function authenticateUser(req: any, res: any, next: any) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-     return res.status(401).json({ error: "No authorization header provided" });
-  }
-
-  const token = authHeader.split(' ')[1];
-  const { data: { user }, error } = await db.auth.getUser(token);
-
-  if (error || !user) {
-     return res.status(401).json({ error: "Invalid or expired session" });
+async function authenticateUser(req: any, res: Response, next: NextFunction) {
+  const user = await getAuthenticatedUser(req);
+  if (!user) {
+    return res.status(401).json({ error: "Invalid or expired session" });
   }
 
   req.user = user;
@@ -66,20 +205,38 @@ async function authenticateUser(req: any, res: any, next: any) {
 // 1. API WEBHOOK (CARRIER CONNECTION) - NO AUTH (SYSTEM TO SYSTEM)
 // ==========================================
 app.post("/api/vapi-webhook", async (req, res) => {
+  const authenticatedUser = await getAuthenticatedUser(req);
+  if (!authenticatedUser && !hasValidWebhookSecret(req)) {
+    return res.status(401).json({ error: "Unauthorized webhook request" });
+  }
+
   const payload = req.body;
+  if (!payload || typeof payload !== "object") {
+    return res.status(400).json({ error: "Invalid webhook payload" });
+  }
+
   const { message } = payload;
+  if (!message || typeof message !== "object") {
+    return res.status(400).json({ error: "Invalid webhook message" });
+  }
   
   console.log("--- INCOMING VAPI WEBHOOK ---");
   
   // For webhooks, we need to know WHICH user this is for.
   // We'll extract agentId from query and fetch the agent and its user_id.
-  const webhookAgentId = req.query.agentId as string || "default-agent";
+  const webhookAgentId = typeof req.query.agentId === "string" ? req.query.agentId.trim() : "";
+  if (!webhookAgentId) {
+    return res.status(400).json({ error: "Missing agentId query parameter" });
+  }
   
   // 0. Fetch the agent's owner and their settings
-  const { data: agent } = await db.from('wireline_agents').select('user_id').eq('id', webhookAgentId).single();
-  if (!agent) return res.status(404).json({ error: "Agent not found" });
+  const { data: agentOwner } = await db.from('wireline_agents').select('user_id').eq('id', webhookAgentId).single();
+  if (!agentOwner) return res.status(404).json({ error: "Agent not found" });
+  if (authenticatedUser && agentOwner.user_id !== authenticatedUser.id) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
 
-  const { data: userSettings } = await db.from('wireline_settings').select('subscription_status').eq('user_id', agent.user_id).single();
+  const { data: userSettings } = await db.from('wireline_settings').select('subscription_status').eq('user_id', agentOwner.user_id).single();
   const subscriptionStatus = userSettings?.subscription_status || 'active';
   
   if (subscriptionStatus !== 'active') {
@@ -106,10 +263,10 @@ app.post("/api/vapi-webhook", async (req, res) => {
     try {
       // 1. Assemble memory from Supabase
       const [agentConfig, directivesData, knowledgeData, personalityData] = await Promise.all([
-        db.from('wireline_agents').select('*').eq('id', webhookAgentId).single(),
-        db.from('wireline_directives').select('content, priority').eq('agent_id', webhookAgentId).order('priority', { ascending: false }),
-        db.from('wireline_knowledge').select('content').eq('agent_id', webhookAgentId),
-        db.from('wireline_personality').select('content').eq('agent_id', webhookAgentId).single()
+        db.from('wireline_agents').select('*').eq('id', webhookAgentId).eq('user_id', agentOwner.user_id).single(),
+        db.from('wireline_directives').select('content, priority').eq('agent_id', webhookAgentId).eq('user_id', agentOwner.user_id).order('priority', { ascending: false }),
+        db.from('wireline_knowledge').select('content').eq('agent_id', webhookAgentId).eq('user_id', agentOwner.user_id),
+        db.from('wireline_personality').select('content').eq('agent_id', webhookAgentId).eq('user_id', agentOwner.user_id).single()
       ]);
 
 
@@ -184,12 +341,12 @@ app.post("/api/vapi-webhook", async (req, res) => {
 
       const responsePayload = {
         assistant: {
-          name: agentConfig?.data?.name || "Wireline Agent",
-          firstMessage: agentConfig?.data?.first_message || "Hello! Thank you for calling. How can I help you today?",
-          serverUrlSecret: "wireline-secret-key",
-          serverMessages: ["tool-calls", "status-update", "conversation-update", "end-of-call-report"],
-          backgroundSound: agentConfig?.data?.ambient_noise || 'off',
-          model: {
+           name: agentConfig?.data?.name || "Wireline Agent",
+           firstMessage: agentConfig?.data?.first_message || "Hello! Thank you for calling. How can I help you today?",
+           serverUrlSecret: process.env.WIRELINE_WEBHOOK_SECRET?.trim(),
+           serverMessages: ["tool-calls", "status-update", "conversation-update", "end-of-call-report"],
+           backgroundSound: agentConfig?.data?.ambient_noise || 'off',
+           model: {
             provider: "google",
             model: "gemini-2.0-flash", 
             systemPrompt: systemPrompt,
@@ -264,21 +421,28 @@ app.post("/api/vapi-webhook", async (req, res) => {
   
   if (message && message.type === "tool-calls") {
     console.log("Received tool call:", JSON.stringify(message.toolCalls, null, 2));
+    if (!Array.isArray(message.toolCalls)) {
+      return res.status(400).json({ error: "Invalid tool call payload" });
+    }
     
     // Fetch agent config once for all tools in this call
-    const { data: agent } = await db.from('wireline_agents').select('*').eq('id', webhookAgentId).single();
+    const { data: agent } = await db.from('wireline_agents').select('*').eq('id', webhookAgentId).eq('user_id', agentOwner.user_id).single();
 
     const results = [];
     
     for (const toolCall of message.toolCalls) {
       
       // TOOL 1: CHECK AVAILABILITY
-      if (toolCall.function.name === "check_calendar_availability") {
-         try {
-            const { date } = toolCall.function.arguments;
-            const { data, error } = await db.from('wireline_appointments').select('time, service_type').ilike('date', `%${date}%`);
-            
-            if (error) throw error;
+       if (toolCall.function.name === "check_calendar_availability") {
+          try {
+             const { date } = toolCall.function.arguments;
+             if (typeof date !== "string" || !date.trim()) {
+               throw new Error("Invalid date");
+             }
+             const sanitizedDate = sanitizeLikeInput(date);
+             const { data, error } = await db.from('wireline_appointments').select('time, service_type').eq('agent_id', webhookAgentId).eq('user_id', agent.user_id).ilike('date', `%${sanitizedDate}%`);
+             
+             if (error) throw error;
 
             if (data && data.length > 0) {
                const bookedTimes = data.map(appt => appt.time).join(", ");
@@ -304,6 +468,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
           
           // Insert actual appointment into Supabase
           const { data, error } = await db.from('wireline_appointments').insert({
+            user_id: agent.user_id,
             agent_id: webhookAgentId,
             call_id: message.call?.id || "in-call",
             date: args.date || "Unknown Date",
@@ -338,14 +503,17 @@ app.post("/api/vapi-webhook", async (req, res) => {
       }
 
       // TOOL 4: ROUTING HANDOFF (PHONE -> EMAIL)
-      if (toolCall.function.name === "send_email") {
-         try {
-           const { to_email, subject, body } = toolCall.function.arguments;
-           
-           // Fetch the first connected valid email account
-           const { data: accounts } = await db.from('wireline_email_accounts').select('*').limit(1);
-           
-           if (!accounts || accounts.length === 0) {
+       if (toolCall.function.name === "send_email") {
+          try {
+            const { to_email, subject, body } = toolCall.function.arguments;
+            if (!isValidEmailAddress(to_email) || typeof subject !== "string" || typeof body !== "string") {
+              throw new Error("Invalid email handoff payload");
+            }
+            
+            // Fetch the first connected valid email account
+            const { data: accounts } = await db.from('wireline_email_accounts').select('*').eq('user_id', agent.user_id).limit(1);
+            
+            if (!accounts || accounts.length === 0) {
               results.push({
                 toolCallId: toolCall.id,
                 result: "Email system is not connected to any inbox. Inform the customer."
@@ -356,11 +524,12 @@ app.post("/api/vapi-webhook", async (req, res) => {
            const account = accounts[0];
            const curAgentId = webhookAgentId || "default-agent";
 
-           // Create a Fleet Handoff Task (For traceability & Founder monitoring)
-           const { data: task, error: taskError } = await db.from('wireline_fleet_tasks').insert({
-              source_type: 'phone_call',
-              source_id: message.call?.id || "manual-handoff",
-              target_channel: 'email',
+            // Create a Fleet Handoff Task (For traceability & Founder monitoring)
+            const { data: task, error: taskError } = await db.from('wireline_fleet_tasks').insert({
+               user_id: agent.user_id,
+               source_type: 'phone_call',
+               source_id: message.call?.id || "manual-handoff",
+               target_channel: 'email',
               agent_id: curAgentId,
               customer_info: { email: to_email },
               task_type: 'follow_up',
@@ -397,11 +566,12 @@ app.post("/api/vapi-webhook", async (req, res) => {
               const googleThreadId = gmailRes.data.threadId;
               let { data: thread } = await db.from('wireline_email_threads').select('*').eq('thread_id', googleThreadId).single();
               
-              if (!thread) {
-                 const { data: newThread } = await db.from('wireline_email_threads').insert({
-                   account_id: account.id,
-                   thread_id: googleThreadId,
-                   customer_email: to_email,
+               if (!thread) {
+                  const { data: newThread } = await db.from('wireline_email_threads').insert({
+                    user_id: agent.user_id,
+                    account_id: account.id,
+                    thread_id: googleThreadId,
+                    customer_email: to_email,
                    subject: subject,
                    status: 'open',
                    summary: `Phone Follow-up: ${to_email}`
@@ -409,10 +579,11 @@ app.post("/api/vapi-webhook", async (req, res) => {
                  thread = newThread;
               }
 
-              await db.from('wireline_email_messages').insert({
-                 thread_id: thread.id,
-                 google_message_id: gmailRes.data.id,
-                 role: 'ai',
+               await db.from('wireline_email_messages').insert({
+                  user_id: agent.user_id,
+                  thread_id: thread.id,
+                  google_message_id: gmailRes.data.id,
+                  role: 'ai',
                  content: body
               });
 
@@ -423,8 +594,8 @@ app.post("/api/vapi-webhook", async (req, res) => {
               console.error("Omnichannel sync error:", syncErr);
            }
 
-           // Mark task as completed
-           await db.from('wireline_fleet_tasks').update({ status: 'completed' }).eq('id', task.id);
+            // Mark task as completed
+            await db.from('wireline_fleet_tasks').update({ status: 'completed' }).eq('id', task.id).eq('user_id', agent.user_id);
 
            results.push({
              toolCallId: toolCall.id,
@@ -457,6 +628,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
         }
 
         await db.from('wireline_call_logs').insert({
+           user_id: agentOwner.user_id,
            vapi_call_id: call?.id || "unknown",
            agent_id: webhookAgentId,
            direction: call?.type === "outboundPhoneCall" ? "outbound" : "inbound",
@@ -476,26 +648,27 @@ app.post("/api/vapi-webhook", async (req, res) => {
           RESPONSE FORMAT (JSON): { "score": number, "label": string }
         `;
         try {
-           const scoreRes = await genAI.models.generateContent({
+           const scoreRes = await getGeminiClient().models.generateContent({
              model: "gemini-3-flash-preview",
              contents: scoringPrompt,
              config: { responseMimeType: "application/json" }
            });
-           const scoreObj = JSON.parse(scoreRes.text || "{}");
-           await db.from('wireline_call_logs').update({
-             lead_score: scoreObj.score || 0,
-             intent_label: scoreObj.label || 'none'
-           }).eq('vapi_call_id', call?.id);
-        } catch(scoringErr) {
-           console.error("Call scoring failed:", scoringErr);
-        }
+            const scoreObj = JSON.parse(scoreRes.text || "{}");
+            await db.from('wireline_call_logs').update({
+              lead_score: scoreObj.score || 0,
+              intent_label: scoreObj.label || 'none'
+            }).eq('vapi_call_id', call?.id).eq('user_id', agentOwner.user_id);
+         } catch(scoringErr) {
+            console.error("Call scoring failed:", scoringErr);
+         }
         
         // If it was outbound, let's update the lead status
-        if (call?.type === "outboundPhoneCall") {
-           await db.from('wireline_outbound_leads')
-             .update({ status: 'Completed' })
-             .eq('call_id', call?.id);
-        }
+         if (call?.type === "outboundPhoneCall") {
+             await db.from('wireline_outbound_leads')
+              .update({ status: 'Completed' })
+              .eq('call_id', call?.id)
+              .eq('user_id', agentOwner.user_id);
+         }
 
         return res.json({ success: true });
     } catch(e) {
@@ -626,8 +799,9 @@ app.post("/api/agents", authenticateUser, async (req: any, res: any) => {
     }
 
     const { id, name, voice_id, channel } = req.body;
+    const agentId = id || `agent-${Date.now()}`;
     await db.from('wireline_agents').insert({
-      id: id || `agent-${Date.now()}`,
+      id: agentId,
       user_id: req.user.id,
       name: name || "New Agent",
       voice_id: voice_id || 'bIHbv24MWmeRgasZH58o',
@@ -636,14 +810,14 @@ app.post("/api/agents", authenticateUser, async (req: any, res: any) => {
     
     // Seed default personality
     await db.from('wireline_personality').insert({
-       agent_id: id,
+       agent_id: agentId,
        user_id: req.user.id,
        content: channel === 'email' 
          ? "You are a professional email agent specialized in clear, efficient communication." 
          : "You are a helpful assistant serving as a phone agent."
     });
     
-    res.json({ success: true, id });
+    res.json({ success: true, id: agentId });
   } catch (error) {
     console.error("Agent creation failed:", error);
     res.status(500).json({ error: "Failed to create agent" });
@@ -832,37 +1006,36 @@ app.delete("/api/agent-config/:id/:type/:rowId", authenticateUser, async (req: a
 // ==========================================
 // 1.8 SETTINGS & OUTBOUND DIALER ENDPOINTS
 // ==========================================
-app.get("/api/settings", async (req, res) => {
+app.get("/api/settings", authenticateUser, async (req: any, res: any) => {
   try {
-    const { data } = await db.from('wireline_settings').select('*').eq('id', 'global').single();
-    if (data) {
-       delete data.vapi_private_key; // Never send secret to client
-    }
+    const { data } = await db.from('wireline_settings').select('id, user_id, subscription_status, max_agents, vapi_phone_number_id, updated_at').eq('user_id', req.user.id).maybeSingle();
     res.json(data || {});
   } catch (error) {
     res.json({});
   }
 });
 
-app.post("/api/settings", async (req, res) => {
+app.post("/api/settings", authenticateUser, async (req: any, res: any) => {
   try {
     const { vapi_phone_number_id, subscription_status, max_agents } = req.body;
+    const parsedMaxAgents = Number.parseInt(String(max_agents ?? 3), 10);
     await db.from('wireline_settings').upsert({
-      id: 'global',
-      vapi_phone_number_id,
-      subscription_status,
-      max_agents,
+      id: req.user.id,
+      user_id: req.user.id,
+      vapi_phone_number_id: typeof vapi_phone_number_id === "string" ? vapi_phone_number_id.trim() : null,
+      subscription_status: typeof subscription_status === "string" && subscription_status.trim() ? subscription_status.trim() : 'active',
+      max_agents: Number.isFinite(parsedMaxAgents) ? Math.min(Math.max(parsedMaxAgents, 1), 100) : 3,
       updated_at: new Date().toISOString()
-    });
+    }, { onConflict: 'user_id' });
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: "Failed to save settings" });
   }
 });
 
-app.get("/api/outbound", async (req, res) => {
+app.get("/api/outbound", authenticateUser, async (req: any, res: any) => {
   try {
-    const { data } = await db.from('wireline_outbound_leads').select('*').order('created_at', { ascending: false });
+    const { data } = await db.from('wireline_outbound_leads').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false });
     res.json({ leads: data || [] });
   } catch (error) {
     res.json({ leads: [] });
@@ -872,6 +1045,13 @@ app.get("/api/outbound", async (req, res) => {
 app.post("/api/outbound/dial", authenticateUser, async (req: any, res: any) => {
   try {
     const { agentId, customerName, customerNumber, context } = req.body;
+    if (typeof agentId !== "string" || !agentId.trim()) {
+      return res.status(400).json({ error: "A valid agentId is required." });
+    }
+    const normalizedCustomerNumber = normalizePhoneNumber(customerNumber);
+    if (!normalizedCustomerNumber) {
+      return res.status(400).json({ error: "A valid E.164-style customerNumber is required." });
+    }
     
     // 0. SECURITY ENFORCEMENT: Check Subscription Status
     const { data: userSettings } = await db.from('wireline_settings').select('*').eq('user_id', req.user.id).single();
@@ -890,11 +1070,14 @@ app.post("/api/outbound/dial", authenticateUser, async (req: any, res: any) => {
 
     // 2. Fetch agent config
     const [agentConfig, directivesData, knowledgeData, personalityData] = await Promise.all([
-      db.from('wireline_agents').select('*').eq('id', agentId).single().then(r => r),
-      db.from('wireline_directives').select('content, priority').eq('agent_id', agentId).order('priority', { ascending: false }).then(r => r),
-      db.from('wireline_knowledge').select('content').eq('agent_id', agentId).then(r => r),
-      db.from('wireline_personality').select('content').eq('agent_id', agentId).single().then(r => r)
+      db.from('wireline_agents').select('*').eq('id', agentId).eq('user_id', req.user.id).single().then(r => r),
+      db.from('wireline_directives').select('content, priority').eq('agent_id', agentId).eq('user_id', req.user.id).order('priority', { ascending: false }).then(r => r),
+      db.from('wireline_knowledge').select('content').eq('agent_id', agentId).eq('user_id', req.user.id).then(r => r),
+      db.from('wireline_personality').select('content').eq('agent_id', agentId).eq('user_id', req.user.id).single().then(r => r)
     ]);
+    if (!agentConfig?.data) {
+      return res.status(404).json({ error: "Agent not found." });
+    }
 
     const currentDateTime = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
     
@@ -959,7 +1142,7 @@ app.post("/api/outbound/dial", authenticateUser, async (req: any, res: any) => {
     const vapiPayload = {
       phoneNumberId: settings.vapi_phone_number_id,
       customer: {
-        number: customerNumber
+        number: normalizedCustomerNumber
       },
       assistant: {
         name: agentConfig?.data?.name || "Wireline Outbound Agent",
@@ -998,10 +1181,11 @@ app.post("/api/outbound/dial", authenticateUser, async (req: any, res: any) => {
 
     // 5. Store Lead generated in Supabase
     await db.from('wireline_outbound_leads').insert({
+       user_id: req.user.id,
        agent_id: agentId,
-       customer_name: customerName,
-       customer_number: customerNumber,
-       context: context,
+       customer_name: typeof customerName === "string" ? customerName.trim() : null,
+       customer_number: normalizedCustomerNumber,
+       context: typeof context === "string" ? context.trim().slice(0, 1000) : null,
        call_id: vapiData.id,
        status: "Dialing"
     });
@@ -1013,21 +1197,49 @@ app.post("/api/outbound/dial", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-app.post("/api/outbound/bulk", async (req, res) => {
+app.post("/api/outbound/bulk", authenticateUser, async (req: any, res: any) => {
   try {
-     const { leads } = req.body;
-     if (!leads || !leads.length) return res.status(400).json({ error: "No leads provided" });
+      const { leads } = req.body;
+      if (!Array.isArray(leads) || !leads.length) return res.status(400).json({ error: "No leads provided" });
 
-     // SECURITY ENFORCEMENT
-     const { data: globalSettings } = await db.from('wireline_settings').select('subscription_status').eq('id', 'global').single();
-     if (globalSettings?.subscription_status !== 'active') {
-        return res.status(403).json({ error: "Access Denied: Inactive billing plan." });
-     }
+      // SECURITY ENFORCEMENT
+      const { data: userSettings } = await db.from('wireline_settings').select('subscription_status').eq('user_id', req.user.id).single();
+      if ((userSettings?.subscription_status || 'active') !== 'active') {
+         return res.status(403).json({ error: "Access Denied: Inactive billing plan." });
+      }
 
-     const { data, error } = await db.from('wireline_outbound_leads').insert(leads).select('id');
-     if (error) throw error;
-     
-     res.json({ success: true, inserted: data.length });
+      const sanitizedLeads = leads.map((lead: any) => {
+        const normalizedNumber = normalizePhoneNumber(lead?.customer_number);
+        if (!normalizedNumber) {
+          return null;
+        }
+        return {
+          user_id: req.user.id,
+          agent_id: typeof lead?.agent_id === "string" ? lead.agent_id : null,
+          customer_name: typeof lead?.customer_name === "string" ? lead.customer_name.trim() : null,
+          customer_number: normalizedNumber,
+          context: typeof lead?.context === "string" ? lead.context.trim().slice(0, 1000) : null,
+          status: typeof lead?.status === "string" && lead.status.trim() ? lead.status.trim() : "Queued",
+        };
+      }).filter(Boolean);
+
+      if (!sanitizedLeads.length) {
+        return res.status(400).json({ error: "No valid leads provided." });
+      }
+
+      const uniqueAgentIds = [...new Set(sanitizedLeads.map((lead: any) => lead.agent_id).filter(Boolean))];
+      if (uniqueAgentIds.length) {
+        const { data: ownedAgents } = await db.from('wireline_agents').select('id').eq('user_id', req.user.id).in('id', uniqueAgentIds);
+        const ownedAgentIds = new Set((ownedAgents || []).map((ownedAgent) => ownedAgent.id));
+        if (uniqueAgentIds.some((agentId) => !ownedAgentIds.has(agentId))) {
+          return res.status(403).json({ error: "One or more leads reference an agent you do not own." });
+        }
+      }
+
+      const { data, error } = await db.from('wireline_outbound_leads').insert(sanitizedLeads).select('id');
+      if (error) throw error;
+      
+      res.json({ success: true, inserted: data.length });
   } catch (error: any) {
      res.status(500).json({ error: "Failed to queue leads" });
   }
@@ -1040,6 +1252,11 @@ app.post("/api/train", authenticateUser, async (req: any, res: any) => {
   const { userMessage, agentId = "default-agent" } = req.body;
   
   try {
+    const { data: agent } = await db.from('wireline_agents').select('id').eq('id', agentId).eq('user_id', req.user.id).single();
+    if (!agent) {
+      return res.status(404).json({ error: "Agent not found" });
+    }
+
     const prompt = `
     You are the Wireline Configuration Engine. The business owner is training their AI fleet.
     Current Training Target: ${agentId}
@@ -1059,7 +1276,7 @@ app.post("/api/train", authenticateUser, async (req: any, res: any) => {
     }
     `;
 
-    const response = await genAI.models.generateContent({
+    const response = await getGeminiClient().models.generateContent({
       model: "gemini-2.5-pro",
       contents: prompt,
       config: {
@@ -1072,17 +1289,17 @@ app.post("/api/train", authenticateUser, async (req: any, res: any) => {
     // Atomic update to Supabase
     if (parsed.directives && parsed.directives.length) {
       await db.from('wireline_directives').insert(
-        parsed.directives.map((d: any) => ({ ...d, agent_id: agentId }))
+        parsed.directives.map((d: any) => ({ ...d, agent_id: agentId, user_id: req.user.id }))
       );
     }
     if (parsed.knowledge && parsed.knowledge.length) {
       await db.from('wireline_knowledge').insert(
-        parsed.knowledge.map((k: any) => ({ ...k, agent_id: agentId }))
+        parsed.knowledge.map((k: any) => ({ ...k, agent_id: agentId, user_id: req.user.id }))
       );
     }
     if (parsed.personality) {
       // Upsert personality
-      await db.from('wireline_personality').upsert({ agent_id: agentId, content: parsed.personality });
+      await db.from('wireline_personality').upsert({ agent_id: agentId, content: parsed.personality, user_id: req.user.id });
     }
 
     res.json({ success: true, extracted: parsed });
@@ -1097,26 +1314,36 @@ app.post("/api/train", authenticateUser, async (req: any, res: any) => {
 // Google Workspace OAuth Endpoints
 // ==========================================
 
-app.get('/api/oauth/google/url', (req, res) => {
+app.get('/api/oauth/google/url', authenticateUser, (req: any, res) => {
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
      return res.status(500).json({ error: "Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET in environment variables." });
   }
 
   const oauth2Client = getGoogleOAuthClient(req);
+  const state = createOAuthState(req.user.id, req.get("origin") || getConfiguredBaseUrl(req));
   const authUrl = oauth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: SCOPES,
-    prompt: 'consent' // Forces consent screen to always get a refresh token
+    prompt: 'consent', // Forces consent screen to always get a refresh token
+    state,
   });
   
   res.json({ url: authUrl });
 });
 
 app.get(['/api/oauth/google/callback', '/api/oauth/google/callback/'], async (req, res) => {
-  const { code } = req.query;
+  const { code, state } = req.query;
   
   if (!code || typeof code !== 'string') {
     return res.status(400).send("No code provided by Google.");
+  }
+  if (!state || typeof state !== "string") {
+    return res.status(400).send("Missing OAuth state.");
+  }
+
+  const verifiedState = verifyOAuthState(state);
+  if (!verifiedState) {
+    return res.status(400).send("Invalid or expired OAuth state.");
   }
 
   try {
@@ -1132,21 +1359,23 @@ app.get(['/api/oauth/google/callback', '/api/oauth/google/callback/'], async (re
     if (!emailAddress) throw new Error("Could not fetch user email.");
 
     // Store in Supabase
-    await db.from('wireline_email_accounts').insert({
-      email_address: emailAddress,
-      provider: 'google',
+    await db.from('wireline_email_accounts').upsert({
+      user_id: verifiedState.userId,
+      email: emailAddress,
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
       expires_at: tokens.expiry_date
-    });
+    }, { onConflict: 'email' });
 
     // Send success to popup
+    const targetOrigin = JSON.stringify(verifiedState.origin);
+    const serializedEmail = JSON.stringify(emailAddress);
     res.send(`
       <html>
         <body>
           <script>
             if (window.opener) {
-              window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS', email: '${emailAddress}' }, '*');
+              window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS', email: ${serializedEmail} }, ${targetOrigin});
               window.close();
             } else {
               window.location.href = '/';
@@ -1277,30 +1506,32 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
            const snippet = msgData.data.snippet || "";
            
            // Check if thread exists in DB
-           let { data: existingThread } = await db.from('wireline_email_threads').select('*').eq('thread_id', threadId).single();
+            let { data: existingThread } = await db.from('wireline_email_threads').select('*').eq('thread_id', threadId).eq('user_id', userId).single();
            
-           if (!existingThread) {
-              const { data: newThread } = await db.from('wireline_email_threads').insert({
-                 account_id: account.id,
-                 thread_id: threadId,
-                 customer_email: from,
+            if (!existingThread) {
+               const { data: newThread } = await db.from('wireline_email_threads').insert({
+                  user_id: userId,
+                  account_id: account.id,
+                  thread_id: threadId,
+                  customer_email: from,
                  subject: subject,
                  status: 'pending_ai'
               }).select('*').single();
               existingThread = newThread;
            }
 
-           // Check if message exists in DB
-           const { data: existingMsg } = await db.from('wireline_email_messages').select('*').eq('google_message_id', msg.id!).single();
-           if (existingMsg) continue;
+            // Check if message exists in DB
+            const { data: existingMsg } = await db.from('wireline_email_messages').select('*').eq('google_message_id', msg.id!).eq('user_id', userId).single();
+            if (existingMsg) continue;
 
            totalNew++;
 
-           // Save the customer message
-           await db.from('wireline_email_messages').insert({
-              thread_id: existingThread!.id,
-              google_message_id: msg.id!,
-              role: 'customer',
+            // Save the customer message
+            await db.from('wireline_email_messages').insert({
+               user_id: userId,
+               thread_id: existingThread!.id,
+               google_message_id: msg.id!,
+               role: 'customer',
               content: snippet
            });
 
@@ -1339,18 +1570,19 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
              RESPONSE:
            `;
 
-           const aiRes = await genAI.models.generateContent({
-              model: "gemini-3-flash-preview",
-              contents: prompt
-           });
+            const aiRes = await getGeminiClient().models.generateContent({
+               model: "gemini-3-flash-preview",
+               contents: prompt
+            });
            const aiText = aiRes.text || "I've received your email and will follow up shortly.";
            const finalReply = activeAgent?.email_signature ? `${aiText}\n\n${activeAgent.email_signature}` : aiText;
 
-           // Save the AI message (as a draft in our DB)
-           await db.from('wireline_email_messages').insert({
-              thread_id: existingThread!.id,
-              role: 'ai',
-              content: finalReply
+            // Save the AI message (as a draft in our DB)
+            await db.from('wireline_email_messages').insert({
+               user_id: userId,
+               thread_id: existingThread!.id,
+               role: 'ai',
+               content: finalReply
            });
 
            // 4. AUTONOMOUS AUTO-RESPOND (If enabled)
@@ -1377,10 +1609,11 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
            const lowerSnippet = snippet.toLowerCase();
            if (lowerSnippet.includes('call') || lowerSnippet.includes('phone') || lowerSnippet.includes('callback') || lowerSnippet.includes('number')) {
               try {
-                 await db.from('wireline_fleet_tasks').insert({
-                    source_type: 'email_thread',
-                    source_id: threadId,
-                    target_channel: 'phone',
+                  await db.from('wireline_fleet_tasks').insert({
+                     user_id: userId,
+                     source_type: 'email_thread',
+                     source_id: threadId,
+                     target_channel: 'phone',
                     agent_id: activeAgent?.id || null,
                     customer_info: { email: from, subject: subject },
                     task_type: 'callback_required',
@@ -1407,7 +1640,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
                 Body: ${snippet}
                 RESPONSE FORMAT (JSON): { "score": number, "label": string }
               `;
-              const sRes = await genAI.models.generateContent({
+              const sRes = await getGeminiClient().models.generateContent({
                 model: "gemini-3-flash-preview",
                 contents: emailScoringPrompt,
                 config: { responseMimeType: "application/json" }
@@ -1467,6 +1700,7 @@ app.post("/api/emails/threads/:id/reply", authenticateUser, async (req: any, res
 
       // Save to DB
       await db.from('wireline_email_messages').insert({
+         user_id: req.user.id,
          thread_id: thread.id,
          role: 'ai',
          content: body
@@ -1483,6 +1717,22 @@ app.post("/api/emails/threads/:id/reply", authenticateUser, async (req: any, res
 // 3. VITE MIDDLEWARE & STATIC SERVING
 // ==========================================
 async function startServer() {
+  app.get("/health", (_req, res) => {
+    res.json({ status: "ok" });
+  });
+
+  app.get("/ready", (_req, res) => {
+    res.json({
+      status: "ready",
+      services: {
+        database: "configured",
+        gemini: geminiApiKey ? "configured" : "missing",
+        googleOAuth: process.env.GOOGLE_CLIENT_ID?.trim() && process.env.GOOGLE_CLIENT_SECRET?.trim() ? "configured" : "missing",
+        webhookSecret: process.env.WIRELINE_WEBHOOK_SECRET?.trim() ? "configured" : "missing",
+      },
+    });
+  });
+
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -1497,9 +1747,16 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
+  const server = app.listen(PORT, HOST, () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
+
+  const shutdown = () => {
+    server.close(() => process.exit(0));
+  };
+
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
 }
 
 startServer();
