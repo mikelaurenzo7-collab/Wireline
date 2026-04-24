@@ -1,7 +1,7 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { GoogleGenAI } from "@google/genai";
 import { createClient } from "@supabase/supabase-js";
 import { google } from "googleapis";
@@ -235,6 +235,9 @@ if (!geminiApiKey) {
 }
 if (!process.env.WIRELINE_WEBHOOK_SECRET?.trim()) {
   console.warn("WIRELINE_WEBHOOK_SECRET is not configured; Vapi server-to-server webhook verification is disabled.");
+}
+if (process.env.NODE_ENV === "production" && !process.env.WIRELINE_WEBHOOK_SECRET?.trim()) {
+  throw new Error("Missing required environment variable: WIRELINE_WEBHOOK_SECRET");
 }
 
 // ==========================================
@@ -848,7 +851,7 @@ app.post("/api/agents", authenticateUser, async (req: any, res: any) => {
     }
 
     const { id, name, voice_id, channel } = req.body;
-    const agentId = id || `agent-${Date.now()}`;
+    const agentId = id || randomUUID();
     await db.from('wireline_agents').insert({
       id: agentId,
       user_id: req.user.id,
@@ -1067,7 +1070,7 @@ app.get("/api/settings", authenticateUser, async (req: any, res: any) => {
 app.post("/api/settings", authenticateUser, async (req: any, res: any) => {
   try {
     const { vapi_phone_number_id, subscription_status, max_agents } = req.body;
-    const parsedMaxAgents = Number.parseInt(String(max_agents ?? 3), 10);
+    const parsedMaxAgents = Number(max_agents ?? 3);
     await db.from('wireline_settings').upsert({
       id: req.user.id,
       user_id: req.user.id,
@@ -1369,7 +1372,7 @@ app.get('/api/oauth/google/url', rateLimit(10, 10 * 60 * 1000), authenticateUser
   }
 
   const oauth2Client = getGoogleOAuthClient(req);
-  const state = createOAuthState(req.user.id, req.get("origin") || getConfiguredBaseUrl(req));
+  const state = createOAuthState(req.user.id, getConfiguredBaseUrl(req));
   const authUrl = oauth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: SCOPES,
@@ -1422,7 +1425,7 @@ app.get(['/api/oauth/google/callback', '/api/oauth/google/callback/'], rateLimit
         <body>
           <script>
             if (window.opener) {
-              window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS' }, window.location.origin);
+              window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS' }, ${JSON.stringify(verifiedState.origin)});
               window.close();
             } else {
               window.location.href = '/';
@@ -1799,7 +1802,11 @@ async function startServer() {
   });
 
   const shutdown = () => {
-    server.close(() => process.exit(0));
+    const forceCloseTimer = setTimeout(() => process.exit(1), 10000);
+    server.close(() => {
+      clearTimeout(forceCloseTimer);
+      process.exit(0);
+    });
   };
 
   process.on("SIGINT", shutdown);
