@@ -14,6 +14,13 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./vitest.setup.ts"],
     include: ["src/**/*.{test,spec}.{ts,tsx}", "server/**/*.{test,spec}.ts"],
+    env: {
+      NODE_ENV: "test",
+      // Provide minimum env so the server-side env loader doesn't print
+      // warnings during the test run.
+      VITE_SUPABASE_URL: "https://test.supabase.co",
+      VITE_SUPABASE_ANON_KEY: "test-anon-key",
+    },
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
@@ -21,3 +28,4 @@ export default defineConfig({
     },
   },
 });
+
