@@ -258,7 +258,10 @@ router.post(
                 .toString("base64")
                 .replace(/\+/g, "-")
                 .replace(/\//g, "_")
-                .replace(/=+$/, "");
+                // Bounded `={0,2}` instead of `=+`: base64 padding is at most
+                // two `=` characters, so this avoids a CodeQL polynomial-redos
+                // flag.
+                .replace(/={0,2}$/, "");
 
               await gmail.users.messages.send({
                 userId: "me",
@@ -372,7 +375,9 @@ router.post(
         .toString("base64")
         .replace(/\+/g, "-")
         .replace(/\//g, "_")
-        .replace(/=+$/, "");
+        // Bounded `={0,2}` instead of `=+`: base64 padding is at most two
+        // `=` characters, so this avoids a CodeQL polynomial-redos flag.
+        .replace(/={0,2}$/, "");
 
       await gmail.users.messages.send({
         userId: "me",
