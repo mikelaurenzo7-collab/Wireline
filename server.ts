@@ -9,6 +9,29 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+// ==========================================
+// ENVIRONMENT VALIDATION
+// ==========================================
+const REQUIRED_ENV_VARS = [
+  "GEMINI_API_KEY",
+  "VITE_SUPABASE_URL",
+  "VITE_SUPABASE_ANON_KEY",
+  "SUPABASE_SERVICE_ROLE_KEY",
+  "GOOGLE_CLIENT_ID",
+  "GOOGLE_CLIENT_SECRET",
+  "APP_URL",
+  "WIRELINE_WEBHOOK_SECRET"
+];
+
+for (const envVar of REQUIRED_ENV_VARS) {
+  if (!process.env[envVar]?.trim()) {
+    console.error(`CRITICAL ERROR: Missing required environment variable: ${envVar}`);
+    if (process.env.NODE_ENV === "production") {
+      process.exit(1);
+    }
+  }
+}
+
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || "0.0.0.0";
@@ -244,7 +267,11 @@ if (process.env.NODE_ENV === "production" && !process.env.WIRELINE_WEBHOOK_SECRE
 // ==========================================
 // AUTH MIDDLEWARE
 // ==========================================
-async function authenticateUser(req: any, res: Response, next: NextFunction) {
+interface AuthenticatedRequest extends Request {
+  user?: any;
+}
+
+async function authenticateUser(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   const user = await getAuthenticatedUser(req);
   if (!user) {
     return res.status(401).json({ error: "Invalid or expired session" });
@@ -466,7 +493,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
       return res.json({
          assistant: {
            firstMessage: "I'm sorry, my memory banks are currently offline.",
-           model: { provider: "google", model: "gemini-3-flash-preview", systemPrompt: "Apologize and hang up." }
+           model: { provider: "google", model: "gemini-2.0-flash", systemPrompt: "Apologize and hang up." }
          }
       });
     }
@@ -702,7 +729,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
         `;
         try {
            const scoreRes = await getGeminiClient().models.generateContent({
-             model: "gemini-3-flash-preview",
+             model: "gemini-2.0-flash",
              contents: scoringPrompt,
              config: { responseMimeType: "application/json" }
            });
@@ -736,7 +763,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
 // ==========================================
 // 1.5 CALL LOG RETRIEVAL ENDPOINT
 // ==========================================
-app.get("/api/calls", authenticateUser, async (req: any, res: any) => {
+app.get("/api/calls", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { data: calls, error } = await db
       .from('wireline_call_logs')
@@ -756,7 +783,7 @@ app.get("/api/calls", authenticateUser, async (req: any, res: any) => {
 // ==========================================
 // 1.8 DASHBOARD STATS ENDPOINT
 // ==========================================
-app.get("/api/dashboard/stats", authenticateUser, async (req: any, res: any) => {
+app.get("/api/dashboard/stats", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
    try {
       const [apptRes, leadsRes, logsRes] = await Promise.all([
           db.from('wireline_appointments').select('id', { count: 'exact' }).eq('user_id', req.user.id),
@@ -804,7 +831,7 @@ app.get("/api/dashboard/stats", authenticateUser, async (req: any, res: any) => 
 // ==========================================
 // 1.6 APPOINTMENTS RETRIEVAL ENDPOINT
 // ==========================================
-app.get("/api/appointments", authenticateUser, async (req: any, res: any) => {
+app.get("/api/appointments", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { data: appointments, error } = await db
       .from('wireline_appointments')
@@ -823,7 +850,7 @@ app.get("/api/appointments", authenticateUser, async (req: any, res: any) => {
 // ==========================================
 // 1.7 AGENTS MANAGEMENT ENDPOINTS
 // ==========================================
-app.get("/api/agents", authenticateUser, async (req: any, res: any) => {
+app.get("/api/agents", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { data: agents, error } = await db.from('wireline_agents').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false });
     res.json({ agents: agents || [] });
@@ -832,7 +859,7 @@ app.get("/api/agents", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-app.post("/api/agents", authenticateUser, async (req: any, res: any) => {
+app.post("/api/agents", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     // SECURITY ENFORCEMENT: Check Subscription Status for this specific user
     const { data: userSettings } = await db.from('wireline_settings').select('subscription_status, max_agents').eq('user_id', req.user.id).single();
@@ -878,7 +905,7 @@ app.post("/api/agents", authenticateUser, async (req: any, res: any) => {
 });
 
 // Update agent settings
-app.put("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
+app.put("/api/agents/:id", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { name, voice_id, voice_id_inbound, voice_id_outbound, voice_provider, first_message, archetype, ambient_noise, website_url, transfer_phone, email_auto_respond, email_agent_tone, email_signature, channel } = req.body;
     await db.from('wireline_agents').update({ 
@@ -903,7 +930,7 @@ app.put("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-app.get("/api/agent-config/:id", authenticateUser, async (req: any, res: any) => {
+app.get("/api/agent-config/:id", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const agentId = req.params.id;
     const [directives, knowledge, personality] = await Promise.all([
@@ -924,7 +951,7 @@ app.get("/api/agent-config/:id", authenticateUser, async (req: any, res: any) =>
 // ==========================================
 // 1.5.4 PHONE NUMBER MANAGEMENT
 // ==========================================
-app.get("/api/phone-numbers", authenticateUser, async (req: any, res: any) => {
+app.get("/api/phone-numbers", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { data, error } = await db.from('wireline_phone_numbers').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false });
     if (error) throw error;
@@ -934,7 +961,7 @@ app.get("/api/phone-numbers", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-app.post("/api/phone-numbers", authenticateUser, async (req: any, res: any) => {
+app.post("/api/phone-numbers", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { phone_number, vapi_number_id } = req.body;
     await db.from('wireline_phone_numbers').insert({ phone_number, vapi_number_id, user_id: req.user.id });
@@ -944,7 +971,7 @@ app.post("/api/phone-numbers", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-app.patch("/api/phone-numbers/:id", authenticateUser, async (req: any, res: any) => {
+app.patch("/api/phone-numbers/:id", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { agent_id } = req.body;
     await db.from('wireline_phone_numbers').update({ agent_id }).eq('id', req.params.id).eq('user_id', req.user.id);
@@ -957,7 +984,7 @@ app.patch("/api/phone-numbers/:id", authenticateUser, async (req: any, res: any)
 // ==========================================
 // 1.5.6 CARRIER SYNC (VAPI PROXY)
 // ==========================================
-app.get("/api/carrier/numbers", authenticateUser, async (req: any, res: any) => {
+app.get("/api/carrier/numbers", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const vapiSecret = process.env.VAPI_PRIVATE_KEY;
     if (!vapiSecret) return res.json({ numbers: [] });
@@ -980,7 +1007,7 @@ app.get("/api/carrier/numbers", authenticateUser, async (req: any, res: any) => 
     res.json({ numbers: [] });
   }
 });
-app.get("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => {
+app.get("/api/fleet/tasks", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { data, error } = await db.from('wireline_fleet_tasks')
                                      .select('*, wireline_agents(name)')
@@ -993,7 +1020,7 @@ app.get("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-app.post("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => {
+app.post("/api/fleet/tasks", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { source_type, source_id, target_channel, customer_info, task_type, description, agent_id } = req.body;
     await db.from('wireline_fleet_tasks').insert({
@@ -1005,7 +1032,7 @@ app.post("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-app.patch("/api/fleet/tasks/:id", authenticateUser, async (req: any, res: any) => {
+app.patch("/api/fleet/tasks/:id", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { status } = req.body;
     await db.from('wireline_fleet_tasks').update({ status }).eq('id', req.params.id).eq('user_id', req.user.id);
@@ -1015,7 +1042,7 @@ app.patch("/api/fleet/tasks/:id", authenticateUser, async (req: any, res: any) =
   }
 });
 
-app.post("/api/agent-config/:id/manual", authenticateUser, async (req: any, res: any) => {
+app.post("/api/agent-config/:id/manual", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const agentId = req.params.id;
     const { type, content, overrideId } = req.body; // type is 'personality', 'directive', or 'knowledge'
@@ -1044,7 +1071,7 @@ app.post("/api/agent-config/:id/manual", authenticateUser, async (req: any, res:
   }
 });
 
-app.delete("/api/agent-config/:id/:type/:rowId", authenticateUser, async (req: any, res: any) => {
+app.delete("/api/agent-config/:id/:type/:rowId", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { type, rowId } = req.params;
       const userId = req.user.id;
@@ -1059,7 +1086,7 @@ app.delete("/api/agent-config/:id/:type/:rowId", authenticateUser, async (req: a
 // ==========================================
 // 1.8 SETTINGS & OUTBOUND DIALER ENDPOINTS
 // ==========================================
-app.get("/api/settings", authenticateUser, async (req: any, res: any) => {
+app.get("/api/settings", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { data } = await db.from('wireline_settings').select('id, user_id, subscription_status, max_agents, vapi_phone_number_id, updated_at').eq('user_id', req.user.id).maybeSingle();
     res.json(data || {});
@@ -1068,7 +1095,7 @@ app.get("/api/settings", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-app.post("/api/settings", authenticateUser, async (req: any, res: any) => {
+app.post("/api/settings", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { vapi_phone_number_id, subscription_status, max_agents } = req.body;
     const parsedMaxAgents = Number(max_agents ?? 3);
@@ -1086,7 +1113,7 @@ app.post("/api/settings", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-app.get("/api/outbound", authenticateUser, async (req: any, res: any) => {
+app.get("/api/outbound", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { data } = await db.from('wireline_outbound_leads').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false });
     res.json({ leads: data || [] });
@@ -1095,7 +1122,7 @@ app.get("/api/outbound", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-app.post("/api/outbound/dial", authenticateUser, async (req: any, res: any) => {
+app.post("/api/outbound/dial", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { agentId, customerName, customerNumber, context } = req.body;
     if (typeof agentId !== "string" || !agentId.trim()) {
@@ -1250,7 +1277,7 @@ app.post("/api/outbound/dial", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-app.post("/api/outbound/bulk", authenticateUser, async (req: any, res: any) => {
+app.post("/api/outbound/bulk", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
       const { leads } = req.body;
       if (!Array.isArray(leads) || !leads.length) return res.status(400).json({ error: "No leads provided" });
@@ -1301,7 +1328,7 @@ app.post("/api/outbound/bulk", authenticateUser, async (req: any, res: any) => {
 // ==========================================
 // 2. AGENT TRAINING ENDPOINT (ADMIN AI)
 // ==========================================
-app.post("/api/train", authenticateUser, async (req: any, res: any) => {
+app.post("/api/train", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   const { userMessage, agentId = "default-agent" } = req.body;
   
   try {
@@ -1330,7 +1357,7 @@ app.post("/api/train", authenticateUser, async (req: any, res: any) => {
     `;
 
     const response = await getGeminiClient().models.generateContent({
-      model: "gemini-2.5-pro",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json"
@@ -1367,7 +1394,7 @@ app.post("/api/train", authenticateUser, async (req: any, res: any) => {
 // Google Workspace OAuth Endpoints
 // ==========================================
 
-app.get('/api/oauth/google/url', rateLimit(10, 10 * 60 * 1000), authenticateUser, (req: any, res) => {
+app.get('/api/oauth/google/url', rateLimit(10, 10 * 60 * 1000), authenticateUser, (req: AuthenticatedRequest, res) => {
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
      return res.status(500).json({ error: "Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET in environment variables." });
   }
@@ -1444,7 +1471,7 @@ app.get(['/api/oauth/google/callback', '/api/oauth/google/callback/'], rateLimit
 });
 
 // Get connected accounts
-app.get("/api/emails/accounts", authenticateUser, async (req: any, res: any) => {
+app.get("/api/emails/accounts", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { data: accounts, error } = await db.from('wireline_email_accounts')
                                                .select('*')
@@ -1457,7 +1484,7 @@ app.get("/api/emails/accounts", authenticateUser, async (req: any, res: any) => 
   }
 });
 
-app.patch("/api/emails/accounts/:id", authenticateUser, async (req: any, res: any) => {
+app.patch("/api/emails/accounts/:id", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { agent_id } = req.body;
     await db.from('wireline_email_accounts').update({ agent_id }).eq('id', req.params.id).eq('user_id', req.user.id);
@@ -1467,7 +1494,7 @@ app.patch("/api/emails/accounts/:id", authenticateUser, async (req: any, res: an
   }
 });
 
-app.delete("/api/emails/accounts/:id", authenticateUser, async (req: any, res: any) => {
+app.delete("/api/emails/accounts/:id", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     await db.from('wireline_email_accounts').delete().eq('id', req.params.id).eq('user_id', req.user.id);
     res.json({ success: true });
@@ -1481,7 +1508,7 @@ app.delete("/api/emails/accounts/:id", authenticateUser, async (req: any, res: a
 // 2.3 EMAIL THREAD & SYNC ENDPOINTS
 // ==========================================
 
-app.get("/api/emails/threads", authenticateUser, async (req: any, res: any) => {
+app.get("/api/emails/threads", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { data: threads, error } = await db.from('wireline_email_threads')
                                            .select('*')
@@ -1494,7 +1521,7 @@ app.get("/api/emails/threads", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-app.get("/api/emails/threads/:id/messages", authenticateUser, async (req: any, res: any) => {
+app.get("/api/emails/threads/:id/messages", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { data: messages, error } = await db.from('wireline_email_messages')
                                              .select('*')
@@ -1509,7 +1536,7 @@ app.get("/api/emails/threads/:id/messages", authenticateUser, async (req: any, r
 });
 
 // The "AI Intelligence" Sync
-app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
+app.post("/api/emails/sync", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
      const userId = req.user.id;
      // 1. Fetch connected accounts
@@ -1623,7 +1650,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
            `;
 
             const aiRes = await getGeminiClient().models.generateContent({
-               model: "gemini-3-flash-preview",
+               model: "gemini-2.0-flash",
                contents: prompt
             });
            const aiText = aiRes.text || "I've received your email and will follow up shortly.";
@@ -1693,7 +1720,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
                 RESPONSE FORMAT (JSON): { "score": number, "label": string }
               `;
               const sRes = await getGeminiClient().models.generateContent({
-                model: "gemini-3-flash-preview",
+                model: "gemini-2.0-flash",
                 contents: emailScoringPrompt,
                 config: { responseMimeType: "application/json" }
               });
@@ -1715,7 +1742,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-app.post("/api/emails/threads/:id/reply", authenticateUser, async (req: any, res: any) => {
+app.post("/api/emails/threads/:id/reply", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
    try {
       const { body } = req.body;
       const { data: thread } = await db.from('wireline_email_threads').select('*, wireline_email_accounts(*)').eq('id', req.params.id).eq('user_id', req.user.id).single();
@@ -1766,8 +1793,16 @@ app.post("/api/emails/threads/:id/reply", authenticateUser, async (req: any, res
 });
 
 // ==========================================
-// 3. VITE MIDDLEWARE & STATIC SERVING
+// 3. ERROR HANDLING & STARTUP
 // ==========================================
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  console.error("GLOBAL_ERROR:", err);
+  res.status(500).json({
+    error: "Internal Server Error",
+    message: process.env.NODE_ENV === "production" ? "An unexpected error occurred." : err.message
+  });
+});
+
 async function startServer() {
   app.get("/health", (_req, res) => {
     res.json({ status: "ok" });

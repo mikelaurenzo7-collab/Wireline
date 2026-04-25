@@ -39,17 +39,15 @@ export default function AgentTraining() {
 
   const fetchKnowledge = async () => {
     try {
-      const [kRes, dRes] = await Promise.all([
-        authFetch(`/api/knowledge/${selectedAgentId}`),
-        authFetch(`/api/directives/${selectedAgentId}`)
-      ]);
-      const kData = await kRes.json();
-      const dData = await dRes.json();
-      setKnowledge(kData.knowledge || []);
-      setDirectives(dData.directives || []);
-      setPersonality(kData.personality || "");
-      setPersonalityDraft(kData.personality || "");
-    } catch(e) {}
+      const res = await authFetch(`/api/agent-config/${selectedAgentId}`);
+      const data = await res.json();
+      setKnowledge(data.knowledge || []);
+      setDirectives(data.directives || []);
+      setPersonality(data.personality || "");
+      setPersonalityDraft(data.personality || "");
+    } catch(e) {
+      console.error("Failed to fetch agent config:", e);
+    }
   };
 
   const handleSend = async () => {

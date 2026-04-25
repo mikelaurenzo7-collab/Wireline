@@ -7,6 +7,7 @@ import Vapi from "@vapi-ai/web";
 import { cn } from "../lib/utils";
 import FleetTaskBridge from "./FleetTaskBridge";
 import { authFetch } from "../lib/api";
+import { LoadingSpinner } from "./LoadingSpinner";
 
 const vapi = new Vapi(import.meta.env.VITE_VAPI_PUBLIC_KEY || "");
 
@@ -138,15 +139,7 @@ export default function DashboardHome() {
       </motion.header>
 
       {isLoading && !stats ? (
-        <div className="flex-1 flex flex-col items-center justify-center p-32 space-y-8">
-           <div className="relative">
-              <Loader2 className="w-20 h-20 animate-spin text-brand" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                 <ShieldCheck className="w-8 h-8 text-ink" />
-              </div>
-           </div>
-           <p className="text-ink font-black uppercase tracking-[0.5em] text-[10px] italic animate-pulse">Syncing with Carrier Nodes...</p>
-        </div>
+        <LoadingSpinner message="Syncing with Carrier Nodes..." />
       ) : (
         <motion.div 
           initial="hidden"
