@@ -3,21 +3,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
 import { BrowserRouter, Routes, Route, Link, useLocation } from "react-router-dom";
 import { Phone, Users, Settings, Activity, MessageSquare, Calendar, PhoneOutgoing, ServerCog, PlugZap, History, MessageCircle, Mail, Menu, X, LogOut, User } from "lucide-react";
-import DashboardHome from "./components/DashboardHome";
-import AgentTraining from "./components/AgentTraining";
-import AppointmentsView from "./components/Appointments";
-import FleetSettings from "./components/FleetSettings";
-import OutboundDialer from "./components/OutboundDialer";
-import AdminSettings from "./components/AdminSettings";
-import Integrations from "./components/Integrations";
-import CallLogs from "./components/CallLogs";
-import EmailInbox from "./components/EmailInbox";
 import AuthPortal from "./components/AuthPortal";
+import { LoadingSpinner } from "./components/LoadingSpinner";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { cn } from "./lib/utils";
+
+// Route-level code splitting: only the auth/landing path ships in the initial
+// bundle. Each screen below resolves to its own chunk fetched on first nav.
+const DashboardHome = React.lazy(() => import("./components/DashboardHome"));
+const AgentTraining = React.lazy(() => import("./components/AgentTraining"));
+const AppointmentsView = React.lazy(() => import("./components/Appointments"));
+const FleetSettings = React.lazy(() => import("./components/FleetSettings"));
+const OutboundDialer = React.lazy(() => import("./components/OutboundDialer"));
+const AdminSettings = React.lazy(() => import("./components/AdminSettings"));
+const Integrations = React.lazy(() => import("./components/Integrations"));
+const CallLogs = React.lazy(() => import("./components/CallLogs"));
+const EmailInbox = React.lazy(() => import("./components/EmailInbox"));
 
 function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) => void }) {
   const location = useLocation();
@@ -181,17 +185,19 @@ function AppContent() {
             <div className="absolute bottom-0 left-0 w-1/4 h-1/4 bg-brand/10 blur-[100px] rounded-full pointer-events-none z-0" />
 
             <div className="flex-1 overflow-y-auto relative z-10 scrollbar-hide">
-              <Routes>
-                <Route path="/" element={<DashboardHome />} />
-                <Route path="/logs" element={<CallLogs />} />
-                <Route path="/inbox" element={<EmailInbox />} />
-                <Route path="/outbound" element={<OutboundDialer />} />
-                <Route path="/appointments" element={<AppointmentsView />} />
-                <Route path="/train" element={<AgentTraining />} />
-                <Route path="/agents" element={<FleetSettings />} />
-                <Route path="/integrations" element={<Integrations />} />
-                <Route path="/admin" element={<AdminSettings />} />
-              </Routes>
+              <Suspense fallback={<LoadingSpinner message="Loading Module..." />}>
+                <Routes>
+                  <Route path="/" element={<DashboardHome />} />
+                  <Route path="/logs" element={<CallLogs />} />
+                  <Route path="/inbox" element={<EmailInbox />} />
+                  <Route path="/outbound" element={<OutboundDialer />} />
+                  <Route path="/appointments" element={<AppointmentsView />} />
+                  <Route path="/train" element={<AgentTraining />} />
+                  <Route path="/agents" element={<FleetSettings />} />
+                  <Route path="/integrations" element={<Integrations />} />
+                  <Route path="/admin" element={<AdminSettings />} />
+                </Routes>
+              </Suspense>
             </div>
          </div>
       </main>

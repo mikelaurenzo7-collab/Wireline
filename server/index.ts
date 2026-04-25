@@ -10,7 +10,7 @@ import express, {
   type Request,
   type Response,
 } from "express";
-import { createServer as createViteServer } from "vite";
+import helmet from "helmet";
 
 import { env, isProductionEnv } from "./lib/env";
 import { errorHandler } from "./lib/errors";
@@ -36,13 +36,25 @@ export function createApp() {
   // correctly resolved when running behind Render/Fly/Cloudflare.
   app.set("trust proxy", 1);
 
-  // Security headers. Phase 1 will replace these with `helmet` + a strict
-  // CSP, but keeping the manual headers here preserves existing behavior
-  // exactly while we land the modularization PR.
+  // Security headers via `helmet`. We intentionally disable CSP for now —
+  // a strict policy needs to allowlist Tailwind/Vite/Vapi/Supabase origins
+  // and is its own focused PR. Everything else helmet ships by default
+  // (HSTS, X-DNS-Prefetch-Control, X-Download-Options, COOP, X-Permitted-
+  // Cross-Domain-Policies, etc.) is on. We then re-apply the existing
+  // hand-rolled headers we want to keep verbatim (Permissions-Policy is
+  // not part of helmet's defaults; X-Frame-Options/X-Content-Type-Options/
+  // Referrer-Policy are, but stating them keeps the contract explicit and
+  // immune to silent default changes between helmet majors).
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginEmbedderPolicy: false,
+      crossOriginResourcePolicy: { policy: "same-origin" },
+      referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+      frameguard: { action: "deny" },
+    })
+  );
   app.use((_req, res, next) => {
-    res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("X-Frame-Options", "DENY");
-    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
     next();
   });
@@ -93,6 +105,9 @@ export async function startServer() {
   const app = createApp();
 
   if (!isProductionEnv()) {
+    // Lazy-import vite so `createApp()` is testable without dragging in
+    // esbuild (which jsdom's polyfilled TextEncoder upsets).
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
