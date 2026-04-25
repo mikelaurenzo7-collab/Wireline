@@ -36,26 +36,69 @@ export function createApp() {
   // correctly resolved when running behind Render/Fly/Cloudflare.
   app.set("trust proxy", 1);
 
-  // Security headers via `helmet`. We intentionally disable CSP for now —
-  // a strict policy needs to allowlist Tailwind/Vite/Vapi/Supabase origins
-  // and is its own focused PR. Everything else helmet ships by default
-  // (HSTS, X-DNS-Prefetch-Control, X-Download-Options, COOP, X-Permitted-
-  // Cross-Domain-Policies, etc.) is on. We then re-apply the existing
-  // hand-rolled headers we want to keep verbatim (Permissions-Policy is
-  // not part of helmet's defaults; X-Frame-Options/X-Content-Type-Options/
-  // Referrer-Policy are, but stating them keeps the contract explicit and
-  // immune to silent default changes between helmet majors).
+  // Security headers via `helmet`.
+  //
+  // CSP: enforced in production with allowlists for the third-party origins
+  // we actually load (Supabase REST/realtime, Vapi REST + WebSocket, Daily
+  // WebRTC, and Google Fonts via the `@import` in `src/index.css`). In dev
+  // we disable CSP entirely because Vite HMR needs `'unsafe-eval'`, inline
+  // scripts, and `ws://` to localhost — it would be a pile of dev-only
+  // exceptions that drift from the prod policy.
+  //
+  // COEP: deliberately disabled. `require-corp` would block any cross-
+  // origin resource (Google Fonts, Supabase responses, Vapi/Daily media
+  // chunks) that doesn't send `Cross-Origin-Resource-Policy`. We can't
+  // control those upstreams' headers, so enabling it now would break the
+  // app. Re-evaluate when we have a service worker / cross-origin
+  // isolation requirement.
+  //
+  // CORP: `same-origin` only restricts who can load *our* resources; it
+  // does not affect what *we* load. Safe.
   app.use(
     helmet({
-      contentSecurityPolicy: false,
+      contentSecurityPolicy: isProductionEnv()
+        ? {
+            useDefaults: true,
+            directives: {
+              defaultSrc: ["'self'"],
+              scriptSrc: ["'self'"],
+              // Tailwind compiles to a stylesheet, but motion/react and
+              // Recharts inject inline `style` attributes at runtime.
+              styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+              fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
+              imgSrc: ["'self'", "data:", "blob:", "https:"],
+              connectSrc: [
+                "'self'",
+                "https://*.supabase.co",
+                "wss://*.supabase.co",
+                "https://api.vapi.ai",
+                "https://*.vapi.ai",
+                "wss://*.vapi.ai",
+                "https://*.daily.co",
+                "wss://*.daily.co",
+              ],
+              mediaSrc: ["'self'", "blob:"],
+              workerSrc: ["'self'", "blob:"],
+              frameAncestors: ["'none'"],
+              objectSrc: ["'none'"],
+              baseUri: ["'self'"],
+              formAction: ["'self'"],
+              upgradeInsecureRequests: [],
+            },
+          }
+        : false,
       crossOriginEmbedderPolicy: false,
       crossOriginResourcePolicy: { policy: "same-origin" },
       referrerPolicy: { policy: "strict-origin-when-cross-origin" },
       frameguard: { action: "deny" },
     })
   );
+  // Permissions-Policy is not part of helmet's middleware set, so we set it
+  // manually. `microphone=(self)` is required by the Vapi web SDK on the
+  // dashboard (it calls `getUserMedia` for voice agent calls). Camera and
+  // geolocation stay denied.
   app.use((_req, res, next) => {
-    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    res.setHeader("Permissions-Policy", "camera=(), microphone=(self), geolocation=()");
     next();
   });
 
