@@ -1,13 +1,31 @@
+import Vapi from "@vapi-ai/web";
+import {
+  Activity,
+  PhoneCall,
+  ShieldCheck,
+  Zap,
+  Mic,
+  Square,
+  Loader2,
+  TrendingUp,
+  DollarSign,
+  ArrowUpRight,
+  BarChart3,
+  Mail,
+  ChevronRight,
+  Bot,
+} from "lucide-react";
+import { motion } from "motion/react";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Activity, PhoneCall, ShieldCheck, Zap, Mic, Square, Loader2, PlayCircle, Clock, Calendar, Users, TrendingUp, DollarSign, ArrowUpRight, BarChart3, Mail, ChevronRight, Bot } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { motion } from "motion/react";
-import Vapi from "@vapi-ai/web";
-import { cn } from "../lib/utils";
-import FleetTaskBridge from "./FleetTaskBridge";
+import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+
 import { authFetch } from "../lib/api";
+import { cn } from "../lib/utils";
+
+import FleetTaskBridge from "./FleetTaskBridge";
 import { LoadingSpinner } from "./LoadingSpinner";
+import { BrutalButton, BrutalCard } from "./ui";
 
 const vapi = new Vapi(import.meta.env.VITE_VAPI_PUBLIC_KEY || "");
 
@@ -120,22 +138,25 @@ export default function DashboardHome() {
           <p className="text-slate-400 font-bold uppercase tracking-[0.3em] text-[10px] md:text-xs max-w-lg leading-relaxed">Tactical monitoring of carrier signals and autonomous agent throughput.</p>
         </div>
         
-         <button 
+         <BrutalButton
           onClick={toggleCall}
           disabled={isConnecting}
-          className={cn(
-             "lg:min-w-[320px] brutal-btn h-14 text-[10px] font-black flex items-center justify-center gap-3 active:translate-x-1 active:translate-y-1 active:shadow-none shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] uppercase tracking-[0.2em] italic",
-             isConnected ? 'bg-red-500 text-white' : 'bg-brand'
-          )}
+          variant={isConnected ? "danger" : "brand"}
+          size="lg"
+          shadow="md"
+          className="lg:min-w-[320px] tracking-[0.2em]"
+          leadingIcon={
+            isConnecting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : isConnected ? (
+              <Square className="w-4 h-4 fill-current" />
+            ) : (
+              <Mic className="w-4 h-4 text-ink" />
+            )
+          }
         >
-          {isConnecting ? (
-             <><Loader2 className="w-4 h-4 animate-spin" /> SYNCHRONIZING...</>
-          ) : isConnected ? (
-             <><Square className="w-4 h-4 fill-current" /> TERMINATE SIGNAL</>
-          ) : (
-             <><Mic className="w-4 h-4 text-ink" /> INITIATE TEST RELAY</>
-          )}
-        </button>
+          {isConnecting ? "SYNCHRONIZING..." : isConnected ? "TERMINATE SIGNAL" : "INITIATE TEST RELAY"}
+        </BrutalButton>
       </motion.header>
 
       {isLoading && !stats ? (
@@ -151,40 +172,51 @@ export default function DashboardHome() {
         >
           {/* Analytics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            <motion.div variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }} className="brutal-card group hover:bg-brand transition-colors !p-5 md:!p-7">
-              <div className="flex justify-between items-start mb-4">
-                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest group-hover:text-ink transition-colors">Carrier Signals</p>
-                 <PhoneCall className="w-4 h-4 text-ink" />
-              </div>
-              <h3 className="text-3xl md:text-5xl font-black text-ink font-display italic leading-none">{stats?.totalCalls || 0}</h3>
-              <p className="text-[8px] font-bold text-slate-500 mt-3 group-hover:text-ink/60 uppercase tracking-[0.2em]">Live Dispatch Total</p>
+            <motion.div variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}>
+              <BrutalCard flush className="group hover:bg-brand transition-colors p-5 md:p-7">
+                <div className="flex justify-between items-start mb-4">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest group-hover:text-ink transition-colors">Carrier Signals</p>
+                  <PhoneCall className="w-4 h-4 text-ink" />
+                </div>
+                <h3 className="text-3xl md:text-5xl font-black text-ink font-display italic leading-none">{stats?.totalCalls || 0}</h3>
+                <p className="text-[8px] font-bold text-slate-500 mt-3 group-hover:text-ink/60 uppercase tracking-[0.2em]">Live Dispatch Total</p>
+              </BrutalCard>
             </motion.div>
 
-            <motion.div variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }} className="brutal-card bg-zinc-950 text-white border-brand !p-5 md:!p-7 shadow-[6px_6px_0px_0px_#FACC15]">
-              <div className="flex justify-between items-start mb-4">
-                 <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest italic">Routing Precision</p>
-                 <TrendingUp className="w-4 h-4 text-brand" />
-              </div>
-              <h3 className="text-3xl md:text-5xl font-black text-brand font-display italic leading-none">{stats?.conversionRate || 0}%</h3>
-              <p className="text-[8px] font-bold text-slate-500 mt-3 uppercase tracking-[0.2em] leading-none">Intent Fulfillment</p>
-            </motion.div>
-            
-            <motion.div variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }} className="brutal-card group hover:bg-ink hover:text-white transition-colors !p-5 md:!p-7">
-              <div className="flex justify-between items-start mb-4">
-                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest group-hover:text-white/40">Active Nodes</p>
-                 <Bot className="w-4 h-4 text-ink group-hover:text-brand" />
-              </div>
-              <h3 className="text-3xl md:text-5xl font-black text-ink group-hover:text-white font-display leading-none italic">{stats?.totalLeads || 0}</h3>
-              <p className="text-[8px] font-bold text-slate-500 mt-3 group-hover:text-white/40 uppercase tracking-[0.2em]">Operational Fleet</p>
+            <motion.div variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}>
+              <BrutalCard
+                flush
+                className="bg-zinc-950 text-white border-brand p-5 md:p-7 shadow-[6px_6px_0px_0px_#FACC15]"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest italic">Routing Precision</p>
+                  <TrendingUp className="w-4 h-4 text-brand" />
+                </div>
+                <h3 className="text-3xl md:text-5xl font-black text-brand font-display italic leading-none">{stats?.conversionRate || 0}%</h3>
+                <p className="text-[8px] font-bold text-slate-500 mt-3 uppercase tracking-[0.2em] leading-none">Intent Fulfillment</p>
+              </BrutalCard>
             </motion.div>
 
-            <motion.div variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }} className="brutal-card group hover:bg-brand transition-colors !p-5 md:!p-7">
-              <div className="flex justify-between items-start mb-4">
-                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest group-hover:text-ink">Operational Burn</p>
-                 <DollarSign className="w-4 h-4 text-ink" />
-              </div>
-              <h3 className="text-3xl md:text-5xl font-black text-ink font-display leading-none italic">${stats?.totalCost || "0.00"}</h3>
-              <p className="text-[8px] font-bold text-slate-500 mt-3 group-hover:text-ink/60 uppercase tracking-[0.2em]">Carrier Expenditure</p>
+            <motion.div variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}>
+              <BrutalCard flush className="group hover:bg-ink hover:text-white transition-colors p-5 md:p-7">
+                <div className="flex justify-between items-start mb-4">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest group-hover:text-white/40">Active Nodes</p>
+                  <Bot className="w-4 h-4 text-ink group-hover:text-brand" />
+                </div>
+                <h3 className="text-3xl md:text-5xl font-black text-ink group-hover:text-white font-display leading-none italic">{stats?.totalLeads || 0}</h3>
+                <p className="text-[8px] font-bold text-slate-500 mt-3 group-hover:text-white/40 uppercase tracking-[0.2em]">Operational Fleet</p>
+              </BrutalCard>
+            </motion.div>
+
+            <motion.div variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}>
+              <BrutalCard flush className="group hover:bg-brand transition-colors p-5 md:p-7">
+                <div className="flex justify-between items-start mb-4">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest group-hover:text-ink">Operational Burn</p>
+                  <DollarSign className="w-4 h-4 text-ink" />
+                </div>
+                <h3 className="text-3xl md:text-5xl font-black text-ink font-display leading-none italic">${stats?.totalCost || "0.00"}</h3>
+                <p className="text-[8px] font-bold text-slate-500 mt-3 group-hover:text-ink/60 uppercase tracking-[0.2em]">Carrier Expenditure</p>
+              </BrutalCard>
             </motion.div>
           </div>
 
@@ -313,9 +345,12 @@ export default function DashboardHome() {
               <h2 className="text-xl font-black text-ink flex items-center gap-3 uppercase font-display italic">
                  <Mic className="w-6 h-6 text-indigo-600" /> Recent Activity
               </h2>
-              <Link to="/logs" className="brutal-btn !py-2 !px-4 text-[10px] flex items-center gap-2 group">
-                 Call History
-                 <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              <Link
+                to="/logs"
+                className="brutal-btn !py-2 !px-4 text-[10px] flex items-center gap-2 group"
+              >
+                Call History
+                <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
               </Link>
             </div>
             
