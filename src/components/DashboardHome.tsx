@@ -2,6 +2,7 @@ import Vapi from "@vapi-ai/web";
 import {
   Activity,
   AlertTriangle,
+  Calendar,
   CheckCircle2,
   ClipboardList,
   PhoneCall,
@@ -18,6 +19,7 @@ import {
   ChevronRight,
   Bot,
   RadioTower,
+  Users,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useState, useEffect } from "react";
@@ -81,22 +83,24 @@ export default function DashboardHome() {
         // Try to find the first voice agent to use for the test relay
         let targetAgentId = "default-agent";
         if (stats?.agents?.length > 0) {
-           const voiceAgent = stats.agents.find((a) => a.channel === "voice" || a.channel === "omnichannel");
-            if (voiceAgent) targetAgentId = voiceAgent.id;
-         }
+          const voiceAgent = stats.agents.find(
+            (a) => a.channel === "voice" || a.channel === "omnichannel"
+          );
+          if (voiceAgent) targetAgentId = voiceAgent.id;
+        }
 
-         const data = await apiClient.post(`/api/vapi-webhook?agentId=${targetAgentId}`, {
-           headers: { "Content-Type": "application/json" },
-           body: { message: { type: "assistant-request" } },
-         }) as { assistant?: unknown };
-         if (data.assistant) {
-           await vapi.start(data.assistant);
-         } else {
-            throw new Error("No assistant configuration returned");
-         }
-       } catch (e) {
-         console.error("Failed to start call", e);
-         setIsConnecting(false);
+        const data = (await apiClient.post(`/api/vapi-webhook?agentId=${targetAgentId}`, {
+          headers: { "Content-Type": "application/json" },
+          body: { message: { type: "assistant-request" } },
+        })) as { assistant?: unknown };
+        if (data.assistant) {
+          await vapi.start(data.assistant);
+        } else {
+          throw new Error("No assistant configuration returned");
+        }
+      } catch (e) {
+        console.error("Failed to start call", e);
+        setIsConnecting(false);
         alert("Carrier connection failed. Ensure at least one agent is configured and Vapi key is valid.");
       }
     }
@@ -106,6 +110,38 @@ export default function DashboardHome() {
     { name: "Inbound", count: stats?.inboundCount || 0 },
     { name: "Outbound", count: stats?.outboundCount || 0 },
     { name: "High Intent", count: stats?.hotLeadCount || 0 },
+  ];
+  const operatorLanes = [
+    {
+      title: "Scale Fleet",
+      value: `${stats?.activeAgents || 0} deployed`,
+      detail:
+        (stats?.activeAgents || 0) > 0
+          ? `${stats?.voiceAgents || 0} voice / ${stats?.emailAgents || 0} email routes are live.`
+          : "Deploy your first agent to activate autonomous coverage.",
+      to: "/agents",
+      icon: Users,
+    },
+    {
+      title: "Protect Calendar",
+      value: `${stats?.scheduledAppointments || 0} scheduled`,
+      detail:
+        (stats?.pendingTasks || 0) > 0
+          ? "Clear pending handoffs before scheduled commitments lose momentum."
+          : "Appointments are stable and ready for follow-through.",
+      to: "/appointments",
+      icon: Calendar,
+    },
+    {
+      title: "Clear Queue",
+      value: `${stats?.openEmailThreads || 0} open threads`,
+      detail:
+        (stats?.openEmailThreads || 0) > 0
+          ? "Use the inbox to convert pressure into replies or callback tasks."
+          : "Inbox pressure is low; lean into outbound and follow-up plays.",
+      to: "/inbox",
+      icon: Mail,
+    },
   ];
 
   const recentLogs = stats?.recentLogs || [];
@@ -350,6 +386,56 @@ export default function DashboardHome() {
               </div>
             </section>
           </motion.div>
+
+          <motion.section
+            variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}
+            className="space-y-5"
+          >
+            <div>
+              <h2 className="text-2xl md:text-4xl font-black text-ink uppercase font-display italic leading-none">
+                Operator Lanes
+              </h2>
+              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-slate-400 mt-2">
+                Fast founder moves from the live telemetry above.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+              {operatorLanes.map((lane) => {
+                const Icon = lane.icon;
+
+                return (
+                  <Link
+                    key={lane.title}
+                    to={lane.to}
+                    className="brutal-card !p-0 overflow-hidden bg-white group hover:bg-brand transition-colors"
+                  >
+                    <div className="p-6 md:p-7 border-b-2 border-ink flex items-center justify-between gap-4">
+                      <div>
+                        <div className="text-[9px] font-black uppercase tracking-[0.28em] text-slate-400 group-hover:text-ink/70">
+                          {lane.title}
+                        </div>
+                        <div className="text-3xl font-black font-display italic text-ink leading-none mt-3">
+                          {lane.value}
+                        </div>
+                      </div>
+                      <div className="w-14 h-14 brutal-border bg-ink text-brand flex items-center justify-center shadow-none group-hover:bg-white group-hover:text-ink transition-colors">
+                        <Icon className="w-6 h-6" />
+                      </div>
+                    </div>
+                    <div className="p-6 md:p-7 flex items-end justify-between gap-5">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 group-hover:text-ink/70 leading-relaxed">
+                        {lane.detail}
+                      </p>
+                      <div className="shrink-0 w-11 h-11 brutal-border bg-white flex items-center justify-center shadow-none group-hover:bg-zinc-950 group-hover:text-brand transition-colors">
+                        <ArrowUpRight className="w-5 h-5" />
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </motion.section>
 
           <motion.div variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }} className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
               <section className="lg:col-span-2 brutal-card !p-0 overflow-hidden flex flex-col bg-white">
