@@ -1,7 +1,12 @@
 import { Router, type Response } from "express";
 
 import { authenticateUser, type AuthenticatedRequest } from "../lib/auth";
-import { buildDashboardBriefing } from "../lib/dashboard";
+import {
+  buildDashboardBriefing,
+  buildFounderPlaybook,
+  formatConversionRate,
+  getDashboardChannelCounts,
+} from "../lib/dashboard";
 import { asyncHandler } from "../lib/errors";
 import { logger } from "../lib/logger";
 import { db } from "../lib/supabase";
@@ -103,6 +108,7 @@ router.get(
       const totalCallsCount = logsRes.count || 0;
       const logs = logsRes.data || [];
       const agents = agentsRes.data || [];
+      const channelCounts = getDashboardChannelCounts(agents);
 
       const totalMinutes = Math.ceil(
         logs.reduce((acc, log) => acc + (log.duration_seconds || 0), 0) / 60
@@ -110,19 +116,12 @@ router.get(
       const totalCost = logs.reduce((acc, log) => acc + (Number(log.cost) || 0), 0);
       const inboundCount = logs.filter((l) => l.direction === "inbound").length;
       const outboundCount = logs.filter((l) => l.direction === "outbound").length;
-      const conversionRate =
-        totalCallsCount > 0 ? ((totalAppointments / totalCallsCount) * 100).toFixed(1) : "0.0";
+      const conversionRate = formatConversionRate(totalAppointments, totalCallsCount);
       const hotCalls = hotCallsRes.data || [];
       const hotEmails = hotEmailsRes.data || [];
       const hotLeadCount = (hotCallsRes.count || 0) + (hotEmailsRes.count || 0);
       const pendingTasks = pendingTasksRes.count || 0;
       const openEmailThreads = openEmailThreadsRes.count || 0;
-      const voiceAgents = agents.filter(
-        (agent) => agent.channel === "voice" || agent.channel === "omnichannel"
-      ).length;
-      const emailAgents = agents.filter(
-        (agent) => agent.channel === "email" || agent.channel === "omnichannel"
-      ).length;
       const signalsLast24h = logs.filter((log) => {
         const createdAt = new Date(log.created_at).getTime();
         return Number.isFinite(createdAt) && Date.now() - createdAt <= 24 * 60 * 60 * 1000;
@@ -151,19 +150,19 @@ router.get(
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
         .slice(0, 5);
 
-      const briefing = buildDashboardBriefing({
+      const dashboardSignals = {
         totalCalls: totalCallsCount,
         totalAppointments,
         hotLeadCount,
         pendingTasks,
         openEmailThreads,
-        activeAgents: agents.length,
-        voiceAgents,
-        emailAgents,
+        ...channelCounts,
         signalsLast24h,
         inboundCount,
         outboundCount,
-      });
+      };
+      const briefing = buildDashboardBriefing(dashboardSignals);
+      const playbook = buildFounderPlaybook(dashboardSignals);
 
       res.json({
         totalAppointments,
@@ -178,14 +177,13 @@ router.get(
         recentLogs: logs.slice(0, 100),
         hotLeads,
         hotLeadCount,
-        activeAgents: agents.length,
-        voiceAgents,
-        emailAgents,
+        ...channelCounts,
         pendingTasks,
         openEmailThreads,
         signalsLast24h,
         agents,
         briefing,
+        playbook,
       });
     } catch (e) {
       logger.error({ err: e }, "Dashboard error");

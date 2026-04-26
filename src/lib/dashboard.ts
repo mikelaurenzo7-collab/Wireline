@@ -4,6 +4,14 @@ export interface DashboardAgentSummary {
   channel: string;
 }
 
+export function isVoiceCapableAgent(agent: DashboardAgentSummary) {
+  return agent.channel === "voice" || agent.channel === "omnichannel";
+}
+
+export function selectVoiceCapableAgent(agents: DashboardAgentSummary[]) {
+  return agents.find(isVoiceCapableAgent);
+}
+
 export interface DashboardBriefingAction {
   label: string;
   value: string;
@@ -18,6 +26,15 @@ export interface DashboardBriefing {
   summary: string;
   nextMove: string;
   actions: DashboardBriefingAction[];
+}
+
+export interface DashboardPlaybookItem {
+  priority: "critical" | "growth" | "optimize";
+  title: string;
+  directive: string;
+  metric: string;
+  route: string;
+  cta: string;
 }
 
 export interface DashboardStatsResponse {
@@ -56,4 +73,5 @@ export interface DashboardStatsResponse {
   signalsLast24h: number;
   agents: DashboardAgentSummary[];
   briefing: DashboardBriefing;
+  playbook: DashboardPlaybookItem[];
 }

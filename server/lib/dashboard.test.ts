@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { buildDashboardBriefing } from "./dashboard";
+import {
+  buildDashboardBriefing,
+  buildFounderPlaybook,
+  formatConversionRate,
+  getDashboardChannelCounts,
+} from "./dashboard";
 
 describe("buildDashboardBriefing", () => {
   it("flags an empty fleet as action-needed", () => {
@@ -61,5 +66,70 @@ describe("buildDashboardBriefing", () => {
     expect(briefing.status).toBe("action-needed");
     expect(briefing.actions[1].tone).toBe("critical");
     expect(briefing.nextMove).toMatch(/pending handoff/i);
+  });
+});
+
+describe("dashboard helpers", () => {
+  it("counts voice and email capable agents consistently", () => {
+    expect(
+      getDashboardChannelCounts([
+        { channel: "voice" },
+        { channel: "email" },
+        { channel: "omnichannel" },
+        { channel: "unknown" },
+      ])
+    ).toEqual({
+      activeAgents: 4,
+      voiceAgents: 2,
+      emailAgents: 2,
+    });
+  });
+
+  it("formats conversion rate with a stable string contract", () => {
+    expect(formatConversionRate(3, 12)).toBe("25.0");
+    expect(formatConversionRate(3, 0)).toBe("0.0");
+  });
+});
+
+describe("buildFounderPlaybook", () => {
+  it("prioritizes first agent deployment when the fleet is empty", () => {
+    const playbook = buildFounderPlaybook({
+      totalCalls: 0,
+      totalAppointments: 0,
+      hotLeadCount: 0,
+      pendingTasks: 0,
+      openEmailThreads: 0,
+      activeAgents: 0,
+      voiceAgents: 0,
+      emailAgents: 0,
+      signalsLast24h: 0,
+      inboundCount: 0,
+      outboundCount: 0,
+    });
+
+    expect(playbook[0]).toMatchObject({
+      priority: "critical",
+      route: "/agents",
+    });
+  });
+
+  it("surfaces queue and inbox pressure before optimization work", () => {
+    const playbook = buildFounderPlaybook({
+      totalCalls: 20,
+      totalAppointments: 2,
+      hotLeadCount: 4,
+      pendingTasks: 7,
+      openEmailThreads: 9,
+      activeAgents: 3,
+      voiceAgents: 2,
+      emailAgents: 1,
+      signalsLast24h: 8,
+      inboundCount: 12,
+      outboundCount: 6,
+    });
+
+    expect(playbook.some((item) => item.title.includes("handoff"))).toBe(true);
+    expect(playbook.some((item) => item.title.includes("inbox"))).toBe(true);
+    expect(playbook[0].priority).toBe("critical");
   });
 });

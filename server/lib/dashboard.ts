@@ -5,6 +5,36 @@ const pluralize = (count: number, singular: string, plural = `${singular}s`) =>
 
 const safeRatio = (value: number, total: number) => (total > 0 ? value / total : 0);
 
+export interface DashboardAgentLike {
+  channel?: string | null;
+}
+
+export interface DashboardChannelCounts {
+  activeAgents: number;
+  voiceAgents: number;
+  emailAgents: number;
+}
+
+export function isVoiceCapableAgent(agent: DashboardAgentLike) {
+  return agent.channel === "voice" || agent.channel === "omnichannel";
+}
+
+export function isEmailCapableAgent(agent: DashboardAgentLike) {
+  return agent.channel === "email" || agent.channel === "omnichannel";
+}
+
+export function getDashboardChannelCounts(agents: DashboardAgentLike[]): DashboardChannelCounts {
+  return {
+    activeAgents: agents.length,
+    voiceAgents: agents.filter(isVoiceCapableAgent).length,
+    emailAgents: agents.filter(isEmailCapableAgent).length,
+  };
+}
+
+export function formatConversionRate(totalAppointments: number, totalCalls: number) {
+  return totalCalls > 0 ? ((totalAppointments / totalCalls) * 100).toFixed(1) : "0.0";
+}
+
 export interface DashboardBriefingInput {
   totalCalls: number;
   totalAppointments: number;
@@ -33,6 +63,15 @@ export interface DashboardBriefing {
   summary: string;
   nextMove: string;
   actions: DashboardBriefingAction[];
+}
+
+export interface DashboardPlaybookItem {
+  priority: "critical" | "growth" | "optimize";
+  title: string;
+  directive: string;
+  metric: string;
+  route: string;
+  cta: string;
 }
 
 export function buildDashboardBriefing(input: DashboardBriefingInput): DashboardBriefing {
@@ -136,4 +175,105 @@ export function buildDashboardBriefing(input: DashboardBriefingInput): Dashboard
       },
     ],
   };
+}
+
+export function buildFounderPlaybook(input: DashboardBriefingInput): DashboardPlaybookItem[] {
+  const playbook: DashboardPlaybookItem[] = [];
+  const hasVoice = input.voiceAgents > 0;
+  const hasEmail = input.emailAgents > 0;
+  const conversionRate = safeRatio(input.totalAppointments, input.totalCalls);
+
+  if (input.activeAgents === 0) {
+    playbook.push({
+      priority: "critical",
+      title: "Deploy the first revenue node",
+      directive:
+        "Create one voice agent with a crisp first message, then run a test relay to prove the acquisition loop.",
+      metric: "0 active agents",
+      route: "/agents",
+      cta: "Deploy agent",
+    });
+  } else if (!hasVoice || !hasEmail) {
+    playbook.push({
+      priority: "growth",
+      title: "Close the channel gap",
+      directive:
+        "Add the missing channel so every hot call can become an inbox follow-up and every email can become a callback.",
+      metric: `${pluralize(input.voiceAgents, "voice node")} · ${pluralize(input.emailAgents, "email node")}`,
+      route: "/agents",
+      cta: "Balance fleet",
+    });
+  }
+
+  if (input.pendingTasks >= 3) {
+    playbook.push({
+      priority: "critical",
+      title: "Crush handoff latency",
+      directive:
+        "Clear the oldest pending handoffs first, then turn repeat task patterns into training directives.",
+      metric: pluralize(input.pendingTasks, "pending handoff"),
+      route: "/",
+      cta: "Open queue",
+    });
+  }
+
+  if (input.hotLeadCount >= 3) {
+    playbook.push({
+      priority: "growth",
+      title: "Exploit the heat window",
+      directive:
+        "Work the highest-intent leads while context is fresh; every minute saved here compounds conversion odds.",
+      metric: pluralize(input.hotLeadCount, "high-intent lead"),
+      route: "/logs",
+      cta: "Review signals",
+    });
+  } else if (input.signalsLast24h === 0) {
+    playbook.push({
+      priority: "optimize",
+      title: "Generate fresh market signal",
+      directive:
+        "Use the test relay or outbound batch to create new conversations and validate the live agent path.",
+      metric: "0 signals / 24h",
+      route: "/outbound",
+      cta: "Launch batch",
+    });
+  }
+
+  if (input.openEmailThreads >= 5) {
+    playbook.push({
+      priority: "critical",
+      title: "Turn inbox pressure into booked intent",
+      directive:
+        "Process open threads by lead score, then dispatch callbacks for the highest-friction conversations.",
+      metric: pluralize(input.openEmailThreads, "open thread"),
+      route: "/inbox",
+      cta: "Clear inbox",
+    });
+  }
+
+  if (input.totalCalls >= 10 && conversionRate < 0.15) {
+    playbook.push({
+      priority: "optimize",
+      title: "Sharpen the conversion script",
+      directive:
+        "Review recent transcripts for objections and add two precise directives to improve booking behavior.",
+      metric: `${Math.round(conversionRate * 100)}% fulfillment`,
+      route: "/train",
+      cta: "Tune training",
+    });
+  }
+
+  if (playbook.length === 0) {
+    playbook.push({
+      priority: "optimize",
+      title: "Compound what is working",
+      directive:
+        "The fleet is stable. Add one stronger directive, one fresh lead batch, and one callback experiment.",
+      metric: "System balanced",
+      route: "/train",
+      cta: "Improve playbook",
+    });
+  }
+
+  return playbook.slice(0, 4);
 }

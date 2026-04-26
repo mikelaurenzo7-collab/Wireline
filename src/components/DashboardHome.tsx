@@ -7,6 +7,7 @@ import {
   ClipboardList,
   PhoneCall,
   ShieldCheck,
+  Target,
   Zap,
   Mic,
   Square,
@@ -19,6 +20,7 @@ import {
   ChevronRight,
   Bot,
   RadioTower,
+  Rocket,
   Users,
 } from "lucide-react";
 import { motion } from "motion/react";
@@ -27,7 +29,7 @@ import { Link } from "react-router-dom";
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 import { apiClient } from "../lib/api";
-import type { DashboardStatsResponse } from "../lib/dashboard";
+import { selectVoiceCapableAgent, type DashboardStatsResponse } from "../lib/dashboard";
 import { cn } from "../lib/utils";
 
 import FleetTaskBridge from "./FleetTaskBridge";
@@ -83,9 +85,7 @@ export default function DashboardHome() {
         // Try to find the first voice agent to use for the test relay
         let targetAgentId = "default-agent";
         if (stats?.agents?.length > 0) {
-          const voiceAgent = stats.agents.find(
-            (a) => a.channel === "voice" || a.channel === "omnichannel"
-          );
+          const voiceAgent = selectVoiceCapableAgent(stats.agents);
           if (voiceAgent) targetAgentId = voiceAgent.id;
         }
 
@@ -154,6 +154,11 @@ export default function DashboardHome() {
     positive: "bg-emerald-500 text-white border-emerald-500",
     watch: "bg-brand text-ink border-ink",
     critical: "bg-rose-500 text-white border-rose-500",
+  } as const;
+  const playbookToneStyles = {
+    critical: "bg-rose-500 text-white border-rose-500",
+    growth: "bg-brand text-ink border-ink",
+    optimize: "bg-zinc-950 text-brand border-zinc-950",
   } as const;
 
   return (
@@ -386,6 +391,67 @@ export default function DashboardHome() {
               </div>
             </section>
           </motion.div>
+
+          <motion.section
+            variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}
+            className="brutal-card !p-0 overflow-hidden bg-white"
+          >
+            <div className="p-6 md:p-8 border-b-4 border-ink bg-brand flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Rocket className="w-5 h-5 text-ink" />
+                  <span className="text-[9px] font-black uppercase tracking-[0.28em] text-ink">
+                    Founder Playbook
+                  </span>
+                </div>
+                <h2 className="text-3xl md:text-5xl font-black text-ink uppercase font-display italic leading-none">
+                  What to do next
+                </h2>
+              </div>
+              <p className="text-[10px] md:text-xs font-bold uppercase tracking-[0.22em] text-ink/60 max-w-2xl leading-relaxed">
+                A ranked operating agenda generated from fleet coverage, demand heat, backlog pressure,
+                and conversion drag.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 xl:grid-cols-2 divide-y-2 xl:divide-y-0 xl:[&>*:nth-child(odd)]:border-r-2 divide-ink">
+              {(stats?.playbook || []).map((item, index) => (
+                <Link
+                  key={`${item.title}-${index}`}
+                  to={item.route}
+                  className="p-6 md:p-8 flex flex-col md:flex-row gap-6 hover:bg-slate-50 transition-colors group"
+                >
+                  <div className="w-16 h-16 brutal-border bg-white flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group-hover:bg-ink group-hover:text-brand group-hover:shadow-none transition-all shrink-0">
+                    <Target className="w-8 h-8" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-3 mb-4">
+                      <span
+                        className={cn(
+                          "px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.25em] brutal-border shadow-none",
+                          playbookToneStyles[item.priority]
+                        )}
+                      >
+                        {item.priority}
+                      </span>
+                      <span className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-400">
+                        {item.metric}
+                      </span>
+                    </div>
+                    <h3 className="text-2xl md:text-3xl font-black text-ink uppercase font-display italic leading-none">
+                      {item.title}
+                    </h3>
+                    <p className="text-[10px] md:text-xs font-bold uppercase tracking-[0.18em] text-slate-500 leading-relaxed mt-4">
+                      {item.directive}
+                    </p>
+                    <div className="inline-flex items-center gap-2 mt-6 text-[10px] font-black uppercase tracking-[0.25em] text-ink">
+                      {item.cta}
+                      <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </motion.section>
 
           <motion.section
             variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}
