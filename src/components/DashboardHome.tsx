@@ -1,6 +1,9 @@
 import Vapi from "@vapi-ai/web";
 import {
   Activity,
+  AlertTriangle,
+  CheckCircle2,
+  ClipboardList,
   PhoneCall,
   ShieldCheck,
   Zap,
@@ -14,13 +17,15 @@ import {
   Mail,
   ChevronRight,
   Bot,
+  RadioTower,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
-import { authFetch } from "../lib/api";
+import { apiClient } from "../lib/api";
+import type { DashboardStatsResponse } from "../lib/dashboard";
 import { cn } from "../lib/utils";
 
 import FleetTaskBridge from "./FleetTaskBridge";
@@ -32,8 +37,8 @@ const vapi = new Vapi(import.meta.env.VITE_VAPI_PUBLIC_KEY || "");
 export default function DashboardHome() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
-  
-  const [stats, setStats] = useState<any>(null);
+
+  const [stats, setStats] = useState<DashboardStatsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -59,8 +64,7 @@ export default function DashboardHome() {
   const fetchStats = async () => {
     setIsLoading(true);
     try {
-      const res = await authFetch("/api/dashboard/stats");
-      const data = await res.json();
+      const data = await apiClient.get<DashboardStatsResponse>("/api/dashboard/stats");
       setStats(data);
     } catch (e) {
       console.error(e);
@@ -77,24 +81,25 @@ export default function DashboardHome() {
         // Try to find the first voice agent to use for the test relay
         let targetAgentId = "default-agent";
         if (stats?.agents?.length > 0) {
-           const voiceAgent = stats.agents.find((a: any) => a.channel === 'voice' || a.channel === 'omnichannel');
-           if (voiceAgent) targetAgentId = voiceAgent.id;
-        }
+           const voiceAgent = stats.agents.find((a) => a.channel === "voice" || a.channel === "omnichannel");
+            if (voiceAgent) targetAgentId = voiceAgent.id;
+         }
 
-        const res = await authFetch(`/api/vapi-webhook?agentId=${targetAgentId}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: { type: "assistant-request" } })
-        });
-        const data = await res.json();
-        if (data.assistant) {
-          await vapi.start(data.assistant);
-        } else {
-           throw new Error("No assistant configuration returned");
-        }
-      } catch (e) {
-        console.error("Failed to start call", e);
-        setIsConnecting(false);
+         const data = await apiClient.post<undefined, { assistant?: unknown }>(
+           `/api/vapi-webhook?agentId=${targetAgentId}`,
+           {
+             headers: { "Content-Type": "application/json" },
+             body: { message: { type: "assistant-request" } } as never,
+           }
+         );
+         if (data.assistant) {
+           await vapi.start(data.assistant);
+         } else {
+            throw new Error("No assistant configuration returned");
+         }
+       } catch (e) {
+         console.error("Failed to start call", e);
+         setIsConnecting(false);
         alert("Carrier connection failed. Ensure at least one agent is configured and Vapi key is valid.");
       }
     }
@@ -103,10 +108,20 @@ export default function DashboardHome() {
   const chartData = [
     { name: "Inbound", count: stats?.inboundCount || 0 },
     { name: "Outbound", count: stats?.outboundCount || 0 },
-    { name: "High Intent", count: stats?.hotLeads?.length || 0 },
+    { name: "Hot Leads", count: stats?.hotLeadCount || 0 },
   ];
 
   const recentLogs = stats?.recentLogs || [];
+  const briefingToneStyles = {
+    "locked-in": "bg-emerald-500 text-white",
+    watch: "bg-brand text-ink",
+    "action-needed": "bg-rose-500 text-white",
+  } as const;
+  const actionToneStyles = {
+    positive: "bg-emerald-500 text-white border-emerald-500",
+    watch: "bg-brand text-ink border-ink",
+    critical: "bg-rose-500 text-white border-rose-500",
+  } as const;
 
   return (
     <motion.div 
@@ -200,11 +215,13 @@ export default function DashboardHome() {
             <motion.div variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}>
               <BrutalCard flush className="group hover:bg-ink hover:text-white transition-colors p-5 md:p-7">
                 <div className="flex justify-between items-start mb-4">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest group-hover:text-white/40">Active Nodes</p>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest group-hover:text-white/40">Active Agents</p>
                   <Bot className="w-4 h-4 text-ink group-hover:text-brand" />
                 </div>
-                <h3 className="text-3xl md:text-5xl font-black text-ink group-hover:text-white font-display leading-none italic">{stats?.totalLeads || 0}</h3>
-                <p className="text-[8px] font-bold text-slate-500 mt-3 group-hover:text-white/40 uppercase tracking-[0.2em]">Operational Fleet</p>
+                <h3 className="text-3xl md:text-5xl font-black text-ink group-hover:text-white font-display leading-none italic">{stats?.activeAgents || 0}</h3>
+                <p className="text-[8px] font-bold text-slate-500 mt-3 group-hover:text-white/40 uppercase tracking-[0.2em]">
+                  {stats?.voiceAgents || 0} Voice / {stats?.emailAgents || 0} Email
+                </p>
               </BrutalCard>
             </motion.div>
 
@@ -219,6 +236,123 @@ export default function DashboardHome() {
               </BrutalCard>
             </motion.div>
           </div>
+
+          <motion.div
+            variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}
+            className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8"
+          >
+            <section className="xl:col-span-2 brutal-card !p-0 overflow-hidden bg-zinc-950 text-white shadow-[10px_10px_0px_0px_#FACC15]">
+              <div className="p-6 md:p-8 border-b-4 border-brand flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={cn(
+                        "px-3 py-1 text-[9px] font-black uppercase tracking-[0.25em] brutal-border shadow-none",
+                        stats?.briefing ? briefingToneStyles[stats.briefing.status] : "bg-brand text-ink"
+                      )}
+                    >
+                      {stats?.briefing?.status === "locked-in"
+                        ? "Fleet locked in"
+                        : stats?.briefing?.status === "action-needed"
+                          ? "Action needed"
+                          : "Monitor closely"}
+                    </span>
+                    <span className="text-[9px] font-black uppercase tracking-[0.25em] text-brand">
+                      Mission control briefing
+                    </span>
+                  </div>
+                  <h2 className="text-3xl md:text-5xl font-black uppercase font-display italic leading-none">
+                    {stats?.briefing?.headline || "Command center ready"}
+                  </h2>
+                  <p className="text-[11px] md:text-sm font-bold text-slate-300 uppercase tracking-[0.16em] leading-relaxed max-w-3xl">
+                    {stats?.briefing?.summary}
+                  </p>
+                </div>
+                <div className="w-28 h-28 md:w-32 md:h-32 brutal-border border-brand bg-white/5 flex flex-col items-center justify-center shrink-0">
+                  <span className="text-[9px] font-black uppercase tracking-[0.3em] text-brand">Readiness</span>
+                  <span className="text-4xl md:text-5xl font-black font-display italic leading-none mt-2">
+                    {stats?.briefing?.score ?? 0}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 divide-y-2 md:divide-y-0 md:divide-x-2 divide-white/10">
+                {stats?.briefing?.actions.map((action) => (
+                  <div key={action.label} className="p-6 md:p-7 space-y-4">
+                    <div
+                      className={cn(
+                        "inline-flex px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.25em] brutal-border shadow-none",
+                        actionToneStyles[action.tone]
+                      )}
+                    >
+                      {action.label}
+                    </div>
+                    <div className="text-2xl md:text-3xl font-black font-display italic leading-none text-white">
+                      {action.value}
+                    </div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 leading-relaxed">
+                      {action.detail}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="brutal-card !p-0 overflow-hidden bg-white">
+              <div className="p-5 border-b-4 border-ink bg-slate-50">
+                <h3 className="text-base font-black text-ink uppercase font-display italic leading-none flex items-center gap-3">
+                  <ClipboardList className="w-5 h-5 text-ink" />
+                  Fleet Snapshot
+                </h3>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="brutal-border p-4 bg-brand/40">
+                    <div className="text-[8px] font-black uppercase tracking-[0.25em] text-slate-500">Pending tasks</div>
+                    <div className="text-3xl font-black font-display italic text-ink leading-none mt-2">
+                      {stats?.pendingTasks || 0}
+                    </div>
+                  </div>
+                  <div className="brutal-border p-4 bg-cyan-50">
+                    <div className="text-[8px] font-black uppercase tracking-[0.25em] text-slate-500">Open threads</div>
+                    <div className="text-3xl font-black font-display italic text-ink leading-none mt-2">
+                      {stats?.openEmailThreads || 0}
+                    </div>
+                  </div>
+                  <div className="brutal-border p-4 bg-white">
+                    <div className="text-[8px] font-black uppercase tracking-[0.25em] text-slate-500">Scheduled</div>
+                    <div className="text-3xl font-black font-display italic text-ink leading-none mt-2">
+                      {stats?.scheduledAppointments || 0}
+                    </div>
+                  </div>
+                  <div className="brutal-border p-4 bg-zinc-950 text-white">
+                    <div className="text-[8px] font-black uppercase tracking-[0.25em] text-slate-400">Signals / 24h</div>
+                    <div className="text-3xl font-black font-display italic leading-none mt-2">
+                      {stats?.signalsLast24h || 0}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="brutal-border p-5 bg-slate-50 space-y-4">
+                  <div className="flex items-center gap-3">
+                    {(stats?.briefing?.status || "watch") === "locked-in" ? (
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                    ) : (stats?.briefing?.status || "watch") === "action-needed" ? (
+                      <AlertTriangle className="w-5 h-5 text-rose-500" />
+                    ) : (
+                      <RadioTower className="w-5 h-5 text-ink" />
+                    )}
+                    <div className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">
+                      Next move
+                    </div>
+                  </div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-ink leading-relaxed">
+                    {stats?.briefing?.nextMove}
+                  </p>
+                </div>
+              </div>
+            </section>
+          </motion.div>
 
           <motion.div variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }} className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
               <section className="lg:col-span-2 brutal-card !p-0 overflow-hidden flex flex-col bg-white">

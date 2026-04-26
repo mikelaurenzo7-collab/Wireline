@@ -1,6 +1,7 @@
 import { Router, type Response } from "express";
 
 import { authenticateUser, type AuthenticatedRequest } from "../lib/auth";
+import { buildDashboardBriefing } from "../lib/dashboard";
 import { asyncHandler } from "../lib/errors";
 import { logger } from "../lib/logger";
 import { db } from "../lib/supabase";
@@ -33,26 +34,74 @@ router.get(
   authenticateUser,
   asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const [apptRes, leadsRes, logsRes] = await Promise.all([
+      const [
+        apptRes,
+        scheduledApptRes,
+        leadsRes,
+        logsRes,
+        agentsRes,
+        pendingTasksRes,
+        openEmailThreadsRes,
+        hotCallsRes,
+        hotEmailsRes,
+      ] = await Promise.all([
         db
           .from("wireline_appointments")
           .select("id", { count: "exact" })
           .eq("user_id", req.user!.id),
+        db
+          .from("wireline_appointments")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", req.user!.id)
+          .eq("status", "Scheduled"),
         db
           .from("wireline_outbound_leads")
           .select("id", { count: "exact" })
           .eq("user_id", req.user!.id),
         db
           .from("wireline_call_logs")
-          .select("cost, duration_seconds, direction, created_at")
+          .select("id, cost, duration_seconds, direction, created_at, customer_number, summary", {
+            count: "exact",
+          })
           .eq("user_id", req.user!.id)
           .order("created_at", { ascending: false })
           .limit(200),
+        db
+          .from("wireline_agents")
+          .select("id, name, channel")
+          .eq("user_id", req.user!.id)
+          .order("created_at", { ascending: false }),
+        db
+          .from("wireline_fleet_tasks")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", req.user!.id)
+          .eq("status", "pending"),
+        db
+          .from("wireline_email_threads")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", req.user!.id)
+          .eq("status", "open"),
+        db
+          .from("wireline_call_logs")
+          .select("*", { count: "exact" })
+          .eq("user_id", req.user!.id)
+          .gte("lead_score", 75)
+          .order("created_at", { ascending: false })
+          .limit(5),
+        db
+          .from("wireline_email_threads")
+          .select("*", { count: "exact" })
+          .eq("user_id", req.user!.id)
+          .gte("lead_score", 75)
+          .order("created_at", { ascending: false })
+          .limit(5),
       ]);
 
       const totalAppointments = apptRes.count || 0;
+      const scheduledAppointments = scheduledApptRes.count || 0;
       const totalLeads = leadsRes.count || 0;
       const logs = logsRes.data || [];
+      const agents = agentsRes.data || [];
 
       const totalMinutes = Math.ceil(
         logs.reduce((acc, log) => acc + (log.duration_seconds || 0), 0) / 60
@@ -61,22 +110,22 @@ router.get(
       const inboundCount = logs.filter((l) => l.direction === "inbound").length;
       const outboundCount = logs.filter((l) => l.direction === "outbound").length;
       const conversionRate =
-        logs.length > 0 ? ((totalAppointments / logs.length) * 100).toFixed(1) : 0;
-
-      const { data: hotCalls } = await db
-        .from("wireline_call_logs")
-        .select("*")
-        .eq("user_id", req.user!.id)
-        .gte("lead_score", 75)
-        .order("created_at", { ascending: false })
-        .limit(5);
-      const { data: hotEmails } = await db
-        .from("wireline_email_threads")
-        .select("*")
-        .eq("user_id", req.user!.id)
-        .gte("lead_score", 75)
-        .order("created_at", { ascending: false })
-        .limit(5);
+        (logsRes.count || 0) > 0 ? ((totalAppointments / (logsRes.count || 0)) * 100).toFixed(1) : "0.0";
+      const hotCalls = hotCallsRes.data || [];
+      const hotEmails = hotEmailsRes.data || [];
+      const hotLeadCount = (hotCallsRes.count || 0) + (hotEmailsRes.count || 0);
+      const pendingTasks = pendingTasksRes.count || 0;
+      const openEmailThreads = openEmailThreadsRes.count || 0;
+      const voiceAgents = agents.filter(
+        (agent) => agent.channel === "voice" || agent.channel === "omnichannel"
+      ).length;
+      const emailAgents = agents.filter(
+        (agent) => agent.channel === "email" || agent.channel === "omnichannel"
+      ).length;
+      const signalsLast24h = logs.filter((log) => {
+        const createdAt = new Date(log.created_at).getTime();
+        return Number.isFinite(createdAt) && Date.now() - createdAt <= 24 * 60 * 60 * 1000;
+      }).length;
 
       const hotLeads = [
         ...(hotCalls || []).map((c) => ({
@@ -101,10 +150,25 @@ router.get(
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
         .slice(0, 5);
 
+      const briefing = buildDashboardBriefing({
+        totalCalls: logsRes.count || 0,
+        totalAppointments,
+        hotLeadCount,
+        pendingTasks,
+        openEmailThreads,
+        activeAgents: agents.length,
+        voiceAgents,
+        emailAgents,
+        signalsLast24h,
+        inboundCount,
+        outboundCount,
+      });
+
       res.json({
         totalAppointments,
+        scheduledAppointments,
         totalLeads,
-        totalCalls: logs.length,
+        totalCalls: logsRes.count || 0,
         totalMinutes,
         totalCost: totalCost.toFixed(2),
         inboundCount,
@@ -112,6 +176,15 @@ router.get(
         conversionRate,
         recentLogs: logs.slice(0, 100),
         hotLeads,
+        hotLeadCount,
+        activeAgents: agents.length,
+        voiceAgents,
+        emailAgents,
+        pendingTasks,
+        openEmailThreads,
+        signalsLast24h,
+        agents,
+        briefing,
       });
     } catch (e) {
       logger.error({ err: e }, "Dashboard error");
