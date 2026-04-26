@@ -67,7 +67,7 @@ export function buildDashboardBriefing(input: DashboardBriefingInput): Dashboard
     status = "action-needed";
     headline = "Deploy your first fleet node";
     summary = "The command center is online, but no agents are currently available to absorb work.";
-  } else if (score >= 78 && input.pendingTasks <= 2) {
+  } else if (score >= 76 && input.pendingTasks <= 2) {
     status = "locked-in";
     headline = "Fleet momentum is compounding";
     summary =

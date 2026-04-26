@@ -25,21 +25,21 @@ describe("buildDashboardBriefing", () => {
 
   it("rewards balanced, healthy throughput", () => {
     const briefing = buildDashboardBriefing({
-      totalCalls: 30,
-      totalAppointments: 10,
-      hotLeadCount: 5,
-      pendingTasks: 1,
+      totalCalls: 48,
+      totalAppointments: 18,
+      hotLeadCount: 8,
+      pendingTasks: 0,
       openEmailThreads: 2,
-      activeAgents: 5,
+      activeAgents: 6,
       voiceAgents: 3,
-      emailAgents: 2,
-      signalsLast24h: 12,
-      inboundCount: 16,
-      outboundCount: 10,
+      emailAgents: 3,
+      signalsLast24h: 20,
+      inboundCount: 24,
+      outboundCount: 16,
     });
 
     expect(briefing.status).toBe("locked-in");
-    expect(briefing.score).toBeGreaterThanOrEqual(78);
+    expect(briefing.score).toBeGreaterThanOrEqual(76);
     expect(briefing.actions.every((action) => action.tone !== "critical")).toBe(true);
   });
 
