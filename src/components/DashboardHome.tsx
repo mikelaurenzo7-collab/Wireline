@@ -85,13 +85,10 @@ export default function DashboardHome() {
             if (voiceAgent) targetAgentId = voiceAgent.id;
          }
 
-         const data = await apiClient.post<undefined, { assistant?: unknown }>(
-           `/api/vapi-webhook?agentId=${targetAgentId}`,
-           {
-             headers: { "Content-Type": "application/json" },
-             body: { message: { type: "assistant-request" } } as never,
-           }
-         );
+         const data = await apiClient.post(`/api/vapi-webhook?agentId=${targetAgentId}`, {
+           headers: { "Content-Type": "application/json" },
+           body: { message: { type: "assistant-request" } },
+         }) as { assistant?: unknown };
          if (data.assistant) {
            await vapi.start(data.assistant);
          } else {
@@ -108,7 +105,7 @@ export default function DashboardHome() {
   const chartData = [
     { name: "Inbound", count: stats?.inboundCount || 0 },
     { name: "Outbound", count: stats?.outboundCount || 0 },
-    { name: "Hot Leads", count: stats?.hotLeadCount || 0 },
+    { name: "High Intent", count: stats?.hotLeadCount || 0 },
   ];
 
   const recentLogs = stats?.recentLogs || [];

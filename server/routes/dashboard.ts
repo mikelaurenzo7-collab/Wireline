@@ -100,6 +100,7 @@ router.get(
       const totalAppointments = apptRes.count || 0;
       const scheduledAppointments = scheduledApptRes.count || 0;
       const totalLeads = leadsRes.count || 0;
+      const totalCallsCount = logsRes.count || 0;
       const logs = logsRes.data || [];
       const agents = agentsRes.data || [];
 
@@ -110,7 +111,7 @@ router.get(
       const inboundCount = logs.filter((l) => l.direction === "inbound").length;
       const outboundCount = logs.filter((l) => l.direction === "outbound").length;
       const conversionRate =
-        (logsRes.count || 0) > 0 ? ((totalAppointments / (logsRes.count || 0)) * 100).toFixed(1) : "0.0";
+        totalCallsCount > 0 ? ((totalAppointments / totalCallsCount) * 100).toFixed(1) : "0.0";
       const hotCalls = hotCallsRes.data || [];
       const hotEmails = hotEmailsRes.data || [];
       const hotLeadCount = (hotCallsRes.count || 0) + (hotEmailsRes.count || 0);
@@ -151,7 +152,7 @@ router.get(
         .slice(0, 5);
 
       const briefing = buildDashboardBriefing({
-        totalCalls: logsRes.count || 0,
+        totalCalls: totalCallsCount,
         totalAppointments,
         hotLeadCount,
         pendingTasks,
@@ -168,7 +169,7 @@ router.get(
         totalAppointments,
         scheduledAppointments,
         totalLeads,
-        totalCalls: logsRes.count || 0,
+        totalCalls: totalCallsCount,
         totalMinutes,
         totalCost: totalCost.toFixed(2),
         inboundCount,
