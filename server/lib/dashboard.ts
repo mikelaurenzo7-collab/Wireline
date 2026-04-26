@@ -4,6 +4,8 @@ const pluralize = (count: number, singular: string, plural = `${singular}s`) =>
   `${count} ${count === 1 ? singular : plural}`;
 
 const safeRatio = (value: number, total: number) => (total > 0 ? value / total : 0);
+const MIN_CALLS_FOR_CONVERSION_ANALYSIS = 10;
+const LOW_CONVERSION_THRESHOLD = 0.15;
 
 export interface DashboardAgentLike {
   channel?: string | null;
@@ -251,7 +253,10 @@ export function buildFounderPlaybook(input: DashboardBriefingInput): DashboardPl
     });
   }
 
-  if (input.totalCalls >= 10 && conversionRate < 0.15) {
+  if (
+    input.totalCalls >= MIN_CALLS_FOR_CONVERSION_ANALYSIS &&
+    conversionRate < LOW_CONVERSION_THRESHOLD
+  ) {
     playbook.push({
       priority: "optimize",
       title: "Sharpen the conversion script",

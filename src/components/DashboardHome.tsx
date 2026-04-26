@@ -109,7 +109,7 @@ export default function DashboardHome() {
   const chartData = [
     { name: "Inbound", count: stats?.inboundCount || 0 },
     { name: "Outbound", count: stats?.outboundCount || 0 },
-    { name: "High Intent", count: stats?.hotLeadCount || 0 },
+    { name: "Hot Leads", count: stats?.hotLeadCount || 0 },
   ];
   const operatorLanes = [
     {
