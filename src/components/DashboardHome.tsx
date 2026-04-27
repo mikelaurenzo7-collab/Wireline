@@ -14,6 +14,9 @@ import {
   Mail,
   ChevronRight,
   Bot,
+  AlertTriangle,
+  CheckCircle2,
+  ClipboardList,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useState, useEffect } from "react";
@@ -28,6 +31,23 @@ import { LoadingSpinner } from "./LoadingSpinner";
 import { BrutalButton, BrutalCard } from "./ui";
 
 const vapi = new Vapi(import.meta.env.VITE_VAPI_PUBLIC_KEY || "");
+
+type RecommendedAction = {
+  id: string;
+  label: string;
+  detail: string;
+  href: string;
+  priority: "critical" | "high" | "medium";
+};
+
+type NextAppointment = {
+  id: string;
+  customer_name?: string;
+  service_type?: string;
+  date?: string;
+  time?: string;
+  status?: string;
+};
 
 export default function DashboardHome() {
   const [isConnecting, setIsConnecting] = useState(false);
@@ -170,6 +190,158 @@ export default function DashboardHome() {
           }}
           className="space-y-8 md:space-y-14"
         >
+          <motion.section
+            variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}
+            className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-10"
+          >
+            <BrutalCard
+              flush
+              surface="ink"
+              className="xl:col-span-2 overflow-hidden shadow-[10px_10px_0px_0px_#FACC15]"
+            >
+              <div className="p-6 md:p-8 border-b-4 border-brand flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <ClipboardList className="w-4 h-4 text-brand" />
+                    <span className="text-[9px] font-black text-brand uppercase tracking-[0.3em] italic">
+                      Mission Control Briefing
+                    </span>
+                  </div>
+                  <h2 className="text-2xl md:text-4xl font-black uppercase font-display italic leading-none">
+                    Next Best Actions
+                  </h2>
+                </div>
+                <div className="brutal-border border-brand bg-white text-ink px-5 py-4 shadow-none">
+                  <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                    Fleet Health
+                  </p>
+                  <div className="text-4xl font-black font-display italic leading-none">
+                    {stats?.fleetHealth || 0}
+                    <span className="text-xs text-slate-400 font-sans not-italic ml-1">/100</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 divide-y-2 md:divide-y-0 md:divide-x-2 divide-white/10">
+                <div className="p-6 md:p-8 space-y-4">
+                  {(stats?.recommendedActions || []).length > 0 ? (
+                    stats.recommendedActions.map((action: RecommendedAction) => (
+                      <Link
+                        key={action.id}
+                        to={action.href}
+                        className="block bg-white/5 border-2 border-white/10 p-4 hover:bg-brand hover:text-ink hover:border-brand transition-colors group"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <div className="flex items-center gap-2 mb-2">
+                              <AlertTriangle
+                                className={cn(
+                                  "w-4 h-4",
+                                  action.priority === "critical"
+                                    ? "text-rose-400 group-hover:text-ink"
+                                    : "text-brand group-hover:text-ink"
+                                )}
+                              />
+                              <p className="text-[10px] font-black uppercase tracking-widest">
+                                {action.label}
+                              </p>
+                            </div>
+                            <p className="text-[9px] font-bold uppercase tracking-widest leading-relaxed text-white/50 group-hover:text-ink/60">
+                              {action.detail}
+                            </p>
+                          </div>
+                          <ChevronRight className="w-5 h-5 shrink-0 group-hover:translate-x-1 transition-transform" />
+                        </div>
+                      </Link>
+                    ))
+                  ) : (
+                    <div className="h-full min-h-[220px] flex flex-col items-center justify-center text-center border-2 border-white/10 bg-white/5 p-8">
+                      <CheckCircle2 className="w-12 h-12 text-brand mb-4" />
+                      <p className="text-xs font-black uppercase tracking-[0.3em] italic">
+                        No urgent actions
+                      </p>
+                      <p className="text-[9px] font-bold uppercase tracking-widest text-white/40 mt-3 leading-loose">
+                        Your active queue is clear and the fleet is ready for new traffic.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-6 md:p-8">
+                  <h3 className="text-[10px] font-black text-brand uppercase tracking-[0.3em] mb-5 italic">
+                    Near-Term Commitments
+                  </h3>
+                  <div className="space-y-3">
+                    {(stats?.nextAppointments || []).length > 0 ? (
+                      stats.nextAppointments.map((appointment: NextAppointment) => (
+                        <Link
+                          key={appointment.id}
+                          to="/appointments"
+                          className="block bg-zinc-950 border-2 border-white/10 p-4 hover:border-brand transition-colors"
+                        >
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="min-w-0">
+                              <p className="font-black text-white uppercase font-display italic truncate">
+                                {appointment.customer_name || "Unknown Contact"}
+                              </p>
+                              <p className="text-[9px] font-bold uppercase tracking-widest text-white/40 mt-1 truncate">
+                                {appointment.service_type || "Service"} • {appointment.status || "Scheduled"}
+                              </p>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className="text-[10px] font-black text-brand uppercase">{appointment.date}</p>
+                              <p className="text-[9px] font-bold text-white/40 uppercase">{appointment.time}</p>
+                            </div>
+                          </div>
+                        </Link>
+                      ))
+                    ) : (
+                      <Link
+                        to="/appointments"
+                        className="min-h-[220px] flex flex-col items-center justify-center text-center border-2 border-white/10 bg-white/5 p-8 hover:border-brand transition-colors"
+                      >
+                        <CheckCircle2 className="w-12 h-12 text-brand mb-4" />
+                        <p className="text-xs font-black uppercase tracking-[0.3em] italic">
+                          No commitments scheduled
+                        </p>
+                        <p className="text-[9px] font-bold uppercase tracking-widest text-white/40 mt-3 leading-loose">
+                          Confirmed appointments will appear here for rapid dispatch review.
+                        </p>
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </BrutalCard>
+
+            <BrutalCard flush className="overflow-hidden">
+              <div className="p-5 border-b-4 border-ink bg-brand">
+                <h3 className="text-base font-black text-ink uppercase font-display italic leading-none">
+                  Live Workload
+                </h3>
+              </div>
+              <div className="divide-y-2 divide-ink">
+                {[
+                  ["Pending handoffs", stats?.pendingTasks || 0, "/"],
+                  ["Queued outreach", stats?.queuedLeads || 0, "/outbound"],
+                  ["Open inbox threads", stats?.openThreads || 0, "/inbox"],
+                  ["7-day signals", stats?.recentSevenDaySignals || 0, "/logs"],
+                ].map(([label, value, href]) => (
+                  <Link
+                    key={label}
+                    to={href as string}
+                    className="p-5 flex items-center justify-between hover:bg-slate-50 transition-colors"
+                  >
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                      {label}
+                    </span>
+                    <span className="text-3xl font-black font-display italic text-ink">{value}</span>
+                  </Link>
+                ))}
+              </div>
+            </BrutalCard>
+          </motion.section>
+
           {/* Analytics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             <motion.div variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}>
@@ -203,7 +375,7 @@ export default function DashboardHome() {
                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest group-hover:text-white/40">Active Nodes</p>
                   <Bot className="w-4 h-4 text-ink group-hover:text-brand" />
                 </div>
-                <h3 className="text-3xl md:text-5xl font-black text-ink group-hover:text-white font-display leading-none italic">{stats?.totalLeads || 0}</h3>
+                <h3 className="text-3xl md:text-5xl font-black text-ink group-hover:text-white font-display leading-none italic">{stats?.activeAgents || 0}</h3>
                 <p className="text-[8px] font-bold text-slate-500 mt-3 group-hover:text-white/40 uppercase tracking-[0.2em]">Operational Fleet</p>
               </BrutalCard>
             </motion.div>
