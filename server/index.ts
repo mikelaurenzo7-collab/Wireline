@@ -75,7 +75,9 @@ export function createApp() {
     ],
     workerSrc: ["'self'", "blob:"],
     mediaSrc: ["'self'", "blob:", "https:"],
-    upgradeInsecureRequests: [],
+    // Only force HTTPS upgrades in production; in dev the server speaks
+    // plain HTTP on localhost and this directive would break HMR.
+    ...(isProductionEnv() ? { upgradeInsecureRequests: [] } : {}),
   };
 
   app.use(
