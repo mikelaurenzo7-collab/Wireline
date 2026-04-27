@@ -11,6 +11,7 @@ import { AppError, asyncHandler } from "../lib/errors";
 import { getGeminiClient } from "../lib/gemini";
 import { getGoogleOAuthClient, google } from "../lib/google";
 import { logger } from "../lib/logger";
+import { RATE_LIMITS, rateLimit } from "../lib/rateLimit";
 import { db } from "../lib/supabase";
 import { isValidEmailAddress, sanitizeLikeInput } from "../lib/validation";
 import { env } from "../lib/env";
@@ -19,6 +20,7 @@ const router = Router();
 
 router.post(
   "/api/vapi-webhook",
+  rateLimit(RATE_LIMITS.webhook),
   asyncHandler(async (req: Request, res: Response) => {
     const authenticatedUser = await getAuthenticatedUser(req);
     if (!authenticatedUser && !hasValidWebhookSecret(req)) {

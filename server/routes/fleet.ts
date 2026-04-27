@@ -1,4 +1,5 @@
 import { Router, type Response } from "express";
+import { z } from "zod";
 
 import { authenticateUser, type AuthenticatedRequest } from "../lib/auth";
 import { asyncHandler } from "../lib/errors";
@@ -6,6 +7,12 @@ import { db } from "../lib/supabase";
 import { fleetTaskSchema, validate } from "../lib/validation";
 
 const router = Router();
+
+const updateFleetTaskSchema = z
+  .object({
+    status: z.string().trim().min(1).max(60),
+  })
+  .strict();
 
 router.get(
   "/api/fleet/tasks",
@@ -54,6 +61,7 @@ router.post(
 router.patch(
   "/api/fleet/tasks/:id",
   authenticateUser,
+  validate(updateFleetTaskSchema),
   asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { status } = req.body;

@@ -4,12 +4,14 @@ import { authenticateUser, type AuthenticatedRequest } from "../lib/auth";
 import { AppError, asyncHandler } from "../lib/errors";
 import { getGeminiClient } from "../lib/gemini";
 import { logger } from "../lib/logger";
+import { RATE_LIMITS, rateLimit } from "../lib/rateLimit";
 import { db } from "../lib/supabase";
 
 const router = Router();
 
 router.post(
   "/api/train",
+  rateLimit(RATE_LIMITS.ai),
   authenticateUser,
   asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { userMessage, agentId = "default-agent" } = req.body;

@@ -11,6 +11,8 @@ export const logger = pino({
       "req.headers.authorization",
       "req.headers.cookie",
       "req.headers['x-vapi-secret']",
+      "req.headers['x-vapi-signature']",
+      "req.headers['x-vapi-timestamp']",
       "*.access_token",
       "*.refresh_token",
       "*.vapi_private_key",

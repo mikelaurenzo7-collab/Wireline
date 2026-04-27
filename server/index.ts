@@ -5,13 +5,18 @@
  * under different transports if we ever decouple `/api` from the SPA host.
  */
 import path from "node:path";
+
+import compression from "compression";
+import cors from "cors";
 import express, {
   type NextFunction,
   type Request,
   type Response,
 } from "express";
+import helmet from "helmet";
 import { createServer as createViteServer } from "vite";
 
+import { buildCorsOptions } from "./lib/cors";
 import { env, isProductionEnv } from "./lib/env";
 import { errorHandler } from "./lib/errors";
 import { isGeminiConfigured } from "./lib/gemini";
@@ -36,18 +41,82 @@ export function createApp() {
   // correctly resolved when running behind Render/Fly/Cloudflare.
   app.set("trust proxy", 1);
 
-  // Security headers. Phase 1 will replace these with `helmet` + a strict
-  // CSP, but keeping the manual headers here preserves existing behavior
-  // exactly while we land the modularization PR.
+  // Hardened security headers. The CSP is tuned for the Wireline SPA:
+  //  - `script-src 'self'` keeps inline JS off and blocks injected scripts.
+  //    The Vite dev server ships its HMR client from the same origin so no
+  //    extra allowlist entry is required.
+  //  - `connect-src` allows API calls to Supabase, Google APIs, and Vapi
+  //    (which the client invokes directly via `@vapi-ai/web`).
+  //  - `img-src` permits data: for inline avatars/icons and https: for
+  //    user-supplied logos.
+  //  - `frame-ancestors 'none'` mirrors the previous X-Frame-Options: DENY.
+  //  - In development we relax `script-src` to allow Vite's dev-time eval'd
+  //    HMR runtime; production stays strict.
+  const cspDirectives: Record<string, string[]> = {
+    defaultSrc: ["'self'"],
+    baseUri: ["'self'"],
+    formAction: ["'self'"],
+    frameAncestors: ["'none'"],
+    objectSrc: ["'none'"],
+    imgSrc: ["'self'", "data:", "https:"],
+    fontSrc: ["'self'", "data:", "https:"],
+    styleSrc: ["'self'", "'unsafe-inline'", "https:"],
+    scriptSrc: isProductionEnv()
+      ? ["'self'"]
+      : ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+    connectSrc: [
+      "'self'",
+      "https://*.supabase.co",
+      "wss://*.supabase.co",
+      "https://*.googleapis.com",
+      "https://*.vapi.ai",
+      "wss://*.vapi.ai",
+      ...(isProductionEnv() ? [] : ["ws://localhost:*", "http://localhost:*"]),
+    ],
+    workerSrc: ["'self'", "blob:"],
+    mediaSrc: ["'self'", "blob:", "https:"],
+    // Only force HTTPS upgrades in production; in dev the server speaks
+    // plain HTTP on localhost and this directive would break HMR.
+    ...(isProductionEnv() ? { upgradeInsecureRequests: [] } : {}),
+  };
+
+  app.use(
+    helmet({
+      contentSecurityPolicy: { directives: cspDirectives, useDefaults: true },
+      crossOriginEmbedderPolicy: false,
+      crossOriginResourcePolicy: { policy: "same-site" },
+      referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+      // Permissions-Policy is not exposed by helmet directly; set it manually
+      // to preserve the previous restriction.
+    })
+  );
   app.use((_req, res, next) => {
-    res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("X-Frame-Options", "DENY");
-    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
     next();
   });
 
-  app.use(express.json({ limit: "1mb" }));
+  // CORS allowlist. Disabled when ALLOWED_ORIGINS is empty (same-origin only).
+  const corsOptions = buildCorsOptions(env.ALLOWED_ORIGINS);
+  if (corsOptions) {
+    app.use(cors(corsOptions));
+    app.options("*", cors(corsOptions));
+  }
+
+  // Compression for JSON + static SPA assets. `filter` defers to the default
+  // (`compression.filter`) which already skips already-compressed responses.
+  app.use(compression());
+
+  // JSON body parsing. The `verify` callback captures the raw bytes so the
+  // Vapi webhook can perform HMAC verification against the exact payload the
+  // sender signed (post-parse re-serialization is not byte-stable).
+  app.use(
+    express.json({
+      limit: "1mb",
+      verify: (req: Request & { rawBody?: Buffer }, _res, buf) => {
+        if (buf?.length) req.rawBody = Buffer.from(buf);
+      },
+    })
+  );
 
   // Routers — order doesn't matter for these since paths are unique.
   app.use(webhooksRouter);
