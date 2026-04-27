@@ -7,6 +7,15 @@ import { db } from "../lib/supabase";
 
 const router = Router();
 
+// 72 keeps a newly configured fleet in "watchful but usable" territory before traffic data arrives.
+const BASELINE_FLEET_HEALTH = 72;
+const MAX_AGENT_HEALTH_BONUS = 12;
+const AGENT_HEALTH_WEIGHT = 3;
+const MAX_TRAFFIC_HEALTH_BONUS = 8;
+const MAX_TASK_BACKLOG_PENALTY = 18;
+const TASK_BACKLOG_WEIGHT = 3;
+const MAX_QUEUE_BACKLOG_PENALTY = 10;
+
 type RecommendedAction = {
   id: string;
   label: string;
@@ -137,11 +146,11 @@ router.get(
         0,
         Math.min(
           100,
-          72 +
-            Math.min(12, agents.length * 3) +
-            Math.min(8, recentSevenDayLogs.length) -
-            Math.min(18, pendingTasks * 3) -
-            Math.min(10, queuedLeads)
+          BASELINE_FLEET_HEALTH +
+            Math.min(MAX_AGENT_HEALTH_BONUS, agents.length * AGENT_HEALTH_WEIGHT) +
+            Math.min(MAX_TRAFFIC_HEALTH_BONUS, recentSevenDayLogs.length) -
+            Math.min(MAX_TASK_BACKLOG_PENALTY, pendingTasks * TASK_BACKLOG_WEIGHT) -
+            Math.min(MAX_QUEUE_BACKLOG_PENALTY, queuedLeads)
         )
       );
 
