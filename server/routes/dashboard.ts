@@ -33,7 +33,16 @@ router.get(
   authenticateUser,
   asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const [apptRes, leadsRes, logsRes] = await Promise.all([
+      const [
+        apptRes,
+        leadsRes,
+        logsRes,
+        agentsRes,
+        pendingTasksRes,
+        openThreadsRes,
+        queuedLeadsRes,
+        nextAppointmentsRes,
+      ] = await Promise.all([
         db
           .from("wireline_appointments")
           .select("id", { count: "exact" })
@@ -44,15 +53,42 @@ router.get(
           .eq("user_id", req.user!.id),
         db
           .from("wireline_call_logs")
-          .select("cost, duration_seconds, direction, created_at")
+          .select("cost, duration_seconds, direction, created_at, lead_score")
           .eq("user_id", req.user!.id)
           .order("created_at", { ascending: false })
           .limit(200),
+        db
+          .from("wireline_agents")
+          .select("id, name, channel, created_at")
+          .eq("user_id", req.user!.id)
+          .order("created_at", { ascending: false }),
+        db
+          .from("wireline_fleet_tasks")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", req.user!.id)
+          .eq("status", "pending"),
+        db
+          .from("wireline_email_threads")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", req.user!.id)
+          .in("status", ["open", "pending_ai"]),
+        db
+          .from("wireline_outbound_leads")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", req.user!.id)
+          .in("status", ["Queued", "Pending"]),
+        db
+          .from("wireline_appointments")
+          .select("id, customer_name, service_type, date, time, status, created_at")
+          .eq("user_id", req.user!.id)
+          .order("created_at", { ascending: false })
+          .limit(3),
       ]);
 
       const totalAppointments = apptRes.count || 0;
       const totalLeads = leadsRes.count || 0;
       const logs = logsRes.data || [];
+      const agents = agentsRes.data || [];
 
       const totalMinutes = Math.ceil(
         logs.reduce((acc, log) => acc + (log.duration_seconds || 0), 0) / 60
@@ -62,6 +98,107 @@ router.get(
       const outboundCount = logs.filter((l) => l.direction === "outbound").length;
       const conversionRate =
         logs.length > 0 ? ((totalAppointments / logs.length) * 100).toFixed(1) : 0;
+      const voiceAgents = agents.filter(
+        (agent) => agent.channel === "voice" || agent.channel === "omnichannel"
+      ).length;
+      const emailAgents = agents.filter(
+        (agent) => agent.channel === "email" || agent.channel === "omnichannel"
+      ).length;
+      const pendingTasks = pendingTasksRes.count || 0;
+      const openThreads = openThreadsRes.count || 0;
+      const queuedLeads = queuedLeadsRes.count || 0;
+
+      const now = Date.now();
+      const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+      const recentSevenDayLogs = logs.filter(
+        (log) => log.created_at && new Date(log.created_at).getTime() >= sevenDaysAgo
+      );
+      const avgLeadScore =
+        logs.length > 0
+          ? Math.round(
+              logs.reduce((acc, log) => acc + (Number(log.lead_score) || 0), 0) / logs.length
+            )
+          : 0;
+      const fleetHealth = Math.max(
+        0,
+        Math.min(
+          100,
+          72 +
+            Math.min(12, agents.length * 3) +
+            Math.min(8, recentSevenDayLogs.length) -
+            Math.min(18, pendingTasks * 3) -
+            Math.min(10, queuedLeads)
+        )
+      );
+
+      const recommendedActions = [
+        ...(agents.length === 0
+          ? [
+              {
+                id: "create-agent",
+                label: "Deploy your first agent",
+                detail: "Create a voice, email, or omnichannel agent before running live traffic.",
+                href: "/agents",
+                priority: "critical",
+              },
+            ]
+          : []),
+        ...(voiceAgents === 0
+          ? [
+              {
+                id: "voice-agent",
+                label: "Add voice coverage",
+                detail: "A voice-capable agent unlocks inbound testing and outbound dispatch.",
+                href: "/agents",
+                priority: "high",
+              },
+            ]
+          : []),
+        ...(emailAgents === 0
+          ? [
+              {
+                id: "email-agent",
+                label: "Add email coverage",
+                detail: "An email-capable agent can draft replies and triage inbox demand.",
+                href: "/agents",
+                priority: "medium",
+              },
+            ]
+          : []),
+        ...(pendingTasks > 0
+          ? [
+              {
+                id: "process-handoffs",
+                label: "Process pending handoffs",
+                detail: `${pendingTasks} cross-channel ${pendingTasks === 1 ? "task needs" : "tasks need"} review.`,
+                href: "/",
+                priority: "high",
+              },
+            ]
+          : []),
+        ...(queuedLeads > 0
+          ? [
+              {
+                id: "launch-queue",
+                label: "Launch queued outreach",
+                detail: `${queuedLeads} outbound ${queuedLeads === 1 ? "lead is" : "leads are"} ready for dispatch.`,
+                href: "/outbound",
+                priority: "medium",
+              },
+            ]
+          : []),
+        ...(openThreads > 0
+          ? [
+              {
+                id: "review-inbox",
+                label: "Review active inbox threads",
+                detail: `${openThreads} email ${openThreads === 1 ? "thread is" : "threads are"} awaiting attention.`,
+                href: "/inbox",
+                priority: "medium",
+              },
+            ]
+          : []),
+      ].slice(0, 4);
 
       const { data: hotCalls } = await db
         .from("wireline_call_logs")
@@ -110,6 +247,18 @@ router.get(
         inboundCount,
         outboundCount,
         conversionRate,
+        avgLeadScore,
+        activeAgents: agents.length,
+        voiceAgents,
+        emailAgents,
+        agents,
+        pendingTasks,
+        openThreads,
+        queuedLeads,
+        fleetHealth,
+        recommendedActions,
+        nextAppointments: nextAppointmentsRes.data || [],
+        recentSevenDaySignals: recentSevenDayLogs.length,
         recentLogs: logs.slice(0, 100),
         hotLeads,
       });
