@@ -7,6 +7,18 @@ import { db } from "../lib/supabase";
 
 const router = Router();
 
+type RecommendedAction = {
+  id: string;
+  label: string;
+  detail: string;
+  href: string;
+  priority: "critical" | "high" | "medium";
+};
+
+function actionIf(condition: boolean, action: RecommendedAction) {
+  return condition ? [action] : [];
+}
+
 router.get(
   "/api/calls",
   authenticateUser,
@@ -119,6 +131,8 @@ router.get(
               logs.reduce((acc, log) => acc + (Number(log.lead_score) || 0), 0) / logs.length
             )
           : 0;
+      // Lightweight readiness score: start from a healthy baseline, reward active coverage and
+      // recent traffic, then subtract operational backlog so the dashboard can flag drift quickly.
       const fleetHealth = Math.max(
         0,
         Math.min(
@@ -132,72 +146,48 @@ router.get(
       );
 
       const recommendedActions = [
-        ...(agents.length === 0
-          ? [
-              {
-                id: "create-agent",
-                label: "Deploy your first agent",
-                detail: "Create a voice, email, or omnichannel agent before running live traffic.",
-                href: "/agents",
-                priority: "critical",
-              },
-            ]
-          : []),
-        ...(voiceAgents === 0
-          ? [
-              {
-                id: "voice-agent",
-                label: "Add voice coverage",
-                detail: "A voice-capable agent unlocks inbound testing and outbound dispatch.",
-                href: "/agents",
-                priority: "high",
-              },
-            ]
-          : []),
-        ...(emailAgents === 0
-          ? [
-              {
-                id: "email-agent",
-                label: "Add email coverage",
-                detail: "An email-capable agent can draft replies and triage inbox demand.",
-                href: "/agents",
-                priority: "medium",
-              },
-            ]
-          : []),
-        ...(pendingTasks > 0
-          ? [
-              {
-                id: "process-handoffs",
-                label: "Process pending handoffs",
-                detail: `${pendingTasks} cross-channel ${pendingTasks === 1 ? "task needs" : "tasks need"} review.`,
-                href: "/",
-                priority: "high",
-              },
-            ]
-          : []),
-        ...(queuedLeads > 0
-          ? [
-              {
-                id: "launch-queue",
-                label: "Launch queued outreach",
-                detail: `${queuedLeads} outbound ${queuedLeads === 1 ? "lead is" : "leads are"} ready for dispatch.`,
-                href: "/outbound",
-                priority: "medium",
-              },
-            ]
-          : []),
-        ...(openThreads > 0
-          ? [
-              {
-                id: "review-inbox",
-                label: "Review active inbox threads",
-                detail: `${openThreads} email ${openThreads === 1 ? "thread is" : "threads are"} awaiting attention.`,
-                href: "/inbox",
-                priority: "medium",
-              },
-            ]
-          : []),
+        ...actionIf(agents.length === 0, {
+          id: "create-agent",
+          label: "Deploy your first agent",
+          detail: "Create a voice, email, or omnichannel agent before running live traffic.",
+          href: "/agents",
+          priority: "critical",
+        }),
+        ...actionIf(voiceAgents === 0, {
+          id: "voice-agent",
+          label: "Add voice coverage",
+          detail: "A voice-capable agent unlocks inbound testing and outbound dispatch.",
+          href: "/agents",
+          priority: "high",
+        }),
+        ...actionIf(emailAgents === 0, {
+          id: "email-agent",
+          label: "Add email coverage",
+          detail: "An email-capable agent can draft replies and triage inbox demand.",
+          href: "/agents",
+          priority: "medium",
+        }),
+        ...actionIf(pendingTasks > 0, {
+          id: "process-handoffs",
+          label: "Process pending handoffs",
+          detail: `${pendingTasks} cross-channel ${pendingTasks === 1 ? "task needs" : "tasks need"} review.`,
+          href: "/",
+          priority: "high",
+        }),
+        ...actionIf(queuedLeads > 0, {
+          id: "launch-queue",
+          label: "Launch queued outreach",
+          detail: `${queuedLeads} outbound ${queuedLeads === 1 ? "lead is" : "leads are"} ready for dispatch.`,
+          href: "/outbound",
+          priority: "medium",
+        }),
+        ...actionIf(openThreads > 0, {
+          id: "review-inbox",
+          label: "Review active inbox threads",
+          detail: `${openThreads} email ${openThreads === 1 ? "thread is" : "threads are"} awaiting attention.`,
+          href: "/inbox",
+          priority: "medium",
+        }),
       ].slice(0, 4);
 
       const { data: hotCalls } = await db
