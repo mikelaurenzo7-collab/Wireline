@@ -40,6 +40,15 @@ type RecommendedAction = {
   priority: "critical" | "high" | "medium";
 };
 
+type NextAppointment = {
+  id: string;
+  customer_name?: string;
+  service_type?: string;
+  date?: string;
+  time?: string;
+  status?: string;
+};
+
 export default function DashboardHome() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
@@ -264,7 +273,7 @@ export default function DashboardHome() {
                   </h3>
                   <div className="space-y-3">
                     {(stats?.nextAppointments || []).length > 0 ? (
-                      stats.nextAppointments.map((appointment: any) => (
+                      stats.nextAppointments.map((appointment: NextAppointment) => (
                         <Link
                           key={appointment.id}
                           to="/appointments"

@@ -7,7 +7,8 @@ import { db } from "../lib/supabase";
 
 const router = Router();
 
-// 72 keeps a newly configured fleet in "watchful but usable" territory before traffic data arrives.
+// 72 keeps a newly configured fleet in "watchful but usable" territory and leaves
+// a 28-point penalty buffer before it drops below 50% when backlog starts building.
 const BASELINE_FLEET_HEALTH = 72;
 const MAX_AGENT_HEALTH_BONUS = 12;
 const AGENT_HEALTH_WEIGHT = 3;
