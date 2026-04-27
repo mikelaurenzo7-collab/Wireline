@@ -1,13 +1,28 @@
 import { Router, type Response } from "express";
+import { z } from "zod";
 
 import { authenticateUser, type AuthenticatedRequest } from "../lib/auth";
 import { AppError, asyncHandler } from "../lib/errors";
 import { getGeminiClient } from "../lib/gemini";
 import { getGoogleOAuthClient, google } from "../lib/google";
 import { logger } from "../lib/logger";
+import { RATE_LIMITS, rateLimit } from "../lib/rateLimit";
 import { db } from "../lib/supabase";
+import { validate } from "../lib/validation";
 
 const router = Router();
+
+const updateAccountMappingSchema = z
+  .object({
+    agent_id: z.string().trim().min(1).max(200).nullish(),
+  })
+  .strict();
+
+const replySchema = z
+  .object({
+    body: z.string().trim().min(1).max(50_000),
+  })
+  .strict();
 
 router.get(
   "/api/emails/accounts",
@@ -30,6 +45,7 @@ router.get(
 router.patch(
   "/api/emails/accounts/:id",
   authenticateUser,
+  validate(updateAccountMappingSchema),
   asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { agent_id } = req.body;
@@ -101,6 +117,7 @@ router.get(
 
 router.post(
   "/api/emails/sync",
+  rateLimit(RATE_LIMITS.ai),
   authenticateUser,
   asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -341,7 +358,9 @@ router.post(
 
 router.post(
   "/api/emails/threads/:id/reply",
+  rateLimit(RATE_LIMITS.ai),
   authenticateUser,
+  validate(replySchema),
   asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { body } = req.body;

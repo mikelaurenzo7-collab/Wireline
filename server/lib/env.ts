@@ -40,6 +40,33 @@ const baseSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().min(1).optional(),
   GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
   OAUTH_STATE_SECRET: z.string().min(16).optional(),
+
+  // CORS allowlist. Comma-separated origins, e.g.
+  // "https://app.example.com,https://staging.example.com".
+  // Each entry must be a valid http(s) origin (no path) or "*".
+  ALLOWED_ORIGINS: z
+    .string()
+    .optional()
+    .transform((v) => {
+      if (!v) return [] as string[];
+      return v
+        .split(",")
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+    })
+    .pipe(
+      z.array(
+        z
+          .string()
+          .refine(
+            (s) => s === "*" || /^https?:\/\/[^/\s]+$/.test(s),
+            "ALLOWED_ORIGINS entries must be '*' or an http(s) origin without a path"
+          )
+      )
+    ),
+
+  // Webhook replay-protection window. Defaults to 5 minutes.
+  WEBHOOK_TIMESTAMP_TOLERANCE_SEC: z.coerce.number().int().positive().default(300),
 });
 
 const productionSchema = baseSchema.extend({

@@ -4,6 +4,7 @@ import { authenticateUser, type AuthenticatedRequest } from "../lib/auth";
 import { env } from "../lib/env";
 import { AppError, asyncHandler } from "../lib/errors";
 import { logger } from "../lib/logger";
+import { RATE_LIMITS, rateLimit } from "../lib/rateLimit";
 import { db } from "../lib/supabase";
 import { normalizePhoneNumber, outboundDialSchema, validate } from "../lib/validation";
 
@@ -28,6 +29,7 @@ router.get(
 
 router.post(
   "/api/outbound/dial",
+  rateLimit(RATE_LIMITS.ai),
   authenticateUser,
   validate(outboundDialSchema),
   asyncHandler(async (req: AuthenticatedRequest, res: Response) => {

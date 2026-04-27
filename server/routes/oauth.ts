@@ -15,14 +15,14 @@ import {
   google,
 } from "../lib/google";
 import { logger } from "../lib/logger";
-import { rateLimit } from "../lib/rateLimit";
+import { RATE_LIMITS, rateLimit } from "../lib/rateLimit";
 import { db } from "../lib/supabase";
 
 const router = Router();
 
 router.get(
   "/api/oauth/google/url",
-  rateLimit({ max: 10, windowMs: 10 * 60 * 1000 }),
+  rateLimit(RATE_LIMITS.oauthInit),
   authenticateUser,
   asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
@@ -46,7 +46,7 @@ router.get(
 
 router.get(
   ["/api/oauth/google/callback", "/api/oauth/google/callback/"],
-  rateLimit({ max: 20, windowMs: 10 * 60 * 1000 }),
+  rateLimit(RATE_LIMITS.oauthCallback),
   asyncHandler(async (req: Request, res: Response) => {
     const { code, state } = req.query;
 

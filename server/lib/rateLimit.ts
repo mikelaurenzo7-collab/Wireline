@@ -61,3 +61,20 @@ export function rateLimit(opts: RateLimitOptions): RequestHandler {
     }
   };
 }
+
+/**
+ * Shared presets so we don't sprinkle magic numbers across routers. Tune
+ * here and every call site picks up the change.
+ *
+ * - `webhook`: high ceiling because Vapi may burst events for a single call
+ *   (assistant-request → many tool-calls → end-of-call-report). Keyed by IP
+ *   only since the request path is constant.
+ * - `oauth`: low ceiling — initiation/callback abuse is the main risk.
+ * - `ai`: moderate; Gemini quota is the actual cost driver.
+ */
+export const RATE_LIMITS = {
+  webhook: { max: 600, windowMs: 60 * 1000 },
+  oauthInit: { max: 10, windowMs: 10 * 60 * 1000 },
+  oauthCallback: { max: 20, windowMs: 10 * 60 * 1000 },
+  ai: { max: 30, windowMs: 60 * 1000 },
+} as const;
