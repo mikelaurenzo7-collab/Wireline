@@ -1378,6 +1378,182 @@ export async function knowledgeFromDocument(input: KnowledgeFromDocumentInput) {
 }
 
 /* ────────────────────────────────────────────────────────────────────────
+ *  Email auto-responder — replaces the legacy Gemini Pro path in
+ *  /api/emails/sync. Manual tool-use loop so operators can plug in
+ *  calendar/booking tool implementations from the Express handler.
+ * ──────────────────────────────────────────────────────────────────── */
+
+export interface SmartEmailReplyInput {
+  agentName: string;
+  agentTone: string;
+  agentArchetype: string;
+  knowledgeBase: string[];
+  directives: string[];
+  fromEmail: string;
+  subject: string;
+  emailBody: string;
+  /** Resolves to a human-readable string describing what's booked. */
+  onCheckCalendar?: (date: string) => Promise<string>;
+  /** Returns { success, reference_id?, error? }. */
+  onBookAppointment?: (args: {
+    date: string;
+    time: string;
+    customer_name: string;
+    service_type: string;
+  }) => Promise<{ success: boolean; reference_id?: string; error?: string }>;
+}
+
+export async function smartEmailReply(input: SmartEmailReplyInput): Promise<{
+  replyText: string;
+  bookedRef?: string;
+}> {
+  const client = getClient();
+
+  const tools: Anthropic.Tool[] = [];
+  if (input.onCheckCalendar) {
+    tools.push({
+      name: "check_calendar_availability",
+      description: "Check what times are already booked on a specific date.",
+      input_schema: {
+        type: "object",
+        properties: {
+          date: { type: "string", description: "The date to check (e.g., 'October 15')." },
+        },
+        required: ["date"],
+      },
+    });
+  }
+  if (input.onBookAppointment) {
+    tools.push({
+      name: "book_appointment",
+      description:
+        "Book a service appointment. ONLY call this AFTER confirming the time is open via check_calendar_availability.",
+      input_schema: {
+        type: "object",
+        properties: {
+          date: { type: "string" },
+          time: { type: "string" },
+          customer_name: { type: "string" },
+          service_type: { type: "string" },
+        },
+        required: ["date", "time", "customer_name", "service_type"],
+      },
+    });
+  }
+
+  // Stable cache prefix: persona + KB + directives. The volatile email
+  // body lives in the user message, after the cache breakpoint.
+  const system = `## IDENTITY
+You are ${input.agentName}, an autonomous email agent.
+Tone: ${input.agentTone}. Archetype: ${input.agentArchetype}.
+
+## ABSOLUTE RULES
+${input.directives.length ? input.directives.map((d) => `- ${d}`).join("\n") : "(none — exercise good judgment)"}
+
+## KNOWLEDGE BASE
+${input.knowledgeBase.length ? input.knowledgeBase.map((k) => `- ${k}`).join("\n") : "(none — be conservative; never invent prices, dates, or policies)"}
+
+## STYLE GUARDRAILS
+- Plain text only. No markdown.
+- ≤120 words unless the customer's question genuinely demands more.
+- Acknowledge the customer's actual question; don't preamble.
+- Never invent facts that aren't in the knowledge base — say "I'll check with the team" instead.
+- If they want an appointment, use your tools to check availability and book it if confirmed.`;
+
+  const messages: Anthropic.MessageParam[] = [
+    {
+      role: "user",
+      content: `From: ${input.fromEmail}\nSubject: ${input.subject}\n\n${input.emailBody}`,
+    },
+  ];
+
+  let bookedRef: string | undefined;
+  let safety = 8;
+
+  while (safety-- > 0) {
+    const body: Anthropic.MessageCreateParams = {
+      model: "claude-opus-4-7",
+      max_tokens: 4096,
+      system: [
+        { type: "text", text: system, cache_control: { type: "ephemeral" } },
+      ],
+      messages,
+    };
+    if (tools.length) body.tools = tools;
+
+    const response = await client.messages.create(body);
+
+    if (response.stop_reason === "tool_use") {
+      messages.push({ role: "assistant", content: response.content });
+      const results: Anthropic.ToolResultBlockParam[] = [];
+      for (const block of response.content) {
+        if (block.type !== "tool_use") continue;
+        let result = "Tool not implemented.";
+        try {
+          const args = block.input as any;
+          if (block.name === "check_calendar_availability" && input.onCheckCalendar) {
+            result = await input.onCheckCalendar(args.date);
+          } else if (block.name === "book_appointment" && input.onBookAppointment) {
+            const r = await input.onBookAppointment(args);
+            if (r.success) {
+              bookedRef = r.reference_id;
+              result = `Booked. Reference ID: ${r.reference_id ?? "(none)"}.`;
+            } else {
+              result = r.error || "Booking failed.";
+            }
+          }
+        } catch (e: any) {
+          result = `Error: ${e?.message ?? e}`;
+        }
+        results.push({ type: "tool_result", tool_use_id: block.id, content: result });
+      }
+      messages.push({ role: "user", content: results });
+      continue;
+    }
+
+    // end_turn / max_tokens / stop_sequence — extract reply text.
+    let replyText = "";
+    for (const block of response.content) {
+      if (block.type === "text") replyText += block.text;
+    }
+    return { replyText: replyText.trim() || "I'll follow up shortly.", bookedRef };
+  }
+
+  // Tool loop exceeded safety cap — return whatever's accumulated.
+  return { replyText: "I'll follow up shortly.", bookedRef };
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+ *  Email intent scoring — drop-in replacement for the legacy Gemini path.
+ * ──────────────────────────────────────────────────────────────────── */
+
+export const SCORE_INTENT_TOOL: ToolSchema = {
+  name: "score_intent",
+  description: "Score business / buying intent.",
+  input_schema: {
+    type: "object",
+    properties: {
+      score: { type: "integer", minimum: 0, maximum: 100 },
+      label: { type: "string", enum: ["high", "medium", "low", "none"] },
+      reasoning: { type: "string" },
+    },
+    required: ["score", "label"],
+    additionalProperties: false,
+  },
+};
+
+export async function scoreIntent(input: { subject?: string; body: string }) {
+  return runStructured<{ score: number; label: string; reasoning?: string }>({
+    system:
+      "You are a B2B intent analyst. Score the message's buying / business intent (0–100) honestly — if there's no signal, score low. Use the score_intent tool.",
+    user: `${input.subject ? `Subject: ${input.subject}\n\n` : ""}${input.body}`,
+    tool: SCORE_INTENT_TOOL,
+    deepThink: false,
+    maxTokens: 512,
+  });
+}
+
+/* ────────────────────────────────────────────────────────────────────────
  *  Daily executive brief — feeds Claude yesterday's stats + recent
  *  highlights/lowlights and asks for an SMB-friendly morning summary.
  * ──────────────────────────────────────────────────────────────────── */

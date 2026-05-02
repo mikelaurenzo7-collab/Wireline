@@ -5,7 +5,13 @@ import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 
 export default function AdminSettings() {
-  const [settings, setSettings] = useState({ vapi_phone_number_id: "", subscription_status: "active", max_agents: 3 });
+  const [settings, setSettings] = useState({
+    vapi_phone_number_id: "",
+    subscription_status: "active",
+    max_agents: 3,
+    voice_llm_provider: "google",
+    voice_llm_model: "gemini-1.5-flash",
+  });
   const [agents, setAgents] = useState<any[]>([]);
   const [phoneNumbers, setPhoneNumbers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,10 +40,12 @@ export default function AdminSettings() {
       ]);
       
       if (settingsRes) {
-         setSettings({ 
+         setSettings({
              vapi_phone_number_id: settingsRes.vapi_phone_number_id || "",
              subscription_status: settingsRes.subscription_status || "active",
-             max_agents: settingsRes.max_agents || 3
+             max_agents: settingsRes.max_agents || 3,
+             voice_llm_provider: settingsRes.voice_llm_provider || "google",
+             voice_llm_model: settingsRes.voice_llm_model || "gemini-1.5-flash",
          });
       }
       setAgents(agentsRes.agents || []);
@@ -197,15 +205,78 @@ export default function AdminSettings() {
 
                   <div className="space-y-6">
                     <label className="text-[10px] font-black text-muted uppercase tracking-[0.5em] block italic ml-1">ROUTING_DESIGNATION (FALLBACK_ID)</label>
-                    <input 
-                      type="text" 
-                      value={settings.vapi_phone_number_id} 
-                      onChange={e => setSettings({...settings, vapi_phone_number_id: e.target.value})} 
-                      className="w-full p-8 brutal-border border-4 outline-none focus:bg-brand font-black text-ink uppercase tracking-widest text-xl bg-paper font-mono h-24 placeholder:text-zinc-100 italic" 
-                      placeholder="E.G. DEPLOYMENT_HEX_CODE" 
+                    <input
+                      type="text"
+                      value={settings.vapi_phone_number_id}
+                      onChange={e => setSettings({...settings, vapi_phone_number_id: e.target.value})}
+                      className="w-full p-8 brutal-border border-4 outline-none focus:bg-brand font-black text-ink uppercase tracking-widest text-xl bg-paper font-mono h-24 placeholder:text-zinc-100 italic"
+                      placeholder="E.G. DEPLOYMENT_HEX_CODE"
                     />
                   </div>
-                  
+
+                  {/* ── Voice LLM picker ─────────────────────────────────────── */}
+                  <div className="relative aurora-ring rounded-2xl mt-8">
+                    <div className="relative rounded-2xl glass border border-white/10 p-6 space-y-5 overflow-hidden">
+                      <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-25 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #C58BFF, transparent)" }} />
+                      <div className="relative z-10 flex items-center justify-between flex-wrap gap-3">
+                        <div>
+                          <div className="text-[10px] uppercase tracking-[0.4em] text-brand">Voice LLM</div>
+                          <h4 className="font-display italic text-2xl text-ink leading-tight mt-1">Brain Powering Live Calls</h4>
+                          <p className="text-[11px] text-ink/55 mt-1">Vapi runs each voice call through this LLM. Defaults to Gemini Flash; switch to Anthropic to route through Claude.</p>
+                        </div>
+                      </div>
+                      <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {[
+                          { v: "google",    label: "Google",    sub: "Gemini",    desc: "Lowest latency, cheapest." },
+                          { v: "anthropic", label: "Anthropic", sub: "Claude",    desc: "Best reasoning, more steerable." },
+                          { v: "openai",    label: "OpenAI",    sub: "GPT",       desc: "Optional — set the model below." },
+                          { v: "groq",      label: "Groq",      sub: "OSS via Groq", desc: "Optional — set the model below." },
+                        ].map((p) => (
+                          <button
+                            key={p.v}
+                            type="button"
+                            onClick={() => setSettings({
+                              ...settings,
+                              voice_llm_provider: p.v,
+                              voice_llm_model:
+                                p.v === "google" ? "gemini-1.5-flash" :
+                                p.v === "anthropic" ? "claude-3-5-sonnet-20241022" :
+                                p.v === "openai" ? "gpt-4o-mini" :
+                                "llama-3.3-70b-versatile",
+                            })}
+                            className={cn(
+                              "relative z-10 text-left rounded-xl p-4 transition-all border",
+                              settings.voice_llm_provider === p.v
+                                ? "bg-brand/10 border-brand/40"
+                                : "bg-black/20 border-white/8 hover:border-white/30",
+                            )}
+                          >
+                            <div className="flex items-baseline justify-between mb-1">
+                              <span className="text-sm font-medium text-ink">{p.label}</span>
+                              <span className="text-[9px] uppercase tracking-[0.3em] text-muted">{p.sub}</span>
+                            </div>
+                            <p className="text-[11px] text-ink/55 leading-snug">{p.desc}</p>
+                          </button>
+                        ))}
+                      </div>
+                      <div className="relative z-10 space-y-2">
+                        <label className="text-[10px] uppercase tracking-[0.4em] text-muted">Model ID (must be supported by Vapi for this provider)</label>
+                        <input
+                          type="text"
+                          value={settings.voice_llm_model}
+                          onChange={(e) => setSettings({ ...settings, voice_llm_model: e.target.value })}
+                          placeholder="e.g. claude-3-5-sonnet-20241022"
+                          className="w-full h-12 px-4 rounded-xl bg-black/30 border border-white/10 outline-none text-ink text-sm font-mono placeholder:text-muted/50 focus:border-brand/60 transition-all"
+                        />
+                        <p className="text-[10px] text-muted/70 leading-relaxed">
+                          Vapi's supported models change over time — check
+                          <a href="https://docs.vapi.ai/customization/multilingual/customize-models" target="_blank" rel="noopener" className="text-brand mx-1 underline">Vapi docs</a>
+                          for the current list. Saves apply to all subsequent voice calls.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="pt-12 border-t-4 border-ink flex flex-col md:flex-row items-center justify-between gap-8">
                       <button 
                         onClick={saveSettings} 
