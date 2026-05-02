@@ -226,7 +226,12 @@ export default function CallLogs() {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3 relative z-10">
+              <div className="flex items-center gap-3 relative z-10 flex-wrap">
+                <ClaudeRecipeButton
+                  recipe="coach"
+                  callId={selectedCall.id}
+                  label="Live Coach"
+                />
                 <ClaudeRecipeButton
                   recipe="qualify"
                   callId={selectedCall.id}

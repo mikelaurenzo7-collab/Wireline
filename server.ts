@@ -648,75 +648,166 @@ app.post("/api/vapi-webhook", async (req, res) => {
            recording_url: message.recordingUrl || message.stereoRecordingUrl || null
         });
 
-        // AI LEAD SCORING & INTENT DETECTION
-        const scoringPrompt = `
-          Analyze this call TRANSCRIPT and give a BUYING INTENT score (0-100) and CATEGORY ('high', 'medium', 'low', 'none').
-          Transcript: ${message.transcript || "None"}
-          Summary: ${analysis?.summary || ""}
-          RESPONSE FORMAT (JSON): { "score": number, "label": string }
-        `;
-        try {
-           const model = genAI.getGenerativeModel({ 
-             model: "gemini-1.5-flash",
-             generationConfig: { responseMimeType: "application/json" }
-           });
-           const scoreRes = await model.generateContent(scoringPrompt);
-           const scoreObj = JSON.parse(scoreRes.response.text() || "{}");
-           await db.from('wireline_call_logs').update({
-             lead_score: scoreObj.score || 0,
-             intent_label: scoreObj.label || 'none'
-           }).eq('vapi_call_id', call?.id);
+        // ────────────────────────────────────────────────────────────
+        //  POST-CALL ENRICHMENT
+        //
+        //  Preferred: single-pass Claude analysis (one tool-call returning
+        //  score + intent + sentiment + lesson + action items + compliance
+        //  flags + knowledge gaps). Falls back to the legacy 3-Gemini-call
+        //  pipeline when ANTHROPIC_API_KEY is not set or the Claude call
+        //  fails for any reason — the agents keep working either way.
+        // ────────────────────────────────────────────────────────────
+        let claudeAnalysisDone = false;
+        if (claudeBrain.isClaudeAvailable() && message.transcript) {
+          try {
+            const { data: agentDetail } = await db
+              .from('wireline_agents')
+              .select('name, archetype')
+              .eq('id', webhookAgentId)
+              .single();
 
-           // Update outbound lead status if applicable
-           await db.from('wireline_outbound_leads').update({
-             status: "Completed",
-             last_called_at: new Date()
-           }).eq('call_id', call?.id);
+            const result = await claudeBrain.postCallAnalysis({
+              agentName: agentDetail?.name || 'Wireline Agent',
+              archetype: agentDetail?.archetype || 'Receptionist',
+              customerNumber: call?.customer?.number,
+              durationSeconds: duration,
+              summary: analysis?.summary || '',
+              transcript: message.transcript || '',
+            });
 
-           // SELF-OPTIMIZING LOOP: Generate Lessons Learned
-           try {
-              const lessonPrompt = `Identify exactly ONE tactical improvement for this agent. JSON ONLY: { "lesson": "string" }. Transcript: ${message.transcript}`;
-              const lessonModel = genAI.getGenerativeModel({ 
-                 model: "gemini-1.5-flash",
-                 generationConfig: { responseMimeType: "application/json" }
+            // 1. Persist lead score + intent + sentiment
+            await db.from('wireline_call_logs').update({
+              lead_score: result.lead_score,
+              intent_label: result.intent_label,
+            }).eq('vapi_call_id', call?.id);
+
+            // 2. Promote a single tactical lesson (if any).
+            if (result.lesson && result.lesson.trim().length > 0) {
+              await db.from('wireline_agent_lessons').insert({
+                agent_id: webhookAgentId,
+                user_id: agent?.user_id,
+                lesson: result.lesson.trim(),
               });
-              const lessonRes = await lessonModel.generateContent(lessonPrompt);
-              const lessonObj = JSON.parse(lessonRes.response.text() || "{}");
-              if (lessonObj.lesson) {
-                 await db.from('wireline_agent_lessons').insert({
-                    agent_id: webhookAgentId,
-                    user_id: agent?.user_id,
-                    lesson: lessonObj.lesson
-                 });
-              }
-           } catch(e) {}
+            }
 
-           // TASK EXTRACTION LOOP: Generate follow-up tasks from promises
-           try {
-              const taskPrompt = `Based on the transcript, did the agent promise any follow-up (like sending an email, checking a quote), or did the human ask for something out-of-scope? 
-              JSON format MUST match exactly: { "has_task": boolean, "task_description": "string", "priority": "high" | "medium" | "low", "target_channel": "email" | "manual" }
-              Transcript: ${message.transcript}`;
-              const taskModel = genAI.getGenerativeModel({ 
-                 model: "gemini-1.5-flash",
-                 generationConfig: { responseMimeType: "application/json" }
+            // 3. Insert ALL action items as fleet tasks.
+            for (const item of result.action_items || []) {
+              await db.from('wireline_fleet_tasks').insert({
+                user_id: agent?.user_id,
+                task_type: 'action_required',
+                description: `Follow-up for ${call?.customer?.number || 'Caller'}: ${item.description}`,
+                source_type: 'phone_call',
+                source_id: call?.id,
+                target_channel: item.target_channel || 'manual',
+                priority: item.priority || 'medium',
+                status: 'pending',
               });
-              const taskRes = await taskModel.generateContent(taskPrompt);
-              const taskObj = JSON.parse(taskRes.response.text() || "{}");
-              if (taskObj.has_task && taskObj.task_description) {
-                 await db.from('wireline_fleet_tasks').insert({
-                    user_id: agent?.user_id,
-                    task_type: 'action_required',
-                    description: `FOLLOW-UP FOR ${call?.customer?.number || 'Caller'}: ${taskObj.task_description}`,
-                    source_type: 'phone_call',
-                    source_id: call?.id,
-                    target_channel: taskObj.target_channel || 'manual',
-                    priority: taskObj.priority || 'medium',
-                    status: 'pending'
-                 });
-              }
-           } catch(e) {}
-        } catch(scoringErr) {
-           console.error("Call scoring failed:", scoringErr);
+            }
+
+            // 4. Surface knowledge gaps as low-priority lessons (clearly tagged so
+            //    they're easy to filter / promote into wireline_knowledge later).
+            for (const gap of result.knowledge_gaps || []) {
+              await db.from('wireline_agent_lessons').insert({
+                agent_id: webhookAgentId,
+                user_id: agent?.user_id,
+                lesson: `[KNOWLEDGE GAP] ${gap}`,
+              });
+            }
+
+            // 5. Surface compliance flags as critical fleet tasks.
+            for (const flag of result.compliance_flags || []) {
+              await db.from('wireline_fleet_tasks').insert({
+                user_id: agent?.user_id,
+                task_type: 'compliance_review',
+                description: `[COMPLIANCE] Call ${call?.id?.slice(0, 8) || ''} — ${flag}`,
+                source_type: 'phone_call',
+                source_id: call?.id,
+                target_channel: 'manual',
+                priority: 'high',
+                status: 'pending',
+              });
+            }
+
+            // 6. Update outbound lead status if applicable.
+            await db.from('wireline_outbound_leads').update({
+              status: 'Completed',
+              last_called_at: new Date(),
+            }).eq('call_id', call?.id);
+
+            claudeAnalysisDone = true;
+          } catch (err) {
+            console.error('Claude post-call analysis failed; falling back to Gemini:', err);
+          }
+        }
+
+        // Legacy Gemini pipeline — runs only if Claude wasn't available or failed.
+        if (!claudeAnalysisDone) {
+          const scoringPrompt = `
+            Analyze this call TRANSCRIPT and give a BUYING INTENT score (0-100) and CATEGORY ('high', 'medium', 'low', 'none').
+            Transcript: ${message.transcript || "None"}
+            Summary: ${analysis?.summary || ""}
+            RESPONSE FORMAT (JSON): { "score": number, "label": string }
+          `;
+          try {
+             const model = genAI.getGenerativeModel({
+               model: "gemini-1.5-flash",
+               generationConfig: { responseMimeType: "application/json" }
+             });
+             const scoreRes = await model.generateContent(scoringPrompt);
+             const scoreObj = JSON.parse(scoreRes.response.text() || "{}");
+             await db.from('wireline_call_logs').update({
+               lead_score: scoreObj.score || 0,
+               intent_label: scoreObj.label || 'none'
+             }).eq('vapi_call_id', call?.id);
+
+             await db.from('wireline_outbound_leads').update({
+               status: "Completed",
+               last_called_at: new Date()
+             }).eq('call_id', call?.id);
+
+             try {
+                const lessonPrompt = `Identify exactly ONE tactical improvement for this agent. JSON ONLY: { "lesson": "string" }. Transcript: ${message.transcript}`;
+                const lessonModel = genAI.getGenerativeModel({
+                   model: "gemini-1.5-flash",
+                   generationConfig: { responseMimeType: "application/json" }
+                });
+                const lessonRes = await lessonModel.generateContent(lessonPrompt);
+                const lessonObj = JSON.parse(lessonRes.response.text() || "{}");
+                if (lessonObj.lesson) {
+                   await db.from('wireline_agent_lessons').insert({
+                      agent_id: webhookAgentId,
+                      user_id: agent?.user_id,
+                      lesson: lessonObj.lesson
+                   });
+                }
+             } catch(e) {}
+
+             try {
+                const taskPrompt = `Based on the transcript, did the agent promise any follow-up (like sending an email, checking a quote), or did the human ask for something out-of-scope?
+                JSON format MUST match exactly: { "has_task": boolean, "task_description": "string", "priority": "high" | "medium" | "low", "target_channel": "email" | "manual" }
+                Transcript: ${message.transcript}`;
+                const taskModel = genAI.getGenerativeModel({
+                   model: "gemini-1.5-flash",
+                   generationConfig: { responseMimeType: "application/json" }
+                });
+                const taskRes = await taskModel.generateContent(taskPrompt);
+                const taskObj = JSON.parse(taskRes.response.text() || "{}");
+                if (taskObj.has_task && taskObj.task_description) {
+                   await db.from('wireline_fleet_tasks').insert({
+                      user_id: agent?.user_id,
+                      task_type: 'action_required',
+                      description: `FOLLOW-UP FOR ${call?.customer?.number || 'Caller'}: ${taskObj.task_description}`,
+                      source_type: 'phone_call',
+                      source_id: call?.id,
+                      target_channel: taskObj.target_channel || 'manual',
+                      priority: taskObj.priority || 'medium',
+                      status: 'pending'
+                   });
+                }
+             } catch(e) {}
+          } catch(scoringErr) {
+             console.error("Call scoring failed:", scoringErr);
+          }
         }
         
         // If it was outbound, let's update the lead status
@@ -2395,6 +2486,179 @@ app.post("/api/claude/agent-review/apply-directive", authenticateUser, async (re
       priority: priorityMap[priority] ?? 5,
     });
     res.json({ success: true });
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// ──────────────────────────────────────────────────────────
+//  CLAUDE BRAIN — additional capability-elevating endpoints
+// ──────────────────────────────────────────────────────────
+
+// Manual re-run of the post-call analysis on an existing call.
+// Useful when ANTHROPIC_API_KEY was added after some calls were already logged.
+app.post("/api/claude/post-call/:callId", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { data: call } = await db
+      .from("wireline_call_logs")
+      .select("*, agent_id, user_id")
+      .eq("id", req.params.callId)
+      .eq("user_id", req.user.id)
+      .single();
+    if (!call) return res.status(404).json({ error: "Call not found." });
+    const { data: agent } = await db
+      .from("wireline_agents")
+      .select("name, archetype")
+      .eq("id", call.agent_id)
+      .single();
+
+    const result = await claudeBrain.postCallAnalysis({
+      agentName: agent?.name || "Wireline Agent",
+      archetype: agent?.archetype || "Receptionist",
+      customerNumber: call.customer_number,
+      durationSeconds: call.duration_seconds,
+      summary: call.summary || "",
+      transcript: call.transcript || "",
+    });
+
+    await db.from("wireline_call_logs").update({
+      lead_score: result.lead_score,
+      intent_label: result.intent_label,
+    }).eq("id", call.id);
+
+    res.json({ analysis: result });
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Live call coach — given a transcript or a callId, returns coaching.
+app.post("/api/claude/coach", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { transcript: rawTranscript, callId, agentId, isLive } = req.body;
+    let transcript = rawTranscript as string | undefined;
+    let agentName = "Wireline Agent";
+    let archetype = "Receptionist";
+
+    if (callId) {
+      const { data: call } = await db.from("wireline_call_logs")
+        .select("transcript, agent_id")
+        .eq("id", callId).eq("user_id", req.user.id).single();
+      if (call) {
+        transcript = transcript || call.transcript;
+        const { data: a } = await db.from("wireline_agents")
+          .select("name, archetype").eq("id", call.agent_id).single();
+        if (a) { agentName = a.name; archetype = a.archetype; }
+      }
+    } else if (agentId) {
+      const { data: a } = await db.from("wireline_agents")
+        .select("name, archetype").eq("id", agentId).eq("user_id", req.user.id).single();
+      if (a) { agentName = a.name; archetype = a.archetype; }
+    }
+
+    if (!transcript) return res.status(400).json({ error: "Provide a transcript or callId." });
+
+    const result = await claudeBrain.coach({ agentName, archetype, transcript, isLive: !!isLive });
+    res.json({ coaching: result });
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Knowledge ingestion from URL — Claude fetches and extracts.
+app.post("/api/claude/knowledge-from-url", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { url, agentContext, maxEntries } = req.body;
+    if (!url || typeof url !== "string") return res.status(400).json({ error: "url required." });
+    try { new URL(url); } catch { return res.status(400).json({ error: "url is not a valid URL." }); }
+    const result = await claudeBrain.knowledgeFromUrl({ url, agentContext, maxEntries });
+    res.json(result);
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Apply a set of extracted knowledge entries to an agent.
+app.post("/api/claude/knowledge-from-url/apply", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { agentId, entries } = req.body;
+    if (!agentId || !Array.isArray(entries)) {
+      return res.status(400).json({ error: "agentId and entries[] required." });
+    }
+    const { data: agent } = await db.from("wireline_agents")
+      .select("id").eq("id", agentId).eq("user_id", req.user.id).single();
+    if (!agent) return res.status(404).json({ error: "Agent not found." });
+
+    const rows = entries
+      .filter((e: any) => typeof e?.fact === "string" && e.fact.trim())
+      .map((e: any) => ({
+        agent_id: agentId,
+        user_id: req.user.id,
+        content: e.fact.trim(),
+      }));
+    if (rows.length === 0) return res.status(400).json({ error: "No valid entries to insert." });
+    await db.from("wireline_knowledge").insert(rows);
+    res.json({ inserted: rows.length });
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Agent Forge — synthesize a complete agent draft from a goal.
+app.post("/api/claude/forge", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { goal, industry, companyName, websiteUrl, voicePreference } = req.body;
+    if (!goal) return res.status(400).json({ error: "goal required." });
+    const result = await claudeBrain.forgeAgent({ goal, industry, companyName, websiteUrl, voicePreference });
+    res.json({ design: result });
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Agent Forge — create the actual agent + seed personality, directives, knowledge.
+app.post("/api/claude/forge/create", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { design, websiteUrl } = req.body;
+    if (!design || !design.name) return res.status(400).json({ error: "design with name required." });
+
+    const agentId = `agent-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+
+    const { error: agentErr } = await db.from("wireline_agents").insert({
+      id: agentId,
+      user_id: req.user.id,
+      name: design.name,
+      archetype: design.archetype || "Receptionist",
+      first_message: design.first_message || `Hi, this is ${design.name}. How can I help?`,
+      website_url: websiteUrl || null,
+      channel: "voice",
+    });
+    if (agentErr) throw agentErr;
+
+    if (design.personality_block) {
+      await db.from("wireline_personality").upsert({
+        agent_id: agentId,
+        user_id: req.user.id,
+        content: design.personality_block,
+      });
+    }
+
+    const directiveRows = (design.directives || []).map((d: any) => ({
+      agent_id: agentId,
+      user_id: req.user.id,
+      content: d.content,
+      priority: d.priority ?? 5,
+    }));
+    if (directiveRows.length) await db.from("wireline_directives").insert(directiveRows);
+
+    const knowledgeRows = (design.seed_knowledge || []).map((k: string) => ({
+      agent_id: agentId,
+      user_id: req.user.id,
+      content: k,
+    }));
+    if (knowledgeRows.length) await db.from("wireline_knowledge").insert(knowledgeRows);
+
+    res.json({ success: true, agentId });
   } catch (e) {
     claudeErr(res, e);
   }

@@ -19,7 +19,7 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   Sparkles, Brain, Target, Mail, Wand2, AlertTriangle, Loader2,
   ArrowRight, ShieldAlert, Compass, BarChart3, ChevronRight, Check,
-  Plus, X, Copy, ScrollText
+  Plus, X, Copy, ScrollText, Globe, Headphones, Hammer, Zap
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
@@ -31,7 +31,10 @@ export type Recipe =
   | "cold-email"
   | "persona-clone"
   | "summarize-thread"
-  | "agent-review";
+  | "agent-review"
+  | "coach"
+  | "knowledge-from-url"
+  | "agent-forge";
 
 interface RecipeMeta {
   title: string;
@@ -42,13 +45,16 @@ interface RecipeMeta {
 }
 
 const RECIPE_META: Record<Recipe, RecipeMeta> = {
-  "brief":            { title: "Pre-Call Brief",       tagline: "Tactical playbook before you dial.",           icon: Compass,     accent: "#7DF9FF", thinking: true  },
-  "qualify":          { title: "Lead Qualification",   tagline: "BANT-scored evidence, not vibes.",             icon: Target,      accent: "#C58BFF", thinking: true  },
-  "objection-drill":  { title: "Objection Drills",     tagline: "Realistic scenarios with scripted rebuttals.", icon: ShieldAlert, accent: "#FF6BD9", thinking: false },
-  "cold-email":       { title: "Cold Email",           tagline: "Reply-worthy outreach in 120 words.",          icon: Mail,        accent: "#4DFFC4", thinking: false },
-  "persona-clone":    { title: "Persona Clone",        tagline: "Distill a person's voice from samples.",       icon: Wand2,       accent: "#FFC07D", thinking: true  },
-  "summarize-thread": { title: "Thread Summary",       tagline: "Action items + sentiment in one sweep.",       icon: ScrollText,  accent: "#7DF9FF", thinking: false },
-  "agent-review":     { title: "Performance Review",   tagline: "Deep audit of your last N calls.",             icon: BarChart3,   accent: "#C58BFF", thinking: true  },
+  "brief":              { title: "Pre-Call Brief",       tagline: "Tactical playbook before you dial.",                  icon: Compass,     accent: "#7DF9FF", thinking: true  },
+  "qualify":            { title: "Lead Qualification",   tagline: "BANT-scored evidence, not vibes.",                    icon: Target,      accent: "#C58BFF", thinking: true  },
+  "objection-drill":    { title: "Objection Drills",     tagline: "Realistic scenarios with scripted rebuttals.",        icon: ShieldAlert, accent: "#FF6BD9", thinking: false },
+  "cold-email":         { title: "Cold Email",           tagline: "Reply-worthy outreach in 120 words.",                 icon: Mail,        accent: "#4DFFC4", thinking: false },
+  "persona-clone":      { title: "Persona Clone",        tagline: "Distill a person's voice from samples.",              icon: Wand2,       accent: "#FFC07D", thinking: true  },
+  "summarize-thread":   { title: "Thread Summary",       tagline: "Action items + sentiment in one sweep.",              icon: ScrollText,  accent: "#7DF9FF", thinking: false },
+  "agent-review":       { title: "Performance Review",   tagline: "Deep audit of your last N calls.",                    icon: BarChart3,   accent: "#C58BFF", thinking: true  },
+  "coach":              { title: "Live Call Coach",      tagline: "Real-time take on a transcript — what to say next.",  icon: Headphones,  accent: "#FF6BD9", thinking: false },
+  "knowledge-from-url": { title: "Ingest from URL",      tagline: "Claude reads your site and extracts agent facts.",    icon: Globe,       accent: "#7DF9FF", thinking: false },
+  "agent-forge":        { title: "Agent Forge",          tagline: "Synthesize a complete agent from a goal.",            icon: Hammer,      accent: "#4DFFC4", thinking: true  },
 };
 
 interface AgentLite { id: string; name: string; archetype: string; }
@@ -186,13 +192,16 @@ function RecipeModal({
 
           {available === false && <NoKeyInline />}
           <div className="flex-1 overflow-y-auto scrollbar-hide">
-            {recipe === "brief"            && <BriefForm           agents={agents} agentId={agentId} initial={initial} disabled={!available} />}
-            {recipe === "qualify"          && <QualifyForm         callId={callId} initial={initial} disabled={!available} />}
-            {recipe === "objection-drill"  && <ObjectionDrillForm  agents={agents} agentId={agentId} initial={initial} disabled={!available} />}
-            {recipe === "cold-email"       && <ColdEmailForm       initial={initial} disabled={!available} />}
-            {recipe === "persona-clone"    && <PersonaCloneForm    agents={agents} agentId={agentId} disabled={!available} />}
-            {recipe === "summarize-thread" && <ThreadSummaryForm   threadId={threadId} disabled={!available} />}
-            {recipe === "agent-review"     && <AgentReviewForm     agents={agents} agentId={agentId} disabled={!available} />}
+            {recipe === "brief"              && <BriefForm           agents={agents} agentId={agentId} initial={initial} disabled={!available} />}
+            {recipe === "qualify"            && <QualifyForm         callId={callId} initial={initial} disabled={!available} />}
+            {recipe === "objection-drill"    && <ObjectionDrillForm  agents={agents} agentId={agentId} initial={initial} disabled={!available} />}
+            {recipe === "cold-email"         && <ColdEmailForm       initial={initial} disabled={!available} />}
+            {recipe === "persona-clone"      && <PersonaCloneForm    agents={agents} agentId={agentId} disabled={!available} />}
+            {recipe === "summarize-thread"   && <ThreadSummaryForm   threadId={threadId} disabled={!available} />}
+            {recipe === "agent-review"       && <AgentReviewForm     agents={agents} agentId={agentId} disabled={!available} />}
+            {recipe === "coach"              && <CoachForm           callId={callId} initial={initial} disabled={!available} />}
+            {recipe === "knowledge-from-url" && <KnowledgeFromUrlForm agents={agents} agentId={agentId} initial={initial} disabled={!available} />}
+            {recipe === "agent-forge"        && <AgentForgeForm      initial={initial} disabled={!available} />}
           </div>
         </div>
       </motion.div>
@@ -298,6 +307,331 @@ function ErrCard({ error }: { error: string }) {
       <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
       <span>{error}</span>
     </div>
+  );
+}
+
+/* ────────────────────  Live coach  ──────────────────────────────── */
+
+function CoachForm({ callId, initial, disabled }: { callId?: string; initial?: any; disabled: boolean }) {
+  const [transcript, setTranscript] = useState(initial?.transcript ?? "");
+  const [isLive, setIsLive] = useState(initial?.isLive ?? false);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [coaching, setCoaching] = useState<any>(null);
+
+  const run = async () => {
+    setLoading(true); setErr(null); setCoaching(null);
+    try {
+      const r = await authFetch("/api/claude/coach", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transcript: callId ? undefined : transcript, callId, isLive }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error);
+      setCoaching(data.coaching);
+    } catch (e: any) { setErr(e.message); } finally { setLoading(false); }
+  };
+
+  return (
+    <FormShell>
+      {!callId && (
+        <Field label="Transcript" hint="Paste a transcript — partial (live coaching) or complete.">
+          <TextArea value={transcript} onChange={setTranscript} rows={10} placeholder="Customer: Hi, I called yesterday about..." />
+        </Field>
+      )}
+      {callId && <p className="text-[11px] uppercase tracking-[0.3em] text-muted">Coaching call <span className="text-brand font-mono">{callId.toString().slice(0, 8)}…</span></p>}
+      <label className="flex items-center gap-3 cursor-pointer text-sm text-ink/80">
+        <input type="checkbox" checked={isLive} onChange={(e) => setIsLive(e.target.checked)} className="w-4 h-4 rounded border-white/20 bg-black/30 accent-brand" />
+        Treat as in-progress (live) call
+      </label>
+      <RunButton onClick={run} loading={loading} disabled={disabled || (!transcript && !callId)} label="Coach Now" />
+
+      {err && <ErrCard error={err} />}
+      {coaching && (
+        <div className="space-y-3 pt-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <ResultCard title="Sentiment">
+              <span className={cn(
+                "inline-flex px-3 py-1 rounded-full text-[11px] uppercase tracking-[0.3em]",
+                coaching.sentiment === "delighted" && "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30",
+                coaching.sentiment === "positive"  && "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30",
+                coaching.sentiment === "neutral"   && "bg-zinc-500/15 text-zinc-300 border border-zinc-500/30",
+                coaching.sentiment === "frustrated" && "bg-amber-500/15 text-amber-500 border border-amber-500/30",
+                coaching.sentiment === "angry"     && "bg-rose-500/15 text-rose-500 border border-rose-500/30",
+              )}>{coaching.sentiment}</span>
+            </ResultCard>
+            <ResultCard title="Engagement">
+              <span className="inline-flex px-3 py-1 rounded-full text-[11px] uppercase tracking-[0.3em] bg-brand/15 text-brand border border-brand/30">
+                {coaching.engagement}
+              </span>
+            </ResultCard>
+            <ResultCard title="Escalation Risk">
+              <span className={cn(
+                "inline-flex px-3 py-1 rounded-full text-[11px] uppercase tracking-[0.3em]",
+                coaching.escalation_risk === "imminent" && "bg-rose-500/30 text-rose-500 border border-rose-500/50 animate-pulse",
+                coaching.escalation_risk === "high"     && "bg-rose-500/15 text-rose-500 border border-rose-500/30",
+                coaching.escalation_risk === "medium"   && "bg-amber-500/15 text-amber-500 border border-amber-500/30",
+                coaching.escalation_risk === "low"      && "bg-zinc-500/15 text-zinc-300 border border-zinc-500/30",
+                coaching.escalation_risk === "none"     && "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30",
+              )}>{coaching.escalation_risk}</span>
+            </ResultCard>
+          </div>
+          <ResultCard title="Suggested Next Words" copyText={coaching.suggested_next_words}>
+            <p className="font-display italic text-xl leading-snug text-ink">"{coaching.suggested_next_words}"</p>
+          </ResultCard>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <ResultCard title="What's Working">
+              <ul className="list-disc list-inside text-emerald-500/90 space-y-1">{coaching.whats_working.map((s: string, i: number) => <li key={i}>{s}</li>)}</ul>
+            </ResultCard>
+            <ResultCard title="What's at Risk">
+              <ul className="list-disc list-inside text-rose-500/90 space-y-1">{coaching.whats_at_risk.map((s: string, i: number) => <li key={i}>{s}</li>)}</ul>
+            </ResultCard>
+          </div>
+          {coaching.missed_opportunities?.length > 0 && (
+            <ResultCard title="Missed Opportunities">
+              <ul className="list-disc list-inside text-brand/90 space-y-1">{coaching.missed_opportunities.map((s: string, i: number) => <li key={i}>{s}</li>)}</ul>
+            </ResultCard>
+          )}
+          {coaching.compliance_alerts?.length > 0 && (
+            <ResultCard title="Compliance Alerts">
+              <ul className="list-disc list-inside text-rose-500/90 space-y-1">{coaching.compliance_alerts.map((s: string, i: number) => <li key={i}>{s}</li>)}</ul>
+            </ResultCard>
+          )}
+        </div>
+      )}
+    </FormShell>
+  );
+}
+
+/* ────────────────────  Knowledge from URL  ──────────────────────── */
+
+function KnowledgeFromUrlForm({ agents, agentId: initAgent, initial, disabled }: { agents: AgentLite[]; agentId?: string; initial?: any; disabled: boolean }) {
+  const [agentId, setAgentId] = useState(initAgent ?? agents[0]?.id ?? "");
+  const [url, setUrl] = useState(initial?.url ?? "");
+  const [agentContext, setAgentContext] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [result, setResult] = useState<any>(null);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [applying, setApplying] = useState(false);
+  const [applied, setApplied] = useState<number | null>(null);
+
+  useEffect(() => { if (!agentId && agents[0]) setAgentId(agents[0].id); }, [agents]);
+
+  const run = async () => {
+    setLoading(true); setErr(null); setResult(null); setSelected(new Set()); setApplied(null);
+    try {
+      const r = await authFetch("/api/claude/knowledge-from-url", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, agentContext }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error);
+      setResult(data);
+      // Default-select all entries.
+      setSelected(new Set((data.entries || []).map((_: any, i: number) => i)));
+    } catch (e: any) { setErr(e.message); } finally { setLoading(false); }
+  };
+
+  const apply = async () => {
+    if (!agentId || !result) return;
+    setApplying(true);
+    try {
+      const entries = result.entries.filter((_: any, i: number) => selected.has(i));
+      const r = await authFetch("/api/claude/knowledge-from-url/apply", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agentId, entries }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error);
+      setApplied(data.inserted);
+    } catch (e: any) { setErr(e.message); } finally { setApplying(false); }
+  };
+
+  const toggleAll = () => {
+    if (selected.size === result.entries.length) setSelected(new Set());
+    else setSelected(new Set(result.entries.map((_: any, i: number) => i)));
+  };
+
+  return (
+    <FormShell>
+      <Field label="URL" hint="A homepage, services page, FAQ, pricing page — anything customer-facing.">
+        <TextInput value={url} onChange={setUrl} placeholder="https://acme.co/services" />
+      </Field>
+      <Field label="Agent Context (optional)" hint="What's this agent's job? Helps Claude prioritize relevant facts.">
+        <TextInput value={agentContext} onChange={setAgentContext} placeholder="Front-desk receptionist for HVAC service company." />
+      </Field>
+      <RunButton onClick={run} loading={loading} disabled={disabled || !url} label="Fetch & Extract" />
+
+      {err && <ErrCard error={err} />}
+      {result && (
+        <div className="space-y-4 pt-3">
+          <ResultCard title="Page Summary"><p>{result.page_summary}</p></ResultCard>
+          <div className="rounded-2xl glass border border-white/10 p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-[10px] uppercase tracking-[0.4em] text-brand">
+                Extracted · {selected.size}/{result.entries.length} selected
+              </h4>
+              <button onClick={toggleAll} className="text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand transition-colors">
+                {selected.size === result.entries.length ? "Deselect All" : "Select All"}
+              </button>
+            </div>
+            <div className="space-y-2 max-h-[400px] overflow-y-auto scrollbar-hide">
+              {result.entries.map((e: any, i: number) => {
+                const isSel = selected.has(i);
+                return (
+                  <button
+                    key={i}
+                    onClick={() => setSelected((s) => {
+                      const ns = new Set(s);
+                      if (ns.has(i)) ns.delete(i); else ns.add(i);
+                      return ns;
+                    })}
+                    className={cn(
+                      "w-full text-left rounded-xl p-3 flex items-start gap-3 border transition-all",
+                      isSel ? "bg-brand/10 border-brand/40" : "bg-black/20 border-white/8 hover:border-white/20",
+                    )}
+                  >
+                    <div className={cn(
+                      "shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 transition-all",
+                      isSel ? "bg-brand border-brand text-paper" : "border-white/30",
+                    )}>
+                      {isSel && <Check className="w-3 h-3" strokeWidth={3} />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-ink/90">{e.fact}</div>
+                      <div className="text-[9px] uppercase tracking-[0.3em] text-muted mt-1">{e.category}</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <Field label="Apply to Agent">
+            <Select value={agentId} onChange={setAgentId} options={agents.map((a) => ({ value: a.id, label: a.name }))} />
+          </Field>
+          <button
+            onClick={apply}
+            disabled={!agentId || applying || selected.size === 0}
+            className="brutal-btn w-full !py-4 !text-[12px] !tracking-[0.32em]"
+          >
+            {applying ? <><Loader2 className="w-4 h-4 animate-spin" /> Applying…</> :
+             applied ? <><Check className="w-4 h-4" /> Applied {applied} entries</> :
+             <><Zap className="w-4 h-4" /> Apply {selected.size} Entries <ArrowRight className="w-4 h-4" /></>}
+          </button>
+        </div>
+      )}
+    </FormShell>
+  );
+}
+
+/* ────────────────────  Agent Forge  ─────────────────────────────── */
+
+function AgentForgeForm({ initial, disabled }: { initial?: any; disabled: boolean }) {
+  const [goal, setGoal] = useState(initial?.goal ?? "");
+  const [companyName, setCompanyName] = useState(initial?.companyName ?? "");
+  const [industry, setIndustry] = useState(initial?.industry ?? "");
+  const [websiteUrl, setWebsiteUrl] = useState(initial?.websiteUrl ?? "");
+  const [voicePref, setVoicePref] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [design, setDesign] = useState<any>(null);
+  const [creating, setCreating] = useState(false);
+  const [createdAgentId, setCreatedAgentId] = useState<string | null>(null);
+
+  const run = async () => {
+    setLoading(true); setErr(null); setDesign(null); setCreatedAgentId(null);
+    try {
+      const r = await authFetch("/api/claude/forge", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ goal, companyName, industry, websiteUrl, voicePreference: voicePref }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error);
+      setDesign(data.design);
+    } catch (e: any) { setErr(e.message); } finally { setLoading(false); }
+  };
+
+  const create = async () => {
+    if (!design) return;
+    setCreating(true); setErr(null);
+    try {
+      const r = await authFetch("/api/claude/forge/create", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ design, websiteUrl }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error);
+      setCreatedAgentId(data.agentId);
+    } catch (e: any) { setErr(e.message); } finally { setCreating(false); }
+  };
+
+  return (
+    <FormShell>
+      <Field label="Goal" hint="Describe the agent's job in one sentence.">
+        <TextArea value={goal} onChange={setGoal} rows={3} placeholder="A friendly front-desk agent that books HVAC service appointments and answers basic pricing questions." />
+      </Field>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Field label="Company Name"><TextInput value={companyName} onChange={setCompanyName} placeholder="Acme HVAC" /></Field>
+        <Field label="Industry"><TextInput value={industry} onChange={setIndustry} placeholder="Home services" /></Field>
+        <Field label="Website (optional)"><TextInput value={websiteUrl} onChange={setWebsiteUrl} placeholder="https://acme.co" /></Field>
+        <Field label="Voice Preference (optional)"><TextInput value={voicePref} onChange={setVoicePref} placeholder="Warm, mid-range female voice" /></Field>
+      </div>
+      <RunButton onClick={run} loading={loading} disabled={disabled || !goal} label="Forge Agent" />
+
+      {err && <ErrCard error={err} />}
+      {design && (
+        <div className="space-y-4 pt-3">
+          {createdAgentId && (
+            <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/30 p-4 text-emerald-500 text-sm flex items-center gap-3">
+              <Check className="w-4 h-4" />
+              Agent created. Open Fleet Topology to assign a phone number and voice.
+            </div>
+          )}
+          <div className="rounded-2xl glass-strong border border-white/12 p-6 space-y-3">
+            <div className="flex items-baseline justify-between">
+              <h3 className="font-display italic text-4xl text-aurora leading-none">{design.name}</h3>
+              <span className="px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.3em] bg-brand/15 text-brand border border-brand/30">{design.archetype}</span>
+            </div>
+            <p className="text-ink/80 text-sm italic">"{design.first_message}"</p>
+            {design.suggested_voice_tone && <p className="text-[11px] uppercase tracking-[0.3em] text-muted">Voice tone · {design.suggested_voice_tone}</p>}
+          </div>
+          <ResultCard title="Personality Block" copyText={design.personality_block}>
+            <pre className="whitespace-pre-wrap font-sans">{design.personality_block}</pre>
+          </ResultCard>
+          <ResultCard title="Directives">
+            <ul className="space-y-2">
+              {design.directives.map((d: any, i: number) => (
+                <li key={i} className="flex items-start gap-3">
+                  <span className="shrink-0 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] bg-brand/15 text-brand border border-brand/30">P{d.priority}</span>
+                  <span className="text-ink/85">{d.content}</span>
+                </li>
+              ))}
+            </ul>
+          </ResultCard>
+          <ResultCard title="Seed Knowledge">
+            <ul className="list-disc list-inside text-ink/85 space-y-1">{design.seed_knowledge.map((k: string, i: number) => <li key={i}>{k}</li>)}</ul>
+          </ResultCard>
+          {design.success_metrics?.length > 0 && (
+            <ResultCard title="Success Metrics">
+              <ul className="list-disc list-inside text-emerald-500/90 space-y-1">{design.success_metrics.map((m: string, i: number) => <li key={i}>{m}</li>)}</ul>
+            </ResultCard>
+          )}
+          {design.reasoning && <ResultCard title="Reasoning"><p className="text-ink/65">{design.reasoning}</p></ResultCard>}
+
+          {!createdAgentId && (
+            <button
+              onClick={create}
+              disabled={creating}
+              className="brutal-btn w-full !py-4 !text-[12px] !tracking-[0.32em]"
+            >
+              {creating ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating Agent…</> :
+               <><Hammer className="w-4 h-4" /> Forge & Deploy <ArrowRight className="w-4 h-4" /></>}
+            </button>
+          )}
+        </div>
+      )}
+    </FormShell>
   );
 }
 

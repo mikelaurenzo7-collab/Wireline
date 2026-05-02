@@ -455,6 +455,217 @@ export const TOOLS = {
     },
   } as ToolSchema,
 
+  /** Single-pass post-call analysis — replaces 3 separate Gemini calls. */
+  postCallAnalysis: {
+    name: "record_post_call_analysis",
+    description:
+      "Record the complete post-call analysis: lead score, intent, sentiment, lessons, action items, compliance flags, and knowledge gaps — all in one structured payload.",
+    input_schema: {
+      type: "object",
+      properties: {
+        lead_score: { type: "integer", minimum: 0, maximum: 100 },
+        intent_label: { type: "string", enum: ["high", "medium", "low", "none"] },
+        sentiment: {
+          type: "string",
+          enum: ["delighted", "positive", "neutral", "frustrated", "angry"],
+        },
+        lesson: {
+          type: "string",
+          description:
+            "ONE specific tactical improvement for the agent based on this call. Empty string if no lesson worth promoting.",
+        },
+        action_items: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              description: { type: "string" },
+              priority: { type: "string", enum: ["high", "medium", "low"] },
+              target_channel: {
+                type: "string",
+                enum: ["email", "phone", "manual"],
+              },
+            },
+            required: ["description", "priority", "target_channel"],
+            additionalProperties: false,
+          },
+          description:
+            "Follow-up tasks promised on the call or implied by the customer's request. Empty if nothing to do.",
+        },
+        compliance_flags: {
+          type: "array",
+          items: { type: "string" },
+          description:
+            "Potential regulatory or compliance issues (TCPA disclosure missed, GDPR data request, recording consent, refund-policy mismatch, etc).",
+        },
+        knowledge_gaps: {
+          type: "array",
+          items: { type: "string" },
+          description:
+            "Topics the agent could not answer authoritatively — should be added to the knowledge base.",
+        },
+        coaching_note: {
+          type: "string",
+          description:
+            "One-sentence note for a human reviewer summarising performance.",
+        },
+      },
+      required: [
+        "lead_score",
+        "intent_label",
+        "sentiment",
+        "lesson",
+        "action_items",
+        "compliance_flags",
+        "knowledge_gaps",
+        "coaching_note",
+      ],
+      additionalProperties: false,
+    },
+  } as ToolSchema,
+
+  /** Live in-call coach — looks at a partial/full transcript and tells the operator what to do next. */
+  coach: {
+    name: "deliver_live_coaching",
+    description:
+      "Deliver real-time coaching for an in-progress or completed call. Identify what is working, what is at risk, and what the agent should say next.",
+    input_schema: {
+      type: "object",
+      properties: {
+        sentiment: {
+          type: "string",
+          enum: ["delighted", "positive", "neutral", "frustrated", "angry"],
+        },
+        engagement: {
+          type: "string",
+          enum: ["high", "medium", "low", "disengaged"],
+        },
+        escalation_risk: {
+          type: "string",
+          enum: ["none", "low", "medium", "high", "imminent"],
+        },
+        whats_working: { type: "array", items: { type: "string" } },
+        whats_at_risk: { type: "array", items: { type: "string" } },
+        missed_opportunities: { type: "array", items: { type: "string" } },
+        suggested_next_words: {
+          type: "string",
+          description:
+            "What the agent should say next, written verbatim. ≤30 words.",
+        },
+        compliance_alerts: { type: "array", items: { type: "string" } },
+      },
+      required: [
+        "sentiment",
+        "engagement",
+        "escalation_risk",
+        "whats_working",
+        "whats_at_risk",
+        "missed_opportunities",
+        "suggested_next_words",
+      ],
+      additionalProperties: false,
+    },
+  } as ToolSchema,
+
+  /** Agent Forge — synthesize a full agent design from a goal. */
+  agentForge: {
+    name: "design_complete_agent",
+    description:
+      "Design a complete autonomous voice/email agent given a goal: name, archetype, first message, personality block, directives, and seed knowledge.",
+    input_schema: {
+      type: "object",
+      properties: {
+        name: { type: "string" },
+        archetype: {
+          type: "string",
+          enum: ["Receptionist", "The Closer", "Support Tech", "The Empath"],
+        },
+        first_message: {
+          type: "string",
+          description: "What the agent says when answering or starting a call. ≤25 words.",
+        },
+        personality_block: {
+          type: "string",
+          description:
+            "A self-contained personality block to drop into the agent's system prompt.",
+        },
+        suggested_voice_tone: { type: "string" },
+        directives: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              content: { type: "string" },
+              priority: { type: "integer", minimum: 1, maximum: 10 },
+            },
+            required: ["content", "priority"],
+            additionalProperties: false,
+          },
+          description: "5–8 absolute rules / tactical directives.",
+        },
+        seed_knowledge: {
+          type: "array",
+          items: { type: "string" },
+          description:
+            "5–10 atomic knowledge entries the agent needs to do its job. If specific facts aren't known, write them as TODO placeholders the operator can fill in.",
+        },
+        success_metrics: {
+          type: "array",
+          items: { type: "string" },
+          description: "How the operator will know this agent is working.",
+        },
+        reasoning: { type: "string" },
+      },
+      required: [
+        "name",
+        "archetype",
+        "first_message",
+        "personality_block",
+        "directives",
+        "seed_knowledge",
+      ],
+      additionalProperties: false,
+    },
+  } as ToolSchema,
+
+  /** Used by the URL-based knowledge ingestion path. */
+  knowledgeFromUrl: {
+    name: "deliver_knowledge_entries",
+    description:
+      "After fetching the page, deliver atomic knowledge entries the agent can use.",
+    input_schema: {
+      type: "object",
+      properties: {
+        page_summary: { type: "string" },
+        entries: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              fact: { type: "string" },
+              category: {
+                type: "string",
+                enum: [
+                  "service",
+                  "pricing",
+                  "hours",
+                  "contact",
+                  "policy",
+                  "faq",
+                  "general",
+                ],
+              },
+            },
+            required: ["fact", "category"],
+            additionalProperties: false,
+          },
+        },
+      },
+      required: ["page_summary", "entries"],
+      additionalProperties: false,
+    },
+  } as ToolSchema,
+
   /** Deep agent performance review. */
   agentReview: {
     name: "deliver_review",
@@ -786,4 +997,167 @@ Output the email body only — no subject, no signature.`;
     cacheRead: result.cacheRead,
     cacheCreate: result.cacheCreate,
   };
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+ *  Single-pass post-call analysis — replaces the 3 Gemini calls in the
+ *  vapi webhook with one Claude tool-call returning everything at once.
+ * ──────────────────────────────────────────────────────────────────── */
+
+export interface PostCallInput {
+  agentName: string;
+  archetype: string;
+  customerNumber?: string;
+  durationSeconds?: number;
+  summary: string;
+  transcript: string;
+}
+
+export async function postCallAnalysis(input: PostCallInput) {
+  const system = `You are a senior call analyst delivering post-call enrichment for an autonomous agent on the Wireline relay. Be evidence-driven and concise:
+- score lead intent honestly (0–100); if there's no signal, score low.
+- extract ONE specific tactical lesson (or empty string if nothing worth promoting).
+- list every concrete follow-up the agent promised or the customer asked for.
+- flag compliance issues (recording consent, TCPA, GDPR, refund-policy mismatch, etc.).
+- list topics the agent couldn't answer authoritatively (knowledge gaps).
+Use plain English. No jargon, no ALL CAPS, no emoji.`;
+
+  const user = `Agent: ${input.agentName} (archetype: ${input.archetype})
+Customer: ${input.customerNumber ?? "(unknown)"}${input.durationSeconds ? ` · ${input.durationSeconds}s` : ""}
+
+--- SUMMARY ---
+${input.summary || "(none)"}
+
+--- TRANSCRIPT ---
+${input.transcript || "(none)"}
+--- END ---`;
+
+  return runStructured({
+    system,
+    user,
+    tool: TOOLS.postCallAnalysis,
+    deepThink: true,
+    maxTokens: 4096,
+  });
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+ *  Live coaching — fast, single-pass.
+ * ──────────────────────────────────────────────────────────────────── */
+
+export interface CoachInput {
+  agentName: string;
+  archetype: string;
+  transcript: string;
+  isLive?: boolean;
+}
+
+export async function coach(input: CoachInput) {
+  const system = `You are a real-time call coach watching ${input.isLive ? "an in-progress" : "a completed"} call. Identify what is working, what is at risk, and exactly what the agent should say next. Suggested-next-words must be ≤30 words and ready to read aloud verbatim. Be tactical and concise.`;
+  const user = `Agent: ${input.agentName} (${input.archetype})
+
+--- TRANSCRIPT ---
+${input.transcript}
+--- END ---
+
+Coach this conversation now.`;
+  return runStructured({
+    system,
+    user,
+    tool: TOOLS.coach,
+    deepThink: false,
+    maxTokens: 2048,
+  });
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+ *  Agent Forge — synthesize a complete agent from a goal description.
+ * ──────────────────────────────────────────────────────────────────── */
+
+export interface AgentForgeInput {
+  goal: string;
+  industry?: string;
+  companyName?: string;
+  websiteUrl?: string;
+  voicePreference?: string;
+}
+
+export async function forgeAgent(input: AgentForgeInput) {
+  const system = `You are a senior conversation designer. Given a goal, design a complete autonomous voice/email agent end-to-end: a memorable name, the right archetype, a snappy first message, a self-contained personality block, 5–8 priority-ranked directives, and 5–10 seed knowledge entries. Be opinionated, specific, and brand-appropriate. If a fact isn't known, write a clearly-marked TODO placeholder so the operator can fill it in.`;
+  const user = `Goal: ${input.goal}
+${input.companyName ? `Company: ${input.companyName}` : ""}
+${input.industry ? `Industry: ${input.industry}` : ""}
+${input.websiteUrl ? `Website: ${input.websiteUrl}` : ""}
+${input.voicePreference ? `Voice preference: ${input.voicePreference}` : ""}
+
+Design the agent now.`;
+  return runStructured({
+    system,
+    user,
+    tool: TOOLS.agentForge,
+    deepThink: true,
+    maxTokens: 6144,
+  });
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+ *  Knowledge ingestion from URL — Claude fetches the page server-side
+ *  via web_fetch, then returns structured knowledge entries.
+ * ──────────────────────────────────────────────────────────────────── */
+
+export interface KnowledgeFromUrlInput {
+  url: string;
+  agentContext?: string;
+  maxEntries?: number;
+}
+
+export async function knowledgeFromUrl(input: KnowledgeFromUrlInput) {
+  const client = getClient();
+  const system = `You are a knowledge-base curator for an autonomous voice/email agent. Fetch the URL and extract every concrete fact a customer-service agent would need: services, pricing, hours, contact info, return/refund policies, FAQ answers, business address, key personnel. Each entry must be atomic, self-contained, and useful in isolation (the agent will quote it verbatim). Skip marketing fluff. ${input.maxEntries ? `Limit to ~${input.maxEntries} entries.` : ""} After fetching, call deliver_knowledge_entries with the result.`;
+
+  let response = await client.messages.create({
+    model: "claude-opus-4-7",
+    max_tokens: 8192,
+    system,
+    tools: [
+      { type: "web_fetch_20260209", name: "web_fetch" },
+      TOOLS.knowledgeFromUrl,
+    ],
+    messages: [
+      {
+        role: "user",
+        content: `Fetch ${input.url}.${input.agentContext ? ` Context for the agent: ${input.agentContext}.` : ""} Then call deliver_knowledge_entries.`,
+      },
+    ],
+  });
+
+  // Server-side tool loop. If we hit pause_turn, re-send to continue.
+  let safety = 5;
+  while (response.stop_reason === "pause_turn" && safety-- > 0) {
+    response = await client.messages.create({
+      model: "claude-opus-4-7",
+      max_tokens: 8192,
+      system,
+      tools: [
+        { type: "web_fetch_20260209", name: "web_fetch" },
+        TOOLS.knowledgeFromUrl,
+      ],
+      messages: [
+        {
+          role: "user",
+          content: `Fetch ${input.url}.${input.agentContext ? ` Context: ${input.agentContext}.` : ""} Then call deliver_knowledge_entries.`,
+        },
+        { role: "assistant", content: response.content },
+      ],
+    });
+  }
+
+  for (const block of response.content) {
+    if (block.type === "tool_use" && block.name === "deliver_knowledge_entries") {
+      return block.input as { page_summary: string; entries: Array<{ fact: string; category: string }> };
+    }
+  }
+  throw new Error(
+    `Claude did not return structured knowledge (stop_reason=${response.stop_reason}). Try again or use a more specific URL.`,
+  );
 }
