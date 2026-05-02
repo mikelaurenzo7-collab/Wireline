@@ -1458,7 +1458,8 @@ const ROLE_PERSONALITY_TEMPLATES: Record<string, string> = {
 
 app.get("/api/agents", authenticateUser, async (req: any, res: any) => {
   try {
-    const { data: agents } = await db.from('wireline_agents').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false });
+    const { data: agents, error } = await db.from('wireline_agents').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false });
+    if (error) console.error("Failed to fetch agents:", error);
     res.json({ agents: agents || [] });
   } catch (error) {
     res.json({ agents: [] }); 
