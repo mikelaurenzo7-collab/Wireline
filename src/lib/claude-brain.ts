@@ -990,12 +990,18 @@ export interface QualifyInput {
   source: "voice_call" | "email_thread";
   transcript: string;
   metadata?: Record<string, any>;
+  role?: string;
 }
 
 export async function qualify(input: QualifyInput) {
-  const system = `You are a senior B2B sales qualification analyst. Score leads against BANT (Budget / Authority / Need / Timeline). Be evidence-driven — every score must reference a specific phrase or signal in the transcript. Be honest: if there's no evidence, score low. Aggregate score is the weighted average (Need 35%, Timeline 25%, Authority 20%, Budget 20%).`;
+  let roleGuidance = "";
+  if (input.role) {
+    roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.role] ?? "";
+    if (!roleGuidance) console.warn(`[claude-brain] qualify: unknown role "${input.role}" — no role lens applied.`);
+  }
+  const system = `You are a senior B2B sales qualification analyst. Score leads against BANT (Budget / Authority / Need / Timeline). Be evidence-driven — every score must reference a specific phrase or signal in the transcript. Be honest: if there's no evidence, score low. Aggregate score is the weighted average (Need 35%, Timeline 25%, Authority 20%, Budget 20%).${roleGuidance ? `\n\nRole-specific qualification lens — ${roleGuidance}` : ""}`;
 
-  const user = `Source: ${input.source}
+  const user = `Source: ${input.source}${input.role ? ` · agent role: ${input.role}` : ""}
 ${input.metadata ? `Metadata: ${JSON.stringify(input.metadata)}` : ""}
 
 --- TRANSCRIPT ---
@@ -1177,6 +1183,7 @@ Deliver the review now.`;
 export interface SmartDraftInput {
   agentName: string;
   agentTone: string;
+  agentRole?: string;
   agentSignature?: string;
   knowledgeBase: string[];
   directives: string[];
@@ -1186,11 +1193,16 @@ export interface SmartDraftInput {
 }
 
 export async function smartDraft(input: SmartDraftInput) {
+  let roleGuidance = "";
+  if (input.agentRole) {
+    roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.agentRole] ?? "";
+    if (!roleGuidance) console.warn(`[claude-brain] smartDraft: unknown role "${input.agentRole}" — no role lens applied.`);
+  }
   // Stable cacheable prefix: persona + knowledge + directives.
   // Volatile suffix: thread + user instructions.
   const system = `## IDENTITY
 You are ${input.agentName}, an autonomous email agent for the company.
-Tone: ${input.agentTone}.
+Tone: ${input.agentTone}.${input.agentRole ? `\nRole: ${input.agentRole}.${roleGuidance ? ` ${roleGuidance}` : ""}` : ""}
 
 ## ABSOLUTE RULES
 ${input.directives.length ? input.directives.map((d) => `- ${d}`).join("\n") : "(none — exercise good judgment)"}
@@ -1518,6 +1530,7 @@ export interface SmartEmailReplyInput {
   agentName: string;
   agentTone: string;
   agentArchetype: string;
+  agentRole?: string;
   knowledgeBase: string[];
   directives: string[];
   fromEmail: string;
@@ -1574,9 +1587,14 @@ export async function smartEmailReply(input: SmartEmailReplyInput): Promise<{
 
   // Stable cache prefix: persona + KB + directives. The volatile email
   // body lives in the user message, after the cache breakpoint.
+  let roleGuidance = "";
+  if (input.agentRole) {
+    roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.agentRole] ?? "";
+    if (!roleGuidance) console.warn(`[claude-brain] smartEmailReply: unknown role "${input.agentRole}" — no role lens applied.`);
+  }
   const system = `## IDENTITY
 You are ${input.agentName}, an autonomous email agent.
-Tone: ${input.agentTone}. Archetype: ${input.agentArchetype}.
+Tone: ${input.agentTone}. Archetype: ${input.agentArchetype}.${input.agentRole ? `\nRole: ${input.agentRole}.${roleGuidance ? ` ${roleGuidance}` : ""}` : ""}
 
 ## ABSOLUTE RULES
 ${input.directives.length ? input.directives.map((d) => `- ${d}`).join("\n") : "(none — exercise good judgment)"}

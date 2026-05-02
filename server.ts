@@ -2738,6 +2738,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
                  agentName: activeAgent?.name || "Wireline Agent",
                  agentTone: activeAgent?.email_agent_tone || "Professional",
                  agentArchetype: activeAgent?.archetype || "Receptionist",
+                 agentRole: activeAgent?.role || DEFAULT_AGENT_ROLE,
                  knowledgeBase: knowledge,
                  directives: directives,
                  fromEmail: from,
@@ -3316,15 +3317,19 @@ app.post("/api/claude/brief", authenticateUser, async (req: any, res: any) => {
 // Lead qualification — BANT scoring, optionally pulled from a call log.
 app.post("/api/claude/qualify", authenticateUser, async (req: any, res: any) => {
   try {
-    const { source, transcript, callId, threadId } = req.body;
+    const { source, transcript, callId, threadId, agentId } = req.body;
     let actualTranscript: string = transcript;
     let metadata: Record<string, any> = {};
+    let resolvedAgentId: string | undefined = agentId;
 
     if (!actualTranscript && callId) {
       const { data: call } = await db.from("wireline_call_logs").select("*").eq("id", callId).eq("user_id", req.user.id).single();
       actualTranscript = call?.transcript ?? call?.summary ?? "";
       metadata = { customer_number: call?.customer_number, duration_seconds: call?.duration_seconds };
+      if (!resolvedAgentId && call?.agent_id) resolvedAgentId = call.agent_id;
     } else if (!actualTranscript && threadId) {
+      const { data: thread } = await db.from("wireline_email_threads").select("agent_id").eq("id", threadId).eq("user_id", req.user.id).single();
+      if (!resolvedAgentId && thread?.agent_id) resolvedAgentId = thread.agent_id;
       const { data: msgs } = await db.from("wireline_email_messages").select("role, content").eq("thread_id", threadId).order("created_at", { ascending: true });
       actualTranscript = (msgs ?? []).map((m: any) => `${m.role.toUpperCase()}: ${m.content}`).join("\n\n");
     }
@@ -3333,10 +3338,17 @@ app.post("/api/claude/qualify", authenticateUser, async (req: any, res: any) => 
       return res.status(400).json({ error: "No transcript provided (and no callId/threadId to fetch from)." });
     }
 
+    let role: string | undefined;
+    if (resolvedAgentId) {
+      const { data: agent } = await db.from("wireline_agents").select("role").eq("id", resolvedAgentId).eq("user_id", req.user.id).single();
+      if (agent) role = agent.role || DEFAULT_AGENT_ROLE;
+    }
+
     const result = await claudeBrain.qualify({
       source: source ?? "voice_call",
       transcript: actualTranscript,
       metadata,
+      role,
     });
     res.json({ qualification: result });
   } catch (e) {
@@ -3442,13 +3454,14 @@ app.post("/api/claude/email-draft", authenticateUser, async (req: any, res: any)
     const targetAgentId = agentId || thread.agent_id;
     let agentName = "Wireline Agent";
     let agentTone = "Professional";
+    let agentRole: string | undefined;
     let agentSignature = "";
     let knowledgeBase: string[] = [];
     let directives: string[] = [];
 
     if (targetAgentId) {
       const [{ data: agent }, { data: knowledge }, { data: directiveRows }] = await Promise.all([
-        db.from("wireline_agents").select("name, email_agent_tone, email_signature").eq("id", targetAgentId).eq("user_id", req.user.id).single(),
+        db.from("wireline_agents").select("name, email_agent_tone, email_signature, role").eq("id", targetAgentId).eq("user_id", req.user.id).single(),
         db.from("wireline_knowledge").select("content").eq("agent_id", targetAgentId).eq("user_id", req.user.id),
         db.from("wireline_directives").select("content").eq("agent_id", targetAgentId).eq("user_id", req.user.id).order("priority", { ascending: false }),
       ]);
@@ -3456,6 +3469,7 @@ app.post("/api/claude/email-draft", authenticateUser, async (req: any, res: any)
         agentName = agent.name;
         agentTone = agent.email_agent_tone || "Professional";
         agentSignature = agent.email_signature || "";
+        agentRole = agent.role || DEFAULT_AGENT_ROLE;
       }
       knowledgeBase = (knowledge ?? []).map((k: any) => k.content);
       directives = (directiveRows ?? []).map((d: any) => d.content);
@@ -3464,7 +3478,7 @@ app.post("/api/claude/email-draft", authenticateUser, async (req: any, res: any)
     const { data: msgs } = await db.from("wireline_email_messages").select("role, content").eq("thread_id", threadId).order("created_at", { ascending: true });
 
     const result = await claudeBrain.smartDraft({
-      agentName, agentTone, agentSignature,
+      agentName, agentTone, agentRole, agentSignature,
       knowledgeBase, directives,
       threadSubject: thread.subject || "(no subject)",
       threadMessages: (msgs ?? []) as any,
