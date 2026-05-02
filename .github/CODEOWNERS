@@ -1,0 +1,29 @@
+# Critical AI integration paths — operator must review before changes.
+# This won't block automated commits to a long-lived branch, but it will
+# auto-request review on every PR that touches these paths.
+
+# Anthropic / Claude integration — DO NOT remove without operator sign-off.
+src/lib/claude-brain.ts                @mikelaurenzo7-collab
+src/components/ClaudeRecipes.tsx       @mikelaurenzo7-collab
+src/components/ContactProfile.tsx      @mikelaurenzo7-collab
+src/components/InsightsView.tsx        @mikelaurenzo7-collab
+src/components/TriageInbox.tsx         @mikelaurenzo7-collab
+src/components/DailyBrief.tsx          @mikelaurenzo7-collab
+src/components/OnboardingQuickstart.tsx @mikelaurenzo7-collab
+src/components/ErrorBoundary.tsx       @mikelaurenzo7-collab
+src/components/CsvExportButton.tsx     @mikelaurenzo7-collab
+
+# Backend — every Claude endpoint lives here.
+server.ts                              @mikelaurenzo7-collab
+
+# Dependency + env manifests — preserve Anthropic + Vapi + Supabase + Gemini.
+package.json                           @mikelaurenzo7-collab
+package-lock.json                      @mikelaurenzo7-collab
+.env.example                           @mikelaurenzo7-collab
+
+# Schema — must stay backward-compatible (idempotent migrations).
+supabase_schema.sql                    @mikelaurenzo7-collab
+
+# Project documentation for agents.
+AGENTS.md                              @mikelaurenzo7-collab
+README.md                              @mikelaurenzo7-collab

@@ -192,8 +192,12 @@ app.post("/api/vapi-webhook", async (req, res) => {
   const { data: agent } = await db.from('wireline_agents').select('user_id').eq('id', webhookAgentId).single();
   if (!agent) return res.status(404).json({ error: "Agent not found" });
 
-  const { data: userSettings } = await db.from('wireline_settings').select('subscription_status').eq('user_id', agent.user_id).single();
+  const { data: userSettings } = await db.from('wireline_settings')
+    .select('subscription_status, voice_llm_provider, voice_llm_model')
+    .eq('user_id', agent.user_id).single();
   const subscriptionStatus = userSettings?.subscription_status || 'active';
+  const voiceLlmProvider = userSettings?.voice_llm_provider || 'google';
+  const voiceLlmModel = userSettings?.voice_llm_model || 'gemini-1.5-flash';
   
   if (subscriptionStatus !== 'active') {
     console.log("Connection rejected: Account subscription is not active.");
@@ -340,11 +344,15 @@ app.post("/api/vapi-webhook", async (req, res) => {
           serverUrlSecret: "wireline-secret-key",
           serverMessages: ["tool-calls", "status-update", "conversation-update", "end-of-call-report"],
           backgroundSound: agentConfig?.data?.ambient_noise || 'off',
+          // Per-user voice LLM choice (defaults to Gemini Flash for backward
+          // compat). Operators set this in Core Settings — pick "anthropic"
+          // and a Claude model Vapi supports (e.g. claude-3-5-sonnet-20241022)
+          // to route the voice agent through Claude.
           model: {
-            provider: "google",
-            model: "gemini-1.5-flash", 
+            provider: voiceLlmProvider,
+            model: voiceLlmModel,
             systemPrompt: systemPrompt,
-            temperature: llmTemp
+            temperature: llmTemp,
           },
           recordingEnabled: true,
           voice: {
@@ -1431,26 +1439,23 @@ app.get("/api/settings", authenticateUser, async (req: any, res: any) => {
 
 app.post("/api/settings", authenticateUser, async (req: any, res: any) => {
   try {
-    const { vapi_phone_number_id, subscription_status, max_agents } = req.body;
-    
-    // Check if exists
+    const { vapi_phone_number_id, subscription_status, max_agents, voice_llm_provider, voice_llm_model } = req.body;
+
+    // Build patch with only the fields the caller actually sent so we
+    // don't accidentally clobber unrelated settings.
+    const patch: Record<string, any> = { updated_at: new Date().toISOString() };
+    if (vapi_phone_number_id !== undefined) patch.vapi_phone_number_id = vapi_phone_number_id;
+    if (subscription_status !== undefined) patch.subscription_status = subscription_status;
+    if (max_agents !== undefined) patch.max_agents = max_agents;
+    if (voice_llm_provider !== undefined) patch.voice_llm_provider = voice_llm_provider;
+    if (voice_llm_model !== undefined) patch.voice_llm_model = voice_llm_model;
+
     const { data: existing } = await db.from('wireline_settings').select('id').eq('user_id', req.user.id).single();
-    
+
     if (existing) {
-       await db.from('wireline_settings').update({
-         vapi_phone_number_id,
-         subscription_status,
-         max_agents,
-         updated_at: new Date().toISOString()
-       }).eq('user_id', req.user.id);
+       await db.from('wireline_settings').update(patch).eq('user_id', req.user.id);
     } else {
-       await db.from('wireline_settings').insert({
-         user_id: req.user.id,
-         vapi_phone_number_id,
-         subscription_status,
-         max_agents,
-         updated_at: new Date().toISOString()
-       });
+       await db.from('wireline_settings').insert({ ...patch, user_id: req.user.id });
     }
     res.json({ success: true });
   } catch (error) {
@@ -1901,115 +1906,117 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
               requestBody: { removeLabelIds: ['UNREAD'] }
            });
 
-           // 3. GENERATE AI RESPONSE (Sales/CS focus) with TOOL SUPPORT
-           const systemInstruction = `
-             ## IDENTITY & ARCHETYPE
-             Persona: You are the AI Email Agent for our company.
-             Tone: ${activeAgent?.email_agent_tone || 'Professional'}. Concise and helpful.
-             Personality: ${activeAgent?.archetype || 'Receptionist'}.
-             Company Site: ${activeAgent?.website_url || 'Home Services Platform'}.
-             
-             ## CONTEXT
-             INCOMING EMAIL FROM: ${from}
-             SUBJECT: ${subject}
-             
-             ## GUARDRAILS
-             Response Length: CRITICAL. Keep every email under 20 words where possible. Be direct and avoid flowery pleasantries.
-             - If they want an appointment, use your tools to check availability and book it if confirmed.
-
-             ## KNOWLEDGE BASE
-             ${knowledge.length > 0 ? knowledge.map(k => `- ${k}`).join('\n') : "Use standard professional knowledge."}
-             
-             ## ABSOLUTE RULES
-             ${directives.length > 0 ? directives.map(d => `- ${d}`).join('\n') : ""}
-           `;
-
-           const tools: any = [{
-              functionDeclarations: [
-                  {
-                      name: "check_calendar_availability",
-                      description: "Checks availability on a specific date.",
-                      parameters: {
-                          type: SchemaType.OBJECT,
-                          properties: { date: { type: SchemaType.STRING, description: "The date to check (e.g., 'October 15')" } },
-                          required: ["date"]
-                      }
-                  },
-                  {
-                      name: "book_appointment",
-                      description: "Books an appointment.",
-                      parameters: {
-                          type: SchemaType.OBJECT,
-                          properties: {
-                              date: { type: SchemaType.STRING },
-                              time: { type: SchemaType.STRING },
-                              customer_name: { type: SchemaType.STRING },
-                              service_type: { type: SchemaType.STRING }
-                          },
-                          required: ["date", "time", "customer_name", "service_type"]
-                      }
-                  }
-              ]
-           }];
-
-           const model = genAI.getGenerativeModel({ 
-              model: "gemini-1.5-pro",
-              systemInstruction,
-              tools,
-              generationConfig: { temperature: 0.4 }
-           });
-
-           const chat = model.startChat();
+           // 3. GENERATE AI RESPONSE — Claude-primary with tool use; Gemini as fallback.
+           //    Tool implementations are shared between both paths.
+           const checkCalendar = async (date: string) => {
+             const { data } = await db.from('wireline_appointments').select('time').ilike('date', `%${date}%`);
+             if (data && data.length > 0) {
+               return `Booked times on ${date}: ${data.map(a => a.time).join(', ')}. Offer other times.`;
+             }
+             return `The entire day on ${date} is fully open.`;
+           };
+           const bookAppointment = async (args: { date: string; time: string; customer_name: string; service_type: string }) => {
+             try {
+               const { data, error } = await db.from('wireline_appointments').insert({
+                 agent_id: activeAgent?.id,
+                 date: args.date,
+                 time: args.time,
+                 customer_name: args.customer_name,
+                 service_type: args.service_type,
+                 status: "Scheduled",
+               }).select('id').single();
+               if (error) throw error;
+               return { success: true, reference_id: String(data.id).split('-')[0] };
+             } catch (e: any) {
+               return { success: false, error: e?.message || "Booking failed." };
+             }
+           };
 
            let finalReply = "I've received your email and will follow up shortly.";
-           try {
-              let resObj = await chat.sendMessage(snippet);
-              let response = resObj.response;
-              
-              // Handle tool calls
-              let calls = response.functionCalls();
-              while (calls && calls.length > 0) {
-                 const toolResponses = [];
-                 for (const call of calls) {
-                     let toolResult = "Tool failed";
-                     const args = call.args as any;
-                     try {
-                         if (call.name === "check_calendar_availability") {
-                             const { data } = await db.from('wireline_appointments').select('time').ilike('date', `%${args.date as string}%`);
-                             if (data && data.length > 0) {
-                                toolResult = `Booked times on ${args.date}: ${data.map(a => a.time).join(', ')}. Offer other times.`;
-                             } else {
-                                toolResult = `The entire day on ${args.date} is fully open.`;
-                             }
-                         } else if (call.name === "book_appointment") {
-                             const { data, error } = await db.from('wireline_appointments').insert({
-                                 agent_id: activeAgent?.id,
-                                 date: args.date as string,
-                                 time: args.time as string,
-                                 customer_name: args.customer_name as string,
-                                 service_type: args.service_type as string,
-                                 status: "Scheduled"
-                             }).select('id').single();
-                             if (error) throw error;
-                             toolResult = `Booked successfully! Reference ID: ${data.id.split('-')[0]}`;
-                         }
-                     } catch(e) {
-                         toolResult = "Error executing tool. Assume failure or ask human.";
-                     }
-                     toolResponses.push({
-                        functionResponse: {
-                            name: call.name,
-                            response: { result: toolResult }
-                        }
-                     });
-                 }
-                 const nextRes = await chat.sendMessage(toolResponses);
-                 response = nextRes.response;
-                 calls = response.functionCalls();
-              }
-              finalReply = response.text() || finalReply;
-           } catch(e) {
-              console.error("AI Email error:", e);
+
+           if (claudeBrain.isClaudeAvailable()) {
+             try {
+               const result = await claudeBrain.smartEmailReply({
+                 agentName: activeAgent?.name || "Wireline Agent",
+                 agentTone: activeAgent?.email_agent_tone || "Professional",
+                 agentArchetype: activeAgent?.archetype || "Receptionist",
+                 knowledgeBase: knowledge,
+                 directives: directives,
+                 fromEmail: from,
+                 subject: subject,
+                 emailBody: snippet,
+                 onCheckCalendar: checkCalendar,
+                 onBookAppointment: bookAppointment,
+               });
+               finalReply = result.replyText || finalReply;
+             } catch (err) {
+               console.error("Claude email reply failed; falling back to Gemini:", err);
+             }
+           }
+
+           // Legacy Gemini path — runs when Claude is offline or failed.
+           if (finalReply === "I've received your email and will follow up shortly.") {
+             const systemInstruction = `
+               ## IDENTITY & ARCHETYPE
+               Persona: You are the AI Email Agent for our company.
+               Tone: ${activeAgent?.email_agent_tone || 'Professional'}. Concise and helpful.
+               Personality: ${activeAgent?.archetype || 'Receptionist'}.
+               Company Site: ${activeAgent?.website_url || 'Home Services Platform'}.
+
+               ## CONTEXT
+               INCOMING EMAIL FROM: ${from}
+               SUBJECT: ${subject}
+
+               ## GUARDRAILS
+               Response Length: CRITICAL. Keep every email under 20 words where possible. Be direct and avoid flowery pleasantries.
+               - If they want an appointment, use your tools to check availability and book it if confirmed.
+
+               ## KNOWLEDGE BASE
+               ${knowledge.length > 0 ? knowledge.map(k => `- ${k}`).join('\n') : "Use standard professional knowledge."}
+
+               ## ABSOLUTE RULES
+               ${directives.length > 0 ? directives.map(d => `- ${d}`).join('\n') : ""}
+             `;
+
+             const tools: any = [{
+                functionDeclarations: [
+                    { name: "check_calendar_availability", description: "Checks availability on a specific date.", parameters: { type: SchemaType.OBJECT, properties: { date: { type: SchemaType.STRING } }, required: ["date"] } },
+                    { name: "book_appointment", description: "Books an appointment.", parameters: { type: SchemaType.OBJECT, properties: { date: { type: SchemaType.STRING }, time: { type: SchemaType.STRING }, customer_name: { type: SchemaType.STRING }, service_type: { type: SchemaType.STRING } }, required: ["date", "time", "customer_name", "service_type"] } },
+                ],
+             }];
+
+             const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro", systemInstruction, tools, generationConfig: { temperature: 0.4 } });
+             const chat = model.startChat();
+
+             try {
+                let resObj = await chat.sendMessage(snippet);
+                let response = resObj.response;
+                let calls = response.functionCalls();
+                while (calls && calls.length > 0) {
+                   const toolResponses = [];
+                   for (const call of calls) {
+                       let toolResult = "Tool failed";
+                       const args = call.args as any;
+                       try {
+                           if (call.name === "check_calendar_availability") {
+                              toolResult = await checkCalendar(args.date as string);
+                           } else if (call.name === "book_appointment") {
+                              const r = await bookAppointment(args);
+                              toolResult = r.success ? `Booked successfully! Reference ID: ${r.reference_id}` : (r.error || "Booking failed.");
+                           }
+                       } catch(e) {
+                           toolResult = "Error executing tool. Assume failure or ask human.";
+                       }
+                       toolResponses.push({ functionResponse: { name: call.name, response: { result: toolResult } } });
+                   }
+                   const nextRes = await chat.sendMessage(toolResponses);
+                   response = nextRes.response;
+                   calls = response.functionCalls();
+                }
+                finalReply = response.text() || finalReply;
+             } catch(e) {
+                console.error("Gemini email fallback also failed:", e);
+             }
            }
 
            if (activeAgent?.email_signature) {
@@ -2069,20 +2076,31 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
               status: 'open'
            }).eq('id', existingThread!.id);
 
-           // AI LEAD SCORING FOR EMAIL
+           // AI LEAD SCORING FOR EMAIL — Claude-primary, Gemini fallback.
            try {
-              const emailScoringPrompt = `
-                Analyze this email and give a BUSINESS INTENT score (0-100) and CATEGORY ('high', 'medium', 'low', 'none').
-                Subject: ${subject}
-                Body: ${snippet}
-                RESPONSE FORMAT (JSON): { "score": number, "label": string }
-              `;
-              const sModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash", generationConfig: { responseMimeType: "application/json" } });
-              const sRes = await sModel.generateContent(emailScoringPrompt);
-              const sObj = JSON.parse(sRes.response.text() || "{}");
+              let score = 0; let label = 'none';
+              if (claudeBrain.isClaudeAvailable()) {
+                 try {
+                    const r = await claudeBrain.scoreIntent({ subject, body: snippet });
+                    score = r.score || 0; label = r.label || 'none';
+                 } catch (err) {
+                    console.error("Claude email scoring failed; falling back to Gemini:", err);
+                 }
+              }
+              if (label === 'none' && score === 0) {
+                 const emailScoringPrompt = `
+                   Analyze this email and give a BUSINESS INTENT score (0-100) and CATEGORY ('high', 'medium', 'low', 'none').
+                   Subject: ${subject}
+                   Body: ${snippet}
+                   RESPONSE FORMAT (JSON): { "score": number, "label": string }
+                 `;
+                 const sModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash", generationConfig: { responseMimeType: "application/json" } });
+                 const sRes = await sModel.generateContent(emailScoringPrompt);
+                 const sObj = JSON.parse(sRes.response.text() || "{}");
+                 score = sObj.score || 0; label = sObj.label || 'none';
+              }
               await db.from('wireline_email_threads').update({
-                 lead_score: sObj.score || 0,
-                 intent_label: sObj.label || 'none'
+                 lead_score: score, intent_label: label,
               }).eq('id', existingThread!.id);
            } catch(e) {
               console.error("Email scoring failed:", e);
@@ -2193,15 +2211,40 @@ async function startServer() {
   }
 
   // OPTIMIZE AGENT PROTOCOLS
-app.post("/api/agents/:id/optimize", authenticateUser, async (req, res) => {
+app.post("/api/agents/:id/optimize", authenticateUser, async (req: any, res: any) => {
    try {
       const { id } = req.params;
-      const { data: logs } = await db.from('wireline_call_logs').select('summary, transcript').eq('agent_id', id).order('created_at', { ascending: false }).limit(10);
-      
+      const { data: logs } = await db.from('wireline_call_logs')
+         .select('summary, transcript, lead_score, intent_label')
+         .eq('agent_id', id).eq('user_id', req.user.id)
+         .order('created_at', { ascending: false }).limit(10);
+
       if (!logs || logs.length === 0) {
          return res.json({ suggestions: [], reason: "Insufficient data: Need at least 1 completed mission log." });
       }
 
+      // Claude path — uses the same agent-review tool as /api/claude/agent-review,
+      // but flattens the response to {suggestions, analysis} for legacy callers.
+      if (claudeBrain.isClaudeAvailable()) {
+         try {
+            const { data: agent } = await db.from('wireline_agents')
+               .select('name, archetype').eq('id', id).eq('user_id', req.user.id).single();
+            const review = await claudeBrain.agentReview({
+               agentName: agent?.name || 'Wireline Agent',
+               archetype: agent?.archetype || 'Receptionist',
+               callLogs: logs as any,
+            });
+            return res.json({
+               suggestions: (review.suggested_directives || []).slice(0, 3).map((d: any) => d.directive),
+               analysis: review.executive_summary,
+               full_review: review,
+            });
+         } catch (err) {
+            console.error("Claude optimize failed; falling back to Gemini:", err);
+         }
+      }
+
+      // Legacy Gemini fallback
       const prompt = `
         AGENT ID: ${id}
         MISSION LOGS (LAST 10):

@@ -250,3 +250,8 @@ END $$;
 ALTER TABLE wireline_email_accounts ADD COLUMN IF NOT EXISTS email_address TEXT;
 ALTER TABLE wireline_email_accounts ADD COLUMN IF NOT EXISTS provider TEXT DEFAULT 'google';
 
+-- Voice LLM picker — operators can route the actual Vapi voice agent through
+-- Anthropic instead of Gemini. Persisted on the per-user settings row.
+ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS voice_llm_provider TEXT DEFAULT 'google';
+ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS voice_llm_model TEXT DEFAULT 'gemini-1.5-flash';
+
