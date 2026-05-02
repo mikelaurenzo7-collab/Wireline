@@ -344,7 +344,7 @@ function HeatmapView({ days }: { days: number }) {
 /* ─────────────────────────  Leaderboard  ─────────────────────────── */
 
 function RolePill({ role }: { role?: string }) {
-  const meta = AGENT_ROLES.find(r => r.value === role) ?? AGENT_ROLES[1];
+  const meta = AGENT_ROLES.find(r => r.value === role) ?? AGENT_ROLES.find(r => r.value === "customer_service") ?? AGENT_ROLES[0];
   return (
     <span className={cn(
       "inline-flex items-center gap-1 font-black uppercase tracking-widest text-[8px] px-2 py-0.5 border-2",

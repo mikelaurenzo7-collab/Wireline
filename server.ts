@@ -11,6 +11,8 @@ import * as claudeBrain from "./src/lib/claude-brain";
 
 dotenv.config();
 
+const DEFAULT_AGENT_ROLE = "customer_service";
+
 const app = express();
 const PORT = 3000;
 
@@ -615,7 +617,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
       const systemPrompt = `
       ## BLOCK 1: IDENTITY & ARCHETYPE (THE "MOAT")
       Persona: You are ${agentConfig?.data?.name || 'Wireline Agent'}, a representative for our company.
-      Role: ${(agentConfig?.data?.role || 'customer_service').replace(/_/g, ' ').toUpperCase()}
+      Role: ${(agentConfig?.data?.role || DEFAULT_AGENT_ROLE).replace(/_/g, ' ').toUpperCase()}
       Tone: Snappy, concise, low-friction.
       The "Secret Sauce": ${archetypeRules}
       Base Personality: ${personalityData?.data?.content || "You are a professional, helpful assistant."}
@@ -1524,7 +1526,7 @@ app.post("/api/agents", authenticateUser, async (req: any, res: any) => {
     }
 
     const { id, name, voice_id, channel, role } = req.body;
-    const agentRole = role || 'customer_service';
+    const agentRole = role || DEFAULT_AGENT_ROLE;
     await db.from('wireline_agents').insert({
       id: id || `agent-${Date.now()}`,
       user_id: req.user.id,
@@ -4609,7 +4611,7 @@ app.get("/api/insights/leaderboard", authenticateUser, async (req: any, res: any
         agent_id: a.id,
         agent_name: a.name,
         archetype: a.archetype,
-        role: a.role || "customer_service",
+        role: a.role || DEFAULT_AGENT_ROLE,
         channel: a.channel,
         total_calls: total,
         qualified,

@@ -1249,7 +1249,11 @@ export interface PostCallInput {
 }
 
 export async function postCallAnalysis(input: PostCallInput) {
-  const roleGuidance = input.role ? (ROLE_ANALYSIS_GUIDANCE[input.role] ?? "") : "";
+  let roleGuidance = "";
+  if (input.role) {
+    roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.role] ?? "";
+    if (!roleGuidance) console.warn(`[claude-brain] postCallAnalysis: unknown role "${input.role}" — no scoring lens applied.`);
+  }
   const system = `You are a senior call analyst delivering post-call enrichment for an autonomous agent on the Wireline relay. Be evidence-driven and concise:
 - score lead intent honestly (0–100); if there's no signal, score low.
 - extract ONE specific tactical lesson (or empty string if nothing worth promoting).
@@ -1291,7 +1295,11 @@ export interface CoachInput {
 }
 
 export async function coach(input: CoachInput) {
-  const roleGuidance = input.role ? (ROLE_ANALYSIS_GUIDANCE[input.role] ?? "") : "";
+  let roleGuidance = "";
+  if (input.role) {
+    roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.role] ?? "";
+    if (!roleGuidance) console.warn(`[claude-brain] coach: unknown role "${input.role}" — no role context applied.`);
+  }
   const system = `You are a real-time call coach watching ${input.isLive ? "an in-progress" : "a completed"} call. Identify what is working, what is at risk, and exactly what the agent should say next. Suggested-next-words must be ≤30 words and ready to read aloud verbatim. Be tactical and concise.${roleGuidance ? `\n\nRole context — ${roleGuidance}` : ""}`;
   const user = `Agent: ${input.agentName} (${input.archetype}${input.role ? `, ${input.role}` : ""})
 
