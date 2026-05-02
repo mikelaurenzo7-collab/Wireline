@@ -3,6 +3,7 @@ import { ServerCog, KeyRound, Loader2, ShieldCheck, Phone, Plus, Link as LinkIco
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
+import WebhooksManager from "./WebhooksManager";
 
 export default function AdminSettings() {
   const [settings, setSettings] = useState({
@@ -277,9 +278,12 @@ export default function AdminSettings() {
                     </div>
                   </div>
 
+                  {/* ── Outbound webhooks ──────────────────────────────────── */}
+                  <WebhooksManager />
+
                   <div className="pt-12 border-t-4 border-ink flex flex-col md:flex-row items-center justify-between gap-8">
-                      <button 
-                        onClick={saveSettings} 
+                      <button
+                        onClick={saveSettings}
                         disabled={isSaving}
                         className="brutal-btn !bg-ink !text-brand !py-6 !px-12 flex items-center gap-6 active:translate-x-1 active:translate-y-1 active:shadow-none text-sm uppercase font-black tracking-[0.3em] italic hover:shadow-none transition-all w-full md:w-auto"
                       >

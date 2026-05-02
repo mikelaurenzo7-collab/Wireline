@@ -2,20 +2,22 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   BarChart3, TrendingUp, Layers, Calendar, Trophy, AlertOctagon, Loader2,
-  RefreshCw, Sparkles, ChevronRight, Users, DollarSign, Brain, Zap
+  RefreshCw, Sparkles, ChevronRight, Users, DollarSign, Brain, Zap,
+  Receipt, Clock, Database
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import CsvExportButton from "./CsvExportButton";
 
-type View = "funnel" | "topics" | "heatmap" | "leaderboard" | "failures";
+type View = "funnel" | "topics" | "heatmap" | "leaderboard" | "failures" | "spend";
 
 const VIEWS: { id: View; label: string; icon: any; accent: string; needsClaude: boolean }[] = [
-  { id: "funnel",      label: "Funnel",         icon: TrendingUp,   accent: "#7DF9FF", needsClaude: false },
-  { id: "topics",      label: "Topic Map",      icon: Layers,       accent: "#C58BFF", needsClaude: true  },
-  { id: "heatmap",     label: "Time Heatmap",   icon: Calendar,     accent: "#FF6BD9", needsClaude: false },
-  { id: "leaderboard", label: "Agent Leaderboard", icon: Trophy,    accent: "#4DFFC4", needsClaude: false },
-  { id: "failures",    label: "Failure Modes",  icon: AlertOctagon, accent: "#FFC07D", needsClaude: true  },
+  { id: "funnel",      label: "Funnel",            icon: TrendingUp,   accent: "#7DF9FF", needsClaude: false },
+  { id: "topics",      label: "Topic Map",         icon: Layers,       accent: "#C58BFF", needsClaude: true  },
+  { id: "heatmap",     label: "Time Heatmap",      icon: Calendar,     accent: "#FF6BD9", needsClaude: false },
+  { id: "leaderboard", label: "Agent Leaderboard", icon: Trophy,       accent: "#4DFFC4", needsClaude: false },
+  { id: "failures",    label: "Failure Modes",     icon: AlertOctagon, accent: "#FFC07D", needsClaude: true  },
+  { id: "spend",       label: "AI Spend",          icon: Receipt,      accent: "#7DF9FF", needsClaude: false },
 ];
 
 export default function InsightsView() {
@@ -107,6 +109,7 @@ export default function InsightsView() {
           {view === "heatmap"     && <HeatmapView     days={days} />}
           {view === "leaderboard" && <LeaderboardView days={days} />}
           {view === "failures"    && <FailureModesView />}
+          {view === "spend"       && <AISpendView     days={days} />}
         </motion.div>
       </AnimatePresence>
     </div>
@@ -464,6 +467,154 @@ function FailureModesView() {
           </div>
         </motion.div>
       ))}
+    </div>
+  );
+}
+
+/* ─────────────────────────  AI Spend  ─────────────────────────── */
+
+function AISpendView({ days }: { days: number }) {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    authFetch(`/api/audit/summary?days=${days}`).then((r) => r.json()).then(setData).finally(() => setLoading(false));
+  }, [days]);
+
+  if (loading) return <Spinner />;
+  if (!data || !data.totals) return null;
+
+  const { totals, by_day = [], by_action = [], by_model = [] } = data;
+  const callsHaveHappened = totals.calls > 0;
+
+  if (!callsHaveHappened) return <Empty label="No Claude calls in this window — try a longer range or run a recipe." />;
+
+  // Find max for chart scaling
+  const maxDay = Math.max(0.01, ...by_day.map((d: any) => Number(d.cost)));
+  const maxAction = Math.max(0.01, ...by_action.map((a: any) => Number(a.cost)));
+
+  return (
+    <div className="space-y-5">
+      {/* Headline cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <SpendStat label="Total Spend" value={`$${totals.cost.toFixed(2)}`} icon={DollarSign} accent="#7DF9FF" />
+        <SpendStat label="Claude Calls" value={String(totals.calls)} icon={Brain} accent="#C58BFF" />
+        <SpendStat label="Avg / Call" value={`$${totals.avg_cost_per_call.toFixed(4)}`} icon={Receipt} accent="#FF6BD9" />
+        <SpendStat label="Saved by Cache" value={`$${totals.cache_savings_usd.toFixed(2)}`} icon={Database} accent="#4DFFC4" />
+      </div>
+
+      {/* Spend over time */}
+      <div className="relative aurora-ring rounded-3xl">
+        <div className="relative rounded-3xl glass-strong overflow-hidden p-6 md:p-8">
+          <div className="text-[10px] uppercase tracking-[0.4em] text-brand mb-5">Spend per Day · {data.window_days}d</div>
+          <div className="space-y-2">
+            {by_day.map((d: any, i: number) => {
+              const pct = (Number(d.cost) / maxDay) * 100;
+              return (
+                <motion.div
+                  key={d.day}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.02, duration: 0.4 }}
+                  className="flex items-center gap-3"
+                >
+                  <span className="shrink-0 text-[10px] uppercase tracking-[0.25em] text-muted w-20 font-mono">{d.day.slice(5)}</span>
+                  <div className="flex-1 relative h-7 rounded-lg bg-white/5 overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${pct}%` }}
+                      transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: i * 0.02 }}
+                      className="absolute inset-y-0 left-0 rounded-lg flex items-center px-3"
+                      style={{ background: "linear-gradient(90deg, #7DF9FF, #C58BFF)" }}
+                    >
+                      <span className="text-[10px] font-mono text-paper font-medium">${d.cost.toFixed(2)}</span>
+                    </motion.div>
+                    <span className="absolute inset-y-0 right-3 flex items-center text-[10px] text-muted">{d.calls} calls</span>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* By action */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="relative aurora-ring rounded-2xl">
+          <div className="relative rounded-2xl glass border border-white/10 p-5 space-y-3">
+            <div className="text-[10px] uppercase tracking-[0.4em] text-brand">Spend by Recipe</div>
+            <div className="space-y-2">
+              {by_action.slice(0, 12).map((a: any, i: number) => {
+                const pct = (Number(a.cost) / maxAction) * 100;
+                return (
+                  <div key={a.action} className="space-y-1">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <span className="text-sm text-ink/85 truncate">{a.action}</span>
+                      <span className="font-display italic text-lg text-aurora tabular-nums shrink-0">${a.cost.toFixed(3)}</span>
+                    </div>
+                    <div className="relative h-1.5 rounded-full bg-white/5 overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }} animate={{ width: `${pct}%` }}
+                        transition={{ duration: 0.6, delay: i * 0.03 }}
+                        className="absolute inset-y-0 left-0 rounded-full"
+                        style={{ background: "linear-gradient(90deg, #C58BFF, #FF6BD9)" }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.25em] text-muted">
+                      <span>{a.calls} calls</span>
+                      <span>avg {a.avg_latency_ms}ms</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div className="relative aurora-ring rounded-2xl">
+          <div className="relative rounded-2xl glass border border-white/10 p-5 space-y-3">
+            <div className="text-[10px] uppercase tracking-[0.4em] text-brand">Spend by Model</div>
+            <div className="space-y-3">
+              {by_model.map((m: any) => (
+                <div key={m.model} className="flex items-baseline justify-between border-b border-white/5 pb-3 last:border-0 last:pb-0">
+                  <div>
+                    <div className="text-sm font-mono text-ink/90">{m.model}</div>
+                    <div className="text-[10px] uppercase tracking-[0.25em] text-muted mt-1">{m.calls} calls</div>
+                  </div>
+                  <div className="font-display italic text-2xl text-aurora">${m.cost.toFixed(2)}</div>
+                </div>
+              ))}
+            </div>
+            <div className="pt-3 border-t border-white/5">
+              <div className="text-[10px] uppercase tracking-[0.3em] text-muted mb-1">Tokens (window)</div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>Input <span className="text-ink/80 font-mono ml-1">{totals.input.toLocaleString()}</span></div>
+                <div>Output <span className="text-ink/80 font-mono ml-1">{totals.output.toLocaleString()}</span></div>
+                <div>Cache reads <span className="text-emerald-500 font-mono ml-1">{totals.cache_read.toLocaleString()}</span></div>
+                <div>Cache writes <span className="text-brand-2 font-mono ml-1">{totals.cache_create.toLocaleString()}</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SpendStat({ label, value, icon: Icon, accent }: { label: string; value: string; icon: any; accent: string }) {
+  return (
+    <div className="relative aurora-ring rounded-2xl">
+      <div className="relative rounded-2xl glass border border-white/10 p-5 overflow-hidden">
+        <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-25 blur-3xl pointer-events-none" style={{ background: `radial-gradient(circle, ${accent}, transparent)` }} />
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[10px] uppercase tracking-[0.3em] text-muted">{label}</p>
+            <Icon className="w-4 h-4" style={{ color: accent }} />
+          </div>
+          <p className="font-display italic text-3xl text-ink leading-none">{value}</p>
+        </div>
+      </div>
     </div>
   );
 }
