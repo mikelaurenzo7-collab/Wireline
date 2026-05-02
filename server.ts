@@ -11,6 +11,8 @@ import * as claudeBrain from "./src/lib/claude-brain";
 
 dotenv.config();
 
+const DEFAULT_AGENT_ROLE = "customer_service";
+
 const app = express();
 const PORT = 3000;
 
@@ -615,6 +617,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
       const systemPrompt = `
       ## BLOCK 1: IDENTITY & ARCHETYPE (THE "MOAT")
       Persona: You are ${agentConfig?.data?.name || 'Wireline Agent'}, a representative for our company.
+      Role: ${(agentConfig?.data?.role || DEFAULT_AGENT_ROLE).replace(/_/g, ' ').toUpperCase()}
       Tone: Snappy, concise, low-friction.
       The "Secret Sauce": ${archetypeRules}
       Base Personality: ${personalityData?.data?.content || "You are a professional, helpful assistant."}
@@ -1110,13 +1113,14 @@ app.post("/api/vapi-webhook", async (req, res) => {
           try {
             const { data: agentDetail } = await db
               .from('wireline_agents')
-              .select('name, archetype')
+              .select('name, archetype, role')
               .eq('id', webhookAgentId)
               .single();
 
             const result = await claudeBrain.postCallAnalysis({
               agentName: agentDetail?.name || 'Wireline Agent',
               archetype: agentDetail?.archetype || 'Receptionist',
+              role: agentDetail?.role || undefined,
               customerNumber: call?.customer?.number,
               durationSeconds: duration,
               summary: analysis?.summary || '',
@@ -1522,7 +1526,7 @@ app.post("/api/agents", authenticateUser, async (req: any, res: any) => {
     }
 
     const { id, name, voice_id, channel, role } = req.body;
-    const agentRole = role || 'customer_service';
+    const agentRole = role || DEFAULT_AGENT_ROLE;
     await db.from('wireline_agents').insert({
       id: id || `agent-${Date.now()}`,
       user_id: req.user.id,
@@ -4357,13 +4361,14 @@ app.post("/api/claude/post-call/:callId", authenticateUser, async (req: any, res
     if (!call) return res.status(404).json({ error: "Call not found." });
     const { data: agent } = await db
       .from("wireline_agents")
-      .select("name, archetype")
+      .select("name, archetype, role")
       .eq("id", call.agent_id)
       .single();
 
     const result = await claudeBrain.postCallAnalysis({
       agentName: agent?.name || "Wireline Agent",
       archetype: agent?.archetype || "Receptionist",
+      role: agent?.role || undefined,
       customerNumber: call.customer_number,
       durationSeconds: call.duration_seconds,
       summary: call.summary || "",
@@ -4388,6 +4393,7 @@ app.post("/api/claude/coach", authenticateUser, async (req: any, res: any) => {
     let transcript = rawTranscript as string | undefined;
     let agentName = "Wireline Agent";
     let archetype = "Receptionist";
+    let role: string | undefined;
 
     if (callId) {
       const { data: call } = await db.from("wireline_call_logs")
@@ -4396,18 +4402,18 @@ app.post("/api/claude/coach", authenticateUser, async (req: any, res: any) => {
       if (call) {
         transcript = transcript || call.transcript;
         const { data: a } = await db.from("wireline_agents")
-          .select("name, archetype").eq("id", call.agent_id).single();
-        if (a) { agentName = a.name; archetype = a.archetype; }
+          .select("name, archetype, role").eq("id", call.agent_id).single();
+        if (a) { agentName = a.name; archetype = a.archetype; role = a.role || undefined; }
       }
     } else if (agentId) {
       const { data: a } = await db.from("wireline_agents")
-        .select("name, archetype").eq("id", agentId).eq("user_id", req.user.id).single();
-      if (a) { agentName = a.name; archetype = a.archetype; }
+        .select("name, archetype, role").eq("id", agentId).eq("user_id", req.user.id).single();
+      if (a) { agentName = a.name; archetype = a.archetype; role = a.role || undefined; }
     }
 
     if (!transcript) return res.status(400).json({ error: "Provide a transcript or callId." });
 
-    const result = await claudeBrain.coach({ agentName, archetype, transcript, isLive: !!isLive });
+    const result = await claudeBrain.coach({ agentName, archetype, role, transcript, isLive: !!isLive });
     res.json({ coaching: result });
   } catch (e) {
     claudeErr(res, e);
@@ -4578,7 +4584,7 @@ app.get("/api/insights/leaderboard", authenticateUser, async (req: any, res: any
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
     const [{ data: agents }, { data: calls }, { data: appts }] = await Promise.all([
-      db.from("wireline_agents").select("id, name, archetype, channel").eq("user_id", req.user.id),
+      db.from("wireline_agents").select("id, name, archetype, channel, role").eq("user_id", req.user.id),
       db.from("wireline_call_logs").select("agent_id, lead_score, intent_label, duration_seconds, cost").eq("user_id", req.user.id).gte("created_at", since),
       db.from("wireline_appointments").select("agent_id").eq("user_id", req.user.id).gte("created_at", since),
     ]);
@@ -4605,6 +4611,7 @@ app.get("/api/insights/leaderboard", authenticateUser, async (req: any, res: any
         agent_id: a.id,
         agent_name: a.name,
         archetype: a.archetype,
+        role: a.role || DEFAULT_AGENT_ROLE,
         channel: a.channel,
         total_calls: total,
         qualified,

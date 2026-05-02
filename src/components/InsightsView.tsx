@@ -8,6 +8,7 @@ import {
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import CsvExportButton from "./CsvExportButton";
+import { AGENT_ROLES } from "./FleetSettings";
 
 type View = "funnel" | "topics" | "heatmap" | "leaderboard" | "failures" | "spend";
 
@@ -342,6 +343,19 @@ function HeatmapView({ days }: { days: number }) {
 
 /* ─────────────────────────  Leaderboard  ─────────────────────────── */
 
+function RolePill({ role }: { role?: string }) {
+  const meta = AGENT_ROLES.find(r => r.value === role) ?? AGENT_ROLES.find(r => r.value === "customer_service") ?? AGENT_ROLES[0];
+  return (
+    <span className={cn(
+      "inline-flex items-center gap-1 font-black uppercase tracking-widest text-[8px] px-2 py-0.5 border-2",
+      meta.tw.bg, meta.tw.text, meta.tw.border,
+    )}>
+      <span className={cn("w-1.5 h-1.5 rounded-full", meta.tw.dot)} />
+      {meta.label}
+    </span>
+  );
+}
+
 function LeaderboardView({ days }: { days: number }) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -374,6 +388,7 @@ function LeaderboardView({ days }: { days: number }) {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap mb-1">
                 <h4 className="font-display italic text-2xl text-ink leading-tight">{a.agent_name}</h4>
+                <RolePill role={a.role} />
                 <span className="px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] bg-brand/15 text-brand border border-brand/30">{a.archetype}</span>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-6 gap-3 text-xs">

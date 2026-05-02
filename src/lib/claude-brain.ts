@@ -1226,9 +1226,22 @@ Output the email body only — no subject, no signature.`;
  *  vapi webhook with one Claude tool-call returning everything at once.
  * ──────────────────────────────────────────────────────────────────── */
 
+// Role-specific scoring lenses applied on top of the generic analysis prompt.
+const ROLE_ANALYSIS_GUIDANCE: Record<string, string> = {
+  lead_qualifier:    "This agent qualifies leads (BANT). Score higher when Budget, Authority, Need, and Timeline were all established. Score low if any pillar is missing. Note which BANT pillars were confirmed or absent.",
+  scheduler:         "This agent books appointments. Score higher when a booking was confirmed with a date, time, and confirmation ID. Note if the appointment was successfully booked, rescheduled, or failed.",
+  collections:       "This agent collects payments. Score higher when a payment commitment, arrangement, or promise-to-pay was obtained. Note amount and timeline if discussed.",
+  sales:             "This agent closes deals. Score higher when genuine interest, objection-handling, and a clear next step (demo, proposal, close) occurred.",
+  technical_support: "This agent resolves technical issues. Score higher when the customer's problem was fully resolved or a concrete resolution path was set. Note resolution status.",
+  marketing:         "This agent runs outreach campaigns. Score higher when the prospect expressed interest, booked a demo, registered for an event, or agreed to a follow-up.",
+  receptionist:      "This agent routes calls and takes messages. Score higher when the caller was properly routed or a complete, accurate message was captured.",
+  customer_service:  "This agent handles support. Score higher when the customer's issue was resolved and satisfaction expressed. Note any unresolved items.",
+};
+
 export interface PostCallInput {
   agentName: string;
   archetype: string;
+  role?: string;
   customerNumber?: string;
   durationSeconds?: number;
   summary: string;
@@ -1236,15 +1249,21 @@ export interface PostCallInput {
 }
 
 export async function postCallAnalysis(input: PostCallInput) {
+  let roleGuidance = "";
+  if (input.role) {
+    roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.role] ?? "";
+    if (!roleGuidance) console.warn(`[claude-brain] postCallAnalysis: unknown role "${input.role}" — no scoring lens applied.`);
+  }
   const system = `You are a senior call analyst delivering post-call enrichment for an autonomous agent on the Wireline relay. Be evidence-driven and concise:
 - score lead intent honestly (0–100); if there's no signal, score low.
 - extract ONE specific tactical lesson (or empty string if nothing worth promoting).
 - list every concrete follow-up the agent promised or the customer asked for.
 - flag compliance issues (recording consent, TCPA, GDPR, refund-policy mismatch, etc.).
 - list topics the agent couldn't answer authoritatively (knowledge gaps).
+${roleGuidance ? `\nRole-specific scoring lens — ${roleGuidance}` : ""}
 Use plain English. No jargon, no ALL CAPS, no emoji.`;
 
-  const user = `Agent: ${input.agentName} (archetype: ${input.archetype})
+  const user = `Agent: ${input.agentName} (archetype: ${input.archetype}${input.role ? `, role: ${input.role}` : ""})
 Customer: ${input.customerNumber ?? "(unknown)"}${input.durationSeconds ? ` · ${input.durationSeconds}s` : ""}
 
 --- SUMMARY ---
@@ -1270,13 +1289,19 @@ ${input.transcript || "(none)"}
 export interface CoachInput {
   agentName: string;
   archetype: string;
+  role?: string;
   transcript: string;
   isLive?: boolean;
 }
 
 export async function coach(input: CoachInput) {
-  const system = `You are a real-time call coach watching ${input.isLive ? "an in-progress" : "a completed"} call. Identify what is working, what is at risk, and exactly what the agent should say next. Suggested-next-words must be ≤30 words and ready to read aloud verbatim. Be tactical and concise.`;
-  const user = `Agent: ${input.agentName} (${input.archetype})
+  let roleGuidance = "";
+  if (input.role) {
+    roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.role] ?? "";
+    if (!roleGuidance) console.warn(`[claude-brain] coach: unknown role "${input.role}" — no role context applied.`);
+  }
+  const system = `You are a real-time call coach watching ${input.isLive ? "an in-progress" : "a completed"} call. Identify what is working, what is at risk, and exactly what the agent should say next. Suggested-next-words must be ≤30 words and ready to read aloud verbatim. Be tactical and concise.${roleGuidance ? `\n\nRole context — ${roleGuidance}` : ""}`;
+  const user = `Agent: ${input.agentName} (${input.archetype}${input.role ? `, ${input.role}` : ""})
 
 --- TRANSCRIPT ---
 ${input.transcript}
