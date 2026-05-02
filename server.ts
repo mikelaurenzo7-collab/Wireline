@@ -1777,6 +1777,72 @@ app.delete("/api/agent-config/:id/:type/:rowId", authenticateUser, async (req: a
     }
  });
 
+// ──────────────────────────────────────────────────────────
+//  KNOWLEDGE BASE MANAGER — cross-agent view of every fact in
+//  wireline_knowledge. Agents accumulate knowledge from URL/PDF
+//  ingest, agent-forge seed, and per-agent manual entry; this is
+//  the centralized place to audit, edit, and prune.
+// ──────────────────────────────────────────────────────────
+
+app.get("/api/knowledge", authenticateUser, async (req: any, res: any) => {
+  try {
+    const [{ data: rows, error }, { data: agents }] = await Promise.all([
+      db.from("wireline_knowledge")
+        .select("id, agent_id, content, created_at")
+        .eq("user_id", req.user.id)
+        .order("created_at", { ascending: false })
+        .limit(2000),
+      db.from("wireline_agents")
+        .select("id, name, archetype")
+        .eq("user_id", req.user.id),
+    ]);
+    if (error) throw error;
+    const agentMap = new Map((agents || []).map((a: any) => [a.id, a]));
+    const knowledge = (rows || []).map((r: any) => {
+      const agent = agentMap.get(r.agent_id) as any;
+      return {
+        id: r.id,
+        agent_id: r.agent_id,
+        agent_name: agent?.name || "(unknown agent)",
+        agent_archetype: agent?.archetype || null,
+        content: r.content,
+        created_at: r.created_at,
+      };
+    });
+    res.json({
+      knowledge,
+      agents: (agents || []).map((a: any) => ({ id: a.id, name: a.name, archetype: a.archetype })),
+      total: knowledge.length,
+    });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load knowledge" }); }
+});
+
+app.patch("/api/knowledge/:id", authenticateUser, async (req: any, res: any) => {
+  try {
+    const content = (req.body?.content || "").toString().trim();
+    if (!content) return res.status(400).json({ error: "content is required" });
+    const { data, error } = await db.from("wireline_knowledge")
+      .update({ content: content.slice(0, 8000) })
+      .eq("id", req.params.id)
+      .eq("user_id", req.user.id)
+      .select("id, agent_id, content, created_at")
+      .single();
+    if (error) throw error;
+    res.json({ knowledge: data });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to update" }); }
+});
+
+app.delete("/api/knowledge/:id", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { error } = await db.from("wireline_knowledge")
+      .delete()
+      .eq("id", req.params.id)
+      .eq("user_id", req.user.id);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to delete" }); }
+});
+
 // ==========================================
 // 1.8 SETTINGS & OUTBOUND DIALER ENDPOINTS
 // ==========================================
@@ -3340,6 +3406,157 @@ setInterval(() => {
 // available (or one was provided in the body), we kick off an outbound
 // Vapi call right after the lead is recorded. Fire-and-forget so the
 // HTTP response stays fast.
+// Single-lead processor — shared between /api/intake/lead and the
+// bulk variant. Returns a structured result so the bulk endpoint can
+// aggregate per-lead success / failure without partial-failure
+// rolling back the rest of the batch.
+type IntakeLeadInput = {
+  customer_number?: string;
+  phone?: string;
+  phone_number?: string;
+  customer_name?: string;
+  name?: string;
+  context?: string;
+  message?: string;
+  metadata?: any;
+  agent_id?: string;
+  idempotency_key?: string;
+};
+
+type IntakeLeadResult = {
+  ok: boolean;
+  lead_id?: number;
+  status?: string;
+  call_id?: string | null;
+  idempotent_replay?: boolean;
+  auto_dial_initiated?: boolean;
+  error?: string;
+  code?: string;
+};
+
+async function processIntakeLead(key: any, input: IntakeLeadInput, idemHeaderOverride?: string | null): Promise<IntakeLeadResult> {
+  const customer_number = (input.customer_number || input.phone || input.phone_number || "").toString().trim();
+  if (!customer_number) {
+    return { ok: false, error: "customer_number (or phone) is required.", code: "MISSING_NUMBER" };
+  }
+
+  const customer_name = (input.customer_name || input.name || "").toString().slice(0, 200);
+  const context = (input.context || input.message || "").toString().slice(0, 4000);
+  const metadata = input.metadata && typeof input.metadata === "object" ? input.metadata : null;
+  const agent_id = input.agent_id || key.default_agent_id || null;
+  const idemKey = (idemHeaderOverride !== undefined ? idemHeaderOverride : (input.idempotency_key || null));
+  const idemKeyTrimmed = idemKey ? String(idemKey).trim().slice(0, 255) : null;
+
+  if (idemKeyTrimmed) {
+    const { data: existing } = await db.from("wireline_outbound_leads")
+      .select("id, call_id, status")
+      .eq("user_id", key.user_id)
+      .eq("idempotency_key", idemKeyTrimmed)
+      .maybeSingle();
+    if (existing) {
+      return {
+        ok: true,
+        lead_id: existing.id,
+        idempotent_replay: true,
+        status: existing.status,
+        call_id: existing.call_id,
+        auto_dial_initiated: false,
+      };
+    }
+  }
+
+  const nowIso = new Date().toISOString();
+  const { data: inserted, error } = await db.from("wireline_outbound_leads").insert({
+    user_id: key.user_id,
+    agent_id,
+    customer_name: customer_name || null,
+    customer_number,
+    phone_number: customer_number,
+    context: context || null,
+    status: "Pending",
+    source: "inbound",
+    metadata,
+    received_at: nowIso,
+    idempotency_key: idemKeyTrimmed,
+  }).select("id").single();
+
+  if (error) {
+    if (idemKeyTrimmed && (error.code === "23505" || /duplicate key/i.test(error.message || ""))) {
+      const { data: replay } = await db.from("wireline_outbound_leads")
+        .select("id, call_id, status")
+        .eq("user_id", key.user_id)
+        .eq("idempotency_key", idemKeyTrimmed)
+        .maybeSingle();
+      if (replay) {
+        return {
+          ok: true,
+          lead_id: replay.id,
+          idempotent_replay: true,
+          status: replay.status,
+          call_id: replay.call_id,
+          auto_dial_initiated: false,
+        };
+      }
+    }
+    return { ok: false, error: error.message || "DB insert failed", code: "INSERT_FAILED" };
+  }
+
+  // Fan out to operator's outbound webhooks.
+  dispatchWebhook(key.user_id, "lead.received", {
+    lead_id: inserted?.id,
+    customer_name: customer_name || null,
+    customer_number,
+    context: context || null,
+    metadata,
+    agent_id,
+    intake_key: { id: key.id, name: key.name },
+    auto_dial: !!key.auto_dial && !!agent_id,
+    at: nowIso,
+  }).catch(() => {});
+
+  let auto_dial_initiated = false;
+  if (key.auto_dial && agent_id && inserted?.id) {
+    auto_dial_initiated = true;
+    (async () => {
+      try {
+        const result = await placeOutboundCall({
+          userId: key.user_id,
+          agentId: agent_id,
+          customerName: customer_name || null,
+          customerNumber: customer_number,
+          context: context || `Inbound lead via ${key.name}`,
+        });
+        if (result.ok) {
+          await db.from("wireline_outbound_leads").update({
+            call_id: result.callId,
+            status: "Dialing",
+            last_called_at: new Date().toISOString(),
+          }).eq("id", inserted.id);
+        } else {
+          await db.from("wireline_outbound_leads").update({
+            status: "AutoDialFailed",
+            metadata: { ...(metadata || {}), auto_dial_error: result.error, auto_dial_status: result.status },
+          }).eq("id", inserted.id);
+          console.warn(`Auto-dial failed for lead ${inserted.id}: [${result.status}] ${result.error}`);
+        }
+      } catch (err: any) {
+        await db.from("wireline_outbound_leads").update({
+          status: "AutoDialFailed",
+          metadata: { ...(metadata || {}), auto_dial_error: err?.message || String(err) },
+        }).eq("id", inserted.id);
+        console.warn(`Auto-dial threw for lead ${inserted.id}:`, err);
+      }
+    })();
+  }
+
+  return {
+    ok: true,
+    lead_id: inserted?.id,
+    idempotent_replay: false,
+    auto_dial_initiated,
+  };
+}
+
 app.post("/api/intake/lead", async (req: any, res: any) => {
   try {
     const provided = req.headers["x-wireline-key"] as string | undefined;
@@ -3356,141 +3573,100 @@ app.post("/api/intake/lead", async (req: any, res: any) => {
       });
     }
 
-    const body = req.body || {};
-    const customer_number: string | undefined = (body.customer_number || body.phone || body.phone_number || "").toString().trim();
-    if (!customer_number) return res.status(400).json({ error: "customer_number (or phone) is required." });
+    const idemHeader = (req.headers["idempotency-key"] as string | undefined)?.toString().trim() || null;
+    const result = await processIntakeLead(key, req.body || {}, idemHeader);
 
-    const customer_name: string = (body.customer_name || body.name || "").toString().slice(0, 200);
-    const context: string = (body.context || body.message || "").toString().slice(0, 4000);
-    const metadata = body.metadata && typeof body.metadata === "object" ? body.metadata : null;
-    const agent_id = body.agent_id || key.default_agent_id || null;
+    if (result.ok) {
+      // Bump usage stats fire-and-forget — only on real (not replayed) inserts.
+      if (!result.idempotent_replay) {
+        const nowIso = new Date().toISOString();
+        db.from("wireline_intake_keys").update({
+          last_used_at: nowIso,
+          use_count: (key.use_count || 0) + 1,
+        }).eq("id", key.id).then(() => {}, () => {});
+      }
+      return res.json(result);
+    }
+    const status = result.code === "MISSING_NUMBER" ? 400 : 500;
+    return res.status(status).json({ error: result.error, code: result.code });
+  } catch (e: any) {
+    console.error("Intake lead failed:", e);
+    res.status(500).json({ error: e?.message ?? "Intake failed" });
+  }
+});
 
-    // Idempotency — operator can pass any string up to 255 chars.
-    const idemHeader = (req.headers["idempotency-key"] as string | undefined)?.toString().trim().slice(0, 255) || null;
+// Bulk intake — accept up to BULK_MAX leads per request. Each lead
+// counts as one rate-limit hit; if the batch would exceed the
+// per-key bucket, the whole request is rejected with 429 (so the
+// caller can split it sensibly rather than getting partial success).
+//
+// Per-lead idempotency_key in the body is supported (the request-level
+// Idempotency-Key header is intentionally ignored here — wouldn't make
+// sense to apply one key to a batch of distinct leads).
+const INTAKE_BULK_MAX = 100;
 
-    if (idemHeader) {
-      const { data: existing } = await db.from("wireline_outbound_leads")
-        .select("id, call_id, status")
-        .eq("user_id", key.user_id)
-        .eq("idempotency_key", idemHeader)
-        .maybeSingle();
-      if (existing) {
-        return res.json({
-          ok: true,
-          lead_id: existing.id,
-          idempotent_replay: true,
-          status: existing.status,
-          call_id: existing.call_id,
+app.post("/api/intake/leads", async (req: any, res: any) => {
+  try {
+    const provided = req.headers["x-wireline-key"] as string | undefined;
+    const key = await resolveIntakeKey(provided);
+    if (!key) return res.status(401).json({ error: "Invalid or missing X-Wireline-Key." });
+
+    const leads = Array.isArray(req.body?.leads) ? req.body.leads : null;
+    if (!leads || leads.length === 0) {
+      return res.status(400).json({ error: "leads must be a non-empty array.", code: "EMPTY_BATCH" });
+    }
+    if (leads.length > INTAKE_BULK_MAX) {
+      return res.status(400).json({
+        error: `Batch too large. Max ${INTAKE_BULK_MAX} leads per request.`,
+        code: "BATCH_TOO_LARGE",
+        max: INTAKE_BULK_MAX,
+      });
+    }
+
+    // Reserve N slots in the rate bucket up front; reject the whole
+    // batch if any slot would overflow so the caller can chunk.
+    for (let i = 0; i < leads.length; i++) {
+      const r = checkIntakeRate(key.id);
+      if (!r.ok) {
+        res.set("Retry-After", String(r.retry_after_s));
+        return res.status(429).json({
+          error: `Rate limit would be exceeded by this batch (${INTAKE_RATE_MAX}/min). Retry in ${r.retry_after_s}s.`,
+          code: "INTAKE_RATE_LIMIT",
+          retry_after_s: r.retry_after_s,
+          accepted_so_far: i,
         });
       }
     }
 
-    const nowIso = new Date().toISOString();
-    const { data: inserted, error } = await db.from("wireline_outbound_leads").insert({
-      user_id: key.user_id,
-      agent_id,
-      customer_name: customer_name || null,
-      customer_number,
-      phone_number: customer_number,
-      context: context || null,
-      status: "Pending",
-      source: "inbound",
-      metadata,
-      received_at: nowIso,
-      idempotency_key: idemHeader,
-    }).select("id").single();
+    // Process leads concurrently. Per-lead errors are captured into
+    // the results array so a single bad row doesn't fail the rest.
+    const results = await Promise.all(
+      (leads as IntakeLeadInput[]).map((lead) => processIntakeLead(key, lead).catch((err: any) => ({
+        ok: false,
+        error: err?.message || String(err),
+        code: "PROCESS_FAILED",
+      } as IntakeLeadResult))),
+    );
 
-    if (error) {
-      // Race condition: a concurrent insert won the unique race. Fall
-      // back to fetching the canonical row by idempotency_key.
-      // Postgres unique-violation is code '23505'.
-      if (idemHeader && (error.code === "23505" || /duplicate key/i.test(error.message || ""))) {
-        const { data: replay } = await db.from("wireline_outbound_leads")
-          .select("id, call_id, status")
-          .eq("user_id", key.user_id)
-          .eq("idempotency_key", idemHeader)
-          .maybeSingle();
-        if (replay) {
-          return res.json({
-            ok: true,
-            lead_id: replay.id,
-            idempotent_replay: true,
-            status: replay.status,
-            call_id: replay.call_id,
-          });
-        }
-      }
-      throw error;
-    }
-
-    // Bump usage stats fire-and-forget so the response stays fast.
-    db.from("wireline_intake_keys").update({
-      last_used_at: nowIso,
-      use_count: (key.use_count || 0) + 1,
-    }).eq("id", key.id).then(() => {}, () => {});
-
-    // Fan out to operator's outbound webhooks.
-    dispatchWebhook(key.user_id, "lead.received", {
-      lead_id: inserted?.id,
-      customer_name: customer_name || null,
-      customer_number,
-      context: context || null,
-      metadata,
-      agent_id,
-      intake_key: { id: key.id, name: key.name },
-      auto_dial: !!key.auto_dial && !!agent_id,
-      at: nowIso,
-    }).catch(() => {});
-
-    // Auto-dial — fire-and-forget so the operator's caller (e.g. a
-    // form submission handler) gets a fast response. The lead row
-    // gets updated with call_id + status='Dialing' on success, or
-    // status='AutoDialFailed' with the reason in metadata on failure
-    // so the operator can see what happened.
-    let auto_dial_initiated = false;
-    if (key.auto_dial && agent_id && inserted?.id) {
-      auto_dial_initiated = true;
-      (async () => {
-        try {
-          const result = await placeOutboundCall({
-            userId: key.user_id,
-            agentId: agent_id,
-            customerName: customer_name || null,
-            customerNumber: customer_number,
-            context: context || `Inbound lead via ${key.name}`,
-          });
-          if (result.ok) {
-            await db.from("wireline_outbound_leads").update({
-              call_id: result.callId,
-              status: "Dialing",
-              last_called_at: new Date().toISOString(),
-            }).eq("id", inserted.id);
-          } else {
-            await db.from("wireline_outbound_leads").update({
-              status: "AutoDialFailed",
-              metadata: { ...(metadata || {}), auto_dial_error: result.error, auto_dial_status: result.status },
-            }).eq("id", inserted.id);
-            console.warn(`Auto-dial failed for lead ${inserted.id}: [${result.status}] ${result.error}`);
-          }
-        } catch (err: any) {
-          await db.from("wireline_outbound_leads").update({
-            status: "AutoDialFailed",
-            metadata: { ...(metadata || {}), auto_dial_error: err?.message || String(err) },
-          }).eq("id", inserted.id);
-          console.warn(`Auto-dial threw for lead ${inserted.id}:`, err);
-        }
-      })();
+    const successes = results.filter(r => r.ok).length;
+    if (successes > 0) {
+      const nowIso = new Date().toISOString();
+      db.from("wireline_intake_keys").update({
+        last_used_at: nowIso,
+        use_count: (key.use_count || 0) + successes,
+      }).eq("id", key.id).then(() => {}, () => {});
     }
 
     res.json({
       ok: true,
-      lead_id: inserted?.id,
-      auto_dial_initiated,
-      idempotent_replay: false,
+      count: leads.length,
+      success_count: successes,
+      failure_count: leads.length - successes,
+      results,
     });
   } catch (e: any) {
-    console.error("Intake lead failed:", e);
-    res.status(500).json({ error: e?.message ?? "Intake failed" });
+    console.error("Bulk intake failed:", e);
+    res.status(500).json({ error: e?.message ?? "Bulk intake failed" });
   }
 });
 
@@ -3550,6 +3726,302 @@ app.delete("/api/intake/keys/:id", authenticateUser, async (req: any, res: any) 
     await db.from("wireline_intake_keys").delete().eq("id", req.params.id).eq("user_id", req.user.id);
     res.json({ success: true });
   } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to delete key" }); }
+});
+
+// ──────────────────────────────────────────────────────────
+//  SCHEDULED DAILY BRIEF — emails Claude's morning brief to the
+//  operator at a configured UTC time via their connected Gmail.
+//  - Background scheduler ticks every 5 minutes; sends to any user
+//    whose daily_brief_send_at has elapsed today and who hasn't
+//    been sent for the current UTC date yet.
+//  - HTML email rendered server-side (no inline images, just well-
+//    structured semantic HTML for max client compatibility).
+//  - Per-send error stored on settings.daily_brief_last_error so
+//    the operator can see why if delivery is silent.
+// ──────────────────────────────────────────────────────────
+
+function buildOAuthClient() {
+  // Token refresh doesn't require an accurate redirect_uri — Google
+  // only validates redirect on the auth-code exchange. Pass APP_URL
+  // when set so any token-server callbacks have a sane URL anyway.
+  return new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.APP_URL ? `${process.env.APP_URL}/api/oauth/google/callback` : undefined,
+  );
+}
+
+function escapeHtml(s: any): string {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function renderDailyBriefEmail(payload: any, opts: { dateLabel: string; appUrl?: string | null }): { subject: string; html: string; text: string } {
+  const brief = payload?.brief || {};
+  const stats = payload?.stats_yesterday || {};
+  const delta = payload?.week_delta || {};
+  const headline = brief.headline || "Your daily brief";
+  const mood = brief.mood || "neutral";
+  const highlights: string[] = brief.highlights || [];
+  const concerns: string[] = brief.concerns || [];
+  const actions: string[] = brief.action_items || [];
+
+  const moodColor = mood === "positive" ? "#10b981" : mood === "concerning" ? "#f43f5e" : "#7DF9FF";
+  const fmtPct = (n: any) => {
+    const v = Number(n || 0);
+    const sign = v >= 0 ? "+" : "";
+    return `${sign}${v.toFixed(0)}%`;
+  };
+  const link = opts.appUrl ? `${opts.appUrl.replace(/\/+$/, "")}/` : null;
+
+  const subject = `Wireline · ${escapeHtml(headline)} · ${opts.dateLabel}`;
+
+  const css = `
+    body { margin:0; padding:0; background:#0F0E2D; color:#EEF1F8; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }
+    .wrap { max-width:640px; margin:0 auto; padding:32px 16px; }
+    .card { background:#191734; border:1px solid rgba(255,255,255,0.08); border-radius:20px; padding:28px; margin-bottom:16px; }
+    .label { font-size:10px; letter-spacing:0.4em; text-transform:uppercase; color:#8E91A8; margin:0 0 12px; }
+    h1 { font-size:28px; line-height:1.15; margin:0 0 8px; color:#fff; font-weight:600; letter-spacing:-0.01em; }
+    h2 { font-size:13px; letter-spacing:0.3em; text-transform:uppercase; color:${moodColor}; margin:0 0 16px; }
+    p { color:rgba(238,241,248,0.8); line-height:1.55; margin:0 0 12px; font-size:14px; }
+    .stats { display:table; width:100%; border-collapse:separate; border-spacing:8px 0; margin-top:8px; }
+    .stat { display:table-cell; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:14px; text-align:center; vertical-align:top; }
+    .stat .v { font-size:22px; font-weight:600; color:#fff; line-height:1; }
+    .stat .l { font-size:10px; letter-spacing:0.25em; text-transform:uppercase; color:#8E91A8; margin-top:8px; }
+    .delta-pos { color:#4DFFC4; }
+    .delta-neg { color:#FF6BD9; }
+    ul { padding:0; margin:0; list-style:none; }
+    li { background:rgba(255,255,255,0.03); border-left:3px solid ${moodColor}; border-radius:6px; padding:10px 14px; margin-bottom:8px; font-size:14px; line-height:1.5; color:rgba(238,241,248,0.9); }
+    li.warn { border-left-color:#FFC07D; }
+    li.action { border-left-color:#7DF9FF; }
+    .footer { text-align:center; color:#8E91A8; font-size:11px; padding:16px 0; }
+    .btn { display:inline-block; padding:10px 18px; border-radius:999px; background:linear-gradient(135deg,#7DF9FF,#C58BFF); color:#0F0E2D !important; text-decoration:none; font-weight:600; font-size:13px; letter-spacing:0.05em; }
+  `;
+
+  const stat = (label: string, value: string, delta?: number | null) => `
+    <div class="stat">
+      <div class="v">${escapeHtml(value)}</div>
+      <div class="l">${escapeHtml(label)}</div>
+      ${delta !== undefined && delta !== null && Math.abs(delta) >= 1
+        ? `<div class="${delta >= 0 ? "delta-pos" : "delta-neg"}" style="font-size:11px;margin-top:6px;">${fmtPct(delta)} vs 7-day</div>`
+        : ""}
+    </div>`;
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8" /><style>${css}</style></head><body>
+    <div class="wrap">
+      <div class="card">
+        <p class="label">Wireline · Daily Brief · ${escapeHtml(opts.dateLabel)}</p>
+        <h2>${escapeHtml(mood)}</h2>
+        <h1>${escapeHtml(headline)}</h1>
+        <div class="stats" role="presentation">
+          ${stat("Calls", String(stats.total_calls ?? 0), delta.calls_pct)}
+          ${stat("Lead Score", String(stats.avg_lead_score ?? 0), delta.score_pct)}
+          ${stat("Cost", `$${Number(stats.cost ?? 0).toFixed(2)}`, delta.cost_pct)}
+          ${stat("Booked", String(stats.appointments_booked ?? 0))}
+        </div>
+      </div>
+      ${highlights.length ? `
+      <div class="card">
+        <p class="label">Highlights</p>
+        <ul>${highlights.map(h => `<li>${escapeHtml(h)}</li>`).join("")}</ul>
+      </div>` : ""}
+      ${concerns.length ? `
+      <div class="card">
+        <p class="label">Concerns</p>
+        <ul>${concerns.map(h => `<li class="warn">${escapeHtml(h)}</li>`).join("")}</ul>
+      </div>` : ""}
+      ${actions.length ? `
+      <div class="card">
+        <p class="label">Action Items</p>
+        <ul>${actions.map(h => `<li class="action">${escapeHtml(h)}</li>`).join("")}</ul>
+      </div>` : ""}
+      ${link ? `<div style="text-align:center; padding:12px 0 32px;"><a class="btn" href="${escapeHtml(link)}">Open Wireline</a></div>` : ""}
+      <div class="footer">Sent automatically from your scheduled daily brief. Pause anytime in <strong>Command Atlas → Daily Brief</strong>.</div>
+    </div>
+  </body></html>`;
+
+  // Plain-text fallback for clients that don't render HTML.
+  const lines: string[] = [];
+  lines.push(`WIRELINE · Daily Brief · ${opts.dateLabel}`);
+  lines.push(`Mood: ${mood}`);
+  lines.push("");
+  lines.push(headline);
+  lines.push("");
+  lines.push(`Calls: ${stats.total_calls ?? 0}  ·  Lead Score: ${stats.avg_lead_score ?? 0}  ·  Cost: $${Number(stats.cost ?? 0).toFixed(2)}  ·  Booked: ${stats.appointments_booked ?? 0}`);
+  if (highlights.length) { lines.push(""); lines.push("HIGHLIGHTS"); highlights.forEach(h => lines.push(` • ${h}`)); }
+  if (concerns.length)   { lines.push(""); lines.push("CONCERNS");   concerns.forEach(h => lines.push(` ⚠ ${h}`)); }
+  if (actions.length)    { lines.push(""); lines.push("ACTIONS");    actions.forEach(h => lines.push(` → ${h}`)); }
+  if (link) { lines.push(""); lines.push(`Open Wireline: ${link}`); }
+  return { subject, html, text: lines.join("\n") };
+}
+
+async function sendDailyBriefEmail(userId: string, opts?: { force?: boolean }) {
+  // Pull settings + the operator's connected Gmail account.
+  const [{ data: settings }, { data: accounts }] = await Promise.all([
+    db.from("wireline_settings").select("daily_brief_recipient, daily_brief_enabled").eq("user_id", userId).maybeSingle(),
+    db.from("wireline_email_accounts").select("access_token, refresh_token, expires_at, email_address").eq("user_id", userId).limit(1),
+  ]);
+  const recipient = settings?.daily_brief_recipient;
+  if (!recipient) throw new Error("No recipient configured (daily_brief_recipient).");
+  const account: any = accounts?.[0];
+  if (!account?.refresh_token) throw new Error("No connected Gmail account — connect one in Carrier Bridge first.");
+
+  // Compute the brief (uses the per-day cache) — may throw CLAUDE_OFFLINE.
+  const { payload } = await computeDailyBrief(userId, { force: opts?.force === true });
+  const dateLabel = new Date().toISOString().slice(0, 10);
+  const { subject, html, text } = renderDailyBriefEmail(payload, { dateLabel, appUrl: process.env.APP_URL });
+
+  const oauth2Client = buildOAuthClient();
+  oauth2Client.setCredentials({
+    access_token: account.access_token,
+    refresh_token: account.refresh_token,
+    expiry_date: account.expires_at,
+  });
+  const gmail = google.gmail({ version: "v1", auth: oauth2Client });
+
+  // Multipart/alternative — text part first, then HTML, per RFC 2046.
+  const boundary = `----wirelineboundary${Date.now().toString(36)}`;
+  const messageParts = [
+    `From: ${account.email_address || "me"}`,
+    `To: ${recipient}`,
+    `Subject: ${subject}`,
+    `MIME-Version: 1.0`,
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+    ``,
+    `--${boundary}`,
+    `Content-Type: text/plain; charset=utf-8`,
+    `Content-Transfer-Encoding: 7bit`,
+    ``,
+    text,
+    ``,
+    `--${boundary}`,
+    `Content-Type: text/html; charset=utf-8`,
+    `Content-Transfer-Encoding: 7bit`,
+    ``,
+    html,
+    ``,
+    `--${boundary}--`,
+  ].join("\r\n");
+  const encoded = Buffer.from(messageParts).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  await gmail.users.messages.send({ userId: "me", requestBody: { raw: encoded } });
+
+  return { recipient, subject };
+}
+
+// Scheduler — every 5 minutes, find any users whose configured time
+// has elapsed today and haven't been sent yet (UTC date comparison).
+// .unref() so it never blocks process exit. Re-entrancy guard so a
+// slow batch doesn't overlap with itself.
+const DAILY_BRIEF_TICK_MS = 5 * 60 * 1000;
+let _briefSchedRunning = false;
+
+async function processScheduledDailyBriefs() {
+  if (_briefSchedRunning) return;
+  _briefSchedRunning = true;
+  try {
+    const now = new Date();
+    const utcHHMM = `${String(now.getUTCHours()).padStart(2, "0")}:${String(now.getUTCMinutes()).padStart(2, "0")}`;
+    const todayUTC = now.toISOString().slice(0, 10);
+
+    // Pull users whose send_at <= now (lex compare HH:MM works) AND
+    // either never sent or last send was on an earlier UTC date.
+    const { data: due } = await db.from("wireline_settings")
+      .select("user_id, daily_brief_send_at, daily_brief_last_sent_at")
+      .eq("daily_brief_enabled", true)
+      .lte("daily_brief_send_at", utcHHMM)
+      .limit(500);
+    if (!due?.length) return;
+
+    for (const row of due) {
+      const lastDate = row.daily_brief_last_sent_at
+        ? new Date(row.daily_brief_last_sent_at).toISOString().slice(0, 10)
+        : null;
+      if (lastDate === todayUTC) continue;
+
+      try {
+        await sendDailyBriefEmail(row.user_id);
+        await db.from("wireline_settings").update({
+          daily_brief_last_sent_at: new Date().toISOString(),
+          daily_brief_last_error: null,
+        }).eq("user_id", row.user_id);
+      } catch (err: any) {
+        // Persist the error so the operator can see why delivery failed,
+        // but DON'T mark sent — we'll retry on the next tick.
+        const message = err?.message || String(err);
+        await db.from("wireline_settings").update({
+          daily_brief_last_error: message.slice(0, 500),
+        }).eq("user_id", row.user_id);
+        console.warn(`Daily-brief send failed for ${row.user_id}:`, message);
+      }
+    }
+  } catch (err) {
+    console.error("Daily-brief scheduler tick failed:", err);
+  } finally {
+    _briefSchedRunning = false;
+  }
+}
+setInterval(processScheduledDailyBriefs, DAILY_BRIEF_TICK_MS).unref?.();
+
+// Settings: GET / PUT for the daily-brief schedule. Defaults are
+// reasonable: 13:00 UTC (~9am ET / 6am PT), recipient = user's email,
+// disabled until the operator opts in.
+app.get("/api/daily-brief/settings", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { data } = await db.from("wireline_settings")
+      .select("daily_brief_enabled, daily_brief_send_at, daily_brief_recipient, daily_brief_last_sent_at, daily_brief_last_error")
+      .eq("user_id", req.user.id).maybeSingle();
+    const { data: accounts } = await db.from("wireline_email_accounts")
+      .select("email_address").eq("user_id", req.user.id).limit(1);
+    res.json({
+      settings: {
+        enabled: !!data?.daily_brief_enabled,
+        send_at: data?.daily_brief_send_at || "13:00",
+        recipient: data?.daily_brief_recipient || req.user.email || null,
+        last_sent_at: data?.daily_brief_last_sent_at || null,
+        last_error: data?.daily_brief_last_error || null,
+      },
+      gmail_connected: !!accounts?.[0]?.email_address,
+      gmail_address: accounts?.[0]?.email_address || null,
+    });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load settings" }); }
+});
+
+app.put("/api/daily-brief/settings", authenticateUser, async (req: any, res: any) => {
+  try {
+    const enabled = req.body?.enabled === true;
+    const send_at = (req.body?.send_at || "13:00").toString();
+    if (!/^\d{2}:\d{2}$/.test(send_at)) return res.status(400).json({ error: "send_at must be HH:MM (UTC)." });
+    const [hh, mm] = send_at.split(":").map(Number);
+    if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return res.status(400).json({ error: "send_at must be a valid HH:MM." });
+    const recipient = (req.body?.recipient || "").toString().trim() || null;
+    if (recipient && !/^\S+@\S+\.\S+$/.test(recipient)) return res.status(400).json({ error: "recipient must be a valid email." });
+
+    await db.from("wireline_settings").upsert({
+      user_id: req.user.id,
+      daily_brief_enabled: enabled,
+      daily_brief_send_at: send_at,
+      daily_brief_recipient: recipient,
+    }, { onConflict: "user_id" });
+
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to save settings" }); }
+});
+
+// Send-now — operator-triggered preview email so they can confirm
+// the schedule works before relying on the morning send. Doesn't
+// touch daily_brief_last_sent_at so the scheduled send still fires.
+app.post("/api/daily-brief/send-now", authenticateUser, async (req: any, res: any) => {
+  try {
+    const result = await sendDailyBriefEmail(req.user.id, { force: true });
+    res.json({ success: true, ...result });
+  } catch (e: any) {
+    if (e?.code === "CLAUDE_OFFLINE") return res.status(503).json({ error: e.message, code: e.code });
+    res.status(500).json({ error: e?.message ?? "Send failed" });
+  }
 });
 
 // ──────────────────────────────────────────────────────────
@@ -4136,80 +4608,92 @@ app.get("/api/insights/failure-modes", authenticateUser, async (req: any, res: a
 });
 
 // Daily brief (Claude-powered, cached per-day).
+// Shared between the HTTP endpoint and the scheduled email sender.
+// Honors the same per-day cache so a manual /api/insights/daily-brief
+// fetch and the morning email don't both pay Claude.
+async function computeDailyBrief(userId: string, opts?: { force?: boolean }) {
+  const today = new Date().toISOString().slice(0, 10);
+  const cacheKey = `brief:${userId}:${today}`;
+  if (!opts?.force) {
+    const cached = cachedInsight(cacheKey);
+    if (cached) return { payload: cached, cached: true };
+  }
+  if (!claudeBrain.isClaudeAvailable()) {
+    const err: any = new Error("Claude required for the daily brief.");
+    err.code = "CLAUDE_OFFLINE";
+    throw err;
+  }
+
+  const yStart = new Date(); yStart.setHours(0, 0, 0, 0); yStart.setDate(yStart.getDate() - 1);
+  const yEnd   = new Date(yStart); yEnd.setDate(yEnd.getDate() + 1);
+  const wStart = new Date(); wStart.setDate(wStart.getDate() - 7);
+
+  const [{ data: yCalls }, { data: wCalls }, { data: appts }, { data: tasks }, { data: leads }, { data: wins }, { data: losses }] = await Promise.all([
+    db.from("wireline_call_logs").select("lead_score, intent_label, duration_seconds, cost, summary, customer_number").eq("user_id", userId).gte("created_at", yStart.toISOString()).lt("created_at", yEnd.toISOString()),
+    db.from("wireline_call_logs").select("lead_score, duration_seconds, cost").eq("user_id", userId).gte("created_at", wStart.toISOString()),
+    db.from("wireline_appointments").select("id").eq("user_id", userId).gte("created_at", yStart.toISOString()).lt("created_at", yEnd.toISOString()),
+    db.from("wireline_fleet_tasks").select("priority, description").eq("user_id", userId).eq("status", "pending").order("created_at", { ascending: false }).limit(8),
+    db.from("wireline_outbound_leads").select("id").eq("user_id", userId).eq("status", "Pending"),
+    db.from("wireline_call_logs").select("customer_number, lead_score, summary").eq("user_id", userId).gte("created_at", yStart.toISOString()).gte("lead_score", 70).order("lead_score", { ascending: false }).limit(3),
+    db.from("wireline_call_logs").select("customer_number, lead_score, summary").eq("user_id", userId).gte("created_at", yStart.toISOString()).lt("lead_score", 30).order("created_at", { ascending: false }).limit(3),
+  ]);
+
+  const yTotal = yCalls?.length || 0;
+  const yMinutes = Math.round((yCalls || []).reduce((s: number, c: any) => s + (c.duration_seconds || 0), 0) / 60);
+  const yAvgScore = yTotal ? Math.round((yCalls || []).reduce((s: number, c: any) => s + (c.lead_score || 0), 0) / yTotal) : 0;
+  const yHighIntent = (yCalls || []).filter((c: any) => c.intent_label === "high").length;
+  const yCost = Number((yCalls || []).reduce((s: number, c: any) => s + Number(c.cost || 0), 0).toFixed(2));
+
+  const wDays = 7;
+  const wAvgPerDay = (wCalls?.length || 0) / wDays;
+  const wAvgScore = wCalls?.length ? (wCalls || []).reduce((s: number, c: any) => s + (c.lead_score || 0), 0) / wCalls.length : 0;
+  const wAvgCostPerDay = (wCalls || []).reduce((s: number, c: any) => s + Number(c.cost || 0), 0) / wDays;
+
+  const callsPct = wAvgPerDay > 0 ? ((yTotal - wAvgPerDay) / wAvgPerDay) * 100 : 0;
+  const scorePct = wAvgScore > 0 ? ((yAvgScore - wAvgScore) / wAvgScore) * 100 : 0;
+  const costPct = wAvgCostPerDay > 0 ? ((yCost - wAvgCostPerDay) / wAvgCostPerDay) * 100 : 0;
+
+  const result = await claudeBrain.dailyBrief({
+    yesterdayStats: {
+      total_calls: yTotal,
+      total_minutes: yMinutes,
+      avg_lead_score: yAvgScore,
+      high_intent_count: yHighIntent,
+      cost: yCost,
+      appointments_booked: appts?.length || 0,
+      pending_tasks: tasks?.length || 0,
+      new_leads: leads?.length || 0,
+    },
+    weekDelta: { calls_pct: callsPct, score_pct: scorePct, cost_pct: costPct },
+    recentWinSamples: (wins || []).map((w: any) => ({ customer: w.customer_number || "Unknown", score: w.lead_score || 0, summary: w.summary || "" })),
+    recentLossSamples: (losses || []).map((w: any) => ({ customer: w.customer_number || "Unknown", score: w.lead_score || 0, summary: w.summary || "" })),
+    openTasks: (tasks || []).map((t: any) => ({ priority: t.priority, description: t.description })),
+  });
+
+  const payload = {
+    brief: result,
+    stats_yesterday: {
+      total_calls: yTotal,
+      total_minutes: yMinutes,
+      avg_lead_score: yAvgScore,
+      high_intent_count: yHighIntent,
+      cost: yCost,
+      appointments_booked: appts?.length || 0,
+    },
+    week_delta: { calls_pct: callsPct, score_pct: scorePct, cost_pct: costPct },
+  };
+  setCachedInsight(cacheKey, payload);
+  return { payload, cached: false };
+}
+
 app.get("/api/insights/daily-brief", authenticateUser, async (req: any, res: any) => {
   try {
-    const force = req.query.refresh === "1";
-    const today = new Date().toISOString().slice(0, 10);
-    const cacheKey = `brief:${req.user.id}:${today}`;
-    if (!force) {
-      const cached = cachedInsight(cacheKey);
-      if (cached) return res.json({ ...cached, cached: true });
-    }
-    if (!claudeBrain.isClaudeAvailable()) {
-      return res.status(503).json({ error: "Claude required for the daily brief.", code: "CLAUDE_OFFLINE" });
-    }
-
-    const yStart = new Date(); yStart.setHours(0, 0, 0, 0); yStart.setDate(yStart.getDate() - 1);
-    const yEnd   = new Date(yStart); yEnd.setDate(yEnd.getDate() + 1);
-    const wStart = new Date(); wStart.setDate(wStart.getDate() - 7);
-
-    const [{ data: yCalls }, { data: wCalls }, { data: appts }, { data: tasks }, { data: leads }, { data: wins }, { data: losses }] = await Promise.all([
-      db.from("wireline_call_logs").select("lead_score, intent_label, duration_seconds, cost, summary, customer_number").eq("user_id", req.user.id).gte("created_at", yStart.toISOString()).lt("created_at", yEnd.toISOString()),
-      db.from("wireline_call_logs").select("lead_score, duration_seconds, cost").eq("user_id", req.user.id).gte("created_at", wStart.toISOString()),
-      db.from("wireline_appointments").select("id").eq("user_id", req.user.id).gte("created_at", yStart.toISOString()).lt("created_at", yEnd.toISOString()),
-      db.from("wireline_fleet_tasks").select("priority, description").eq("user_id", req.user.id).eq("status", "pending").order("created_at", { ascending: false }).limit(8),
-      db.from("wireline_outbound_leads").select("id").eq("user_id", req.user.id).eq("status", "Pending"),
-      db.from("wireline_call_logs").select("customer_number, lead_score, summary").eq("user_id", req.user.id).gte("created_at", yStart.toISOString()).gte("lead_score", 70).order("lead_score", { ascending: false }).limit(3),
-      db.from("wireline_call_logs").select("customer_number, lead_score, summary").eq("user_id", req.user.id).gte("created_at", yStart.toISOString()).lt("lead_score", 30).order("created_at", { ascending: false }).limit(3),
-    ]);
-
-    const yTotal = yCalls?.length || 0;
-    const yMinutes = Math.round((yCalls || []).reduce((s: number, c: any) => s + (c.duration_seconds || 0), 0) / 60);
-    const yAvgScore = yTotal ? Math.round((yCalls || []).reduce((s: number, c: any) => s + (c.lead_score || 0), 0) / yTotal) : 0;
-    const yHighIntent = (yCalls || []).filter((c: any) => c.intent_label === "high").length;
-    const yCost = Number((yCalls || []).reduce((s: number, c: any) => s + Number(c.cost || 0), 0).toFixed(2));
-
-    const wDays = 7;
-    const wAvgPerDay = (wCalls?.length || 0) / wDays;
-    const wAvgScore = wCalls?.length ? (wCalls || []).reduce((s: number, c: any) => s + (c.lead_score || 0), 0) / wCalls.length : 0;
-    const wAvgCostPerDay = (wCalls || []).reduce((s: number, c: any) => s + Number(c.cost || 0), 0) / wDays;
-
-    const callsPct = wAvgPerDay > 0 ? ((yTotal - wAvgPerDay) / wAvgPerDay) * 100 : 0;
-    const scorePct = wAvgScore > 0 ? ((yAvgScore - wAvgScore) / wAvgScore) * 100 : 0;
-    const costPct = wAvgCostPerDay > 0 ? ((yCost - wAvgCostPerDay) / wAvgCostPerDay) * 100 : 0;
-
-    const result = await claudeBrain.dailyBrief({
-      yesterdayStats: {
-        total_calls: yTotal,
-        total_minutes: yMinutes,
-        avg_lead_score: yAvgScore,
-        high_intent_count: yHighIntent,
-        cost: yCost,
-        appointments_booked: appts?.length || 0,
-        pending_tasks: tasks?.length || 0,
-        new_leads: leads?.length || 0,
-      },
-      weekDelta: { calls_pct: callsPct, score_pct: scorePct, cost_pct: costPct },
-      recentWinSamples: (wins || []).map((w: any) => ({ customer: w.customer_number || "Unknown", score: w.lead_score || 0, summary: w.summary || "" })),
-      recentLossSamples: (losses || []).map((w: any) => ({ customer: w.customer_number || "Unknown", score: w.lead_score || 0, summary: w.summary || "" })),
-      openTasks: (tasks || []).map((t: any) => ({ priority: t.priority, description: t.description })),
-    });
-
-    const payload = {
-      brief: result,
-      stats_yesterday: {
-        total_calls: yTotal,
-        total_minutes: yMinutes,
-        avg_lead_score: yAvgScore,
-        high_intent_count: yHighIntent,
-        cost: yCost,
-        appointments_booked: appts?.length || 0,
-      },
-      week_delta: { calls_pct: callsPct, score_pct: scorePct, cost_pct: costPct },
-    };
-    setCachedInsight(cacheKey, payload);
-    res.json({ ...payload, cached: false });
-  } catch (e) { claudeErr(res, e); }
+    const { payload, cached } = await computeDailyBrief(req.user.id, { force: req.query.refresh === "1" });
+    res.json({ ...payload, cached });
+  } catch (e: any) {
+    if (e?.code === "CLAUDE_OFFLINE") return res.status(503).json({ error: e.message, code: e.code });
+    claudeErr(res, e);
+  }
 });
 
 // ──────────────────────────────────────────────────────────

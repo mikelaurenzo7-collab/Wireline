@@ -136,6 +136,7 @@ Each request includes `X-Wireline-Attempt: <n>` so receivers can implement their
 
 ### Inbound lead intake API
 - `POST /api/intake/lead` — public, authenticated by `X-Wireline-Key: wlk_…`. Body `{ customer_name?, customer_number, context?, metadata?, agent_id? }`. Inserts into the leads table with `source='inbound'` so the dialer + Triage surfaces pick it up automatically, then fires a `lead.received` webhook event.
+- `POST /api/intake/leads` — bulk variant (up to 100 leads per request). Body `{ leads: [...] }`. Each lead can carry its own `idempotency_key`. Returns `{ count, success_count, failure_count, results: [...] }` so partial failures don't roll back the rest. Each lead counts as one rate-limit hit.
 - `GET  /api/intake/keys` · `POST /api/intake/keys` · `PATCH/DELETE /api/intake/keys/:id` — manage per-user intake keys (plaintext returned only at create time; SHA-256 stored).
 
 Per-key features:
@@ -150,6 +151,18 @@ curl -X POST $WIRELINE_URL/api/intake/lead \
   -H "Idempotency-Key: form-submission-12345" \
   -d '{"customer_name":"Jane Doe","customer_number":"+15551234567","context":"Filled out demo form","metadata":{"utm_source":"newsletter"}}'
 ```
+
+### Knowledge base
+- `GET    /api/knowledge` — every fact across every agent + agent metadata, for the cross-agent Knowledge Atlas view.
+- `PATCH  /api/knowledge/:id` — edit content (RLS scoped to owner).
+- `DELETE /api/knowledge/:id` — permanent delete.
+
+### Scheduled Daily Brief email
+Claude's morning brief sent to your inbox at a chosen UTC time, via your connected Gmail account (no extra dependency).
+- `GET  /api/daily-brief/settings` · `PUT /api/daily-brief/settings` — `{ enabled, send_at: "HH:MM", recipient }`
+- `POST /api/daily-brief/send-now` — preview email; bypasses cache + doesn't update last-sent timestamp.
+
+A 5-minute background scheduler picks up due users, computes the brief (sharing the per-day cache with the in-app view), renders an HTML+plaintext multipart email, and sends via the operator's existing Gmail OAuth. Per-send errors are persisted to `daily_brief_last_error` so silent failures are visible in the UI.
 
 ### Voice / Email / Fleet
 See `server.ts` for the full list — voice webhook (`/api/vapi-webhook`), email sync, agent CRUD, outbound dialer, fleet tasks, etc.

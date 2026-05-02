@@ -419,6 +419,16 @@ DO $$ BEGIN
     END IF;
 END $$;
 
+-- Scheduled Daily Brief email — Claude's morning brief gets emailed
+-- to a configurable recipient at a configurable UTC time. The
+-- background scheduler in server.ts polls every 15 minutes and sends
+-- via the operator's connected Gmail account.
+ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS daily_brief_enabled BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS daily_brief_send_at TEXT NOT NULL DEFAULT '13:00';   -- HH:MM, UTC
+ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS daily_brief_recipient TEXT;
+ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS daily_brief_last_sent_at TIMESTAMPTZ;
+ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS daily_brief_last_error TEXT;
+
 -- Auto-dial on inbound intake — when on, leads pushed via this key
 -- automatically trigger an outbound call from the default agent.
 ALTER TABLE wireline_intake_keys ADD COLUMN IF NOT EXISTS auto_dial BOOLEAN NOT NULL DEFAULT FALSE;

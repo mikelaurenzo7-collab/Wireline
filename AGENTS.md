@@ -43,6 +43,9 @@ break the deployment:
 - `src/components/IntakeKeysManager.tsx` — inbound lead-intake API
   key CRUD UI in Admin. Plaintext shown only once at create time;
   SHA-256 hash stored. Powers `POST /api/intake/lead`.
+- `src/components/KnowledgeBaseManager.tsx` — cross-agent fact
+  manager at `/knowledge`. Lists every row in `wireline_knowledge`,
+  filterable by agent, searchable, with inline edit + bulk delete.
 
 ## Dependencies that MUST stay in package.json
 
