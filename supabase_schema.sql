@@ -385,3 +385,37 @@ DO $$ BEGIN
     END IF;
 END $$;
 
+-- Webhook delivery queue — every dispatch persists a row so failures
+-- can retry with exponential backoff (30s · 2m · 10m · 1h between
+-- attempts, 5 attempts max → 'dead'). Powers the per-hook delivery
+-- history view in Admin and the manual-retry button.
+CREATE TABLE IF NOT EXISTS wireline_webhook_deliveries (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id UUID NOT NULL,
+    webhook_id UUID NOT NULL REFERENCES wireline_webhooks(id) ON DELETE CASCADE,
+    event TEXT NOT NULL,
+    payload JSONB NOT NULL,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    max_attempts INTEGER NOT NULL DEFAULT 5,
+    status TEXT NOT NULL DEFAULT 'pending',  -- 'pending' | 'success' | 'dead'
+    last_status_code INTEGER,
+    last_error TEXT,
+    next_attempt_at TIMESTAMPTZ DEFAULT NOW(),
+    delivered_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+-- Partial index makes the scheduler's "due now" scan O(due rows).
+CREATE INDEX IF NOT EXISTS wireline_webhook_deliveries_due_idx
+    ON wireline_webhook_deliveries(next_attempt_at)
+    WHERE status = 'pending';
+CREATE INDEX IF NOT EXISTS wireline_webhook_deliveries_hook_created_idx
+    ON wireline_webhook_deliveries(webhook_id, created_at DESC);
+ALTER TABLE wireline_webhook_deliveries ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'wireline_webhook_deliveries' AND policyname = 'Users can view their own webhook deliveries'
+    ) THEN
+        EXECUTE 'CREATE POLICY "Users can view their own webhook deliveries" ON wireline_webhook_deliveries FOR ALL USING (auth.uid() = user_id)';
+    END IF;
+END $$;
+

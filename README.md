@@ -126,6 +126,14 @@ All require `ANTHROPIC_API_KEY` and are rate-limited to 60 req/min/user.
 
 When month-to-date spend crosses the warn threshold or the limit, Wireline fires `spend.warning` / `spend.exceeded` outbound webhook events (debounced to once per period). With **hard cap on**, Claude calls return HTTP 402 once the limit is reached — no surprise bills.
 
+### Webhook delivery queue
+Every dispatch persists a `wireline_webhook_deliveries` row. Failed attempts retry with exponential backoff (30s · 2m · 10m · 1h, max 5 attempts → status `dead`). A 30s background scheduler picks up due retries.
+- `GET    /api/webhooks/:id/deliveries` — recent deliveries for a hook
+- `POST   /api/webhooks/deliveries/:id/retry` — manually requeue a failed/dead delivery
+- `DELETE /api/webhooks/deliveries/:id` — discard
+
+Each request includes `X-Wireline-Attempt: <n>` so receivers can implement their own idempotency.
+
 ### Inbound lead intake API
 - `POST /api/intake/lead` — public, authenticated by `X-Wireline-Key: wlk_…`. Body `{ customer_name?, customer_number, context?, metadata?, agent_id? }`. Inserts into the leads table with `source='inbound'` so the dialer + Triage surfaces pick it up automatically, then fires a `lead.received` webhook event.
 - `GET  /api/intake/keys` · `POST /api/intake/keys` · `PATCH/DELETE /api/intake/keys/:id` — manage per-user intake keys (plaintext returned only at create time; SHA-256 stored).
