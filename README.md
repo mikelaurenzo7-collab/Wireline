@@ -136,6 +136,7 @@ Each request includes `X-Wireline-Attempt: <n>` so receivers can implement their
 
 ### Inbound lead intake API
 - `POST /api/intake/lead` — public, authenticated by `X-Wireline-Key: wlk_…`. Body `{ customer_name?, customer_number, context?, metadata?, agent_id? }`. Inserts into the leads table with `source='inbound'` so the dialer + Triage surfaces pick it up automatically, then fires a `lead.received` webhook event.
+- `POST /api/intake/leads` — bulk variant (up to 100 leads per request). Body `{ leads: [...] }`. Each lead can carry its own `idempotency_key`. Returns `{ count, success_count, failure_count, results: [...] }` so partial failures don't roll back the rest. Each lead counts as one rate-limit hit.
 - `GET  /api/intake/keys` · `POST /api/intake/keys` · `PATCH/DELETE /api/intake/keys/:id` — manage per-user intake keys (plaintext returned only at create time; SHA-256 stored).
 
 Per-key features:

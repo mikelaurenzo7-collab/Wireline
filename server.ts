@@ -3340,6 +3340,157 @@ setInterval(() => {
 // available (or one was provided in the body), we kick off an outbound
 // Vapi call right after the lead is recorded. Fire-and-forget so the
 // HTTP response stays fast.
+// Single-lead processor — shared between /api/intake/lead and the
+// bulk variant. Returns a structured result so the bulk endpoint can
+// aggregate per-lead success / failure without partial-failure
+// rolling back the rest of the batch.
+type IntakeLeadInput = {
+  customer_number?: string;
+  phone?: string;
+  phone_number?: string;
+  customer_name?: string;
+  name?: string;
+  context?: string;
+  message?: string;
+  metadata?: any;
+  agent_id?: string;
+  idempotency_key?: string;
+};
+
+type IntakeLeadResult = {
+  ok: boolean;
+  lead_id?: number;
+  status?: string;
+  call_id?: string | null;
+  idempotent_replay?: boolean;
+  auto_dial_initiated?: boolean;
+  error?: string;
+  code?: string;
+};
+
+async function processIntakeLead(key: any, input: IntakeLeadInput, idemHeaderOverride?: string | null): Promise<IntakeLeadResult> {
+  const customer_number = (input.customer_number || input.phone || input.phone_number || "").toString().trim();
+  if (!customer_number) {
+    return { ok: false, error: "customer_number (or phone) is required.", code: "MISSING_NUMBER" };
+  }
+
+  const customer_name = (input.customer_name || input.name || "").toString().slice(0, 200);
+  const context = (input.context || input.message || "").toString().slice(0, 4000);
+  const metadata = input.metadata && typeof input.metadata === "object" ? input.metadata : null;
+  const agent_id = input.agent_id || key.default_agent_id || null;
+  const idemKey = (idemHeaderOverride !== undefined ? idemHeaderOverride : (input.idempotency_key || null));
+  const idemKeyTrimmed = idemKey ? String(idemKey).trim().slice(0, 255) : null;
+
+  if (idemKeyTrimmed) {
+    const { data: existing } = await db.from("wireline_outbound_leads")
+      .select("id, call_id, status")
+      .eq("user_id", key.user_id)
+      .eq("idempotency_key", idemKeyTrimmed)
+      .maybeSingle();
+    if (existing) {
+      return {
+        ok: true,
+        lead_id: existing.id,
+        idempotent_replay: true,
+        status: existing.status,
+        call_id: existing.call_id,
+        auto_dial_initiated: false,
+      };
+    }
+  }
+
+  const nowIso = new Date().toISOString();
+  const { data: inserted, error } = await db.from("wireline_outbound_leads").insert({
+    user_id: key.user_id,
+    agent_id,
+    customer_name: customer_name || null,
+    customer_number,
+    phone_number: customer_number,
+    context: context || null,
+    status: "Pending",
+    source: "inbound",
+    metadata,
+    received_at: nowIso,
+    idempotency_key: idemKeyTrimmed,
+  }).select("id").single();
+
+  if (error) {
+    if (idemKeyTrimmed && (error.code === "23505" || /duplicate key/i.test(error.message || ""))) {
+      const { data: replay } = await db.from("wireline_outbound_leads")
+        .select("id, call_id, status")
+        .eq("user_id", key.user_id)
+        .eq("idempotency_key", idemKeyTrimmed)
+        .maybeSingle();
+      if (replay) {
+        return {
+          ok: true,
+          lead_id: replay.id,
+          idempotent_replay: true,
+          status: replay.status,
+          call_id: replay.call_id,
+          auto_dial_initiated: false,
+        };
+      }
+    }
+    return { ok: false, error: error.message || "DB insert failed", code: "INSERT_FAILED" };
+  }
+
+  // Fan out to operator's outbound webhooks.
+  dispatchWebhook(key.user_id, "lead.received", {
+    lead_id: inserted?.id,
+    customer_name: customer_name || null,
+    customer_number,
+    context: context || null,
+    metadata,
+    agent_id,
+    intake_key: { id: key.id, name: key.name },
+    auto_dial: !!key.auto_dial && !!agent_id,
+    at: nowIso,
+  }).catch(() => {});
+
+  let auto_dial_initiated = false;
+  if (key.auto_dial && agent_id && inserted?.id) {
+    auto_dial_initiated = true;
+    (async () => {
+      try {
+        const result = await placeOutboundCall({
+          userId: key.user_id,
+          agentId: agent_id,
+          customerName: customer_name || null,
+          customerNumber: customer_number,
+          context: context || `Inbound lead via ${key.name}`,
+        });
+        if (result.ok) {
+          await db.from("wireline_outbound_leads").update({
+            call_id: result.callId,
+            status: "Dialing",
+            last_called_at: new Date().toISOString(),
+          }).eq("id", inserted.id);
+        } else {
+          await db.from("wireline_outbound_leads").update({
+            status: "AutoDialFailed",
+            metadata: { ...(metadata || {}), auto_dial_error: result.error, auto_dial_status: result.status },
+          }).eq("id", inserted.id);
+          console.warn(`Auto-dial failed for lead ${inserted.id}: [${result.status}] ${result.error}`);
+        }
+      } catch (err: any) {
+        await db.from("wireline_outbound_leads").update({
+          status: "AutoDialFailed",
+          metadata: { ...(metadata || {}), auto_dial_error: err?.message || String(err) },
+        }).eq("id", inserted.id);
+        console.warn(`Auto-dial threw for lead ${inserted.id}:`, err);
+      }
+    })();
+  }
+
+  return {
+    ok: true,
+    lead_id: inserted?.id,
+    idempotent_replay: false,
+    auto_dial_initiated,
+  };
+}
+
 app.post("/api/intake/lead", async (req: any, res: any) => {
   try {
     const provided = req.headers["x-wireline-key"] as string | undefined;
@@ -3356,141 +3507,100 @@ app.post("/api/intake/lead", async (req: any, res: any) => {
       });
     }
 
-    const body = req.body || {};
-    const customer_number: string | undefined = (body.customer_number || body.phone || body.phone_number || "").toString().trim();
-    if (!customer_number) return res.status(400).json({ error: "customer_number (or phone) is required." });
+    const idemHeader = (req.headers["idempotency-key"] as string | undefined)?.toString().trim() || null;
+    const result = await processIntakeLead(key, req.body || {}, idemHeader);
 
-    const customer_name: string = (body.customer_name || body.name || "").toString().slice(0, 200);
-    const context: string = (body.context || body.message || "").toString().slice(0, 4000);
-    const metadata = body.metadata && typeof body.metadata === "object" ? body.metadata : null;
-    const agent_id = body.agent_id || key.default_agent_id || null;
+    if (result.ok) {
+      // Bump usage stats fire-and-forget — only on real (not replayed) inserts.
+      if (!result.idempotent_replay) {
+        const nowIso = new Date().toISOString();
+        db.from("wireline_intake_keys").update({
+          last_used_at: nowIso,
+          use_count: (key.use_count || 0) + 1,
+        }).eq("id", key.id).then(() => {}, () => {});
+      }
+      return res.json(result);
+    }
+    const status = result.code === "MISSING_NUMBER" ? 400 : 500;
+    return res.status(status).json({ error: result.error, code: result.code });
+  } catch (e: any) {
+    console.error("Intake lead failed:", e);
+    res.status(500).json({ error: e?.message ?? "Intake failed" });
+  }
+});
 
-    // Idempotency — operator can pass any string up to 255 chars.
-    const idemHeader = (req.headers["idempotency-key"] as string | undefined)?.toString().trim().slice(0, 255) || null;
+// Bulk intake — accept up to BULK_MAX leads per request. Each lead
+// counts as one rate-limit hit; if the batch would exceed the
+// per-key bucket, the whole request is rejected with 429 (so the
+// caller can split it sensibly rather than getting partial success).
+//
+// Per-lead idempotency_key in the body is supported (the request-level
+// Idempotency-Key header is intentionally ignored here — wouldn't make
+// sense to apply one key to a batch of distinct leads).
+const INTAKE_BULK_MAX = 100;
 
-    if (idemHeader) {
-      const { data: existing } = await db.from("wireline_outbound_leads")
-        .select("id, call_id, status")
-        .eq("user_id", key.user_id)
-        .eq("idempotency_key", idemHeader)
-        .maybeSingle();
-      if (existing) {
-        return res.json({
-          ok: true,
-          lead_id: existing.id,
-          idempotent_replay: true,
-          status: existing.status,
-          call_id: existing.call_id,
+app.post("/api/intake/leads", async (req: any, res: any) => {
+  try {
+    const provided = req.headers["x-wireline-key"] as string | undefined;
+    const key = await resolveIntakeKey(provided);
+    if (!key) return res.status(401).json({ error: "Invalid or missing X-Wireline-Key." });
+
+    const leads = Array.isArray(req.body?.leads) ? req.body.leads : null;
+    if (!leads || leads.length === 0) {
+      return res.status(400).json({ error: "leads must be a non-empty array.", code: "EMPTY_BATCH" });
+    }
+    if (leads.length > INTAKE_BULK_MAX) {
+      return res.status(400).json({
+        error: `Batch too large. Max ${INTAKE_BULK_MAX} leads per request.`,
+        code: "BATCH_TOO_LARGE",
+        max: INTAKE_BULK_MAX,
+      });
+    }
+
+    // Reserve N slots in the rate bucket up front; reject the whole
+    // batch if any slot would overflow so the caller can chunk.
+    for (let i = 0; i < leads.length; i++) {
+      const r = checkIntakeRate(key.id);
+      if (!r.ok) {
+        res.set("Retry-After", String(r.retry_after_s));
+        return res.status(429).json({
+          error: `Rate limit would be exceeded by this batch (${INTAKE_RATE_MAX}/min). Retry in ${r.retry_after_s}s.`,
+          code: "INTAKE_RATE_LIMIT",
+          retry_after_s: r.retry_after_s,
+          accepted_so_far: i,
         });
       }
     }
 
-    const nowIso = new Date().toISOString();
-    const { data: inserted, error } = await db.from("wireline_outbound_leads").insert({
-      user_id: key.user_id,
-      agent_id,
-      customer_name: customer_name || null,
-      customer_number,
-      phone_number: customer_number,
-      context: context || null,
-      status: "Pending",
-      source: "inbound",
-      metadata,
-      received_at: nowIso,
-      idempotency_key: idemHeader,
-    }).select("id").single();
+    // Process leads concurrently. Per-lead errors are captured into
+    // the results array so a single bad row doesn't fail the rest.
+    const results = await Promise.all(
+      (leads as IntakeLeadInput[]).map((lead) => processIntakeLead(key, lead).catch((err: any) => ({
+        ok: false,
+        error: err?.message || String(err),
+        code: "PROCESS_FAILED",
+      } as IntakeLeadResult))),
+    );
 
-    if (error) {
-      // Race condition: a concurrent insert won the unique race. Fall
-      // back to fetching the canonical row by idempotency_key.
-      // Postgres unique-violation is code '23505'.
-      if (idemHeader && (error.code === "23505" || /duplicate key/i.test(error.message || ""))) {
-        const { data: replay } = await db.from("wireline_outbound_leads")
-          .select("id, call_id, status")
-          .eq("user_id", key.user_id)
-          .eq("idempotency_key", idemHeader)
-          .maybeSingle();
-        if (replay) {
-          return res.json({
-            ok: true,
-            lead_id: replay.id,
-            idempotent_replay: true,
-            status: replay.status,
-            call_id: replay.call_id,
-          });
-        }
-      }
-      throw error;
-    }
-
-    // Bump usage stats fire-and-forget so the response stays fast.
-    db.from("wireline_intake_keys").update({
-      last_used_at: nowIso,
-      use_count: (key.use_count || 0) + 1,
-    }).eq("id", key.id).then(() => {}, () => {});
-
-    // Fan out to operator's outbound webhooks.
-    dispatchWebhook(key.user_id, "lead.received", {
-      lead_id: inserted?.id,
-      customer_name: customer_name || null,
-      customer_number,
-      context: context || null,
-      metadata,
-      agent_id,
-      intake_key: { id: key.id, name: key.name },
-      auto_dial: !!key.auto_dial && !!agent_id,
-      at: nowIso,
-    }).catch(() => {});
-
-    // Auto-dial — fire-and-forget so the operator's caller (e.g. a
-    // form submission handler) gets a fast response. The lead row
-    // gets updated with call_id + status='Dialing' on success, or
-    // status='AutoDialFailed' with the reason in metadata on failure
-    // so the operator can see what happened.
-    let auto_dial_initiated = false;
-    if (key.auto_dial && agent_id && inserted?.id) {
-      auto_dial_initiated = true;
-      (async () => {
-        try {
-          const result = await placeOutboundCall({
-            userId: key.user_id,
-            agentId: agent_id,
-            customerName: customer_name || null,
-            customerNumber: customer_number,
-            context: context || `Inbound lead via ${key.name}`,
-          });
-          if (result.ok) {
-            await db.from("wireline_outbound_leads").update({
-              call_id: result.callId,
-              status: "Dialing",
-              last_called_at: new Date().toISOString(),
-            }).eq("id", inserted.id);
-          } else {
-            await db.from("wireline_outbound_leads").update({
-              status: "AutoDialFailed",
-              metadata: { ...(metadata || {}), auto_dial_error: result.error, auto_dial_status: result.status },
-            }).eq("id", inserted.id);
-            console.warn(`Auto-dial failed for lead ${inserted.id}: [${result.status}] ${result.error}`);
-          }
-        } catch (err: any) {
-          await db.from("wireline_outbound_leads").update({
-            status: "AutoDialFailed",
-            metadata: { ...(metadata || {}), auto_dial_error: err?.message || String(err) },
-          }).eq("id", inserted.id);
-          console.warn(`Auto-dial threw for lead ${inserted.id}:`, err);
-        }
-      })();
+    const successes = results.filter(r => r.ok).length;
+    if (successes > 0) {
+      const nowIso = new Date().toISOString();
+      db.from("wireline_intake_keys").update({
+        last_used_at: nowIso,
+        use_count: (key.use_count || 0) + successes,
+      }).eq("id", key.id).then(() => {}, () => {});
     }
 
     res.json({
       ok: true,
-      lead_id: inserted?.id,
-      auto_dial_initiated,
-      idempotent_replay: false,
+      count: leads.length,
+      success_count: successes,
+      failure_count: leads.length - successes,
+      results,
     });
   } catch (e: any) {
-    console.error("Intake lead failed:", e);
-    res.status(500).json({ error: e?.message ?? "Intake failed" });
+    console.error("Bulk intake failed:", e);
+    res.status(500).json({ error: e?.message ?? "Bulk intake failed" });
   }
 });
 
