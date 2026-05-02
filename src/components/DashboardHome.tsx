@@ -8,6 +8,7 @@ import { cn } from "../lib/utils";
 import FleetTaskBridge from "./FleetTaskBridge";
 import TriggerIntelligenceFeed from "./TriggerIntelligenceFeed";
 import DailyBrief from "./DailyBrief";
+import OnboardingQuickstart from "./OnboardingQuickstart";
 import { authFetch } from "../lib/api";
 
 const vapi = new Vapi(import.meta.env.VITE_VAPI_PUBLIC_KEY || "");
@@ -236,6 +237,11 @@ export default function DashboardHome() {
           variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
           className="space-y-12"
         >
+          {/* First-run quickstart — self-hides once the operator is fully onboarded */}
+          <motion.div variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}>
+            <OnboardingQuickstart />
+          </motion.div>
+
           {/* Claude's morning brief — only renders when ANTHROPIC_API_KEY is set */}
           <motion.div variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}>
             <DailyBrief />

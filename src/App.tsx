@@ -1,23 +1,26 @@
-import React, { useState } from "react";
+import React, { useState, lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Link, useLocation } from "react-router-dom";
-import { Phone, Users, Settings, Activity, MessageSquare, Calendar, PhoneOutgoing, ServerCog, PlugZap, History, Mail, Menu, X, LogOut, User, Terminal, ChevronRight, Zap, Target, Shield, Signal, Globe, Box, LayoutPanelLeft, Database, Command, Sparkles, Waves, Inbox, BarChart3 } from "lucide-react";
+import { Phone, Users, Settings, Activity, MessageSquare, Calendar, PhoneOutgoing, ServerCog, PlugZap, History, Mail, Menu, X, LogOut, User, Terminal, ChevronRight, Zap, Target, Shield, Signal, Globe, Box, LayoutPanelLeft, Database, Command, Sparkles, Waves, Inbox, BarChart3, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import DashboardHome from "./components/DashboardHome";
-import AgentTraining from "./components/AgentTraining";
-import AppointmentsView from "./components/Appointments";
-import FleetSettings from "./components/FleetSettings";
-import OutboundDialer from "./components/OutboundDialer";
-import AdminSettings from "./components/AdminSettings";
-import Integrations from "./components/Integrations";
-import CallLogs from "./components/CallLogs";
-import EmailInbox from "./components/EmailInbox";
 import AuthPortal from "./components/AuthPortal";
 import CommandBar from "./components/CommandBar";
-import TriageInbox from "./components/TriageInbox";
-import ContactProfile from "./components/ContactProfile";
-import InsightsView from "./components/InsightsView";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { cn } from "./lib/utils";
+
+// All route surfaces are code-split. Initial bundle holds only the
+// app shell + auth + command bar; pages stream in on demand.
+const DashboardHome   = lazy(() => import("./components/DashboardHome"));
+const TriageInbox     = lazy(() => import("./components/TriageInbox"));
+const ContactProfile  = lazy(() => import("./components/ContactProfile"));
+const InsightsView    = lazy(() => import("./components/InsightsView"));
+const AgentTraining   = lazy(() => import("./components/AgentTraining"));
+const AppointmentsView = lazy(() => import("./components/Appointments"));
+const FleetSettings   = lazy(() => import("./components/FleetSettings"));
+const OutboundDialer  = lazy(() => import("./components/OutboundDialer"));
+const AdminSettings   = lazy(() => import("./components/AdminSettings"));
+const Integrations    = lazy(() => import("./components/Integrations"));
+const CallLogs        = lazy(() => import("./components/CallLogs"));
+const EmailInbox      = lazy(() => import("./components/EmailInbox"));
 
 const NAV_ITEMS = [
   { group: "Operations", items: [
@@ -224,6 +227,21 @@ function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) =>
   );
 }
 
+function RouteFallback() {
+  return (
+    <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
+      <div className="relative w-16 h-16">
+        <div className="absolute inset-0 rounded-full" style={{ background: "conic-gradient(from 0deg, #7DF9FF, #C58BFF, #FF6BD9, #4DFFC4, #7DF9FF)", filter: "blur(1px)", animation: "spin 4s linear infinite" }} />
+        <div className="absolute inset-1 rounded-full bg-paper" />
+        <div className="absolute inset-2 rounded-full glass flex items-center justify-center">
+          <Loader2 className="w-5 h-5 text-aurora animate-spin" />
+        </div>
+      </div>
+      <p className="text-[10px] uppercase tracking-[0.5em] text-muted">Streaming</p>
+    </div>
+  );
+}
+
 function PageTransition({ children }: { children: React.ReactNode }) {
   return (
     <motion.div
@@ -326,20 +344,22 @@ function AppContent() {
             <div className="flex-1 overflow-y-auto relative z-10 scrollbar-hide">
               <div className="max-w-[1920px] mx-auto min-h-full p-6 md:p-12 lg:p-16">
                 <AnimatePresence mode="wait">
-                  <Routes>
-                    <Route path="/" element={<PageTransition><DashboardHome /></PageTransition>} />
-                    <Route path="/triage" element={<PageTransition><TriageInbox /></PageTransition>} />
-                    <Route path="/insights" element={<PageTransition><InsightsView /></PageTransition>} />
-                    <Route path="/contact/:number" element={<PageTransition><ContactProfile /></PageTransition>} />
-                    <Route path="/logs" element={<PageTransition><CallLogs /></PageTransition>} />
-                    <Route path="/inbox" element={<PageTransition><EmailInbox /></PageTransition>} />
-                    <Route path="/outbound" element={<PageTransition><OutboundDialer /></PageTransition>} />
-                    <Route path="/appointments" element={<PageTransition><AppointmentsView /></PageTransition>} />
-                    <Route path="/train" element={<PageTransition><AgentTraining /></PageTransition>} />
-                    <Route path="/agents" element={<PageTransition><FleetSettings /></PageTransition>} />
-                    <Route path="/integrations" element={<PageTransition><Integrations /></PageTransition>} />
-                    <Route path="/admin" element={<PageTransition><AdminSettings /></PageTransition>} />
-                  </Routes>
+                  <Suspense fallback={<RouteFallback />}>
+                    <Routes>
+                      <Route path="/" element={<PageTransition><DashboardHome /></PageTransition>} />
+                      <Route path="/triage" element={<PageTransition><TriageInbox /></PageTransition>} />
+                      <Route path="/insights" element={<PageTransition><InsightsView /></PageTransition>} />
+                      <Route path="/contact/:number" element={<PageTransition><ContactProfile /></PageTransition>} />
+                      <Route path="/logs" element={<PageTransition><CallLogs /></PageTransition>} />
+                      <Route path="/inbox" element={<PageTransition><EmailInbox /></PageTransition>} />
+                      <Route path="/outbound" element={<PageTransition><OutboundDialer /></PageTransition>} />
+                      <Route path="/appointments" element={<PageTransition><AppointmentsView /></PageTransition>} />
+                      <Route path="/train" element={<PageTransition><AgentTraining /></PageTransition>} />
+                      <Route path="/agents" element={<PageTransition><FleetSettings /></PageTransition>} />
+                      <Route path="/integrations" element={<PageTransition><Integrations /></PageTransition>} />
+                      <Route path="/admin" element={<PageTransition><AdminSettings /></PageTransition>} />
+                    </Routes>
+                  </Suspense>
                 </AnimatePresence>
               </div>
             </div>
