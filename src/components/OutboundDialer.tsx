@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { PhoneOutgoing, Loader2, PlayCircle, Clock, Plus, Phone, UploadCloud, Users, Bot } from "lucide-react";
+import { PhoneOutgoing, Loader2, PlayCircle, Clock, Plus, Phone, UploadCloud, Users, Bot, Radar, Activity, Zap, Terminal, Shield, Target, FileSpreadsheet, ChevronRight, Share2, Search } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 import Papa from "papaparse";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
@@ -103,7 +104,7 @@ export default function OutboundDialer() {
               });
               if (!res.ok) throw new Error("Bulk upload failed on server.");
               
-              setUploadStats(`Successfully queued ${parsedLeads.length} leads in the system.`);
+              setUploadStats(`SYNCED ${parsedLeads.length} OPERATIONAL LEADS.`);
               setTimeout(() => fetchData(), 1000);
            } catch (e: any) {
               setDialError(e.message);
@@ -112,21 +113,20 @@ export default function OutboundDialer() {
            if (fileInputRef.current) fileInputRef.current.value = "";
         },
         error: (error) => {
-           setDialError(`CSV Parsing Error: ${error.message}`);
+           setDialError(`CSV_PARSING_ERROR: ${error.message}`);
            setIsUploading(false);
         }
      });
   };
 
-  // Launch all queued calls sequentially
   const launchQueue = async () => {
      const queued = leads.filter(l => l.status === "Queued");
      if (queued.length === 0) return;
      
-     if (!window.confirm(`Warning: This will attempt to sequentially dispatch ${queued.length} calls against Vapi. Do you want to proceed?`)) return;
+     if (!window.confirm(`SEQUENTIAL_DISPATCH_ALERT: ATTEMPTING ${queued.length} RELAY_THREADS. PROCEED?`)) return;
 
      setIsDialing(true);
-     setUploadStats(`Dispatching ${queued.length} queued calls... Please don't close the browser.`);
+     setUploadStats(`DISPATCHING ${queued.length} NODAL SIGNALS. DO_NOT_DISCONNECT.`);
      setDialError("");
 
      for (const lead of queued) {
@@ -143,192 +143,278 @@ export default function OutboundDialer() {
            });
            
            if (res.ok) {
-              // Mark local complete to show progress
               setLeads(prev => prev.map(l => l.id === lead.id ? { ...l, status: "Dialing" } : l));
            }
-           
-           // Slight delay between sequential dispatches to avoid rate limits
-           await new Promise(resolve => setTimeout(resolve, 1500));
+           await new Promise(resolve => setTimeout(resolve, 2000));
         } catch (e) {
            console.error("Failed batch call", e);
         }
      }
      
      setIsDialing(false);
-     setUploadStats(`Batch sequence complete.`);
+     setUploadStats(`BATCH_SEQUENCE_TERMINATED.`);
      setTimeout(() => fetchData(), 2000);
   };
 
   return (
-    <div className="flex flex-col min-h-full bg-white space-y-6 md:space-y-8 pb-32 max-w-7xl mx-auto w-full p-4 md:p-8 lg:p-10 text-ink">
-      <header className="border-b-8 border-ink pb-6 md:pb-8 relative flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
-        <div className="space-y-2">
-           <div className="flex items-center gap-2 mb-3">
-              <span className="bg-brand text-ink text-[10px] font-black px-2 py-0.5 uppercase tracking-widest brutal-border shadow-none italic font-display">BATCH CENTER</span>
-              <div className="flex items-center gap-1.5 px-2 py-0.5 bg-ink text-brand brutal-border shadow-none">
-                 <PhoneOutgoing className="w-2.5 h-2.5" />
-                 <span className="text-[8px] font-black uppercase tracking-tighter italic">Signal Operations</span>
-              </div>
-           </div>
-           <h1 className="text-4xl md:text-7xl font-black text-ink uppercase tracking-tight font-display italic leading-none">
-             Signal Batching
-           </h1>
+    <div className="flex flex-col space-y-12 md:space-y-20 pb-40 max-w-[1600px] mx-auto w-full p-8 md:p-12 lg:p-16">
+      <header className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-10 border-b-8 border-ink pb-12">
+        <div className="space-y-6">
+          <div className="flex items-center gap-4">
+             <div className="bg-brand text-ink text-[10px] font-black px-3 py-1 uppercase tracking-widest brutal-border shadow-none italic font-display animate-pulse flex items-center gap-2">
+               <Radar className="w-3 h-3" /> BATCH_MODE: ENABLED
+             </div>
+             <div className="flex items-center gap-2 px-3 py-1 bg-ink text-brand brutal-border shadow-none">
+                <Shield className="w-3 h-3" />
+                <span className="text-[9px] font-black uppercase tracking-tighter italic">SECURITY_ENFORCED: LEVEL_4</span>
+             </div>
+          </div>
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-ink uppercase tracking-tighter font-display italic leading-[0.8]">
+            OUTBOUND<br />DISPATCH
+          </h1>
+          <p className="text-muted font-bold uppercase tracking-[0.4em] text-xs md:text-sm max-w-xl leading-relaxed italic underline decoration-brand decoration-4 underline-offset-[-2px]">
+            Deploy specialized neural units across global carrier networks for mass lead qualification and mission execution.
+          </p>
         </div>
-        <p className="text-slate-400 font-bold uppercase tracking-[0.3em] text-[9px] md:text-[10px] max-w-xs leading-relaxed lg:text-right">Dispatch tactical AI specialists across carrier networks for autonomous lead qualification.</p>
+        
+        <div className="flex items-center gap-6 w-full lg:w-auto">
+           <div className="bg-white p-2 brutal-border border-4 shadow-none flex">
+              <button onClick={() => setMode("single")} className={cn("px-10 py-4 text-[10px] font-black uppercase tracking-[0.3em] transition-all italic", mode === "single" ? "bg-ink text-brand" : "text-muted hover:text-ink")}>DISCRETE_THREAD</button>
+              <button onClick={() => setMode("bulk")} className={cn("px-10 py-4 text-[10px] font-black uppercase tracking-[0.3em] transition-all italic", mode === "bulk" ? "bg-ink text-brand" : "text-muted hover:text-ink")}>BATCH_ARCHIVE</button>
+           </div>
+        </div>
       </header>
 
       {isLoading ? (
-        <div className="flex justify-center p-24 text-center"><Loader2 className="w-12 h-12 animate-spin text-brand" /></div>
+        <div className="flex flex-col items-center justify-center py-48 space-y-8">
+           <Loader2 className="w-20 h-20 animate-spin text-brand" />
+           <span className="text-[12px] font-black uppercase tracking-[0.8em] text-ink italic animate-pulse">BOOTSTRAPPING_OPERATIONS_CORE...</span>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-12">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-16 lg:gap-24">
           
-          <div className="lg:col-span-1">
-             <div className="bg-white brutal-border shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] sticky top-0 overflow-hidden">
-                 <div className="flex w-full border-b-4 border-ink bg-ink">
-                    <button 
-                      onClick={() => setMode("single")} 
-                      className={cn("flex-1 py-4 text-[9px] font-black uppercase tracking-widest font-display italic transition-all", mode === "single" ? "bg-brand text-ink" : "text-white/40 hover:text-white")}
-                    >
-                      Discrete Signal
-                    </button>
-                    <button 
-                      onClick={() => setMode("bulk")} 
-                      className={cn("flex-1 py-4 text-[9px] font-black uppercase tracking-widest font-display italic border-l-4 border-ink transition-all", mode === "bulk" ? "bg-brand text-ink" : "text-white/40 hover:text-white")}
-                    >
-                      Batch Archive
-                    </button>
+          {/* Configuration Panel */}
+          <div className="xl:col-span-5">
+             <div className="bg-white brutal-border border-8 shadow-[24px_24px_0px_0px_rgba(10,10,10,1)] sticky top-32 overflow-hidden flex flex-col">
+                 <div className="p-10 border-b-8 border-ink bg-zinc-950 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                       <Zap className="w-6 h-6 text-brand" />
+                       <h2 className="text-2xl font-black text-white uppercase tracking-tighter font-display italic">DISPATCH_PARAMS</h2>
+                    </div>
+                    {mode === 'bulk' && <FileSpreadsheet className="w-6 h-6 text-brand" />}
+                    {mode === 'single' && <Activity className="w-6 h-6 text-brand" />}
                  </div>
 
-                 <div className="p-6 md:p-8 space-y-6">
-                   <div>
-                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 block italic">Select Agent</label>
-                     <select value={selectedAgentId} onChange={e => setSelectedAgentId(e.target.value)} className="w-full p-4 bg-zinc-50 brutal-border outline-none focus:bg-brand text-ink font-black uppercase tracking-widest text-[10px] h-12 appearance-none cursor-pointer">
-                        {agents.map(a => <option key={a.id} value={a.id}>{a.name.toUpperCase()}</option>)}
-                     </select>
+                 <div className="p-10 md:p-14 space-y-10">
+                   <div className="space-y-4">
+                     <label className="text-[10px] font-black text-muted uppercase tracking-[0.4em] block italic ml-1">DEPLOY_MISSION_AGENT</label>
+                     <div className="relative">
+                        <select 
+                          value={selectedAgentId} 
+                          onChange={e => setSelectedAgentId(e.target.value)} 
+                          className="w-full p-6 bg-paper brutal-border border-4 outline-none focus:bg-brand text-ink font-black uppercase tracking-widest text-xs h-20 appearance-none cursor-pointer italic"
+                        >
+                           {agents.map(a => <option key={a.id} value={a.id}>{a.name.toUpperCase()}</option>)}
+                        </select>
+                        <ChevronRight className="absolute right-8 top-1/2 -translate-y-1/2 w-8 h-8 text-ink pointer-events-none rotate-90" />
+                     </div>
                    </div>
 
-                   {mode === "single" ? (
-                     <div className="space-y-5 animate-in fade-in slide-in-from-left-4 text-ink">
-                       <div>
-                         <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 block italic">Target Number</label>
-                         <input type="text" value={customerNumber} onChange={e => setCustomerNumber(e.target.value)} placeholder="+1 XXX XXX XXXX" className="w-full p-4 brutal-border outline-none focus:bg-brand font-black text-ink uppercase tracking-widest text-[10px] bg-white shadow-none font-mono h-11" />
-                       </div>
+                   <AnimatePresence mode="wait">
+                    {mode === "single" ? (
+                      <motion.div 
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        className="space-y-10"
+                      >
+                        <div className="grid grid-cols-1 gap-10">
+                          <div className="space-y-4">
+                            <label className="text-[10px] font-black text-muted uppercase tracking-[0.4em] block italic ml-1">CARRIER_VECTOR (PHONE)</label>
+                            <input type="text" value={customerNumber} onChange={e => setCustomerNumber(e.target.value)} placeholder="+1 XXX XXX XXXX" className="w-full p-6 brutal-border border-4 outline-none focus:bg-brand font-black text-ink uppercase tracking-widest text-xl bg-white shadow-none font-sans h-20 italic font-display" />
+                          </div>
 
-                       <div>
-                         <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 block italic">Recipient Identity</label>
-                         <input type="text" value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="JOHN DOE" className="w-full p-4 brutal-border outline-none focus:bg-brand font-black text-ink uppercase tracking-widest text-[10px] bg-white shadow-none h-11" />
-                       </div>
+                          <div className="space-y-4">
+                            <label className="text-[10px] font-black text-muted uppercase tracking-[0.4em] block italic ml-1">SUBJECT_DESIGNATION (NAME)</label>
+                            <input type="text" value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="JOHN_DOE" className="w-full p-6 brutal-border border-4 outline-none focus:bg-brand font-black text-ink uppercase tracking-widest text-xl bg-white shadow-none h-20 italic font-display" />
+                          </div>
+                        </div>
 
-                       <div>
-                         <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 block italic">Tactical Context</label>
-                         <textarea value={context} onChange={e => setContext(e.target.value)} rows={3} placeholder="MISSION OBJECTIVES..." className="w-full p-4 brutal-border outline-none focus:bg-brand font-black text-ink uppercase tracking-tight text-sm bg-white shadow-none resize-none italic font-display"></textarea>
-                       </div>
+                        <div className="space-y-4">
+                          <label className="text-[10px] font-black text-muted uppercase tracking-[0.4em] block italic ml-1">MISSION_OBJECTIVES (CONTEXT)</label>
+                          <textarea value={context} onChange={e => setContext(e.target.value)} rows={5} placeholder="ENTER_OPERATIONAL_PARAMETERS..." className="w-full p-8 brutal-border border-4 outline-none focus:bg-brand font-black text-ink uppercase tracking-tighter text-2xl bg-white shadow-none resize-none italic font-display leading-[1.1]"></textarea>
+                        </div>
 
-                       <button 
-                         onClick={dispatchCall} 
-                         disabled={isDialing || !customerNumber}
-                         className="w-full py-4 bg-zinc-950 text-brand brutal-border flex justify-center items-center gap-3 hover:bg-black disabled:opacity-50 font-black uppercase tracking-widest shadow-[4px_4px_0px_0px_rgba(250,204,21,1)] text-[10px] italic h-14"
+                        <button 
+                          onClick={dispatchCall} 
+                          disabled={isDialing || !customerNumber}
+                          className="w-full h-24 bg-zinc-950 text-brand brutal-border border-4 flex justify-center items-center gap-6 hover:bg-black disabled:opacity-50 font-black uppercase tracking-[0.4em] shadow-[12px_12px_0px_0px_rgba(212,255,77,1)] text-lg italic transition-all active:translate-x-1 active:translate-y-1 active:shadow-none"
+                        >
+                          {isDialing ? <><Loader2 className="w-8 h-8 animate-spin" /> DISPATCHING_RELAY...</> : <><Search className="w-8 h-8" /> INITIATE_SIGNAL</>}
+                        </button>
+                      </motion.div>
+                    ) : (
+                       <motion.div 
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20 }}
+                        className="space-y-10"
                        >
-                         {isDialing ? <><Loader2 className="w-4 h-4 animate-spin" /> DISPATCHING...</> : <><PhoneOutgoing className="w-4 h-4" /> INITIATE SIGNAL</>}
-                       </button>
-                     </div>
-                   ) : (
-                      <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
-                         <div className="p-4 bg-zinc-950 text-brand brutal-border shadow-none">
-                            <h4 className="text-[9px] font-black uppercase tracking-[0.3em] mb-2 italic">Format Required</h4>
-                            <ul className="text-[8px] font-bold text-white/50 list-disc pl-4 space-y-1 uppercase tracking-widest">
-                               <li>HEADERS: <span className="text-white">PHONE, NAME, CONTEXT</span></li>
-                            </ul>
-                         </div>
+                          <div className="p-8 bg-zinc-950 text-brand brutal-border border-4 shadow-none">
+                             <div className="flex items-center gap-4 mb-6 border-b border-brand/20 pb-4">
+                               <Terminal className="w-5 h-5 text-brand" />
+                               <h4 className="text-[10px] font-black uppercase tracking-[0.4em] italic leading-none">STRUCTURAL_INTEGRITY_SPECS</h4>
+                             </div>
+                             <ul className="text-[10px] font-bold text-white/50 space-y-3 uppercase tracking-widest">
+                                <li className="flex items-center gap-3"><ChevronRight className="w-3 h-3 text-brand" /> HEADERS: <span className="text-white">PHONE, NAME, CONTEXT</span></li>
+                                <li className="flex items-center gap-3"><ChevronRight className="w-3 h-3 text-brand" /> FORMAT: <span className="text-white">CSV_ENCODED</span></li>
+                                <li className="flex items-center gap-3"><ChevronRight className="w-3 h-3 text-brand" /> LIMIT: <span className="text-white">1,000_LINES_MAX</span></li>
+                             </ul>
+                          </div>
 
-                         <div className="border-4 border-dashed border-ink/20 p-8 flex flex-col items-center justify-center text-center hover:bg-zinc-50 transition-all w-full cursor-pointer relative group" onClick={() => fileInputRef.current?.click()}>
-                            <input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
-                            {isUploading ? (
-                               <Loader2 className="w-8 h-8 text-brand animate-spin mb-4" />
-                            ) : (
-                               <UploadCloud className="w-8 h-8 text-slate-200 group-hover:text-brand transition-colors mb-4" />
-                            )}
-                            <h3 className="font-black text-ink uppercase tracking-widest mb-1 font-display italic text-xs">Upload CSV</h3>
-                            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">DRAG SIGNAL DATA OR CLICK</p>
-                         </div>
-                      </div>
-                   )}
+                          <div 
+                            className="border-8 border-dashed border-ink/10 p-20 flex flex-col items-center justify-center text-center hover:bg-brand/5 hover:border-brand transition-all w-full cursor-pointer relative group" 
+                            onClick={() => fileInputRef.current?.click()}
+                          >
+                             <input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
+                             {isUploading ? (
+                                <Loader2 className="w-16 h-16 text-brand animate-spin mb-8" />
+                             ) : (
+                                <UploadCloud className="w-16 h-16 text-zinc-100 group-hover:text-brand transition-all mb-8 group-hover:scale-110" />
+                             )}
+                             <h3 className="font-black text-ink uppercase tracking-[0.4em] mb-4 font-display italic text-lg">UPLOAD_BATCH_MANIFEST</h3>
+                             <p className="text-[10px] font-black text-muted uppercase tracking-[0.5em] italic">DRAG_MANIFEST_HERE_OR_CLICK_TO_SCAN</p>
+                          </div>
+                          
+                          <div className="p-10 bg-brand/5 border-4 border-brand border-dashed flex items-center gap-6">
+                             <Shield className="w-8 h-8 text-brand fill-ink" />
+                             <p className="text-[10px] font-black text-ink uppercase tracking-widest italic leading-relaxed">
+                                ALL_BATCH_DATA_SCRUBBED_AND_ENCRYPTED_BEFORE_DISPATCH_SEQUENCE_EXECUTION.
+                             </p>
+                          </div>
+                       </motion.div>
+                    )}
+                   </AnimatePresence>
 
-                  {dialError && (
-                    <div className="p-3 bg-rose-500 text-white font-black uppercase tracking-widest text-[8px] brutal-border shadow-none italic animate-shake">
-                      SIGNAL_ERROR: {dialError}
-                    </div>
-                  )}
-                  {uploadStats && (
-                    <div className="p-3 bg-brand text-ink font-black uppercase tracking-widest text-[8px] brutal-border shadow-none italic">
-                      SYSTEM_STATUS: {uploadStats}
-                    </div>
-                  )}
-                </div>
-             </div>
+                   <AnimatePresence>
+                    {(dialError || uploadStats) && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="space-y-4"
+                      >
+                        {dialError && (
+                          <div className="p-6 bg-rose-500 text-white font-black uppercase tracking-widest text-[10px] brutal-border border-4 shadow-none italic flex items-center gap-4">
+                            <Terminal className="w-5 h-5 shrink-0" /> THREAD_CRITICAL_FAIL: {dialError}
+                          </div>
+                        )}
+                        {uploadStats && (
+                          <div className="p-6 bg-brand text-ink font-black uppercase tracking-widest text-[10px] brutal-border border-4 shadow-none italic flex items-center gap-4">
+                            <Activity className="w-5 h-5 shrink-0" /> NETWORK_STATUS: {uploadStats}
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+                   </AnimatePresence>
+                 </div>
+              </div>
           </div>
 
-          <div className="lg:col-span-2">
-             <div className="bg-white brutal-border shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden min-h-[500px] flex flex-col">
-                <div className="p-4 md:p-6 border-b-4 border-ink bg-zinc-950 flex justify-between items-center shrink-0">
-                  <h2 className="text-base md:text-xl font-black text-white uppercase tracking-tight font-display italic flex items-center gap-3">
-                     <PlayCircle className="w-5 h-5 md:w-6 md:h-6 text-brand" />
-                     Operations Queue
-                  </h2>
+          {/* Operations Queue */}
+          <div className="xl:col-span-7">
+             <div className="bg-white brutal-border border-8 shadow-[24px_24px_0px_0px_rgba(10,10,10,1)] overflow-hidden min-h-[800px] flex flex-col relative animate-in fade-in slide-in-from-right-10 duration-700">
+                <div className="absolute inset-0 bg-ink/5 -skew-x-12 translate-x-[50%] pointer-events-none" />
+                <div className="p-10 md:p-14 border-b-8 border-ink bg-zinc-950 flex flex-col md:flex-row justify-between items-center gap-8 shrink-0 relative z-10 overflow-hidden">
+                  <div className="absolute top-0 right-0 p-8 opacity-10">
+                     <Radar className="w-32 h-32 text-brand animate-spin" style={{ animationDuration: '10s' }} />
+                  </div>
+                  <div className="flex items-center gap-6 relative z-10">
+                     <PlayCircle className="w-12 h-12 text-brand" />
+                     <div>
+                       <h2 className="text-3xl font-black text-white uppercase tracking-tighter font-display italic leading-none">OPERATIONS_QUEUE</h2>
+                       <p className="text-[10px] font-black text-brand uppercase tracking-[0.4em] italic mt-3">Tactical Pipeline Status</p>
+                     </div>
+                  </div>
                   
                   {leads.filter(l => l.status === "Queued").length > 0 && (
                      <button 
                        onClick={launchQueue} 
                        disabled={isDialing}
-                       className="bg-brand text-ink px-4 py-2 border-2 md:border-4 border-ink text-[8px] md:text-[9px] font-black uppercase tracking-widest shadow-none hover:bg-white hover:text-ink transition-all flex items-center gap-2 active:translate-x-1 active:translate-y-1"
+                       className="w-full md:w-auto h-20 bg-brand text-ink px-10 border-4 border-ink text-sm font-black uppercase tracking-[0.3em] shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] hover:shadow-none transition-all flex items-center justify-center gap-6 active:translate-x-1 active:translate-y-1 italic relative z-10"
                      >
-                        {isDialing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PlayCircle className="w-3.5 h-3.5" />}
-                        BATCH DISPATCH ({leads.filter(l => l.status === "Queued").length})
+                        {isDialing ? <Loader2 className="w-6 h-6 animate-spin" /> : <Radar className="w-6 h-6 animate-pulse" />}
+                        SEQUENTIAL_DISPATCH ({leads.filter(l => l.status === "Queued").length})
                      </button>
                   )}
                </div>
 
-               <div className="flex-1 overflow-y-auto">
-                {leads.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full p-12 md:p-24 text-slate-400 text-center">
-                    <div className="w-12 h-12 md:w-16 md:h-16 bg-zinc-50 brutal-border border-slate-100 flex items-center justify-center mb-6 shadow-none">
-                        <Users className="w-6 h-6 md:w-8 md:h-8 text-slate-200" />
+               <div className="flex-1 overflow-y-auto relative z-10 scrollbar-hide">
+                <AnimatePresence mode="popLayout">
+                  {leads.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full p-24 md:p-40 text-center">
+                      <div className="w-32 h-32 md:w-48 md:h-48 bg-paper brutal-border border-8 flex items-center justify-center mb-12 shadow-[16px_16px_0px_0px_rgba(10,10,10,1)] group hover:-rotate-6 transition-transform">
+                          <Target className="w-16 h-16 md:w-24 md:h-24 text-zinc-100 group-hover:text-brand transition-colors" />
+                      </div>
+                      <div className="space-y-6">
+                         <h3 className="text-4xl font-black text-ink uppercase tracking-tighter font-display italic leading-none">QUEUE_IDLE</h3>
+                         <p className="max-w-md font-bold text-muted uppercase tracking-[0.4em] text-xs md:text-sm leading-loose italic underline decoration-brand decoration-4 underline-offset-[-2px]">
+                            NO_TACTICAL_SIGNAL_THREADS_CURRENTLY_REGISTERED_IN_THE_OPERATIONAL_PIPELINE.
+                         </p>
+                      </div>
                     </div>
-                    <p className="font-black text-ink text-[10px] uppercase tracking-widest mb-1 italic">ARCHIVE EMPTY</p>
-                    <p className="text-[8px] font-bold uppercase tracking-widest leading-loose max-w-sm">
-                        No tactical signals identified in queue.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="divide-y-2 divide-ink/10">
-                    {leads.map((lead, idx) => (
-                      <div key={idx} className={cn("p-4 md:p-6 flex flex-col sm:flex-row gap-4 md:gap-6 transition-all justify-between items-center group", lead.status === 'Queued' ? 'bg-brand/5' : 'hover:bg-zinc-50')}>
-                          <div className="flex-1 min-w-0 w-full sm:w-auto">
-                            <div className="flex flex-wrap items-center gap-3 mb-2">
-                              <h3 className="font-black text-ink text-base md:text-xl uppercase tracking-tighter font-display italic truncate">{lead.customer_name || "UNKNOWN"}</h3>
-                              <span className={cn("px-2 py-0.5 brutal-border shadow-none text-[7px] md:text-[8px] font-black uppercase tracking-widest italic h-5 flex items-center", 
-                                 lead.status === 'Completed' ? 'bg-emerald-500 text-white' :
-                                 lead.status === 'Queued' ? 'bg-brand text-ink border-ink' : 
-                                 'bg-rose-500 text-white'
-                              )}>
-                                 {lead.status}
-                              </span>
+                  ) : (
+                    <div className="divide-y-8 divide-ink">
+                      {leads.map((lead, idx) => (
+                        <motion.div 
+                          layout
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          key={lead.id || idx} 
+                          className={cn(
+                            "p-10 md:p-14 flex flex-col sm:flex-row gap-10 transition-all justify-between items-center group", 
+                            lead.status === 'Queued' ? 'bg-brand/5' : 'hover:bg-zinc-50'
+                          )}
+                        >
+                          <div className="flex-2 min-w-0 w-full sm:w-auto space-y-6">
+                            <div className="flex flex-wrap items-center gap-6">
+                               <div className="w-1.5 h-10 bg-ink shadow-[2px_2px_0px_0px_rgba(10,10,10,1)]" />
+                               <h3 className="font-black text-ink text-3xl md:text-5xl uppercase tracking-tighter font-display italic leading-[0.8] truncate group-hover:translate-x-2 transition-transform">{lead.customer_name || "SUBJECT_UNKNOWN"}</h3>
                             </div>
-                            <div className="flex flex-wrap items-center gap-4 text-[7px] md:text-[8px] font-black uppercase tracking-widest text-slate-400">
-                               <span className="text-ink font-mono bg-zinc-100 px-2 py-0.5 brutal-border shadow-none border-zinc-200">{lead.customer_number}</span>
-                               <span className="italic">RELAY_AGENT: {lead.agent_id?.substring(0,8).toUpperCase()}</span>
+                            <div className="flex flex-wrap items-center gap-8 pl-10">
+                               <div className={cn(
+                                 "px-4 py-1 brutal-border border-2 shadow-none text-[10px] font-black uppercase tracking-widest italic flex items-center gap-3", 
+                                 lead.status === 'Completed' ? 'bg-emerald-500 text-white' :
+                                 lead.status === 'Queued' ? 'bg-brand text-ink border-ink animate-pulse' : 
+                                 'bg-rose-500 text-white animate-pulse'
+                               )}>
+                                  <div className="w-2 h-2 bg-current rounded-full" /> {lead.status}
+                               </div>
+                               <span className="text-ink font-mono font-black border-4 border-ink px-4 py-1 text-sm bg-paper shadow-none">{lead.customer_number}</span>
+                               <span className="text-[10px] font-black text-muted uppercase tracking-[0.4em] italic hidden md:inline">RELAY_TARGET: AGENT_{lead.agent_id?.substring(0,8).toUpperCase()}</span>
                             </div>
                           </div>
 
-                          <div className="shrink-0">
-                             <div className="w-10 h-10 bg-zinc-950 text-brand brutal-border flex items-center justify-center shadow-none group-hover:bg-brand group-hover:text-ink transition-all">
-                                <PlayCircle className="w-4 h-4" />
+                          <div className="shrink-0 flex items-center gap-6">
+                             {lead.status === 'Queued' && (
+                                <button className="w-16 h-16 bg-zinc-950 text-brand brutal-border border-4 flex items-center justify-center shadow-[6px_6px_0px_0px_rgba(212,255,77,1)] hover:shadow-none hover:bg-brand hover:text-ink transition-all active:translate-x-1 active:translate-y-1">
+                                   <Share2 className="w-8 h-8" />
+                                </button>
+                             )}
+                             <div className="w-20 h-20 bg-paper brutal-border border-4 flex items-center justify-center shadow-none group-hover:bg-ink group-hover:text-brand transition-all">
+                                <Terminal className="w-10 h-10" />
                              </div>
                           </div>
-                       </div>
-                    ))}
-                  </div>
-                )}
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+                </AnimatePresence>
+               </div>
+               
+               <div className="p-10 bg-zinc-950 text-brand text-center relative overflow-hidden group">
+                  <div className="absolute inset-0 bg-brand/5 translate-x-full group-hover:translate-x-0 transition-transform duration-700" />
+                  <p className="text-[10px] font-black uppercase tracking-[1em] italic opacity-40 relative z-10">-- SYSTEM OPERATIONS PIPELINE STATUS: IDLE --</p>
                </div>
              </div>
           </div>

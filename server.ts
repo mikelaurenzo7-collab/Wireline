@@ -1,7 +1,9 @@
 import express from "express";
+import cors from "cors";
 import { createServer as createViteServer } from "vite";
 import path from "path";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { SchemaType } from "@google/generative-ai";
 import { createClient } from "@supabase/supabase-js";
 import { google } from "googleapis";
 import dotenv from "dotenv";
@@ -11,10 +13,11 @@ dotenv.config();
 const app = express();
 const PORT = 3000;
 
+app.use(cors());
 app.use(express.json());
 
 // Initialize AI and DB
-const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 // Google Workspace OAuth Setup
 const SCOPES = [
@@ -90,7 +93,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
                 firstMessage: "We're sorry, but the automated service for this line is currently suspended. Please contact the administrator.",
                 model: {
                     provider: "google",
-                    model: "gemini-2.0-flash",
+                    model: "gemini-1.5-flash",
                     systemPrompt: "Tell the user the service is suspended, and gracefully end the call."
                 }
             }
@@ -180,20 +183,28 @@ app.post("/api/vapi-webhook", async (req, res) => {
 
       ## HALLUCINATION GUARD & FALLBACK
       If a customer asks a question you do not have the answer to in the Knowledge Base below:
-      1. ACKNOWLEDGE: "That's a great question, but I want to make sure I give you 100% accurate info."
-      2. RESOLVE: "Let me have one of our senior specialists review that and get back to you. What's the best email to reach you at?"
-      3. LOG: After getting the info, move on to the next part of the conversation. NEVER guess or make up prices, dates, or company policies.
+      1. ACKNOWLEDGE: "That's a great question, let me check with our experts."
+      2. RESOLVE: "Let me have a specialist review that and get back to you. What's your email?"
+      3. LOG: After getting the info, move on. NEVER guess or make up prices, dates, or company policies.
 
       ## BLOCK 2: TEMPORAL & CONTEXTUAL ANCHORS
       You unmistakably know that today is ${currentDateTime} (Eastern Time). If a customer asks for "tomorrow" or "next week", calculate the date silently and confirm it back to them (e.g., "So that would be Tuesday the 24th at 2pm?").
 
+      Memory Protocol: If a customer context seems familiar or they mention a previous conversation, you MUST use the 'view_recent_interactions' tool to retrieve their history and provide a personalized experience.
+
       ## BLOCK 3: CONVERSATIONAL LOOP & GUARDRAILS
-      Response Length: Keep every response under 20 words unless you are explaining a complex process. Long AI monologues feel like robots.
-      The "Anti-Echo" Rule: Do not repeat back what the user just said. If they say "My heater is broken", do not say "I understand your heater is broken." Instead, say "Got it. Let's get a tech out there. Is it blowing cold air or not turning on at all?"
+      Response Length: ABSOLUTE LIMIT. Keep every response under 20 words. No monologues. Be snappy and human.
+      The "Anti-Echo" Rule: Do not repeat back what the user just said.
       Question Limit: Never ask more than one question at a time.
       Number Formatting: Spell out important numbers if they sound robotic (e.g., "Two zero two" instead of "Two hundred and two").
 
       ## BLOCK 4: TOOL EXECUTION LOGIC & PROTOCOLS
+      Escalation Detection (CRITICAL):
+      You must proactively escalate to a human using the 'escalate_to_human' tool if:
+      1. Potential Conflict: The customer starts using profanity or sounds clearly distressed.
+      2. High stakes: The customer is asking for a quote over $5,000 or wants to discuss a legal liability.
+      3. Repetition: You have had to repeat the same answer three times without resolution.
+      
       Sequence Requirements:
       1. If a user wants a slot, you MUST check calendar availability first.
       2. If the slot is open, book the appointment.
@@ -221,7 +232,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
           backgroundSound: agentConfig?.data?.ambient_noise || 'off',
           model: {
             provider: "google",
-            model: "gemini-2.0-flash", 
+            model: "gemini-1.5-flash", 
             systemPrompt: systemPrompt,
             temperature: llmTemp
           },
@@ -273,6 +284,38 @@ app.post("/api/vapi-webhook", async (req, res) => {
                 },
                 required: ["to_email", "subject", "body"]
               }
+            },
+            {
+              name: "create_fleet_task",
+              description: "Creates a resolution mission for a human agent. Use this if a customer needs something complex that you cannot handle on the call.",
+              parameters: {
+                type: "object",
+                properties: {
+                  description: { type: "string", description: "Detailed description of the task." },
+                  priority: { type: "string", enum: ["low", "medium", "high"], description: "The urgency of the mission." }
+                },
+                required: ["description", "priority"]
+              }
+            },
+            {
+              name: "search_leads",
+              description: "Locates customer lead data from the central fleet intelligence database. Use this to find existing lead context.",
+              parameters: {
+                type: "object",
+                properties: {
+                  query: { type: "string", description: "The name or signal signature to search for." }
+                },
+                required: ["query"]
+              }
+            },
+            {
+              name: "view_recent_interactions",
+              description: "Retrieves recent tasks and call summaries for this specific number. Use this to provide continuity if a caller asks about previous status.",
+              parameters: {
+                type: "object",
+                properties: {},
+                required: []
+              }
             }
           ]
         }
@@ -286,7 +329,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
       return res.json({
          assistant: {
            firstMessage: "I'm sorry, my memory banks are currently offline.",
-           model: { provider: "google", model: "gemini-3-flash-preview", systemPrompt: "Apologize and hang up." }
+           model: { provider: "google", model: "gemini-1.5-flash", systemPrompt: "Apologize and hang up." }
          }
       });
     }
@@ -301,6 +344,51 @@ app.post("/api/vapi-webhook", async (req, res) => {
     const results = [];
     
     for (const toolCall of message.toolCalls) {
+      
+      // TOOL 0: CONTEXTUAL RECALL (MEMORY)
+      if (toolCall.function.name === "view_recent_interactions") {
+         try {
+            const customerPhone = payload.call?.customer?.number || message.call?.customer?.number || "unknown";
+            
+            console.log(`[MEMORY] Fetching history for ${customerPhone}`);
+
+            // 1. Fetch last 3 call summaries
+            const { data: pastCalls } = await db.from('wireline_call_logs')
+               .select('summary, intent_label, created_at')
+               .eq('customer_number', customerPhone)
+               .order('created_at', { ascending: false })
+               .limit(3);
+
+            // 2. Fetch any open tasks for this customer
+            const { data: tasks } = await db.from('wireline_fleet_tasks')
+               .select('description, status, priority')
+               .eq('user_id', agent?.user_id)
+               .ilike('customer_info->>email', `%${customerPhone}%`)
+               .eq('status', 'pending')
+               .limit(2);
+
+            let contextReport = `RECENT CONTEXT FOR ${customerPhone}:\n`;
+            if (pastCalls && pastCalls.length > 0) {
+               contextReport += "PAST CALL HISTORY:\n" + pastCalls.map(c => `- [${new Date(c.created_at).toLocaleDateString()}] Intent: ${c.intent_label || 'Inquiry'}. Summary: ${c.summary}`).join('\n');
+            } else {
+               contextReport += "No previous voice interaction history found.\n";
+            }
+
+            if (tasks && tasks.length > 0) {
+               contextReport += "\nACTIVE MISSIONS/TASKS:\n" + tasks.map(t => `- [${t.priority.toUpperCase()}] ${t.description} (Status: ${t.status})`).join('\n');
+            }
+
+            results.push({
+              toolCallId: toolCall.id,
+              result: contextReport || "No interaction signals found in the neural cache."
+            });
+            continue;
+         } catch (e) {
+            console.error("Recall Error:", e);
+            results.push({ toolCallId: toolCall.id, result: "Memory retrieval error. Process caller as a new contact for safety." });
+            continue;
+         }
+      }
       
       // TOOL 1: CHECK AVAILABILITY
       if (toolCall.function.name === "check_calendar_availability") {
@@ -468,6 +556,45 @@ app.post("/api/vapi-webhook", async (req, res) => {
            });
          }
       }
+
+      // TOOL 5: FLEET TASK
+      if (toolCall.function.name === "create_fleet_task") {
+        try {
+           const { description, priority } = toolCall.function.arguments;
+           const { data: task, error: taskError } = await db.from('wireline_fleet_tasks').insert({
+              user_id: agent?.user_id,
+              agent_id: agent?.id,
+              description,
+              priority: priority || 'medium',
+              status: 'pending',
+              source: 'voice'
+           }).select('id').single();
+           
+           if (taskError) throw taskError;
+           results.push({ toolCallId: toolCall.id, result: `Task ${task.id.split('-')[0]} created in mission queue.` });
+        } catch (e) {
+           results.push({ toolCallId: toolCall.id, result: "Failed to create task in mission queue." });
+        }
+      }
+
+      // TOOL 6: SEARCH LEADS
+      if (toolCall.function.name === "search_leads") {
+        try {
+           const { query } = toolCall.function.arguments;
+           const { data: leads } = await db.from('wireline_outbound_leads')
+             .select('name, status, last_contact_summary')
+             .or(`name.ilike.%${query}%,email.ilike.%${query}%`)
+             .limit(3);
+           
+           if (leads && leads.length > 0) {
+              results.push({ toolCallId: toolCall.id, result: `Found matching intelligence: ${leads.map(l => `${l.name} (${l.status}): ${l.last_contact_summary || 'No prior notes'}`).join('; ')}` });
+           } else {
+              results.push({ toolCallId: toolCall.id, result: "No matching lead profiles found in current sector." });
+           }
+        } catch (e) {
+           results.push({ toolCallId: toolCall.id, result: "Intelligence database is currently unreachable." });
+        }
+      }
     }
     
     res.json({ results });
@@ -528,31 +655,62 @@ app.post("/api/vapi-webhook", async (req, res) => {
           RESPONSE FORMAT (JSON): { "score": number, "label": string }
         `;
         try {
-           const scoreRes = await genAI.models.generateContent({
-             model: "gemini-3-flash-preview",
-             contents: scoringPrompt,
-             config: { responseMimeType: "application/json" }
+           const model = genAI.getGenerativeModel({ 
+             model: "gemini-1.5-flash",
+             generationConfig: { responseMimeType: "application/json" }
            });
-           const scoreObj = JSON.parse(scoreRes.text || "{}");
+           const scoreRes = await model.generateContent(scoringPrompt);
+           const scoreObj = JSON.parse(scoreRes.response.text() || "{}");
            await db.from('wireline_call_logs').update({
              lead_score: scoreObj.score || 0,
              intent_label: scoreObj.label || 'none'
            }).eq('vapi_call_id', call?.id);
 
+           // Update outbound lead status if applicable
+           await db.from('wireline_outbound_leads').update({
+             status: "Completed",
+             last_called_at: new Date()
+           }).eq('call_id', call?.id);
+
            // SELF-OPTIMIZING LOOP: Generate Lessons Learned
            try {
               const lessonPrompt = `Identify exactly ONE tactical improvement for this agent. JSON ONLY: { "lesson": "string" }. Transcript: ${message.transcript}`;
-              const lessonRes = await genAI.models.generateContent({
-                 model: "gemini-2.0-flash",
-                 contents: lessonPrompt,
-                 config: { responseMimeType: "application/json" }
+              const lessonModel = genAI.getGenerativeModel({ 
+                 model: "gemini-1.5-flash",
+                 generationConfig: { responseMimeType: "application/json" }
               });
-              const lessonObj = JSON.parse(lessonRes.text || "{}");
+              const lessonRes = await lessonModel.generateContent(lessonPrompt);
+              const lessonObj = JSON.parse(lessonRes.response.text() || "{}");
               if (lessonObj.lesson) {
                  await db.from('wireline_agent_lessons').insert({
                     agent_id: webhookAgentId,
                     user_id: agent?.user_id,
                     lesson: lessonObj.lesson
+                 });
+              }
+           } catch(e) {}
+
+           // TASK EXTRACTION LOOP: Generate follow-up tasks from promises
+           try {
+              const taskPrompt = `Based on the transcript, did the agent promise any follow-up (like sending an email, checking a quote), or did the human ask for something out-of-scope? 
+              JSON format MUST match exactly: { "has_task": boolean, "task_description": "string", "priority": "high" | "medium" | "low", "target_channel": "email" | "manual" }
+              Transcript: ${message.transcript}`;
+              const taskModel = genAI.getGenerativeModel({ 
+                 model: "gemini-1.5-flash",
+                 generationConfig: { responseMimeType: "application/json" }
+              });
+              const taskRes = await taskModel.generateContent(taskPrompt);
+              const taskObj = JSON.parse(taskRes.response.text() || "{}");
+              if (taskObj.has_task && taskObj.task_description) {
+                 await db.from('wireline_fleet_tasks').insert({
+                    user_id: agent?.user_id,
+                    task_type: 'action_required',
+                    description: `FOLLOW-UP FOR ${call?.customer?.number || 'Caller'}: ${taskObj.task_description}`,
+                    source_type: 'phone_call',
+                    source_id: call?.id,
+                    target_channel: taskObj.target_channel || 'manual',
+                    priority: taskObj.priority || 'medium',
+                    status: 'pending'
                  });
               }
            } catch(e) {}
@@ -582,18 +740,25 @@ app.post("/api/vapi-webhook", async (req, res) => {
 // ==========================================
 app.get("/api/calls", authenticateUser, async (req: any, res: any) => {
   try {
-    const { data: calls, error } = await db
+    const limit = parseInt(req.query.limit as string) || 50;
+    const offset = parseInt(req.query.offset as string) || 0;
+    
+    const { data: calls, error, count } = await db
       .from('wireline_call_logs')
-      .select('*')
+      .select('*', { count: 'exact' })
       .eq('user_id', req.user.id)
       .order('created_at', { ascending: false })
-      .limit(50);
+      .range(offset, offset + limit - 1);
       
     if (error) throw error;
-    res.json({ calls: calls || [] });
+    res.json({ 
+       calls: calls || [],
+       hasMore: count ? (offset + limit) < count : false,
+       total: count || 0
+    });
   } catch (error) {
     console.error("Failed to fetch calls:", error);
-    res.json({ calls: [] }); // Fail gracefully if table not created
+    res.json({ calls: [], hasMore: false, total: 0 }); // Fail gracefully if table not created
   }
 });
 
@@ -627,6 +792,42 @@ app.get("/api/dashboard/stats", authenticateUser, async (req: any, res: any) => 
         ...(hotEmails || []).map(e => ({ id: e.id, type: 'email', contact: e.customer_email, score: e.lead_score, intent: e.intent_label, summary: e.summary, date: e.created_at }))
       ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
 
+      // Compute Chart Data (Last 7 Days)
+      const last7Days = Array.from({ length: 7 }, (_, i) => {
+         const d = new Date();
+         d.setDate(d.getDate() - (6 - i));
+         return d.toISOString().split('T')[0];
+      });
+
+      const chartDataMap: Record<string, { signals: number, leads: number }> = {};
+      last7Days.forEach(dateStr => {
+         chartDataMap[dateStr] = { signals: 0, leads: 0 };
+      });
+
+      logs.forEach((log: any) => {
+         const d = new Date(log.created_at).toISOString().split('T')[0];
+         if (chartDataMap[d]) {
+             chartDataMap[d].signals += 1;
+         }
+      });
+
+      const { data: recentAppts } = await db.from('wireline_appointments').select('created_at').eq('user_id', req.user.id);
+      (recentAppts || []).forEach((appt: any) => {
+         const d = new Date(appt.created_at).toISOString().split('T')[0];
+         if (chartDataMap[d]) {
+             chartDataMap[d].leads += 1;
+         }
+      });
+
+      const chartData = last7Days.map(dateStr => {
+         const date = new Date(dateStr + "T12:00:00");
+         return {
+            name: date.toLocaleDateString('en-US', { weekday: 'short' }),
+            signals: chartDataMap[dateStr].signals,
+            leads: chartDataMap[dateStr].leads
+         };
+      });
+
       res.json({
          totalAppointments,
          totalLeads,
@@ -637,7 +838,8 @@ app.get("/api/dashboard/stats", authenticateUser, async (req: any, res: any) => 
          outboundCount,
          conversionRate,
          recentLogs: logs.slice(0, 100),
-         hotLeads
+         hotLeads,
+         chartData
       });
    } catch(e) {
       console.error("Dashboard error", e);
@@ -821,15 +1023,17 @@ app.put("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
 app.get("/api/agent-config/:id", authenticateUser, async (req: any, res: any) => {
   try {
     const agentId = req.params.id;
-    const [directives, knowledge, personality] = await Promise.all([
+    const [directives, knowledge, personality, lessons] = await Promise.all([
       db.from('wireline_directives').select('*').eq('agent_id', agentId).eq('user_id', req.user.id).order('priority', { ascending: false }),
       db.from('wireline_knowledge').select('*').eq('agent_id', agentId).eq('user_id', req.user.id),
-      db.from('wireline_personality').select('content').eq('agent_id', agentId).eq('user_id', req.user.id).single()
+      db.from('wireline_personality').select('content').eq('agent_id', agentId).eq('user_id', req.user.id).single(),
+      db.from('wireline_agent_lessons').select('*').eq('agent_id', agentId).eq('user_id', req.user.id).order('created_at', { ascending: false })
     ]);
     res.json({
       directives: directives.data || [],
       knowledge: knowledge.data || [],
-      personality: personality.data?.content || ""
+      personality: personality.data?.content || "",
+      lessons: lessons.data || []
     });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch config" });
@@ -896,6 +1100,9 @@ app.get("/api/carrier/numbers", authenticateUser, async (req: any, res: any) => 
   }
 });
 
+// ==========================================
+// FLEET MANAGEMENT ENDPOINTS
+// ==========================================
 app.get("/api/fleet/presence", authenticateUser, async (req: any, res: any) => {
   try {
     const { data, error } = await db.from('wireline_signal_presence')
@@ -905,9 +1112,11 @@ app.get("/api/fleet/presence", authenticateUser, async (req: any, res: any) => {
     if (error) throw error;
     res.json({ signals: data || [] });
   } catch (error) {
+    console.error("Presence fetch failed:", error);
     res.json({ signals: [] });
   }
 });
+
 app.get("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => {
   try {
     const { data, error } = await db.from('wireline_fleet_tasks')
@@ -916,34 +1125,21 @@ app.get("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => {
     
     if (error) throw error;
 
-    // Sort in memory for accurate business logic priority order: High > Medium > Low
     const sortedTasks = (data || []).sort((a: any, b: any) => {
-      // 1. Completion status (unprocessed first)
       if (a.status === 'completed' && b.status !== 'completed') return 1;
       if (a.status !== 'completed' && b.status === 'completed') return -1;
-
-      // 2. Priority weight
       const priorityWeight: Record<string, number> = { 'high': 3, 'medium': 2, 'low': 1 };
       const weightA = priorityWeight[a.priority?.toLowerCase()] || 0;
       const weightB = priorityWeight[b.priority?.toLowerCase()] || 0;
-      
       if (weightA !== weightB) return weightB - weightA;
-
-      // 3. Due Date (earlier first)
-      if (a.due_date && b.due_date) {
-        return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
-      }
-      if (a.due_date) return -1;
-      if (b.due_date) return 1;
-
-      // 4. Default: Newest first
+      if (a.due_date && b.due_date) return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
 
     res.json({ tasks: sortedTasks });
   } catch (error) {
     console.error("Fetch tasks failed:", error);
-    res.status(500).json({ error: "Failed to fetch fleet tasks" });
+    res.json({ tasks: [] });
   }
 });
 
@@ -961,12 +1157,13 @@ app.post("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => {
 
 app.patch("/api/fleet/tasks/:id", authenticateUser, async (req: any, res: any) => {
   try {
-    const { status, priority, due_date, agent_id } = req.body;
+    const { status, priority, due_date, agent_id, resolution_notes } = req.body;
     const updateData: any = {};
     if (status) updateData.status = status;
     if (priority) updateData.priority = priority;
     if (due_date !== undefined) updateData.due_date = due_date;
     if (agent_id !== undefined) updateData.agent_id = agent_id;
+    if (resolution_notes !== undefined) updateData.resolution_notes = resolution_notes;
     
     await db.from('wireline_fleet_tasks').update(updateData).eq('id', req.params.id).eq('user_id', req.user.id);
     res.json({ success: true });
@@ -1019,9 +1216,9 @@ app.delete("/api/agent-config/:id/:type/:rowId", authenticateUser, async (req: a
 // ==========================================
 // 1.8 SETTINGS & OUTBOUND DIALER ENDPOINTS
 // ==========================================
-app.get("/api/settings", async (req, res) => {
+app.get("/api/settings", authenticateUser, async (req: any, res: any) => {
   try {
-    const { data } = await db.from('wireline_settings').select('*').eq('id', 'global').single();
+    const { data } = await db.from('wireline_settings').select('*').eq('user_id', req.user.id).single();
     if (data) {
        delete data.vapi_private_key; // Never send secret to client
     }
@@ -1031,25 +1228,38 @@ app.get("/api/settings", async (req, res) => {
   }
 });
 
-app.post("/api/settings", async (req, res) => {
+app.post("/api/settings", authenticateUser, async (req: any, res: any) => {
   try {
     const { vapi_phone_number_id, subscription_status, max_agents } = req.body;
-    await db.from('wireline_settings').upsert({
-      id: 'global',
-      vapi_phone_number_id,
-      subscription_status,
-      max_agents,
-      updated_at: new Date().toISOString()
-    });
+    
+    // Check if exists
+    const { data: existing } = await db.from('wireline_settings').select('id').eq('user_id', req.user.id).single();
+    
+    if (existing) {
+       await db.from('wireline_settings').update({
+         vapi_phone_number_id,
+         subscription_status,
+         max_agents,
+         updated_at: new Date().toISOString()
+       }).eq('user_id', req.user.id);
+    } else {
+       await db.from('wireline_settings').insert({
+         user_id: req.user.id,
+         vapi_phone_number_id,
+         subscription_status,
+         max_agents,
+         updated_at: new Date().toISOString()
+       });
+    }
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: "Failed to save settings" });
   }
 });
 
-app.get("/api/outbound", async (req, res) => {
+app.get("/api/outbound", authenticateUser, async (req: any, res: any) => {
   try {
-    const { data } = await db.from('wireline_outbound_leads').select('*').order('created_at', { ascending: false });
+    const { data } = await db.from('wireline_outbound_leads').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false });
     res.json({ leads: data || [] });
   } catch (error) {
     res.json({ leads: [] });
@@ -1200,18 +1410,23 @@ app.post("/api/outbound/dial", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-app.post("/api/outbound/bulk", async (req, res) => {
+app.post("/api/outbound/bulk", authenticateUser, async (req: any, res: any) => {
   try {
      const { leads } = req.body;
      if (!leads || !leads.length) return res.status(400).json({ error: "No leads provided" });
 
      // SECURITY ENFORCEMENT
-     const { data: globalSettings } = await db.from('wireline_settings').select('subscription_status').eq('id', 'global').single();
-     if (globalSettings?.subscription_status !== 'active') {
+     const { data: userSettings } = await db.from('wireline_settings').select('subscription_status').eq('user_id', req.user.id).single();
+     if (userSettings?.subscription_status !== 'active') {
         return res.status(403).json({ error: "Access Denied: Inactive billing plan." });
      }
 
-     const { data, error } = await db.from('wireline_outbound_leads').insert(leads).select('id');
+     const leadsWithUser = leads.map((lead: any) => ({
+        ...lead,
+        user_id: req.user.id
+     }));
+
+     const { data, error } = await db.from('wireline_outbound_leads').insert(leadsWithUser).select('id');
      if (error) throw error;
      
      res.json({ success: true, inserted: data.length });
@@ -1409,9 +1624,17 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
      for (const account of accounts) {
         // Fetch agent for this specific account
         let activeAgent = agent;
+        let knowledge = [];
+        let directives = [];
         if (account.agent_id) {
           const { data: specificAgent } = await db.from('wireline_agents').select('*').eq('id', account.agent_id).single();
           if (specificAgent) activeAgent = specificAgent;
+          
+          const knowledgeRes = await db.from('wireline_knowledge').select('content').eq('agent_id', account.agent_id);
+          if (knowledgeRes.data) knowledge = knowledgeRes.data.map(k => k.content);
+
+          const directivesRes = await db.from('wireline_directives').select('content').eq('agent_id', account.agent_id);
+          if (directivesRes.data) directives = directivesRes.data.map(d => d.content);
         }
 
         const oauth2Client = getGoogleOAuthClient(req);
@@ -1477,40 +1700,120 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
               requestBody: { removeLabelIds: ['UNREAD'] }
            });
 
-           // 3. GENERATE AI RESPONSE (Sales/CS focus)
-           // Grounded in agent's context
-           const prompt = `
-             ## BLOCK 1: IDENTITY & ARCHETYPE
+           // 3. GENERATE AI RESPONSE (Sales/CS focus) with TOOL SUPPORT
+           const systemInstruction = `
+             ## IDENTITY & ARCHETYPE
              Persona: You are the AI Email Agent for our company.
              Tone: ${activeAgent?.email_agent_tone || 'Professional'}. Concise and helpful.
              Personality: ${activeAgent?.archetype || 'Receptionist'}.
              Company Site: ${activeAgent?.website_url || 'Home Services Platform'}.
-             Signature: ${activeAgent?.email_signature || 'The Wireline Team'}.
-
-             ## BLOCK 2: CONTEXT
+             
+             ## CONTEXT
              INCOMING EMAIL FROM: ${from}
              SUBJECT: ${subject}
-             CONTENT: ${snippet}
-
-             ## BLOCK 3: CONVERSATIONAL LOOP & GUARDRAILS
-             Response Length: Keep it professional and concise. Do not write a novel.
-             Goal: Write a Sales or Customer Service response.
-             - If they are asking for a callback, acknowledge and tell them a representative will call them soon.
-             - If they want an appointment, provide basic info and ask them to call or utilize the website.
-             - Do not repeat their entire message back to them. Get straight to the value.
+             
+             ## GUARDRAILS
+             Response Length: CRITICAL. Keep every email under 20 words where possible. Be direct and avoid flowery pleasantries.
+             - If they want an appointment, use your tools to check availability and book it if confirmed.
 
              ## KNOWLEDGE BASE
-             ${activeAgent?.knowledge ? activeAgent.knowledge.map((k: any) => `- ${k.content}`).join('\n') : "Rely on standard professional knowledge."}
-
-             RESPONSE:
+             ${knowledge.length > 0 ? knowledge.map(k => `- ${k}`).join('\n') : "Use standard professional knowledge."}
+             
+             ## ABSOLUTE RULES
+             ${directives.length > 0 ? directives.map(d => `- ${d}`).join('\n') : ""}
            `;
 
-           const aiRes = await genAI.models.generateContent({
-              model: "gemini-3-flash-preview",
-              contents: prompt
+           const tools: any = [{
+              functionDeclarations: [
+                  {
+                      name: "check_calendar_availability",
+                      description: "Checks availability on a specific date.",
+                      parameters: {
+                          type: SchemaType.OBJECT,
+                          properties: { date: { type: SchemaType.STRING, description: "The date to check (e.g., 'October 15')" } },
+                          required: ["date"]
+                      }
+                  },
+                  {
+                      name: "book_appointment",
+                      description: "Books an appointment.",
+                      parameters: {
+                          type: SchemaType.OBJECT,
+                          properties: {
+                              date: { type: SchemaType.STRING },
+                              time: { type: SchemaType.STRING },
+                              customer_name: { type: SchemaType.STRING },
+                              service_type: { type: SchemaType.STRING }
+                          },
+                          required: ["date", "time", "customer_name", "service_type"]
+                      }
+                  }
+              ]
+           }];
+
+           const model = genAI.getGenerativeModel({ 
+              model: "gemini-1.5-pro",
+              systemInstruction,
+              tools,
+              generationConfig: { temperature: 0.4 }
            });
-           const aiText = aiRes.text || "I've received your email and will follow up shortly.";
-           const finalReply = activeAgent?.email_signature ? `${aiText}\n\n${activeAgent.email_signature}` : aiText;
+
+           const chat = model.startChat();
+
+           let finalReply = "I've received your email and will follow up shortly.";
+           try {
+              let resObj = await chat.sendMessage(snippet);
+              let response = resObj.response;
+              
+              // Handle tool calls
+              let calls = response.functionCalls();
+              while (calls && calls.length > 0) {
+                 const toolResponses = [];
+                 for (const call of calls) {
+                     let toolResult = "Tool failed";
+                     const args = call.args as any;
+                     try {
+                         if (call.name === "check_calendar_availability") {
+                             const { data } = await db.from('wireline_appointments').select('time').ilike('date', `%${args.date as string}%`);
+                             if (data && data.length > 0) {
+                                toolResult = `Booked times on ${args.date}: ${data.map(a => a.time).join(', ')}. Offer other times.`;
+                             } else {
+                                toolResult = `The entire day on ${args.date} is fully open.`;
+                             }
+                         } else if (call.name === "book_appointment") {
+                             const { data, error } = await db.from('wireline_appointments').insert({
+                                 agent_id: activeAgent?.id,
+                                 date: args.date as string,
+                                 time: args.time as string,
+                                 customer_name: args.customer_name as string,
+                                 service_type: args.service_type as string,
+                                 status: "Scheduled"
+                             }).select('id').single();
+                             if (error) throw error;
+                             toolResult = `Booked successfully! Reference ID: ${data.id.split('-')[0]}`;
+                         }
+                     } catch(e) {
+                         toolResult = "Error executing tool. Assume failure or ask human.";
+                     }
+                     toolResponses.push({
+                        functionResponse: {
+                            name: call.name,
+                            response: { result: toolResult }
+                        }
+                     });
+                 }
+                 const nextRes = await chat.sendMessage(toolResponses);
+                 response = nextRes.response;
+                 calls = response.functionCalls();
+              }
+              finalReply = response.text() || finalReply;
+           } catch(e) {
+              console.error("AI Email error:", e);
+           }
+
+           if (activeAgent?.email_signature) {
+               finalReply = `${finalReply}\n\n${activeAgent.email_signature}`;
+           }
 
            // Save the AI message (as a draft in our DB)
            await db.from('wireline_email_messages').insert({
@@ -1573,12 +1876,9 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
                 Body: ${snippet}
                 RESPONSE FORMAT (JSON): { "score": number, "label": string }
               `;
-              const sRes = await genAI.models.generateContent({
-                model: "gemini-3-flash-preview",
-                contents: emailScoringPrompt,
-                config: { responseMimeType: "application/json" }
-              });
-              const sObj = JSON.parse(sRes.text || "{}");
+              const sModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash", generationConfig: { responseMimeType: "application/json" } });
+              const sRes = await sModel.generateContent(emailScoringPrompt);
+              const sObj = JSON.parse(sRes.response.text() || "{}");
               await db.from('wireline_email_threads').update({
                  lead_score: sObj.score || 0,
                  intent_label: sObj.label || 'none'
@@ -1645,6 +1945,34 @@ app.post("/api/emails/threads/:id/reply", authenticateUser, async (req: any, res
    }
 });
 
+app.post("/api/emails/draft", authenticateUser, async (req: any, res: any) => {
+  try {
+     const { subject, messages, context } = req.body;
+     const prompt = `You are a professional AI assistant drafting an email reply.
+Subject: ${subject}
+Conversation history:
+${(messages || []).map((m: any) => `${m.role.toUpperCase()}: ${m.content}`).join('\n')}
+
+Extra instructions from user (if any):
+${context || 'Write a helpful and polite reply that advances the conversation seamlessly without repeating the context.'}
+
+Draft only the plain text email body. Do not include a subject line. Be professional but brief. Do not include placeholders like "[Your Name]", write as the AI representative if a name is not known, or just leave it off.`;
+
+     const aiModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+     const aiRes = await aiModel.generateContent(prompt);
+
+     res.json({ draft: aiRes.response.text() });
+  } catch (e) {
+     console.error("Draft error:", e);
+     res.status(500).json({ error: "Failed to draft reply" });
+  }
+});
+
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('Unhandled Global Error:', err.stack);
+  res.status(500).json({ error: 'Internal Server Error' });
+});
+
 // ==========================================
 // 3. VITE MIDDLEWARE & STATIC SERVING
 // ==========================================
@@ -1663,7 +1991,139 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
+  // OPTIMIZE AGENT PROTOCOLS
+app.post("/api/agents/:id/optimize", authenticateUser, async (req, res) => {
+   try {
+      const { id } = req.params;
+      const { data: logs } = await db.from('wireline_call_logs').select('summary, transcript').eq('agent_id', id).order('created_at', { ascending: false }).limit(10);
+      
+      if (!logs || logs.length === 0) {
+         return res.json({ suggestions: [], reason: "Insufficient data: Need at least 1 completed mission log." });
+      }
+
+      const prompt = `
+        AGENT ID: ${id}
+        MISSION LOGS (LAST 10):
+        ${logs.map((l, i) => `Log ${i+1}: Summary: ${l.summary}. Transcript: ${l.transcript}`).join('\n\n')}
+
+        TASK: Analyze performance and suggest exactly 3 new tactical directives to improve the agent.
+        FORMAT: JSON { "suggestions": string[], "analysis": string }
+      `;
+
+      const model = genAI.getGenerativeModel({
+         model: "gemini-1.5-pro",
+         generationConfig: { responseMimeType: "application/json" }
+      });
+
+      const result = await model.generateContent(prompt);
+      const aiText = result.response.text();
+      res.json(JSON.parse(aiText || "{}"));
+   } catch (e) {
+      res.status(500).json({ error: "Optimization protocol failed" });
+   }
+});
+
+// ==========================================
+// 1.9 CONSOLIDATED ACTIVITY FEED (TRIGGER LOG)
+// ==========================================
+app.get("/api/fleet/activity", authenticateUser, async (req: any, res: any) => {
+   try {
+      const [logs, tasks, lessons, emails] = await Promise.all([
+          db.from('wireline_call_logs').select('id, customer_number, lead_score, intent_label, summary, created_at').eq('user_id', req.user.id).order('created_at', { ascending: false }).limit(5),
+          db.from('wireline_fleet_tasks').select('id, description, status, priority, created_at').eq('user_id', req.user.id).order('created_at', { ascending: false }).limit(5),
+          db.from('wireline_agent_lessons').select('id, lesson, created_at').eq('user_id', req.user.id).order('created_at', { ascending: false }).limit(5),
+          db.from('wireline_email_threads').select('id, customer_email, lead_score, intent_label, created_at').eq('user_id', req.user.id).order('created_at', { ascending: false }).limit(5)
+      ]);
+
+      const activity = [
+         ...(logs.data || []).map(l => ({ 
+            id: l.id, 
+            type: 'SIGNAL_ANALYZED', 
+            trigger: 'Voice Ingestion', 
+            action: `Intent extracted: ${l.intent_label || 'Analysis Pending'}`, 
+            meta: l.customer_number,
+            timestamp: l.created_at,
+            importance: l.lead_score > 70 ? 'high' : 'medium'
+         })),
+         ...(tasks.data || []).map(t => ({ 
+            id: t.id, 
+            type: 'MISSION_INJECTED', 
+            trigger: 'Functional Requirement Detected', 
+            action: `New Task: ${t.description.substring(0, 50)}...`, 
+            meta: t.status,
+            timestamp: t.created_at,
+            importance: t.priority === 'high' ? 'critical' : 'medium'
+         })),
+         ...(lessons.data || []).map(l => ({ 
+            id: l.id, 
+            type: 'NEURAL_OPTIMIZATION', 
+            trigger: 'Behavioral Deviation', 
+            action: `Lesson Learned: ${l.lesson.substring(0, 50)}...`, 
+            meta: 'Agent Refinement',
+            timestamp: l.created_at,
+            importance: 'low'
+         })),
+         ...(emails.data || []).map(e => ({ 
+            id: e.id, 
+            type: 'DIGITAL_RELAY', 
+            trigger: 'OMNI_CHANNEL_SYNC', 
+            action: `Email Thread Synced: ${e.intent_label || 'Scanning'}`, 
+            meta: e.customer_email,
+            timestamp: e.created_at,
+            importance: 'medium'
+         }))
+      ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+      res.json({ activity: activity.slice(0, 15) });
+   } catch(e) {
+      console.error("Activity feed error", e);
+      res.status(500).json({ error: "Failed to fetch activity" });
+   }
+});
+
+// ==========================================
+// 1.10 SUPERVISED AGENT TUNING
+// ==========================================
+app.get("/api/agents/:id/lessons", authenticateUser, async (req: any, res: any) => {
+   try {
+      const { data: lessons, error } = await db.from('wireline_agent_lessons').select('*').eq('agent_id', req.params.id).order('created_at', { ascending: false });
+      if (error) throw error;
+      res.json({ lessons });
+   } catch (e) {
+      res.status(500).json({ error: "Failed to fetch lessons" });
+   }
+});
+
+app.post("/api/agents/:id/promote", authenticateUser, async (req: any, res: any) => {
+   try {
+      const { lessonId, content } = req.body;
+      const { error: promoError } = await db.from('wireline_agent_directives').insert({
+         agent_id: req.params.id,
+         content: content,
+         priority: 2, // Medium priority by default
+         user_id: req.user.id
+      });
+      if (promoError) throw promoError;
+
+      // Delete the lesson after promotion
+      await db.from('wireline_agent_lessons').delete().eq('id', lessonId);
+      
+      res.json({ success: true });
+   } catch (e) {
+      res.status(500).json({ error: "Promotion failed" });
+   }
+});
+
+app.delete("/api/agents/:id/lessons/:lessonId", authenticateUser, async (req: any, res: any) => {
+   try {
+      await db.from('wireline_agent_lessons').delete().eq('id', req.params.lessonId);
+      res.json({ success: true });
+   } catch (e) {
+      res.status(500).json({ error: "Delete failed" });
+   }
+});
+
+app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
 }

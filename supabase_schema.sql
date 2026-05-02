@@ -56,6 +56,14 @@ CREATE TABLE IF NOT EXISTS wireline_personality (
     content TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS wireline_agent_lessons (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id UUID DEFAULT auth.uid(),
+    agent_id TEXT REFERENCES wireline_agents(id) ON DELETE CASCADE,
+    lesson TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- 4. COMMITMENTS & LOGISTICS
 CREATE TABLE IF NOT EXISTS wireline_appointments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -136,6 +144,9 @@ CREATE TABLE IF NOT EXISTS wireline_fleet_tasks (
     task_type TEXT,
     description TEXT,
     status TEXT DEFAULT 'pending',
+    priority TEXT DEFAULT 'medium',
+    due_date TIMESTAMPTZ,
+    resolution_notes TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -161,6 +172,18 @@ CREATE TABLE IF NOT EXISTS wireline_outbound_leads (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 10. REAL-TIME SIGNAL PRESENCE
+CREATE TABLE IF NOT EXISTS wireline_signal_presence (
+    id TEXT PRIMARY KEY, -- call_id
+    user_id UUID DEFAULT auth.uid(),
+    agent_id TEXT REFERENCES wireline_agents(id),
+    customer_number TEXT,
+    status TEXT,
+    label TEXT,
+    type TEXT DEFAULT 'voice',
+    started_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- 10. AUTH & RLS POLICIES
 -- Enable RLS on all tables
 ALTER TABLE wireline_settings ENABLE ROW LEVEL SECURITY;
@@ -176,6 +199,7 @@ ALTER TABLE wireline_email_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wireline_fleet_tasks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wireline_phone_numbers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wireline_outbound_leads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE wireline_signal_presence ENABLE ROW LEVEL SECURITY;
 
 -- Create policies (Owner only)
 -- Example for wireline_agents
@@ -195,4 +219,5 @@ CREATE POLICY "Users can manage their own email messages" ON wireline_email_mess
 CREATE POLICY "Users can manage their own fleet tasks" ON wireline_fleet_tasks FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "Users can manage their own phone numbers" ON wireline_phone_numbers FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "Users can manage their own leads" ON wireline_outbound_leads FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users can manage their own presence signals" ON wireline_signal_presence FOR ALL USING (auth.uid() = user_id);
 
