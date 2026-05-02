@@ -198,7 +198,7 @@ function RecipeModal({
             {recipe === "brief"              && <BriefForm           agents={agents} agentId={agentId} initial={initial} disabled={!available} />}
             {recipe === "qualify"            && <QualifyForm         callId={callId} initial={initial} disabled={!available} />}
             {recipe === "objection-drill"    && <ObjectionDrillForm  agents={agents} agentId={agentId} initial={initial} disabled={!available} />}
-            {recipe === "cold-email"         && <ColdEmailForm       initial={initial} disabled={!available} />}
+            {recipe === "cold-email"         && <ColdEmailForm       agents={agents} agentId={agentId} initial={initial} disabled={!available} />}
             {recipe === "persona-clone"      && <PersonaCloneForm    agents={agents} agentId={agentId} disabled={!available} />}
             {recipe === "summarize-thread"   && <ThreadSummaryForm   threadId={threadId} disabled={!available} />}
             {recipe === "agent-review"       && <AgentReviewForm     agents={agents} agentId={agentId} disabled={!available} />}
@@ -917,7 +917,8 @@ function ObjectionDrillForm({ agents, agentId: initAgent, initial, disabled }: {
 
 /* ────────────────────  Cold email  ──────────────────────────────── */
 
-function ColdEmailForm({ initial, disabled }: { initial?: any; disabled: boolean }) {
+function ColdEmailForm({ agents, agentId: initAgent, initial, disabled }: { agents: AgentLite[]; agentId?: string; initial?: any; disabled: boolean }) {
+  const [agentId, setAgentId] = useState(initAgent || "");
   const [form, setForm] = useState({
     leadName: initial?.leadName ?? "", leadCompany: initial?.leadCompany ?? "", leadRole: initial?.leadRole ?? "",
     leadHook: initial?.leadHook ?? "", ourCompany: initial?.ourCompany ?? "", valueProp: initial?.valueProp ?? "",
@@ -931,7 +932,7 @@ function ColdEmailForm({ initial, disabled }: { initial?: any; disabled: boolean
   const run = async () => {
     setLoading(true); setErr(null); setEmail(null);
     try {
-      const r = await authFetch("/api/claude/cold-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+      const r = await authFetch("/api/claude/cold-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, agentId: agentId || undefined }) });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error);
       setEmail(data.email);
@@ -940,6 +941,9 @@ function ColdEmailForm({ initial, disabled }: { initial?: any; disabled: boolean
 
   return (
     <FormShell>
+      <Field label="Sending Agent" hint="Optional — applies the agent's role lens to the email.">
+        <Select value={agentId} onChange={setAgentId} options={[{ value: "", label: "(no agent — generic copy)" }, ...agents.map((a) => ({ value: a.id, label: `${a.name} · ${a.archetype}` }))]} />
+      </Field>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Field label="Lead Name"><TextInput value={form.leadName} onChange={(v: string) => set("leadName", v)} placeholder="Avery Tang" /></Field>
         <Field label="Lead Role"><TextInput value={form.leadRole} onChange={(v: string) => set("leadRole", v)} placeholder="VP of Operations" /></Field>

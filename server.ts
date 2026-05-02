@@ -3286,15 +3286,17 @@ app.post("/api/claude/brief", authenticateUser, async (req: any, res: any) => {
     let agentName = "Wireline Agent";
     let agentArchetype = "Receptionist";
     let knowledgeBase: string[] = [];
+    let role: string | undefined;
 
     if (agentId) {
       const [{ data: agent }, { data: knowledge }] = await Promise.all([
-        db.from("wireline_agents").select("name, archetype").eq("id", agentId).eq("user_id", req.user.id).single(),
+        db.from("wireline_agents").select("name, archetype, role").eq("id", agentId).eq("user_id", req.user.id).single(),
         db.from("wireline_knowledge").select("content").eq("agent_id", agentId).eq("user_id", req.user.id),
       ]);
       if (agent) {
         agentName = agent.name;
         agentArchetype = agent.archetype;
+        role = agent.role || DEFAULT_AGENT_ROLE;
       }
       knowledgeBase = (knowledge ?? []).map((k: any) => k.content);
     }
@@ -3302,6 +3304,7 @@ app.post("/api/claude/brief", authenticateUser, async (req: any, res: any) => {
     const result = await claudeBrain.brief({
       agentName,
       agentArchetype,
+      role,
       customerName,
       customerNumber,
       reasonForCall: reasonForCall || "No specific reason provided.",
@@ -3381,7 +3384,13 @@ app.post("/api/claude/objection-drill", authenticateUser, async (req: any, res: 
 // Cold-email composer.
 app.post("/api/claude/cold-email", authenticateUser, async (req: any, res: any) => {
   try {
-    const result = await claudeBrain.coldEmail(req.body);
+    const { agentId, ...rest } = req.body ?? {};
+    let agentRole: string | undefined = rest.agentRole;
+    if (agentId && !agentRole) {
+      const { data: agent } = await db.from("wireline_agents").select("role").eq("id", agentId).eq("user_id", req.user.id).single();
+      if (agent) agentRole = agent.role || DEFAULT_AGENT_ROLE;
+    }
+    const result = await claudeBrain.coldEmail({ ...rest, agentRole });
     res.json({ email: result });
   } catch (e) {
     claudeErr(res, e);

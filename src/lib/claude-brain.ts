@@ -954,6 +954,7 @@ export const TOOLS = {
 export interface BriefInput {
   agentName: string;
   agentArchetype: string;
+  role?: string;
   customerName?: string;
   customerNumber?: string;
   reasonForCall: string;
@@ -962,10 +963,15 @@ export interface BriefInput {
 }
 
 export async function brief(input: BriefInput) {
+  let roleGuidance = "";
+  if (input.role) {
+    roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.role] ?? "";
+    if (!roleGuidance) console.warn(`[claude-brain] brief: unknown role "${input.role}" — no role lens applied.`);
+  }
   const system = `You are a senior tactical sales coach drafting a pre-call brief for an autonomous voice agent on the Wireline relay.
 
-Agent: ${input.agentName} — Archetype: ${input.agentArchetype}.
-Be terse, decisive, and tactical. Every recommendation must be specific. No generic platitudes. Use plain English (no jargon, no ALL CAPS, no emoji).
+Agent: ${input.agentName} — Archetype: ${input.agentArchetype}${input.role ? ` — Role: ${input.role}` : ""}.
+Be terse, decisive, and tactical. Every recommendation must be specific. No generic platitudes. Use plain English (no jargon, no ALL CAPS, no emoji).${roleGuidance ? `\n\nRole-specific brief lens — ${roleGuidance} The opening line, key questions, and objections you anticipate must reflect what this role actually faces on calls.` : ""}
 
 Knowledge base (use to ground every recommendation):
 ${(input.knowledgeBase ?? []).map((k) => `• ${k}`).join("\n") || "(none provided)"}`;
@@ -1055,16 +1061,22 @@ export interface ColdEmailInput {
   valueProp: string;
   tone?: "warm" | "professional" | "punchy" | "consultative";
   callToAction?: string;
+  agentRole?: string;
 }
 
 export async function coldEmail(input: ColdEmailInput) {
+  let roleGuidance = "";
+  if (input.agentRole) {
+    roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.agentRole] ?? "";
+    if (!roleGuidance) console.warn(`[claude-brain] coldEmail: unknown role "${input.agentRole}" — no role lens applied.`);
+  }
   const system = `You are an elite cold-outreach copywriter. Write emails that get replies. Rules:
 - Subject line: 4–7 words, no clickbait, hint at value.
 - Body: ≤120 words, three short paragraphs max.
 - Open with personalization, not "I hope this finds you well".
 - One clear call-to-action.
 - Plain text only. No markdown.
-- Tone: ${input.tone ?? "professional"}.`;
+- Tone: ${input.tone ?? "professional"}.${roleGuidance ? `\n\nSending agent role — ${roleGuidance} The body, hook, and CTA must reflect what this role actually pursues; do not pitch outside its mandate.` : ""}`;
 
   const user = `Lead: ${input.leadName ?? "(unknown)"} — ${input.leadRole ?? ""} at ${input.leadCompany ?? "(unknown)"}.
 Lead hook (specific reason to reach out): ${input.leadHook ?? "(none — write a generic-but-strong opener)"}.
