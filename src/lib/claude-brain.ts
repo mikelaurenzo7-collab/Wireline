@@ -1016,12 +1016,18 @@ Qualify this lead now.`;
 export interface ObjectionDrillInput {
   agentName: string;
   archetype: string;
+  role?: string;
   topic: string;
   count?: number;
 }
 
 export async function objectionDrill(input: ObjectionDrillInput) {
-  const system = `You are a sales-coaching AI generating objection-handling drills for the autonomous agent "${input.agentName}" (archetype: ${input.archetype}). Make drills realistic, varied in difficulty, and tied to a recommended response that respects the archetype's tone. Coaching notes should explain *why* the response works.`;
+  let roleGuidance = "";
+  if (input.role) {
+    roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.role] ?? "";
+    if (!roleGuidance) console.warn(`[claude-brain] objectionDrill: unknown role "${input.role}" — no role lens applied.`);
+  }
+  const system = `You are a sales-coaching AI generating objection-handling drills for the autonomous agent "${input.agentName}" (archetype: ${input.archetype}${input.role ? `, role: ${input.role}` : ""}). Make drills realistic, varied in difficulty, and tied to a recommended response that respects the archetype's tone. Coaching notes should explain *why* the response works.${roleGuidance ? `\n\nRole-specific drill lens — ${roleGuidance} Drills should reflect the objections, edge cases, and compliance pitfalls this role actually encounters.` : ""}`;
 
   const user = `Topic: ${input.topic}
 Generate ${input.count ?? 5} drills covering a range of difficulties.`;
@@ -1132,13 +1138,19 @@ export async function routeIntent(input: IntentInput) {
 export interface AgentReviewInput {
   agentName: string;
   archetype: string;
+  role?: string;
   callLogs: Array<{ summary: string; transcript?: string; lead_score?: number; intent_label?: string }>;
 }
 
 export async function agentReview(input: AgentReviewInput) {
-  const system = `You are a senior fleet operator reviewing the performance of an autonomous voice agent. Use evidence from the call logs. Be specific, tactical, and willing to be critical. Recommended directives should be concrete instructions the agent can immediately follow — not vague advice. Knowledge entries should be facts/policies that prevent recurring failures.`;
+  let roleGuidance = "";
+  if (input.role) {
+    roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.role] ?? "";
+    if (!roleGuidance) console.warn(`[claude-brain] agentReview: unknown role "${input.role}" — no role lens applied.`);
+  }
+  const system = `You are a senior fleet operator reviewing the performance of an autonomous voice agent. Use evidence from the call logs. Be specific, tactical, and willing to be critical. Recommended directives should be concrete instructions the agent can immediately follow — not vague advice. Knowledge entries should be facts/policies that prevent recurring failures.${roleGuidance ? `\n\nRole-specific review lens — ${roleGuidance}` : ""}`;
 
-  const user = `Agent: ${input.agentName} (archetype: ${input.archetype})
+  const user = `Agent: ${input.agentName} (archetype: ${input.archetype}${input.role ? `, role: ${input.role}` : ""})
 
 --- LAST ${input.callLogs.length} CALLS ---
 ${input.callLogs
