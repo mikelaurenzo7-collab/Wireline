@@ -1297,6 +1297,62 @@ export async function knowledgeFromUrl(input: KnowledgeFromUrlInput) {
 }
 
 /* ────────────────────────────────────────────────────────────────────────
+ *  Knowledge ingestion from a PDF document — uses Claude's native PDF
+ *  document content block. The operator uploads a brochure / menu /
+ *  policy doc / FAQ; Claude reads it and extracts atomic agent facts.
+ * ──────────────────────────────────────────────────────────────────── */
+
+export interface KnowledgeFromDocumentInput {
+  /** Base64-encoded PDF (no data: prefix). */
+  pdfBase64: string;
+  fileName?: string;
+  agentContext?: string;
+  maxEntries?: number;
+}
+
+export async function knowledgeFromDocument(input: KnowledgeFromDocumentInput) {
+  const client = getClient();
+  const system = `You are a knowledge-base curator for an autonomous voice/email agent. Read the provided document and extract every concrete fact a customer-service agent would need: services, pricing, hours, contact info, return/refund policies, FAQ answers, business address, key personnel. Each entry must be atomic, self-contained, and useful in isolation (the agent will quote it verbatim). Skip marketing fluff. ${input.maxEntries ? `Limit to ~${input.maxEntries} entries.` : ""} Then call deliver_knowledge_entries with the result.`;
+
+  const response = await client.messages.create({
+    model: "claude-opus-4-7",
+    max_tokens: 8192,
+    system,
+    tools: [TOOLS.knowledgeFromUrl],
+    tool_choice: { type: "tool", name: "deliver_knowledge_entries" },
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "document",
+            source: {
+              type: "base64",
+              media_type: "application/pdf",
+              data: input.pdfBase64,
+            },
+            ...(input.fileName ? { title: input.fileName } : {}),
+          },
+          {
+            type: "text",
+            text: `${input.agentContext ? `Context for the agent: ${input.agentContext}.\n\n` : ""}Extract knowledge entries from this document.`,
+          },
+        ],
+      },
+    ],
+  });
+
+  for (const block of response.content) {
+    if (block.type === "tool_use" && block.name === "deliver_knowledge_entries") {
+      return block.input as { page_summary: string; entries: Array<{ fact: string; category: string }> };
+    }
+  }
+  throw new Error(
+    `Claude did not return structured knowledge (stop_reason=${response.stop_reason}).`,
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────────────
  *  Daily executive brief — feeds Claude yesterday's stats + recent
  *  highlights/lowlights and asks for an SMB-friendly morning summary.
  * ──────────────────────────────────────────────────────────────────── */

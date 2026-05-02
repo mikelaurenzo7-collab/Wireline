@@ -230,6 +230,7 @@ export default function AgentTraining() {
               <ClaudeRecipeButton recipe="agent-review" agentId={selectedAgentId !== 'default-agent' ? selectedAgentId : undefined} label="Performance Review" />
               <ClaudeRecipeButton recipe="persona-clone" agentId={selectedAgentId !== 'default-agent' ? selectedAgentId : undefined} label="Clone Persona" />
               <ClaudeRecipeButton recipe="knowledge-from-url" agentId={selectedAgentId !== 'default-agent' ? selectedAgentId : undefined} label="Ingest from URL" />
+              <ClaudeRecipeButton recipe="knowledge-from-document" agentId={selectedAgentId !== 'default-agent' ? selectedAgentId : undefined} label="Ingest from PDF" />
               <ClaudeRecipeButton recipe="objection-drill" agentId={selectedAgentId !== 'default-agent' ? selectedAgentId : undefined} label="Objection Drills" />
               <ClaudeRecipeButton recipe="brief" agentId={selectedAgentId !== 'default-agent' ? selectedAgentId : undefined} label="Pre-Call Brief" />
             </div>

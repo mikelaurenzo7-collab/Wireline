@@ -19,7 +19,8 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   Sparkles, Brain, Target, Mail, Wand2, AlertTriangle, Loader2,
   ArrowRight, ShieldAlert, Compass, BarChart3, ChevronRight, Check,
-  Plus, X, Copy, ScrollText, Globe, Headphones, Hammer, Zap
+  Plus, X, Copy, ScrollText, Globe, Headphones, Hammer, Zap, FileUp,
+  FileText, Trash2
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
@@ -34,6 +35,7 @@ export type Recipe =
   | "agent-review"
   | "coach"
   | "knowledge-from-url"
+  | "knowledge-from-document"
   | "agent-forge";
 
 interface RecipeMeta {
@@ -53,8 +55,9 @@ const RECIPE_META: Record<Recipe, RecipeMeta> = {
   "summarize-thread":   { title: "Thread Summary",       tagline: "Action items + sentiment in one sweep.",              icon: ScrollText,  accent: "#7DF9FF", thinking: false },
   "agent-review":       { title: "Performance Review",   tagline: "Deep audit of your last N calls.",                    icon: BarChart3,   accent: "#C58BFF", thinking: true  },
   "coach":              { title: "Live Call Coach",      tagline: "Real-time take on a transcript — what to say next.",  icon: Headphones,  accent: "#FF6BD9", thinking: false },
-  "knowledge-from-url": { title: "Ingest from URL",      tagline: "Claude reads your site and extracts agent facts.",    icon: Globe,       accent: "#7DF9FF", thinking: false },
-  "agent-forge":        { title: "Agent Forge",          tagline: "Synthesize a complete agent from a goal.",            icon: Hammer,      accent: "#4DFFC4", thinking: true  },
+  "knowledge-from-url":      { title: "Ingest from URL",      tagline: "Claude reads your site and extracts agent facts.",    icon: Globe,    accent: "#7DF9FF", thinking: false },
+  "knowledge-from-document": { title: "Ingest from PDF",      tagline: "Upload a brochure, menu, or policy doc — Claude reads it.", icon: FileUp, accent: "#FFC07D", thinking: false },
+  "agent-forge":             { title: "Agent Forge",          tagline: "Synthesize a complete agent from a goal.",            icon: Hammer,   accent: "#4DFFC4", thinking: true  },
 };
 
 interface AgentLite { id: string; name: string; archetype: string; }
@@ -200,8 +203,9 @@ function RecipeModal({
             {recipe === "summarize-thread"   && <ThreadSummaryForm   threadId={threadId} disabled={!available} />}
             {recipe === "agent-review"       && <AgentReviewForm     agents={agents} agentId={agentId} disabled={!available} />}
             {recipe === "coach"              && <CoachForm           callId={callId} initial={initial} disabled={!available} />}
-            {recipe === "knowledge-from-url" && <KnowledgeFromUrlForm agents={agents} agentId={agentId} initial={initial} disabled={!available} />}
-            {recipe === "agent-forge"        && <AgentForgeForm      initial={initial} disabled={!available} />}
+            {recipe === "knowledge-from-url"      && <KnowledgeFromUrlForm      agents={agents} agentId={agentId} initial={initial} disabled={!available} />}
+            {recipe === "knowledge-from-document" && <KnowledgeFromDocumentForm agents={agents} agentId={agentId} disabled={!available} />}
+            {recipe === "agent-forge"             && <AgentForgeForm            initial={initial} disabled={!available} />}
           </div>
         </div>
       </motion.div>
@@ -1188,6 +1192,198 @@ function AgentReviewForm({ agents, agentId: initAgent, disabled }: { agents: Age
               <ul className="list-disc list-inside text-rose-500/90 space-y-1">{review.risk_alerts.map((r: string, i: number) => <li key={i}>{r}</li>)}</ul>
             </ResultCard>
           )}
+        </div>
+      )}
+    </FormShell>
+  );
+}
+
+/* ────────────────────  Knowledge from Document (PDF)  ───────────── */
+
+function KnowledgeFromDocumentForm({ agents, agentId: initAgent, disabled }: { agents: AgentLite[]; agentId?: string; disabled: boolean }) {
+  const [agentId, setAgentId] = useState(initAgent ?? agents[0]?.id ?? "");
+  const [file, setFile] = useState<File | null>(null);
+  const [agentContext, setAgentContext] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [result, setResult] = useState<any>(null);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [applying, setApplying] = useState(false);
+  const [applied, setApplied] = useState<number | null>(null);
+
+  useEffect(() => { if (!agentId && agents[0]) setAgentId(agents[0].id); }, [agents]);
+
+  const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (!f.type.includes("pdf") && !f.name.toLowerCase().endsWith(".pdf")) {
+      setErr("Please choose a PDF file."); return;
+    }
+    if (f.size > 32 * 1024 * 1024) {
+      setErr(`PDF is ${(f.size / 1024 / 1024).toFixed(1)} MB — Claude's per-file limit is 32 MB.`); return;
+    }
+    setErr(null);
+    setFile(f);
+    setResult(null);
+    setApplied(null);
+  };
+
+  const onDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    const f = e.dataTransfer.files?.[0];
+    if (!f) return;
+    onFile({ target: { files: [f] } } as any);
+  };
+
+  const fileToBase64 = (f: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const r = reader.result as string;
+      // strip the "data:...;base64," prefix
+      const idx = r.indexOf(",");
+      resolve(idx >= 0 ? r.slice(idx + 1) : r);
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(f);
+  });
+
+  const run = async () => {
+    if (!file) return;
+    setLoading(true); setErr(null); setResult(null); setSelected(new Set()); setApplied(null);
+    try {
+      const pdfBase64 = await fileToBase64(file);
+      const r = await authFetch("/api/claude/knowledge-from-document", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pdfBase64, fileName: file.name, agentContext }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error);
+      setResult(data);
+      setSelected(new Set((data.entries || []).map((_: any, i: number) => i)));
+    } catch (e: any) { setErr(e.message); } finally { setLoading(false); }
+  };
+
+  const apply = async () => {
+    if (!agentId || !result) return;
+    setApplying(true);
+    try {
+      const entries = result.entries.filter((_: any, i: number) => selected.has(i));
+      const r = await authFetch("/api/claude/knowledge-from-url/apply", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agentId, entries }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error);
+      setApplied(data.inserted);
+    } catch (e: any) { setErr(e.message); } finally { setApplying(false); }
+  };
+
+  const toggleAll = () => {
+    if (!result) return;
+    if (selected.size === result.entries.length) setSelected(new Set());
+    else setSelected(new Set(result.entries.map((_: any, i: number) => i)));
+  };
+
+  return (
+    <FormShell>
+      <Field label="Document" hint="PDF up to 32 MB. Brochures, menus, FAQ docs, policies, price sheets — anything customer-facing.">
+        <label
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={onDrop}
+          className="relative flex flex-col items-center justify-center gap-3 px-6 py-10 rounded-2xl glass border-2 border-dashed border-white/15 hover:border-brand/40 transition-all cursor-pointer text-center"
+        >
+          <input type="file" accept="application/pdf,.pdf" onChange={onFile} className="absolute inset-0 opacity-0 cursor-pointer" />
+          {file ? (
+            <>
+              <div className="w-12 h-12 rounded-2xl glass border border-brand/30 flex items-center justify-center text-brand">
+                <FileText className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-ink leading-tight">{file.name}</p>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-muted">{(file.size / 1024 / 1024).toFixed(2)} MB · ready</p>
+              </div>
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); setFile(null); setResult(null); setApplied(null); }}
+                className="relative z-10 text-[10px] uppercase tracking-[0.3em] text-rose-500 hover:text-rose-400 transition-colors flex items-center gap-1.5"
+              >
+                <Trash2 className="w-3 h-3" /> Remove
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="w-12 h-12 rounded-2xl glass border border-white/10 flex items-center justify-center text-brand">
+                <FileUp className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-ink/85">Drop a PDF here, or click to choose</p>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-muted">Up to 32 MB · Claude reads it natively</p>
+              </div>
+            </>
+          )}
+        </label>
+      </Field>
+      <Field label="Agent Context (optional)" hint="What's this agent's job? Helps Claude prioritize relevant facts.">
+        <TextInput value={agentContext} onChange={setAgentContext} placeholder="Front-desk agent for HVAC service company." />
+      </Field>
+      <RunButton onClick={run} loading={loading} disabled={disabled || !file} label="Read & Extract" />
+
+      {err && <ErrCard error={err} />}
+      {result && (
+        <div className="space-y-4 pt-3">
+          <ResultCard title="Document Summary"><p>{result.page_summary}</p></ResultCard>
+          <div className="rounded-2xl glass border border-white/10 p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-[10px] uppercase tracking-[0.4em] text-brand">
+                Extracted · {selected.size}/{result.entries.length} selected
+              </h4>
+              <button onClick={toggleAll} className="text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand transition-colors">
+                {selected.size === result.entries.length ? "Deselect All" : "Select All"}
+              </button>
+            </div>
+            <div className="space-y-2 max-h-[400px] overflow-y-auto scrollbar-hide">
+              {result.entries.map((e: any, i: number) => {
+                const isSel = selected.has(i);
+                return (
+                  <button
+                    key={i}
+                    onClick={() => setSelected((s) => {
+                      const ns = new Set(s);
+                      if (ns.has(i)) ns.delete(i); else ns.add(i);
+                      return ns;
+                    })}
+                    className={cn(
+                      "w-full text-left rounded-xl p-3 flex items-start gap-3 border transition-all",
+                      isSel ? "bg-brand/10 border-brand/40" : "bg-black/20 border-white/8 hover:border-white/20",
+                    )}
+                  >
+                    <div className={cn(
+                      "shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 transition-all",
+                      isSel ? "bg-brand border-brand text-paper" : "border-white/30",
+                    )}>
+                      {isSel && <Check className="w-3 h-3" strokeWidth={3} />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-ink/90">{e.fact}</div>
+                      <div className="text-[9px] uppercase tracking-[0.3em] text-muted mt-1">{e.category}</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <Field label="Apply to Agent">
+            <Select value={agentId} onChange={setAgentId} options={agents.map((a) => ({ value: a.id, label: a.name }))} />
+          </Field>
+          <button
+            onClick={apply}
+            disabled={!agentId || applying || selected.size === 0}
+            className="brutal-btn w-full !py-4 !text-[12px] !tracking-[0.32em]"
+          >
+            {applying ? <><Loader2 className="w-4 h-4 animate-spin" /> Applying…</> :
+             applied ? <><Check className="w-4 h-4" /> Applied {applied} entries</> :
+             <><Zap className="w-4 h-4" /> Apply {selected.size} Entries <ArrowRight className="w-4 h-4" /></>}
+          </button>
         </div>
       )}
     </FormShell>

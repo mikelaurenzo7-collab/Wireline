@@ -15,7 +15,9 @@ const app = express();
 const PORT = 3000;
 
 app.use(cors());
-app.use(express.json());
+// Bump body limit so base64-encoded PDF uploads (up to ~32MB raw / ~43MB
+// base64) fit comfortably for the knowledge-from-document recipe.
+app.use(express.json({ limit: '50mb' }));
 
 // Initialize AI and DB
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
@@ -2572,6 +2574,26 @@ app.post("/api/claude/knowledge-from-url", authenticateUser, async (req: any, re
     if (!url || typeof url !== "string") return res.status(400).json({ error: "url required." });
     try { new URL(url); } catch { return res.status(400).json({ error: "url is not a valid URL." }); }
     const result = await claudeBrain.knowledgeFromUrl({ url, agentContext, maxEntries });
+    res.json(result);
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Knowledge ingestion from a PDF document (Claude native PDF support).
+app.post("/api/claude/knowledge-from-document", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { pdfBase64, fileName, agentContext, maxEntries } = req.body;
+    if (!pdfBase64 || typeof pdfBase64 !== "string") {
+      return res.status(400).json({ error: "pdfBase64 required (base64-encoded PDF, no data: prefix)." });
+    }
+    // Quick sanity check: PDF starts with %PDF-
+    let head = "";
+    try { head = Buffer.from(pdfBase64.slice(0, 16), "base64").toString("utf8", 0, 5); } catch {}
+    if (!head.startsWith("%PDF")) {
+      return res.status(400).json({ error: "File does not look like a valid PDF." });
+    }
+    const result = await claudeBrain.knowledgeFromDocument({ pdfBase64, fileName, agentContext, maxEntries });
     res.json(result);
   } catch (e) {
     claudeErr(res, e);
