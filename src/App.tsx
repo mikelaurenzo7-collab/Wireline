@@ -22,6 +22,7 @@ const AdminSettings   = lazy(() => import("./components/AdminSettings"));
 const Integrations    = lazy(() => import("./components/Integrations"));
 const CallLogs        = lazy(() => import("./components/CallLogs"));
 const EmailInbox      = lazy(() => import("./components/EmailInbox"));
+const KnowledgeBaseManager = lazy(() => import("./components/KnowledgeBaseManager"));
 
 const NAV_ITEMS = [
   { group: "Operations", items: [
@@ -37,6 +38,7 @@ const NAV_ITEMS = [
   { group: "Intelligence", items: [
     { label: "Insights", path: "/insights", icon: BarChart3 },
     { label: "Neural Atelier", path: "/train", icon: MessageSquare },
+    { label: "Knowledge Atlas", path: "/knowledge", icon: Database },
     { label: "Agent Topology", path: "/agents", icon: Users },
     { label: "Carrier Bridge", path: "/integrations", icon: PlugZap },
   ]},
@@ -372,6 +374,7 @@ function AppContent() {
                         <Route path="/outbound" element={<PageTransition><OutboundDialer /></PageTransition>} />
                         <Route path="/appointments" element={<PageTransition><AppointmentsView /></PageTransition>} />
                         <Route path="/train" element={<PageTransition><AgentTraining /></PageTransition>} />
+                        <Route path="/knowledge" element={<PageTransition><KnowledgeBaseManager /></PageTransition>} />
                         <Route path="/agents" element={<PageTransition><FleetSettings /></PageTransition>} />
                         <Route path="/integrations" element={<PageTransition><Integrations /></PageTransition>} />
                         <Route path="/admin" element={<PageTransition><AdminSettings /></PageTransition>} />

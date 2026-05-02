@@ -152,6 +152,11 @@ curl -X POST $WIRELINE_URL/api/intake/lead \
   -d '{"customer_name":"Jane Doe","customer_number":"+15551234567","context":"Filled out demo form","metadata":{"utm_source":"newsletter"}}'
 ```
 
+### Knowledge base
+- `GET    /api/knowledge` — every fact across every agent + agent metadata, for the cross-agent Knowledge Atlas view.
+- `PATCH  /api/knowledge/:id` — edit content (RLS scoped to owner).
+- `DELETE /api/knowledge/:id` — permanent delete.
+
 ### Voice / Email / Fleet
 See `server.ts` for the full list — voice webhook (`/api/vapi-webhook`), email sync, agent CRUD, outbound dialer, fleet tasks, etc.
 

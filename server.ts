@@ -1777,6 +1777,72 @@ app.delete("/api/agent-config/:id/:type/:rowId", authenticateUser, async (req: a
     }
  });
 
+// ──────────────────────────────────────────────────────────
+//  KNOWLEDGE BASE MANAGER — cross-agent view of every fact in
+//  wireline_knowledge. Agents accumulate knowledge from URL/PDF
+//  ingest, agent-forge seed, and per-agent manual entry; this is
+//  the centralized place to audit, edit, and prune.
+// ──────────────────────────────────────────────────────────
+
+app.get("/api/knowledge", authenticateUser, async (req: any, res: any) => {
+  try {
+    const [{ data: rows, error }, { data: agents }] = await Promise.all([
+      db.from("wireline_knowledge")
+        .select("id, agent_id, content, created_at")
+        .eq("user_id", req.user.id)
+        .order("created_at", { ascending: false })
+        .limit(2000),
+      db.from("wireline_agents")
+        .select("id, name, archetype")
+        .eq("user_id", req.user.id),
+    ]);
+    if (error) throw error;
+    const agentMap = new Map((agents || []).map((a: any) => [a.id, a]));
+    const knowledge = (rows || []).map((r: any) => {
+      const agent = agentMap.get(r.agent_id) as any;
+      return {
+        id: r.id,
+        agent_id: r.agent_id,
+        agent_name: agent?.name || "(unknown agent)",
+        agent_archetype: agent?.archetype || null,
+        content: r.content,
+        created_at: r.created_at,
+      };
+    });
+    res.json({
+      knowledge,
+      agents: (agents || []).map((a: any) => ({ id: a.id, name: a.name, archetype: a.archetype })),
+      total: knowledge.length,
+    });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load knowledge" }); }
+});
+
+app.patch("/api/knowledge/:id", authenticateUser, async (req: any, res: any) => {
+  try {
+    const content = (req.body?.content || "").toString().trim();
+    if (!content) return res.status(400).json({ error: "content is required" });
+    const { data, error } = await db.from("wireline_knowledge")
+      .update({ content: content.slice(0, 8000) })
+      .eq("id", req.params.id)
+      .eq("user_id", req.user.id)
+      .select("id, agent_id, content, created_at")
+      .single();
+    if (error) throw error;
+    res.json({ knowledge: data });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to update" }); }
+});
+
+app.delete("/api/knowledge/:id", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { error } = await db.from("wireline_knowledge")
+      .delete()
+      .eq("id", req.params.id)
+      .eq("user_id", req.user.id);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to delete" }); }
+});
+
 // ==========================================
 // 1.8 SETTINGS & OUTBOUND DIALER ENDPOINTS
 // ==========================================
