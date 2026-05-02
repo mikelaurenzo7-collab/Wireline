@@ -255,3 +255,57 @@ ALTER TABLE wireline_email_accounts ADD COLUMN IF NOT EXISTS provider TEXT DEFAU
 ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS voice_llm_provider TEXT DEFAULT 'google';
 ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS voice_llm_model TEXT DEFAULT 'gemini-1.5-flash';
 
+-- Audit log — every Claude (and optionally Gemini) call is recorded with
+-- tokens, cost, latency, model, and free-form metadata. Powers the
+-- AI-Spend dashboard and the compliance/debug trail.
+CREATE TABLE IF NOT EXISTS wireline_audit_log (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id UUID DEFAULT auth.uid(),
+    action TEXT NOT NULL,
+    provider TEXT,
+    model TEXT,
+    input_tokens INTEGER DEFAULT 0,
+    output_tokens INTEGER DEFAULT 0,
+    cache_read_tokens INTEGER DEFAULT 0,
+    cache_create_tokens INTEGER DEFAULT 0,
+    cost_usd DECIMAL(12, 6) DEFAULT 0,
+    latency_ms INTEGER,
+    metadata JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS wireline_audit_log_user_created_idx
+    ON wireline_audit_log(user_id, created_at DESC);
+ALTER TABLE wireline_audit_log ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'wireline_audit_log' AND policyname = 'Users can view their own audit log'
+    ) THEN
+        EXECUTE 'CREATE POLICY "Users can view their own audit log" ON wireline_audit_log FOR ALL USING (auth.uid() = user_id)';
+    END IF;
+END $$;
+
+-- Outbound webhooks — per-user destinations that get notified when
+-- specific events fire (call.completed, lead.hot, email.received, etc.).
+CREATE TABLE IF NOT EXISTS wireline_webhooks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID DEFAULT auth.uid(),
+    name TEXT NOT NULL,
+    url TEXT NOT NULL,
+    events TEXT[] NOT NULL DEFAULT '{}',
+    secret TEXT,
+    active BOOLEAN DEFAULT TRUE,
+    last_triggered_at TIMESTAMPTZ,
+    last_status INTEGER,
+    last_error TEXT,
+    delivery_count INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE wireline_webhooks ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'wireline_webhooks' AND policyname = 'Users can manage their own webhooks'
+    ) THEN
+        EXECUTE 'CREATE POLICY "Users can manage their own webhooks" ON wireline_webhooks FOR ALL USING (auth.uid() = user_id)';
+    END IF;
+END $$;
+

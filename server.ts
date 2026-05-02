@@ -114,6 +114,74 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL || "https://placeholder-url.su
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || "placeholder-key";
 const db = createClient(supabaseUrl, supabaseKey);
 
+// ────────────────────────────────────────────────────────────────────
+//  Outbound webhooks dispatcher — module-scope so the vapi webhook
+//  handler (also module-level, registered before startServer) can
+//  call it. The CRUD endpoints for managing webhooks live inside
+//  startServer alongside the other auth-gated routes.
+// ────────────────────────────────────────────────────────────────────
+const WEBHOOK_EVENTS = [
+  "call.completed",
+  "call.escalated",
+  "lead.hot",
+  "email.received",
+  "appointment.booked",
+  "task.created",
+  "compliance.flagged",
+] as const;
+type WebhookEvent = typeof WEBHOOK_EVENTS[number];
+
+async function dispatchWebhook(userId: string, event: WebhookEvent, data: any) {
+  try {
+    const { data: hooks } = await db.from("wireline_webhooks")
+      .select("id, url, secret, events, delivery_count")
+      .eq("user_id", userId)
+      .eq("active", true);
+    if (!hooks?.length) return;
+
+    const payload = JSON.stringify({ event, timestamp: new Date().toISOString(), data });
+    const deliveryId = `whk_${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+    const crypto = await import("node:crypto");
+
+    await Promise.all(hooks
+      .filter((h: any) => Array.isArray(h.events) && h.events.includes(event))
+      .map(async (h: any) => {
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+          "User-Agent": "Wireline-Webhooks/1.0",
+          "X-Wireline-Event": event,
+          "X-Wireline-Delivery": deliveryId,
+        };
+        if (h.secret) {
+          const sig = crypto.createHmac("sha256", h.secret).update(payload).digest("hex");
+          headers["X-Wireline-Signature"] = `sha256=${sig}`;
+        }
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 10_000);
+        try {
+          const r = await fetch(h.url, { method: "POST", headers, body: payload, signal: controller.signal });
+          await db.from("wireline_webhooks").update({
+            last_triggered_at: new Date().toISOString(),
+            last_status: r.status,
+            last_error: r.ok ? null : `HTTP ${r.status}`,
+            delivery_count: ((h.delivery_count as number) || 0) + 1,
+          }).eq("id", h.id);
+        } catch (err: any) {
+          await db.from("wireline_webhooks").update({
+            last_triggered_at: new Date().toISOString(),
+            last_status: 0,
+            last_error: err?.message || String(err),
+          }).eq("id", h.id);
+        } finally {
+          clearTimeout(timer);
+        }
+      }),
+    );
+  } catch (err) {
+    console.error("Webhook dispatch failed:", err);
+  }
+}
+
 // ==========================================
 // AUTH MIDDLEWARE
 // ==========================================
@@ -850,6 +918,30 @@ app.post("/api/vapi-webhook", async (req, res) => {
               status: 'Completed',
               last_called_at: new Date(),
             }).eq('call_id', call?.id);
+
+            // 7. Outbound webhook events
+            const callPayload = {
+              call_id: call?.id,
+              customer_number: call?.customer?.number,
+              direction: call?.type === "outboundPhoneCall" ? "outbound" : "inbound",
+              duration_seconds: duration,
+              cost: call?.cost,
+              lead_score: result.lead_score,
+              intent_label: result.intent_label,
+              sentiment: result.sentiment,
+              summary: analysis?.summary,
+              agent_id: webhookAgentId,
+            };
+            dispatchWebhook(agent?.user_id, "call.completed", callPayload).catch(() => {});
+            if (result.intent_label === "high" || result.lead_score >= 70) {
+              dispatchWebhook(agent?.user_id, "lead.hot", callPayload).catch(() => {});
+            }
+            if (result.sentiment === "angry" || (result.compliance_flags?.length ?? 0) > 0) {
+              dispatchWebhook(agent?.user_id, "call.escalated", callPayload).catch(() => {});
+            }
+            for (const flag of result.compliance_flags || []) {
+              dispatchWebhook(agent?.user_id, "compliance.flagged", { ...callPayload, flag }).catch(() => {});
+            }
 
             claudeAnalysisDone = true;
           } catch (err) {
@@ -2382,6 +2474,63 @@ function claudeErr(res: any, e: any) {
   return res.status(500).json({ error: e?.message ?? "Claude error" });
 }
 
+/**
+ * Audit middleware — sets up an AsyncLocalStorage context BEFORE the
+ * route handler runs. Every Claude API round trip inside the handler
+ * records itself into the context. On `res.finish`, fire-and-forget
+ * insert into wireline_audit_log so the user's flow is never blocked.
+ *
+ * Keyed by req.path so /api/claude/brief becomes action='claude.brief'.
+ * Apply to /api/claude/* and the Claude-backed insights paths.
+ */
+function withAudit(actionPrefix: string) {
+  return (req: any, res: any, next: any) => {
+    const ctx = claudeBrain.createAuditContext();
+    res.on("finish", () => {
+      if (ctx.records.length === 0) return;
+      if (!req?.user?.id) return;        // not authed → don't write
+      if (res.statusCode >= 500) return;  // don't bill failed Claude calls
+      const subpath = req.path.replace(/\//g, ".").replace(/^\.+/, "");
+      const action = `${actionPrefix}${subpath ? "." + subpath : ""}`;
+      const rows = ctx.records.map(r => ({
+        user_id: req.user.id,
+        action,
+        provider: r.provider,
+        model: r.model,
+        input_tokens: r.input_tokens,
+        output_tokens: r.output_tokens,
+        cache_read_tokens: r.cache_read_tokens,
+        cache_create_tokens: r.cache_create_tokens,
+        cost_usd: claudeBrain.estimateCost(
+          {
+            input_tokens: r.input_tokens,
+            output_tokens: r.output_tokens,
+            cache_read_input_tokens: r.cache_read_tokens,
+            cache_creation_input_tokens: r.cache_create_tokens,
+          },
+          r.model,
+        ),
+        latency_ms: r.latency_ms,
+        metadata: { method: req.method, path: req.path },
+      }));
+      // Fire-and-forget; we don't want the user's flow to wait on this.
+      Promise.resolve(db.from("wireline_audit_log").insert(rows))
+        .then(({ error }: any) => { if (error) console.error("Audit insert failed:", error); })
+        .catch((err: any) => console.error("Audit insert exception:", err));
+    });
+    claudeBrain.runInAuditContext(ctx, () => next());
+  };
+}
+
+// Auto-instrument every Claude path + the Claude-backed insights paths.
+app.use("/api/claude", (req: any, res: any, next: any) => {
+  if (req.path === "/status") return next();
+  return withAudit("claude")(req, res, next);
+});
+app.use(["/api/insights/topics", "/api/insights/failure-modes", "/api/insights/daily-brief"],
+  withAudit("insights"),
+);
+
 // Status / health
 app.get("/api/claude/status", authenticateUser, async (_req: any, res: any) => {
   res.json({
@@ -2640,6 +2789,199 @@ app.post("/api/claude/agent-review/apply-directive", authenticateUser, async (re
     res.json({ success: true });
   } catch (e) {
     claudeErr(res, e);
+  }
+});
+
+// ──────────────────────────────────────────────────────────
+//  OUTBOUND WEBHOOKS — push events to Slack / CRM / Zapier / n8n / etc.
+//
+//  Subscribed events:
+//    call.completed       — every voice call after post-call enrichment
+//    call.escalated       — any call where intent_label === 'escalation'
+//    lead.hot             — when lead_score >= 70
+//    email.received       — every successfully-synced inbound email
+//    appointment.booked   — every booking insert
+//    task.created         — every fleet_task insert
+//    compliance.flagged   — every compliance_review task created
+//
+//  Each delivery includes:
+//    POST <url>
+//    Headers:
+//      Content-Type: application/json
+//      X-Wireline-Event: <event>
+//      X-Wireline-Signature: sha256=<hex hmac of body using webhook.secret>
+//      X-Wireline-Delivery: <random uuid>
+//    Body: { event, timestamp, data }
+// ──────────────────────────────────────────────────────────
+
+app.get("/api/webhooks", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { data, error } = await db.from("wireline_webhooks")
+      .select("*").eq("user_id", req.user.id).order("created_at", { ascending: false });
+    if (error) throw error;
+    res.json({ webhooks: data || [], available_events: WEBHOOK_EVENTS });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load webhooks" }); }
+});
+
+app.post("/api/webhooks", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { name, url, events, secret, active } = req.body;
+    if (!name || !url || !Array.isArray(events) || events.length === 0) {
+      return res.status(400).json({ error: "name, url, and events[] required." });
+    }
+    try { new URL(url); } catch { return res.status(400).json({ error: "Invalid URL." }); }
+    const bad = events.filter((e: string) => !WEBHOOK_EVENTS.includes(e as WebhookEvent));
+    if (bad.length) return res.status(400).json({ error: `Unknown events: ${bad.join(", ")}` });
+
+    const { data, error } = await db.from("wireline_webhooks").insert({
+      user_id: req.user.id, name, url, events, secret: secret || null, active: active ?? true,
+    }).select().single();
+    if (error) throw error;
+    res.json({ webhook: data });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to create webhook" }); }
+});
+
+app.patch("/api/webhooks/:id", authenticateUser, async (req: any, res: any) => {
+  try {
+    const patch: any = {};
+    for (const k of ["name", "url", "events", "secret", "active"]) {
+      if (req.body[k] !== undefined) patch[k] = req.body[k];
+    }
+    if (patch.url) { try { new URL(patch.url); } catch { return res.status(400).json({ error: "Invalid URL." }); } }
+    if (patch.events) {
+      if (!Array.isArray(patch.events) || patch.events.some((e: string) => !WEBHOOK_EVENTS.includes(e as WebhookEvent))) {
+        return res.status(400).json({ error: "Invalid events." });
+      }
+    }
+    const { data, error } = await db.from("wireline_webhooks").update(patch)
+      .eq("id", req.params.id).eq("user_id", req.user.id).select().single();
+    if (error) throw error;
+    res.json({ webhook: data });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to update" }); }
+});
+
+app.delete("/api/webhooks/:id", authenticateUser, async (req: any, res: any) => {
+  try {
+    await db.from("wireline_webhooks").delete().eq("id", req.params.id).eq("user_id", req.user.id);
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to delete" }); }
+});
+
+app.post("/api/webhooks/:id/test", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { data: hook } = await db.from("wireline_webhooks").select("*").eq("id", req.params.id).eq("user_id", req.user.id).single();
+    if (!hook) return res.status(404).json({ error: "Webhook not found." });
+    await dispatchWebhook(req.user.id, "task.created", {
+      test: true, message: "This is a test ping from Wireline.", at: new Date().toISOString(),
+    });
+    res.json({ success: true, message: "Test dispatched. Check the URL." });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Test failed" }); }
+});
+
+// ──────────────────────────────────────────────────────────
+//  AUDIT LOG — token + cost visibility for every Claude call.
+// ──────────────────────────────────────────────────────────
+
+// Aggregate spend summary — powers the AI-Spend dashboard tab.
+app.get("/api/audit/summary", authenticateUser, async (req: any, res: any) => {
+  try {
+    const days = Math.min(parseInt((req.query.days as string) || "30"), 365);
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+    const { data: rows } = await db
+      .from("wireline_audit_log")
+      .select("action, provider, model, input_tokens, output_tokens, cache_read_tokens, cache_create_tokens, cost_usd, latency_ms, created_at")
+      .eq("user_id", req.user.id)
+      .gte("created_at", since)
+      .order("created_at", { ascending: false })
+      .limit(5000);
+
+    const all = rows || [];
+    const num = (n: any) => Number(n || 0);
+
+    // Totals
+    const totals = all.reduce((acc: any, r: any) => {
+      acc.calls += 1;
+      acc.cost += num(r.cost_usd);
+      acc.input += num(r.input_tokens);
+      acc.output += num(r.output_tokens);
+      acc.cache_read += num(r.cache_read_tokens);
+      acc.cache_create += num(r.cache_create_tokens);
+      return acc;
+    }, { calls: 0, cost: 0, input: 0, output: 0, cache_read: 0, cache_create: 0 });
+
+    // Cache savings — what we'd have paid if cache_read tokens were full-price input.
+    // 0.10x rate means we save 0.90x the equivalent input cost.
+    const inputRate = (model: string) =>
+      model?.includes("haiku") ? 1 : model?.includes("sonnet") ? 3 : 5;
+    const cacheSavings = all.reduce((s: number, r: any) =>
+      s + (num(r.cache_read_tokens) * inputRate(r.model) * 0.90) / 1_000_000, 0);
+
+    // By day
+    const byDayMap: Record<string, { day: string; calls: number; cost: number }> = {};
+    for (const r of all) {
+      const day = (r.created_at || "").slice(0, 10);
+      const b = byDayMap[day] ||= { day, calls: 0, cost: 0 };
+      b.calls += 1;
+      b.cost += num(r.cost_usd);
+    }
+    const byDay = Object.values(byDayMap).sort((a, b) => a.day.localeCompare(b.day));
+
+    // By action
+    const byActionMap: Record<string, { action: string; calls: number; cost: number; avg_latency_ms: number; _latencySum: number }> = {};
+    for (const r of all) {
+      const a = byActionMap[r.action] ||= { action: r.action, calls: 0, cost: 0, avg_latency_ms: 0, _latencySum: 0 };
+      a.calls += 1;
+      a.cost += num(r.cost_usd);
+      a._latencySum += num(r.latency_ms);
+    }
+    const byAction = Object.values(byActionMap).map(a => {
+      a.avg_latency_ms = Math.round(a._latencySum / Math.max(1, a.calls));
+      delete (a as any)._latencySum;
+      return a;
+    }).sort((a, b) => b.cost - a.cost);
+
+    // By model
+    const byModelMap: Record<string, { model: string; calls: number; cost: number }> = {};
+    for (const r of all) {
+      const key = r.model || "unknown";
+      const m = byModelMap[key] ||= { model: key, calls: 0, cost: 0 };
+      m.calls += 1;
+      m.cost += num(r.cost_usd);
+    }
+    const byModel = Object.values(byModelMap).sort((a, b) => b.cost - a.cost);
+
+    res.json({
+      window_days: days,
+      totals: {
+        ...totals,
+        cost: Number(totals.cost.toFixed(4)),
+        cache_savings_usd: Number(cacheSavings.toFixed(4)),
+        avg_cost_per_call: totals.calls ? Number((totals.cost / totals.calls).toFixed(4)) : 0,
+      },
+      by_day: byDay.map(d => ({ ...d, cost: Number(d.cost.toFixed(4)) })),
+      by_action: byAction.map(a => ({ ...a, cost: Number(a.cost.toFixed(4)) })),
+      by_model: byModel.map(m => ({ ...m, cost: Number(m.cost.toFixed(4)) })),
+    });
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message ?? "Audit summary failed" });
+  }
+});
+
+// Recent audit entries — for debugging + compliance trail.
+app.get("/api/audit/recent", authenticateUser, async (req: any, res: any) => {
+  try {
+    const limit = Math.min(parseInt((req.query.limit as string) || "100"), 500);
+    const { data, error } = await db
+      .from("wireline_audit_log")
+      .select("*")
+      .eq("user_id", req.user.id)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+    res.json({ entries: data || [] });
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message ?? "Audit fetch failed" });
   }
 });
 

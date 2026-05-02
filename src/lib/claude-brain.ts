@@ -11,8 +11,91 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
+import { AsyncLocalStorage } from "node:async_hooks";
 
 const DEFAULT_MODEL = "claude-opus-4-7";
+
+/* ────────────────────────────────────────────────────────────────────────
+ *  Audit capture — every Claude API round trip pushes its meta into the
+ *  active AsyncLocalStorage context (if any). Endpoints wrap their work
+ *  with `withAuditCapture` to collect the records, then flush them to
+ *  wireline_audit_log. Zero-cost when no context is active.
+ * ──────────────────────────────────────────────────────────────────── */
+
+export interface ClaudeCallMeta {
+  model: string;
+  provider: "anthropic";
+  input_tokens: number;
+  output_tokens: number;
+  cache_read_tokens: number;
+  cache_create_tokens: number;
+  latency_ms: number;
+}
+
+export interface AuditContext { records: ClaudeCallMeta[]; }
+const auditCtx = new AsyncLocalStorage<AuditContext>();
+
+/** Capture all Claude usage performed inside `fn`, then return it. */
+export async function withAuditCapture<T>(
+  fn: () => Promise<T>,
+): Promise<{ result: T; records: ClaudeCallMeta[] }> {
+  const ctx: AuditContext = { records: [] };
+  return new Promise((resolve, reject) => {
+    auditCtx.run(ctx, async () => {
+      try {
+        const result = await fn();
+        resolve({ result, records: ctx.records });
+      } catch (e) {
+        reject(e);
+      }
+    });
+  });
+}
+
+/** Lower-level helpers for express middleware use. The middleware
+ *  creates a context BEFORE the route handler runs and flushes the
+ *  records on `res.on('finish')`. */
+export function createAuditContext(): AuditContext { return { records: [] }; }
+export function runInAuditContext<T>(ctx: AuditContext, fn: () => T): T {
+  return auditCtx.run(ctx, fn);
+}
+
+/** Estimate cost in USD from Anthropic usage. Defaults to Opus 4.7 pricing.
+ *  Sonnet 4.6 / Haiku 4.5 have different rates; pass the model to scale. */
+export function estimateCost(usage: {
+  input_tokens?: number;
+  output_tokens?: number;
+  cache_read_input_tokens?: number;
+  cache_creation_input_tokens?: number;
+}, model: string = DEFAULT_MODEL): number {
+  const rates = (() => {
+    if (model.includes("haiku")) return { in: 1, out: 5 };
+    if (model.includes("sonnet")) return { in: 3, out: 15 };
+    return { in: 5, out: 25 }; // Opus 4.x
+  })();
+  const cacheRead = rates.in * 0.10;   // ~10% of input
+  const cacheWrite = rates.in * 1.25;  // 1.25x of input (5-min TTL)
+  const total =
+    (usage.input_tokens || 0) * rates.in +
+    (usage.output_tokens || 0) * rates.out +
+    (usage.cache_read_input_tokens || 0) * cacheRead +
+    (usage.cache_creation_input_tokens || 0) * cacheWrite;
+  return total / 1_000_000;
+}
+
+function recordUsage(model: string, response: { usage: any }, latencyMs: number) {
+  const ctx = auditCtx.getStore();
+  if (!ctx) return;
+  ctx.records.push({
+    model,
+    provider: "anthropic",
+    input_tokens: response.usage?.input_tokens ?? 0,
+    output_tokens: response.usage?.output_tokens ?? 0,
+    cache_read_tokens: response.usage?.cache_read_input_tokens ?? 0,
+    cache_create_tokens: response.usage?.cache_creation_input_tokens ?? 0,
+    latency_ms: latencyMs,
+  });
+}
 
 let _client: Anthropic | null = null;
 function getClient(): Anthropic {
@@ -89,7 +172,9 @@ export async function runStructured<T = any>(opts: StructuredOptions): Promise<T
     body.output_config = { effort: "high" };
   }
 
+  const t0 = Date.now();
   const response = await client.messages.create(body);
+  recordUsage(opts.model ?? DEFAULT_MODEL, response, Date.now() - t0);
   for (const block of response.content) {
     if (block.type === "tool_use" && block.name === opts.tool.name) {
       return block.input as T;
@@ -120,8 +205,10 @@ export async function runCompletion(opts: CompletionOptions): Promise<{
   cacheCreate: number;
 }> {
   const client = getClient();
+  const model = opts.model ?? DEFAULT_MODEL;
+  const t0 = Date.now();
   const response = await client.messages.create({
-    model: opts.model ?? DEFAULT_MODEL,
+    model,
     max_tokens: opts.maxTokens ?? 4096,
     system: opts.cacheSystem
       ? [
@@ -134,6 +221,7 @@ export async function runCompletion(opts: CompletionOptions): Promise<{
       : opts.system,
     messages: [{ role: "user", content: opts.user }],
   });
+  recordUsage(model, response, Date.now() - t0);
   let text = "";
   for (const block of response.content) {
     if (block.type === "text") text += block.text;
@@ -1286,6 +1374,7 @@ After crawling, extract every concrete fact a customer-service agent would need:
     { role: "user", content: userPrompt },
   ];
 
+  let _t = Date.now();
   let response = await client.messages.create({
     model: "claude-opus-4-7",
     max_tokens: maxTokens,
@@ -1293,6 +1382,7 @@ After crawling, extract every concrete fact a customer-service agent would need:
     tools,
     messages,
   });
+  recordUsage("claude-opus-4-7", response, Date.now() - _t);
 
   // Server-side tool loop — `pause_turn` means Claude hit the per-request
   // server-side iteration cap (10 by default) and needs us to re-send the
@@ -1302,6 +1392,7 @@ After crawling, extract every concrete fact a customer-service agent would need:
   let safety = safetyCap;
   while (response.stop_reason === "pause_turn" && safety-- > 0) {
     messages.push({ role: "assistant", content: response.content });
+    _t = Date.now();
     response = await client.messages.create({
       model: "claude-opus-4-7",
       max_tokens: maxTokens,
@@ -1309,6 +1400,7 @@ After crawling, extract every concrete fact a customer-service agent would need:
       tools,
       messages,
     });
+    recordUsage("claude-opus-4-7", response, Date.now() - _t);
   }
 
   for (const block of response.content) {
@@ -1339,6 +1431,7 @@ export async function knowledgeFromDocument(input: KnowledgeFromDocumentInput) {
   const client = getClient();
   const system = `You are a knowledge-base curator for an autonomous voice/email agent. Read the provided document and extract every concrete fact a customer-service agent would need: services, pricing, hours, contact info, return/refund policies, FAQ answers, business address, key personnel. Each entry must be atomic, self-contained, and useful in isolation (the agent will quote it verbatim). Skip marketing fluff. ${input.maxEntries ? `Limit to ~${input.maxEntries} entries.` : ""} Then call deliver_knowledge_entries with the result.`;
 
+  const t0 = Date.now();
   const response = await client.messages.create({
     model: "claude-opus-4-7",
     max_tokens: 8192,
@@ -1367,6 +1460,7 @@ export async function knowledgeFromDocument(input: KnowledgeFromDocumentInput) {
     ],
   });
 
+  recordUsage("claude-opus-4-7", response, Date.now() - t0);
   for (const block of response.content) {
     if (block.type === "tool_use" && block.name === "deliver_knowledge_entries") {
       return block.input as { page_summary: string; entries: Array<{ fact: string; category: string }> };
@@ -1481,7 +1575,9 @@ ${input.knowledgeBase.length ? input.knowledgeBase.map((k) => `- ${k}`).join("\n
     };
     if (tools.length) body.tools = tools;
 
+    const _t = Date.now();
     const response = await client.messages.create(body);
+    recordUsage("claude-opus-4-7", response, Date.now() - _t);
 
     if (response.stop_reason === "tool_use") {
       messages.push({ role: "assistant", content: response.content });
