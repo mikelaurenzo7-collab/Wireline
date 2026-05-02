@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, KeyboardEvent as ReactKeyboardEvent } from "react";
-import { Search, Bot, PhoneCall, Mail, Zap, Terminal, X, ChevronRight, Hash } from "lucide-react";
+import { Search, Bot, PhoneCall, Mail, Zap, Terminal, X, ChevronRight, Hash, Inbox, BarChart3, Calendar, MessageSquare, PhoneOutgoing, History, ServerCog, PlugZap, Sparkles, Activity } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
@@ -20,14 +20,24 @@ export default function CommandBar() {
   const navigate = useNavigate();
 
   const commands: CommandItem[] = [
-    { id: 'dash', label: 'Dashboard', description: 'Real-time command center', icon: Terminal, action: () => navigate('/'), category: 'Navigation' },
-    { id: 'fleet', label: 'Manage Fleet', description: 'Configure autonomous agents', icon: Bot, action: () => navigate('/fleet'), category: 'Navigation' },
-    { id: 'logs', label: 'Call Records', description: 'Review voice signal archives', icon: PhoneCall, action: () => navigate('/logs'), category: 'Navigation' },
-    { id: 'inbox', label: 'Omnichannel Inbox', description: 'Monitor email signal threads', icon: Mail, action: () => navigate('/inbox'), category: 'Navigation' },
-    { id: 'tasks', label: 'Mission Queue', description: 'Handoff resolution progress', icon: Zap, category: 'Navigation', action: () => navigate('/fleet') },
-    
-    { id: 'new-agent', label: 'Deploy New Agent', description: 'Provision a new carrier node', icon: Bot, category: 'Actions', action: () => navigate('/fleet') },
-    { id: 'test-call', label: 'Initiate Test Relay', description: 'Trigger manual carrier sync', icon: PhoneCall, category: 'Actions', action: () => navigate('/') },
+    // ── Navigation ─────────────────────────────────────────
+    { id: 'dash',         label: 'Command Atlas',     description: 'Real-time dashboard + Daily Brief',     icon: Activity,       category: 'Navigation', action: () => navigate('/') },
+    { id: 'triage',       label: 'Triage Inbox',      description: 'Hot leads, compliance, knowledge gaps', icon: Inbox,          category: 'Navigation', action: () => navigate('/triage') },
+    { id: 'insights',     label: 'Insights',          description: 'Funnel, topics, heatmap, leaderboard',  icon: BarChart3,      category: 'Navigation', action: () => navigate('/insights') },
+    { id: 'appointments', label: 'Constellation',     description: 'Booked appointments',                   icon: Calendar,       category: 'Navigation', action: () => navigate('/appointments') },
+    { id: 'logs',         label: 'Voice Archive',     description: 'Call records + transcripts',            icon: History,        category: 'Navigation', action: () => navigate('/logs') },
+    { id: 'inbox',        label: 'Email Inbox',       description: 'Inbound omnichannel email threads',     icon: Mail,           category: 'Navigation', action: () => navigate('/inbox') },
+    { id: 'outbound',     label: 'Outbound Dialer',   description: 'Single + bulk lead dispatch',           icon: PhoneOutgoing,  category: 'Navigation', action: () => navigate('/outbound') },
+    { id: 'train',        label: 'Neural Atelier',    description: 'Train + tune agents',                   icon: MessageSquare,  category: 'Navigation', action: () => navigate('/train') },
+    { id: 'agents',       label: 'Agent Topology',    description: 'Configure autonomous agents',           icon: Bot,            category: 'Navigation', action: () => navigate('/agents') },
+    { id: 'integrations', label: 'Carrier Bridge',    description: 'Phone numbers + integrations',          icon: PlugZap,        category: 'Navigation', action: () => navigate('/integrations') },
+    { id: 'admin',        label: 'Core Settings',     description: 'Account + system core',                 icon: ServerCog,      category: 'Navigation', action: () => navigate('/admin') },
+
+    // ── Actions ────────────────────────────────────────────
+    { id: 'forge-agent',  label: 'Forge Agent with Claude',     description: 'Synthesize a complete agent from a goal',  icon: Sparkles,  category: 'Actions', action: () => navigate('/agents') },
+    { id: 'test-call',    label: 'Initiate Test Relay',         description: 'Talk to your agent right now',             icon: PhoneCall, category: 'Actions', action: () => navigate('/') },
+    { id: 'review-agent', label: 'Run Performance Review',      description: 'Deep audit of an agent\'s last N calls',   icon: BarChart3, category: 'Actions', action: () => navigate('/train') },
+    { id: 'ingest-url',   label: 'Ingest Knowledge from URL',   description: 'Claude reads a site and extracts facts',   icon: Zap,       category: 'Actions', action: () => navigate('/train') },
   ];
 
   const filteredCommands = commands.filter(c => 

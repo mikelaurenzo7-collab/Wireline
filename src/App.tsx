@@ -4,6 +4,7 @@ import { Phone, Users, Settings, Activity, MessageSquare, Calendar, PhoneOutgoin
 import { motion, AnimatePresence } from "motion/react";
 import AuthPortal from "./components/AuthPortal";
 import CommandBar from "./components/CommandBar";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { cn } from "./lib/utils";
 
@@ -227,6 +228,21 @@ function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) =>
   );
 }
 
+function NotFound() {
+  return (
+    <div className="min-h-[70vh] flex flex-col items-center justify-center gap-6 text-center px-6">
+      <div className="font-display italic text-aurora text-[8rem] md:text-[12rem] leading-none">404</div>
+      <p className="text-[10px] uppercase tracking-[0.6em] text-muted">No signal at this coordinate</p>
+      <p className="text-ink/55 max-w-md text-sm leading-relaxed">
+        The page you're after doesn't exist on the relay. Use ⌘K to jump anywhere, or head back to the Atlas.
+      </p>
+      <Link to="/" className="brutal-btn !py-3 !px-6 !text-[11px] !tracking-[0.3em]">
+        <Activity className="w-3.5 h-3.5" /> Back to Atlas <ChevronRight className="w-3.5 h-3.5" />
+      </Link>
+    </div>
+  );
+}
+
 function RouteFallback() {
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
@@ -344,22 +360,25 @@ function AppContent() {
             <div className="flex-1 overflow-y-auto relative z-10 scrollbar-hide">
               <div className="max-w-[1920px] mx-auto min-h-full p-6 md:p-12 lg:p-16">
                 <AnimatePresence mode="wait">
-                  <Suspense fallback={<RouteFallback />}>
-                    <Routes>
-                      <Route path="/" element={<PageTransition><DashboardHome /></PageTransition>} />
-                      <Route path="/triage" element={<PageTransition><TriageInbox /></PageTransition>} />
-                      <Route path="/insights" element={<PageTransition><InsightsView /></PageTransition>} />
-                      <Route path="/contact/:number" element={<PageTransition><ContactProfile /></PageTransition>} />
-                      <Route path="/logs" element={<PageTransition><CallLogs /></PageTransition>} />
-                      <Route path="/inbox" element={<PageTransition><EmailInbox /></PageTransition>} />
-                      <Route path="/outbound" element={<PageTransition><OutboundDialer /></PageTransition>} />
-                      <Route path="/appointments" element={<PageTransition><AppointmentsView /></PageTransition>} />
-                      <Route path="/train" element={<PageTransition><AgentTraining /></PageTransition>} />
-                      <Route path="/agents" element={<PageTransition><FleetSettings /></PageTransition>} />
-                      <Route path="/integrations" element={<PageTransition><Integrations /></PageTransition>} />
-                      <Route path="/admin" element={<PageTransition><AdminSettings /></PageTransition>} />
-                    </Routes>
-                  </Suspense>
+                  <ErrorBoundary>
+                    <Suspense fallback={<RouteFallback />}>
+                      <Routes>
+                        <Route path="/" element={<PageTransition><DashboardHome /></PageTransition>} />
+                        <Route path="/triage" element={<PageTransition><TriageInbox /></PageTransition>} />
+                        <Route path="/insights" element={<PageTransition><InsightsView /></PageTransition>} />
+                        <Route path="/contact/:number" element={<PageTransition><ContactProfile /></PageTransition>} />
+                        <Route path="/logs" element={<PageTransition><CallLogs /></PageTransition>} />
+                        <Route path="/inbox" element={<PageTransition><EmailInbox /></PageTransition>} />
+                        <Route path="/outbound" element={<PageTransition><OutboundDialer /></PageTransition>} />
+                        <Route path="/appointments" element={<PageTransition><AppointmentsView /></PageTransition>} />
+                        <Route path="/train" element={<PageTransition><AgentTraining /></PageTransition>} />
+                        <Route path="/agents" element={<PageTransition><FleetSettings /></PageTransition>} />
+                        <Route path="/integrations" element={<PageTransition><Integrations /></PageTransition>} />
+                        <Route path="/admin" element={<PageTransition><AdminSettings /></PageTransition>} />
+                        <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
+                      </Routes>
+                    </Suspense>
+                  </ErrorBoundary>
                 </AnimatePresence>
               </div>
             </div>

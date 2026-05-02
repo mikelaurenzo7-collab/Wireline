@@ -413,6 +413,8 @@ function KnowledgeFromUrlForm({ agents, agentId: initAgent, initial, disabled }:
   const [agentId, setAgentId] = useState(initAgent ?? agents[0]?.id ?? "");
   const [url, setUrl] = useState(initial?.url ?? "");
   const [agentContext, setAgentContext] = useState("");
+  const [crawl, setCrawl] = useState(false);
+  const [maxPages, setMaxPages] = useState(8);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
@@ -427,7 +429,7 @@ function KnowledgeFromUrlForm({ agents, agentId: initAgent, initial, disabled }:
     try {
       const r = await authFetch("/api/claude/knowledge-from-url", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, agentContext }),
+        body: JSON.stringify({ url, agentContext, maxPages: crawl ? maxPages : 1 }),
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error);
@@ -459,13 +461,65 @@ function KnowledgeFromUrlForm({ agents, agentId: initAgent, initial, disabled }:
 
   return (
     <FormShell>
-      <Field label="URL" hint="A homepage, services page, FAQ, pricing page — anything customer-facing.">
-        <TextInput value={url} onChange={setUrl} placeholder="https://acme.co/services" />
+      <Field label="URL" hint={crawl ? "Root URL — Claude follows nav links from here." : "A homepage, services page, FAQ, pricing page — anything customer-facing."}>
+        <TextInput value={url} onChange={setUrl} placeholder={crawl ? "https://acme.co" : "https://acme.co/services"} />
       </Field>
+
+      {/* Crawl mode toggle */}
+      <div className="rounded-2xl glass border border-white/10 p-4 space-y-3">
+        <label className="flex items-center justify-between cursor-pointer">
+          <div className="flex items-center gap-3">
+            <Globe className="w-4 h-4 text-brand" />
+            <div>
+              <div className="text-sm text-ink">Crawl whole site</div>
+              <div className="text-[10px] uppercase tracking-[0.3em] text-muted">
+                {crawl ? `Follow nav links · up to ${maxPages} pages` : "Single page only"}
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setCrawl(!crawl)}
+            className={cn(
+              "relative w-11 h-6 rounded-full transition-all",
+              crawl ? "bg-brand" : "bg-white/10",
+            )}
+          >
+            <span className={cn(
+              "absolute top-0.5 w-5 h-5 rounded-full bg-paper transition-all",
+              crawl ? "left-[22px]" : "left-0.5",
+            )} />
+          </button>
+        </label>
+        {crawl && (
+          <div className="flex items-center gap-3 pt-1">
+            <span className="text-[10px] uppercase tracking-[0.3em] text-muted shrink-0">Max pages</span>
+            <div className="flex gap-2">
+              {[5, 8, 12, 20, 25].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setMaxPages(n)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-full text-[11px] uppercase tracking-[0.25em] transition-all",
+                    maxPages === n
+                      ? "bg-brand/20 text-brand border border-brand/40"
+                      : "glass border border-white/10 text-muted hover:text-ink",
+                  )}
+                >{n}</button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
       <Field label="Agent Context (optional)" hint="What's this agent's job? Helps Claude prioritize relevant facts.">
         <TextInput value={agentContext} onChange={setAgentContext} placeholder="Front-desk receptionist for HVAC service company." />
       </Field>
-      <RunButton onClick={run} loading={loading} disabled={disabled || !url} label="Fetch & Extract" />
+      <RunButton
+        onClick={run} loading={loading} disabled={disabled || !url}
+        label={crawl ? `Crawl ${maxPages} pages` : "Fetch & Extract"}
+      />
 
       {err && <ErrCard error={err} />}
       {result && (

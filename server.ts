@@ -19,6 +19,72 @@ app.use(cors());
 // base64) fit comfortably for the knowledge-from-document recipe.
 app.use(express.json({ limit: '50mb' }));
 
+// ────────────────────────────────────────────────────────────────────
+//  Health check — for uptime monitors, load balancers, and the AI
+//  Studio container's readiness probe. Public, no auth.
+// ────────────────────────────────────────────────────────────────────
+app.get("/api/health", (_req, res) => {
+  res.json({
+    status: "ok",
+    uptime_s: Math.round(process.uptime()),
+    capabilities: {
+      claude:    !!process.env.ANTHROPIC_API_KEY,
+      gemini:    !!process.env.GEMINI_API_KEY,
+      vapi:      !!process.env.VAPI_PRIVATE_KEY,
+      supabase:  !!process.env.VITE_SUPABASE_URL,
+      google_oauth: !!process.env.GOOGLE_CLIENT_ID,
+    },
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────
+//  Per-user rate limit for /api/claude/* — cost protection.
+//
+//  Claude Opus 4.7 is expensive ($5/M input, $25/M output). A single
+//  user accidentally hammering an endpoint (or a rogue script) could
+//  rack up real $$. Cap at 60 requests / minute / user. Uses a
+//  rolling 60-second window in-memory — fine for single-process
+//  deployment; swap to Redis if you go multi-region.
+// ────────────────────────────────────────────────────────────────────
+const claudeRateLimit = new Map<string, number[]>();
+const CLAUDE_RATE_WINDOW_MS = 60_000;
+const CLAUDE_RATE_MAX = 60;
+
+app.use("/api/claude", (req: any, res: any, next: any) => {
+  // Status endpoint is exempt — used by clients to probe availability.
+  if (req.path === "/status") return next();
+  // This middleware runs before authenticateUser, so req.user isn't
+  // populated yet. The bearer token is per-user, so token-keying gives
+  // us effective per-user limits without decoding the JWT here.
+  // Fall back to IP for unauthenticated edge cases.
+  const token = req.headers.authorization?.split(" ")[1];
+  const key = token || req.ip || "anon";
+  const now = Date.now();
+  const hits = (claudeRateLimit.get(key) || []).filter(t => now - t < CLAUDE_RATE_WINDOW_MS);
+  if (hits.length >= CLAUDE_RATE_MAX) {
+    res.setHeader("Retry-After", "60");
+    return res.status(429).json({
+      error: `Rate limit exceeded — ${CLAUDE_RATE_MAX} requests per minute. Slow down.`,
+      code: "CLAUDE_RATE_LIMIT",
+    });
+  }
+  hits.push(now);
+  claudeRateLimit.set(key, hits);
+  next();
+});
+
+// Keep the rate-limit map from growing forever — purge stale buckets every
+// 5 minutes. Cheap operation; map rarely has more than a few hundred keys.
+setInterval(() => {
+  const cutoff = Date.now() - CLAUDE_RATE_WINDOW_MS * 2;
+  for (const [k, hits] of claudeRateLimit) {
+    const fresh = hits.filter(t => t > cutoff);
+    if (fresh.length === 0) claudeRateLimit.delete(k);
+    else claudeRateLimit.set(k, fresh);
+  }
+}, 5 * 60 * 1000).unref?.();
+
 // Initialize AI and DB
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -2568,12 +2634,14 @@ app.post("/api/claude/coach", authenticateUser, async (req: any, res: any) => {
 });
 
 // Knowledge ingestion from URL — Claude fetches and extracts.
+// Optional `maxPages > 1` upgrades the request from a single-page fetch
+// to a same-domain crawl following nav links, capped at 25 pages.
 app.post("/api/claude/knowledge-from-url", authenticateUser, async (req: any, res: any) => {
   try {
-    const { url, agentContext, maxEntries } = req.body;
+    const { url, agentContext, maxEntries, maxPages } = req.body;
     if (!url || typeof url !== "string") return res.status(400).json({ error: "url required." });
     try { new URL(url); } catch { return res.status(400).json({ error: "url is not a valid URL." }); }
-    const result = await claudeBrain.knowledgeFromUrl({ url, agentContext, maxEntries });
+    const result = await claudeBrain.knowledgeFromUrl({ url, agentContext, maxEntries, maxPages });
     res.json(result);
   } catch (e) {
     claudeErr(res, e);

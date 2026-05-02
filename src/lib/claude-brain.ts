@@ -1243,46 +1243,71 @@ export interface KnowledgeFromUrlInput {
   url: string;
   agentContext?: string;
   maxEntries?: number;
+  /**
+   * Multi-page site crawl. When > 1, instructs Claude to follow nav links
+   * from the root URL and fetch up to maxPages pages, combining the
+   * extracted entries into a single deduplicated list.
+   *
+   * Defaults to 1 (single-page fetch — original behavior).
+   */
+  maxPages?: number;
 }
 
 export async function knowledgeFromUrl(input: KnowledgeFromUrlInput) {
   const client = getClient();
-  const system = `You are a knowledge-base curator for an autonomous voice/email agent. Fetch the URL and extract every concrete fact a customer-service agent would need: services, pricing, hours, contact info, return/refund policies, FAQ answers, business address, key personnel. Each entry must be atomic, self-contained, and useful in isolation (the agent will quote it verbatim). Skip marketing fluff. ${input.maxEntries ? `Limit to ~${input.maxEntries} entries.` : ""} After fetching, call deliver_knowledge_entries with the result.`;
+  const maxPages = Math.max(1, Math.min(input.maxPages ?? 1, 25));
+  const isCrawl = maxPages > 1;
+
+  const system = isCrawl
+    ? `You are a knowledge-base curator for an autonomous voice/email agent. Crawl the given site by:
+1. Fetching the root URL first.
+2. Identifying the most important nav/footer links (about, services, products, pricing, hours, contact, faq, policies, locations).
+3. Fetching up to ${maxPages} TOTAL pages (including the root). Stop early if you've covered the high-value pages.
+4. Stay on the same domain. Never follow outbound or social links.
+5. Skip duplicate content (e.g. blog index, search pages, login pages).
+
+After crawling, extract every concrete fact a customer-service agent would need: services, pricing, hours, contact info, return/refund policies, FAQ answers, business address, key personnel. Each entry must be atomic, self-contained, and useful in isolation (the agent will quote it verbatim). Skip marketing fluff. **Deduplicate entries that say the same thing across multiple pages.** ${input.maxEntries ? `Limit to ~${input.maxEntries} entries.` : ""} The page_summary should describe the SITE as a whole, not just one page. Then call deliver_knowledge_entries.`
+    : `You are a knowledge-base curator for an autonomous voice/email agent. Fetch the URL and extract every concrete fact a customer-service agent would need: services, pricing, hours, contact info, return/refund policies, FAQ answers, business address, key personnel. Each entry must be atomic, self-contained, and useful in isolation (the agent will quote it verbatim). Skip marketing fluff. ${input.maxEntries ? `Limit to ~${input.maxEntries} entries.` : ""} After fetching, call deliver_knowledge_entries with the result.`;
+
+  const userPrompt = isCrawl
+    ? `Crawl ${input.url} (up to ${maxPages} pages).${input.agentContext ? ` Context for the agent: ${input.agentContext}.` : ""} Then call deliver_knowledge_entries.`
+    : `Fetch ${input.url}.${input.agentContext ? ` Context for the agent: ${input.agentContext}.` : ""} Then call deliver_knowledge_entries.`;
+
+  // Crawls need much more headroom for both the assistant text + multiple
+  // server-tool round trips before the final structured output.
+  const maxTokens = isCrawl ? 16384 : 8192;
+
+  const tools: Anthropic.Tool[] = [
+    { type: "web_fetch_20260209", name: "web_fetch" } as any,
+    TOOLS.knowledgeFromUrl,
+  ];
+
+  const messages: Anthropic.MessageParam[] = [
+    { role: "user", content: userPrompt },
+  ];
 
   let response = await client.messages.create({
     model: "claude-opus-4-7",
-    max_tokens: 8192,
+    max_tokens: maxTokens,
     system,
-    tools: [
-      { type: "web_fetch_20260209", name: "web_fetch" },
-      TOOLS.knowledgeFromUrl,
-    ],
-    messages: [
-      {
-        role: "user",
-        content: `Fetch ${input.url}.${input.agentContext ? ` Context for the agent: ${input.agentContext}.` : ""} Then call deliver_knowledge_entries.`,
-      },
-    ],
+    tools,
+    messages,
   });
 
-  // Server-side tool loop. If we hit pause_turn, re-send to continue.
-  let safety = 5;
+  // Server-side tool loop — `pause_turn` means Claude hit the per-request
+  // server-side iteration cap (10 by default) and needs us to re-send the
+  // assistant turn so it can continue fetching. Bigger crawls need more
+  // headroom; cap at 8 retries to bound latency / cost.
+  const safetyCap = isCrawl ? 8 : 3;
+  let safety = safetyCap;
   while (response.stop_reason === "pause_turn" && safety-- > 0) {
+    messages.push({ role: "assistant", content: response.content });
     response = await client.messages.create({
       model: "claude-opus-4-7",
-      max_tokens: 8192,
+      max_tokens: maxTokens,
       system,
-      tools: [
-        { type: "web_fetch_20260209", name: "web_fetch" },
-        TOOLS.knowledgeFromUrl,
-      ],
-      messages: [
-        {
-          role: "user",
-          content: `Fetch ${input.url}.${input.agentContext ? ` Context: ${input.agentContext}.` : ""} Then call deliver_knowledge_entries.`,
-        },
-        { role: "assistant", content: response.content },
-      ],
+      tools,
+      messages,
     });
   }
 
@@ -1292,7 +1317,7 @@ export async function knowledgeFromUrl(input: KnowledgeFromUrlInput) {
     }
   }
   throw new Error(
-    `Claude did not return structured knowledge (stop_reason=${response.stop_reason}). Try again or use a more specific URL.`,
+    `Claude did not return structured knowledge (stop_reason=${response.stop_reason}). Try again or narrow the URL/crawl scope.`,
   );
 }
 
