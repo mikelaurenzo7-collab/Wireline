@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { supabase } from "../lib/supabase";
-import { Phone, ShieldCheck, Mail, Lock, Loader2, ArrowRight, UserPlus, LogIn, Terminal, Shield, Zap, Globe, Target, Activity, AlertTriangle } from "lucide-react";
+import { Phone, ShieldCheck, Mail, Lock, Loader2, ArrowRight, UserPlus, LogIn, Terminal, Shield, Zap, Globe, Target, Activity, AlertTriangle, Waves, Sparkles, Check } from "lucide-react";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -25,7 +25,7 @@ export default function AuthPortal() {
           password,
         });
         if (error) throw error;
-        setMessage("CHECK_EMAIL_FOR_CONFIRMATION_SIGNAL.");
+        setMessage("Check your inbox for a confirmation signal.");
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -35,9 +35,9 @@ export default function AuthPortal() {
       }
     } catch (err: any) {
       if (err.message === 'Failed to fetch') {
-          setError("DATABASE_OFFLINE: UNABLE_TO_ESTABLISH_CONNECTION_WITH_SUPABASE_CLUSTER.");
+          setError("Database offline — unable to reach the Supabase cluster.");
       } else {
-          setError(`AUTH_FAILURE: ${err.message.toUpperCase()}`);
+          setError(err.message);
       }
     } finally {
       setLoading(false);
@@ -45,145 +45,194 @@ export default function AuthPortal() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-8 relative overflow-hidden">
-      {/* Dynamic Grid Background */}
-      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: "linear-gradient(#000 1.5px, transparent 1.5px), linear-gradient(90deg, #000 1.5px, transparent 1.5px)", backgroundSize: "60px 60px" }} />
-        <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[60%] bg-brand/10 blur-[180px] rounded-full animate-pulse" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-zinc-950/5 blur-[150px] rounded-full" />
-        
-        {/* Decorative Elements */}
-        <div className="absolute top-10 left-10 flex gap-4 rotate-12 opacity-10">
-           <Terminal className="w-20 h-20" />
-           <Shield className="w-20 h-20" />
-        </div>
-        <div className="absolute bottom-10 right-10 flex gap-4 -rotate-12 opacity-10">
-           <Zap className="w-20 h-20" />
-           <Target className="w-20 h-20" />
-        </div>
+    <div className="min-h-screen flex items-center justify-center p-6 md:p-10 relative overflow-hidden">
+      {/* Animated aurora backdrop */}
+      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+        <motion.div
+          className="absolute -top-[30%] -left-[20%] w-[80vw] h-[80vw] rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(125,249,255,0.30), transparent 60%)" }}
+          animate={{ x: [0, 40, 0], y: [0, -30, 0], scale: [1, 1.05, 1] }}
+          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute -bottom-[25%] -right-[20%] w-[75vw] h-[75vw] rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(255,107,217,0.28), transparent 60%)" }}
+          animate={{ x: [0, -40, 0], y: [0, 30, 0], scale: [1, 1.06, 1] }}
+          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute top-[20%] right-[20%] w-[50vw] h-[50vw] rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(197,139,255,0.22), transparent 60%)" }}
+          animate={{ x: [0, -50, 30, 0], y: [0, 40, -20, 0] }}
+          transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
+        />
+
+        {/* Subtle grid */}
+        <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px)", backgroundSize: "80px 80px", maskImage: "radial-gradient(ellipse at center, black 30%, transparent 70%)" }} />
       </div>
 
-      <motion.div 
-        initial={{ y: 40, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ type: "spring", damping: 25, stiffness: 100 }}
-        className="w-full max-w-xl relative z-10"
+      <div className="scanline" />
+
+      <motion.div
+        initial={{ y: 30, opacity: 0, filter: "blur(12px)" }}
+        animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
+        transition={{ type: "spring", damping: 26, stiffness: 90 }}
+        className="w-full max-w-md md:max-w-lg relative z-10"
       >
-        <div className="text-center mb-16">
-          <div className="relative inline-block group">
-            <div className="absolute -inset-4 bg-brand blur-2xl opacity-20 group-hover:opacity-40 transition-opacity" />
-            <div className="w-32 h-32 bg-zinc-950 border-8 border-ink flex items-center justify-center mb-10 shadow-[16px_16px_0px_0px_rgba(212,255,77,1)] relative z-10 group-hover:-translate-x-2 group-hover:-translate-y-2 transition-transform">
-               <Phone className="w-16 h-16 text-brand" />
+        {/* Hero mark */}
+        <div className="text-center mb-12">
+          <motion.div
+            initial={{ scale: 0.6, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 80, damping: 14 }}
+            className="relative inline-block mb-8"
+          >
+            <div className="absolute inset-0 blur-3xl opacity-60" style={{ background: "conic-gradient(from 0deg, #7DF9FF, #C58BFF, #FF6BD9, #7DF9FF)" }} />
+            <div className="relative w-24 h-24 rounded-3xl flex items-center justify-center" style={{
+              background: "linear-gradient(135deg, #7DF9FF 0%, #C58BFF 50%, #FF6BD9 100%)",
+              boxShadow: "0 20px 60px -10px rgba(125,249,255,0.55), 0 0 0 1px rgba(255,255,255,0.2) inset"
+            }}>
+              <Waves className="w-12 h-12 text-paper" strokeWidth={2.2} />
             </div>
-          </div>
-          <h1 className="text-6xl md:text-[6rem] font-black text-ink uppercase tracking-tighter font-display italic leading-[0.75] mb-6">WIRELINE</h1>
-          <p className="text-muted font-bold uppercase tracking-[0.6em] text-[10px] md:text-xs italic underline decoration-brand decoration-4 underline-offset-[-2px]">OMNICHANNEL_FLEET_MANAGEMENT_v4.0</p>
+          </motion.div>
+
+          <h1 className="font-display italic text-7xl md:text-8xl text-aurora leading-[0.85] tracking-tight mb-4">
+            Wireline
+          </h1>
+          <p className="text-[10px] md:text-xs uppercase tracking-[0.55em] text-muted">
+            Aurora Relay · Omnichannel Fleet
+          </p>
         </div>
 
-        <div className="bg-white brutal-border border-8 p-12 md:p-16 shadow-[24px_24px_0px_0px_rgba(10,10,10,1)] relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-8 opacity-5">
-             <Globe className="w-48 h-48 animate-spin" style={{ animationDuration: '20s' }} />
-          </div>
-          
-          <div className="flex bg-zinc-950 p-2 brutal-border border-4 border-ink shadow-none mb-12 relative z-10">
-            <button 
-              onClick={() => setIsSignUp(false)}
-              className={cn(
-                "flex-1 py-5 text-[11px] font-black uppercase tracking-[0.3em] transition-all italic",
-                !isSignUp ? "bg-brand text-ink" : "text-white/30 hover:text-white"
-              )}
-            >
-              COMMAND_SYNC
-            </button>
-            <button 
-              onClick={() => setIsSignUp(true)}
-              className={cn(
-                "flex-1 py-5 text-[11px] font-black uppercase tracking-[0.3em] transition-all italic",
-                isSignUp ? "bg-brand text-ink" : "text-white/30 hover:text-white"
-              )}
-            >
-              INIT_NODE
-            </button>
-          </div>
+        {/* Glass auth card */}
+        <div className="relative aurora-ring rounded-3xl">
+          <div className="relative rounded-3xl p-8 md:p-10 glass-strong overflow-hidden">
+            {/* Inner glow */}
+            <div className="absolute -top-32 -right-32 w-64 h-64 rounded-full opacity-30 blur-3xl" style={{ background: "radial-gradient(circle, #7DF9FF, transparent)" }} />
+            <div className="absolute -bottom-32 -left-32 w-64 h-64 rounded-full opacity-30 blur-3xl" style={{ background: "radial-gradient(circle, #FF6BD9, transparent)" }} />
 
-          <form onSubmit={handleAuth} className="space-y-10 relative z-10">
-            <div className="space-y-4">
-              <label className="text-[10px] font-black text-muted uppercase tracking-[0.5em] italic flex items-center gap-4 ml-1">
-                <Mail className="w-4 h-4 text-brand fill-ink" /> CARRIER_ID_MAP
-              </label>
-              <input 
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full h-20 p-8 brutal-border border-4 outline-none focus:bg-brand font-black text-ink uppercase tracking-widest text-lg bg-zinc-50 transition-all font-display italic"
-                placeholder="OPERATOR@SYSTEM.AI"
-              />
+            {/* Tab toggle */}
+            <div className="relative z-10 mb-8">
+              <div className="relative flex p-1 rounded-2xl bg-black/30 border border-white/8">
+                <motion.div
+                  layout
+                  className="absolute inset-y-1 w-[calc(50%-4px)] rounded-xl"
+                  style={{
+                    background: "linear-gradient(135deg, rgba(125,249,255,0.18), rgba(197,139,255,0.18))",
+                    border: "1px solid rgba(125,249,255,0.35)",
+                    left: isSignUp ? "calc(50% + 2px)" : "4px",
+                    boxShadow: "0 8px 24px -8px rgba(125,249,255,0.45)"
+                  }}
+                  transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                />
+                <button
+                  onClick={() => setIsSignUp(false)}
+                  className={cn(
+                    "relative z-10 flex-1 py-3 text-[11px] uppercase tracking-[0.3em] transition-colors",
+                    !isSignUp ? "text-ink" : "text-muted hover:text-ink/70"
+                  )}
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => setIsSignUp(true)}
+                  className={cn(
+                    "relative z-10 flex-1 py-3 text-[11px] uppercase tracking-[0.3em] transition-colors",
+                    isSignUp ? "text-ink" : "text-muted hover:text-ink/70"
+                  )}
+                >
+                  New Node
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-4">
-              <label className="text-[10px] font-black text-muted uppercase tracking-[0.5em] italic flex items-center gap-4 ml-1">
-                <Lock className="w-4 h-4 text-brand fill-ink" /> SECURITY_HASH
-              </label>
-              <input 
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full h-20 p-8 brutal-border border-4 outline-none focus:bg-brand font-black text-ink uppercase tracking-[0.5em] text-lg bg-zinc-50 transition-all font-display"
-                placeholder="********"
-              />
-            </div>
+            <form onSubmit={handleAuth} className="relative z-10 space-y-5">
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase tracking-[0.4em] text-muted flex items-center gap-2">
+                  <Mail className="w-3 h-3 text-brand" /> Carrier ID
+                </label>
+                <div className="relative group">
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full h-14 px-5 rounded-xl bg-black/30 border border-white/10 outline-none text-ink text-sm placeholder:text-muted/50 focus:border-brand/60 focus:bg-black/40 transition-all tracking-wide"
+                    placeholder="operator@aurora.relay"
+                  />
+                  <div className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity" style={{ boxShadow: "0 0 0 1px rgba(125,249,255,0.4), 0 0 24px rgba(125,249,255,0.25)" }} />
+                </div>
+              </div>
 
-            <AnimatePresence mode="wait">
-              {error && (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="p-8 bg-rose-500 text-white text-[10px] font-black uppercase tracking-[0.3em] italic brutal-border border-4 shadow-none flex items-center gap-6"
-                >
-                  <AlertTriangle className="w-6 h-6 shrink-0" />
-                  {error}
-                </motion.div>
-              )}
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase tracking-[0.4em] text-muted flex items-center gap-2">
+                  <Lock className="w-3 h-3 text-brand" /> Cipher Key
+                </label>
+                <div className="relative group">
+                  <input
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full h-14 px-5 rounded-xl bg-black/30 border border-white/10 outline-none text-ink text-sm placeholder:text-muted/50 focus:border-brand/60 focus:bg-black/40 transition-all tracking-[0.3em]"
+                    placeholder="••••••••••"
+                  />
+                  <div className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity" style={{ boxShadow: "0 0 0 1px rgba(125,249,255,0.4), 0 0 24px rgba(125,249,255,0.25)" }} />
+                </div>
+              </div>
 
-              {message && (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="p-8 bg-emerald-500 text-white text-[10px] font-black uppercase tracking-[0.3em] italic brutal-border border-4 shadow-none flex items-center gap-6"
-                >
-                  <Activity className="w-6 h-6 shrink-0" />
-                  {message}
-                </motion.div>
-              )}
-            </AnimatePresence>
+              <AnimatePresence mode="wait">
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6, height: 0 }}
+                    animate={{ opacity: 1, y: 0, height: "auto" }}
+                    exit={{ opacity: 0, y: -6, height: 0 }}
+                    className="flex items-start gap-3 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs"
+                  >
+                    <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span className="leading-relaxed">{error}</span>
+                  </motion.div>
+                )}
 
-            <button 
-              type="submit"
-              disabled={loading}
-              className="w-full h-24 bg-zinc-950 text-brand brutal-border border-4 text-sm font-black flex items-center justify-center gap-6 shadow-[12px_12px_0px_0px_rgba(212,255,77,1)] hover:shadow-none hover:bg-black uppercase tracking-[0.5em] italic transition-all active:translate-x-1 active:translate-y-1 active:shadow-none disabled:opacity-50 mt-4"
-            >
-              {loading ? (
-                <><Loader2 className="w-8 h-8 animate-spin" /> ESTABLISHING_SIGNAL...</>
-              ) : (
-                <>
-                  {isSignUp ? <UserPlus className="w-8 h-8" /> : <LogIn className="w-8 h-8" />}
-                  {isSignUp ? "INITIALIZE_RELAY_NODE" : "SYNC_COMMAND_HUB"}
-                </>
-              )}
-            </button>
-          </form>
+                {message && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6, height: 0 }}
+                    animate={{ opacity: 1, y: 0, height: "auto" }}
+                    exit={{ opacity: 0, y: -6, height: 0 }}
+                    className="flex items-start gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-xs"
+                  >
+                    <Check className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span className="leading-relaxed">{message}</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="brutal-btn w-full !py-4 !px-6 !text-[12px] !tracking-[0.3em] mt-2"
+              >
+                {loading ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Connecting</>
+                ) : (
+                  <>
+                    {isSignUp ? <UserPlus className="w-4 h-4" /> : <LogIn className="w-4 h-4" />}
+                    {isSignUp ? "Initialize Node" : "Enter Aurora"}
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
         </div>
 
-        <div className="mt-16 flex flex-col items-center gap-6 opacity-30">
-          <div className="flex items-center gap-6">
-             <ShieldCheck className="w-6 h-6 text-ink" />
-             <span className="text-[10px] font-black uppercase tracking-[0.6em] italic">WIRELINE_RSA_ENCRYPTION_v4_ACTIVE</span>
+        {/* Footer */}
+        <div className="mt-10 flex flex-col items-center gap-3 text-muted/60">
+          <div className="flex items-center gap-3">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span className="text-[10px] uppercase tracking-[0.45em]">RSA-4096 · End-to-End Relay</span>
           </div>
-          <p className="text-[8px] font-black uppercase tracking-[0.8em] italic">-- ALL_SIGNALS_ARE_ENCRYPTED_AND_LOGGED --</p>
+          <p className="text-[9px] uppercase tracking-[0.55em]">Powered by Claude Design</p>
         </div>
       </motion.div>
     </div>

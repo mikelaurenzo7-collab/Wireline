@@ -7,6 +7,7 @@ import { SchemaType } from "@google/generative-ai";
 import { createClient } from "@supabase/supabase-js";
 import { google } from "googleapis";
 import dotenv from "dotenv";
+import * as claudeBrain from "./src/lib/claude-brain";
 
 dotenv.config();
 
@@ -647,75 +648,166 @@ app.post("/api/vapi-webhook", async (req, res) => {
            recording_url: message.recordingUrl || message.stereoRecordingUrl || null
         });
 
-        // AI LEAD SCORING & INTENT DETECTION
-        const scoringPrompt = `
-          Analyze this call TRANSCRIPT and give a BUYING INTENT score (0-100) and CATEGORY ('high', 'medium', 'low', 'none').
-          Transcript: ${message.transcript || "None"}
-          Summary: ${analysis?.summary || ""}
-          RESPONSE FORMAT (JSON): { "score": number, "label": string }
-        `;
-        try {
-           const model = genAI.getGenerativeModel({ 
-             model: "gemini-1.5-flash",
-             generationConfig: { responseMimeType: "application/json" }
-           });
-           const scoreRes = await model.generateContent(scoringPrompt);
-           const scoreObj = JSON.parse(scoreRes.response.text() || "{}");
-           await db.from('wireline_call_logs').update({
-             lead_score: scoreObj.score || 0,
-             intent_label: scoreObj.label || 'none'
-           }).eq('vapi_call_id', call?.id);
+        // ────────────────────────────────────────────────────────────
+        //  POST-CALL ENRICHMENT
+        //
+        //  Preferred: single-pass Claude analysis (one tool-call returning
+        //  score + intent + sentiment + lesson + action items + compliance
+        //  flags + knowledge gaps). Falls back to the legacy 3-Gemini-call
+        //  pipeline when ANTHROPIC_API_KEY is not set or the Claude call
+        //  fails for any reason — the agents keep working either way.
+        // ────────────────────────────────────────────────────────────
+        let claudeAnalysisDone = false;
+        if (claudeBrain.isClaudeAvailable() && message.transcript) {
+          try {
+            const { data: agentDetail } = await db
+              .from('wireline_agents')
+              .select('name, archetype')
+              .eq('id', webhookAgentId)
+              .single();
 
-           // Update outbound lead status if applicable
-           await db.from('wireline_outbound_leads').update({
-             status: "Completed",
-             last_called_at: new Date()
-           }).eq('call_id', call?.id);
+            const result = await claudeBrain.postCallAnalysis({
+              agentName: agentDetail?.name || 'Wireline Agent',
+              archetype: agentDetail?.archetype || 'Receptionist',
+              customerNumber: call?.customer?.number,
+              durationSeconds: duration,
+              summary: analysis?.summary || '',
+              transcript: message.transcript || '',
+            });
 
-           // SELF-OPTIMIZING LOOP: Generate Lessons Learned
-           try {
-              const lessonPrompt = `Identify exactly ONE tactical improvement for this agent. JSON ONLY: { "lesson": "string" }. Transcript: ${message.transcript}`;
-              const lessonModel = genAI.getGenerativeModel({ 
-                 model: "gemini-1.5-flash",
-                 generationConfig: { responseMimeType: "application/json" }
+            // 1. Persist lead score + intent + sentiment
+            await db.from('wireline_call_logs').update({
+              lead_score: result.lead_score,
+              intent_label: result.intent_label,
+            }).eq('vapi_call_id', call?.id);
+
+            // 2. Promote a single tactical lesson (if any).
+            if (result.lesson && result.lesson.trim().length > 0) {
+              await db.from('wireline_agent_lessons').insert({
+                agent_id: webhookAgentId,
+                user_id: agent?.user_id,
+                lesson: result.lesson.trim(),
               });
-              const lessonRes = await lessonModel.generateContent(lessonPrompt);
-              const lessonObj = JSON.parse(lessonRes.response.text() || "{}");
-              if (lessonObj.lesson) {
-                 await db.from('wireline_agent_lessons').insert({
-                    agent_id: webhookAgentId,
-                    user_id: agent?.user_id,
-                    lesson: lessonObj.lesson
-                 });
-              }
-           } catch(e) {}
+            }
 
-           // TASK EXTRACTION LOOP: Generate follow-up tasks from promises
-           try {
-              const taskPrompt = `Based on the transcript, did the agent promise any follow-up (like sending an email, checking a quote), or did the human ask for something out-of-scope? 
-              JSON format MUST match exactly: { "has_task": boolean, "task_description": "string", "priority": "high" | "medium" | "low", "target_channel": "email" | "manual" }
-              Transcript: ${message.transcript}`;
-              const taskModel = genAI.getGenerativeModel({ 
-                 model: "gemini-1.5-flash",
-                 generationConfig: { responseMimeType: "application/json" }
+            // 3. Insert ALL action items as fleet tasks.
+            for (const item of result.action_items || []) {
+              await db.from('wireline_fleet_tasks').insert({
+                user_id: agent?.user_id,
+                task_type: 'action_required',
+                description: `Follow-up for ${call?.customer?.number || 'Caller'}: ${item.description}`,
+                source_type: 'phone_call',
+                source_id: call?.id,
+                target_channel: item.target_channel || 'manual',
+                priority: item.priority || 'medium',
+                status: 'pending',
               });
-              const taskRes = await taskModel.generateContent(taskPrompt);
-              const taskObj = JSON.parse(taskRes.response.text() || "{}");
-              if (taskObj.has_task && taskObj.task_description) {
-                 await db.from('wireline_fleet_tasks').insert({
-                    user_id: agent?.user_id,
-                    task_type: 'action_required',
-                    description: `FOLLOW-UP FOR ${call?.customer?.number || 'Caller'}: ${taskObj.task_description}`,
-                    source_type: 'phone_call',
-                    source_id: call?.id,
-                    target_channel: taskObj.target_channel || 'manual',
-                    priority: taskObj.priority || 'medium',
-                    status: 'pending'
-                 });
-              }
-           } catch(e) {}
-        } catch(scoringErr) {
-           console.error("Call scoring failed:", scoringErr);
+            }
+
+            // 4. Surface knowledge gaps as low-priority lessons (clearly tagged so
+            //    they're easy to filter / promote into wireline_knowledge later).
+            for (const gap of result.knowledge_gaps || []) {
+              await db.from('wireline_agent_lessons').insert({
+                agent_id: webhookAgentId,
+                user_id: agent?.user_id,
+                lesson: `[KNOWLEDGE GAP] ${gap}`,
+              });
+            }
+
+            // 5. Surface compliance flags as critical fleet tasks.
+            for (const flag of result.compliance_flags || []) {
+              await db.from('wireline_fleet_tasks').insert({
+                user_id: agent?.user_id,
+                task_type: 'compliance_review',
+                description: `[COMPLIANCE] Call ${call?.id?.slice(0, 8) || ''} — ${flag}`,
+                source_type: 'phone_call',
+                source_id: call?.id,
+                target_channel: 'manual',
+                priority: 'high',
+                status: 'pending',
+              });
+            }
+
+            // 6. Update outbound lead status if applicable.
+            await db.from('wireline_outbound_leads').update({
+              status: 'Completed',
+              last_called_at: new Date(),
+            }).eq('call_id', call?.id);
+
+            claudeAnalysisDone = true;
+          } catch (err) {
+            console.error('Claude post-call analysis failed; falling back to Gemini:', err);
+          }
+        }
+
+        // Legacy Gemini pipeline — runs only if Claude wasn't available or failed.
+        if (!claudeAnalysisDone) {
+          const scoringPrompt = `
+            Analyze this call TRANSCRIPT and give a BUYING INTENT score (0-100) and CATEGORY ('high', 'medium', 'low', 'none').
+            Transcript: ${message.transcript || "None"}
+            Summary: ${analysis?.summary || ""}
+            RESPONSE FORMAT (JSON): { "score": number, "label": string }
+          `;
+          try {
+             const model = genAI.getGenerativeModel({
+               model: "gemini-1.5-flash",
+               generationConfig: { responseMimeType: "application/json" }
+             });
+             const scoreRes = await model.generateContent(scoringPrompt);
+             const scoreObj = JSON.parse(scoreRes.response.text() || "{}");
+             await db.from('wireline_call_logs').update({
+               lead_score: scoreObj.score || 0,
+               intent_label: scoreObj.label || 'none'
+             }).eq('vapi_call_id', call?.id);
+
+             await db.from('wireline_outbound_leads').update({
+               status: "Completed",
+               last_called_at: new Date()
+             }).eq('call_id', call?.id);
+
+             try {
+                const lessonPrompt = `Identify exactly ONE tactical improvement for this agent. JSON ONLY: { "lesson": "string" }. Transcript: ${message.transcript}`;
+                const lessonModel = genAI.getGenerativeModel({
+                   model: "gemini-1.5-flash",
+                   generationConfig: { responseMimeType: "application/json" }
+                });
+                const lessonRes = await lessonModel.generateContent(lessonPrompt);
+                const lessonObj = JSON.parse(lessonRes.response.text() || "{}");
+                if (lessonObj.lesson) {
+                   await db.from('wireline_agent_lessons').insert({
+                      agent_id: webhookAgentId,
+                      user_id: agent?.user_id,
+                      lesson: lessonObj.lesson
+                   });
+                }
+             } catch(e) {}
+
+             try {
+                const taskPrompt = `Based on the transcript, did the agent promise any follow-up (like sending an email, checking a quote), or did the human ask for something out-of-scope?
+                JSON format MUST match exactly: { "has_task": boolean, "task_description": "string", "priority": "high" | "medium" | "low", "target_channel": "email" | "manual" }
+                Transcript: ${message.transcript}`;
+                const taskModel = genAI.getGenerativeModel({
+                   model: "gemini-1.5-flash",
+                   generationConfig: { responseMimeType: "application/json" }
+                });
+                const taskRes = await taskModel.generateContent(taskPrompt);
+                const taskObj = JSON.parse(taskRes.response.text() || "{}");
+                if (taskObj.has_task && taskObj.task_description) {
+                   await db.from('wireline_fleet_tasks').insert({
+                      user_id: agent?.user_id,
+                      task_type: 'action_required',
+                      description: `FOLLOW-UP FOR ${call?.customer?.number || 'Caller'}: ${taskObj.task_description}`,
+                      source_type: 'phone_call',
+                      source_id: call?.id,
+                      target_channel: taskObj.target_channel || 'manual',
+                      priority: taskObj.priority || 'medium',
+                      status: 'pending'
+                   });
+                }
+             } catch(e) {}
+          } catch(scoringErr) {
+             console.error("Call scoring failed:", scoringErr);
+          }
         }
         
         // If it was outbound, let's update the lead status
@@ -2121,6 +2213,905 @@ app.delete("/api/agents/:id/lessons/:lessonId", authenticateUser, async (req: an
    } catch (e) {
       res.status(500).json({ error: "Delete failed" });
    }
+});
+
+// ==========================================
+//  CLAUDE BRAIN — advanced agent capabilities
+// ==========================================
+
+function claudeErr(res: any, e: any) {
+  if (e instanceof claudeBrain.ClaudeUnavailableError) {
+    return res.status(503).json({
+      error: e.message,
+      code: "CLAUDE_OFFLINE",
+    });
+  }
+  console.error("Claude endpoint error:", e);
+  return res.status(500).json({ error: e?.message ?? "Claude error" });
+}
+
+// Status / health
+app.get("/api/claude/status", authenticateUser, async (_req: any, res: any) => {
+  res.json({
+    available: claudeBrain.isClaudeAvailable(),
+    model: "claude-opus-4-7",
+    capabilities: [
+      "brief", "qualify", "objection-drill", "cold-email",
+      "persona-clone", "summarize-thread", "route-intent",
+      "smart-draft", "agent-review",
+    ],
+  });
+});
+
+// Pre-call briefing — given a lead, deliver a tactical brief.
+app.post("/api/claude/brief", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { agentId, customerName, customerNumber, reasonForCall, pastInteractionSummary } = req.body;
+    let agentName = "Wireline Agent";
+    let agentArchetype = "Receptionist";
+    let knowledgeBase: string[] = [];
+
+    if (agentId) {
+      const [{ data: agent }, { data: knowledge }] = await Promise.all([
+        db.from("wireline_agents").select("name, archetype").eq("id", agentId).eq("user_id", req.user.id).single(),
+        db.from("wireline_knowledge").select("content").eq("agent_id", agentId).eq("user_id", req.user.id),
+      ]);
+      if (agent) {
+        agentName = agent.name;
+        agentArchetype = agent.archetype;
+      }
+      knowledgeBase = (knowledge ?? []).map((k: any) => k.content);
+    }
+
+    const result = await claudeBrain.brief({
+      agentName,
+      agentArchetype,
+      customerName,
+      customerNumber,
+      reasonForCall: reasonForCall || "No specific reason provided.",
+      knowledgeBase,
+      pastInteractionSummary,
+    });
+    res.json({ brief: result });
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Lead qualification — BANT scoring, optionally pulled from a call log.
+app.post("/api/claude/qualify", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { source, transcript, callId, threadId } = req.body;
+    let actualTranscript: string = transcript;
+    let metadata: Record<string, any> = {};
+
+    if (!actualTranscript && callId) {
+      const { data: call } = await db.from("wireline_call_logs").select("*").eq("id", callId).eq("user_id", req.user.id).single();
+      actualTranscript = call?.transcript ?? call?.summary ?? "";
+      metadata = { customer_number: call?.customer_number, duration_seconds: call?.duration_seconds };
+    } else if (!actualTranscript && threadId) {
+      const { data: msgs } = await db.from("wireline_email_messages").select("role, content").eq("thread_id", threadId).order("created_at", { ascending: true });
+      actualTranscript = (msgs ?? []).map((m: any) => `${m.role.toUpperCase()}: ${m.content}`).join("\n\n");
+    }
+
+    if (!actualTranscript) {
+      return res.status(400).json({ error: "No transcript provided (and no callId/threadId to fetch from)." });
+    }
+
+    const result = await claudeBrain.qualify({
+      source: source ?? "voice_call",
+      transcript: actualTranscript,
+      metadata,
+    });
+    res.json({ qualification: result });
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Objection drills — practice scenarios for an agent.
+app.post("/api/claude/objection-drill", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { agentId, topic, count } = req.body;
+    let agentName = "Wireline Agent";
+    let archetype = "Receptionist";
+    if (agentId) {
+      const { data: agent } = await db.from("wireline_agents").select("name, archetype").eq("id", agentId).eq("user_id", req.user.id).single();
+      if (agent) { agentName = agent.name; archetype = agent.archetype; }
+    }
+    const result = await claudeBrain.objectionDrill({
+      agentName, archetype,
+      topic: topic || "general sales objections",
+      count: count ?? 5,
+    });
+    res.json(result);
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Cold-email composer.
+app.post("/api/claude/cold-email", authenticateUser, async (req: any, res: any) => {
+  try {
+    const result = await claudeBrain.coldEmail(req.body);
+    res.json({ email: result });
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Persona cloning.
+app.post("/api/claude/persona-clone", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { description, samples, agentId, applyToAgent } = req.body;
+    if (!Array.isArray(samples) || samples.length === 0) {
+      return res.status(400).json({ error: "Provide at least one sample message." });
+    }
+    const result = await claudeBrain.personaClone({
+      description: description || "Unknown persona",
+      samples,
+    });
+
+    if (applyToAgent && agentId) {
+      // Verify ownership before applying.
+      const { data: agent } = await db.from("wireline_agents").select("id").eq("id", agentId).eq("user_id", req.user.id).single();
+      if (agent) {
+        await db.from("wireline_personality").upsert({
+          agent_id: agentId,
+          user_id: req.user.id,
+          content: result.persona_block,
+        });
+      }
+    }
+    res.json({ persona: result, applied: !!(applyToAgent && agentId) });
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Email-thread summarizer.
+app.post("/api/claude/summarize-thread", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { threadId } = req.body;
+    const { data: thread } = await db.from("wireline_email_threads").select("subject").eq("id", threadId).eq("user_id", req.user.id).single();
+    if (!thread) return res.status(404).json({ error: "Thread not found." });
+    const { data: msgs } = await db.from("wireline_email_messages").select("role, content").eq("thread_id", threadId).order("created_at", { ascending: true });
+    const result = await claudeBrain.threadSummary({
+      subject: thread.subject || "(no subject)",
+      messages: (msgs ?? []) as any,
+    });
+    res.json({ summary: result });
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Fast intent routing.
+app.post("/api/claude/route-intent", authenticateUser, async (req: any, res: any) => {
+  try {
+    const result = await claudeBrain.routeIntent({ text: req.body.text || "" });
+    res.json(result);
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Smart email draft (the better drop-in for the Gemini draft endpoint).
+app.post("/api/claude/email-draft", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { threadId, agentId, userInstructions } = req.body;
+    const { data: thread } = await db.from("wireline_email_threads").select("subject, agent_id").eq("id", threadId).eq("user_id", req.user.id).single();
+    if (!thread) return res.status(404).json({ error: "Thread not found." });
+
+    const targetAgentId = agentId || thread.agent_id;
+    let agentName = "Wireline Agent";
+    let agentTone = "Professional";
+    let agentSignature = "";
+    let knowledgeBase: string[] = [];
+    let directives: string[] = [];
+
+    if (targetAgentId) {
+      const [{ data: agent }, { data: knowledge }, { data: directiveRows }] = await Promise.all([
+        db.from("wireline_agents").select("name, email_agent_tone, email_signature").eq("id", targetAgentId).eq("user_id", req.user.id).single(),
+        db.from("wireline_knowledge").select("content").eq("agent_id", targetAgentId).eq("user_id", req.user.id),
+        db.from("wireline_directives").select("content").eq("agent_id", targetAgentId).eq("user_id", req.user.id).order("priority", { ascending: false }),
+      ]);
+      if (agent) {
+        agentName = agent.name;
+        agentTone = agent.email_agent_tone || "Professional";
+        agentSignature = agent.email_signature || "";
+      }
+      knowledgeBase = (knowledge ?? []).map((k: any) => k.content);
+      directives = (directiveRows ?? []).map((d: any) => d.content);
+    }
+
+    const { data: msgs } = await db.from("wireline_email_messages").select("role, content").eq("thread_id", threadId).order("created_at", { ascending: true });
+
+    const result = await claudeBrain.smartDraft({
+      agentName, agentTone, agentSignature,
+      knowledgeBase, directives,
+      threadSubject: thread.subject || "(no subject)",
+      threadMessages: (msgs ?? []) as any,
+      userInstructions,
+    });
+
+    res.json({
+      draft: result.draft,
+      diagnostics: { cacheRead: result.cacheRead, cacheCreate: result.cacheCreate },
+    });
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Deep agent performance review.
+app.post("/api/claude/agent-review", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { agentId, lookback } = req.body;
+    if (!agentId) return res.status(400).json({ error: "agentId required" });
+    const { data: agent } = await db.from("wireline_agents").select("name, archetype").eq("id", agentId).eq("user_id", req.user.id).single();
+    if (!agent) return res.status(404).json({ error: "Agent not found." });
+    const { data: logs } = await db
+      .from("wireline_call_logs")
+      .select("summary, transcript, lead_score, intent_label")
+      .eq("agent_id", agentId)
+      .eq("user_id", req.user.id)
+      .order("created_at", { ascending: false })
+      .limit(Math.min(lookback ?? 15, 30));
+    if (!logs || logs.length === 0) {
+      return res.status(400).json({ error: "Insufficient data — need at least 1 completed call.", code: "NO_DATA" });
+    }
+    const result = await claudeBrain.agentReview({
+      agentName: agent.name,
+      archetype: agent.archetype,
+      callLogs: logs as any,
+    });
+    res.json({ review: result, lookback: logs.length });
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Promote a Claude-suggested directive into the agent's directive table.
+app.post("/api/claude/agent-review/apply-directive", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { agentId, directive, priority } = req.body;
+    const { data: agent } = await db.from("wireline_agents").select("id").eq("id", agentId).eq("user_id", req.user.id).single();
+    if (!agent) return res.status(404).json({ error: "Agent not found." });
+    const priorityMap: Record<string, number> = { critical: 10, high: 7, medium: 5, low: 3 };
+    await db.from("wireline_directives").insert({
+      agent_id: agentId,
+      user_id: req.user.id,
+      content: directive,
+      priority: priorityMap[priority] ?? 5,
+    });
+    res.json({ success: true });
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// ──────────────────────────────────────────────────────────
+//  CLAUDE BRAIN — additional capability-elevating endpoints
+// ──────────────────────────────────────────────────────────
+
+// Manual re-run of the post-call analysis on an existing call.
+// Useful when ANTHROPIC_API_KEY was added after some calls were already logged.
+app.post("/api/claude/post-call/:callId", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { data: call } = await db
+      .from("wireline_call_logs")
+      .select("*, agent_id, user_id")
+      .eq("id", req.params.callId)
+      .eq("user_id", req.user.id)
+      .single();
+    if (!call) return res.status(404).json({ error: "Call not found." });
+    const { data: agent } = await db
+      .from("wireline_agents")
+      .select("name, archetype")
+      .eq("id", call.agent_id)
+      .single();
+
+    const result = await claudeBrain.postCallAnalysis({
+      agentName: agent?.name || "Wireline Agent",
+      archetype: agent?.archetype || "Receptionist",
+      customerNumber: call.customer_number,
+      durationSeconds: call.duration_seconds,
+      summary: call.summary || "",
+      transcript: call.transcript || "",
+    });
+
+    await db.from("wireline_call_logs").update({
+      lead_score: result.lead_score,
+      intent_label: result.intent_label,
+    }).eq("id", call.id);
+
+    res.json({ analysis: result });
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Live call coach — given a transcript or a callId, returns coaching.
+app.post("/api/claude/coach", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { transcript: rawTranscript, callId, agentId, isLive } = req.body;
+    let transcript = rawTranscript as string | undefined;
+    let agentName = "Wireline Agent";
+    let archetype = "Receptionist";
+
+    if (callId) {
+      const { data: call } = await db.from("wireline_call_logs")
+        .select("transcript, agent_id")
+        .eq("id", callId).eq("user_id", req.user.id).single();
+      if (call) {
+        transcript = transcript || call.transcript;
+        const { data: a } = await db.from("wireline_agents")
+          .select("name, archetype").eq("id", call.agent_id).single();
+        if (a) { agentName = a.name; archetype = a.archetype; }
+      }
+    } else if (agentId) {
+      const { data: a } = await db.from("wireline_agents")
+        .select("name, archetype").eq("id", agentId).eq("user_id", req.user.id).single();
+      if (a) { agentName = a.name; archetype = a.archetype; }
+    }
+
+    if (!transcript) return res.status(400).json({ error: "Provide a transcript or callId." });
+
+    const result = await claudeBrain.coach({ agentName, archetype, transcript, isLive: !!isLive });
+    res.json({ coaching: result });
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Knowledge ingestion from URL — Claude fetches and extracts.
+app.post("/api/claude/knowledge-from-url", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { url, agentContext, maxEntries } = req.body;
+    if (!url || typeof url !== "string") return res.status(400).json({ error: "url required." });
+    try { new URL(url); } catch { return res.status(400).json({ error: "url is not a valid URL." }); }
+    const result = await claudeBrain.knowledgeFromUrl({ url, agentContext, maxEntries });
+    res.json(result);
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Apply a set of extracted knowledge entries to an agent.
+app.post("/api/claude/knowledge-from-url/apply", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { agentId, entries } = req.body;
+    if (!agentId || !Array.isArray(entries)) {
+      return res.status(400).json({ error: "agentId and entries[] required." });
+    }
+    const { data: agent } = await db.from("wireline_agents")
+      .select("id").eq("id", agentId).eq("user_id", req.user.id).single();
+    if (!agent) return res.status(404).json({ error: "Agent not found." });
+
+    const rows = entries
+      .filter((e: any) => typeof e?.fact === "string" && e.fact.trim())
+      .map((e: any) => ({
+        agent_id: agentId,
+        user_id: req.user.id,
+        content: e.fact.trim(),
+      }));
+    if (rows.length === 0) return res.status(400).json({ error: "No valid entries to insert." });
+    await db.from("wireline_knowledge").insert(rows);
+    res.json({ inserted: rows.length });
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Agent Forge — synthesize a complete agent draft from a goal.
+app.post("/api/claude/forge", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { goal, industry, companyName, websiteUrl, voicePreference } = req.body;
+    if (!goal) return res.status(400).json({ error: "goal required." });
+    const result = await claudeBrain.forgeAgent({ goal, industry, companyName, websiteUrl, voicePreference });
+    res.json({ design: result });
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// ──────────────────────────────────────────────────────────
+//  INSIGHTS — business intelligence the operator actually needs
+// ──────────────────────────────────────────────────────────
+
+// Tiny in-memory cache for the Claude-powered insights. Keyed by
+// (user_id, endpoint). 1-hour TTL is plenty — the underlying data
+// only changes when calls land, which is sub-daily for most SMBs.
+const insightCache = new Map<string, { ts: number; data: any }>();
+const INSIGHT_TTL_MS = 60 * 60 * 1000;
+function cachedInsight(key: string) {
+  const entry = insightCache.get(key);
+  return entry && Date.now() - entry.ts < INSIGHT_TTL_MS ? entry.data : null;
+}
+function setCachedInsight(key: string, data: any) {
+  insightCache.set(key, { ts: Date.now(), data });
+}
+
+// Conversion funnel — calls → connected → qualified → booked → completed.
+app.get("/api/insights/funnel", authenticateUser, async (req: any, res: any) => {
+  try {
+    const days = Math.min(parseInt((req.query.days as string) || "30"), 365);
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+    const [{ data: calls }, { data: appts }, { data: leads }] = await Promise.all([
+      db.from("wireline_call_logs").select("lead_score, intent_label, duration_seconds").eq("user_id", req.user.id).gte("created_at", since),
+      db.from("wireline_appointments").select("status").eq("user_id", req.user.id).gte("created_at", since),
+      db.from("wireline_outbound_leads").select("status").eq("user_id", req.user.id).gte("created_at", since),
+    ]);
+
+    const totalCalls = calls?.length || 0;
+    const connected = (calls || []).filter((c: any) => (c.duration_seconds || 0) > 10).length;
+    const qualified = (calls || []).filter((c: any) => (c.lead_score || 0) >= 50).length;
+    const highIntent = (calls || []).filter((c: any) => c.intent_label === "high").length;
+    const bookings = (appts || []).length;
+    const completed = (appts || []).filter((a: any) => a.status === "Completed").length;
+    const queuedLeads = (leads || []).filter((l: any) => l.status === "Pending" || l.status === "Queued").length;
+
+    res.json({
+      window_days: days,
+      stages: [
+        { name: "Queued",     count: queuedLeads },
+        { name: "Calls",      count: totalCalls },
+        { name: "Connected",  count: connected },
+        { name: "Qualified",  count: qualified },
+        { name: "High intent", count: highIntent },
+        { name: "Booked",     count: bookings },
+        { name: "Completed",  count: completed },
+      ],
+    });
+  } catch (e) { claudeErr(res, e); }
+});
+
+// Hour-of-day × day-of-week heatmap of call volume + lead score.
+app.get("/api/insights/heatmap", authenticateUser, async (req: any, res: any) => {
+  try {
+    const days = Math.min(parseInt((req.query.days as string) || "30"), 365);
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+    const { data: calls } = await db
+      .from("wireline_call_logs")
+      .select("created_at, lead_score")
+      .eq("user_id", req.user.id)
+      .gte("created_at", since);
+
+    // 7×24 grid: counts and avg lead score
+    const grid: { hour: number; weekday: number; count: number; avg_score: number }[] = [];
+    const buckets: Record<string, { c: number; s: number }> = {};
+    for (const c of calls || []) {
+      const d = new Date(c.created_at);
+      const key = `${d.getDay()}-${d.getHours()}`;
+      const b = buckets[key] || { c: 0, s: 0 };
+      b.c++;
+      b.s += c.lead_score || 0;
+      buckets[key] = b;
+    }
+    for (let w = 0; w < 7; w++) {
+      for (let h = 0; h < 24; h++) {
+        const b = buckets[`${w}-${h}`] || { c: 0, s: 0 };
+        grid.push({ weekday: w, hour: h, count: b.c, avg_score: b.c ? Math.round(b.s / b.c) : 0 });
+      }
+    }
+    res.json({ window_days: days, grid });
+  } catch (e) { claudeErr(res, e); }
+});
+
+// Per-agent leaderboard.
+app.get("/api/insights/leaderboard", authenticateUser, async (req: any, res: any) => {
+  try {
+    const days = Math.min(parseInt((req.query.days as string) || "30"), 365);
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+    const [{ data: agents }, { data: calls }, { data: appts }] = await Promise.all([
+      db.from("wireline_agents").select("id, name, archetype, channel").eq("user_id", req.user.id),
+      db.from("wireline_call_logs").select("agent_id, lead_score, intent_label, duration_seconds, cost").eq("user_id", req.user.id).gte("created_at", since),
+      db.from("wireline_appointments").select("agent_id").eq("user_id", req.user.id).gte("created_at", since),
+    ]);
+
+    const callsByAgent: Record<string, any[]> = {};
+    for (const c of calls || []) {
+      const id = c.agent_id || "unknown";
+      (callsByAgent[id] ||= []).push(c);
+    }
+    const apptsByAgent: Record<string, number> = {};
+    for (const a of appts || []) apptsByAgent[a.agent_id || "unknown"] = (apptsByAgent[a.agent_id || "unknown"] || 0) + 1;
+
+    const rows = (agents || []).map((a: any) => {
+      const calls = callsByAgent[a.id] || [];
+      const total = calls.length;
+      const qualified = calls.filter((c) => (c.lead_score || 0) >= 50).length;
+      const highIntent = calls.filter((c) => c.intent_label === "high").length;
+      const minutes = Math.round(calls.reduce((s, c) => s + (c.duration_seconds || 0), 0) / 60);
+      const cost = Number(calls.reduce((s, c) => s + Number(c.cost || 0), 0).toFixed(2));
+      const avgScore = total ? Math.round(calls.reduce((s, c) => s + (c.lead_score || 0), 0) / total) : 0;
+      const bookings = apptsByAgent[a.id] || 0;
+      const costPerQualified = qualified ? Number((cost / qualified).toFixed(2)) : 0;
+      return {
+        agent_id: a.id,
+        agent_name: a.name,
+        archetype: a.archetype,
+        channel: a.channel,
+        total_calls: total,
+        qualified,
+        high_intent: highIntent,
+        bookings,
+        avg_lead_score: avgScore,
+        minutes,
+        cost,
+        cost_per_qualified: costPerQualified,
+        conversion_rate: total ? Math.round((qualified / total) * 100) : 0,
+      };
+    }).sort((a: any, b: any) => b.qualified - a.qualified);
+
+    res.json({ window_days: days, agents: rows });
+  } catch (e) { claudeErr(res, e); }
+});
+
+// Topic clusters (Claude-powered, cached 1h per user).
+app.get("/api/insights/topics", authenticateUser, async (req: any, res: any) => {
+  try {
+    const force = req.query.refresh === "1";
+    const cacheKey = `topics:${req.user.id}`;
+    if (!force) {
+      const cached = cachedInsight(cacheKey);
+      if (cached) return res.json({ ...cached, cached: true });
+    }
+    if (!claudeBrain.isClaudeAvailable()) {
+      return res.status(503).json({ error: "Claude required for topic clustering.", code: "CLAUDE_OFFLINE" });
+    }
+    const { data: rows } = await db
+      .from("wireline_call_logs")
+      .select("summary, intent_label")
+      .eq("user_id", req.user.id)
+      .order("created_at", { ascending: false })
+      .limit(120);
+    if (!rows || rows.length < 3) {
+      return res.json({ topics: [], total_analyzed: rows?.length || 0, message: "Not enough data yet — run more calls." });
+    }
+    const result = await claudeBrain.clusterTopics({
+      summaries: rows.map((r: any) => ({ summary: r.summary || "", intent_label: r.intent_label })),
+      windowDays: 14,
+    });
+    setCachedInsight(cacheKey, result);
+    res.json({ ...result, cached: false });
+  } catch (e) { claudeErr(res, e); }
+});
+
+// Failure modes (Claude-powered, cached 1h per user).
+app.get("/api/insights/failure-modes", authenticateUser, async (req: any, res: any) => {
+  try {
+    const force = req.query.refresh === "1";
+    const cacheKey = `failures:${req.user.id}`;
+    if (!force) {
+      const cached = cachedInsight(cacheKey);
+      if (cached) return res.json({ ...cached, cached: true });
+    }
+    if (!claudeBrain.isClaudeAvailable()) {
+      return res.status(503).json({ error: "Claude required for failure analysis.", code: "CLAUDE_OFFLINE" });
+    }
+    const { data: rows } = await db
+      .from("wireline_call_logs")
+      .select("summary, transcript, lead_score, intent_label")
+      .eq("user_id", req.user.id)
+      .or("lead_score.lt.30,intent_label.eq.low,intent_label.eq.none")
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (!rows || rows.length < 2) {
+      return res.json({ modes: [], message: "Not enough failed calls yet — system is performing well." });
+    }
+    const result = await claudeBrain.clusterFailureModes({ failedCalls: rows as any });
+    setCachedInsight(cacheKey, result);
+    res.json({ ...result, cached: false });
+  } catch (e) { claudeErr(res, e); }
+});
+
+// Daily brief (Claude-powered, cached per-day).
+app.get("/api/insights/daily-brief", authenticateUser, async (req: any, res: any) => {
+  try {
+    const force = req.query.refresh === "1";
+    const today = new Date().toISOString().slice(0, 10);
+    const cacheKey = `brief:${req.user.id}:${today}`;
+    if (!force) {
+      const cached = cachedInsight(cacheKey);
+      if (cached) return res.json({ ...cached, cached: true });
+    }
+    if (!claudeBrain.isClaudeAvailable()) {
+      return res.status(503).json({ error: "Claude required for the daily brief.", code: "CLAUDE_OFFLINE" });
+    }
+
+    const yStart = new Date(); yStart.setHours(0, 0, 0, 0); yStart.setDate(yStart.getDate() - 1);
+    const yEnd   = new Date(yStart); yEnd.setDate(yEnd.getDate() + 1);
+    const wStart = new Date(); wStart.setDate(wStart.getDate() - 7);
+
+    const [{ data: yCalls }, { data: wCalls }, { data: appts }, { data: tasks }, { data: leads }, { data: wins }, { data: losses }] = await Promise.all([
+      db.from("wireline_call_logs").select("lead_score, intent_label, duration_seconds, cost, summary, customer_number").eq("user_id", req.user.id).gte("created_at", yStart.toISOString()).lt("created_at", yEnd.toISOString()),
+      db.from("wireline_call_logs").select("lead_score, duration_seconds, cost").eq("user_id", req.user.id).gte("created_at", wStart.toISOString()),
+      db.from("wireline_appointments").select("id").eq("user_id", req.user.id).gte("created_at", yStart.toISOString()).lt("created_at", yEnd.toISOString()),
+      db.from("wireline_fleet_tasks").select("priority, description").eq("user_id", req.user.id).eq("status", "pending").order("created_at", { ascending: false }).limit(8),
+      db.from("wireline_outbound_leads").select("id").eq("user_id", req.user.id).eq("status", "Pending"),
+      db.from("wireline_call_logs").select("customer_number, lead_score, summary").eq("user_id", req.user.id).gte("created_at", yStart.toISOString()).gte("lead_score", 70).order("lead_score", { ascending: false }).limit(3),
+      db.from("wireline_call_logs").select("customer_number, lead_score, summary").eq("user_id", req.user.id).gte("created_at", yStart.toISOString()).lt("lead_score", 30).order("created_at", { ascending: false }).limit(3),
+    ]);
+
+    const yTotal = yCalls?.length || 0;
+    const yMinutes = Math.round((yCalls || []).reduce((s: number, c: any) => s + (c.duration_seconds || 0), 0) / 60);
+    const yAvgScore = yTotal ? Math.round((yCalls || []).reduce((s: number, c: any) => s + (c.lead_score || 0), 0) / yTotal) : 0;
+    const yHighIntent = (yCalls || []).filter((c: any) => c.intent_label === "high").length;
+    const yCost = Number((yCalls || []).reduce((s: number, c: any) => s + Number(c.cost || 0), 0).toFixed(2));
+
+    const wDays = 7;
+    const wAvgPerDay = (wCalls?.length || 0) / wDays;
+    const wAvgScore = wCalls?.length ? (wCalls || []).reduce((s: number, c: any) => s + (c.lead_score || 0), 0) / wCalls.length : 0;
+    const wAvgCostPerDay = (wCalls || []).reduce((s: number, c: any) => s + Number(c.cost || 0), 0) / wDays;
+
+    const callsPct = wAvgPerDay > 0 ? ((yTotal - wAvgPerDay) / wAvgPerDay) * 100 : 0;
+    const scorePct = wAvgScore > 0 ? ((yAvgScore - wAvgScore) / wAvgScore) * 100 : 0;
+    const costPct = wAvgCostPerDay > 0 ? ((yCost - wAvgCostPerDay) / wAvgCostPerDay) * 100 : 0;
+
+    const result = await claudeBrain.dailyBrief({
+      yesterdayStats: {
+        total_calls: yTotal,
+        total_minutes: yMinutes,
+        avg_lead_score: yAvgScore,
+        high_intent_count: yHighIntent,
+        cost: yCost,
+        appointments_booked: appts?.length || 0,
+        pending_tasks: tasks?.length || 0,
+        new_leads: leads?.length || 0,
+      },
+      weekDelta: { calls_pct: callsPct, score_pct: scorePct, cost_pct: costPct },
+      recentWinSamples: (wins || []).map((w: any) => ({ customer: w.customer_number || "Unknown", score: w.lead_score || 0, summary: w.summary || "" })),
+      recentLossSamples: (losses || []).map((w: any) => ({ customer: w.customer_number || "Unknown", score: w.lead_score || 0, summary: w.summary || "" })),
+      openTasks: (tasks || []).map((t: any) => ({ priority: t.priority, description: t.description })),
+    });
+
+    const payload = {
+      brief: result,
+      stats_yesterday: {
+        total_calls: yTotal,
+        total_minutes: yMinutes,
+        avg_lead_score: yAvgScore,
+        high_intent_count: yHighIntent,
+        cost: yCost,
+        appointments_booked: appts?.length || 0,
+      },
+      week_delta: { calls_pct: callsPct, score_pct: scorePct, cost_pct: costPct },
+    };
+    setCachedInsight(cacheKey, payload);
+    res.json({ ...payload, cached: false });
+  } catch (e) { claudeErr(res, e); }
+});
+
+// ──────────────────────────────────────────────────────────
+//  TRIAGE INBOX — "what needs my attention right now"
+// ──────────────────────────────────────────────────────────
+
+app.get("/api/triage", authenticateUser, async (req: any, res: any) => {
+  try {
+    const [{ data: hotLeads }, { data: complianceTasks }, { data: pendingTasks }, { data: knowledgeGaps }, { data: escalations }] = await Promise.all([
+      // Calls with high lead score from the last 7 days that don't have a follow-up logged.
+      db.from("wireline_call_logs")
+        .select("id, agent_id, customer_number, lead_score, intent_label, summary, created_at")
+        .eq("user_id", req.user.id)
+        .gte("lead_score", 70)
+        .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+        .order("lead_score", { ascending: false })
+        .limit(30),
+      db.from("wireline_fleet_tasks")
+        .select("*")
+        .eq("user_id", req.user.id)
+        .eq("task_type", "compliance_review")
+        .eq("status", "pending")
+        .order("created_at", { ascending: false })
+        .limit(20),
+      db.from("wireline_fleet_tasks")
+        .select("*")
+        .eq("user_id", req.user.id)
+        .eq("status", "pending")
+        .neq("task_type", "compliance_review")
+        .order("created_at", { ascending: false })
+        .limit(30),
+      db.from("wireline_agent_lessons")
+        .select("id, agent_id, lesson, created_at")
+        .eq("user_id", req.user.id)
+        .like("lesson", "[KNOWLEDGE GAP]%")
+        .order("created_at", { ascending: false })
+        .limit(30),
+      db.from("wireline_call_logs")
+        .select("id, agent_id, customer_number, lead_score, summary, created_at")
+        .eq("user_id", req.user.id)
+        .or("intent_label.eq.escalation")
+        .order("created_at", { ascending: false })
+        .limit(20),
+    ]);
+
+    res.json({
+      hot_leads: hotLeads || [],
+      compliance: complianceTasks || [],
+      pending_tasks: pendingTasks || [],
+      knowledge_gaps: knowledgeGaps || [],
+      escalations: escalations || [],
+      counts: {
+        hot_leads: hotLeads?.length || 0,
+        compliance: complianceTasks?.length || 0,
+        pending_tasks: pendingTasks?.length || 0,
+        knowledge_gaps: knowledgeGaps?.length || 0,
+        escalations: escalations?.length || 0,
+      },
+    });
+  } catch (e) { claudeErr(res, e); }
+});
+
+// Promote a [KNOWLEDGE GAP] lesson into the agent's knowledge base.
+app.post("/api/knowledge-gaps/:lessonId/promote", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { customContent } = req.body;
+    const { data: lesson } = await db
+      .from("wireline_agent_lessons")
+      .select("id, agent_id, lesson, user_id")
+      .eq("id", req.params.lessonId)
+      .eq("user_id", req.user.id)
+      .single();
+    if (!lesson) return res.status(404).json({ error: "Lesson not found." });
+
+    const content =
+      customContent?.trim() ||
+      lesson.lesson.replace(/^\[KNOWLEDGE GAP\]\s*/, "").trim();
+
+    if (!content) return res.status(400).json({ error: "Content is empty." });
+
+    await db.from("wireline_knowledge").insert({
+      agent_id: lesson.agent_id,
+      user_id: req.user.id,
+      content,
+    });
+    await db.from("wireline_agent_lessons").delete().eq("id", lesson.id);
+    res.json({ success: true });
+  } catch (e) { claudeErr(res, e); }
+});
+
+// ──────────────────────────────────────────────────────────
+//  CONTACT PROFILE — unified per-customer history
+// ──────────────────────────────────────────────────────────
+
+app.get("/api/contacts/:number", authenticateUser, async (req: any, res: any) => {
+  try {
+    const number = decodeURIComponent(req.params.number);
+    // Strip non-digits then take the last 10 — gives us a normalized form.
+    const norm = number.replace(/\D/g, "").slice(-10);
+    if (!norm) return res.status(400).json({ error: "Invalid phone number." });
+
+    // Match: exact, or anything ending in the same last-10-digits.
+    const [{ data: calls }, { data: leads }, { data: appts }] = await Promise.all([
+      db.from("wireline_call_logs")
+        .select("id, agent_id, direction, customer_number, duration_seconds, cost, summary, transcript, recording_url, lead_score, intent_label, created_at")
+        .eq("user_id", req.user.id)
+        .ilike("customer_number", `%${norm}`)
+        .order("created_at", { ascending: false }),
+      db.from("wireline_outbound_leads")
+        .select("id, agent_id, customer_name, status, context, last_called_at, created_at, phone_number")
+        .eq("user_id", req.user.id)
+        .ilike("phone_number", `%${norm}`)
+        .order("created_at", { ascending: false }),
+      db.from("wireline_appointments")
+        .select("id, agent_id, customer_name, service_type, date, time, status, created_at")
+        .eq("user_id", req.user.id)
+        .order("created_at", { ascending: false }),
+    ]);
+
+    // The first lead/call gives us a candidate name.
+    const customerName =
+      leads?.[0]?.customer_name ||
+      appts?.[0]?.customer_name ||
+      null;
+
+    // Build a unified timeline.
+    const timeline: any[] = [];
+    for (const c of calls || []) {
+      timeline.push({
+        type: c.direction === "inbound" ? "call_in" : "call_out",
+        id: c.id,
+        ts: c.created_at,
+        duration_seconds: c.duration_seconds,
+        cost: c.cost,
+        summary: c.summary,
+        lead_score: c.lead_score,
+        intent_label: c.intent_label,
+        recording_url: c.recording_url,
+        agent_id: c.agent_id,
+      });
+    }
+    for (const a of appts || []) {
+      // Only include appointments where the customer name matches one of our leads/calls
+      if (customerName && a.customer_name && a.customer_name.toLowerCase().trim() === customerName.toLowerCase().trim()) {
+        timeline.push({
+          type: "appointment",
+          id: a.id,
+          ts: a.created_at,
+          summary: `${a.service_type} — ${a.date} ${a.time}`,
+          status: a.status,
+          agent_id: a.agent_id,
+        });
+      }
+    }
+    timeline.sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime());
+
+    const totalCalls = calls?.length || 0;
+    const totalMinutes = Math.round((calls || []).reduce((s: number, c: any) => s + (c.duration_seconds || 0), 0) / 60);
+    const totalCost = Number((calls || []).reduce((s: number, c: any) => s + Number(c.cost || 0), 0).toFixed(2));
+    const avgScore = totalCalls ? Math.round((calls || []).reduce((s: number, c: any) => s + (c.lead_score || 0), 0) / totalCalls) : 0;
+    const lastTouch = calls?.[0]?.created_at || leads?.[0]?.created_at || null;
+
+    res.json({
+      number: number,
+      normalized: norm,
+      customer_name: customerName,
+      stats: {
+        total_calls: totalCalls,
+        total_minutes: totalMinutes,
+        total_cost: totalCost,
+        avg_lead_score: avgScore,
+        last_touch: lastTouch,
+        outbound_leads: leads?.length || 0,
+        appointments: appts?.filter((a: any) => customerName && a.customer_name?.toLowerCase().trim() === customerName.toLowerCase().trim()).length || 0,
+      },
+      timeline,
+      leads: leads || [],
+      appointments: (appts || []).filter((a: any) => customerName && a.customer_name?.toLowerCase().trim() === customerName.toLowerCase().trim()),
+    });
+  } catch (e) { claudeErr(res, e); }
+});
+
+// Agent Forge — create the actual agent + seed personality, directives, knowledge.
+app.post("/api/claude/forge/create", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { design, websiteUrl } = req.body;
+    if (!design || !design.name) return res.status(400).json({ error: "design with name required." });
+
+    const agentId = `agent-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+
+    const { error: agentErr } = await db.from("wireline_agents").insert({
+      id: agentId,
+      user_id: req.user.id,
+      name: design.name,
+      archetype: design.archetype || "Receptionist",
+      first_message: design.first_message || `Hi, this is ${design.name}. How can I help?`,
+      website_url: websiteUrl || null,
+      channel: "voice",
+    });
+    if (agentErr) throw agentErr;
+
+    if (design.personality_block) {
+      await db.from("wireline_personality").upsert({
+        agent_id: agentId,
+        user_id: req.user.id,
+        content: design.personality_block,
+      });
+    }
+
+    const directiveRows = (design.directives || []).map((d: any) => ({
+      agent_id: agentId,
+      user_id: req.user.id,
+      content: d.content,
+      priority: d.priority ?? 5,
+    }));
+    if (directiveRows.length) await db.from("wireline_directives").insert(directiveRows);
+
+    const knowledgeRows = (design.seed_knowledge || []).map((k: string) => ({
+      agent_id: agentId,
+      user_id: req.user.id,
+      content: k,
+    }));
+    if (knowledgeRows.length) await db.from("wireline_knowledge").insert(knowledgeRows);
+
+    res.json({ success: true, agentId });
+  } catch (e) {
+    claudeErr(res, e);
+  }
 });
 
 app.listen(PORT, "0.0.0.0", () => {

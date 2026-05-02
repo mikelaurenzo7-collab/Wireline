@@ -112,14 +112,14 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
                              <button 
                                onClick={() => promoteToDirective(lesson)}
                                disabled={isPromoting === lesson.id}
-                               className="p-2 brutal-border border-2 bg-white hover:bg-brand text-ink transition-all hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_rgba(10,10,10,1)] active:translate-x-0 active:translate-y-0 active:shadow-none disabled:opacity-50"
+                               className="p-2 brutal-border border-2 bg-white hover:bg-brand text-ink transition-all hover:translate-x-[-2px] hover:translate-y-[-2px] active:translate-x-0 active:translate-y-0 active:shadow-none disabled:opacity-50"
                                title="Promote to Absolute Rule"
                              >
                                 {isPromoting === lesson.id ? <Loader2 className="w-4 h-4 animate-spin text-ink" /> : <ArrowUpCircle className="w-4 h-4" />}
                              </button>
                              <button 
                                onClick={() => deleteLesson(lesson.id)}
-                               className="p-2 brutal-border border-2 bg-white hover:bg-rose-500 text-ink hover:text-white transition-all hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_rgba(10,10,10,1)] active:translate-x-0 active:translate-y-0 active:shadow-none"
+                               className="p-2 brutal-border border-2 bg-white hover:bg-rose-500 text-ink hover:text-white transition-all hover:translate-x-[-2px] hover:translate-y-[-2px] active:translate-x-0 active:translate-y-0 active:shadow-none"
                              >
                                 <Trash2 className="w-4 h-4" />
                              </button>
