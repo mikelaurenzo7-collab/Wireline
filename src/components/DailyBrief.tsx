@@ -1,0 +1,217 @@
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { motion } from "motion/react";
+import {
+  Sparkles, Loader2, RefreshCw, AlertTriangle, Sun, Brain,
+  TrendingUp, TrendingDown, Activity, ChevronRight, Zap
+} from "lucide-react";
+import { authFetch } from "../lib/api";
+import { cn } from "../lib/utils";
+
+interface BriefData {
+  brief: {
+    headline: string;
+    mood: "green" | "yellow" | "red";
+    key_metrics_takeaway: string;
+    highlights: string[];
+    concerns: string[];
+    action_items: Array<{ description: string; urgency: "high" | "medium" | "low" }>;
+  };
+  stats_yesterday: {
+    total_calls: number;
+    total_minutes: number;
+    avg_lead_score: number;
+    high_intent_count: number;
+    cost: number;
+    appointments_booked: number;
+  };
+  week_delta: {
+    calls_pct: number;
+    score_pct: number;
+    cost_pct: number;
+  };
+  cached?: boolean;
+}
+
+export default function DailyBrief() {
+  const [data, setData] = useState<BriefData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+  const [needsKey, setNeedsKey] = useState(false);
+
+  const load = async (refresh = false) => {
+    setLoading(true); setErr(null);
+    try {
+      const r = await authFetch(`/api/insights/daily-brief${refresh ? "?refresh=1" : ""}`);
+      const d = await r.json();
+      if (r.status === 503) { setNeedsKey(true); return; }
+      if (!r.ok) throw new Error(d.error);
+      setData(d);
+    } catch (e: any) { setErr(e.message); } finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  if (needsKey) return (
+    <div className="relative aurora-ring rounded-3xl">
+      <div className="relative p-7 rounded-3xl glass overflow-hidden flex items-center gap-5">
+        <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #C58BFF, #FF6BD9)" }}>
+          <Brain className="w-7 h-7 text-paper" />
+        </div>
+        <div className="flex-1">
+          <h3 className="font-display italic text-2xl text-ink leading-tight">Daily Brief is offline</h3>
+          <p className="text-sm text-ink/55">Set <code className="text-brand font-mono text-xs">ANTHROPIC_API_KEY</code> to receive Claude's morning summary.</p>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (loading && !data) return (
+    <div className="rounded-3xl glass border border-white/10 p-8 flex items-center gap-4">
+      <Loader2 className="w-5 h-5 animate-spin text-brand" />
+      <span className="text-[11px] uppercase tracking-[0.4em] text-muted">Claude is reading the room</span>
+    </div>
+  );
+
+  if (err && !data) return (
+    <div className="rounded-2xl bg-rose-500/10 border border-rose-500/30 p-5 flex items-start gap-3">
+      <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+      <span className="text-sm text-rose-500">{err}</span>
+    </div>
+  );
+
+  if (!data) return null;
+
+  const moodAccent = data.brief.mood === "green" ? "#4DFFC4" : data.brief.mood === "yellow" ? "#FFC07D" : "#FF6BD9";
+  const moodLabel = data.brief.mood === "green" ? "All systems go" : data.brief.mood === "yellow" ? "Watch closely" : "Needs attention";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+      className="relative aurora-ring rounded-3xl"
+    >
+      <div className="relative rounded-3xl glass-strong overflow-hidden">
+        <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-30 blur-3xl pointer-events-none" style={{ background: `radial-gradient(circle, ${moodAccent}, transparent)` }} />
+        <div className="absolute -bottom-32 -left-32 w-72 h-72 rounded-full opacity-25 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #C58BFF, transparent)" }} />
+
+        <div className="relative z-10 px-7 py-5 border-b border-white/8 flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${moodAccent}, ${moodAccent}aa)` }}>
+              <Sun className="w-5 h-5 text-paper" />
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.4em] text-brand flex items-center gap-2">
+                <Brain className="w-3 h-3" /> Daily Brief · {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+              </div>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="w-2 h-2 rounded-full" style={{ background: moodAccent, boxShadow: `0 0 12px ${moodAccent}` }} />
+                <span className="text-[10px] uppercase tracking-[0.3em] text-ink/70">{moodLabel}</span>
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => load(true)}
+            disabled={loading}
+            className="px-3 py-1.5 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5 disabled:opacity-50"
+          >
+            {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+            {data.cached ? "Refresh" : "Cached"}
+          </button>
+        </div>
+
+        <div className="relative z-10 p-7 space-y-7">
+          {/* Headline */}
+          <div className="space-y-3">
+            <h2 className="font-display italic text-3xl md:text-5xl text-ink leading-tight">{data.brief.headline}</h2>
+            <p className="text-ink/60 text-sm md:text-base leading-relaxed max-w-3xl">{data.brief.key_metrics_takeaway}</p>
+          </div>
+
+          {/* Quick stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Quick label="Calls"        value={data.stats_yesterday.total_calls}        delta={data.week_delta.calls_pct} />
+            <Quick label="Avg Score"    value={data.stats_yesterday.avg_lead_score}     delta={data.week_delta.score_pct} />
+            <Quick label="High Intent"  value={data.stats_yesterday.high_intent_count} />
+            <Quick label="Spend"        value={`$${data.stats_yesterday.cost.toFixed(2)}`} delta={data.week_delta.cost_pct} invertDelta />
+          </div>
+
+          {/* Highlights & Concerns */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {data.brief.highlights.length > 0 && (
+              <Section title="Highlights" icon={Sparkles} accent="#4DFFC4">
+                {data.brief.highlights.map((h, i) => <li key={i}>{h}</li>)}
+              </Section>
+            )}
+            {data.brief.concerns.length > 0 && (
+              <Section title="Concerns" icon={AlertTriangle} accent="#FF6BD9">
+                {data.brief.concerns.map((c, i) => <li key={i}>{c}</li>)}
+              </Section>
+            )}
+          </div>
+
+          {/* Action items */}
+          {data.brief.action_items.length > 0 && (
+            <div className="space-y-2.5">
+              <h4 className="text-[10px] uppercase tracking-[0.4em] text-brand flex items-center gap-2">
+                <Zap className="w-3 h-3" /> Do today
+              </h4>
+              <div className="space-y-2">
+                {data.brief.action_items.map((a, i) => (
+                  <div key={i} className="rounded-xl glass border border-white/10 p-4 flex items-start gap-3">
+                    <span className={cn(
+                      "shrink-0 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] mt-0.5",
+                      a.urgency === "high"   && "bg-rose-500/15 text-rose-500 border border-rose-500/30",
+                      a.urgency === "medium" && "bg-brand/15 text-brand border border-brand/30",
+                      a.urgency === "low"    && "bg-zinc-500/15 text-zinc-300 border border-zinc-500/30",
+                    )}>{a.urgency}</span>
+                    <p className="text-sm text-ink/90 flex-1">{a.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <Link to="/triage" className="inline-flex items-center gap-2 px-5 py-3 rounded-full glass border border-brand/30 hover:bg-brand/10 transition-all text-[11px] uppercase tracking-[0.3em] text-brand">
+            Open Triage Inbox <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function Quick({ label, value, delta, invertDelta }: { label: string; value: any; delta?: number; invertDelta?: boolean }) {
+  const showDelta = delta !== undefined && Math.abs(delta) >= 0.5;
+  const isUp = (delta ?? 0) > 0;
+  // For "spend", going up is bad — invert the color sense.
+  const isGood = invertDelta ? !isUp : isUp;
+  return (
+    <div className="rounded-2xl glass border border-white/10 p-4">
+      <div className="text-[10px] uppercase tracking-[0.3em] text-muted mb-2">{label}</div>
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="font-display italic text-3xl text-ink">{value}</span>
+        {showDelta && (
+          <span className={cn(
+            "text-[10px] uppercase tracking-[0.2em] flex items-center gap-1",
+            isGood ? "text-emerald-500" : "text-rose-500",
+          )}>
+            {isUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+            {Math.abs(Math.round(delta!))}%
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Section({ title, icon: Icon, accent, children }: { title: string; icon: any; accent: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-2xl glass border border-white/10 p-5">
+      <h4 className="text-[10px] uppercase tracking-[0.4em] mb-3 flex items-center gap-2" style={{ color: accent }}>
+        <Icon className="w-3 h-3" /> {title}
+      </h4>
+      <ul className="space-y-1.5 text-sm text-ink/85 list-disc list-inside marker:text-brand/50">
+        {children}
+      </ul>
+    </div>
+  );
+}

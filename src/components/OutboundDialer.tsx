@@ -4,6 +4,9 @@ import { motion, AnimatePresence } from "motion/react";
 import Papa from "papaparse";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
+import { Link } from "react-router-dom";
+import { ClaudeRecipeButton } from "./ClaudeRecipes";
+import CsvExportButton from "./CsvExportButton";
 
 export default function OutboundDialer() {
   const [isLoading, setIsLoading] = useState(true);
@@ -177,11 +180,12 @@ export default function OutboundDialer() {
           </p>
         </div>
         
-        <div className="flex items-center gap-6 w-full lg:w-auto">
+        <div className="flex items-center gap-3 w-full lg:w-auto flex-wrap">
            <div className="bg-white p-2 brutal-border border-4 shadow-none flex">
               <button onClick={() => setMode("single")} className={cn("px-10 py-4 text-[10px] font-black uppercase tracking-[0.3em] transition-all italic", mode === "single" ? "bg-ink text-brand" : "text-muted hover:text-ink")}>DISCRETE_THREAD</button>
               <button onClick={() => setMode("bulk")} className={cn("px-10 py-4 text-[10px] font-black uppercase tracking-[0.3em] transition-all italic", mode === "bulk" ? "bg-ink text-brand" : "text-muted hover:text-ink")}>BATCH_ARCHIVE</button>
            </div>
+           <CsvExportButton type="leads" label="Export Leads" />
         </div>
       </header>
 
@@ -195,7 +199,7 @@ export default function OutboundDialer() {
           
           {/* Configuration Panel */}
           <div className="xl:col-span-5">
-             <div className="bg-white brutal-border border-8 shadow-[24px_24px_0px_0px_rgba(10,10,10,1)] sticky top-32 overflow-hidden flex flex-col">
+             <div className="bg-white brutal-border border-8 sticky top-32 overflow-hidden flex flex-col">
                  <div className="p-10 border-b-8 border-ink bg-zinc-950 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                        <Zap className="w-6 h-6 text-brand" />
@@ -248,7 +252,7 @@ export default function OutboundDialer() {
                         <button 
                           onClick={dispatchCall} 
                           disabled={isDialing || !customerNumber}
-                          className="w-full h-24 bg-zinc-950 text-brand brutal-border border-4 flex justify-center items-center gap-6 hover:bg-black disabled:opacity-50 font-black uppercase tracking-[0.4em] shadow-[12px_12px_0px_0px_rgba(212,255,77,1)] text-lg italic transition-all active:translate-x-1 active:translate-y-1 active:shadow-none"
+                          className="w-full h-24 bg-zinc-950 text-brand brutal-border border-4 flex justify-center items-center gap-6 hover:bg-black disabled:opacity-50 font-black uppercase tracking-[0.4em] text-lg italic transition-all active:translate-x-1 active:translate-y-1 active:shadow-none"
                         >
                           {isDialing ? <><Loader2 className="w-8 h-8 animate-spin" /> DISPATCHING_RELAY...</> : <><Search className="w-8 h-8" /> INITIATE_SIGNAL</>}
                         </button>
@@ -323,7 +327,7 @@ export default function OutboundDialer() {
 
           {/* Operations Queue */}
           <div className="xl:col-span-7">
-             <div className="bg-white brutal-border border-8 shadow-[24px_24px_0px_0px_rgba(10,10,10,1)] overflow-hidden min-h-[800px] flex flex-col relative animate-in fade-in slide-in-from-right-10 duration-700">
+             <div className="bg-white brutal-border border-8 overflow-hidden min-h-[800px] flex flex-col relative animate-in fade-in slide-in-from-right-10 duration-700">
                 <div className="absolute inset-0 bg-ink/5 -skew-x-12 translate-x-[50%] pointer-events-none" />
                 <div className="p-10 md:p-14 border-b-8 border-ink bg-zinc-950 flex flex-col md:flex-row justify-between items-center gap-8 shrink-0 relative z-10 overflow-hidden">
                   <div className="absolute top-0 right-0 p-8 opacity-10">
@@ -341,7 +345,7 @@ export default function OutboundDialer() {
                      <button 
                        onClick={launchQueue} 
                        disabled={isDialing}
-                       className="w-full md:w-auto h-20 bg-brand text-ink px-10 border-4 border-ink text-sm font-black uppercase tracking-[0.3em] shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] hover:shadow-none transition-all flex items-center justify-center gap-6 active:translate-x-1 active:translate-y-1 italic relative z-10"
+                       className="w-full md:w-auto h-20 bg-brand text-ink px-10 border-4 border-ink text-sm font-black uppercase tracking-[0.3em] hover:shadow-none transition-all flex items-center justify-center gap-6 active:translate-x-1 active:translate-y-1 italic relative z-10"
                      >
                         {isDialing ? <Loader2 className="w-6 h-6 animate-spin" /> : <Radar className="w-6 h-6 animate-pulse" />}
                         SEQUENTIAL_DISPATCH ({leads.filter(l => l.status === "Queued").length})
@@ -353,7 +357,7 @@ export default function OutboundDialer() {
                 <AnimatePresence mode="popLayout">
                   {leads.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full p-24 md:p-40 text-center">
-                      <div className="w-32 h-32 md:w-48 md:h-48 bg-paper brutal-border border-8 flex items-center justify-center mb-12 shadow-[16px_16px_0px_0px_rgba(10,10,10,1)] group hover:-rotate-6 transition-transform">
+                      <div className="w-32 h-32 md:w-48 md:h-48 bg-paper brutal-border border-8 flex items-center justify-center mb-12 group hover:-rotate-6 transition-transform">
                           <Target className="w-16 h-16 md:w-24 md:h-24 text-zinc-100 group-hover:text-brand transition-colors" />
                       </div>
                       <div className="space-y-6">
@@ -378,7 +382,7 @@ export default function OutboundDialer() {
                         >
                           <div className="flex-2 min-w-0 w-full sm:w-auto space-y-6">
                             <div className="flex flex-wrap items-center gap-6">
-                               <div className="w-1.5 h-10 bg-ink shadow-[2px_2px_0px_0px_rgba(10,10,10,1)]" />
+                               <div className="w-1.5 h-10 bg-ink" />
                                <h3 className="font-black text-ink text-3xl md:text-5xl uppercase tracking-tighter font-display italic leading-[0.8] truncate group-hover:translate-x-2 transition-transform">{lead.customer_name || "SUBJECT_UNKNOWN"}</h3>
                             </div>
                             <div className="flex flex-wrap items-center gap-8 pl-10">
@@ -390,19 +394,34 @@ export default function OutboundDialer() {
                                )}>
                                   <div className="w-2 h-2 bg-current rounded-full" /> {lead.status}
                                </div>
-                               <span className="text-ink font-mono font-black border-4 border-ink px-4 py-1 text-sm bg-paper shadow-none">{lead.customer_number}</span>
+                               <Link
+                                 to={`/contact/${encodeURIComponent(lead.phone_number || lead.customer_number || "unknown")}`}
+                                 className="px-3 py-1 rounded-full glass border border-brand/30 hover:bg-brand/10 hover:border-brand/60 transition-all text-xs text-brand font-mono"
+                               >
+                                 {lead.phone_number || lead.customer_number}
+                               </Link>
                                <span className="text-[10px] font-black text-muted uppercase tracking-[0.4em] italic hidden md:inline">RELAY_TARGET: AGENT_{lead.agent_id?.substring(0,8).toUpperCase()}</span>
                             </div>
                           </div>
 
-                          <div className="shrink-0 flex items-center gap-6">
+                          <div className="shrink-0 flex items-center gap-3">
+                             <ClaudeRecipeButton
+                                recipe="brief"
+                                agentId={selectedAgentId}
+                                initial={{
+                                   customerName: lead.customer_name,
+                                   customerNumber: lead.phone_number,
+                                   reasonForCall: lead.context,
+                                }}
+                                label="Brief"
+                             />
                              {lead.status === 'Queued' && (
-                                <button className="w-16 h-16 bg-zinc-950 text-brand brutal-border border-4 flex items-center justify-center shadow-[6px_6px_0px_0px_rgba(212,255,77,1)] hover:shadow-none hover:bg-brand hover:text-ink transition-all active:translate-x-1 active:translate-y-1">
-                                   <Share2 className="w-8 h-8" />
+                                <button className="w-12 h-12 rounded-full glass border border-white/10 flex items-center justify-center text-ink/70 hover:border-brand/40 hover:text-brand transition-all">
+                                   <Share2 className="w-5 h-5" />
                                 </button>
                              )}
-                             <div className="w-20 h-20 bg-paper brutal-border border-4 flex items-center justify-center shadow-none group-hover:bg-ink group-hover:text-brand transition-all">
-                                <Terminal className="w-10 h-10" />
+                             <div className="w-12 h-12 rounded-full glass border border-white/10 flex items-center justify-center text-ink/70 group-hover:border-brand/40 group-hover:text-brand transition-all">
+                                <Terminal className="w-5 h-5" />
                              </div>
                           </div>
                         </motion.div>

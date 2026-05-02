@@ -110,7 +110,7 @@ export default function FleetTaskBridge() {
         <div className="flex items-center gap-6 w-full lg:w-auto">
           <button 
             onClick={fetchTasks} 
-            className="w-16 h-16 brutal-border border-4 bg-white flex items-center justify-center hover:bg-brand transition-all shadow-[8px_8px_0px_0px_rgba(10,10,10,1)] hover:shadow-none translate-x-[-4px] translate-y-[-4px] active:translate-x-1 active:translate-y-1"
+            className="w-16 h-16 brutal-border border-4 bg-white flex items-center justify-center hover:bg-brand transition-all hover:shadow-none translate-x-[-4px] translate-y-[-4px] active:translate-x-1 active:translate-y-1"
           >
             <Clock className={cn("w-8 h-8", loading && "animate-spin")} />
           </button>
@@ -132,9 +132,9 @@ export default function FleetTaskBridge() {
             <motion.div 
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="p-32 text-center bg-white brutal-border border-8 shadow-[24px_24px_0px_0px_rgba(212,255,77,1)] space-y-12"
+              className="p-32 text-center bg-white brutal-border border-8 space-y-12"
             >
-              <div className="w-32 h-32 md:w-48 md:h-48 bg-brand brutal-border border-8 flex items-center justify-center mx-auto shadow-[16px_16px_0px_0px_rgba(10,10,10,1)] group hover:-rotate-6 transition-transform">
+              <div className="w-32 h-32 md:w-48 md:h-48 bg-brand brutal-border border-8 flex items-center justify-center mx-auto group hover:-rotate-6 transition-transform">
                  <CheckCircle2 className="w-16 h-16 md:w-24 md:h-24 text-ink" />
               </div>
               <div className="space-y-6">
@@ -154,15 +154,15 @@ export default function FleetTaskBridge() {
                   key={task.id} 
                   className={cn(
                     "bg-white brutal-border border-8 p-10 md:p-14 transition-all relative overflow-hidden group",
-                    task.status === 'completed' ? "bg-zinc-50 border-zinc-100 opacity-60 grayscale shadow-none" : "shadow-[16px_16px_0px_0px_rgba(10,10,10,1)]",
-                    task.priority === 'high' && task.status !== 'completed' && "border-rose-500 shadow-[16px_16px_0px_0px_rgba(244,63,94,1)]"
+                    task.status === 'completed' ? "bg-zinc-50 border-zinc-100 opacity-60 grayscale shadow-none" : "",
+                    task.priority === 'high' && task.status !== 'completed' && "border-rose-500 "
                   )}
                 >
                   <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-12 group/card">
                     <div className="flex flex-col md:flex-row items-center md:items-center gap-10 flex-1 min-w-0 w-full">
                       <div className="flex items-center gap-6 shrink-0 relative">
                         <div className={cn(
-                          "w-20 h-20 md:w-24 md:h-24 brutal-border border-4 flex items-center justify-center shrink-0 shadow-[8px_8px_0px_0px_rgba(10,10,10,1)] group-hover:translate-x-[-4px] group-hover:translate-y-[-4px] group-hover:shadow-none transition-all",
+                          "w-20 h-20 md:w-24 md:h-24 brutal-border border-4 flex items-center justify-center shrink-0  group-hover:translate-x-[-4px] group-hover:translate-y-[-4px] group-hover:shadow-none transition-all",
                           task.source_type === 'phone_call' ? "bg-brand text-ink" : "bg-zinc-950 text-white"
                         )}>
                           {task.source_type === 'phone_call' ? <Phone className="w-10 h-10" /> : <Mail className="w-10 h-10" />}
@@ -173,7 +173,7 @@ export default function FleetTaskBridge() {
                         </div>
 
                         <div className={cn(
-                          "w-20 h-20 md:w-24 md:h-24 brutal-border border-4 flex items-center justify-center shrink-0 shadow-[8px_8px_0px_0px_rgba(10,10,10,1)] group-hover:translate-x-[-4px] group-hover:translate-y-[-4px] group-hover:shadow-none transition-all",
+                          "w-20 h-20 md:w-24 md:h-24 brutal-border border-4 flex items-center justify-center shrink-0  group-hover:translate-x-[-4px] group-hover:translate-y-[-4px] group-hover:shadow-none transition-all",
                           task.target_channel === 'email' ? "bg-zinc-950 text-white" : "bg-brand text-ink"
                         )}>
                           {task.target_channel === 'email' ? <Mail className="w-10 h-10" /> : <Phone className="w-10 h-10" />}
@@ -274,7 +274,7 @@ export default function FleetTaskBridge() {
                             </div>
                             <button 
                               onClick={() => updateStatus(task.id, 'completed')}
-                              className="w-full h-16 bg-zinc-950 text-brand brutal-border border-4 flex items-center justify-center gap-6 shadow-[8px_8px_0px_0px_rgba(212,255,77,1)] hover:shadow-none hover:bg-black transition-all active:translate-x-1 active:translate-y-1 text-xs font-black uppercase tracking-[0.4em] italic"
+                              className="w-full h-16 bg-zinc-950 text-brand brutal-border border-4 flex items-center justify-center gap-6 hover:shadow-none hover:bg-black transition-all active:translate-x-1 active:translate-y-1 text-xs font-black uppercase tracking-[0.4em] italic"
                             >
                                <CheckCircle2 className="w-6 h-6" /> CONFIRM_PROCESSING
                             </button>

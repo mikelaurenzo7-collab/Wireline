@@ -100,7 +100,8 @@ CREATE TABLE IF NOT EXISTS wireline_call_logs (
 CREATE TABLE IF NOT EXISTS wireline_email_accounts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID DEFAULT auth.uid(),
-    email TEXT UNIQUE NOT NULL,
+    email_address TEXT UNIQUE NOT NULL,
+    provider TEXT DEFAULT 'google',
     access_token TEXT,
     refresh_token TEXT,
     expires_at BIGINT,
@@ -166,9 +167,12 @@ CREATE TABLE IF NOT EXISTS wireline_outbound_leads (
     user_id UUID DEFAULT auth.uid(),
     agent_id TEXT REFERENCES wireline_agents(id),
     phone_number TEXT,
+    customer_number TEXT,
     customer_name TEXT,
+    context TEXT,
     status TEXT DEFAULT 'Pending',
     call_id TEXT,
+    last_called_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -220,4 +224,29 @@ CREATE POLICY "Users can manage their own fleet tasks" ON wireline_fleet_tasks F
 CREATE POLICY "Users can manage their own phone numbers" ON wireline_phone_numbers FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "Users can manage their own leads" ON wireline_outbound_leads FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "Users can manage their own presence signals" ON wireline_signal_presence FOR ALL USING (auth.uid() = user_id);
+
+-- ────────────────────────────────────────────────────────────────────
+-- 11. IDEMPOTENT MIGRATIONS — safe to re-run on existing installs.
+-- ────────────────────────────────────────────────────────────────────
+
+-- Outbound leads: add customer_number, context, last_called_at if missing.
+ALTER TABLE wireline_outbound_leads ADD COLUMN IF NOT EXISTS customer_number TEXT;
+ALTER TABLE wireline_outbound_leads ADD COLUMN IF NOT EXISTS context TEXT;
+ALTER TABLE wireline_outbound_leads ADD COLUMN IF NOT EXISTS last_called_at TIMESTAMPTZ;
+
+-- Email accounts: rename email → email_address (idempotent) and add provider.
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'wireline_email_accounts' AND column_name = 'email'
+    ) AND NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'wireline_email_accounts' AND column_name = 'email_address'
+    ) THEN
+        ALTER TABLE wireline_email_accounts RENAME COLUMN email TO email_address;
+    END IF;
+END $$;
+ALTER TABLE wireline_email_accounts ADD COLUMN IF NOT EXISTS email_address TEXT;
+ALTER TABLE wireline_email_accounts ADD COLUMN IF NOT EXISTS provider TEXT DEFAULT 'google';
 

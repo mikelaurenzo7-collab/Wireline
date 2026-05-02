@@ -161,7 +161,7 @@ export default function AdminSettings() {
               className="grid grid-cols-1 xl:grid-cols-2 gap-16 items-start"
             >
               {/* Carrier Config Card */}
-              <div className="bg-white brutal-border border-8 p-12 md:p-16 shadow-[24px_24px_0px_0px_rgba(10,10,10,1)] relative overflow-hidden group">
+              <div className="bg-white brutal-border border-8 p-12 md:p-16 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 p-16 opacity-5 pointer-events-none group-hover:rotate-12 transition-transform">
                    <ServerCog className="w-64 h-64 text-zinc-950" />
                 </div>
@@ -201,7 +201,7 @@ export default function AdminSettings() {
                       type="text" 
                       value={settings.vapi_phone_number_id} 
                       onChange={e => setSettings({...settings, vapi_phone_number_id: e.target.value})} 
-                      className="w-full p-8 brutal-border border-4 outline-none focus:bg-brand font-black text-ink uppercase tracking-widest text-xl bg-paper shadow-[8px_8px_0px_0px_rgba(10,10,10,1)] font-mono h-24 placeholder:text-zinc-100 italic" 
+                      className="w-full p-8 brutal-border border-4 outline-none focus:bg-brand font-black text-ink uppercase tracking-widest text-xl bg-paper font-mono h-24 placeholder:text-zinc-100 italic" 
                       placeholder="E.G. DEPLOYMENT_HEX_CODE" 
                     />
                   </div>
@@ -210,7 +210,7 @@ export default function AdminSettings() {
                       <button 
                         onClick={saveSettings} 
                         disabled={isSaving}
-                        className="brutal-btn !bg-ink !text-brand !py-6 !px-12 flex items-center gap-6 active:translate-x-1 active:translate-y-1 active:shadow-none text-sm uppercase font-black tracking-[0.3em] italic shadow-[12px_12px_0px_0px_rgba(212,255,77,1)] hover:shadow-none transition-all w-full md:w-auto"
+                        className="brutal-btn !bg-ink !text-brand !py-6 !px-12 flex items-center gap-6 active:translate-x-1 active:translate-y-1 active:shadow-none text-sm uppercase font-black tracking-[0.3em] italic hover:shadow-none transition-all w-full md:w-auto"
                       >
                         {isSaving ? <Loader2 className="w-6 h-6 animate-spin" /> : <KeyRound className="w-6 h-6" />}
                         COMMIT_CHANGES
@@ -232,7 +232,7 @@ export default function AdminSettings() {
               </div>
 
               {/* Carrier Hub & Routing */}
-              <div className="bg-white brutal-border border-8 p-12 md:p-16 shadow-[24px_24px_0px_0px_rgba(212,255,77,1)] border-ink relative overflow-hidden group">
+              <div className="bg-white brutal-border border-8 p-12 md:p-16 border-ink relative overflow-hidden group">
                  <div className="absolute top-0 right-0 p-16 opacity-5 pointer-events-none group-hover:rotate-12 transition-transform">
                    <Globe className="w-64 h-64 text-zinc-950" />
                 </div>
@@ -350,7 +350,7 @@ export default function AdminSettings() {
                       <button 
                          onClick={addPhoneNumber}
                          disabled={!newNumber || !newNumberVapiId}
-                         className="brutal-btn !bg-ink !text-brand !py-6 w-full flex justify-center items-center gap-6 active:translate-x-1 active:translate-y-1 shadow-[12px_12px_0px_0px_rgba(212,255,77,1)] hover:shadow-none disabled:opacity-30 text-xs font-black uppercase tracking-[0.4em] italic border-4"
+                         className="brutal-btn !bg-ink !text-brand !py-6 w-full flex justify-center items-center gap-6 active:translate-x-1 active:translate-y-1 hover:shadow-none disabled:opacity-30 text-xs font-black uppercase tracking-[0.4em] italic border-4"
                       >
                          <Shield className="w-6 h-6" /> REGISTER_TO_FLEET_CORE
                       </button>
@@ -367,7 +367,7 @@ export default function AdminSettings() {
               className="grid grid-cols-1 xl:grid-cols-12 gap-16 items-start"
             >
               {/* Billing Simulator Card */}
-              <div className="xl:col-span-12 bg-white brutal-border border-8 p-12 md:p-16 shadow-[24px_24px_0px_0px_rgba(10,10,10,1)] relative overflow-hidden group">
+              <div className="xl:col-span-12 bg-white brutal-border border-8 p-12 md:p-16 relative overflow-hidden group">
                  <div className="absolute top-0 right-0 p-16 opacity-5 pointer-events-none group-hover:rotate-6 transition-transform">
                    <CreditCard className="w-64 h-64 text-zinc-950" />
                 </div>
@@ -387,7 +387,7 @@ export default function AdminSettings() {
                             onClick={() => setSettings({...settings, subscription_status: 'active'})}
                             className={cn(
                               "h-24 brutal-border border-4 font-black uppercase text-xs tracking-[0.3em] transition-all italic flex items-center justify-center gap-4", 
-                              settings.subscription_status === 'active' ? "bg-emerald-500 text-white shadow-[8px_8px_0px_0px_rgba(10,10,10,1)] -translate-x-1 -translate-y-1" : "bg-white text-muted/20 border-zinc-100 shadow-none grayscale"
+                              settings.subscription_status === 'active' ? "bg-emerald-500 text-white  -translate-x-1 -translate-y-1" : "bg-white text-muted/20 border-zinc-100 shadow-none grayscale"
                             )}
                           >
                              {settings.subscription_status === 'active' && <CheckCircle2 className="w-6 h-6" />}
@@ -397,7 +397,7 @@ export default function AdminSettings() {
                             onClick={() => setSettings({...settings, subscription_status: 'past_due'})}
                             className={cn(
                               "h-24 brutal-border border-4 font-black uppercase text-xs tracking-[0.3em] transition-all italic flex items-center justify-center gap-4", 
-                              settings.subscription_status === 'past_due' ? "bg-rose-500 text-white shadow-[8px_8px_0px_0px_rgba(10,10,10,1)] -translate-x-1 -translate-y-1" : "bg-white text-muted/20 border-zinc-100 shadow-none grayscale"
+                              settings.subscription_status === 'past_due' ? "bg-rose-500 text-white  -translate-x-1 -translate-y-1" : "bg-white text-muted/20 border-zinc-100 shadow-none grayscale"
                             )}
                           >
                              {settings.subscription_status === 'past_due' && <Activity className="w-6 h-6 animate-pulse" />}
@@ -426,7 +426,7 @@ export default function AdminSettings() {
                                <span>ENTERPRISE_CORE</span>
                             </div>
                           </div>
-                          <div className="w-24 h-24 brutal-border border-8 bg-ink text-brand flex items-center justify-center font-black text-4xl font-display shadow-[8px_8px_0px_0px_rgba(10,10,10,1)] italic">{settings.max_agents}</div>
+                          <div className="w-24 h-24 brutal-border border-8 bg-ink text-brand flex items-center justify-center font-black text-4xl font-display italic">{settings.max_agents}</div>
                        </div>
                     </div>
 
@@ -434,7 +434,7 @@ export default function AdminSettings() {
                        <button 
                           onClick={saveSettings} 
                           disabled={isSaving}
-                          className="brutal-btn !bg-ink !text-brand !py-8 !px-16 flex items-center gap-6 active:translate-x-1 active:translate-y-1 active:shadow-none text-sm uppercase font-black tracking-[0.4em] italic shadow-[16px_16px_0px_0px_rgba(212,255,77,1)] hover:shadow-none transition-all w-full md:w-auto border-4"
+                          className="brutal-btn !bg-ink !text-brand !py-8 !px-16 flex items-center gap-6 active:translate-x-1 active:translate-y-1 active:shadow-none text-sm uppercase font-black tracking-[0.4em] italic hover:shadow-none transition-all w-full md:w-auto border-4"
                        >
                           {isSaving ? <Loader2 className="w-8 h-8 animate-spin" /> : <Save className="w-8 h-8" />}
                           COMMIT_BILLING_PROTOCOL
@@ -442,7 +442,7 @@ export default function AdminSettings() {
                     </div>
                   </div>
 
-                  <div className="p-10 md:p-14 bg-zinc-950 text-white border-8 border-brand brutal-border shadow-[12px_12px_0px_0px_rgba(10,10,10,1)] relative overflow-hidden flex flex-col justify-between group h-max">
+                  <div className="p-10 md:p-14 bg-zinc-950 text-white border-8 border-brand brutal-border relative overflow-hidden flex flex-col justify-between group h-max">
                       <div className="absolute top-0 right-0 p-10 opacity-10 pointer-events-none group-hover:rotate-12 transition-transform">
                          <Terminal className="w-64 h-64 text-brand" />
                       </div>

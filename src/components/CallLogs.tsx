@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Phone, PhoneIncoming, PhoneOutgoing, Clock, User, FileText, Play, Pause, Download, Search, Filter, Loader2, MessageCircle, ChevronRight, X, Database, Terminal, Shield, Target, Zap, Activity, Signal } from "lucide-react";
+import { Phone, PhoneIncoming, PhoneOutgoing, Clock, User, FileText, Play, Pause, Download, Search, Filter, Loader2, MessageCircle, ChevronRight, X, Database, Terminal, Shield, Target, Zap, Activity, Signal, ExternalLink } from "lucide-react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
+import { ClaudeRecipeButton } from "./ClaudeRecipes";
+import CsvExportButton from "./CsvExportButton";
 
 export default function CallLogs() {
   const [calls, setCalls] = useState<any[]>([]);
@@ -87,7 +90,7 @@ export default function CallLogs() {
             <input 
               type="text" 
               placeholder="SEARCH_SIGNALS..." 
-              className="w-full pl-14 pr-6 h-16 bg-white border-4 border-ink font-black text-ink outline-none shadow-[8px_8px_0px_0px_rgba(10,10,10,1)] hover:shadow-none translate-x-[-4px] translate-y-[-4px] hover:translate-x-0 hover:translate-y-0 focus:bg-brand transition-all uppercase tracking-widest text-xs italic"
+              className="w-full pl-14 pr-6 h-16 bg-white border-4 border-ink font-black text-ink outline-none hover:shadow-none translate-x-[-4px] translate-y-[-4px] hover:translate-x-0 hover:translate-y-0 focus:bg-brand transition-all uppercase tracking-widest text-xs italic"
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
@@ -95,7 +98,7 @@ export default function CallLogs() {
           
           <div className="relative w-full lg:w-64">
             <select 
-              className="w-full h-16 bg-white border-4 border-ink font-black text-ink outline-none shadow-[8px_8px_0px_0px_rgba(10,10,10,1)] hover:shadow-none translate-x-[-4px] translate-y-[-4px] hover:translate-x-0 hover:translate-y-0 focus:bg-brand transition-all uppercase tracking-widest text-xs px-8 italic cursor-pointer appearance-none"
+              className="w-full h-16 bg-white border-4 border-ink font-black text-ink outline-none hover:shadow-none translate-x-[-4px] translate-y-[-4px] hover:translate-x-0 hover:translate-y-0 focus:bg-brand transition-all uppercase tracking-widest text-xs px-8 italic cursor-pointer appearance-none"
               value={filter}
               onChange={e => setFilter(e.target.value)}
             >
@@ -105,10 +108,12 @@ export default function CallLogs() {
             </select>
             <ChevronRight className="absolute right-6 top-1/2 -translate-y-1/2 w-6 h-6 text-ink pointer-events-none rotate-90" />
           </div>
+
+          <CsvExportButton type="calls" label="Export CSV" />
         </div>
       </header>
 
-      <div className="bg-white brutal-border border-4 !p-0 overflow-hidden flex flex-col shadow-[24px_24px_0px_0px_rgba(10,10,10,1)] animate-in fade-in slide-in-from-bottom-5 duration-700">
+      <div className="bg-white brutal-border border-4 !p-0 overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-5 duration-700">
         <div className="overflow-x-auto scrollbar-hide">
           <table className="w-full text-left border-collapse min-w-[1000px]">
             <thead>
@@ -155,7 +160,7 @@ export default function CallLogs() {
                   </td>
                   <td className="px-10 py-8 text-center border-r border-ink/5">
                     <div className={cn(
-                      "inline-flex items-center justify-center w-12 h-12 brutal-border border-4 font-black text-sm italic shadow-[4px_4px_0px_0px_rgba(10,10,10,1)] group-hover:shadow-none transition-all",
+                      "inline-flex items-center justify-center w-12 h-12 brutal-border border-4 font-black text-sm italic  group-hover:shadow-none transition-all",
                       (call.lead_score || 0) >= 80 ? "bg-rose-500 text-white" :
                       (call.lead_score || 0) >= 50 ? "bg-brand text-ink" :
                       "bg-white text-muted"
@@ -178,7 +183,7 @@ export default function CallLogs() {
                     </div>
                   </td>
                   <td className="px-10 py-8 text-right">
-                    <div className="w-12 h-12 brutal-border border-4 bg-white flex items-center justify-center group-hover:bg-zinc-950 group-hover:text-brand transition-all ml-auto shadow-[6px_6px_0px_0px_rgba(10,10,10,1)] group-hover:shadow-none">
+                    <div className="w-12 h-12 brutal-border border-4 bg-white flex items-center justify-center group-hover:bg-zinc-950 group-hover:text-brand transition-all ml-auto group-hover:shadow-none">
                       <ChevronRight className="w-6 h-6" />
                     </div>
                   </td>
@@ -193,7 +198,7 @@ export default function CallLogs() {
              <button 
                 onClick={loadMore} 
                 disabled={loadingMore}
-                className="brutal-btn !bg-ink !text-brand !py-5 !px-12 flex items-center justify-center gap-6 text-[11px] italic font-black uppercase tracking-[0.3em] shadow-[8px_8px_0px_0px_rgba(212,255,77,1)] hover:shadow-none transition-all relative z-10"
+                className="brutal-btn !bg-ink !text-brand !py-5 !px-12 flex items-center justify-center gap-6 text-[11px] italic font-black uppercase tracking-[0.3em] hover:shadow-none transition-all relative z-10"
              >
                 {loadingMore ? <Loader2 className="w-5 h-5 animate-spin" /> : <Signal className="w-5 h-5 animate-pulse" />}
                 {loadingMore ? 'SYNCING_SIGNALS...' : 'LOAD_MORE_ARCHIVES'}
@@ -214,23 +219,41 @@ export default function CallLogs() {
             <div className="p-10 md:p-14 border-b-8 border-ink flex items-center justify-between bg-brand relative overflow-hidden group">
               <div className="absolute top-0 right-10 bottom-0 w-32 bg-ink/5 -skew-x-12 translate-x-10" />
               <div className="flex items-center gap-8 relative z-10">
-                <div className="w-16 h-16 md:w-24 md:h-24 brutal-border border-4 flex items-center justify-center shadow-[8px_8px_0px_0px_rgba(10,10,10,1)] bg-white group-hover:rotate-3 transition-transform">
+                <div className="w-16 h-16 md:w-24 md:h-24 brutal-border border-4 flex items-center justify-center bg-white group-hover:rotate-3 transition-transform">
                   {selectedCall.direction === "inbound" ? <PhoneIncoming className="w-8 h-8 md:w-12 md:h-12 text-ink" /> : <PhoneOutgoing className="w-8 h-8 md:w-12 md:h-12 text-ink" />}
                 </div>
                 <div>
-                  <h2 className="text-3xl md:text-5xl font-black font-display text-ink uppercase italic leading-[0.8] tracking-tighter">{selectedCall.customer_number}</h2>
+                  <Link
+                    to={`/contact/${encodeURIComponent(selectedCall.customer_number || "unknown")}`}
+                    className="group/link inline-flex items-center gap-3 hover:text-brand transition-colors"
+                  >
+                    <h2 className="text-3xl md:text-5xl font-black font-display text-ink uppercase italic leading-[0.8] tracking-tighter group-hover/link:text-brand transition-colors">{selectedCall.customer_number}</h2>
+                    <ExternalLink className="w-5 h-5 opacity-0 group-hover/link:opacity-100 transition-opacity" />
+                  </Link>
                   <div className="flex items-center gap-4 mt-4">
                      <span className="text-ink/40 text-[9px] font-black uppercase tracking-[0.4em] italic font-mono">TRACE_ID: {selectedCall.vapi_call_id.substring(0,16)}</span>
                      <div className="w-2 h-2 bg-ink rounded-full animate-ping" />
                   </div>
                 </div>
               </div>
-              <button 
-                onClick={() => setSelectedCall(null)}
-                className="w-14 h-14 md:w-16 md:h-16 brutal-border border-4 bg-white flex items-center justify-center text-ink hover:bg-rose-500 hover:text-white transition-all shadow-[6px_6px_0px_0px_rgba(10,10,10,1)] hover:shadow-none translate-x-[-4px] translate-y-[-4px] hover:translate-x-0 hover:translate-y-0 relative z-10"
-              >
-                <X className="w-8 h-8" />
-              </button>
+              <div className="flex items-center gap-3 relative z-10 flex-wrap">
+                <ClaudeRecipeButton
+                  recipe="coach"
+                  callId={selectedCall.id}
+                  label="Live Coach"
+                />
+                <ClaudeRecipeButton
+                  recipe="qualify"
+                  callId={selectedCall.id}
+                  label="Qualify · BANT"
+                />
+                <button
+                  onClick={() => setSelectedCall(null)}
+                  className="w-12 h-12 rounded-full glass border border-white/10 flex items-center justify-center text-ink/70 hover:text-rose-500 hover:border-rose-500/40 transition-all"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-10 md:p-14 space-y-16 scrollbar-hide">
@@ -244,7 +267,7 @@ export default function CallLogs() {
                    <span className="text-[10px] font-black text-muted uppercase tracking-[0.3em] italic">Carrier Layer Rec.</span>
                 </div>
                 {selectedCall.recording_url ? (
-                  <div className="bg-zinc-950 brutal-border border-4 !p-10 text-white space-y-8 shadow-[12px_12px_0px_0px_rgba(10,10,10,1)] relative overflow-hidden group">
+                  <div className="bg-zinc-950 brutal-border border-4 !p-10 text-white space-y-8 relative overflow-hidden group">
                     <div className="absolute -bottom-10 -right-10 opacity-5 pointer-events-none group-hover:rotate-12 transition-transform">
                        <Signal className="w-48 h-48 text-brand" />
                     </div>
@@ -257,7 +280,7 @@ export default function CallLogs() {
                            <source src={selectedCall.recording_url} type="audio/mpeg" />
                          </audio>
                       </div>
-                      <a href={selectedCall.recording_url} download target="_blank" rel="noreferrer" className="w-20 h-20 brutal-btn !bg-white !text-ink !p-0 flex items-center justify-center group-hover:shadow-[4px_4px_0px_0px_rgba(212,255,77,1)] transition-all shrink-0">
+                      <a href={selectedCall.recording_url} download target="_blank" rel="noreferrer" className="w-20 h-20 brutal-btn !bg-white !text-ink !p-0 flex items-center justify-center transition-all shrink-0">
                          <Download className="w-8 h-8 group-hover:scale-110 transition-transform" />
                       </a>
                     </div>
@@ -279,20 +302,20 @@ export default function CallLogs() {
                    </h3>
                    <div className="w-16 h-1 bg-brand" />
                 </header>
-                <div className="bg-white brutal-border border-4 p-8 md:p-12 text-ink font-black leading-tight shadow-[12px_12px_0px_0px_rgba(212,255,77,1)] text-xl md:text-3xl uppercase tracking-tighter italic font-display">
+                <div className="bg-white brutal-border border-4 p-8 md:p-12 text-ink font-black leading-tight text-xl md:text-3xl uppercase tracking-tighter italic font-display">
                   {selectedCall.summary || "PENDING_INFERENCE..."}
                 </div>
               </div>
 
               {/* Stats Grid */}
               <div className="grid grid-cols-2 gap-8">
-                <div className="brutal-border border-4 bg-zinc-50 p-8 shadow-[8px_8px_0px_0px_rgba(10,10,10,1)] group hover:bg-white transition-all">
+                <div className="brutal-border border-4 bg-zinc-50 p-8 group hover:bg-white transition-all">
                   <div className="text-[10px] text-muted uppercase font-black tracking-[0.4em] mb-4 italic flex items-center gap-3">
                      <Clock className="w-3.5 h-3.5" /> DURATION
                   </div>
                   <div className="text-3xl md:text-5xl font-black text-ink font-display italic leading-none tracking-tighter">{formatDuration(selectedCall.duration_seconds || 0)}</div>
                 </div>
-                <div className="brutal-border border-4 bg-zinc-50 p-8 shadow-[8px_8px_0px_0px_rgba(10,10,10,1)] group hover:bg-white transition-all">
+                <div className="brutal-border border-4 bg-zinc-50 p-8 group hover:bg-white transition-all">
                   <div className="text-[10px] text-muted uppercase font-black tracking-[0.4em] mb-4 italic flex items-center gap-3">
                      <Zap className="w-3.5 h-3.5" /> OPERATIONAL_BURN
                   </div>
