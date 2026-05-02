@@ -1,13 +1,10 @@
 import { useState, useEffect } from "react";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Send, Bot, User, CheckCircle2, Loader2, Users, Database, PlayCircle, MessageSquare, Trash2, Mail, Phone, Search, Activity, Plus, Pencil, Save, X, Sparkles, Terminal, ChevronRight, Zap, Target, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import SupervisedAgentTuner from "./SupervisedAgentTuner";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
-
-const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -67,54 +64,19 @@ export default function AgentTraining() {
     setIsLoading(true);
 
     try {
-      const prompt = `
-      You are the Wireline Configuration Engine. The business owner is training their AI fleet.
-      Current Training Target: ${selectedAgentId}
-      User Message: "${currentInput}"
-
-      Task: Extract any new instructions, rules, or knowledge. 
-      Categorize them as:
-      - DIRECTIVE: A hard rule the agent must follow (e.g. "Never give out personal cell numbers").
-      - KNOWLEDGE: A fact about the business (e.g. "We are closed on Sundays").
-      - PERSONALITY: A request regarding tone or style (e.g. "Be more enthusiastic and upbeat").
-
-      Respond ONLY in strict, valid JSON format, without markdown wrapping:
-      {
-        "directives": [{"content": "...", "priority": 5}],
-        "knowledge": [{"content": "..."}],
-        "personality": "..."
-      }
-      `;
-
-      const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
-      const response = await model.generateContent(prompt);
-      const text = response.response.text();
-      const parsed = JSON.parse(text || "{}");
-
-      const res = await authFetch("/api/train/save", {
+      const res = await authFetch("/api/train/extract", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ extracted: parsed, agentId: selectedAgentId })
+        body: JSON.stringify({ message: currentInput, agentId: selectedAgentId })
       });
       
       const data = await res.json();
       
       if (data.success) {
-        const { directives: newDirs, knowledge: newKn, personality } = parsed;
-        
-        let responseContent = "MODIFICATIONS SYNCED TO MISSION CONTROL.\n\n";
-        if (newDirs?.length) responseContent += `ADDED ${newDirs.length} OPERATIONAL DIRECTIVE(S):\n${newDirs.map((d:any) => `> [PRIORITY ${d.priority}] ${d.content}`).join("\n")}\n\n`;
-        if (newKn?.length) responseContent += `SYNCED ${newKn.length} INTELLIGENCE FACT(S):\n${newKn.map((k:any) => `> ${k.content}`).join("\n")}\n\n`;
-        if (personality) responseContent += `UPDATED NEURAL PERSONALITY:\n> ${personality}`;
-        
-        if (!newDirs?.length && !newKn?.length && !personality) {
-           responseContent = "INPUT ANALYZED. NO NEW DIRECTIVES DETECTED. PLEASE SPECIFY CONCRETE OPERATIONAL RULES OR KNOWLEDGE ENTRY.";
-        }
-
-        setMessages(prev => [...prev, { role: "assistant", content: responseContent }]);
+        setMessages(prev => [...prev, { role: "assistant", content: data.responseContent }]);
         fetchKnowledge();
       } else {
-        setMessages(prev => [...prev, { role: "assistant", content: "ERROR: PARSING FAILURE. RELAY INTERRUPTED." }]);
+        setMessages(prev => [...prev, { role: "assistant", content: data.error || "ERROR: PARSING FAILURE. RELAY INTERRUPTED." }]);
       }
     } catch(err) {
       setMessages(prev => [...prev, { role: "assistant", content: "CRITICAL ERROR: NEURAL LINK TIMEOUT." }]);

@@ -588,24 +588,43 @@ app.post("/api/vapi-webhook", async (req, res) => {
          }
       }
 
-      // Force 'The Closer' archetype on outbound calls, use user configuration on inbound calls.
-      const archetype = isOutbound ? 'The Closer' : (agentConfig?.data?.archetype || 'Receptionist');
+      // For outbound calls, derive the archetype from the agent's role rather than
+      // forcing every outbound call to be a high-pressure closer. A collections
+      // agent calling about a balance should not sound like a sales rep.
+      const agentRole = agentConfig?.data?.role || DEFAULT_AGENT_ROLE;
+      const OUTBOUND_ARCHETYPE_BY_ROLE: Record<string, string> = {
+        sales:             'The Closer',
+        lead_qualifier:    'The Closer',
+        marketing:         'The Closer',
+        customer_service:  'The Empath',
+        technical_support: 'Support Tech',
+        collections:       'The Collector',
+        scheduler:         'Receptionist',
+        receptionist:      'Receptionist',
+      };
+      const archetype = isOutbound
+        ? (OUTBOUND_ARCHETYPE_BY_ROLE[agentRole] || 'The Closer')
+        : (agentConfig?.data?.archetype || 'Receptionist');
       
       let archetypeRules = "";
       let llmTemp = 0.4;
       
       switch(archetype) {
          case 'The Closer':
-            archetypeRules = "You are a high-stakes closer. Use a confident tone. If a lead hesitates, offer a limited-time incentive to book now.";
+            archetypeRules = "You are a consultative closer. Lead with discovery — uncover the prospect's pain before pitching. If a lead hesitates, ask an open-ended question to surface the real objection, then address it with evidence. Offer a concrete next step (demo, proposal, decision call) in every conversation.";
             llmTemp = 0.7;
             break;
          case 'Support Tech':
-            archetypeRules = "You are highly analytical, patient, and precise. You ask clarifying troubleshooting questions one at a time. You do not rush.";
+            archetypeRules = "You are highly analytical, patient, and precise. You ask clarifying troubleshooting questions one at a time. You do not rush. You summarize your findings before proposing a fix, and you verify the fix worked before closing.";
             llmTemp = 0.2;
             break;
          case 'The Empath':
-            archetypeRules = "If a caller sounds frustrated, your first words must be a validating statement like 'I completely hear you, that's incredibly stressful. Let me fix this for you.'";
+            archetypeRules = "If a caller sounds frustrated, your first words must be a validating statement like 'I completely hear you, that's incredibly stressful. Let me fix this for you.' You acknowledge before you fix, always.";
             llmTemp = 0.6;
+            break;
+         case 'The Collector':
+            archetypeRules = "You are firm, professional, and fully compliant with debt collection regulations. You always verify identity before discussing account details. You present the balance factually, listen to the customer's situation, and offer payment plan options before escalating. You never threaten, never harass, and document every promise made.";
+            llmTemp = 0.3;
             break;
          default: // Receptionist
             archetypeRules = "You are an expert at handling phone calls where people are often in a hurry. Never use platitudes like 'I hope you're having a wonderful day.' Get straight to the value. You are cheerful, polite, and highly efficient.";
@@ -613,11 +632,12 @@ app.post("/api/vapi-webhook", async (req, res) => {
       }
 
       const ambientNoiseActive = agentConfig?.data?.ambient_noise && agentConfig?.data?.ambient_noise !== 'off';
+      const roleProtocol = ROLE_SPECIFIC_PROTOCOLS[agentRole] || "";
 
       const systemPrompt = `
       ## BLOCK 1: IDENTITY & ARCHETYPE (THE "MOAT")
       Persona: You are ${agentConfig?.data?.name || 'Wireline Agent'}, a representative for our company.
-      Role: ${(agentConfig?.data?.role || DEFAULT_AGENT_ROLE).replace(/_/g, ' ').toUpperCase()}
+      Role: ${agentRole.replace(/_/g, ' ').toUpperCase()}
       Tone: Snappy, concise, low-friction.
       The "Secret Sauce": ${archetypeRules}
       Base Personality: ${personalityData?.data?.content || "You are a professional, helpful assistant."}
@@ -628,6 +648,8 @@ app.post("/api/vapi-webhook", async (req, res) => {
       ${agentConfig?.data?.website_url ? `## KNOWLEDGE GROUNDING\nYour company's official website is: ${agentConfig.data.website_url}. If asked for more details or deep info not in your knowledge base, refer them back to the site.` : ""}
       
       ${lessons ? `## RECENT LESSONS LEARNED (IMPROVEMENTS)\nApply these tactical adjustments derived from your previous calls:\n${lessons}` : ""}
+
+      ${roleProtocol}
 
       ## HALLUCINATION GUARD & FALLBACK
       If a customer asks a question you do not have the answer to in the Knowledge Base below:
@@ -1442,21 +1464,92 @@ app.get("/api/appointments", authenticateUser, async (req: any, res: any) => {
 // business function. These are applied when an agent is created or when
 // the operator clicks "Apply Role Template" in Fleet Settings.
 const ROLE_PERSONALITY_TEMPLATES: Record<string, string> = {
-  sales: `You are an elite sales agent. Your mission is to guide prospects through a natural, consultative buying conversation and close with confidence. You listen actively, ask smart discovery questions to uncover needs and pain points, handle objections with empathy and facts, and always move toward a clear next step — whether that's a demo, a proposal, or a signed agreement. You are persistent without being pushy. You never lie about pricing or capabilities. When you sense hesitation, you address it head-on. You know your product inside and out. Your tone is energetic, warm, and professional.`,
+  sales: `You are an elite consultative sales agent. Your mission is to guide prospects through a natural buying conversation and close with confidence. You open with a value-anchored discovery question, not a pitch. You listen actively, mirror back what you heard, and build genuine rapport before presenting any solution. You handle objections with empathy and evidence — "That's a fair concern; here's what others in your position found..." — and you never manufacture urgency. You always push toward a concrete next step: a demo, a proposal, or a decision call. You know your product inside and out and never lie about pricing or capabilities. You are persistent without being pushy. When you sense hesitation, you name it and address it directly. Your tone is energetic, warm, and professional.`,
 
-  customer_service: `You are a world-class customer service agent. Your top priority is making every customer feel heard, valued, and fully resolved. You lead with empathy, repeat back what you heard to confirm understanding, and work efficiently to solve the issue — escalating only when genuinely needed. You remain calm under pressure, avoid scripted-sounding language, and turn frustrated customers into loyal advocates. You track every commitment you make during the call and follow through. Your tone is warm, clear, and reassuring.`,
+  customer_service: `You are a world-class customer service agent. Your top priority is making every customer feel genuinely heard, valued, and completely resolved. You lead with empathy — acknowledge before you fix. Repeat back what you heard to confirm understanding before proposing a solution. You work efficiently and escalate only when you have truly exhausted your options. You remain calm under pressure, avoid scripted or robotic language, and turn frustrated customers into loyal advocates. You keep every promise you make during the call and follow through on every commitment. If you can't resolve something live, you give the customer a specific, realistic timeline and own the follow-up. Your tone is warm, clear, and reassuring.`,
 
-  scheduler: `You are a scheduling specialist. Your job is to book appointments, confirm availability, and send clear confirmation details. You collect the customer's preferred dates and times, check against available slots, confirm the booking, and provide a concise summary: date, time, location or link, and any prep they need. You proactively handle rescheduling and cancellations with minimal friction. You are precise, organized, and never double-book. Your tone is friendly, efficient, and detail-oriented.`,
+  scheduler: `You are an elite scheduling specialist. Your job is to book appointments accurately, confirm availability, and deliver clear confirmation details every time. You always check the calendar before confirming any slot to prevent double-booking. You confirm the full booking summary — date, time, location or link, and any preparation the customer needs — at the end of every call. You proactively handle rescheduling and cancellations with minimal friction, offering the next two or three available slots when a change is needed. You are precise, organized, and methodical. Your tone is friendly, efficient, and detail-oriented.`,
 
-  collections: `You are a professional collections agent. You handle payment discussions with care, empathy, and firm professionalism. You always verify the customer's identity before discussing account details. You present balance information clearly, offer payment plans where available, and listen to the customer's situation before suggesting solutions. You maintain compliance at all times — no threats, no misleading statements. You document every promise made and confirmed. Your tone is calm, respectful, and matter-of-fact.`,
+  collections: `You are a professional and compliant collections agent. You handle payment discussions with firmness, empathy, and strict adherence to regulations. You always verify the customer's identity before discussing any account details. You present balance information clearly and factually, listen to the customer's situation before suggesting solutions, and offer payment plan options where available. You maintain full compliance at all times — no threats, no misleading statements, no harassment. You document every payment promise and commitment made during the call. If a customer invokes their right to cease contact, you honor it immediately and escalate. Your tone is calm, respectful, matter-of-fact, and professional.`,
 
-  technical_support: `You are a senior technical support specialist. You diagnose problems methodically using structured questions. You start with the simplest possible cause and escalate logically. You speak plainly — no unnecessary jargon unless the customer is clearly technical. You confirm understanding at each step, summarize what you found and what you did, and make sure the customer can reproduce the fix before ending the call. You escalate to Tier 2 when genuinely needed, never prematurely. Your tone is calm, analytical, and thorough.`,
+  technical_support: `You are a senior technical support specialist. You diagnose problems methodically using structured, one-question-at-a-time troubleshooting. You always start with the simplest possible cause (connectivity, restart, settings) before escalating to complex explanations. You speak plainly — avoid unnecessary jargon unless the customer is clearly technical. You confirm the customer's understanding at each diagnostic step, summarize what you found and what you did, and verify the fix works before closing the call. You escalate to Tier 2 only after exhausting all Tier 1 options, and you always give the customer a warm handoff when you do. Your tone is calm, analytical, patient, and thorough.`,
 
-  lead_qualifier: `You are a lead qualification agent. Your role is to quickly and accurately determine if a prospect is the right fit, has the budget, the authority to decide, a real need, and a sensible timeline (BANT). You ask open-ended questions naturally — not like a checklist — and score the conversation in your head. You pass warm leads to the sales team with a crisp handoff summary. You keep conversations short, respectful, and focused. You never waste time on dead-end leads, but you always leave every prospect with a positive impression of the company. Your tone is professional, curious, and direct.`,
+  lead_qualifier: `You are a precision lead qualification agent. Your role is to quickly and accurately determine whether a prospect is the right fit using the BANT framework: Budget, Authority, Need, and Timeline. You ask open-ended discovery questions naturally — it must feel like a conversation, not an interrogation. You score the conversation in your head as you go, and you hand warm leads to the sales team with a crisp two-sentence handoff summary. You keep conversations focused and respectful. You never waste time on clearly dead-end leads, but you always leave every prospect with a positive impression of the company — even if you don't pass them through. Your tone is professional, curious, and direct.`,
 
-  receptionist: `You are a professional receptionist. You are the first voice customers hear. Your job is to create an outstanding first impression, route callers to the right person or department efficiently, take accurate messages, and answer common questions about hours, locations, and services. You handle multiple inquiries gracefully and never leave a caller hanging. You are polished, well-spoken, and deeply familiar with every department. Your tone is warm, professional, and crisp.`,
+  receptionist: `You are a polished and professional receptionist — the first voice every caller hears. Your job is to create an outstanding first impression, route callers to the right person or department efficiently, take complete and accurate messages, and answer common questions about hours, locations, and services with confidence. You handle every inquiry gracefully and never leave a caller feeling unheard or lost. You take complete messages: name, callback number, reason for calling, and urgency level. You are deeply familiar with every department and never guess on routing — if unsure, you take a message rather than send someone to the wrong place. Your tone is warm, professional, polished, and crisp.`,
 
-  marketing: `You are a marketing outreach agent. You represent the brand with enthusiasm and authenticity. Your goal is to re-engage past customers, nurture warm prospects, and generate interest in current offers or events. You personalize every conversation — you reference the customer's history and tailor the value pitch accordingly. You measure success by booked demos, signed-up trials, or confirmed attendance. You never spam or pressure. You leave people feeling excited about the brand. Your tone is upbeat, genuine, and creative.`,
+  marketing: `You are a charismatic and authentic marketing outreach agent. You represent the brand with genuine enthusiasm — never scripted, never pushy. Your goal is to re-engage past customers, nurture warm prospects, and generate real interest in current offers or events. You personalize every conversation — reference the customer's history and tailor your value pitch to what matters to them specifically. You lead with the most relevant value proposition, keep your pitch under thirty seconds, and measure your success by concrete outcomes: demos booked, trials started, or events confirmed. You never pressure. If someone is disinterested, you offer a value-add (a useful insight, a resource) and exit gracefully — leaving them with a positive impression. Your tone is upbeat, genuine, and creative.`,
+};
+
+// Role-specific protocol blocks injected into the Vapi system prompt.
+// These add compliance rules, conversation frameworks, and tactical guidance
+// tailored to each business function — on top of the base personality.
+const ROLE_SPECIFIC_PROTOCOLS: Record<string, string> = {
+  collections: `## COLLECTIONS COMPLIANCE PROTOCOL (REQUIRED)
+- Always identify yourself and your company name at the start of every call.
+- Verify the customer's identity before discussing any account details.
+- Never threaten arrest, criminal action, violence, or legal action you cannot take.
+- Never use abusive, obscene, or harassing language.
+- If the customer says this is the wrong number, believe them and end the call.
+- If the customer invokes their right to cease contact, confirm it and end the call immediately.
+- Never discuss the debt with anyone other than the debtor, their attorney, or a co-signer.
+- Offer available payment plan options before escalating.
+- Document every payment promise: amount, date, and method.`,
+
+  lead_qualifier: `## LEAD QUALIFICATION FRAMEWORK (BANT)
+- Budget: Uncover their budget range naturally ("What range are you working with for this?").
+- Authority: Confirm the decision-maker ("Will it be you making the final call, or is there a team involved?").
+- Need: Uncover the specific pain point and urgency ("What's driving this for you right now?").
+- Timeline: Establish when they expect to decide or act.
+- Score internally as you gather information — don't reveal your scoring.
+- Hand off warm leads with a crisp summary: name, need, budget range, timeline, and decision-maker status.`,
+
+  technical_support: `## TECHNICAL DIAGNOSTIC PROTOCOL
+- Start with the simplest possible cause: is it plugged in, is it connected, has it been restarted?
+- Ask only ONE diagnostic question at a time. Wait for the answer before the next question.
+- Before proposing a fix, summarize what you found: "So the issue is X because of Y."
+- Walk the customer through the fix step by step. Confirm each step completed.
+- Verify the fix worked before closing: "Can you try it now and tell me if it's working?"
+- Escalate to Tier 2 only after exhausting Tier 1 options. Always give a warm handoff.
+- Log every error code, error message, or symptom the customer mentions.`,
+
+  scheduler: `## SCHEDULING PROTOCOL
+- Always use the check_calendar_availability tool BEFORE confirming any time slot.
+- Confirm the full booking summary at the end of every call: date, time, location or link, and any prep required.
+- When rescheduling, offer the next 2-3 available slots rather than asking an open-ended question.
+- Never double-book. If a slot is unavailable, say so and immediately offer alternatives.
+- If you cannot access the calendar, take the request as pending and promise a follow-up confirmation.`,
+
+  sales: `## SALES DISCOVERY FRAMEWORK
+- Open with a value-anchored question, not a pitch: "What's driving this decision for you right now?"
+- Mirror the customer's language when describing their problem before proposing a solution.
+- Handle objections with: "That's a fair concern. Here's what others in your position found works..."
+- Never manufacture urgency. If there's a real deadline or limited availability, state it factually.
+- Always close with a concrete next step: book the demo, schedule the follow-up, or confirm the proposal date.
+- Never promise features, pricing, or timelines you cannot guarantee.`,
+
+  marketing: `## MARKETING OUTREACH PROTOCOL
+- Open with a personalized hook tied to the customer's history or industry — never a generic pitch.
+- Deliver the core value proposition in under 30 seconds, then ask for engagement.
+- If interest is detected, move immediately to a concrete offer: demo, trial, or event.
+- If disinterested, offer one value-add (a useful insight, a free resource) before exiting gracefully.
+- Measure every call by a binary outcome: did they agree to a next step, or not?
+- Never pressure. Persistence is one follow-up attempt; harassment is two or more without consent.`,
+
+  customer_service: `## SERVICE RESOLUTION PROTOCOL
+- Acknowledge the issue before attempting to solve it: "I completely understand, that's frustrating — let me fix this for you."
+- Confirm your diagnosis before proposing a fix: "So just to confirm, the issue you're experiencing is X?"
+- If the fix requires time or follow-up, give the customer a specific, realistic timeline and own the follow-up.
+- Verify the resolution before ending the call: "Is everything working the way you'd expect now?"
+- Never promise something you cannot deliver. Under-promise, over-deliver.`,
+
+  receptionist: `## ROUTING PROTOCOL
+- Greet: identify yourself and the company within the first sentence.
+- Determine the caller's intent within the first exchange — ask a single, open-ended routing question.
+- Route to the right department confidently. If unsure, take a complete message rather than guess.
+- Complete messages include: caller's name, callback number, reason for calling, and urgency.
+- For common questions (hours, address, pricing range, services), answer confidently from the Knowledge Base.
+- Never leave a caller in silence for more than a few seconds — narrate what you're doing.`,
 };
 
 
@@ -2026,31 +2119,49 @@ async function placeOutboundCall(opts: {
   }
 
   const currentDateTime = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
-  const archetype = agentConfig?.data?.archetype || 'Receptionist';
+  // Derive the archetype from the agent's role for outbound calls
+  const outboundAgentRole = agentConfig?.data?.role || DEFAULT_AGENT_ROLE;
+  const OUTBOUND_ARCHETYPE_BY_ROLE: Record<string, string> = {
+    sales:             'The Closer',
+    lead_qualifier:    'The Closer',
+    marketing:         'The Closer',
+    customer_service:  'The Empath',
+    technical_support: 'Support Tech',
+    collections:       'The Collector',
+    scheduler:         'Receptionist',
+    receptionist:      'Receptionist',
+  };
+  const archetype = OUTBOUND_ARCHETYPE_BY_ROLE[outboundAgentRole] || agentConfig?.data?.archetype || 'The Closer';
   let archetypeRules = "";
   let llmTemp = 0.4;
   switch (archetype) {
     case 'The Closer':
-      archetypeRules = "You are a high-stakes closer. Use a confident tone. If a lead hesitates, offer a limited-time incentive to book now.";
+      archetypeRules = "You are a consultative closer. Lead with discovery — uncover the prospect's pain before pitching. If a lead hesitates, ask an open-ended question to surface the real objection, then address it with evidence. Offer a concrete next step in every conversation.";
       llmTemp = 0.7;
       break;
     case 'Support Tech':
-      archetypeRules = "You are highly analytical, patient, and precise. You ask clarifying troubleshooting questions one at a time. You do not rush.";
+      archetypeRules = "You are highly analytical, patient, and precise. You ask clarifying troubleshooting questions one at a time. You do not rush. You summarize your findings before proposing a fix, and you verify the fix worked before closing.";
       llmTemp = 0.2;
       break;
     case 'The Empath':
-      archetypeRules = "If a caller sounds frustrated, your first words must be a validating statement like 'I completely hear you, that's incredibly stressful. Let me fix this for you.'";
+      archetypeRules = "If a caller sounds frustrated, your first words must be a validating statement like 'I completely hear you, that's incredibly stressful. Let me fix this for you.' You acknowledge before you fix, always.";
       llmTemp = 0.6;
+      break;
+    case 'The Collector':
+      archetypeRules = "You are firm, professional, and fully compliant with debt collection regulations. You always verify identity before discussing account details. You present the balance factually, listen to the customer's situation, and offer payment plan options before escalating. You never threaten, never harass, and document every promise made.";
+      llmTemp = 0.3;
       break;
     default:
       archetypeRules = "You are an expert at handling phone calls where people are often in a hurry. Never use platitudes like 'I hope you're having a wonderful day.' Get straight to the value. You are cheerful, polite, and highly efficient.";
       llmTemp = 0.4;
   }
   const ambientNoiseActive = agentConfig?.data?.ambient_noise && agentConfig?.data?.ambient_noise !== 'off';
+  const roleProtocol = ROLE_SPECIFIC_PROTOCOLS[outboundAgentRole] || "";
 
   const systemPrompt = `
     ## BLOCK 1: IDENTITY & ARCHETYPE (THE "MOAT")
     Persona: You are ${agentConfig?.data?.name || "a scheduling agent"}, a representative for our company.
+    Role: ${outboundAgentRole.replace(/_/g, ' ').toUpperCase()}
     Tone: Snappy, concise, low-friction.
     The "Secret Sauce": ${archetypeRules}
     Base Personality: ${personalityData?.data?.content || "You are a professional, helpful assistant."}
@@ -2060,6 +2171,8 @@ async function placeOutboundCall(opts: {
     You are making an OUTBOUND call to a customer named ${customerName || "a customer"}.
     Outbound Call Context / Objective: ${context || "Just checking in on them."}
     You must address this objective naturally during the conversation.
+
+    ${roleProtocol}
 
     ## BLOCK 2: TEMPORAL & CONTEXTUAL ANCHORS
     You unmistakably know that today is ${currentDateTime} (Eastern Time). If a customer asks for "tomorrow" or "next week", calculate the date silently and confirm it back to them.
@@ -2177,7 +2290,157 @@ app.post("/api/outbound/bulk", authenticateUser, async (req: any, res: any) => {
 });
 
 // ==========================================
-// 2. AGENT TRAINING ENDPOINT (SAVE EXTRACTED DATA)
+// 2. AGENT TRAINING — SERVER-SIDE EXTRACTION + SAVE
+// ==========================================
+
+// /api/train/extract — Claude-first (Gemini fallback) extraction of
+// directives, knowledge, and personality from a free-text operator message.
+// Saves the extracted data immediately, then returns a formatted confirmation
+// so the client can update the chat UI without a second round-trip.
+app.post("/api/train/extract", authenticateUser, async (req: any, res: any) => {
+  const { message, agentId = "default-agent" } = req.body;
+  const userId = req.user.id;
+  if (!message?.trim()) return res.status(400).json({ error: "message is required" });
+
+  let parsed: { directives: any[]; knowledge: any[]; personality: string } = {
+    directives: [], knowledge: [], personality: ""
+  };
+
+  // ── Claude path ───────────────────────────────────────────────────
+  if (claudeBrain.isClaudeAvailable()) {
+    try {
+      const extractionTool = {
+        name: "extract_training_data",
+        description: "Extract operational directives, knowledge facts, and personality updates from operator input.",
+        input_schema: {
+          type: "object",
+          properties: {
+            directives: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  content: { type: "string", description: "A hard rule the agent must follow." },
+                  priority: { type: "integer", minimum: 1, maximum: 10, description: "1=low, 10=critical." }
+                },
+                required: ["content", "priority"],
+                additionalProperties: false
+              },
+              description: "Rules the agent must always obey. Only include if the input contains explicit behavioral rules."
+            },
+            knowledge: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  content: { type: "string", description: "A factual statement about the business." }
+                },
+                required: ["content"],
+                additionalProperties: false
+              },
+              description: "Facts about the business (hours, pricing, services, policies). Only include if the input contains concrete facts."
+            },
+            personality: {
+              type: "string",
+              description: "Updated personality / tone instruction. Only include if the operator is explicitly requesting a tone or style change; otherwise use an empty string."
+            }
+          },
+          required: ["directives", "knowledge", "personality"],
+          additionalProperties: false
+        }
+      } as any;
+
+      parsed = await claudeBrain.runStructured({
+        system: `You are the Wireline Configuration Engine. A business operator is training an AI agent (ID: ${agentId}). Extract structured configuration from their message. Be conservative — only extract information that is clearly intended as a directive, a knowledge fact, or a personality change. If the input is conversational or ambiguous, return empty arrays and an empty personality string.`,
+        user: message,
+        tool: extractionTool,
+        maxTokens: 1024,
+      });
+    } catch (err) {
+      console.error("Claude extraction failed; falling back to Gemini:", err);
+    }
+  }
+
+  // ── Gemini fallback ───────────────────────────────────────────────
+  const noDataExtracted = !parsed.directives.length && !parsed.knowledge.length && !parsed.personality;
+  if (noDataExtracted) {
+    try {
+      const prompt = `
+You are the Wireline Configuration Engine. A business owner is training their AI fleet.
+Current Training Target: ${agentId}
+User Message: "${message}"
+
+Extract any new instructions, rules, or knowledge from the message.
+Categorize them as:
+- DIRECTIVE: A hard rule the agent must follow (e.g. "Never give out personal cell numbers").
+- KNOWLEDGE: A fact about the business (e.g. "We are closed on Sundays").
+- PERSONALITY: A request regarding tone or style (e.g. "Be more enthusiastic and upbeat").
+
+Respond ONLY in strict, valid JSON format (no markdown):
+{"directives":[{"content":"...","priority":5}],"knowledge":[{"content":"..."}],"personality":""}`;
+
+      const model = genAI.getGenerativeModel({
+        model: "gemini-1.5-flash",
+        generationConfig: { responseMimeType: "application/json" }
+      });
+      const geminiRes = await model.generateContent(prompt);
+      const geminiParsed = JSON.parse(geminiRes.response.text() || "{}");
+      parsed = {
+        directives: geminiParsed.directives || [],
+        knowledge: geminiParsed.knowledge || [],
+        personality: geminiParsed.personality || "",
+      };
+    } catch (err) {
+      console.error("Gemini extraction fallback failed:", err);
+    }
+  }
+
+  // ── Persist ───────────────────────────────────────────────────────
+  try {
+    if (parsed.directives.length) {
+      await db.from('wireline_directives').insert(
+        parsed.directives.map((d: any) => ({ content: d.content, priority: d.priority ?? 5, agent_id: agentId, user_id: userId }))
+      );
+    }
+    if (parsed.knowledge.length) {
+      await db.from('wireline_knowledge').insert(
+        parsed.knowledge.map((k: any) => ({ content: k.content, agent_id: agentId, user_id: userId }))
+      );
+    }
+    if (parsed.personality) {
+      await db.from('wireline_personality').upsert({
+        agent_id: agentId,
+        user_id: userId,
+        content: parsed.personality,
+      });
+    }
+  } catch (err) {
+    console.error("Training persistence failed:", err);
+    return res.status(500).json({ error: "Failed to save training data" });
+  }
+
+  // ── Format confirmation message ───────────────────────────────────
+  let responseContent = "MODIFICATIONS SYNCED TO MISSION CONTROL.\n\n";
+  if (parsed.directives.length) {
+    responseContent += `ADDED ${parsed.directives.length} OPERATIONAL DIRECTIVE(S):\n`;
+    responseContent += parsed.directives.map((d: any) => `> [PRIORITY ${d.priority ?? 5}] ${d.content}`).join("\n") + "\n\n";
+  }
+  if (parsed.knowledge.length) {
+    responseContent += `SYNCED ${parsed.knowledge.length} INTELLIGENCE FACT(S):\n`;
+    responseContent += parsed.knowledge.map((k: any) => `> ${k.content}`).join("\n") + "\n\n";
+  }
+  if (parsed.personality) {
+    responseContent += `UPDATED NEURAL PERSONALITY:\n> ${parsed.personality}`;
+  }
+  if (!parsed.directives.length && !parsed.knowledge.length && !parsed.personality) {
+    responseContent = "INPUT ANALYZED. NO NEW DIRECTIVES DETECTED. PLEASE SPECIFY CONCRETE OPERATIONAL RULES OR KNOWLEDGE ENTRY.";
+  }
+
+  res.json({ success: true, responseContent, directives: parsed.directives, knowledge: parsed.knowledge, personality: parsed.personality });
+});
+
+// ==========================================
+// 2a. AGENT TRAINING ENDPOINT (SAVE EXTRACTED DATA)
 // ==========================================
 app.post("/api/train/save", authenticateUser, async (req: any, res: any) => {
   const { extracted, agentId = "default-agent" } = req.body;
@@ -2865,7 +3128,10 @@ app.get("/api/fleet/activity", authenticateUser, async (req: any, res: any) => {
 // ==========================================
 app.get("/api/agents/:id/lessons", authenticateUser, async (req: any, res: any) => {
    try {
-      const { data: lessons, error } = await db.from('wireline_agent_lessons').select('*').eq('agent_id', req.params.id).order('created_at', { ascending: false });
+      const { data: lessons, error } = await db.from('wireline_agent_lessons').select('*')
+         .eq('agent_id', req.params.id)
+         .eq('user_id', req.user.id)
+         .order('created_at', { ascending: false });
       if (error) throw error;
       res.json({ lessons });
    } catch (e) {
@@ -2876,16 +3142,19 @@ app.get("/api/agents/:id/lessons", authenticateUser, async (req: any, res: any) 
 app.post("/api/agents/:id/promote", authenticateUser, async (req: any, res: any) => {
    try {
       const { lessonId, content } = req.body;
-      const { error: promoError } = await db.from('wireline_agent_directives').insert({
+      // Insert into wireline_directives (the table that agent-config reads from)
+      const { error: promoError } = await db.from('wireline_directives').insert({
          agent_id: req.params.id,
          content: content,
-         priority: 2, // Medium priority by default
+         priority: 5, // Medium priority by default
          user_id: req.user.id
       });
       if (promoError) throw promoError;
 
-      // Delete the lesson after promotion
-      await db.from('wireline_agent_lessons').delete().eq('id', lessonId);
+      // Delete the lesson after promotion — verify ownership first
+      await db.from('wireline_agent_lessons').delete()
+         .eq('id', lessonId)
+         .eq('user_id', req.user.id);
       
       res.json({ success: true });
    } catch (e) {
@@ -2895,7 +3164,9 @@ app.post("/api/agents/:id/promote", authenticateUser, async (req: any, res: any)
 
 app.delete("/api/agents/:id/lessons/:lessonId", authenticateUser, async (req: any, res: any) => {
    try {
-      await db.from('wireline_agent_lessons').delete().eq('id', req.params.lessonId);
+      await db.from('wireline_agent_lessons').delete()
+         .eq('id', req.params.lessonId)
+         .eq('user_id', req.user.id);
       res.json({ success: true });
    } catch (e) {
       res.status(500).json({ error: "Delete failed" });
