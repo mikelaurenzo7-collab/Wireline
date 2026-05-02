@@ -3,6 +3,7 @@ import { Mail, Send, Loader2, User, Search, Filter, History, ChevronRight, Inbox
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
+import { ClaudeRecipeButton } from "./ClaudeRecipes";
 
 export default function EmailInbox() {
   const [threads, setThreads] = useState<any[]>([]);
@@ -56,13 +57,30 @@ export default function EmailInbox() {
      if (!selectedThread) return;
      setIsDrafting(true);
      try {
+       // Prefer Claude (cached agent prefix + smarter persona handling).
+       const claudeRes = await authFetch(`/api/claude/email-draft`, {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({
+            threadId: selectedThread.id,
+            userInstructions: replyText || undefined,
+         })
+       });
+       if (claudeRes.ok) {
+         const data = await claudeRes.json();
+         if (data.draft) { setReplyText(data.draft); return; }
+       } else if (claudeRes.status !== 503) {
+         const err = await claudeRes.json().catch(() => ({}));
+         console.warn("Claude draft failed; falling back to Gemini:", err);
+       }
+       // Fallback: legacy Gemini draft.
        const res = await authFetch(`/api/emails/draft`, {
          method: "POST",
          headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({ 
+         body: JSON.stringify({
              subject: selectedThread.subject,
              messages: messages,
-             context: replyText 
+             context: replyText
          })
        });
        const data = await res.json();
@@ -249,12 +267,17 @@ export default function EmailInbox() {
                          </div>
                        </div>
                      </div>
-                     <div className="w-full md:w-auto flex flex-col items-stretch gap-4">
-                       <button 
+                     <div className="w-full md:w-auto flex flex-col items-stretch gap-3">
+                       <ClaudeRecipeButton
+                         recipe="summarize-thread"
+                         threadId={selectedThread.id}
+                         label="Summarize · Action Items"
+                       />
+                       <button
                          onClick={() => handlePhoneHandoff(selectedThread)}
-                         className="brutal-btn !bg-ink !text-brand !py-4 !px-8 text-xs font-black uppercase tracking-[0.3em] italic flex items-center justify-center gap-4 group hover:shadow-none active:translate-x-1 active:translate-y-1 transition-all"
+                         className="brutal-btn !py-4 !px-8 text-xs font-black uppercase tracking-[0.3em] italic flex items-center justify-center gap-4 group transition-all"
                        >
-                         <Phone className="w-5 h-5 group-hover:rotate-12 transition-transform" /> ROUTE_TO_VOICE_FLEET
+                         <Phone className="w-5 h-5 group-hover:rotate-12 transition-transform" /> Route to Voice Fleet
                        </button>
                        <div className={cn(
                          "px-6 py-2 brutal-border border-4 shadow-none text-[10px] font-black uppercase tracking-[0.3em] flex items-center justify-center italic",

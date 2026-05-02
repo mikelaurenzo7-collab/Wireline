@@ -3,6 +3,7 @@ import { Phone, PhoneIncoming, PhoneOutgoing, Clock, User, FileText, Play, Pause
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
+import { ClaudeRecipeButton } from "./ClaudeRecipes";
 
 export default function CallLogs() {
   const [calls, setCalls] = useState<any[]>([]);
@@ -225,12 +226,19 @@ export default function CallLogs() {
                   </div>
                 </div>
               </div>
-              <button 
-                onClick={() => setSelectedCall(null)}
-                className="w-14 h-14 md:w-16 md:h-16 brutal-border border-4 bg-white flex items-center justify-center text-ink hover:bg-rose-500 hover:text-white transition-all hover:shadow-none translate-x-[-4px] translate-y-[-4px] hover:translate-x-0 hover:translate-y-0 relative z-10"
-              >
-                <X className="w-8 h-8" />
-              </button>
+              <div className="flex items-center gap-3 relative z-10">
+                <ClaudeRecipeButton
+                  recipe="qualify"
+                  callId={selectedCall.id}
+                  label="Qualify · BANT"
+                />
+                <button
+                  onClick={() => setSelectedCall(null)}
+                  className="w-12 h-12 rounded-full glass border border-white/10 flex items-center justify-center text-ink/70 hover:text-rose-500 hover:border-rose-500/40 transition-all"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-10 md:p-14 space-y-16 scrollbar-hide">

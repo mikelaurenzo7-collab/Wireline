@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import SupervisedAgentTuner from "./SupervisedAgentTuner";
+import { ClaudeRecipeButton } from "./ClaudeRecipes";
 
 const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -210,6 +211,30 @@ export default function AgentTraining() {
             </div>
           </div>
         </div>
+
+      {/* Claude Brain rail — recipes scoped to the selected agent */}
+      <div className="max-w-[1400px] mx-auto w-full mt-10">
+        <div className="relative aurora-ring rounded-2xl">
+          <div className="relative rounded-2xl glass p-5 flex flex-wrap items-center gap-3 overflow-hidden">
+            <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-25 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #C58BFF, transparent)" }} />
+            <div className="relative z-10 flex items-center gap-3 mr-2">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #7DF9FF, #C58BFF)" }}>
+                <Sparkles className="w-4 h-4 text-paper" strokeWidth={2.5} />
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-[0.4em] text-brand">Claude Brain</div>
+                <div className="text-[11px] text-ink/60">Wire intelligent recipes into this agent.</div>
+              </div>
+            </div>
+            <div className="relative z-10 flex flex-wrap items-center gap-2 ml-auto">
+              <ClaudeRecipeButton recipe="agent-review" agentId={selectedAgentId !== 'default-agent' ? selectedAgentId : undefined} label="Performance Review" />
+              <ClaudeRecipeButton recipe="persona-clone" agentId={selectedAgentId !== 'default-agent' ? selectedAgentId : undefined} label="Clone Persona" />
+              <ClaudeRecipeButton recipe="objection-drill" agentId={selectedAgentId !== 'default-agent' ? selectedAgentId : undefined} label="Objection Drills" />
+              <ClaudeRecipeButton recipe="brief" agentId={selectedAgentId !== 'default-agent' ? selectedAgentId : undefined} label="Pre-Call Brief" />
+            </div>
+          </div>
+        </div>
+      </div>
 
       <nav className="flex flex-wrap gap-6 max-w-[1400px] mx-auto w-full mt-12 pt-8 border-t-2 border-ink/5">
            {[ 

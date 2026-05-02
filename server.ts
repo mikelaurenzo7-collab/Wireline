@@ -7,6 +7,7 @@ import { SchemaType } from "@google/generative-ai";
 import { createClient } from "@supabase/supabase-js";
 import { google } from "googleapis";
 import dotenv from "dotenv";
+import * as claudeBrain from "./src/lib/claude-brain";
 
 dotenv.config();
 
@@ -2121,6 +2122,282 @@ app.delete("/api/agents/:id/lessons/:lessonId", authenticateUser, async (req: an
    } catch (e) {
       res.status(500).json({ error: "Delete failed" });
    }
+});
+
+// ==========================================
+//  CLAUDE BRAIN — advanced agent capabilities
+// ==========================================
+
+function claudeErr(res: any, e: any) {
+  if (e instanceof claudeBrain.ClaudeUnavailableError) {
+    return res.status(503).json({
+      error: e.message,
+      code: "CLAUDE_OFFLINE",
+    });
+  }
+  console.error("Claude endpoint error:", e);
+  return res.status(500).json({ error: e?.message ?? "Claude error" });
+}
+
+// Status / health
+app.get("/api/claude/status", authenticateUser, async (_req: any, res: any) => {
+  res.json({
+    available: claudeBrain.isClaudeAvailable(),
+    model: "claude-opus-4-7",
+    capabilities: [
+      "brief", "qualify", "objection-drill", "cold-email",
+      "persona-clone", "summarize-thread", "route-intent",
+      "smart-draft", "agent-review",
+    ],
+  });
+});
+
+// Pre-call briefing — given a lead, deliver a tactical brief.
+app.post("/api/claude/brief", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { agentId, customerName, customerNumber, reasonForCall, pastInteractionSummary } = req.body;
+    let agentName = "Wireline Agent";
+    let agentArchetype = "Receptionist";
+    let knowledgeBase: string[] = [];
+
+    if (agentId) {
+      const [{ data: agent }, { data: knowledge }] = await Promise.all([
+        db.from("wireline_agents").select("name, archetype").eq("id", agentId).eq("user_id", req.user.id).single(),
+        db.from("wireline_knowledge").select("content").eq("agent_id", agentId).eq("user_id", req.user.id),
+      ]);
+      if (agent) {
+        agentName = agent.name;
+        agentArchetype = agent.archetype;
+      }
+      knowledgeBase = (knowledge ?? []).map((k: any) => k.content);
+    }
+
+    const result = await claudeBrain.brief({
+      agentName,
+      agentArchetype,
+      customerName,
+      customerNumber,
+      reasonForCall: reasonForCall || "No specific reason provided.",
+      knowledgeBase,
+      pastInteractionSummary,
+    });
+    res.json({ brief: result });
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Lead qualification — BANT scoring, optionally pulled from a call log.
+app.post("/api/claude/qualify", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { source, transcript, callId, threadId } = req.body;
+    let actualTranscript: string = transcript;
+    let metadata: Record<string, any> = {};
+
+    if (!actualTranscript && callId) {
+      const { data: call } = await db.from("wireline_call_logs").select("*").eq("id", callId).eq("user_id", req.user.id).single();
+      actualTranscript = call?.transcript ?? call?.summary ?? "";
+      metadata = { customer_number: call?.customer_number, duration_seconds: call?.duration_seconds };
+    } else if (!actualTranscript && threadId) {
+      const { data: msgs } = await db.from("wireline_email_messages").select("role, content").eq("thread_id", threadId).order("created_at", { ascending: true });
+      actualTranscript = (msgs ?? []).map((m: any) => `${m.role.toUpperCase()}: ${m.content}`).join("\n\n");
+    }
+
+    if (!actualTranscript) {
+      return res.status(400).json({ error: "No transcript provided (and no callId/threadId to fetch from)." });
+    }
+
+    const result = await claudeBrain.qualify({
+      source: source ?? "voice_call",
+      transcript: actualTranscript,
+      metadata,
+    });
+    res.json({ qualification: result });
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Objection drills — practice scenarios for an agent.
+app.post("/api/claude/objection-drill", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { agentId, topic, count } = req.body;
+    let agentName = "Wireline Agent";
+    let archetype = "Receptionist";
+    if (agentId) {
+      const { data: agent } = await db.from("wireline_agents").select("name, archetype").eq("id", agentId).eq("user_id", req.user.id).single();
+      if (agent) { agentName = agent.name; archetype = agent.archetype; }
+    }
+    const result = await claudeBrain.objectionDrill({
+      agentName, archetype,
+      topic: topic || "general sales objections",
+      count: count ?? 5,
+    });
+    res.json(result);
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Cold-email composer.
+app.post("/api/claude/cold-email", authenticateUser, async (req: any, res: any) => {
+  try {
+    const result = await claudeBrain.coldEmail(req.body);
+    res.json({ email: result });
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Persona cloning.
+app.post("/api/claude/persona-clone", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { description, samples, agentId, applyToAgent } = req.body;
+    if (!Array.isArray(samples) || samples.length === 0) {
+      return res.status(400).json({ error: "Provide at least one sample message." });
+    }
+    const result = await claudeBrain.personaClone({
+      description: description || "Unknown persona",
+      samples,
+    });
+
+    if (applyToAgent && agentId) {
+      // Verify ownership before applying.
+      const { data: agent } = await db.from("wireline_agents").select("id").eq("id", agentId).eq("user_id", req.user.id).single();
+      if (agent) {
+        await db.from("wireline_personality").upsert({
+          agent_id: agentId,
+          user_id: req.user.id,
+          content: result.persona_block,
+        });
+      }
+    }
+    res.json({ persona: result, applied: !!(applyToAgent && agentId) });
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Email-thread summarizer.
+app.post("/api/claude/summarize-thread", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { threadId } = req.body;
+    const { data: thread } = await db.from("wireline_email_threads").select("subject").eq("id", threadId).eq("user_id", req.user.id).single();
+    if (!thread) return res.status(404).json({ error: "Thread not found." });
+    const { data: msgs } = await db.from("wireline_email_messages").select("role, content").eq("thread_id", threadId).order("created_at", { ascending: true });
+    const result = await claudeBrain.threadSummary({
+      subject: thread.subject || "(no subject)",
+      messages: (msgs ?? []) as any,
+    });
+    res.json({ summary: result });
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Fast intent routing.
+app.post("/api/claude/route-intent", authenticateUser, async (req: any, res: any) => {
+  try {
+    const result = await claudeBrain.routeIntent({ text: req.body.text || "" });
+    res.json(result);
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Smart email draft (the better drop-in for the Gemini draft endpoint).
+app.post("/api/claude/email-draft", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { threadId, agentId, userInstructions } = req.body;
+    const { data: thread } = await db.from("wireline_email_threads").select("subject, agent_id").eq("id", threadId).eq("user_id", req.user.id).single();
+    if (!thread) return res.status(404).json({ error: "Thread not found." });
+
+    const targetAgentId = agentId || thread.agent_id;
+    let agentName = "Wireline Agent";
+    let agentTone = "Professional";
+    let agentSignature = "";
+    let knowledgeBase: string[] = [];
+    let directives: string[] = [];
+
+    if (targetAgentId) {
+      const [{ data: agent }, { data: knowledge }, { data: directiveRows }] = await Promise.all([
+        db.from("wireline_agents").select("name, email_agent_tone, email_signature").eq("id", targetAgentId).eq("user_id", req.user.id).single(),
+        db.from("wireline_knowledge").select("content").eq("agent_id", targetAgentId).eq("user_id", req.user.id),
+        db.from("wireline_directives").select("content").eq("agent_id", targetAgentId).eq("user_id", req.user.id).order("priority", { ascending: false }),
+      ]);
+      if (agent) {
+        agentName = agent.name;
+        agentTone = agent.email_agent_tone || "Professional";
+        agentSignature = agent.email_signature || "";
+      }
+      knowledgeBase = (knowledge ?? []).map((k: any) => k.content);
+      directives = (directiveRows ?? []).map((d: any) => d.content);
+    }
+
+    const { data: msgs } = await db.from("wireline_email_messages").select("role, content").eq("thread_id", threadId).order("created_at", { ascending: true });
+
+    const result = await claudeBrain.smartDraft({
+      agentName, agentTone, agentSignature,
+      knowledgeBase, directives,
+      threadSubject: thread.subject || "(no subject)",
+      threadMessages: (msgs ?? []) as any,
+      userInstructions,
+    });
+
+    res.json({
+      draft: result.draft,
+      diagnostics: { cacheRead: result.cacheRead, cacheCreate: result.cacheCreate },
+    });
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Deep agent performance review.
+app.post("/api/claude/agent-review", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { agentId, lookback } = req.body;
+    if (!agentId) return res.status(400).json({ error: "agentId required" });
+    const { data: agent } = await db.from("wireline_agents").select("name, archetype").eq("id", agentId).eq("user_id", req.user.id).single();
+    if (!agent) return res.status(404).json({ error: "Agent not found." });
+    const { data: logs } = await db
+      .from("wireline_call_logs")
+      .select("summary, transcript, lead_score, intent_label")
+      .eq("agent_id", agentId)
+      .eq("user_id", req.user.id)
+      .order("created_at", { ascending: false })
+      .limit(Math.min(lookback ?? 15, 30));
+    if (!logs || logs.length === 0) {
+      return res.status(400).json({ error: "Insufficient data — need at least 1 completed call.", code: "NO_DATA" });
+    }
+    const result = await claudeBrain.agentReview({
+      agentName: agent.name,
+      archetype: agent.archetype,
+      callLogs: logs as any,
+    });
+    res.json({ review: result, lookback: logs.length });
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Promote a Claude-suggested directive into the agent's directive table.
+app.post("/api/claude/agent-review/apply-directive", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { agentId, directive, priority } = req.body;
+    const { data: agent } = await db.from("wireline_agents").select("id").eq("id", agentId).eq("user_id", req.user.id).single();
+    if (!agent) return res.status(404).json({ error: "Agent not found." });
+    const priorityMap: Record<string, number> = { critical: 10, high: 7, medium: 5, low: 3 };
+    await db.from("wireline_directives").insert({
+      agent_id: agentId,
+      user_id: req.user.id,
+      content: directive,
+      priority: priorityMap[priority] ?? 5,
+    });
+    res.json({ success: true });
+  } catch (e) {
+    claudeErr(res, e);
+  }
 });
 
 app.listen(PORT, "0.0.0.0", () => {

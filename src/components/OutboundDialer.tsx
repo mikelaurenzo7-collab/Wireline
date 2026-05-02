@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import Papa from "papaparse";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
+import { ClaudeRecipeButton } from "./ClaudeRecipes";
 
 export default function OutboundDialer() {
   const [isLoading, setIsLoading] = useState(true);
@@ -395,14 +396,24 @@ export default function OutboundDialer() {
                             </div>
                           </div>
 
-                          <div className="shrink-0 flex items-center gap-6">
+                          <div className="shrink-0 flex items-center gap-3">
+                             <ClaudeRecipeButton
+                                recipe="brief"
+                                agentId={selectedAgentId}
+                                initial={{
+                                   customerName: lead.customer_name,
+                                   customerNumber: lead.phone_number,
+                                   reasonForCall: lead.context,
+                                }}
+                                label="Brief"
+                             />
                              {lead.status === 'Queued' && (
-                                <button className="w-16 h-16 bg-zinc-950 text-brand brutal-border border-4 flex items-center justify-center hover:shadow-none hover:bg-brand hover:text-ink transition-all active:translate-x-1 active:translate-y-1">
-                                   <Share2 className="w-8 h-8" />
+                                <button className="w-12 h-12 rounded-full glass border border-white/10 flex items-center justify-center text-ink/70 hover:border-brand/40 hover:text-brand transition-all">
+                                   <Share2 className="w-5 h-5" />
                                 </button>
                              )}
-                             <div className="w-20 h-20 bg-paper brutal-border border-4 flex items-center justify-center shadow-none group-hover:bg-ink group-hover:text-brand transition-all">
-                                <Terminal className="w-10 h-10" />
+                             <div className="w-12 h-12 rounded-full glass border border-white/10 flex items-center justify-center text-ink/70 group-hover:border-brand/40 group-hover:text-brand transition-all">
+                                <Terminal className="w-5 h-5" />
                              </div>
                           </div>
                         </motion.div>
