@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Phone, PhoneIncoming, PhoneOutgoing, Clock, User, FileText, Play, Pause, Download, Search, Filter, Loader2, MessageCircle, ChevronRight, X, Database } from "lucide-react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
-import { LoadingSpinner } from "./LoadingSpinner";
 
 export default function CallLogs() {
   const [calls, setCalls] = useState<any[]>([]);
@@ -80,9 +79,9 @@ export default function CallLogs() {
         </div>
       </header>
 
-      <div className="bg-white brutal-border !p-0 overflow-hidden flex flex-col shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] max-h-[800px] w-full">
-        <div className="overflow-x-auto overflow-y-auto scrollbar-hide">
-          <table className="w-full text-left border-collapse min-w-[1000px]">
+      <div className="bg-white brutal-border !p-0 overflow-hidden flex flex-col shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] max-h-[800px]">
+        <div className="overflow-x-auto overflow-y-auto">
+          <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
               <tr className="bg-zinc-950 text-white border-b-4 border-ink sticky top-0 z-10">
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] italic border-r border-white/10">Signal Direction</th>
@@ -96,7 +95,7 @@ export default function CallLogs() {
             <tbody className="divide-y-2 divide-ink">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-20"><LoadingSpinner message="Retrieving Signal Archives..." /></td>
+                  <td colSpan={6} className="text-center py-20"><Loader2 className="w-10 h-10 animate-spin text-brand mx-auto" /></td>
                 </tr>
               ) : filteredCalls.length === 0 ? (
                 <tr>

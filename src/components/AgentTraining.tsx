@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
+import { GoogleGenAI } from "@google/genai";
 import { Send, Bot, User, CheckCircle2, Loader2, Users, Database, PlayCircle, MessageSquare, Trash2, Mail, Phone, Search, Activity, Plus, Pencil, Save, X, Sparkles } from "lucide-react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -39,15 +42,17 @@ export default function AgentTraining() {
 
   const fetchKnowledge = async () => {
     try {
-      const res = await authFetch(`/api/agent-config/${selectedAgentId}`);
-      const data = await res.json();
-      setKnowledge(data.knowledge || []);
-      setDirectives(data.directives || []);
-      setPersonality(data.personality || "");
-      setPersonalityDraft(data.personality || "");
-    } catch(e) {
-      console.error("Failed to fetch agent config:", e);
-    }
+      const [kRes, dRes] = await Promise.all([
+        authFetch(`/api/knowledge/${selectedAgentId}`),
+        authFetch(`/api/directives/${selectedAgentId}`)
+      ]);
+      const kData = await kRes.json();
+      const dData = await dRes.json();
+      setKnowledge(kData.knowledge || []);
+      setDirectives(dData.directives || []);
+      setPersonality(kData.personality || "");
+      setPersonalityDraft(kData.personality || "");
+    } catch(e) {}
   };
 
   const handleSend = async () => {
@@ -59,16 +64,47 @@ export default function AgentTraining() {
     setIsLoading(true);
 
     try {
-      const res = await authFetch("/api/train", {
+      // 1. CALL GEMINI FROM FRONTEND (SECURITY COMPLIANCE)
+      const prompt = `
+      You are the Wireline Configuration Engine. The business owner is training their AI fleet.
+      Current Training Target: ${selectedAgentId}
+      User Message: "${currentInput}"
+
+      Task: Extract any new instructions, rules, or knowledge. 
+      Categorize them as:
+      - DIRECTIVE: A hard rule the agent must follow (e.g. "Never give out personal cell numbers").
+      - KNOWLEDGE: A fact about the business (e.g. "We are closed on Sundays").
+      - PERSONALITY: A request regarding tone or style (e.g. "Be more enthusiastic and upbeat").
+
+      Respond ONLY in strict, valid JSON format, without markdown wrapping:
+      {
+        "directives": [{"content": "...", "priority": 5}],
+        "knowledge": [{"content": "..."}],
+        "personality": "..."
+      }
+      `;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-2.0-flash", // Using the latest recommended model
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json"
+        }
+      });
+
+      const parsed = JSON.parse(response.text || "{}");
+
+      // 2. SEND EXTRACTED DATA TO BACKEND
+      const res = await authFetch("/api/train/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userMessage: currentInput, agentId: selectedAgentId })
+        body: JSON.stringify({ extracted: parsed, agentId: selectedAgentId })
       });
       
       const data = await res.json();
       
       if (data.success) {
-        const { directives: newDirs, knowledge: newKn, personality } = data.extracted;
+        const { directives: newDirs, knowledge: newKn, personality } = parsed;
         
         let responseContent = "I've successfully updated the agent's knowledge base!\n\n";
         if (newDirs?.length) responseContent += `**Added ${newDirs.length} Directive(s):**\n${newDirs.map((d:any) => `- [Priority ${d.priority}] ${d.content}`).join("\n")}\n\n`;

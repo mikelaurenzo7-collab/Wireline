@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { ArrowRight, Phone, Mail, CheckCircle2, Clock, Loader2, Bot, User, ChevronRight } from "lucide-react";
+import { ArrowRight, Phone, Mail, CheckCircle2, Clock, Loader2, Bot, User, ChevronRight, Calendar } from "lucide-react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 
 export default function FleetTaskBridge() {
   const [tasks, setTasks] = useState<any[]>([]);
+  const [agents, setAgents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchTasks = async () => {
@@ -19,8 +20,17 @@ export default function FleetTaskBridge() {
     }
   };
 
+  const fetchAgents = async () => {
+    try {
+      const res = await authFetch("/api/agents");
+      const data = await res.json();
+      setAgents(data.agents || []);
+    } catch (e) {}
+  };
+
   useEffect(() => {
     fetchTasks();
+    fetchAgents();
     const interval = setInterval(fetchTasks, 30000); // Poll every 30s
     return () => clearInterval(interval);
   }, []);
@@ -31,6 +41,39 @@ export default function FleetTaskBridge() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
+      });
+      fetchTasks();
+    } catch(e) {}
+  };
+
+  const updatePriority = async (id: string, priority: string) => {
+    try {
+      await authFetch(`/api/fleet/tasks/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priority })
+      });
+      fetchTasks();
+    } catch(e) {}
+  };
+
+  const updateAssignment = async (id: string, agent_id: string) => {
+    try {
+      await authFetch(`/api/fleet/tasks/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agent_id })
+      });
+      fetchTasks();
+    } catch(e) {}
+  };
+
+  const updateDueDate = async (id: string, due_date: string) => {
+    try {
+      await authFetch(`/api/fleet/tasks/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ due_date })
       });
       fetchTasks();
     } catch(e) {}
@@ -76,7 +119,8 @@ export default function FleetTaskBridge() {
               key={task.id} 
               className={cn(
                 "bg-white brutal-border p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all relative overflow-hidden group",
-                task.status === 'completed' ? "bg-zinc-50/50 opacity-60 grayscale shadow-none" : "bg-white"
+                task.status === 'completed' ? "bg-zinc-50/50 opacity-60 grayscale shadow-none" : "bg-white",
+                task.priority === 'high' && task.status !== 'completed' && "border-rose-500 shadow-[8px_8px_0px_0px_rgba(244,63,94,1)]"
               )}
             >
               <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6 xl:gap-10">
@@ -106,6 +150,20 @@ export default function FleetTaskBridge() {
                        <span className="text-[9px] font-black text-white bg-ink px-2 py-0.5 uppercase tracking-widest italic brutal-border shadow-none">
                          {task.task_type.replace('_', ' ')}
                        </span>
+                       <select
+                        value={task.priority || "medium"}
+                        onChange={(e) => updatePriority(task.id, e.target.value)}
+                        className={cn(
+                          "text-[9px] font-black uppercase tracking-widest italic brutal-border p-1 outline-none h-6 flex items-center shadow-none transition-all",
+                          task.priority === 'high' ? "bg-rose-500 text-white" :
+                          task.priority === 'low' ? "bg-slate-200 text-slate-600" :
+                          "bg-brand text-ink"
+                        )}
+                       >
+                         <option value="high">HIGH PRIORITY</option>
+                         <option value="medium">MEDIUM</option>
+                         <option value="low">LOW</option>
+                       </select>
                        <span className="text-[9px] text-slate-300 font-black uppercase tracking-[0.3em]">RELAY ID: {task.id.split('-')[0]}</span>
                     </div>
                     <h4 className="font-black text-ink text-xl md:text-3xl font-display uppercase tracking-tight italic leading-none mb-3">
@@ -114,6 +172,36 @@ export default function FleetTaskBridge() {
                     <p className="text-sm md:text-base font-bold text-slate-500 uppercase tracking-tight leading-relaxed max-w-2xl font-display">
                       {task.description.toUpperCase()}
                     </p>
+
+                    <div className="flex flex-wrap items-center gap-6 mt-6">
+                       <div className="flex flex-col gap-2">
+                          <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest italic flex items-center gap-2">
+                            <Bot className="w-3 h-3 text-brand" /> ASSIGNED AGENT
+                          </label>
+                          <select 
+                            value={task.agent_id || ""}
+                            onChange={(e) => updateAssignment(task.id, e.target.value)}
+                            className="text-[10px] font-black bg-zinc-50 brutal-border border-zinc-200 p-2 outline-none focus:bg-brand focus:border-ink min-w-[200px] appearance-none cursor-pointer uppercase tracking-widest shadow-none"
+                          >
+                             <option value="">UNASSIGNED</option>
+                             {agents.map((a: any) => (
+                               <option key={a.id} value={a.id}>{a.name.toUpperCase()}</option>
+                             ))}
+                          </select>
+                       </div>
+
+                       <div className="flex flex-col gap-2">
+                          <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest italic flex items-center gap-2">
+                            <Calendar className="w-3 h-3 text-brand" /> DEADLINE
+                          </label>
+                          <input 
+                            type="date"
+                            value={task.due_date ? task.due_date.split('T')[0] : ""}
+                            onChange={(e) => updateDueDate(task.id, e.target.value)}
+                            className="text-[10px] font-black bg-zinc-50 brutal-border border-zinc-200 p-2 outline-none focus:bg-brand focus:border-ink min-w-[160px] cursor-pointer shadow-none"
+                          />
+                       </div>
+                    </div>
                   </div>
                 </div>
 
@@ -141,7 +229,15 @@ export default function FleetTaskBridge() {
                 </div>
               </div>
               {task.status === 'pending' && (
-                <div className="absolute top-0 left-0 w-4 h-full bg-brand" />
+                <div className={cn(
+                  "absolute top-0 left-0 w-2 md:w-4 h-full transition-colors",
+                  task.priority === 'high' ? "bg-rose-500 animate-pulse" : "bg-brand"
+                )} />
+              )}
+              {task.due_date && task.status === 'pending' && new Date(task.due_date) < new Date() && (
+                <div className="absolute top-0 right-0 bg-rose-500 text-white text-[8px] font-black px-4 py-1 uppercase tracking-[0.3em] font-sans italic brutal-border border-t-0 border-r-0 shadow-none z-10">
+                  OVERDUE MISSION
+                </div>
               )}
             </div>
           ))

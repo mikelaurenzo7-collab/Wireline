@@ -215,7 +215,25 @@ export default function FleetSettings() {
             )}
 
               <div className="pt-8 mt-8 border-t-4 border-ink space-y-6">
-              <h3 className="text-[10px] font-black text-ink uppercase tracking-[0.3em] font-sans italic">CREATE NEW AGENT</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-[10px] font-black text-ink uppercase tracking-[0.3em] font-sans italic">CREATE NEW AGENT</h3>
+                <button 
+                  onClick={async () => {
+                    if (confirm("Seed fleet with specialized units?")) {
+                      setIsCreating(true);
+                      try {
+                        const resp = await authFetch("/api/fleet/seed", { method: "POST" });
+                        if (resp.ok) await fetchAgents();
+                      } finally {
+                        setIsCreating(false);
+                      }
+                    }
+                  }}
+                  className="text-[8px] font-black text-brand bg-ink px-2 py-1 brutal-border shadow-none hover:bg-zinc-800 transition-colors uppercase tracking-widest italic flex items-center gap-2"
+                >
+                  <Sparkles className="w-3 h-3" /> SEED SPECIALISTS
+                </button>
+              </div>
               <div className="flex bg-ink p-1 brutal-border shadow-none">
                  <button onClick={() => setNewAgentChannel('voice')} className={cn("flex-1 text-[10px] font-black py-3 uppercase tracking-widest transition-all italic", newAgentChannel === 'voice' ? "bg-brand text-ink" : "text-white/40 hover:text-white")}>VOICE</button>
                  <button onClick={() => setNewAgentChannel('email')} className={cn("flex-1 text-[10px] font-black py-3 uppercase tracking-widest transition-all italic", newAgentChannel === 'email' ? "bg-brand text-ink" : "text-white/40 hover:text-white")}>EMAIL</button>

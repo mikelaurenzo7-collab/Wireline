@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Mail, Send, Loader2, User, Search, Filter, History, ChevronRight, Inbox, CheckCircle2, RotateCw, Trash2, Bot, Phone } from "lucide-react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
-import { LoadingSpinner } from "./LoadingSpinner";
 
 export default function EmailInbox() {
   const [threads, setThreads] = useState<any[]>([]);
@@ -128,7 +127,7 @@ export default function EmailInbox() {
           
           <div className="flex-1 overflow-y-auto divide-y-2 divide-ink">
             {loading ? (
-              <div className="p-24 text-center"><LoadingSpinner message="Scanning Signal Relay..." /></div>
+              <div className="p-24 text-center"><Loader2 className="w-12 h-12 animate-spin text-brand mx-auto" /></div>
             ) : threads.length === 0 ? (
               <div className="p-24 text-center text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px] italic">No active conversations.</div>
             ) : threads.map(thread => (

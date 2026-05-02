@@ -151,7 +151,7 @@ export default function Integrations() {
                      <Mail className="w-12 h-12 text-brand" />
                   </div>
                   <div>
-                    <div className="font-black text-ink text-4xl font-display uppercase tracking-tighter italic border-b-4 border-transparent group-hover:border-brand transition-all">{acc.email || acc.email_address}</div>
+                    <div className="font-black text-ink text-4xl font-display uppercase tracking-tighter italic border-b-4 border-transparent group-hover:border-brand transition-all">{acc.email_address}</div>
                     <div className="flex items-center gap-6 mt-4">
                       <span className="px-4 py-1 bg-ink text-brand text-[10px] font-black uppercase tracking-widest brutal-border shadow-none italic h-6 flex items-center">CONNECTED</span>
                       <span className="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em]">WORKSPACE ACCOUNT</span>
