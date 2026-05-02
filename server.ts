@@ -5310,6 +5310,7 @@ async function startServer() {
 export { app };
 
 // Only start the HTTP server when running standalone (not on Vercel).
-if (!process.env.VERCEL) {
+// Vercel sets VERCEL=1 automatically in all serverless function environments.
+if (process.env.VERCEL !== '1') {
   startServer();
 }
