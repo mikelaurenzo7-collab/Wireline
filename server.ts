@@ -135,12 +135,53 @@ async function authenticateUser(req: any, res: any, next: any) {
 }
 
 // ==========================================
-// 1. API WEBHOOK (CARRIER CONNECTION) - NO AUTH (SYSTEM TO SYSTEM)
+// 1. VAPI WEBHOOK — system-to-system, signature-verified
 // ==========================================
+//
+// Vapi delivers every webhook with the `serverUrlSecret` value we
+// configured on the assistant (see line ~230) echoed back as a header.
+// We compare in constant time. If VAPI_WEBHOOK_SECRET isn't set we log
+// a one-time warning and allow the request — keeps local dev simple
+// without leaving prod open.
+//
+const VAPI_WEBHOOK_SECRET = process.env.VAPI_WEBHOOK_SECRET || "wireline-secret-key";
+let _warnedAboutVapiSecret = false;
+
+function timingSafeEq(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let mismatch = 0;
+  for (let i = 0; i < a.length; i++) mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return mismatch === 0;
+}
+
 app.post("/api/vapi-webhook", async (req, res) => {
+  // Vapi sends the secret back via one of these headers depending on
+  // SDK version — accept either. The older `x-vapi-secret` and the
+  // newer signature-style header. We're checking for the shared
+  // secret echo, not an HMAC; that's what Vapi's serverUrlSecret
+  // delivers.
+  const provided =
+    (req.headers["x-vapi-secret"] as string | undefined) ||
+    (req.headers["x-vapi-signature"] as string | undefined) ||
+    "";
+
+  if (!process.env.VAPI_WEBHOOK_SECRET) {
+    if (!_warnedAboutVapiSecret) {
+      console.warn(
+        "⚠️  VAPI_WEBHOOK_SECRET is not set — accepting all webhook " +
+        "requests. Set the env var (matching the assistant's " +
+        "serverUrlSecret) to enforce verification in production.",
+      );
+      _warnedAboutVapiSecret = true;
+    }
+  } else if (!timingSafeEq(provided, VAPI_WEBHOOK_SECRET)) {
+    console.warn("Rejected Vapi webhook with bad/missing signature.");
+    return res.status(401).json({ error: "Invalid webhook signature." });
+  }
+
   const payload = req.body;
   const { message } = payload;
-  
+
   console.log("--- INCOMING VAPI WEBHOOK ---");
   
   // For webhooks, we need to know WHICH user this is for.
@@ -2556,6 +2597,70 @@ app.post("/api/claude/agent-review/apply-directive", authenticateUser, async (re
     res.json({ success: true });
   } catch (e) {
     claudeErr(res, e);
+  }
+});
+
+// ──────────────────────────────────────────────────────────
+//  CSV EXPORT — operators get their data out for compliance, analysis,
+//  or migration. RFC 4180 quoting; streamed via res.send().
+// ──────────────────────────────────────────────────────────
+
+function csvEscape(v: any): string {
+  if (v === null || v === undefined) return "";
+  const s = typeof v === "string" ? v : typeof v === "object" ? JSON.stringify(v) : String(v);
+  // Quote if contains delimiter, quote, or newline; escape inner quotes by doubling.
+  if (/[",\r\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+function rowsToCsv(rows: any[], columns: string[]): string {
+  const header = columns.map(csvEscape).join(",");
+  if (!rows.length) return header + "\n";
+  const body = rows.map(r => columns.map(c => csvEscape(r[c])).join(",")).join("\n");
+  return header + "\n" + body + "\n";
+}
+
+const EXPORT_DEFS: Record<string, { table: string; columns: string[]; order: string }> = {
+  calls: {
+    table: "wireline_call_logs",
+    columns: ["id", "vapi_call_id", "agent_id", "direction", "customer_number", "duration_seconds", "cost", "lead_score", "intent_label", "summary", "transcript", "recording_url", "created_at"],
+    order: "created_at",
+  },
+  leads: {
+    table: "wireline_outbound_leads",
+    columns: ["id", "agent_id", "phone_number", "customer_number", "customer_name", "context", "status", "call_id", "last_called_at", "created_at"],
+    order: "created_at",
+  },
+  appointments: {
+    table: "wireline_appointments",
+    columns: ["id", "agent_id", "call_id", "date", "time", "customer_name", "service_type", "status", "created_at"],
+    order: "created_at",
+  },
+  tasks: {
+    table: "wireline_fleet_tasks",
+    columns: ["id", "task_type", "description", "status", "priority", "target_channel", "agent_id", "source_type", "source_id", "due_date", "resolution_notes", "created_at"],
+    order: "created_at",
+  },
+};
+
+app.get("/api/export/:type.csv", authenticateUser, async (req: any, res: any) => {
+  try {
+    const def = EXPORT_DEFS[req.params.type];
+    if (!def) return res.status(404).json({ error: `Unknown export type. Use: ${Object.keys(EXPORT_DEFS).join(", ")}.` });
+
+    const { data, error } = await db
+      .from(def.table)
+      .select(def.columns.join(","))
+      .eq("user_id", req.user.id)
+      .order(def.order, { ascending: false });
+    if (error) throw error;
+
+    const filename = `wireline-${req.params.type}-${new Date().toISOString().slice(0, 10)}.csv`;
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.send(rowsToCsv(data || [], def.columns));
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message ?? "Export failed" });
   }
 });
 

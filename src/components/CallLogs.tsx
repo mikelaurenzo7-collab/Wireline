@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
+import CsvExportButton from "./CsvExportButton";
 
 export default function CallLogs() {
   const [calls, setCalls] = useState<any[]>([]);
@@ -107,6 +108,8 @@ export default function CallLogs() {
             </select>
             <ChevronRight className="absolute right-6 top-1/2 -translate-y-1/2 w-6 h-6 text-ink pointer-events-none rotate-90" />
           </div>
+
+          <CsvExportButton type="calls" label="Export CSV" />
         </div>
       </header>
 

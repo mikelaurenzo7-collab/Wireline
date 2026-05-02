@@ -9,6 +9,7 @@ import {
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
+import CsvExportButton from "./CsvExportButton";
 
 interface TriageData {
   hot_leads: any[];
@@ -81,14 +82,17 @@ export default function TriageInbox() {
             </p>
           </div>
         </div>
-        <button
-          onClick={fetchData}
-          disabled={loading}
-          className="px-4 py-2.5 rounded-full glass border border-white/10 text-[11px] uppercase tracking-[0.3em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-2 disabled:opacity-50"
-        >
-          {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <CsvExportButton type="tasks" label="Export Tasks" />
+          <button
+            onClick={fetchData}
+            disabled={loading}
+            className="px-4 py-2.5 rounded-full glass border border-white/10 text-[11px] uppercase tracking-[0.3em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-2 disabled:opacity-50"
+          >
+            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+            Refresh
+          </button>
+        </div>
       </motion.header>
 
       {/* Tab strip */}

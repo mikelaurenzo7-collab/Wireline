@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
+import CsvExportButton from "./CsvExportButton";
 
 type View = "funnel" | "topics" | "heatmap" | "leaderboard" | "failures";
 
@@ -48,13 +49,14 @@ export default function InsightsView() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <select
             value={days} onChange={(e) => setDays(parseInt(e.target.value))}
             className="px-4 h-11 rounded-full glass border border-white/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
           >
             {[7, 14, 30, 60, 90].map((d) => <option key={d} value={d}>Last {d} days</option>)}
           </select>
+          <CsvExportButton type="calls" label="Export Calls" />
         </div>
       </motion.header>
 

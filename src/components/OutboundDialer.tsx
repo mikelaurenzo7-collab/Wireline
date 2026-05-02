@@ -6,6 +6,7 @@ import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import { Link } from "react-router-dom";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
+import CsvExportButton from "./CsvExportButton";
 
 export default function OutboundDialer() {
   const [isLoading, setIsLoading] = useState(true);
@@ -179,11 +180,12 @@ export default function OutboundDialer() {
           </p>
         </div>
         
-        <div className="flex items-center gap-6 w-full lg:w-auto">
+        <div className="flex items-center gap-3 w-full lg:w-auto flex-wrap">
            <div className="bg-white p-2 brutal-border border-4 shadow-none flex">
               <button onClick={() => setMode("single")} className={cn("px-10 py-4 text-[10px] font-black uppercase tracking-[0.3em] transition-all italic", mode === "single" ? "bg-ink text-brand" : "text-muted hover:text-ink")}>DISCRETE_THREAD</button>
               <button onClick={() => setMode("bulk")} className={cn("px-10 py-4 text-[10px] font-black uppercase tracking-[0.3em] transition-all italic", mode === "bulk" ? "bg-ink text-brand" : "text-muted hover:text-ink")}>BATCH_ARCHIVE</button>
            </div>
+           <CsvExportButton type="leads" label="Export Leads" />
         </div>
       </header>
 
