@@ -123,11 +123,14 @@ const db = createClient(supabaseUrl, supabaseKey);
 const WEBHOOK_EVENTS = [
   "call.completed",
   "call.escalated",
+  "lead.received",
   "lead.hot",
   "email.received",
   "appointment.booked",
   "task.created",
   "compliance.flagged",
+  "spend.warning",
+  "spend.exceeded",
 ] as const;
 type WebhookEvent = typeof WEBHOOK_EVENTS[number];
 
@@ -182,10 +185,145 @@ async function dispatchWebhook(userId: string, event: WebhookEvent, data: any) {
   }
 }
 
+// ────────────────────────────────────────────────────────────────────
+//  SPEND BUDGETS — enforce monthly Claude limits and fire spend.*
+//  webhook events when thresholds are crossed. Composed with the
+//  audit log: month-to-date cost = SUM(cost_usd) over the current
+//  UTC month for the user. Every Claude call funnels through the
+//  audit middleware, which calls evaluateSpend() after the usage
+//  rows are persisted. Hard-cap enforcement is a separate pre-handler
+//  (enforceSpendCap) that short-circuits /api/claude/* with HTTP 402
+//  when the user is both over budget and has hard_cap = true.
+// ────────────────────────────────────────────────────────────────────
+
+type BudgetCacheEntry = {
+  fetchedAt: number;
+  budget: { monthly_limit_usd: number; hard_cap: boolean; warn_threshold_pct: number; enabled: boolean } | null;
+  mtdCost: number;
+  period: string;
+};
+const BUDGET_CACHE_TTL_MS = 60_000;
+const budgetCache = new Map<string, BudgetCacheEntry>();
+
+function currentPeriod(now = new Date()): string {
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+function periodStartIso(period = currentPeriod()): string {
+  // 'YYYY-MM' → UTC midnight of the 1st
+  return new Date(`${period}-01T00:00:00.000Z`).toISOString();
+}
+
+async function getBudgetSnapshot(userId: string, force = false): Promise<BudgetCacheEntry> {
+  const cached = budgetCache.get(userId);
+  const period = currentPeriod();
+  if (!force && cached && cached.period === period && Date.now() - cached.fetchedAt < BUDGET_CACHE_TTL_MS) {
+    return cached;
+  }
+  const [{ data: budget }, { data: rows }] = await Promise.all([
+    db.from("wireline_spend_budgets").select("monthly_limit_usd, hard_cap, warn_threshold_pct, enabled").eq("user_id", userId).maybeSingle(),
+    db.from("wireline_audit_log").select("cost_usd").eq("user_id", userId).gte("created_at", periodStartIso(period)),
+  ]);
+  const mtdCost = (rows || []).reduce((s: number, r: any) => s + Number(r.cost_usd || 0), 0);
+  const entry: BudgetCacheEntry = {
+    fetchedAt: Date.now(),
+    budget: budget
+      ? {
+          monthly_limit_usd: Number(budget.monthly_limit_usd || 0),
+          hard_cap: !!budget.hard_cap,
+          warn_threshold_pct: Number(budget.warn_threshold_pct || 80),
+          enabled: budget.enabled !== false,
+        }
+      : null,
+    mtdCost,
+    period,
+  };
+  budgetCache.set(userId, entry);
+  return entry;
+}
+
+function bumpBudgetCache(userId: string, deltaUsd: number) {
+  const cached = budgetCache.get(userId);
+  if (!cached) return;
+  const period = currentPeriod();
+  if (cached.period !== period) return;
+  cached.mtdCost += deltaUsd;
+}
+
+/**
+ * Fire spend.warning / spend.exceeded webhooks when thresholds cross.
+ * Debounced via wireline_spend_alerts(unique user_id+period+threshold) —
+ * each threshold fires at most once per period.
+ */
+async function evaluateSpend(userId: string, deltaUsd: number) {
+  try {
+    bumpBudgetCache(userId, deltaUsd);
+    const snap = await getBudgetSnapshot(userId);
+    if (!snap.budget || !snap.budget.enabled) return;
+    const limit = snap.budget.monthly_limit_usd;
+    if (!(limit > 0)) return;
+
+    const pct = (snap.mtdCost / limit) * 100;
+    const warnPct = Math.max(1, Math.min(99, snap.budget.warn_threshold_pct));
+    const thresholdsToFire: { pct: number; event: WebhookEvent }[] = [];
+    if (pct >= 100) thresholdsToFire.push({ pct: 100, event: "spend.exceeded" });
+    if (pct >= warnPct) thresholdsToFire.push({ pct: warnPct, event: "spend.warning" });
+
+    for (const t of thresholdsToFire) {
+      // Debounce: insert (user, period, threshold) — duplicate row => already fired.
+      const { error } = await db
+        .from("wireline_spend_alerts")
+        .insert({ user_id: userId, period: snap.period, threshold_pct: t.pct });
+      if (error) continue; // unique-violation or insert error → skip silently
+      await dispatchWebhook(userId, t.event, {
+        period: snap.period,
+        month_to_date_usd: Number(snap.mtdCost.toFixed(4)),
+        monthly_limit_usd: limit,
+        threshold_pct: t.pct,
+        percent_used: Number(pct.toFixed(1)),
+        hard_cap: snap.budget.hard_cap,
+        at: new Date().toISOString(),
+      });
+    }
+  } catch (err) {
+    console.error("evaluateSpend failed:", err);
+  }
+}
+
+/**
+ * Pre-handler for /api/claude/* — block the request with HTTP 402 if the
+ * user has a hard cap on and is at/over their monthly limit. Uses the
+ * cached snapshot so this stays fast on the hot path.
+ */
+async function enforceSpendCap(req: any, res: any, next: any) {
+  if (!req?.user?.id) return next();
+  try {
+    const snap = await getBudgetSnapshot(req.user.id);
+    const b = snap.budget;
+    if (b && b.enabled && b.hard_cap && b.monthly_limit_usd > 0 && snap.mtdCost >= b.monthly_limit_usd) {
+      return res.status(402).json({
+        error: `Monthly Claude budget reached ($${b.monthly_limit_usd.toFixed(2)}). Disable hard cap or raise the limit in Insights → AI Spend.`,
+        code: "SPEND_LIMIT_EXCEEDED",
+        period: snap.period,
+        month_to_date_usd: Number(snap.mtdCost.toFixed(4)),
+        monthly_limit_usd: b.monthly_limit_usd,
+      });
+    }
+  } catch (err) {
+    console.error("enforceSpendCap check failed:", err);
+  }
+  next();
+}
+
 // ==========================================
 // AUTH MIDDLEWARE
 // ==========================================
 async function authenticateUser(req: any, res: any, next: any) {
+  // Idempotent: if an upstream middleware already authenticated this
+  // request (e.g. the /api/claude scope runs auth before the spend cap
+  // and audit middleware), skip the redundant Supabase round-trip.
+  if (req.user?.id) return next();
+
   const authHeader = req.headers.authorization;
   if (!authHeader) {
      return res.status(401).json({ error: "No authorization header provided" });
@@ -2513,9 +2651,21 @@ function withAudit(actionPrefix: string) {
         latency_ms: r.latency_ms,
         metadata: { method: req.method, path: req.path },
       }));
+      const deltaUsd = rows.reduce((s: number, r: any) => s + Number(r.cost_usd || 0), 0);
       // Fire-and-forget; we don't want the user's flow to wait on this.
       Promise.resolve(db.from("wireline_audit_log").insert(rows))
-        .then(({ error }: any) => { if (error) console.error("Audit insert failed:", error); })
+        .then(({ error }: any) => {
+          if (error) {
+            console.error("Audit insert failed:", error);
+            return;
+          }
+          // After the spend is persisted, evaluate against the budget and
+          // fire spend.warning / spend.exceeded webhooks if a threshold
+          // crossed. Also fire-and-forget — never block the response.
+          evaluateSpend(req.user.id, deltaUsd).catch((err: any) =>
+            console.error("evaluateSpend exception:", err),
+          );
+        })
         .catch((err: any) => console.error("Audit insert exception:", err));
     });
     claudeBrain.runInAuditContext(ctx, () => next());
@@ -2523,9 +2673,15 @@ function withAudit(actionPrefix: string) {
 }
 
 // Auto-instrument every Claude path + the Claude-backed insights paths.
+// /status is unauthenticated and doesn't make Claude calls — let it through.
+// Otherwise: authenticate → spend hard-cap → audit context → handler.
+// Hard-cap is checked BEFORE the audit context is established because
+// blocked requests don't make Claude calls so they don't need auditing.
 app.use("/api/claude", (req: any, res: any, next: any) => {
   if (req.path === "/status") return next();
-  return withAudit("claude")(req, res, next);
+  return authenticateUser(req, res, () =>
+    enforceSpendCap(req, res, () => withAudit("claude")(req, res, next)),
+  );
 });
 app.use(["/api/insights/topics", "/api/insights/failure-modes", "/api/insights/daily-brief"],
   withAudit("insights"),
@@ -2879,6 +3035,168 @@ app.post("/api/webhooks/:id/test", authenticateUser, async (req: any, res: any) 
 });
 
 // ──────────────────────────────────────────────────────────
+//  INBOUND LEAD INTAKE — public POST endpoint authenticated by a
+//  per-user API key (X-Wireline-Key: wlk_…). Lets external systems
+//  (Webflow forms, CRMs, Zapier, custom intake) push leads into
+//  Wireline. Inserts into wireline_outbound_leads with
+//  source='inbound' so the existing dialer + triage surfaces pick
+//  them up for free, then fires a lead.received webhook event.
+//
+//    POST /api/intake/lead
+//    Headers:
+//      Content-Type: application/json
+//      X-Wireline-Key: wlk_<24+ chars>
+//    Body:
+//      {
+//        "customer_name": "Jane Doe",          // optional
+//        "customer_number": "+15551234567",    // required (or "phone")
+//        "context": "Filled out demo form",    // optional
+//        "metadata": { "utm_source": "..." }   // optional, free-form
+//      }
+//    Returns: { ok: true, lead_id: <bigint> }
+// ──────────────────────────────────────────────────────────
+
+const INTAKE_KEY_PREFIX = "wlk_";
+
+async function sha256Hex(value: string): Promise<string> {
+  const crypto = await import("node:crypto");
+  return crypto.createHash("sha256").update(value).digest("hex");
+}
+
+async function generateIntakeKey(): Promise<{ plaintext: string; prefix: string; hash: string }> {
+  const crypto = await import("node:crypto");
+  // 32 bytes → 43-char base64url-ish; strip non-alphanumeric for cleanliness.
+  const raw = crypto.randomBytes(32).toString("base64").replace(/[^A-Za-z0-9]/g, "").slice(0, 36);
+  const plaintext = `${INTAKE_KEY_PREFIX}${raw}`;
+  const prefix = plaintext.slice(0, 12);
+  const hash = await sha256Hex(plaintext);
+  return { plaintext, prefix, hash };
+}
+
+// Lookup an intake key, return the row (with user_id) or null.
+async function resolveIntakeKey(provided: string | undefined): Promise<any | null> {
+  if (!provided || typeof provided !== "string" || !provided.startsWith(INTAKE_KEY_PREFIX)) return null;
+  const hash = await sha256Hex(provided.trim());
+  const { data } = await db.from("wireline_intake_keys")
+    .select("id, user_id, name, default_agent_id, active, use_count")
+    .eq("key_hash", hash)
+    .maybeSingle();
+  if (!data || !data.active) return null;
+  return data;
+}
+
+// Public — no Supabase JWT. Authenticated by X-Wireline-Key header.
+app.post("/api/intake/lead", async (req: any, res: any) => {
+  try {
+    const provided = req.headers["x-wireline-key"] as string | undefined;
+    const key = await resolveIntakeKey(provided);
+    if (!key) return res.status(401).json({ error: "Invalid or missing X-Wireline-Key." });
+
+    const body = req.body || {};
+    const customer_number: string | undefined = (body.customer_number || body.phone || body.phone_number || "").toString().trim();
+    if (!customer_number) return res.status(400).json({ error: "customer_number (or phone) is required." });
+
+    const customer_name: string = (body.customer_name || body.name || "").toString().slice(0, 200);
+    const context: string = (body.context || body.message || "").toString().slice(0, 4000);
+    const metadata = body.metadata && typeof body.metadata === "object" ? body.metadata : null;
+    const agent_id = body.agent_id || key.default_agent_id || null;
+
+    const nowIso = new Date().toISOString();
+    const { data: inserted, error } = await db.from("wireline_outbound_leads").insert({
+      user_id: key.user_id,
+      agent_id,
+      customer_name: customer_name || null,
+      customer_number,
+      phone_number: customer_number,
+      context: context || null,
+      status: "Pending",
+      source: "inbound",
+      metadata,
+      received_at: nowIso,
+    }).select("id").single();
+    if (error) throw error;
+
+    // Bump usage stats fire-and-forget so the response stays fast.
+    db.from("wireline_intake_keys").update({
+      last_used_at: nowIso,
+      use_count: (key.use_count || 0) + 1,
+    }).eq("id", key.id).then(() => {}, () => {});
+
+    // Fan out to operator's outbound webhooks.
+    dispatchWebhook(key.user_id, "lead.received", {
+      lead_id: inserted?.id,
+      customer_name: customer_name || null,
+      customer_number,
+      context: context || null,
+      metadata,
+      agent_id,
+      intake_key: { id: key.id, name: key.name },
+      at: nowIso,
+    }).catch(() => {});
+
+    res.json({ ok: true, lead_id: inserted?.id });
+  } catch (e: any) {
+    console.error("Intake lead failed:", e);
+    res.status(500).json({ error: e?.message ?? "Intake failed" });
+  }
+});
+
+// Per-user CRUD on intake keys. Plaintext is returned ONLY at create
+// time; subsequent reads expose the prefix only.
+app.get("/api/intake/keys", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { data, error } = await db.from("wireline_intake_keys")
+      .select("id, name, key_prefix, default_agent_id, active, last_used_at, use_count, created_at")
+      .eq("user_id", req.user.id)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    res.json({ keys: data || [] });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load keys" }); }
+});
+
+app.post("/api/intake/keys", authenticateUser, async (req: any, res: any) => {
+  try {
+    const name = (req.body?.name || "").toString().trim();
+    if (!name) return res.status(400).json({ error: "name is required" });
+    const default_agent_id = req.body?.default_agent_id || null;
+
+    const { plaintext, prefix, hash } = await generateIntakeKey();
+    const { data, error } = await db.from("wireline_intake_keys").insert({
+      user_id: req.user.id,
+      name: name.slice(0, 80),
+      key_prefix: prefix,
+      key_hash: hash,
+      default_agent_id,
+      active: true,
+    }).select("id, name, key_prefix, default_agent_id, active, created_at").single();
+    if (error) throw error;
+    // Plaintext is returned ONCE — we never store or expose it again.
+    res.json({ key: data, plaintext });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to create key" }); }
+});
+
+app.patch("/api/intake/keys/:id", authenticateUser, async (req: any, res: any) => {
+  try {
+    const patch: any = {};
+    if (req.body?.name !== undefined) patch.name = String(req.body.name).slice(0, 80);
+    if (req.body?.active !== undefined) patch.active = !!req.body.active;
+    if (req.body?.default_agent_id !== undefined) patch.default_agent_id = req.body.default_agent_id || null;
+    const { data, error } = await db.from("wireline_intake_keys").update(patch)
+      .eq("id", req.params.id).eq("user_id", req.user.id)
+      .select("id, name, key_prefix, default_agent_id, active, last_used_at, use_count, created_at").single();
+    if (error) throw error;
+    res.json({ key: data });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to update key" }); }
+});
+
+app.delete("/api/intake/keys/:id", authenticateUser, async (req: any, res: any) => {
+  try {
+    await db.from("wireline_intake_keys").delete().eq("id", req.params.id).eq("user_id", req.user.id);
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to delete key" }); }
+});
+
+// ──────────────────────────────────────────────────────────
 //  AUDIT LOG — token + cost visibility for every Claude call.
 // ──────────────────────────────────────────────────────────
 
@@ -2983,6 +3301,78 @@ app.get("/api/audit/recent", authenticateUser, async (req: any, res: any) => {
   } catch (e: any) {
     res.status(500).json({ error: e?.message ?? "Audit fetch failed" });
   }
+});
+
+// ──────────────────────────────────────────────────────────
+//  SPEND BUDGET — monthly Claude limit, hard-cap toggle,
+//  warn-threshold %. Composed with the audit log + outbound webhooks
+//  to give operators a real safety net for LLM bills.
+// ──────────────────────────────────────────────────────────
+
+app.get("/api/spend/budget", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { data } = await db.from("wireline_spend_budgets")
+      .select("monthly_limit_usd, hard_cap, warn_threshold_pct, enabled, updated_at")
+      .eq("user_id", req.user.id).maybeSingle();
+    res.json({
+      budget: data || {
+        monthly_limit_usd: 0,
+        hard_cap: false,
+        warn_threshold_pct: 80,
+        enabled: true,
+        updated_at: null,
+      },
+    });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load budget" }); }
+});
+
+app.put("/api/spend/budget", authenticateUser, async (req: any, res: any) => {
+  try {
+    const limit = Number(req.body.monthly_limit_usd ?? 0);
+    const warn = Math.round(Number(req.body.warn_threshold_pct ?? 80));
+    const hardCap = !!req.body.hard_cap;
+    const enabled = req.body.enabled !== false;
+    if (!Number.isFinite(limit) || limit < 0) return res.status(400).json({ error: "monthly_limit_usd must be a non-negative number" });
+    if (!Number.isInteger(warn) || warn < 1 || warn > 99) return res.status(400).json({ error: "warn_threshold_pct must be 1–99" });
+
+    const { data, error } = await db.from("wireline_spend_budgets")
+      .upsert({
+        user_id: req.user.id,
+        monthly_limit_usd: limit,
+        hard_cap: hardCap,
+        warn_threshold_pct: warn,
+        enabled,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "user_id" })
+      .select().single();
+    if (error) throw error;
+    // Force a cache refresh so the new limit takes effect on the next request.
+    budgetCache.delete(req.user.id);
+    res.json({ budget: data });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to save budget" }); }
+});
+
+app.get("/api/spend/status", authenticateUser, async (req: any, res: any) => {
+  try {
+    const snap = await getBudgetSnapshot(req.user.id, true);
+    const { data: alerts } = await db.from("wireline_spend_alerts")
+      .select("threshold_pct, fired_at")
+      .eq("user_id", req.user.id).eq("period", snap.period)
+      .order("threshold_pct", { ascending: true });
+    const limit = snap.budget?.monthly_limit_usd || 0;
+    const pct = limit > 0 ? (snap.mtdCost / limit) * 100 : 0;
+    res.json({
+      period: snap.period,
+      month_to_date_usd: Number(snap.mtdCost.toFixed(4)),
+      monthly_limit_usd: limit,
+      percent_used: Number(pct.toFixed(1)),
+      hard_cap: snap.budget?.hard_cap ?? false,
+      enabled: snap.budget?.enabled ?? true,
+      warn_threshold_pct: snap.budget?.warn_threshold_pct ?? 80,
+      hard_capped_now: !!(snap.budget?.hard_cap && limit > 0 && snap.mtdCost >= limit),
+      alerts_fired: alerts || [],
+    });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load spend status" }); }
 });
 
 // ──────────────────────────────────────────────────────────

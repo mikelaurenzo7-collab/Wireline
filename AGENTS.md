@@ -38,6 +38,11 @@ break the deployment:
 - `src/components/ErrorBoundary.tsx` — app-level render-error recovery.
 - `src/components/CsvExportButton.tsx` — used by CallLogs / Outbound /
   Insights / Triage for operator data export.
+- `src/components/WebhooksManager.tsx` — outbound webhook CRUD UI in
+  Admin. Handles HMAC-SHA256-signed deliveries to Slack/CRM/Zapier/etc.
+- `src/components/IntakeKeysManager.tsx` — inbound lead-intake API
+  key CRUD UI in Admin. Plaintext shown only once at create time;
+  SHA-256 hash stored. Powers `POST /api/intake/lead`.
 
 ## Dependencies that MUST stay in package.json
 

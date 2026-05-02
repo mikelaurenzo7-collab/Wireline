@@ -118,6 +118,25 @@ All require `ANTHROPIC_API_KEY` and are rate-limited to 60 req/min/user.
 - `POST /api/claude/knowledge-from-url` (single + crawl) · `knowledge-from-document` (PDF) · `knowledge-from-url/apply`
 - `POST /api/knowledge-gaps/:id/promote`
 
+### Spend & audit
+- `GET  /api/audit/summary` — totals + per-day + per-recipe + per-model breakdowns
+- `GET  /api/audit/recent`  — last N raw entries (debug + compliance)
+- `GET  /api/spend/budget` · `PUT /api/spend/budget` — monthly Claude limit + hard-cap toggle
+- `GET  /api/spend/status`  — month-to-date spend, % used, alerts fired, hard-cap state
+
+When month-to-date spend crosses the warn threshold or the limit, Wireline fires `spend.warning` / `spend.exceeded` outbound webhook events (debounced to once per period). With **hard cap on**, Claude calls return HTTP 402 once the limit is reached — no surprise bills.
+
+### Inbound lead intake API
+- `POST /api/intake/lead` — public, authenticated by `X-Wireline-Key: wlk_…`. Body `{ customer_name?, customer_number, context?, metadata?, agent_id? }`. Inserts into the leads table with `source='inbound'` so the dialer + Triage surfaces pick it up automatically, then fires a `lead.received` webhook event.
+- `GET  /api/intake/keys` · `POST /api/intake/keys` · `PATCH/DELETE /api/intake/keys/:id` — manage per-user intake keys (plaintext returned only at create time; SHA-256 stored).
+
+```bash
+curl -X POST $WIRELINE_URL/api/intake/lead \
+  -H "Content-Type: application/json" \
+  -H "X-Wireline-Key: wlk_..." \
+  -d '{"customer_name":"Jane Doe","customer_number":"+15551234567","context":"Filled out demo form","metadata":{"utm_source":"newsletter"}}'
+```
+
 ### Voice / Email / Fleet
 See `server.ts` for the full list — voice webhook (`/api/vapi-webhook`), email sync, agent CRUD, outbound dialer, fleet tasks, etc.
 

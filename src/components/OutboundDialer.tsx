@@ -384,6 +384,9 @@ export default function OutboundDialer() {
                             <div className="flex flex-wrap items-center gap-6">
                                <div className="w-1.5 h-10 bg-ink" />
                                <h3 className="font-black text-ink text-3xl md:text-5xl uppercase tracking-tighter font-display italic leading-[0.8] truncate group-hover:translate-x-2 transition-transform">{lead.customer_name || "SUBJECT_UNKNOWN"}</h3>
+                               {lead.source === "inbound" && (
+                                  <span className="px-3 py-1 bg-brand-2/15 border-2 border-brand-2/50 text-brand-2 text-[10px] font-black uppercase tracking-widest italic">INBOUND</span>
+                               )}
                             </div>
                             <div className="flex flex-wrap items-center gap-8 pl-10">
                                <div className={cn(
