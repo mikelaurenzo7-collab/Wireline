@@ -131,6 +131,49 @@ const WEBHOOK_EVENTS = [
 ] as const;
 type WebhookEvent = typeof WEBHOOK_EVENTS[number];
 
+// Deliver a single webhook with exponential-backoff retry.
+// Attempts: immediate → 2 s → 4 s → 8 s (4 total).
+// 4xx responses are not retried (caller error, not transient).
+// DB is updated once after the final attempt so we don't spam writes.
+async function deliverWebhookWithRetry(
+  hookId: string,
+  deliveryCount: number,
+  url: string,
+  headers: Record<string, string>,
+  payload: string,
+): Promise<void> {
+  const RETRY_DELAYS_MS = [2_000, 4_000, 8_000];
+  let lastStatus = 0;
+  let lastErr: string | null = null;
+
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    if (attempt > 0) {
+      await new Promise(r => setTimeout(r, RETRY_DELAYS_MS[attempt - 1]));
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10_000);
+    try {
+      const r = await fetch(url, { method: "POST", headers, body: payload, signal: controller.signal });
+      clearTimeout(timer);
+      lastStatus = r.status;
+      lastErr = r.ok ? null : `HTTP ${r.status} (attempt ${attempt + 1}/${RETRY_DELAYS_MS.length + 1})`;
+      if (r.ok) break;
+      if (r.status >= 400 && r.status < 500) break; // 4xx — don't retry
+    } catch (err: any) {
+      clearTimeout(timer);
+      lastStatus = 0;
+      lastErr = `${err?.message || String(err)} (attempt ${attempt + 1}/${RETRY_DELAYS_MS.length + 1})`;
+    }
+  }
+
+  await db.from("wireline_webhooks").update({
+    last_triggered_at: new Date().toISOString(),
+    last_status: lastStatus,
+    last_error: lastErr,
+    delivery_count: deliveryCount + 1,
+  }).eq("id", hookId);
+}
+
 async function dispatchWebhook(userId: string, event: WebhookEvent, data: any) {
   try {
     const { data: hooks } = await db.from("wireline_webhooks")
@@ -156,25 +199,13 @@ async function dispatchWebhook(userId: string, event: WebhookEvent, data: any) {
           const sig = crypto.createHmac("sha256", h.secret).update(payload).digest("hex");
           headers["X-Wireline-Signature"] = `sha256=${sig}`;
         }
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 10_000);
-        try {
-          const r = await fetch(h.url, { method: "POST", headers, body: payload, signal: controller.signal });
-          await db.from("wireline_webhooks").update({
-            last_triggered_at: new Date().toISOString(),
-            last_status: r.status,
-            last_error: r.ok ? null : `HTTP ${r.status}`,
-            delivery_count: ((h.delivery_count as number) || 0) + 1,
-          }).eq("id", h.id);
-        } catch (err: any) {
-          await db.from("wireline_webhooks").update({
-            last_triggered_at: new Date().toISOString(),
-            last_status: 0,
-            last_error: err?.message || String(err),
-          }).eq("id", h.id);
-        } finally {
-          clearTimeout(timer);
-        }
+        await deliverWebhookWithRetry(
+          h.id,
+          (h.delivery_count as number) || 0,
+          h.url,
+          headers,
+          payload,
+        );
       }),
     );
   } catch (err) {
@@ -1420,10 +1451,20 @@ app.get("/api/fleet/presence", authenticateUser, async (req: any, res: any) => {
 
 app.get("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => {
   try {
-    const { data, error } = await db.from('wireline_fleet_tasks')
-                                     .select('*, wireline_agents(name)')
-                                     .eq('user_id', req.user.id);
-    
+    const limit = Math.min(parseInt(req.query.limit as string) || 200, 500);
+    const offset = parseInt(req.query.offset as string) || 0;
+    const statusFilter = req.query.status as string | undefined;
+
+    let query = db.from('wireline_fleet_tasks')
+      .select('*, wireline_agents(name)', { count: 'exact' })
+      .eq('user_id', req.user.id)
+      .range(offset, offset + limit - 1);
+
+    if (statusFilter && ['pending', 'active', 'completed'].includes(statusFilter)) {
+      query = query.eq('status', statusFilter);
+    }
+
+    const { data, error, count } = await query;
     if (error) throw error;
 
     const sortedTasks = (data || []).sort((a: any, b: any) => {
@@ -1437,10 +1478,10 @@ app.get("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
 
-    res.json({ tasks: sortedTasks });
+    res.json({ tasks: sortedTasks, total: count || 0, hasMore: count ? (offset + limit) < count : false });
   } catch (error) {
     console.error("Fetch tasks failed:", error);
-    res.json({ tasks: [] });
+    res.json({ tasks: [], total: 0, hasMore: false });
   }
 });
 
@@ -1881,12 +1922,27 @@ app.delete("/api/emails/accounts/:id", authenticateUser, async (req: any, res: a
 
 app.get("/api/emails/threads", authenticateUser, async (req: any, res: any) => {
   try {
-    const { data: threads, error } = await db.from('wireline_email_threads')
-                                           .select('*')
-                                           .eq('user_id', req.user.id)
-                                           .order('last_message_at', { ascending: false });
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+    const offset = parseInt(req.query.offset as string) || 0;
+    const status = req.query.status as string | undefined;
+
+    let query = db.from('wireline_email_threads')
+      .select('*', { count: 'exact' })
+      .eq('user_id', req.user.id)
+      .order('last_message_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (status && ['open', 'replied', 'archived'].includes(status)) {
+      query = query.eq('status', status);
+    }
+
+    const { data: threads, error, count } = await query;
     if (error) throw error;
-    res.json({ threads: threads || [] });
+    res.json({
+      threads: threads || [],
+      total: count || 0,
+      hasMore: count ? (offset + limit) < count : false,
+    });
   } catch(e) {
     res.status(500).json({ error: "Failed to fetch threads" });
   }
