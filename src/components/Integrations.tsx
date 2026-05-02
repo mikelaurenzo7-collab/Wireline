@@ -122,7 +122,7 @@ export default function Integrations() {
         <div className="flex items-center gap-6 w-full lg:w-auto">
           <button 
             onClick={syncAll} 
-            className="brutal-btn flex items-center justify-center gap-4 !h-20 !px-12 bg-zinc-950 !text-brand w-full lg:w-auto uppercase tracking-[0.3em] font-black italic hover:shadow-none translate-x-[-4px] translate-y-[-4px] hover:translate-x-0 hover:translate-y-0 active:translate-x-1 active:translate-y-1 transition-all border-4"
+            className="brutal-btn flex items-center justify-center gap-4 !h-20 !px-12 bg-zinc-950 !text-brand w-full lg:w-auto uppercase tracking-[0.3em] font-black italic shadow-[8px_8px_0px_0px_rgba(212,255,77,1)] hover:shadow-none translate-x-[-4px] translate-y-[-4px] hover:translate-x-0 hover:translate-y-0 active:translate-x-1 active:translate-y-1 transition-all border-4"
           >
             <RotateCw className="w-6 h-6 animate-spin" style={{ animationDuration: '3s' }} />
             <span className="text-sm">GLOBAL_SYNC</span>
@@ -130,7 +130,7 @@ export default function Integrations() {
         </div>
       </header>
 
-      <div className="bg-white brutal-border border-8 !p-0 overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-700">
+      <div className="bg-white brutal-border border-8 !p-0 overflow-hidden shadow-[24px_24px_0px_0px_rgba(10,10,10,1)] animate-in fade-in slide-in-from-bottom-5 duration-700">
         <div className="p-10 md:p-14 border-b-8 border-ink flex flex-col md:flex-row justify-between items-center bg-brand gap-10 relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-10 opacity-10 pointer-events-none group-hover:scale-110 transition-transform">
              <Mail className="w-48 h-48 text-zinc-950" />
@@ -144,7 +144,7 @@ export default function Integrations() {
           </div>
           <button 
             onClick={handleConnectGmail}
-            className="w-full md:w-auto brutal-btn !bg-white !text-ink !px-12 !py-6 hover:!bg-zinc-950 hover:!text-brand transition-all flex items-center justify-center gap-6 hover:shadow-none border-4"
+            className="w-full md:w-auto brutal-btn !bg-white !text-ink !px-12 !py-6 hover:!bg-zinc-950 hover:!text-brand transition-all flex items-center justify-center gap-6 shadow-[8px_8px_0px_0px_rgba(10,10,10,1)] hover:shadow-none border-4"
           >
             <Plus className="w-8 h-8" />
             <span className="font-black uppercase tracking-[0.3em] text-sm italic">LINK_EXTERNAL_ACCOUNT</span>
@@ -159,7 +159,7 @@ export default function Integrations() {
             </div>
           ) : accounts.length === 0 ? (
             <div className="p-32 text-center flex flex-col items-center justify-center space-y-12">
-              <div className="w-32 h-32 md:w-48 md:h-48 bg-white brutal-border border-8 flex items-center justify-center group hover:-rotate-6 transition-transform">
+              <div className="w-32 h-32 md:w-48 md:h-48 bg-white brutal-border border-8 flex items-center justify-center shadow-[16px_16px_0px_0px_rgba(10,10,10,1)] group hover:-rotate-6 transition-transform">
                 <Shield className="w-16 h-16 md:w-24 md:h-24 text-zinc-100 group-hover:text-brand transition-colors" />
               </div>
               <div className="space-y-6">
@@ -180,7 +180,7 @@ export default function Integrations() {
                   className="p-10 md:p-14 flex flex-col xl:flex-row items-center justify-between gap-12 group hover:bg-white transition-all border-b-8 border-ink last:border-b-0"
                 >
                   <div className="flex items-center gap-10">
-                    <div className="w-20 h-20 md:w-24 md:h-24 bg-zinc-950 brutal-border border-4 flex items-center justify-center group-hover:shadow-none transition-all shrink-0">
+                    <div className="w-20 h-20 md:w-24 md:h-24 bg-zinc-950 brutal-border border-4 flex items-center justify-center shadow-[8px_8px_0px_0px_rgba(212,255,77,1)] group-hover:shadow-none transition-all shrink-0">
                        <Mail className="w-10 h-10 md:w-12 md:h-12 text-brand" />
                     </div>
                     <div className="space-y-4">
@@ -203,7 +203,7 @@ export default function Integrations() {
                           <select 
                             value={acc.agent_id || "none"}
                             onChange={(e) => updateAccountAgent(acc.id, e.target.value)}
-                            className="text-sm font-black bg-white brutal-border border-4 p-6 outline-none focus:bg-brand min-w-[350px] appearance-none cursor-pointer uppercase tracking-[0.2em] hover:shadow-none transition-all italic font-display"
+                            className="text-sm font-black bg-white brutal-border border-4 p-6 outline-none focus:bg-brand min-w-[350px] appearance-none cursor-pointer uppercase tracking-[0.2em] shadow-[8px_8px_0px_0px_rgba(10,10,10,1)] hover:shadow-none transition-all italic font-display"
                           >
                              <option value="none">UNASSIGNED_MODE</option>
                              {agents.map(agent => (
@@ -216,7 +216,7 @@ export default function Integrations() {
 
                      <button
                         onClick={() => handleDisconnect(acc.id)}
-                        className="w-20 h-20 brutal-border border-4 bg-white text-zinc-100 hover:text-white hover:bg-rose-500 flex items-center justify-center transition-all hover:shadow-none translate-y-[-4px] hover:translate-y-0 active:scale-95 group/del"
+                        className="w-20 h-20 brutal-border border-4 bg-white text-zinc-100 hover:text-white hover:bg-rose-500 flex items-center justify-center transition-all shadow-[8px_8px_0px_0px_rgba(10,10,10,0.05)] hover:shadow-none translate-y-[-4px] hover:translate-y-0 active:scale-95 group/del"
                         title="TERMINATE_DATA_THREAD"
                      >
                         <Trash2 className="w-8 h-8 group-hover/del:rotate-12 transition-transform" />
@@ -251,7 +251,7 @@ export default function Integrations() {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="mt-12 bg-zinc-950 brutal-border border-8 border-ink p-12 md:p-16 text-white relative overflow-hidden"
+              className="mt-12 bg-zinc-950 brutal-border border-8 border-ink p-12 md:p-16 text-white relative overflow-hidden shadow-[24px_24px_0px_0px_rgba(10,10,10,1)]"
             >
                <div className="absolute top-0 right-0 p-16 opacity-10 pointer-events-none">
                   <Terminal className="w-64 h-64 text-brand" />

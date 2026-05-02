@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Activity, PhoneCall, ShieldCheck, Zap, Mic, Square, Loader2, PlayCircle, Clock, Calendar, Users, TrendingUp, DollarSign, ArrowUpRight, BarChart3, Mail, ChevronRight, Bot, Signal, Target, Radio, Sparkles, Waves } from "lucide-react";
+import { Activity, PhoneCall, ShieldCheck, Zap, Mic, Square, Loader2, PlayCircle, Clock, Calendar, Users, TrendingUp, DollarSign, ArrowUpRight, BarChart3, Mail, ChevronRight, Bot, Signal, Target, Radio } from "lucide-react";
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from "recharts";
 import { motion } from "motion/react";
 import Vapi from "@vapi-ai/web";
 import { cn } from "../lib/utils";
 import FleetTaskBridge from "./FleetTaskBridge";
 import TriggerIntelligenceFeed from "./TriggerIntelligenceFeed";
-import DailyBrief from "./DailyBrief";
 import { authFetch } from "../lib/api";
 
 const vapi = new Vapi(import.meta.env.VITE_VAPI_PUBLIC_KEY || "");
@@ -15,7 +14,7 @@ const vapi = new Vapi(import.meta.env.VITE_VAPI_PUBLIC_KEY || "");
 export default function DashboardHome() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
-
+  
   const [stats, setStats] = useState<any>(null);
   const [activeSignals, setActiveSignals] = useState<any[]>([]);
   const [highPriorityTasks, setHighPriorityTasks] = useState<any[]>([]);
@@ -135,426 +134,395 @@ export default function DashboardHome() {
   const recentLogs = stats?.recentLogs || [];
 
   return (
-    <div className="min-h-full w-full max-w-[1700px] mx-auto space-y-12 pb-32">
-      {/* Hero */}
-      <motion.header
-        initial={{ y: -16, opacity: 0 }}
+    <div className="min-h-full bg-paper w-full p-6 md:p-12 lg:p-16 max-w-[1700px] mx-auto space-y-12 pb-40">
+      {/* Tactical Header Overlay */}
+      <motion.header 
+        initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-10"
+        className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-10 border-b-8 border-ink pb-12"
       >
         <div className="space-y-6 flex-1">
           {highPriorityTasks.length > 0 && (
-            <Link to="/fleet" className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/15 transition-all group">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75 animate-ping" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
-              </span>
-              <span className="text-[10px] uppercase tracking-[0.3em] text-rose-500 font-medium">{highPriorityTasks.length} critical missions await</span>
-              <ChevronRight className="w-3.5 h-3.5 text-rose-500 group-hover:translate-x-0.5 transition-transform" />
+            <Link to="/fleet" className="flex items-center gap-4 bg-rose-500 text-white px-6 py-3 brutal-border shadow-none mb-6 animate-pulse hover:bg-zinc-950 transition-all group">
+              <Zap className="w-5 h-5 fill-white group-hover:fill-brand" />
+              <span className="text-xs font-black uppercase tracking-[0.2em] italic">CRITICAL MISSION QUEUE: {highPriorityTasks.length} NODES REQUIRE IMMEDIATE RESOLUTION</span>
+              <ChevronRight className="w-6 h-6 ml-auto" />
             </Link>
           )}
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            <div className="px-3 py-1.5 rounded-full glass border border-white/8 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 indicator-glow" />
-              <span className="text-[10px] uppercase tracking-[0.3em] text-ink/80">Relay Optimal</span>
-            </div>
-            <div className="px-3 py-1.5 rounded-full glass border border-white/8 flex items-center gap-2">
-              <Radio className="w-3 h-3 text-brand" />
-              <span className="text-[10px] uppercase tracking-[0.3em] text-ink/80">Latency 42ms</span>
-            </div>
-            {activeSignals.length > 0 && (
-              <div className="px-3 py-1.5 rounded-full glass border border-white/8 flex items-center gap-2">
-                <Signal className="w-3 h-3 text-brand-2" />
-                <span className="text-[10px] uppercase tracking-[0.3em] text-ink/80">{activeSignals.length} threads live</span>
-              </div>
-            )}
+          <div className="flex flex-wrap items-center gap-4">
+             <div className="bg-brand text-ink text-[10px] font-black px-3 py-1 uppercase tracking-widest brutal-border shadow-none italic font-display flex items-center gap-2">
+                <span className="w-2 h-2 bg-ink rounded-full animate-ping" />
+                RELAY STATUS: OPTIMAL
+             </div>
+             <div className="flex items-center gap-2 px-3 py-1 bg-ink text-brand brutal-border shadow-none">
+                <Radio className="w-3 h-3 animate-pulse" />
+                <span className="text-[9px] font-black uppercase tracking-tighter italic">Fleet Latency: 42ms</span>
+             </div>
+             {activeSignals.length > 0 && (
+                <div className="flex items-center gap-2 px-3 py-1 bg-zinc-900 text-white brutal-border border-zinc-900 shadow-none">
+                   <Signal className="w-3 h-3 text-brand animate-pulse" />
+                   <span className="text-[9px] font-black uppercase tracking-tighter italic">{activeSignals.length} Active Carrier Threads</span>
+                </div>
+             )}
           </div>
 
-          <div className="space-y-3">
-            <p className="text-[10px] uppercase tracking-[0.6em] text-muted">Today · {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
-            <motion.h1
+          <div className="space-y-2">
+            <motion.h1 
               initial={{ x: -20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.15, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-              className="font-display italic text-6xl md:text-7xl lg:text-[7.5rem] leading-[0.9] tracking-tight"
+              transition={{ delay: 0.2 }}
+              className="text-5xl md:text-7xl lg:text-8xl font-black text-ink uppercase tracking-tighter font-display italic leading-[0.8] mb-4"
             >
-              <span className="text-aurora">Command</span><br />
-              <span className="text-ink/90">Atlas</span>
+              COMMAND<br />CENTER
             </motion.h1>
-            <p className="text-ink/50 max-w-xl text-sm leading-relaxed">
-              Live tactical oversight of autonomous agent dispersion and signal throughput across the Aurora Relay.
+            <p className="text-muted font-bold uppercase tracking-[0.4em] text-xs md:text-sm max-w-xl leading-relaxed">
+              Real-time tactical oversight of autonomous agent dispersion and signal processing throughput.
             </p>
           </div>
         </div>
-
-        <div className="flex flex-col gap-3">
-          <span className="text-[10px] uppercase tracking-[0.45em] text-muted text-right">Voice Console</span>
-          <button
+        
+        <div className="flex flex-col gap-4">
+          <div className="text-[9px] font-black text-ink/30 uppercase tracking-[0.3em] italic text-right px-4">Relay Control Interface v2.4</div>
+          <button 
             onClick={toggleCall}
             disabled={isConnecting}
             className={cn(
-              "lg:min-w-[360px] h-16 px-8 rounded-full flex items-center justify-center gap-3 text-[12px] uppercase tracking-[0.32em] transition-all relative overflow-hidden group",
-              isConnected
-                ? "bg-rose-500/15 border border-rose-500/40 text-rose-500 hover:bg-rose-500/25"
-                : "brutal-btn"
+               "lg:min-w-[400px] brutal-btn h-20 text-sm font-black flex items-center justify-center gap-4 hover:shadow-[12px_12px_0px_0px_rgba(10,10,10,1)] uppercase tracking-[0.3em] italic px-10 transition-all",
+               isConnected ? 'bg-rose-500 text-white shadow-[8px_8px_0px_0px_rgba(244,63,94,1)]' : 'bg-brand'
             )}
           >
             {isConnecting ? (
-              <><Loader2 className="w-5 h-5 animate-spin" /> Synchronizing</>
+               <><Loader2 className="w-6 h-6 animate-spin" /> SYNCHRONIZING...</>
             ) : isConnected ? (
-              <><Square className="w-4 h-4 fill-current" /> Terminate Signal</>
+               <><Square className="w-6 h-6 fill-current" /> TERMINATE SIGNAL</>
             ) : (
-              <><Mic className="w-5 h-5" /> Initiate Test Relay</>
+               <><Mic className="w-6 h-6 text-ink" /> INITIATE TEST RELAY</>
             )}
           </button>
         </div>
       </motion.header>
 
       {isLoading && !stats ? (
-        <div className="flex-1 flex flex-col items-center justify-center py-32 space-y-8">
-          <div className="relative w-32 h-32">
-            <div className="absolute inset-0 rounded-full" style={{
-              background: "conic-gradient(from 0deg, #7DF9FF, #C58BFF, #FF6BD9, #4DFFC4, #7DF9FF)",
-              filter: "blur(2px)",
-              animation: "spin 8s linear infinite"
-            }} />
-            <div className="absolute inset-1.5 rounded-full bg-paper" />
-            <div className="absolute inset-3 rounded-full glass flex items-center justify-center">
-              <Target className="w-12 h-12 text-aurora" strokeWidth={1.5} />
-            </div>
-          </div>
-          <div className="text-center space-y-3">
-            <p className="text-aurora text-sm uppercase tracking-[0.5em]">Syncing Carrier Nodes</p>
-          </div>
+        <div className="flex-1 flex flex-col items-center justify-center p-40 space-y-12">
+           <div className="relative">
+              <Loader2 className="w-24 h-24 animate-spin text-brand" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                 <Target className="w-10 h-10 text-ink animate-pulse" />
+              </div>
+           </div>
+           <div className="text-center space-y-4">
+             <p className="text-ink font-black uppercase tracking-[0.6em] text-sm italic animate-pulse">Syncing with Carrier Nodes...</p>
+             <div className="w-64 h-1 bg-ink/5 mx-auto rounded-full overflow-hidden">
+                <motion.div 
+                  animate={{ x: ["-100%", "100%"] }}
+                  transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                  className="w-1/2 h-full bg-brand"
+                />
+             </div>
+           </div>
         </div>
       ) : (
-        <motion.div
+        <motion.div 
           initial="hidden"
           animate="visible"
-          variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
-          className="space-y-12"
+          variants={{
+            visible: { transition: { staggerChildren: 0.1 } }
+          }}
+          className="space-y-16 lg:space-y-24"
         >
-          {/* Claude's morning brief — only renders when ANTHROPIC_API_KEY is set */}
-          <motion.div variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}>
-            <DailyBrief />
-          </motion.div>
+          {/* Analytics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-10">
+            <motion.div variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }} className="brutal-card group hover:bg-brand transition-all !p-8 md:!p-10 border-4">
+              <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
+                 <PhoneCall className="w-32 h-32" />
+              </div>
+              <div className="flex justify-between items-start mb-8">
+                 <p className="text-[10px] font-black text-muted uppercase tracking-[0.3em] group-hover:text-ink transition-colors italic">Carrier Signals</p>
+                 <PhoneCall className="w-5 h-5 text-ink group-hover:scale-110 transition-transform" />
+              </div>
+              <h3 className="text-5xl md:text-[6.5rem] font-black text-ink font-display italic leading-none tracking-tighter mb-4">{stats?.totalCalls || 0}</h3>
+              <div className="h-1 w-full bg-ink/5 mt-4 group-hover:bg-ink/20 transition-colors" />
+              <p className="text-[9px] font-black text-muted mt-5 group-hover:text-ink/60 uppercase tracking-[0.4em] italic mb-0">Live Dispatch Total</p>
+            </motion.div>
 
-          {/* Metric cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-            {[
-              { label: "Carrier Signals",    value: stats?.totalCalls ?? 0,            sub: "Live dispatch total",       icon: PhoneCall, accent: "#7DF9FF" },
-              { label: "Routing Precision",  value: `${stats?.conversionRate ?? 0}%`,  sub: "Intent fulfillment",       icon: TrendingUp, accent: "#C58BFF" },
-              { label: "Active Nodes",       value: stats?.totalLeads ?? 0,            sub: "Operational fleet",        icon: Bot, accent: "#FF6BD9" },
-              { label: "Operational Burn",   value: `$${stats?.totalCost ?? "0.00"}`,  sub: "Carrier expenditure",      icon: DollarSign, accent: "#4DFFC4" },
-            ].map((c, i) => (
-              <motion.div
-                key={c.label}
-                variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}
-                whileHover={{ y: -4 }}
-                transition={{ duration: 0.4 }}
-                className="relative aurora-ring rounded-3xl"
-              >
-                <div className="relative p-7 rounded-3xl glass overflow-hidden h-full">
-                  <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-25 blur-3xl pointer-events-none" style={{ background: `radial-gradient(circle, ${c.accent}, transparent)` }} />
-                  <div className="relative z-10 flex flex-col h-full">
-                    <div className="flex justify-between items-start mb-6">
-                      <p className="text-[10px] uppercase tracking-[0.3em] text-muted">{c.label}</p>
-                      <div className="w-9 h-9 rounded-xl glass border border-white/10 flex items-center justify-center" style={{ color: c.accent }}>
-                        <c.icon className="w-4 h-4" strokeWidth={2} />
-                      </div>
-                    </div>
-                    <h3 className="font-display italic text-5xl md:text-6xl text-ink leading-none tracking-tight mb-3">{c.value}</h3>
-                    <div className="h-px w-full bg-gradient-to-r from-white/10 via-white/5 to-transparent mt-auto mb-3" />
-                    <p className="text-[10px] uppercase tracking-[0.3em] text-muted">{c.sub}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+            <motion.div variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }} className="brutal-card bg-zinc-950 text-white border-brand !p-8 md:!p-10 shadow-[12px_12px_0px_0px_#D4FF4D]">
+              <div className="flex justify-between items-start mb-8">
+                 <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] italic">Routing Precision</p>
+                 <TrendingUp className="w-5 h-5 text-brand animate-bounce" />
+              </div>
+              <h3 className="text-5xl md:text-[6.5rem] font-black text-brand font-display italic leading-none tracking-tighter mb-4">{stats?.conversionRate || 0}%</h3>
+              <div className="h-1 w-full bg-brand/10 mt-4" />
+              <p className="text-[9px] font-black text-zinc-500 mt-5 uppercase tracking-[0.4em] leading-none italic">Intent Fulfillment</p>
+            </motion.div>
+            
+            <motion.div variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }} className="brutal-card group hover:bg-ink hover:text-white transition-all !p-8 md:!p-10">
+              <div className="flex justify-between items-start mb-8">
+                 <p className="text-[10px] font-black text-muted uppercase tracking-[0.3em] group-hover:text-white/40 italic">Active Nodes</p>
+                 <Bot className="w-5 h-5 text-ink group-hover:text-brand" />
+              </div>
+              <h3 className="text-5xl md:text-[6.5rem] font-black text-ink group-hover:text-white font-display leading-none italic tracking-tighter mb-4">{stats?.totalLeads || 0}</h3>
+              <div className="h-1 w-full bg-ink/5 mt-4 group-hover:bg-white/10" />
+              <p className="text-[9px] font-black text-muted mt-5 group-hover:text-white/40 uppercase tracking-[0.4em] italic">Operational Fleet</p>
+            </motion.div>
+
+            <motion.div variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }} className="brutal-card group hover:bg-brand transition-all !p-8 md:!p-10">
+              <div className="flex justify-between items-start mb-8">
+                 <p className="text-[10px] font-black text-muted uppercase tracking-[0.3em] group-hover:text-ink italic">Operational Burn</p>
+                 <DollarSign className="w-5 h-5 text-ink" />
+              </div>
+              <h3 className="text-5xl md:text-[6.5rem] font-black text-ink font-display leading-none italic tracking-tighter mb-4">${stats?.totalCost || "0.00"}</h3>
+              <div className="h-1 w-full bg-ink/5 mt-4 group-hover:bg-ink/20" />
+              <p className="text-[9px] font-black text-muted mt-5 group-hover:text-ink/60 uppercase tracking-[0.4em] italic">Carrier Expenditure</p>
+            </motion.div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10">
-            <section className="lg:col-span-2 space-y-8">
-              {/* Live signal relay */}
-              {activeSignals.length > 0 && (
-                <motion.div layout className="relative aurora-ring rounded-3xl">
-                  <div className="relative rounded-3xl glass-strong overflow-hidden">
-                    <div className="px-7 py-5 border-b border-white/8 flex justify-between items-center">
-                      <h2 className="font-display italic text-2xl flex items-center gap-3">
-                        <Signal className="w-5 h-5 text-rose-500" />
-                        Tactical Signal Relay
-                      </h2>
-                      <div className="flex items-center gap-2">
-                        <span className="relative flex h-2 w-2">
-                          <span className="absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75 animate-ping" />
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
-                        </span>
-                        <span className="text-[10px] uppercase tracking-[0.3em] text-muted">Live Monitor</span>
-                      </div>
-                    </div>
-                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {activeSignals.map((sig, idx) => (
-                        <div key={idx} className="relative group p-5 rounded-2xl glass border border-white/8 hover:border-brand/40 transition-all">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="font-display italic text-2xl text-ink mb-1.5 tracking-tight">{sig.customer_number}</div>
-                              <div className="flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 indicator-glow" />
-                                <span className="text-[10px] uppercase tracking-[0.3em] text-muted">{sig.status}</span>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-[10px] uppercase tracking-[0.3em] text-rose-500 mb-1">Deployed</div>
-                              <div className="text-[9px] font-mono text-muted/60">node·{sig.agent_id.substring(0,8)}</div>
-                            </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-20">
+              <section className="lg:col-span-2 space-y-12">
+                 {/* Live Monitor */}
+                 {activeSignals.length > 0 && (
+                    <motion.div 
+                      layout
+                      className="brutal-card !p-0 overflow-hidden bg-zinc-950 text-white border-rose-500 shadow-[16px_16px_0px_0px_rgba(244,63,94,1)]"
+                    >
+                       <div className="p-6 border-b-4 border-white/10 flex justify-between items-center bg-rose-500/10">
+                          <h2 className="text-sm font-black uppercase tracking-[0.4em] italic flex items-center gap-4">
+                             <Signal className="w-5 h-5 animate-pulse text-rose-500" />
+                             Tactical Signal Relay
+                          </h2>
+                          <div className="flex items-center gap-3">
+                             <span className="w-2 h-2 bg-rose-500 rounded-full animate-ping" />
+                             <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest italic">Live Monitor Mode</span>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="px-7 py-3 border-t border-white/8 text-center">
-                      <p className="text-[9px] uppercase tracking-[0.7em] text-muted/60">AES-256 Encrypted Stream</p>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* High-intent signals */}
-              <div className="relative aurora-ring rounded-3xl">
-                <div className="relative rounded-3xl glass overflow-hidden">
-                  <div className="px-7 py-5 border-b border-white/8 flex justify-between items-center">
-                    <h2 className="font-display italic text-3xl flex items-center gap-3">
-                      <Target className="w-5 h-5 text-brand" />
-                      High-Intent Signals
-                    </h2>
-                    <span className="text-[10px] uppercase tracking-[0.3em] text-muted">Sector Archive</span>
-                  </div>
-                  <div className="divide-y divide-white/5 flex-1 overflow-y-auto max-h-[700px] scrollbar-hide">
-                    {stats?.hotLeads?.length > 0 ? (
-                      stats.hotLeads.map((lead: any) => (
-                        <div key={lead.id} className="group relative p-7 flex items-center justify-between hover:bg-white/2 transition-all cursor-pointer">
-                          <div className="absolute left-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-brand/0 to-transparent group-hover:via-brand/60 transition-all" />
-                          <div className="flex items-center gap-5 md:gap-6 min-w-0 flex-1">
-                            <div className="relative shrink-0">
-                              <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl glass border border-white/10 flex items-center justify-center text-brand group-hover:text-paper transition-colors">
-                                <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: "linear-gradient(135deg, #7DF9FF, #C58BFF)" }} />
-                                {lead.type === 'call' ? <PhoneCall className="w-6 h-6 relative z-10" /> : <Mail className="w-6 h-6 relative z-10" />}
-                              </div>
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex flex-col md:flex-row md:items-center gap-3 mb-2">
-                                <span className="font-display italic text-2xl md:text-3xl text-ink leading-none tracking-tight truncate">{lead.contact}</span>
-                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand/15 border border-brand/30 w-fit">
-                                  <Sparkles className="w-3 h-3 text-brand" />
-                                  <span className="text-[9px] uppercase tracking-[0.25em] text-brand font-medium">{lead.score}% intent</span>
+                       </div>
+                       <div className="p-8 md:p-12 grid grid-cols-1 md:grid-cols-2 gap-8">
+                          {activeSignals.map((sig, idx) => (
+                             <div key={idx} className="p-6 bg-white/5 border-4 border-white/10 flex items-center justify-between hover:border-white/30 transition-colors">
+                                <div>
+                                   <div className="text-2xl font-black font-display text-white mb-3 italic tracking-tight">{sig.customer_number}</div>
+                                   <div className="flex items-center gap-3">
+                                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                                      <span className="text-[10px] font-black uppercase text-white/60 tracking-widest leading-none">{sig.status}</span>
+                                   </div>
                                 </div>
-                              </div>
-                              <p className="text-xs md:text-sm text-muted leading-relaxed truncate max-w-xl">{lead.summary}</p>
-                            </div>
-                          </div>
-                          <Link to={lead.type === 'call' ? "/logs" : "/inbox"} className="ml-4 shrink-0 w-12 h-12 rounded-full glass border border-white/10 flex items-center justify-center text-ink/60 group-hover:text-paper group-hover:border-brand/0 transition-all relative overflow-hidden">
-                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: "linear-gradient(135deg, #7DF9FF, #C58BFF)" }} />
-                            <ChevronRight className="w-5 h-5 relative z-10" />
-                          </Link>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="p-24 text-center text-muted/40 flex flex-col items-center justify-center space-y-4">
-                        <Radio className="w-16 h-16 opacity-30 animate-pulse" />
-                        <p className="text-[10px] uppercase tracking-[0.6em]">Sector silence</p>
-                      </div>
-                    )}
-                  </div>
-                  <div className="px-7 py-4 border-t border-white/8 text-center">
-                    <button className="text-[10px] uppercase tracking-[0.4em] text-muted/60 hover:text-ink transition-colors">Load Archived Histograms</button>
-                  </div>
-                </div>
-              </div>
-            </section>
+                                <div className="text-right">
+                                   <div className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-1 italic leading-none">DEPLOYED</div>
+                                   <div className="text-[8px] font-mono text-white/20 italic uppercase tracking-tighter">NODE_{sig.agent_id.substring(0,8)}</div>
+                                </div>
+                             </div>
+                          ))}
+                       </div>
+                       <div className="p-4 bg-rose-500/5 text-center border-t-2 border-white/5">
+                          <p className="text-[8px] font-black text-white/20 uppercase tracking-[1em] italic">Encryption Protocol: AES-256 Enabled</p>
+                       </div>
+                    </motion.div>
+                 )}
 
-            <div className="space-y-8">
-              {/* Signal metrics chart */}
-              <section className="relative aurora-ring rounded-3xl">
-                <div className="relative rounded-3xl glass overflow-hidden">
-                  <div className="px-6 py-5 border-b border-white/8">
-                    <h3 className="font-display italic text-2xl flex items-center gap-3">
-                      <BarChart3 className="w-5 h-5 text-brand-2" />
+                 <div className="brutal-card !p-0 overflow-hidden flex flex-col bg-white">
+                    <div className="p-8 border-b-4 border-ink flex justify-between items-center bg-zinc-50 relative">
+                       <div className="absolute top-0 right-10 bottom-0 w-24 bg-brand/5 -skew-x-12" />
+                       <h2 className="text-2xl font-black text-ink flex items-center gap-4 uppercase font-display italic relative z-10">
+                          <Target className="w-6 h-6 text-ink fill-brand" />
+                          High-Intent Signals
+                       </h2>
+                       <div className="flex items-center gap-4 relative z-10">
+                          <span className="text-[9px] font-black text-muted uppercase tracking-[0.3em] italic">Sector Archive</span>
+                          <div className="w-12 h-1 bg-ink" />
+                       </div>
+                    </div>
+                    <div className="divide-y-4 divide-ink flex-1 overflow-y-auto max-h-[700px] scrollbar-hide">
+                       {stats?.hotLeads?.length > 0 ? (
+                          stats.hotLeads.map((lead: any) => (
+                            <div key={lead.id} className="p-8 md:p-12 flex items-center justify-between hover:bg-brand transition-all group cursor-pointer border-l-[12px] border-transparent hover:border-ink">
+                               <div className="flex items-center gap-6 md:gap-10">
+                                  <div className="w-16 h-16 md:w-24 md:h-24 brutal-border bg-ink text-brand flex items-center justify-center shadow-none group-hover:bg-white group-hover:text-ink transition-all">
+                                     {lead.type === 'call' ? <PhoneCall className="w-6 h-6 md:w-10 md:h-10" /> : <Mail className="w-6 h-6 md:w-10 md:h-10" />}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                     <div className="flex flex-col md:flex-row md:items-center gap-4 mb-3">
+                                        <span className="font-black text-xl md:text-3xl text-ink font-display uppercase tracking-tighter leading-none italic">{lead.contact}</span>
+                                        <div className="flex items-center gap-2 px-3 py-1 bg-ink text-brand text-[9px] font-black uppercase tracking-widest italic w-fit shadow-[4px_4px_0px_0px_rgba(212,255,77,0.3)]">
+                                           <Zap className="w-3 h-3 fill-current" />
+                                           {lead.score}% INTENT
+                                        </div>
+                                     </div>
+                                     <p className="text-xs md:text-sm text-muted font-bold group-hover:text-ink/60 uppercase tracking-[0.2em] italic max-w-xl leading-relaxed">{lead.summary}</p>
+                                  </div>
+                               </div>
+                               <Link to={lead.type === 'call' ? "/logs" : "/inbox"} className="w-16 h-16 md:w-20 md:h-20 brutal-border bg-white flex items-center justify-center hover:bg-zinc-950 hover:text-brand transition-all shadow-none shrink-0 ml-4 group-hover:scale-110">
+                                 <ChevronRight className="w-8 h-8 md:w-10 md:h-10" />
+                               </Link>
+                            </div>
+                          ))
+                       ) : (
+                          <div className="p-40 text-center text-ink/10 flex flex-col items-center justify-center h-full space-y-6">
+                            <Radio className="w-24 h-24 opacity-10 animate-pulse" />
+                            <p className="font-black uppercase text-xs tracking-[1em] italic">Sector Silence: No Active Intelligence Detected</p>
+                          </div>
+                       )}
+                    </div>
+                    <div className="p-4 bg-zinc-50 border-t-2 border-ink text-center">
+                       <button className="text-[9px] font-black uppercase tracking-[0.5em] text-ink/40 hover:text-ink transition-colors italic">LOAD ARCHIVED HISTOGRAMS</button>
+                    </div>
+                 </div>
+              </section>
+
+              <div className="space-y-10 lg:space-y-12">
+                <section className="brutal-card !p-0 overflow-hidden bg-white hover:shadow-[16px_16px_0px_0px_rgba(10,10,10,1)] transition-all">
+                  <div className="p-6 border-b-4 border-ink bg-brand">
+                    <h3 className="text-lg font-black text-ink uppercase font-display italic leading-none flex items-center gap-4">
+                      <BarChart3 className="w-6 h-6" />
                       Signal Metrics
                     </h3>
                   </div>
-                  <div className="p-5 h-[380px]">
+                  <div className="p-8 md:p-10 h-[450px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={chartData}>
                         <defs>
-                          <linearGradient id="colorSignals" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#7DF9FF" stopOpacity={0.6}/>
-                            <stop offset="50%" stopColor="#C58BFF" stopOpacity={0.3}/>
-                            <stop offset="100%" stopColor="#FF6BD9" stopOpacity={0}/>
-                          </linearGradient>
-                          <linearGradient id="strokeGrad" x1="0" y1="0" x2="1" y2="0">
-                            <stop offset="0%" stopColor="#7DF9FF"/>
-                            <stop offset="50%" stopColor="#C58BFF"/>
-                            <stop offset="100%" stopColor="#FF6BD9"/>
-                          </linearGradient>
+                           <linearGradient id="colorSignals" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#D4FF4D" stopOpacity={0.8}/>
+                              <stop offset="95%" stopColor="#D4FF4D" stopOpacity={0}/>
+                           </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 6" vertical={false} stroke="#FFFFFF" strokeOpacity={0.05} />
-                        <XAxis
-                          dataKey="name"
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fill: '#8B89B8', fontWeight: 500, fontSize: 10, letterSpacing: '0.15em' }}
+                        <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#0A0A0A" strokeOpacity={0.1} />
+                        <XAxis 
+                          dataKey="name" 
+                          axisLine={{ stroke: '#0A0A0A', strokeWidth: 2 }} 
+                          tickLine={false} 
+                          tick={{ fill: '#0A0A0A', fontWeight: 900, fontSize: 9, textTransform: 'uppercase' }} 
                           dy={10}
                         />
                         <YAxis hide />
-                        <Tooltip
-                          contentStyle={{ backgroundColor: 'rgba(15,14,45,0.95)', border: '1px solid rgba(125,249,255,0.3)', borderRadius: '12px', color: '#F2F1FF', fontSize: '12px', backdropFilter: 'blur(20px)', boxShadow: '0 12px 36px -8px rgba(125,249,255,0.3)' }}
-                          cursor={{ stroke: '#7DF9FF', strokeWidth: 1, strokeDasharray: '4 4' }}
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: '#0A0A0A', border: '4px solid #D4FF4D', color: '#D4FF4D', fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', fontStyle: 'italic' }}
+                          cursor={{ stroke: '#0A0A0A', strokeWidth: 2, strokeDasharray: '4 4' }}
                         />
-                        <Area
-                          type="monotone"
-                          dataKey="signals"
-                          stroke="url(#strokeGrad)"
-                          strokeWidth={3}
-                          fillOpacity={1}
-                          fill="url(#colorSignals)"
-                          animationDuration={1800}
+                        <Area 
+                           type="monotone" 
+                           dataKey="signals" 
+                           stroke="#0A0A0A" 
+                           strokeWidth={6} 
+                           fillOpacity={1} 
+                           fill="url(#colorSignals)" 
+                           animationDuration={2000}
                         />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="px-6 py-4 border-t border-white/8 flex justify-between items-center">
-                    <div>
-                      <div className="text-[10px] uppercase tracking-[0.3em] text-muted mb-1">Tactical Accuracy</div>
-                      <div className="font-display italic text-3xl text-aurora tracking-tight">82.4%</div>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl glass border border-white/10 flex items-center justify-center text-brand">
-                      <TrendingUp className="w-5 h-5" />
-                    </div>
+                  <div className="p-6 border-t-4 border-ink bg-zinc-100 flex justify-between items-center">
+                     <div>
+                        <div className="text-[10px] font-black uppercase tracking-[0.3em] text-muted mb-1 italic">Tactical Accuracy</div>
+                        <div className="text-4xl font-black text-ink font-display italic tracking-tighter">82.4%</div>
+                     </div>
+                     <div className="w-12 h-12 brutal-border bg-white flex items-center justify-center shadow-none text-brand">
+                        <TrendingUp className="w-6 h-6 text-ink" />
+                     </div>
                   </div>
-                </div>
-              </section>
+                </section>
 
-              <TriggerIntelligenceFeed activity={systemActivity} />
-              <FleetTaskBridge />
+                <TriggerIntelligenceFeed activity={systemActivity} />
 
-              {/* System criticality */}
-              <div className="relative aurora-ring rounded-3xl">
-                <div className="relative p-7 rounded-3xl glass-strong overflow-hidden space-y-5">
-                  <div className="absolute -bottom-16 -right-16 w-48 h-48 rounded-full opacity-30 blur-3xl" style={{ background: "radial-gradient(circle, #FF6BD9, transparent)" }} />
-                  <div className="relative z-10 flex items-center gap-3">
-                    <ShieldCheck className="w-4 h-4 text-rose-500" />
-                    <h4 className="text-[11px] uppercase tracking-[0.4em] text-rose-500">System Criticality</h4>
-                  </div>
-                  <p className="relative z-10 text-ink/60 text-xs leading-relaxed">
-                    All carrier nodes operating within thermal limits. No signal drops detected in the last 14,000 requests. Redundancy protocols active.
-                  </p>
-                  <div className="relative z-10 flex items-center gap-3">
-                    <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: "94%" }}
-                        transition={{ duration: 1.8, ease: "easeOut" }}
-                        className="h-full rounded-full"
-                        style={{ background: "linear-gradient(90deg, #7DF9FF, #C58BFF, #FF6BD9)" }}
-                      />
-                    </div>
-                    <span className="font-mono text-xs text-ink">94%</span>
-                  </div>
+                <FleetTaskBridge />
+
+                <div className="brutal-card bg-zinc-900 border-rose-500 !p-10 space-y-6 relative overflow-hidden group">
+                   <div className="absolute -bottom-10 -right-10 opacity-10 group-hover:rotate-12 transition-transform duration-700">
+                      <ShieldCheck className="w-48 h-48 text-rose-500" />
+                   </div>
+                   <h4 className="text-rose-500 font-black uppercase tracking-[0.4em] text-xs italic">System Criticality</h4>
+                   <p className="text-white/60 text-xs font-bold leading-relaxed tracking-wider uppercase italic">
+                      All carrier nodes are operating within thermal limits. No signal drops detected in the last 14,000 requests. Redundancy protocols active.
+                   </p>
+                   <div className="flex items-center gap-4">
+                      <div className="flex-1 h-3 bg-white/10 rounded-full overflow-hidden border-2 border-white/5">
+                         <motion.div 
+                           initial={{ width: 0 }}
+                           animate={{ width: "94%" }}
+                           transition={{ duration: 2, ease: "easeOut" }}
+                           className="h-full bg-rose-500"
+                         />
+                      </div>
+                      <span className="text-white font-black italic font-mono text-xs">94%</span>
+                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Mission integrity hero panel */}
-          <motion.div variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }} className="relative aurora-ring rounded-3xl">
-            <div className="relative rounded-3xl p-10 md:p-16 glass-strong overflow-hidden">
-              <div className="absolute -top-32 -right-32 w-[28rem] h-[28rem] rounded-full opacity-40 blur-3xl" style={{ background: "radial-gradient(circle, #7DF9FF, transparent)" }} />
-              <div className="absolute -bottom-32 -left-32 w-[28rem] h-[28rem] rounded-full opacity-40 blur-3xl" style={{ background: "radial-gradient(circle, #C58BFF, transparent)" }} />
-
-              <div className="relative z-10 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-12">
-                <div className="space-y-6 max-w-2xl">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Sparkles className="w-4 h-4 text-brand" />
-                    <span className="text-[10px] uppercase tracking-[0.45em] text-brand">Aurora Health</span>
-                  </div>
-                  <h3 className="font-display italic text-5xl md:text-7xl text-aurora leading-[0.9] tracking-tight">Mission Integrity</h3>
-                  <p className="text-ink/50 text-sm md:text-base leading-relaxed">
-                    Platform protocols remain stable across all carrier geographies. Neural engines operate at peak inference capacity.
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <div className="px-3 py-1.5 rounded-full glass border border-brand/30 text-brand text-[10px] uppercase tracking-[0.3em]">Node Global-Relay-1</div>
-                    <div className="px-3 py-1.5 rounded-full glass border border-rose-500/30 text-rose-500 text-[10px] uppercase tracking-[0.3em]">Core Active</div>
-                  </div>
+            <motion.div variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }} className="brutal-card !bg-zinc-950 text-white p-12 md:p-20 relative overflow-hidden border-4 border-brand">
+             <div className="absolute top-0 right-0 p-16 opacity-5 pointer-events-none -rotate-12 translate-x-12 translate-y-[-2rem] group-hover:rotate-0 transition-transform duration-1000">
+                <Target className="w-[30rem] h-[30rem] text-brand" />
+             </div>
+             
+             <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-16 relative z-10">
+                <div className="space-y-10">
+                   <div className="flex items-center gap-6">
+                      <div className="w-4 h-16 bg-brand shadow-[4px_4px_0px_0px_rgba(212,255,77,0.3)]" />
+                      <h3 className="text-4xl md:text-7xl font-black uppercase font-display italic leading-none tracking-tighter">Mission Integrity</h3>
+                   </div>
+                   <p className="text-white/40 max-w-2xl text-xs md:text-base font-bold uppercase tracking-[0.3em] leading-relaxed italic">
+                      PLATFORM PROTOCOLS REMAIN STABLE ACROSS ALL CARRIER GEOGRAPHIES. NEURAL ENGINES ARE OPERATING AT PEAK INFERENCE CAPACITY.
+                   </p>
+                   <div className="flex gap-4">
+                      <div className="px-4 py-2 border-2 border-brand/40 text-brand text-[10px] font-black uppercase tracking-widest italic">Node: Global-Relay-1</div>
+                      <div className="px-4 py-2 border-2 border-rose-500/40 text-rose-500 text-[10px] font-black uppercase tracking-widest italic">Core: Active</div>
+                   </div>
                 </div>
-
-                <div className="flex flex-wrap gap-4 w-full xl:w-auto">
-                  <div className="flex-1 min-w-[200px] md:min-w-[260px] p-7 md:p-10 rounded-3xl glass border border-white/10 hover:border-brand/40 transition-all relative overflow-hidden group">
-                    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand to-transparent opacity-60" />
-                    <div className="text-[10px] uppercase tracking-[0.45em] text-brand mb-6">Dispersion Time</div>
-                    <div className="font-display italic text-6xl md:text-8xl text-ink leading-none tracking-tight">
-                      {stats?.totalMinutes || 0}
-                      <span className="text-2xl md:text-3xl text-muted/60 ml-2 not-italic">min</span>
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-[200px] md:min-w-[260px] p-7 md:p-10 rounded-3xl glass border border-white/10 hover:border-brand-3/40 transition-all relative overflow-hidden group">
-                    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-3 to-transparent opacity-60" />
-                    <div className="text-[10px] uppercase tracking-[0.45em] text-brand-3 mb-6">Target Capture</div>
-                    <div className="font-display italic text-6xl md:text-8xl text-ink leading-none tracking-tight">
-                      72.4
-                      <span className="text-2xl md:text-3xl text-muted/60 ml-1 not-italic">%</span>
-                    </div>
-                  </div>
+                
+                <div className="flex flex-wrap gap-8 md:gap-12 w-full xl:w-auto">
+                   <div className="flex-1 min-w-[220px] md:min-w-[280px] border-4 border-white/10 bg-white/5 p-8 md:p-14 hover:border-brand transition-all group overflow-hidden relative">
+                      <div className="absolute top-0 right-0 w-2 h-full bg-brand group-hover:scale-y-100 scale-y-0 origin-top transition-transform" />
+                      <div className="text-brand text-[10px] md:text-sm font-black uppercase tracking-[0.5em] mb-10 italic">Dispersion Time</div>
+                      <div className="text-6xl md:text-9xl font-black font-display text-white italic leading-none tracking-tighter">{stats?.totalMinutes || 0}<span className="text-xs md:text-3xl text-white/20 font-sans not-italic ml-4 tracking-tighter align-baseline font-black">MIN</span></div>
+                   </div>
+                   <div className="flex-1 min-w-[220px] md:min-w-[280px] border-4 border-white/10 bg-white/5 p-8 md:p-14 hover:border-brand transition-all group overflow-hidden relative">
+                      <div className="absolute top-0 right-0 w-2 h-full bg-rose-500 group-hover:scale-y-100 scale-y-0 origin-top transition-transform" />
+                      <div className="text-rose-500 text-[10px] md:text-sm font-black uppercase tracking-[0.5em] mb-10 italic">Target Capture</div>
+                      <div className="text-6xl md:text-9xl font-black font-display text-white italic leading-none tracking-tighter">72.4<span className="text-xs md:text-3xl text-white/20 font-sans not-italic ml-4 tracking-tighter align-baseline font-black font-black">%</span></div>
+                   </div>
                 </div>
-              </div>
-            </div>
+             </div>
           </motion.div>
 
-          {/* Signal history */}
-          <motion.section variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }} className="relative aurora-ring rounded-3xl">
-            <div className="relative rounded-3xl glass overflow-hidden">
-              <div className="px-7 py-5 border-b border-white/8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <h2 className="font-display italic text-3xl flex items-center gap-3">
-                  <Mic className="w-5 h-5 text-brand" />
-                  Signal History
-                </h2>
-                <Link to="/logs" className="px-5 py-2.5 rounded-full glass border border-white/10 hover:border-brand/40 text-[11px] uppercase tracking-[0.3em] flex items-center gap-2 transition-all group">
-                  View All Archives
-                  <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                </Link>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-white/5">
-                {recentLogs.length === 0 ? (
-                  <div className="p-24 text-center col-span-2">
-                    <p className="text-[10px] uppercase tracking-[0.6em] text-muted/40">Idle signal state</p>
-                  </div>
-                ) : (
-                  recentLogs.slice(0, 4).map((call: any, idx: number) => (
-                    <Link to="/logs" key={call.id || idx} className="group relative p-7 md:p-9 flex items-center justify-between hover:bg-white/2 transition-all overflow-hidden">
-                      <div className="flex items-center gap-5 relative z-10 min-w-0">
-                        <div className={cn(
-                          "w-14 h-14 md:w-16 md:h-16 rounded-2xl glass border flex items-center justify-center transition-all shrink-0",
-                          call.direction === 'inbound' ? "border-brand/30 text-brand" : "border-brand-2/30 text-brand-2"
-                        )}>
-                          <PhoneCall className={cn("w-6 h-6", call.direction === 'inbound' ? "" : "-rotate-90")} />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="font-display italic text-2xl md:text-3xl text-ink leading-none mb-2 tracking-tight truncate">{call.customer_number || "Simulator"}</div>
-                          <div className="text-[10px] uppercase tracking-[0.3em] text-muted truncate w-48 md:w-72">{call.summary}</div>
-                        </div>
+          <motion.section variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }} className="brutal-card !p-0 overflow-hidden bg-white border-4">
+            <div className="p-10 border-b-4 border-ink flex flex-col md:flex-row justify-between items-start md:items-center bg-zinc-50 gap-6">
+              <h2 className="text-3xl font-black text-ink flex items-center gap-6 uppercase font-display italic">
+                 <Mic className="w-10 h-10 text-ink fill-brand" /> Signal History
+              </h2>
+              <Link to="/logs" className="brutal-btn w-full md:w-auto !py-4 !px-8 text-xs flex items-center justify-center gap-4 group hover:shadow-[6px_6px_0px_0px_rgba(10,10,10,1)]">
+                 VIEW ALL ARCHIVES
+                 <ArrowUpRight className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+              </Link>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 divide-y-4 md:divide-y-0 md:divide-x-4 divide-ink">
+              {recentLogs.length === 0 ? (
+                <div className="p-40 text-center text-muted font-black uppercase text-xs tracking-[1em] col-span-2 italic">Idle signal state detected.</div>
+              ) : (
+                recentLogs.slice(0, 4).map((call: any, idx: number) => (
+                  <Link to="/logs" key={call.id || idx} className="p-10 md:p-14 flex items-center justify-between hover:bg-zinc-50 transition-all group relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-brand/5 rotate-45 translate-x-12 translate-y-[-2rem] group-hover:opacity-20 transition-opacity" />
+                    <div className="flex items-center gap-8 relative z-10">
+                      <div className={cn(
+                        "w-16 h-16 md:w-20 md:h-20 brutal-border flex items-center justify-center group-hover:scale-105 transition-transform",
+                        call.direction === 'inbound' ? 'bg-cyan-50' : 'bg-brand'
+                      )}>
+                        {call.direction === 'inbound' ? <PhoneCall className="w-8 h-8 md:w-10 md:h-10 text-ink" /> : <PhoneCall className="w-8 h-8 md:w-10 md:h-10 text-ink -rotate-90" />}
                       </div>
-                      <div className="text-right relative z-10 shrink-0 ml-4">
-                        <div className="font-mono text-base md:text-lg text-ink/90">{Math.ceil(call.duration_seconds / 60)}m {call.duration_seconds % 60}s</div>
-                        <div className="text-[9px] uppercase tracking-[0.3em] text-muted mt-1">{new Date(call.created_at).toLocaleDateString()}</div>
+                      <div className="min-w-0">
+                        <div className="font-black text-ink font-display text-2xl md:text-3xl leading-none mb-3 tracking-tighter uppercase italic">{call.customer_number || "SIMULATOR"}</div>
+                        <div className="text-[10px] md:text-xs font-bold text-muted uppercase tracking-widest truncate w-48 md:w-64 italic">{call.summary}</div>
                       </div>
-                    </Link>
-                  ))
-                )}
-              </div>
-              <div className="px-7 py-4 border-t border-white/8 text-center flex items-center justify-center gap-2">
-                <span className="w-1 h-1 rounded-full bg-brand indicator-glow" />
-                <p className="text-[9px] uppercase tracking-[0.7em] text-muted/60">End of recent buffer</p>
-              </div>
+                    </div>
+                    <div className="text-right relative z-10 shrink-0 ml-4">
+                       <div className="text-lg md:text-2xl font-black text-ink font-mono uppercase tracking-tighter italic">{Math.ceil(call.duration_seconds / 60)}m {call.duration_seconds % 60}s</div>
+                       <div className="text-[9px] text-muted font-black uppercase tracking-widest mt-2 bg-ink/5 px-2 py-1 italic">{new Date(call.created_at).toLocaleDateString()}</div>
+                    </div>
+                  </Link>
+                ))
+              )}
+            </div>
+            <div className="p-8 bg-zinc-950 text-center flex items-center justify-center gap-4">
+               <span className="w-1.5 h-1.5 bg-brand rounded-full animate-ping" />
+               <p className="text-[9px] font-black text-white/40 uppercase tracking-[0.8em] italic">End of recent signal buffer</p>
             </div>
           </motion.section>
         </motion.div>

@@ -87,7 +87,7 @@ export default function CommandBar() {
             initial={{ scale: 0.95, opacity: 0, y: -20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: -20 }}
-            className="relative w-full max-w-2xl bg-white brutal-border overflow-hidden"
+            className="relative w-full max-w-2xl bg-white brutal-border shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] overflow-hidden"
           >
             <div className="p-6 border-b-4 border-ink flex items-center gap-4 bg-zinc-50">
               <Search className="w-6 h-6 text-slate-400" />
@@ -126,7 +126,7 @@ export default function CommandBar() {
                                  onMouseEnter={() => setSelectedIndex(globalIndex)}
                                  className={cn(
                                    "w-full p-4 flex items-center justify-between text-left transition-all border-2 border-transparent",
-                                   isSelected ? "bg-brand border-ink translate-x-1 -translate-y-1 " : "hover:bg-zinc-50"
+                                   isSelected ? "bg-brand border-ink translate-x-1 -translate-y-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]" : "hover:bg-zinc-50"
                                  )}
                                >
                                  <div className="flex items-center gap-4">

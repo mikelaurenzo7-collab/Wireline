@@ -34,7 +34,7 @@ export default function TriggerIntelligenceFeed({ activity }: { activity: Activi
   };
 
   return (
-    <div className="brutal-card !p-0 overflow-hidden bg-white transition-all">
+    <div className="brutal-card !p-0 overflow-hidden bg-white hover:shadow-[16px_16px_0px_0px_rgba(10,10,10,1)] transition-all">
       <div className="p-6 border-b-4 border-ink bg-zinc-950 text-white flex justify-between items-center">
         <h3 className="text-sm font-black uppercase tracking-[0.4em] italic flex items-center gap-4">
           <Activity className="w-5 h-5 text-brand" />
