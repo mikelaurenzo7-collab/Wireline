@@ -628,6 +628,140 @@ export const TOOLS = {
     },
   } as ToolSchema,
 
+  /** Daily executive brief — Claude's morning take. */
+  dailyBrief: {
+    name: "deliver_daily_brief",
+    description:
+      "Deliver a concise executive brief summarizing the previous day's agent activity for an SMB owner.",
+    input_schema: {
+      type: "object",
+      properties: {
+        headline: { type: "string", description: "≤14 words. The day's story in one line." },
+        mood: { type: "string", enum: ["green", "yellow", "red"] },
+        key_metrics_takeaway: { type: "string", description: "1–2 sentences interpreting the headline numbers." },
+        highlights: {
+          type: "array",
+          items: { type: "string" },
+          description: "Wins, breakthroughs, surprises (2–4 items).",
+        },
+        concerns: {
+          type: "array",
+          items: { type: "string" },
+          description: "Risks, regressions, things to watch (0–4 items).",
+        },
+        action_items: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              description: { type: "string" },
+              urgency: { type: "string", enum: ["high", "medium", "low"] },
+            },
+            required: ["description", "urgency"],
+            additionalProperties: false,
+          },
+          description: "Concrete things the operator should do today (1–4 items).",
+        },
+      },
+      required: [
+        "headline",
+        "mood",
+        "key_metrics_takeaway",
+        "highlights",
+        "concerns",
+        "action_items",
+      ],
+      additionalProperties: false,
+    },
+  } as ToolSchema,
+
+  /** Topic clustering across recent transcripts/summaries. */
+  topicClusters: {
+    name: "cluster_topics",
+    description:
+      "Cluster the recent calls/emails into a small set of meaningful topics with counts and example quotes.",
+    input_schema: {
+      type: "object",
+      properties: {
+        topics: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              name: { type: "string", description: "Short topic name (≤4 words)." },
+              count: { type: "integer", minimum: 1 },
+              category: {
+                type: "string",
+                enum: [
+                  "sales",
+                  "support",
+                  "complaint",
+                  "info",
+                  "billing",
+                  "appointment",
+                  "other",
+                ],
+              },
+              example_quote: { type: "string" },
+              trend: {
+                type: "string",
+                enum: ["new", "growing", "steady", "declining"],
+              },
+            },
+            required: ["name", "count", "category", "example_quote"],
+            additionalProperties: false,
+          },
+        },
+        total_analyzed: { type: "integer", minimum: 0 },
+      },
+      required: ["topics", "total_analyzed"],
+      additionalProperties: false,
+    },
+  } as ToolSchema,
+
+  /** Failure-mode clustering across low-score / escalated calls. */
+  failureModes: {
+    name: "cluster_failure_modes",
+    description:
+      "Cluster reasons calls fail (low intent, escalations, knowledge gaps, transfer requests) and recommend a fix per cluster.",
+    input_schema: {
+      type: "object",
+      properties: {
+        modes: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              failure_type: { type: "string", description: "Short name (≤6 words)." },
+              count: { type: "integer", minimum: 1 },
+              severity: {
+                type: "string",
+                enum: ["critical", "high", "medium", "low"],
+              },
+              description: { type: "string" },
+              recommended_fix: { type: "string" },
+              fix_target: {
+                type: "string",
+                enum: ["directive", "knowledge", "personality", "process", "other"],
+              },
+            },
+            required: [
+              "failure_type",
+              "count",
+              "severity",
+              "description",
+              "recommended_fix",
+              "fix_target",
+            ],
+            additionalProperties: false,
+          },
+        },
+      },
+      required: ["modes"],
+      additionalProperties: false,
+    },
+  } as ToolSchema,
+
   /** Used by the URL-based knowledge ingestion path. */
   knowledgeFromUrl: {
     name: "deliver_knowledge_entries",
@@ -1160,4 +1294,124 @@ export async function knowledgeFromUrl(input: KnowledgeFromUrlInput) {
   throw new Error(
     `Claude did not return structured knowledge (stop_reason=${response.stop_reason}). Try again or use a more specific URL.`,
   );
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+ *  Daily executive brief — feeds Claude yesterday's stats + recent
+ *  highlights/lowlights and asks for an SMB-friendly morning summary.
+ * ──────────────────────────────────────────────────────────────────── */
+
+export interface DailyBriefInput {
+  yesterdayStats: {
+    total_calls: number;
+    total_minutes: number;
+    avg_lead_score: number;
+    high_intent_count: number;
+    cost: number;
+    appointments_booked: number;
+    pending_tasks: number;
+    new_leads: number;
+  };
+  weekDelta: {
+    calls_pct: number;
+    score_pct: number;
+    cost_pct: number;
+  };
+  recentWinSamples: Array<{ customer: string; score: number; summary: string }>;
+  recentLossSamples: Array<{ customer: string; score: number; summary: string }>;
+  openTasks: Array<{ priority: string; description: string }>;
+  ownerName?: string;
+}
+
+export async function dailyBrief(input: DailyBriefInput) {
+  const system = `You are the chief of staff for a small-business owner running an autonomous voice/email agent fleet on the Wireline relay. Deliver a tight morning brief: what happened yesterday, what's working, what's at risk, and what to do today. Plain English, no jargon, no emoji.`;
+
+  const user = `${input.ownerName ? `Operator: ${input.ownerName}\n` : ""}YESTERDAY (vs 7-day avg):
+- Calls: ${input.yesterdayStats.total_calls} (${input.weekDelta.calls_pct >= 0 ? "+" : ""}${input.weekDelta.calls_pct.toFixed(0)}%)
+- Avg lead score: ${input.yesterdayStats.avg_lead_score} (${input.weekDelta.score_pct >= 0 ? "+" : ""}${input.weekDelta.score_pct.toFixed(0)}%)
+- High-intent leads: ${input.yesterdayStats.high_intent_count}
+- Total minutes on the wire: ${input.yesterdayStats.total_minutes}
+- Cost: $${input.yesterdayStats.cost.toFixed(2)} (${input.weekDelta.cost_pct >= 0 ? "+" : ""}${input.weekDelta.cost_pct.toFixed(0)}%)
+- Appointments booked: ${input.yesterdayStats.appointments_booked}
+- New outbound leads queued: ${input.yesterdayStats.new_leads}
+- Open tasks: ${input.yesterdayStats.pending_tasks}
+
+WIN SAMPLES:
+${input.recentWinSamples.map((s) => `- ${s.customer} (score ${s.score}): ${s.summary}`).join("\n") || "(none)"}
+
+LOSS SAMPLES:
+${input.recentLossSamples.map((s) => `- ${s.customer} (score ${s.score}): ${s.summary}`).join("\n") || "(none)"}
+
+TOP OPEN TASKS:
+${input.openTasks.map((t) => `- [${t.priority}] ${t.description}`).join("\n") || "(none)"}
+
+Deliver the daily brief now.`;
+
+  return runStructured({
+    system,
+    user,
+    tool: TOOLS.dailyBrief,
+    deepThink: true,
+    maxTokens: 3072,
+  });
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+ *  Topic clustering across recent calls.
+ * ──────────────────────────────────────────────────────────────────── */
+
+export interface TopicClustersInput {
+  summaries: Array<{ summary: string; intent_label?: string }>;
+  windowDays?: number;
+}
+
+export async function clusterTopics(input: TopicClustersInput) {
+  const system = `You are a customer-conversation analyst. Cluster the provided call/email summaries into a SHORT list (5–8 max) of meaningful topics. Use plain English topic names that an SMB owner would understand. Estimate trend ('new' / 'growing' / 'steady' / 'declining') based on whether each topic appears more/less in the recent half vs the older half of the data.`;
+  const user = `Window: last ${input.windowDays ?? 14} days. ${input.summaries.length} samples.
+
+${input.summaries.map((s, i) => `${i + 1}. [${s.intent_label || "?"}] ${s.summary}`).join("\n")}`;
+
+  return runStructured({
+    system,
+    user,
+    tool: TOOLS.topicClusters,
+    deepThink: false,
+    maxTokens: 4096,
+  });
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+ *  Failure-mode clustering — feeds the worst calls to Claude for fix
+ *  recommendations.
+ * ──────────────────────────────────────────────────────────────────── */
+
+export interface FailureModesInput {
+  failedCalls: Array<{
+    summary: string;
+    transcript?: string;
+    lead_score?: number;
+    intent_label?: string;
+  }>;
+}
+
+export async function clusterFailureModes(input: FailureModesInput) {
+  const system = `You are a senior agent-operations analyst. Identify recurring failure modes from the provided calls (low lead score, escalations, knowledge gaps, transfer requests). Cluster them, count occurrences, recommend a specific fix per cluster, and tag what kind of fix it is (directive / knowledge / personality / process / other).`;
+  const user = `${input.failedCalls.length} failing calls:
+
+${input.failedCalls
+  .map(
+    (c, i) =>
+      `[${i + 1}] score=${c.lead_score ?? "?"} intent=${c.intent_label ?? "?"}\nSummary: ${c.summary}${
+        c.transcript ? `\nTranscript: ${c.transcript.slice(0, 1200)}${c.transcript.length > 1200 ? "…" : ""}` : ""
+      }`,
+  )
+  .join("\n\n")}`;
+
+  return runStructured({
+    system,
+    user,
+    tool: TOOLS.failureModes,
+    deepThink: true,
+    maxTokens: 4096,
+  });
 }

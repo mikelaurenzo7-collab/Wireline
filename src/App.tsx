@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { BrowserRouter, Routes, Route, Link, useLocation } from "react-router-dom";
-import { Phone, Users, Settings, Activity, MessageSquare, Calendar, PhoneOutgoing, ServerCog, PlugZap, History, Mail, Menu, X, LogOut, User, Terminal, ChevronRight, Zap, Target, Shield, Signal, Globe, Box, LayoutPanelLeft, Database, Command, Sparkles, Waves } from "lucide-react";
+import { Phone, Users, Settings, Activity, MessageSquare, Calendar, PhoneOutgoing, ServerCog, PlugZap, History, Mail, Menu, X, LogOut, User, Terminal, ChevronRight, Zap, Target, Shield, Signal, Globe, Box, LayoutPanelLeft, Database, Command, Sparkles, Waves, Inbox, BarChart3 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import DashboardHome from "./components/DashboardHome";
 import AgentTraining from "./components/AgentTraining";
@@ -13,12 +13,16 @@ import CallLogs from "./components/CallLogs";
 import EmailInbox from "./components/EmailInbox";
 import AuthPortal from "./components/AuthPortal";
 import CommandBar from "./components/CommandBar";
+import TriageInbox from "./components/TriageInbox";
+import ContactProfile from "./components/ContactProfile";
+import InsightsView from "./components/InsightsView";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { cn } from "./lib/utils";
 
 const NAV_ITEMS = [
   { group: "Operations", items: [
     { label: "Command Atlas", path: "/", icon: Activity },
+    { label: "Triage Inbox", path: "/triage", icon: Inbox },
     { label: "Constellation", path: "/appointments", icon: Calendar },
   ]},
   { group: "Signal Channels", items: [
@@ -27,6 +31,7 @@ const NAV_ITEMS = [
     { label: "Outbound Dialer", path: "/outbound", icon: PhoneOutgoing },
   ]},
   { group: "Intelligence", items: [
+    { label: "Insights", path: "/insights", icon: BarChart3 },
     { label: "Neural Atelier", path: "/train", icon: MessageSquare },
     { label: "Agent Topology", path: "/agents", icon: Users },
     { label: "Carrier Bridge", path: "/integrations", icon: PlugZap },
@@ -323,6 +328,9 @@ function AppContent() {
                 <AnimatePresence mode="wait">
                   <Routes>
                     <Route path="/" element={<PageTransition><DashboardHome /></PageTransition>} />
+                    <Route path="/triage" element={<PageTransition><TriageInbox /></PageTransition>} />
+                    <Route path="/insights" element={<PageTransition><InsightsView /></PageTransition>} />
+                    <Route path="/contact/:number" element={<PageTransition><ContactProfile /></PageTransition>} />
                     <Route path="/logs" element={<PageTransition><CallLogs /></PageTransition>} />
                     <Route path="/inbox" element={<PageTransition><EmailInbox /></PageTransition>} />
                     <Route path="/outbound" element={<PageTransition><OutboundDialer /></PageTransition>} />

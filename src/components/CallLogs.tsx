@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Phone, PhoneIncoming, PhoneOutgoing, Clock, User, FileText, Play, Pause, Download, Search, Filter, Loader2, MessageCircle, ChevronRight, X, Database, Terminal, Shield, Target, Zap, Activity, Signal } from "lucide-react";
+import { Phone, PhoneIncoming, PhoneOutgoing, Clock, User, FileText, Play, Pause, Download, Search, Filter, Loader2, MessageCircle, ChevronRight, X, Database, Terminal, Shield, Target, Zap, Activity, Signal, ExternalLink } from "lucide-react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
@@ -219,7 +220,13 @@ export default function CallLogs() {
                   {selectedCall.direction === "inbound" ? <PhoneIncoming className="w-8 h-8 md:w-12 md:h-12 text-ink" /> : <PhoneOutgoing className="w-8 h-8 md:w-12 md:h-12 text-ink" />}
                 </div>
                 <div>
-                  <h2 className="text-3xl md:text-5xl font-black font-display text-ink uppercase italic leading-[0.8] tracking-tighter">{selectedCall.customer_number}</h2>
+                  <Link
+                    to={`/contact/${encodeURIComponent(selectedCall.customer_number || "unknown")}`}
+                    className="group/link inline-flex items-center gap-3 hover:text-brand transition-colors"
+                  >
+                    <h2 className="text-3xl md:text-5xl font-black font-display text-ink uppercase italic leading-[0.8] tracking-tighter group-hover/link:text-brand transition-colors">{selectedCall.customer_number}</h2>
+                    <ExternalLink className="w-5 h-5 opacity-0 group-hover/link:opacity-100 transition-opacity" />
+                  </Link>
                   <div className="flex items-center gap-4 mt-4">
                      <span className="text-ink/40 text-[9px] font-black uppercase tracking-[0.4em] italic font-mono">TRACE_ID: {selectedCall.vapi_call_id.substring(0,16)}</span>
                      <div className="w-2 h-2 bg-ink rounded-full animate-ping" />

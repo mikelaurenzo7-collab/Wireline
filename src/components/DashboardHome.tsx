@@ -7,6 +7,7 @@ import Vapi from "@vapi-ai/web";
 import { cn } from "../lib/utils";
 import FleetTaskBridge from "./FleetTaskBridge";
 import TriggerIntelligenceFeed from "./TriggerIntelligenceFeed";
+import DailyBrief from "./DailyBrief";
 import { authFetch } from "../lib/api";
 
 const vapi = new Vapi(import.meta.env.VITE_VAPI_PUBLIC_KEY || "");
@@ -235,6 +236,11 @@ export default function DashboardHome() {
           variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
           className="space-y-12"
         >
+          {/* Claude's morning brief — only renders when ANTHROPIC_API_KEY is set */}
+          <motion.div variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}>
+            <DailyBrief />
+          </motion.div>
+
           {/* Metric cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             {[

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import Papa from "papaparse";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
+import { Link } from "react-router-dom";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 
 export default function OutboundDialer() {
@@ -391,7 +392,12 @@ export default function OutboundDialer() {
                                )}>
                                   <div className="w-2 h-2 bg-current rounded-full" /> {lead.status}
                                </div>
-                               <span className="text-ink font-mono font-black border-4 border-ink px-4 py-1 text-sm bg-paper shadow-none">{lead.customer_number}</span>
+                               <Link
+                                 to={`/contact/${encodeURIComponent(lead.phone_number || lead.customer_number || "unknown")}`}
+                                 className="px-3 py-1 rounded-full glass border border-brand/30 hover:bg-brand/10 hover:border-brand/60 transition-all text-xs text-brand font-mono"
+                               >
+                                 {lead.phone_number || lead.customer_number}
+                               </Link>
                                <span className="text-[10px] font-black text-muted uppercase tracking-[0.4em] italic hidden md:inline">RELAY_TARGET: AGENT_{lead.agent_id?.substring(0,8).toUpperCase()}</span>
                             </div>
                           </div>
