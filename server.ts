@@ -2136,7 +2136,7 @@ async function placeOutboundCall(opts: {
   let llmTemp = 0.4;
   switch (archetype) {
     case 'The Closer':
-      archetypeRules = "You are a consultative closer. Lead with discovery — uncover the prospect's pain before pitching. If a lead hesitates, ask an open-ended question to surface the real objection, then address it with evidence. Offer a concrete next step in every conversation.";
+      archetypeRules = "You are a consultative closer. Lead with discovery — uncover the prospect's pain before pitching. If a lead hesitates, ask an open-ended question to surface the real objection, then address it with evidence. Offer a concrete next step (demo, proposal, decision call) in every conversation.";
       llmTemp = 0.7;
       break;
     case 'Support Tech':
@@ -3142,11 +3142,12 @@ app.get("/api/agents/:id/lessons", authenticateUser, async (req: any, res: any) 
 app.post("/api/agents/:id/promote", authenticateUser, async (req: any, res: any) => {
    try {
       const { lessonId, content } = req.body;
-      // Insert into wireline_directives (the table that agent-config reads from)
+      // Insert into wireline_directives (the table that agent-config reads from).
+      // Priority 5 = medium on the 1-10 scale used throughout the app.
       const { error: promoError } = await db.from('wireline_directives').insert({
          agent_id: req.params.id,
          content: content,
-         priority: 5, // Medium priority by default
+         priority: 5,
          user_id: req.user.id
       });
       if (promoError) throw promoError;
