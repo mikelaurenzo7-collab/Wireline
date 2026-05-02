@@ -3026,10 +3026,11 @@ app.post("/api/agents/:id/optimize", authenticateUser, async (req: any, res: any
       if (claudeBrain.isClaudeAvailable()) {
          try {
             const { data: agent } = await db.from('wireline_agents')
-               .select('name, archetype').eq('id', id).eq('user_id', req.user.id).single();
+               .select('name, archetype, role').eq('id', id).eq('user_id', req.user.id).single();
             const review = await claudeBrain.agentReview({
                agentName: agent?.name || 'Wireline Agent',
                archetype: agent?.archetype || 'Receptionist',
+               role: agent?.role || DEFAULT_AGENT_ROLE,
                callLogs: logs as any,
             });
             return res.json({
@@ -3349,12 +3350,13 @@ app.post("/api/claude/objection-drill", authenticateUser, async (req: any, res: 
     const { agentId, topic, count } = req.body;
     let agentName = "Wireline Agent";
     let archetype = "Receptionist";
+    let role: string | undefined;
     if (agentId) {
-      const { data: agent } = await db.from("wireline_agents").select("name, archetype").eq("id", agentId).eq("user_id", req.user.id).single();
-      if (agent) { agentName = agent.name; archetype = agent.archetype; }
+      const { data: agent } = await db.from("wireline_agents").select("name, archetype, role").eq("id", agentId).eq("user_id", req.user.id).single();
+      if (agent) { agentName = agent.name; archetype = agent.archetype; role = agent.role || DEFAULT_AGENT_ROLE; }
     }
     const result = await claudeBrain.objectionDrill({
-      agentName, archetype,
+      agentName, archetype, role,
       topic: topic || "general sales objections",
       count: count ?? 5,
     });
@@ -3483,7 +3485,7 @@ app.post("/api/claude/agent-review", authenticateUser, async (req: any, res: any
   try {
     const { agentId, lookback } = req.body;
     if (!agentId) return res.status(400).json({ error: "agentId required" });
-    const { data: agent } = await db.from("wireline_agents").select("name, archetype").eq("id", agentId).eq("user_id", req.user.id).single();
+    const { data: agent } = await db.from("wireline_agents").select("name, archetype, role").eq("id", agentId).eq("user_id", req.user.id).single();
     if (!agent) return res.status(404).json({ error: "Agent not found." });
     const { data: logs } = await db
       .from("wireline_call_logs")
@@ -3498,6 +3500,7 @@ app.post("/api/claude/agent-review", authenticateUser, async (req: any, res: any
     const result = await claudeBrain.agentReview({
       agentName: agent.name,
       archetype: agent.archetype,
+      role: agent.role || DEFAULT_AGENT_ROLE,
       callLogs: logs as any,
     });
     res.json({ review: result, lookback: logs.length });
