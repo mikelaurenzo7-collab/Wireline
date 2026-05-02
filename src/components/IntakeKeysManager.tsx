@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   KeyRound, Plus, Loader2, X, Trash2, Copy, Check, Eye, EyeOff, Inbox,
+  PhoneOutgoing, Zap,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
@@ -11,6 +12,7 @@ interface IntakeKey {
   name: string;
   key_prefix: string;
   default_agent_id: string | null;
+  auto_dial: boolean;
   active: boolean;
   last_used_at: string | null;
   use_count: number | null;
@@ -24,6 +26,7 @@ export default function IntakeKeysManager() {
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
   const [defaultAgentId, setDefaultAgentId] = useState("");
+  const [autoDial, setAutoDial] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [justCreated, setJustCreated] = useState<{ id: string; plaintext: string } | null>(null);
@@ -53,7 +56,11 @@ export default function IntakeKeysManager() {
       const r = await authFetch("/api/intake/keys", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), default_agent_id: defaultAgentId || null }),
+        body: JSON.stringify({
+          name: name.trim(),
+          default_agent_id: defaultAgentId || null,
+          auto_dial: autoDial && !!defaultAgentId,
+        }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Create failed");
@@ -61,6 +68,7 @@ export default function IntakeKeysManager() {
       setRevealed(true);
       setName("");
       setDefaultAgentId("");
+      setAutoDial(false);
       setShowForm(false);
       refresh();
     } catch (e: any) {
@@ -75,6 +83,16 @@ export default function IntakeKeysManager() {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ active: !k.active }),
+    });
+    refresh();
+  };
+
+  const toggleAutoDial = async (k: IntakeKey) => {
+    if (!k.default_agent_id) return; // can't auto-dial without an agent
+    await authFetch(`/api/intake/keys/${k.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ auto_dial: !k.auto_dial }),
     });
     refresh();
   };
@@ -182,7 +200,7 @@ export default function IntakeKeysManager() {
                     <span className="text-[10px] uppercase tracking-[0.3em] text-muted">Default agent (optional)</span>
                     <select
                       value={defaultAgentId}
-                      onChange={(e) => setDefaultAgentId(e.target.value)}
+                      onChange={(e) => { setDefaultAgentId(e.target.value); if (!e.target.value) setAutoDial(false); }}
                       className="w-full h-11 px-3 rounded-xl bg-black/40 border border-white/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
                     >
                       <option value="">— None —</option>
@@ -190,6 +208,36 @@ export default function IntakeKeysManager() {
                     </select>
                   </label>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => defaultAgentId && setAutoDial(!autoDial)}
+                  disabled={!defaultAgentId}
+                  className={cn(
+                    "w-full px-4 py-3 rounded-xl border flex items-start gap-3 text-left transition-all",
+                    !defaultAgentId
+                      ? "bg-black/20 border-white/5 text-muted/50 cursor-not-allowed"
+                      : autoDial
+                        ? "bg-brand-2/15 border-brand-2/40 text-brand-2"
+                        : "bg-black/30 border-white/10 text-ink/80 hover:border-white/20",
+                  )}
+                >
+                  <div className={cn(
+                    "shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center mt-0.5",
+                    autoDial && defaultAgentId ? "bg-brand-2 border-brand-2 text-paper" : "border-white/30",
+                  )}>
+                    {autoDial && defaultAgentId && <Check className="w-2.5 h-2.5" strokeWidth={4} />}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-medium flex items-center gap-2">
+                      <Zap className="w-3 h-3" /> Auto-dial inbound leads
+                    </div>
+                    <div className="text-[10px] leading-snug mt-0.5 text-ink/55">
+                      {defaultAgentId
+                        ? "Every lead pushed via this key triggers an outbound call from the selected agent. Subscription must be active."
+                        : "Pick a default agent above to enable auto-dial."}
+                    </div>
+                  </div>
+                </button>
                 {createError && <div className="text-xs text-rose-400">{createError}</div>}
                 <div className="flex justify-end">
                   <button
@@ -230,6 +278,11 @@ export default function IntakeKeysManager() {
                         Agent · {agent.name}
                       </span>
                     )}
+                    {k.auto_dial && k.default_agent_id && (
+                      <span className="text-[9px] uppercase tracking-[0.3em] px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/40 text-amber-400 flex items-center gap-1">
+                        <Zap className="w-2.5 h-2.5" /> Auto-dial
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-3 flex-wrap text-[11px] text-muted">
                     <span className="font-mono">{k.key_prefix}…</span>
@@ -238,6 +291,22 @@ export default function IntakeKeysManager() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => toggleAutoDial(k)}
+                    disabled={!k.default_agent_id}
+                    title={k.default_agent_id ? "Toggle auto-dial" : "Set a default agent before enabling auto-dial."}
+                    className={cn(
+                      "h-9 px-3 rounded-lg text-[10px] uppercase tracking-[0.25em] flex items-center gap-1.5 transition-all",
+                      !k.default_agent_id
+                        ? "glass border border-white/5 text-muted/40 cursor-not-allowed"
+                        : k.auto_dial
+                          ? "bg-amber-500/15 border border-amber-500/40 text-amber-300 hover:bg-amber-500/25"
+                          : "glass border border-white/10 text-ink/70 hover:text-amber-300 hover:border-amber-500/40",
+                    )}
+                  >
+                    <PhoneOutgoing className="w-3 h-3" />
+                    {k.auto_dial && k.default_agent_id ? "Auto-dial: ON" : "Auto-dial: OFF"}
+                  </button>
                   <button
                     onClick={() => toggleActive(k)}
                     className="h-9 px-3 rounded-lg glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-ink/70 hover:text-ink hover:border-white/30"
@@ -268,12 +337,20 @@ export default function IntakeKeysManager() {
         </div>
 
         {/* Quick-start example */}
-        <div className="relative z-10 rounded-xl bg-black/40 border border-white/10 p-4 text-[11px] text-ink/70 font-mono leading-relaxed overflow-x-auto">
-          <div className="text-[9px] uppercase tracking-[0.3em] text-brand-2 mb-2">Quick start · curl</div>
-          <pre className="whitespace-pre-wrap break-all">{`curl -X POST $WIRELINE_URL/api/intake/lead \\
+        <div className="relative z-10 rounded-xl bg-black/40 border border-white/10 p-4 text-[11px] text-ink/70 font-mono leading-relaxed overflow-x-auto space-y-3">
+          <div>
+            <div className="text-[9px] uppercase tracking-[0.3em] text-brand-2 mb-2">Quick start · curl</div>
+            <pre className="whitespace-pre-wrap break-all">{`curl -X POST $WIRELINE_URL/api/intake/lead \\
   -H "Content-Type: application/json" \\
   -H "X-Wireline-Key: wlk_..." \\
+  -H "Idempotency-Key: form-submission-12345" \\
   -d '{"customer_name":"Jane Doe","customer_number":"+15551234567","context":"Filled out demo form","metadata":{"utm_source":"newsletter"}}'`}</pre>
+          </div>
+          <div className="text-[10px] text-ink/55 leading-relaxed font-sans space-y-1.5">
+            <div><span className="text-brand-2 font-mono uppercase tracking-wider">Idempotency-Key</span> — optional, any string ≤ 255 chars. Same key + same operator returns the original <code className="text-ink/80">lead_id</code> with <code className="text-ink/80">idempotent_replay: true</code>. Safe for form-submission retries.</div>
+            <div><span className="text-brand-2 font-mono uppercase tracking-wider">Rate limit</span> — 60 requests / minute per intake key. Excess returns <code className="text-ink/80">HTTP 429</code> with <code className="text-ink/80">Retry-After</code>.</div>
+            <div><span className="text-brand-2 font-mono uppercase tracking-wider">Auto-dial</span> — when on, the response includes <code className="text-ink/80">auto_dial_initiated: true</code> and the call is dispatched in the background; the lead row gets <code className="text-ink/80">call_id</code> + <code className="text-ink/80">status: "Dialing"</code> on success.</div>
+          </div>
         </div>
       </div>
     </div>
