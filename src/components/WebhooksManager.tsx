@@ -24,11 +24,14 @@ interface WebhookRow {
 const EVENT_DESCRIPTIONS: Record<string, string> = {
   "call.completed":     "Every voice call after post-call enrichment",
   "call.escalated":     "Calls flagged as angry / requiring escalation",
+  "lead.received":      "New lead pushed via the inbound intake API",
   "lead.hot":           "When a call's lead score crosses 70",
   "email.received":     "Every successfully-synced inbound email",
   "appointment.booked": "Every appointment insert",
   "task.created":       "Every fleet task created",
   "compliance.flagged": "Every compliance_review task created",
+  "spend.warning":      "Month-to-date Claude spend crossed your warn threshold",
+  "spend.exceeded":     "Month-to-date Claude spend hit 100% of monthly limit",
 };
 
 export default function WebhooksManager() {

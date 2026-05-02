@@ -351,3 +351,37 @@ DO $$ BEGIN
     END IF;
 END $$;
 
+-- Inbound lead intake — additive columns on wireline_outbound_leads so
+-- inbound and outbound flow through the same dialer / triage surfaces.
+ALTER TABLE wireline_outbound_leads ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'manual';
+ALTER TABLE wireline_outbound_leads ADD COLUMN IF NOT EXISTS metadata JSONB;
+ALTER TABLE wireline_outbound_leads ADD COLUMN IF NOT EXISTS received_at TIMESTAMPTZ;
+CREATE INDEX IF NOT EXISTS wireline_outbound_leads_user_source_idx
+    ON wireline_outbound_leads(user_id, source);
+
+-- Per-user API keys for the public lead-intake endpoint. Plaintext is
+-- shown only at create time; we store SHA-256 of the key plus a
+-- 12-char prefix so operators can recognize their keys in the UI.
+CREATE TABLE IF NOT EXISTS wireline_intake_keys (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID DEFAULT auth.uid(),
+    name TEXT NOT NULL,
+    key_prefix TEXT NOT NULL,      -- 'wlk_xxxxxxxx' (first 12 chars)
+    key_hash TEXT NOT NULL,        -- sha256 hex of full key
+    default_agent_id TEXT REFERENCES wireline_agents(id) ON DELETE SET NULL,
+    active BOOLEAN DEFAULT TRUE,
+    last_used_at TIMESTAMPTZ,
+    use_count INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS wireline_intake_keys_hash_idx
+    ON wireline_intake_keys(key_hash);
+ALTER TABLE wireline_intake_keys ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'wireline_intake_keys' AND policyname = 'Users can manage their own intake keys'
+    ) THEN
+        EXECUTE 'CREATE POLICY "Users can manage their own intake keys" ON wireline_intake_keys FOR ALL USING (auth.uid() = user_id)';
+    END IF;
+END $$;
+

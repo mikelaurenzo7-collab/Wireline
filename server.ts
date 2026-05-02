@@ -123,6 +123,7 @@ const db = createClient(supabaseUrl, supabaseKey);
 const WEBHOOK_EVENTS = [
   "call.completed",
   "call.escalated",
+  "lead.received",
   "lead.hot",
   "email.received",
   "appointment.booked",
@@ -3031,6 +3032,168 @@ app.post("/api/webhooks/:id/test", authenticateUser, async (req: any, res: any) 
     });
     res.json({ success: true, message: "Test dispatched. Check the URL." });
   } catch (e: any) { res.status(500).json({ error: e?.message ?? "Test failed" }); }
+});
+
+// ──────────────────────────────────────────────────────────
+//  INBOUND LEAD INTAKE — public POST endpoint authenticated by a
+//  per-user API key (X-Wireline-Key: wlk_…). Lets external systems
+//  (Webflow forms, CRMs, Zapier, custom intake) push leads into
+//  Wireline. Inserts into wireline_outbound_leads with
+//  source='inbound' so the existing dialer + triage surfaces pick
+//  them up for free, then fires a lead.received webhook event.
+//
+//    POST /api/intake/lead
+//    Headers:
+//      Content-Type: application/json
+//      X-Wireline-Key: wlk_<24+ chars>
+//    Body:
+//      {
+//        "customer_name": "Jane Doe",          // optional
+//        "customer_number": "+15551234567",    // required (or "phone")
+//        "context": "Filled out demo form",    // optional
+//        "metadata": { "utm_source": "..." }   // optional, free-form
+//      }
+//    Returns: { ok: true, lead_id: <bigint> }
+// ──────────────────────────────────────────────────────────
+
+const INTAKE_KEY_PREFIX = "wlk_";
+
+async function sha256Hex(value: string): Promise<string> {
+  const crypto = await import("node:crypto");
+  return crypto.createHash("sha256").update(value).digest("hex");
+}
+
+async function generateIntakeKey(): Promise<{ plaintext: string; prefix: string; hash: string }> {
+  const crypto = await import("node:crypto");
+  // 32 bytes → 43-char base64url-ish; strip non-alphanumeric for cleanliness.
+  const raw = crypto.randomBytes(32).toString("base64").replace(/[^A-Za-z0-9]/g, "").slice(0, 36);
+  const plaintext = `${INTAKE_KEY_PREFIX}${raw}`;
+  const prefix = plaintext.slice(0, 12);
+  const hash = await sha256Hex(plaintext);
+  return { plaintext, prefix, hash };
+}
+
+// Lookup an intake key, return the row (with user_id) or null.
+async function resolveIntakeKey(provided: string | undefined): Promise<any | null> {
+  if (!provided || typeof provided !== "string" || !provided.startsWith(INTAKE_KEY_PREFIX)) return null;
+  const hash = await sha256Hex(provided.trim());
+  const { data } = await db.from("wireline_intake_keys")
+    .select("id, user_id, name, default_agent_id, active, use_count")
+    .eq("key_hash", hash)
+    .maybeSingle();
+  if (!data || !data.active) return null;
+  return data;
+}
+
+// Public — no Supabase JWT. Authenticated by X-Wireline-Key header.
+app.post("/api/intake/lead", async (req: any, res: any) => {
+  try {
+    const provided = req.headers["x-wireline-key"] as string | undefined;
+    const key = await resolveIntakeKey(provided);
+    if (!key) return res.status(401).json({ error: "Invalid or missing X-Wireline-Key." });
+
+    const body = req.body || {};
+    const customer_number: string | undefined = (body.customer_number || body.phone || body.phone_number || "").toString().trim();
+    if (!customer_number) return res.status(400).json({ error: "customer_number (or phone) is required." });
+
+    const customer_name: string = (body.customer_name || body.name || "").toString().slice(0, 200);
+    const context: string = (body.context || body.message || "").toString().slice(0, 4000);
+    const metadata = body.metadata && typeof body.metadata === "object" ? body.metadata : null;
+    const agent_id = body.agent_id || key.default_agent_id || null;
+
+    const nowIso = new Date().toISOString();
+    const { data: inserted, error } = await db.from("wireline_outbound_leads").insert({
+      user_id: key.user_id,
+      agent_id,
+      customer_name: customer_name || null,
+      customer_number,
+      phone_number: customer_number,
+      context: context || null,
+      status: "Pending",
+      source: "inbound",
+      metadata,
+      received_at: nowIso,
+    }).select("id").single();
+    if (error) throw error;
+
+    // Bump usage stats fire-and-forget so the response stays fast.
+    db.from("wireline_intake_keys").update({
+      last_used_at: nowIso,
+      use_count: (key.use_count || 0) + 1,
+    }).eq("id", key.id).then(() => {}, () => {});
+
+    // Fan out to operator's outbound webhooks.
+    dispatchWebhook(key.user_id, "lead.received", {
+      lead_id: inserted?.id,
+      customer_name: customer_name || null,
+      customer_number,
+      context: context || null,
+      metadata,
+      agent_id,
+      intake_key: { id: key.id, name: key.name },
+      at: nowIso,
+    }).catch(() => {});
+
+    res.json({ ok: true, lead_id: inserted?.id });
+  } catch (e: any) {
+    console.error("Intake lead failed:", e);
+    res.status(500).json({ error: e?.message ?? "Intake failed" });
+  }
+});
+
+// Per-user CRUD on intake keys. Plaintext is returned ONLY at create
+// time; subsequent reads expose the prefix only.
+app.get("/api/intake/keys", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { data, error } = await db.from("wireline_intake_keys")
+      .select("id, name, key_prefix, default_agent_id, active, last_used_at, use_count, created_at")
+      .eq("user_id", req.user.id)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    res.json({ keys: data || [] });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load keys" }); }
+});
+
+app.post("/api/intake/keys", authenticateUser, async (req: any, res: any) => {
+  try {
+    const name = (req.body?.name || "").toString().trim();
+    if (!name) return res.status(400).json({ error: "name is required" });
+    const default_agent_id = req.body?.default_agent_id || null;
+
+    const { plaintext, prefix, hash } = await generateIntakeKey();
+    const { data, error } = await db.from("wireline_intake_keys").insert({
+      user_id: req.user.id,
+      name: name.slice(0, 80),
+      key_prefix: prefix,
+      key_hash: hash,
+      default_agent_id,
+      active: true,
+    }).select("id, name, key_prefix, default_agent_id, active, created_at").single();
+    if (error) throw error;
+    // Plaintext is returned ONCE — we never store or expose it again.
+    res.json({ key: data, plaintext });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to create key" }); }
+});
+
+app.patch("/api/intake/keys/:id", authenticateUser, async (req: any, res: any) => {
+  try {
+    const patch: any = {};
+    if (req.body?.name !== undefined) patch.name = String(req.body.name).slice(0, 80);
+    if (req.body?.active !== undefined) patch.active = !!req.body.active;
+    if (req.body?.default_agent_id !== undefined) patch.default_agent_id = req.body.default_agent_id || null;
+    const { data, error } = await db.from("wireline_intake_keys").update(patch)
+      .eq("id", req.params.id).eq("user_id", req.user.id)
+      .select("id, name, key_prefix, default_agent_id, active, last_used_at, use_count, created_at").single();
+    if (error) throw error;
+    res.json({ key: data });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to update key" }); }
+});
+
+app.delete("/api/intake/keys/:id", authenticateUser, async (req: any, res: any) => {
+  try {
+    await db.from("wireline_intake_keys").delete().eq("id", req.params.id).eq("user_id", req.user.id);
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to delete key" }); }
 });
 
 // ──────────────────────────────────────────────────────────

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import WebhooksManager from "./WebhooksManager";
+import IntakeKeysManager from "./IntakeKeysManager";
 
 export default function AdminSettings() {
   const [settings, setSettings] = useState({
@@ -280,6 +281,9 @@ export default function AdminSettings() {
 
                   {/* ── Outbound webhooks ──────────────────────────────────── */}
                   <WebhooksManager />
+
+                  {/* ── Inbound lead intake API ─────────────────────────────── */}
+                  <IntakeKeysManager />
 
                   <div className="pt-12 border-t-4 border-ink flex flex-col md:flex-row items-center justify-between gap-8">
                       <button
