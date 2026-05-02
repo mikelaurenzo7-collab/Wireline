@@ -1827,61 +1827,85 @@ app.get("/api/outbound", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-app.post("/api/outbound/dial", authenticateUser, async (req: any, res: any) => {
-  try {
-    const { agentId, customerName, customerNumber, context } = req.body;
-    
-    // 0. SECURITY ENFORCEMENT: Check Subscription Status
-    const { data: userSettings } = await db.from('wireline_settings').select('*').eq('user_id', req.user.id).single();
-    const subscriptionStatus = userSettings?.subscription_status || 'active';
-    if (subscriptionStatus !== 'active') {
-       return res.status(403).json({ error: "Access Denied: Please upgrade your billing plan to access outbound dialing." });
-    }
+// ──────────────────────────────────────────────────────────────────
+// placeOutboundCall — assemble agent context, build the Vapi payload,
+// and dispatch the call. Returns { ok: true, callId } on success or a
+// shaped error so callers can map to HTTP status. Used by both
+// /api/outbound/dial (manual) and /api/intake/lead (auto-dial).
+//
+// The lead row is intentionally NOT written here — manual dial inserts
+// a fresh row; intake auto-dial updates an existing row. Keeping the
+// persistence decision in the caller avoids accidental duplicates.
+// ──────────────────────────────────────────────────────────────────
+// Flat shape (rather than a discriminated union) so the call sites
+// can read `.status` / `.error` without strict-mode narrowing — this
+// project's tsconfig doesn't have strictNullChecks enabled.
+type PlaceCallResult = {
+  ok: boolean;
+  callId?: string;
+  status?: number;
+  error?: string;
+};
 
-    // 1. Fetch settings (we need Phone ID and use env for API key)
-    const settings = userSettings;
-    const vapiSecret = process.env.VAPI_PRIVATE_KEY;
-    
-    if (!vapiSecret || !settings?.vapi_phone_number_id) {
-       return res.status(400).json({ error: "Platform Error: Master telecom carrier not configured. Please ensure VAPI_PRIVATE_KEY is set in environment secrets." });
-    }
+async function placeOutboundCall(opts: {
+  userId: string;
+  agentId: string;
+  customerName?: string | null;
+  customerNumber: string;
+  context?: string | null;
+}): Promise<PlaceCallResult> {
+  const { userId, agentId, customerName, customerNumber, context } = opts;
 
-    // 2. Fetch agent config
-    const [agentConfig, directivesData, knowledgeData, personalityData] = await Promise.all([
-      db.from('wireline_agents').select('*').eq('id', agentId).single().then(r => r),
-      db.from('wireline_directives').select('content, priority').eq('agent_id', agentId).order('priority', { ascending: false }).then(r => r),
-      db.from('wireline_knowledge').select('content').eq('agent_id', agentId).then(r => r),
-      db.from('wireline_personality').select('content').eq('agent_id', agentId).single().then(r => r)
-    ]);
+  // 0. Subscription guard
+  const { data: userSettings } = await db.from('wireline_settings').select('*').eq('user_id', userId).single();
+  const subscriptionStatus = userSettings?.subscription_status || 'active';
+  if (subscriptionStatus !== 'active') {
+    return { ok: false, status: 403, error: "Access Denied: Please upgrade your billing plan to access outbound dialing." };
+  }
 
-    const currentDateTime = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
-    
-    // Determine Archetype Behavior
-    const archetype = agentConfig?.data?.archetype || 'Receptionist';
-    let archetypeRules = "";
-    let llmTemp = 0.4;
-    
-    switch(archetype) {
-       case 'The Closer':
-          archetypeRules = "You are a high-stakes closer. Use a confident tone. If a lead hesitates, offer a limited-time incentive to book now.";
-          llmTemp = 0.7;
-          break;
-       case 'Support Tech':
-          archetypeRules = "You are highly analytical, patient, and precise. You ask clarifying troubleshooting questions one at a time. You do not rush.";
-          llmTemp = 0.2;
-          break;
-       case 'The Empath':
-          archetypeRules = "If a caller sounds frustrated, your first words must be a validating statement like 'I completely hear you, that's incredibly stressful. Let me fix this for you.'";
-          llmTemp = 0.6;
-          break;
-       default: // Receptionist
-          archetypeRules = "You are an expert at handling phone calls where people are often in a hurry. Never use platitudes like 'I hope you're having a wonderful day.' Get straight to the value. You are cheerful, polite, and highly efficient.";
-          llmTemp = 0.4;
-    }
+  // 1. Vapi config
+  const settings = userSettings;
+  const vapiSecret = process.env.VAPI_PRIVATE_KEY;
+  if (!vapiSecret || !settings?.vapi_phone_number_id) {
+    return { ok: false, status: 400, error: "Platform Error: Master telecom carrier not configured. Please ensure VAPI_PRIVATE_KEY is set in environment secrets." };
+  }
 
-    const ambientNoiseActive = agentConfig?.data?.ambient_noise && agentConfig?.data?.ambient_noise !== 'off';
+  // 2. Agent context
+  const [agentConfig, directivesData, knowledgeData, personalityData] = await Promise.all([
+    db.from('wireline_agents').select('*').eq('id', agentId).single().then(r => r),
+    db.from('wireline_directives').select('content, priority').eq('agent_id', agentId).order('priority', { ascending: false }).then(r => r),
+    db.from('wireline_knowledge').select('content').eq('agent_id', agentId).then(r => r),
+    db.from('wireline_personality').select('content').eq('agent_id', agentId).single().then(r => r),
+  ]);
 
-    const systemPrompt = `
+  if (!agentConfig?.data) {
+    return { ok: false, status: 404, error: `Agent ${agentId} not found.` };
+  }
+
+  const currentDateTime = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
+  const archetype = agentConfig?.data?.archetype || 'Receptionist';
+  let archetypeRules = "";
+  let llmTemp = 0.4;
+  switch (archetype) {
+    case 'The Closer':
+      archetypeRules = "You are a high-stakes closer. Use a confident tone. If a lead hesitates, offer a limited-time incentive to book now.";
+      llmTemp = 0.7;
+      break;
+    case 'Support Tech':
+      archetypeRules = "You are highly analytical, patient, and precise. You ask clarifying troubleshooting questions one at a time. You do not rush.";
+      llmTemp = 0.2;
+      break;
+    case 'The Empath':
+      archetypeRules = "If a caller sounds frustrated, your first words must be a validating statement like 'I completely hear you, that's incredibly stressful. Let me fix this for you.'";
+      llmTemp = 0.6;
+      break;
+    default:
+      archetypeRules = "You are an expert at handling phone calls where people are often in a hurry. Never use platitudes like 'I hope you're having a wonderful day.' Get straight to the value. You are cheerful, polite, and highly efficient.";
+      llmTemp = 0.4;
+  }
+  const ambientNoiseActive = agentConfig?.data?.ambient_noise && agentConfig?.data?.ambient_noise !== 'off';
+
+  const systemPrompt = `
     ## BLOCK 1: IDENTITY & ARCHETYPE (THE "MOAT")
     Persona: You are ${agentConfig?.data?.name || "a scheduling agent"}, a representative for our company.
     Tone: Snappy, concise, low-friction.
@@ -1908,63 +1932,76 @@ app.post("/api/outbound/dial", authenticateUser, async (req: any, res: any) => {
 
     ## ABSOLUTE RULES
     ${(directivesData?.data || []).map((d: any) => `[PRIORITY ${d.priority}] ${d.content}`).join('\n')}
-    
+
     ## KNOWLEDGE BASE
     ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n')}
     `;
 
-    // 3. Assemble Vapi REST Call Payload
-    const vapiPayload = {
-      phoneNumberId: settings.vapi_phone_number_id,
-      customer: {
-        number: customerNumber
+  const vapiPayload = {
+    phoneNumberId: settings.vapi_phone_number_id,
+    customer: { number: customerNumber },
+    assistant: {
+      name: agentConfig?.data?.name || "Wireline Outbound Agent",
+      firstMessage: `Hi ${customerName ? customerName : 'there'}, this is ${agentConfig?.data?.name || 'calling from Wireline'}. ${context || ''}`,
+      backgroundSound: agentConfig?.data?.ambient_noise || 'off',
+      model: {
+        provider: "google",
+        model: "gemini-2.0-flash",
+        systemPrompt: systemPrompt,
+        temperature: llmTemp,
       },
-      assistant: {
-        name: agentConfig?.data?.name || "Wireline Outbound Agent",
-        firstMessage: `Hi ${customerName ? customerName : 'there'}, this is ${agentConfig?.data?.name || 'calling from Wireline'}. ${context}`,
-        backgroundSound: agentConfig?.data?.ambient_noise || 'off',
-        model: {
-          provider: "google",
-          model: "gemini-2.0-flash",
-          systemPrompt: systemPrompt,
-          temperature: llmTemp
-        },
-        recordingEnabled: true,
-        voice: {
-          provider: agentConfig?.data?.voice_provider || "11labs",
-          voiceId: agentConfig?.data?.voice_id || "bIHbv24MWmeRgasZH58o"
-        }
-      }
-    };
-
-    // 4. Dispatch Call to Vapi
-    const vapiResponse = await fetch("https://api.vapi.ai/call/phone", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${vapiSecret}`,
-        "Content-Type": "application/json"
+      recordingEnabled: true,
+      voice: {
+        provider: agentConfig?.data?.voice_provider || "11labs",
+        voiceId: agentConfig?.data?.voice_id || "bIHbv24MWmeRgasZH58o",
       },
-      body: JSON.stringify(vapiPayload)
-    });
+    },
+  };
 
-    if (!vapiResponse.ok) {
-       const errBody = await vapiResponse.text();
-       throw new Error(`Vapi API Error: ${errBody}`);
+  const vapiResponse = await fetch("https://api.vapi.ai/call/phone", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${vapiSecret}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(vapiPayload),
+  });
+
+  if (!vapiResponse.ok) {
+    const errBody = await vapiResponse.text();
+    return { ok: false, status: 502, error: `Vapi API Error: ${errBody}` };
+  }
+  const vapiData = await vapiResponse.json();
+  return { ok: true, callId: vapiData.id };
+}
+
+app.post("/api/outbound/dial", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { agentId, customerName, customerNumber, context } = req.body;
+    if (!agentId || !customerNumber) {
+      return res.status(400).json({ error: "agentId and customerNumber are required." });
     }
 
-    const vapiData = await vapiResponse.json();
+    const result = await placeOutboundCall({
+      userId: req.user.id,
+      agentId,
+      customerName,
+      customerNumber,
+      context,
+    });
+    if (!result.ok) return res.status(result.status).json({ error: result.error });
 
-    // 5. Store Lead generated in Supabase
     await db.from('wireline_outbound_leads').insert({
-       agent_id: agentId,
-       customer_name: customerName,
-       customer_number: customerNumber,
-       context: context,
-       call_id: vapiData.id,
-       status: "Dialing"
+      user_id: req.user.id,
+      agent_id: agentId,
+      customer_name: customerName,
+      customer_number: customerNumber,
+      context: context,
+      call_id: result.callId,
+      status: "Dialing",
     });
 
-    res.json({ success: true, callId: vapiData.id });
+    res.json({ success: true, callId: result.callId });
   } catch (error: any) {
     console.error("Outbound call failed:", error);
     res.status(500).json({ error: error.message || "Failed to dispatch call." });
@@ -3255,19 +3292,69 @@ async function resolveIntakeKey(provided: string | undefined): Promise<any | nul
   if (!provided || typeof provided !== "string" || !provided.startsWith(INTAKE_KEY_PREFIX)) return null;
   const hash = await sha256Hex(provided.trim());
   const { data } = await db.from("wireline_intake_keys")
-    .select("id, user_id, name, default_agent_id, active, use_count")
+    .select("id, user_id, name, default_agent_id, active, use_count, auto_dial")
     .eq("key_hash", hash)
     .maybeSingle();
   if (!data || !data.active) return null;
   return data;
 }
 
+// Per-key in-memory rate limit. Public endpoint, so a single noisy
+// caller can't drain the operator's Vapi spend or hammer Supabase.
+// Rolling window: ≤ 60 requests per 60s per intake key.
+const INTAKE_RATE_WINDOW_MS = 60_000;
+const INTAKE_RATE_MAX = 60;
+const intakeRateBuckets = new Map<string, number[]>();
+
+function checkIntakeRate(keyId: string): { ok: boolean; retry_after_s?: number } {
+  const now = Date.now();
+  const cutoff = now - INTAKE_RATE_WINDOW_MS;
+  const hits = (intakeRateBuckets.get(keyId) || []).filter(t => t > cutoff);
+  if (hits.length >= INTAKE_RATE_MAX) {
+    const retryAfter = Math.max(1, Math.ceil((hits[0] + INTAKE_RATE_WINDOW_MS - now) / 1000));
+    intakeRateBuckets.set(keyId, hits);
+    return { ok: false, retry_after_s: retryAfter };
+  }
+  hits.push(now);
+  intakeRateBuckets.set(keyId, hits);
+  return { ok: true };
+}
+
+// Purge stale buckets every 5 min (matches the Claude rate-limit pattern).
+setInterval(() => {
+  const cutoff = Date.now() - INTAKE_RATE_WINDOW_MS * 2;
+  for (const [k, hits] of intakeRateBuckets) {
+    const fresh = hits.filter(t => t > cutoff);
+    if (fresh.length === 0) intakeRateBuckets.delete(k);
+    else intakeRateBuckets.set(k, fresh);
+  }
+}, 5 * 60 * 1000).unref?.();
+
 // Public — no Supabase JWT. Authenticated by X-Wireline-Key header.
+//
+// Optional Idempotency-Key header — same key + same operator returns
+// the original lead_id with idempotent_replay: true. Unique partial
+// index on (user_id, idempotency_key) enforces this in Postgres.
+//
+// auto_dial — when set on the intake key AND a default_agent_id is
+// available (or one was provided in the body), we kick off an outbound
+// Vapi call right after the lead is recorded. Fire-and-forget so the
+// HTTP response stays fast.
 app.post("/api/intake/lead", async (req: any, res: any) => {
   try {
     const provided = req.headers["x-wireline-key"] as string | undefined;
     const key = await resolveIntakeKey(provided);
     if (!key) return res.status(401).json({ error: "Invalid or missing X-Wireline-Key." });
+
+    const rate = checkIntakeRate(key.id);
+    if (!rate.ok) {
+      res.set("Retry-After", String(rate.retry_after_s));
+      return res.status(429).json({
+        error: `Rate limit exceeded for this intake key (${INTAKE_RATE_MAX}/min). Retry in ${rate.retry_after_s}s.`,
+        code: "INTAKE_RATE_LIMIT",
+        retry_after_s: rate.retry_after_s,
+      });
+    }
 
     const body = req.body || {};
     const customer_number: string | undefined = (body.customer_number || body.phone || body.phone_number || "").toString().trim();
@@ -3277,6 +3364,26 @@ app.post("/api/intake/lead", async (req: any, res: any) => {
     const context: string = (body.context || body.message || "").toString().slice(0, 4000);
     const metadata = body.metadata && typeof body.metadata === "object" ? body.metadata : null;
     const agent_id = body.agent_id || key.default_agent_id || null;
+
+    // Idempotency — operator can pass any string up to 255 chars.
+    const idemHeader = (req.headers["idempotency-key"] as string | undefined)?.toString().trim().slice(0, 255) || null;
+
+    if (idemHeader) {
+      const { data: existing } = await db.from("wireline_outbound_leads")
+        .select("id, call_id, status")
+        .eq("user_id", key.user_id)
+        .eq("idempotency_key", idemHeader)
+        .maybeSingle();
+      if (existing) {
+        return res.json({
+          ok: true,
+          lead_id: existing.id,
+          idempotent_replay: true,
+          status: existing.status,
+          call_id: existing.call_id,
+        });
+      }
+    }
 
     const nowIso = new Date().toISOString();
     const { data: inserted, error } = await db.from("wireline_outbound_leads").insert({
@@ -3290,8 +3397,31 @@ app.post("/api/intake/lead", async (req: any, res: any) => {
       source: "inbound",
       metadata,
       received_at: nowIso,
+      idempotency_key: idemHeader,
     }).select("id").single();
-    if (error) throw error;
+
+    if (error) {
+      // Race condition: a concurrent insert won the unique race. Fall
+      // back to fetching the canonical row by idempotency_key.
+      // Postgres unique-violation is code '23505'.
+      if (idemHeader && (error.code === "23505" || /duplicate key/i.test(error.message || ""))) {
+        const { data: replay } = await db.from("wireline_outbound_leads")
+          .select("id, call_id, status")
+          .eq("user_id", key.user_id)
+          .eq("idempotency_key", idemHeader)
+          .maybeSingle();
+        if (replay) {
+          return res.json({
+            ok: true,
+            lead_id: replay.id,
+            idempotent_replay: true,
+            status: replay.status,
+            call_id: replay.call_id,
+          });
+        }
+      }
+      throw error;
+    }
 
     // Bump usage stats fire-and-forget so the response stays fast.
     db.from("wireline_intake_keys").update({
@@ -3308,10 +3438,56 @@ app.post("/api/intake/lead", async (req: any, res: any) => {
       metadata,
       agent_id,
       intake_key: { id: key.id, name: key.name },
+      auto_dial: !!key.auto_dial && !!agent_id,
       at: nowIso,
     }).catch(() => {});
 
-    res.json({ ok: true, lead_id: inserted?.id });
+    // Auto-dial — fire-and-forget so the operator's caller (e.g. a
+    // form submission handler) gets a fast response. The lead row
+    // gets updated with call_id + status='Dialing' on success, or
+    // status='AutoDialFailed' with the reason in metadata on failure
+    // so the operator can see what happened.
+    let auto_dial_initiated = false;
+    if (key.auto_dial && agent_id && inserted?.id) {
+      auto_dial_initiated = true;
+      (async () => {
+        try {
+          const result = await placeOutboundCall({
+            userId: key.user_id,
+            agentId: agent_id,
+            customerName: customer_name || null,
+            customerNumber: customer_number,
+            context: context || `Inbound lead via ${key.name}`,
+          });
+          if (result.ok) {
+            await db.from("wireline_outbound_leads").update({
+              call_id: result.callId,
+              status: "Dialing",
+              last_called_at: new Date().toISOString(),
+            }).eq("id", inserted.id);
+          } else {
+            await db.from("wireline_outbound_leads").update({
+              status: "AutoDialFailed",
+              metadata: { ...(metadata || {}), auto_dial_error: result.error, auto_dial_status: result.status },
+            }).eq("id", inserted.id);
+            console.warn(`Auto-dial failed for lead ${inserted.id}: [${result.status}] ${result.error}`);
+          }
+        } catch (err: any) {
+          await db.from("wireline_outbound_leads").update({
+            status: "AutoDialFailed",
+            metadata: { ...(metadata || {}), auto_dial_error: err?.message || String(err) },
+          }).eq("id", inserted.id);
+          console.warn(`Auto-dial threw for lead ${inserted.id}:`, err);
+        }
+      })();
+    }
+
+    res.json({
+      ok: true,
+      lead_id: inserted?.id,
+      auto_dial_initiated,
+      idempotent_replay: false,
+    });
   } catch (e: any) {
     console.error("Intake lead failed:", e);
     res.status(500).json({ error: e?.message ?? "Intake failed" });
@@ -3323,7 +3499,7 @@ app.post("/api/intake/lead", async (req: any, res: any) => {
 app.get("/api/intake/keys", authenticateUser, async (req: any, res: any) => {
   try {
     const { data, error } = await db.from("wireline_intake_keys")
-      .select("id, name, key_prefix, default_agent_id, active, last_used_at, use_count, created_at")
+      .select("id, name, key_prefix, default_agent_id, auto_dial, active, last_used_at, use_count, created_at")
       .eq("user_id", req.user.id)
       .order("created_at", { ascending: false });
     if (error) throw error;
@@ -3336,6 +3512,7 @@ app.post("/api/intake/keys", authenticateUser, async (req: any, res: any) => {
     const name = (req.body?.name || "").toString().trim();
     if (!name) return res.status(400).json({ error: "name is required" });
     const default_agent_id = req.body?.default_agent_id || null;
+    const auto_dial = !!req.body?.auto_dial;
 
     const { plaintext, prefix, hash } = await generateIntakeKey();
     const { data, error } = await db.from("wireline_intake_keys").insert({
@@ -3344,8 +3521,9 @@ app.post("/api/intake/keys", authenticateUser, async (req: any, res: any) => {
       key_prefix: prefix,
       key_hash: hash,
       default_agent_id,
+      auto_dial,
       active: true,
-    }).select("id, name, key_prefix, default_agent_id, active, created_at").single();
+    }).select("id, name, key_prefix, default_agent_id, auto_dial, active, created_at").single();
     if (error) throw error;
     // Plaintext is returned ONCE — we never store or expose it again.
     res.json({ key: data, plaintext });
@@ -3358,9 +3536,10 @@ app.patch("/api/intake/keys/:id", authenticateUser, async (req: any, res: any) =
     if (req.body?.name !== undefined) patch.name = String(req.body.name).slice(0, 80);
     if (req.body?.active !== undefined) patch.active = !!req.body.active;
     if (req.body?.default_agent_id !== undefined) patch.default_agent_id = req.body.default_agent_id || null;
+    if (req.body?.auto_dial !== undefined) patch.auto_dial = !!req.body.auto_dial;
     const { data, error } = await db.from("wireline_intake_keys").update(patch)
       .eq("id", req.params.id).eq("user_id", req.user.id)
-      .select("id, name, key_prefix, default_agent_id, active, last_used_at, use_count, created_at").single();
+      .select("id, name, key_prefix, default_agent_id, auto_dial, active, last_used_at, use_count, created_at").single();
     if (error) throw error;
     res.json({ key: data });
   } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to update key" }); }

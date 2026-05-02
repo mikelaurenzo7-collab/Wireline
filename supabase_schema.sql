@@ -419,3 +419,16 @@ DO $$ BEGIN
     END IF;
 END $$;
 
+-- Auto-dial on inbound intake — when on, leads pushed via this key
+-- automatically trigger an outbound call from the default agent.
+ALTER TABLE wireline_intake_keys ADD COLUMN IF NOT EXISTS auto_dial BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- Idempotency on inbound intake — operators (or middleware like Zapier)
+-- can pass an Idempotency-Key header so retries don't create duplicate
+-- leads. Partial unique index allows existing rows to coexist with
+-- legacy NULL values.
+ALTER TABLE wireline_outbound_leads ADD COLUMN IF NOT EXISTS idempotency_key TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS wireline_outbound_leads_user_idem_idx
+    ON wireline_outbound_leads(user_id, idempotency_key)
+    WHERE idempotency_key IS NOT NULL;
+

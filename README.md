@@ -138,10 +138,16 @@ Each request includes `X-Wireline-Attempt: <n>` so receivers can implement their
 - `POST /api/intake/lead` — public, authenticated by `X-Wireline-Key: wlk_…`. Body `{ customer_name?, customer_number, context?, metadata?, agent_id? }`. Inserts into the leads table with `source='inbound'` so the dialer + Triage surfaces pick it up automatically, then fires a `lead.received` webhook event.
 - `GET  /api/intake/keys` · `POST /api/intake/keys` · `PATCH/DELETE /api/intake/keys/:id` — manage per-user intake keys (plaintext returned only at create time; SHA-256 stored).
 
+Per-key features:
+- **Auto-dial** — when on, the lead is recorded *and* an outbound call from the default agent is dispatched in the background. Composes with the post-call enrichment + audit + webhooks pipeline. Response includes `auto_dial_initiated: true`; the lead row gets `call_id` + `status: "Dialing"` once Vapi accepts the call (or `status: "AutoDialFailed"` with the reason in `metadata.auto_dial_error`).
+- **Idempotency** — pass an `Idempotency-Key` header (≤ 255 chars). Same key + same operator returns the original `lead_id` with `idempotent_replay: true`. Enforced by a partial unique index, so concurrent retries of a form submission can't create duplicates.
+- **Rate limit** — 60 requests / minute per intake key. Excess returns HTTP 429 with `Retry-After`.
+
 ```bash
 curl -X POST $WIRELINE_URL/api/intake/lead \
   -H "Content-Type: application/json" \
   -H "X-Wireline-Key: wlk_..." \
+  -H "Idempotency-Key: form-submission-12345" \
   -d '{"customer_name":"Jane Doe","customer_number":"+15551234567","context":"Filled out demo form","metadata":{"utm_source":"newsletter"}}'
 ```
 
