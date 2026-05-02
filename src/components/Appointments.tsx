@@ -50,7 +50,7 @@ export default function AppointmentsView() {
         </div>
       </header>
 
-      <div className="bg-white brutal-border border-4 !p-0 overflow-hidden shadow-[24px_24px_0px_0px_rgba(10,10,10,1)] animate-in fade-in slide-in-from-bottom-10 duration-700">
+      <div className="bg-white brutal-border border-4 !p-0 overflow-hidden animate-in fade-in slide-in-from-bottom-10 duration-700">
         <div className="p-8 md:p-12 border-b-8 border-ink flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-zinc-950 text-white relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-10 opacity-10 pointer-events-none group-hover:scale-110 transition-transform">
              <Signal className="w-48 h-48 text-brand" />
@@ -73,7 +73,7 @@ export default function AppointmentsView() {
                 animate={{ opacity: 1, scale: 1 }}
                 className="flex-1 flex flex-col items-center justify-center p-24 text-center space-y-10"
               >
-                <div className="w-32 h-32 md:w-48 md:h-48 bg-white brutal-border border-8 flex items-center justify-center shadow-[16px_16px_0px_0px_rgba(10,10,10,1)] group hover:rotate-6 transition-transform">
+                <div className="w-32 h-32 md:w-48 md:h-48 bg-white brutal-border border-8 flex items-center justify-center group hover:rotate-6 transition-transform">
                   <CalendarIcon className="w-16 h-16 md:w-24 md:h-24 text-zinc-100 group-hover:text-brand transition-colors" />
                 </div>
                 <div className="space-y-6">
@@ -98,7 +98,7 @@ export default function AppointmentsView() {
                       <div className="space-y-6">
                         <h3 className="text-[10px] font-black text-muted uppercase tracking-[0.4em] italic mb-2">COUNTERPARTY_ID</h3>
                         <div className="flex items-center gap-6 font-black text-ink text-3xl md:text-5xl font-display uppercase italic leading-[0.8] tracking-tighter truncate group-hover:translate-x-4 transition-transform">
-                          <div className="w-16 h-16 brutal-border border-4 bg-white flex items-center justify-center shrink-0 group-hover:bg-brand group-hover:text-ink transition-all shadow-[6px_6px_0px_0px_rgba(10,10,10,1)] group-hover:shadow-none translate-x-[-4px] translate-y-[-4px] group-hover:translate-x-0 group-hover:translate-y-0">
+                          <div className="w-16 h-16 brutal-border border-4 bg-white flex items-center justify-center shrink-0 group-hover:bg-brand group-hover:text-ink transition-all group-hover:shadow-none translate-x-[-4px] translate-y-[-4px] group-hover:translate-x-0 group-hover:translate-y-0">
                             <User className="w-8 h-8" />
                           </div>
                           <span className="truncate">{appt.customer_name}</span>
@@ -107,14 +107,14 @@ export default function AppointmentsView() {
                       
                       <div className="space-y-6 lg:pl-10 lg:border-l-4 lg:border-ink/5">
                         <h3 className="text-[10px] font-black text-muted uppercase tracking-[0.4em] italic mb-2">OPERATIONAL_SCOPE</h3>
-                        <div className="flex items-center gap-4 font-black text-ink text-xl md:text-2xl font-display uppercase italic leading-none bg-brand py-4 px-8 brutal-border border-4 shadow-[8px_8px_0px_0px_rgba(10,10,10,1)] w-max max-w-full">
+                        <div className="flex items-center gap-4 font-black text-ink text-xl md:text-2xl font-display uppercase italic leading-none bg-brand py-4 px-8 brutal-border border-4 w-max max-w-full">
                           <Wrench className="w-6 h-6 shrink-0" />
                           <span className="truncate">{appt.service_type}</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex flex-col md:flex-row gap-10 items-start md:items-center bg-zinc-950 text-white p-8 md:p-10 brutal-border border-4 shadow-[12px_12px_0px_0px_rgba(212,255,77,1)] shrink-0 transition-all w-full xl:w-auto relative overflow-hidden group/card shadow-none">
+                    <div className="flex flex-col md:flex-row gap-10 items-start md:items-center bg-zinc-950 text-white p-8 md:p-10 brutal-border border-4 shrink-0 transition-all w-full xl:w-auto relative overflow-hidden group/card shadow-none">
                       <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover/card:scale-150 transition-transform">
                          <Target className="w-32 h-32 text-brand" />
                       </div>

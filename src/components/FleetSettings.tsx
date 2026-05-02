@@ -203,7 +203,7 @@ export default function FleetSettings() {
                     className={cn(
                       "w-full text-left p-8 flex items-center gap-6 transition-all brutal-border border-4 relative overflow-hidden group", 
                       selectedAgent?.id === agent.id 
-                        ? "bg-brand border-ink shadow-[8px_8px_0px_0px_rgba(10,10,10,1)] translate-x-1 translate-y-1" 
+                        ? "bg-brand border-ink  translate-x-1 translate-y-1" 
                         : "bg-white border-zinc-200 shadow-none hover:border-ink"
                     )}
                   >
@@ -270,7 +270,7 @@ export default function FleetSettings() {
               <button 
                 onClick={handleCreateAgent} 
                 disabled={isCreating || !newAgentId || !newAgentName} 
-                className="brutal-btn w-full !bg-ink !text-brand !py-6 text-sm font-black uppercase flex justify-center items-center gap-4 transition-all shadow-[8px_8px_0px_0px_rgba(212,255,77,1)] active:shadow-none active:translate-x-1 active:translate-y-1 hover:shadow-[12px_12px_0px_0px_rgba(212,255,77,1)]"
+                className="brutal-btn w-full !bg-ink !text-brand !py-6 text-sm font-black uppercase flex justify-center items-center gap-4 transition-all active:shadow-none active:translate-x-1 active:translate-y-1"
               >
                 {isCreating ? <Loader2 className="w-6 h-6 animate-spin" /> : <Plus className="w-6 h-6" />} COMMENCE DEPLOYMENT
               </button>
@@ -287,7 +287,7 @@ export default function FleetSettings() {
               animate={{ opacity: 1, scale: 1 }}
               className="h-full flex flex-col items-center justify-center p-20 text-center space-y-10"
             >
-              <div className="w-32 h-32 md:w-48 md:h-48 bg-white brutal-border border-8 flex items-center justify-center shadow-[16px_16px_0px_0px_rgba(10,10,10,1)] group hover:rotate-6 transition-transform">
+              <div className="w-32 h-32 md:w-48 md:h-48 bg-white brutal-border border-8 flex items-center justify-center group hover:rotate-6 transition-transform">
                 <Target className="w-16 h-16 md:w-24 md:h-24 text-zinc-100 group-hover:text-brand transition-colors" />
               </div>
               <div className="space-y-4">
@@ -310,7 +310,7 @@ export default function FleetSettings() {
                  <div className="flex flex-col lg:flex-row items-start justify-between gap-12 relative z-10">
                    <div className="flex-1 w-full space-y-8">
                       <div className="flex items-center gap-6">
-                        <div className="w-4 h-16 md:h-24 bg-brand shadow-[4px_4px_0px_0px_rgba(10,10,10,1)]" />
+                        <div className="w-4 h-16 md:h-24 bg-brand" />
                         <input 
                           type="text" 
                           value={selectedAgent.name} 
@@ -436,7 +436,7 @@ export default function FleetSettings() {
                              type="text" 
                              value={selectedAgent.first_message || ""} 
                              onChange={e => updateAgentMeta({ first_message: e.target.value })} 
-                             className="w-full p-8 brutal-border border-4 font-black text-ink uppercase tracking-tighter text-2xl md:text-4xl outline-none focus:bg-brand bg-paper font-display italic shadow-[12px_12px_0px_0px_rgba(10,10,10,1)]"
+                             className="w-full p-8 brutal-border border-4 font-black text-ink uppercase tracking-tighter text-2xl md:text-4xl outline-none focus:bg-brand bg-paper font-display italic"
                            />
                          </div>
                      </div>
@@ -511,7 +511,7 @@ export default function FleetSettings() {
               ) : (
                  <div className="space-y-24">
                    {/* Personality Matrix */}
-                   <section className="bg-zinc-950 p-12 md:p-16 brutal-border border-8 shadow-[24px_24px_0px_0px_rgba(212,255,77,1)] relative overflow-hidden group">
+                   <section className="bg-zinc-950 p-12 md:p-16 brutal-border border-8 relative overflow-hidden group">
                      <div className="absolute top-0 right-0 p-16 opacity-5 pointer-events-none group-hover:scale-110 transition-transform">
                         <Terminal className="w-96 h-96 text-brand" />
                      </div>
@@ -541,7 +541,7 @@ export default function FleetSettings() {
 
                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24">
                      {/* Directives Lists (Manual Override) */}
-                     <section className="bg-white p-10 md:p-14 brutal-border border-8 shadow-[16px_16px_0px_0px_rgba(10,10,10,1)] flex flex-col h-[700px]">
+                     <section className="bg-white p-10 md:p-14 brutal-border border-8 flex flex-col h-[700px]">
                        <header className="border-b-8 border-ink pb-8 mb-10 flex justify-between items-end">
                           <div>
                             <h3 className="text-3xl font-black text-ink uppercase tracking-tighter font-display italic leading-none mb-4">TACTICAL LOGIC</h3>
@@ -614,7 +614,7 @@ export default function FleetSettings() {
                        </div>
                      </section>
 
-                     <section className="bg-white p-10 md:p-14 brutal-border border-8 shadow-[16px_16px_0px_0px_rgba(10,10,10,1)] flex flex-col h-[700px]">
+                     <section className="bg-white p-10 md:p-14 brutal-border border-8 flex flex-col h-[700px]">
                        <header className="border-b-8 border-ink pb-8 mb-10 flex justify-between items-end">
                           <div>
                             <h3 className="text-3xl font-black text-ink uppercase tracking-tighter font-display italic leading-none mb-4">NEURAL GROUNDING</h3>

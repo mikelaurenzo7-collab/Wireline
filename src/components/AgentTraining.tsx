@@ -199,7 +199,7 @@ export default function AgentTraining() {
               <select 
                 value={selectedAgentId} 
                 onChange={e => setSelectedAgentId(e.target.value)}
-                className="w-full pl-6 pr-12 h-16 bg-white border-4 border-ink font-black text-ink cursor-pointer shadow-[8px_8px_0px_0px_rgba(10,10,10,1)] hover:shadow-none translate-x-[-4px] translate-y-[-4px] hover:translate-x-0 hover:translate-y-0 transition-all outline-none appearance-none uppercase tracking-widest text-xs italic"
+                className="w-full pl-6 pr-12 h-16 bg-white border-4 border-ink font-black text-ink cursor-pointer hover:shadow-none translate-x-[-4px] translate-y-[-4px] hover:translate-x-0 hover:translate-y-0 transition-all outline-none appearance-none uppercase tracking-widest text-xs italic"
               >
                 <option value="default-agent">GLOBAL FLEET DIRECTIVES</option>
                 {agents.map(a => (
@@ -222,7 +222,7 @@ export default function AgentTraining() {
                onClick={() => setActiveTab(tab.id as any)}
                className={cn(
                  "brutal-btn uppercase italic tracking-[0.2em] !py-4 !px-10 text-[11px] font-black flex items-center gap-4 transition-all",
-                 activeTab === tab.id ? "bg-brand text-ink shadow-[4px_4px_0px_0px_rgba(10,10,10,1)]" : "bg-white text-muted border-zinc-200 shadow-none hover:border-ink hover:text-ink"
+                 activeTab === tab.id ? "bg-brand text-ink " : "bg-white text-muted border-zinc-200 shadow-none hover:border-ink hover:text-ink"
                )}
              >
                <tab.icon className="w-5 h-5" /> {tab.label}
@@ -254,7 +254,7 @@ export default function AgentTraining() {
                     </div>
                     <div className={`flex max-w-[90%] md:max-w-[75%] ${msg.role === "user" ? "justify-end text-right" : "justify-start text-left"}`}>
                       <div className={cn(
-                        "p-6 md:p-10 font-bold leading-relaxed shadow-[8px_8px_0px_0px_rgba(10,10,10,1)] text-sm md:text-xl border-4 border-ink",
+                        "p-6 md:p-10 font-bold leading-relaxed  text-sm md:text-xl border-4 border-ink",
                         msg.role === "user" ? "bg-white text-ink" : "bg-zinc-50 text-ink italic font-display tracking-tight"
                       )}>
                         {msg.content.split('\n').map((line, lIdx) => (
@@ -280,7 +280,7 @@ export default function AgentTraining() {
               </div>
 
               <div className="p-10 md:p-16 border-t-4 border-ink bg-white sticky bottom-0">
-                <div className="flex items-center gap-6 bg-paper border-4 border-ink p-4 shadow-[12px_12px_0px_0px_rgba(10,10,10,1)] focus-within:bg-brand/5 transition-all group">
+                <div className="flex items-center gap-6 bg-paper border-4 border-ink p-4 focus-within:bg-brand/5 transition-all group">
                   <Terminal className="w-8 h-8 text-muted ml-4" />
                   <input 
                     type="text" 
@@ -294,7 +294,7 @@ export default function AgentTraining() {
                   <button 
                     onClick={handleSend}
                     disabled={isLoading || !input.trim()}
-                    className="w-20 h-20 bg-ink hover:bg-brand hover:text-ink disabled:bg-zinc-100 disabled:shadow-none text-brand flex items-center justify-center transition-all shadow-[6px_6px_0px_0px_rgba(10,10,10,1)] active:translate-x-1 active:translate-y-1 active:shadow-none"
+                    className="w-20 h-20 bg-ink hover:bg-brand hover:text-ink disabled:bg-zinc-100 disabled:shadow-none text-brand flex items-center justify-center transition-all active:translate-x-1 active:translate-y-1 active:shadow-none"
                   >
                      <Send className="w-8 h-8" />
                   </button>
@@ -356,7 +356,7 @@ export default function AgentTraining() {
                           <motion.div 
                             key={idx} 
                             exit={{ opacity: 0, scale: 0.8 }}
-                            className="brutal-card bg-white !p-8 space-y-6 flex flex-col justify-between border-4 hover:shadow-[12px_12px_0px_0px_rgba(10,10,10,1)] transition-all"
+                            className="brutal-card bg-white !p-8 space-y-6 flex flex-col justify-between border-4 transition-all"
                           >
                             <p className="text-sm font-bold text-ink leading-relaxed uppercase tracking-tight italic">"{s}"</p>
                             <button 
@@ -442,7 +442,7 @@ export default function AgentTraining() {
                             <button 
                               onClick={() => saveManualEntry('directive', newDirective)} 
                               disabled={!newDirective || isSavingEntry}
-                              className="w-20 bg-emerald-500 text-white p-4 brutal-border hover:shadow-[6px_6px_0px_0px_rgba(10,10,10,1)] active:translate-x-1 active:translate-y-1 transition-all shadow-none border-4 flex items-center justify-center disabled:opacity-50"
+                              className="w-20 bg-emerald-500 text-white p-4 brutal-border active:translate-x-1 active:translate-y-1 transition-all shadow-none border-4 flex items-center justify-center disabled:opacity-50"
                             >
                               <Plus className="w-8 h-8" />
                             </button>
@@ -525,7 +525,7 @@ export default function AgentTraining() {
                             <button 
                               onClick={() => saveManualEntry('knowledge', newKnowledge)} 
                               disabled={!newKnowledge || isSavingEntry}
-                              className="w-20 bg-blue-500 text-white p-4 brutal-border hover:shadow-[6px_6px_0px_0px_rgba(10,10,10,1)] active:translate-x-1 active:translate-y-1 transition-all shadow-none border-4 flex items-center justify-center disabled:opacity-50"
+                              className="w-20 bg-blue-500 text-white p-4 brutal-border active:translate-x-1 active:translate-y-1 transition-all shadow-none border-4 flex items-center justify-center disabled:opacity-50"
                             >
                               <Plus className="w-8 h-8" />
                             </button>
@@ -604,7 +604,7 @@ export default function AgentTraining() {
                      </header>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                         {lessons.map(lesson => (
-                           <div key={lesson.id} className="brutal-card bg-emerald-50 !border-emerald-500 !p-12 flex items-start gap-8 shadow-[12px_12px_0px_0px_rgba(16,185,129,1)] hover:translate-x-2 hover:translate-y-2 hover:shadow-none transition-all cursor-crosshair group relative overflow-hidden">
+                           <div key={lesson.id} className="brutal-card bg-emerald-50 !border-emerald-500 !p-12 flex items-start gap-8 hover:translate-x-2 hover:translate-y-2 hover:shadow-none transition-all cursor-crosshair group relative overflow-hidden">
                               <div className="absolute -top-4 -right-4 italic font-black text-emerald-500/10 text-[8rem] select-none group-hover:rotate-12 transition-transform leading-none font-display uppercase tracking-tighter">SKILL</div>
                               <div className="mt-1 flex-shrink-0 relative z-10">
                                  <div className="w-12 h-12 brutal-border bg-white border-emerald-500 border-4 flex items-center justify-center shadow-none">
@@ -634,7 +634,7 @@ export default function AgentTraining() {
               animate={{ opacity: 1, scale: 1 }}
               className="min-h-screen bg-paper p-10 md:p-24 flex flex-col items-center justify-center"
             >
-               <div className="w-full max-w-[1000px] bg-white brutal-card !p-16 md:!p-24 text-center border-ink border-8 shadow-[24px_24px_0px_0px_rgba(212,255,77,1)] relative overflow-hidden">
+               <div className="w-full max-w-[1000px] bg-white brutal-card !p-16 md:!p-24 text-center border-ink border-8 relative overflow-hidden">
                   <div className="absolute top-0 left-0 w-full h-8 bg-zinc-950 flex items-center px-6 gap-3">
                      <div className="w-3 h-3 rounded-full bg-rose-500" />
                      <div className="w-3 h-3 rounded-full bg-amber-500" />
@@ -642,7 +642,7 @@ export default function AgentTraining() {
                      <span className="text-[9px] font-black text-white/40 uppercase tracking-[0.5em] ml-4 italic">SIMULATION_ENVIRONMENT_v4.0</span>
                   </div>
                   
-                  <div className="w-32 h-32 bg-brand border-8 border-ink flex items-center justify-center mx-auto mb-14 shadow-[12px_12px_0px_0px_rgba(10,10,10,1)] group hover:rotate-90 transition-transform cursor-pointer">
+                  <div className="w-32 h-32 bg-brand border-8 border-ink flex items-center justify-center mx-auto mb-14 group hover:rotate-90 transition-transform cursor-pointer">
                      <PlayCircle className="w-16 h-16 text-ink" />
                   </div>
                   <h2 className="text-5xl md:text-[6rem] font-black text-ink mb-10 tracking-tighter font-display uppercase italic leading-none">MISSION<br />SANDBOX</h2>

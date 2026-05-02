@@ -143,7 +143,7 @@ export default function EmailInbox() {
           <button 
             onClick={syncInbox} 
             disabled={syncing}
-            className="brutal-btn flex items-center justify-center gap-4 !h-20 !px-12 bg-brand w-full lg:w-auto uppercase tracking-[0.3em] font-black italic shadow-[8px_8px_0px_0px_rgba(10,10,10,1)] hover:shadow-none translate-x-[-4px] translate-y-[-4px] hover:translate-x-0 hover:translate-y-0 active:translate-x-1 active:translate-y-1 transition-all"
+            className="brutal-btn flex items-center justify-center gap-4 !h-20 !px-12 bg-brand w-full lg:w-auto uppercase tracking-[0.3em] font-black italic hover:shadow-none translate-x-[-4px] translate-y-[-4px] hover:translate-x-0 hover:translate-y-0 active:translate-x-1 active:translate-y-1 transition-all"
           >
             {syncing ? <Loader2 className="w-6 h-6 animate-spin" /> : <RotateCw className="w-6 h-6 text-ink" />}
             <span className="text-sm">INITIATE_SYNC</span>
@@ -153,7 +153,7 @@ export default function EmailInbox() {
 
       <div className="flex-1 flex flex-col lg:flex-row gap-12 min-h-0">
         {/* Thread List */}
-        <aside className="w-full lg:w-[500px] flex flex-col bg-white brutal-border border-4 !p-0 overflow-hidden shrink-0 shadow-[16px_16px_0px_0px_rgba(10,10,10,1)] max-h-[850px]">
+        <aside className="w-full lg:w-[500px] flex flex-col bg-white brutal-border border-4 !p-0 overflow-hidden shrink-0 max-h-[850px]">
           <div className="p-8 border-b-4 border-ink flex items-center justify-between bg-zinc-950 text-white relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none group-hover:scale-110 transition-transform">
                <Signal className="w-20 h-20 text-brand" />
@@ -217,7 +217,7 @@ export default function EmailInbox() {
         </aside>
 
         {/* Message View */}
-        <main className={cn("flex-1 flex flex-col bg-white brutal-border border-4 !p-0 overflow-hidden relative shadow-[16px_16px_0px_0px_rgba(10,10,10,1)]", !selectedThread ? "hidden lg:flex" : "flex")}>
+        <main className={cn("flex-1 flex flex-col bg-white brutal-border border-4 !p-0 overflow-hidden relative ", !selectedThread ? "hidden lg:flex" : "flex")}>
           <AnimatePresence mode="wait">
             {selectedThread ? (
               <motion.div 
@@ -234,7 +234,7 @@ export default function EmailInbox() {
                           <ChevronRight className="w-6 h-6 rotate-180" />
                        </button>
                        <div className={cn(
-                          "w-20 h-20 md:w-24 md:h-24 brutal-border border-4 flex flex-col items-center justify-center font-black shadow-[8px_8px_0px_0px_rgba(10,10,10,1)] shrink-0 transition-all group-hover:shadow-none",
+                          "w-20 h-20 md:w-24 md:h-24 brutal-border border-4 flex flex-col items-center justify-center font-black  shrink-0 transition-all group-hover:shadow-none",
                           (selectedThread.lead_score || 0) >= 80 ? "bg-rose-500 text-white" :
                           (selectedThread.lead_score || 0) >= 50 ? "bg-brand text-ink" :
                           "bg-paper text-muted"
@@ -252,7 +252,7 @@ export default function EmailInbox() {
                      <div className="w-full md:w-auto flex flex-col items-stretch gap-4">
                        <button 
                          onClick={() => handlePhoneHandoff(selectedThread)}
-                         className="brutal-btn !bg-ink !text-brand !py-4 !px-8 text-xs font-black uppercase tracking-[0.3em] italic flex items-center justify-center gap-4 group shadow-[6px_6px_0px_0px_rgba(212,255,77,1)] hover:shadow-none active:translate-x-1 active:translate-y-1 transition-all"
+                         className="brutal-btn !bg-ink !text-brand !py-4 !px-8 text-xs font-black uppercase tracking-[0.3em] italic flex items-center justify-center gap-4 group hover:shadow-none active:translate-x-1 active:translate-y-1 transition-all"
                        >
                          <Phone className="w-5 h-5 group-hover:rotate-12 transition-transform" /> ROUTE_TO_VOICE_FLEET
                        </button>
@@ -276,9 +276,9 @@ export default function EmailInbox() {
                         className={cn("flex flex-col max-w-[95%] md:max-w-[85%]", msg.role === 'ai' ? "ml-auto items-end" : "items-start")}
                       >
                         <div className={cn(
-                          "p-8 md:p-12 brutal-border border-4 font-bold leading-relaxed shadow-[12px_12px_0px_0px_rgba(10,10,10,1)] relative overflow-hidden group",
+                          "p-8 md:p-12 brutal-border border-4 font-bold leading-relaxed  relative overflow-hidden group",
                           msg.role === 'ai' 
-                            ? "bg-zinc-950 text-white italic border-brand shadow-[12px_12px_0px_0px_rgba(212,255,77,0.3)]" 
+                            ? "bg-zinc-950 text-white italic border-brand " 
                             : "bg-white text-ink"
                         )}>
                           {msg.role === 'ai' && (
@@ -310,7 +310,7 @@ export default function EmailInbox() {
                 </div>
 
                 <div className="p-10 md:p-14 bg-white border-t-8 border-ink">
-                  <div className="bg-paper brutal-border border-4 !p-6 flex flex-col shadow-[16px_16px_0px_0px_rgba(10,10,10,1)] group-focus-within:shadow-none transition-all">
+                  <div className="bg-paper brutal-border border-4 !p-6 flex flex-col group-focus-within:shadow-none transition-all">
                     <div className="flex items-center gap-4 mb-4 opacity-30 group-focus-within:opacity-100 transition-opacity">
                        <Terminal className="w-5 h-5 text-ink" />
                        <span className="text-[10px] font-black uppercase tracking-[0.5em] italic">RESPONSE_INTERFACE_v2.0</span>
@@ -336,7 +336,7 @@ export default function EmailInbox() {
                         </button>
                         <button 
                           onClick={sendReply}
-                          className="brutal-btn !bg-ink !text-brand !py-4 !px-12 flex items-center justify-center gap-6 group shadow-[6px_6px_0px_0px_rgba(212,255,77,1)] hover:shadow-none active:translate-x-1 active:translate-y-1 transition-all border-4 grow xl:grow-0"
+                          className="brutal-btn !bg-ink !text-brand !py-4 !px-12 flex items-center justify-center gap-6 group hover:shadow-none active:translate-x-1 active:translate-y-1 transition-all border-4 grow xl:grow-0"
                         >
                           <Send className="w-6 h-6 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> 
                           <span className="text-xs font-black uppercase tracking-[0.2em] italic">INITIATE_RELAY</span>
@@ -352,7 +352,7 @@ export default function EmailInbox() {
                 animate={{ opacity: 1, scale: 1 }}
                 className="flex-1 flex flex-col items-center justify-center p-24 text-center space-y-12"
               >
-                <div className="w-32 h-32 md:w-48 md:h-48 bg-brand brutal-border border-8 flex items-center justify-center shadow-[16px_16px_0px_0px_rgba(10,10,10,1)] group hover:-rotate-6 transition-transform">
+                <div className="w-32 h-32 md:w-48 md:h-48 bg-brand brutal-border border-8 flex items-center justify-center group hover:-rotate-6 transition-transform">
                   <Mail className="w-16 h-16 md:w-24 md:h-24 text-ink group-hover:scale-110 transition-transform" />
                 </div>
                 <div className="space-y-6">
