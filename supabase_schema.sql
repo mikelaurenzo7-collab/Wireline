@@ -309,3 +309,45 @@ DO $$ BEGIN
     END IF;
 END $$;
 
+-- Spend budgets — per-user monthly Claude budget with optional hard cap.
+-- One row per user. Powers spend.warning / spend.exceeded webhooks and the
+-- 402 short-circuit on /api/claude/* when hard_cap is on and exceeded.
+CREATE TABLE IF NOT EXISTS wireline_spend_budgets (
+    user_id UUID PRIMARY KEY DEFAULT auth.uid(),
+    monthly_limit_usd DECIMAL(12, 2) NOT NULL DEFAULT 0,
+    hard_cap BOOLEAN NOT NULL DEFAULT FALSE,
+    warn_threshold_pct INTEGER NOT NULL DEFAULT 80,
+    enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE wireline_spend_budgets ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'wireline_spend_budgets' AND policyname = 'Users can manage their own budget'
+    ) THEN
+        EXECUTE 'CREATE POLICY "Users can manage their own budget" ON wireline_spend_budgets FOR ALL USING (auth.uid() = user_id)';
+    END IF;
+END $$;
+
+-- Spend alerts ledger — debounces webhook firing so we send each
+-- threshold (e.g. 80%, 100%) at most once per period (YYYY-MM, UTC).
+CREATE TABLE IF NOT EXISTS wireline_spend_alerts (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id UUID NOT NULL,
+    period TEXT NOT NULL,           -- 'YYYY-MM' (UTC)
+    threshold_pct INTEGER NOT NULL, -- 80, 100, etc.
+    fired_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(user_id, period, threshold_pct)
+);
+CREATE INDEX IF NOT EXISTS wireline_spend_alerts_user_period_idx
+    ON wireline_spend_alerts(user_id, period);
+ALTER TABLE wireline_spend_alerts ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'wireline_spend_alerts' AND policyname = 'Users can view their own spend alerts'
+    ) THEN
+        EXECUTE 'CREATE POLICY "Users can view their own spend alerts" ON wireline_spend_alerts FOR ALL USING (auth.uid() = user_id)';
+    END IF;
+END $$;
+

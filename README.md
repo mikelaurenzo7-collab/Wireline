@@ -118,6 +118,14 @@ All require `ANTHROPIC_API_KEY` and are rate-limited to 60 req/min/user.
 - `POST /api/claude/knowledge-from-url` (single + crawl) · `knowledge-from-document` (PDF) · `knowledge-from-url/apply`
 - `POST /api/knowledge-gaps/:id/promote`
 
+### Spend & audit
+- `GET  /api/audit/summary` — totals + per-day + per-recipe + per-model breakdowns
+- `GET  /api/audit/recent`  — last N raw entries (debug + compliance)
+- `GET  /api/spend/budget` · `PUT /api/spend/budget` — monthly Claude limit + hard-cap toggle
+- `GET  /api/spend/status`  — month-to-date spend, % used, alerts fired, hard-cap state
+
+When month-to-date spend crosses the warn threshold or the limit, Wireline fires `spend.warning` / `spend.exceeded` outbound webhook events (debounced to once per period). With **hard cap on**, Claude calls return HTTP 402 once the limit is reached — no surprise bills.
+
 ### Voice / Email / Fleet
 See `server.ts` for the full list — voice webhook (`/api/vapi-webhook`), email sync, agent CRUD, outbound dialer, fleet tasks, etc.
 
