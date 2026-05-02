@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   Sparkles, Loader2, RefreshCw, AlertTriangle, Sun, Brain,
-  TrendingUp, TrendingDown, Activity, ChevronRight, Zap
+  TrendingUp, TrendingDown, Activity, ChevronRight, Zap, Mail,
+  Send, Check, X as XIcon, Clock,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
@@ -38,6 +39,7 @@ export default function DailyBrief() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [needsKey, setNeedsKey] = useState(false);
+  const [showSchedule, setShowSchedule] = useState(false);
 
   const load = async (refresh = false) => {
     setLoading(true); setErr(null);
@@ -109,15 +111,39 @@ export default function DailyBrief() {
               </div>
             </div>
           </div>
-          <button
-            onClick={() => load(true)}
-            disabled={loading}
-            className="px-3 py-1.5 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5 disabled:opacity-50"
-          >
-            {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-            {data.cached ? "Refresh" : "Cached"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowSchedule(s => !s)}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] transition-all flex items-center gap-1.5",
+                showSchedule
+                  ? "bg-brand-2/15 border border-brand-2/40 text-brand-2"
+                  : "glass border border-white/10 text-muted hover:text-brand-2 hover:border-brand-2/40",
+              )}
+            >
+              <Mail className="w-3 h-3" /> Email Schedule
+            </button>
+            <button
+              onClick={() => load(true)}
+              disabled={loading}
+              className="px-3 py-1.5 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5 disabled:opacity-50"
+            >
+              {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+              {data.cached ? "Refresh" : "Cached"}
+            </button>
+          </div>
         </div>
+
+        <AnimatePresence>
+          {showSchedule && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+              className="relative z-10 overflow-hidden"
+            >
+              <DailyBriefSchedule onClose={() => setShowSchedule(false)} />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <div className="relative z-10 p-7 space-y-7">
           {/* Headline */}
@@ -212,6 +238,186 @@ function Section({ title, icon: Icon, accent, children }: { title: string; icon:
       <ul className="space-y-1.5 text-sm text-ink/85 list-disc list-inside marker:text-brand/50">
         {children}
       </ul>
+    </div>
+  );
+}
+
+function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
+  const [loading, setLoading] = useState(true);
+  const [enabled, setEnabled] = useState(false);
+  const [sendAt, setSendAt] = useState("13:00");
+  const [recipient, setRecipient] = useState("");
+  const [lastSentAt, setLastSentAt] = useState<string | null>(null);
+  const [lastError, setLastError] = useState<string | null>(null);
+  const [gmailConnected, setGmailConnected] = useState(false);
+  const [gmailAddress, setGmailAddress] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [feedback, setFeedback] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+
+  const refresh = async () => {
+    setLoading(true);
+    try {
+      const r = await authFetch("/api/daily-brief/settings");
+      const d = await r.json();
+      if (r.ok) {
+        setEnabled(!!d.settings.enabled);
+        setSendAt(d.settings.send_at || "13:00");
+        setRecipient(d.settings.recipient || "");
+        setLastSentAt(d.settings.last_sent_at);
+        setLastError(d.settings.last_error);
+        setGmailConnected(!!d.gmail_connected);
+        setGmailAddress(d.gmail_address);
+      }
+    } finally { setLoading(false); }
+  };
+
+  useEffect(() => { refresh(); }, []);
+
+  const save = async () => {
+    setSaving(true); setFeedback(null);
+    try {
+      const r = await authFetch("/api/daily-brief/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled, send_at: sendAt, recipient: recipient || null }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || "Save failed");
+      setFeedback({ kind: "ok", text: "Saved." });
+      refresh();
+    } catch (e: any) {
+      setFeedback({ kind: "err", text: e?.message || "Save failed" });
+    } finally { setSaving(false); }
+  };
+
+  const sendNow = async () => {
+    setSending(true); setFeedback(null);
+    try {
+      const r = await authFetch("/api/daily-brief/send-now", { method: "POST" });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || "Send failed");
+      setFeedback({ kind: "ok", text: `Sent to ${d.recipient}.` });
+    } catch (e: any) {
+      setFeedback({ kind: "err", text: e?.message || "Send failed" });
+    } finally { setSending(false); }
+  };
+
+  return (
+    <div className="px-7 py-5 border-b border-white/8 bg-black/20 space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-brand-2">
+          <Mail className="w-3 h-3" /> Email this brief on a schedule
+        </div>
+        <button onClick={onClose} className="w-7 h-7 rounded-full glass border border-white/10 hover:border-white/30 flex items-center justify-center text-ink/60 hover:text-ink">
+          <XIcon className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center gap-2 text-muted text-xs"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…</div>
+      ) : (
+        <>
+          {!gmailConnected && (
+            <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2 text-amber-400 text-xs flex items-center gap-2">
+              <AlertTriangle className="w-3.5 h-3.5" />
+              Connect a Gmail account in <Link to="/integrations" className="underline">Carrier Bridge</Link> first — emails are sent through your own Gmail OAuth.
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setEnabled(e => !e)}
+            disabled={!gmailConnected}
+            className={cn(
+              "w-full px-4 py-3 rounded-xl border flex items-start gap-3 text-left transition-all",
+              !gmailConnected
+                ? "bg-black/20 border-white/5 text-muted/50 cursor-not-allowed"
+                : enabled
+                  ? "bg-brand-2/15 border-brand-2/40 text-brand-2"
+                  : "bg-black/30 border-white/10 text-ink/80 hover:border-white/20",
+            )}
+          >
+            <div className={cn(
+              "shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center mt-0.5",
+              enabled && gmailConnected ? "bg-brand-2 border-brand-2 text-paper" : "border-white/30",
+            )}>
+              {enabled && gmailConnected && <Check className="w-2.5 h-2.5" strokeWidth={4} />}
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-medium">Send the daily brief by email at the time below (UTC)</div>
+              <div className="text-[10px] leading-snug mt-0.5 text-ink/55">
+                Background scheduler ticks every 5 minutes. Emails are sent through {gmailAddress ? <span className="font-mono text-ink/75">{gmailAddress}</span> : "your connected Gmail account"}.
+              </div>
+            </div>
+          </button>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <label className="space-y-1.5">
+              <span className="text-[10px] uppercase tracking-[0.3em] text-muted flex items-center gap-1.5">
+                <Clock className="w-3 h-3" /> Send time (UTC)
+              </span>
+              <input
+                type="time"
+                value={sendAt}
+                onChange={(e) => setSendAt(e.target.value)}
+                className="w-full h-11 px-4 rounded-xl bg-black/40 border border-white/10 outline-none text-ink text-sm focus:border-brand/60 transition-all font-mono"
+              />
+              <span className="text-[10px] text-ink/40 leading-snug">
+                13:00 UTC ≈ 9 AM ET / 6 AM PT. Convert your local time before saving.
+              </span>
+            </label>
+            <label className="space-y-1.5">
+              <span className="text-[10px] uppercase tracking-[0.3em] text-muted">Recipient</span>
+              <input
+                type="email"
+                value={recipient}
+                onChange={(e) => setRecipient(e.target.value)}
+                placeholder="you@example.com"
+                className="w-full h-11 px-4 rounded-xl bg-black/40 border border-white/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
+              />
+            </label>
+          </div>
+
+          {lastSentAt && (
+            <div className="text-[10px] uppercase tracking-[0.3em] text-emerald-500/70">
+              Last sent {new Date(lastSentAt).toLocaleString()}
+            </div>
+          )}
+          {lastError && (
+            <div className="text-[10px] text-rose-400 flex items-start gap-1.5">
+              <AlertTriangle className="w-3 h-3 shrink-0 mt-0.5" />
+              <span className="font-mono">Last error: {lastError}</span>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between gap-3 flex-wrap pt-1">
+            <button
+              onClick={sendNow}
+              disabled={sending || !gmailConnected || !recipient}
+              className="h-10 px-4 rounded-lg glass border border-brand-2/30 text-brand-2 hover:bg-brand-2/10 text-[11px] uppercase tracking-[0.25em] flex items-center gap-2 disabled:opacity-50"
+            >
+              {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+              Send preview now
+            </button>
+            <div className="flex items-center gap-3">
+              {feedback && (
+                <span className={cn("text-[11px]", feedback.kind === "ok" ? "text-emerald-500" : "text-rose-400")}>
+                  {feedback.text}
+                </span>
+              )}
+              <button
+                onClick={save}
+                disabled={saving}
+                className="h-10 px-4 rounded-lg bg-brand text-paper text-[11px] uppercase tracking-[0.25em] flex items-center gap-2 disabled:opacity-50 hover:opacity-90"
+              >
+                {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                Save
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

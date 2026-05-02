@@ -3729,6 +3729,302 @@ app.delete("/api/intake/keys/:id", authenticateUser, async (req: any, res: any) 
 });
 
 // ──────────────────────────────────────────────────────────
+//  SCHEDULED DAILY BRIEF — emails Claude's morning brief to the
+//  operator at a configured UTC time via their connected Gmail.
+//  - Background scheduler ticks every 5 minutes; sends to any user
+//    whose daily_brief_send_at has elapsed today and who hasn't
+//    been sent for the current UTC date yet.
+//  - HTML email rendered server-side (no inline images, just well-
+//    structured semantic HTML for max client compatibility).
+//  - Per-send error stored on settings.daily_brief_last_error so
+//    the operator can see why if delivery is silent.
+// ──────────────────────────────────────────────────────────
+
+function buildOAuthClient() {
+  // Token refresh doesn't require an accurate redirect_uri — Google
+  // only validates redirect on the auth-code exchange. Pass APP_URL
+  // when set so any token-server callbacks have a sane URL anyway.
+  return new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.APP_URL ? `${process.env.APP_URL}/api/oauth/google/callback` : undefined,
+  );
+}
+
+function escapeHtml(s: any): string {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function renderDailyBriefEmail(payload: any, opts: { dateLabel: string; appUrl?: string | null }): { subject: string; html: string; text: string } {
+  const brief = payload?.brief || {};
+  const stats = payload?.stats_yesterday || {};
+  const delta = payload?.week_delta || {};
+  const headline = brief.headline || "Your daily brief";
+  const mood = brief.mood || "neutral";
+  const highlights: string[] = brief.highlights || [];
+  const concerns: string[] = brief.concerns || [];
+  const actions: string[] = brief.action_items || [];
+
+  const moodColor = mood === "positive" ? "#10b981" : mood === "concerning" ? "#f43f5e" : "#7DF9FF";
+  const fmtPct = (n: any) => {
+    const v = Number(n || 0);
+    const sign = v >= 0 ? "+" : "";
+    return `${sign}${v.toFixed(0)}%`;
+  };
+  const link = opts.appUrl ? `${opts.appUrl.replace(/\/+$/, "")}/` : null;
+
+  const subject = `Wireline · ${escapeHtml(headline)} · ${opts.dateLabel}`;
+
+  const css = `
+    body { margin:0; padding:0; background:#0F0E2D; color:#EEF1F8; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }
+    .wrap { max-width:640px; margin:0 auto; padding:32px 16px; }
+    .card { background:#191734; border:1px solid rgba(255,255,255,0.08); border-radius:20px; padding:28px; margin-bottom:16px; }
+    .label { font-size:10px; letter-spacing:0.4em; text-transform:uppercase; color:#8E91A8; margin:0 0 12px; }
+    h1 { font-size:28px; line-height:1.15; margin:0 0 8px; color:#fff; font-weight:600; letter-spacing:-0.01em; }
+    h2 { font-size:13px; letter-spacing:0.3em; text-transform:uppercase; color:${moodColor}; margin:0 0 16px; }
+    p { color:rgba(238,241,248,0.8); line-height:1.55; margin:0 0 12px; font-size:14px; }
+    .stats { display:table; width:100%; border-collapse:separate; border-spacing:8px 0; margin-top:8px; }
+    .stat { display:table-cell; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:14px; text-align:center; vertical-align:top; }
+    .stat .v { font-size:22px; font-weight:600; color:#fff; line-height:1; }
+    .stat .l { font-size:10px; letter-spacing:0.25em; text-transform:uppercase; color:#8E91A8; margin-top:8px; }
+    .delta-pos { color:#4DFFC4; }
+    .delta-neg { color:#FF6BD9; }
+    ul { padding:0; margin:0; list-style:none; }
+    li { background:rgba(255,255,255,0.03); border-left:3px solid ${moodColor}; border-radius:6px; padding:10px 14px; margin-bottom:8px; font-size:14px; line-height:1.5; color:rgba(238,241,248,0.9); }
+    li.warn { border-left-color:#FFC07D; }
+    li.action { border-left-color:#7DF9FF; }
+    .footer { text-align:center; color:#8E91A8; font-size:11px; padding:16px 0; }
+    .btn { display:inline-block; padding:10px 18px; border-radius:999px; background:linear-gradient(135deg,#7DF9FF,#C58BFF); color:#0F0E2D !important; text-decoration:none; font-weight:600; font-size:13px; letter-spacing:0.05em; }
+  `;
+
+  const stat = (label: string, value: string, delta?: number | null) => `
+    <div class="stat">
+      <div class="v">${escapeHtml(value)}</div>
+      <div class="l">${escapeHtml(label)}</div>
+      ${delta !== undefined && delta !== null && Math.abs(delta) >= 1
+        ? `<div class="${delta >= 0 ? "delta-pos" : "delta-neg"}" style="font-size:11px;margin-top:6px;">${fmtPct(delta)} vs 7-day</div>`
+        : ""}
+    </div>`;
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8" /><style>${css}</style></head><body>
+    <div class="wrap">
+      <div class="card">
+        <p class="label">Wireline · Daily Brief · ${escapeHtml(opts.dateLabel)}</p>
+        <h2>${escapeHtml(mood)}</h2>
+        <h1>${escapeHtml(headline)}</h1>
+        <div class="stats" role="presentation">
+          ${stat("Calls", String(stats.total_calls ?? 0), delta.calls_pct)}
+          ${stat("Lead Score", String(stats.avg_lead_score ?? 0), delta.score_pct)}
+          ${stat("Cost", `$${Number(stats.cost ?? 0).toFixed(2)}`, delta.cost_pct)}
+          ${stat("Booked", String(stats.appointments_booked ?? 0))}
+        </div>
+      </div>
+      ${highlights.length ? `
+      <div class="card">
+        <p class="label">Highlights</p>
+        <ul>${highlights.map(h => `<li>${escapeHtml(h)}</li>`).join("")}</ul>
+      </div>` : ""}
+      ${concerns.length ? `
+      <div class="card">
+        <p class="label">Concerns</p>
+        <ul>${concerns.map(h => `<li class="warn">${escapeHtml(h)}</li>`).join("")}</ul>
+      </div>` : ""}
+      ${actions.length ? `
+      <div class="card">
+        <p class="label">Action Items</p>
+        <ul>${actions.map(h => `<li class="action">${escapeHtml(h)}</li>`).join("")}</ul>
+      </div>` : ""}
+      ${link ? `<div style="text-align:center; padding:12px 0 32px;"><a class="btn" href="${escapeHtml(link)}">Open Wireline</a></div>` : ""}
+      <div class="footer">Sent automatically from your scheduled daily brief. Pause anytime in <strong>Command Atlas → Daily Brief</strong>.</div>
+    </div>
+  </body></html>`;
+
+  // Plain-text fallback for clients that don't render HTML.
+  const lines: string[] = [];
+  lines.push(`WIRELINE · Daily Brief · ${opts.dateLabel}`);
+  lines.push(`Mood: ${mood}`);
+  lines.push("");
+  lines.push(headline);
+  lines.push("");
+  lines.push(`Calls: ${stats.total_calls ?? 0}  ·  Lead Score: ${stats.avg_lead_score ?? 0}  ·  Cost: $${Number(stats.cost ?? 0).toFixed(2)}  ·  Booked: ${stats.appointments_booked ?? 0}`);
+  if (highlights.length) { lines.push(""); lines.push("HIGHLIGHTS"); highlights.forEach(h => lines.push(` • ${h}`)); }
+  if (concerns.length)   { lines.push(""); lines.push("CONCERNS");   concerns.forEach(h => lines.push(` ⚠ ${h}`)); }
+  if (actions.length)    { lines.push(""); lines.push("ACTIONS");    actions.forEach(h => lines.push(` → ${h}`)); }
+  if (link) { lines.push(""); lines.push(`Open Wireline: ${link}`); }
+  return { subject, html, text: lines.join("\n") };
+}
+
+async function sendDailyBriefEmail(userId: string, opts?: { force?: boolean }) {
+  // Pull settings + the operator's connected Gmail account.
+  const [{ data: settings }, { data: accounts }] = await Promise.all([
+    db.from("wireline_settings").select("daily_brief_recipient, daily_brief_enabled").eq("user_id", userId).maybeSingle(),
+    db.from("wireline_email_accounts").select("access_token, refresh_token, expires_at, email_address").eq("user_id", userId).limit(1),
+  ]);
+  const recipient = settings?.daily_brief_recipient;
+  if (!recipient) throw new Error("No recipient configured (daily_brief_recipient).");
+  const account: any = accounts?.[0];
+  if (!account?.refresh_token) throw new Error("No connected Gmail account — connect one in Carrier Bridge first.");
+
+  // Compute the brief (uses the per-day cache) — may throw CLAUDE_OFFLINE.
+  const { payload } = await computeDailyBrief(userId, { force: opts?.force === true });
+  const dateLabel = new Date().toISOString().slice(0, 10);
+  const { subject, html, text } = renderDailyBriefEmail(payload, { dateLabel, appUrl: process.env.APP_URL });
+
+  const oauth2Client = buildOAuthClient();
+  oauth2Client.setCredentials({
+    access_token: account.access_token,
+    refresh_token: account.refresh_token,
+    expiry_date: account.expires_at,
+  });
+  const gmail = google.gmail({ version: "v1", auth: oauth2Client });
+
+  // Multipart/alternative — text part first, then HTML, per RFC 2046.
+  const boundary = `----wirelineboundary${Date.now().toString(36)}`;
+  const messageParts = [
+    `From: ${account.email_address || "me"}`,
+    `To: ${recipient}`,
+    `Subject: ${subject}`,
+    `MIME-Version: 1.0`,
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+    ``,
+    `--${boundary}`,
+    `Content-Type: text/plain; charset=utf-8`,
+    `Content-Transfer-Encoding: 7bit`,
+    ``,
+    text,
+    ``,
+    `--${boundary}`,
+    `Content-Type: text/html; charset=utf-8`,
+    `Content-Transfer-Encoding: 7bit`,
+    ``,
+    html,
+    ``,
+    `--${boundary}--`,
+  ].join("\r\n");
+  const encoded = Buffer.from(messageParts).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  await gmail.users.messages.send({ userId: "me", requestBody: { raw: encoded } });
+
+  return { recipient, subject };
+}
+
+// Scheduler — every 5 minutes, find any users whose configured time
+// has elapsed today and haven't been sent yet (UTC date comparison).
+// .unref() so it never blocks process exit. Re-entrancy guard so a
+// slow batch doesn't overlap with itself.
+const DAILY_BRIEF_TICK_MS = 5 * 60 * 1000;
+let _briefSchedRunning = false;
+
+async function processScheduledDailyBriefs() {
+  if (_briefSchedRunning) return;
+  _briefSchedRunning = true;
+  try {
+    const now = new Date();
+    const utcHHMM = `${String(now.getUTCHours()).padStart(2, "0")}:${String(now.getUTCMinutes()).padStart(2, "0")}`;
+    const todayUTC = now.toISOString().slice(0, 10);
+
+    // Pull users whose send_at <= now (lex compare HH:MM works) AND
+    // either never sent or last send was on an earlier UTC date.
+    const { data: due } = await db.from("wireline_settings")
+      .select("user_id, daily_brief_send_at, daily_brief_last_sent_at")
+      .eq("daily_brief_enabled", true)
+      .lte("daily_brief_send_at", utcHHMM)
+      .limit(500);
+    if (!due?.length) return;
+
+    for (const row of due) {
+      const lastDate = row.daily_brief_last_sent_at
+        ? new Date(row.daily_brief_last_sent_at).toISOString().slice(0, 10)
+        : null;
+      if (lastDate === todayUTC) continue;
+
+      try {
+        await sendDailyBriefEmail(row.user_id);
+        await db.from("wireline_settings").update({
+          daily_brief_last_sent_at: new Date().toISOString(),
+          daily_brief_last_error: null,
+        }).eq("user_id", row.user_id);
+      } catch (err: any) {
+        // Persist the error so the operator can see why delivery failed,
+        // but DON'T mark sent — we'll retry on the next tick.
+        const message = err?.message || String(err);
+        await db.from("wireline_settings").update({
+          daily_brief_last_error: message.slice(0, 500),
+        }).eq("user_id", row.user_id);
+        console.warn(`Daily-brief send failed for ${row.user_id}:`, message);
+      }
+    }
+  } catch (err) {
+    console.error("Daily-brief scheduler tick failed:", err);
+  } finally {
+    _briefSchedRunning = false;
+  }
+}
+setInterval(processScheduledDailyBriefs, DAILY_BRIEF_TICK_MS).unref?.();
+
+// Settings: GET / PUT for the daily-brief schedule. Defaults are
+// reasonable: 13:00 UTC (~9am ET / 6am PT), recipient = user's email,
+// disabled until the operator opts in.
+app.get("/api/daily-brief/settings", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { data } = await db.from("wireline_settings")
+      .select("daily_brief_enabled, daily_brief_send_at, daily_brief_recipient, daily_brief_last_sent_at, daily_brief_last_error")
+      .eq("user_id", req.user.id).maybeSingle();
+    const { data: accounts } = await db.from("wireline_email_accounts")
+      .select("email_address").eq("user_id", req.user.id).limit(1);
+    res.json({
+      settings: {
+        enabled: !!data?.daily_brief_enabled,
+        send_at: data?.daily_brief_send_at || "13:00",
+        recipient: data?.daily_brief_recipient || req.user.email || null,
+        last_sent_at: data?.daily_brief_last_sent_at || null,
+        last_error: data?.daily_brief_last_error || null,
+      },
+      gmail_connected: !!accounts?.[0]?.email_address,
+      gmail_address: accounts?.[0]?.email_address || null,
+    });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load settings" }); }
+});
+
+app.put("/api/daily-brief/settings", authenticateUser, async (req: any, res: any) => {
+  try {
+    const enabled = req.body?.enabled === true;
+    const send_at = (req.body?.send_at || "13:00").toString();
+    if (!/^\d{2}:\d{2}$/.test(send_at)) return res.status(400).json({ error: "send_at must be HH:MM (UTC)." });
+    const [hh, mm] = send_at.split(":").map(Number);
+    if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return res.status(400).json({ error: "send_at must be a valid HH:MM." });
+    const recipient = (req.body?.recipient || "").toString().trim() || null;
+    if (recipient && !/^\S+@\S+\.\S+$/.test(recipient)) return res.status(400).json({ error: "recipient must be a valid email." });
+
+    await db.from("wireline_settings").upsert({
+      user_id: req.user.id,
+      daily_brief_enabled: enabled,
+      daily_brief_send_at: send_at,
+      daily_brief_recipient: recipient,
+    }, { onConflict: "user_id" });
+
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to save settings" }); }
+});
+
+// Send-now — operator-triggered preview email so they can confirm
+// the schedule works before relying on the morning send. Doesn't
+// touch daily_brief_last_sent_at so the scheduled send still fires.
+app.post("/api/daily-brief/send-now", authenticateUser, async (req: any, res: any) => {
+  try {
+    const result = await sendDailyBriefEmail(req.user.id, { force: true });
+    res.json({ success: true, ...result });
+  } catch (e: any) {
+    if (e?.code === "CLAUDE_OFFLINE") return res.status(503).json({ error: e.message, code: e.code });
+    res.status(500).json({ error: e?.message ?? "Send failed" });
+  }
+});
+
+// ──────────────────────────────────────────────────────────
 //  AUDIT LOG — token + cost visibility for every Claude call.
 // ──────────────────────────────────────────────────────────
 
@@ -4312,80 +4608,92 @@ app.get("/api/insights/failure-modes", authenticateUser, async (req: any, res: a
 });
 
 // Daily brief (Claude-powered, cached per-day).
+// Shared between the HTTP endpoint and the scheduled email sender.
+// Honors the same per-day cache so a manual /api/insights/daily-brief
+// fetch and the morning email don't both pay Claude.
+async function computeDailyBrief(userId: string, opts?: { force?: boolean }) {
+  const today = new Date().toISOString().slice(0, 10);
+  const cacheKey = `brief:${userId}:${today}`;
+  if (!opts?.force) {
+    const cached = cachedInsight(cacheKey);
+    if (cached) return { payload: cached, cached: true };
+  }
+  if (!claudeBrain.isClaudeAvailable()) {
+    const err: any = new Error("Claude required for the daily brief.");
+    err.code = "CLAUDE_OFFLINE";
+    throw err;
+  }
+
+  const yStart = new Date(); yStart.setHours(0, 0, 0, 0); yStart.setDate(yStart.getDate() - 1);
+  const yEnd   = new Date(yStart); yEnd.setDate(yEnd.getDate() + 1);
+  const wStart = new Date(); wStart.setDate(wStart.getDate() - 7);
+
+  const [{ data: yCalls }, { data: wCalls }, { data: appts }, { data: tasks }, { data: leads }, { data: wins }, { data: losses }] = await Promise.all([
+    db.from("wireline_call_logs").select("lead_score, intent_label, duration_seconds, cost, summary, customer_number").eq("user_id", userId).gte("created_at", yStart.toISOString()).lt("created_at", yEnd.toISOString()),
+    db.from("wireline_call_logs").select("lead_score, duration_seconds, cost").eq("user_id", userId).gte("created_at", wStart.toISOString()),
+    db.from("wireline_appointments").select("id").eq("user_id", userId).gte("created_at", yStart.toISOString()).lt("created_at", yEnd.toISOString()),
+    db.from("wireline_fleet_tasks").select("priority, description").eq("user_id", userId).eq("status", "pending").order("created_at", { ascending: false }).limit(8),
+    db.from("wireline_outbound_leads").select("id").eq("user_id", userId).eq("status", "Pending"),
+    db.from("wireline_call_logs").select("customer_number, lead_score, summary").eq("user_id", userId).gte("created_at", yStart.toISOString()).gte("lead_score", 70).order("lead_score", { ascending: false }).limit(3),
+    db.from("wireline_call_logs").select("customer_number, lead_score, summary").eq("user_id", userId).gte("created_at", yStart.toISOString()).lt("lead_score", 30).order("created_at", { ascending: false }).limit(3),
+  ]);
+
+  const yTotal = yCalls?.length || 0;
+  const yMinutes = Math.round((yCalls || []).reduce((s: number, c: any) => s + (c.duration_seconds || 0), 0) / 60);
+  const yAvgScore = yTotal ? Math.round((yCalls || []).reduce((s: number, c: any) => s + (c.lead_score || 0), 0) / yTotal) : 0;
+  const yHighIntent = (yCalls || []).filter((c: any) => c.intent_label === "high").length;
+  const yCost = Number((yCalls || []).reduce((s: number, c: any) => s + Number(c.cost || 0), 0).toFixed(2));
+
+  const wDays = 7;
+  const wAvgPerDay = (wCalls?.length || 0) / wDays;
+  const wAvgScore = wCalls?.length ? (wCalls || []).reduce((s: number, c: any) => s + (c.lead_score || 0), 0) / wCalls.length : 0;
+  const wAvgCostPerDay = (wCalls || []).reduce((s: number, c: any) => s + Number(c.cost || 0), 0) / wDays;
+
+  const callsPct = wAvgPerDay > 0 ? ((yTotal - wAvgPerDay) / wAvgPerDay) * 100 : 0;
+  const scorePct = wAvgScore > 0 ? ((yAvgScore - wAvgScore) / wAvgScore) * 100 : 0;
+  const costPct = wAvgCostPerDay > 0 ? ((yCost - wAvgCostPerDay) / wAvgCostPerDay) * 100 : 0;
+
+  const result = await claudeBrain.dailyBrief({
+    yesterdayStats: {
+      total_calls: yTotal,
+      total_minutes: yMinutes,
+      avg_lead_score: yAvgScore,
+      high_intent_count: yHighIntent,
+      cost: yCost,
+      appointments_booked: appts?.length || 0,
+      pending_tasks: tasks?.length || 0,
+      new_leads: leads?.length || 0,
+    },
+    weekDelta: { calls_pct: callsPct, score_pct: scorePct, cost_pct: costPct },
+    recentWinSamples: (wins || []).map((w: any) => ({ customer: w.customer_number || "Unknown", score: w.lead_score || 0, summary: w.summary || "" })),
+    recentLossSamples: (losses || []).map((w: any) => ({ customer: w.customer_number || "Unknown", score: w.lead_score || 0, summary: w.summary || "" })),
+    openTasks: (tasks || []).map((t: any) => ({ priority: t.priority, description: t.description })),
+  });
+
+  const payload = {
+    brief: result,
+    stats_yesterday: {
+      total_calls: yTotal,
+      total_minutes: yMinutes,
+      avg_lead_score: yAvgScore,
+      high_intent_count: yHighIntent,
+      cost: yCost,
+      appointments_booked: appts?.length || 0,
+    },
+    week_delta: { calls_pct: callsPct, score_pct: scorePct, cost_pct: costPct },
+  };
+  setCachedInsight(cacheKey, payload);
+  return { payload, cached: false };
+}
+
 app.get("/api/insights/daily-brief", authenticateUser, async (req: any, res: any) => {
   try {
-    const force = req.query.refresh === "1";
-    const today = new Date().toISOString().slice(0, 10);
-    const cacheKey = `brief:${req.user.id}:${today}`;
-    if (!force) {
-      const cached = cachedInsight(cacheKey);
-      if (cached) return res.json({ ...cached, cached: true });
-    }
-    if (!claudeBrain.isClaudeAvailable()) {
-      return res.status(503).json({ error: "Claude required for the daily brief.", code: "CLAUDE_OFFLINE" });
-    }
-
-    const yStart = new Date(); yStart.setHours(0, 0, 0, 0); yStart.setDate(yStart.getDate() - 1);
-    const yEnd   = new Date(yStart); yEnd.setDate(yEnd.getDate() + 1);
-    const wStart = new Date(); wStart.setDate(wStart.getDate() - 7);
-
-    const [{ data: yCalls }, { data: wCalls }, { data: appts }, { data: tasks }, { data: leads }, { data: wins }, { data: losses }] = await Promise.all([
-      db.from("wireline_call_logs").select("lead_score, intent_label, duration_seconds, cost, summary, customer_number").eq("user_id", req.user.id).gte("created_at", yStart.toISOString()).lt("created_at", yEnd.toISOString()),
-      db.from("wireline_call_logs").select("lead_score, duration_seconds, cost").eq("user_id", req.user.id).gte("created_at", wStart.toISOString()),
-      db.from("wireline_appointments").select("id").eq("user_id", req.user.id).gte("created_at", yStart.toISOString()).lt("created_at", yEnd.toISOString()),
-      db.from("wireline_fleet_tasks").select("priority, description").eq("user_id", req.user.id).eq("status", "pending").order("created_at", { ascending: false }).limit(8),
-      db.from("wireline_outbound_leads").select("id").eq("user_id", req.user.id).eq("status", "Pending"),
-      db.from("wireline_call_logs").select("customer_number, lead_score, summary").eq("user_id", req.user.id).gte("created_at", yStart.toISOString()).gte("lead_score", 70).order("lead_score", { ascending: false }).limit(3),
-      db.from("wireline_call_logs").select("customer_number, lead_score, summary").eq("user_id", req.user.id).gte("created_at", yStart.toISOString()).lt("lead_score", 30).order("created_at", { ascending: false }).limit(3),
-    ]);
-
-    const yTotal = yCalls?.length || 0;
-    const yMinutes = Math.round((yCalls || []).reduce((s: number, c: any) => s + (c.duration_seconds || 0), 0) / 60);
-    const yAvgScore = yTotal ? Math.round((yCalls || []).reduce((s: number, c: any) => s + (c.lead_score || 0), 0) / yTotal) : 0;
-    const yHighIntent = (yCalls || []).filter((c: any) => c.intent_label === "high").length;
-    const yCost = Number((yCalls || []).reduce((s: number, c: any) => s + Number(c.cost || 0), 0).toFixed(2));
-
-    const wDays = 7;
-    const wAvgPerDay = (wCalls?.length || 0) / wDays;
-    const wAvgScore = wCalls?.length ? (wCalls || []).reduce((s: number, c: any) => s + (c.lead_score || 0), 0) / wCalls.length : 0;
-    const wAvgCostPerDay = (wCalls || []).reduce((s: number, c: any) => s + Number(c.cost || 0), 0) / wDays;
-
-    const callsPct = wAvgPerDay > 0 ? ((yTotal - wAvgPerDay) / wAvgPerDay) * 100 : 0;
-    const scorePct = wAvgScore > 0 ? ((yAvgScore - wAvgScore) / wAvgScore) * 100 : 0;
-    const costPct = wAvgCostPerDay > 0 ? ((yCost - wAvgCostPerDay) / wAvgCostPerDay) * 100 : 0;
-
-    const result = await claudeBrain.dailyBrief({
-      yesterdayStats: {
-        total_calls: yTotal,
-        total_minutes: yMinutes,
-        avg_lead_score: yAvgScore,
-        high_intent_count: yHighIntent,
-        cost: yCost,
-        appointments_booked: appts?.length || 0,
-        pending_tasks: tasks?.length || 0,
-        new_leads: leads?.length || 0,
-      },
-      weekDelta: { calls_pct: callsPct, score_pct: scorePct, cost_pct: costPct },
-      recentWinSamples: (wins || []).map((w: any) => ({ customer: w.customer_number || "Unknown", score: w.lead_score || 0, summary: w.summary || "" })),
-      recentLossSamples: (losses || []).map((w: any) => ({ customer: w.customer_number || "Unknown", score: w.lead_score || 0, summary: w.summary || "" })),
-      openTasks: (tasks || []).map((t: any) => ({ priority: t.priority, description: t.description })),
-    });
-
-    const payload = {
-      brief: result,
-      stats_yesterday: {
-        total_calls: yTotal,
-        total_minutes: yMinutes,
-        avg_lead_score: yAvgScore,
-        high_intent_count: yHighIntent,
-        cost: yCost,
-        appointments_booked: appts?.length || 0,
-      },
-      week_delta: { calls_pct: callsPct, score_pct: scorePct, cost_pct: costPct },
-    };
-    setCachedInsight(cacheKey, payload);
-    res.json({ ...payload, cached: false });
-  } catch (e) { claudeErr(res, e); }
+    const { payload, cached } = await computeDailyBrief(req.user.id, { force: req.query.refresh === "1" });
+    res.json({ ...payload, cached });
+  } catch (e: any) {
+    if (e?.code === "CLAUDE_OFFLINE") return res.status(503).json({ error: e.message, code: e.code });
+    claudeErr(res, e);
+  }
 });
 
 // ──────────────────────────────────────────────────────────

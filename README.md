@@ -157,6 +157,13 @@ curl -X POST $WIRELINE_URL/api/intake/lead \
 - `PATCH  /api/knowledge/:id` — edit content (RLS scoped to owner).
 - `DELETE /api/knowledge/:id` — permanent delete.
 
+### Scheduled Daily Brief email
+Claude's morning brief sent to your inbox at a chosen UTC time, via your connected Gmail account (no extra dependency).
+- `GET  /api/daily-brief/settings` · `PUT /api/daily-brief/settings` — `{ enabled, send_at: "HH:MM", recipient }`
+- `POST /api/daily-brief/send-now` — preview email; bypasses cache + doesn't update last-sent timestamp.
+
+A 5-minute background scheduler picks up due users, computes the brief (sharing the per-day cache with the in-app view), renders an HTML+plaintext multipart email, and sends via the operator's existing Gmail OAuth. Per-send errors are persisted to `daily_brief_last_error` so silent failures are visible in the UI.
+
 ### Voice / Email / Fleet
 See `server.ts` for the full list — voice webhook (`/api/vapi-webhook`), email sync, agent CRUD, outbound dialer, fleet tasks, etc.
 
