@@ -1433,12 +1433,72 @@ app.get("/api/appointments", authenticateUser, async (req: any, res: any) => {
 // ==========================================
 // 1.7 AGENTS MANAGEMENT ENDPOINTS
 // ==========================================
+
+// Role personality templates — production-grade system prompts for each
+// business function. These are applied when an agent is created or when
+// the operator clicks "Apply Role Template" in Fleet Settings.
+const ROLE_PERSONALITY_TEMPLATES: Record<string, string> = {
+  sales: `You are an elite sales agent. Your mission is to guide prospects through a natural, consultative buying conversation and close with confidence. You listen actively, ask smart discovery questions to uncover needs and pain points, handle objections with empathy and facts, and always move toward a clear next step — whether that's a demo, a proposal, or a signed agreement. You are persistent without being pushy. You never lie about pricing or capabilities. When you sense hesitation, you address it head-on. You know your product inside and out. Your tone is energetic, warm, and professional.`,
+
+  customer_service: `You are a world-class customer service agent. Your top priority is making every customer feel heard, valued, and fully resolved. You lead with empathy, repeat back what you heard to confirm understanding, and work efficiently to solve the issue — escalating only when genuinely needed. You remain calm under pressure, avoid scripted-sounding language, and turn frustrated customers into loyal advocates. You track every commitment you make during the call and follow through. Your tone is warm, clear, and reassuring.`,
+
+  scheduler: `You are a scheduling specialist. Your job is to book appointments, confirm availability, and send clear confirmation details. You collect the customer's preferred dates and times, check against available slots, confirm the booking, and provide a concise summary: date, time, location or link, and any prep they need. You proactively handle rescheduling and cancellations with minimal friction. You are precise, organized, and never double-book. Your tone is friendly, efficient, and detail-oriented.`,
+
+  collections: `You are a professional collections agent. You handle payment discussions with care, empathy, and firm professionalism. You always verify the customer's identity before discussing account details. You present balance information clearly, offer payment plans where available, and listen to the customer's situation before suggesting solutions. You maintain compliance at all times — no threats, no misleading statements. You document every promise made and confirmed. Your tone is calm, respectful, and matter-of-fact.`,
+
+  technical_support: `You are a senior technical support specialist. You diagnose problems methodically using structured questions. You start with the simplest possible cause and escalate logically. You speak plainly — no unnecessary jargon unless the customer is clearly technical. You confirm understanding at each step, summarize what you found and what you did, and make sure the customer can reproduce the fix before ending the call. You escalate to Tier 2 when genuinely needed, never prematurely. Your tone is calm, analytical, and thorough.`,
+
+  lead_qualifier: `You are a lead qualification agent. Your role is to quickly and accurately determine if a prospect is the right fit, has the budget, the authority to decide, a real need, and a sensible timeline (BANT). You ask open-ended questions naturally — not like a checklist — and score the conversation in your head. You pass warm leads to the sales team with a crisp handoff summary. You keep conversations short, respectful, and focused. You never waste time on dead-end leads, but you always leave every prospect with a positive impression of the company. Your tone is professional, curious, and direct.`,
+
+  receptionist: `You are a professional receptionist. You are the first voice customers hear. Your job is to create an outstanding first impression, route callers to the right person or department efficiently, take accurate messages, and answer common questions about hours, locations, and services. You handle multiple inquiries gracefully and never leave a caller hanging. You are polished, well-spoken, and deeply familiar with every department. Your tone is warm, professional, and crisp.`,
+
+  marketing: `You are a marketing outreach agent. You represent the brand with enthusiasm and authenticity. Your goal is to re-engage past customers, nurture warm prospects, and generate interest in current offers or events. You personalize every conversation — you reference the customer's history and tailor the value pitch accordingly. You measure success by booked demos, signed-up trials, or confirmed attendance. You never spam or pressure. You leave people feeling excited about the brand. Your tone is upbeat, genuine, and creative.`,
+};
+
+
 app.get("/api/agents", authenticateUser, async (req: any, res: any) => {
   try {
     const { data: agents, error } = await db.from('wireline_agents').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false });
+    if (error) console.error("Failed to fetch agents:", error);
     res.json({ agents: agents || [] });
   } catch (error) {
     res.json({ agents: [] }); 
+  }
+});
+
+// Returns role metadata (label, description, color, and personality template)
+// so the UI can render role selectors and apply templates without client-side hardcoding.
+app.get("/api/agents/roles", (_req, res) => {
+  res.json({
+    roles: [
+      { value: "sales",            label: "Sales",              description: "Closes deals and drives revenue",           color: "amber" },
+      { value: "customer_service", label: "Customer Service",   description: "Handles inbound issues and support",        color: "emerald" },
+      { value: "scheduler",        label: "Scheduler",          description: "Books appointments and manages calendars",  color: "violet" },
+      { value: "collections",      label: "Collections",        description: "Handles payment follow-ups and recovery",   color: "rose" },
+      { value: "technical_support",label: "Technical Support",  description: "Diagnoses and resolves technical issues",   color: "blue" },
+      { value: "lead_qualifier",   label: "Lead Qualifier",     description: "Screens and scores inbound prospects",      color: "orange" },
+      { value: "receptionist",     label: "Receptionist",       description: "Routes calls and creates first impressions",color: "cyan" },
+      { value: "marketing",        label: "Marketing",          description: "Nurtures prospects and runs campaigns",     color: "purple" },
+    ],
+    templates: ROLE_PERSONALITY_TEMPLATES
+  });
+});
+
+// Apply a role template directly to an agent's personality record.
+// Called from the Fleet Settings "Apply Role Template" button.
+app.post("/api/agents/:id/apply-role", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { role } = req.body;
+    const template = ROLE_PERSONALITY_TEMPLATES[role as keyof typeof ROLE_PERSONALITY_TEMPLATES];
+    if (!template) return res.status(400).json({ error: "Unknown role" });
+
+    await db.from('wireline_personality')
+      .upsert({ agent_id: req.params.id, user_id: req.user.id, content: template }, { onConflict: 'agent_id' })
+      .eq('agent_id', req.params.id);
+
+    res.json({ success: true, content: template });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to apply role template" });
   }
 });
 
@@ -1461,22 +1521,25 @@ app.post("/api/agents", authenticateUser, async (req: any, res: any) => {
       return res.status(403).json({ error: `Quota Exceeded: Your plan only allows ${maxAgents} agents.` });
     }
 
-    const { id, name, voice_id, channel } = req.body;
+    const { id, name, voice_id, channel, role } = req.body;
+    const agentRole = role || 'customer_service';
     await db.from('wireline_agents').insert({
       id: id || `agent-${Date.now()}`,
       user_id: req.user.id,
       name: name || "New Agent",
       voice_id: voice_id || 'bIHbv24MWmeRgasZH58o',
-      channel: channel || 'voice'
+      channel: channel || 'voice',
+      role: agentRole
     });
     
-    // Seed default personality
+    // Seed role-appropriate default personality
     await db.from('wireline_personality').insert({
        agent_id: id,
        user_id: req.user.id,
-       content: channel === 'email' 
-         ? "You are a professional email agent specialized in clear, efficient communication." 
-         : "You are a helpful assistant serving as a phone agent."
+       content: ROLE_PERSONALITY_TEMPLATES[agentRole as keyof typeof ROLE_PERSONALITY_TEMPLATES]
+         ?? (channel === 'email'
+           ? "You are a professional email agent specialized in clear, efficient communication."
+           : "You are a helpful assistant serving as a phone agent.")
     });
     
     res.json({ success: true, id });
@@ -1493,36 +1556,44 @@ app.post("/api/fleet/seed", authenticateUser, async (req: any, res: any) => {
       id: `billing-spec-${Date.now()}`,
       name: "Billing Specialist",
       channel: "voice",
+      role: "collections",
       archetype: "The Collector",
       first_message: "Hello, this is the billing department. I'm calling regarding your recent account inquiry. How can I assist you with your statement today?",
-      personality: "Highly professional, secure, and methodical. You handle financial discussions with extreme care and follow all security protocols."
+      personality: ROLE_PERSONALITY_TEMPLATES.collections
     },
     {
       id: `prospector-${Date.now()}`,
       name: "Outbound Prospector",
       channel: "voice",
+      role: "sales",
       archetype: "The Closer",
       first_message: "Hi there! I'm calling from the growth team. We saw you were interested in our services and I wanted to see if we could set up a quick strategy session?",
-      personality: "Energetic, persuasive, and persistent. You are an expert at handling objections and turning a 'maybe' into a 'yes'."
+      personality: ROLE_PERSONALITY_TEMPLATES.sales
     },
     {
       id: `growth-email-${Date.now()}`,
       name: "Growth Coordinator",
       channel: "email",
+      role: "marketing",
       archetype: "Receptionist",
       email_agent_tone: "Friendly",
       email_signature: "The Growth Team",
-      personality: "You focus on marketing and expansion. Your emails are engaging, clear, and always include a strong call to action."
+      personality: ROLE_PERSONALITY_TEMPLATES.marketing
     },
     {
       id: `tech-support-${Date.now()}`,
       name: "Tier 2 Technical Lead",
       channel: "voice",
+      role: "technical_support",
       archetype: "Support Tech",
       first_message: "Wireline Technical Support, this is the Tier 2 lead speaking. I understand you're having a complex issue. Let's get this resolved. What symptoms are you seeing?",
-      personality: "Deeply technical, calm, and highly analytical. You solve problems by breaking them down into logical steps."
+      personality: ROLE_PERSONALITY_TEMPLATES.technical_support
     }
-  ];
+  ] as Array<{
+    id: string; name: string; channel: string; role: string; archetype?: string;
+    first_message?: string; email_agent_tone?: string; email_signature?: string;
+    personality: string;
+  }>;
 
   try {
     for (const agent of specializedAgents) {
@@ -1531,6 +1602,7 @@ app.post("/api/fleet/seed", authenticateUser, async (req: any, res: any) => {
         user_id: userId,
         name: agent.name,
         channel: agent.channel,
+        role: agent.role,
         archetype: agent.archetype,
         first_message: agent.first_message,
         email_agent_tone: agent.email_agent_tone,
@@ -1561,7 +1633,7 @@ app.post("/api/fleet/seed", authenticateUser, async (req: any, res: any) => {
 // Update agent settings
 app.put("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
   try {
-    const { name, voice_id, voice_id_inbound, voice_id_outbound, voice_provider, first_message, archetype, ambient_noise, website_url, transfer_phone, email_auto_respond, email_agent_tone, email_signature, channel } = req.body;
+    const { name, voice_id, voice_id_inbound, voice_id_outbound, voice_provider, first_message, archetype, ambient_noise, website_url, transfer_phone, email_auto_respond, email_agent_tone, email_signature, channel, role } = req.body;
     await db.from('wireline_agents').update({ 
       name, 
       voice_id, 
@@ -1576,7 +1648,8 @@ app.put("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
       email_auto_respond, 
       email_agent_tone, 
       email_signature,
-      channel
+      channel,
+      role
     }).eq('id', req.params.id).eq('user_id', req.user.id);
     res.json({ success: true });
   } catch (error) {

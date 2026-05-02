@@ -442,3 +442,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS wireline_outbound_leads_user_idem_idx
     ON wireline_outbound_leads(user_id, idempotency_key)
     WHERE idempotency_key IS NOT NULL;
 
+-- Agent role — the business function this agent performs.
+-- Distinct from archetype (communication style). Roles drive default
+-- personality templates and surface role-specific UI affordances.
+-- Values: sales | customer_service | scheduler | collections |
+--         technical_support | lead_qualifier | receptionist | marketing
+ALTER TABLE wireline_agents ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'customer_service';
+

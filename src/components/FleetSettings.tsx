@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, Plus, Phone, Bot, Save, Loader2, Link as LinkIcon, Copy, Trash2, Megaphone, Mail, Pencil, Sparkles, Terminal, ChevronRight, Zap, Target, Radio, Settings2, Shield } from "lucide-react";
+import { Users, Plus, Phone, Bot, Save, Loader2, Link as LinkIcon, Copy, Trash2, Megaphone, Mail, Pencil, Sparkles, Terminal, ChevronRight, Zap, Target, Radio, Settings2, Shield, Briefcase, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
@@ -17,6 +17,40 @@ const PREMIUM_VOICES = [
   { id: "shimmer", provider: "openai", name: "Chloe (Clear & Articulate)" }
 ];
 
+// Role metadata — mirrors ROLE_PERSONALITY_TEMPLATES on the server.
+// color is a Tailwind color stem (without bg-/text- prefix).
+export const AGENT_ROLES = [
+  { value: "sales",             label: "Sales",             description: "Closes deals and drives revenue",           color: "amber",   tw: { bg: "bg-amber-100",   text: "text-amber-800",   border: "border-amber-300",   dot: "bg-amber-500"   } },
+  { value: "customer_service",  label: "Customer Service",  description: "Handles inbound issues and support",         color: "emerald", tw: { bg: "bg-emerald-100", text: "text-emerald-800", border: "border-emerald-300", dot: "bg-emerald-500" } },
+  { value: "scheduler",         label: "Scheduler",         description: "Books appointments and manages calendars",   color: "violet",  tw: { bg: "bg-violet-100",  text: "text-violet-800",  border: "border-violet-300",  dot: "bg-violet-500"  } },
+  { value: "collections",       label: "Collections",       description: "Handles payment follow-ups and recovery",    color: "rose",    tw: { bg: "bg-rose-100",    text: "text-rose-800",    border: "border-rose-300",    dot: "bg-rose-500"    } },
+  { value: "technical_support", label: "Technical Support", description: "Diagnoses and resolves technical issues",    color: "blue",    tw: { bg: "bg-blue-100",    text: "text-blue-800",    border: "border-blue-300",    dot: "bg-blue-500"    } },
+  { value: "lead_qualifier",    label: "Lead Qualifier",    description: "Screens and scores inbound prospects",       color: "orange",  tw: { bg: "bg-orange-100",  text: "text-orange-800",  border: "border-orange-300",  dot: "bg-orange-500"  } },
+  { value: "receptionist",      label: "Receptionist",      description: "Routes calls and creates first impressions", color: "cyan",    tw: { bg: "bg-cyan-100",    text: "text-cyan-800",    border: "border-cyan-300",    dot: "bg-cyan-500"    } },
+  { value: "marketing",         label: "Marketing",         description: "Nurtures prospects and runs campaigns",      color: "purple",  tw: { bg: "bg-purple-100",  text: "text-purple-800",  border: "border-purple-300",  dot: "bg-purple-500"  } },
+] as const;
+
+type RoleValue = typeof AGENT_ROLES[number]["value"];
+
+function getRoleMeta(role?: string) {
+  return AGENT_ROLES.find(r => r.value === role) ?? AGENT_ROLES[1]; // default: customer_service
+}
+
+function RoleBadge({ role, size = "sm" }: { role?: string; size?: "xs" | "sm" }) {
+  const meta = getRoleMeta(role);
+  return (
+    <span className={cn(
+      "inline-flex items-center gap-1.5 font-black uppercase tracking-widest italic brutal-border shadow-none",
+      meta.tw.bg, meta.tw.text, meta.tw.border,
+      size === "xs" ? "text-[8px] px-2 py-0.5 border-2" : "text-[10px] px-3 py-1 border-2"
+    )}>
+      <span className={cn("w-1.5 h-1.5 rounded-full", meta.tw.dot)} />
+      {meta.label}
+    </span>
+  );
+}
+
+
 export default function FleetSettings() {
   const [agents, setAgents] = useState<any[]>([]);
   const [subscription, setSubscription] = useState<{ status: string, max_agents: number }>({ status: 'active', max_agents: 3 });
@@ -25,7 +59,9 @@ export default function FleetSettings() {
   const [newAgentName, setNewAgentName] = useState("");
   const [newAgentId, setNewAgentId] = useState("");
   const [newAgentChannel, setNewAgentChannel] = useState("voice");
+  const [newAgentRole, setNewAgentRole] = useState<RoleValue>("customer_service");
   const [selectedAgent, setSelectedAgent] = useState<any | null>(null);
+  const [isApplyingTemplate, setIsApplyingTemplate] = useState(false);
   
   const [isConfigLoading, setIsConfigLoading] = useState(false);
   const [agentConfig, setAgentConfig] = useState<any>({ personality: "", directives: [], knowledge: [] });
@@ -99,7 +135,7 @@ export default function FleetSettings() {
       const resp = await authFetch("/api/agents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: newAgentId, name: newAgentName, channel: newAgentChannel })
+        body: JSON.stringify({ id: newAgentId, name: newAgentName, channel: newAgentChannel, role: newAgentRole })
       });
       const data = await resp.json();
       
@@ -115,6 +151,26 @@ export default function FleetSettings() {
       alert("An error occurred. Please try again.");
     }
     setIsCreating(false);
+  };
+
+  // Apply the server-side role personality template to the selected agent.
+  const applyRoleTemplate = async (role: string) => {
+    if (!selectedAgent) return;
+    setIsApplyingTemplate(true);
+    try {
+      const resp = await authFetch(`/api/agents/${selectedAgent.id}/apply-role`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role })
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        setAgentConfig((prev: any) => ({ ...prev, personality: data.content }));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setIsApplyingTemplate(false);
   };
 
   const updateAgentMeta = async (updates: any) => {
@@ -214,16 +270,16 @@ export default function FleetSettings() {
                      )}>
                        {agent.channel === 'email' ? <Mail className="w-8 h-8" /> : <Bot className="w-8 h-8" />}
                      </div>
-                     <div className="overflow-hidden">
+                     <div className="overflow-hidden flex-1 min-w-0">
                        <div className="font-black text-ink uppercase tracking-tighter font-display text-2xl italic leading-none truncate mb-2">{agent.name}</div>
-                       <div className="flex items-center gap-3">
+                       <div className="flex items-center flex-wrap gap-2">
+                          <RoleBadge role={agent.role} size="xs" />
                           <span className={cn(
                             "text-[8px] font-black px-2 py-0.5 brutal-border shadow-none uppercase tracking-widest italic",
                             selectedAgent?.id === agent.id ? "bg-ink text-brand" : "bg-zinc-100 text-muted"
                           )}>
                              {agent.channel?.toUpperCase()}
                           </span>
-                          <span className="text-[9px] font-black text-muted uppercase tracking-widest truncate">ID_{agent.id.substring(0,10)}</span>
                        </div>
                      </div>
                   </motion.button>
@@ -261,6 +317,24 @@ export default function FleetSettings() {
               </div>
               
               <div className="space-y-6">
+                <div className="space-y-2">
+                   <label className="text-[9px] font-black text-muted uppercase tracking-widest italic ml-1 flex items-center gap-2"><Briefcase className="w-3 h-3" /> BUSINESS ROLE</label>
+                   <div className="relative">
+                     <select
+                       value={newAgentRole}
+                       onChange={e => setNewAgentRole(e.target.value as RoleValue)}
+                       className="w-full text-xs font-black p-5 brutal-border border-4 outline-none focus:bg-brand uppercase tracking-widest bg-white appearance-none cursor-pointer h-16"
+                     >
+                       {AGENT_ROLES.map(r => (
+                         <option key={r.value} value={r.value}>{r.label.toUpperCase()}</option>
+                       ))}
+                     </select>
+                     <ChevronRight className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-ink pointer-events-none rotate-90" />
+                   </div>
+                   <p className="text-[9px] text-muted font-bold italic ml-1">
+                     {AGENT_ROLES.find(r => r.value === newAgentRole)?.description}
+                   </p>
+                </div>
                 <div className="space-y-2">
                    <label className="text-[9px] font-black text-muted uppercase tracking-widest italic ml-1">DESIGNATION ID</label>
                    <input type="text" placeholder="NODE-XXX-YYY" value={newAgentId} onChange={e => setNewAgentId(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))} className="w-full text-sm font-black p-5 brutal-border border-4 outline-none focus:bg-brand uppercase tracking-widest placeholder:text-zinc-200" />
@@ -329,8 +403,42 @@ export default function FleetSettings() {
                         )}>
                           NODAL CHANNEL: {selectedAgent.channel?.toUpperCase()}
                         </span>
+                        <RoleBadge role={selectedAgent.role} size="sm" />
                         <div className="text-[10px] md:text-xs font-black text-muted uppercase tracking-[0.3em] italic flex items-center gap-4">
                           ASSET_ID: <span className="bg-zinc-100 text-ink px-4 py-1 brutal-border border-2 shadow-none font-mono">#{selectedAgent.id}</span>
+                        </div>
+                      </div>
+
+                      {/* Role assignment row */}
+                      <div className="flex flex-wrap items-center gap-6 p-6 bg-zinc-50 brutal-border border-4 shadow-none">
+                        <Briefcase className="w-5 h-5 text-muted shrink-0" />
+                        <div className="flex-1 min-w-[180px] space-y-1">
+                          <label className="text-[9px] font-black text-muted uppercase tracking-[0.3em] italic">AGENT ROLE</label>
+                          <div className="relative">
+                            <select
+                              value={selectedAgent.role || 'customer_service'}
+                              onChange={e => updateAgentMeta({ role: e.target.value })}
+                              className="w-full p-3 brutal-border border-4 font-black uppercase tracking-widest text-xs outline-none focus:bg-brand bg-white h-12 cursor-pointer appearance-none"
+                            >
+                              {AGENT_ROLES.map(r => (
+                                <option key={r.value} value={r.value}>{r.label.toUpperCase()}</option>
+                              ))}
+                            </select>
+                            <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-ink pointer-events-none rotate-90" />
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <p className="text-[9px] font-bold text-muted italic">
+                            {AGENT_ROLES.find(r => r.value === (selectedAgent.role || 'customer_service'))?.description}
+                          </p>
+                          <button
+                            onClick={() => applyRoleTemplate(selectedAgent.role || 'customer_service')}
+                            disabled={isApplyingTemplate}
+                            className="flex items-center gap-2 px-4 py-2 brutal-border border-4 bg-white text-[9px] font-black uppercase tracking-widest italic hover:bg-brand transition-all disabled:opacity-50"
+                          >
+                            {isApplyingTemplate ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                            Apply Role Template
+                          </button>
                         </div>
                       </div>
                    </div>
