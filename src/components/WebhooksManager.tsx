@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Webhook, Plus, Loader2, Check, X, Trash2, Send, AlertTriangle,
-  CircleAlert, CheckCircle2, Sparkles, Eye, EyeOff
+  CircleAlert, CheckCircle2, Sparkles, Eye, EyeOff, History,
+  ChevronDown, RotateCcw, Skull
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
@@ -218,14 +219,67 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
   );
 }
 
+interface DeliveryRow {
+  id: number;
+  event: string;
+  attempts: number;
+  max_attempts: number;
+  status: "pending" | "success" | "dead";
+  last_status_code: number | null;
+  last_error: string | null;
+  next_attempt_at: string | null;
+  delivered_at: string | null;
+  created_at: string;
+}
+
 const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, onChanged }) => {
   const [busy, setBusy] = useState<"test" | "delete" | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [revealed, setRevealed] = useState(false);
+  const [showDeliveries, setShowDeliveries] = useState(false);
+  const [deliveries, setDeliveries] = useState<DeliveryRow[] | null>(null);
+  const [loadingDeliveries, setLoadingDeliveries] = useState(false);
+  const [deliveryBusy, setDeliveryBusy] = useState<number | null>(null);
+
+  const loadDeliveries = async () => {
+    setLoadingDeliveries(true);
+    try {
+      const r = await authFetch(`/api/webhooks/${hook.id}/deliveries`);
+      const d = await r.json();
+      setDeliveries(d.deliveries || []);
+    } finally { setLoadingDeliveries(false); }
+  };
+
+  const toggleDeliveries = async () => {
+    const next = !showDeliveries;
+    setShowDeliveries(next);
+    if (next && !deliveries) await loadDeliveries();
+  };
+
+  const retryDelivery = async (id: number) => {
+    setDeliveryBusy(id);
+    try {
+      await authFetch(`/api/webhooks/deliveries/${id}/retry`, { method: "POST" });
+      // Give the inline attempt a moment, then refresh.
+      setTimeout(() => loadDeliveries(), 600);
+    } finally { setDeliveryBusy(null); }
+  };
+
+  const discardDelivery = async (id: number) => {
+    setDeliveryBusy(id);
+    try {
+      await authFetch(`/api/webhooks/deliveries/${id}`, { method: "DELETE" });
+      setDeliveries(prev => prev ? prev.filter(d => d.id !== id) : prev);
+    } finally { setDeliveryBusy(null); }
+  };
 
   const test = async () => {
     setBusy("test");
-    try { await authFetch(`/api/webhooks/${hook.id}/test`, { method: "POST" }); onChanged(); }
+    try {
+      await authFetch(`/api/webhooks/${hook.id}/test`, { method: "POST" });
+      onChanged();
+      if (showDeliveries) setTimeout(() => loadDeliveries(), 600);
+    }
     finally { setBusy(null); }
   };
   const remove = async () => {
@@ -296,6 +350,18 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <button
+            onClick={toggleDeliveries}
+            className={cn(
+              "px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] flex items-center gap-1.5 transition-all",
+              showDeliveries
+                ? "bg-brand-2/15 border border-brand-2/40 text-brand-2"
+                : "glass border border-white/10 hover:border-brand-2/40 hover:text-brand-2",
+            )}
+          >
+            <History className="w-3 h-3" /> Deliveries
+            <ChevronDown className={cn("w-3 h-3 transition-transform", showDeliveries && "rotate-180")} />
+          </button>
+          <button
             onClick={test} disabled={busy !== null}
             className="px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] glass border border-white/10 hover:border-brand/40 hover:text-brand transition-all flex items-center gap-1.5 disabled:opacity-50"
           >
@@ -318,6 +384,82 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
           )}
         </div>
       </div>
+
+      <AnimatePresence>
+        {showDeliveries && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="mt-4 pt-4 border-t border-white/10 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="text-[10px] uppercase tracking-[0.3em] text-muted">Recent deliveries</div>
+                <button onClick={loadDeliveries} disabled={loadingDeliveries} className="text-[10px] uppercase tracking-[0.3em] text-muted hover:text-ink flex items-center gap-1.5">
+                  {loadingDeliveries ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
+                  Refresh
+                </button>
+              </div>
+              {loadingDeliveries && !deliveries && (
+                <div className="text-[10px] text-muted italic py-3">Loading deliveries…</div>
+              )}
+              {deliveries && deliveries.length === 0 && (
+                <div className="text-[10px] text-ink/40 italic py-3">No deliveries yet. Hit Test or trigger an event.</div>
+              )}
+              <div className="space-y-1.5">
+                {(deliveries || []).map((d) => {
+                  const isSuccess = d.status === "success";
+                  const isDead = d.status === "dead";
+                  const pillClass = isSuccess
+                    ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                    : isDead
+                      ? "bg-rose-500/15 text-rose-400 border-rose-500/30"
+                      : "bg-amber-500/15 text-amber-400 border-amber-500/30";
+                  return (
+                    <div key={d.id} className="rounded-lg bg-black/20 border border-white/5 px-3 py-2 flex items-center gap-3 flex-wrap text-[11px]">
+                      <span className={cn("px-1.5 py-0.5 rounded text-[9px] uppercase tracking-[0.25em] border flex items-center gap-1", pillClass)}>
+                        {isSuccess ? <CheckCircle2 className="w-2.5 h-2.5" /> : isDead ? <Skull className="w-2.5 h-2.5" /> : <Loader2 className="w-2.5 h-2.5 animate-spin" />}
+                        {d.status}
+                      </span>
+                      <span className="font-mono text-ink/80">{d.event}</span>
+                      <span className="text-muted">try {d.attempts}/{d.max_attempts}</span>
+                      {d.last_status_code !== null && d.last_status_code > 0 && (
+                        <span className="font-mono text-muted">HTTP {d.last_status_code}</span>
+                      )}
+                      <span className="text-muted">{new Date(d.created_at).toLocaleString()}</span>
+                      {d.last_error && (
+                        <span className="text-rose-400/80 font-mono truncate max-w-[40ch]" title={d.last_error}>{d.last_error}</span>
+                      )}
+                      {d.next_attempt_at && d.status === "pending" && (
+                        <span className="text-amber-400/80">next {new Date(d.next_attempt_at).toLocaleTimeString()}</span>
+                      )}
+                      <div className="ml-auto flex items-center gap-1">
+                        {!isSuccess && (
+                          <button
+                            onClick={() => retryDelivery(d.id)}
+                            disabled={deliveryBusy === d.id}
+                            className="px-2 py-0.5 rounded text-[9px] uppercase tracking-[0.25em] bg-brand/15 border border-brand/40 text-brand hover:bg-brand/25 flex items-center gap-1 disabled:opacity-50"
+                          >
+                            {deliveryBusy === d.id ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <RotateCcw className="w-2.5 h-2.5" />}
+                            Retry
+                          </button>
+                        )}
+                        <button
+                          onClick={() => discardDelivery(d.id)}
+                          disabled={deliveryBusy === d.id}
+                          className="w-6 h-6 rounded glass border border-white/10 hover:border-rose-500/40 hover:text-rose-400 flex items-center justify-center"
+                          title="Discard"
+                        >
+                          <Trash2 className="w-2.5 h-2.5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

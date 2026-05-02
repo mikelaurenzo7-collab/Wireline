@@ -134,56 +134,181 @@ const WEBHOOK_EVENTS = [
 ] as const;
 type WebhookEvent = typeof WEBHOOK_EVENTS[number];
 
+// Backoff between retries, indexed by failed-attempts count after the
+// inline first attempt. attempts=1 → wait 30s, =2 → 2m, =3 → 10m,
+// =4 → 1h. With max_attempts=5, the 5th failure marks status='dead'
+// (no further retry — operator can manually requeue from the UI).
+const WEBHOOK_RETRY_BACKOFF_MS = [
+  30_000,        // 30s
+  2 * 60_000,    // 2m
+  10 * 60_000,   // 10m
+  60 * 60_000,   // 1h
+];
+
+const WEBHOOK_TIMEOUT_MS = 10_000;
+const WEBHOOK_DEFAULT_MAX_ATTEMPTS = 5;
+
+async function attemptWebhookDelivery(deliveryId: number) {
+  // Pull the delivery and its hook in one round-trip via a join shape
+  // Supabase supports natively. We re-read the hook each time so a
+  // disabled / deleted hook short-circuits cleanly.
+  const { data: row } = await db
+    .from("wireline_webhook_deliveries")
+    .select("id, user_id, webhook_id, event, payload, attempts, max_attempts, status, wireline_webhooks(id, url, secret, active, delivery_count)")
+    .eq("id", deliveryId)
+    .maybeSingle();
+  if (!row || row.status !== "pending") return;
+  const hook: any = (row as any).wireline_webhooks;
+  if (!hook || !hook.active) {
+    // Hook was paused/deleted between enqueue and attempt; mark dead so
+    // the operator can see + decide.
+    await db.from("wireline_webhook_deliveries").update({
+      status: "dead",
+      last_error: "Webhook is paused or deleted.",
+      attempts: (row.attempts || 0) + 1,
+    }).eq("id", deliveryId);
+    return;
+  }
+
+  const crypto = await import("node:crypto");
+  const payloadStr = JSON.stringify(row.payload);
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "User-Agent": "Wireline-Webhooks/1.0",
+    "X-Wireline-Event": row.event,
+    "X-Wireline-Delivery": `whk_${row.id}`,
+    "X-Wireline-Attempt": String((row.attempts || 0) + 1),
+  };
+  if (hook.secret) {
+    const sig = crypto.createHmac("sha256", hook.secret).update(payloadStr).digest("hex");
+    headers["X-Wireline-Signature"] = `sha256=${sig}`;
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), WEBHOOK_TIMEOUT_MS);
+  const nowIso = new Date().toISOString();
+  let statusCode: number | null = null;
+  let errMsg: string | null = null;
+  let ok = false;
+  try {
+    const r = await fetch(hook.url, { method: "POST", headers, body: payloadStr, signal: controller.signal });
+    statusCode = r.status;
+    ok = r.ok;
+    if (!ok) errMsg = `HTTP ${r.status}`;
+  } catch (err: any) {
+    statusCode = 0;
+    errMsg = err?.name === "AbortError" ? `Timed out after ${WEBHOOK_TIMEOUT_MS}ms` : (err?.message || String(err));
+  } finally {
+    clearTimeout(timer);
+  }
+
+  const newAttempts = (row.attempts || 0) + 1;
+  if (ok) {
+    await db.from("wireline_webhook_deliveries").update({
+      status: "success",
+      attempts: newAttempts,
+      last_status_code: statusCode,
+      last_error: null,
+      delivered_at: nowIso,
+    }).eq("id", deliveryId);
+    await db.from("wireline_webhooks").update({
+      last_triggered_at: nowIso,
+      last_status: statusCode,
+      last_error: null,
+      delivery_count: ((hook.delivery_count as number) || 0) + 1,
+    }).eq("id", hook.id);
+    return;
+  }
+
+  // Failed — schedule a retry or mark dead.
+  const max = row.max_attempts || WEBHOOK_DEFAULT_MAX_ATTEMPTS;
+  const reachedDead = newAttempts >= max;
+  const backoff = WEBHOOK_RETRY_BACKOFF_MS[Math.min(newAttempts - 1, WEBHOOK_RETRY_BACKOFF_MS.length - 1)];
+  await db.from("wireline_webhook_deliveries").update({
+    status: reachedDead ? "dead" : "pending",
+    attempts: newAttempts,
+    last_status_code: statusCode,
+    last_error: errMsg,
+    next_attempt_at: reachedDead ? null : new Date(Date.now() + backoff).toISOString(),
+  }).eq("id", deliveryId);
+  await db.from("wireline_webhooks").update({
+    last_triggered_at: nowIso,
+    last_status: statusCode,
+    last_error: errMsg,
+  }).eq("id", hook.id);
+}
+
 async function dispatchWebhook(userId: string, event: WebhookEvent, data: any) {
   try {
     const { data: hooks } = await db.from("wireline_webhooks")
-      .select("id, url, secret, events, delivery_count")
+      .select("id, events")
       .eq("user_id", userId)
       .eq("active", true);
-    if (!hooks?.length) return;
-
-    const payload = JSON.stringify({ event, timestamp: new Date().toISOString(), data });
-    const deliveryId = `whk_${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
-    const crypto = await import("node:crypto");
-
-    await Promise.all(hooks
+    const targetIds = (hooks || [])
       .filter((h: any) => Array.isArray(h.events) && h.events.includes(event))
-      .map(async (h: any) => {
-        const headers: Record<string, string> = {
-          "Content-Type": "application/json",
-          "User-Agent": "Wireline-Webhooks/1.0",
-          "X-Wireline-Event": event,
-          "X-Wireline-Delivery": deliveryId,
-        };
-        if (h.secret) {
-          const sig = crypto.createHmac("sha256", h.secret).update(payload).digest("hex");
-          headers["X-Wireline-Signature"] = `sha256=${sig}`;
-        }
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 10_000);
-        try {
-          const r = await fetch(h.url, { method: "POST", headers, body: payload, signal: controller.signal });
-          await db.from("wireline_webhooks").update({
-            last_triggered_at: new Date().toISOString(),
-            last_status: r.status,
-            last_error: r.ok ? null : `HTTP ${r.status}`,
-            delivery_count: ((h.delivery_count as number) || 0) + 1,
-          }).eq("id", h.id);
-        } catch (err: any) {
-          await db.from("wireline_webhooks").update({
-            last_triggered_at: new Date().toISOString(),
-            last_status: 0,
-            last_error: err?.message || String(err),
-          }).eq("id", h.id);
-        } finally {
-          clearTimeout(timer);
-        }
-      }),
-    );
+      .map((h: any) => h.id);
+    if (!targetIds.length) return;
+
+    const payload = { event, timestamp: new Date().toISOString(), data };
+    const rows = targetIds.map((webhook_id: string) => ({
+      user_id: userId,
+      webhook_id,
+      event,
+      payload,
+    }));
+    const { data: inserted, error } = await db
+      .from("wireline_webhook_deliveries")
+      .insert(rows)
+      .select("id");
+    if (error) {
+      console.error("Webhook delivery insert failed:", error);
+      return;
+    }
+    // Fire the first attempt immediately, in parallel. Failures get
+    // requeued by attemptWebhookDelivery itself; the background
+    // scheduler picks them up once their backoff elapses.
+    await Promise.all((inserted || []).map((d: any) => attemptWebhookDelivery(d.id)));
   } catch (err) {
     console.error("Webhook dispatch failed:", err);
   }
 }
+
+// ──────────────────────────────────────────────────────────────────
+// Background retry scheduler — every 30s, claim and retry up to
+// SCHED_BATCH pending deliveries whose next_attempt_at has elapsed.
+// .unref() so it never blocks process exit. Wrapped in a re-entrancy
+// guard so a slow batch never overlaps with itself.
+// ──────────────────────────────────────────────────────────────────
+const WEBHOOK_SCHED_INTERVAL_MS = 30_000;
+const WEBHOOK_SCHED_BATCH = 25;
+let _webhookSchedRunning = false;
+
+async function processWebhookRetries() {
+  if (_webhookSchedRunning) return;
+  _webhookSchedRunning = true;
+  try {
+    const { data: due } = await db
+      .from("wireline_webhook_deliveries")
+      .select("id")
+      .eq("status", "pending")
+      .lte("next_attempt_at", new Date().toISOString())
+      .order("next_attempt_at", { ascending: true })
+      .limit(WEBHOOK_SCHED_BATCH);
+    if (!due?.length) return;
+    // Run each delivery sequentially within the batch — keeps total
+    // outbound concurrency bounded and the load on Supabase modest.
+    for (const d of due) {
+      try { await attemptWebhookDelivery(d.id); } catch (err) {
+        console.error("Webhook retry attempt failed:", err);
+      }
+    }
+  } catch (err) {
+    console.error("Webhook scheduler tick failed:", err);
+  } finally {
+    _webhookSchedRunning = false;
+  }
+}
+setInterval(processWebhookRetries, WEBHOOK_SCHED_INTERVAL_MS).unref?.();
 
 // ────────────────────────────────────────────────────────────────────
 //  SPEND BUDGETS — enforce monthly Claude limits and fire spend.*
@@ -3032,6 +3157,58 @@ app.post("/api/webhooks/:id/test", authenticateUser, async (req: any, res: any) 
     });
     res.json({ success: true, message: "Test dispatched. Check the URL." });
   } catch (e: any) { res.status(500).json({ error: e?.message ?? "Test failed" }); }
+});
+
+// Per-hook delivery history — newest first. Operators use this to
+// audit deliveries, see why an integration is silent, and manually
+// retry failed/dead deliveries.
+app.get("/api/webhooks/:id/deliveries", authenticateUser, async (req: any, res: any) => {
+  try {
+    const limit = Math.min(parseInt((req.query.limit as string) || "50"), 200);
+    // Verify ownership before reading deliveries (RLS guards too, but
+    // returning a clean 404 is friendlier than an empty list).
+    const { data: hook } = await db.from("wireline_webhooks")
+      .select("id").eq("id", req.params.id).eq("user_id", req.user.id).maybeSingle();
+    if (!hook) return res.status(404).json({ error: "Webhook not found." });
+    const { data, error } = await db.from("wireline_webhook_deliveries")
+      .select("id, event, attempts, max_attempts, status, last_status_code, last_error, next_attempt_at, delivered_at, created_at")
+      .eq("webhook_id", req.params.id)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+    res.json({ deliveries: data || [] });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load deliveries" }); }
+});
+
+// Manually requeue a delivery — clears terminal state and runs an
+// attempt right away. Useful after a downstream outage is fixed.
+app.post("/api/webhooks/deliveries/:id/retry", authenticateUser, async (req: any, res: any) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (!Number.isFinite(id)) return res.status(400).json({ error: "Invalid delivery id." });
+    const { data: row } = await db.from("wireline_webhook_deliveries")
+      .select("id, user_id, status").eq("id", id).maybeSingle();
+    if (!row || row.user_id !== req.user.id) return res.status(404).json({ error: "Delivery not found." });
+    await db.from("wireline_webhook_deliveries").update({
+      status: "pending",
+      next_attempt_at: new Date().toISOString(),
+      last_error: null,
+      last_status_code: null,
+    }).eq("id", id);
+    // Fire-and-forget — the inline attempt happens in the background.
+    attemptWebhookDelivery(id).catch(() => {});
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Retry failed" }); }
+});
+
+app.delete("/api/webhooks/deliveries/:id", authenticateUser, async (req: any, res: any) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (!Number.isFinite(id)) return res.status(400).json({ error: "Invalid delivery id." });
+    await db.from("wireline_webhook_deliveries")
+      .delete().eq("id", id).eq("user_id", req.user.id);
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Discard failed" }); }
 });
 
 // ──────────────────────────────────────────────────────────
