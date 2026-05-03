@@ -33,6 +33,7 @@ const EVENT_DESCRIPTIONS: Record<string, string> = {
   "compliance.flagged": "Every compliance_review task created",
   "spend.warning":      "Month-to-date Claude spend crossed your warn threshold",
   "spend.exceeded":     "Month-to-date Claude spend hit 100% of monthly limit",
+  "subscription.changed": "Stripe subscription status, plan, or renewal date changed",
 };
 
 export default function WebhooksManager() {
