@@ -97,6 +97,9 @@ export default function CommandBar() {
             initial={{ scale: 0.95, opacity: 0, y: -20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: -20 }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Command bar"
             className="relative w-full max-w-2xl bg-white brutal-border overflow-hidden"
           >
             <div className="p-6 border-b-4 border-ink flex items-center gap-4 bg-zinc-50">

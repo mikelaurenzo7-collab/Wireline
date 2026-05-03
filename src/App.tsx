@@ -1,4 +1,4 @@
-import React, { useState, lazy, Suspense } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Link, useLocation } from "react-router-dom";
 import { Phone, Users, Settings, Activity, MessageSquare, Calendar, PhoneOutgoing, ServerCog, PlugZap, History, Mail, Menu, X, LogOut, User, Terminal, ChevronRight, Zap, Target, Shield, Signal, Globe, Box, LayoutPanelLeft, Database, Command, Sparkles, Waves, Inbox, BarChart3, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -274,10 +274,32 @@ function PageTransition({ children }: { children: React.ReactNode }) {
   );
 }
 
+const PAGE_TITLES: Record<string, string> = {
+  "/":             "Command Atlas",
+  "/triage":        "Triage Inbox",
+  "/appointments":  "Constellation",
+  "/logs":          "Voice Archive",
+  "/inbox":         "Inbound Email",
+  "/outbound":      "Outbound Dialer",
+  "/insights":      "Insights",
+  "/train":         "Neural Atelier",
+  "/knowledge":     "Knowledge Atlas",
+  "/agents":        "Agent Topology",
+  "/integrations":  "Carrier Bridge",
+  "/admin":         "Core Settings",
+};
+
 function AppContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, loading } = useAuth();
   const location = useLocation();
+
+  useEffect(() => {
+    const label =
+      PAGE_TITLES[location.pathname] ??
+      (location.pathname.startsWith("/contact/") ? "Contact Profile" : null);
+    document.title = label ? `${label} — Wireline` : "Wireline";
+  }, [location.pathname]);
 
   if (loading) {
     return (
@@ -343,6 +365,8 @@ function AppContent() {
          <div className="lg:hidden p-5 flex items-center justify-between z-30 sticky top-0 glass-strong border-b border-white/8">
             <button
               onClick={() => setSidebarOpen(true)}
+              aria-label="Open navigation menu"
+              aria-expanded={sidebarOpen}
               className="w-11 h-11 rounded-xl glass border border-white/10 flex items-center justify-center hover:border-brand/40 transition-all"
             >
               <Menu className="w-5 h-5 text-ink" />
