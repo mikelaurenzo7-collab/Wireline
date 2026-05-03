@@ -409,6 +409,15 @@ export default function OutboundDialer() {
 
                           <div className="shrink-0 flex items-center gap-3">
                              <ClaudeRecipeButton
+                                recipe="enrich-lead"
+                                initial={{
+                                   customerName: lead.customer_name,
+                                   customerNumber: lead.phone_number || lead.customer_number,
+                                   context: lead.context,
+                                }}
+                                label="Enrich"
+                             />
+                             <ClaudeRecipeButton
                                 recipe="brief"
                                 agentId={selectedAgentId}
                                 initial={{

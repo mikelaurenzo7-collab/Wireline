@@ -195,6 +195,14 @@ function HotLeads({ items }: { items: any[] }) {
             </div>
             <div className="relative z-10 flex items-center gap-2 shrink-0 flex-wrap">
               <ClaudeRecipeButton
+                recipe="enrich-lead"
+                initial={{
+                  customerNumber: c.customer_number,
+                  context: `High-intent (${c.lead_score}) lead from prior call. Summary: ${c.summary}`,
+                }}
+                label="Enrich"
+              />
+              <ClaudeRecipeButton
                 recipe="brief"
                 agentId={c.agent_id}
                 initial={{
