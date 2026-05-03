@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: typecheck + build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript typecheck
+        run: npx tsc --noEmit
+
+      - name: Build (vite + esbuild server)
+        run: npm run build
+
+      - name: Audit (high severity, non-blocking)
+        # `audit` exits non-zero on findings; we surface the report but
+        # don't fail CI on transitive vulns we can't immediately fix.
+        run: npm audit --audit-level=high || true

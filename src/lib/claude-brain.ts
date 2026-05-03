@@ -103,7 +103,15 @@ function getClient(): Anthropic {
     if (!process.env.ANTHROPIC_API_KEY) {
       throw new ClaudeUnavailableError();
     }
-    _client = new Anthropic();
+    // Per-request timeout: a stalled Anthropic call would otherwise tie up
+    // an Express handler indefinitely. 120s is long enough for adaptive
+    // thinking on the deep-analysis paths, short enough to fail fast on
+    // network blips. The SDK retries idempotent failures up to maxRetries
+    // within that budget.
+    _client = new Anthropic({
+      timeout: 120_000,
+      maxRetries: 2,
+    });
   }
   return _client;
 }

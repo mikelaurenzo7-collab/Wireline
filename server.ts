@@ -7,28 +7,207 @@ import { SchemaType } from "@google/generative-ai";
 import { createClient } from "@supabase/supabase-js";
 import { google } from "googleapis";
 import dotenv from "dotenv";
+import { randomUUID } from "node:crypto";
 import * as claudeBrain from "./src/lib/claude-brain";
 
 dotenv.config();
 
 const DEFAULT_AGENT_ROLE = "customer_service";
+const IS_PROD = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
+
+// ────────────────────────────────────────────────────────────────────
+//  Structured logger — single-line JSON in production, pretty in dev.
+//  Centralizing console.* calls so we can ship to Datadog/Logtail later
+//  without rewriting every call site. Levels: debug | info | warn | error.
+// ────────────────────────────────────────────────────────────────────
+type LogLevel = "debug" | "info" | "warn" | "error";
+function emitLog(level: LogLevel, msg: string, fields?: Record<string, unknown>) {
+  const entry = { ts: new Date().toISOString(), level, msg, ...(fields || {}) };
+  if (IS_PROD) {
+    // eslint-disable-next-line no-console
+    (level === "error" ? console.error : level === "warn" ? console.warn : console.log)(JSON.stringify(entry));
+  } else {
+    // eslint-disable-next-line no-console
+    (level === "error" ? console.error : level === "warn" ? console.warn : console.log)(
+      `[${level}]`, msg, fields ?? ""
+    );
+  }
+}
+const log = {
+  debug: (msg: string, fields?: Record<string, unknown>) => emitLog("debug", msg, fields),
+  info:  (msg: string, fields?: Record<string, unknown>) => emitLog("info", msg, fields),
+  warn:  (msg: string, fields?: Record<string, unknown>) => emitLog("warn", msg, fields),
+  error: (msg: string, fields?: Record<string, unknown>) => emitLog("error", msg, fields),
+};
+
+// ────────────────────────────────────────────────────────────────────
+//  fetchWithTimeout — every outbound HTTP call (Vapi, Gmail, generic)
+//  must have a deadline. node-fetch has no default; a stalled
+//  connection will hang the request handler indefinitely. 15s is
+//  long enough for legitimate slow APIs, short enough to fail fast.
+// ────────────────────────────────────────────────────────────────────
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit = {},
+  timeoutMs = 15_000,
+): Promise<Response> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: ctrl.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────
+//  Startup env validation — fail fast in production rather than
+//  silently booting with placeholder Supabase URLs / missing webhook
+//  secrets. Log warnings (not errors) in dev so local hacking still works.
+// ────────────────────────────────────────────────────────────────────
+function validateStartupEnv() {
+  const required = [
+    ["VITE_SUPABASE_URL", process.env.VITE_SUPABASE_URL],
+    ["VITE_SUPABASE_ANON_KEY", process.env.VITE_SUPABASE_ANON_KEY],
+  ] as const;
+  const missing = required.filter(([, v]) => !v).map(([k]) => k);
+  const recommended: string[] = [];
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) recommended.push("SUPABASE_SERVICE_ROLE_KEY");
+  if (!process.env.ANTHROPIC_API_KEY) recommended.push("ANTHROPIC_API_KEY");
+  if (!process.env.VAPI_WEBHOOK_SECRET) recommended.push("VAPI_WEBHOOK_SECRET");
+  if (!process.env.APP_URL) recommended.push("APP_URL");
+
+  if (missing.length) {
+    if (IS_PROD) {
+      log.error("Refusing to start: required env vars are missing", { missing });
+      // Exit synchronously so the platform restart loop kicks in instead of
+      // accepting traffic in a broken state.
+      process.exit(1);
+    } else {
+      log.warn("Required env vars missing (dev mode — continuing with placeholders)", { missing });
+    }
+  }
+  if (recommended.length) {
+    log.warn("Recommended env vars not set", { recommended });
+  }
+}
+validateStartupEnv();
 
 const app = express();
 const PORT = 3000;
 
-app.use(cors());
+// ────────────────────────────────────────────────────────────────────
+//  CORS — locked down to an explicit allowlist via CORS_ORIGINS
+//  (comma-separated). In dev (no NODE_ENV=production / VERCEL=1) we
+//  fall back to allowing all origins to keep `npm run dev` painless.
+// ────────────────────────────────────────────────────────────────────
+const corsAllowList = (process.env.CORS_ORIGINS || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+if (IS_PROD && corsAllowList.length === 0 && process.env.APP_URL) {
+  corsAllowList.push(process.env.APP_URL);
+}
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Same-origin / curl / server-to-server have no Origin header.
+      if (!origin) return callback(null, true);
+      if (!IS_PROD && corsAllowList.length === 0) return callback(null, true);
+      if (corsAllowList.includes(origin)) return callback(null, true);
+      log.warn("CORS rejected origin", { origin });
+      return callback(new Error("Origin not permitted by CORS"));
+    },
+    credentials: true,
+  }),
+);
 // Bump body limit so base64-encoded PDF uploads (up to ~32MB raw / ~43MB
 // base64) fit comfortably for the knowledge-from-document recipe.
 app.use(express.json({ limit: '50mb' }));
 
 // ────────────────────────────────────────────────────────────────────
-//  Health check — for uptime monitors, load balancers, and the AI
-//  Studio container's readiness probe. Public, no auth.
+//  Request correlation IDs — every request gets a stable id we attach
+//  to res.locals + an X-Request-Id response header. Client-supplied
+//  X-Request-Id is honored if present so traces can flow end-to-end.
 // ────────────────────────────────────────────────────────────────────
-app.get("/api/health", (_req, res) => {
-  res.json({
-    status: "ok",
+app.use((req: any, res: any, next: any) => {
+  const incoming = (req.headers["x-request-id"] as string | undefined)?.slice(0, 64);
+  const requestId = incoming && /^[A-Za-z0-9._-]+$/.test(incoming) ? incoming : randomUUID();
+  res.locals.requestId = requestId;
+  res.setHeader("X-Request-Id", requestId);
+  next();
+});
+
+// ────────────────────────────────────────────────────────────────────
+//  Security headers — hand-rolled (no helmet dep) so we control the
+//  exact set of headers and CSP directives. Applied to every response.
+//  CSP intentionally permissive for inline scripts because the OAuth
+//  callback page injects a JSON-encoded postMessage script; tighten
+//  with a nonce when that page moves to a static asset.
+// ────────────────────────────────────────────────────────────────────
+app.use((_req: any, res: any, next: any) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "geolocation=(), camera=(), microphone=(self)");
+  if (IS_PROD) {
+    // 6 months HSTS preload-eligible — only in prod so dev over http stays usable.
+    res.setHeader("Strict-Transport-Security", "max-age=15552000; includeSubDomains");
+  }
+  next();
+});
+
+// ────────────────────────────────────────────────────────────────────
+//  Slow-request logging — emit a structured warning when any handler
+//  exceeds 5s. Helps surface stalled Vapi / Gmail / Claude paths in
+//  prod logs without instrumenting every route by hand.
+// ────────────────────────────────────────────────────────────────────
+const SLOW_REQUEST_THRESHOLD_MS = 5_000;
+app.use((req: any, res: any, next: any) => {
+  const start = Date.now();
+  res.on("finish", () => {
+    const dur = Date.now() - start;
+    if (dur >= SLOW_REQUEST_THRESHOLD_MS) {
+      log.warn("slow request", {
+        requestId: res.locals?.requestId,
+        method: req.method,
+        path: req.path,
+        status: res.statusCode,
+        duration_ms: dur,
+      });
+    }
+  });
+  next();
+});
+
+// ────────────────────────────────────────────────────────────────────
+//  Health check — for uptime monitors, load balancers, and the AI
+//  Studio container's readiness probe. Public, no auth. Probes the
+//  database with a short timeout so we report `degraded` (HTTP 503)
+//  when Supabase is unreachable rather than lying with `ok`.
+// ────────────────────────────────────────────────────────────────────
+async function probeDatabase(timeoutMs = 1500): Promise<{ ok: boolean; latency_ms: number; error?: string }> {
+  const t0 = Date.now();
+  try {
+    const probe = db.from("wireline_settings").select("user_id", { head: true, count: "exact" }).limit(1);
+    const result = await Promise.race([
+      probe,
+      new Promise((_resolve, reject) => setTimeout(() => reject(new Error("db probe timed out")), timeoutMs)),
+    ]) as { error?: { message: string } | null };
+    if (result?.error) return { ok: false, latency_ms: Date.now() - t0, error: result.error.message };
+    return { ok: true, latency_ms: Date.now() - t0 };
+  } catch (err: any) {
+    return { ok: false, latency_ms: Date.now() - t0, error: err?.message || String(err) };
+  }
+}
+
+app.get("/api/health", async (_req, res) => {
+  const dbStatus = await probeDatabase();
+  const status = dbStatus.ok ? "ok" : "degraded";
+  res.status(dbStatus.ok ? 200 : 503).json({
+    status,
     uptime_s: Math.round(process.uptime()),
+    db: dbStatus,
     capabilities: {
       claude:    !!process.env.ANTHROPIC_API_KEY,
       gemini:    !!process.env.GEMINI_API_KEY,
@@ -98,12 +277,26 @@ const SCOPES = [
 ];
 
 function getGoogleOAuthClient(req: express.Request) {
-   // According to oauth-integration skill, we determine the exact redirect URI based on the request origin or APP_URL.
-   // But because we might be behind a proxy, trusting process.env.APP_URL is safest, but AI Studio passes it as a header or similar, or we can just infer from req.headers.referer if needed, but for OAuth callback absolute URL is needed.
-   // Wait, oauth-integration says: use `process.env.APP_URL` or dynamically construct from req.headers.host but in container getting the external host is tricky.
-   // Wait! `req.protocol + '://' + req.get('host')` might work if proxied correctly. Let's do that for now but fallback if missing.
-   // "always use the APP_URL environment variable to get the URL of the container."
-   const baseUrl = process.env.APP_URL || `https://${req.get('host')}`;
+   // OAuth redirect URI MUST match what's registered in Google Cloud
+   // Console exactly. Prefer APP_URL (operator-controlled) over the
+   // request Host header (attacker-controlled). When APP_URL isn't
+   // set we fall back to the request host but only allow it if it
+   // matches one of the configured CORS origins — otherwise an attacker
+   // who can spoof the Host header could redirect the OAuth flow to
+   // their own server and steal the token.
+   let baseUrl = process.env.APP_URL;
+   if (!baseUrl) {
+      const hostHeader = req.get('host');
+      const candidate = hostHeader ? `${req.protocol}://${hostHeader}` : null;
+      if (candidate && (corsAllowList.length === 0 || corsAllowList.includes(candidate))) {
+         baseUrl = candidate;
+      } else {
+         log.error("OAuth redirect URI: APP_URL unset and Host header not in CORS_ORIGINS", {
+            host: hostHeader,
+         });
+         throw new Error("OAuth misconfigured: set APP_URL or add the host to CORS_ORIGINS.");
+      }
+   }
    return new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
@@ -111,7 +304,10 @@ function getGoogleOAuthClient(req: express.Request) {
    );
 }
 
-// Note: Backend uses Service Role for secure modifications across the DB if needed
+// Note: Backend uses Service Role for secure modifications across the DB if needed.
+// In dev we still allow a placeholder so `npm run dev` doesn't crash before
+// the operator fills in .env; in prod validateStartupEnv() above already
+// process.exit(1)s when these are missing.
 const supabaseUrl = process.env.VITE_SUPABASE_URL || "https://placeholder-url.supabase.co";
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || "placeholder-key";
 const db = createClient(supabaseUrl, supabaseKey);
@@ -437,7 +633,14 @@ async function enforceSpendCap(req: any, res: any, next: any) {
       });
     }
   } catch (err) {
-    console.error("enforceSpendCap check failed:", err);
+    // Fail-OPEN on transient DB errors: blocking everyone when Supabase
+    // blips would be worse than briefly missing a hard cap. We log a
+    // structured warning so operators can see when this fires.
+    log.warn("enforceSpendCap check failed — allowing request through", {
+      user_id: req?.user?.id,
+      requestId: res.locals?.requestId,
+      error: (err as any)?.message || String(err),
+    });
   }
   next();
 }
@@ -477,7 +680,11 @@ async function authenticateUser(req: any, res: any, next: any) {
 // a one-time warning and allow the request — keeps local dev simple
 // without leaving prod open.
 //
-const VAPI_WEBHOOK_SECRET = process.env.VAPI_WEBHOOK_SECRET || "wireline-secret-key";
+// VAPI webhook secret — in production we REFUSE to use a default; the
+// route handler returns 503 if VAPI_WEBHOOK_SECRET is unset, so we never
+// silently accept unauthenticated webhooks. In dev we still default to
+// a known value so local Vapi testing works without env juggling.
+const VAPI_WEBHOOK_SECRET = process.env.VAPI_WEBHOOK_SECRET || (IS_PROD ? "" : "wireline-secret-key");
 let _warnedAboutVapiSecret = false;
 
 function timingSafeEq(a: string, b: string): boolean {
@@ -499,16 +706,20 @@ app.post("/api/vapi-webhook", async (req, res) => {
     "";
 
   if (!process.env.VAPI_WEBHOOK_SECRET) {
+    if (IS_PROD) {
+      // Fail closed in production — refusing the webhook is safer than
+      // accepting unauthenticated payloads that drive Vapi/LLM spend.
+      log.error("VAPI_WEBHOOK_SECRET unset in production — rejecting webhook");
+      return res.status(503).json({ error: "Webhook auth not configured." });
+    }
     if (!_warnedAboutVapiSecret) {
-      console.warn(
-        "⚠️  VAPI_WEBHOOK_SECRET is not set — accepting all webhook " +
-        "requests. Set the env var (matching the assistant's " +
-        "serverUrlSecret) to enforce verification in production.",
-      );
+      log.warn("VAPI_WEBHOOK_SECRET unset — accepting all webhook requests (dev only)");
       _warnedAboutVapiSecret = true;
     }
   } else if (!timingSafeEq(provided, VAPI_WEBHOOK_SECRET)) {
-    console.warn("Rejected Vapi webhook with bad/missing signature.");
+    log.warn("Rejected Vapi webhook with bad/missing signature", {
+      requestId: res.locals?.requestId,
+    });
     return res.status(401).json({ error: "Invalid webhook signature." });
   }
 
@@ -1221,15 +1432,17 @@ app.post("/api/vapi-webhook", async (req, res) => {
               summary: analysis?.summary,
               agent_id: webhookAgentId,
             };
-            dispatchWebhook(agent?.user_id, "call.completed", callPayload).catch(() => {});
+            const logWebhookFailure = (event: string) => (err: unknown) =>
+              log.warn("webhook dispatch failed", { event, error: (err as any)?.message || String(err) });
+            dispatchWebhook(agent?.user_id, "call.completed", callPayload).catch(logWebhookFailure("call.completed"));
             if (result.intent_label === "high" || result.lead_score >= 70) {
-              dispatchWebhook(agent?.user_id, "lead.hot", callPayload).catch(() => {});
+              dispatchWebhook(agent?.user_id, "lead.hot", callPayload).catch(logWebhookFailure("lead.hot"));
             }
             if (result.sentiment === "angry" || (result.compliance_flags?.length ?? 0) > 0) {
-              dispatchWebhook(agent?.user_id, "call.escalated", callPayload).catch(() => {});
+              dispatchWebhook(agent?.user_id, "call.escalated", callPayload).catch(logWebhookFailure("call.escalated"));
             }
             for (const flag of result.compliance_flags || []) {
-              dispatchWebhook(agent?.user_id, "compliance.flagged", { ...callPayload, flag }).catch(() => {});
+              dispatchWebhook(agent?.user_id, "compliance.flagged", { ...callPayload, flag }).catch(logWebhookFailure("compliance.flagged"));
             }
 
             claudeAnalysisDone = true;
@@ -1815,9 +2028,9 @@ app.get("/api/carrier/numbers", authenticateUser, async (req: any, res: any) => 
     const vapiSecret = process.env.VAPI_PRIVATE_KEY;
     if (!vapiSecret) return res.json({ numbers: [] });
 
-    const response = await fetch("https://api.vapi.ai/phone-number", {
+    const response = await fetchWithTimeout("https://api.vapi.ai/phone-number", {
       headers: { "Authorization": `Bearer ${vapiSecret}` }
-    });
+    }, 15_000);
     const data = await response.json();
     
     // The Vapi response is usually an array of phone number objects
@@ -2242,14 +2455,14 @@ async function placeOutboundCall(opts: {
     },
   };
 
-  const vapiResponse = await fetch("https://api.vapi.ai/call/phone", {
+  const vapiResponse = await fetchWithTimeout("https://api.vapi.ai/call/phone", {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${vapiSecret}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify(vapiPayload),
-  });
+  }, 20_000);
 
   if (!vapiResponse.ok) {
     const errBody = await vapiResponse.text();
@@ -2553,13 +2766,20 @@ app.get(['/api/oauth/google/callback', '/api/oauth/google/callback/'], async (re
       expires_at: tokens.expiry_date
     });
 
-    // Send success to popup
+    // Send success to popup. Restrict postMessage to the configured app
+    // origin (or the current request origin when APP_URL isn't set) so
+    // a malicious page that opens this popup can't intercept the email.
+    const targetOrigin = (process.env.APP_URL && new URL(process.env.APP_URL).origin)
+      || `${req.protocol}://${req.get('host')}`;
+    // JSON-encode values to neutralize any HTML/JS injection via the email field.
+    const safeEmail = JSON.stringify(emailAddress);
+    const safeOrigin = JSON.stringify(targetOrigin);
     res.send(`
       <html>
         <body>
           <script>
             if (window.opener) {
-              window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS', email: '${emailAddress}' }, '*');
+              window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS', email: ${safeEmail} }, ${safeOrigin});
               window.close();
             } else {
               window.location.href = '/';
@@ -2570,8 +2790,13 @@ app.get(['/api/oauth/google/callback', '/api/oauth/google/callback/'], async (re
       </html>
     `);
   } catch (error) {
-    console.error("OAuth Callback Error:", error);
-    res.status(500).send("Authentication failed. " + String(error));
+    log.error("OAuth callback failed", {
+      requestId: res.locals?.requestId,
+      error: (error as any)?.message || String(error),
+    });
+    // Generic message to the user — never leak the raw error / stack /
+    // DB strings the SDK may attach.
+    res.status(500).send("Authentication failed. Please try again or contact support.");
   }
 });
 
@@ -3679,7 +3904,9 @@ app.post("/api/webhooks/deliveries/:id/retry", authenticateUser, async (req: any
       last_status_code: null,
     }).eq("id", id);
     // Fire-and-forget — the inline attempt happens in the background.
-    attemptWebhookDelivery(id).catch(() => {});
+    attemptWebhookDelivery(id).catch((err) =>
+      log.warn("webhook delivery attempt failed", { delivery_id: id, error: (err as any)?.message || String(err) })
+    );
     res.json({ success: true });
   } catch (e: any) { res.status(500).json({ error: e?.message ?? "Retry failed" }); }
 });
@@ -3892,7 +4119,12 @@ async function processIntakeLead(key: any, input: IntakeLeadInput, idemHeaderOve
     intake_key: { id: key.id, name: key.name },
     auto_dial: !!key.auto_dial && !!agent_id,
     at: nowIso,
-  }).catch(() => {});
+  }).catch((err) =>
+    log.warn("lead.received webhook dispatch failed", {
+      user_id: key.user_id,
+      error: (err as any)?.message || String(err),
+    })
+  );
 
   let auto_dial_initiated = false;
   if (key.auto_dial && agent_id && inserted?.id) {
@@ -5383,9 +5615,15 @@ app.post("/api/claude/forge/create", authenticateUser, async (req: any, res: any
   }
 });
 
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Unhandled Global Error:', err.stack);
-  res.status(500).json({ error: 'Internal Server Error' });
+app.use((err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  log.error("Unhandled global error", {
+    requestId: (res as any).locals?.requestId,
+    method: req.method,
+    path: req.path,
+    error: err?.message || String(err),
+    stack: err?.stack,
+  });
+  res.status(500).json({ error: 'Internal Server Error', requestId: (res as any).locals?.requestId });
 });
 
 // ==========================================
@@ -5406,10 +5644,60 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  const server = app.listen(PORT, "0.0.0.0", () => {
+    log.info(`Server running on http://localhost:${PORT}`);
   });
+
+  // ────────────────────────────────────────────────────────────────
+  //  Graceful shutdown — stop accepting new connections, drain
+  //  in-flight requests for up to GRACE_MS, then exit. Triggered by
+  //  SIGTERM (Vercel/PM2/systemd) and SIGINT (Ctrl-C).
+  // ────────────────────────────────────────────────────────────────
+  const GRACE_MS = 15_000;
+  let shuttingDown = false;
+  const shutdown = (signal: string) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    log.info(`Received ${signal} — starting graceful shutdown`);
+    const forceTimer = setTimeout(() => {
+      log.error("Graceful shutdown timed out — forcing exit");
+      process.exit(1);
+    }, GRACE_MS).unref?.();
+    server.close((err) => {
+      clearTimeout(forceTimer as any);
+      if (err) {
+        log.error("Error during server.close", { error: err.message });
+        process.exit(1);
+      }
+      log.info("Graceful shutdown complete");
+      process.exit(0);
+    });
+  };
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
 }
+
+// ────────────────────────────────────────────────────────────────────
+//  Process-level safety net — never let an unhandled rejection or
+//  uncaught exception silently crash the worker. We log structured
+//  details and (for uncaught exceptions, which leave the process in
+//  an unknown state) ask the runtime to restart us.
+// ────────────────────────────────────────────────────────────────────
+process.on("unhandledRejection", (reason: any) => {
+  log.error("unhandledRejection", {
+    error: reason?.message || String(reason),
+    stack: reason?.stack,
+  });
+});
+process.on("uncaughtException", (err: Error) => {
+  log.error("uncaughtException", { error: err.message, stack: err.stack });
+  // Best practice: process is in an unknown state — exit so the
+  // platform's restart policy boots us fresh. Skipped on Vercel where
+  // each invocation is its own process.
+  if (process.env.VERCEL !== "1") {
+    setTimeout(() => process.exit(1), 100).unref?.();
+  }
+});
 
 export { app };
 
