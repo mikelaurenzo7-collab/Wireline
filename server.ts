@@ -4836,6 +4836,30 @@ app.post("/api/claude/knowledge-dedupe", authenticateUser, async (req: any, res:
   }
 });
 
+// Lead enrichment — pre-call web research. Auto-instrumented via the
+// /api/claude/* withAudit chain so the cost lands in AI Spend, and the
+// hard-cap gate refuses the request if the operator is over budget.
+app.post("/api/claude/enrich-lead", authenticateUser, async (req: any, res: any) => {
+  try {
+    if (!claudeBrain.isClaudeAvailable()) {
+      return res.status(503).json({ error: "Claude required for lead enrichment.", code: "CLAUDE_OFFLINE" });
+    }
+    const customer_number = (req.body?.customer_number || req.body?.phone || "").toString().trim();
+    if (!customer_number) {
+      return res.status(400).json({ error: "customer_number is required." });
+    }
+    const enrichment = await claudeBrain.enrichLead({
+      customer_number,
+      customer_name: (req.body?.customer_name || req.body?.name || "").toString().slice(0, 200) || null,
+      context: (req.body?.context || "").toString().slice(0, 4000) || null,
+      industry_hint: (req.body?.industry_hint || "").toString().slice(0, 200) || null,
+    });
+    res.json({ enrichment });
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
 // Agent Forge — synthesize a complete agent draft from a goal.
 app.post("/api/claude/forge", authenticateUser, async (req: any, res: any) => {
   try {

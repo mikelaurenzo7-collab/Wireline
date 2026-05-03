@@ -917,6 +917,66 @@ export const TOOLS = {
     },
   } as ToolSchema,
 
+  /** Pre-call lead enrichment — Claude searches the web before the
+   *  operator dials, returns identity + relevance + hooks. Pairs with
+   *  the web_search server tool in messages.create. */
+  enrichLead: {
+    name: "deliver_lead_enrichment",
+    description:
+      "Deliver the structured pre-call enrichment after web-searching. Be honest about confidence — low is fine when the data is thin.",
+    input_schema: {
+      type: "object",
+      properties: {
+        research_confidence: {
+          type: "string",
+          enum: ["high", "medium", "low"],
+          description: "high = found specific person + employer on a reputable source. medium = likely match. low = couldn't pin down.",
+        },
+        identity_summary: {
+          type: "string",
+          description: "1-2 sentence working hypothesis for who this is. If confidence is low, say so.",
+        },
+        company_name: { type: "string" },
+        role: { type: "string", description: "Job title or function." },
+        industry: { type: "string" },
+        company_size: {
+          type: "string",
+          description: "e.g. '11-50 employees', 'Fortune 500', 'mom-and-pop', 'unknown'.",
+        },
+        recent_signals: {
+          type: "array",
+          items: { type: "string" },
+          description: "Notable recent activity — funding, press, hiring, product launches, layoffs. Empty array if none found.",
+        },
+        conversation_hooks: {
+          type: "array",
+          minItems: 1,
+          items: { type: "string" },
+          description: "3-5 specific things to mention to build rapport or relevance. Always at least one.",
+        },
+        likely_objections: {
+          type: "array",
+          items: { type: "string" },
+          description: "2-3 objections this person might raise based on role/industry. Empty array if confidence is too low to guess.",
+        },
+        sources: {
+          type: "array",
+          items: { type: "string" },
+          description: "Up to 6 source URLs that informed this enrichment. Empty if no sources used.",
+        },
+      },
+      required: [
+        "research_confidence",
+        "identity_summary",
+        "conversation_hooks",
+        "likely_objections",
+        "recent_signals",
+        "sources",
+      ],
+      additionalProperties: false,
+    },
+  } as ToolSchema,
+
   /** Used by the URL-based knowledge ingestion path. */
   knowledgeFromUrl: {
     name: "deliver_knowledge_entries",
@@ -1950,4 +2010,107 @@ ${input.facts.map(f => `[id=${f.id}${f.agent_name ? ` · ${f.agent_name}` : ""}]
     deepThink: false,
     maxTokens: 4096,
   });
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+ *  Lead enrichment — Claude uses the server-side web_search tool to
+ *  research a name / phone before the operator dials, then returns a
+ *  structured pre-call brief. Mirrors the knowledgeFromUrl pause_turn
+ *  loop pattern.
+ * ──────────────────────────────────────────────────────────────────── */
+
+export interface EnrichLeadInput {
+  customer_number: string;
+  customer_name?: string | null;
+  context?: string | null;
+  /** Operator hint about the deal — speeds Claude up by narrowing the search. */
+  industry_hint?: string | null;
+}
+
+export interface EnrichLeadResult {
+  research_confidence: "high" | "medium" | "low";
+  identity_summary: string;
+  company_name?: string;
+  role?: string;
+  industry?: string;
+  company_size?: string;
+  recent_signals: string[];
+  conversation_hooks: string[];
+  likely_objections: string[];
+  sources: string[];
+}
+
+export async function enrichLead(input: EnrichLeadInput): Promise<EnrichLeadResult> {
+  const client = getClient();
+
+  const system = `You are a B2B research assistant for an SMB sales operator about to dial a lead. Search the public web and return a structured pre-call enrichment brief.
+
+Search strategy:
+- Run 3-5 targeted web_search queries; stop early once you have enough.
+- Search for the name + phone area code's likely region for company / role context.
+- If you identify a company, search recent news / press / funding signals.
+- Skip socially noisy results (paywalled gossip, low-trust forums) unless they corroborate a primary source.
+
+Be honest about confidence:
+- HIGH: you found the specific person + employer on a reputable source (LinkedIn, company site, Crunchbase, press).
+- MEDIUM: you found a likely match (common name, but role + region / industry context fits).
+- LOW: you couldn't pin them down — return what you can about the likely region, industry patterns, or general guidance.
+
+Never fabricate names, employers, or signals — when in doubt, drop confidence and say so in identity_summary. After researching, call deliver_lead_enrichment.`;
+
+  const userPrompt = `Research this lead before the operator dials:
+- Phone: ${input.customer_number}
+- Name: ${input.customer_name || "(unknown)"}
+- Operator context: ${input.context || "(none)"}
+- Industry hint: ${input.industry_hint || "(none)"}
+
+Search the web, then call deliver_lead_enrichment.`;
+
+  const tools: Anthropic.Tool[] = [
+    { type: "web_search_20250305", name: "web_search", max_uses: 5 } as any,
+    TOOLS.enrichLead,
+  ];
+
+  const messages: Anthropic.MessageParam[] = [
+    { role: "user", content: userPrompt },
+  ];
+
+  const model = "claude-opus-4-7";
+  const maxTokens = 4096;
+
+  let _t = Date.now();
+  let response = await client.messages.create({
+    model,
+    max_tokens: maxTokens,
+    system,
+    tools,
+    messages,
+  });
+  recordUsage(model, response, Date.now() - _t);
+
+  // Server-side tool loop. The `web_search` tool has its own per-request
+  // iteration cap; pause_turn means Claude wants another turn to keep
+  // searching. Cap retries to bound latency / cost.
+  let safety = 4;
+  while (response.stop_reason === "pause_turn" && safety-- > 0) {
+    messages.push({ role: "assistant", content: response.content });
+    _t = Date.now();
+    response = await client.messages.create({
+      model,
+      max_tokens: maxTokens,
+      system,
+      tools,
+      messages,
+    });
+    recordUsage(model, response, Date.now() - _t);
+  }
+
+  for (const block of response.content) {
+    if (block.type === "tool_use" && block.name === "deliver_lead_enrichment") {
+      return block.input as EnrichLeadResult;
+    }
+  }
+  throw new Error(
+    `Claude did not return enrichment (stop_reason=${response.stop_reason}). Try again with more operator context.`,
+  );
 }

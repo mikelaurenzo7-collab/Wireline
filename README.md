@@ -26,6 +26,7 @@ Drop-in modal recipes wired into the surfaces where they belong. All gracefully 
 
 | Recipe                  | Where it lives                       | What it does |
 |-------------------------|--------------------------------------|--------------|
+| **Enrich Lead**         | OutboundDialer rows, Triage Hot Leads, Recipes hub | Claude runs up to 5 web searches via Anthropic's `web_search` server tool. Returns identity hypothesis, employer + role + industry, recent signals (funding/press/hiring), 3–5 conversation hooks, 2–3 likely objections, and source URLs. Honest about confidence (high/medium/low). |
 | **Pre-Call Brief**      | OutboundDialer rows, Triage Hot Leads | Tactical playbook before you dial — opening line, key questions, anticipated objections + rebuttals, value props, closing strategy, risk flags. Adaptive thinking. |
 | **Lead Qualification**  | CallLogs detail, Triage              | BANT scoring with evidence — every score references a specific phrase from the transcript. |
 | **Live Call Coach**     | CallLogs detail                      | Real-time take on a transcript — sentiment, engagement, escalation risk, what's working / at risk, missed opportunities, suggested next words verbatim (≤30 words). |
@@ -111,7 +112,7 @@ Run `supabase_schema.sql` in the Supabase SQL editor. It declares every table wi
 
 ### Claude recipes
 All require `ANTHROPIC_API_KEY` and are rate-limited to 60 req/min/user.
-- `POST /api/claude/brief` · `qualify` · `objection-drill` · `cold-email`
+- `POST /api/claude/brief` · `enrich-lead` · `qualify` · `objection-drill` · `cold-email`
 - `POST /api/claude/persona-clone` · `summarize-thread` · `route-intent`
 - `POST /api/claude/email-draft` · `agent-review`
 - `POST /api/claude/coach` · `forge` · `forge/create`
