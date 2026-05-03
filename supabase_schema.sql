@@ -204,6 +204,7 @@ ALTER TABLE wireline_fleet_tasks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wireline_phone_numbers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wireline_outbound_leads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wireline_signal_presence ENABLE ROW LEVEL SECURITY;
+ALTER TABLE wireline_agent_lessons ENABLE ROW LEVEL SECURITY;
 
 -- Create policies (Owner only)
 -- Example for wireline_agents
@@ -224,6 +225,13 @@ CREATE POLICY "Users can manage their own fleet tasks" ON wireline_fleet_tasks F
 CREATE POLICY "Users can manage their own phone numbers" ON wireline_phone_numbers FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "Users can manage their own leads" ON wireline_outbound_leads FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "Users can manage their own presence signals" ON wireline_signal_presence FOR ALL USING (auth.uid() = user_id);
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'wireline_agent_lessons' AND policyname = 'Users can manage their own agent lessons'
+    ) THEN
+        EXECUTE 'CREATE POLICY "Users can manage their own agent lessons" ON wireline_agent_lessons FOR ALL USING (auth.uid() = user_id)';
+    END IF;
+END $$;
 
 -- ────────────────────────────────────────────────────────────────────
 -- 11. IDEMPOTENT MIGRATIONS — safe to re-run on existing installs.

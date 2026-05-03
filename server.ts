@@ -2662,10 +2662,18 @@ app.post("/api/settings", authenticateUser, async (req: any, res: any) => {
 
 app.get("/api/outbound", authenticateUser, async (req: any, res: any) => {
   try {
-    const { data } = await db.from('wireline_outbound_leads').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false });
-    res.json({ leads: data || [] });
+    const limit = Math.min(parseInt((req.query.limit as string) || "100"), 500);
+    const offset = parseInt((req.query.offset as string) || "0");
+    const { data, count, error } = await db
+      .from('wireline_outbound_leads')
+      .select('*', { count: 'exact' })
+      .eq('user_id', req.user.id)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (error) throw error;
+    res.json({ leads: data || [], total: count || 0, hasMore: count ? (offset + limit) < count : false });
   } catch (error) {
-    res.json({ leads: [] });
+    res.json({ leads: [], total: 0, hasMore: false });
   }
 });
 
