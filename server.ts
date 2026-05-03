@@ -1987,6 +1987,34 @@ app.get("/api/knowledge", authenticateUser, async (req: any, res: any) => {
   } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load knowledge" }); }
 });
 
+app.post("/api/knowledge", authenticateUser, async (req: any, res: any) => {
+  try {
+    const content = (req.body?.content || "").toString().trim();
+    const agent_id = (req.body?.agent_id || "").toString();
+    if (!content) return res.status(400).json({ error: "content is required" });
+    if (!agent_id) return res.status(400).json({ error: "agent_id is required" });
+
+    // Confirm the agent belongs to this user before insert.
+    const { data: agent } = await db.from("wireline_agents")
+      .select("id, name, archetype")
+      .eq("id", agent_id).eq("user_id", req.user.id).maybeSingle();
+    if (!agent) return res.status(404).json({ error: "Agent not found." });
+
+    const { data, error } = await db.from("wireline_knowledge")
+      .insert({ user_id: req.user.id, agent_id, content: content.slice(0, 8000) })
+      .select("id, agent_id, content, created_at")
+      .single();
+    if (error) throw error;
+    res.json({
+      knowledge: {
+        ...data,
+        agent_name: agent.name,
+        agent_archetype: agent.archetype,
+      },
+    });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to create" }); }
+});
+
 app.patch("/api/knowledge/:id", authenticateUser, async (req: any, res: any) => {
   try {
     const content = (req.body?.content || "").toString().trim();
@@ -4751,6 +4779,58 @@ app.post("/api/claude/knowledge-from-url/apply", authenticateUser, async (req: a
     if (rows.length === 0) return res.status(400).json({ error: "No valid entries to insert." });
     await db.from("wireline_knowledge").insert(rows);
     res.json({ inserted: rows.length });
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Knowledge dedupe — Claude pass over the operator's whole knowledge
+// base to find duplicate / near-duplicate / contradictory facts.
+// Auto-instrumented via the existing /api/claude/* withAudit chain,
+// so the cost shows up in the AI-Spend dashboard automatically.
+//
+// Returns {clusters} with input ids verbatim. The UI applies operator
+// decisions via the existing PATCH/DELETE /api/knowledge/:id endpoints.
+const KNOWLEDGE_DEDUPE_MAX_FACTS = 400;
+app.post("/api/claude/knowledge-dedupe", authenticateUser, async (req: any, res: any) => {
+  try {
+    if (!claudeBrain.isClaudeAvailable()) {
+      return res.status(503).json({ error: "Claude required for knowledge dedupe.", code: "CLAUDE_OFFLINE" });
+    }
+    const [{ data: rows }, { data: agents }] = await Promise.all([
+      db.from("wireline_knowledge").select("id, agent_id, content").eq("user_id", req.user.id).limit(KNOWLEDGE_DEDUPE_MAX_FACTS),
+      db.from("wireline_agents").select("id, name").eq("user_id", req.user.id),
+    ]);
+    if (!rows || rows.length < 2) {
+      return res.json({ clusters: [], total_analyzed: rows?.length || 0, message: "Not enough facts to dedupe." });
+    }
+    const agentMap = new Map((agents || []).map((a: any) => [a.id, a.name]));
+    const result = await claudeBrain.findKnowledgeDuplicates({
+      facts: rows.map((r: any) => ({
+        id: r.id,
+        agent_name: agentMap.get(r.agent_id) || "(unknown)",
+        content: r.content,
+      })),
+    });
+    // Defensive: drop any cluster that references an id we didn't send,
+    // or that doesn't have ≥ 2 valid members. Claude's tool schema
+    // already enforces this but better-safe-than-sorry.
+    const validIds = new Set(rows.map((r: any) => r.id));
+    const safe = (result.clusters || [])
+      .map((c: any) => ({
+        ...c,
+        members: (c.members || []).filter((m: any) => validIds.has(m.id)),
+      }))
+      .filter((c: any) =>
+        c.members.length >= 2 &&
+        validIds.has(c.recommended_keep_id) &&
+        c.members.some((m: any) => m.id === c.recommended_keep_id),
+      );
+    res.json({
+      clusters: safe,
+      total_analyzed: result.total_analyzed ?? rows.length,
+      truncated: rows.length === KNOWLEDGE_DEDUPE_MAX_FACTS,
+    });
   } catch (e) {
     claudeErr(res, e);
   }
