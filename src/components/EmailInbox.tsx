@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
-import { Mail, Send, Loader2, User, Search, Filter, History, ChevronRight, Inbox, CheckCircle2, RotateCw, Trash2, Bot, Phone, Terminal, Shield, Target, Zap, Activity, Signal, AtSign } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Mail, Send, Loader2, User, ChevronRight, Inbox, RotateCw, Bot, Phone, Terminal } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
+import PageShell, { Panel } from "./PageShell";
 
 export default function EmailInbox() {
   const [threads, setThreads] = useState<any[]>([]);
@@ -12,6 +13,7 @@ export default function EmailInbox() {
   const [selectedThread, setSelectedThread] = useState<any | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [replyText, setReplyText] = useState("");
+  const [isDrafting, setIsDrafting] = useState(false);
 
   const fetchThreads = async () => {
     try {
@@ -37,67 +39,57 @@ export default function EmailInbox() {
     }
   };
 
-  useEffect(() => {
-    fetchThreads();
-  }, []);
-
-  const [isDrafting, setIsDrafting] = useState(false);
+  useEffect(() => { fetchThreads(); }, []);
 
   const fetchMessages = async (threadId: string) => {
     try {
-       const res = await authFetch(`/api/emails/threads/${threadId}/messages`);
-       const data = await res.json();
-       setMessages(data.messages || []);
+      const res = await authFetch(`/api/emails/threads/${threadId}/messages`);
+      const data = await res.json();
+      setMessages(data.messages || []);
     } catch (e) {
-       console.error("Failed to fetch messages:", e);
+      console.error("Failed to fetch messages:", e);
     }
   };
 
   const handleDraftAI = async () => {
-     if (!selectedThread) return;
-     setIsDrafting(true);
-     try {
-       // Prefer Claude (cached agent prefix + smarter persona handling).
-       const claudeRes = await authFetch(`/api/claude/email-draft`, {
-         method: "POST",
-         headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({
-            threadId: selectedThread.id,
-            userInstructions: replyText || undefined,
-         })
-       });
-       if (claudeRes.ok) {
-         const data = await claudeRes.json();
-         if (data.draft) { setReplyText(data.draft); return; }
-       } else if (claudeRes.status !== 503) {
-         const err = await claudeRes.json().catch(() => ({}));
-         console.warn("Claude draft failed; falling back to Gemini:", err);
-       }
-       // Fallback: legacy Gemini draft.
-       const res = await authFetch(`/api/emails/draft`, {
-         method: "POST",
-         headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({
-             subject: selectedThread.subject,
-             messages: messages,
-             context: replyText
-         })
-       });
-       const data = await res.json();
-       if (data.draft) {
-          setReplyText(data.draft);
-       }
-     } catch (e) {
-       console.error("Draft fail:", e);
-     } finally {
-       setIsDrafting(false);
-     }
+    if (!selectedThread) return;
+    setIsDrafting(true);
+    try {
+      const claudeRes = await authFetch(`/api/claude/email-draft`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          threadId: selectedThread.id,
+          userInstructions: replyText || undefined,
+        })
+      });
+      if (claudeRes.ok) {
+        const data = await claudeRes.json();
+        if (data.draft) { setReplyText(data.draft); return; }
+      } else if (claudeRes.status !== 503) {
+        const err = await claudeRes.json().catch(() => ({}));
+        console.warn("Claude draft failed; falling back to Gemini:", err);
+      }
+      const res = await authFetch(`/api/emails/draft`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject: selectedThread.subject,
+          messages: messages,
+          context: replyText
+        })
+      });
+      const data = await res.json();
+      if (data.draft) setReplyText(data.draft);
+    } catch (e) {
+      console.error("Draft fail:", e);
+    } finally {
+      setIsDrafting(false);
+    }
   };
 
   useEffect(() => {
-    if (selectedThread) {
-      fetchMessages(selectedThread.id);
-    }
+    if (selectedThread) fetchMessages(selectedThread.id);
   }, [selectedThread?.id]);
 
   const sendReply = async () => {
@@ -129,266 +121,269 @@ export default function EmailInbox() {
           description: `Manual handoff requested from inbox. Subject: ${thread.subject}`
         })
       });
-      alert('SIGNAL_ROUTED_TO_VOICE_FLEET. UNIT_DEPLOYED.');
-    } catch(e) {
+    } catch (e) {
       console.error(e);
-      alert('ROUTING_FAILURE.');
     }
   };
 
-  return (
-    <div className="h-full overflow-y-auto scrollbar-hide flex flex-col space-y-5 md:space-y-6 max-w-[1700px] mx-auto w-full">
-      <header className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-10 border-b-8 border-ink pb-12">
-        <div className="space-y-6">
-          <div className="flex items-center gap-4">
-             <div className="bg-brand text-ink text-[10px] font-black px-3 py-1 uppercase tracking-widest brutal-border shadow-none italic font-display animate-pulse flex items-center gap-2">
-               <AtSign className="w-3 h-3" /> RELAY_STATUS: SYNCED
-             </div>
-             <div className="flex items-center gap-2 px-3 py-1 bg-ink text-brand brutal-border shadow-none">
-                <Inbox className="w-3 h-3" />
-                <span className="text-[9px] font-black uppercase tracking-tighter italic">BUFFER_LOAD: {threads.length} DATA_THREATS</span>
-             </div>
-          </div>
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-ink uppercase tracking-tighter font-display italic leading-[0.8]">
-            SIGNAL<br />INBOX
-          </h1>
-          <p className="text-muted font-bold uppercase tracking-[0.4em] text-xs md:text-sm max-w-xl leading-relaxed italic underline decoration-brand decoration-4 underline-offset-[-2px]">
-            Master intelligence relay for individual digital signal threads. Monitor or autonomous reply protocols.
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-6 w-full lg:w-auto">
-          <button 
-            onClick={syncInbox} 
-            disabled={syncing}
-            className="brutal-btn flex items-center justify-center gap-4 !h-20 !px-12 bg-brand w-full lg:w-auto uppercase tracking-[0.3em] font-black italic hover:shadow-none translate-x-[-4px] translate-y-[-4px] hover:translate-x-0 hover:translate-y-0 active:translate-x-1 active:translate-y-1 transition-all"
-          >
-            {syncing ? <Loader2 className="w-6 h-6 animate-spin" /> : <RotateCw className="w-6 h-6 text-ink" />}
-            <span className="text-sm">INITIATE_SYNC</span>
-          </button>
-        </div>
-      </header>
+  const syncAction = (
+    <button
+      onClick={syncInbox}
+      disabled={syncing}
+      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full glass border border-white/10 text-ink text-[11px] uppercase tracking-[0.22em] hover:border-brand/40 transition-colors disabled:opacity-60"
+    >
+      {syncing ? <Loader2 className="w-3 h-3 animate-spin text-brand" /> : <RotateCw className="w-3 h-3 text-brand" />}
+      Sync inbox
+    </button>
+  );
 
-      <div className="flex-1 flex flex-col lg:flex-row gap-12 min-h-0">
-        {/* Thread List */}
-        <aside className="w-full lg:w-[500px] flex flex-col bg-white brutal-border border-4 !p-0 overflow-hidden shrink-0 max-h-[850px]">
-          <div className="p-8 border-b-4 border-ink flex items-center justify-between bg-zinc-950 text-white relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none group-hover:scale-110 transition-transform">
-               <Signal className="w-20 h-20 text-brand" />
-            </div>
-            <span className="text-[10px] font-black uppercase tracking-[0.5em] italic flex items-center gap-4 relative z-10">
-              <Inbox className="w-5 h-5 text-brand" /> DATA_THREADS_CATALOGUE
+  return (
+    <PageShell
+      title="Inbound Email"
+      eyebrow="Signal · Inbox"
+      subtitle={`${threads.length} thread${threads.length === 1 ? '' : 's'} routed to the relay.`}
+      actions={syncAction}
+    >
+      <div className="h-full flex flex-col lg:flex-row gap-3 min-h-0">
+        {/* Thread list */}
+        <Panel
+          title="threads"
+          hint="ALL CONVERSATIONS"
+          icon={Inbox}
+          scroll
+          flush
+          className="lg:w-[420px] shrink-0"
+          actions={
+            <span className="text-[9px] uppercase tracking-[0.3em] text-muted/70 tabular-nums">
+              {threads.length}
             </span>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto divide-y-4 divide-ink scrollbar-hide">
-            <AnimatePresence mode="popLayout">
-              {loading ? (
-                <div className="p-32 text-center flex flex-col items-center gap-6">
-                   <Loader2 className="w-12 h-12 animate-spin text-brand" />
-                   <span className="text-[10px] font-black uppercase tracking-[0.4em] text-ink italic animate-pulse">EXTRACTING_THREADS...</span>
-                </div>
-              ) : threads.length === 0 ? (
-                <div className="p-32 text-center text-muted font-black uppercase tracking-[0.4em] text-xs italic">ZERO_THREADS_DETECTED.</div>
-              ) : threads.map(thread => (
-                <motion.button 
-                  layout
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  key={thread.id}
-                  onClick={() => setSelectedThread(thread)}
-                  className={cn(
-                    "w-full p-8 text-left hover:bg-brand transition-all flex gap-8 group items-start relative overflow-hidden text-ink",
-                    selectedThread?.id === thread.id ? "bg-zinc-50 border-l-[12px] border-zinc-950" : "bg-white border-l-[12px] border-transparent"
-                  )}
-                >
-                  <div className={cn(
-                    "w-16 h-16 brutal-border border-2 bg-white flex items-center justify-center text-ink shrink-0 font-black font-display text-2xl group-hover:bg-zinc-950 group-hover:text-brand transition-all shadow-none",
-                    selectedThread?.id === thread.id && "bg-zinc-950 text-brand"
-                  )}>
-                    {thread.customer_email[0].toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0 relative z-10">
-                    <div className="flex justify-between items-start mb-3">
-                      <span className="text-[9px] font-black text-muted uppercase tracking-[0.2em] truncate max-w-[200px] italic">{thread.customer_email}</span>
-                      <span className="text-[9px] text-muted font-black uppercase tracking-tighter opacity-40 italic">{new Date(thread.last_message_at).toLocaleDateString()}</span>
-                    </div>
-                    <h4 className="font-black text-ink text-xl font-display uppercase tracking-tighter leading-none mb-3 group-hover:drop-shadow-sm truncate">
-                      {thread.subject || "(SIGNAL_WITHOUT_SUBJECT)"}
-                    </h4>
-                    <div className="flex items-center gap-4">
-                      <p className="text-[10px] font-bold text-muted group-hover:text-ink/60 uppercase tracking-tight truncate flex-1 leading-none italic">"{thread.summary || 'PENDING_ANALYSIS'}"</p>
+          }
+        >
+          <AnimatePresence mode="popLayout">
+            {loading ? (
+              <div className="h-full flex flex-col items-center justify-center gap-3 py-16">
+                <Loader2 className="w-5 h-5 animate-spin text-brand" />
+                <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">Loading threads</span>
+              </div>
+            ) : threads.length === 0 ? (
+              <div className="h-full flex items-center justify-center px-8 text-center">
+                <p className="text-[10px] uppercase tracking-[0.4em] text-muted/70">No threads yet</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-white/6">
+                {threads.map(thread => {
+                  const score = thread.lead_score || 0;
+                  const active = selectedThread?.id === thread.id;
+                  const scoreTone =
+                    score >= 80 ? "bg-rose-500/15 text-rose-500 border-rose-500/30" :
+                    score >= 50 ? "bg-brand/15 text-brand border-brand/30" :
+                    "bg-white/5 text-muted border-white/10";
+                  return (
+                    <motion.button
+                      layout
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      key={thread.id}
+                      onClick={() => setSelectedThread(thread)}
+                      className={cn(
+                        "w-full px-4 py-3 text-left transition-colors flex gap-3 items-start",
+                        active ? "bg-white/5" : "hover:bg-white/3"
+                      )}
+                    >
                       <div className={cn(
-                        "shrink-0 px-3 py-1 brutal-border border-2 shadow-none text-[10px] font-black italic",
-                        (thread.lead_score || 0) >= 80 ? "bg-rose-500 text-white" :
-                        (thread.lead_score || 0) >= 50 ? "bg-brand text-ink" :
-                        "bg-white text-muted/30"
+                        "w-9 h-9 rounded-lg glass border flex items-center justify-center font-display italic text-base shrink-0",
+                        active ? "border-brand/40 text-brand" : "border-white/10 text-ink/70"
                       )}>
-                        {thread.lead_score || 0}%_INTENT
+                        {thread.customer_email?.[0]?.toUpperCase() || "?"}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2 mb-0.5">
+                          <span className="text-[9px] uppercase tracking-[0.25em] text-muted/70 truncate">{thread.customer_email}</span>
+                          <span className="text-[9px] tabular-nums text-muted/60 shrink-0">
+                            {new Date(thread.last_message_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <h4 className="font-display italic text-base text-ink leading-tight truncate mb-1">
+                          {thread.subject || "(no subject)"}
+                        </h4>
+                        <div className="flex items-center gap-2">
+                          <p className="text-[10px] text-muted/80 truncate flex-1">
+                            {thread.summary || "Pending analysis"}
+                          </p>
+                          <span className={cn(
+                            "shrink-0 px-1.5 py-0.5 rounded-full border text-[9px] uppercase tracking-[0.2em] tabular-nums",
+                            scoreTone
+                          )}>
+                            {score}%
+                          </span>
+                        </div>
+                      </div>
+                    </motion.button>
+                  );
+                })}
+              </div>
+            )}
+          </AnimatePresence>
+        </Panel>
+
+        {/* Detail */}
+        <Panel
+          title={selectedThread ? "thread" : "select a thread"}
+          hint={selectedThread ? "DETAIL" : "INBOX"}
+          icon={Mail}
+          flush
+          className={cn("flex-1 min-w-0", !selectedThread && "hidden lg:flex")}
+        >
+          <AnimatePresence mode="wait">
+            {selectedThread ? (
+              <motion.div
+                key={selectedThread.id}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="h-full flex flex-col min-h-0"
+              >
+                {/* Subject header */}
+                <div className="shrink-0 px-4 py-3 border-b border-white/8 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <button
+                      className="lg:hidden w-8 h-8 rounded-lg glass border border-white/10 flex items-center justify-center text-ink shrink-0"
+                      onClick={() => setSelectedThread(null)}
+                    >
+                      <ChevronRight className="w-3.5 h-3.5 rotate-180" />
+                    </button>
+                    <div className={cn(
+                      "shrink-0 w-12 h-12 rounded-xl glass border flex flex-col items-center justify-center",
+                      (selectedThread.lead_score || 0) >= 80 ? "border-rose-500/40 text-rose-500" :
+                      (selectedThread.lead_score || 0) >= 50 ? "border-brand/40 text-brand" :
+                      "border-white/10 text-muted"
+                    )}>
+                      <span className="text-[7px] uppercase tracking-[0.3em] leading-none mb-0.5">Intent</span>
+                      <span className="font-display italic text-xl leading-none tabular-nums">{selectedThread.lead_score || 0}</span>
+                    </div>
+                    <div className="min-w-0">
+                      <h2 className="font-display italic text-xl md:text-2xl text-ink leading-tight truncate">
+                        {selectedThread.subject || "(no subject)"}
+                      </h2>
+                      <div className="text-[10px] uppercase tracking-[0.3em] text-muted/80 mt-1 flex items-center gap-1.5 truncate">
+                        <User className="w-3 h-3 text-brand shrink-0" />
+                        <span className="truncate">{selectedThread.customer_email}</span>
                       </div>
                     </div>
                   </div>
-                </motion.button>
-              ))}
-            </AnimatePresence>
-          </div>
-        </aside>
-
-        {/* Message View */}
-        <main className={cn("flex-1 flex flex-col bg-white brutal-border border-4 !p-0 overflow-hidden relative ", !selectedThread ? "hidden lg:flex" : "flex")}>
-          <AnimatePresence mode="wait">
-            {selectedThread ? (
-              <motion.div 
-                key={selectedThread.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.98 }}
-                className="h-full flex flex-col"
-              >
-                <div className="p-4 md:p-5 border-b-4 border-ink bg-white sticky top-0 z-10 group">
-                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-10">
-                     <div className="flex items-center gap-10 md:gap-12 w-full md:w-auto">
-                       <button className="lg:hidden w-12 h-12 brutal-border border-2 bg-brand text-ink flex items-center justify-center shadow-none" onClick={() => setSelectedThread(null)}>
-                          <ChevronRight className="w-6 h-6 rotate-180" />
-                       </button>
-                       <div className={cn(
-                          "w-20 h-20 md:w-24 md:h-24 brutal-border border-4 flex flex-col items-center justify-center font-black  shrink-0 transition-all group-hover:shadow-none",
-                          (selectedThread.lead_score || 0) >= 80 ? "bg-rose-500 text-white" :
-                          (selectedThread.lead_score || 0) >= 50 ? "bg-brand text-ink" :
-                          "bg-paper text-muted"
-                        )}>
-                          <span className="text-[9px] uppercase tracking-widest leading-none mb-1 font-mono italic">INTENT</span>
-                          <span className="text-4xl leading-none font-display italic font-black">{selectedThread.lead_score || 0}</span>
-                       </div>
-                       <div className="min-w-0">
-                         <h2 className="text-3xl md:text-5xl font-black text-ink uppercase tracking-tighter font-display leading-[0.9] italic truncate">{selectedThread.subject}</h2>
-                         <div className="text-[10px] md:text-xs font-black text-muted uppercase tracking-[0.4em] mt-4 flex items-center gap-4 truncate italic">
-                           <User className="w-5 h-5 shrink-0 text-brand fill-ink" /> <span className="truncate">{selectedThread.customer_email}</span>
-                         </div>
-                       </div>
-                     </div>
-                     <div className="w-full md:w-auto flex flex-col items-stretch gap-3">
-                       <ClaudeRecipeButton
-                         recipe="summarize-thread"
-                         threadId={selectedThread.id}
-                         label="Summarize · Action Items"
-                       />
-                       <button
-                         onClick={() => handlePhoneHandoff(selectedThread)}
-                         className="brutal-btn !py-4 !px-8 text-xs font-black uppercase tracking-[0.3em] italic flex items-center justify-center gap-4 group transition-all"
-                       >
-                         <Phone className="w-5 h-5 group-hover:rotate-12 transition-transform" /> Route to Voice Fleet
-                       </button>
-                       <div className={cn(
-                         "px-6 py-2 brutal-border border-4 shadow-none text-[10px] font-black uppercase tracking-[0.3em] flex items-center justify-center italic",
-                         selectedThread.status === 'open' ? "bg-brand text-ink border-ink" : "bg-white text-muted border-zinc-200"
-                       )}>
-                         LIFECYCLE_STATE: {selectedThread.status}
-                       </div>
-                     </div>
+                  <div className="shrink-0 flex items-center gap-1.5">
+                    <ClaudeRecipeButton
+                      recipe="summarize-thread"
+                      threadId={selectedThread.id}
+                      label="Summarize"
+                    />
+                    <button
+                      onClick={() => handlePhoneHandoff(selectedThread)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full glass border border-white/10 text-ink text-[10px] uppercase tracking-[0.25em] hover:border-brand/40 transition-colors"
+                      title="Route this thread to a voice fleet agent"
+                    >
+                      <Phone className="w-3 h-3 text-brand" />
+                      Voice handoff
+                    </button>
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-4 md:p-5 space-y-4 scrollbar-hide bg-paper">
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto scrollbar-hide p-4 space-y-3">
                   <AnimatePresence>
                     {messages.map((msg, idx) => (
-                      <motion.div 
-                        initial={{ opacity: 0, x: msg.role === 'ai' ? 20 : -20 }}
+                      <motion.div
+                        initial={{ opacity: 0, x: msg.role === 'ai' ? 8 : -8 }}
                         animate={{ opacity: 1, x: 0 }}
-                        key={msg.id || idx} 
-                        className={cn("flex flex-col max-w-[95%] md:max-w-[85%]", msg.role === 'ai' ? "ml-auto items-end" : "items-start")}
+                        key={msg.id || idx}
+                        className={cn(
+                          "flex flex-col max-w-[88%]",
+                          msg.role === 'ai' ? "ml-auto items-end" : "items-start"
+                        )}
                       >
                         <div className={cn(
-                          "p-8 md:p-12 brutal-border border-4 font-bold leading-relaxed  relative overflow-hidden group",
-                          msg.role === 'ai' 
-                            ? "bg-zinc-950 text-white italic border-brand " 
-                            : "bg-white text-ink"
+                          "rounded-2xl border p-4 leading-relaxed",
+                          msg.role === 'ai'
+                            ? "glass border-brand/30 text-ink"
+                            : "bg-white/5 border-white/10 text-ink"
                         )}>
-                          {msg.role === 'ai' && (
-                            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover:rotate-6 transition-transform">
-                               <Bot className="w-32 h-32 text-brand" />
-                            </div>
-                          )}
                           <div className={cn(
-                            "text-[10px] uppercase font-black mb-6 flex items-center gap-3 italic tracking-[0.3em]",
-                            msg.role === 'ai' ? "text-brand" : "text-muted"
+                            "text-[9px] uppercase tracking-[0.3em] mb-2 flex items-center gap-1.5",
+                            msg.role === 'ai' ? "text-brand" : "text-muted/70"
                           )}>
                             {msg.role === 'ai' ? (
-                               <><div className="w-2 h-2 bg-brand rounded-full animate-ping" /> NEURAL_RELAY_RESPONSE</>
+                              <><span className="w-1.5 h-1.5 bg-brand rounded-full animate-pulse" /> Agent reply</>
                             ) : (
-                               <><User className="w-3.5 h-3.5 fill-ink" /> SUBJECT_INPUT_FEED</>
+                              <><User className="w-2.5 h-2.5" /> Inbound</>
                             )}
                           </div>
-                          <p className="whitespace-pre-wrap uppercase tracking-tight text-xl md:text-2xl font-display leading-[1.1] relative z-10">{msg.content}</p>
+                          <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</p>
                         </div>
-                        <span className={cn(
-                          "text-[9px] font-black mt-6 uppercase tracking-[0.4em] italic opacity-40",
-                          msg.role === 'ai' ? "text-right" : "text-left"
-                        )}>
-                          TEMPORAL_FIX: {new Date(msg.created_at).toLocaleTimeString().toUpperCase()}
+                        <span className="text-[9px] uppercase tracking-[0.3em] text-muted/50 mt-1.5 tabular-nums">
+                          {new Date(msg.created_at).toLocaleTimeString()}
                         </span>
                       </motion.div>
                     ))}
                   </AnimatePresence>
                 </div>
 
-                <div className="p-4 md:p-5 bg-white border-t-8 border-ink">
-                  <div className="bg-paper brutal-border border-4 !p-6 flex flex-col group-focus-within:shadow-none transition-all">
-                    <div className="flex items-center gap-4 mb-4 opacity-30 group-focus-within:opacity-100 transition-opacity">
-                       <Terminal className="w-5 h-5 text-ink" />
-                       <span className="text-[10px] font-black uppercase tracking-[0.5em] italic">RESPONSE_INTERFACE_v2.0</span>
+                {/* Reply composer */}
+                <div className="shrink-0 px-4 py-3 border-t border-white/8 space-y-3">
+                  <div className="rounded-xl glass border border-white/10 focus-within:border-brand/40 transition-colors overflow-hidden">
+                    <div className="px-3 pt-2.5 pb-1 flex items-center gap-2 text-muted/70">
+                      <Terminal className="w-3 h-3" />
+                      <span className="text-[9px] uppercase tracking-[0.35em]">Compose reply</span>
                     </div>
-                    <textarea 
+                    <textarea
                       value={replyText}
                       onChange={e => setReplyText(e.target.value)}
-                      placeholder="INSTRUCT_AGENT_OR_TYPE_DIRECT_RELAY..."
-                      className="flex-1 p-6 md:p-10 min-h-[200px] outline-none font-black text-ink uppercase tracking-tighter text-2xl md:text-4xl resize-none bg-transparent placeholder:text-zinc-100 font-display italic leading-none"
+                      placeholder="Type a reply or ask the agent to draft one…"
+                      className="w-full px-3 pb-3 min-h-[100px] outline-none text-ink text-sm leading-relaxed resize-none bg-transparent placeholder:text-muted/50"
                     />
-                    <div className="flex flex-col xl:flex-row justify-between items-center gap-10 p-10 border-t-4 border-ink/5 pt-12">
-                      <p className="text-[11px] font-black text-muted uppercase tracking-[0.3em] italic flex-1 max-w-xl leading-relaxed">
-                        DIRECTIVES ARE ANALYZED IN REAL-TIME. AGENT WILL APPLY TRAINED HEURISTICS TO SYNTHESIZE OPTIMAL RESPONSE PATTERNS.
-                      </p>
-                      <div className="flex gap-6 w-full xl:w-auto">
-                        <button 
-                          onClick={handleDraftAI}
-                          disabled={isDrafting}
-                          className="brutal-btn !bg-zinc-100 !text-ink !py-4 !px-10 flex items-center justify-center gap-4 shadow-none border-4 disabled:opacity-50 group grow xl:grow-0"
-                        >
-                          {isDrafting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Bot className="w-6 h-6 group-hover:rotate-12 transition-transform" />} 
-                          <span className="text-xs font-black uppercase tracking-[0.2em] italic">AI_SYNTHESIZE</span>
-                        </button>
-                        <button 
-                          onClick={sendReply}
-                          className="brutal-btn !bg-ink !text-brand !py-4 !px-12 flex items-center justify-center gap-6 group hover:shadow-none active:translate-x-1 active:translate-y-1 transition-all border-4 grow xl:grow-0"
-                        >
-                          <Send className="w-6 h-6 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> 
-                          <span className="text-xs font-black uppercase tracking-[0.2em] italic">INITIATE_RELAY</span>
-                        </button>
-                      </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[10px] text-muted/70 flex-1 leading-relaxed hidden md:block">
+                      Drafts use trained heuristics from this agent's persona and prior thread context.
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleDraftAI}
+                        disabled={isDrafting}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full glass border border-white/10 text-ink text-[10px] uppercase tracking-[0.25em] hover:border-brand/40 transition-colors disabled:opacity-50"
+                      >
+                        {isDrafting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Bot className="w-3 h-3 text-brand" />}
+                        AI draft
+                      </button>
+                      <button
+                        onClick={sendReply}
+                        className="brutal-btn !py-2 !px-4 !text-[10px] !tracking-[0.25em]"
+                      >
+                        <Send className="w-3 h-3" /> Send
+                      </button>
                     </div>
                   </div>
                 </div>
               </motion.div>
             ) : (
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.9 }}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="flex-1 flex flex-col items-center justify-center p-24 text-center space-y-12"
+                className="h-full flex flex-col items-center justify-center gap-4 px-6 text-center"
               >
-                <div className="w-32 h-32 md:w-48 md:h-48 bg-brand brutal-border border-8 flex items-center justify-center group hover:-rotate-6 transition-transform">
-                  <Mail className="w-16 h-16 md:w-24 md:h-24 text-ink group-hover:scale-110 transition-transform" />
+                <div className="w-16 h-16 rounded-2xl glass border border-white/10 flex items-center justify-center text-muted">
+                  <Mail className="w-7 h-7" />
                 </div>
-                <div className="space-y-6">
-                  <h3 className="text-4xl md:text-7xl font-black text-ink font-display uppercase italic tracking-tighter leading-none">SIGNAL<br />SELECTION</h3>
-                  <p className="max-w-md font-bold text-muted uppercase tracking-[0.4em] text-xs md:text-sm leading-loose italic mx-auto underline decoration-brand decoration-4 underline-offset-[-2px]">
-                    SELECT_AN_INCOMING_SIGNAL_THREAD_TO_MONITOR_OR_DEPLOY_AUTONOMOUS_REPLY_PROTOCOLS.
+                <div className="space-y-1.5">
+                  <h3 className="font-display italic lowercase text-2xl text-ink">select a thread</h3>
+                  <p className="text-[10px] uppercase tracking-[0.4em] text-muted/70 max-w-sm">
+                    Pick a conversation from the list to monitor or reply.
                   </p>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
-        </main>
+        </Panel>
       </div>
-    </div>
+    </PageShell>
   );
 }
