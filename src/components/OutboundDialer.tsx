@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { PhoneOutgoing, Loader2, PlayCircle, Clock, Plus, Phone, UploadCloud, Users, Bot, Radar, Activity, Zap, Terminal, Shield, Target, FileSpreadsheet, ChevronRight, Share2, Search } from "lucide-react";
+import { PhoneOutgoing, Loader2, PlayCircle, Clock, Plus, Phone, UploadCloud, Users, Bot, Radar, Activity, Zap, Terminal, Shield, Target, FileSpreadsheet, ChevronRight, Share2, Search, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Papa from "papaparse";
 import { cn } from "../lib/utils";
@@ -27,6 +27,7 @@ export default function OutboundDialer() {
   const [isUploading, setIsUploading] = useState(false);
   const [dialError, setDialError] = useState("");
   const [uploadStats, setUploadStats] = useState("");
+  const [isDeletingLead, setIsDeletingLead] = useState<number | string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -47,6 +48,20 @@ export default function OutboundDialer() {
       console.error(e);
     }
     setIsLoading(false);
+  };
+
+  const deleteLead = async (id: number | string) => {
+    if (!confirm("Remove this lead from the queue?")) return;
+    setIsDeletingLead(id);
+    try {
+      const resp = await authFetch(`/api/outbound/${id}`, { method: "DELETE" });
+      if (resp.ok) {
+        setLeads(prev => prev.filter(l => l.id !== id));
+      }
+    } catch (e) {
+      console.error("Failed to delete lead:", e);
+    }
+    setIsDeletingLead(null);
   };
 
   const dispatchCall = async () => {
@@ -432,9 +447,16 @@ export default function OutboundDialer() {
                                    <Share2 className="w-5 h-5" />
                                 </button>
                              )}
-                             <div className="w-12 h-12 rounded-full glass border border-white/10 flex items-center justify-center text-ink/70 group-hover:border-brand/40 group-hover:text-brand transition-all">
-                                <Terminal className="w-5 h-5" />
-                             </div>
+                             <button
+                               onClick={() => deleteLead(lead.id)}
+                               disabled={isDeletingLead === lead.id}
+                               title="Remove lead"
+                               className="w-12 h-12 rounded-full glass border border-white/10 flex items-center justify-center text-rose-300 hover:border-rose-400/60 hover:text-rose-500 disabled:opacity-40 transition-all"
+                             >
+                               {isDeletingLead === lead.id
+                                 ? <Loader2 className="w-5 h-5 animate-spin" />
+                                 : <Trash2 className="w-5 h-5" />}
+                             </button>
                           </div>
                         </motion.div>
                       ))}

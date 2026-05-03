@@ -2371,6 +2371,20 @@ app.patch("/api/phone-numbers/:id", authenticateUser, async (req: any, res: any)
   }
 });
 
+app.delete("/api/phone-numbers/:id", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { error } = await db.from('wireline_phone_numbers')
+      .delete()
+      .eq('id', req.params.id)
+      .eq('user_id', req.user.id);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (error: any) {
+    log.error("Failed to delete phone number", { error: error?.message });
+    res.status(500).json({ error: "Failed to delete phone number." });
+  }
+});
+
 // ==========================================
 // 1.5.6 CARRIER SYNC (VAPI PROXY)
 // ==========================================
@@ -2652,6 +2666,20 @@ app.get("/api/outbound", authenticateUser, async (req: any, res: any) => {
     res.json({ leads: data || [] });
   } catch (error) {
     res.json({ leads: [] });
+  }
+});
+
+app.delete("/api/outbound/:id", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { error } = await db.from('wireline_outbound_leads')
+      .delete()
+      .eq('id', req.params.id)
+      .eq('user_id', req.user.id);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (error: any) {
+    log.error("Failed to delete lead", { error: error?.message });
+    res.status(500).json({ error: "Failed to delete lead." });
   }
 });
 
