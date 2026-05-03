@@ -1,6 +1,5 @@
 import express from "express";
 import cors from "cors";
-import { createServer as createViteServer } from "vite";
 import path from "path";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { SchemaType } from "@google/generative-ai";
@@ -12,6 +11,17 @@ import { randomUUID } from "node:crypto";
 import * as claudeBrain from "./src/lib/claude-brain";
 
 dotenv.config();
+
+// On Vercel, VERCEL_URL is automatically set to the deployment hostname
+// (e.g. "myapp-abc123.vercel.app") with no protocol or trailing slash.
+// When APP_URL isn't explicitly configured, derive it from VERCEL_URL so
+// OAuth callbacks, billing redirects, and CORS work out of the box on
+// preview and production deployments without manual configuration.
+// Strip any accidental protocol prefix to guard against misconfiguration.
+if (!process.env.APP_URL && process.env.VERCEL_URL) {
+  const hostname = process.env.VERCEL_URL.replace(/^https?:\/\/|\/+$/g, '');
+  process.env.APP_URL = `https://${hostname}`;
+}
 
 const DEFAULT_AGENT_ROLE = "customer_service";
 const IS_PROD = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
@@ -6054,6 +6064,7 @@ app.use((err: any, req: express.Request, res: express.Response, _next: express.N
 // ==========================================
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",

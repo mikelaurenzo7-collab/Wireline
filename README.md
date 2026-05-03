@@ -69,6 +69,23 @@ cp .env.example .env.local
 npm run dev
 ```
 
+## Deploy to Vercel
+
+1. **Import** the repo in the [Vercel dashboard](https://vercel.com/new).
+2. **Set environment variables** — go to *Project → Settings → Environment Variables* and add every key from `.env.example` that you have. The minimum set to get the app running:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `ANTHROPIC_API_KEY`
+3. **`APP_URL`** — leave unset for preview deployments (Wireline auto-derives it from Vercel's `VERCEL_URL`). For production with a custom domain, set it to `https://yourdomain.com`.
+4. **Deploy.** The `vercel.json` is already configured:
+   - `buildCommand` runs `npm run vercel-build` (Vite frontend only).
+   - `api/index.ts` is the serverless entry point — Vercel compiles it automatically.
+   - All `/api/*` requests route to the serverless function; everything else is served from the CDN.
+5. **Google OAuth redirect URI** — if using Gmail integration, register `https://YOUR_APP_URL/api/oauth/google/callback` in your Google Cloud Console OAuth client.
+6. **Stripe webhook endpoint** — register `https://YOUR_APP_URL/api/stripe-webhook` in the Stripe dashboard and paste the signing secret into `STRIPE_WEBHOOK_SECRET`.
+7. **Vapi server URL** — set your Vapi assistant's server URL to `https://YOUR_APP_URL/api/vapi-webhook`.
+
 ## Environment
 
 ```bash
