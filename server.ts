@@ -1251,10 +1251,11 @@ app.post("/api/vapi-webhook", async (req, res) => {
             
             log.debug("[MEMORY] Fetching history", { customerPhone });
 
-            // Sanitize the phone number before using it in LIKE patterns —
-            // strip any character that isn't a digit, +, -, (, ) or space so
-            // callers can't inject LIKE wildcards (% _) or control characters.
-            const safePhone = customerPhone.replace(/[^0-9+\-()\s]/g, '').slice(0, 30);
+            // Sanitize the phone number before using it in LIKE patterns.
+            // Vapi delivers phone numbers in E.164 format (+15551234567), so only
+            // digits and the leading '+' are valid. Stripping anything else also
+            // prevents LIKE wildcard characters (% _) from manipulating the query.
+            const safePhone = customerPhone.replace(/[^0-9+]/g, '').slice(0, 20);
 
             // 1. Fetch last 3 call summaries
             const { data: pastCalls } = await db.from('wireline_call_logs')
@@ -1308,6 +1309,10 @@ app.post("/api/vapi-webhook", async (req, res) => {
             // appear in natural date expressions (letters, digits, spaces,
             // commas, slashes, hyphens, periods).
             const safeDate = String(date || '').replace(/[^A-Za-z0-9 ,\/\-\.]/g, '').slice(0, 60);
+            if (!safeDate) {
+              results.push({ toolCallId: toolCall.id, result: "No date provided. Please ask the customer which date they need." });
+              continue;
+            }
             // Scope to this agent's bookings so cross-operator calendar isolation is preserved.
             const { data, error } = await db.from('wireline_appointments')
               .select('time, service_type')
