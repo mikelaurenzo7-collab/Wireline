@@ -550,12 +550,12 @@ export default function FleetSettings() {
                                     onChange={(e) => updateAgentMeta({ archetype: e.target.value })}
                                     className="w-full text-xs bg-black/30 border border-white/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-brand/50 cursor-pointer appearance-none text-ink"
                                   >
-                                    <option value="Receptionist">Front-line relay</option>
-                                    <option value="The Closer">Mission terminator</option>
-                                    <option value="Support Tech">Logistics navigator</option>
-                                    <option value="The Empath">Diplomatic core</option>
-                                    <option value="The Collector">Data harvester</option>
-                                    <option value="Lead Qualifier">Target scanner</option>
+                                    <option value="Receptionist">Receptionist</option>
+                                    <option value="The Closer">The Closer</option>
+                                    <option value="Support Tech">Support Tech</option>
+                                    <option value="The Empath">The Empath</option>
+                                    <option value="The Collector">The Collector</option>
+                                    <option value="Lead Qualifier">Lead Qualifier</option>
                                   </select>
                                   <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none rotate-90" />
                                 </div>

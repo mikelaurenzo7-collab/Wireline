@@ -138,7 +138,7 @@ export default function OutboundDialer() {
           });
           if (!res.ok) throw new Error("Bulk upload failed.");
 
-          setUploadStats(`Queued ${parsedLeads.length} lead${parsedLeads.length === 1 ? '' : 's'}.`);
+          setUploadStats(`Queued ${parsedLeads.length} lead${parsedLeads.length === 1 ? '' : 's'}`);
           setTimeout(() => fetchData(), 1000);
         } catch (e: any) {
           setDialError(e.message);

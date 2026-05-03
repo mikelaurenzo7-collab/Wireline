@@ -216,7 +216,7 @@ export default function AdminSettings() {
                   <div className="rounded-2xl glass border border-white/10 p-4 space-y-3">
                     <div>
                       <div className="text-[10px] uppercase tracking-[0.4em] text-brand">Voice LLM</div>
-                      <h4 className="font-display italic lowercase text-xl text-ink leading-tight mt-0.5">brain powering live calls</h4>
+                      <h4 className="font-display italic lowercase text-xl text-ink leading-tight mt-0.5">voice brain for live calls</h4>
                       <p className="text-[10px] text-muted/80 mt-1 leading-relaxed">
                         Vapi runs each voice call through this LLM. Defaults to Gemini Flash.
                       </p>
