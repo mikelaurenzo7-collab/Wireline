@@ -46,6 +46,21 @@ break the deployment:
 - `src/components/KnowledgeBaseManager.tsx` — cross-agent fact
   manager at `/knowledge`. Lists every row in `wireline_knowledge`,
   filterable by agent, searchable, with inline edit + bulk delete.
+- `src/components/StripeBillingCard.tsx` — real billing UI in
+  AdminSettings → BILLING_STATE tab. Renders plan picker, current
+  subscription card, and "Manage subscription" button (Stripe
+  Customer Portal). Falls back to a configuration-needed notice
+  when STRIPE_SECRET_KEY is unset.
+
+## Stripe — billing source of truth
+
+`wireline_subscriptions` mirrors the Stripe sub. The Stripe webhook
+(`/api/stripe-webhook`) keeps it in sync AND updates
+`wireline_settings.subscription_status` + `max_agents` so all the
+existing legacy gates (`/api/outbound/dial`, vapi-webhook) keep
+working without modification. Plan catalog lives in `server.ts`
+(`STRIPE_PLANS`); only price IDs are env-driven so test/live mode
+swap cleanly.
 
 ## Dependencies that MUST stay in package.json
 

@@ -153,6 +153,15 @@ curl -X POST $WIRELINE_URL/api/intake/lead \
   -d '{"customer_name":"Jane Doe","customer_number":"+15551234567","context":"Filled out demo form","metadata":{"utm_source":"newsletter"}}'
 ```
 
+### Billing (Stripe)
+- `GET    /api/billing/plans` · public — plan catalog with `configured: true|false` per tier.
+- `GET    /api/billing/status` — current subscription (plan, status, period end, cancel-at-period-end).
+- `POST   /api/billing/checkout` `{ plan_id }` — returns `{ url }` for a Stripe Checkout session.
+- `POST   /api/billing/portal` — returns `{ url }` for the Stripe Customer Portal (manage / cancel / update card).
+- `POST   /api/stripe-webhook` — signature-verified, raw-body. Subscribed events: `checkout.session.completed`, `customer.subscription.{created,updated,deleted}`, `invoice.payment_failed`. Mirrors into `wireline_subscriptions` AND keeps `wireline_settings.subscription_status` + `max_agents` in sync so all existing gates keep working. Fires `subscription.changed` outbound webhook.
+
+Required env vars: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_STARTER_PRICE_ID`, `STRIPE_PRO_PRICE_ID`, `STRIPE_ENTERPRISE_PRICE_ID`. Plan tiers (price, agent cap, feature list) live in `server.ts` (`STRIPE_PLANS`); only the price IDs vary per environment.
+
 ### Knowledge base
 - `GET    /api/knowledge` — every fact across every agent + agent metadata, for the cross-agent Knowledge Atlas view.
 - `POST   /api/knowledge` — `{ agent_id, content }`. Adds a fact directly from the Atlas without going through Neural Atelier.

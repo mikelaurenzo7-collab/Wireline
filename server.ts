@@ -6,6 +6,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { SchemaType } from "@google/generative-ai";
 import { createClient } from "@supabase/supabase-js";
 import { google } from "googleapis";
+import Stripe from "stripe";
 import dotenv from "dotenv";
 import { randomUUID } from "node:crypto";
 import * as claudeBrain from "./src/lib/claude-brain";
@@ -121,6 +122,10 @@ app.use(
     credentials: true,
   }),
 );
+// Stripe webhook needs the RAW body bytes to verify the signature, so
+// register raw-body middleware on that exact path BEFORE the global
+// JSON parser. The handler reads `req.body` as a Buffer.
+app.use("/api/stripe-webhook", express.raw({ type: "application/json" }));
 // Bump body limit so base64-encoded PDF uploads (up to ~32MB raw / ~43MB
 // base64) fit comfortably for the knowledge-from-document recipe.
 app.use(express.json({ limit: '50mb' }));
@@ -313,6 +318,100 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SU
 const db = createClient(supabaseUrl, supabaseKey);
 
 // ────────────────────────────────────────────────────────────────────
+//  Stripe — billing source of truth.
+//
+//  Plan catalog is defined in code (so it's easy to read), but the
+//  actual price ids come from env vars so test-mode and live-mode
+//  prices can swap without code changes. When STRIPE_SECRET_KEY is
+//  unset, the SDK is constructed with a placeholder so the server
+//  still boots in dev — every billing endpoint defensively returns
+//  503 if `stripeAvailable()` is false.
+// ────────────────────────────────────────────────────────────────────
+
+export type StripePlan = {
+  id: "starter" | "pro" | "enterprise";
+  name: string;
+  price_usd_monthly: number;
+  max_agents: number;
+  features: string[];
+  // Resolved at request time so env changes don't require a restart.
+  priceIdEnv: string;
+};
+
+const STRIPE_PLANS: StripePlan[] = [
+  {
+    id: "starter",
+    name: "Starter",
+    price_usd_monthly: 49,
+    max_agents: 3,
+    priceIdEnv: "STRIPE_STARTER_PRICE_ID",
+    features: [
+      "3 voice + email agents",
+      "Unlimited inbound calls",
+      "100 outbound calls / month",
+      "Daily Brief + Triage",
+      "Webhooks · Intake API",
+    ],
+  },
+  {
+    id: "pro",
+    name: "Pro",
+    price_usd_monthly: 199,
+    max_agents: 10,
+    priceIdEnv: "STRIPE_PRO_PRICE_ID",
+    features: [
+      "10 agents",
+      "Unlimited outbound",
+      "All Starter features",
+      "Insights + Knowledge Atlas",
+      "Auto-dial intake",
+      "Priority support",
+    ],
+  },
+  {
+    id: "enterprise",
+    name: "Enterprise",
+    price_usd_monthly: 999,
+    max_agents: 100,
+    priceIdEnv: "STRIPE_ENTERPRISE_PRICE_ID",
+    features: [
+      "100 agents",
+      "All Pro features",
+      "SSO + SAML",
+      "Custom data retention",
+      "Dedicated success manager",
+      "99.95% uptime SLA",
+    ],
+  },
+];
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_placeholder", {
+  apiVersion: "2025-09-30.clover" as any,
+  typescript: true,
+});
+function stripeAvailable() {
+  return !!process.env.STRIPE_SECRET_KEY;
+}
+function planByPriceId(priceId: string | null | undefined): StripePlan | null {
+  if (!priceId) return null;
+  return STRIPE_PLANS.find(p => process.env[p.priceIdEnv] === priceId) || null;
+}
+function planById(id: string): StripePlan | null {
+  return STRIPE_PLANS.find(p => p.id === id) || null;
+}
+function plansForClient() {
+  return STRIPE_PLANS.map(p => ({
+    id: p.id,
+    name: p.name,
+    price_usd_monthly: p.price_usd_monthly,
+    max_agents: p.max_agents,
+    features: p.features,
+    // Don't expose env var names; just whether the price is configured.
+    configured: !!process.env[p.priceIdEnv],
+  }));
+}
+
+// ────────────────────────────────────────────────────────────────────
 //  Outbound webhooks dispatcher — module-scope so the vapi webhook
 //  handler (also module-level, registered before startServer) can
 //  call it. The CRUD endpoints for managing webhooks live inside
@@ -329,6 +428,7 @@ const WEBHOOK_EVENTS = [
   "compliance.flagged",
   "spend.warning",
   "spend.exceeded",
+  "subscription.changed",
 ] as const;
 type WebhookEvent = typeof WEBHOOK_EVENTS[number];
 
@@ -669,6 +769,120 @@ async function authenticateUser(req: any, res: any, next: any) {
   req.user = user;
   next();
 }
+
+// ==========================================
+// STRIPE WEBHOOK + sync helper
+// ==========================================
+//
+// Mirrors the Stripe subscription into wireline_subscriptions AND keeps
+// wireline_settings.subscription_status / max_agents in sync so every
+// existing gate in the app keeps working. The Stripe row is the source
+// of truth; this is a cache.
+//
+// Maps Stripe statuses to the legacy two-value gate Wireline already uses:
+//   active | trialing      → subscription_status='active'
+//   past_due | unpaid      → subscription_status='past_due'
+//   canceled | incomplete* → subscription_status='canceled'
+async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
+  // Resolve the user via stripe_customer_id (set during checkout).
+  const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+  const { data: existing } = await db.from("wireline_subscriptions")
+    .select("user_id").eq("stripe_customer_id", customerId).maybeSingle();
+  if (!existing?.user_id) {
+    console.warn(`Stripe webhook: no wireline_subscriptions row for customer ${customerId}; skipping sync.`);
+    return;
+  }
+  const userId = existing.user_id;
+  const item = sub.items?.data?.[0];
+  const priceId = item?.price?.id || null;
+  const plan = planByPriceId(priceId);
+  const stripeStatus = sub.status;
+  const localStatus =
+    stripeStatus === "active" || stripeStatus === "trialing" ? "active" :
+    stripeStatus === "past_due" || stripeStatus === "unpaid" ? "past_due" :
+    "canceled";
+
+  // Mirror to wireline_subscriptions.
+  await db.from("wireline_subscriptions").upsert({
+    user_id: userId,
+    stripe_customer_id: customerId,
+    stripe_subscription_id: sub.id,
+    plan: plan?.id || null,
+    status: stripeStatus,
+    current_period_end: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null,
+    cancel_at_period_end: !!sub.cancel_at_period_end,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: "user_id" });
+
+  // Sync the legacy gate so /api/outbound/dial, vapi-webhook, etc.
+  // continue to work without touching them.
+  const settingsPatch: any = { user_id: userId, subscription_status: localStatus };
+  if (plan?.max_agents) settingsPatch.max_agents = plan.max_agents;
+  await db.from("wireline_settings").upsert(settingsPatch, { onConflict: "user_id" });
+
+  // Fan out to operator webhooks so external systems can react
+  // (e.g. notify Slack on downgrade / cancellation).
+  dispatchWebhook(userId, "subscription.changed", {
+    plan: plan?.id || null,
+    status: stripeStatus,
+    legacy_status: localStatus,
+    cancel_at_period_end: !!sub.cancel_at_period_end,
+    current_period_end: sub.current_period_end
+      ? new Date(sub.current_period_end * 1000).toISOString() : null,
+    at: new Date().toISOString(),
+  }).catch(() => {});
+}
+
+app.post("/api/stripe-webhook", async (req: any, res: any) => {
+  if (!stripeAvailable() || !process.env.STRIPE_WEBHOOK_SECRET) {
+    return res.status(503).json({ error: "Stripe webhook not configured." });
+  }
+  const sig = req.headers["stripe-signature"] as string | undefined;
+  if (!sig) return res.status(400).json({ error: "Missing stripe-signature header." });
+  let event: Stripe.Event;
+  try {
+    // express.raw populated req.body as a Buffer — pass it through verbatim.
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (err: any) {
+    console.warn("Stripe webhook signature verification failed:", err?.message);
+    return res.status(400).json({ error: `Webhook Error: ${err?.message}` });
+  }
+
+  try {
+    switch (event.type) {
+      case "checkout.session.completed": {
+        // First-ever subscription for this customer — pull the sub and sync.
+        const session = event.data.object as Stripe.Checkout.Session;
+        if (session.mode === "subscription" && session.subscription) {
+          const subId = typeof session.subscription === "string" ? session.subscription : session.subscription.id;
+          const sub = await stripe.subscriptions.retrieve(subId);
+          await syncSubscriptionFromStripe(sub);
+        }
+        break;
+      }
+      case "customer.subscription.created":
+      case "customer.subscription.updated":
+      case "customer.subscription.deleted": {
+        await syncSubscriptionFromStripe(event.data.object as Stripe.Subscription);
+        break;
+      }
+      case "invoice.payment_failed": {
+        // Sub status will flip to past_due via the next subscription.updated;
+        // we don't need a separate sync here.
+        const inv = event.data.object as Stripe.Invoice;
+        console.warn(`Stripe invoice payment failed for customer ${inv.customer}`);
+        break;
+      }
+      default:
+        // Many event types — ignore the noise.
+        break;
+    }
+    res.json({ received: true });
+  } catch (err: any) {
+    console.error("Stripe webhook handler error:", err);
+    res.status(500).json({ error: err?.message || "Webhook handler failed" });
+  }
+});
 
 // ==========================================
 // 1. VAPI WEBHOOK — system-to-system, signature-verified
@@ -4813,6 +5027,140 @@ app.get("/api/spend/status", authenticateUser, async (req: any, res: any) => {
       alerts_fired: alerts || [],
     });
   } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load spend status" }); }
+});
+
+// ──────────────────────────────────────────────────────────
+//  STRIPE BILLING — checkout, portal, status. Webhook handler
+//  lives at module scope (above) so it can use raw-body parsing.
+// ──────────────────────────────────────────────────────────
+
+function billingBaseUrl(req: any): string {
+  // Honor APP_URL when set (production). Otherwise fall back to the
+  // Origin header so dev sandboxes work without env config.
+  return (process.env.APP_URL || req.get("origin") || "http://localhost:3000").replace(/\/+$/, "");
+}
+
+// Public — anyone can read the catalog (renders pre-auth on the
+// pricing surface in the future). No secrets are exposed.
+app.get("/api/billing/plans", (_req: any, res: any) => {
+  res.json({ plans: plansForClient(), stripe_configured: stripeAvailable() });
+});
+
+// Operator-facing read of their current sub.
+app.get("/api/billing/status", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { data: sub } = await db.from("wireline_subscriptions")
+      .select("plan, status, current_period_end, cancel_at_period_end, stripe_customer_id, stripe_subscription_id, updated_at")
+      .eq("user_id", req.user.id).maybeSingle();
+    const planMeta = sub?.plan ? planById(sub.plan) : null;
+    res.json({
+      stripe_configured: stripeAvailable(),
+      subscription: sub ? {
+        plan: sub.plan,
+        plan_name: planMeta?.name || null,
+        max_agents: planMeta?.max_agents || null,
+        status: sub.status,
+        current_period_end: sub.current_period_end,
+        cancel_at_period_end: !!sub.cancel_at_period_end,
+        has_customer: !!sub.stripe_customer_id,
+        has_subscription: !!sub.stripe_subscription_id,
+        updated_at: sub.updated_at,
+      } : null,
+    });
+  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load status" }); }
+});
+
+// Start a Stripe Checkout session for a plan. Idempotent on
+// stripe_customer_id — we re-use the customer across upgrades so
+// invoices and payment methods carry forward.
+app.post("/api/billing/checkout", authenticateUser, async (req: any, res: any) => {
+  try {
+    if (!stripeAvailable()) return res.status(503).json({ error: "Stripe not configured." });
+    const planId = String(req.body?.plan_id || "").trim();
+    const plan = planById(planId);
+    if (!plan) return res.status(400).json({ error: "Unknown plan_id." });
+    const priceId = process.env[plan.priceIdEnv];
+    if (!priceId) return res.status(503).json({ error: `Price for plan '${plan.id}' not configured (${plan.priceIdEnv}).` });
+
+    // Find the existing Stripe row first — we need to gate against
+    // double-subscribing AND we'll re-use the customer if present.
+    const { data: existing } = await db.from("wireline_subscriptions")
+      .select("stripe_customer_id, stripe_subscription_id, status, plan")
+      .eq("user_id", req.user.id).maybeSingle();
+
+    // Block creating a second concurrent subscription. Stripe permits
+    // multiple subs per customer unless we explicitly prevent it; our
+    // wireline_subscriptions row only tracks ONE stripe_subscription_id
+    // so a second checkout would silently double-charge the operator
+    // and leave the second sub orphaned in Stripe. Plan changes go
+    // through the Customer Portal (clean proration, single sub) — the
+    // UI redirects there when an active sub already exists.
+    const liveStatuses = new Set(["active", "trialing", "past_due", "incomplete", "unpaid"]);
+    if (existing?.stripe_subscription_id && liveStatuses.has(existing.status || "")) {
+      return res.status(409).json({
+        error:
+          "You already have an active subscription. Use the Customer Portal to change plans " +
+          "(this avoids creating a second concurrent subscription).",
+        code: "ALREADY_SUBSCRIBED",
+        current_plan: existing.plan,
+        current_status: existing.status,
+      });
+    }
+
+    // Find or create the Stripe Customer for this user.
+    let customerId = existing?.stripe_customer_id || null;
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: req.user.email,
+        metadata: { wireline_user_id: req.user.id },
+      });
+      customerId = customer.id;
+      await db.from("wireline_subscriptions").upsert({
+        user_id: req.user.id,
+        stripe_customer_id: customerId,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "user_id" });
+    }
+
+    const base = billingBaseUrl(req);
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      customer: customerId,
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${base}/admin?billing=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${base}/admin?billing=canceled`,
+      allow_promotion_codes: true,
+      subscription_data: {
+        metadata: { wireline_user_id: req.user.id, wireline_plan: plan.id },
+      },
+    });
+    res.json({ url: session.url });
+  } catch (e: any) {
+    console.error("Checkout creation failed:", e);
+    res.status(500).json({ error: e?.message ?? "Checkout failed" });
+  }
+});
+
+// Open the Stripe Customer Portal for the operator to manage their
+// subscription, payment method, invoice history, and cancellation.
+app.post("/api/billing/portal", authenticateUser, async (req: any, res: any) => {
+  try {
+    if (!stripeAvailable()) return res.status(503).json({ error: "Stripe not configured." });
+    const { data: sub } = await db.from("wireline_subscriptions")
+      .select("stripe_customer_id").eq("user_id", req.user.id).maybeSingle();
+    if (!sub?.stripe_customer_id) {
+      return res.status(404).json({ error: "No Stripe customer for this user yet — run checkout first." });
+    }
+    const base = billingBaseUrl(req);
+    const portal = await stripe.billingPortal.sessions.create({
+      customer: sub.stripe_customer_id,
+      return_url: `${base}/admin`,
+    });
+    res.json({ url: portal.url });
+  } catch (e: any) {
+    console.error("Portal session failed:", e);
+    res.status(500).json({ error: e?.message ?? "Portal failed" });
+  }
 });
 
 // ──────────────────────────────────────────────────────────

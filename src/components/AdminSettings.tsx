@@ -5,6 +5,7 @@ import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import WebhooksManager from "./WebhooksManager";
 import IntakeKeysManager from "./IntakeKeysManager";
+import StripeBillingCard from "./StripeBillingCard";
 
 export default function AdminSettings() {
   const [settings, setSettings] = useState({
@@ -438,13 +439,18 @@ export default function AdminSettings() {
               </div>
             </motion.div>
           ) : (
-            <motion.div 
+            <motion.div
               key="subscription"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               className="grid grid-cols-1 xl:grid-cols-12 gap-16 items-start"
             >
+              {/* ── Real Stripe billing — checkout, portal, plan picker ── */}
+              <div className="xl:col-span-12">
+                <StripeBillingCard />
+              </div>
+
               {/* Billing Simulator Card */}
               <div className="xl:col-span-12 bg-white brutal-border border-8 p-12 md:p-16 relative overflow-hidden group">
                  <div className="absolute top-0 right-0 p-16 opacity-5 pointer-events-none group-hover:rotate-6 transition-transform">

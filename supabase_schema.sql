@@ -454,3 +454,31 @@ ALTER TABLE wireline_knowledge ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ D
 --         technical_support | lead_qualifier | receptionist | marketing
 ALTER TABLE wireline_agents ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'customer_service';
 
+-- Stripe billing — one row per user, mirrored from Stripe via webhook.
+-- The Stripe subscription is the source of truth; this table is a cache
+-- so the app can render plan / status without round-tripping Stripe on
+-- every request. wireline_settings.subscription_status is also kept
+-- in sync so the existing gates (outbound dial, vapi webhook) continue
+-- to work without touching their guard logic.
+CREATE TABLE IF NOT EXISTS wireline_subscriptions (
+    user_id UUID PRIMARY KEY DEFAULT auth.uid(),
+    stripe_customer_id TEXT,
+    stripe_subscription_id TEXT,
+    plan TEXT,                        -- 'starter' | 'pro' | 'enterprise'
+    status TEXT,                      -- Stripe subscription status verbatim
+    current_period_end TIMESTAMPTZ,
+    cancel_at_period_end BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS wireline_subscriptions_customer_idx
+    ON wireline_subscriptions(stripe_customer_id);
+ALTER TABLE wireline_subscriptions ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'wireline_subscriptions' AND policyname = 'Users can view their own subscription'
+    ) THEN
+        EXECUTE 'CREATE POLICY "Users can view their own subscription" ON wireline_subscriptions FOR ALL USING (auth.uid() = user_id)';
+    END IF;
+END $$;
+
