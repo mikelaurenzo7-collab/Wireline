@@ -248,7 +248,7 @@ export default function FleetSettings() {
       
       {/* Sidebar: Agents List */}
       <aside className="w-full md:w-[450px] border-b-8 md:border-b-0 md:border-r-8 border-ink bg-white h-auto md:h-full flex flex-col shrink-0">
-        <div className="p-10 md:p-14 border-b-8 border-ink bg-brand relative overflow-hidden group">
+        <div className="p-4 md:p-5 border-b-8 border-ink bg-brand relative overflow-hidden group">
            <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none group-hover:rotate-12 transition-transform">
               <Users className="w-32 h-32 text-ink" />
            </div>
@@ -395,7 +395,7 @@ export default function FleetSettings() {
       </aside>
 
       {/* Main Panel: Agent Configuration */}
-      <main className="flex-1 h-full overflow-y-auto bg-paper p-8 md:p-16 lg:p-24 pb-40">
+      <main className="flex-1 h-full overflow-y-auto bg-paper p-4 md:p-5 scrollbar-hide">
         <AnimatePresence mode="wait">
           {!selectedAgent ? (
             <motion.div 
@@ -416,7 +416,7 @@ export default function FleetSettings() {
               key={selectedAgent.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="max-w-[1200px] mx-auto space-y-16 lg:space-y-24"
+              className="max-w-[1200px] mx-auto space-y-4 lg:space-y-6"
             >
               <header className="brutal-card !p-12 md:!p-20 border-8 relative group">
                  <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none group-hover:-rotate-6 transition-transform">
@@ -512,7 +512,7 @@ export default function FleetSettings() {
 
                     {/* Voice Node Config */}
                     {selectedAgent.channel !== 'email' && (
-                     <div className="md:col-span-2 space-y-12 bg-white p-10 md:p-14 brutal-border border-4">
+                     <div className="md:col-span-2 space-y-12 bg-white p-4 md:p-5 brutal-border border-4">
                          <header className="flex items-center gap-6 border-b-4 border-ink pb-8">
                            <Radio className="w-10 h-10 text-brand fill-ink animate-pulse" />
                            <h3 className="font-black text-ink text-3xl uppercase tracking-tighter font-display italic">CARRIER SIGNAL PARAMETERS</h3>
@@ -594,7 +594,7 @@ export default function FleetSettings() {
 
                     {/* Email Config */}
                     {(selectedAgent.channel === 'email' || selectedAgent.channel === 'omnichannel' || !selectedAgent.channel) && (
-                     <div className="md:col-span-2 space-y-12 bg-white p-10 md:p-14 brutal-border border-4">
+                     <div className="md:col-span-2 space-y-12 bg-white p-4 md:p-5 brutal-border border-4">
                          <header className="flex items-center gap-6 border-b-4 border-ink pb-8">
                            <Mail className="w-10 h-10 text-emerald-500 fill-zinc-950 animate-pulse" />
                            <h3 className="font-black text-ink text-3xl uppercase tracking-tighter font-display italic">EMAIL RELAY HEURISTICS</h3>
@@ -659,9 +659,9 @@ export default function FleetSettings() {
                    <span className="text-xl font-black uppercase tracking-[0.5em] italic">EXTRACTING NEURAL MAP...</span>
                  </div>
               ) : (
-                 <div className="space-y-24">
+                 <div className="space-y-6">
                    {/* Personality Matrix */}
-                   <section className="bg-zinc-950 p-12 md:p-16 brutal-border border-8 relative overflow-hidden group">
+                   <section className="bg-zinc-950 p-4 md:p-5 brutal-border border-8 relative overflow-hidden group">
                      <div className="absolute top-0 right-0 p-16 opacity-5 pointer-events-none group-hover:scale-110 transition-transform">
                         <Terminal className="w-96 h-96 text-brand" />
                      </div>
@@ -691,7 +691,7 @@ export default function FleetSettings() {
 
                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24">
                      {/* Directives Lists (Manual Override) */}
-                     <section className="bg-white p-10 md:p-14 brutal-border border-8 flex flex-col h-[700px]">
+                     <section className="bg-white p-4 md:p-5 brutal-border border-8 flex flex-col h-[700px]">
                        <header className="border-b-8 border-ink pb-8 mb-10 flex justify-between items-end">
                           <div>
                             <h3 className="text-3xl font-black text-ink uppercase tracking-tighter font-display italic leading-none mb-4">TACTICAL LOGIC</h3>
@@ -764,7 +764,7 @@ export default function FleetSettings() {
                        </div>
                      </section>
 
-                     <section className="bg-white p-10 md:p-14 brutal-border border-8 flex flex-col h-[700px]">
+                     <section className="bg-white p-4 md:p-5 brutal-border border-8 flex flex-col h-[700px]">
                        <header className="border-b-8 border-ink pb-8 mb-10 flex justify-between items-end">
                           <div>
                             <h3 className="text-3xl font-black text-ink uppercase tracking-tighter font-display italic leading-none mb-4">NEURAL GROUNDING</h3>

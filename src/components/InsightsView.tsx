@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
 import {
   BarChart3, TrendingUp, Layers, Calendar, Trophy, AlertOctagon, Loader2,
   RefreshCw, Sparkles, ChevronRight, Users, DollarSign, Brain, Zap,
@@ -9,111 +8,44 @@ import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import CsvExportButton from "./CsvExportButton";
 import { AGENT_ROLES } from "./FleetSettings";
+import PageShell from "./PageShell";
 
 type View = "funnel" | "topics" | "heatmap" | "leaderboard" | "failures" | "spend";
 
-const VIEWS: { id: View; label: string; icon: any; accent: string; needsClaude: boolean }[] = [
-  { id: "funnel",      label: "Funnel",            icon: TrendingUp,   accent: "#7DF9FF", needsClaude: false },
-  { id: "topics",      label: "Topic Map",         icon: Layers,       accent: "#C58BFF", needsClaude: true  },
-  { id: "heatmap",     label: "Time Heatmap",      icon: Calendar,     accent: "#FF6BD9", needsClaude: false },
-  { id: "leaderboard", label: "Agent Leaderboard", icon: Trophy,       accent: "#4DFFC4", needsClaude: false },
-  { id: "failures",    label: "Failure Modes",     icon: AlertOctagon, accent: "#FFC07D", needsClaude: true  },
-  { id: "spend",       label: "AI Spend",          icon: Receipt,      accent: "#7DF9FF", needsClaude: false },
-];
-
 export default function InsightsView() {
-  const [view, setView] = useState<View>("funnel");
   const [days, setDays] = useState(30);
 
+  const wrap = (node: React.ReactNode) => (
+    <div className="h-full w-full overflow-y-auto scrollbar-hide pr-1">
+      {node}
+    </div>
+  );
+
   return (
-    <div className="min-h-full w-full max-w-[1700px] mx-auto space-y-10 pb-32">
-      <motion.header
-        initial={{ y: -16, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-        className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6"
-      >
-        <div className="space-y-5">
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <div className="px-3 py-1.5 rounded-full glass border border-white/8 flex items-center gap-2">
-              <BarChart3 className="w-3.5 h-3.5 text-brand" />
-              <span className="text-[10px] uppercase tracking-[0.3em] text-ink/80">Business Intelligence</span>
-            </div>
-            <div className="px-3 py-1.5 rounded-full glass border border-white/8 flex items-center gap-2">
-              <Brain className="w-3 h-3 text-brand-2" />
-              <span className="text-[10px] uppercase tracking-[0.3em] text-ink/80">Claude-powered</span>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <p className="text-[10px] uppercase tracking-[0.6em] text-muted">Deep Analytics</p>
-            <h1 className="font-display italic text-6xl md:text-7xl lg:text-[7rem] leading-[0.9] tracking-tight">
-              <span className="text-aurora">Insights</span>
-            </h1>
-            <p className="text-ink/55 max-w-2xl text-sm md:text-base leading-relaxed">
-              Real BI on every signal — funnel, topic clusters, time heatmaps, per-agent leaderboards, and clustered failure modes with fix recommendations.
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
+    <PageShell
+      eyebrow="Deep Analytics · Business Intelligence"
+      title="Insights"
+      subtitle="Funnel, topic clusters, time heatmaps, leaderboards, and clustered failure modes"
+      actions={
+        <>
           <select
             value={days} onChange={(e) => setDays(parseInt(e.target.value))}
-            className="px-4 h-11 rounded-full glass border border-white/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
+            className="px-3 h-9 rounded-full glass border border-white/10 outline-none text-ink text-[11px] focus:border-brand/60 transition-all"
           >
-            {[7, 14, 30, 60, 90].map((d) => <option key={d} value={d}>Last {d} days</option>)}
+            {[7, 14, 30, 60, 90].map((d) => <option key={d} value={d}>{d}d</option>)}
           </select>
-          <CsvExportButton type="calls" label="Export Calls" />
-        </div>
-      </motion.header>
-
-      {/* View tabs */}
-      <div className="flex flex-wrap gap-2.5">
-        {VIEWS.map((v) => {
-          const isActive = view === v.id;
-          return (
-            <button
-              key={v.id}
-              onClick={() => setView(v.id)}
-              className={cn(
-                "relative px-5 py-3 rounded-full transition-all flex items-center gap-2.5 overflow-hidden",
-                isActive ? "border-transparent text-paper" : "glass border border-white/10 text-ink/70 hover:text-ink hover:border-white/30",
-              )}
-            >
-              {isActive && (
-                <motion.div
-                  layoutId="insights-tab"
-                  className="absolute inset-0 rounded-full"
-                  style={{
-                    background: `linear-gradient(135deg, ${v.accent}, ${v.accent}cc)`,
-                    boxShadow: `0 8px 24px -8px ${v.accent}88, 0 0 0 1px rgba(255,255,255,0.2) inset`,
-                  }}
-                  transition={{ type: "spring", stiffness: 380, damping: 32 }}
-                />
-              )}
-              <v.icon className="w-4 h-4 relative z-10" />
-              <span className="text-[11px] uppercase tracking-[0.25em] relative z-10 font-medium">{v.label}</span>
-              {v.needsClaude && (
-                <Brain className={cn("w-3 h-3 relative z-10", isActive ? "text-paper/70" : "text-brand-2")} />
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={view}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.4 }}
-        >
-          {view === "funnel"      && <FunnelView      days={days} />}
-          {view === "topics"      && <TopicsView />}
-          {view === "heatmap"     && <HeatmapView     days={days} />}
-          {view === "leaderboard" && <LeaderboardView days={days} />}
-          {view === "failures"    && <FailureModesView />}
-          {view === "spend"       && <AISpendView     days={days} />}
-        </motion.div>
-      </AnimatePresence>
-    </div>
+          <CsvExportButton type="calls" label="CSV" />
+        </>
+      }
+      tabs={[
+        { id: "funnel",      label: "Funnel",      icon: TrendingUp,   content: wrap(<FunnelView      days={days} />) },
+        { id: "topics",      label: "Topics",      icon: Layers,       content: wrap(<TopicsView />) },
+        { id: "heatmap",     label: "Heatmap",     icon: Calendar,     content: wrap(<HeatmapView     days={days} />) },
+        { id: "leaderboard", label: "Leaderboard", icon: Trophy,       content: wrap(<LeaderboardView days={days} />) },
+        { id: "failures",    label: "Failures",    icon: AlertOctagon, content: wrap(<FailureModesView />) },
+        { id: "spend",       label: "AI Spend",    icon: Receipt,      content: wrap(<AISpendView     days={days} />) },
+      ]}
+    />
   );
 }
 

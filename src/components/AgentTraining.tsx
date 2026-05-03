@@ -139,7 +139,7 @@ export default function AgentTraining() {
   };
 
   return (
-    <div className="flex flex-col min-h-full bg-paper pb-40">
+    <div className="flex flex-col h-full overflow-hidden bg-paper">
       <header className="p-8 md:p-12 border-b-8 border-ink bg-white sticky top-0 z-30 shadow-sm">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10 max-w-[1400px] mx-auto w-full">
           <div className="space-y-6">
@@ -230,7 +230,7 @@ export default function AgentTraining() {
               exit={{ opacity: 0 }}
               className="flex flex-col h-full bg-white max-w-[1200px] mx-auto w-full border-x-4 border-ink"
             >
-               <div className="flex-1 overflow-y-auto p-10 md:p-14 space-y-12 pb-40 scrollbar-hide">
+               <div className="flex-1 overflow-y-auto p-4 md:p-5 space-y-4 scrollbar-hide">
                 {messages.map((msg, i) => (
                   <motion.div 
                     initial={{ opacity: 0, x: msg.role === 'user' ? 20 : -20 }}
@@ -268,7 +268,7 @@ export default function AgentTraining() {
                 )}
               </div>
 
-              <div className="p-10 md:p-16 border-t-4 border-ink bg-white sticky bottom-0">
+              <div className="p-4 md:p-5 border-t-4 border-ink bg-white sticky bottom-0">
                 <div className="flex items-center gap-6 bg-paper border-4 border-ink p-4 focus-within:bg-brand/5 transition-all group">
                   <Terminal className="w-8 h-8 text-muted ml-4" />
                   <input 
@@ -300,7 +300,7 @@ export default function AgentTraining() {
               key="database"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="p-8 md:p-16 lg:p-24 bg-paper max-w-[1400px] mx-auto w-full pb-40 space-y-24"
+              className="p-4 md:p-5 bg-paper max-w-[1400px] mx-auto w-full space-y-4"
             >
                {selectedAgentId !== 'default-agent' && (
                  <SupervisedAgentTuner agentId={selectedAgentId} />
@@ -577,7 +577,7 @@ export default function AgentTraining() {
                   <motion.div 
                     initial={{ opacity: 0 }}
                     whileInView={{ opacity: 1 }}
-                    className="space-y-16 mt-32 pt-32 border-t-8 border-ink border-dashed"
+                    className="space-y-4 mt-32 pt-32 border-t-8 border-ink border-dashed"
                   >
                      <header className="pb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div className="flex items-center gap-8">

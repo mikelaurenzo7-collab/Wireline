@@ -89,7 +89,7 @@ export default function FleetTaskBridge() {
   };
 
   return (
-    <div className="flex flex-col space-y-12 md:space-y-20 pb-40 max-w-[1700px] mx-auto w-full p-8 md:p-12 lg:p-16">
+    <div className="flex flex-col space-y-3 w-full">
       <header className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-10 border-b-8 border-ink pb-12">
         <div className="space-y-6">
           <div className="flex items-center gap-4">
@@ -155,7 +155,7 @@ export default function FleetTaskBridge() {
                   animate={{ opacity: 1, y: 0 }}
                   key={task.id} 
                   className={cn(
-                    "bg-white brutal-border border-8 p-10 md:p-14 transition-all relative overflow-hidden group",
+                    "bg-white brutal-border border-8 p-4 md:p-5 transition-all relative overflow-hidden group",
                     task.status === 'completed' ? "bg-zinc-50 border-zinc-100 opacity-60 grayscale shadow-none" : "",
                     task.priority === 'high' && task.status !== 'completed' && "border-rose-500 "
                   )}

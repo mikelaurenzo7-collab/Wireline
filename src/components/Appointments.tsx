@@ -22,7 +22,7 @@ export default function AppointmentsView() {
   }, []);
 
   return (
-    <div className="flex flex-col space-y-12 md:space-y-20 pb-40 max-w-[1700px] mx-auto w-full p-8 md:p-12 lg:p-16">
+    <div className="h-full overflow-y-auto scrollbar-hide flex flex-col space-y-5 md:space-y-6 max-w-[1700px] mx-auto w-full">
       <header className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-10 border-b-8 border-ink pb-12">
         <div className="space-y-6">
           <div className="flex items-center gap-4">
@@ -91,7 +91,7 @@ export default function AppointmentsView() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     key={appt.id || idx} 
-                    className="p-10 md:p-14 hover:bg-white transition-all flex flex-col xl:flex-row items-start xl:items-center justify-between gap-12 group last:border-b-0"
+                    className="p-4 md:p-5 hover:bg-white transition-all flex flex-col xl:flex-row items-start xl:items-center justify-between gap-12 group last:border-b-0"
                   >
                     
                     <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-12 w-full">

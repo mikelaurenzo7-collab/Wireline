@@ -222,7 +222,7 @@ export default function KnowledgeBaseManager() {
   };
 
   return (
-    <div className="min-h-full w-full max-w-[1700px] mx-auto space-y-10 pb-32">
+    <div className="h-full overflow-y-auto scrollbar-hide w-full max-w-[1700px] mx-auto space-y-4">
       <motion.header
         initial={{ y: -16, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -242,7 +242,7 @@ export default function KnowledgeBaseManager() {
           </div>
           <div className="space-y-2">
             <p className="text-[10px] uppercase tracking-[0.6em] text-muted">Cross-Agent Intelligence</p>
-            <h1 className="font-display italic text-6xl md:text-7xl lg:text-[7rem] leading-[0.9] tracking-tight">
+            <h1 className="font-display italic text-3xl md:text-4xl leading-[0.95] tracking-tight">
               <span className="text-aurora">Knowledge</span>{" "}
               <span className="text-ink/90">Atlas</span>
             </h1>

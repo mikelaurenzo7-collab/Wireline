@@ -194,7 +194,7 @@ export default function OutboundDialer() {
   };
 
   return (
-    <div className="flex flex-col space-y-12 md:space-y-20 pb-40 max-w-[1600px] mx-auto w-full p-8 md:p-12 lg:p-16">
+    <div className="h-full overflow-y-auto scrollbar-hide flex flex-col space-y-5 md:space-y-6 max-w-[1700px] mx-auto w-full">
       <header className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-10 border-b-8 border-ink pb-12">
         <div className="space-y-6">
           <div className="flex items-center gap-4">
@@ -243,7 +243,7 @@ export default function OutboundDialer() {
                     {mode === 'single' && <Activity className="w-6 h-6 text-brand" />}
                  </div>
 
-                 <div className="p-10 md:p-14 space-y-10">
+                 <div className="p-4 md:p-5 space-y-10">
                    <div className="space-y-4">
                      <label className="text-[10px] font-black text-muted uppercase tracking-[0.4em] block italic ml-1">DEPLOY_MISSION_AGENT</label>
                      <div className="relative">
@@ -363,7 +363,7 @@ export default function OutboundDialer() {
           <div className="xl:col-span-7">
              <div className="bg-white brutal-border border-8 overflow-hidden min-h-[800px] flex flex-col relative animate-in fade-in slide-in-from-right-10 duration-700">
                 <div className="absolute inset-0 bg-ink/5 -skew-x-12 translate-x-[50%] pointer-events-none" />
-                <div className="p-10 md:p-14 border-b-8 border-ink bg-zinc-950 flex flex-col md:flex-row justify-between items-center gap-8 shrink-0 relative z-10 overflow-hidden">
+                <div className="p-4 md:p-5 border-b-8 border-ink bg-zinc-950 flex flex-col md:flex-row justify-between items-center gap-8 shrink-0 relative z-10 overflow-hidden">
                   <div className="absolute top-0 right-0 p-8 opacity-10">
                      <Radar className="w-32 h-32 text-brand animate-spin" style={{ animationDuration: '10s' }} />
                   </div>
@@ -412,7 +412,7 @@ export default function OutboundDialer() {
                           animate={{ opacity: 1, y: 0 }}
                           key={lead.id || idx} 
                           className={cn(
-                            "p-10 md:p-14 flex flex-col sm:flex-row gap-10 transition-all justify-between items-center group", 
+                            "p-4 md:p-5 flex flex-col sm:flex-row gap-10 transition-all justify-between items-center group", 
                             lead.status === 'Queued' ? 'bg-brand/5' : 'hover:bg-zinc-50'
                           )}
                         >

@@ -99,7 +99,7 @@ export default function Integrations() {
   const [showTechnical, setShowTechnical] = useState(false);
 
   return (
-    <div className="flex flex-col space-y-12 md:space-y-20 pb-40 max-w-[1700px] mx-auto w-full p-8 md:p-12 lg:p-16">
+    <div className="h-full overflow-y-auto scrollbar-hide flex flex-col space-y-5 md:space-y-6 max-w-[1700px] mx-auto w-full">
       <header className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-10 border-b-8 border-ink pb-12">
         <div className="space-y-6">
           <div className="flex items-center gap-4">
@@ -131,7 +131,7 @@ export default function Integrations() {
       </header>
 
       <div className="bg-white brutal-border border-8 !p-0 overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-700">
-        <div className="p-10 md:p-14 border-b-8 border-ink flex flex-col md:flex-row justify-between items-center bg-brand gap-10 relative overflow-hidden group">
+        <div className="p-4 md:p-5 border-b-8 border-ink flex flex-col md:flex-row justify-between items-center bg-brand gap-10 relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-10 opacity-10 pointer-events-none group-hover:scale-110 transition-transform">
              <Mail className="w-48 h-48 text-zinc-950" />
           </div>
@@ -177,7 +177,7 @@ export default function Integrations() {
                   initial={{ opacity: 0, scale: 0.98 }}
                   animate={{ opacity: 1, scale: 1 }}
                   key={acc.id} 
-                  className="p-10 md:p-14 flex flex-col xl:flex-row items-center justify-between gap-12 group hover:bg-white transition-all border-b-8 border-ink last:border-b-0"
+                  className="p-4 md:p-5 flex flex-col xl:flex-row items-center justify-between gap-12 group hover:bg-white transition-all border-b-8 border-ink last:border-b-0"
                 >
                   <div className="flex items-center gap-10">
                     <div className="w-20 h-20 md:w-24 md:h-24 bg-zinc-950 brutal-border border-4 flex items-center justify-center group-hover:shadow-none transition-all shrink-0">
@@ -251,12 +251,12 @@ export default function Integrations() {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="mt-12 bg-zinc-950 brutal-border border-8 border-ink p-12 md:p-16 text-white relative overflow-hidden"
+              className="mt-12 bg-zinc-950 brutal-border border-8 border-ink p-4 md:p-5 text-white relative overflow-hidden"
             >
                <div className="absolute top-0 right-0 p-16 opacity-10 pointer-events-none">
                   <Terminal className="w-64 h-64 text-brand" />
                </div>
-               <div className="relative z-10 space-y-16">
+               <div className="relative z-10 space-y-4">
                  <div className="flex items-center gap-8">
                     <div className="w-20 h-20 bg-brand/10 border-4 border-brand/20 flex items-center justify-center brutal-border shadow-none">
                       <Webhook className="w-10 h-10 text-brand" />
