@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Mail, CheckCircle2, AlertCircle, Plus, Trash2, Webhook, Loader2, Bot, ChevronDown, Activity, Terminal, Shield, Zap, Target, Signal, Globe, Cpu, RotateCw, Command, X } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { Mail, CheckCircle2, AlertCircle, Trash2, Loader2, Bot, ChevronDown, Shield, Globe, RotateCw, Command } from "lucide-react";
+import { motion } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 
@@ -36,35 +36,7 @@ export default function Integrations() {
       setLoading(false);
     };
     init();
-
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data?.type === 'OAUTH_AUTH_SUCCESS') {
-        fetchAccounts();
-      }
-    };
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
   }, []);
-
-  const handleConnectGmail = async () => {
-    try {
-      const res = await authFetch('/api/oauth/google/url');
-      const { url } = await res.json();
-      
-      const authWindow = window.open(
-        url,
-        'oauth_popup',
-        'width=600,height=700'
-      );
-
-      if (!authWindow) {
-         alert('PROTOCOL_ERROR: BLOCK_POPUP_DETECTED. PERMISSION_REENTRY_REQUIRED.');
-      }
-    } catch (e) {
-      console.error(e);
-      alert('INITIALIZATION_FAILURE. CHECK_OAUTH_HEURISTICS.');
-    }
-  };
 
   const handleDisconnect = async (id: string) => {
     if (!confirm('TERMINATE_DATA_THREAD: ARE_YOU_SURE?')) return;
@@ -92,11 +64,9 @@ export default function Integrations() {
   const syncAll = async () => {
      try {
        await authFetch('/api/emails/sync', { method: 'POST' });
-       alert("GLOBAL_FLEET_SYNC_PROTOCOL_INITIATED.");
      } catch(e) {}
   };
 
-  const [showTechnical, setShowTechnical] = useState(false);
 
   return (
     <div className="flex flex-col space-y-12 md:space-y-20 pb-40 max-w-[1700px] mx-auto w-full p-8 md:p-12 lg:p-16">
@@ -140,15 +110,12 @@ export default function Integrations() {
               <Mail className="w-10 h-10 md:w-16 md:h-16 shrink-0" />
               EMAIL_CARRIER_LINK
             </h2>
-            <p className="text-ink font-black text-[10px] md:text-xs uppercase tracking-[0.3em] mt-6 opacity-60 max-w-xl italic">ESTABLISH_AUTH_BRIDGE_WITH_GOOGLE_WORKSPACE_FOR_NODAL_EMAIL_EXTRACTION_AND_RELAY_INJECTION.</p>
+            <p className="text-ink font-black text-[10px] md:text-xs uppercase tracking-[0.3em] mt-6 opacity-60 max-w-xl italic">EMAIL_INTEGRATION_REQUIRES_SMTP_CONFIGURATION. CONNECT_VIA_ENVIRONMENT_VARIABLES.</p>
           </div>
-          <button 
-            onClick={handleConnectGmail}
-            className="w-full md:w-auto brutal-btn !bg-white !text-ink !px-12 !py-6 hover:!bg-zinc-950 hover:!text-brand transition-all flex items-center justify-center gap-6 hover:shadow-none border-4"
-          >
-            <Plus className="w-8 h-8" />
-            <span className="font-black uppercase tracking-[0.3em] text-sm italic">LINK_EXTERNAL_ACCOUNT</span>
-          </button>
+          <div className="w-full md:w-auto brutal-btn !bg-zinc-900 !text-zinc-500 !px-12 !py-6 flex items-center justify-center gap-6 border-4 cursor-not-allowed opacity-60">
+            <AlertCircle className="w-8 h-8" />
+            <span className="font-black uppercase tracking-[0.3em] text-sm italic">NOT_CONFIGURED</span>
+          </div>
         </div>
         
         <div className="bg-paper flex flex-col min-h-[400px]">
@@ -233,78 +200,6 @@ export default function Integrations() {
         </div>
       </div>
       
-      {/* Hidden Technical Section */}
-      <footer className="pt-24 border-t-8 border-ink border-dashed">
-        <button 
-          onClick={() => setShowTechnical(!showTechnical)}
-          className="text-xs font-black text-muted uppercase tracking-[0.6em] hover:text-ink transition-all flex items-center gap-6 group italic"
-        >
-          <div className={cn("w-10 h-10 brutal-border border-4 flex items-center justify-center transition-all", showTechnical ? "bg-ink text-brand" : "bg-white text-muted group-hover:bg-brand group-hover:text-ink")}>
-            {showTechnical ? <X className="w-5 h-5" /> : <ChevronDown className="w-5 h-5 group-hover:translate-y-1" />}
-          </div>
-          {showTechnical ? "CLOSE_OPERATIONAL_DEBUG_CONSOLE" : "OPEN_OPERATIONAL_DEBUG_CONSOLE"}
-        </button>
-
-        <AnimatePresence>
-          {showTechnical && (
-            <motion.div 
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="mt-12 bg-zinc-950 brutal-border border-8 border-ink p-12 md:p-16 text-white relative overflow-hidden"
-            >
-               <div className="absolute top-0 right-0 p-16 opacity-10 pointer-events-none">
-                  <Terminal className="w-64 h-64 text-brand" />
-               </div>
-               <div className="relative z-10 space-y-16">
-                 <div className="flex items-center gap-8">
-                    <div className="w-20 h-20 bg-brand/10 border-4 border-brand/20 flex items-center justify-center brutal-border shadow-none">
-                      <Webhook className="w-10 h-10 text-brand" />
-                    </div>
-                    <div>
-                       <h3 className="text-4xl md:text-6xl font-black uppercase tracking-tighter italic font-display leading-none">OAUTH_CORE</h3>
-                       <p className="text-[11px] text-zinc-500 font-black uppercase tracking-[0.5em] mt-3 italic">API_CALLBACK_HEURISTICS</p>
-                    </div>
-                 </div>
-                 
-                 <div className="space-y-10">
-                   <p className="text-zinc-400 text-sm font-black uppercase tracking-widest leading-loose max-w-4xl italic border-l-4 border-brand pl-8">
-                      ENSURE_THIS_REDIRECT_VECTOR_IS_WHITELISTED_IN_YOUR_GOOGLE_CLOUD_IDENTITY_PLATFORM_CONSOLE_TO_ALLOW_OAUTH_FLOW_COMPLETION.
-                   </p>
-                   <div className="bg-white/5 p-10 brutal-border border-4 border-white/10 flex flex-col md:flex-row items-center justify-between gap-12 group hover:bg-white/10 transition-all">
-                      <div className="space-y-4 flex-1 w-full">
-                        <div className="text-[10px] font-black text-brand uppercase tracking-[0.5em] italic flex items-center gap-4">
-                           <Signal className="w-4 h-4 animate-pulse" /> RELAY_OAUTH_REENTRY_URL
-                        </div>
-                        <code className="text-white font-mono text-xl md:text-2xl select-all break-all block shadow-none bg-transparent outline-none">
-                          {window.location.origin}/api/oauth/google/callback
-                        </code>
-                      </div>
-                      <div className="h-20 px-10 bg-brand text-ink text-[11px] font-black uppercase tracking-[0.4em] brutal-border border-4 shadow-none italic shrink-0 flex items-center justify-center">
-                        WHITELIST_MANDATORY
-                      </div>
-                   </div>
-                 </div>
-                 
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                    <div className="p-8 bg-white/5 brutal-border border-2 border-white/10">
-                       <h4 className="text-[9px] font-black text-brand uppercase tracking-[0.4em] mb-4">TOKEN_ENCRYPTION</h4>
-                       <p className="text-[10px] text-zinc-500 font-bold uppercase leading-relaxed">AES-256-GCM ARCHITECTURE ENFORCED ON ALL BEARER TOKENS.</p>
-                    </div>
-                    <div className="p-8 bg-white/5 brutal-border border-2 border-white/10">
-                       <h4 className="text-[9px] font-black text-brand uppercase tracking-[0.4em] mb-4">ROTATION_POLICY</h4>
-                       <p className="text-[10px] text-zinc-500 font-bold uppercase leading-relaxed">AUTOMATIC REFRESH TOKEN ROTATION EVERY 3600S.</p>
-                    </div>
-                    <div className="p-8 bg-white/5 brutal-border border-2 border-white/10">
-                       <h4 className="text-[9px] font-black text-brand uppercase tracking-[0.4em] mb-4">SCOPES_GRANTED</h4>
-                       <p className="text-[10px] text-zinc-500 font-bold uppercase leading-relaxed">GMAIL.READ, GMAIL.SEND, GMAIL.MODIFY (MINIMAL_SURFACE).</p>
-                    </div>
-                 </div>
-               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </footer>
     </div>
   );
 }

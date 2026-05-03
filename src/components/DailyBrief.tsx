@@ -249,8 +249,6 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
   const [recipient, setRecipient] = useState("");
   const [lastSentAt, setLastSentAt] = useState<string | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
-  const [gmailConnected, setGmailConnected] = useState(false);
-  const [gmailAddress, setGmailAddress] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [sending, setSending] = useState(false);
   const [feedback, setFeedback] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
@@ -266,8 +264,6 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
         setRecipient(d.settings.recipient || "");
         setLastSentAt(d.settings.last_sent_at);
         setLastError(d.settings.last_error);
-        setGmailConnected(!!d.gmail_connected);
-        setGmailAddress(d.gmail_address);
       }
     } finally { setLoading(false); }
   };
@@ -318,36 +314,26 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
         <div className="flex items-center gap-2 text-muted text-xs"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…</div>
       ) : (
         <>
-          {!gmailConnected && (
-            <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2 text-amber-400 text-xs flex items-center gap-2">
-              <AlertTriangle className="w-3.5 h-3.5" />
-              Connect a Gmail account in <Link to="/integrations" className="underline">Carrier Bridge</Link> first — emails are sent through your own Gmail OAuth.
-            </div>
-          )}
-
           <button
             type="button"
             onClick={() => setEnabled(e => !e)}
-            disabled={!gmailConnected}
             className={cn(
               "w-full px-4 py-3 rounded-xl border flex items-start gap-3 text-left transition-all",
-              !gmailConnected
-                ? "bg-black/20 border-white/5 text-muted/50 cursor-not-allowed"
-                : enabled
-                  ? "bg-brand-2/15 border-brand-2/40 text-brand-2"
-                  : "bg-black/30 border-white/10 text-ink/80 hover:border-white/20",
+              enabled
+                ? "bg-brand-2/15 border-brand-2/40 text-brand-2"
+                : "bg-black/30 border-white/10 text-ink/80 hover:border-white/20",
             )}
           >
             <div className={cn(
               "shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center mt-0.5",
-              enabled && gmailConnected ? "bg-brand-2 border-brand-2 text-paper" : "border-white/30",
+              enabled ? "bg-brand-2 border-brand-2 text-paper" : "border-white/30",
             )}>
-              {enabled && gmailConnected && <Check className="w-2.5 h-2.5" strokeWidth={4} />}
+              {enabled && <Check className="w-2.5 h-2.5" strokeWidth={4} />}
             </div>
             <div className="min-w-0">
               <div className="text-xs font-medium">Send the daily brief by email at the time below (UTC)</div>
               <div className="text-[10px] leading-snug mt-0.5 text-ink/55">
-                Background scheduler ticks every 5 minutes. Emails are sent through {gmailAddress ? <span className="font-mono text-ink/75">{gmailAddress}</span> : "your connected Gmail account"}.
+                Background scheduler ticks every 5 minutes. Enter a recipient address below to receive the brief.
               </div>
             </div>
           </button>
@@ -394,7 +380,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
           <div className="flex items-center justify-between gap-3 flex-wrap pt-1">
             <button
               onClick={sendNow}
-              disabled={sending || !gmailConnected || !recipient}
+              disabled={sending || !recipient}
               className="h-10 px-4 rounded-lg glass border border-brand-2/30 text-brand-2 hover:bg-brand-2/10 text-[11px] uppercase tracking-[0.25em] flex items-center gap-2 disabled:opacity-50"
             >
               {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}

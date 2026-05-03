@@ -1396,65 +1396,12 @@ app.post("/api/vapi-webhook", async (req, res) => {
 
            if (taskError) throw taskError;
 
-           const oauth2Client = getGoogleOAuthClient(req);
-           oauth2Client.setCredentials({
-             access_token: account.access_token,
-             refresh_token: account.refresh_token,
-             expiry_date: account.expires_at
-           });
-
-           const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
-           const messageParts = [
-             `To: ${to_email}`,
-             `Subject: ${subject}`,
-             'Content-Type: text/plain; charset=utf-8',
-             '',
-             body
-           ];
-           const encodedMessage = Buffer.from(messageParts.join('\n')).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-           
-           const gmailRes = await gmail.users.messages.send({
-             userId: 'me',
-             requestBody: { raw: encodedMessage }
-           });
-
-           // OMNICHANNEL SYNC: Log the phone-originated email to the hub
-           try {
-              const googleThreadId = gmailRes.data.threadId;
-              let { data: thread } = await db.from('wireline_email_threads').select('*').eq('thread_id', googleThreadId).single();
-              
-              if (!thread) {
-                 const { data: newThread } = await db.from('wireline_email_threads').insert({
-                   account_id: account.id,
-                   thread_id: googleThreadId,
-                   customer_email: to_email,
-                   subject: subject,
-                   status: 'open',
-                   summary: `Phone Follow-up: ${to_email}`
-                 }).select('*').single();
-                 thread = newThread;
-              }
-
-              await db.from('wireline_email_messages').insert({
-                 thread_id: thread.id,
-                 google_message_id: gmailRes.data.id,
-                 role: 'ai',
-                 content: body
-              });
-
-              await db.from('wireline_email_threads').update({
-                 last_message_at: new Date()
-              }).eq('id', thread.id);
-           } catch(syncErr: any) {
-              log.warn("Vapi tool: omnichannel email sync error", { agentId: webhookAgentId, error: syncErr?.message || String(syncErr) });
-           }
-
-           // Mark task as completed
-           await db.from('wireline_fleet_tasks').update({ status: 'completed' }).eq('id', task.id);
+           // Mark the fleet task as pending — email delivery requires a configured SMTP provider.
+           await db.from('wireline_fleet_tasks').update({ status: 'pending' }).eq('id', task.id);
 
            results.push({
              toolCallId: toolCall.id,
-             result: `Successfully handed off follow-up task to the AI Email Fleet. Task ID: ${task.id.split('-')[0]}. The email has been dispatched via your connected mailroom.`
+             result: `Follow-up task logged. Task ID: ${task.id.split('-')[0]}. Email delivery is not currently configured — the task is queued in Fleet HQ for manual follow-up.`
            });
          } catch (e: any) {
            log.error("Vapi tool: fleet handoff failed", { agentId: webhookAgentId, error: e?.message || String(e) });
@@ -3130,6 +3077,7 @@ app.get("/api/emails/threads/:id/messages", authenticateUser, async (req: any, r
 
 // The "AI Intelligence" Sync
 app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
+  return res.status(503).json({ error: "Gmail integration not available. Email sync requires a connected Gmail account." });
   try {
      const userId = req.user.id;
      // 1. Fetch connected accounts
@@ -3431,52 +3379,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
 });
 
 app.post("/api/emails/threads/:id/reply", authenticateUser, async (req: any, res: any) => {
-   try {
-      const { body } = req.body;
-      const { data: thread } = await db.from('wireline_email_threads').select('*, wireline_email_accounts(*)').eq('id', req.params.id).eq('user_id', req.user.id).single();
-      
-      if (!thread) throw new Error("Thread not found");
-
-      const account = thread.wireline_email_accounts;
-      const oauth2Client = getGoogleOAuthClient(req);
-      oauth2Client.setCredentials({
-         access_token: account.access_token,
-         refresh_token: account.refresh_token,
-         expiry_date: account.expires_at
-      });
-
-      const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
-      
-      // Send via Gmail
-      const messageParts = [
-        `To: ${thread.customer_email}`,
-        `Subject: Re: ${thread.subject}`,
-        'Content-Type: text/plain; charset=utf-8',
-        '',
-        body
-      ];
-      const encodedMessage = Buffer.from(messageParts.join('\n')).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-      
-      await gmail.users.messages.send({
-        userId: 'me',
-        requestBody: {
-          raw: encodedMessage,
-          threadId: thread.thread_id
-        }
-      });
-
-      // Save to DB
-      await db.from('wireline_email_messages').insert({
-         thread_id: thread.id,
-         role: 'ai',
-         content: body
-      });
-
-      res.json({ success: true });
-   } catch(e) {
-      log.error("Reply Error", { error: e?.message || String(e) });
-      res.status(500).json({ error: String(e) });
-   }
+  return res.status(503).json({ error: "Gmail integration not available. Email reply requires a connected Gmail account." });
 });
 
 app.post("/api/emails/draft", authenticateUser, async (req: any, res: any) => {
@@ -4615,16 +4518,6 @@ app.delete("/api/intake/keys/:id", authenticateUser, async (req: any, res: any) 
 //    the operator can see why if delivery is silent.
 // ──────────────────────────────────────────────────────────
 
-function buildOAuthClient() {
-  // Token refresh doesn't require an accurate redirect_uri — Google
-  // only validates redirect on the auth-code exchange. Pass APP_URL
-  // when set so any token-server callbacks have a sane URL anyway.
-  return new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    process.env.APP_URL ? `${process.env.APP_URL}/api/oauth/google/callback` : undefined,
-  );
-}
 
 function escapeHtml(s: any): string {
   return String(s ?? "")
@@ -4734,57 +4627,8 @@ function renderDailyBriefEmail(payload: any, opts: { dateLabel: string; appUrl?:
   return { subject, html, text: lines.join("\n") };
 }
 
-async function sendDailyBriefEmail(userId: string, opts?: { force?: boolean }) {
-  // Pull settings + the operator's connected Gmail account.
-  const [{ data: settings }, { data: accounts }] = await Promise.all([
-    db.from("wireline_settings").select("daily_brief_recipient, daily_brief_enabled").eq("user_id", userId).maybeSingle(),
-    db.from("wireline_email_accounts").select("access_token, refresh_token, expires_at, email_address").eq("user_id", userId).limit(1),
-  ]);
-  const recipient = settings?.daily_brief_recipient;
-  if (!recipient) throw new Error("No recipient configured (daily_brief_recipient).");
-  const account: any = accounts?.[0];
-  if (!account?.refresh_token) throw new Error("No connected Gmail account — connect one in Carrier Bridge first.");
-
-  // Compute the brief (uses the per-day cache) — may throw CLAUDE_OFFLINE.
-  const { payload } = await computeDailyBrief(userId, { force: opts?.force === true });
-  const dateLabel = new Date().toISOString().slice(0, 10);
-  const { subject, html, text } = renderDailyBriefEmail(payload, { dateLabel, appUrl: process.env.APP_URL });
-
-  const oauth2Client = buildOAuthClient();
-  oauth2Client.setCredentials({
-    access_token: account.access_token,
-    refresh_token: account.refresh_token,
-    expiry_date: account.expires_at,
-  });
-  const gmail = google.gmail({ version: "v1", auth: oauth2Client });
-
-  // Multipart/alternative — text part first, then HTML, per RFC 2046.
-  const boundary = `----wirelineboundary${Date.now().toString(36)}`;
-  const messageParts = [
-    `From: ${account.email_address || "me"}`,
-    `To: ${recipient}`,
-    `Subject: ${subject}`,
-    `MIME-Version: 1.0`,
-    `Content-Type: multipart/alternative; boundary="${boundary}"`,
-    ``,
-    `--${boundary}`,
-    `Content-Type: text/plain; charset=utf-8`,
-    `Content-Transfer-Encoding: 7bit`,
-    ``,
-    text,
-    ``,
-    `--${boundary}`,
-    `Content-Type: text/html; charset=utf-8`,
-    `Content-Transfer-Encoding: 7bit`,
-    ``,
-    html,
-    ``,
-    `--${boundary}--`,
-  ].join("\r\n");
-  const encoded = Buffer.from(messageParts).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-  await gmail.users.messages.send({ userId: "me", requestBody: { raw: encoded } });
-
-  return { recipient, subject };
+async function sendDailyBriefEmail(_userId: string, _opts?: { force?: boolean }): Promise<never> {
+  throw new Error("Email delivery is not configured. Connect an SMTP provider to enable daily brief emails.");
 }
 
 // Scheduler — every 5 minutes, find any users whose configured time
@@ -4849,8 +4693,6 @@ app.get("/api/daily-brief/settings", authenticateUser, async (req: any, res: any
     const { data } = await db.from("wireline_settings")
       .select("daily_brief_enabled, daily_brief_send_at, daily_brief_recipient, daily_brief_last_sent_at, daily_brief_last_error")
       .eq("user_id", req.user.id).maybeSingle();
-    const { data: accounts } = await db.from("wireline_email_accounts")
-      .select("email_address").eq("user_id", req.user.id).limit(1);
     res.json({
       settings: {
         enabled: !!data?.daily_brief_enabled,
@@ -4859,8 +4701,8 @@ app.get("/api/daily-brief/settings", authenticateUser, async (req: any, res: any
         last_sent_at: data?.daily_brief_last_sent_at || null,
         last_error: data?.daily_brief_last_error || null,
       },
-      gmail_connected: !!accounts?.[0]?.email_address,
-      gmail_address: accounts?.[0]?.email_address || null,
+      gmail_connected: false,
+      gmail_address: null,
     });
   } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load settings" }); }
 });
