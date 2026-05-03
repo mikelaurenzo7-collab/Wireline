@@ -1088,7 +1088,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
       Memory Protocol: If a customer context seems familiar or they mention a previous conversation, you MUST use the 'view_recent_interactions' tool to retrieve their history and provide a personalized experience.
 
       ## BLOCK 3: CONVERSATIONAL LOOP & GUARDRAILS
-      Response Length: Aim for under 20 words per response — keep it snappy and human. Use more words only when confirming complex details like an appointment or explaining a multi-step process.
+      Response Length: Keep responses conversational — aim for 20 words or fewer. Go up to 40 words only when confirming multi-step details like a full appointment (date, time, and service). Never monologue.
       The "Anti-Echo" Rule: Do not repeat back what the user just said.
       Question Limit: Never ask more than one question at a time.
       Number Formatting: Spell out important numbers if they sound robotic (e.g., "Two zero two" instead of "Two hundred and two").
@@ -1249,7 +1249,12 @@ app.post("/api/vapi-webhook", async (req, res) => {
          try {
             const customerPhone = payload.call?.customer?.number || message.call?.customer?.number || "unknown";
             
-            console.log(`[MEMORY] Fetching history for ${customerPhone}`);
+            log.debug("[MEMORY] Fetching history", { customerPhone });
+
+            // Sanitize the phone number before using it in LIKE patterns —
+            // strip any character that isn't a digit, +, -, (, ) or space so
+            // callers can't inject LIKE wildcards (% _) or control characters.
+            const safePhone = customerPhone.replace(/[^0-9+\-()\s]/g, '').slice(0, 30);
 
             // 1. Fetch last 3 call summaries
             const { data: pastCalls } = await db.from('wireline_call_logs')
@@ -1262,12 +1267,14 @@ app.post("/api/vapi-webhook", async (req, res) => {
             //    Tasks are linked by description (which includes the phone) or by the
             //    customer_info JSONB phone field — not by email, since we only have a
             //    phone number here.
-            const { data: tasks } = await db.from('wireline_fleet_tasks')
-               .select('description, status, priority')
-               .eq('user_id', agent?.user_id)
-               .or(`description.ilike.%${customerPhone}%,customer_info->>phone.ilike.%${customerPhone}%`)
-               .eq('status', 'pending')
-               .limit(2);
+            const { data: tasks } = safePhone
+               ? await db.from('wireline_fleet_tasks')
+                  .select('description, status, priority')
+                  .eq('user_id', agent?.user_id)
+                  .or(`description.ilike.%${safePhone}%,customer_info->>phone.ilike.%${safePhone}%`)
+                  .eq('status', 'pending')
+                  .limit(2)
+               : { data: [] };
 
             let contextReport = `RECENT CONTEXT FOR ${customerPhone}:\n`;
             if (pastCalls && pastCalls.length > 0) {
@@ -1296,10 +1303,15 @@ app.post("/api/vapi-webhook", async (req, res) => {
       if (toolCall.function.name === "check_calendar_availability") {
          try {
             const { date } = toolCall.function.arguments;
+            // Sanitize the date string so LIKE wildcards (% _) from the LLM
+            // cannot manipulate the query pattern. Keep only characters that
+            // appear in natural date expressions (letters, digits, spaces,
+            // commas, slashes, hyphens, periods).
+            const safeDate = String(date || '').replace(/[^A-Za-z0-9 ,\/\-\.]/g, '').slice(0, 60);
             // Scope to this agent's bookings so cross-operator calendar isolation is preserved.
             const { data, error } = await db.from('wireline_appointments')
               .select('time, service_type')
-              .ilike('date', `%${date}%`)
+              .ilike('date', `%${safeDate}%`)
               .eq('user_id', agent?.user_id);
             
             if (error) throw error;
@@ -1308,12 +1320,12 @@ app.post("/api/vapi-webhook", async (req, res) => {
                const bookedTimes = data.map(appt => appt.time).join(", ");
                results.push({
                  toolCallId: toolCall.id,
-                 result: `The following times are already booked on ${date}: ${bookedTimes}. Please tell the customer these times are unavailable and offer them any other time.`
+                 result: `The following times are already booked on ${safeDate}: ${bookedTimes}. Please tell the customer these times are unavailable and offer them any other time.`
                });
             } else {
                results.push({
                  toolCallId: toolCall.id,
-                 result: `The entire day on ${date} is completely open. You can offer them any time during normal business hours.`
+                 result: `The entire day on ${safeDate} is completely open. You can offer them any time during normal business hours.`
                });
             }
          } catch (e) {
