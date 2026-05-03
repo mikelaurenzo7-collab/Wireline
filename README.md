@@ -154,8 +154,10 @@ curl -X POST $WIRELINE_URL/api/intake/lead \
 
 ### Knowledge base
 - `GET    /api/knowledge` — every fact across every agent + agent metadata, for the cross-agent Knowledge Atlas view.
+- `POST   /api/knowledge` — `{ agent_id, content }`. Adds a fact directly from the Atlas without going through Neural Atelier.
 - `PATCH  /api/knowledge/:id` — edit content (RLS scoped to owner).
 - `DELETE /api/knowledge/:id` — permanent delete.
+- `POST   /api/claude/knowledge-dedupe` — Claude pass over the operator's whole knowledge base (≤ 400 facts). Returns clusters of duplicates / near-duplicates / contradictions with a `recommended_keep_id` per cluster. Auto-instrumented via `withAudit` so the cost shows up in AI Spend.
 
 ### Scheduled Daily Brief email
 Claude's morning brief sent to your inbox at a chosen UTC time, via your connected Gmail account (no extra dependency).

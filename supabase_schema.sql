@@ -442,6 +442,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS wireline_outbound_leads_user_idem_idx
     ON wireline_outbound_leads(user_id, idempotency_key)
     WHERE idempotency_key IS NOT NULL;
 
+-- Knowledge timestamp — Knowledge Atlas sorts/displays by this column
+-- and the dedupe pass uses it to break ties. Idempotent so existing
+-- installs backfill on re-run.
+ALTER TABLE wireline_knowledge ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+
 -- Agent role — the business function this agent performs.
 -- Distinct from archetype (communication style). Roles drive default
 -- personality templates and surface role-specific UI affordances.

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   BookOpen, Search, Loader2, Filter, Save, Trash2, X, Check, Pencil,
   Database, Users, AlertOctagon, RefreshCw, FileText, Sparkles,
+  Plus, Brain, Copy, AlertTriangle, GitMerge, ChevronDown,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
@@ -22,6 +23,14 @@ interface AgentRef {
   archetype: string | null;
 }
 
+interface DedupeCluster {
+  kind: "duplicate" | "near_duplicate" | "contradiction";
+  reason: string;
+  recommended_keep_id: number;
+  suggested_canonical_content?: string;
+  members: Array<{ id: number; note?: string }>;
+}
+
 export default function KnowledgeBaseManager() {
   const [rows, setRows] = useState<KnowledgeRow[]>([]);
   const [agents, setAgents] = useState<AgentRef[]>([]);
@@ -34,6 +43,18 @@ export default function KnowledgeBaseManager() {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Add-fact form state
+  const [showAdd, setShowAdd] = useState(false);
+  const [addAgent, setAddAgent] = useState("");
+  const [addContent, setAddContent] = useState("");
+  const [adding, setAdding] = useState(false);
+
+  // Dedupe state
+  const [deduping, setDeduping] = useState(false);
+  const [clusters, setClusters] = useState<DedupeCluster[] | null>(null);
+  const [clusterDecisions, setClusterDecisions] = useState<Map<number, number>>(new Map());
+  const [applying, setApplying] = useState(false);
 
   const refresh = async () => {
     setLoading(true);
@@ -132,6 +153,74 @@ export default function KnowledgeBaseManager() {
     } finally { setBulkBusy(false); }
   };
 
+  const addFact = async () => {
+    const content = addContent.trim();
+    if (!content || !addAgent) return;
+    setAdding(true); setError(null);
+    try {
+      const r = await authFetch("/api/knowledge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agent_id: addAgent, content }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || "Add failed");
+      setRows(prev => [d.knowledge, ...prev]);
+      setAddContent("");
+    } catch (e: any) {
+      setError(e?.message || "Add failed");
+    } finally { setAdding(false); }
+  };
+
+  const runDedupe = async () => {
+    setDeduping(true); setError(null);
+    setClusters(null);
+    setClusterDecisions(new Map());
+    try {
+      const r = await authFetch("/api/claude/knowledge-dedupe", { method: "POST" });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || "Dedupe failed");
+      const found: DedupeCluster[] = d.clusters || [];
+      setClusters(found);
+      // Default each cluster's "keep" to Claude's recommendation.
+      const m = new Map<number, number>();
+      found.forEach((c, i) => m.set(i, c.recommended_keep_id));
+      setClusterDecisions(m);
+    } catch (e: any) {
+      setError(e?.message || "Dedupe failed");
+    } finally { setDeduping(false); }
+  };
+
+  const applyClusterDecisions = async () => {
+    if (!clusters || clusters.length === 0) return;
+    setApplying(true); setError(null);
+    try {
+      const toDelete: number[] = [];
+      for (let i = 0; i < clusters.length; i++) {
+        const c = clusters[i];
+        const keepId = clusterDecisions.get(i);
+        // Skip clusters where the operator chose "skip" (no keep id set).
+        if (!keepId) continue;
+        for (const m of c.members) {
+          if (m.id !== keepId) toDelete.push(m.id);
+        }
+      }
+      if (toDelete.length === 0) {
+        setClusters(null);
+        return;
+      }
+      // De-dupe the deletion list (a single id can't be in two clusters
+      // per the schema, but be defensive).
+      const uniq = Array.from(new Set(toDelete));
+      await Promise.all(uniq.map(id => authFetch(`/api/knowledge/${id}`, { method: "DELETE" })));
+      setRows(prev => prev.filter(p => !uniq.includes(p.id)));
+      setClusters(null);
+      setClusterDecisions(new Map());
+    } catch (e: any) {
+      setError(e?.message || "Apply failed");
+    } finally { setApplying(false); }
+  };
+
   return (
     <div className="min-h-full w-full max-w-[1700px] mx-auto space-y-10 pb-32">
       <motion.header
@@ -162,7 +251,27 @@ export default function KnowledgeBaseManager() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => setShowAdd(s => !s)}
+            className={cn(
+              "px-4 py-2.5 rounded-full text-[11px] uppercase tracking-[0.3em] transition-all flex items-center gap-2",
+              showAdd
+                ? "bg-brand text-paper"
+                : "glass border border-white/10 text-muted hover:text-brand hover:border-brand/40",
+            )}
+          >
+            {showAdd ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+            {showAdd ? "Cancel" : "Add Fact"}
+          </button>
+          <button
+            onClick={runDedupe}
+            disabled={deduping || rows.length < 2}
+            className="px-4 py-2.5 rounded-full text-[11px] uppercase tracking-[0.3em] bg-brand-2/15 border border-brand-2/40 text-brand-2 hover:bg-brand-2/25 transition-all flex items-center gap-2 disabled:opacity-40"
+          >
+            {deduping ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Brain className="w-3.5 h-3.5" />}
+            {deduping ? "Scanning…" : "Find Duplicates"}
+          </button>
           <button
             onClick={refresh}
             disabled={loading}
@@ -173,6 +282,70 @@ export default function KnowledgeBaseManager() {
           </button>
         </div>
       </motion.header>
+
+      {/* Add-fact form */}
+      <AnimatePresence>
+        {showAdd && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="rounded-2xl glass border border-white/10 p-5 space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-[260px,1fr,auto] gap-3 items-start">
+                <label className="space-y-1.5">
+                  <span className="text-[10px] uppercase tracking-[0.3em] text-muted">Agent</span>
+                  <select
+                    value={addAgent}
+                    onChange={(e) => setAddAgent(e.target.value)}
+                    className="w-full h-11 px-3 rounded-xl bg-black/40 border border-white/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
+                  >
+                    <option value="">— Pick an agent —</option>
+                    {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                  </select>
+                </label>
+                <label className="space-y-1.5">
+                  <span className="text-[10px] uppercase tracking-[0.3em] text-muted">Content</span>
+                  <textarea
+                    value={addContent}
+                    onChange={(e) => setAddContent(e.target.value)}
+                    rows={3}
+                    placeholder="One atomic fact the agent should know — e.g. &quot;We open at 9 AM Monday–Friday and 10 AM on weekends.&quot;"
+                    className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 outline-none text-ink text-sm focus:border-brand/60 transition-all resize-y"
+                  />
+                </label>
+                <button
+                  onClick={addFact}
+                  disabled={adding || !addContent.trim() || !addAgent}
+                  className="h-11 px-5 rounded-xl bg-brand text-paper text-[11px] uppercase tracking-[0.25em] flex items-center gap-2 disabled:opacity-50 hover:opacity-90 self-end"
+                >
+                  {adding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  Save
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Dedupe review panel */}
+      <AnimatePresence>
+        {clusters && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <DedupePanel
+              clusters={clusters}
+              decisions={clusterDecisions}
+              setDecisions={setClusterDecisions}
+              rows={rows}
+              applying={applying}
+              onApply={applyClusterDecisions}
+              onClose={() => { setClusters(null); setClusterDecisions(new Map()); }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Filter strip */}
       <div className="flex flex-wrap items-center gap-3">
@@ -404,6 +577,183 @@ export default function KnowledgeBaseManager() {
           <div className="px-6 py-3 border-t border-white/5 text-[10px] uppercase tracking-[0.3em] text-muted/60 bg-black/10 flex items-center gap-2">
             <FileText className="w-3 h-3" />
             Edits apply to live agent calls immediately. Deletions are permanent.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DedupePanel({
+  clusters, decisions, setDecisions, rows, applying, onApply, onClose,
+}: {
+  clusters: DedupeCluster[];
+  decisions: Map<number, number>;
+  setDecisions: (m: Map<number, number>) => void;
+  rows: KnowledgeRow[];
+  applying: boolean;
+  onApply: () => void;
+  onClose: () => void;
+}) {
+  const factById = useMemo(() => {
+    const m = new Map<number, KnowledgeRow>();
+    rows.forEach(r => m.set(r.id, r));
+    return m;
+  }, [rows]);
+
+  if (clusters.length === 0) {
+    return (
+      <div className="rounded-3xl bg-emerald-500/10 border border-emerald-500/30 p-8 text-center space-y-3">
+        <Sparkles className="w-8 h-8 mx-auto text-emerald-400" />
+        <p className="text-emerald-400 text-sm">Knowledge base looks clean — no near-duplicates or contradictions found.</p>
+        <button onClick={onClose} className="px-5 h-10 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.3em] text-ink/70">
+          Dismiss
+        </button>
+      </div>
+    );
+  }
+
+  const setKeep = (clusterIdx: number, keepId: number | null) => {
+    const next = new Map(decisions);
+    if (keepId === null) next.delete(clusterIdx);
+    else next.set(clusterIdx, keepId);
+    setDecisions(next);
+  };
+
+  const totalToDelete = clusters.reduce((s, c, i) => {
+    const keep = decisions.get(i);
+    if (!keep) return s;
+    return s + c.members.filter(m => m.id !== keep).length;
+  }, 0);
+
+  const kindAccent = (k: DedupeCluster["kind"]) =>
+    k === "duplicate" ? "#FF6BD9" : k === "contradiction" ? "#FFC07D" : "#7DF9FF";
+  const kindIcon = (k: DedupeCluster["kind"]) =>
+    k === "contradiction" ? AlertTriangle : k === "duplicate" ? Copy : GitMerge;
+
+  return (
+    <div className="relative aurora-ring rounded-3xl">
+      <div className="relative rounded-3xl glass-strong border border-white/10 p-6 md:p-7 space-y-5 overflow-hidden">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #C58BFF, #FF6BD9)" }}>
+              <Brain className="w-5 h-5 text-paper" />
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.4em] text-brand-2">Claude found {clusters.length} {clusters.length === 1 ? "cluster" : "clusters"}</div>
+              <div className="text-sm text-ink/70 mt-1">Pick which fact to keep in each cluster. The rest will be deleted.</div>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-9 h-9 rounded-full glass border border-white/10 hover:border-white/30 flex items-center justify-center text-ink/60 hover:text-ink">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          {clusters.map((c, idx) => {
+            const accent = kindAccent(c.kind);
+            const Icon = kindIcon(c.kind);
+            const keepId = decisions.get(idx);
+            return (
+              <div key={idx} className="rounded-2xl bg-black/20 border border-white/10 p-4 space-y-3" style={{ borderLeft: `3px solid ${accent}` }}>
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] flex items-center gap-1 border" style={{ color: accent, borderColor: `${accent}55`, background: `${accent}1A` }}>
+                      <Icon className="w-3 h-3" /> {c.kind.replace("_", " ")}
+                    </span>
+                    <span className="text-[10px] uppercase tracking-[0.25em] text-muted">{c.members.length} facts</span>
+                  </div>
+                  <button
+                    onClick={() => setKeep(idx, keepId === undefined ? c.recommended_keep_id : null)}
+                    className="text-[10px] uppercase tracking-[0.25em] text-muted hover:text-ink"
+                    title="Skip this cluster (no deletes)"
+                  >
+                    {keepId ? "Skip cluster" : "Re-enable"}
+                  </button>
+                </div>
+
+                <p className="text-xs text-ink/65 italic">{c.reason}</p>
+
+                <div className="space-y-2">
+                  {c.members.map((m) => {
+                    const fact = factById.get(m.id);
+                    const isKeep = keepId === m.id;
+                    const isRecommended = c.recommended_keep_id === m.id;
+                    return (
+                      <button
+                        key={m.id}
+                        onClick={() => setKeep(idx, m.id)}
+                        disabled={!keepId}
+                        className={cn(
+                          "w-full text-left rounded-xl border p-3 flex items-start gap-3 transition-all",
+                          !keepId
+                            ? "bg-black/10 border-white/5 opacity-50 cursor-not-allowed"
+                            : isKeep
+                              ? "bg-emerald-500/10 border-emerald-500/40"
+                              : "bg-black/30 border-white/10 hover:border-white/30",
+                        )}
+                      >
+                        <div className={cn(
+                          "shrink-0 mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center",
+                          isKeep ? "bg-emerald-500 border-emerald-500" : "border-white/30",
+                        )}>
+                          {isKeep && <Check className="w-2.5 h-2.5 text-paper" strokeWidth={4} />}
+                        </div>
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {fact && (
+                              <span className="px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] bg-brand-2/10 border border-brand-2/30 text-brand-2">
+                                {fact.agent_name}
+                              </span>
+                            )}
+                            {isRecommended && (
+                              <span className="px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center gap-1">
+                                <Sparkles className="w-2.5 h-2.5" /> Claude pick
+                              </span>
+                            )}
+                            {m.note && <span className="text-[10px] text-muted/70 italic">{m.note}</span>}
+                          </div>
+                          <p className="text-sm text-ink/85 leading-relaxed">{fact?.content || `(fact ${m.id} not found)`}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {c.suggested_canonical_content && keepId && (
+                  <div className="rounded-lg bg-amber-500/5 border border-amber-500/20 p-3 text-xs text-ink/75 leading-relaxed">
+                    <div className="text-[9px] uppercase tracking-[0.3em] text-amber-400 mb-1.5 flex items-center gap-1">
+                      <Sparkles className="w-2.5 h-2.5" /> Suggested merge
+                    </div>
+                    {c.suggested_canonical_content}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="flex items-center justify-between gap-3 pt-2 border-t border-white/10">
+          <div className="text-[11px] text-ink/60">
+            {totalToDelete > 0
+              ? <>Will delete <span className="text-rose-400 font-medium">{totalToDelete}</span> {totalToDelete === 1 ? "fact" : "facts"}, keep one per active cluster.</>
+              : "Pick which fact to keep in each cluster, or skip the cluster."}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              className="h-10 px-4 rounded-lg glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-ink/70 hover:text-ink"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onApply}
+              disabled={applying || totalToDelete === 0}
+              className="h-10 px-4 rounded-lg bg-rose-500 text-paper text-[10px] uppercase tracking-[0.25em] flex items-center gap-2 disabled:opacity-40 hover:opacity-90"
+            >
+              {applying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+              {applying ? "Applying" : `Apply (delete ${totalToDelete})`}
+            </button>
           </div>
         </div>
       </div>

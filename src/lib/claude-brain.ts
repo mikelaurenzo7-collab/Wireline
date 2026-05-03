@@ -850,6 +850,73 @@ export const TOOLS = {
     },
   } as ToolSchema,
 
+  /** Knowledge dedupe — clusters near-duplicate facts across an
+   *  operator's agents and recommends a canonical version per cluster.
+   *  Each item references the input fact's `id` so the UI / server can
+   *  apply the keep/delete decision via the existing CRUD endpoints. */
+  knowledgeDedupe: {
+    name: "cluster_knowledge_duplicates",
+    description:
+      "Find clusters of near-duplicate or contradictory knowledge facts. Use the input ids verbatim. Skip facts that have no plausible duplicates.",
+    input_schema: {
+      type: "object",
+      properties: {
+        clusters: {
+          type: "array",
+          description:
+            "Groups of 2+ facts that say the same thing or contradict each other. Don't include singletons. Don't repeat ids across clusters.",
+          items: {
+            type: "object",
+            properties: {
+              kind: {
+                type: "string",
+                enum: ["duplicate", "near_duplicate", "contradiction"],
+                description:
+                  "duplicate = essentially identical wording. near_duplicate = same fact, different phrasing. contradiction = facts disagree.",
+              },
+              reason: {
+                type: "string",
+                description: "1-sentence explanation of why these belong together.",
+              },
+              recommended_keep_id: {
+                type: "integer",
+                description:
+                  "Which fact id to keep (most accurate / clearest). MUST be one of the ids in this cluster.",
+              },
+              suggested_canonical_content: {
+                type: "string",
+                description:
+                  "Optional improved version that consolidates the cluster. Operator can choose to apply this as an edit to the kept fact.",
+              },
+              members: {
+                type: "array",
+                minItems: 2,
+                items: {
+                  type: "object",
+                  properties: {
+                    id: { type: "integer" },
+                    note: {
+                      type: "string",
+                      description:
+                        "Brief note about this specific member — e.g. 'redundant', 'older phrasing', 'contradicts the others on price'.",
+                    },
+                  },
+                  required: ["id"],
+                  additionalProperties: false,
+                },
+              },
+            },
+            required: ["kind", "reason", "recommended_keep_id", "members"],
+            additionalProperties: false,
+          },
+        },
+        total_analyzed: { type: "integer", minimum: 0 },
+      },
+      required: ["clusters", "total_analyzed"],
+      additionalProperties: false,
+    },
+  } as ToolSchema,
+
   /** Used by the URL-based knowledge ingestion path. */
   knowledgeFromUrl: {
     name: "deliver_knowledge_entries",
@@ -1832,6 +1899,55 @@ ${input.failedCalls
     user,
     tool: TOOLS.failureModes,
     deepThink: true,
+    maxTokens: 4096,
+  });
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+ *  Knowledge dedupe — find near-duplicate or contradictory facts in an
+ *  operator's cross-agent knowledge base. Returns clusters + a
+ *  recommended canonical so the UI can present a one-click keep/delete.
+ * ──────────────────────────────────────────────────────────────────── */
+
+export interface KnowledgeDedupeInput {
+  facts: Array<{
+    id: number;
+    agent_name?: string;
+    content: string;
+  }>;
+}
+
+export async function findKnowledgeDuplicates(input: KnowledgeDedupeInput) {
+  const system = `You audit an SMB operator's agent knowledge base for clutter. Cluster facts that:
+- DUPLICATE: essentially identical wording (whitespace / punctuation / capitalization differences only).
+- NEAR_DUPLICATE: same factual content with different phrasing (e.g. "Hours: 9-5" vs "We're open from 9 AM to 5 PM").
+- CONTRADICTION: claims that disagree (e.g. "Free shipping over $50" vs "Free shipping over $75").
+
+Rules:
+- Use input ids VERBATIM. Never invent ids.
+- A cluster MUST have ≥ 2 members. Skip singletons.
+- An id should appear in AT MOST one cluster.
+- Choose recommended_keep_id from the cluster's members — pick the clearest, most precise wording.
+- Provide a suggested_canonical_content that consolidates the cluster ONLY when it materially improves clarity; otherwise omit it.
+- Be conservative: when in doubt, do NOT cluster. False positives waste operator time.`;
+  const user = `${input.facts.length} facts across the operator's fleet:
+
+${input.facts.map(f => `[id=${f.id}${f.agent_name ? ` · ${f.agent_name}` : ""}] ${f.content}`).join("\n")}`;
+
+  return runStructured<{
+    clusters: Array<{
+      kind: "duplicate" | "near_duplicate" | "contradiction";
+      reason: string;
+      recommended_keep_id: number;
+      suggested_canonical_content?: string;
+      members: Array<{ id: number; note?: string }>;
+    }>;
+    total_analyzed: number;
+  }>({
+    system,
+    user,
+    tool: TOOLS.knowledgeDedupe,
+    deepThink: false,
     maxTokens: 4096,
   });
 }
