@@ -81,6 +81,18 @@ export default function StripeBillingCard() {
   }, []);
 
   const startCheckout = async (planId: string) => {
+    // Plan changes for an existing subscriber go through the Customer
+    // Portal — Stripe handles proration cleanly there and we avoid
+    // creating a second concurrent subscription. The server enforces
+    // this with a 409 ALREADY_SUBSCRIBED, but routing client-side
+    // gives a smoother UX (one redirect instead of two).
+    const hasActive = !!sub?.has_subscription &&
+      (sub.status === "active" || sub.status === "trialing" ||
+       sub.status === "past_due");
+    if (hasActive) {
+      return openPortal();
+    }
+
     setBusy(planId);
     setError(null);
     try {
@@ -90,6 +102,12 @@ export default function StripeBillingCard() {
         body: JSON.stringify({ plan_id: planId }),
       });
       const d = await r.json();
+      // Defense-in-depth: if the server still rejected (race with a
+      // checkout in another tab, etc.), bounce to the portal.
+      if (r.status === 409 && d?.code === "ALREADY_SUBSCRIBED") {
+        setBusy(null);
+        return openPortal();
+      }
       if (!r.ok || !d.url) throw new Error(d.error || "Checkout failed");
       window.location.href = d.url;
     } catch (e: any) {

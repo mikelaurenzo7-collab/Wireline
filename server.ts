@@ -5082,9 +5082,32 @@ app.post("/api/billing/checkout", authenticateUser, async (req: any, res: any) =
     const priceId = process.env[plan.priceIdEnv];
     if (!priceId) return res.status(503).json({ error: `Price for plan '${plan.id}' not configured (${plan.priceIdEnv}).` });
 
-    // Find or create the Stripe Customer for this user.
+    // Find the existing Stripe row first — we need to gate against
+    // double-subscribing AND we'll re-use the customer if present.
     const { data: existing } = await db.from("wireline_subscriptions")
-      .select("stripe_customer_id").eq("user_id", req.user.id).maybeSingle();
+      .select("stripe_customer_id, stripe_subscription_id, status, plan")
+      .eq("user_id", req.user.id).maybeSingle();
+
+    // Block creating a second concurrent subscription. Stripe permits
+    // multiple subs per customer unless we explicitly prevent it; our
+    // wireline_subscriptions row only tracks ONE stripe_subscription_id
+    // so a second checkout would silently double-charge the operator
+    // and leave the second sub orphaned in Stripe. Plan changes go
+    // through the Customer Portal (clean proration, single sub) — the
+    // UI redirects there when an active sub already exists.
+    const liveStatuses = new Set(["active", "trialing", "past_due", "incomplete", "unpaid"]);
+    if (existing?.stripe_subscription_id && liveStatuses.has(existing.status || "")) {
+      return res.status(409).json({
+        error:
+          "You already have an active subscription. Use the Customer Portal to change plans " +
+          "(this avoids creating a second concurrent subscription).",
+        code: "ALREADY_SUBSCRIBED",
+        current_plan: existing.plan,
+        current_status: existing.status,
+      });
+    }
+
+    // Find or create the Stripe Customer for this user.
     let customerId = existing?.stripe_customer_id || null;
     if (!customerId) {
       const customer = await stripe.customers.create({
