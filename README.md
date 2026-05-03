@@ -13,7 +13,7 @@ business-intelligence layer that surfaces what actually needs your attention.
 ## What it does
 
 - **Voice agents** answer your phone (via Vapi), book appointments, escalate to humans, and follow up by email — autonomously.
-- **Email agents** respond to inbound mail (via Gmail OAuth) using your knowledge base, with optional auto-respond.
+- **Email agents** respond to inbound mail using your knowledge base, with optional auto-respond.
 - **Single-pass post-call enrichment** — every completed call is scored against BANT, lessons are extracted, follow-up tasks are queued, compliance flags are surfaced, and knowledge gaps are captured for promotion.
 - **Daily Brief** — Claude reads yesterday's stats vs the 7-day baseline and writes you a morning summary (headline, mood, highlights, concerns, action items).
 - **Triage Inbox** — five tabs of "what needs your attention right now": hot leads, compliance, knowledge gaps (with one-click promote), open tasks, escalations.
@@ -82,9 +82,8 @@ npm run dev
    - `buildCommand` runs `npm run vercel-build` (Vite frontend only).
    - `api/index.ts` is the serverless entry point — Vercel compiles it automatically.
    - All `/api/*` requests route to the serverless function; everything else is served from the CDN.
-5. **Google OAuth redirect URI** — if using Gmail integration, register `https://YOUR_APP_URL/api/oauth/google/callback` in your Google Cloud Console OAuth client.
-6. **Stripe webhook endpoint** — register `https://YOUR_APP_URL/api/stripe-webhook` in the Stripe dashboard and paste the signing secret into `STRIPE_WEBHOOK_SECRET`.
-7. **Vapi server URL** — set your Vapi assistant's server URL to `https://YOUR_APP_URL/api/vapi-webhook`.
+5. **Stripe webhook endpoint** — register `https://YOUR_APP_URL/api/stripe-webhook` in the Stripe dashboard and paste the signing secret into `STRIPE_WEBHOOK_SECRET`.
+6. **Vapi server URL** — set your Vapi assistant's server URL to `https://YOUR_APP_URL/api/vapi-webhook`.
 
 ## Environment
 
@@ -102,11 +101,7 @@ GEMINI_API_KEY=                   # legacy + fallback paths
 VAPI_PRIVATE_KEY=
 VITE_VAPI_PUBLIC_KEY=
 
-# Gmail (email agent)
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-
-APP_URL=http://localhost:3000     # used for OAuth callback
+APP_URL=http://localhost:3000     # used for webhook callbacks
 ```
 
 ## Database

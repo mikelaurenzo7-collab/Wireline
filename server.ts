@@ -4,7 +4,6 @@ import path from "path";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { SchemaType } from "@google/generative-ai";
 import { createClient } from "@supabase/supabase-js";
-import { google } from "googleapis";
 import Stripe from "stripe";
 import dotenv from "dotenv";
 import { randomUUID } from "node:crypto";
@@ -228,7 +227,6 @@ app.get("/api/health", async (_req, res) => {
       gemini:    !!process.env.GEMINI_API_KEY,
       vapi:      !!process.env.VAPI_PRIVATE_KEY,
       supabase:  !!process.env.VITE_SUPABASE_URL,
-      google_oauth: !!process.env.GOOGLE_CLIENT_ID,
     },
     timestamp: new Date().toISOString(),
   });
@@ -288,77 +286,8 @@ setInterval(() => {
   }
 }, 5 * 60 * 1000).unref?.();
 
-// ────────────────────────────────────────────────────────────────────
-//  IP-based rate limit for unauthenticated OAuth initiation.
-//  Prevents a crawler from generating unlimited Google OAuth flows.
-//  10 requests per 5 minutes per IP is generous for legitimate use.
-// ────────────────────────────────────────────────────────────────────
-const oauthRateLimit = new Map<string, number[]>();
-const OAUTH_RATE_WINDOW_MS = 5 * 60_000;
-const OAUTH_RATE_MAX = 10;
-
-function oauthRateLimiter(req: any, res: any, next: any) {
-  const key = req.ip || "anon";
-  const now = Date.now();
-  const hits = (oauthRateLimit.get(key) || []).filter((t: number) => now - t < OAUTH_RATE_WINDOW_MS);
-  if (hits.length >= OAUTH_RATE_MAX) {
-    res.setHeader("Retry-After", String(Math.ceil(OAUTH_RATE_WINDOW_MS / 1000)));
-    return res.status(429).json({
-      error: "Too many OAuth requests. Please wait before trying again.",
-      code: "OAUTH_RATE_LIMIT",
-    });
-  }
-  hits.push(now);
-  oauthRateLimit.set(key, hits);
-  next();
-}
-
-setInterval(() => {
-  const cutoff = Date.now() - OAUTH_RATE_WINDOW_MS * 2;
-  for (const [k, hits] of oauthRateLimit) {
-    const fresh = hits.filter((t: number) => t > cutoff);
-    if (fresh.length === 0) oauthRateLimit.delete(k);
-    else oauthRateLimit.set(k, fresh);
-  }
-}, 10 * 60 * 1000).unref?.();
-
 // Initialize AI and DB
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-
-// Google Workspace OAuth Setup
-const SCOPES = [
-  'https://www.googleapis.com/auth/gmail.send',
-  'https://www.googleapis.com/auth/userinfo.email',
-  'https://www.googleapis.com/auth/userinfo.profile'
-];
-
-function getGoogleOAuthClient(req: express.Request) {
-   // OAuth redirect URI MUST match what's registered in Google Cloud
-   // Console exactly. Prefer APP_URL (operator-controlled) over the
-   // request Host header (attacker-controlled). When APP_URL isn't
-   // set we fall back to the request host but only allow it if it
-   // matches one of the configured CORS origins — otherwise an attacker
-   // who can spoof the Host header could redirect the OAuth flow to
-   // their own server and steal the token.
-   let baseUrl = process.env.APP_URL;
-   if (!baseUrl) {
-      const hostHeader = req.get('host');
-      const candidate = hostHeader ? `${req.protocol}://${hostHeader}` : null;
-      if (candidate && (corsAllowList.length === 0 || corsAllowList.includes(candidate))) {
-         baseUrl = candidate;
-      } else {
-         log.error("OAuth redirect URI: APP_URL unset and Host header not in CORS_ORIGINS", {
-            host: hostHeader,
-         });
-         throw new Error("OAuth misconfigured: set APP_URL or add the host to CORS_ORIGINS.");
-      }
-   }
-   return new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      `${baseUrl}/api/oauth/google/callback`
-   );
-}
 
 // Note: Backend uses Service Role for secure modifications across the DB if needed.
 // In dev we still allow a placeholder so `npm run dev` doesn't crash before
@@ -3133,87 +3062,6 @@ app.post("/api/train/save", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-
-// ==========================================
-// Google Workspace OAuth Endpoints
-// ==========================================
-
-app.get('/api/oauth/google/url', oauthRateLimiter, (req, res) => {
-  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-     return res.status(500).json({ error: "Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET in environment variables." });
-  }
-
-  const oauth2Client = getGoogleOAuthClient(req);
-  const authUrl = oauth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: SCOPES,
-    prompt: 'consent' // Forces consent screen to always get a refresh token
-  });
-  
-  res.json({ url: authUrl });
-});
-
-app.get(['/api/oauth/google/callback', '/api/oauth/google/callback/'], oauthRateLimiter, async (req, res) => {
-  const { code } = req.query;
-  
-  if (!code || typeof code !== 'string') {
-    return res.status(400).send("No code provided by Google.");
-  }
-
-  try {
-    const oauth2Client = getGoogleOAuthClient(req);
-    const { tokens } = await oauth2Client.getToken(code);
-    oauth2Client.setCredentials(tokens);
-
-    // Fetch user info to get email address
-    const oauth2 = google.oauth2({ auth: oauth2Client, version: 'v2' });
-    const userInfo = await oauth2.userinfo.get();
-    const emailAddress = userInfo.data.email;
-
-    if (!emailAddress) throw new Error("Could not fetch user email.");
-
-    // Store in Supabase
-    await db.from('wireline_email_accounts').insert({
-      email_address: emailAddress,
-      provider: 'google',
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
-      expires_at: tokens.expiry_date
-    });
-
-    // Send success to popup. Restrict postMessage to the configured app
-    // origin (or the current request origin when APP_URL isn't set) so
-    // a malicious page that opens this popup can't intercept the email.
-    const targetOrigin = (process.env.APP_URL && new URL(process.env.APP_URL).origin)
-      || `${req.protocol}://${req.get('host')}`;
-    // JSON-encode values to neutralize any HTML/JS injection via the email field.
-    const safeEmail = JSON.stringify(emailAddress);
-    const safeOrigin = JSON.stringify(targetOrigin);
-    res.send(`
-      <html>
-        <body>
-          <script>
-            if (window.opener) {
-              window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS', email: ${safeEmail} }, ${safeOrigin});
-              window.close();
-            } else {
-              window.location.href = '/';
-            }
-          </script>
-          <p>Authentication successful. You can close this window.</p>
-        </body>
-      </html>
-    `);
-  } catch (error) {
-    log.error("OAuth callback failed", {
-      requestId: res.locals?.requestId,
-      error: (error as any)?.message || String(error),
-    });
-    // Generic message to the user — never leak the raw error / stack /
-    // DB strings the SDK may attach.
-    res.status(500).send("Authentication failed. Please try again or contact support.");
-  }
-});
 
 // Get connected accounts
 app.get("/api/emails/accounts", authenticateUser, async (req: any, res: any) => {
