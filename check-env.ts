@@ -12,7 +12,16 @@ async function main() {
      console.log("Missing Supabase credentials");
      return;
   }
-  
+
+  // Bootstrap creds come from env vars, never from source. Both must be set.
+  // Pass them as: WIRELINE_BOOTSTRAP_EMAIL=… WIRELINE_BOOTSTRAP_PASSWORD=… npx ts-node check-env.ts
+  const email = process.env.WIRELINE_BOOTSTRAP_EMAIL;
+  const password = process.env.WIRELINE_BOOTSTRAP_PASSWORD;
+  if (!email || !password) {
+    console.error("Set WIRELINE_BOOTSTRAP_EMAIL and WIRELINE_BOOTSTRAP_PASSWORD before running this script.");
+    process.exit(1);
+  }
+
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
   const db = createClient(supabaseUrl, supabaseKey);
@@ -20,8 +29,8 @@ async function main() {
   console.log("Attempting to query wireline_users or auth.users...");
   // Try to create the user account
   const { data, error } = await db.auth.admin.createUser({
-    email: 'mikelaurenzo7@gmail.com',
-    password: 'Chet1212!',
+    email,
+    password,
     email_confirm: true
   });
 

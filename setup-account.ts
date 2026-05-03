@@ -12,8 +12,15 @@ async function setupFounder() {
   }
 
   const supabase = createClient(supabaseUrl, supabaseKey);
-  const email = 'mikelaurenzo7@gmail.com';
-  const password = 'Chet1212!';
+
+  // Bootstrap creds come from env vars, never from source. Both must be set.
+  // Pass them as: WIRELINE_BOOTSTRAP_EMAIL=… WIRELINE_BOOTSTRAP_PASSWORD=… npx ts-node setup-account.ts
+  const email = process.env.WIRELINE_BOOTSTRAP_EMAIL;
+  const password = process.env.WIRELINE_BOOTSTRAP_PASSWORD;
+  if (!email || !password) {
+    console.error("Set WIRELINE_BOOTSTRAP_EMAIL and WIRELINE_BOOTSTRAP_PASSWORD before running this script.");
+    process.exit(1);
+  }
 
   console.log(`Connecting to: ${supabaseUrl}`);
 
