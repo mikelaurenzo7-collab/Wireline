@@ -237,17 +237,14 @@ const claudeRateLimit = new Map<string, number[]>();
 const CLAUDE_RATE_WINDOW_MS = 60_000;
 const CLAUDE_RATE_MAX = 60;
 
-app.use("/api/claude", (req: any, res: any, next: any) => {
-  // Status endpoint is exempt — used by clients to probe availability.
-  if (req.path === "/status") return next();
-  // This middleware runs before authenticateUser, so req.user isn't
-  // populated yet. The bearer token is per-user, so token-keying gives
-  // us effective per-user limits without decoding the JWT here.
-  // Fall back to IP for unauthenticated edge cases.
+// Reusable per-user rate-limiter for any endpoint that calls Claude.
+// Keys by Bearer token (available before authenticateUser runs); falls
+// back to IP so unauthenticated edge cases are still covered.
+function claudeRateLimiter(req: any, res: any, next: any) {
   const token = req.headers.authorization?.split(" ")[1];
   const key = token || req.ip || "anon";
   const now = Date.now();
-  const hits = (claudeRateLimit.get(key) || []).filter(t => now - t < CLAUDE_RATE_WINDOW_MS);
+  const hits = (claudeRateLimit.get(key) || []).filter((t: number) => now - t < CLAUDE_RATE_WINDOW_MS);
   if (hits.length >= CLAUDE_RATE_MAX) {
     res.setHeader("Retry-After", "60");
     return res.status(429).json({
@@ -258,18 +255,62 @@ app.use("/api/claude", (req: any, res: any, next: any) => {
   hits.push(now);
   claudeRateLimit.set(key, hits);
   next();
+}
+
+app.use("/api/claude", (req: any, res: any, next: any) => {
+  // Status endpoint is exempt — used by clients to probe availability.
+  if (req.path === "/status") return next();
+  claudeRateLimiter(req, res, next);
 });
+
+// Extend Claude rate limiting to non-/api/claude/* endpoints that also
+// make Claude calls so they share the same per-user budget.
+app.use(["/api/train/extract", "/api/agents/:id/optimize"], claudeRateLimiter);
 
 // Keep the rate-limit map from growing forever — purge stale buckets every
 // 5 minutes. Cheap operation; map rarely has more than a few hundred keys.
 setInterval(() => {
   const cutoff = Date.now() - CLAUDE_RATE_WINDOW_MS * 2;
   for (const [k, hits] of claudeRateLimit) {
-    const fresh = hits.filter(t => t > cutoff);
+    const fresh = hits.filter((t: number) => t > cutoff);
     if (fresh.length === 0) claudeRateLimit.delete(k);
     else claudeRateLimit.set(k, fresh);
   }
 }, 5 * 60 * 1000).unref?.();
+
+// ────────────────────────────────────────────────────────────────────
+//  IP-based rate limit for unauthenticated OAuth initiation.
+//  Prevents a crawler from generating unlimited Google OAuth flows.
+//  10 requests per 5 minutes per IP is generous for legitimate use.
+// ────────────────────────────────────────────────────────────────────
+const oauthRateLimit = new Map<string, number[]>();
+const OAUTH_RATE_WINDOW_MS = 5 * 60_000;
+const OAUTH_RATE_MAX = 10;
+
+function oauthRateLimiter(req: any, res: any, next: any) {
+  const key = req.ip || "anon";
+  const now = Date.now();
+  const hits = (oauthRateLimit.get(key) || []).filter((t: number) => now - t < OAUTH_RATE_WINDOW_MS);
+  if (hits.length >= OAUTH_RATE_MAX) {
+    res.setHeader("Retry-After", String(Math.ceil(OAUTH_RATE_WINDOW_MS / 1000)));
+    return res.status(429).json({
+      error: "Too many OAuth requests. Please wait before trying again.",
+      code: "OAUTH_RATE_LIMIT",
+    });
+  }
+  hits.push(now);
+  oauthRateLimit.set(key, hits);
+  next();
+}
+
+setInterval(() => {
+  const cutoff = Date.now() - OAUTH_RATE_WINDOW_MS * 2;
+  for (const [k, hits] of oauthRateLimit) {
+    const fresh = hits.filter((t: number) => t > cutoff);
+    if (fresh.length === 0) oauthRateLimit.delete(k);
+    else oauthRateLimit.set(k, fresh);
+  }
+}, 10 * 60 * 1000).unref?.();
 
 // Initialize AI and DB
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
@@ -2971,7 +3012,7 @@ app.post("/api/train/save", authenticateUser, async (req: any, res: any) => {
 // Google Workspace OAuth Endpoints
 // ==========================================
 
-app.get('/api/oauth/google/url', (req, res) => {
+app.get('/api/oauth/google/url', oauthRateLimiter, (req, res) => {
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
      return res.status(500).json({ error: "Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET in environment variables." });
   }
@@ -2986,7 +3027,7 @@ app.get('/api/oauth/google/url', (req, res) => {
   res.json({ url: authUrl });
 });
 
-app.get(['/api/oauth/google/callback', '/api/oauth/google/callback/'], async (req, res) => {
+app.get(['/api/oauth/google/callback', '/api/oauth/google/callback/'], oauthRateLimiter, async (req, res) => {
   const { code } = req.query;
   
   if (!code || typeof code !== 'string') {
