@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Send, Bot, User, CheckCircle2, Loader2, Users, Database, PlayCircle, MessageSquare, Trash2, Mail, Phone, Search, Activity, Plus, Pencil, Save, X, Sparkles, Terminal, ChevronRight, Zap, Target, Clock } from "lucide-react";
+import { Send, Bot, User, CheckCircle2, Loader2, Users, Database, PlayCircle, MessageSquare, Trash2, Mail, Phone, Search, Activity, Plus, Pencil, Save, X, Sparkles, Terminal, ChevronRight, ChevronDown, Zap, Target, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
@@ -139,84 +139,81 @@ export default function AgentTraining() {
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-paper">
-      <header className="p-8 md:p-12 border-b-8 border-ink bg-white sticky top-0 z-30 shadow-sm">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10 max-w-[1400px] mx-auto w-full">
-          <div className="space-y-6">
-            <div className="flex items-center gap-4">
-               <div className="bg-brand text-ink text-[10px] font-black px-3 py-1 uppercase tracking-widest brutal-border shadow-none italic font-display animate-pulse flex items-center gap-2">
-                 <Terminal className="w-3 h-3" /> NEURAL LINK: ACTIVE
-               </div>
-               <div className="flex items-center gap-2 px-3 py-1 bg-ink text-brand brutal-border shadow-none">
-                  <Activity className="w-3 h-3" />
-                  <span className="text-[9px] font-black uppercase tracking-tighter italic">98.4% SYNC ACCURACY</span>
-               </div>
+    <div className="flex flex-col h-full overflow-hidden">
+      <header className="shrink-0 px-4 md:px-6 pt-4 pb-3 sticky top-0 z-30 backdrop-blur-xl bg-paper/70 border-b border-white/8">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 max-w-[1400px] mx-auto w-full">
+          <div className="flex items-center gap-3 min-w-0">
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.45em] text-brand/80 mb-1">Studio · Training</div>
+              <h1 className="font-display italic lowercase text-3xl md:text-4xl text-ink leading-none">
+                <span className="text-aurora">agent training</span>
+              </h1>
             </div>
-            <h1 className="text-4xl md:text-[6rem] font-black text-ink uppercase tracking-tighter font-display italic leading-[0.8]">
-              TACTICAL<br />TRAINING
-            </h1>
           </div>
-          <div className="flex flex-col items-start lg:items-end gap-4 w-full lg:w-auto">
-            <span className="text-[10px] uppercase font-black text-muted tracking-[0.4em] font-sans italic">NODE SELECTION</span>
-            <div className="relative w-full lg:min-w-[400px]">
-              <select 
-                value={selectedAgentId} 
+          <div className="flex items-center gap-2 w-full lg:w-auto">
+            <Users className="w-3.5 h-3.5 text-brand shrink-0" />
+            <span className="text-[10px] uppercase tracking-[0.3em] text-muted/70 hidden sm:inline">Agent</span>
+            <div className="relative flex-1 lg:flex-none lg:min-w-[260px]">
+              <select
+                value={selectedAgentId}
                 onChange={e => setSelectedAgentId(e.target.value)}
-                className="w-full pl-6 pr-12 h-16 bg-white border-4 border-ink font-black text-ink cursor-pointer hover:shadow-none translate-x-[-4px] translate-y-[-4px] hover:translate-x-0 hover:translate-y-0 transition-all outline-none appearance-none uppercase tracking-widest text-xs italic"
+                className="w-full text-sm bg-black/30 border border-white/10 rounded-lg pl-3 pr-8 py-2 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
               >
-                <option value="default-agent">GLOBAL FLEET DIRECTIVES</option>
+                <option value="default-agent">Global fleet directives</option>
                 {agents.map(a => (
-                  <option key={a.id} value={a.id}>{a.name.toUpperCase()}</option>
+                  <option key={a.id} value={a.id}>{a.name}</option>
                 ))}
               </select>
-              <Users className="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 text-ink pointer-events-none" />
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none" />
             </div>
           </div>
         </div>
 
-      {/* Claude Brain rail — recipes scoped to the selected agent */}
-      <div className="max-w-[1400px] mx-auto w-full mt-10">
-        <div className="relative aurora-ring rounded-2xl">
-          <div className="relative rounded-2xl glass p-5 flex flex-wrap items-center gap-3 overflow-hidden">
-            <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-25 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #C58BFF, transparent)" }} />
-            <div className="relative z-10 flex items-center gap-3 mr-2">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #7DF9FF, #C58BFF)" }}>
-                <Sparkles className="w-4 h-4 text-paper" strokeWidth={2.5} />
+        {/* Claude Brain rail — recipes scoped to the selected agent */}
+        <div className="max-w-[1400px] mx-auto w-full mt-3">
+          <div className="relative aurora-ring rounded-2xl">
+            <div className="relative rounded-2xl glass p-3 flex flex-wrap items-center gap-2 overflow-hidden">
+              <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-25 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #C58BFF, transparent)" }} />
+              <div className="relative z-10 flex items-center gap-2 mr-1">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "linear-gradient(135deg, #7DF9FF, #C58BFF)" }}>
+                  <Sparkles className="w-3.5 h-3.5 text-paper" strokeWidth={2.5} />
+                </div>
+                <div>
+                  <div className="text-[9px] uppercase tracking-[0.35em] text-brand">Claude Brain</div>
+                  <div className="text-[10px] text-ink/60">Wire intelligent recipes into this agent.</div>
+                </div>
               </div>
-              <div>
-                <div className="text-[10px] uppercase tracking-[0.4em] text-brand">Claude Brain</div>
-                <div className="text-[11px] text-ink/60">Wire intelligent recipes into this agent.</div>
+              <div className="relative z-10 flex flex-wrap items-center gap-1.5 ml-auto">
+                <ClaudeRecipeButton variant="ghost" recipe="agent-review" agentId={selectedAgentId !== 'default-agent' ? selectedAgentId : undefined} label="Performance Review" />
+                <ClaudeRecipeButton variant="ghost" recipe="persona-clone" agentId={selectedAgentId !== 'default-agent' ? selectedAgentId : undefined} label="Clone Persona" />
+                <ClaudeRecipeButton variant="ghost" recipe="knowledge-from-url" agentId={selectedAgentId !== 'default-agent' ? selectedAgentId : undefined} label="Ingest URL" />
+                <ClaudeRecipeButton variant="ghost" recipe="knowledge-from-document" agentId={selectedAgentId !== 'default-agent' ? selectedAgentId : undefined} label="Ingest PDF" />
+                <ClaudeRecipeButton variant="ghost" recipe="objection-drill" agentId={selectedAgentId !== 'default-agent' ? selectedAgentId : undefined} label="Objection Drills" />
+                <ClaudeRecipeButton variant="ghost" recipe="brief" agentId={selectedAgentId !== 'default-agent' ? selectedAgentId : undefined} label="Pre-Call Brief" />
               </div>
-            </div>
-            <div className="relative z-10 flex flex-wrap items-center gap-2 ml-auto">
-              <ClaudeRecipeButton recipe="agent-review" agentId={selectedAgentId !== 'default-agent' ? selectedAgentId : undefined} label="Performance Review" />
-              <ClaudeRecipeButton recipe="persona-clone" agentId={selectedAgentId !== 'default-agent' ? selectedAgentId : undefined} label="Clone Persona" />
-              <ClaudeRecipeButton recipe="knowledge-from-url" agentId={selectedAgentId !== 'default-agent' ? selectedAgentId : undefined} label="Ingest from URL" />
-              <ClaudeRecipeButton recipe="knowledge-from-document" agentId={selectedAgentId !== 'default-agent' ? selectedAgentId : undefined} label="Ingest from PDF" />
-              <ClaudeRecipeButton recipe="objection-drill" agentId={selectedAgentId !== 'default-agent' ? selectedAgentId : undefined} label="Objection Drills" />
-              <ClaudeRecipeButton recipe="brief" agentId={selectedAgentId !== 'default-agent' ? selectedAgentId : undefined} label="Pre-Call Brief" />
             </div>
           </div>
         </div>
-      </div>
 
-      <nav className="flex flex-wrap gap-6 max-w-[1400px] mx-auto w-full mt-12 pt-8 border-t-2 border-ink/5">
-           {[ 
-             { id: 'admin', label: 'NEURAL RELAY', icon: MessageSquare },
-             { id: 'database', label: 'DIRECTIVE REGISTRY', icon: Database },
-             { id: 'simulator', label: 'MISSION SANDBOX', icon: PlayCircle }
-           ].map((tab) => (
-             <button 
-               key={tab.id}
-               onClick={() => setActiveTab(tab.id as any)}
-               className={cn(
-                 "brutal-btn uppercase italic tracking-[0.2em] !py-4 !px-10 text-[11px] font-black flex items-center gap-4 transition-all",
-                 activeTab === tab.id ? "bg-brand text-ink " : "bg-white text-muted border-zinc-200 shadow-none hover:border-ink hover:text-ink"
-               )}
-             >
-               <tab.icon className="w-5 h-5" /> {tab.label}
-             </button>
-           ))}
+        <nav className="flex flex-wrap gap-1.5 max-w-[1400px] mx-auto w-full mt-3">
+          {[
+            { id: 'admin', label: 'Neural relay', icon: MessageSquare },
+            { id: 'database', label: 'Directive registry', icon: Database },
+            { id: 'simulator', label: 'Mission sandbox', icon: PlayCircle }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={cn(
+                "px-3 py-1.5 rounded-full border text-[10px] uppercase tracking-[0.25em] flex items-center gap-1.5 transition-colors",
+                activeTab === tab.id
+                  ? "bg-brand/15 border-brand/40 text-brand"
+                  : "glass border-white/10 text-muted hover:border-white/20 hover:text-ink"
+              )}
+            >
+              <tab.icon className="w-3 h-3" /> {tab.label}
+            </button>
+          ))}
         </nav>
       </header>
 
