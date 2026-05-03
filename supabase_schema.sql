@@ -225,13 +225,7 @@ CREATE POLICY "Users can manage their own fleet tasks" ON wireline_fleet_tasks F
 CREATE POLICY "Users can manage their own phone numbers" ON wireline_phone_numbers FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "Users can manage their own leads" ON wireline_outbound_leads FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "Users can manage their own presence signals" ON wireline_signal_presence FOR ALL USING (auth.uid() = user_id);
-DO $$ BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_policies WHERE tablename = 'wireline_agent_lessons' AND policyname = 'Users can manage their own agent lessons'
-    ) THEN
-        EXECUTE 'CREATE POLICY "Users can manage their own agent lessons" ON wireline_agent_lessons FOR ALL USING (auth.uid() = user_id)';
-    END IF;
-END $$;
+CREATE POLICY "Users can manage their own agent lessons" ON wireline_agent_lessons FOR ALL USING (auth.uid() = user_id);
 
 -- ────────────────────────────────────────────────────────────────────
 -- 11. IDEMPOTENT MIGRATIONS — safe to re-run on existing installs.

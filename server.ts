@@ -2291,14 +2291,27 @@ app.delete("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
     if (!agent) return res.status(404).json({ error: "Agent not found." });
 
     // Null-out agent_id on tables that would otherwise block the delete.
-    await Promise.all([
-      db.from("wireline_call_logs").update({ agent_id: null }).eq("agent_id", agentId).eq("user_id", userId),
-      db.from("wireline_appointments").update({ agent_id: null }).eq("agent_id", agentId).eq("user_id", userId),
-      db.from("wireline_outbound_leads").update({ agent_id: null }).eq("agent_id", agentId).eq("user_id", userId),
-      db.from("wireline_fleet_tasks").update({ agent_id: null }).eq("agent_id", agentId).eq("user_id", userId),
-      db.from("wireline_phone_numbers").update({ agent_id: null }).eq("agent_id", agentId).eq("user_id", userId),
-      db.from("wireline_signal_presence").update({ agent_id: null }).eq("agent_id", agentId).eq("user_id", userId),
-    ]);
+    const nullTables = [
+      { table: "wireline_call_logs",      label: "call_logs" },
+      { table: "wireline_appointments",   label: "appointments" },
+      { table: "wireline_outbound_leads", label: "outbound_leads" },
+      { table: "wireline_fleet_tasks",    label: "fleet_tasks" },
+      { table: "wireline_phone_numbers",  label: "phone_numbers" },
+      { table: "wireline_signal_presence",label: "signal_presence" },
+    ] as const;
+
+    const nullResults = await Promise.allSettled(
+      nullTables.map(({ table }) =>
+        db.from(table as any).update({ agent_id: null }).eq("agent_id", agentId).eq("user_id", userId)
+      )
+    );
+
+    nullResults.forEach((r, i) => {
+      if (r.status === "rejected" || (r.status === "fulfilled" && (r.value as any)?.error)) {
+        const reason = r.status === "rejected" ? r.reason?.message : (r.value as any)?.error?.message;
+        log.warn(`agent delete: failed to null agent_id on ${nullTables[i].label}`, { agentId, reason });
+      }
+    });
 
     // Delete the agent row — CASCADE handles directives, knowledge,
     // personality, and lessons automatically.
@@ -2662,8 +2675,10 @@ app.post("/api/settings", authenticateUser, async (req: any, res: any) => {
 
 app.get("/api/outbound", authenticateUser, async (req: any, res: any) => {
   try {
-    const limit = Math.min(parseInt((req.query.limit as string) || "100"), 500);
-    const offset = parseInt((req.query.offset as string) || "0");
+    const limitRaw = parseInt(req.query.limit as string);
+    const offsetRaw = parseInt(req.query.offset as string);
+    const limit = Math.min(isNaN(limitRaw) ? 100 : limitRaw, 500);
+    const offset = isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw);
     const { data, count, error } = await db
       .from('wireline_outbound_leads')
       .select('*', { count: 'exact' })
