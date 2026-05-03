@@ -397,7 +397,7 @@ export default function AgentTraining() {
                           value={personalityDraft} 
                           onChange={e => setPersonalityDraft(e.target.value)}
                           className="w-full min-h-[250px] p-8 brutal-border bg-paper font-black text-ink text-xl md:text-3xl focus:bg-brand/5 outline-none transition-all tracking-tighter italic border-4 uppercase"
-                          placeholder="DEFIE THE CORE IDENTITY HEURISTICS..."
+                          placeholder="DEFINE THE CORE IDENTITY HEURISTICS..."
                         />
                      ) : (
                         <p className="text-2xl md:text-[3.5rem] font-black text-ink leading-[1.1] italic uppercase tracking-tighter relative z-10 font-display">

@@ -463,10 +463,10 @@ export default function FleetSettings() {
                           <Phone className="w-4 h-4" /> RESPONSE HANDOVER (PTSN)
                        </label>
                        <input 
-                         type="text" 
+                         type="tel" 
                          value={selectedAgent.transfer_phone || ""} 
                          onChange={e => updateAgentMeta({ transfer_phone: e.target.value })} 
-                         placeholder="+1.800.REDACTED"
+                         placeholder="+1 800 555 0100"
                          className="w-full p-5 brutal-border border-4 outline-none focus:bg-brand bg-white text-sm font-black uppercase tracking-[0.2em] placeholder:text-zinc-200"
                        />
                      </div>

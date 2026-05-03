@@ -69,7 +69,9 @@ export default function DashboardHome() {
       const data = await res.json();
       const high = (data.tasks || []).filter((t: any) => t.priority === 'high' && t.status === 'pending');
       setHighPriorityTasks(high);
-    } catch (e) {}
+    } catch (e) {
+      console.error("Failed to fetch high-priority tasks:", e);
+    }
   };
 
   const fetchSystemActivity = async () => {
@@ -77,7 +79,9 @@ export default function DashboardHome() {
       const res = await authFetch("/api/fleet/activity");
       const data = await res.json();
       setSystemActivity(data.activity || []);
-    } catch (e) {}
+    } catch (e) {
+      console.error("Failed to fetch system activity:", e);
+    }
   };
 
   const fetchStats = async () => {

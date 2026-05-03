@@ -52,7 +52,9 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
     try {
       await authFetch(`/api/agents/${agentId}/lessons/${id}`, { method: 'DELETE' });
       setLessons(prev => prev.filter(l => l.id !== id));
-    } catch (e) {}
+    } catch (e) {
+      console.error("Failed to delete lesson:", e);
+    }
   };
 
   if (isLoading) {

@@ -222,7 +222,7 @@ function NoKeyInline() {
       <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
       <p className="text-xs text-rose-500 leading-relaxed">
         Claude Brain is offline — set <code className="font-mono">ANTHROPIC_API_KEY</code> to enable this recipe.
-        <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" className="underline ml-2">Get a key →</a>
+        <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer" className="underline ml-2">Get a key →</a>
       </p>
     </div>
   );

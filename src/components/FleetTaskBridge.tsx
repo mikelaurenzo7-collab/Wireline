@@ -26,7 +26,9 @@ export default function FleetTaskBridge() {
       const res = await authFetch("/api/agents");
       const data = await res.json();
       setAgents(data.agents || []);
-    } catch (e) {}
+    } catch (e) {
+      console.error("Failed to fetch agents:", e);
+    }
   };
 
   useEffect(() => {

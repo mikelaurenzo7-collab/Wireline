@@ -272,7 +272,7 @@ export default function AdminSettings() {
                         />
                         <p className="text-[10px] text-muted/70 leading-relaxed">
                           Vapi's supported models change over time — check
-                          <a href="https://docs.vapi.ai/customization/multilingual/customize-models" target="_blank" rel="noopener" className="text-brand mx-1 underline">Vapi docs</a>
+                          <a href="https://docs.vapi.ai/customization/multilingual/customize-models" target="_blank" rel="noopener noreferrer" className="text-brand mx-1 underline">Vapi docs</a>
                           for the current list. Saves apply to all subsequent voice calls.
                         </p>
                       </div>
@@ -408,10 +408,10 @@ export default function AdminSettings() {
                          <div className="space-y-4">
                             <label className="text-[9px] font-black text-muted uppercase tracking-[0.4em] italic ml-1">CARRIER_NUMBER</label>
                             <input 
-                              type="text" 
+                              type="tel" 
                               value={newNumber}
                               onChange={e => setNewNumber(e.target.value)}
-                              placeholder="+1.800.REDACTED" 
+                              placeholder="+1 800 555 0100" 
                               className="w-full p-6 brutal-border border-4 text-sm font-black uppercase tracking-widest shadow-none focus:bg-brand outline-none h-16 italic font-display bg-white" 
                             />
                          </div>
@@ -421,7 +421,7 @@ export default function AdminSettings() {
                               type="text" 
                               value={newNumberVapiId}
                               onChange={e => setNewNumberVapiId(e.target.value)}
-                              placeholder="CARRIER_ID_HEX" 
+                              placeholder="e.g. 3c7a9f..." 
                               className="w-full p-6 brutal-border border-4 text-sm font-black uppercase tracking-widest shadow-none focus:bg-brand outline-none h-16 italic font-display bg-white" 
                             />
                          </div>

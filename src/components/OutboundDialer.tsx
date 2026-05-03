@@ -235,7 +235,7 @@ export default function OutboundDialer() {
                         <div className="grid grid-cols-1 gap-10">
                           <div className="space-y-4">
                             <label className="text-[10px] font-black text-muted uppercase tracking-[0.4em] block italic ml-1">CARRIER_VECTOR (PHONE)</label>
-                            <input type="text" value={customerNumber} onChange={e => setCustomerNumber(e.target.value)} placeholder="+1 XXX XXX XXXX" className="w-full p-6 brutal-border border-4 outline-none focus:bg-brand font-black text-ink uppercase tracking-widest text-xl bg-white shadow-none font-sans h-20 italic font-display" />
+                            <input type="tel" value={customerNumber} onChange={e => setCustomerNumber(e.target.value)} placeholder="+1 555 000 0000" className="w-full p-6 brutal-border border-4 outline-none focus:bg-brand font-black text-ink uppercase tracking-widest text-xl bg-white shadow-none font-sans h-20 italic font-display" />
                           </div>
 
                           <div className="space-y-4">
