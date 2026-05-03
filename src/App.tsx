@@ -116,7 +116,7 @@ function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) =>
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent" />
               </motion.div>
               <div className="flex flex-col min-w-0">
-                <span className="font-display italic text-xl text-ink leading-none tracking-tight truncate">Wireline</span>
+                <span className="font-display italic lowercase text-xl text-ink leading-none tracking-tight truncate">wireline</span>
                 <span className="text-[8px] tracking-[0.4em] uppercase text-muted mt-1 flex items-center gap-1.5">
                   <span className="w-1 h-1 rounded-full bg-brand indicator-glow" />
                   Aurora Relay
@@ -190,7 +190,7 @@ function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) =>
                           />
                         )}
                         <item.icon className={cn("w-4 h-4 relative z-10 transition-transform shrink-0", active ? "" : "group-hover:translate-x-0.5")} strokeWidth={active ? 2.5 : 1.75} />
-                        <span className={cn("text-[12px] tracking-wide relative z-10 truncate", active ? "font-medium" : "font-normal")}>
+                        <span className={cn("text-[12px] lowercase tracking-wide relative z-10 truncate", active ? "font-medium" : "font-normal")}>
                           {item.label}
                         </span>
                         {active && <ChevronRight className="ml-auto w-3.5 h-3.5 relative z-10 shrink-0" />}
@@ -206,7 +206,7 @@ function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) =>
           <div className="px-3 py-2.5 border-t border-white/6 relative space-y-2 shrink-0">
             <SystemStatusBadge />
             <div className="flex items-center justify-between text-[8px] uppercase tracking-[0.35em] text-muted/70">
-              <span className="font-display italic text-[10px] tracking-tight not-italic-fix text-ink/70 normal-case">v∞ — Aurora</span>
+              <span className="font-display italic lowercase text-[11px] tracking-tight text-ink/70">v∞ · aurora</span>
               <span className="flex items-center gap-1">
                 <span className="w-1 h-1 rounded-full bg-emerald-500 indicator-glow" />
                 Stable
@@ -364,8 +364,8 @@ function AppContent() {
         </motion.div>
 
         <div className="space-y-4 relative z-10">
-          <h1 className="text-6xl md:text-8xl font-display italic text-aurora leading-[0.85] tracking-tight">
-            Wireline
+          <h1 className="text-6xl md:text-8xl font-display italic lowercase text-aurora leading-[0.85] tracking-tight">
+            wireline
           </h1>
           <p className="text-[10px] uppercase tracking-[0.6em] text-muted">Awakening the Aurora Relay</p>
           <div className="flex items-center justify-center gap-1.5 pt-4">
@@ -409,7 +409,7 @@ function AppContent() {
               <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "linear-gradient(135deg, #7DF9FF, #C58BFF, #FF6BD9)" }}>
                 <Waves className="w-3.5 h-3.5 text-paper" strokeWidth={2.5} />
               </div>
-              <span className="font-display italic text-lg text-ink leading-none">Wireline</span>
+              <span className="font-display italic lowercase text-lg text-ink leading-none">wireline</span>
             </div>
             <div className="w-9 h-9 rounded-lg glass border border-white/10 flex items-center justify-center">
               <User className="w-4 h-4 text-ink/70" />

@@ -71,7 +71,7 @@ export default function PageShell({
               {eyebrow}
             </p>
           )}
-          <h1 className="font-display italic text-3xl md:text-4xl leading-[0.95] tracking-tight text-ink truncate">
+          <h1 className="font-display italic lowercase text-3xl md:text-4xl leading-[0.95] tracking-tight text-ink truncate">
             <span className="text-aurora">{title}</span>
           </h1>
           {subtitle && (
@@ -176,7 +176,7 @@ export function Panel({
               </div>
             )}
             {title && (
-              <h3 className="font-display italic text-base text-ink leading-none truncate">
+              <h3 className="font-display italic lowercase text-base text-ink leading-none truncate">
                 {title}
               </h3>
             )}
