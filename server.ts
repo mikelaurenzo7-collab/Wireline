@@ -17,8 +17,10 @@ dotenv.config();
 // When APP_URL isn't explicitly configured, derive it from VERCEL_URL so
 // OAuth callbacks, billing redirects, and CORS work out of the box on
 // preview and production deployments without manual configuration.
+// Strip any accidental protocol prefix to guard against misconfiguration.
 if (!process.env.APP_URL && process.env.VERCEL_URL) {
-  process.env.APP_URL = `https://${process.env.VERCEL_URL}`;
+  const hostname = process.env.VERCEL_URL.replace(/^https?:\/\//, '').replace(/\/+$/, '');
+  process.env.APP_URL = `https://${hostname}`;
 }
 
 const DEFAULT_AGENT_ROLE = "customer_service";

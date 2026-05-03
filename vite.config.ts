@@ -28,7 +28,9 @@ export default defineConfig(({mode}) => {
               return 'vendor-vapi';
             }
             // Core React runtime — smallest possible initial payload.
-            if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
+            // Use exact package boundaries to avoid accidentally bucketing
+            // react-router-dom or other react-* packages here.
+            if (/node_modules\/(react|react-dom)\//.test(id)) {
               return 'vendor-react';
             }
           },
