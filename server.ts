@@ -610,15 +610,15 @@ async function dispatchWebhook(userId: string, event: WebhookEvent, data: any) {
       .insert(rows)
       .select("id");
     if (error) {
-      console.error("Webhook delivery insert failed:", error);
+      log.error("Webhook delivery insert failed", { error: error.message });
       return;
     }
     // Fire the first attempt immediately, in parallel. Failures get
     // requeued by attemptWebhookDelivery itself; the background
     // scheduler picks them up once their backoff elapses.
     await Promise.all((inserted || []).map((d: any) => attemptWebhookDelivery(d.id)));
-  } catch (err) {
-    console.error("Webhook dispatch failed:", err);
+  } catch (err: any) {
+    log.error("Webhook dispatch failed", { error: err?.message || String(err) });
   }
 }
 
@@ -647,12 +647,12 @@ async function processWebhookRetries() {
     // Run each delivery sequentially within the batch — keeps total
     // outbound concurrency bounded and the load on Supabase modest.
     for (const d of due) {
-      try { await attemptWebhookDelivery(d.id); } catch (err) {
-        console.error("Webhook retry attempt failed:", err);
+      try { await attemptWebhookDelivery(d.id); } catch (err: any) {
+        log.error("Webhook retry attempt failed", { id: d.id, error: err?.message || String(err) });
       }
     }
-  } catch (err) {
-    console.error("Webhook scheduler tick failed:", err);
+  } catch (err: any) {
+    log.error("Webhook scheduler tick failed", { error: err?.message || String(err) });
   } finally {
     _webhookSchedRunning = false;
   }
@@ -759,8 +759,8 @@ async function evaluateSpend(userId: string, deltaUsd: number) {
         at: new Date().toISOString(),
       });
     }
-  } catch (err) {
-    console.error("evaluateSpend failed:", err);
+  } catch (err: any) {
+    log.error("evaluateSpend failed", { error: err?.message || String(err) });
   }
 }
 
@@ -840,7 +840,7 @@ async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
   const { data: existing } = await db.from("wireline_subscriptions")
     .select("user_id").eq("stripe_customer_id", customerId).maybeSingle();
   if (!existing?.user_id) {
-    console.warn(`Stripe webhook: no wireline_subscriptions row for customer ${customerId}; skipping sync.`);
+    log.warn("Stripe webhook: no subscription row for customer, skipping sync", { customerId });
     return;
   }
   const userId = existing.user_id;
@@ -895,7 +895,7 @@ app.post("/api/stripe-webhook", async (req: any, res: any) => {
     // express.raw populated req.body as a Buffer — pass it through verbatim.
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err: any) {
-    console.warn("Stripe webhook signature verification failed:", err?.message);
+    log.warn("Stripe webhook signature verification failed", { error: err?.message });
     return res.status(400).json({ error: `Webhook Error: ${err?.message}` });
   }
 
@@ -921,7 +921,7 @@ app.post("/api/stripe-webhook", async (req: any, res: any) => {
         // Sub status will flip to past_due via the next subscription.updated;
         // we don't need a separate sync here.
         const inv = event.data.object as Stripe.Invoice;
-        console.warn(`Stripe invoice payment failed for customer ${inv.customer}`);
+        log.warn("Stripe invoice payment failed", { customerId: inv.customer });
         break;
       }
       default:
@@ -930,7 +930,7 @@ app.post("/api/stripe-webhook", async (req: any, res: any) => {
     }
     res.json({ received: true });
   } catch (err: any) {
-    console.error("Stripe webhook handler error:", err);
+    log.error("Stripe webhook handler error", { error: err?.message || String(err) });
     res.status(500).json({ error: err?.message || "Webhook handler failed" });
   }
 });
@@ -991,7 +991,11 @@ app.post("/api/vapi-webhook", async (req, res) => {
   const payload = req.body;
   const { message } = payload;
 
-  console.log("--- INCOMING VAPI WEBHOOK ---");
+  log.info("Vapi webhook received", {
+    requestId: res.locals?.requestId,
+    messageType: payload?.message?.type,
+    agentId: req.query.agentId,
+  });
   
   // For webhooks, we need to know WHICH user this is for.
   // We'll extract agentId from query and fetch the agent and its user_id.
@@ -1009,7 +1013,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
   const voiceLlmModel = userSettings?.voice_llm_model || 'gemini-1.5-flash';
   
   if (subscriptionStatus !== 'active') {
-    console.log("Connection rejected: Account subscription is not active.");
+    log.warn("Vapi webhook: subscription inactive, rejecting", { agentId: webhookAgentId, status: subscriptionStatus });
     if (message && message.type === "assistant-request") {
         return res.json({
             assistant: {
@@ -1027,7 +1031,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
   
   // Vapi calls this prior to connecting the agent
   if (message && message.type === "assistant-request") {
-    console.log("Assistant request received for Agent ID:", webhookAgentId);
+    log.info("Vapi assistant-request", { requestId: res.locals?.requestId, agentId: webhookAgentId });
 
     try {
       // 1. Assemble memory from Supabase
@@ -1173,7 +1177,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
         assistant: {
           name: agentConfig?.data?.name || "Wireline Agent",
           firstMessage: agentConfig?.data?.first_message || "Hello! Thank you for calling. How can I help you today?",
-          serverUrlSecret: "wireline-secret-key",
+          serverUrlSecret: VAPI_WEBHOOK_SECRET,
           serverMessages: ["tool-calls", "status-update", "conversation-update", "end-of-call-report"],
           backgroundSound: agentConfig?.data?.ambient_noise || 'off',
           // Per-user voice LLM choice (defaults to Gemini Flash for backward
@@ -1271,10 +1275,10 @@ app.post("/api/vapi-webhook", async (req, res) => {
         }
       };
 
-      console.log("Replied with assistant config successfully.");
+      log.debug("Vapi assistant-request served", { requestId: res.locals?.requestId, agentId: webhookAgentId });
       return res.json(responsePayload);
-    } catch (e) {
-      console.error("Vapi webhook config error:", e);
+    } catch (e: any) {
+      log.error("Vapi webhook config error", { requestId: res.locals?.requestId, agentId: webhookAgentId, error: e?.message || String(e) });
       // Give Vapi a graceful fallback so it doesn't freeze
       return res.json({
          assistant: {
@@ -1286,7 +1290,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
   }
   
   if (message && message.type === "tool-calls") {
-    console.log("Received tool call:", JSON.stringify(message.toolCalls, null, 2));
+    log.debug("Vapi tool-calls received", { requestId: res.locals?.requestId, agentId: webhookAgentId, tools: (message.toolCalls || []).map((t: any) => t?.function?.name) });
     
     // Fetch agent config once for all tools in this call
     const { data: agent } = await db.from('wireline_agents').select('*').eq('id', webhookAgentId).single();
@@ -1344,8 +1348,8 @@ app.post("/api/vapi-webhook", async (req, res) => {
               result: contextReport || "No interaction signals found in the neural cache."
             });
             continue;
-         } catch (e) {
-            console.error("Recall Error:", e);
+         } catch (e: any) {
+            log.error("Vapi tool: recall failed", { agentId: webhookAgentId, error: e?.message || String(e) });
             results.push({ toolCallId: toolCall.id, result: "Memory retrieval error. Process caller as a new contact for safety." });
             continue;
          }
@@ -1412,8 +1416,8 @@ app.post("/api/vapi-webhook", async (req, res) => {
             toolCallId: toolCall.id,
             result: `Appointment confirmed successfully! Your booking reference ID is ${data.id.split('-')[0]}.`
           });
-        } catch (e) {
-          console.error("Failed to book appointment:", e);
+        } catch (e: any) {
+          log.error("Vapi tool: book_appointment failed", { agentId: webhookAgentId, error: e?.message || String(e) });
           results.push({
             toolCallId: toolCall.id,
             result: "I'm sorry, I'm having trouble accessing the calendar database right now."
@@ -1512,8 +1516,8 @@ app.post("/api/vapi-webhook", async (req, res) => {
               await db.from('wireline_email_threads').update({
                  last_message_at: new Date()
               }).eq('id', thread.id);
-           } catch(syncErr) {
-              console.error("Omnichannel sync error:", syncErr);
+           } catch(syncErr: any) {
+              log.warn("Vapi tool: omnichannel email sync error", { agentId: webhookAgentId, error: syncErr?.message || String(syncErr) });
            }
 
            // Mark task as completed
@@ -1524,7 +1528,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
              result: `Successfully handed off follow-up task to the AI Email Fleet. Task ID: ${task.id.split('-')[0]}. The email has been dispatched via your connected mailroom.`
            });
          } catch (e: any) {
-           console.error("Fleet Handoff Failed:", e);
+           log.error("Vapi tool: fleet handoff failed", { agentId: webhookAgentId, error: e?.message || String(e) });
            results.push({
              toolCallId: toolCall.id,
              result: "Handoff to email system failed. Please take a manual note."
@@ -1599,7 +1603,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
   }
 
   if (message && message.type === "end-of-call-report") {
-    console.log("Call ended, report received!");
+    log.info("Vapi end-of-call-report received", { requestId: res.locals?.requestId, agentId: webhookAgentId, callId: message.call?.id });
     
     try {
         const call = message.call;
@@ -1738,8 +1742,8 @@ app.post("/api/vapi-webhook", async (req, res) => {
             }
 
             claudeAnalysisDone = true;
-          } catch (err) {
-            console.error('Claude post-call analysis failed; falling back to Gemini:', err);
+          } catch (err: any) {
+            log.warn("Claude post-call analysis failed; falling back to Gemini", { agentId: webhookAgentId, error: err?.message || String(err) });
           }
         }
 
@@ -1808,8 +1812,8 @@ app.post("/api/vapi-webhook", async (req, res) => {
                    });
                 }
              } catch(e) {}
-          } catch(scoringErr) {
-             console.error("Call scoring failed:", scoringErr);
+          } catch(scoringErr: any) {
+             log.error("Gemini call scoring failed", { agentId: webhookAgentId, error: scoringErr?.message || String(scoringErr) });
           }
         }
         
@@ -1821,8 +1825,8 @@ app.post("/api/vapi-webhook", async (req, res) => {
         }
 
         return res.json({ success: true });
-    } catch(e) {
-      console.error("Failed to save call log", e);
+    } catch(e: any) {
+      log.error("Failed to save call log", { agentId: webhookAgentId, error: e?.message || String(e) });
       return res.json({ success: false });
     }
   }
@@ -1851,8 +1855,8 @@ app.get("/api/calls", authenticateUser, async (req: any, res: any) => {
        hasMore: count ? (offset + limit) < count : false,
        total: count || 0
     });
-  } catch (error) {
-    console.error("Failed to fetch calls:", error);
+  } catch (error: any) {
+    log.error("Failed to fetch calls", { error: error?.message || String(error) });
     res.json({ calls: [], hasMore: false, total: 0 }); // Fail gracefully if table not created
   }
 });
@@ -1936,8 +1940,8 @@ app.get("/api/dashboard/stats", authenticateUser, async (req: any, res: any) => 
          hotLeads,
          chartData
       });
-   } catch(e) {
-      console.error("Dashboard error", e);
+   } catch(e: any) {
+      log.error("Dashboard stats error", { error: e?.message || String(e) });
       res.status(500).json({ error: "Failed to fetch stats" });
    }
 });
@@ -1955,8 +1959,8 @@ app.get("/api/appointments", authenticateUser, async (req: any, res: any) => {
       
     if (error) throw error;
     res.json({ appointments: appointments || [] });
-  } catch (error) {
-    console.error("Failed to fetch appointments:", error);
+  } catch (error: any) {
+    log.error("Failed to fetch appointments", { error: error?.message || String(error) });
     res.json({ appointments: [] }); 
   }
 });
@@ -2061,7 +2065,7 @@ const ROLE_SPECIFIC_PROTOCOLS: Record<string, string> = {
 app.get("/api/agents", authenticateUser, async (req: any, res: any) => {
   try {
     const { data: agents, error } = await db.from('wireline_agents').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false });
-    if (error) console.error("Failed to fetch agents:", error);
+    if (error) log.warn("Failed to fetch agents", { userId: req.user.id, error: error?.message });
     res.json({ agents: agents || [] });
   } catch (error) {
     res.json({ agents: [] }); 
@@ -2146,7 +2150,7 @@ app.post("/api/agents", authenticateUser, async (req: any, res: any) => {
     
     res.json({ success: true, id });
   } catch (error) {
-    console.error("Agent creation failed:", error);
+    log.error("Agent creation failed", { error: error?.message || String(error) });
     res.status(500).json({ error: "Failed to create agent" });
   }
 });
@@ -2227,7 +2231,7 @@ app.post("/api/fleet/seed", authenticateUser, async (req: any, res: any) => {
     }
     res.json({ success: true, count: specializedAgents.length });
   } catch (error) {
-    console.error("Fleet seeding failed:", error);
+    log.error("Fleet seeding failed", { error: error?.message || String(error) });
     res.status(500).json({ error: "Failed to seed fleet" });
   }
 });
@@ -2420,7 +2424,7 @@ app.get("/api/carrier/numbers", authenticateUser, async (req: any, res: any) => 
 
     res.json({ numbers: formatted });
   } catch (error) {
-    console.error("Vapi sync error:", error);
+    log.error("Vapi sync error", { error: error?.message || String(error) });
     res.json({ numbers: [] });
   }
 });
@@ -2437,7 +2441,7 @@ app.get("/api/fleet/presence", authenticateUser, async (req: any, res: any) => {
     if (error) throw error;
     res.json({ signals: data || [] });
   } catch (error) {
-    console.error("Presence fetch failed:", error);
+    log.error("Presence fetch failed", { error: error?.message || String(error) });
     res.json({ signals: [] });
   }
 });
@@ -2463,7 +2467,7 @@ app.get("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => {
 
     res.json({ tasks: sortedTasks });
   } catch (error) {
-    console.error("Fetch tasks failed:", error);
+    log.error("Fetch tasks failed", { error: error?.message || String(error) });
     res.json({ tasks: [] });
   }
 });
@@ -2521,7 +2525,7 @@ app.post("/api/agent-config/:id/manual", authenticateUser, async (req: any, res:
     
     res.json({ success: true });
   } catch (error) {
-    console.error("Manual config error", error);
+    log.error("Manual config error", { error: error?.message || String(error) });
     res.status(500).json({ error: "Failed to update" });
   }
 });
@@ -2909,7 +2913,7 @@ app.post("/api/outbound/dial", authenticateUser, async (req: any, res: any) => {
 
     res.json({ success: true, callId: result.callId });
   } catch (error: any) {
-    console.error("Outbound call failed:", error);
+    log.error("Outbound call failed", { error: error?.message || String(error) });
     res.status(500).json({ error: error.message || "Failed to dispatch call." });
   }
 });
@@ -3007,7 +3011,7 @@ app.post("/api/train/extract", authenticateUser, async (req: any, res: any) => {
         maxTokens: 1024,
       });
     } catch (err) {
-      console.error("Claude extraction failed; falling back to Gemini:", err);
+      log.error("Claude extraction failed; falling back to Gemini", { error: err?.message || String(err) });
     }
   }
 
@@ -3041,7 +3045,7 @@ Respond ONLY in strict, valid JSON format (no markdown):
         personality: geminiParsed.personality || "",
       };
     } catch (err) {
-      console.error("Gemini extraction fallback failed:", err);
+      log.error("Gemini extraction fallback failed", { error: err?.message || String(err) });
     }
   }
 
@@ -3065,7 +3069,7 @@ Respond ONLY in strict, valid JSON format (no markdown):
       });
     }
   } catch (err) {
-    console.error("Training persistence failed:", err);
+    log.error("Training persistence failed", { error: err?.message || String(err) });
     return res.status(500).json({ error: "Failed to save training data" });
   }
 
@@ -3122,7 +3126,7 @@ app.post("/api/train/save", authenticateUser, async (req: any, res: any) => {
 
     res.json({ success: true });
   } catch (error) {
-    console.error("Training save error:", error);
+    log.error("Training save error", { error: error?.message || String(error) });
     res.status(500).json({ error: "Failed to save intelligence patterns" });
   }
 });
@@ -3411,7 +3415,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
                });
                finalReply = result.replyText || finalReply;
              } catch (err) {
-               console.error("Claude email reply failed; falling back to Gemini:", err);
+               log.error("Claude email reply failed; falling back to Gemini", { error: err?.message || String(err) });
              }
            }
 
@@ -3476,7 +3480,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
                 }
                 finalReply = response.text() || finalReply;
              } catch(e) {
-                console.error("Gemini email fallback also failed:", e);
+                log.error("Gemini email fallback also failed", { error: e?.message || String(e) });
              }
            }
 
@@ -3507,7 +3511,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
                      requestBody: { raw, threadId }
                   });
                } catch (sendErr) {
-                  console.error("Auto-respond failed:", sendErr);
+                  log.error("Auto-respond failed", { error: sendErr?.message || String(sendErr) });
                }
            }
 
@@ -3526,7 +3530,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
                     status: 'pending'
                  });
               } catch(handoffErr) {
-                 console.error("Email-to-Phone handoff failed:", handoffErr);
+                 log.error("Email-to-Phone handoff failed", { error: handoffErr?.message || String(handoffErr) });
               }
            }
 
@@ -3545,7 +3549,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
                     const r = await claudeBrain.scoreIntent({ subject, body: snippet });
                     score = r.score || 0; label = r.label || 'none';
                  } catch (err) {
-                    console.error("Claude email scoring failed; falling back to Gemini:", err);
+                    log.error("Claude email scoring failed; falling back to Gemini", { error: err?.message || String(err) });
                  }
               }
               if (label === 'none' && score === 0) {
@@ -3564,14 +3568,14 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
                  lead_score: score, intent_label: label,
               }).eq('id', existingThread!.id);
            } catch(e) {
-              console.error("Email scoring failed:", e);
+              log.error("Email scoring failed", { error: e?.message || String(e) });
            }
         }
      }
 
      res.json({ success: true, synced: totalNew });
   } catch(e) {
-     console.error("Sync Error:", e);
+     log.error("Sync Error", { error: e?.message || String(e) });
      res.status(500).json({ error: String(e) });
   }
 });
@@ -3620,7 +3624,7 @@ app.post("/api/emails/threads/:id/reply", authenticateUser, async (req: any, res
 
       res.json({ success: true });
    } catch(e) {
-      console.error("Reply Error:", e);
+      log.error("Reply Error", { error: e?.message || String(e) });
       res.status(500).json({ error: String(e) });
    }
 });
@@ -3643,7 +3647,7 @@ Draft only the plain text email body. Do not include a subject line. Be professi
 
      res.json({ draft: aiRes.response.text() });
   } catch (e) {
-     console.error("Draft error:", e);
+     log.error("Draft error", { error: e?.message || String(e) });
      res.status(500).json({ error: "Failed to draft reply" });
   }
 });
@@ -3679,7 +3683,7 @@ app.post("/api/agents/:id/optimize", authenticateUser, async (req: any, res: any
                full_review: review,
             });
          } catch (err) {
-            console.error("Claude optimize failed; falling back to Gemini:", err);
+            log.error("Claude optimize failed; falling back to Gemini", { error: err?.message || String(err) });
          }
       }
 
@@ -3759,7 +3763,7 @@ app.get("/api/fleet/activity", authenticateUser, async (req: any, res: any) => {
 
       res.json({ activity: activity.slice(0, 15) });
    } catch(e) {
-      console.error("Activity feed error", e);
+      log.error("Activity feed error", { error: e?.message || String(e) });
       res.status(500).json({ error: "Failed to fetch activity" });
    }
 });
@@ -3826,7 +3830,7 @@ function claudeErr(res: any, e: any) {
       code: "CLAUDE_OFFLINE",
     });
   }
-  console.error("Claude endpoint error:", e);
+  log.error("Claude endpoint error", { error: e?.message || String(e) });
   return res.status(500).json({ error: e?.message ?? "Claude error" });
 }
 
@@ -3874,17 +3878,17 @@ function withAudit(actionPrefix: string) {
       Promise.resolve(db.from("wireline_audit_log").insert(rows))
         .then(({ error }: any) => {
           if (error) {
-            console.error("Audit insert failed:", error);
+            log.error("Audit insert failed", { error: error?.message || String(error) });
             return;
           }
           // After the spend is persisted, evaluate against the budget and
           // fire spend.warning / spend.exceeded webhooks if a threshold
           // crossed. Also fire-and-forget — never block the response.
           evaluateSpend(req.user.id, deltaUsd).catch((err: any) =>
-            console.error("evaluateSpend exception:", err),
+            log.error("evaluateSpend exception", { error: err?.message || String(err) }),
           );
         })
-        .catch((err: any) => console.error("Audit insert exception:", err));
+        .catch((err: any) => log.error("Audit insert exception", { error: err?.message || String(err) }));
     });
     claudeBrain.runInAuditContext(ctx, () => next());
   };
@@ -4558,14 +4562,14 @@ async function processIntakeLead(key: any, input: IntakeLeadInput, idemHeaderOve
             status: "AutoDialFailed",
             metadata: { ...(metadata || {}), auto_dial_error: result.error, auto_dial_status: result.status },
           }).eq("id", inserted.id);
-          console.warn(`Auto-dial failed for lead ${inserted.id}: [${result.status}] ${result.error}`);
+          log.warn("Auto-dial failed for lead", { leadId: inserted.id, status: result.status, error: result.error });
         }
       } catch (err: any) {
         await db.from("wireline_outbound_leads").update({
           status: "AutoDialFailed",
           metadata: { ...(metadata || {}), auto_dial_error: err?.message || String(err) },
         }).eq("id", inserted.id);
-        console.warn(`Auto-dial threw for lead ${inserted.id}:`, err);
+        log.warn("Auto-dial threw for lead", { leadId: inserted.id, error: err?.message || String(err) });
       }
     })();
   }
@@ -4611,7 +4615,7 @@ app.post("/api/intake/lead", async (req: any, res: any) => {
     const status = result.code === "MISSING_NUMBER" ? 400 : 500;
     return res.status(status).json({ error: result.error, code: result.code });
   } catch (e: any) {
-    console.error("Intake lead failed:", e);
+    log.error("Intake lead failed", { error: e?.message || String(e) });
     res.status(500).json({ error: e?.message ?? "Intake failed" });
   }
 });
@@ -4686,7 +4690,7 @@ app.post("/api/intake/leads", async (req: any, res: any) => {
       results,
     });
   } catch (e: any) {
-    console.error("Bulk intake failed:", e);
+    log.error("Bulk intake failed", { error: e?.message || String(e) });
     res.status(500).json({ error: e?.message ?? "Bulk intake failed" });
   }
 });
@@ -4976,11 +4980,11 @@ async function processScheduledDailyBriefs() {
         await db.from("wireline_settings").update({
           daily_brief_last_error: message.slice(0, 500),
         }).eq("user_id", row.user_id);
-        console.warn(`Daily-brief send failed for ${row.user_id}:`, message);
+        log.warn("Daily-brief send failed", { userId: row.user_id, error: message });
       }
     }
   } catch (err) {
-    console.error("Daily-brief scheduler tick failed:", err);
+    log.error("Daily-brief scheduler tick failed", { error: err?.message || String(err) });
   } finally {
     _briefSchedRunning = false;
   }
@@ -5331,7 +5335,7 @@ app.post("/api/billing/checkout", authenticateUser, async (req: any, res: any) =
     });
     res.json({ url: session.url });
   } catch (e: any) {
-    console.error("Checkout creation failed:", e);
+    log.error("Checkout creation failed", { error: e?.message || String(e) });
     res.status(500).json({ error: e?.message ?? "Checkout failed" });
   }
 });
@@ -5353,7 +5357,7 @@ app.post("/api/billing/portal", authenticateUser, async (req: any, res: any) => 
     });
     res.json({ url: portal.url });
   } catch (e: any) {
-    console.error("Portal session failed:", e);
+    log.error("Portal session failed", { error: e?.message || String(e) });
     res.status(500).json({ error: e?.message ?? "Portal failed" });
   }
 });
