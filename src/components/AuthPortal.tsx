@@ -96,8 +96,8 @@ export default function AuthPortal() {
             </div>
           </motion.div>
 
-          <h1 className="font-display italic text-7xl md:text-8xl text-aurora leading-[0.85] tracking-tight mb-4">
-            Wireline
+          <h1 className="font-display italic lowercase text-7xl md:text-8xl text-aurora leading-[0.85] tracking-tight mb-4">
+            wireline
           </h1>
           <p className="text-[10px] md:text-xs uppercase tracking-[0.55em] text-muted">
             Aurora Relay · Omnichannel Fleet
