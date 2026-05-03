@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { PhoneOutgoing, Loader2, PlayCircle, Clock, Plus, Phone, UploadCloud, Users, Bot, Radar, Activity, Zap, Terminal, Shield, Target, FileSpreadsheet, ChevronRight, Share2, Search } from "lucide-react";
+import { PhoneOutgoing, Loader2, PlayCircle, Clock, Plus, Phone, UploadCloud, Users, Bot, Radar, Activity, Zap, Terminal, Shield, Target, FileSpreadsheet, ChevronRight, Share2, Search, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Papa from "papaparse";
 import { cn } from "../lib/utils";
@@ -12,6 +12,9 @@ export default function OutboundDialer() {
   const [isLoading, setIsLoading] = useState(true);
   const [agents, setAgents] = useState<any[]>([]);
   const [leads, setLeads] = useState<any[]>([]);
+  const [leadsHasMore, setLeadsHasMore] = useState(false);
+  const [leadsTotal, setLeadsTotal] = useState(0);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   
   // UI States
   const [mode, setMode] = useState<"single" | "bulk">("single");
@@ -27,6 +30,7 @@ export default function OutboundDialer() {
   const [isUploading, setIsUploading] = useState(false);
   const [dialError, setDialError] = useState("");
   const [uploadStats, setUploadStats] = useState("");
+  const [isDeletingLead, setIsDeletingLead] = useState<number | string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -43,10 +47,40 @@ export default function OutboundDialer() {
       const leadsRes = await authFetch("/api/outbound");
       const leadsData = await leadsRes.json();
       setLeads(leadsData.leads || []);
+      setLeadsHasMore(leadsData.hasMore || false);
+      setLeadsTotal(leadsData.total || 0);
     } catch (e) {
       console.error(e);
     }
     setIsLoading(false);
+  };
+
+  const loadMoreLeads = async () => {
+    setIsLoadingMore(true);
+    try {
+      const res = await authFetch(`/api/outbound?offset=${leads.length}`);
+      const data = await res.json();
+      setLeads(prev => [...prev, ...(data.leads || [])]);
+      setLeadsHasMore(data.hasMore || false);
+      setLeadsTotal(data.total || 0);
+    } catch (e) {
+      console.error(e);
+    }
+    setIsLoadingMore(false);
+  };
+
+  const deleteLead = async (id: number | string) => {
+    if (!confirm("Remove this lead from the queue?")) return;
+    setIsDeletingLead(id);
+    try {
+      const resp = await authFetch(`/api/outbound/${id}`, { method: "DELETE" });
+      if (resp.ok) {
+        setLeads(prev => prev.filter(l => l.id !== id));
+      }
+    } catch (e) {
+      console.error("Failed to delete lead:", e);
+    }
+    setIsDeletingLead(null);
   };
 
   const dispatchCall = async () => {
@@ -337,7 +371,9 @@ export default function OutboundDialer() {
                      <PlayCircle className="w-12 h-12 text-brand" />
                      <div>
                        <h2 className="text-3xl font-black text-white uppercase tracking-tighter font-display italic leading-none">OPERATIONS_QUEUE</h2>
-                       <p className="text-[10px] font-black text-brand uppercase tracking-[0.4em] italic mt-3">Tactical Pipeline Status</p>
+                       <p className="text-[10px] font-black text-brand uppercase tracking-[0.4em] italic mt-3">
+                         {leadsTotal > 0 ? `${leads.length} / ${leadsTotal} LEADS` : "Tactical Pipeline Status"}
+                       </p>
                      </div>
                   </div>
                   
@@ -432,9 +468,16 @@ export default function OutboundDialer() {
                                    <Share2 className="w-5 h-5" />
                                 </button>
                              )}
-                             <div className="w-12 h-12 rounded-full glass border border-white/10 flex items-center justify-center text-ink/70 group-hover:border-brand/40 group-hover:text-brand transition-all">
-                                <Terminal className="w-5 h-5" />
-                             </div>
+                             <button
+                               onClick={() => deleteLead(lead.id)}
+                               disabled={isDeletingLead === lead.id}
+                               title="Remove lead"
+                               className="w-12 h-12 rounded-full glass border border-white/10 flex items-center justify-center text-rose-300 hover:border-rose-400/60 hover:text-rose-500 disabled:opacity-40 transition-all"
+                             >
+                               {isDeletingLead === lead.id
+                                 ? <Loader2 className="w-5 h-5 animate-spin" />
+                                 : <Trash2 className="w-5 h-5" />}
+                             </button>
                           </div>
                         </motion.div>
                       ))}
@@ -442,6 +485,19 @@ export default function OutboundDialer() {
                   )}
                 </AnimatePresence>
                </div>
+               
+               {leadsHasMore && (
+                 <div className="p-6 flex justify-center border-t-4 border-ink/10 bg-paper relative z-10">
+                   <button
+                     onClick={loadMoreLeads}
+                     disabled={isLoadingMore}
+                     className="flex items-center gap-4 px-10 py-4 brutal-border border-4 bg-white font-black text-[10px] uppercase tracking-[0.4em] italic hover:bg-brand transition-all disabled:opacity-50"
+                   >
+                     {isLoadingMore ? <Loader2 className="w-5 h-5 animate-spin" /> : <ChevronRight className="w-5 h-5 rotate-90" />}
+                     LOAD MORE ({leadsTotal - leads.length} REMAINING)
+                   </button>
+                 </div>
+               )}
                
                <div className="p-10 bg-zinc-950 text-brand text-center relative overflow-hidden group">
                   <div className="absolute inset-0 bg-brand/5 translate-x-full group-hover:translate-x-0 transition-transform duration-700" />

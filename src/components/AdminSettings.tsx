@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ServerCog, KeyRound, Loader2, ShieldCheck, Phone, Plus, Link as LinkIcon, Save, Terminal, Shield, Zap, Activity, Signal, Globe, CreditCard, Cpu, ChevronRight, RotateCw, CheckCircle2 } from "lucide-react";
+import { ServerCog, KeyRound, Loader2, ShieldCheck, Phone, Plus, Link as LinkIcon, Save, Terminal, Shield, Zap, Activity, Signal, Globe, CreditCard, Cpu, ChevronRight, RotateCw, CheckCircle2, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
@@ -20,6 +20,7 @@ export default function AdminSettings() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
+  const [isDeletingNumber, setIsDeletingNumber] = useState<number | string | null>(null);
   
   const [newNumber, setNewNumber] = useState("");
   const [newNumberVapiId, setNewNumberVapiId] = useState("");
@@ -116,6 +117,20 @@ export default function AdminSettings() {
         console.error(e);
      }
   }
+
+  const deletePhoneNumber = async (id: number | string) => {
+    if (!confirm("Remove this carrier number?")) return;
+    setIsDeletingNumber(id);
+    try {
+      const resp = await authFetch(`/api/phone-numbers/${id}`, { method: "DELETE" });
+      if (resp.ok) {
+        setPhoneNumbers(prev => prev.filter(n => n.id !== id));
+      }
+    } catch(e) {
+      console.error(e);
+    }
+    setIsDeletingNumber(null);
+  };
 
   return (
     <div className="flex flex-col space-y-12 md:space-y-20 pb-40 max-w-[1700px] mx-auto w-full p-8 md:p-12 lg:p-16">
@@ -354,6 +369,16 @@ export default function AdminSettings() {
                                     </select>
                                     <ChevronRight className="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 text-ink pointer-events-none rotate-90" />
                                   </div>
+                                  <button
+                                    onClick={() => deletePhoneNumber(pt.id)}
+                                    disabled={isDeletingNumber === pt.id}
+                                    title="Remove carrier number"
+                                    className="w-10 h-10 brutal-border border-2 bg-white hover:bg-rose-500 hover:text-white flex items-center justify-center text-rose-300 disabled:opacity-40 transition-all shrink-0"
+                                  >
+                                    {isDeletingNumber === pt.id
+                                      ? <Loader2 className="w-4 h-4 animate-spin" />
+                                      : <Trash2 className="w-4 h-4" />}
+                                  </button>
                                </div>
                             </motion.div>
                          ))}

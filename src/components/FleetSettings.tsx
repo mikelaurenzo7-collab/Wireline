@@ -219,6 +219,30 @@ export default function FleetSettings() {
     fetchAgentConfig(selectedAgent.id);
   };
 
+  const [isDeletingAgent, setIsDeletingAgent] = useState<string | null>(null);
+
+  const handleDeleteAgent = async (agentId: string, agentName: string) => {
+    if (!confirm(`DECOMMISSION "${agentName.toUpperCase()}"?\n\nThis permanently removes the agent and all its training data. Historical call logs and leads are preserved.\n\nThis action cannot be undone.`)) return;
+    setIsDeletingAgent(agentId);
+    try {
+      const resp = await authFetch(`/api/agents/${agentId}`, { method: "DELETE" });
+      if (resp.ok) {
+        const remaining = agents.filter(a => a.id !== agentId);
+        setAgents(remaining);
+        if (selectedAgent?.id === agentId) {
+          setSelectedAgent(remaining.length > 0 ? remaining[0] : null);
+        }
+      } else {
+        const data = await resp.json().catch(() => ({}));
+        alert(data.error || "Failed to decommission agent. Please try again.");
+      }
+    } catch (e) {
+      console.error("Failed to delete agent:", e);
+      alert("Network error. Failed to decommission agent.");
+    }
+    setIsDeletingAgent(null);
+  };
+
   return (
     <div className="h-full flex flex-col md:flex-row bg-paper">
       
@@ -251,38 +275,52 @@ export default function FleetSettings() {
                </div>
              ) : (
                agents.map(agent => (
-                  <motion.button
+                  <motion.div
                     layout
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     key={agent.id}
-                    onClick={() => setSelectedAgent(agent)}
                     className={cn(
-                      "w-full text-left p-8 flex items-center gap-6 transition-all brutal-border border-4 relative overflow-hidden group", 
-                      selectedAgent?.id === agent.id 
-                        ? "bg-brand border-ink  translate-x-1 translate-y-1" 
+                      "w-full flex items-center gap-2 transition-all brutal-border border-4 relative group",
+                      selectedAgent?.id === agent.id
+                        ? "bg-brand border-ink translate-x-1 translate-y-1"
                         : "bg-white border-zinc-200 shadow-none hover:border-ink"
                     )}
                   >
-                     <div className={cn(
-                       "w-16 h-16 brutal-border border-4 flex items-center justify-center shrink-0 shadow-none transition-all", 
-                       selectedAgent?.id === agent.id ? "bg-ink text-brand" : "bg-zinc-100 text-muted group-hover:bg-brand group-hover:text-ink"
-                     )}>
-                       {agent.channel === 'email' ? <Mail className="w-8 h-8" /> : <Bot className="w-8 h-8" />}
-                     </div>
-                     <div className="overflow-hidden flex-1 min-w-0">
-                       <div className="font-black text-ink uppercase tracking-tighter font-display text-2xl italic leading-none truncate mb-2">{agent.name}</div>
-                       <div className="flex items-center flex-wrap gap-2">
+                    <button
+                      onClick={() => setSelectedAgent(agent)}
+                      className="flex-1 text-left p-8 flex items-center gap-6 min-w-0"
+                    >
+                      <div className={cn(
+                        "w-16 h-16 brutal-border border-4 flex items-center justify-center shrink-0 shadow-none transition-all",
+                        selectedAgent?.id === agent.id ? "bg-ink text-brand" : "bg-zinc-100 text-muted group-hover:bg-brand group-hover:text-ink"
+                      )}>
+                        {agent.channel === 'email' ? <Mail className="w-8 h-8" /> : <Bot className="w-8 h-8" />}
+                      </div>
+                      <div className="overflow-hidden flex-1 min-w-0">
+                        <div className="font-black text-ink uppercase tracking-tighter font-display text-2xl italic leading-none truncate mb-2">{agent.name}</div>
+                        <div className="flex items-center flex-wrap gap-2">
                           <RoleBadge role={agent.role} size="xs" />
                           <span className={cn(
                             "text-[8px] font-black px-2 py-0.5 brutal-border shadow-none uppercase tracking-widest italic",
                             selectedAgent?.id === agent.id ? "bg-ink text-brand" : "bg-zinc-100 text-muted"
                           )}>
-                             {agent.channel?.toUpperCase()}
+                            {agent.channel?.toUpperCase()}
                           </span>
-                       </div>
-                     </div>
-                  </motion.button>
+                        </div>
+                      </div>
+                    </button>
+                    <button
+                      onClick={e => { e.stopPropagation(); handleDeleteAgent(agent.id, agent.name); }}
+                      disabled={isDeletingAgent === agent.id}
+                      title="Decommission agent"
+                      className="mr-4 shrink-0 w-10 h-10 brutal-border border-2 bg-white hover:bg-rose-500 hover:text-white flex items-center justify-center text-rose-300 disabled:opacity-40 transition-all"
+                    >
+                      {isDeletingAgent === agent.id
+                        ? <Loader2 className="w-4 h-4 animate-spin" />
+                        : <Trash2 className="w-4 h-4" />}
+                    </button>
+                  </motion.div>
                 ))
               )}
             </AnimatePresence>

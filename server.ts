@@ -2259,6 +2259,78 @@ app.put("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
   }
 });
 
+// ──────────────────────────────────────────────────────────────────────────
+//  DELETE /api/agents/:id
+//  Permanently decommissions an agent.
+//
+//  Tables with ON DELETE CASCADE (auto-cleaned by Postgres):
+//    wireline_directives, wireline_knowledge, wireline_personality,
+//    wireline_agent_lessons
+//
+//  Tables with no CASCADE (foreign key would block deletion):
+//    wireline_call_logs, wireline_appointments, wireline_outbound_leads,
+//    wireline_fleet_tasks, wireline_phone_numbers, wireline_signal_presence
+//  → We null-out agent_id on these so historical records are preserved.
+//
+//  wireline_intake_keys.default_agent_id is already ON DELETE SET NULL.
+// ──────────────────────────────────────────────────────────────────────────
+app.delete("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
+  try {
+    const agentId = req.params.id;
+    const userId = req.user.id;
+
+    // Confirm the agent belongs to this user before touching anything.
+    const { data: agent, error: lookupErr } = await db
+      .from("wireline_agents")
+      .select("id")
+      .eq("id", agentId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (lookupErr) throw lookupErr;
+    if (!agent) return res.status(404).json({ error: "Agent not found." });
+
+    // Null-out agent_id on tables that would otherwise block the delete.
+    const nullTables = [
+      { table: "wireline_call_logs",      label: "call_logs" },
+      { table: "wireline_appointments",   label: "appointments" },
+      { table: "wireline_outbound_leads", label: "outbound_leads" },
+      { table: "wireline_fleet_tasks",    label: "fleet_tasks" },
+      { table: "wireline_phone_numbers",  label: "phone_numbers" },
+      { table: "wireline_signal_presence",label: "signal_presence" },
+    ] as const;
+
+    const nullResults = await Promise.allSettled(
+      nullTables.map(({ table }) =>
+        db.from(table as any).update({ agent_id: null }).eq("agent_id", agentId).eq("user_id", userId)
+      )
+    );
+
+    nullResults.forEach((r, i) => {
+      if (r.status === "rejected" || (r.status === "fulfilled" && (r.value as any)?.error)) {
+        const reason = r.status === "rejected" ? r.reason?.message : (r.value as any)?.error?.message;
+        log.warn(`agent delete: failed to null agent_id on ${nullTables[i].label}`, { agentId, reason });
+      }
+    });
+
+    // Delete the agent row — CASCADE handles directives, knowledge,
+    // personality, and lessons automatically.
+    const { error: deleteErr } = await db
+      .from("wireline_agents")
+      .delete()
+      .eq("id", agentId)
+      .eq("user_id", userId);
+
+    if (deleteErr) throw deleteErr;
+
+    log.info("agent deleted", { agentId, userId });
+    res.json({ success: true });
+  } catch (error: any) {
+    log.error("Failed to delete agent", { error: error?.message });
+    res.status(500).json({ error: "Failed to delete agent." });
+  }
+});
+
 app.get("/api/agent-config/:id", authenticateUser, async (req: any, res: any) => {
   try {
     const agentId = req.params.id;
@@ -2309,6 +2381,20 @@ app.patch("/api/phone-numbers/:id", authenticateUser, async (req: any, res: any)
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: "Failed to update phone number assignment" });
+  }
+});
+
+app.delete("/api/phone-numbers/:id", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { error } = await db.from('wireline_phone_numbers')
+      .delete()
+      .eq('id', req.params.id)
+      .eq('user_id', req.user.id);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (error: any) {
+    log.error("Failed to delete phone number", { error: error?.message });
+    res.status(500).json({ error: "Failed to delete phone number." });
   }
 });
 
@@ -2589,10 +2675,34 @@ app.post("/api/settings", authenticateUser, async (req: any, res: any) => {
 
 app.get("/api/outbound", authenticateUser, async (req: any, res: any) => {
   try {
-    const { data } = await db.from('wireline_outbound_leads').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false });
-    res.json({ leads: data || [] });
+    const limitRaw = parseInt(req.query.limit as string);
+    const offsetRaw = parseInt(req.query.offset as string);
+    const limit = Math.min(isNaN(limitRaw) ? 100 : limitRaw, 500);
+    const offset = isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw);
+    const { data, count, error } = await db
+      .from('wireline_outbound_leads')
+      .select('*', { count: 'exact' })
+      .eq('user_id', req.user.id)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (error) throw error;
+    res.json({ leads: data || [], total: count || 0, hasMore: count ? (offset + limit) < count : false });
   } catch (error) {
-    res.json({ leads: [] });
+    res.json({ leads: [], total: 0, hasMore: false });
+  }
+});
+
+app.delete("/api/outbound/:id", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { error } = await db.from('wireline_outbound_leads')
+      .delete()
+      .eq('id', req.params.id)
+      .eq('user_id', req.user.id);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (error: any) {
+    log.error("Failed to delete lead", { error: error?.message });
+    res.status(500).json({ error: "Failed to delete lead." });
   }
 });
 
