@@ -139,6 +139,48 @@ app.use((req: any, res: any, next: any) => {
 });
 
 // ────────────────────────────────────────────────────────────────────
+//  Security headers — hand-rolled (no helmet dep) so we control the
+//  exact set of headers and CSP directives. Applied to every response.
+//  CSP intentionally permissive for inline scripts because the OAuth
+//  callback page injects a JSON-encoded postMessage script; tighten
+//  with a nonce when that page moves to a static asset.
+// ────────────────────────────────────────────────────────────────────
+app.use((_req: any, res: any, next: any) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "geolocation=(), camera=(), microphone=(self)");
+  if (IS_PROD) {
+    // 6 months HSTS preload-eligible — only in prod so dev over http stays usable.
+    res.setHeader("Strict-Transport-Security", "max-age=15552000; includeSubDomains");
+  }
+  next();
+});
+
+// ────────────────────────────────────────────────────────────────────
+//  Slow-request logging — emit a structured warning when any handler
+//  exceeds 5s. Helps surface stalled Vapi / Gmail / Claude paths in
+//  prod logs without instrumenting every route by hand.
+// ────────────────────────────────────────────────────────────────────
+const SLOW_REQUEST_THRESHOLD_MS = 5_000;
+app.use((req: any, res: any, next: any) => {
+  const start = Date.now();
+  res.on("finish", () => {
+    const dur = Date.now() - start;
+    if (dur >= SLOW_REQUEST_THRESHOLD_MS) {
+      log.warn("slow request", {
+        requestId: res.locals?.requestId,
+        method: req.method,
+        path: req.path,
+        status: res.statusCode,
+        duration_ms: dur,
+      });
+    }
+  });
+  next();
+});
+
+// ────────────────────────────────────────────────────────────────────
 //  Health check — for uptime monitors, load balancers, and the AI
 //  Studio container's readiness probe. Public, no auth. Probes the
 //  database with a short timeout so we report `degraded` (HTTP 503)
@@ -235,12 +277,26 @@ const SCOPES = [
 ];
 
 function getGoogleOAuthClient(req: express.Request) {
-   // According to oauth-integration skill, we determine the exact redirect URI based on the request origin or APP_URL.
-   // But because we might be behind a proxy, trusting process.env.APP_URL is safest, but AI Studio passes it as a header or similar, or we can just infer from req.headers.referer if needed, but for OAuth callback absolute URL is needed.
-   // Wait, oauth-integration says: use `process.env.APP_URL` or dynamically construct from req.headers.host but in container getting the external host is tricky.
-   // Wait! `req.protocol + '://' + req.get('host')` might work if proxied correctly. Let's do that for now but fallback if missing.
-   // "always use the APP_URL environment variable to get the URL of the container."
-   const baseUrl = process.env.APP_URL || `https://${req.get('host')}`;
+   // OAuth redirect URI MUST match what's registered in Google Cloud
+   // Console exactly. Prefer APP_URL (operator-controlled) over the
+   // request Host header (attacker-controlled). When APP_URL isn't
+   // set we fall back to the request host but only allow it if it
+   // matches one of the configured CORS origins — otherwise an attacker
+   // who can spoof the Host header could redirect the OAuth flow to
+   // their own server and steal the token.
+   let baseUrl = process.env.APP_URL;
+   if (!baseUrl) {
+      const hostHeader = req.get('host');
+      const candidate = hostHeader ? `${req.protocol}://${hostHeader}` : null;
+      if (candidate && (corsAllowList.length === 0 || corsAllowList.includes(candidate))) {
+         baseUrl = candidate;
+      } else {
+         log.error("OAuth redirect URI: APP_URL unset and Host header not in CORS_ORIGINS", {
+            host: hostHeader,
+         });
+         throw new Error("OAuth misconfigured: set APP_URL or add the host to CORS_ORIGINS.");
+      }
+   }
    return new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
