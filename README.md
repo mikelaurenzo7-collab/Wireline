@@ -178,9 +178,113 @@ See `server.ts` for the full list — voice webhook (`/api/vapi-webhook`), email
 ```bash
 npm run lint     # tsc --noEmit
 npm run build    # vite build + esbuild server
-npm start        # node dist/server.js
+npm start        # node dist/server.cjs
 ```
 
+## Deploy to Railway
+
+Wireline runs on Railway as a single Node service: Express serves both the
+bundled API (`dist/server.cjs`) and the static React build (`dist/`) on the
+`PORT` Railway injects. There are no serverless functions — one container,
+one process, one port.
+
+### One-time setup
+
+1. **Create the project**
+   - Sign in at <https://railway.com> and click **New Project → Deploy from
+     GitHub repo**, then select this repository.
+   - Railway autodetects the Node app via `railway.json` + `nixpacks.toml`
+     committed at the repo root and uses Nixpacks with Node 20.
+
+2. **Generate a public domain**
+   - Open the service → **Settings → Networking → Generate Domain**.
+     Railway returns something like `your-service.up.railway.app`.
+   - (Optional) Add a custom domain on the same screen and create the
+     CNAME record at your DNS provider.
+
+3. **Set environment variables** (Service → **Variables**). Required:
+
+   | Variable | Notes |
+   |---|---|
+   | `ANTHROPIC_API_KEY` | unlocks every `/api/claude/*` path |
+   | `GEMINI_API_KEY` | legacy + fallback paths |
+   | `VAPI_PRIVATE_KEY` | server-side Vapi calls |
+   | `VITE_VAPI_PUBLIC_KEY` | bundled into the frontend at build time |
+   | `VAPI_WEBHOOK_SECRET` | HMAC secret for Vapi server webhooks |
+   | `VITE_SUPABASE_URL` | bundled into the frontend |
+   | `VITE_SUPABASE_ANON_KEY` | bundled into the frontend |
+   | `SUPABASE_SERVICE_ROLE_KEY` | server-side privileged DB ops |
+   | `GOOGLE_CLIENT_ID` | Gmail OAuth |
+   | `GOOGLE_CLIENT_SECRET` | Gmail OAuth |
+   | `APP_URL` | **must** be the full public URL — e.g. `https://your-service.up.railway.app`. Used for OAuth redirect URIs and absolute links. |
+
+   > **Do not set `PORT` yourself.** Railway injects it; the server reads
+   > `process.env.PORT` and falls back to `3000` only for local dev.
+
+   > **`VITE_*` variables are baked into the static bundle at `npm run
+   > build` time.** If you change them, you must trigger a redeploy
+   > (Deployments → ⋯ → **Redeploy**) to rebuild the frontend.
+
+4. **Run the database schema**
+   - Open the Supabase SQL editor and execute `supabase_schema.sql`. It is
+     idempotent and safe to re-run on existing installs.
+
+5. **Configure Google OAuth redirect URIs**
+   - In Google Cloud Console → APIs & Services → Credentials → your OAuth
+     2.0 Client → **Authorized redirect URIs**, add:
+     `https://<your-railway-domain>/api/oauth/google/callback`
+
+6. **Configure Vapi server webhooks**
+   - Point your assistant's `serverUrl` at:
+     `https://<your-railway-domain>/api/vapi-webhook`
+   - Set `serverUrlSecret` to the same value as `VAPI_WEBHOOK_SECRET`.
+
+### Build & start
+
+Railway will run, on every push to the connected branch:
+
+```
+npm ci          # clean reproducible install
+npm run build   # vite build (frontend → dist/) + esbuild (server → dist/server.cjs)
+npm start       # node dist/server.cjs
+```
+
+The healthcheck (`GET /api/health`) is wired in `railway.json`; failed
+deploys auto-rollback to the previous successful release.
+
+### Useful Railway CLI commands
+
+```bash
+npm i -g @railway/cli
+railway login
+railway link                       # connect this repo to your project
+railway up                         # deploy current working tree
+railway logs                       # tail server logs
+railway variables                  # list env vars
+railway variables --set KEY=value  # set one
+railway run npm run lint           # run a command with project env
+railway open                       # open the project dashboard
+```
+
+### Operational notes specific to Railway
+
+- **Single replica only.** The Vapi webhook delivery scheduler, Daily Brief
+  scheduler, and the in-memory rate limiter all assume a single Node
+  process. If you scale `numReplicas` above 1, swap the rate-limit store
+  for Redis and gate the schedulers behind a leader election. The default
+  in `railway.json` is `numReplicas: 1` — leave it alone unless you've
+  done that work.
+- **Persistent volumes are not required.** All state lives in Supabase.
+- **Egress allowlist:** the service must be able to reach
+  `api.anthropic.com`, `generativelanguage.googleapis.com`,
+  `api.vapi.ai`, your Supabase project, and `oauth2.googleapis.com` /
+  `gmail.googleapis.com`. Railway has open egress by default — no
+  action needed.
+- **Logs:** `console.log`/`console.error` from `server.ts` stream to the
+  Railway dashboard. The Daily Brief scheduler also writes per-send
+  failures to `daily_brief_last_error` in Supabase.
+
 ## License
+
 
 Internal — see your org's license terms.

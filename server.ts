@@ -14,7 +14,10 @@ dotenv.config();
 const DEFAULT_AGENT_ROLE = "customer_service";
 
 const app = express();
-const PORT = 3000;
+// Railway (and most PaaS providers) inject PORT dynamically. Fall back to
+// 3000 for local dev. parseInt handles undefined / empty strings cleanly
+// (both yield NaN) and rejects accidental garbage like "3000abc".
+const PORT = parseInt(process.env.PORT || '', 10) || 3000;
 
 app.use(cors());
 // Bump body limit so base64-encoded PDF uploads (up to ~32MB raw / ~43MB
@@ -5309,8 +5312,6 @@ async function startServer() {
 
 export { app };
 
-// Only start the HTTP server when running standalone (not on Vercel).
-// Vercel sets VERCEL=1 automatically in all serverless function environments.
-if (process.env.VERCEL !== '1') {
-  startServer();
-}
+// Always start the HTTP server when this module is the process entry point.
+// Railway, Render, Fly, Docker and `node dist/server.js` all enter here.
+startServer();

@@ -1,0 +1,14 @@
+# Nixpacks config — Railway uses this to build the image.
+# Pins Node 20 and uses npm ci for reproducible installs.
+
+[phases.setup]
+nixPkgs = ["nodejs_20", "npm-10_x"]
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[start]
+cmd = "npm start"

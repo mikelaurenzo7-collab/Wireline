@@ -5,12 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "vite build && esbuild server.ts --platform=node --packages=external --bundle --format=cjs --outdir=dist",
-    "vercel-build": "vite build",
-    "start": "node dist/server.js",
+    "build": "vite build && esbuild server.ts --platform=node --packages=external --bundle --format=cjs --outfile=dist/server.cjs",
+    "start": "node dist/server.cjs",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.92.0",
