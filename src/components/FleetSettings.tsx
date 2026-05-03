@@ -20,14 +20,14 @@ const PREMIUM_VOICES = [
 // Role metadata — mirrors ROLE_PERSONALITY_TEMPLATES on the server.
 // color is a Tailwind color stem (without bg-/text- prefix).
 export const AGENT_ROLES = [
-  { value: "sales",             label: "Sales",             description: "Closes deals and drives revenue",           color: "amber",   tw: { bg: "bg-amber-100",   text: "text-amber-800",   border: "border-amber-300",   dot: "bg-amber-500"   } },
-  { value: "customer_service",  label: "Customer Service",  description: "Handles inbound issues and support",         color: "emerald", tw: { bg: "bg-emerald-100", text: "text-emerald-800", border: "border-emerald-300", dot: "bg-emerald-500" } },
-  { value: "scheduler",         label: "Scheduler",         description: "Books appointments and manages calendars",   color: "violet",  tw: { bg: "bg-violet-100",  text: "text-violet-800",  border: "border-violet-300",  dot: "bg-violet-500"  } },
-  { value: "collections",       label: "Collections",       description: "Handles payment follow-ups and recovery",    color: "rose",    tw: { bg: "bg-rose-100",    text: "text-rose-800",    border: "border-rose-300",    dot: "bg-rose-500"    } },
-  { value: "technical_support", label: "Technical Support", description: "Diagnoses and resolves technical issues",    color: "blue",    tw: { bg: "bg-blue-100",    text: "text-blue-800",    border: "border-blue-300",    dot: "bg-blue-500"    } },
-  { value: "lead_qualifier",    label: "Lead Qualifier",    description: "Screens and scores inbound prospects",       color: "orange",  tw: { bg: "bg-orange-100",  text: "text-orange-800",  border: "border-orange-300",  dot: "bg-orange-500"  } },
-  { value: "receptionist",      label: "Receptionist",      description: "Routes calls and creates first impressions", color: "cyan",    tw: { bg: "bg-cyan-100",    text: "text-cyan-800",    border: "border-cyan-300",    dot: "bg-cyan-500"    } },
-  { value: "marketing",         label: "Marketing",         description: "Nurtures prospects and runs campaigns",      color: "purple",  tw: { bg: "bg-purple-100",  text: "text-purple-800",  border: "border-purple-300",  dot: "bg-purple-500"  } },
+  { value: "sales",             label: "Sales",             description: "Closes deals and drives revenue",           color: "amber",   tw: { bg: "bg-amber-500/10",   text: "text-amber-400",   border: "border-amber-500/25",   dot: "bg-amber-400"   } },
+  { value: "customer_service",  label: "Customer Service",  description: "Handles inbound issues and support",         color: "emerald", tw: { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/25", dot: "bg-emerald-400" } },
+  { value: "scheduler",         label: "Scheduler",         description: "Books appointments and manages calendars",   color: "violet",  tw: { bg: "bg-violet-500/10",  text: "text-violet-400",  border: "border-violet-500/25",  dot: "bg-violet-400"  } },
+  { value: "collections",       label: "Collections",       description: "Handles payment follow-ups and recovery",    color: "rose",    tw: { bg: "bg-rose-500/10",    text: "text-rose-400",    border: "border-rose-500/25",    dot: "bg-rose-400"    } },
+  { value: "technical_support", label: "Technical Support", description: "Diagnoses and resolves technical issues",    color: "blue",    tw: { bg: "bg-blue-500/10",    text: "text-blue-400",    border: "border-blue-500/25",    dot: "bg-blue-400"    } },
+  { value: "lead_qualifier",    label: "Lead Qualifier",    description: "Screens and scores inbound prospects",       color: "orange",  tw: { bg: "bg-orange-500/10",  text: "text-orange-400",  border: "border-orange-500/25",  dot: "bg-orange-400"  } },
+  { value: "receptionist",      label: "Receptionist",      description: "Routes calls and creates first impressions", color: "cyan",    tw: { bg: "bg-cyan-500/10",    text: "text-cyan-400",    border: "border-cyan-500/25",    dot: "bg-cyan-400"    } },
+  { value: "marketing",         label: "Marketing",         description: "Nurtures prospects and runs campaigns",      color: "purple",  tw: { bg: "bg-purple-500/10",  text: "text-purple-400",  border: "border-purple-500/25",  dot: "bg-purple-400"  } },
 ] as const;
 
 type RoleValue = typeof AGENT_ROLES[number]["value"];
@@ -40,11 +40,11 @@ function RoleBadge({ role, size = "sm" }: { role?: string; size?: "xs" | "sm" })
   const meta = getRoleMeta(role);
   return (
     <span className={cn(
-      "inline-flex items-center gap-1.5 font-black uppercase tracking-widest italic brutal-border shadow-none",
+      "inline-flex items-center gap-1 rounded-full border leading-none",
       meta.tw.bg, meta.tw.text, meta.tw.border,
-      size === "xs" ? "text-[8px] px-2 py-0.5 border-2" : "text-[10px] px-3 py-1 border-2"
+      size === "xs" ? "text-[8px] uppercase tracking-[0.22em] px-1.5 py-0.5" : "text-[9px] uppercase tracking-[0.22em] px-2 py-0.5"
     )}>
-      <span className={cn("w-1.5 h-1.5 rounded-full", meta.tw.dot)} />
+      <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", meta.tw.dot)} />
       {meta.label}
     </span>
   );
@@ -674,7 +674,7 @@ export default function FleetSettings() {
                         </div>
                         <button
                           onClick={() => updatePersonality(agentConfig.personality)}
-                          className="brutal-btn !py-2 !px-4 !text-[11px] !tracking-[0.3em]"
+                          className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-all"
                         >
                           <Save className="w-3.5 h-3.5" />
                           Save
