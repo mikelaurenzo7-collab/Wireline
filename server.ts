@@ -1265,83 +1265,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
             provider: isOutbound ? (agentConfig?.data?.voice_provider_outbound || agentConfig?.data?.voice_provider || "11labs") : (agentConfig?.data?.voice_provider_inbound || agentConfig?.data?.voice_provider || "11labs"),
             voiceId: isOutbound ? (agentConfig?.data?.voice_id_outbound || agentConfig?.data?.voice_id || "bIHbv24MWmeRgasZH58o") : (agentConfig?.data?.voice_id_inbound || agentConfig?.data?.voice_id || "bIHbv24MWmeRgasZH58o") 
           },
-          functions: [
-            {
-              name: "check_calendar_availability",
-              description: "Checks the database calendar to see what times are already booked on a specific date. ALWAYS run this before confirming an appointment to prevent double-booking.",
-              parameters: {
-                type: "object",
-                properties: {
-                  date: { type: "string", description: "The date to check (e.g., 'October 15', 'Next Tuesday')." }
-                },
-                required: ["date"]
-              }
-            },
-            {
-              name: "book_appointment",
-              description: "Books an appointment in the calendar. Use this only AFTER checking the calendar to ensure the time is free.",
-              parameters: {
-                type: "object",
-                properties: {
-                  date: { type: "string", description: "The date of the appointment (e.g., 'Tuesday', 'Oct 15')" },
-                  time: { type: "string", description: "The time of the appointment (e.g., '2 PM')" },
-                  customer_name: { type: "string", description: "The caller's name" },
-                  service_type: { type: "string", description: "The type of service requested (e.g., 'AC Repair', 'Plumbing')" }
-                },
-                required: ["date", "time", "customer_name", "service_type"]
-              }
-            },
-            {
-              name: "escalate_to_human",
-              description: "Transfers the call to a real human manager. Use this if the customer is very angry, asks for a human repeatedly, or has an extremely complex question you cannot answer with your Knowledge Base.",
-              parameters: { type: "object", properties: {}, required: [] }
-            },
-            {
-              name: "send_email",
-              description: "Sends an email to the customer. Use this to send confirmations, quotes, or follow-up information during or after the call.",
-              parameters: {
-                type: "object",
-                properties: {
-                  to_email: { type: "string", description: "The customer's email address." },
-                  subject: { type: "string", description: "The subject of the email." },
-                  body: { type: "string", description: "The body content of the email." }
-                },
-                required: ["to_email", "subject", "body"]
-              }
-            },
-            {
-              name: "create_fleet_task",
-              description: "Creates a resolution mission for a human agent. Use this if a customer needs something complex that you cannot handle on the call.",
-              parameters: {
-                type: "object",
-                properties: {
-                  description: { type: "string", description: "Detailed description of the task." },
-                  priority: { type: "string", enum: ["low", "medium", "high"], description: "The urgency of the mission." }
-                },
-                required: ["description", "priority"]
-              }
-            },
-            {
-              name: "search_leads",
-              description: "Locates customer lead data from the central fleet intelligence database. Use this to find existing lead context.",
-              parameters: {
-                type: "object",
-                properties: {
-                  query: { type: "string", description: "The name or signal signature to search for." }
-                },
-                required: ["query"]
-              }
-            },
-            {
-              name: "view_recent_interactions",
-              description: "Retrieves recent tasks and call summaries for this specific number. Use this to provide continuity if a caller asks about previous status.",
-              parameters: {
-                type: "object",
-                properties: {},
-                required: []
-              }
-            }
-          ]
+          functions: buildRoleToolDefs(agentRole)
         }
       };
 
@@ -1642,6 +1566,73 @@ app.post("/api/vapi-webhook", async (req, res) => {
            }
         } catch (e) {
            results.push({ toolCallId: toolCall.id, result: "Intelligence database is currently unreachable." });
+        }
+      }
+
+      // TOOL 7: UPDATE LEAD STATUS
+      if (toolCall.function.name === "update_lead_status") {
+        try {
+          const { status, notes } = toolCall.function.arguments;
+          const customerPhone = payload.call?.customer?.number || message.call?.customer?.number;
+          if (customerPhone) {
+            const safePhone = customerPhone.replace(/[^0-9+]/g, '').slice(0, 20);
+            await db.from('wireline_outbound_leads')
+              .update({ status, last_contact_summary: notes || '', last_called_at: new Date() })
+              .eq('user_id', agent?.user_id)
+              .ilike('customer_number', `%${safePhone}%`);
+          }
+          results.push({ toolCallId: toolCall.id, result: `Lead status updated to '${status}'. CRM record saved.` });
+        } catch (e: any) {
+          log.error("Vapi tool: update_lead_status failed", { agentId: webhookAgentId, error: e?.message || String(e) });
+          results.push({ toolCallId: toolCall.id, result: "Failed to update lead status. Note the outcome manually." });
+        }
+      }
+
+      // TOOL 8: LOG PAYMENT PROMISE (collections compliance)
+      if (toolCall.function.name === "log_payment_promise") {
+        try {
+          const { amount_promised, payment_date, payment_method } = toolCall.function.arguments;
+          const customerPhone = payload.call?.customer?.number || message.call?.customer?.number || "Unknown";
+          await db.from('wireline_fleet_tasks').insert({
+            user_id: agent?.user_id,
+            agent_id: webhookAgentId,
+            task_type: 'payment_promise',
+            description: `[PAYMENT PROMISE] Caller: ${customerPhone} — ${amount_promised} due by ${payment_date}. Method: ${payment_method || 'not specified'}`,
+            source_type: 'phone_call',
+            source_id: message.call?.id || payload.call?.id || "in-call",
+            target_channel: 'manual',
+            priority: 'high',
+            status: 'pending',
+          });
+          results.push({ toolCallId: toolCall.id, result: `Payment promise recorded: ${amount_promised} by ${payment_date}. Compliance log updated.` });
+        } catch (e: any) {
+          log.error("Vapi tool: log_payment_promise failed", { agentId: webhookAgentId, error: e?.message || String(e) });
+          results.push({ toolCallId: toolCall.id, result: "Failed to log payment promise. You must manually record this commitment for compliance." });
+        }
+      }
+
+      // TOOL 9: CREATE SUPPORT TICKET (technical_support)
+      if (toolCall.function.name === "create_support_ticket") {
+        try {
+          const { issue_summary, error_codes, severity } = toolCall.function.arguments;
+          const customerPhone = payload.call?.customer?.number || message.call?.customer?.number || "Unknown";
+          const ticketDescription = `[SUPPORT TICKET] ${severity.toUpperCase()} — Caller: ${customerPhone}\nIssue: ${issue_summary}${error_codes ? `\nError Codes: ${error_codes}` : ''}`;
+          const { data: task, error: taskError } = await db.from('wireline_fleet_tasks').insert({
+            user_id: agent?.user_id,
+            agent_id: webhookAgentId,
+            task_type: 'support_ticket',
+            description: ticketDescription,
+            source_type: 'phone_call',
+            source_id: message.call?.id || payload.call?.id || "in-call",
+            target_channel: 'manual',
+            priority: (severity === 'critical' || severity === 'high') ? 'high' : severity === 'medium' ? 'medium' : 'low',
+            status: 'pending',
+          }).select('id').single();
+          if (taskError) throw taskError;
+          results.push({ toolCallId: toolCall.id, result: `Support ticket #${(task?.id || '').toString().slice(0, 8)} opened with ${severity} severity. Engineering team has been notified.` });
+        } catch (e: any) {
+          log.error("Vapi tool: create_support_ticket failed", { agentId: webhookAgentId, error: e?.message || String(e) });
+          results.push({ toolCallId: toolCall.id, result: "Failed to create support ticket. Please note the issue details and file a ticket manually." });
         }
       }
     }
@@ -2038,6 +2029,150 @@ app.get("/api/appointments", authenticateUser, async (req: any, res: any) => {
 // ==========================================
 // 1.7 AGENTS MANAGEMENT ENDPOINTS
 // ==========================================
+
+// ── Role-scoped Vapi tool definitions ────────────────────────────────────────
+// Canonical definitions for every tool an agent may call during a live voice
+// call. Universal tools (recall, escalate, fleet-task, email) appear on every
+// role. Scheduling tools are limited to booking-capable roles. Intelligence
+// tools (search_leads, update_lead_status) go to commercial roles.
+// Specialist tools (log_payment_promise, create_support_ticket) are gated to
+// the one role that needs them so the LLM isn't distracted by irrelevant tools.
+// ─────────────────────────────────────────────────────────────────────────────
+const VAPI_TOOL_DEFS = {
+  view_recent_interactions: {
+    name: "view_recent_interactions",
+    description: "Retrieves recent call history and open tasks for this caller. Use this to provide continuity if they reference a previous conversation or status.",
+    parameters: { type: "object", properties: {}, required: [] },
+  },
+  escalate_to_human: {
+    name: "escalate_to_human",
+    description: "Transfers the call to a human. Use if the caller is very upset, asks for a real person more than once, or the issue is beyond your authority.",
+    parameters: { type: "object", properties: {}, required: [] },
+  },
+  create_fleet_task: {
+    name: "create_fleet_task",
+    description: "Creates a follow-up task for a human team member. Use for complex issues you cannot resolve on the call.",
+    parameters: {
+      type: "object",
+      properties: {
+        description: { type: "string", description: "Detailed description of what needs to be done." },
+        priority: { type: "string", enum: ["low", "medium", "high"], description: "Urgency level." },
+      },
+      required: ["description", "priority"],
+    },
+  },
+  send_email: {
+    name: "send_email",
+    description: "Sends an email to the customer for confirmations, quotes, or follow-up information discussed on the call.",
+    parameters: {
+      type: "object",
+      properties: {
+        to_email: { type: "string", description: "Customer's email address." },
+        subject: { type: "string", description: "Email subject line." },
+        body: { type: "string", description: "Email body content." },
+      },
+      required: ["to_email", "subject", "body"],
+    },
+  },
+  check_calendar_availability: {
+    name: "check_calendar_availability",
+    description: "Checks the calendar for already-booked times on a date. ALWAYS run this before confirming any appointment slot.",
+    parameters: {
+      type: "object",
+      properties: {
+        date: { type: "string", description: "The date to check (e.g., 'October 15', 'Next Tuesday')." },
+      },
+      required: ["date"],
+    },
+  },
+  book_appointment: {
+    name: "book_appointment",
+    description: "Books an appointment. Only use AFTER confirming availability with check_calendar_availability.",
+    parameters: {
+      type: "object",
+      properties: {
+        date: { type: "string", description: "Appointment date (e.g., 'Tuesday', 'Oct 15')." },
+        time: { type: "string", description: "Appointment time (e.g., '2 PM')." },
+        customer_name: { type: "string", description: "Caller's full name." },
+        service_type: { type: "string", description: "Type of service (e.g., 'HVAC Repair', 'Plumbing Inspection')." },
+      },
+      required: ["date", "time", "customer_name", "service_type"],
+    },
+  },
+  search_leads: {
+    name: "search_leads",
+    description: "Searches the lead database for existing customer records. Use to pull context before discussing account history.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Customer name, email, or phone number to search for." },
+      },
+      required: ["query"],
+    },
+  },
+  update_lead_status: {
+    name: "update_lead_status",
+    description: "Updates the lead's status in the CRM based on the outcome of this call. Use at the end of every commercial interaction.",
+    parameters: {
+      type: "object",
+      properties: {
+        status: {
+          type: "string",
+          enum: ["qualified", "not_interested", "callback_requested", "proposal_sent", "closed_won", "closed_lost"],
+          description: "The outcome of this interaction.",
+        },
+        notes: { type: "string", description: "One sentence summarising why this status was set." },
+      },
+      required: ["status", "notes"],
+    },
+  },
+  log_payment_promise: {
+    name: "log_payment_promise",
+    description: "Records a payment promise made by the customer during a collections call. REQUIRED whenever a payment commitment is made — FDCPA compliance.",
+    parameters: {
+      type: "object",
+      properties: {
+        amount_promised: { type: "string", description: "The dollar amount the customer agreed to pay (e.g., '$250')." },
+        payment_date: { type: "string", description: "The date they committed to pay (e.g., 'Friday June 7th')." },
+        payment_method: { type: "string", description: "How they will pay (e.g., 'credit card over phone', 'check by mail', 'online portal')." },
+      },
+      required: ["amount_promised", "payment_date"],
+    },
+  },
+  create_support_ticket: {
+    name: "create_support_ticket",
+    description: "Creates a formal support ticket for issues requiring engineering or specialist review. Use when you cannot resolve the issue on the call.",
+    parameters: {
+      type: "object",
+      properties: {
+        issue_summary: { type: "string", description: "Concise description of the technical problem." },
+        error_codes: { type: "string", description: "Any error codes or messages the customer reported (leave blank if none)." },
+        severity: { type: "string", enum: ["low", "medium", "high", "critical"], description: "Impact severity of this issue." },
+      },
+      required: ["issue_summary", "severity"],
+    },
+  },
+} as const;
+
+type VapiToolName = keyof typeof VAPI_TOOL_DEFS;
+
+// Maps each agent role to the subset of tools it may call during a live call.
+const ROLE_TOOL_SETS: Record<string, VapiToolName[]> = {
+  sales:             ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status"],
+  customer_service:  ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "check_calendar_availability", "book_appointment"],
+  scheduler:         ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "check_calendar_availability", "book_appointment"],
+  collections:       ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "log_payment_promise"],
+  technical_support: ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "create_support_ticket"],
+  lead_qualifier:    ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status"],
+  receptionist:      ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "check_calendar_availability", "book_appointment"],
+  marketing:         ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status"],
+};
+
+/** Returns the Vapi `functions` array scoped to the given agent role. */
+function buildRoleToolDefs(role: string): object[] {
+  const toolNames = ROLE_TOOL_SETS[role] ?? ROLE_TOOL_SETS["customer_service"];
+  return toolNames.map(name => VAPI_TOOL_DEFS[name]);
+}
 
 // Role personality templates — production-grade system prompts for each
 // business function. These are applied when an agent is created or when
@@ -2917,6 +3052,13 @@ async function placeOutboundCall(opts: {
     ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n')}
     `;
 
+  // Construct the server URL so Vapi can route tool-call and end-of-call
+  // webhooks back to this agent's endpoint. Without this, outbound calls
+  // have no tools and no post-call enrichment.
+  const outboundServerUrl = process.env.APP_URL
+    ? `${process.env.APP_URL}/api/vapi-webhook?agentId=${agentId}`
+    : undefined;
+
   const vapiPayload = {
     phoneNumberId: settings.vapi_phone_number_id,
     customer: { number: customerNumber },
@@ -2924,11 +3066,15 @@ async function placeOutboundCall(opts: {
       name: agentConfig?.data?.name || "Wireline Outbound Agent",
       firstMessage: agentConfig?.data?.first_message || `Hi ${customerName ? customerName : 'there'}, this is ${agentConfig?.data?.name || 'your representative'} calling.`,
       backgroundSound: agentConfig?.data?.ambient_noise || 'off',
+      ...(outboundServerUrl && { serverUrl: outboundServerUrl }),
+      serverUrlSecret: process.env.VAPI_WEBHOOK_SECRET,
+      serverMessages: ["tool-calls", "status-update", "end-of-call-report"],
       model: {
         provider: voiceLlmProvider,
         model: voiceLlmModel,
         systemPrompt: systemPrompt,
         temperature: llmTemp,
+        functions: buildRoleToolDefs(outboundAgentRole),
       },
       recordingEnabled: true,
       voice: {
