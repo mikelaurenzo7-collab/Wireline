@@ -59,20 +59,21 @@ export default function DashboardHome() {
       const res = await authFetch("/api/fleet/presence");
       const data = await res.json();
       setActiveSignals(data.signals || []);
-    } catch (e) { console.error("Failed to fetch active signals:", e); }
+    } catch (e) { console.error("Signal presence sync failed:", e); }
   };
 
   const fetchHighPriorityTasks = async () => {
     try {
-      const res = await authFetch("/api/tasks/high-priority");
+      const res = await authFetch("/api/fleet/tasks");
       const data = await res.json();
-      setHighPriorityTasks(data.tasks || []);
+      const high = (data.tasks || []).filter((t: any) => t.priority === 'high' && t.status === 'pending');
+      setHighPriorityTasks(high);
     } catch (e) { console.error("Failed to fetch high priority tasks:", e); }
   };
 
   const fetchSystemActivity = async () => {
     try {
-      const res = await authFetch("/api/activity/recent");
+      const res = await authFetch("/api/fleet/activity");
       const data = await res.json();
       setSystemActivity(data.activity || []);
     } catch (e) { console.error("Failed to fetch system activity:", e); }
@@ -80,7 +81,7 @@ export default function DashboardHome() {
 
   const fetchStats = async () => {
     try {
-      const res = await authFetch("/api/stats");
+      const res = await authFetch("/api/dashboard/stats");
       const data = await res.json();
       setStats(data);
     } catch (e) { console.error(e); } finally { setIsLoading(false); }

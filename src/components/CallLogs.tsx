@@ -41,9 +41,13 @@ export default function CallLogs() {
 
   useEffect(() => { fetchCalls(0, false); }, []);
 
-  // Auto-select first call so detail panel always has content
+  // Auto-select first call on initial load only — preserve user deselection.
+  const initialSelectionDone = React.useRef(false);
   useEffect(() => {
-    if (!selectedCall && calls.length > 0) setSelectedCall(calls[0]);
+    if (!initialSelectionDone.current && calls.length > 0 && !selectedCall) {
+      setSelectedCall(calls[0]);
+      initialSelectionDone.current = true;
+    }
   }, [calls, selectedCall]);
 
   const loadMore = () => { if (!loadingMore && hasMore) fetchCalls(offset, true); };
@@ -134,6 +138,7 @@ export default function CallLogs() {
                   <li key={call.id}>
                     <button
                       onClick={() => setSelectedCall(call)}
+                      aria-label={`Open signal from ${call.customer_number || "Sim Test"}: ${call.summary || "no summary"}`}
                       className={cn(
                         "w-full text-left flex items-center gap-3 px-3 py-2.5 hover:bg-white/3 transition-all",
                         selectedCall?.id === call.id && "bg-brand/8 ring-1 ring-inset ring-brand/30"

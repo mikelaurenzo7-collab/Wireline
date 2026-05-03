@@ -114,6 +114,7 @@ function HotLeads({ items }: { items: any[] }) {
             />
             <Link
               to={`/contact/${encodeURIComponent(c.customer_number || "unknown")}`}
+              aria-label={`View contact profile for ${c.customer_number || "unknown caller"}`}
               className="w-8 h-8 rounded-full glass border border-white/10 flex items-center justify-center text-ink/70 hover:text-brand hover:border-brand/40 transition-all"
             >
               <ChevronRight className="w-3.5 h-3.5" />
