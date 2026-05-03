@@ -1088,7 +1088,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
       Memory Protocol: If a customer context seems familiar or they mention a previous conversation, you MUST use the 'view_recent_interactions' tool to retrieve their history and provide a personalized experience.
 
       ## BLOCK 3: CONVERSATIONAL LOOP & GUARDRAILS
-      Response Length: ABSOLUTE LIMIT. Keep every response under 20 words. No monologues. Be snappy and human.
+      Response Length: Aim for under 20 words per response — keep it snappy and human. Use more words only when confirming complex details like an appointment or explaining a multi-step process.
       The "Anti-Echo" Rule: Do not repeat back what the user just said.
       Question Limit: Never ask more than one question at a time.
       Number Formatting: Spell out important numbers if they sound robotic (e.g., "Two zero two" instead of "Two hundred and two").
@@ -1154,7 +1154,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
             },
             {
               name: "book_appointment",
-              description: "Books a home service appointment. Use this only AFTER checking the calendar to ensure the time is free.",
+              description: "Books an appointment in the calendar. Use this only AFTER checking the calendar to ensure the time is free.",
               parameters: {
                 type: "object",
                 properties: {
@@ -1258,11 +1258,14 @@ app.post("/api/vapi-webhook", async (req, res) => {
                .order('created_at', { ascending: false })
                .limit(3);
 
-            // 2. Fetch any open tasks for this customer
+            // 2. Fetch any open tasks mentioning this customer's phone number.
+            //    Tasks are linked by description (which includes the phone) or by the
+            //    customer_info JSONB phone field — not by email, since we only have a
+            //    phone number here.
             const { data: tasks } = await db.from('wireline_fleet_tasks')
                .select('description, status, priority')
                .eq('user_id', agent?.user_id)
-               .ilike('customer_info->>email', `%${customerPhone}%`)
+               .or(`description.ilike.%${customerPhone}%,customer_info->>phone.ilike.%${customerPhone}%`)
                .eq('status', 'pending')
                .limit(2);
 
@@ -1293,7 +1296,11 @@ app.post("/api/vapi-webhook", async (req, res) => {
       if (toolCall.function.name === "check_calendar_availability") {
          try {
             const { date } = toolCall.function.arguments;
-            const { data, error } = await db.from('wireline_appointments').select('time, service_type').ilike('date', `%${date}%`);
+            // Scope to this agent's bookings so cross-operator calendar isolation is preserved.
+            const { data, error } = await db.from('wireline_appointments')
+              .select('time, service_type')
+              .ilike('date', `%${date}%`)
+              .eq('user_id', agent?.user_id);
             
             if (error) throw error;
 
@@ -1322,6 +1329,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
           // Insert actual appointment into Supabase
           const { data, error } = await db.from('wireline_appointments').insert({
             agent_id: webhookAgentId,
+            user_id: agent?.user_id,
             call_id: message.call?.id || "in-call",
             date: args.date || "Unknown Date",
             time: args.time || "Unknown Time",
@@ -1574,10 +1582,12 @@ app.post("/api/vapi-webhook", async (req, res) => {
               transcript: message.transcript || '',
             });
 
-            // 1. Persist lead score + intent + sentiment
+            // 1. Persist lead score + intent + sentiment + coaching note
             await db.from('wireline_call_logs').update({
               lead_score: result.lead_score,
               intent_label: result.intent_label,
+              sentiment: result.sentiment,
+              coaching_note: result.coaching_note,
             }).eq('vapi_call_id', call?.id);
 
             // 2. Promote a single tactical lesson (if any).
@@ -2562,17 +2572,19 @@ async function placeOutboundCall(opts: {
   }
 
   // 2. Agent context
-  const [agentConfig, directivesData, knowledgeData, personalityData] = await Promise.all([
+  const [agentConfig, directivesData, knowledgeData, personalityData, lessonsData] = await Promise.all([
     db.from('wireline_agents').select('*').eq('id', agentId).single().then(r => r),
     db.from('wireline_directives').select('content, priority').eq('agent_id', agentId).order('priority', { ascending: false }).then(r => r),
     db.from('wireline_knowledge').select('content').eq('agent_id', agentId).then(r => r),
     db.from('wireline_personality').select('content').eq('agent_id', agentId).single().then(r => r),
+    db.from('wireline_agent_lessons').select('lesson').eq('agent_id', agentId).order('created_at', { ascending: false }).limit(3).then(r => r),
   ]);
 
   if (!agentConfig?.data) {
     return { ok: false, status: 404, error: `Agent ${agentId} not found.` };
   }
 
+  const lessons = (lessonsData?.data || []).map((l: any) => l.lesson).join('\n');
   const currentDateTime = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
   // Derive the archetype from the agent's role for outbound calls
   const outboundAgentRole = agentConfig?.data?.role || DEFAULT_AGENT_ROLE;
@@ -2612,6 +2624,9 @@ async function placeOutboundCall(opts: {
   }
   const ambientNoiseActive = agentConfig?.data?.ambient_noise && agentConfig?.data?.ambient_noise !== 'off';
   const roleProtocol = ROLE_SPECIFIC_PROTOCOLS[outboundAgentRole] || "";
+  // Respect user's voice LLM settings (same as inbound). Fallback to Gemini Flash.
+  const voiceLlmProvider = settings?.voice_llm_provider || 'google';
+  const voiceLlmModel = settings?.voice_llm_model || 'gemini-1.5-flash';
 
   const systemPrompt = `
     ## BLOCK 1: IDENTITY & ARCHETYPE (THE "MOAT")
@@ -2626,6 +2641,8 @@ async function placeOutboundCall(opts: {
     You are making an OUTBOUND call to a customer named ${customerName || "a customer"}.
     Outbound Call Context / Objective: ${context || "Just checking in on them."}
     You must address this objective naturally during the conversation.
+
+    ${lessons ? `## RECENT LESSONS LEARNED (IMPROVEMENTS)\nApply these tactical adjustments from your previous calls:\n${lessons}` : ""}
 
     ${roleProtocol}
 
@@ -2653,11 +2670,11 @@ async function placeOutboundCall(opts: {
     customer: { number: customerNumber },
     assistant: {
       name: agentConfig?.data?.name || "Wireline Outbound Agent",
-      firstMessage: `Hi ${customerName ? customerName : 'there'}, this is ${agentConfig?.data?.name || 'calling from Wireline'}. ${context || ''}`,
+      firstMessage: agentConfig?.data?.first_message || `Hi ${customerName ? customerName : 'there'}, this is ${agentConfig?.data?.name || 'your representative'} calling.`,
       backgroundSound: agentConfig?.data?.ambient_noise || 'off',
       model: {
-        provider: "google",
-        model: "gemini-2.0-flash",
+        provider: voiceLlmProvider,
+        model: voiceLlmModel,
         systemPrompt: systemPrompt,
         temperature: llmTemp,
       },

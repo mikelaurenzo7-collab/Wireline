@@ -454,6 +454,11 @@ ALTER TABLE wireline_knowledge ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ D
 --         technical_support | lead_qualifier | receptionist | marketing
 ALTER TABLE wireline_agents ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'customer_service';
 
+-- Post-call Claude enrichment columns — sentiment + coaching note stored alongside
+-- lead_score and intent_label. Added as migrations so existing installs upgrade safely.
+ALTER TABLE wireline_call_logs ADD COLUMN IF NOT EXISTS sentiment TEXT DEFAULT 'neutral';
+ALTER TABLE wireline_call_logs ADD COLUMN IF NOT EXISTS coaching_note TEXT;
+
 -- Stripe billing — one row per user, mirrored from Stripe via webhook.
 -- The Stripe subscription is the source of truth; this table is a cache
 -- so the app can render plan / status without round-tripping Stripe on
