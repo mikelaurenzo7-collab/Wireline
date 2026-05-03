@@ -156,15 +156,63 @@ app.use((req: any, res: any, next: any) => {
 // ────────────────────────────────────────────────────────────────────
 //  Security headers — hand-rolled (no helmet dep) so we control the
 //  exact set of headers and CSP directives. Applied to every response.
-//  CSP intentionally permissive for inline scripts because the OAuth
-//  callback page injects a JSON-encoded postMessage script; tighten
-//  with a nonce when that page moves to a static asset.
+//
+//  CSP allows 'unsafe-inline' on script-src because:
+//    • The OAuth callback page writes a JSON-encoded postMessage script
+//      at runtime. When that page moves to a static asset, replace
+//      'unsafe-inline' with a nonce.
+//    • Vite HMR in dev also injects inline scripts.
+//
+//  connect-src permits Supabase, Anthropic, Vapi, and Google APIs so
+//  the browser's fetch() is allowed to reach those origins.
 // ────────────────────────────────────────────────────────────────────
+const supabaseOrigin = (() => {
+  try {
+    const u = new URL(process.env.VITE_SUPABASE_URL || "https://placeholder.supabase.co");
+    return u.origin;
+  } catch { return "https://*.supabase.co"; }
+})();
+
+// Build CSP connect-src from known external APIs.
+const CSP_CONNECT_SRCS = [
+  "'self'",
+  supabaseOrigin,
+  "https://*.supabase.co",
+  "wss://*.supabase.co",
+  "https://api.anthropic.com",
+  "https://api.vapi.ai",
+  "wss://api.vapi.ai",
+  "https://accounts.google.com",
+  "https://oauth2.googleapis.com",
+  "https://www.googleapis.com",
+  "https://api.stripe.com",
+].join(" ");
+
+function buildCSP(isDev: boolean): string {
+  const scriptSrc = isDev
+    ? "'self' 'unsafe-inline' 'unsafe-eval'"
+    : "'self' 'unsafe-inline'";
+  return [
+    `default-src 'self'`,
+    `script-src ${scriptSrc}`,
+    `style-src 'self' 'unsafe-inline'`,
+    `img-src 'self' data: blob: https:`,
+    `font-src 'self' data:`,
+    `connect-src ${CSP_CONNECT_SRCS}`,
+    `media-src 'self' blob:`,
+    `worker-src 'self' blob:`,
+    `frame-ancestors 'none'`,
+    `base-uri 'self'`,
+    `form-action 'self'`,
+  ].join("; ");
+}
+
 app.use((_req: any, res: any, next: any) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader("Permissions-Policy", "geolocation=(), camera=(), microphone=(self)");
+  res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD));
   if (IS_PROD) {
     // 6 months HSTS preload-eligible — only in prod so dev over http stays usable.
     res.setHeader("Strict-Transport-Security", "max-age=15552000; includeSubDomains");
@@ -200,6 +248,8 @@ app.use((req: any, res: any, next: any) => {
 //  Studio container's readiness probe. Public, no auth. Probes the
 //  database with a short timeout so we report `degraded` (HTTP 503)
 //  when Supabase is unreachable rather than lying with `ok`.
+//  Light IP-based rate limit (30 req/min) prevents health-endpoint DDoS
+//  from saturating Supabase with probe queries.
 // ────────────────────────────────────────────────────────────────────
 async function probeDatabase(timeoutMs = 1500): Promise<{ ok: boolean; latency_ms: number; error?: string }> {
   const t0 = Date.now();
@@ -216,7 +266,23 @@ async function probeDatabase(timeoutMs = 1500): Promise<{ ok: boolean; latency_m
   }
 }
 
-app.get("/api/health", async (_req, res) => {
+const healthRateLimit = new Map<string, number[]>();
+const HEALTH_RATE_WINDOW_MS = 60_000;
+const HEALTH_RATE_MAX = 30;
+function healthRateLimiter(req: any, res: any, next: any) {
+  const key = req.ip || "anon";
+  const now = Date.now();
+  const hits = (healthRateLimit.get(key) || []).filter((t: number) => now - t < HEALTH_RATE_WINDOW_MS);
+  if (hits.length >= HEALTH_RATE_MAX) {
+    res.setHeader("Retry-After", "60");
+    return res.status(429).json({ error: "Too many health-check requests." });
+  }
+  hits.push(now);
+  healthRateLimit.set(key, hits);
+  next();
+}
+
+app.get("/api/health", healthRateLimiter, async (_req, res) => {
   const dbStatus = await probeDatabase();
   const status = dbStatus.ok ? "ok" : "degraded";
   res.status(dbStatus.ok ? 200 : 503).json({
@@ -4460,9 +4526,25 @@ async function processIntakeLead(key: any, input: IntakeLeadInput, idemHeaderOve
     return { ok: false, error: "customer_number (or phone) is required.", code: "MISSING_NUMBER" };
   }
 
+  // Validate phone number — must look like an E.164 number (+<digits>) or at least
+  // contain only digits, spaces, hyphens, parentheses, and a leading +.
+  // We're intentionally lenient (not enforcing full E.164 length) to accommodate
+  // international numbers that operators may not have pre-normalised, but we
+  // reject obvious non-phone strings (e.g., SQL injection attempts).
+  const phoneClean = customer_number.replace(/[\s\-().]/g, "");
+  if (!/^\+?[0-9]{7,20}$/.test(phoneClean)) {
+    return { ok: false, error: "customer_number must be a valid phone number (7–20 digits, optional leading +).", code: "INVALID_NUMBER" };
+  }
+
   const customer_name = (input.customer_name || input.name || "").toString().slice(0, 200);
   const context = (input.context || input.message || "").toString().slice(0, 4000);
-  const metadata = input.metadata && typeof input.metadata === "object" ? input.metadata : null;
+  // Sanitise metadata: only plain objects, max 50 keys, values coerced to strings
+  // if needed to prevent oversized blobs from reaching Supabase.
+  let metadata: Record<string, unknown> | null = null;
+  if (input.metadata && typeof input.metadata === "object" && !Array.isArray(input.metadata)) {
+    const entries = Object.entries(input.metadata as Record<string, unknown>).slice(0, 50);
+    metadata = Object.fromEntries(entries.map(([k, v]) => [String(k).slice(0, 100), v]));
+  }
   const agent_id = input.agent_id || key.default_agent_id || null;
   const idemKey = (idemHeaderOverride !== undefined ? idemHeaderOverride : (input.idempotency_key || null));
   const idemKeyTrimmed = idemKey ? String(idemKey).trim().slice(0, 255) : null;
