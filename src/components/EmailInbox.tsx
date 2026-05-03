@@ -137,7 +137,7 @@ export default function EmailInbox() {
   };
 
   return (
-    <div className="h-full flex flex-col space-y-12 md:space-y-16 pb-40 max-w-[1700px] mx-auto w-full p-8 md:p-12 lg:p-16">
+    <div className="h-full overflow-y-auto scrollbar-hide flex flex-col space-y-5 md:space-y-6 max-w-[1700px] mx-auto w-full">
       <header className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-10 border-b-8 border-ink pb-12">
         <div className="space-y-6">
           <div className="flex items-center gap-4">
@@ -245,7 +245,7 @@ export default function EmailInbox() {
                 exit={{ opacity: 0, scale: 0.98 }}
                 className="h-full flex flex-col"
               >
-                <div className="p-10 md:p-14 border-b-4 border-ink bg-white sticky top-0 z-10 group">
+                <div className="p-4 md:p-5 border-b-4 border-ink bg-white sticky top-0 z-10 group">
                   <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-10">
                      <div className="flex items-center gap-10 md:gap-12 w-full md:w-auto">
                        <button className="lg:hidden w-12 h-12 brutal-border border-2 bg-brand text-ink flex items-center justify-center shadow-none" onClick={() => setSelectedThread(null)}>
@@ -289,7 +289,7 @@ export default function EmailInbox() {
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-10 md:p-14 space-y-12 md:space-y-16 scrollbar-hide bg-paper">
+                <div className="flex-1 overflow-y-auto p-4 md:p-5 space-y-4 scrollbar-hide bg-paper">
                   <AnimatePresence>
                     {messages.map((msg, idx) => (
                       <motion.div 
@@ -332,7 +332,7 @@ export default function EmailInbox() {
                   </AnimatePresence>
                 </div>
 
-                <div className="p-10 md:p-14 bg-white border-t-8 border-ink">
+                <div className="p-4 md:p-5 bg-white border-t-8 border-ink">
                   <div className="bg-paper brutal-border border-4 !p-6 flex flex-col group-focus-within:shadow-none transition-all">
                     <div className="flex items-center gap-4 mb-4 opacity-30 group-focus-within:opacity-100 transition-opacity">
                        <Terminal className="w-5 h-5 text-ink" />

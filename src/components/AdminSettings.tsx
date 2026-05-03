@@ -133,7 +133,7 @@ export default function AdminSettings() {
   };
 
   return (
-    <div className="flex flex-col space-y-12 md:space-y-20 pb-40 max-w-[1700px] mx-auto w-full p-8 md:p-12 lg:p-16">
+    <div className="h-full overflow-y-auto scrollbar-hide flex flex-col space-y-5 md:space-y-6 max-w-[1700px] mx-auto w-full">
       <header className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-10 border-b-8 border-ink pb-12">
         <div className="space-y-6">
           <div className="flex items-center gap-4">
@@ -187,7 +187,7 @@ export default function AdminSettings() {
               className="grid grid-cols-1 xl:grid-cols-2 gap-16 items-start"
             >
               {/* Carrier Config Card */}
-              <div className="bg-white brutal-border border-8 p-12 md:p-16 relative overflow-hidden group">
+              <div className="bg-white brutal-border border-8 p-4 md:p-5 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 p-16 opacity-5 pointer-events-none group-hover:rotate-12 transition-transform">
                    <ServerCog className="w-64 h-64 text-zinc-950" />
                 </div>
@@ -327,7 +327,7 @@ export default function AdminSettings() {
               </div>
 
               {/* Carrier Hub & Routing */}
-              <div className="bg-white brutal-border border-8 p-12 md:p-16 border-ink relative overflow-hidden group">
+              <div className="bg-white brutal-border border-8 p-4 md:p-5 border-ink relative overflow-hidden group">
                  <div className="absolute top-0 right-0 p-16 opacity-5 pointer-events-none group-hover:rotate-12 transition-transform">
                    <Globe className="w-64 h-64 text-zinc-950" />
                 </div>
@@ -477,7 +477,7 @@ export default function AdminSettings() {
               </div>
 
               {/* Billing Simulator Card */}
-              <div className="xl:col-span-12 bg-white brutal-border border-8 p-12 md:p-16 relative overflow-hidden group">
+              <div className="xl:col-span-12 bg-white brutal-border border-8 p-4 md:p-5 relative overflow-hidden group">
                  <div className="absolute top-0 right-0 p-16 opacity-5 pointer-events-none group-hover:rotate-6 transition-transform">
                    <CreditCard className="w-64 h-64 text-zinc-950" />
                 </div>
@@ -552,7 +552,7 @@ export default function AdminSettings() {
                     </div>
                   </div>
 
-                  <div className="p-10 md:p-14 bg-zinc-950 text-white border-8 border-brand brutal-border relative overflow-hidden flex flex-col justify-between group h-max">
+                  <div className="p-4 md:p-5 bg-zinc-950 text-white border-8 border-brand brutal-border relative overflow-hidden flex flex-col justify-between group h-max">
                       <div className="absolute top-0 right-0 p-10 opacity-10 pointer-events-none group-hover:rotate-12 transition-transform">
                          <Terminal className="w-64 h-64 text-brand" />
                       </div>

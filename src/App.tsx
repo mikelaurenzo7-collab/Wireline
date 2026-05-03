@@ -94,7 +94,7 @@ function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) =>
       </AnimatePresence>
 
       <aside className={cn(
-        "fixed inset-y-0 left-0 w-80 flex flex-col h-full z-[70] transition-transform duration-700 lg:relative lg:translate-x-0 lg:z-20",
+        "fixed inset-y-0 left-0 w-72 flex flex-col h-full z-[70] transition-transform duration-700 lg:relative lg:translate-x-0 lg:z-20 lg:w-60 xl:w-64",
         open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
         <div className="absolute inset-0 glass-strong border-r border-white/8" />
@@ -102,70 +102,68 @@ function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) =>
 
         <div className="relative z-10 flex flex-col h-full">
           {/* Header */}
-          <div className="px-8 pt-9 pb-7 border-b border-white/6 flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-4 group" onClick={() => setOpen(false)}>
+          <div className="px-5 pt-5 pb-4 border-b border-white/6 flex items-center justify-between">
+            <Link to="/" className="flex items-center gap-3 group min-w-0" onClick={() => setOpen(false)}>
               <motion.div
                 whileHover={{ rotate: 12, scale: 1.05 }}
-                className="relative w-12 h-12 rounded-2xl flex items-center justify-center overflow-hidden"
+                className="relative w-9 h-9 rounded-xl flex items-center justify-center overflow-hidden shrink-0"
                 style={{
                   background: "linear-gradient(135deg, #7DF9FF 0%, #C58BFF 50%, #FF6BD9 100%)",
-                  boxShadow: "0 8px 28px -8px rgba(125,249,255,0.6), 0 0 0 1px rgba(255,255,255,0.2) inset"
+                  boxShadow: "0 6px 20px -8px rgba(125,249,255,0.6), 0 0 0 1px rgba(255,255,255,0.2) inset"
                 }}
               >
-                <Waves className="w-6 h-6 text-paper relative z-10" strokeWidth={2.5} />
+                <Waves className="w-4 h-4 text-paper relative z-10" strokeWidth={2.5} />
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent" />
               </motion.div>
-              <div className="flex flex-col">
-                <span className="font-display italic text-3xl text-ink leading-none tracking-tight">Wireline</span>
-                <span className="text-[10px] tracking-[0.4em] uppercase text-muted mt-2 flex items-center gap-2">
+              <div className="flex flex-col min-w-0">
+                <span className="font-display italic text-xl text-ink leading-none tracking-tight truncate">Wireline</span>
+                <span className="text-[8px] tracking-[0.4em] uppercase text-muted mt-1 flex items-center gap-1.5">
                   <span className="w-1 h-1 rounded-full bg-brand indicator-glow" />
                   Aurora Relay
                 </span>
               </div>
             </Link>
-            <button onClick={() => setOpen(false)} className="lg:hidden w-10 h-10 rounded-full flex items-center justify-center text-ink/60 hover:text-ink hover:bg-white/5 transition-all">
-              <X className="w-5 h-5" />
+            <button onClick={() => setOpen(false)} className="lg:hidden w-8 h-8 rounded-full flex items-center justify-center text-ink/60 hover:text-ink hover:bg-white/5 transition-all shrink-0">
+              <X className="w-4 h-4" />
             </button>
           </div>
 
           {/* User Card */}
-          <div className="mx-6 mt-6 relative aurora-ring rounded-2xl">
-            <div className="relative p-5 rounded-2xl glass overflow-hidden">
-              <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-30 blur-2xl" style={{ background: "radial-gradient(circle, #7DF9FF, transparent)" }} />
-              <div className="relative z-10 flex items-center gap-4">
-                <div className="relative">
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-paper" style={{ background: "linear-gradient(135deg, #7DF9FF, #C58BFF)" }}>
-                    <User className="w-5 h-5" strokeWidth={2.5} />
+          <div className="mx-3 mt-3 relative aurora-ring rounded-xl">
+            <div className="relative p-3 rounded-xl glass overflow-hidden">
+              <div className="absolute -top-8 -right-8 w-20 h-20 rounded-full opacity-30 blur-2xl" style={{ background: "radial-gradient(circle, #7DF9FF, transparent)" }} />
+              <div className="relative z-10 flex items-center gap-2.5">
+                <div className="relative shrink-0">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-paper" style={{ background: "linear-gradient(135deg, #7DF9FF, #C58BFF)" }}>
+                    <User className="w-3.5 h-3.5" strokeWidth={2.5} />
                   </div>
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#0F0E2D] bg-emerald-500" />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#0F0E2D] bg-emerald-500" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-medium text-ink truncate">{user?.email?.split('@')[0]}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <p className="text-[10px] tracking-[0.25em] uppercase text-muted">Signal Active</p>
-                  </div>
+                  <p className="text-[11px] font-medium text-ink truncate">{user?.email?.split('@')[0]}</p>
+                  <p className="text-[8px] tracking-[0.25em] uppercase text-muted">Signal Active</p>
                 </div>
+                <button
+                  onClick={() => signOut()}
+                  title="End session"
+                  className="shrink-0 w-7 h-7 rounded-md text-ink/60 hover:text-rose-500 hover:bg-rose-500/8 border border-white/6 hover:border-rose-500/30 transition-all flex items-center justify-center"
+                >
+                  <LogOut className="w-3 h-3" />
+                </button>
               </div>
-              <button
-                onClick={() => signOut()}
-                className="mt-5 w-full py-2.5 rounded-xl text-[10px] uppercase tracking-[0.32em] text-ink/60 hover:text-rose-500 hover:bg-rose-500/8 border border-white/6 hover:border-rose-500/30 transition-all flex items-center justify-center gap-2"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                End Session
-              </button>
             </div>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 mt-8 overflow-y-auto pb-8 scrollbar-hide space-y-8">
+          <nav className="flex-1 px-2 mt-3 overflow-y-auto pb-3 scrollbar-hide space-y-3 min-h-0">
             {NAV_ITEMS.map((group) => (
               <div key={group.group}>
-                <h3 className="px-4 text-[9px] font-medium uppercase tracking-[0.45em] text-muted/70 mb-3 flex items-center gap-3">
+                <h3 className="px-3 text-[8px] font-medium uppercase tracking-[0.4em] text-muted/70 mb-1.5 flex items-center gap-2">
                   <span className="h-px flex-1 bg-gradient-to-r from-white/0 via-white/15 to-white/0" />
                   {group.group}
                   <span className="h-px flex-1 bg-gradient-to-r from-white/0 via-white/15 to-white/0" />
                 </h3>
-                <div className="space-y-1">
+                <div className="space-y-0.5">
                   {group.items.map((item) => {
                     const active = isActive(item.path);
                     return (
@@ -174,7 +172,7 @@ function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) =>
                         to={item.path}
                         onClick={() => setOpen(false)}
                         className={cn(
-                          "group relative flex items-center gap-4 px-4 py-3 rounded-xl transition-all overflow-hidden",
+                          "group relative flex items-center gap-3 px-3 py-2 rounded-lg transition-all overflow-hidden",
                           active
                             ? "text-paper"
                             : "text-ink/70 hover:text-ink hover:bg-white/4"
@@ -183,19 +181,19 @@ function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) =>
                         {active && (
                           <motion.div
                             layoutId="nav-active"
-                            className="absolute inset-0 rounded-xl"
+                            className="absolute inset-0 rounded-lg"
                             style={{
                               background: "linear-gradient(135deg, #7DF9FF 0%, #C58BFF 60%, #FF6BD9 100%)",
-                              boxShadow: "0 8px 28px -10px rgba(125,249,255,0.55), 0 0 0 1px rgba(255,255,255,0.20) inset"
+                              boxShadow: "0 6px 20px -10px rgba(125,249,255,0.55), 0 0 0 1px rgba(255,255,255,0.20) inset"
                             }}
                             transition={{ type: "spring", stiffness: 400, damping: 35 }}
                           />
                         )}
-                        <item.icon className={cn("w-[18px] h-[18px] relative z-10 transition-transform", active ? "" : "group-hover:translate-x-0.5")} strokeWidth={active ? 2.5 : 1.75} />
-                        <span className={cn("text-[13px] tracking-wide relative z-10", active ? "font-medium" : "font-normal")}>
+                        <item.icon className={cn("w-4 h-4 relative z-10 transition-transform shrink-0", active ? "" : "group-hover:translate-x-0.5")} strokeWidth={active ? 2.5 : 1.75} />
+                        <span className={cn("text-[12px] tracking-wide relative z-10 truncate", active ? "font-medium" : "font-normal")}>
                           {item.label}
                         </span>
-                        {active && <ChevronRight className="ml-auto w-4 h-4 relative z-10" />}
+                        {active && <ChevronRight className="ml-auto w-3.5 h-3.5 relative z-10 shrink-0" />}
                       </Link>
                     );
                   })}
@@ -205,26 +203,18 @@ function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) =>
           </nav>
 
           {/* Footer */}
-          <div className="px-6 py-5 border-t border-white/6 relative space-y-4">
+          <div className="px-3 py-2.5 border-t border-white/6 relative space-y-2 shrink-0">
             <SystemStatusBadge />
-            <div className="flex items-center justify-between text-[9px] uppercase tracking-[0.35em] text-muted/70">
-              <span className="font-display italic text-[11px] tracking-tight not-italic-fix text-ink/70 normal-case">v∞ — Aurora</span>
-              <span className="flex items-center gap-1.5">
+            <div className="flex items-center justify-between text-[8px] uppercase tracking-[0.35em] text-muted/70">
+              <span className="font-display italic text-[10px] tracking-tight not-italic-fix text-ink/70 normal-case">v∞ — Aurora</span>
+              <span className="flex items-center gap-1">
                 <span className="w-1 h-1 rounded-full bg-emerald-500 indicator-glow" />
                 Stable
               </span>
             </div>
-            <div className="relative h-1 rounded-full bg-white/5 overflow-hidden">
-              <motion.div
-                animate={{ x: ["-100%", "100%"] }}
-                transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
-                className="absolute inset-y-0 w-1/2 rounded-full"
-                style={{ background: "linear-gradient(90deg, transparent, #7DF9FF, #C58BFF, transparent)" }}
-              />
-            </div>
-            <div className="flex items-center gap-2 text-[9px] uppercase tracking-[0.3em] text-muted/60">
-              <Sparkles className="w-3 h-3" />
-              <span>⌘K  Open Command</span>
+            <div className="flex items-center gap-1.5 text-[8px] uppercase tracking-[0.3em] text-muted/60">
+              <Sparkles className="w-2.5 h-2.5" />
+              <span>⌘K  Command</span>
             </div>
           </div>
         </div>
@@ -406,31 +396,31 @@ function AppContent() {
 
       <main className="flex-1 overflow-hidden relative flex flex-col z-10">
          {/* Mobile Header */}
-         <div className="lg:hidden p-5 flex items-center justify-between z-30 sticky top-0 glass-strong border-b border-white/8">
+         <div className="lg:hidden p-3 flex items-center justify-between z-30 sticky top-0 glass-strong border-b border-white/8 shrink-0">
             <button
               onClick={() => setSidebarOpen(true)}
               aria-label="Open navigation menu"
               aria-expanded={sidebarOpen}
-              className="w-11 h-11 rounded-xl glass border border-white/10 flex items-center justify-center hover:border-brand/40 transition-all"
+              className="w-9 h-9 rounded-lg glass border border-white/10 flex items-center justify-center hover:border-brand/40 transition-all"
             >
-              <Menu className="w-5 h-5 text-ink" />
+              <Menu className="w-4 h-4 text-ink" />
             </button>
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #7DF9FF, #C58BFF, #FF6BD9)" }}>
-                <Waves className="w-4 h-4 text-paper" strokeWidth={2.5} />
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "linear-gradient(135deg, #7DF9FF, #C58BFF, #FF6BD9)" }}>
+                <Waves className="w-3.5 h-3.5 text-paper" strokeWidth={2.5} />
               </div>
-              <span className="font-display italic text-2xl text-ink leading-none">Wireline</span>
+              <span className="font-display italic text-lg text-ink leading-none">Wireline</span>
             </div>
-            <div className="w-11 h-11 rounded-xl glass border border-white/10 flex items-center justify-center">
-              <User className="w-5 h-5 text-ink/70" />
+            <div className="w-9 h-9 rounded-lg glass border border-white/10 flex items-center justify-center">
+              <User className="w-4 h-4 text-ink/70" />
             </div>
          </div>
 
          <TrialBanner />
 
-         <div className="flex-1 relative flex flex-col min-h-0">
-            <div className="flex-1 overflow-y-auto relative z-10 scrollbar-hide">
-              <div className="max-w-[1920px] mx-auto min-h-full p-6 md:p-12 lg:p-16">
+         <div className="flex-1 relative flex flex-col min-h-0 overflow-hidden">
+            <div className="flex-1 overflow-hidden relative z-10 min-h-0">
+              <div className="h-full max-w-[1920px] mx-auto px-4 md:px-6 lg:px-8 py-3 md:py-4 lg:py-5 flex flex-col">
                 <AnimatePresence mode="wait">
                   <Suspense fallback={<RouteFallback />}>
                     <Routes>

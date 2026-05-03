@@ -60,13 +60,13 @@ export default function ContactProfile() {
   }, [number]);
 
   if (loading) return (
-    <div className="min-h-full flex items-center justify-center py-32">
+    <div className="h-full flex items-center justify-center">
       <Loader2 className="w-10 h-10 animate-spin text-brand" />
     </div>
   );
 
   if (err || !data) return (
-    <div className="min-h-full flex flex-col items-center justify-center py-32 gap-4">
+    <div className="h-full flex flex-col items-center justify-center gap-4">
       <AlertOctagon className="w-12 h-12 text-rose-500/60" />
       <p className="text-[11px] uppercase tracking-[0.4em] text-rose-500">{err || "Contact not found"}</p>
       <Link to="/" className="text-[11px] uppercase tracking-[0.3em] text-muted hover:text-brand">← Back to Atlas</Link>
@@ -77,7 +77,7 @@ export default function ContactProfile() {
   const lastTouch = data.stats.last_touch ? new Date(data.stats.last_touch).toLocaleDateString() : "—";
 
   return (
-    <div className="min-h-full w-full max-w-[1500px] mx-auto space-y-10 pb-32">
+    <div className="h-full overflow-y-auto scrollbar-hide w-full max-w-[1500px] mx-auto space-y-4">
       <Link to="/" className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-muted hover:text-brand transition-colors">
         <ChevronLeft className="w-3.5 h-3.5" /> Back
       </Link>
