@@ -15,6 +15,26 @@ export default defineConfig(({mode}) => {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            // Heavy chart library — only loaded by Insights + Dashboard views.
+            if (id.includes('node_modules/recharts') || id.includes('node_modules/d3-')) {
+              return 'vendor-charts';
+            }
+            // Vapi browser SDK — only used in DashboardHome live-call widget.
+            if (id.includes('node_modules/@vapi-ai')) {
+              return 'vendor-vapi';
+            }
+            // Core React runtime — smallest possible initial payload.
+            if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
+              return 'vendor-react';
+            }
+          },
+        },
+      },
+    },
     server: {
       hmr: true,
       // In local dev, proxy /api/* to the Express server running on port 3000.
