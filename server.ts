@@ -19,7 +19,7 @@ dotenv.config();
 // preview and production deployments without manual configuration.
 // Strip any accidental protocol prefix to guard against misconfiguration.
 if (!process.env.APP_URL && process.env.VERCEL_URL) {
-  const hostname = process.env.VERCEL_URL.replace(/^https?:\/\//, '').replace(/\/+$/, '');
+  const hostname = process.env.VERCEL_URL.replace(/^https?:\/\/|\/+$/g, '');
   process.env.APP_URL = `https://${hostname}`;
 }
 
