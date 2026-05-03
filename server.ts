@@ -2259,6 +2259,65 @@ app.put("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
   }
 });
 
+// ──────────────────────────────────────────────────────────────────────────
+//  DELETE /api/agents/:id
+//  Permanently decommissions an agent.
+//
+//  Tables with ON DELETE CASCADE (auto-cleaned by Postgres):
+//    wireline_directives, wireline_knowledge, wireline_personality,
+//    wireline_agent_lessons
+//
+//  Tables with no CASCADE (foreign key would block deletion):
+//    wireline_call_logs, wireline_appointments, wireline_outbound_leads,
+//    wireline_fleet_tasks, wireline_phone_numbers, wireline_signal_presence
+//  → We null-out agent_id on these so historical records are preserved.
+//
+//  wireline_intake_keys.default_agent_id is already ON DELETE SET NULL.
+// ──────────────────────────────────────────────────────────────────────────
+app.delete("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
+  try {
+    const agentId = req.params.id;
+    const userId = req.user.id;
+
+    // Confirm the agent belongs to this user before touching anything.
+    const { data: agent, error: lookupErr } = await db
+      .from("wireline_agents")
+      .select("id")
+      .eq("id", agentId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (lookupErr) throw lookupErr;
+    if (!agent) return res.status(404).json({ error: "Agent not found." });
+
+    // Null-out agent_id on tables that would otherwise block the delete.
+    await Promise.all([
+      db.from("wireline_call_logs").update({ agent_id: null }).eq("agent_id", agentId).eq("user_id", userId),
+      db.from("wireline_appointments").update({ agent_id: null }).eq("agent_id", agentId).eq("user_id", userId),
+      db.from("wireline_outbound_leads").update({ agent_id: null }).eq("agent_id", agentId).eq("user_id", userId),
+      db.from("wireline_fleet_tasks").update({ agent_id: null }).eq("agent_id", agentId).eq("user_id", userId),
+      db.from("wireline_phone_numbers").update({ agent_id: null }).eq("agent_id", agentId).eq("user_id", userId),
+      db.from("wireline_signal_presence").update({ agent_id: null }).eq("agent_id", agentId).eq("user_id", userId),
+    ]);
+
+    // Delete the agent row — CASCADE handles directives, knowledge,
+    // personality, and lessons automatically.
+    const { error: deleteErr } = await db
+      .from("wireline_agents")
+      .delete()
+      .eq("id", agentId)
+      .eq("user_id", userId);
+
+    if (deleteErr) throw deleteErr;
+
+    log.info("agent deleted", { agentId, userId });
+    res.json({ success: true });
+  } catch (error: any) {
+    log.error("Failed to delete agent", { error: error?.message });
+    res.status(500).json({ error: "Failed to delete agent." });
+  }
+});
+
 app.get("/api/agent-config/:id", authenticateUser, async (req: any, res: any) => {
   try {
     const agentId = req.params.id;
