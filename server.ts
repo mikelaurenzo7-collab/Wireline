@@ -2986,30 +2986,7 @@ Draft only the plain text email body. Do not include a subject line. Be professi
   }
 });
 
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Unhandled Global Error:', err.stack);
-  res.status(500).json({ error: 'Internal Server Error' });
-});
-
-// ==========================================
-// 3. VITE MIDDLEWARE & STATIC SERVING
-// ==========================================
-async function startServer() {
-  if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
-  }
-
-  // OPTIMIZE AGENT PROTOCOLS
+// OPTIMIZE AGENT PROTOCOLS
 app.post("/api/agents/:id/optimize", authenticateUser, async (req: any, res: any) => {
    try {
       const { id } = req.params;
@@ -5302,9 +5279,38 @@ app.post("/api/claude/forge/create", authenticateUser, async (req: any, res: any
   }
 });
 
-app.listen(PORT, "0.0.0.0", () => {
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('Unhandled Global Error:', err.stack);
+  res.status(500).json({ error: 'Internal Server Error' });
+});
+
+// ==========================================
+// 3. VITE MIDDLEWARE & STATIC SERVING
+// ==========================================
+async function startServer() {
+  if (process.env.NODE_ENV !== "production") {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+    });
+    app.use(vite.middlewares);
+  } else {
+    const distPath = path.join(process.cwd(), 'dist');
+    app.use(express.static(distPath));
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
+  }
+
+  app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
 }
 
-startServer();
+export { app };
+
+// Only start the HTTP server when running standalone (not on Vercel).
+// Vercel sets VERCEL=1 automatically in all serverless function environments.
+if (process.env.VERCEL !== '1') {
+  startServer();
+}
