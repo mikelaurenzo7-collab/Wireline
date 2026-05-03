@@ -134,6 +134,25 @@ function FunnelView({ days }: { days: number }) {
   const stages = data.stages || [];
   const max = Math.max(1, ...stages.map((s: any) => s.count));
 
+  // No calls yet — give operators a clear nudge rather than a blank panel.
+  if (stages.length === 0 || stages.every((s: any) => s.count === 0)) {
+    return (
+      <div className="relative aurora-ring rounded-3xl">
+        <div className="relative rounded-3xl glass-strong overflow-hidden p-10 md:p-14 flex flex-col items-center gap-5 text-center">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #7DF9FF22, #C58BFF22)" }}>
+            <TrendingUp className="w-8 h-8 text-brand" />
+          </div>
+          <div>
+            <h3 className="font-display italic text-3xl text-ink mb-2">No calls yet</h3>
+            <p className="text-sm text-ink/55 max-w-sm leading-relaxed">
+              Your conversion funnel will populate once agents start handling calls. Run a test relay from the Command Atlas to see data here.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative aurora-ring rounded-3xl">
       <div className="relative rounded-3xl glass-strong overflow-hidden p-8 md:p-10 space-y-4">

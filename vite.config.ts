@@ -16,6 +16,9 @@ export default defineConfig(({mode}) => {
       },
     },
     build: {
+      // Keep chunks reasonable — 500 kB uncompressed is a good ceiling
+      // before we start caring about a given page's specific imports.
+      chunkSizeWarningLimit: 600,
       rollupOptions: {
         output: {
           manualChunks(id) {
@@ -26,6 +29,15 @@ export default defineConfig(({mode}) => {
             // Vapi browser SDK — only used in DashboardHome live-call widget.
             if (id.includes('node_modules/@vapi-ai')) {
               return 'vendor-vapi';
+            }
+            // Motion (Framer Motion fork) — animation library used everywhere
+            // but kept separate so it can be cached independently.
+            if (id.includes('node_modules/motion') || id.includes('node_modules/framer-motion')) {
+              return 'vendor-motion';
+            }
+            // Lucide icon set — large icon sprite, cache independently.
+            if (id.includes('node_modules/lucide-react')) {
+              return 'vendor-lucide';
             }
             // Core React runtime — smallest possible initial payload.
             // Use exact package boundaries to avoid accidentally bucketing

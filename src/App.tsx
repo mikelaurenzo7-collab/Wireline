@@ -1,11 +1,13 @@
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Link, useLocation } from "react-router-dom";
-import { Phone, Users, Settings, Activity, MessageSquare, Calendar, PhoneOutgoing, ServerCog, PlugZap, History, Mail, Menu, X, LogOut, User, Terminal, ChevronRight, Zap, Target, Shield, Signal, Globe, Box, LayoutPanelLeft, Database, Command, Sparkles, Waves, Inbox, BarChart3, Loader2 } from "lucide-react";
+import { Phone, Users, Settings, Activity, MessageSquare, Calendar, PhoneOutgoing, ServerCog, PlugZap, History, Mail, Menu, X, LogOut, User, Terminal, ChevronRight, Zap, Target, Shield, Signal, Globe, Box, LayoutPanelLeft, Database, Command, Sparkles, Waves, Inbox, BarChart3, Loader2, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import AuthPortal from "./components/AuthPortal";
 import CommandBar from "./components/CommandBar";
 import ErrorBoundary from "./components/ErrorBoundary";
+import SystemStatusBadge from "./components/SystemStatusBadge";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { authFetch } from "./lib/api";
 import { cn } from "./lib/utils";
 
 // All route surfaces are code-split. Initial bundle holds only the
@@ -203,8 +205,9 @@ function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) =>
           </nav>
 
           {/* Footer */}
-          <div className="px-6 py-5 border-t border-white/6 relative">
-            <div className="flex items-center justify-between text-[9px] uppercase tracking-[0.35em] text-muted/70 mb-3">
+          <div className="px-6 py-5 border-t border-white/6 relative space-y-4">
+            <SystemStatusBadge />
+            <div className="flex items-center justify-between text-[9px] uppercase tracking-[0.35em] text-muted/70">
               <span className="font-display italic text-[11px] tracking-tight not-italic-fix text-ink/70 normal-case">v∞ — Aurora</span>
               <span className="flex items-center gap-1.5">
                 <span className="w-1 h-1 rounded-full bg-emerald-500 indicator-glow" />
@@ -219,7 +222,7 @@ function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) =>
                 style={{ background: "linear-gradient(90deg, transparent, #7DF9FF, #C58BFF, transparent)" }}
               />
             </div>
-            <div className="mt-3 flex items-center gap-2 text-[9px] uppercase tracking-[0.3em] text-muted/60">
+            <div className="flex items-center gap-2 text-[9px] uppercase tracking-[0.3em] text-muted/60">
               <Sparkles className="w-3 h-3" />
               <span>⌘K  Open Command</span>
             </div>
@@ -257,6 +260,47 @@ function RouteFallback() {
       </div>
       <p className="text-[10px] uppercase tracking-[0.5em] text-muted">Streaming</p>
     </div>
+  );
+}
+
+function TrialBanner() {
+  const [daysLeft, setDaysLeft] = useState<number | null>(null);
+
+  useEffect(() => {
+    authFetch("/api/billing/status")
+      .then(r => r.json())
+      .then(d => {
+        const sub = d.subscription;
+        if (sub?.status === "trialing" && sub?.current_period_end) {
+          const ms = new Date(sub.current_period_end).getTime() - Date.now();
+          setDaysLeft(Math.max(0, Math.ceil(ms / 86_400_000)));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  if (daysLeft === null) return null;
+
+  return (
+    <motion.div
+      initial={{ height: 0, opacity: 0 }}
+      animate={{ height: "auto", opacity: 1 }}
+      className="bg-amber-500/10 border-b border-amber-500/30 px-6 py-2.5 flex items-center justify-between gap-4 flex-wrap"
+    >
+      <div className="flex items-center gap-2.5 text-amber-300 text-xs">
+        <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+        <span>
+          Your free trial ends in <strong>{daysLeft} day{daysLeft !== 1 ? "s" : ""}</strong>.
+          Add a payment method before it expires to keep your agents running.
+        </span>
+      </div>
+      <Link
+        to="/admin"
+        className="shrink-0 px-3 py-1.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] uppercase tracking-[0.3em] hover:bg-amber-500/30 transition-all"
+      >
+        Add Card
+      </Link>
+    </motion.div>
   );
 }
 
@@ -382,30 +426,30 @@ function AppContent() {
             </div>
          </div>
 
+         <TrialBanner />
+
          <div className="flex-1 relative flex flex-col min-h-0">
             <div className="flex-1 overflow-y-auto relative z-10 scrollbar-hide">
               <div className="max-w-[1920px] mx-auto min-h-full p-6 md:p-12 lg:p-16">
                 <AnimatePresence mode="wait">
-                  <ErrorBoundary>
-                    <Suspense fallback={<RouteFallback />}>
-                      <Routes>
-                        <Route path="/" element={<PageTransition><DashboardHome /></PageTransition>} />
-                        <Route path="/triage" element={<PageTransition><TriageInbox /></PageTransition>} />
-                        <Route path="/insights" element={<PageTransition><InsightsView /></PageTransition>} />
-                        <Route path="/contact/:number" element={<PageTransition><ContactProfile /></PageTransition>} />
-                        <Route path="/logs" element={<PageTransition><CallLogs /></PageTransition>} />
-                        <Route path="/inbox" element={<PageTransition><EmailInbox /></PageTransition>} />
-                        <Route path="/outbound" element={<PageTransition><OutboundDialer /></PageTransition>} />
-                        <Route path="/appointments" element={<PageTransition><AppointmentsView /></PageTransition>} />
-                        <Route path="/train" element={<PageTransition><AgentTraining /></PageTransition>} />
-                        <Route path="/knowledge" element={<PageTransition><KnowledgeBaseManager /></PageTransition>} />
-                        <Route path="/agents" element={<PageTransition><FleetSettings /></PageTransition>} />
-                        <Route path="/integrations" element={<PageTransition><Integrations /></PageTransition>} />
-                        <Route path="/admin" element={<PageTransition><AdminSettings /></PageTransition>} />
-                        <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
-                      </Routes>
-                    </Suspense>
-                  </ErrorBoundary>
+                  <Suspense fallback={<RouteFallback />}>
+                    <Routes>
+                      <Route path="/" element={<PageTransition><ErrorBoundary><DashboardHome /></ErrorBoundary></PageTransition>} />
+                      <Route path="/triage" element={<PageTransition><ErrorBoundary><TriageInbox /></ErrorBoundary></PageTransition>} />
+                      <Route path="/insights" element={<PageTransition><ErrorBoundary><InsightsView /></ErrorBoundary></PageTransition>} />
+                      <Route path="/contact/:number" element={<PageTransition><ErrorBoundary><ContactProfile /></ErrorBoundary></PageTransition>} />
+                      <Route path="/logs" element={<PageTransition><ErrorBoundary><CallLogs /></ErrorBoundary></PageTransition>} />
+                      <Route path="/inbox" element={<PageTransition><ErrorBoundary><EmailInbox /></ErrorBoundary></PageTransition>} />
+                      <Route path="/outbound" element={<PageTransition><ErrorBoundary><OutboundDialer /></ErrorBoundary></PageTransition>} />
+                      <Route path="/appointments" element={<PageTransition><ErrorBoundary><AppointmentsView /></ErrorBoundary></PageTransition>} />
+                      <Route path="/train" element={<PageTransition><ErrorBoundary><AgentTraining /></ErrorBoundary></PageTransition>} />
+                      <Route path="/knowledge" element={<PageTransition><ErrorBoundary><KnowledgeBaseManager /></ErrorBoundary></PageTransition>} />
+                      <Route path="/agents" element={<PageTransition><ErrorBoundary><FleetSettings /></ErrorBoundary></PageTransition>} />
+                      <Route path="/integrations" element={<PageTransition><ErrorBoundary><Integrations /></ErrorBoundary></PageTransition>} />
+                      <Route path="/admin" element={<PageTransition><ErrorBoundary><AdminSettings /></ErrorBoundary></PageTransition>} />
+                      <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
+                    </Routes>
+                  </Suspense>
                 </AnimatePresence>
               </div>
             </div>
