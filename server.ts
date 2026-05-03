@@ -270,7 +270,11 @@ const healthRateLimit = new Map<string, number[]>();
 const HEALTH_RATE_WINDOW_MS = 60_000;
 const HEALTH_RATE_MAX = 30;
 function healthRateLimiter(req: any, res: any, next: any) {
-  const key = req.ip || "anon";
+  // Use x-forwarded-for (first hop) when behind a trusted reverse proxy,
+  // falling back to req.ip. Consistent with the OAuth and Claude rate
+  // limiters in this file which also key on the request IP.
+  const xff = req.headers["x-forwarded-for"];
+  const key = (typeof xff === "string" ? xff.split(",")[0].trim() : null) || req.ip || "anon";
   const now = Date.now();
   const hits = (healthRateLimit.get(key) || []).filter((t: number) => now - t < HEALTH_RATE_WINDOW_MS);
   if (hits.length >= HEALTH_RATE_MAX) {
@@ -4526,13 +4530,13 @@ async function processIntakeLead(key: any, input: IntakeLeadInput, idemHeaderOve
     return { ok: false, error: "customer_number (or phone) is required.", code: "MISSING_NUMBER" };
   }
 
-  // Validate phone number — must look like an E.164 number (+<digits>) or at least
-  // contain only digits, spaces, hyphens, parentheses, and a leading +.
-  // We're intentionally lenient (not enforcing full E.164 length) to accommodate
-  // international numbers that operators may not have pre-normalised, but we
-  // reject obvious non-phone strings (e.g., SQL injection attempts).
+  // Lenient E.164 validation: strip common separators then check for 7–20 digits
+  // with an optional leading +. Intentionally not enforcing strict E.164 length
+  // to accommodate pre-normalised numbers from operators; rejects non-phone strings
+  // (SQL injection attempts, etc.).
+  const PHONE_RE = /^\+?[0-9]{7,20}$/;
   const phoneClean = customer_number.replace(/[\s\-().]/g, "");
-  if (!/^\+?[0-9]{7,20}$/.test(phoneClean)) {
+  if (!PHONE_RE.test(phoneClean)) {
     return { ok: false, error: "customer_number must be a valid phone number (7–20 digits, optional leading +).", code: "INVALID_NUMBER" };
   }
 
