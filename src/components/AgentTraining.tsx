@@ -35,6 +35,7 @@ export default function AgentTraining() {
   const [isSavingEntry, setIsSavingEntry] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [optSuggestions, setOptSuggestions] = useState<any>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     authFetch("/api/agents").then(res => res.json()).then(data => {
@@ -45,6 +46,7 @@ export default function AgentTraining() {
 
   const fetchKnowledge = async () => {
     try {
+      setFetchError(null);
       const res = await authFetch(`/api/agent-config/${selectedAgentId}`);
       const data = await res.json();
       setKnowledge(data.knowledge || []);
@@ -52,7 +54,10 @@ export default function AgentTraining() {
       setPersonality(data.personality || "");
       setPersonalityDraft(data.personality || "");
       setLessons(data.lessons || []);
-    } catch(e) {}
+    } catch(e) {
+      console.error("fetchKnowledge failed:", e);
+      setFetchError("Failed to load agent configuration. Check your connection and try again.");
+    }
   };
 
   const handleSend = async () => {
@@ -89,7 +94,9 @@ export default function AgentTraining() {
      try {
        await authFetch(`/api/agent-config/${selectedAgentId}/${type}/${id}`, { method: 'DELETE' });
        fetchKnowledge();
-     } catch(e) {}
+     } catch(e) {
+       console.error(`deleteItem(${type}) failed:`, e);
+     }
   };
 
   const saveManualEntry = async (type: 'directive' | 'knowledge' | 'personality', content: string, overrideId?: string) => {
@@ -199,6 +206,12 @@ export default function AgentTraining() {
           </div>
         </div>
       </div>
+
+      {fetchError && (
+        <div className="max-w-[1400px] mx-auto w-full mt-6 px-4 py-3 bg-red-50 border-2 border-red-300 text-red-700 text-sm font-medium rounded">
+          {fetchError}
+        </div>
+      )}
 
       <nav className="flex flex-wrap gap-6 max-w-[1400px] mx-auto w-full mt-12 pt-8 border-t-2 border-ink/5">
            {[ 

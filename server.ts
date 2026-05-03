@@ -1839,8 +1839,10 @@ app.post("/api/vapi-webhook", async (req, res) => {
 // ==========================================
 app.get("/api/calls", authenticateUser, async (req: any, res: any) => {
   try {
-    const limit = parseInt(req.query.limit as string) || 50;
-    const offset = parseInt(req.query.offset as string) || 0;
+    const limitRaw = parseInt(req.query.limit as string);
+    const offsetRaw = parseInt(req.query.offset as string);
+    const limit = Math.min(isNaN(limitRaw) ? 50 : limitRaw, 500);
+    const offset = isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw);
     
     const { data: calls, error, count } = await db
       .from('wireline_call_logs')

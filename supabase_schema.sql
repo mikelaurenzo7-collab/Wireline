@@ -489,3 +489,30 @@ DO $$ BEGIN
     END IF;
 END $$;
 
+
+-- Performance indexes for high-frequency query patterns
+-- wireline_call_logs is scanned by user_id + ordered by created_at on every
+-- CallLogs load, Insights, and post-call enrichment listing.
+CREATE INDEX IF NOT EXISTS wireline_call_logs_user_created_idx
+    ON wireline_call_logs(user_id, created_at DESC);
+
+-- wireline_outbound_leads is scanned by user_id + ordered by created_at on
+-- every OutboundDialer and Triage hot-leads load.
+CREATE INDEX IF NOT EXISTS wireline_outbound_leads_user_created_idx
+    ON wireline_outbound_leads(user_id, created_at DESC);
+
+-- wireline_email_threads is sorted by last_message_at on every EmailInbox load.
+CREATE INDEX IF NOT EXISTS wireline_email_threads_user_last_msg_idx
+    ON wireline_email_threads(user_id, last_message_at DESC);
+
+-- wireline_fleet_tasks is filtered by user_id + status on the FleetTaskBridge view.
+CREATE INDEX IF NOT EXISTS wireline_fleet_tasks_user_status_idx
+    ON wireline_fleet_tasks(user_id, status);
+
+-- Fix orphaned appointment records when an agent is deleted.
+-- Existing rows keep their agent_id value via SET NULL so history is preserved.
+ALTER TABLE wireline_appointments
+    DROP CONSTRAINT IF EXISTS wireline_appointments_agent_id_fkey;
+ALTER TABLE wireline_appointments
+    ADD CONSTRAINT wireline_appointments_agent_id_fkey
+    FOREIGN KEY (agent_id) REFERENCES wireline_agents(id) ON DELETE SET NULL;
