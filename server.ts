@@ -3513,14 +3513,17 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
      const [agentRows, knowledgeRows, directiveRows] = await Promise.all([
        agentIds.length
          ? db.from('wireline_agents').select('*').in('id', agentIds)
-         : Promise.resolve({ data: [] }),
+         : Promise.resolve({ data: [], error: null }),
        agentIds.length
          ? db.from('wireline_knowledge').select('agent_id, content').in('agent_id', agentIds)
-         : Promise.resolve({ data: [] }),
+         : Promise.resolve({ data: [], error: null }),
        agentIds.length
          ? db.from('wireline_directives').select('agent_id, content').in('agent_id', agentIds)
-         : Promise.resolve({ data: [] }),
+         : Promise.resolve({ data: [], error: null }),
      ]);
+     if (agentRows.error) log.warn("Email sync: failed to batch-fetch agents", { error: agentRows.error.message });
+     if (knowledgeRows.error) log.warn("Email sync: failed to batch-fetch knowledge", { error: knowledgeRows.error.message });
+     if (directiveRows.error) log.warn("Email sync: failed to batch-fetch directives", { error: directiveRows.error.message });
      const agentMap = new Map((agentRows.data || []).map((a: any) => [a.id, a]));
      const knowledgeMap = new Map<string, string[]>();
      const directivesMap = new Map<string, string[]>();
@@ -3568,10 +3571,23 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
         const messages = gmailRes.data.messages || [];
         if (messages.length === 0) continue;
 
-        // Fetch all message details in parallel instead of sequentially.
-        const msgDetails = await Promise.all(
+        // Fetch all message details in parallel. Use allSettled so a single
+        // transient failure (rate-limit, deleted message) doesn't abort the
+        // entire sync — we simply skip the messages that couldn't be fetched.
+        const msgSettled = await Promise.allSettled(
           messages.map((msg: any) => gmail.users.messages.get({ userId: 'me', id: msg.id! }))
         );
+        const msgDetails = msgSettled
+          .filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled')
+          .map(r => r.value);
+        if (msgDetails.length < messages.length) {
+          log.warn("Email sync: some message fetches failed", {
+            account: account.email_address,
+            attempted: messages.length,
+            succeeded: msgDetails.length,
+          });
+        }
+        if (msgDetails.length === 0) continue;
 
         // Collect all thread IDs and message IDs so we can batch-check DB existence
         // in two queries instead of 2 × N individual lookups.
@@ -3581,11 +3597,13 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
         const [existingThreadsRes, existingMsgsRes] = await Promise.all([
           threadIds.length
             ? db.from('wireline_email_threads').select('*').in('thread_id', threadIds)
-            : Promise.resolve({ data: [] }),
+            : Promise.resolve({ data: [], error: null }),
           googleMsgIds.length
             ? db.from('wireline_email_messages').select('google_message_id').in('google_message_id', googleMsgIds)
-            : Promise.resolve({ data: [] }),
+            : Promise.resolve({ data: [], error: null }),
         ]);
+        if (existingThreadsRes.error) log.warn("Email sync: thread batch-check failed", { error: existingThreadsRes.error.message });
+        if (existingMsgsRes.error) log.warn("Email sync: message batch-check failed", { error: existingMsgsRes.error.message });
         const threadDbMap = new Map((existingThreadsRes.data || []).map((t: any) => [t.thread_id, t]));
         const seenMsgIds = new Set((existingMsgsRes.data || []).map((m: any) => m.google_message_id));
 
