@@ -1,6 +1,6 @@
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from "react-router-dom";
-import { Phone, Users, Settings, Activity, MessageSquare, Calendar, PhoneOutgoing, ServerCog, PlugZap, History, Mail, Menu, X, LogOut, User, Terminal, ChevronRight, Zap, Target, Shield, Signal, Globe, Box, LayoutPanelLeft, Database, Command, Sparkles, Waves, Inbox, BarChart3, Loader2, AlertTriangle } from "lucide-react";
+import { Phone, Users, Settings, Activity, MessageSquare, Calendar, PhoneOutgoing, ServerCog, PlugZap, History, Mail, Menu, X, LogOut, User, Terminal, ChevronRight, Zap, Target, Shield, Signal, Globe, Box, LayoutPanelLeft, Database, Command, Sparkles, Waves, Inbox, BarChart3, Loader2, AlertTriangle, PhoneCall } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import AuthPortal from "./components/AuthPortal";
 import CommandBar from "./components/CommandBar";
@@ -28,24 +28,24 @@ const KnowledgeBaseManager = lazy(() => import("./components/KnowledgeBaseManage
 
 const NAV_ITEMS = [
   { group: "Control Center", items: [
-    { label: "Command Atlas", path: "/", icon: Activity, badge: null },
-    { label: "Triage Inbox", path: "/triage", icon: Inbox, badge: null },
-    { label: "Insights", path: "/insights", icon: BarChart3, badge: null },
+    { label: "Command Atlas", path: "/", icon: Activity },
+    { label: "Triage Inbox", path: "/triage", icon: Inbox },
+    { label: "Insights", path: "/insights", icon: BarChart3 },
   ]},
   { group: "Communications", items: [
-    { label: "Voice Archive", path: "/logs", icon: History, badge: null },
-    { label: "Inbound Email", path: "/inbox", icon: Mail, badge: null },
-    { label: "Outbound Dialer", path: "/outbound", icon: PhoneOutgoing, badge: null },
-    { label: "Constellation", path: "/appointments", icon: Calendar, badge: null },
+    { label: "Voice Archive", path: "/logs", icon: History },
+    { label: "Inbound Email", path: "/inbox", icon: Mail },
+    { label: "Outbound Dialer", path: "/outbound", icon: PhoneOutgoing },
+    { label: "Constellation", path: "/appointments", icon: Calendar },
   ]},
   { group: "Intelligence Layer", items: [
-    { label: "Neural Atelier", path: "/train", icon: MessageSquare, badge: null },
-    { label: "Knowledge Atlas", path: "/knowledge", icon: Database, badge: null },
-    { label: "Agent Topology", path: "/agents", icon: Users, badge: null },
+    { label: "Neural Atelier", path: "/train", icon: MessageSquare },
+    { label: "Knowledge Atlas", path: "/knowledge", icon: Database },
+    { label: "Agent Topology", path: "/agents", icon: Users },
   ]},
   { group: "Infrastructure", items: [
-    { label: "Carrier Bridge", path: "/integrations", icon: PlugZap, badge: null },
-    { label: "Core Settings", path: "/admin", icon: ServerCog, badge: null },
+    { label: "Carrier Bridge", path: "/integrations", icon: PlugZap },
+    { label: "Core Settings", path: "/admin", icon: ServerCog },
   ]}
 ];
 

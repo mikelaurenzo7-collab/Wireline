@@ -341,17 +341,3 @@ select:focus {
     0 0 20px rgba(125, 249, 255, 0.20);
   border-color: rgba(125, 249, 255, 0.50);
 }
-
-/* When a button is the brutal-btn (gradient), ensure icons + spans inherit ink color */
-.brutal-btn:hover {
-  background-position: 100% 100%;
-  transform: translateY(-1px);
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.30) inset,
-    0 18px 40px -8px rgba(125, 249, 255, 0.55),
-    0 28px 60px -10px rgba(197, 139, 255, 0.45);
-}
-
-.brutal-btn:active {
-  transform: translateY(0);
-}
