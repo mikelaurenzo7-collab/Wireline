@@ -1900,8 +1900,10 @@ app.post("/api/vapi-webhook", async (req, res) => {
 // ==========================================
 app.get("/api/calls", authenticateUser, async (req: any, res: any) => {
   try {
-    const limit = parseInt(req.query.limit as string) || 50;
-    const offset = parseInt(req.query.offset as string) || 0;
+    const limitRaw = parseInt(req.query.limit as string);
+    const offsetRaw = parseInt(req.query.offset as string);
+    const limit = Math.min(isNaN(limitRaw) ? 50 : limitRaw, 200);
+    const offset = isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw);
     
     const { data: calls, error, count } = await db
       .from('wireline_call_logs')
@@ -3505,22 +3507,49 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
      // Fleet Synchronization
      const { data: agent } = await db.from('wireline_agents').select('*').eq('user_id', userId).limit(1).single();
 
+     // Batch-fetch all agent-specific data for accounts that reference a specific agent.
+     // Collecting unique agent IDs first avoids repeated single-row queries inside the loop.
+     const agentIds = [...new Set(accounts.map((a: any) => a.agent_id).filter(Boolean))];
+     const [agentRows, knowledgeRows, directiveRows] = await Promise.all([
+       agentIds.length
+         ? db.from('wireline_agents').select('*').in('id', agentIds)
+         : Promise.resolve({ data: [], error: null }),
+       agentIds.length
+         ? db.from('wireline_knowledge').select('agent_id, content').in('agent_id', agentIds)
+         : Promise.resolve({ data: [], error: null }),
+       agentIds.length
+         ? db.from('wireline_directives').select('agent_id, content').in('agent_id', agentIds)
+         : Promise.resolve({ data: [], error: null }),
+     ]);
+     if (agentRows.error) log.warn("Email sync: failed to batch-fetch agents", { error: agentRows.error.message });
+     if (knowledgeRows.error) log.warn("Email sync: failed to batch-fetch knowledge", { error: knowledgeRows.error.message });
+     if (directiveRows.error) log.warn("Email sync: failed to batch-fetch directives", { error: directiveRows.error.message });
+     const agentMap = new Map((agentRows.data || []).map((a: any) => [a.id, a]));
+     const knowledgeMap = new Map<string, string[]>();
+     const directivesMap = new Map<string, string[]>();
+     for (const k of (knowledgeRows.data || [])) {
+       const arr = knowledgeMap.get(k.agent_id) || [];
+       arr.push(k.content);
+       knowledgeMap.set(k.agent_id, arr);
+     }
+     for (const d of (directiveRows.data || [])) {
+       const arr = directivesMap.get(d.agent_id) || [];
+       arr.push(d.content);
+       directivesMap.set(d.agent_id, arr);
+     }
+
      let totalNew = 0;
 
      for (const account of accounts) {
-        // Fetch agent for this specific account
+        // Resolve agent/knowledge/directives from pre-fetched maps (no extra DB round-trips).
         let activeAgent = agent;
-        let knowledge = [];
-        let directives = [];
+        let knowledge: string[] = [];
+        let directives: string[] = [];
         if (account.agent_id) {
-          const { data: specificAgent } = await db.from('wireline_agents').select('*').eq('id', account.agent_id).single();
+          const specificAgent = agentMap.get(account.agent_id);
           if (specificAgent) activeAgent = specificAgent;
-          
-          const knowledgeRes = await db.from('wireline_knowledge').select('content').eq('agent_id', account.agent_id);
-          if (knowledgeRes.data) knowledge = knowledgeRes.data.map(k => k.content);
-
-          const directivesRes = await db.from('wireline_directives').select('content').eq('agent_id', account.agent_id);
-          if (directivesRes.data) directives = directivesRes.data.map(d => d.content);
+          knowledge = knowledgeMap.get(account.agent_id) || [];
+          directives = directivesMap.get(account.agent_id) || [];
         }
 
         const oauth2Client = getGoogleOAuthClient(req);
@@ -3540,19 +3569,57 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
         });
 
         const messages = gmailRes.data.messages || [];
-        
-        for (const msg of messages) {
-           const msgData = await gmail.users.messages.get({ userId: 'me', id: msg.id! });
-           const headers = msgData.data.payload?.headers || [];
-           const subject = headers.find(h => h.name === 'Subject')?.value || "No Subject";
-           const from = headers.find(h => h.name === 'From')?.value || "";
-           const threadId = msgData.data.threadId!;
+        if (messages.length === 0) continue;
+
+        // Fetch all message details in parallel. Use allSettled so a single
+        // transient failure (rate-limit, deleted message) doesn't abort the
+        // entire sync — we simply skip the messages that couldn't be fetched.
+        const msgSettled = await Promise.allSettled(
+          messages.map((msg: any) => gmail.users.messages.get({ userId: 'me', id: msg.id! }))
+        );
+        const msgDetails = msgSettled
+          .filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled')
+          .map(r => r.value);
+        if (msgDetails.length < messages.length) {
+          log.warn("Email sync: some message fetches failed", {
+            account: account.email_address,
+            attempted: messages.length,
+            succeeded: msgDetails.length,
+          });
+        }
+        if (msgDetails.length === 0) continue;
+
+        // Collect all thread IDs and message IDs so we can batch-check DB existence
+        // in two queries instead of 2 × N individual lookups.
+        const threadIds = [...new Set(msgDetails.map((m: any) => m.data.threadId!).filter(Boolean))];
+        const googleMsgIds = msgDetails.map((m: any) => m.data.id!).filter(Boolean);
+
+        const [existingThreadsRes, existingMsgsRes] = await Promise.all([
+          threadIds.length
+            ? db.from('wireline_email_threads').select('*').in('thread_id', threadIds)
+            : Promise.resolve({ data: [], error: null }),
+          googleMsgIds.length
+            ? db.from('wireline_email_messages').select('google_message_id').in('google_message_id', googleMsgIds)
+            : Promise.resolve({ data: [], error: null }),
+        ]);
+        if (existingThreadsRes.error) log.warn("Email sync: thread batch-check failed", { error: existingThreadsRes.error.message });
+        if (existingMsgsRes.error) log.warn("Email sync: message batch-check failed", { error: existingMsgsRes.error.message });
+        const threadDbMap = new Map((existingThreadsRes.data || []).map((t: any) => [t.thread_id, t]));
+        const seenMsgIds = new Set((existingMsgsRes.data || []).map((m: any) => m.google_message_id));
+
+        for (const msgData of msgDetails) {
+           const msg = msgData.data;
+           const headers = msg.payload?.headers || [];
+           const subject = headers.find((h: any) => h.name === 'Subject')?.value || "No Subject";
+           const from = headers.find((h: any) => h.name === 'From')?.value || "";
+           const threadId = msg.threadId!;
+           const msgId = msg.id!;
            
            // Extract snippet or body
-           const snippet = msgData.data.snippet || "";
+           const snippet = msg.snippet || "";
            
-           // Check if thread exists in DB
-           let { data: existingThread } = await db.from('wireline_email_threads').select('*').eq('thread_id', threadId).single();
+           // Check if thread exists in DB (from pre-fetched map)
+           let existingThread = threadDbMap.get(threadId);
            
            if (!existingThread) {
               const { data: newThread } = await db.from('wireline_email_threads').insert({
@@ -3563,18 +3630,19 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
                  status: 'pending_ai'
               }).select('*').single();
               existingThread = newThread;
+              if (existingThread) threadDbMap.set(threadId, existingThread);
            }
 
-           // Check if message exists in DB
-           const { data: existingMsg } = await db.from('wireline_email_messages').select('*').eq('google_message_id', msg.id!).single();
-           if (existingMsg) continue;
+           // Check if message exists in DB (from pre-fetched set)
+           if (seenMsgIds.has(msgId)) continue;
 
            totalNew++;
+           seenMsgIds.add(msgId);
 
            // Save the customer message
            await db.from('wireline_email_messages').insert({
               thread_id: existingThread!.id,
-              google_message_id: msg.id!,
+              google_message_id: msgId,
               role: 'customer',
               content: snippet
            });
@@ -3582,7 +3650,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
            // mark as read in Gmail (optional, but good for sync)
            await gmail.users.messages.modify({
               userId: 'me',
-              id: msg.id!,
+              id: msgId,
               requestBody: { removeLabelIds: ['UNREAD'] }
            });
 

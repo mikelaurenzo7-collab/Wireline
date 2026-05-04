@@ -39,7 +39,7 @@ export default function DashboardHome() {
       fetchActiveSignals();
       fetchHighPriorityTasks();
       fetchSystemActivity();
-    }, 5000);
+    }, 30_000);
 
     vapi.on("call-start", () => { setIsConnecting(false); setIsConnected(true); });
     vapi.on("call-end", () => {
