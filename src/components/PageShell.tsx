@@ -63,19 +63,19 @@ export default function PageShell({
         initial={{ y: -8, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-        className="shrink-0 flex items-end justify-between gap-6 pb-3 mb-3 border-b border-white/8"
+        className="shrink-0 flex items-end justify-between gap-6 pb-4 mb-4 border-b border-white/10"
       >
         <div className="min-w-0">
           {eyebrow && (
-            <p className="text-[9px] uppercase tracking-[0.45em] text-muted/80 mb-1.5 truncate">
+            <p className="text-[9px] uppercase tracking-[0.48em] text-muted/80 mb-2 truncate">
               {eyebrow}
             </p>
           )}
-          <h1 className="font-display italic lowercase text-3xl md:text-4xl leading-[0.95] tracking-tight text-ink truncate">
+          <h1 className="font-display italic lowercase text-3xl md:text-4xl lg:text-5xl leading-[0.92] tracking-tight text-ink truncate">
             <span className="text-aurora">{title}</span>
           </h1>
           {subtitle && (
-            <p className="text-[11px] text-muted/80 mt-1 truncate max-w-2xl">
+            <p className="text-[11px] text-muted/80 mt-2 truncate max-w-2xl leading-relaxed">
               {subtitle}
             </p>
           )}
@@ -88,7 +88,7 @@ export default function PageShell({
 
       {/* Tab strip */}
       {tabs && tabs.length > 0 && (
-        <div className="shrink-0 flex items-center gap-1.5 mb-3 overflow-x-auto scrollbar-hide">
+        <div className="shrink-0 flex items-center gap-1.5 mb-4 overflow-x-auto scrollbar-hide">
           {tabs.map(tab => {
             const Icon = tab.icon;
             const active = tab.id === activeId;
@@ -97,18 +97,18 @@ export default function PageShell({
                 key={tab.id}
                 onClick={() => setActiveId(tab.id)}
                 className={cn(
-                  "shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-full transition-all border text-[11px] uppercase tracking-[0.22em]",
+                  "shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-full transition-all border text-[11px] uppercase tracking-[0.24em]",
                   active
-                    ? "bg-white/8 border-brand/40 text-ink ring-aurora"
-                    : "bg-transparent border-white/8 text-muted hover:text-ink hover:border-white/20"
+                    ? "bg-white/10 border-brand/50 text-ink ring-aurora shadow-lg"
+                    : "bg-transparent border-white/8 text-muted hover:text-ink hover:border-white/25"
                 )}
               >
                 {Icon && <Icon className={cn("w-3.5 h-3.5", active ? "text-brand" : "")} />}
                 <span>{tab.label}</span>
                 {tab.badge != null && tab.badge !== 0 && (
                   <span className={cn(
-                    "ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-mono leading-none",
-                    active ? "bg-brand/20 text-brand" : "bg-white/8 text-muted"
+                    "ml-1 px-2 py-0.5 rounded-full text-[9px] font-mono leading-none",
+                    active ? "bg-brand/25 text-brand" : "bg-white/8 text-muted"
                   )}>
                     {tab.badge}
                   </span>
@@ -163,25 +163,28 @@ export function Panel({
   return (
     <section
       className={cn(
-        "relative rounded-2xl glass border border-white/8 flex flex-col h-full min-h-0 overflow-hidden",
+        "relative rounded-2xl glass border border-white/10 flex flex-col h-full min-h-0 overflow-hidden shadow-2xl",
         className
       )}
+      style={{
+        boxShadow: "0 1px 0 rgba(255, 255, 255, 0.08) inset, 0 0 0 1px rgba(125, 249, 255, 0.04), 0 20px 60px -20px rgba(0, 0, 0, 0.7), 0 8px 24px -8px rgba(125, 249, 255, 0.15)"
+      }}
     >
       {(title || actions) && (
-        <header className="shrink-0 px-4 py-2.5 flex items-center justify-between gap-3 border-b border-white/8">
-          <div className="flex items-center gap-2 min-w-0">
+        <header className="shrink-0 px-4 py-3 flex items-center justify-between gap-3 border-b border-white/10">
+          <div className="flex items-center gap-2.5 min-w-0">
             {Icon && (
-              <div className="w-7 h-7 rounded-lg glass border border-white/10 flex items-center justify-center text-brand shrink-0">
-                <Icon className="w-3.5 h-3.5" />
+              <div className="w-8 h-8 rounded-lg glass border border-white/12 flex items-center justify-center text-brand shrink-0">
+                <Icon className="w-4 h-4" />
               </div>
             )}
             {title && (
-              <h3 className="font-display italic lowercase text-base text-ink leading-none truncate">
+              <h3 className="font-display italic lowercase text-base md:text-lg text-ink leading-none truncate">
                 {title}
               </h3>
             )}
             {hint && (
-              <span className="text-[9px] uppercase tracking-[0.3em] text-muted/70 truncate ml-1">
+              <span className="text-[9px] uppercase tracking-[0.32em] text-muted/70 truncate ml-1">
                 {hint}
               </span>
             )}
@@ -214,24 +217,24 @@ export function StatTile({
   accent?: string;
 }) {
   return (
-    <div className="relative rounded-xl glass border border-white/8 p-3 overflow-hidden">
+    <div className="relative rounded-xl glass border border-white/10 p-4 overflow-hidden shadow-lg">
       <div
-        className="absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-25 blur-2xl pointer-events-none"
+        className="absolute -top-8 -right-8 w-28 h-28 rounded-full opacity-30 blur-3xl pointer-events-none"
         style={{ background: `radial-gradient(circle, ${accent}, transparent)` }}
       />
-      <div className="relative flex items-start justify-between mb-2">
-        <p className="text-[9px] uppercase tracking-[0.28em] text-muted">{label}</p>
+      <div className="relative flex items-start justify-between mb-2.5">
+        <p className="text-[9px] uppercase tracking-[0.32em] text-muted font-medium">{label}</p>
         {Icon && (
-          <div className="w-6 h-6 rounded-md glass border border-white/10 flex items-center justify-center" style={{ color: accent }}>
-            <Icon className="w-3 h-3" />
+          <div className="w-7 h-7 rounded-lg glass border border-white/12 flex items-center justify-center" style={{ color: accent }}>
+            <Icon className="w-3.5 h-3.5" />
           </div>
         )}
       </div>
-      <div className="font-display italic text-2xl md:text-3xl text-ink leading-none tracking-tight truncate">
+      <div className="font-display italic text-2xl md:text-3xl lg:text-4xl text-ink leading-none tracking-tight truncate">
         {value}
       </div>
       {sub && (
-        <p className="text-[9px] uppercase tracking-[0.28em] text-muted mt-1.5 truncate">{sub}</p>
+        <p className="text-[9px] uppercase tracking-[0.32em] text-muted mt-2 truncate">{sub}</p>
       )}
     </div>
   );
