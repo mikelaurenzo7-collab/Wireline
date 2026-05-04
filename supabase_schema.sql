@@ -489,3 +489,92 @@ DO $$ BEGIN
     END IF;
 END $$;
 
+-- ────────────────────────────────────────────────────────────────────
+-- PERFORMANCE INDEXES — idempotent, safe to re-run on existing installs.
+--
+-- The tables below are queried almost exclusively by (user_id) or
+-- (user_id, agent_id) but lacked indexes. Without them Supabase/Postgres
+-- falls back to sequential scans which become very slow as row counts
+-- grow. All indexes are CONCURRENT-safe and IF NOT EXISTS so this block
+-- can be run on live databases without downtime.
+-- ────────────────────────────────────────────────────────────────────
+
+-- wireline_agents — most-read table; every API call that resolves an
+-- agent starts here.
+CREATE INDEX IF NOT EXISTS wireline_agents_user_idx
+    ON wireline_agents(user_id);
+
+-- wireline_directives — fetched on every voice/email call to build the
+-- agent's instruction set.
+CREATE INDEX IF NOT EXISTS wireline_directives_user_agent_idx
+    ON wireline_directives(user_id, agent_id);
+
+-- wireline_knowledge — same query pattern as directives.
+CREATE INDEX IF NOT EXISTS wireline_knowledge_user_agent_idx
+    ON wireline_knowledge(user_id, agent_id);
+
+-- wireline_call_logs — dashboard stats, insights, triage, activity feed,
+-- and call-log list all query this table ordered by created_at DESC.
+CREATE INDEX IF NOT EXISTS wireline_call_logs_user_created_idx
+    ON wireline_call_logs(user_id, created_at DESC);
+
+-- wireline_appointments — calendar availability checks run on every email
+-- that mentions a date.
+CREATE INDEX IF NOT EXISTS wireline_appointments_user_idx
+    ON wireline_appointments(user_id);
+
+-- wireline_fleet_tasks — polled every 30 s from the dashboard and read
+-- by the task bridge; also written by the email sync on every run.
+CREATE INDEX IF NOT EXISTS wireline_fleet_tasks_user_created_idx
+    ON wireline_fleet_tasks(user_id, created_at DESC);
+
+-- wireline_fleet_tasks dedup — each (source, task_type) pair should
+-- create at most one pending task. The partial index (status = 'pending')
+-- keeps it lightweight and only blocks actual duplicates.
+CREATE UNIQUE INDEX IF NOT EXISTS wireline_fleet_tasks_source_type_pending_idx
+    ON wireline_fleet_tasks(user_id, source_id, task_type)
+    WHERE status = 'pending' AND source_id IS NOT NULL;
+
+-- wireline_email_accounts — looked up by user_id on every email sync.
+CREATE INDEX IF NOT EXISTS wireline_email_accounts_user_idx
+    ON wireline_email_accounts(user_id);
+
+-- wireline_email_threads — the sync inner loop checks for an existing
+-- thread by thread_id (already UNIQUE) but the activity feed and triage
+-- surface filter/order by user_id + created_at.
+CREATE INDEX IF NOT EXISTS wireline_email_threads_user_created_idx
+    ON wireline_email_threads(user_id, created_at DESC);
+
+-- wireline_email_messages — every sync pass checks whether a Gmail
+-- message is already stored. Without an index this is a full-table scan.
+CREATE INDEX IF NOT EXISTS wireline_email_messages_google_id_idx
+    ON wireline_email_messages(google_message_id);
+
+-- Enforce uniqueness so concurrent sync runs can't insert the same
+-- Gmail message twice even under a race condition. Uses DO/EXECUTE
+-- so it's idempotent if the constraint already exists.
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'wireline_email_messages_google_message_id_key'
+    ) THEN
+        ALTER TABLE wireline_email_messages
+            ADD CONSTRAINT wireline_email_messages_google_message_id_key
+            UNIQUE (google_message_id);
+    END IF;
+END $$;
+
+-- wireline_email_messages — thread_id FK is the join key used by the
+-- thread detail view and email reply endpoint.
+CREATE INDEX IF NOT EXISTS wireline_email_messages_thread_idx
+    ON wireline_email_messages(thread_id);
+
+-- wireline_signal_presence — polled frequently from the dashboard live
+-- view; no index meant a full scan on every poll.
+CREATE INDEX IF NOT EXISTS wireline_signal_presence_user_idx
+    ON wireline_signal_presence(user_id);
+
+-- wireline_agent_lessons — activity feed reads the 5 most recent lessons.
+CREATE INDEX IF NOT EXISTS wireline_agent_lessons_user_created_idx
+    ON wireline_agent_lessons(user_id, created_at DESC);
+
