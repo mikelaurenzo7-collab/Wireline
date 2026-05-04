@@ -578,3 +578,21 @@ CREATE INDEX IF NOT EXISTS wireline_signal_presence_user_idx
 CREATE INDEX IF NOT EXISTS wireline_agent_lessons_user_created_idx
     ON wireline_agent_lessons(user_id, created_at DESC);
 
+-- wireline_call_logs — dashboard stats, triage, and daily-brief all filter
+-- by lead_score (gte 70 or 75). Without this index Postgres falls back to
+-- the user_created_idx and then re-filters every row in the date range.
+CREATE INDEX IF NOT EXISTS wireline_call_logs_user_score_idx
+    ON wireline_call_logs(user_id, lead_score DESC);
+
+-- wireline_email_threads — dashboard "hot leads" query filters by
+-- lead_score >= 75. Mirrors the pattern above.
+CREATE INDEX IF NOT EXISTS wireline_email_threads_user_score_idx
+    ON wireline_email_threads(user_id, lead_score DESC);
+
+-- wireline_fleet_tasks — triage fetches pending compliance tasks and
+-- pending general tasks in separate queries. The existing user_created_idx
+-- doesn't help with status equality filters, so Postgres scans all tasks
+-- for the user. A (user_id, status) index resolves both queries.
+CREATE INDEX IF NOT EXISTS wireline_fleet_tasks_user_status_idx
+    ON wireline_fleet_tasks(user_id, status);
+

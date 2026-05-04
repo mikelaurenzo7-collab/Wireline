@@ -1929,12 +1929,21 @@ app.get("/api/calls", authenticateUser, async (req: any, res: any) => {
 // ==========================================
 app.get("/api/dashboard/stats", authenticateUser, async (req: any, res: any) => {
    try {
-      const [apptRes, leadsRes, logsRes] = await Promise.all([
+      // Chart window — compute once, reuse across all 6 parallel queries.
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+      // All six queries fire in parallel — eliminates the previous 3
+      // sequential round-trips (hotCalls, hotEmails, recentAppts).
+      // recentAppts is scoped to the 7-day chart window instead of ALL time.
+      const [apptRes, leadsRes, logsRes, hotCallsRes, hotEmailsRes, recentApptsRes] = await Promise.all([
           db.from('wireline_appointments').select('id', { count: 'exact' }).eq('user_id', req.user.id),
           db.from('wireline_outbound_leads').select('id', { count: 'exact' }).eq('user_id', req.user.id),
-          db.from('wireline_call_logs').select('cost, duration_seconds, direction, created_at').eq('user_id', req.user.id).order('created_at', { ascending: false }).limit(200)
+          db.from('wireline_call_logs').select('cost, duration_seconds, direction, created_at').eq('user_id', req.user.id).order('created_at', { ascending: false }).limit(200),
+          db.from('wireline_call_logs').select('id, customer_number, lead_score, intent_label, summary, created_at').eq('user_id', req.user.id).gte('lead_score', 75).order('created_at', { ascending: false }).limit(5),
+          db.from('wireline_email_threads').select('id, customer_email, lead_score, intent_label, summary, created_at').eq('user_id', req.user.id).gte('lead_score', 75).order('created_at', { ascending: false }).limit(5),
+          db.from('wireline_appointments').select('created_at').eq('user_id', req.user.id).gte('created_at', sevenDaysAgo),
       ]);
-      
+
       const totalAppointments = apptRes.count || 0;
       const totalLeads = leadsRes.count || 0;
       const logs = logsRes.data || [];
@@ -1945,13 +1954,10 @@ app.get("/api/dashboard/stats", authenticateUser, async (req: any, res: any) => 
       const outboundCount = logs.filter(l => l.direction === 'outbound').length;
       const conversionRate = logs.length > 0 ? ((totalAppointments / logs.length) * 100).toFixed(1) : 0;
 
-      // FETCH "HOT LEADS" (AI-Scored High Intent)
-      const { data: hotCalls } = await db.from('wireline_call_logs').select('*').eq('user_id', req.user.id).gte('lead_score', 75).order('created_at', { ascending: false }).limit(5);
-      const { data: hotEmails } = await db.from('wireline_email_threads').select('*').eq('user_id', req.user.id).gte('lead_score', 75).order('created_at', { ascending: false }).limit(5);
-
+      // HOT LEADS — AI-Scored High Intent (results already in parallel fetch above)
       const hotLeads = [
-        ...(hotCalls || []).map(c => ({ id: c.id, type: 'call', contact: c.customer_number, score: c.lead_score, intent: c.intent_label, summary: c.summary, date: c.created_at })),
-        ...(hotEmails || []).map(e => ({ id: e.id, type: 'email', contact: e.customer_email, score: e.lead_score, intent: e.intent_label, summary: e.summary, date: e.created_at }))
+        ...(hotCallsRes.data || []).map((c: any) => ({ id: c.id, type: 'call', contact: c.customer_number, score: c.lead_score, intent: c.intent_label, summary: c.summary, date: c.created_at })),
+        ...(hotEmailsRes.data || []).map((e: any) => ({ id: e.id, type: 'email', contact: e.customer_email, score: e.lead_score, intent: e.intent_label, summary: e.summary, date: e.created_at }))
       ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
 
       // Compute Chart Data (Last 7 Days)
@@ -1973,8 +1979,7 @@ app.get("/api/dashboard/stats", authenticateUser, async (req: any, res: any) => 
          }
       });
 
-      const { data: recentAppts } = await db.from('wireline_appointments').select('created_at').eq('user_id', req.user.id);
-      (recentAppts || []).forEach((appt: any) => {
+      (recentApptsRes.data || []).forEach((appt: any) => {
          const d = new Date(appt.created_at).toISOString().split('T')[0];
          if (chartDataMap[d]) {
              chartDataMap[d].leads += 1;
@@ -2657,7 +2662,8 @@ app.get("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => {
   try {
     const { data, error } = await db.from('wireline_fleet_tasks')
                                      .select('*, wireline_agents(name)')
-                                     .eq('user_id', req.user.id);
+                                     .eq('user_id', req.user.id)
+                                     .limit(200);
     
     if (error) throw error;
 
@@ -5960,6 +5966,7 @@ app.post("/api/claude/forge", authenticateUser, async (req: any, res: any) => {
 // only changes when calls land, which is sub-daily for most SMBs.
 const insightCache = new Map<string, { ts: number; data: any }>();
 const INSIGHT_TTL_MS = 60 * 60 * 1000;
+const INSIGHT_CLEANUP_INTERVAL_MS = 2 * 60 * 60 * 1000; // sweep every 2h
 function cachedInsight(key: string) {
   const entry = insightCache.get(key);
   return entry && Date.now() - entry.ts < INSIGHT_TTL_MS ? entry.data : null;
@@ -5967,6 +5974,14 @@ function cachedInsight(key: string) {
 function setCachedInsight(key: string, data: any) {
   insightCache.set(key, { ts: Date.now(), data });
 }
+// Evict stale insight entries on the cleanup interval so the map doesn't
+// grow forever in long-running deployments (each entry is ~5-20 KB).
+setInterval(() => {
+  const cutoff = Date.now() - INSIGHT_TTL_MS;
+  for (const [k, v] of insightCache) {
+    if (v.ts < cutoff) insightCache.delete(k);
+  }
+}, INSIGHT_CLEANUP_INTERVAL_MS).unref?.();
 
 // Conversion funnel — calls → connected → qualified → booked → completed.
 app.get("/api/insights/funnel", authenticateUser, async (req: any, res: any) => {
@@ -6348,7 +6363,8 @@ app.get("/api/contacts/:number", authenticateUser, async (req: any, res: any) =>
       db.from("wireline_appointments")
         .select("id, agent_id, customer_name, service_type, date, time, status, created_at")
         .eq("user_id", req.user.id)
-        .order("created_at", { ascending: false }),
+        .order("created_at", { ascending: false })
+        .limit(100),
     ]);
 
     // The first lead/call gives us a candidate name.
