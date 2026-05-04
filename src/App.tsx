@@ -53,22 +53,22 @@ function AuroraBackdrop() {
   return (
     <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
       <motion.div
-        className="absolute -top-[20%] -left-[10%] w-[80vw] h-[80vw] rounded-full"
-        style={{ background: "radial-gradient(circle at center, rgba(125,249,255,0.22), transparent 60%)" }}
-        animate={{ x: [0, 40, 0], y: [0, -30, 0] }}
-        transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute -top-[20%] -left-[10%] w-[85vw] h-[85vw] rounded-full"
+        style={{ background: "radial-gradient(circle at center, rgba(125,249,255,0.24), transparent 58%)" }}
+        animate={{ x: [0, 50, 0], y: [0, -40, 0] }}
+        transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
-        className="absolute -bottom-[20%] -right-[10%] w-[70vw] h-[70vw] rounded-full"
-        style={{ background: "radial-gradient(circle at center, rgba(255,107,217,0.18), transparent 60%)" }}
-        animate={{ x: [0, -30, 0], y: [0, 40, 0] }}
-        transition={{ duration: 28, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute -bottom-[20%] -right-[10%] w-[75vw] h-[75vw] rounded-full"
+        style={{ background: "radial-gradient(circle at center, rgba(255,107,217,0.20), transparent 58%)" }}
+        animate={{ x: [0, -40, 0], y: [0, 50, 0] }}
+        transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
-        className="absolute top-[40%] left-[40%] w-[55vw] h-[55vw] rounded-full"
-        style={{ background: "radial-gradient(circle at center, rgba(197,139,255,0.18), transparent 60%)" }}
-        animate={{ x: [0, 60, -20, 0], y: [0, -40, 30, 0] }}
-        transition={{ duration: 32, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute top-[40%] left-[40%] w-[60vw] h-[60vw] rounded-full"
+        style={{ background: "radial-gradient(circle at center, rgba(197,139,255,0.20), transparent 58%)" }}
+        animate={{ x: [0, 70, -30, 0], y: [0, -50, 40, 0] }}
+        transition={{ duration: 35, repeat: Infinity, ease: "easeInOut" }}
       />
     </div>
   );
@@ -95,7 +95,7 @@ function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) =>
       </AnimatePresence>
 
       <aside className={cn(
-        "fixed inset-y-0 left-0 w-72 flex flex-col h-full z-[70] transition-transform duration-700 lg:relative lg:translate-x-0 lg:z-20 lg:w-60 xl:w-64",
+        "fixed inset-y-0 left-0 w-72 flex flex-col h-full z-[70] transition-transform duration-700 lg:relative lg:translate-x-0 lg:z-20 lg:w-64 xl:w-72",
         open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
         <div className="absolute inset-0 glass-strong border-r border-white/8" />
@@ -103,53 +103,53 @@ function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) =>
 
         <div className="relative z-10 flex flex-col h-full">
           {/* Header */}
-          <div className="px-5 pt-5 pb-4 border-b border-white/6 flex items-center justify-between">
+          <div className="px-5 pt-6 pb-4 border-b border-white/8 flex items-center justify-between">
             <Link to="/" className="flex items-center gap-3 group min-w-0" onClick={() => setOpen(false)}>
               <motion.div
-                whileHover={{ rotate: 12, scale: 1.05 }}
-                className="relative w-9 h-9 rounded-xl flex items-center justify-center overflow-hidden shrink-0"
+                whileHover={{ rotate: 12, scale: 1.06 }}
+                className="relative w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden shrink-0"
                 style={{
                   background: "linear-gradient(135deg, #7DF9FF 0%, #C58BFF 50%, #FF6BD9 100%)",
-                  boxShadow: "0 6px 20px -8px rgba(125,249,255,0.6), 0 0 0 1px rgba(255,255,255,0.2) inset"
+                  boxShadow: "0 8px 24px -10px rgba(125,249,255,0.65), 0 0 0 1px rgba(255,255,255,0.25) inset"
                 }}
               >
-                <Waves className="w-4 h-4 text-paper relative z-10" strokeWidth={2.5} />
-                <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent" />
+                <Waves className="w-5 h-5 text-paper relative z-10" strokeWidth={2.5} />
+                <div className="absolute inset-0 bg-gradient-to-tr from-white/35 to-transparent" />
               </motion.div>
               <div className="flex flex-col min-w-0">
                 <span className="font-display italic lowercase text-xl text-ink leading-none tracking-tight truncate">wireline</span>
-                <span className="text-[8px] tracking-[0.4em] uppercase text-muted mt-1 flex items-center gap-1.5">
+                <span className="text-[8px] tracking-[0.42em] uppercase text-muted mt-1 flex items-center gap-1.5">
                   <span className="w-1 h-1 rounded-full bg-brand indicator-glow" />
                   Aurora Relay
                 </span>
               </div>
             </Link>
-            <button onClick={() => setOpen(false)} className="lg:hidden w-8 h-8 rounded-full flex items-center justify-center text-ink/60 hover:text-ink hover:bg-white/5 transition-all shrink-0">
+            <button onClick={() => setOpen(false)} className="lg:hidden w-9 h-9 rounded-full flex items-center justify-center text-ink/60 hover:text-ink hover:bg-white/8 transition-all shrink-0">
               <X className="w-4 h-4" />
             </button>
           </div>
 
           {/* User Card */}
-          <div className="mx-3 mt-3 relative aurora-ring rounded-xl">
-            <div className="relative p-3 rounded-xl glass overflow-hidden">
-              <div className="absolute -top-8 -right-8 w-20 h-20 rounded-full opacity-30 blur-2xl" style={{ background: "radial-gradient(circle, #7DF9FF, transparent)" }} />
-              <div className="relative z-10 flex items-center gap-2.5">
+          <div className="mx-3 mt-4 relative aurora-ring rounded-xl">
+            <div className="relative p-3.5 rounded-xl glass overflow-hidden">
+              <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-35 blur-3xl" style={{ background: "radial-gradient(circle, #7DF9FF, transparent)" }} />
+              <div className="relative z-10 flex items-center gap-3">
                 <div className="relative shrink-0">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-paper" style={{ background: "linear-gradient(135deg, #7DF9FF, #C58BFF)" }}>
-                    <User className="w-3.5 h-3.5" strokeWidth={2.5} />
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-paper" style={{ background: "linear-gradient(135deg, #7DF9FF, #C58BFF)" }}>
+                    <User className="w-4 h-4" strokeWidth={2.5} />
                   </div>
-                  <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#0F0E2D] bg-emerald-500" />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#0F0E2D] bg-emerald-500" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[11px] font-medium text-ink truncate">{user?.email?.split('@')[0]}</p>
-                  <p className="text-[8px] tracking-[0.25em] uppercase text-muted">Signal Active</p>
+                  <p className="text-[8px] tracking-[0.28em] uppercase text-muted">Signal Active</p>
                 </div>
                 <button
                   onClick={() => signOut()}
                   title="End session"
-                  className="shrink-0 w-7 h-7 rounded-md text-ink/60 hover:text-rose-500 hover:bg-rose-500/8 border border-white/6 hover:border-rose-500/30 transition-all flex items-center justify-center"
+                  className="shrink-0 w-8 h-8 rounded-lg text-ink/60 hover:text-rose-500 hover:bg-rose-500/10 border border-white/8 hover:border-rose-500/40 transition-all flex items-center justify-center"
                 >
-                  <LogOut className="w-3 h-3" />
+                  <LogOut className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
@@ -327,10 +327,10 @@ function TrialBanner() {
 function PageTransition({ children }: { children: React.ReactNode }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12, filter: "blur(8px)" }}
+      initial={{ opacity: 0, y: 16, filter: "blur(10px)" }}
       animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      exit={{ opacity: 0, y: -8, filter: "blur(8px)" }}
-      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      exit={{ opacity: 0, y: -12, filter: "blur(10px)" }}
+      transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
       className="h-full"
     >
       {children}
@@ -453,7 +453,7 @@ function AppContent() {
 
          <div className="flex-1 relative flex flex-col min-h-0 overflow-hidden">
             <div className="flex-1 overflow-hidden relative z-10 min-h-0">
-              <div className="h-full max-w-[1920px] mx-auto px-4 md:px-6 lg:px-8 py-3 md:py-4 lg:py-5 flex flex-col">
+              <div className="h-full max-w-[1920px] mx-auto px-4 md:px-6 lg:px-8 xl:px-10 py-4 md:py-5 lg:py-6 flex flex-col">
                 <AnimatePresence mode="wait">
                   <Suspense fallback={<RouteFallback />}>
                     <Routes>

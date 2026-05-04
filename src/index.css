@@ -311,9 +311,9 @@
 /* Soft glow ring for focused / selected items */
 .ring-aurora {
   box-shadow:
-    0 0 0 1px rgba(125, 249, 255, 0.55),
-    0 0 24px rgba(125, 249, 255, 0.35),
-    0 0 48px rgba(197, 139, 255, 0.25);
+    0 0 0 1px rgba(125, 249, 255, 0.60),
+    0 0 28px rgba(125, 249, 255, 0.40),
+    0 0 52px rgba(197, 139, 255, 0.28);
 }
 
 .font-display {
@@ -330,6 +330,16 @@ input[type="tel"],
 textarea,
 select {
   background-color: rgba(255, 255, 255, 0.04);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  box-shadow:
+    0 0 0 2px rgba(125, 249, 255, 0.35),
+    0 0 20px rgba(125, 249, 255, 0.20);
+  border-color: rgba(125, 249, 255, 0.50);
 }
 
 /* When a button is the brutal-btn (gradient), ensure icons + spans inherit ink color */
