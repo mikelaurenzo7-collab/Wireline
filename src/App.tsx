@@ -1,5 +1,5 @@
 import React, { useState, useEffect, lazy, Suspense } from "react";
-import { BrowserRouter, Routes, Route, Link, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from "react-router-dom";
 import { Phone, Users, Settings, Activity, MessageSquare, Calendar, PhoneOutgoing, ServerCog, PlugZap, History, Mail, Menu, X, LogOut, User, Terminal, ChevronRight, Zap, Target, Shield, Signal, Globe, Box, LayoutPanelLeft, Database, Command, Sparkles, Waves, Inbox, BarChart3, Loader2, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import AuthPortal from "./components/AuthPortal";
@@ -27,25 +27,25 @@ const EmailInbox      = lazy(() => import("./components/EmailInbox"));
 const KnowledgeBaseManager = lazy(() => import("./components/KnowledgeBaseManager"));
 
 const NAV_ITEMS = [
-  { group: "Operations", items: [
-    { label: "Command Atlas", path: "/", icon: Activity },
-    { label: "Triage Inbox", path: "/triage", icon: Inbox },
-    { label: "Constellation", path: "/appointments", icon: Calendar },
+  { group: "Control Center", items: [
+    { label: "Command Atlas", path: "/", icon: Activity, badge: null },
+    { label: "Triage Inbox", path: "/triage", icon: Inbox, badge: null },
+    { label: "Insights", path: "/insights", icon: BarChart3, badge: null },
   ]},
-  { group: "Signal Channels", items: [
-    { label: "Voice Archive", path: "/logs", icon: History },
-    { label: "Inbound Email", path: "/inbox", icon: Mail },
-    { label: "Outbound Dialer", path: "/outbound", icon: PhoneOutgoing },
+  { group: "Communications", items: [
+    { label: "Voice Archive", path: "/logs", icon: History, badge: null },
+    { label: "Inbound Email", path: "/inbox", icon: Mail, badge: null },
+    { label: "Outbound Dialer", path: "/outbound", icon: PhoneOutgoing, badge: null },
+    { label: "Constellation", path: "/appointments", icon: Calendar, badge: null },
   ]},
-  { group: "Intelligence", items: [
-    { label: "Insights", path: "/insights", icon: BarChart3 },
-    { label: "Neural Atelier", path: "/train", icon: MessageSquare },
-    { label: "Knowledge Atlas", path: "/knowledge", icon: Database },
-    { label: "Agent Topology", path: "/agents", icon: Users },
-    { label: "Carrier Bridge", path: "/integrations", icon: PlugZap },
+  { group: "Intelligence Layer", items: [
+    { label: "Neural Atelier", path: "/train", icon: MessageSquare, badge: null },
+    { label: "Knowledge Atlas", path: "/knowledge", icon: Database, badge: null },
+    { label: "Agent Topology", path: "/agents", icon: Users, badge: null },
   ]},
-  { group: "Root", items: [
-    { label: "Core Settings", path: "/admin", icon: ServerCog },
+  { group: "Infrastructure", items: [
+    { label: "Carrier Bridge", path: "/integrations", icon: PlugZap, badge: null },
+    { label: "Core Settings", path: "/admin", icon: ServerCog, badge: null },
   ]}
 ];
 
@@ -76,6 +76,7 @@ function AuroraBackdrop() {
 
 function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) => void }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const isActive = (path: string) => location.pathname === path;
 
@@ -155,13 +156,13 @@ function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) =>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-2 mt-3 overflow-y-auto pb-3 scrollbar-hide space-y-3 min-h-0">
+          <nav className="flex-1 px-2 mt-4 overflow-y-auto pb-3 scrollbar-hide space-y-4 min-h-0">
             {NAV_ITEMS.map((group) => (
               <div key={group.group}>
-                <h3 className="px-3 text-[8px] font-medium uppercase tracking-[0.4em] text-muted/70 mb-1.5 flex items-center gap-2">
-                  <span className="h-px flex-1 bg-gradient-to-r from-white/0 via-white/15 to-white/0" />
+                <h3 className="px-3 text-[8px] font-semibold uppercase tracking-[0.42em] text-muted/80 mb-2 flex items-center gap-2">
+                  <span className="h-px flex-1 bg-gradient-to-r from-white/0 via-white/20 to-white/0" />
                   {group.group}
-                  <span className="h-px flex-1 bg-gradient-to-r from-white/0 via-white/15 to-white/0" />
+                  <span className="h-px flex-1 bg-gradient-to-r from-white/0 via-white/20 to-white/0" />
                 </h3>
                 <div className="space-y-0.5">
                   {group.items.map((item) => {
@@ -172,10 +173,10 @@ function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) =>
                         to={item.path}
                         onClick={() => setOpen(false)}
                         className={cn(
-                          "group relative flex items-center gap-3 px-3 py-2 rounded-lg transition-all overflow-hidden",
+                          "group relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all overflow-hidden",
                           active
                             ? "text-paper"
-                            : "text-ink/70 hover:text-ink hover:bg-white/4"
+                            : "text-ink/70 hover:text-ink hover:bg-white/5"
                         )}
                       >
                         {active && (
@@ -190,9 +191,17 @@ function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) =>
                           />
                         )}
                         <item.icon className={cn("w-4 h-4 relative z-10 transition-transform shrink-0", active ? "" : "group-hover:translate-x-0.5")} strokeWidth={active ? 2.5 : 1.75} />
-                        <span className={cn("text-[12px] lowercase tracking-wide relative z-10 truncate", active ? "font-medium" : "font-normal")}>
+                        <span className={cn("text-[12px] lowercase tracking-wide relative z-10 truncate flex-1", active ? "font-medium" : "font-normal")}>
                           {item.label}
                         </span>
+                        {item.badge != null && item.badge !== 0 && (
+                          <span className={cn(
+                            "relative z-10 shrink-0 px-1.5 py-0.5 rounded-full text-[9px] font-mono leading-none",
+                            active ? "bg-white/20 text-paper" : "bg-brand/15 text-brand"
+                          )}>
+                            {item.badge}
+                          </span>
+                        )}
                         {active && <ChevronRight className="ml-auto w-3.5 h-3.5 relative z-10 shrink-0" />}
                       </Link>
                     );
@@ -203,17 +212,38 @@ function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) =>
           </nav>
 
           {/* Footer */}
-          <div className="px-3 py-2.5 border-t border-white/6 relative space-y-2 shrink-0">
+          <div className="px-3 py-3 border-t border-white/8 relative space-y-2.5 shrink-0">
             <SystemStatusBadge />
-            <div className="flex items-center justify-between text-[8px] uppercase tracking-[0.35em] text-muted/70">
+            
+            {/* Quick Actions */}
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => navigate('/train')}
+                title="Quick Train"
+                className="flex-1 px-3 py-2 rounded-lg glass border border-white/8 hover:border-brand/40 text-[10px] uppercase tracking-[0.28em] text-ink/70 hover:text-ink transition-all flex items-center justify-center gap-1.5"
+              >
+                <MessageSquare className="w-3 h-3" />
+                <span>Train</span>
+              </button>
+              <button
+                onClick={() => navigate('/')}
+                title="Test Call"
+                className="flex-1 px-3 py-2 rounded-lg glass border border-white/8 hover:border-brand/40 text-[10px] uppercase tracking-[0.28em] text-ink/70 hover:text-ink transition-all flex items-center justify-center gap-1.5"
+              >
+                <PhoneCall className="w-3 h-3" />
+                <span>Test</span>
+              </button>
+            </div>
+            
+            <div className="flex items-center justify-between text-[8px] uppercase tracking-[0.38em] text-muted/70">
               <span className="font-display italic lowercase text-[11px] tracking-tight text-ink/70">v∞ · aurora</span>
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-1.5">
                 <span className="w-1 h-1 rounded-full bg-emerald-500 indicator-glow" />
                 Stable
               </span>
             </div>
-            <div className="flex items-center gap-1.5 text-[8px] uppercase tracking-[0.3em] text-muted/60">
-              <Sparkles className="w-2.5 h-2.5" />
+            <div className="flex items-center gap-1.5 text-[8px] uppercase tracking-[0.32em] text-muted/60">
+              <Terminal className="w-2.5 h-2.5" />
               <span>⌘K  Command</span>
             </div>
           </div>
@@ -396,24 +426,27 @@ function AppContent() {
 
       <main className="flex-1 overflow-hidden relative flex flex-col z-10">
          {/* Mobile Header */}
-         <div className="lg:hidden p-3 flex items-center justify-between z-30 sticky top-0 glass-strong border-b border-white/8 shrink-0">
+         <div className="lg:hidden p-4 flex items-center justify-between z-30 sticky top-0 glass-strong border-b border-white/10 shrink-0 shadow-lg">
             <button
               onClick={() => setSidebarOpen(true)}
               aria-label="Open navigation menu"
               aria-expanded={sidebarOpen}
-              className="w-9 h-9 rounded-lg glass border border-white/10 flex items-center justify-center hover:border-brand/40 transition-all"
+              className="w-10 h-10 rounded-xl glass border border-white/12 flex items-center justify-center hover:border-brand/50 transition-all active:scale-95"
             >
-              <Menu className="w-4 h-4 text-ink" />
+              <Menu className="w-5 h-5 text-ink" />
             </button>
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "linear-gradient(135deg, #7DF9FF, #C58BFF, #FF6BD9)" }}>
-                <Waves className="w-3.5 h-3.5 text-paper" strokeWidth={2.5} />
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center shadow-lg" style={{ background: "linear-gradient(135deg, #7DF9FF, #C58BFF, #FF6BD9)" }}>
+                <Waves className="w-4 h-4 text-paper" strokeWidth={2.5} />
               </div>
-              <span className="font-display italic lowercase text-lg text-ink leading-none">wireline</span>
+              <span className="font-display italic lowercase text-xl text-ink leading-none tracking-tight">wireline</span>
             </div>
-            <div className="w-9 h-9 rounded-lg glass border border-white/10 flex items-center justify-center">
-              <User className="w-4 h-4 text-ink/70" />
-            </div>
+            <button
+              onClick={() => navigate('/admin')}
+              className="w-10 h-10 rounded-xl glass border border-white/12 flex items-center justify-center hover:border-brand/50 transition-all active:scale-95"
+            >
+              <User className="w-5 h-5 text-ink/70" />
+            </button>
          </div>
 
          <TrialBanner />
