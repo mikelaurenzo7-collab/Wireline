@@ -228,8 +228,8 @@ export default function FleetSettings() {
   const [isDeletingAgent, setIsDeletingAgent] = useState<string | null>(null);
   const [agentStats, setAgentStats] = useState<Record<string, any>>({});
 
-  const fetchAgentPerformance = async (id: string) => {
-    if (agentStats[id]) return; // already loaded
+  const fetchAgentPerformance = async (id: string, force = false) => {
+    if (agentStats[id] && !force) return; // already loaded; use force=true to refresh
     try {
       const r = await authFetch(`/api/agents/${id}/performance`);
       if (r.ok) {
@@ -521,9 +521,16 @@ export default function FleetSettings() {
                            <div className="text-[8px] uppercase tracking-[0.3em] text-brand mb-1">Avg Score</div>
                            <div className="font-display italic text-xl text-ink">{s.avgScore}</div>
                          </div>
-                         <div className="rounded-lg glass border border-white/8 p-2.5">
+                         <div className="rounded-lg glass border border-white/8 p-2.5 relative">
                            <div className="text-[8px] uppercase tracking-[0.3em] text-brand mb-1">Sentiment</div>
                            <div className="font-display italic text-xl text-ink">{posPct}%<span className="text-xs text-muted not-italic ml-1">pos</span></div>
+                           <button
+                             onClick={() => fetchAgentPerformance(selectedAgent.id, true)}
+                             title="Refresh stats"
+                             className="absolute top-2 right-2 w-5 h-5 flex items-center justify-center rounded-full glass border border-white/10 text-muted/50 hover:text-brand transition-colors"
+                           >
+                             <RefreshCw className="w-2.5 h-2.5" />
+                           </button>
                          </div>
                        </div>
                      );

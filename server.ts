@@ -3034,6 +3034,8 @@ app.get("/api/campaigns/:id/leads", authenticateUser, async (req: any, res: any)
 
 // Launch a campaign — dial all queued leads sequentially (fire-and-forget
 // per lead; we respond immediately with a count and let calls resolve async).
+const CAMPAIGN_DIAL_SPACING_MS = 3_000; // 3-second gap to avoid Vapi rate limits
+
 app.post("/api/campaigns/:id/launch", authenticateUser, async (req: any, res: any) => {
   try {
     const campaignId = req.params.id;
@@ -3068,34 +3070,46 @@ app.post("/api/campaigns/:id/launch", authenticateUser, async (req: any, res: an
 
     res.json({ success: true, dispatching: queued.length });
 
-    // Fire-and-forget: dial sequentially with a 3-second gap between calls
-    // so the Vapi rate limiter is not hit.
+    // Fire-and-forget: dial sequentially with a configurable gap between calls
+    // so the Vapi rate limiter is not hit. The entire async body is wrapped in
+    // try/catch so a thrown error always marks the campaign completed/failed.
     (async () => {
-      for (const lead of queued) {
-        try {
-          const result = await placeOutboundCall({
-            userId: req.user.id,
-            agentId: lead.agent_id || campaign.agent_id,
-            customerName: lead.customer_name,
-            customerNumber: lead.customer_number,
-            context: lead.context,
-          });
-          const newStatus = result.ok ? 'Dialing' : 'Failed';
-          await db.from('wireline_outbound_leads')
-            .update({ status: newStatus, last_called_at: new Date().toISOString(), attempts: 1 })
-            .eq('id', lead.id);
-        } catch (e) {
-          log.error("Campaign launch: lead dial failed", { leadId: lead.id, error: (e as any)?.message });
+      try {
+        for (const lead of queued) {
+          try {
+            const result = await placeOutboundCall({
+              userId: req.user.id,
+              agentId: lead.agent_id || campaign.agent_id,
+              customerName: lead.customer_name,
+              customerNumber: lead.customer_number,
+              context: lead.context,
+            });
+            const newStatus = result.ok ? 'Dialing' : 'Failed';
+            await db.from('wireline_outbound_leads')
+              .update({ status: newStatus, last_called_at: new Date().toISOString(), attempts: 1 })
+              .eq('id', lead.id);
+          } catch (e) {
+            log.error("Campaign launch: lead dial failed", { leadId: lead.id, error: (e as any)?.message });
+            await db.from('wireline_outbound_leads')
+              .update({ status: 'Failed', last_called_at: new Date().toISOString() })
+              .eq('id', lead.id);
+          }
+          await new Promise(resolve => setTimeout(resolve, CAMPAIGN_DIAL_SPACING_MS));
         }
-        // 3-second gap between dials.
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        // Mark campaign complete when all leads have been attempted.
+        await db.from('wireline_outbound_campaigns')
+          .update({ status: 'completed', updated_at: new Date().toISOString() })
+          .eq('id', campaignId)
+          .eq('user_id', req.user.id);
+      } catch (e: any) {
+        log.error("Campaign launch loop failed", { campaignId, error: e?.message });
+        // Ensure campaign doesn't remain stuck in 'running'.
+        await db.from('wireline_outbound_campaigns')
+          .update({ status: 'completed', updated_at: new Date().toISOString() })
+          .eq('id', campaignId)
+          .eq('user_id', req.user.id);
       }
-      // Mark campaign complete when all leads have been attempted.
-      await db.from('wireline_outbound_campaigns')
-        .update({ status: 'completed', updated_at: new Date().toISOString() })
-        .eq('id', campaignId)
-        .eq('user_id', req.user.id);
-    })().catch(e => log.error("Campaign launch loop failed", { error: (e as any)?.message }));
+    })();
   } catch (error: any) {
     log.error("Campaign launch failed", { error: error?.message });
     res.status(500).json({ error: "Failed to launch campaign." });
