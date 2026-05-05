@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Loader2, PlayCircle, Plus, Phone, UploadCloud, Bot, Radar, Zap, Terminal, Shield, FileSpreadsheet, ChevronRight, Search, Trash2, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Loader2, PlayCircle, Plus, Phone, UploadCloud, Bot, Radar, Zap, Terminal, Shield, FileSpreadsheet, ChevronRight, Search, Trash2, AlertTriangle, CheckCircle2, Megaphone, Target, Pause, Play, X, Clock, Users, Activity, BarChart3 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Papa from "papaparse";
 import { cn } from "../lib/utils";
@@ -31,7 +31,16 @@ export default function OutboundDialer() {
   const [uploadStats, setUploadStats] = useState("");
   const [isDeletingLead, setIsDeletingLead] = useState<number | string | null>(null);
 
-  useEffect(() => { fetchData(); }, []);
+  // Campaign state
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [campaignLoading, setCampaignLoading] = useState(false);
+  const [selectedCampaign, setSelectedCampaign] = useState<any | null>(null);
+  const [campaignLeads, setCampaignLeads] = useState<any[]>([]);
+  const [campaignLeadsLoading, setCampaignLeadsLoading] = useState(false);
+  const [showCampaignModal, setShowCampaignModal] = useState(false);
+  const [bulkCampaignId, setBulkCampaignId] = useState<string>("");
+
+  useEffect(() => { fetchData(); fetchCampaigns(); }, []);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -134,12 +143,12 @@ export default function OutboundDialer() {
           const res = await authFetch("/api/outbound/bulk", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ leads: parsedLeads })
+            body: JSON.stringify({ leads: parsedLeads, ...(bulkCampaignId ? { campaign_id: bulkCampaignId } : {}) })
           });
           if (!res.ok) throw new Error("Bulk upload failed.");
 
-          setUploadStats(`Queued ${parsedLeads.length} lead${parsedLeads.length === 1 ? '' : 's'}`);
-          setTimeout(() => fetchData(), 1000);
+          setUploadStats(`Queued ${parsedLeads.length} lead${parsedLeads.length === 1 ? '' : 's'}${bulkCampaignId ? ' (campaign assigned)' : ''}`);
+          setTimeout(() => { fetchData(); fetchCampaigns(); }, 1000);
         } catch (e: any) {
           setDialError(e.message);
         }
@@ -188,35 +197,59 @@ export default function OutboundDialer() {
     setTimeout(() => fetchData(), 2000);
   };
 
+  const fetchCampaigns = async () => {
+    setCampaignLoading(true);
+    try {
+      const res = await authFetch("/api/campaigns");
+      const data = await res.json();
+      setCampaigns(data.campaigns || []);
+    } catch (e) { console.error("Failed to fetch campaigns:", e); }
+    setCampaignLoading(false);
+  };
+
+  const fetchCampaignLeads = async (id: string) => {
+    setCampaignLeadsLoading(true);
+    try {
+      const res = await authFetch(`/api/campaigns/${id}/leads`);
+      const data = await res.json();
+      setCampaignLeads(data.leads || []);
+    } catch (e) { console.error("Failed to fetch campaign leads:", e); }
+    setCampaignLeadsLoading(false);
+  };
+
+  const setCampaignStatus = async (id: string, status: string) => {
+    try {
+      const res = await authFetch(`/api/campaigns/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      const data = await res.json();
+      if (data.campaign) {
+        setCampaigns(prev => prev.map(c => c.id === id ? { ...c, ...data.campaign } : c));
+        if (selectedCampaign?.id === id) setSelectedCampaign((prev: any) => ({ ...prev, ...data.campaign }));
+      }
+    } catch (e) { console.error("Failed to set campaign status:", e); }
+  };
+
+  const deleteCampaign = async (id: string) => {
+    if (!confirm("Delete this campaign? Leads will be unlinked but not removed.")) return;
+    try {
+      await authFetch(`/api/campaigns/${id}`, { method: "DELETE" });
+      setCampaigns(prev => prev.filter(c => c.id !== id));
+      if (selectedCampaign?.id === id) setSelectedCampaign(null);
+    } catch (e) { console.error("Failed to delete campaign:", e); }
+  };
+
+  const handleSelectCampaign = (c: any) => {
+    setSelectedCampaign(c);
+    fetchCampaignLeads(c.id);
+  };
+
   const queuedCount = leads.filter(l => l.status === "Queued").length;
 
-  const headerActions = (
-    <div className="flex items-center gap-2">
-      <div className="flex p-1 rounded-full glass border border-white/10">
-        {(["single", "bulk"] as const).map(m => (
-          <button
-            key={m}
-            onClick={() => setMode(m)}
-            className={cn(
-              "px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.25em] transition-colors",
-              mode === m ? "bg-brand/20 text-brand" : "text-muted hover:text-ink"
-            )}
-          >
-            {m === "single" ? "Single" : "Bulk"}
-          </button>
-        ))}
-      </div>
-      <CsvExportButton type="leads" label="Export" />
-    </div>
-  );
-
-  return (
-    <PageShell
-      title="Outbound Dialer"
-      eyebrow="Signal · Dispatch"
-      subtitle="Deploy agents across carrier networks for lead qualification."
-      actions={headerActions}
-    >
+  const dispatchTab = (
+    <>
       {isLoading ? (
         <div className="h-full flex flex-col items-center justify-center gap-3">
           <Loader2 className="w-5 h-5 animate-spin text-brand" />
@@ -233,6 +266,24 @@ export default function OutboundDialer() {
               scroll
             >
               <div className="space-y-4">
+                {/* Mode toggle */}
+                <div className="flex items-center gap-2">
+                  <div className="flex p-1 rounded-full glass border border-white/10">
+                    {(["single", "bulk"] as const).map(m => (
+                      <button
+                        key={m}
+                        onClick={() => setMode(m)}
+                        className={cn(
+                          "px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.25em] transition-colors",
+                          mode === m ? "bg-brand/20 text-brand" : "text-muted hover:text-ink"
+                        )}
+                      >
+                        {m === "single" ? "Single" : "Bulk"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="space-y-1.5">
                   <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70 flex items-center gap-1.5">
                     <Bot className="w-2.5 h-2.5 text-brand" /> Agent
@@ -323,6 +374,26 @@ export default function OutboundDialer() {
                           <li className="flex items-center gap-1.5"><ChevronRight className="w-2.5 h-2.5 text-brand" /> Limit: <span className="text-ink/80">1,000 rows</span></li>
                         </ul>
                       </div>
+
+                      {/* Optional campaign assignment for bulk */}
+                      {campaigns.length > 0 && (
+                        <div className="space-y-1.5">
+                          <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70 flex items-center gap-1.5">
+                            <Megaphone className="w-2.5 h-2.5 text-brand" /> Assign to campaign (optional)
+                          </label>
+                          <div className="relative">
+                            <select
+                              value={bulkCampaignId}
+                              onChange={e => setBulkCampaignId(e.target.value)}
+                              className="w-full text-sm bg-black/30 border border-white/10 rounded-lg pl-3 pr-8 py-2 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
+                            >
+                              <option value="">No campaign</option>
+                              {campaigns.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            </select>
+                            <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none rotate-90" />
+                          </div>
+                        </div>
+                      )}
 
                       <button
                         type="button"
@@ -505,6 +576,344 @@ export default function OutboundDialer() {
           </div>
         </div>
       )}
-    </PageShell>
+    </>
+  );
+
+  const campaignsTab = (
+    <div className="h-full grid grid-cols-1 xl:grid-cols-12 gap-3 min-h-0">
+      {/* Campaign list */}
+      <div className="xl:col-span-5 min-h-0">
+        <Panel
+          title="campaigns"
+          hint={`${campaigns.length} total`}
+          icon={Megaphone}
+          scroll flush
+          actions={
+            <button
+              onClick={() => setShowCampaignModal(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-colors"
+            >
+              <Plus className="w-3 h-3" /> New
+            </button>
+          }
+        >
+          {campaignLoading ? (
+            <div className="h-full flex items-center justify-center">
+              <Loader2 className="w-5 h-5 animate-spin text-brand" />
+            </div>
+          ) : campaigns.length === 0 ? (
+            <div className="h-full min-h-[200px] flex flex-col items-center justify-center gap-4 text-center px-6 py-12">
+              <div className="w-14 h-14 rounded-2xl glass border border-white/10 flex items-center justify-center text-muted">
+                <Megaphone className="w-6 h-6" />
+              </div>
+              <div className="space-y-1.5">
+                <h3 className="font-display italic lowercase text-2xl text-ink">no campaigns</h3>
+                <p className="text-[10px] uppercase tracking-[0.4em] text-muted/70 max-w-xs">
+                  Create a campaign to group and track bulk outbound calling efforts.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="divide-y divide-white/5">
+              {campaigns.map(c => {
+                const statusMeta = CAMPAIGN_STATUS[c.status] ?? CAMPAIGN_STATUS.draft;
+                const isSelected = selectedCampaign?.id === c.id;
+                return (
+                  <motion.div
+                    key={c.id}
+                    layout
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={cn(
+                      "px-4 py-3.5 cursor-pointer hover:bg-white/3 transition-colors group",
+                      isSelected && "bg-brand/8 ring-1 ring-inset ring-brand/30"
+                    )}
+                    onClick={() => handleSelectCampaign(c)}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={cn("w-9 h-9 rounded-xl glass border flex items-center justify-center shrink-0 mt-0.5", statusMeta.iconBorder)}>
+                        <Megaphone className={cn("w-4 h-4", statusMeta.text)} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                          <span className="font-display italic text-base text-ink truncate">{c.name}</span>
+                          <span className={cn("px-2 py-0.5 rounded-full border text-[8px] uppercase tracking-[0.3em] shrink-0", statusMeta.bg, statusMeta.text, statusMeta.border)}>
+                            {c.status}
+                          </span>
+                        </div>
+                        {c.goal && (
+                          <p className="text-[10px] text-muted/60 truncate mb-1">{c.goal}</p>
+                        )}
+                        <div className="flex items-center gap-3 text-[9px] text-muted/60">
+                          <span className="inline-flex items-center gap-1">
+                            <Users className="w-2.5 h-2.5" />
+                            {c.leads_count} leads
+                          </span>
+                          <span className="inline-flex items-center gap-1">
+                            <Activity className="w-2.5 h-2.5" />
+                            {c.dialed_count} dialed
+                          </span>
+                          <span className="inline-flex items-center gap-1">
+                            <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" />
+                            {c.connected_count} connected
+                          </span>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-3.5 h-3.5 text-muted/40 shrink-0 mt-1" />
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+        </Panel>
+      </div>
+
+      {/* Campaign detail */}
+      <div className="xl:col-span-7 min-h-0">
+        {selectedCampaign ? (
+          <Panel
+            title={selectedCampaign.name}
+            hint="Campaign detail"
+            icon={BarChart3}
+            scroll flush
+            actions={
+              <div className="flex items-center gap-1.5">
+                {selectedCampaign.status === "draft" && (
+                  <button onClick={() => setCampaignStatus(selectedCampaign.id, "active")}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 text-[10px] uppercase tracking-[0.25em] hover:bg-emerald-500/25 transition-colors">
+                    <Play className="w-3 h-3" /> Activate
+                  </button>
+                )}
+                {selectedCampaign.status === "active" && (
+                  <button onClick={() => setCampaignStatus(selectedCampaign.id, "paused")}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-400 text-[10px] uppercase tracking-[0.25em] hover:bg-amber-500/25 transition-colors">
+                    <Pause className="w-3 h-3" /> Pause
+                  </button>
+                )}
+                {selectedCampaign.status === "paused" && (
+                  <button onClick={() => setCampaignStatus(selectedCampaign.id, "active")}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-colors">
+                    <Play className="w-3 h-3" /> Resume
+                  </button>
+                )}
+                {["active", "paused"].includes(selectedCampaign.status) && (
+                  <button onClick={() => setCampaignStatus(selectedCampaign.id, "completed")}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-violet-500/15 border border-violet-500/40 text-violet-400 text-[10px] uppercase tracking-[0.25em] hover:bg-violet-500/25 transition-colors">
+                    <CheckCircle2 className="w-3 h-3" /> Complete
+                  </button>
+                )}
+                <button onClick={() => deleteCampaign(selectedCampaign.id)}
+                  className="w-8 h-8 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30 transition-all">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            }
+          >
+            {/* Stats row */}
+            <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-2 border-b border-white/8">
+              {[
+                { label: "Leads",     value: selectedCampaign.leads_count,     accent: "#7DF9FF" },
+                { label: "Dialed",    value: selectedCampaign.dialed_count,     accent: "#C58BFF" },
+                { label: "Connected", value: selectedCampaign.connected_count,  accent: "#4DFFC4" },
+                { label: "Window",    value: `${selectedCampaign.call_window_start}–${selectedCampaign.call_window_end}`, accent: "#FF6BD9" },
+              ].map(s => (
+                <div key={s.label} className="rounded-lg glass border border-white/8 p-2.5">
+                  <div className="text-[8px] uppercase tracking-[0.3em] mb-1" style={{ color: s.accent }}>{s.label}</div>
+                  <div className="font-display italic text-xl text-ink leading-none">{s.value}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Leads list */}
+            {campaignLeadsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-5 h-5 animate-spin text-brand" />
+              </div>
+            ) : campaignLeads.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
+                <p className="text-[10px] uppercase tracking-[0.4em] text-muted/50">No leads assigned to this campaign</p>
+                <p className="text-[10px] text-muted/40">Use the Bulk tab and select this campaign when uploading a CSV.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-white/5">
+                {campaignLeads.map(lead => (
+                  <div key={lead.id} className="px-4 py-3 flex items-center gap-3 hover:bg-white/3 transition-colors">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                        <span className="font-display italic text-sm text-ink truncate">{lead.customer_name || "Unknown"}</span>
+                        <span className={cn(
+                          "px-1.5 py-0 rounded-full border text-[8px] uppercase tracking-[0.25em] leading-tight",
+                          lead.status === 'Completed' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' :
+                          lead.status === 'Queued' ? 'bg-brand/15 border-brand/40 text-brand' :
+                          'bg-white/5 border-white/10 text-muted'
+                        )}>
+                          {lead.status}
+                        </span>
+                      </div>
+                      <Link
+                        to={`/contact/${encodeURIComponent(lead.phone_number || lead.customer_number || "unknown")}`}
+                        className="text-[10px] text-brand font-mono tabular-nums hover:underline"
+                      >
+                        {lead.phone_number || lead.customer_number}
+                      </Link>
+                    </div>
+                    <div className="text-[9px] text-muted/50 tabular-nums shrink-0">
+                      {new Date(lead.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Panel>
+        ) : (
+          <Panel title="select campaign" hint="Details" icon={Target}>
+            <div className="h-full flex items-center justify-center">
+              <p className="text-[9px] uppercase tracking-[0.5em] text-muted/40">Select a campaign to view details</p>
+            </div>
+          </Panel>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      <PageShell
+        title="Outbound Dialer"
+        eyebrow="Signal · Dispatch"
+        subtitle="Deploy agents across carrier networks for lead qualification."
+        actions={<CsvExportButton type="leads" label="Export" />}
+        tabs={[
+          { id: "dispatch",  label: "Dispatch",  icon: Zap,       content: dispatchTab },
+          { id: "campaigns", label: "Campaigns", icon: Megaphone, badge: campaigns.length || undefined, content: campaignsTab },
+        ]}
+      />
+      <AnimatePresence>
+        {showCampaignModal && (
+          <CreateCampaignModal
+            agents={agents}
+            onClose={() => setShowCampaignModal(false)}
+            onCreated={(c) => {
+              setCampaigns(prev => [c, ...prev]);
+              setShowCampaignModal(false);
+            }}
+          />
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
+const CAMPAIGN_STATUS: Record<string, { text: string; bg: string; border: string; iconBorder: string }> = {
+  draft:     { text: "text-muted",        bg: "bg-white/5",           border: "border-white/15",         iconBorder: "border-white/10" },
+  active:    { text: "text-emerald-400",  bg: "bg-emerald-500/10",    border: "border-emerald-500/30",   iconBorder: "border-emerald-500/30" },
+  paused:    { text: "text-amber-400",    bg: "bg-amber-500/10",      border: "border-amber-500/30",     iconBorder: "border-amber-500/30" },
+  completed: { text: "text-violet-400",   bg: "bg-violet-500/10",     border: "border-violet-500/30",    iconBorder: "border-violet-500/30" },
+};
+
+/* ─── Create Campaign Modal ──────────────────────────────────────── */
+function CreateCampaignModal({ agents, onClose, onCreated }: { agents: any[]; onClose: () => void; onCreated: (c: any) => void }) {
+  const [form, setForm] = useState({
+    name: "", goal: "", agent_id: "",
+    call_window_start: "09:00", call_window_end: "17:00", max_attempts: "3",
+  });
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+
+  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+  const inputCls = "w-full text-sm bg-black/30 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 transition-all";
+
+  const save = async () => {
+    if (!form.name.trim()) { setErr("Campaign name is required."); return; }
+    setSaving(true); setErr("");
+    try {
+      const res = await authFetch("/api/campaigns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, max_attempts: parseInt(form.max_attempts) || 3 }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to create campaign");
+      onCreated(data.campaign);
+    } catch (e: any) { setErr(e.message); }
+    setSaving(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <motion.div initial={{ scale: 0.96, opacity: 0, y: 16 }} animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.96, opacity: 0, y: 16 }} transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+        className="relative w-full max-w-md rounded-2xl glass-strong border border-white/15 shadow-2xl overflow-hidden"
+      >
+        <header className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+          <div>
+            <p className="text-[9px] uppercase tracking-[0.4em] text-brand mb-0.5">Signal · Campaigns</p>
+            <h2 className="font-display italic lowercase text-2xl text-ink">new campaign</h2>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-ink transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </header>
+
+        <div className="p-5 space-y-4 overflow-y-auto max-h-[70vh] scrollbar-hide">
+          <div className="space-y-1.5">
+            <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">Campaign Name</label>
+            <input className={inputCls} placeholder="Q4 Win-Back Drive" value={form.name} onChange={e => set("name", e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">Goal (optional)</label>
+            <input className={inputCls} placeholder="Re-engage churned users from past 90 days" value={form.goal} onChange={e => set("goal", e.target.value)} />
+          </div>
+          {agents.length > 0 && (
+            <div className="space-y-1.5">
+              <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70 flex items-center gap-1.5">
+                <Bot className="w-2.5 h-2.5 text-brand" /> Default Agent
+              </label>
+              <select className={cn(inputCls, "appearance-none cursor-pointer")} value={form.agent_id} onChange={e => set("agent_id", e.target.value)}>
+                <option value="">Unassigned</option>
+                {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+              </select>
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70 flex items-center gap-1.5">
+                <Clock className="w-2.5 h-2.5 text-brand" /> Window start
+              </label>
+              <input type="time" className={inputCls} value={form.call_window_start} onChange={e => set("call_window_start", e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">Window end</label>
+              <input type="time" className={inputCls} value={form.call_window_end} onChange={e => set("call_window_end", e.target.value)} />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">Max retry attempts</label>
+            <input type="number" min="1" max="10" className={inputCls} value={form.max_attempts} onChange={e => set("max_attempts", e.target.value)} />
+          </div>
+
+          {err && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-rose-500/10 border border-rose-500/30">
+              <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+              <p className="text-[11px] text-rose-400">{err}</p>
+            </div>
+          )}
+        </div>
+
+        <footer className="px-5 py-4 border-t border-white/10 flex items-center justify-end gap-2">
+          <button onClick={onClose} className="h-9 px-4 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-colors">
+            Cancel
+          </button>
+          <button onClick={save} disabled={saving}
+            className="h-9 px-5 rounded-full bg-brand/15 border border-brand/50 text-brand text-[10px] uppercase tracking-[0.28em] hover:bg-brand/25 transition-all flex items-center gap-1.5 disabled:opacity-50">
+            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+            Create
+          </button>
+        </footer>
+      </motion.div>
+    </div>
   );
 }
