@@ -2509,7 +2509,7 @@ app.post("/api/agents", authenticateUser, async (req: any, res: any) => {
     });
     
     // Audit log: agent creation
-    await auditLogger.logAgentOperation('created', {
+    void auditLogger.logAgentOperation('created', {
       userId: req.user.id,
       agentId: id,
       agentName: name || "New Agent",
@@ -2628,7 +2628,7 @@ app.put("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
     }).eq('id', req.params.id).eq('user_id', req.user.id);
     
     // Audit log: agent update (sanitize sensitive fields)
-    await auditLogger.logAgentOperation('updated', {
+    void auditLogger.logAgentOperation('updated', {
       userId: req.user.id,
       agentId: req.params.id,
       metadata: { changes: sanitizeForAudit(req.body) },
@@ -2708,7 +2708,7 @@ app.delete("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
     log.info("agent deleted", { agentId, userId });
     
     // Audit log: agent deletion
-    await auditLogger.logAgentOperation('deleted', {
+    void auditLogger.logAgentOperation('deleted', {
       userId: req.user.id,
       agentId: agentId,
       ip: req.ip
@@ -3377,7 +3377,7 @@ app.post("/api/settings", authenticateUser, async (req: any, res: any) => {
     }
     
     // Audit log: settings update (sanitize sensitive fields)
-    await auditLogger.logSettings('updated', {
+    void auditLogger.logSettings('updated', {
       userId: req.user.id,
       changes: sanitizeForAudit(req.body),
       ip: req.ip
@@ -6191,7 +6191,7 @@ app.get("/api/audit/export", authenticateUser, async (req: any, res: any) => {
     if (error) throw error;
 
     // Log the export operation
-    await auditLogger.logDataOperation('export', {
+    void auditLogger.logDataOperation('export', {
       userId,
       resourceType: 'audit_log',
       recordCount: data?.length || 0,
