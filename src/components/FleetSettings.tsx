@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
+import { useToast } from "../contexts/ToastContext";
 
 const PREMIUM_VOICES = [
   // 11labs
@@ -52,6 +53,7 @@ function RoleBadge({ role, size = "sm" }: { role?: string; size?: "xs" | "sm" })
 
 
 export default function FleetSettings() {
+  const { success: toastSuccess, error: toastError, warning: toastWarning } = useToast();
   const [agents, setAgents] = useState<any[]>([]);
   const [subscription, setSubscription] = useState<{ status: string, max_agents: number }>({ status: 'active', max_agents: 3 });
   const [isLoading, setIsLoading] = useState(true);
@@ -121,12 +123,12 @@ export default function FleetSettings() {
     if (!newAgentName || !newAgentId) return;
     
     if (subscription.status !== 'active') {
-      alert("Deployment suspended. Account subscription billing required.");
+      toastWarning("Subscription required", "Activate a billing plan to deploy agents.");
       return;
     }
     
     if (agents.length >= subscription.max_agents) {
-      alert(`Fleet capacity reached (${subscription.max_agents} agents). Upgrade plan to deploy more.`);
+      toastWarning("Fleet capacity reached", `${subscription.max_agents} agents maximum on current plan.`);
       return;
     }
 
@@ -140,15 +142,15 @@ export default function FleetSettings() {
       const data = await resp.json();
       
       if (resp.status === 403) {
-         alert(data.error || "Access Denied. Please upgrade your plan.");
+        toastWarning("Access denied", data.error || "Upgrade your plan.");
       } else {
-         setNewAgentName("");
-         setNewAgentId("");
-         await fetchAgents();
+        setNewAgentName("");
+        setNewAgentId("");
+        toastSuccess("Agent deployed", newAgentName);
+        await fetchAgents();
       }
-    } catch (e) {
-      console.error(e);
-      alert("An error occurred. Please try again.");
+    } catch (e: any) {
+      toastError("Deployment failed", e.message);
     }
     setIsCreating(false);
   };
@@ -166,9 +168,10 @@ export default function FleetSettings() {
       if (resp.ok) {
         const data = await resp.json();
         setAgentConfig((prev: any) => ({ ...prev, personality: data.content }));
+        toastSuccess("Role template applied", `${role.replace(/_/g, ' ')} personality loaded`);
       }
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      toastError("Template failed", e.message);
     }
     setIsApplyingTemplate(false);
   };

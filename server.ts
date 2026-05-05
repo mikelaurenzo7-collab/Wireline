@@ -4315,6 +4315,49 @@ app.get("/api/fleet/activity", authenticateUser, async (req: any, res: any) => {
 // ==========================================
 // 1.10 SUPERVISED AGENT TUNING
 // ==========================================
+
+// Per-agent performance stats — call count, avg score, total minutes, sentiment breakdown.
+app.get("/api/agents/:id/performance", authenticateUser, async (req: any, res: any) => {
+  try {
+    const agentId = req.params.id;
+    const { data: logs } = await db
+      .from('wireline_call_logs')
+      .select('id, lead_score, duration_seconds, sentiment, created_at')
+      .eq('agent_id', agentId)
+      .eq('user_id', req.user.id)
+      .order('created_at', { ascending: false })
+      .limit(500);
+
+    const rows = logs || [];
+    const callCount = rows.length;
+    const totalMinutes = Math.ceil(rows.reduce((s: number, r: any) => s + (r.duration_seconds || 0), 0) / 60);
+    const scored = rows.filter((r: any) => (r.lead_score ?? 0) > 0);
+    const avgScore = scored.length ? Math.round(scored.reduce((s: number, r: any) => s + r.lead_score, 0) / scored.length) : 0;
+    const sentiment: Record<string, number> = { positive: 0, neutral: 0, negative: 0 };
+    for (const r of rows) {
+      const k = (r.sentiment || 'neutral').toLowerCase();
+      if (k in sentiment) sentiment[k]++; else sentiment['neutral']++;
+    }
+    // Calls per day (last 7d) for sparkline
+    const last7 = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(); d.setDate(d.getDate() - (6 - i));
+      return d.toISOString().split('T')[0];
+    });
+    const byDay: Record<string, number> = {};
+    last7.forEach(d => { byDay[d] = 0; });
+    rows.forEach((r: any) => {
+      const d = new Date(r.created_at).toISOString().split('T')[0];
+      if (d in byDay) byDay[d]++;
+    });
+    const sparkline = last7.map(d => byDay[d]);
+
+    res.json({ callCount, totalMinutes, avgScore, sentiment, sparkline });
+  } catch (e: any) {
+    log.error("Agent performance error", { error: e?.message });
+    res.json({ callCount: 0, totalMinutes: 0, avgScore: 0, sentiment: { positive: 0, neutral: 0, negative: 0 }, sparkline: [] });
+  }
+});
+
 app.get("/api/agents/:id/lessons", authenticateUser, async (req: any, res: any) => {
    try {
       const { data: lessons, error } = await db.from('wireline_agent_lessons').select('*')
