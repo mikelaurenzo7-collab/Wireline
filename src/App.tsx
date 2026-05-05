@@ -26,7 +26,16 @@ const CallLogs        = lazy(() => import("./components/CallLogs"));
 const EmailInbox      = lazy(() => import("./components/EmailInbox"));
 const KnowledgeBaseManager = lazy(() => import("./components/KnowledgeBaseManager"));
 
-const NAV_ITEMS = [
+type NavItem = {
+  label: string;
+  path: string;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  badge?: number;
+};
+
+type NavGroup = { group: string; items: NavItem[] };
+
+const NAV_ITEMS: NavGroup[] = [
   { group: "Control Center", items: [
     { label: "Command Atlas", path: "/", icon: Activity },
     { label: "Triage Inbox", path: "/triage", icon: Inbox },
@@ -79,6 +88,24 @@ function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) =>
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const isActive = (path: string) => location.pathname === path;
+
+  // Live badge counts — poll a lightweight endpoint every 2 min.
+  const [navBadges, setNavBadges] = useState<Record<string, number>>({});
+  useEffect(() => {
+    let cancelled = false;
+    const fetchCounts = async () => {
+      try {
+        const r = await authFetch("/api/nav-counts");
+        if (!cancelled && r.ok) {
+          const d = await r.json();
+          setNavBadges(d as Record<string, number>);
+        }
+      } catch { /* silent — badges are non-critical */ }
+    };
+    fetchCounts();
+    const interval = setInterval(fetchCounts, 120_000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, []);
 
   return (
     <>
@@ -194,12 +221,12 @@ function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) =>
                         <span className={cn("text-[12px] lowercase tracking-wide relative z-10 truncate flex-1", active ? "font-medium" : "font-normal")}>
                           {item.label}
                         </span>
-                        {item.badge != null && item.badge !== 0 && (
+                        {(navBadges[item.path] ?? 0) > 0 && (
                           <span className={cn(
                             "relative z-10 shrink-0 px-1.5 py-0.5 rounded-full text-[9px] font-mono leading-none",
                             active ? "bg-white/20 text-paper" : "bg-brand/15 text-brand"
                           )}>
-                            {item.badge}
+                            {navBadges[item.path]}
                           </span>
                         )}
                         {active && <ChevronRight className="ml-auto w-3.5 h-3.5 relative z-10 shrink-0" />}
@@ -357,6 +384,7 @@ function AppContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, loading } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const label =

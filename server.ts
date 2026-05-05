@@ -6462,6 +6462,49 @@ app.post("/api/claude/forge/create", authenticateUser, async (req: any, res: any
   }
 });
 
+// ──────────────────────────────────────────────────────────────────────────
+//  NAV COUNTS — lightweight badge data for the sidebar nav.
+//  Returns a map of route path → integer count so the sidebar can render
+//  attention badges without a full data load. Uses COUNT(*) queries only.
+// ──────────────────────────────────────────────────────────────────────────
+app.get("/api/nav-counts", authenticateUser, async (req: any, res: any) => {
+  try {
+    const userId = req.user.id;
+
+    const [
+      { count: triageCount },
+      { count: emailCount },
+      { count: outboundCount },
+    ] = await Promise.all([
+      // Triage: pending fleet tasks (any type)
+      db.from("wireline_fleet_tasks")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("status", "pending"),
+      // Email: unread threads
+      db.from("wireline_email_threads")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("read", false),
+      // Outbound: queued leads not yet dialed
+      db.from("wireline_outbound_leads")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("status", "queued"),
+    ]);
+
+    res.json({
+      "/triage":   triageCount  ?? 0,
+      "/inbox":    emailCount   ?? 0,
+      "/outbound": outboundCount ?? 0,
+    });
+  } catch (e) {
+    // Never 500 on a non-critical badge endpoint
+    log.warn("nav-counts failed", { error: (e as Error)?.message });
+    res.json({ "/triage": 0, "/inbox": 0, "/outbound": 0 });
+  }
+});
+
 app.use((err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
   log.error("Unhandled global error", {
     requestId: (res as any).locals?.requestId,
