@@ -134,6 +134,21 @@ export default function OutboundDialer() {
     setLaunchingCampaignId(null);
   };
 
+  const retryFailedLeads = async (campaignId: string) => {
+    try {
+      const res = await authFetch(`/api/campaigns/${campaignId}/retry-failed`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      toastSuccess("Leads reset", `${data.reset} failed lead${data.reset === 1 ? '' : 's'} re-queued — launch again to retry`);
+      if (selectedCampaign?.id === campaignId) {
+        const leads = await authFetch(`/api/campaigns/${campaignId}/leads`).then(r => r.json());
+        setCampaignLeads(leads.leads || []);
+      }
+    } catch (e: any) {
+      toastError("Retry failed", e.message);
+    }
+  };
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -777,34 +792,55 @@ export default function OutboundDialer() {
                 <p className="text-[10px] text-muted/40">Use the Bulk tab and select this campaign when uploading a CSV.</p>
               </div>
             ) : (
-              <div className="divide-y divide-white/5">
-                {campaignLeads.map(lead => (
-                  <div key={lead.id} className="px-4 py-3 flex items-center gap-3 hover:bg-white/3 transition-colors">
+              <>
+                {/* Retry failed banner */}
+                {campaignLeads.some(l => l.status === 'Failed') && (
+                  <div className="mx-4 mt-3 rounded-xl bg-rose-500/10 border border-rose-500/30 p-3 flex items-center gap-3">
+                    <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                        <span className="font-display italic text-sm text-ink truncate">{lead.customer_name || "Unknown"}</span>
-                        <span className={cn(
-                          "px-1.5 py-0 rounded-full border text-[8px] uppercase tracking-[0.25em] leading-tight",
-                          lead.status === 'Completed' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' :
-                          lead.status === 'Queued' ? 'bg-brand/15 border-brand/40 text-brand' :
-                          'bg-white/5 border-white/10 text-muted'
-                        )}>
-                          {lead.status}
-                        </span>
-                      </div>
-                      <Link
-                        to={`/contact/${encodeURIComponent(lead.phone_number || lead.customer_number || "unknown")}`}
-                        className="text-[10px] text-brand font-mono tabular-nums hover:underline"
-                      >
-                        {lead.phone_number || lead.customer_number}
-                      </Link>
+                      <p className="text-[10px] text-rose-400 uppercase tracking-[0.25em]">
+                        {campaignLeads.filter(l => l.status === 'Failed').length} failed lead{campaignLeads.filter(l => l.status === 'Failed').length > 1 ? 's' : ''}
+                      </p>
                     </div>
-                    <div className="text-[9px] text-muted/50 tabular-nums shrink-0">
-                      {new Date(lead.created_at).toLocaleDateString()}
-                    </div>
+                    <button
+                      onClick={() => retryFailedLeads(selectedCampaign.id)}
+                      className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-400 text-[9px] uppercase tracking-[0.25em] hover:bg-rose-500/30 transition-colors"
+                    >
+                      <Activity className="w-3 h-3" /> Retry Failed
+                    </button>
                   </div>
-                ))}
-              </div>
+                )}
+                <div className="divide-y divide-white/5 mt-2">
+                  {campaignLeads.map(lead => (
+                    <div key={lead.id} className="px-4 py-3 flex items-center gap-3 hover:bg-white/3 transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                          <span className="font-display italic text-sm text-ink truncate">{lead.customer_name || "Unknown"}</span>
+                          <span className={cn(
+                            "px-1.5 py-0 rounded-full border text-[8px] uppercase tracking-[0.25em] leading-tight",
+                            lead.status === 'Completed' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' :
+                            lead.status === 'Queued' ? 'bg-brand/15 border-brand/40 text-brand' :
+                            lead.status === 'Failed' ? 'bg-rose-500/10 border-rose-500/30 text-rose-500' :
+                            lead.status === 'Dialing' ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' :
+                            'bg-white/5 border-white/10 text-muted'
+                          )}>
+                            {lead.status}
+                          </span>
+                        </div>
+                        <Link
+                          to={`/contact/${encodeURIComponent(lead.phone_number || lead.customer_number || "unknown")}`}
+                          className="text-[10px] text-brand font-mono tabular-nums hover:underline"
+                        >
+                          {lead.phone_number || lead.customer_number}
+                        </Link>
+                      </div>
+                      <div className="text-[9px] text-muted/50 tabular-nums shrink-0">
+                        {new Date(lead.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </Panel>
         ) : (

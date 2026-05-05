@@ -3102,6 +3102,42 @@ app.post("/api/campaigns/:id/launch", authenticateUser, async (req: any, res: an
   }
 });
 
+// Retry all failed leads in a campaign.
+app.post("/api/campaigns/:id/retry-failed", authenticateUser, async (req: any, res: any) => {
+  try {
+    const campaignId = req.params.id;
+    const { data: campaign } = await db
+      .from('wireline_outbound_campaigns')
+      .select('id, agent_id, status')
+      .eq('id', campaignId)
+      .eq('user_id', req.user.id)
+      .single();
+    if (!campaign) return res.status(404).json({ error: "Campaign not found." });
+
+    const { data: failed } = await db
+      .from('wireline_outbound_leads')
+      .select('id, customer_name, customer_number, context, agent_id')
+      .eq('campaign_id', campaignId)
+      .eq('user_id', req.user.id)
+      .eq('status', 'Failed');
+
+    if (!failed || failed.length === 0) {
+      return res.status(400).json({ error: "No failed leads to retry." });
+    }
+
+    // Reset them to Queued so the launch endpoint can pick them up.
+    await db.from('wireline_outbound_leads')
+      .update({ status: 'Queued', updated_at: new Date().toISOString() })
+      .in('id', failed.map((l: any) => l.id))
+      .eq('user_id', req.user.id);
+
+    res.json({ success: true, reset: failed.length });
+  } catch (error: any) {
+    log.error("Retry failed leads error", { error: error?.message });
+    res.status(500).json({ error: "Failed to retry leads." });
+  }
+});
+
 // ==========================================
 // 1.9 SETTINGS & OUTBOUND DIALER ENDPOINTS
 // ==========================================

@@ -5,8 +5,10 @@ import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import PageShell, { Panel } from "./PageShell";
+import { useToast } from "../contexts/ToastContext";
 
 export default function EmailInbox() {
+  const { success: toastSuccess, error: toastError, info: toastInfo } = useToast();
   const [threads, setThreads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -32,8 +34,9 @@ export default function EmailInbox() {
     try {
       await authFetch("/api/emails/sync", { method: "POST" });
       await fetchThreads();
-    } catch (e) {
-      console.error("Sync failed:", e);
+      toastSuccess("Inbox synced", `${threads.length} thread${threads.length === 1 ? '' : 's'} loaded`);
+    } catch (e: any) {
+      toastError("Sync failed", e.message);
     } finally {
       setSyncing(false);
     }
@@ -54,6 +57,7 @@ export default function EmailInbox() {
   const handleDraftAI = async () => {
     if (!selectedThread) return;
     setIsDrafting(true);
+    toastInfo("Drafting reply", "Claude is composing your response…");
     try {
       const claudeRes = await authFetch(`/api/claude/email-draft`, {
         method: "POST",
@@ -65,7 +69,7 @@ export default function EmailInbox() {
       });
       if (claudeRes.ok) {
         const data = await claudeRes.json();
-        if (data.draft) { setReplyText(data.draft); return; }
+        if (data.draft) { setReplyText(data.draft); toastSuccess("Draft ready", "Review and send when ready."); return; }
       } else if (claudeRes.status !== 503) {
         const err = await claudeRes.json().catch(() => ({}));
         console.warn("Claude draft failed; falling back to Gemini:", err);
@@ -80,9 +84,9 @@ export default function EmailInbox() {
         })
       });
       const data = await res.json();
-      if (data.draft) setReplyText(data.draft);
-    } catch (e) {
-      console.error("Draft fail:", e);
+      if (data.draft) { setReplyText(data.draft); toastSuccess("Draft ready", "Review and send when ready."); }
+    } catch (e: any) {
+      toastError("Draft failed", e.message);
     } finally {
       setIsDrafting(false);
     }
@@ -102,8 +106,9 @@ export default function EmailInbox() {
       });
       setReplyText("");
       fetchMessages(selectedThread.id);
-    } catch (e) {
-      console.error("Reply failed:", e);
+      toastSuccess("Reply sent");
+    } catch (e: any) {
+      toastError("Reply failed", e.message);
     }
   };
 
@@ -121,8 +126,9 @@ export default function EmailInbox() {
           description: `Manual handoff requested from inbox. Subject: ${thread.subject}`
         })
       });
-    } catch (e) {
-      console.error(e);
+      toastSuccess("Callback queued", `Handoff task created for ${thread.customer_email}`);
+    } catch (e: any) {
+      toastError("Handoff failed", e.message);
     }
   };
 
