@@ -13,6 +13,36 @@ import { AuditLogger } from "./src/lib/audit-logger";
 
 dotenv.config();
 
+// ────────────────────────────────────────────────────────────────────
+//  Sanitization for audit logs — redacts sensitive fields like API keys,
+//  secrets, passwords, tokens from objects before logging. Prevents
+//  credential leakage in audit trail.
+// ────────────────────────────────────────────────────────────────────
+function sanitizeForAudit(obj: any): any {
+  if (!obj || typeof obj !== 'object') return obj;
+  
+  const sensitivePatterns = [
+    'key', 'secret', 'password', 'token', 'credential', 'auth'
+  ];
+  
+  const sanitized: any = Array.isArray(obj) ? [] : {};
+  
+  for (const [key, value] of Object.entries(obj)) {
+    const keyLower = key.toLowerCase();
+    const isSensitive = sensitivePatterns.some(pattern => keyLower.includes(pattern));
+    
+    if (isSensitive) {
+      sanitized[key] = '[REDACTED]';
+    } else if (typeof value === 'object' && value !== null) {
+      sanitized[key] = sanitizeForAudit(value);
+    } else {
+      sanitized[key] = value;
+    }
+  }
+  
+  return sanitized;
+}
+
 // On Vercel, VERCEL_URL is automatically set to the deployment hostname
 // (e.g. "myapp-abc123.vercel.app") with no protocol or trailing slash.
 // When APP_URL isn't explicitly configured, derive it from VERCEL_URL so
@@ -327,22 +357,20 @@ function claudeRateLimiter(req: any, res: any, next: any) {
   const now = Date.now();
   const hits = (claudeRateLimit.get(key) || []).filter((t: number) => now - t < CLAUDE_RATE_WINDOW_MS);
   if (hits.length >= CLAUDE_RATE_MAX) {
-    // Audit log: rate limit exceeded (non-blocking)
-    const token = req.headers.authorization?.split(" ")[1];
-    // Try to extract userId if we have a token (best effort, don't block)
-    if (token) {
-      db.auth.getUser(token).then(({ data: { user } }) => {
-        if (user) {
-          auditLogger.logSecurity('rate_limit_exceeded', {
-            userId: user.id,
-            resource: 'claude_api',
-            ip: req.ip,
-            userAgent: req.get('user-agent'),
-            metadata: { requests: hits.length, limit: CLAUDE_RATE_MAX }
-          }).catch(console.error);
-        }
-      }).catch(() => {/* best-effort, ignore failures */});
-    }
+    // Audit log: rate limit exceeded (non-blocking, synchronous)
+    // Don't do async user lookup here — causes unbounded work under attack.
+    // Accept we don't have userId at this point; log with available data.
+    await auditLogger.logSecurity('rate_limit_exceeded', {
+      userId: undefined,
+      resource: 'claude_api',
+      ip: req.ip,
+      userAgent: req.get('user-agent'),
+      metadata: { 
+        requests: hits.length, 
+        limit: CLAUDE_RATE_MAX,
+        hasToken: !!token
+      }
+    }).catch(console.error);
     
     res.setHeader("Retry-After", "60");
     return res.status(429).json({
@@ -898,8 +926,8 @@ async function authenticateUser(req: any, res: any, next: any) {
 
   const authHeader = req.headers.authorization;
   if (!authHeader) {
-     // Audit log: missing auth header
-     await auditLogger.logAuth('failed_login', {
+     // Audit log: missing auth header (non-blocking)
+     void auditLogger.logAuth('failed_login', {
        email: req.body?.email,
        ip: req.ip,
        userAgent: req.get('user-agent'),
@@ -913,8 +941,8 @@ async function authenticateUser(req: any, res: any, next: any) {
   const { data: { user }, error } = await db.auth.getUser(token);
 
   if (error || !user) {
-     // Audit log: invalid/expired token
-     await auditLogger.logAuth('failed_login', {
+     // Audit log: invalid/expired token (non-blocking)
+     void auditLogger.logAuth('failed_login', {
        email: req.body?.email,
        ip: req.ip,
        userAgent: req.get('user-agent'),
@@ -2599,11 +2627,11 @@ app.put("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
       role
     }).eq('id', req.params.id).eq('user_id', req.user.id);
     
-    // Audit log: agent update
+    // Audit log: agent update (sanitize sensitive fields)
     await auditLogger.logAgentOperation('updated', {
       userId: req.user.id,
       agentId: req.params.id,
-      metadata: { changes: req.body },
+      metadata: { changes: sanitizeForAudit(req.body) },
       ip: req.ip
     }).catch(console.error);
     
@@ -3348,10 +3376,10 @@ app.post("/api/settings", authenticateUser, async (req: any, res: any) => {
        await db.from('wireline_settings').insert({ ...patch, user_id: req.user.id });
     }
     
-    // Audit log: settings update
+    // Audit log: settings update (sanitize sensitive fields)
     await auditLogger.logSettings('updated', {
       userId: req.user.id,
-      changes: req.body,
+      changes: sanitizeForAudit(req.body),
       ip: req.ip
     }).catch(console.error);
     
