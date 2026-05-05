@@ -39,10 +39,17 @@ describe('AuditLog Component', () => {
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          total: 100,
-          api_calls: 50,
-          total_cost: 12.34,
-          critical_count: 5
+          total_events: 100,
+          total_api_calls: 50,
+          total_cost_usd: 12.34,
+          by_severity: {
+            critical: 5,
+            warning: 10,
+            error: 8,
+            info: 77
+          },
+          by_type: {},
+          period_days: 7
         })
       });
 
@@ -63,10 +70,17 @@ describe('AuditLog Component', () => {
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          total: 0,
-          api_calls: 0,
-          total_cost: 0,
-          critical_count: 0
+          total_events: 0,
+          total_api_calls: 0,
+          total_cost_usd: 0,
+          by_severity: {
+            critical: 0,
+            warning: 0,
+            error: 0,
+            info: 0
+          },
+          by_type: {},
+          period_days: 7
         })
       });
     
@@ -88,10 +102,17 @@ describe('AuditLog Component', () => {
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          total: 0,
-          api_calls: 0,
-          total_cost: 0,
-          critical_count: 0
+          total_events: 0,
+          total_api_calls: 0,
+          total_cost_usd: 0,
+          by_severity: {
+            critical: 0,
+            warning: 0,
+            error: 0,
+            info: 0
+          },
+          by_type: {},
+          period_days: 7
         })
       });
     
