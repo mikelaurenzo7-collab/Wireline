@@ -9,6 +9,7 @@ import Stripe from "stripe";
 import dotenv from "dotenv";
 import { randomUUID } from "node:crypto";
 import * as claudeBrain from "./src/lib/claude-brain";
+import { AuditLogger } from "./src/lib/audit-logger";
 
 dotenv.config();
 
@@ -437,6 +438,9 @@ function getGoogleOAuthClient(req: express.Request) {
 const supabaseUrl = process.env.VITE_SUPABASE_URL || "https://placeholder-url.supabase.co";
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || "placeholder-key";
 const db = createClient(supabaseUrl, supabaseKey);
+
+// Initialize audit logger for server-side activity tracking.
+const auditLogger = new AuditLogger(db);
 
 // ────────────────────────────────────────────────────────────────────
 //  Stripe — billing source of truth.
@@ -888,6 +892,17 @@ async function authenticateUser(req: any, res: any, next: any) {
   }
 
   req.user = user;
+  
+  // Log successful authentication (non-blocking).
+  auditLogger.logAuth('login', {
+    userId: user.id,
+    email: user.email,
+    ip: req.ip || req.headers['x-forwarded-for'] as string,
+    userAgent: req.headers['user-agent']
+  }).catch((err) => {
+    log.warn("Failed to log auth event", { userId: user.id, error: String(err) });
+  });
+  
   next();
 }
 
