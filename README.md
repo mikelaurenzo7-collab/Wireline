@@ -20,6 +20,21 @@ business-intelligence layer that surfaces what actually needs your attention.
 - **Insights** — funnel, topic clustering, hour×weekday heatmap, per-agent leaderboard, and Claude-clustered failure modes with fix recommendations.
 - **Contact Profile** — unified per-customer history (calls + appointments + leads) on one page. Phone numbers across the app deep-link here.
 
+## Audit & Activity Monitoring
+
+Enterprise-grade audit logging for compliance, security, and cost tracking:
+
+- **Full activity trail** — authentication, agent changes, settings updates, API calls
+- **Security monitoring** — failed logins, rate limits, unauthorized access
+- **AI cost tracking** — per-call token usage and costs with provider/model detail  
+- **Compliance-ready** — SOC 2, GDPR, HIPAA audit trail with export capabilities
+- **Flexible filtering** — by event type, severity, date range, search term
+- **CSV/JSON export** — for compliance reporting and analysis
+
+Access at `/audit` in the admin section.
+
+See [docs/audit-monitoring.md](docs/audit-monitoring.md) for full documentation.
+
 ## Claude recipes
 
 Drop-in modal recipes wired into the surfaces where they belong. All gracefully no-op (503 + "add a key") when `ANTHROPIC_API_KEY` is unset.
