@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Loader2, PlayCircle, Plus, Phone, UploadCloud, Bot, Radar, Zap, Terminal, Shield, FileSpreadsheet, ChevronRight, Search, Trash2, AlertTriangle, CheckCircle2, Megaphone, Target, Pause, Play, X, Clock, Users, Activity, BarChart3 } from "lucide-react";
+import { Loader2, PlayCircle, Plus, Phone, UploadCloud, Bot, Radar, Zap, Terminal, Shield, FileSpreadsheet, ChevronRight, Search, Trash2, AlertTriangle, CheckCircle2, Megaphone, Target, Pause, Play, X, Clock, Users, Activity, BarChart3, Rocket } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Papa from "papaparse";
 import { cn } from "../lib/utils";
@@ -8,8 +8,10 @@ import { Link } from "react-router-dom";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import CsvExportButton from "./CsvExportButton";
 import PageShell, { Panel } from "./PageShell";
+import { useToast } from "../contexts/ToastContext";
 
 export default function OutboundDialer() {
+  const { success: toastSuccess, error: toastError, info: toastInfo } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [agents, setAgents] = useState<any[]>([]);
   const [leads, setLeads] = useState<any[]>([]);
@@ -30,6 +32,7 @@ export default function OutboundDialer() {
   const [dialError, setDialError] = useState("");
   const [uploadStats, setUploadStats] = useState("");
   const [isDeletingLead, setIsDeletingLead] = useState<number | string | null>(null);
+  const [launchingCampaignId, setLaunchingCampaignId] = useState<string | null>(null);
 
   // Campaign state
   const [campaigns, setCampaigns] = useState<any[]>([]);
@@ -102,15 +105,33 @@ export default function OutboundDialer() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
+      toastSuccess("Call dispatched", `Dialing ${customerNumber}…`);
       setCustomerName("");
       setCustomerNumber("");
       setContext("");
       setTimeout(() => fetchData(), 2000);
     } catch (err: any) {
       setDialError(err.message);
+      toastError("Dispatch failed", err.message);
     } finally {
       setIsDialing(false);
     }
+  };
+
+  const launchCampaign = async (campaignId: string, campaignName: string) => {
+    setLaunchingCampaignId(campaignId);
+    try {
+      const res = await authFetch(`/api/campaigns/${campaignId}/launch`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      toastSuccess("Campaign launched", `Dispatching ${data.dispatching} call${data.dispatching === 1 ? '' : 's'} for "${campaignName}"`);
+      setCampaigns(prev => prev.map(c => c.id === campaignId ? { ...c, status: 'running' } : c));
+      if (selectedCampaign?.id === campaignId) setSelectedCampaign((p: any) => ({ ...p, status: 'running' }));
+      setTimeout(() => fetchCampaigns(), 5000);
+    } catch (e: any) {
+      toastError("Launch failed", e.message);
+    }
+    setLaunchingCampaignId(null);
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -135,6 +156,7 @@ export default function OutboundDialer() {
 
         if (parsedLeads.length === 0) {
           setDialError("No valid phone numbers found. Use a header named 'customer_number' or 'phone'.");
+          toastError("Upload failed", "No valid phone numbers found in CSV.");
           setIsUploading(false);
           return;
         }
@@ -147,16 +169,20 @@ export default function OutboundDialer() {
           });
           if (!res.ok) throw new Error("Bulk upload failed.");
 
-          setUploadStats(`Queued ${parsedLeads.length} lead${parsedLeads.length === 1 ? '' : 's'}${bulkCampaignId ? ' (campaign assigned)' : ''}`);
+          const msg = `Queued ${parsedLeads.length} lead${parsedLeads.length === 1 ? '' : 's'}${bulkCampaignId ? ' (campaign assigned)' : ''}`;
+          setUploadStats(msg);
+          toastSuccess("Leads queued", msg);
           setTimeout(() => { fetchData(); fetchCampaigns(); }, 1000);
         } catch (e: any) {
           setDialError(e.message);
+          toastError("Upload failed", e.message);
         }
         setIsUploading(false);
         if (fileInputRef.current) fileInputRef.current.value = "";
       },
       error: (error) => {
         setDialError(`CSV parsing error: ${error.message}`);
+        toastError("CSV error", error.message);
         setIsUploading(false);
       }
     });
@@ -169,6 +195,7 @@ export default function OutboundDialer() {
 
     setIsDialing(true);
     setUploadStats(`Dispatching ${queued.length} call${queued.length === 1 ? '' : 's'}…`);
+    toastInfo("Queue launched", `Dispatching ${queued.length} calls sequentially…`);
     setDialError("");
 
     for (const lead of queued) {
@@ -194,6 +221,7 @@ export default function OutboundDialer() {
 
     setIsDialing(false);
     setUploadStats(`Sequential dispatch finished.`);
+    toastSuccess("Queue complete", "All queued calls have been dispatched.");
     setTimeout(() => fetchData(), 2000);
   };
 
@@ -679,6 +707,19 @@ export default function OutboundDialer() {
             scroll flush
             actions={
               <div className="flex items-center gap-1.5">
+                {/* Launch button — dials all queued leads via server fire-and-forget */}
+                {selectedCampaign.status !== "running" && selectedCampaign.status !== "completed" && (
+                  <button
+                    onClick={() => launchCampaign(selectedCampaign.id, selectedCampaign.name)}
+                    disabled={launchingCampaignId === selectedCampaign.id}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-colors disabled:opacity-50"
+                  >
+                    {launchingCampaignId === selectedCampaign.id
+                      ? <Loader2 className="w-3 h-3 animate-spin" />
+                      : <Rocket className="w-3 h-3" />}
+                    Launch
+                  </button>
+                )}
                 {selectedCampaign.status === "draft" && (
                   <button onClick={() => setCampaignStatus(selectedCampaign.id, "active")}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 text-[10px] uppercase tracking-[0.25em] hover:bg-emerald-500/25 transition-colors">

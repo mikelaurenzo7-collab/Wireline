@@ -167,10 +167,10 @@ export default function DashboardHome() {
     <div className="h-full grid grid-cols-12 grid-rows-6 gap-3">
       {/* 4 stat tiles */}
       <div className="col-span-12 lg:col-span-8 row-span-2 grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatTile label="Carrier Signals" value={stats?.totalCalls ?? 0}        sub="Live dispatch total" icon={PhoneCall}  accent="#7DF9FF" />
-        <StatTile label="Routing Precision" value={`${stats?.conversionRate ?? 0}%`} sub="Intent fulfillment" icon={TrendingUp} accent="#C58BFF" />
-        <StatTile label="Active Nodes"     value={stats?.totalLeads ?? 0}       sub="Operational fleet"  icon={Bot}        accent="#FF6BD9" />
-        <StatTile label="Operational Burn" value={`$${stats?.totalCost ?? "0.00"}`} sub="Carrier expenditure" icon={DollarSign} accent="#4DFFC4" />
+        <StatTile label="Carrier Signals" value={stats?.totalCalls ?? 0}              sub="Live dispatch total"  icon={PhoneCall}  accent="#7DF9FF" />
+        <StatTile label="Routing Precision" value={`${stats?.conversionRate ?? 0}%`}  sub="Intent fulfillment"   icon={TrendingUp} accent="#C58BFF" />
+        <StatTile label="Outbound Leads"   value={stats?.totalLeads ?? 0}             sub="Queue depth"          icon={Bot}        accent="#FF6BD9" />
+        <StatTile label="Operational Burn" value={`$${stats?.totalCost ?? "0.00"}`}   sub="Carrier expenditure"  icon={DollarSign} accent="#4DFFC4" />
       </div>
 
       {/* Mission integrity */}
@@ -178,8 +178,12 @@ export default function DashboardHome() {
         <Panel title="Mission Integrity" hint="Aurora Health" icon={ShieldCheck}>
           <div className="h-full flex flex-col gap-3">
             <div className="flex flex-wrap gap-1.5">
-              <span className="px-2 py-0.5 rounded-full glass border border-brand/30 text-brand text-[8px] uppercase tracking-[0.28em]">Node 1</span>
-              <span className="px-2 py-0.5 rounded-full glass border border-rose-500/30 text-rose-500 text-[8px] uppercase tracking-[0.28em]">Core Active</span>
+              {(stats?.agents || []).slice(0, 3).map((a: any, i: number) => (
+                <span key={i} className="px-2 py-0.5 rounded-full glass border border-brand/30 text-brand text-[8px] uppercase tracking-[0.28em]">{a.name}</span>
+              ))}
+              {!(stats?.agents?.length) && (
+                <span className="px-2 py-0.5 rounded-full glass border border-rose-500/30 text-rose-500 text-[8px] uppercase tracking-[0.28em]">No agents</span>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="p-3 rounded-lg glass border border-white/8">
@@ -187,32 +191,45 @@ export default function DashboardHome() {
                 <div className="font-display italic text-2xl text-ink leading-none">{stats?.totalMinutes || 0}<span className="text-xs text-muted/60 ml-1 not-italic">min</span></div>
               </div>
               <div className="p-3 rounded-lg glass border border-white/8">
-                <div className="text-[8px] uppercase tracking-[0.3em] text-brand-3 mb-1">Capture</div>
-                <div className="font-display italic text-2xl text-ink leading-none">72.4<span className="text-xs text-muted/60 not-italic">%</span></div>
+                <div className="text-[8px] uppercase tracking-[0.3em] text-brand-3 mb-1">Avg Score</div>
+                <div className="font-display italic text-2xl text-ink leading-none">{stats?.avgLeadScore ?? 0}<span className="text-xs text-muted/60 ml-1 not-italic">pts</span></div>
               </div>
             </div>
             <div className="rounded-lg glass border border-white/8 p-3">
               <div className="flex items-center gap-2 mb-2">
                 <ShieldCheck className="w-3 h-3 text-rose-500" />
-                <span className="text-[9px] uppercase tracking-[0.3em] text-rose-500">Criticality</span>
+                <span className="text-[9px] uppercase tracking-[0.3em] text-rose-500">Sentiment Health</span>
               </div>
-              <p className="text-[11px] text-ink/55 leading-snug">All nodes nominal. No drops in last 14k requests.</p>
-              <div className="mt-2 flex items-center gap-2">
-                <div className="flex-1 h-1 rounded-full bg-white/5 overflow-hidden">
-                  <motion.div initial={{ width: 0 }} animate={{ width: "94%" }} transition={{ duration: 1.4 }}
-                    className="h-full rounded-full" style={{ background: "linear-gradient(90deg,#7DF9FF,#C58BFF,#FF6BD9)" }} />
-                </div>
-                <span className="font-mono text-[10px] text-ink">94%</span>
-              </div>
+              {(() => {
+                const s = stats?.sentimentBreakdown || { positive: 0, neutral: 0, negative: 0 };
+                const total = (s.positive + s.neutral + s.negative) || 1;
+                const positivePct = Math.round((s.positive / total) * 100);
+                return (
+                  <>
+                    <p className="text-[11px] text-ink/55 leading-snug">
+                      {positivePct > 0 ? `${positivePct}% positive sentiment across ${total} call${total === 1 ? '' : 's'}.` : 'No call data yet.'}
+                    </p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <div className="flex-1 h-1 rounded-full bg-white/5 overflow-hidden">
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${positivePct}%` }} transition={{ duration: 1.4 }}
+                          className="h-full rounded-full" style={{ background: "linear-gradient(90deg,#7DF9FF,#C58BFF,#FF6BD9)" }} />
+                      </div>
+                      <span className="font-mono text-[10px] text-ink">{positivePct}%</span>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
             <div className="mt-auto flex flex-wrap gap-1.5">
               <div className="px-2 py-1 rounded-full glass border border-white/8 flex items-center gap-1.5">
                 <span className="w-1 h-1 rounded-full bg-emerald-500 indicator-glow" />
-                <span className="text-[8px] uppercase tracking-[0.3em] text-ink/80">Optimal</span>
+                <span className="text-[8px] uppercase tracking-[0.3em] text-ink/80">
+                  {stats?.agents?.length ? `${stats.agents.length} agent${stats.agents.length > 1 ? 's' : ''}` : 'No agents'}
+                </span>
               </div>
               <div className="px-2 py-1 rounded-full glass border border-white/8 flex items-center gap-1.5">
-                <Radio className="w-2.5 h-2.5 text-brand" />
-                <span className="text-[8px] uppercase tracking-[0.3em] text-ink/80">42ms</span>
+                <Signal className="w-2.5 h-2.5 text-brand" />
+                <span className="text-[8px] uppercase tracking-[0.3em] text-ink/80">{stats?.inboundCount ?? 0}↓ {stats?.outboundCount ?? 0}↑</span>
               </div>
               {activeSignals.length > 0 && (
                 <div className="px-2 py-1 rounded-full glass border border-white/8 flex items-center gap-1.5">
