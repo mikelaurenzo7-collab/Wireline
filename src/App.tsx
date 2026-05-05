@@ -6,7 +6,9 @@ import AuthPortal from "./components/AuthPortal";
 import CommandBar from "./components/CommandBar";
 import ErrorBoundary from "./components/ErrorBoundary";
 import SystemStatusBadge from "./components/SystemStatusBadge";
+import ToastStack from "./components/Toast";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { ToastProvider } from "./contexts/ToastContext";
 import { authFetch } from "./lib/api";
 import { cn } from "./lib/utils";
 
@@ -521,7 +523,10 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppContent />
+        <ToastProvider>
+          <AppContent />
+          <ToastStack />
+        </ToastProvider>
       </AuthProvider>
     </BrowserRouter>
   );

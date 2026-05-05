@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Loader2, PlayCircle, Plus, Phone, UploadCloud, Bot, Radar, Zap, Terminal, Shield, FileSpreadsheet, ChevronRight, Search, Trash2, AlertTriangle, CheckCircle2, Megaphone, Target, Pause, Play, X, Clock, Users, Activity, BarChart3 } from "lucide-react";
+import { Loader2, PlayCircle, Plus, Phone, UploadCloud, Bot, Radar, Zap, Terminal, Shield, FileSpreadsheet, ChevronRight, Search, Trash2, AlertTriangle, CheckCircle2, Megaphone, Target, Pause, Play, X, Clock, Users, Activity, BarChart3, Rocket } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Papa from "papaparse";
 import { cn } from "../lib/utils";
@@ -8,8 +8,10 @@ import { Link } from "react-router-dom";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import CsvExportButton from "./CsvExportButton";
 import PageShell, { Panel } from "./PageShell";
+import { useToast } from "../contexts/ToastContext";
 
 export default function OutboundDialer() {
+  const { success: toastSuccess, error: toastError, info: toastInfo } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [agents, setAgents] = useState<any[]>([]);
   const [leads, setLeads] = useState<any[]>([]);
@@ -30,6 +32,7 @@ export default function OutboundDialer() {
   const [dialError, setDialError] = useState("");
   const [uploadStats, setUploadStats] = useState("");
   const [isDeletingLead, setIsDeletingLead] = useState<number | string | null>(null);
+  const [launchingCampaignId, setLaunchingCampaignId] = useState<string | null>(null);
 
   // Campaign state
   const [campaigns, setCampaigns] = useState<any[]>([]);
@@ -102,14 +105,47 @@ export default function OutboundDialer() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
+      toastSuccess("Call dispatched", `Dialing ${customerNumber}…`);
       setCustomerName("");
       setCustomerNumber("");
       setContext("");
       setTimeout(() => fetchData(), 2000);
     } catch (err: any) {
       setDialError(err.message);
+      toastError("Dispatch failed", err.message);
     } finally {
       setIsDialing(false);
+    }
+  };
+
+  const launchCampaign = async (campaignId: string, campaignName: string) => {
+    setLaunchingCampaignId(campaignId);
+    try {
+      const res = await authFetch(`/api/campaigns/${campaignId}/launch`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      toastSuccess("Campaign launched", `Dispatching ${data.dispatching} call${data.dispatching === 1 ? '' : 's'} for "${campaignName}"`);
+      setCampaigns(prev => prev.map(c => c.id === campaignId ? { ...c, status: 'running' } : c));
+      if (selectedCampaign?.id === campaignId) setSelectedCampaign((p: any) => ({ ...p, status: 'running' }));
+      setTimeout(() => fetchCampaigns(), 5000);
+    } catch (e: any) {
+      toastError("Launch failed", e.message);
+    }
+    setLaunchingCampaignId(null);
+  };
+
+  const retryFailedLeads = async (campaignId: string) => {
+    try {
+      const res = await authFetch(`/api/campaigns/${campaignId}/retry-failed`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      toastSuccess("Leads reset", `${data.reset} failed lead${data.reset === 1 ? '' : 's'} re-queued — launch again to retry`);
+      if (selectedCampaign?.id === campaignId) {
+        const leads = await authFetch(`/api/campaigns/${campaignId}/leads`).then(r => r.json());
+        setCampaignLeads(leads.leads || []);
+      }
+    } catch (e: any) {
+      toastError("Retry failed", e.message);
     }
   };
 
@@ -135,6 +171,7 @@ export default function OutboundDialer() {
 
         if (parsedLeads.length === 0) {
           setDialError("No valid phone numbers found. Use a header named 'customer_number' or 'phone'.");
+          toastError("Upload failed", "No valid phone numbers found in CSV.");
           setIsUploading(false);
           return;
         }
@@ -147,16 +184,20 @@ export default function OutboundDialer() {
           });
           if (!res.ok) throw new Error("Bulk upload failed.");
 
-          setUploadStats(`Queued ${parsedLeads.length} lead${parsedLeads.length === 1 ? '' : 's'}${bulkCampaignId ? ' (campaign assigned)' : ''}`);
+          const msg = `Queued ${parsedLeads.length} lead${parsedLeads.length === 1 ? '' : 's'}${bulkCampaignId ? ' (campaign assigned)' : ''}`;
+          setUploadStats(msg);
+          toastSuccess("Leads queued", msg);
           setTimeout(() => { fetchData(); fetchCampaigns(); }, 1000);
         } catch (e: any) {
           setDialError(e.message);
+          toastError("Upload failed", e.message);
         }
         setIsUploading(false);
         if (fileInputRef.current) fileInputRef.current.value = "";
       },
       error: (error) => {
         setDialError(`CSV parsing error: ${error.message}`);
+        toastError("CSV error", error.message);
         setIsUploading(false);
       }
     });
@@ -169,6 +210,7 @@ export default function OutboundDialer() {
 
     setIsDialing(true);
     setUploadStats(`Dispatching ${queued.length} call${queued.length === 1 ? '' : 's'}…`);
+    toastInfo("Queue launched", `Dispatching ${queued.length} calls sequentially…`);
     setDialError("");
 
     for (const lead of queued) {
@@ -194,6 +236,7 @@ export default function OutboundDialer() {
 
     setIsDialing(false);
     setUploadStats(`Sequential dispatch finished.`);
+    toastSuccess("Queue complete", "All queued calls have been dispatched.");
     setTimeout(() => fetchData(), 2000);
   };
 
@@ -679,6 +722,19 @@ export default function OutboundDialer() {
             scroll flush
             actions={
               <div className="flex items-center gap-1.5">
+                {/* Launch button — dials all queued leads via server fire-and-forget */}
+                {selectedCampaign.status !== "running" && selectedCampaign.status !== "completed" && (
+                  <button
+                    onClick={() => launchCampaign(selectedCampaign.id, selectedCampaign.name)}
+                    disabled={launchingCampaignId === selectedCampaign.id}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-colors disabled:opacity-50"
+                  >
+                    {launchingCampaignId === selectedCampaign.id
+                      ? <Loader2 className="w-3 h-3 animate-spin" />
+                      : <Rocket className="w-3 h-3" />}
+                    Launch
+                  </button>
+                )}
                 {selectedCampaign.status === "draft" && (
                   <button onClick={() => setCampaignStatus(selectedCampaign.id, "active")}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 text-[10px] uppercase tracking-[0.25em] hover:bg-emerald-500/25 transition-colors">
@@ -736,34 +792,55 @@ export default function OutboundDialer() {
                 <p className="text-[10px] text-muted/40">Use the Bulk tab and select this campaign when uploading a CSV.</p>
               </div>
             ) : (
-              <div className="divide-y divide-white/5">
-                {campaignLeads.map(lead => (
-                  <div key={lead.id} className="px-4 py-3 flex items-center gap-3 hover:bg-white/3 transition-colors">
+              <>
+                {/* Retry failed banner */}
+                {campaignLeads.some(l => l.status === 'Failed') && (
+                  <div className="mx-4 mt-3 rounded-xl bg-rose-500/10 border border-rose-500/30 p-3 flex items-center gap-3">
+                    <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                        <span className="font-display italic text-sm text-ink truncate">{lead.customer_name || "Unknown"}</span>
-                        <span className={cn(
-                          "px-1.5 py-0 rounded-full border text-[8px] uppercase tracking-[0.25em] leading-tight",
-                          lead.status === 'Completed' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' :
-                          lead.status === 'Queued' ? 'bg-brand/15 border-brand/40 text-brand' :
-                          'bg-white/5 border-white/10 text-muted'
-                        )}>
-                          {lead.status}
-                        </span>
-                      </div>
-                      <Link
-                        to={`/contact/${encodeURIComponent(lead.phone_number || lead.customer_number || "unknown")}`}
-                        className="text-[10px] text-brand font-mono tabular-nums hover:underline"
-                      >
-                        {lead.phone_number || lead.customer_number}
-                      </Link>
+                      <p className="text-[10px] text-rose-400 uppercase tracking-[0.25em]">
+                        {campaignLeads.filter(l => l.status === 'Failed').length} failed lead{campaignLeads.filter(l => l.status === 'Failed').length > 1 ? 's' : ''}
+                      </p>
                     </div>
-                    <div className="text-[9px] text-muted/50 tabular-nums shrink-0">
-                      {new Date(lead.created_at).toLocaleDateString()}
-                    </div>
+                    <button
+                      onClick={() => retryFailedLeads(selectedCampaign.id)}
+                      className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-400 text-[9px] uppercase tracking-[0.25em] hover:bg-rose-500/30 transition-colors"
+                    >
+                      <Activity className="w-3 h-3" /> Retry Failed
+                    </button>
                   </div>
-                ))}
-              </div>
+                )}
+                <div className="divide-y divide-white/5 mt-2">
+                  {campaignLeads.map(lead => (
+                    <div key={lead.id} className="px-4 py-3 flex items-center gap-3 hover:bg-white/3 transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                          <span className="font-display italic text-sm text-ink truncate">{lead.customer_name || "Unknown"}</span>
+                          <span className={cn(
+                            "px-1.5 py-0 rounded-full border text-[8px] uppercase tracking-[0.25em] leading-tight",
+                            lead.status === 'Completed' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' :
+                            lead.status === 'Queued' ? 'bg-brand/15 border-brand/40 text-brand' :
+                            lead.status === 'Failed' ? 'bg-rose-500/10 border-rose-500/30 text-rose-500' :
+                            lead.status === 'Dialing' ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' :
+                            'bg-white/5 border-white/10 text-muted'
+                          )}>
+                            {lead.status}
+                          </span>
+                        </div>
+                        <Link
+                          to={`/contact/${encodeURIComponent(lead.phone_number || lead.customer_number || "unknown")}`}
+                          className="text-[10px] text-brand font-mono tabular-nums hover:underline"
+                        >
+                          {lead.phone_number || lead.customer_number}
+                        </Link>
+                      </div>
+                      <div className="text-[9px] text-muted/50 tabular-nums shrink-0">
+                        {new Date(lead.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </Panel>
         ) : (

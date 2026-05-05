@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ServerCog, KeyRound, Loader2, Phone, Plus, Link as LinkIcon, Save, ChevronRight, RotateCw, CheckCircle2, Trash2, AlertTriangle, Cpu, CreditCard, Activity } from "lucide-react";
+import { ServerCog, KeyRound, Loader2, Phone, Plus, Link as LinkIcon, Save, ChevronRight, RotateCw, CheckCircle2, Trash2, AlertTriangle, Cpu, CreditCard, Activity, ShieldCheck, Zap, Bot, Wifi } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
@@ -7,8 +7,10 @@ import WebhooksManager from "./WebhooksManager";
 import IntakeKeysManager from "./IntakeKeysManager";
 import StripeBillingCard from "./StripeBillingCard";
 import PageShell, { Panel } from "./PageShell";
+import { useToast } from "../contexts/ToastContext";
 
 export default function AdminSettings() {
+  const { success: toastSuccess, error: toastError } = useToast();
   const [settings, setSettings] = useState({
     vapi_phone_number_id: "",
     subscription_status: "active",
@@ -20,18 +22,25 @@ export default function AdminSettings() {
   const [phoneNumbers, setPhoneNumbers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState("");
   const [isDeletingNumber, setIsDeletingNumber] = useState<number | string | null>(null);
+  const [claudeStatus, setClaudeStatus] = useState<{ available: boolean; model: string } | null>(null);
 
   const [newNumber, setNewNumber] = useState("");
   const [newNumberVapiId, setNewNumberVapiId] = useState("");
 
-  const [activeTab, setActiveTab] = useState<"carrier" | "subscription">("carrier");
+  const [activeTab, setActiveTab] = useState<"carrier" | "subscription" | "system">("carrier");
 
   const [carrierNumbers, setCarrierNumbers] = useState<any[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); fetchClaudeStatus(); }, []);
+
+  const fetchClaudeStatus = async () => {
+    try {
+      const r = await authFetch("/api/claude/status");
+      if (r.ok) setClaudeStatus(await r.json());
+    } catch (_) { /* non-critical */ }
+  };
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -73,17 +82,16 @@ export default function AdminSettings() {
 
   const saveSettings = async () => {
     setIsSaving(true);
-    setSaveMessage("");
     try {
-      await authFetch("/api/settings", {
+      const res = await authFetch("/api/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(settings)
       });
-      setSaveMessage("Settings saved.");
-      setTimeout(() => setSaveMessage(""), 3000);
-    } catch (e) {
-      setSaveMessage("Save failed.");
+      if (!res.ok) throw new Error("Save failed");
+      toastSuccess("Settings saved", "Platform configuration updated.");
+    } catch (e: any) {
+      toastError("Save failed", e.message);
     }
     setIsSaving(false);
   };
@@ -99,8 +107,9 @@ export default function AdminSettings() {
       setNewNumber("");
       setNewNumberVapiId("");
       fetchData();
-    } catch (e) {
-      console.error(e);
+      toastSuccess("Number added", newNumber);
+    } catch (e: any) {
+      toastError("Failed to add number", e.message);
     }
   };
 
@@ -133,7 +142,7 @@ export default function AdminSettings() {
 
   const tabSwitcher = (
     <div className="flex p-1 rounded-full glass border border-white/10">
-      {(["carrier", "subscription"] as const).map(t => (
+      {(["carrier", "subscription", "system"] as const).map(t => (
         <button
           key={t}
           onClick={() => setActiveTab(t)}
@@ -142,7 +151,7 @@ export default function AdminSettings() {
             activeTab === t ? "bg-brand/20 text-brand" : "text-muted hover:text-ink"
           )}
         >
-          {t === "carrier" ? "Carrier" : "Billing"}
+          {t === "carrier" ? "Carrier" : t === "subscription" ? "Billing" : "System"}
         </button>
       ))}
     </div>
@@ -537,6 +546,108 @@ export default function AdminSettings() {
                       </div>
                     </div>
                   </div>
+                </div>
+              </Panel>
+            </motion.div>
+          )}
+          {activeTab === "system" && (
+            <motion.div
+              key="system"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="h-full grid grid-cols-1 lg:grid-cols-2 gap-3 min-h-0"
+            >
+              <Panel title="AI Engine" hint="Claude · Anthropic" icon={Bot} scroll>
+                <div className="space-y-4">
+                  <div className="rounded-xl glass border border-white/8 p-4 space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className={cn(
+                        "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+                        claudeStatus?.available ? "bg-emerald-500/15 border border-emerald-500/30" : "bg-rose-500/15 border border-rose-500/30"
+                      )}>
+                        <Zap className={cn("w-4 h-4", claudeStatus?.available ? "text-emerald-400" : "text-rose-400")} />
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-ink">
+                          {claudeStatus?.available ? "Claude Online" : "Claude Offline"}
+                        </div>
+                        <div className="text-[10px] text-muted uppercase tracking-[0.25em] mt-0.5">
+                          {claudeStatus?.model || "claude-opus-4-7"}
+                        </div>
+                      </div>
+                      <div className="ml-auto">
+                        {claudeStatus?.available
+                          ? <span className="px-2 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[9px] uppercase tracking-[0.25em]">Active</span>
+                          : <span className="px-2 py-1 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-400 text-[9px] uppercase tracking-[0.25em]">Offline</span>}
+                      </div>
+                    </div>
+                    <div className="text-[11px] text-muted leading-relaxed border-t border-white/5 pt-3">
+                      Your Anthropic API key is configured server-side. All Claude AI features — Daily Brief, call enrichment, recipes, coaching, qualification — are available to your users at no extra cost to them. AI usage is metered through your Wireline subscription.
+                    </div>
+                  </div>
+                  <div className="rounded-xl glass border border-white/8 p-4 space-y-2">
+                    <div className="text-[9px] uppercase tracking-[0.3em] text-brand mb-3">Capabilities Active</div>
+                    {(claudeStatus?.capabilities || [
+                      "brief", "qualify", "objection-drill", "cold-email",
+                      "persona-clone", "summarize-thread", "route-intent",
+                      "smart-draft", "agent-review"
+                    ]).map((cap: string) => (
+                      <div key={cap} className="flex items-center gap-2 text-[11px] text-ink/80">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
+                        <span className="capitalize">{cap.replace(/-/g, ' ')}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </Panel>
+              <Panel title="Platform Health" hint="Wireline Core" icon={ShieldCheck} scroll>
+                <div className="space-y-3">
+                  {[
+                    {
+                      label: "ANTHROPIC_API_KEY",
+                      desc: "Powers all Claude AI features",
+                      ok: !!claudeStatus?.available,
+                      icon: Bot,
+                    },
+                    {
+                      label: "VITE_VAPI_PUBLIC_KEY",
+                      desc: "Voice AI browser SDK",
+                      ok: !!import.meta.env.VITE_VAPI_PUBLIC_KEY,
+                      icon: Wifi,
+                    },
+                    {
+                      label: "VITE_SUPABASE_URL",
+                      desc: "Database connection",
+                      ok: !!import.meta.env.VITE_SUPABASE_URL,
+                      icon: Activity,
+                    },
+                    {
+                      label: "Agents",
+                      desc: `${agents.length} of ${settings.max_agents} deployed`,
+                      ok: agents.length > 0,
+                      icon: Bot,
+                    },
+                  ].map(item => (
+                    <div key={item.label} className="rounded-xl glass border border-white/8 p-3 flex items-center gap-3">
+                      <div className={cn(
+                        "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                        item.ok ? "bg-emerald-500/15" : "bg-rose-500/15"
+                      )}>
+                        <item.icon className={cn("w-3.5 h-3.5", item.ok ? "text-emerald-400" : "text-rose-400")} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[10px] font-mono text-ink truncate">{item.label}</div>
+                        <div className="text-[10px] text-muted">{item.desc}</div>
+                      </div>
+                      <span className={cn(
+                        "text-[8px] uppercase tracking-[0.25em] shrink-0",
+                        item.ok ? "text-emerald-400" : "text-rose-400"
+                      )}>
+                        {item.ok ? "OK" : "Missing"}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </Panel>
             </motion.div>

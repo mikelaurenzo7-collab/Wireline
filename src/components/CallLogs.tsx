@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import {
   PhoneIncoming, PhoneOutgoing, Clock, FileText, Search, Loader2,
   MessageCircle, ChevronRight, Database, Activity, Signal, ExternalLink,
-  Download, Filter,
+  Download, Filter, SmilePlus, Meh, Frown, MessageSquare,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
@@ -161,6 +161,7 @@ export default function CallLogs() {
                           )}>
                             {call.lead_score || 0}
                           </span>
+                          <SentimentDot sentiment={call.sentiment} />
                         </div>
                         <p className="text-[10px] text-muted truncate leading-tight">{call.summary || "Decoding…"}</p>
                       </div>
@@ -189,6 +190,13 @@ export default function CallLogs() {
       </div>
     </PageShell>
   );
+}
+
+function SentimentDot({ sentiment }: { sentiment?: string }) {
+  const s = (sentiment || 'neutral').toLowerCase();
+  if (s === 'positive') return <SmilePlus className="w-3 h-3 text-emerald-400 shrink-0" />;
+  if (s === 'negative') return <Frown className="w-3 h-3 text-rose-400 shrink-0" />;
+  return <Meh className="w-3 h-3 text-muted/40 shrink-0" />;
 }
 
 function CallDetail({ call, formatDuration }: { call: any; formatDuration: (s: number) => string }) {
@@ -263,11 +271,27 @@ function CallDetail({ call, formatDuration }: { call: any; formatDuration: (s: n
                   </p>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  <Stat label="Duration"     value={formatDuration(call.duration_seconds || 0)} accent="#7DF9FF" icon={Clock} />
-                  <Stat label="Cost"         value={`$${(call.cost ?? 0).toFixed(4)}`}          accent="#FF6BD9" />
-                  <Stat label="Lead score"   value={`${call.lead_score ?? 0}`}                  accent="#C58BFF" />
-                  <Stat label="Direction"    value={call.direction || "—"}                       accent="#4DFFC4" />
+                  <Stat label="Duration"   value={formatDuration(call.duration_seconds || 0)} accent="#7DF9FF" icon={Clock} />
+                  <Stat label="Cost"       value={`$${(call.cost ?? 0).toFixed(4)}`}          accent="#FF6BD9" />
+                  <Stat label="Lead score" value={`${call.lead_score ?? 0}`}                  accent="#C58BFF" />
+                  <Stat label="Sentiment"  value={
+                    <span className={cn(
+                      "capitalize text-base",
+                      (call.sentiment || 'neutral') === 'positive' ? "text-emerald-400" :
+                      (call.sentiment || 'neutral') === 'negative' ? "text-rose-400" : "text-muted/70"
+                    )}>
+                      {call.sentiment || "neutral"}
+                    </span>
+                  } accent="#4DFFC4" />
                 </div>
+                {call.coaching_note && (
+                  <div className="rounded-xl glass border border-brand/20 p-4">
+                    <div className="text-[9px] uppercase tracking-[0.3em] text-brand mb-2 flex items-center gap-1.5">
+                      <MessageSquare className="w-3 h-3" /> AI coaching note
+                    </div>
+                    <p className="text-[12px] text-ink/80 leading-relaxed">{call.coaching_note}</p>
+                  </div>
+                )}
               </motion.div>
             )}
             {tab === "transcript" && (
@@ -320,8 +344,9 @@ function CallDetail({ call, formatDuration }: { call: any; formatDuration: (s: n
                   </div>
                 ) : (
                   <div className="h-full min-h-[200px] flex flex-col items-center justify-center gap-2">
-                    <Loader2 className="w-6 h-6 animate-spin text-muted/60" />
-                    <p className="text-[9px] uppercase tracking-[0.4em] text-muted/60">Reconstruction in progress</p>
+                    <Activity className="w-6 h-6 text-muted/40" />
+                    <p className="text-[9px] uppercase tracking-[0.4em] text-muted/60">No recording available</p>
+                    <p className="text-[10px] text-muted/40">Recordings are stored by Vapi when enabled</p>
                   </div>
                 )}
               </motion.div>

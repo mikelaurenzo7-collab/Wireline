@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
+import { useToast } from "../contexts/ToastContext";
 
 const PREMIUM_VOICES = [
   // 11labs
@@ -52,6 +53,7 @@ function RoleBadge({ role, size = "sm" }: { role?: string; size?: "xs" | "sm" })
 
 
 export default function FleetSettings() {
+  const { success: toastSuccess, error: toastError, warning: toastWarning } = useToast();
   const [agents, setAgents] = useState<any[]>([]);
   const [subscription, setSubscription] = useState<{ status: string, max_agents: number }>({ status: 'active', max_agents: 3 });
   const [isLoading, setIsLoading] = useState(true);
@@ -102,7 +104,10 @@ export default function FleetSettings() {
   }, []);
 
   useEffect(() => {
-    if (selectedAgent) fetchAgentConfig(selectedAgent.id);
+    if (selectedAgent) {
+      fetchAgentConfig(selectedAgent.id);
+      fetchAgentPerformance(selectedAgent.id);
+    }
   }, [selectedAgent?.id]);
 
   const fetchAgentConfig = async (id: string) => {
@@ -121,12 +126,12 @@ export default function FleetSettings() {
     if (!newAgentName || !newAgentId) return;
     
     if (subscription.status !== 'active') {
-      alert("Deployment suspended. Account subscription billing required.");
+      toastWarning("Subscription required", "Activate a billing plan to deploy agents.");
       return;
     }
     
     if (agents.length >= subscription.max_agents) {
-      alert(`Fleet capacity reached (${subscription.max_agents} agents). Upgrade plan to deploy more.`);
+      toastWarning("Fleet capacity reached", `${subscription.max_agents} agents maximum on current plan.`);
       return;
     }
 
@@ -140,15 +145,15 @@ export default function FleetSettings() {
       const data = await resp.json();
       
       if (resp.status === 403) {
-         alert(data.error || "Access Denied. Please upgrade your plan.");
+        toastWarning("Access denied", data.error || "Upgrade your plan.");
       } else {
-         setNewAgentName("");
-         setNewAgentId("");
-         await fetchAgents();
+        setNewAgentName("");
+        setNewAgentId("");
+        toastSuccess("Agent deployed", newAgentName);
+        await fetchAgents();
       }
-    } catch (e) {
-      console.error(e);
-      alert("An error occurred. Please try again.");
+    } catch (e: any) {
+      toastError("Deployment failed", e.message);
     }
     setIsCreating(false);
   };
@@ -166,9 +171,10 @@ export default function FleetSettings() {
       if (resp.ok) {
         const data = await resp.json();
         setAgentConfig((prev: any) => ({ ...prev, personality: data.content }));
+        toastSuccess("Role template applied", `${role.replace(/_/g, ' ')} personality loaded`);
       }
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      toastError("Template failed", e.message);
     }
     setIsApplyingTemplate(false);
   };
@@ -220,6 +226,18 @@ export default function FleetSettings() {
   };
 
   const [isDeletingAgent, setIsDeletingAgent] = useState<string | null>(null);
+  const [agentStats, setAgentStats] = useState<Record<string, any>>({});
+
+  const fetchAgentPerformance = async (id: string, force = false) => {
+    if (agentStats[id] && !force) return; // already loaded; use force=true to refresh
+    try {
+      const r = await authFetch(`/api/agents/${id}/performance`);
+      if (r.ok) {
+        const data = await r.json();
+        setAgentStats(prev => ({ ...prev, [id]: data }));
+      }
+    } catch (_) { /* non-critical */ }
+  };
 
   const handleDeleteAgent = async (agentId: string, agentName: string) => {
     if (!confirm(`DECOMMISSION "${agentName.toUpperCase()}"?\n\nThis permanently removes the agent and all its training data. Historical call logs and leads are preserved.\n\nThis action cannot be undone.`)) return;
@@ -232,13 +250,13 @@ export default function FleetSettings() {
         if (selectedAgent?.id === agentId) {
           setSelectedAgent(remaining.length > 0 ? remaining[0] : null);
         }
+        toastSuccess("Agent decommissioned", agentName);
       } else {
         const data = await resp.json().catch(() => ({}));
-        alert(data.error || "Failed to decommission agent. Please try again.");
+        toastError("Failed to decommission", data.error || "Please try again.");
       }
-    } catch (e) {
-      console.error("Failed to delete agent:", e);
-      alert("Network error. Failed to decommission agent.");
+    } catch (e: any) {
+      toastError("Network error", "Failed to decommission agent.");
     }
     setIsDeletingAgent(null);
   };
@@ -288,7 +306,7 @@ export default function FleetSettings() {
                   )}
                 >
                   <button
-                    onClick={() => setSelectedAgent(agent)}
+                    onClick={() => { setSelectedAgent(agent); fetchAgentPerformance(agent.id); }}
                     className="flex-1 text-left px-3 py-2.5 flex items-center gap-2.5 min-w-0"
                   >
                     <div className={cn(
@@ -306,6 +324,11 @@ export default function FleetSettings() {
                         <span className="text-[9px] uppercase tracking-[0.25em] px-1.5 py-0.5 rounded-full glass border border-white/10 text-muted/80 leading-none">
                           {agent.channel}
                         </span>
+                        {agentStats[agent.id] && (
+                          <span className="text-[9px] uppercase tracking-[0.22em] px-1.5 py-0.5 rounded-full glass border border-white/10 text-muted/80 leading-none tabular-nums">
+                            {agentStats[agent.id].callCount} calls
+                          </span>
+                        )}
                       </div>
                     </div>
                   </button>
@@ -483,6 +506,35 @@ export default function FleetSettings() {
                  </div>
 
                  <div className="relative z-10 mt-3 grid grid-cols-1 md:grid-cols-2 gap-2 pt-3 border-t border-white/8">
+                   {/* Performance stats */}
+                   {agentStats[selectedAgent.id] && (() => {
+                     const s = agentStats[selectedAgent.id];
+                     const total = (s.sentiment.positive + s.sentiment.neutral + s.sentiment.negative) || 1;
+                     const posPct = Math.round((s.sentiment.positive / total) * 100);
+                     return (
+                       <div className="md:col-span-2 grid grid-cols-3 gap-2 mb-2">
+                         <div className="rounded-lg glass border border-white/8 p-2.5">
+                           <div className="text-[8px] uppercase tracking-[0.3em] text-brand mb-1">Calls</div>
+                           <div className="font-display italic text-xl text-ink">{s.callCount}</div>
+                         </div>
+                         <div className="rounded-lg glass border border-white/8 p-2.5">
+                           <div className="text-[8px] uppercase tracking-[0.3em] text-brand mb-1">Avg Score</div>
+                           <div className="font-display italic text-xl text-ink">{s.avgScore}</div>
+                         </div>
+                         <div className="rounded-lg glass border border-white/8 p-2.5 relative">
+                           <div className="text-[8px] uppercase tracking-[0.3em] text-brand mb-1">Sentiment</div>
+                           <div className="font-display italic text-xl text-ink">{posPct}%<span className="text-xs text-muted not-italic ml-1">pos</span></div>
+                           <button
+                             onClick={() => fetchAgentPerformance(selectedAgent.id, true)}
+                             title="Refresh stats"
+                             className="absolute top-2 right-2 w-5 h-5 flex items-center justify-center rounded-full glass border border-white/10 text-muted/50 hover:text-brand transition-colors"
+                           >
+                             <RefreshCw className="w-2.5 h-2.5" />
+                           </button>
+                         </div>
+                       </div>
+                     );
+                   })()}
                    <div className="space-y-1.5">
                      <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70 flex items-center gap-1.5">
                         <LinkIcon className="w-2.5 h-2.5 text-brand" /> Knowledge URL

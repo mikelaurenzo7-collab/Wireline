@@ -1929,30 +1929,50 @@ app.get("/api/calls", authenticateUser, async (req: any, res: any) => {
 // ==========================================
 app.get("/api/dashboard/stats", authenticateUser, async (req: any, res: any) => {
    try {
-      const [apptRes, leadsRes, logsRes] = await Promise.all([
+      const [apptRes, leadsRes, logsRes, agentsRes] = await Promise.all([
           db.from('wireline_appointments').select('id', { count: 'exact' }).eq('user_id', req.user.id),
           db.from('wireline_outbound_leads').select('id', { count: 'exact' }).eq('user_id', req.user.id),
-          db.from('wireline_call_logs').select('cost, duration_seconds, direction, created_at').eq('user_id', req.user.id).order('created_at', { ascending: false }).limit(200)
+          db.from('wireline_call_logs')
+            .select('id, cost, duration_seconds, direction, created_at, lead_score, summary, customer_number, sentiment, coaching_note')
+            .eq('user_id', req.user.id)
+            .order('created_at', { ascending: false })
+            .limit(200),
+          db.from('wireline_agents').select('id, name, channel, role').eq('user_id', req.user.id),
       ]);
       
       const totalAppointments = apptRes.count || 0;
       const totalLeads = leadsRes.count || 0;
       const logs = logsRes.data || [];
+      const agents = agentsRes.data || [];
       
-      const totalMinutes = Math.ceil(logs.reduce((acc, log) => acc + (log.duration_seconds || 0), 0) / 60);
-      const totalCost = logs.reduce((acc, log) => acc + (Number(log.cost) || 0), 0);
-      const inboundCount = logs.filter(l => l.direction === 'inbound').length;
-      const outboundCount = logs.filter(l => l.direction === 'outbound').length;
+      const totalMinutes = Math.ceil(logs.reduce((acc: number, l: any) => acc + (l.duration_seconds || 0), 0) / 60);
+      const totalCost = logs.reduce((acc: number, l: any) => acc + (Number(l.cost) || 0), 0);
+      const inboundCount = logs.filter((l: any) => l.direction === 'inbound').length;
+      const outboundCount = logs.filter((l: any) => l.direction === 'outbound').length;
       const conversionRate = logs.length > 0 ? ((totalAppointments / logs.length) * 100).toFixed(1) : 0;
+
+      // Average lead score across all scored calls
+      const scoredLogs = logs.filter((l: any) => (l.lead_score ?? 0) > 0);
+      const avgLeadScore = scoredLogs.length > 0
+        ? Math.round(scoredLogs.reduce((s: number, l: any) => s + (l.lead_score || 0), 0) / scoredLogs.length)
+        : 0;
+
+      // Sentiment breakdown (positive / neutral / negative)
+      const sentimentMap: Record<string, number> = { positive: 0, neutral: 0, negative: 0 };
+      for (const l of logs) {
+        const s = (l.sentiment || 'neutral').toLowerCase();
+        if (s in sentimentMap) sentimentMap[s]++;
+        else sentimentMap['neutral']++;
+      }
 
       // FETCH "HOT LEADS" (AI-Scored High Intent)
       const { data: hotCalls } = await db.from('wireline_call_logs').select('*').eq('user_id', req.user.id).gte('lead_score', 75).order('created_at', { ascending: false }).limit(5);
       const { data: hotEmails } = await db.from('wireline_email_threads').select('*').eq('user_id', req.user.id).gte('lead_score', 75).order('created_at', { ascending: false }).limit(5);
 
       const hotLeads = [
-        ...(hotCalls || []).map(c => ({ id: c.id, type: 'call', contact: c.customer_number, score: c.lead_score, intent: c.intent_label, summary: c.summary, date: c.created_at })),
-        ...(hotEmails || []).map(e => ({ id: e.id, type: 'email', contact: e.customer_email, score: e.lead_score, intent: e.intent_label, summary: e.summary, date: e.created_at }))
-      ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
+        ...(hotCalls || []).map((c: any) => ({ id: c.id, type: 'call', contact: c.customer_number, score: c.lead_score, intent: c.intent_label, summary: c.summary, date: c.created_at })),
+        ...(hotEmails || []).map((e: any) => ({ id: e.id, type: 'email', contact: e.customer_email, score: e.lead_score, intent: e.intent_label, summary: e.summary, date: e.created_at }))
+      ].sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
 
       // Compute Chart Data (Last 7 Days)
       const last7Days = Array.from({ length: 7 }, (_, i) => {
@@ -1966,19 +1986,15 @@ app.get("/api/dashboard/stats", authenticateUser, async (req: any, res: any) => 
          chartDataMap[dateStr] = { signals: 0, leads: 0 };
       });
 
-      logs.forEach((log: any) => {
-         const d = new Date(log.created_at).toISOString().split('T')[0];
-         if (chartDataMap[d]) {
-             chartDataMap[d].signals += 1;
-         }
+      logs.forEach((l: any) => {
+         const d = new Date(l.created_at).toISOString().split('T')[0];
+         if (chartDataMap[d]) chartDataMap[d].signals += 1;
       });
 
       const { data: recentAppts } = await db.from('wireline_appointments').select('created_at').eq('user_id', req.user.id);
       (recentAppts || []).forEach((appt: any) => {
          const d = new Date(appt.created_at).toISOString().split('T')[0];
-         if (chartDataMap[d]) {
-             chartDataMap[d].leads += 1;
-         }
+         if (chartDataMap[d]) chartDataMap[d].leads += 1;
       });
 
       const chartData = last7Days.map(dateStr => {
@@ -1999,6 +2015,9 @@ app.get("/api/dashboard/stats", authenticateUser, async (req: any, res: any) => 
          inboundCount,
          outboundCount,
          conversionRate,
+         avgLeadScore,
+         sentimentBreakdown: sentimentMap,
+         agents,
          recentLogs: logs.slice(0, 100),
          hotLeads,
          chartData
@@ -3010,6 +3029,126 @@ app.get("/api/campaigns/:id/leads", authenticateUser, async (req: any, res: any)
   } catch (error: any) {
     log.error("Failed to fetch campaign leads", { error: error?.message });
     res.json({ leads: [] });
+  }
+});
+
+// Launch a campaign — dial all queued leads sequentially (fire-and-forget
+// per lead; we respond immediately with a count and let calls resolve async).
+const CAMPAIGN_DIAL_SPACING_MS = 3_000; // 3-second gap to avoid Vapi rate limits
+
+app.post("/api/campaigns/:id/launch", authenticateUser, async (req: any, res: any) => {
+  try {
+    const campaignId = req.params.id;
+
+    // Verify campaign belongs to user and is not already running.
+    const { data: campaign, error: campErr } = await db
+      .from('wireline_outbound_campaigns')
+      .select('id, name, agent_id, status')
+      .eq('id', campaignId)
+      .eq('user_id', req.user.id)
+      .single();
+    if (campErr || !campaign) return res.status(404).json({ error: "Campaign not found." });
+    if (campaign.status === 'running') return res.status(409).json({ error: "Campaign is already running." });
+
+    // Fetch queued leads for this campaign.
+    const { data: queued } = await db
+      .from('wireline_outbound_leads')
+      .select('id, customer_name, customer_number, context, agent_id')
+      .eq('campaign_id', campaignId)
+      .eq('user_id', req.user.id)
+      .eq('status', 'Queued');
+
+    if (!queued || queued.length === 0) {
+      return res.status(400).json({ error: "No queued leads in this campaign." });
+    }
+
+    // Mark campaign as running.
+    await db.from('wireline_outbound_campaigns')
+      .update({ status: 'running', updated_at: new Date().toISOString() })
+      .eq('id', campaignId)
+      .eq('user_id', req.user.id);
+
+    res.json({ success: true, dispatching: queued.length });
+
+    // Fire-and-forget: dial sequentially with a configurable gap between calls
+    // so the Vapi rate limiter is not hit. The entire async body is wrapped in
+    // try/catch so a thrown error always marks the campaign completed/failed.
+    (async () => {
+      try {
+        for (const lead of queued) {
+          try {
+            const result = await placeOutboundCall({
+              userId: req.user.id,
+              agentId: lead.agent_id || campaign.agent_id,
+              customerName: lead.customer_name,
+              customerNumber: lead.customer_number,
+              context: lead.context,
+            });
+            const newStatus = result.ok ? 'Dialing' : 'Failed';
+            await db.from('wireline_outbound_leads')
+              .update({ status: newStatus, last_called_at: new Date().toISOString(), attempts: 1 })
+              .eq('id', lead.id);
+          } catch (e) {
+            log.error("Campaign launch: lead dial failed", { leadId: lead.id, error: (e as any)?.message });
+            await db.from('wireline_outbound_leads')
+              .update({ status: 'Failed', last_called_at: new Date().toISOString() })
+              .eq('id', lead.id);
+          }
+          await new Promise(resolve => setTimeout(resolve, CAMPAIGN_DIAL_SPACING_MS));
+        }
+        // Mark campaign complete when all leads have been attempted.
+        await db.from('wireline_outbound_campaigns')
+          .update({ status: 'completed', updated_at: new Date().toISOString() })
+          .eq('id', campaignId)
+          .eq('user_id', req.user.id);
+      } catch (e: any) {
+        log.error("Campaign launch loop failed", { campaignId, error: e?.message });
+        // Ensure campaign doesn't remain stuck in 'running'.
+        await db.from('wireline_outbound_campaigns')
+          .update({ status: 'completed', updated_at: new Date().toISOString() })
+          .eq('id', campaignId)
+          .eq('user_id', req.user.id);
+      }
+    })();
+  } catch (error: any) {
+    log.error("Campaign launch failed", { error: error?.message });
+    res.status(500).json({ error: "Failed to launch campaign." });
+  }
+});
+
+// Retry all failed leads in a campaign.
+app.post("/api/campaigns/:id/retry-failed", authenticateUser, async (req: any, res: any) => {
+  try {
+    const campaignId = req.params.id;
+    const { data: campaign } = await db
+      .from('wireline_outbound_campaigns')
+      .select('id, agent_id, status')
+      .eq('id', campaignId)
+      .eq('user_id', req.user.id)
+      .single();
+    if (!campaign) return res.status(404).json({ error: "Campaign not found." });
+
+    const { data: failed } = await db
+      .from('wireline_outbound_leads')
+      .select('id, customer_name, customer_number, context, agent_id')
+      .eq('campaign_id', campaignId)
+      .eq('user_id', req.user.id)
+      .eq('status', 'Failed');
+
+    if (!failed || failed.length === 0) {
+      return res.status(400).json({ error: "No failed leads to retry." });
+    }
+
+    // Reset them to Queued so the launch endpoint can pick them up.
+    await db.from('wireline_outbound_leads')
+      .update({ status: 'Queued', updated_at: new Date().toISOString() })
+      .in('id', failed.map((l: any) => l.id))
+      .eq('user_id', req.user.id);
+
+    res.json({ success: true, reset: failed.length });
+  } catch (error: any) {
+    log.error("Retry failed leads error", { error: error?.message });
+    res.status(500).json({ error: "Failed to retry leads." });
   }
 });
 
@@ -4226,6 +4365,49 @@ app.get("/api/fleet/activity", authenticateUser, async (req: any, res: any) => {
 // ==========================================
 // 1.10 SUPERVISED AGENT TUNING
 // ==========================================
+
+// Per-agent performance stats — call count, avg score, total minutes, sentiment breakdown.
+app.get("/api/agents/:id/performance", authenticateUser, async (req: any, res: any) => {
+  try {
+    const agentId = req.params.id;
+    const { data: logs } = await db
+      .from('wireline_call_logs')
+      .select('id, lead_score, duration_seconds, sentiment, created_at')
+      .eq('agent_id', agentId)
+      .eq('user_id', req.user.id)
+      .order('created_at', { ascending: false })
+      .limit(500);
+
+    const rows = logs || [];
+    const callCount = rows.length;
+    const totalMinutes = Math.ceil(rows.reduce((s: number, r: any) => s + (r.duration_seconds || 0), 0) / 60);
+    const scored = rows.filter((r: any) => (r.lead_score ?? 0) > 0);
+    const avgScore = scored.length ? Math.round(scored.reduce((s: number, r: any) => s + r.lead_score, 0) / scored.length) : 0;
+    const sentiment: Record<string, number> = { positive: 0, neutral: 0, negative: 0 };
+    for (const r of rows) {
+      const k = (r.sentiment || 'neutral').toLowerCase();
+      if (k in sentiment) sentiment[k]++; else sentiment['neutral']++;
+    }
+    // Calls per day (last 7d) for sparkline
+    const last7 = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(); d.setDate(d.getDate() - (6 - i));
+      return d.toISOString().split('T')[0];
+    });
+    const byDay: Record<string, number> = {};
+    last7.forEach(d => { byDay[d] = 0; });
+    rows.forEach((r: any) => {
+      const d = new Date(r.created_at).toISOString().split('T')[0];
+      if (d in byDay) byDay[d]++;
+    });
+    const sparkline = last7.map(d => byDay[d]);
+
+    res.json({ callCount, totalMinutes, avgScore, sentiment, sparkline });
+  } catch (e: any) {
+    log.error("Agent performance error", { error: e?.message });
+    res.json({ callCount: 0, totalMinutes: 0, avgScore: 0, sentiment: { positive: 0, neutral: 0, negative: 0 }, sparkline: [] });
+  }
+});
+
 app.get("/api/agents/:id/lessons", authenticateUser, async (req: any, res: any) => {
    try {
       const { data: lessons, error } = await db.from('wireline_agent_lessons').select('*')
