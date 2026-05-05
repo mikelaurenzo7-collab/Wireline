@@ -3,8 +3,10 @@ import { Mail, CheckCircle2, Plus, Trash2, Webhook, Loader2, Bot, ChevronDown, R
 import { motion, AnimatePresence } from "motion/react";
 import { authFetch } from "../lib/api";
 import PageShell, { Panel } from "./PageShell";
+import { useToast } from "../contexts/ToastContext";
 
 export default function Integrations() {
+  const { error: toastError, warning: toastWarning } = useToast();
   const [accounts, setAccounts] = useState<any[]>([]);
   const [agents, setAgents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,11 +55,11 @@ export default function Integrations() {
       const { url } = await res.json();
       const authWindow = window.open(url, 'oauth_popup', 'width=600,height=700');
       if (!authWindow) {
-        alert('Popup blocked — allow popups for this site to connect Gmail.');
+        toastWarning("Popup blocked", "Allow popups for this site to connect Gmail.");
       }
     } catch (e) {
       console.error(e);
-      alert('Could not start Gmail connection.');
+      toastError("Gmail connection failed", "Could not start Gmail connection.");
     }
   };
 
