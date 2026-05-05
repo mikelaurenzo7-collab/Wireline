@@ -3,6 +3,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { AuditEventType, AuditSeverity } from '../types/audit';
 
 export class AuditLogger {
+  private failureCount = 0;
+
   constructor(private supabase: SupabaseClient) {}
 
   private async log(data: {
@@ -20,7 +22,16 @@ export class AuditLogger {
     model?: string;
     costUsd?: number;
     latencyMs?: number;
-  }) {
+  }): Promise<{ success: boolean; error?: string }> {
+    // Validate required fields
+    if (!data.action || !data.eventType) {
+      console.error('[AuditLogger] Missing required fields:', {
+        action: data.action,
+        eventType: data.eventType
+      });
+      return { success: false, error: 'Missing required fields' };
+    }
+
     const record = {
       event_type: data.eventType,
       user_id: data.userId,
@@ -38,7 +49,23 @@ export class AuditLogger {
       latency_ms: data.latencyMs
     };
 
-    await this.supabase.from('wireline_audit_log').insert(record);
+    const { error } = await this.supabase.from('wireline_audit_log').insert(record);
+
+    if (error) {
+      this.failureCount++;
+      console.error('[AuditLogger] Failed to log event:', {
+        eventType: data.eventType,
+        error: error.message,
+        totalFailures: this.failureCount
+      });
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  }
+
+  public getStats() {
+    return { failureCount: this.failureCount };
   }
 
   async logAuth(
@@ -51,8 +78,15 @@ export class AuditLogger {
       reason?: string;
     }
   ) {
-    await this.log({
-      eventType: `auth.${action}` as AuditEventType,
+    const eventTypeMap: Record<typeof action, AuditEventType> = {
+      'login': 'auth.login',
+      'logout': 'auth.logout',
+      'failed_login': 'auth.failed_login',
+      'password_reset': 'auth.password_reset'
+    };
+
+    return await this.log({
+      eventType: eventTypeMap[action],
       userId: params.userId,
       action,
       severity: action === 'failed_login' ? 'warning' : 'info',
@@ -73,8 +107,15 @@ export class AuditLogger {
       ip?: string;
     }
   ) {
-    await this.log({
-      eventType: `agent.${action}` as AuditEventType,
+    const eventTypeMap: Record<typeof action, AuditEventType> = {
+      'created': 'agent.created',
+      'updated': 'agent.updated',
+      'deleted': 'agent.deleted',
+      'training_updated': 'agent.training_updated'
+    };
+
+    return await this.log({
+      eventType: eventTypeMap[action],
       userId: params.userId,
       action,
       severity: 'info',
@@ -95,8 +136,14 @@ export class AuditLogger {
       metadata?: Record<string, any>;
     }
   ) {
-    await this.log({
-      eventType: `security.${action}` as AuditEventType,
+    const eventTypeMap: Record<typeof action, AuditEventType> = {
+      'rate_limit_exceeded': 'security.rate_limit_exceeded',
+      'unauthorized_access': 'security.unauthorized_access',
+      'suspicious_activity': 'security.suspicious_activity'
+    };
+
+    return await this.log({
+      eventType: eventTypeMap[action],
       userId: params.userId,
       action,
       severity: 'critical',
@@ -114,8 +161,13 @@ export class AuditLogger {
       ip?: string;
     }
   ) {
-    await this.log({
-      eventType: `settings.${action}` as AuditEventType,
+    const eventTypeMap: Record<typeof action, AuditEventType> = {
+      'updated': 'settings.updated',
+      'api_key_rotated': 'settings.api_key_rotated'
+    };
+
+    return await this.log({
+      eventType: eventTypeMap[action],
       userId: params.userId,
       action,
       severity: 'info',
@@ -134,8 +186,14 @@ export class AuditLogger {
       ip?: string;
     }
   ) {
-    await this.log({
-      eventType: `data.${action}` as AuditEventType,
+    const eventTypeMap: Record<typeof action, AuditEventType> = {
+      'export': 'data.export',
+      'import': 'data.import',
+      'bulk_delete': 'data.bulk_delete'
+    };
+
+    return await this.log({
+      eventType: eventTypeMap[action],
       userId: params.userId,
       action,
       severity: action === 'bulk_delete' ? 'warning' : 'info',
