@@ -360,7 +360,7 @@ function claudeRateLimiter(req: any, res: any, next: any) {
     // Audit log: rate limit exceeded (non-blocking, synchronous)
     // Don't do async user lookup here — causes unbounded work under attack.
     // Accept we don't have userId at this point; log with available data.
-    await auditLogger.logSecurity('rate_limit_exceeded', {
+    void auditLogger.logSecurity('rate_limit_exceeded', {
       userId: undefined,
       resource: 'claude_api',
       ip: req.ip,
@@ -955,7 +955,7 @@ async function authenticateUser(req: any, res: any, next: any) {
   req.user = user;
   
   // Log successful authentication (non-blocking).
-  auditLogger.logAuth('login', {
+  void auditLogger.logAuth('login', {
     userId: user.id,
     email: user.email,
     ip: req.ip || req.headers['x-forwarded-for'] as string,
