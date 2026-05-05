@@ -53,7 +53,7 @@ describe("authFetch", () => {
     expect(callArgs[1].headers?.["Content-Type"]).toBe("application/json");
   });
 
-  it("honours a caller-supplied AbortSignal instead of installing its own", async () => {
+  it("honors a caller-supplied AbortSignal instead of installing its own", async () => {
     const ctrl = new AbortController();
     await authFetch("/api/test", { signal: ctrl.signal });
     const callArgs = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];

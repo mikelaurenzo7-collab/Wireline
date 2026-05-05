@@ -6500,7 +6500,7 @@ app.get("/api/nav-counts", authenticateUser, async (req: any, res: any) => {
     });
   } catch (e) {
     // Never 500 on a non-critical badge endpoint
-    log.warn("nav-counts failed", { error: (e as Error)?.message });
+    log.warn("nav-counts failed", { error: e instanceof Error ? e.message : String(e) });
     res.json({ "/triage": 0, "/inbox": 0, "/outbound": 0 });
   }
 });

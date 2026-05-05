@@ -89,7 +89,7 @@ function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) =>
   const { user, signOut } = useAuth();
   const isActive = (path: string) => location.pathname === path;
 
-  // Live badge counts — poll a lightweight endpoint every 2 min.
+  // Live badge counts — poll a lightweight endpoint every 2 minutes.
   const [navBadges, setNavBadges] = useState<Record<string, number>>({});
   useEffect(() => {
     let cancelled = false;
@@ -100,7 +100,10 @@ function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) =>
           const d = await r.json();
           setNavBadges(d as Record<string, number>);
         }
-      } catch { /* silent — badges are non-critical */ }
+      } catch (e) {
+        // Badges are non-critical; log at debug level so it's visible in devtools.
+        console.debug("[nav-badges] fetch failed:", e);
+      }
     };
     fetchCounts();
     const interval = setInterval(fetchCounts, 120_000);
