@@ -23,7 +23,7 @@ export default function AdminSettings() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeletingNumber, setIsDeletingNumber] = useState<number | string | null>(null);
-  const [claudeStatus, setClaudeStatus] = useState<{ available: boolean; model: string } | null>(null);
+  const [claudeStatus, setClaudeStatus] = useState<{ available: boolean; model: string; capabilities?: string[] } | null>(null);
 
   const [newNumber, setNewNumber] = useState("");
   const [newNumberVapiId, setNewNumberVapiId] = useState("");
@@ -285,7 +285,7 @@ export default function AdminSettings() {
                   <WebhooksManager />
                   <IntakeKeysManager />
 
-                  <div className="pt-3 border-t border-white/8 flex items-center justify-between gap-3">
+                  <div className="pt-3 border-t border-white/8">
                     <button
                       onClick={saveSettings}
                       disabled={isSaving}
@@ -294,18 +294,6 @@ export default function AdminSettings() {
                       {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
                       Save settings
                     </button>
-                    <AnimatePresence>
-                      {saveMessage && (
-                        <motion.span
-                          initial={{ opacity: 0, x: 8 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0 }}
-                          className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-[10px] uppercase tracking-[0.25em]"
-                        >
-                          <CheckCircle2 className="w-3 h-3" /> {saveMessage}
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
                   </div>
                 </div>
               </Panel>

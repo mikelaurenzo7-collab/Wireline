@@ -17,10 +17,12 @@ import DailyBrief from "./DailyBrief";
 import OnboardingQuickstart from "./OnboardingQuickstart";
 import PageShell, { Panel, StatTile } from "./PageShell";
 import { authFetch } from "../lib/api";
+import { useToast } from "../contexts/ToastContext";
 
 const vapi = new Vapi(import.meta.env.VITE_VAPI_PUBLIC_KEY || "");
 
 export default function DashboardHome() {
+  const { error: toastError } = useToast();
   const [isConnecting, setIsConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [stats, setStats] = useState<any>(null);
@@ -107,7 +109,7 @@ export default function DashboardHome() {
     } catch (e) {
       console.error("Failed to start call", e);
       setIsConnecting(false);
-      alert("Carrier connection failed. Ensure at least one agent is configured and Vapi key is valid.");
+      toastError("Carrier connection failed", "Ensure at least one agent is configured and Vapi key is valid.");
     }
   };
 

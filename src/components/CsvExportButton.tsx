@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Download, Loader2, Check } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
+import { useToast } from "../contexts/ToastContext";
 
 export type CsvExportType = "calls" | "leads" | "appointments" | "tasks";
 
@@ -19,6 +20,7 @@ export default function CsvExportButton({
   label?: string;
   variant?: "default" | "ghost";
 }) {
+  const { error: toastError } = useToast();
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
 
@@ -40,7 +42,7 @@ export default function CsvExportButton({
       setTimeout(() => setDone(false), 2000);
     } catch (err) {
       console.error("CSV export failed:", err);
-      alert("Export failed — check the console for details.");
+      toastError("Export failed", "Check the console for details.");
     } finally { setBusy(false); }
   };
 
