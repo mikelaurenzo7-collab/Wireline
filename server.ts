@@ -2914,15 +2914,28 @@ app.get("/api/campaigns", authenticateUser, async (req: any, res: any) => {
       .order('created_at', { ascending: false });
     if (error) throw error;
 
-    // Attach per-campaign lead stats in parallel.
-    const enriched = await Promise.all((data || []).map(async (c: any) => {
-      const [{ count: total }, { count: dialed }, { count: connected }] = await Promise.all([
-        db.from('wireline_outbound_leads').select('*', { count: 'exact', head: true }).eq('campaign_id', c.id),
-        db.from('wireline_outbound_leads').select('*', { count: 'exact', head: true }).eq('campaign_id', c.id).neq('status', 'Pending').neq('status', 'Queued'),
-        db.from('wireline_outbound_leads').select('*', { count: 'exact', head: true }).eq('campaign_id', c.id).eq('status', 'Completed'),
-      ]);
-      return { ...c, leads_count: total ?? 0, dialed_count: dialed ?? 0, connected_count: connected ?? 0 };
-    }));
+    // Pull lead counts via a single GROUP BY aggregation, then merge.
+    const campaignIds = (data || []).map((c: any) => c.id);
+    let leadStats: Record<string, { total: number; dialed: number; connected: number }> = {};
+    if (campaignIds.length > 0) {
+      const { data: allLeads } = await db
+        .from('wireline_outbound_leads')
+        .select('campaign_id, status')
+        .in('campaign_id', campaignIds);
+
+      for (const row of allLeads ?? []) {
+        const s = leadStats[row.campaign_id] ?? { total: 0, dialed: 0, connected: 0 };
+        s.total++;
+        if (row.status !== 'Pending' && row.status !== 'Queued') s.dialed++;
+        if (row.status === 'Completed') s.connected++;
+        leadStats[row.campaign_id] = s;
+      }
+    }
+
+    const enriched = (data || []).map((c: any) => {
+      const s = leadStats[c.id] ?? { total: 0, dialed: 0, connected: 0 };
+      return { ...c, leads_count: s.total, dialed_count: s.dialed, connected_count: s.connected };
+    });
 
     res.json({ campaigns: enriched });
   } catch (error: any) {
@@ -3307,7 +3320,7 @@ app.post("/api/outbound/bulk", authenticateUser, async (req: any, res: any) => {
      const leadsWithUser = leads.map((lead: any) => ({
         ...lead,
         user_id: req.user.id,
-        ...(campaign_id ? { campaign_id } : {}),
+        campaign_id: campaign_id || null,
      }));
 
      const { data, error } = await db.from('wireline_outbound_leads').insert(leadsWithUser).select('id');

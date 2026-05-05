@@ -10,6 +10,8 @@ import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import PageShell, { Panel, StatTile } from "./PageShell";
 
+const POLL_INTERVAL_MS = 10_000;
+
 type SignalEntry = {
   id: string;          // call_id
   agent_id: string;
@@ -36,11 +38,12 @@ type ActivityEntry = {
 
 /** Live elapsed time ticker for an active call. */
 function ElapsedTimer({ startedAt }: { startedAt: string }) {
-  const [secs, setSecs] = useState(() => Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000));
+  const startMs = new Date(startedAt).getTime();
+  const [secs, setSecs] = useState(() => Math.max(0, Math.floor((Date.now() - startMs) / 1000)));
   useEffect(() => {
-    const id = setInterval(() => setSecs(s => s + 1), 1000);
+    const id = setInterval(() => setSecs(Math.max(0, Math.floor((Date.now() - startMs) / 1000))), 1000);
     return () => clearInterval(id);
-  }, []);
+  }, [startMs]);
   const m = Math.floor(secs / 60);
   const s = secs % 60;
   return <span className="tabular-nums font-mono">{m}:{String(s).padStart(2, "0")}</span>;
@@ -73,7 +76,7 @@ export default function LiveMonitor() {
 
   useEffect(() => {
     fetchData();
-    intervalRef.current = setInterval(fetchData, 10_000);
+    intervalRef.current = setInterval(fetchData, POLL_INTERVAL_MS);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, []);
 

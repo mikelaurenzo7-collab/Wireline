@@ -18,19 +18,19 @@ type Appointment = {
   created_at: string;
 };
 
-const STATUS_META: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  Scheduled:  { label: "Scheduled",  color: "text-brand",         bg: "bg-brand/10",         border: "border-brand/30" },
-  Confirmed:  { label: "Confirmed",  color: "text-emerald-400",   bg: "bg-emerald-500/10",   border: "border-emerald-500/30" },
-  Completed:  { label: "Completed",  color: "text-violet-400",    bg: "bg-violet-500/10",    border: "border-violet-500/30" },
-  Cancelled:  { label: "Cancelled",  color: "text-rose-400",      bg: "bg-rose-500/10",      border: "border-rose-500/30" },
-  Rescheduled:{ label: "Rescheduled",color: "text-amber-400",     bg: "bg-amber-500/10",     border: "border-amber-500/30" },
+const STATUS_META: Record<string, { label: string; color: string; bg: string; border: string; dot: string }> = {
+  Scheduled:  { label: "Scheduled",  color: "text-brand",         bg: "bg-brand/10",         border: "border-brand/30",         dot: "bg-brand" },
+  Confirmed:  { label: "Confirmed",  color: "text-emerald-400",   bg: "bg-emerald-500/10",   border: "border-emerald-500/30",   dot: "bg-emerald-400" },
+  Completed:  { label: "Completed",  color: "text-violet-400",    bg: "bg-violet-500/10",    border: "border-violet-500/30",    dot: "bg-violet-400" },
+  Cancelled:  { label: "Cancelled",  color: "text-rose-400",      bg: "bg-rose-500/10",      border: "border-rose-500/30",      dot: "bg-rose-400" },
+  Rescheduled:{ label: "Rescheduled",color: "text-amber-400",     bg: "bg-amber-500/10",     border: "border-amber-500/30",     dot: "bg-amber-400" },
 };
 
 function StatusBadge({ status }: { status: string }) {
   const m = STATUS_META[status] ?? STATUS_META["Scheduled"];
   return (
     <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[9px] uppercase tracking-[0.3em]", m.color, m.bg, m.border)}>
-      <span className={cn("w-1.5 h-1.5 rounded-full", m.bg.replace("bg-", "bg-").replace("/10", ""))} />
+      <span className={cn("w-1.5 h-1.5 rounded-full", m.dot)} />
       {m.label}
     </span>
   );
@@ -576,7 +576,7 @@ function AppointmentRow({
                   {Object.keys(STATUS_META).map(s => (
                     <button key={s} onClick={() => { onStatusChange(s); setShowStatusMenu(false); }}
                       className="w-full text-left px-3 py-2 text-[10px] text-ink hover:bg-white/5 transition-colors flex items-center gap-2">
-                      <span className={cn("w-1.5 h-1.5 rounded-full", STATUS_META[s].bg.replace("/10", ""))} />
+                      <span className={cn("w-1.5 h-1.5 rounded-full", STATUS_META[s].dot)} />
                       {s}
                     </button>
                   ))}
