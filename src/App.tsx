@@ -29,6 +29,7 @@ const EmailInbox      = lazy(() => import("./components/EmailInbox"));
 const KnowledgeBaseManager = lazy(() => import("./components/KnowledgeBaseManager"));
 const LiveMonitor     = lazy(() => import("./components/LiveMonitor"));
 const DncManager      = lazy(() => import("./components/DncManager"));
+const AuditLog        = lazy(() => import("./components/AuditLog"));
 
 type NavItem = {
   label: string;
@@ -63,6 +64,7 @@ const NAV_ITEMS: NavGroup[] = [
   ]},
   { group: "Compliance", items: [
     { label: "DNC List",     path: "/dnc", icon: Shield },
+    { label: "Audit Log",    path: "/audit", icon: Shield },
   ]},
 ];
 
@@ -512,6 +514,7 @@ function AppContent() {
                       <Route path="/integrations" element={<PageTransition><ErrorBoundary><Integrations /></ErrorBoundary></PageTransition>} />
                       <Route path="/admin" element={<PageTransition><ErrorBoundary><AdminSettings /></ErrorBoundary></PageTransition>} />
                       <Route path="/dnc" element={<PageTransition><ErrorBoundary><DncManager /></ErrorBoundary></PageTransition>} />
+                      <Route path="/audit" element={<PageTransition><ErrorBoundary><AuditLog /></ErrorBoundary></PageTransition>} />
                       <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
                     </Routes>
                   </Suspense>
