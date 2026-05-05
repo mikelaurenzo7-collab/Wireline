@@ -71,3 +71,40 @@ describe("authFetch", () => {
     expect(callArgs[1].headers?.Authorization).toBeUndefined();
   });
 });
+
+// ──────────────────────────────────────────────────────────
+//  AUDIT API ENDPOINTS — integration tests
+// ──────────────────────────────────────────────────────────
+describe('Audit API Endpoints', () => {
+  it('should fetch audit events with filters', async () => {
+    const response = await fetch('/api/audit/events?event_type=agent.created&days=7', {
+      headers: { Authorization: 'Bearer test-token' }
+    });
+    const data = await response.json();
+    
+    expect(response.ok).toBe(true);
+    expect(data.events).toBeDefined();
+    expect(Array.isArray(data.events)).toBe(true);
+  });
+
+  it('should fetch audit statistics', async () => {
+    const response = await fetch('/api/audit/stats?days=30', {
+      headers: { Authorization: 'Bearer test-token' }
+    });
+    const data = await response.json();
+    
+    expect(response.ok).toBe(true);
+    expect(data.total_events).toBeDefined();
+    expect(data.by_severity).toBeDefined();
+    expect(data.total_cost_usd).toBeDefined();
+  });
+
+  it('should export audit events as CSV', async () => {
+    const response = await fetch('/api/audit/export?format=csv&days=7', {
+      headers: { Authorization: 'Bearer test-token' }
+    });
+    
+    expect(response.ok).toBe(true);
+    expect(response.headers.get('content-type')).toContain('text/csv');
+  });
+});

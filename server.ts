@@ -5916,6 +5916,188 @@ app.get("/api/audit/recent", authenticateUser, async (req: any, res: any) => {
   }
 });
 
+// GET /api/audit/events — fetch audit events with filtering
+app.get("/api/audit/events", authenticateUser, async (req: any, res: any) => {
+  const userId = req.user.id;
+  const {
+    event_type,
+    severity,
+    resource_type,
+    start_date,
+    end_date,
+    search,
+    days = "7",
+    limit = "100",
+    offset = "0"
+  } = req.query;
+
+  try {
+    let query = supabaseServiceClient
+      .from("wireline_audit_log")
+      .select("*", { count: "exact" })
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
+
+    // Apply filters
+    if (event_type) {
+      const types = Array.isArray(event_type) ? event_type : [event_type];
+      query = query.in("event_type", types);
+    }
+    if (severity) {
+      const severities = Array.isArray(severity) ? severity : [severity];
+      query = query.in("severity", severities);
+    }
+    if (resource_type) {
+      query = query.eq("resource_type", resource_type);
+    }
+    if (start_date) {
+      query = query.gte("created_at", start_date);
+    } else if (days) {
+      const since = new Date();
+      since.setDate(since.getDate() - parseInt(days));
+      query = query.gte("created_at", since.toISOString());
+    }
+    if (end_date) {
+      query = query.lte("created_at", end_date);
+    }
+    if (search) {
+      query = query.or(`action.ilike.%${search}%,actor_email.ilike.%${search}%,resource_id.ilike.%${search}%`);
+    }
+
+    const { data, error, count } = await query;
+
+    if (error) throw error;
+
+    res.json({
+      events: data || [],
+      total: count || 0,
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+  } catch (e: any) {
+    log.error("Audit events error", { userId, error: String(e) });
+    res.status(500).json({ error: "Failed to fetch audit events" });
+  }
+});
+
+// GET /api/audit/stats — aggregate statistics
+app.get("/api/audit/stats", authenticateUser, async (req: any, res: any) => {
+  const userId = req.user.id;
+  const { days = "30" } = req.query;
+
+  try {
+    const since = new Date();
+    since.setDate(since.getDate() - parseInt(days));
+
+    const { data, error } = await supabaseServiceClient
+      .from("wireline_audit_log")
+      .select("*")
+      .eq("user_id", userId)
+      .gte("created_at", since.toISOString());
+
+    if (error) throw error;
+
+    const events = data || [];
+    
+    // Aggregate statistics
+    const bySeverity: Record<string, number> = {};
+    const byType: Record<string, number> = {};
+    let totalCost = 0;
+    let apiCalls = 0;
+
+    events.forEach((event: any) => {
+      // Count by severity
+      const sev = event.severity || 'info';
+      bySeverity[sev] = (bySeverity[sev] || 0) + 1;
+      
+      // Count by type
+      const type = event.event_type || event.action || 'unknown';
+      byType[type] = (byType[type] || 0) + 1;
+      
+      // Sum costs
+      if (event.cost_usd) {
+        totalCost += parseFloat(event.cost_usd);
+      }
+      
+      // Count API calls
+      if (type.startsWith('api.')) {
+        apiCalls++;
+      }
+    });
+
+    res.json({
+      total_events: events.length,
+      by_severity: bySeverity,
+      by_type: byType,
+      total_cost_usd: totalCost,
+      total_api_calls: apiCalls,
+      period_days: parseInt(days)
+    });
+  } catch (e: any) {
+    log.error("Audit stats error", { userId, error: String(e) });
+    res.status(500).json({ error: "Failed to fetch audit statistics" });
+  }
+});
+
+// GET /api/audit/export — export as CSV or JSON
+app.get("/api/audit/export", authenticateUser, async (req: any, res: any) => {
+  const userId = req.user.id;
+  const { format = "csv", days = "30" } = req.query;
+
+  try {
+    const since = new Date();
+    since.setDate(since.getDate() - parseInt(days));
+
+    const { data, error } = await supabaseServiceClient
+      .from("wireline_audit_log")
+      .select("*")
+      .eq("user_id", userId)
+      .gte("created_at", since.toISOString())
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    // Log the export operation
+    await auditLogger.logDataOperation('export', {
+      userId,
+      resourceType: 'audit_log',
+      recordCount: data?.length || 0,
+      ip: req.ip
+    });
+
+    if (format === "json") {
+      res.setHeader("Content-Type", "application/json");
+      res.setHeader("Content-Disposition", `attachment; filename="audit-log-${Date.now()}.json"`);
+      res.json(data);
+    } else {
+      // CSV format
+      const events = data || [];
+      const headers = [
+        "created_at", "event_type", "severity", "action",
+        "actor_email", "resource_type", "resource_id",
+        "ip_address", "cost_usd", "latency_ms"
+      ];
+      
+      const csvRows = [headers.join(",")];
+      events.forEach((event: any) => {
+        const row = headers.map((h) => {
+          const val = event[h];
+          return val !== null && val !== undefined ? `"${String(val).replace(/"/g, '""')}"` : "";
+        });
+        csvRows.push(row.join(","));
+      });
+
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", `attachment; filename="audit-log-${Date.now()}.csv"`);
+      res.send(csvRows.join("\n"));
+    }
+  } catch (e: any) {
+    log.error("Audit export error", { userId, error: String(e) });
+    res.status(500).json({ error: "Failed to export audit log" });
+  }
+});
+
 // ──────────────────────────────────────────────────────────
 //  SPEND BUDGET — monthly Claude limit, hard-cap toggle,
 //  warn-threshold %. Composed with the audit log + outbound webhooks
