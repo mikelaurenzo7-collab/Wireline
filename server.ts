@@ -5926,18 +5926,27 @@ app.get("/api/audit/events", authenticateUser, async (req: any, res: any) => {
     start_date,
     end_date,
     search,
-    days = "7",
-    limit = "100",
-    offset = "0"
+    days: daysParam = "7",
+    limit: limitParam = "100",
+    offset: offsetParam = "0"
   } = req.query;
 
+  // Validate and constrain numeric parameters
+  const days = Math.min(Math.max(parseInt(daysParam as string), 1), 365);
+  const limit = Math.min(Math.max(parseInt(limitParam as string), 1), 500);
+  const offset = Math.max(parseInt(offsetParam as string), 0);
+
+  if (isNaN(days) || isNaN(limit) || isNaN(offset)) {
+    return res.status(400).json({ error: "Invalid numeric parameters" });
+  }
+
   try {
-    let query = supabaseServiceClient
+    let query = db
       .from("wireline_audit_log")
       .select("*", { count: "exact" })
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
-      .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
+      .range(offset, offset + limit - 1);
 
     // Apply filters
     if (event_type) {
@@ -5955,14 +5964,16 @@ app.get("/api/audit/events", authenticateUser, async (req: any, res: any) => {
       query = query.gte("created_at", start_date);
     } else if (days) {
       const since = new Date();
-      since.setDate(since.getDate() - parseInt(days));
+      since.setDate(since.getDate() - days);
       query = query.gte("created_at", since.toISOString());
     }
     if (end_date) {
       query = query.lte("created_at", end_date);
     }
     if (search) {
-      query = query.or(`action.ilike.%${search}%,actor_email.ilike.%${search}%,resource_id.ilike.%${search}%`);
+      // Escape special chars to prevent SQL injection
+      const sanitized = String(search).replace(/[%_]/g, '\\$&');
+      query = query.or(`action.ilike.%${sanitized}%,actor_email.ilike.%${sanitized}%,resource_id.ilike.%${sanitized}%`);
     }
 
     const { data, error, count } = await query;
@@ -5972,11 +5983,17 @@ app.get("/api/audit/events", authenticateUser, async (req: any, res: any) => {
     res.json({
       events: data || [],
       total: count || 0,
-      limit: parseInt(limit),
-      offset: parseInt(offset)
+      limit,
+      offset
     });
   } catch (e: any) {
-    log.error("Audit events error", { userId, error: String(e) });
+    log.error("Audit events error", {
+      userId,
+      error: String(e),
+      query: req.query,
+      ip: req.ip,
+      userAgent: req.headers['user-agent']
+    });
     res.status(500).json({ error: "Failed to fetch audit events" });
   }
 });
@@ -5984,13 +6001,20 @@ app.get("/api/audit/events", authenticateUser, async (req: any, res: any) => {
 // GET /api/audit/stats — aggregate statistics
 app.get("/api/audit/stats", authenticateUser, async (req: any, res: any) => {
   const userId = req.user.id;
-  const { days = "30" } = req.query;
+  const { days: daysParam = "30" } = req.query;
+
+  // Validate and constrain numeric parameters
+  const days = Math.min(Math.max(parseInt(daysParam as string), 1), 365);
+
+  if (isNaN(days)) {
+    return res.status(400).json({ error: "Invalid numeric parameters" });
+  }
 
   try {
     const since = new Date();
-    since.setDate(since.getDate() - parseInt(days));
+    since.setDate(since.getDate() - days);
 
-    const { data, error } = await supabaseServiceClient
+    const { data, error } = await db
       .from("wireline_audit_log")
       .select("*")
       .eq("user_id", userId)
@@ -6032,10 +6056,16 @@ app.get("/api/audit/stats", authenticateUser, async (req: any, res: any) => {
       by_type: byType,
       total_cost_usd: totalCost,
       total_api_calls: apiCalls,
-      period_days: parseInt(days)
+      period_days: days
     });
   } catch (e: any) {
-    log.error("Audit stats error", { userId, error: String(e) });
+    log.error("Audit stats error", {
+      userId,
+      error: String(e),
+      query: req.query,
+      ip: req.ip,
+      userAgent: req.headers['user-agent']
+    });
     res.status(500).json({ error: "Failed to fetch audit statistics" });
   }
 });
@@ -6043,13 +6073,20 @@ app.get("/api/audit/stats", authenticateUser, async (req: any, res: any) => {
 // GET /api/audit/export — export as CSV or JSON
 app.get("/api/audit/export", authenticateUser, async (req: any, res: any) => {
   const userId = req.user.id;
-  const { format = "csv", days = "30" } = req.query;
+  const { format = "csv", days: daysParam = "30" } = req.query;
+
+  // Validate and constrain numeric parameters
+  const days = Math.min(Math.max(parseInt(daysParam as string), 1), 365);
+
+  if (isNaN(days)) {
+    return res.status(400).json({ error: "Invalid numeric parameters" });
+  }
 
   try {
     const since = new Date();
-    since.setDate(since.getDate() - parseInt(days));
+    since.setDate(since.getDate() - days);
 
-    const { data, error } = await supabaseServiceClient
+    const { data, error } = await db
       .from("wireline_audit_log")
       .select("*")
       .eq("user_id", userId)
@@ -6071,7 +6108,7 @@ app.get("/api/audit/export", authenticateUser, async (req: any, res: any) => {
       res.setHeader("Content-Disposition", `attachment; filename="audit-log-${Date.now()}.json"`);
       res.json(data);
     } else {
-      // CSV format
+      // CSV format with formula injection prevention
       const events = data || [];
       const headers = [
         "created_at", "event_type", "severity", "action",
@@ -6079,12 +6116,19 @@ app.get("/api/audit/export", authenticateUser, async (req: any, res: any) => {
         "ip_address", "cost_usd", "latency_ms"
       ];
       
+      const sanitizeCSV = (val: any) => {
+        if (val === null || val === undefined) return "";
+        const str = String(val);
+        // Prevent formula injection - prefix dangerous characters with single quote
+        if (str.match(/^[=@+\-]/)) {
+          return `"'${str.replace(/"/g, '""')}"`;
+        }
+        return `"${str.replace(/"/g, '""')}"`;
+      };
+      
       const csvRows = [headers.join(",")];
       events.forEach((event: any) => {
-        const row = headers.map((h) => {
-          const val = event[h];
-          return val !== null && val !== undefined ? `"${String(val).replace(/"/g, '""')}"` : "";
-        });
+        const row = headers.map((h) => sanitizeCSV(event[h]));
         csvRows.push(row.join(","));
       });
 
@@ -6093,7 +6137,13 @@ app.get("/api/audit/export", authenticateUser, async (req: any, res: any) => {
       res.send(csvRows.join("\n"));
     }
   } catch (e: any) {
-    log.error("Audit export error", { userId, error: String(e) });
+    log.error("Audit export error", {
+      userId,
+      error: String(e),
+      query: req.query,
+      ip: req.ip,
+      userAgent: req.headers['user-agent']
+    });
     res.status(500).json({ error: "Failed to export audit log" });
   }
 });
