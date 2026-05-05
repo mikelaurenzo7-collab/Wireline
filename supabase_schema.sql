@@ -286,6 +286,25 @@ DO $$ BEGIN
     END IF;
 END $$;
 
+-- Enhanced audit log columns for comprehensive activity monitoring
+-- (auth events, agent ops, settings, billing, security, data operations)
+-- These additions are idempotent — safe to re-run on existing installs.
+ALTER TABLE wireline_audit_log ADD COLUMN IF NOT EXISTS event_type TEXT;
+ALTER TABLE wireline_audit_log ADD COLUMN IF NOT EXISTS severity TEXT DEFAULT 'info';
+ALTER TABLE wireline_audit_log ADD COLUMN IF NOT EXISTS actor_email TEXT;
+ALTER TABLE wireline_audit_log ADD COLUMN IF NOT EXISTS resource_type TEXT;
+ALTER TABLE wireline_audit_log ADD COLUMN IF NOT EXISTS resource_id TEXT;
+ALTER TABLE wireline_audit_log ADD COLUMN IF NOT EXISTS ip_address TEXT;
+ALTER TABLE wireline_audit_log ADD COLUMN IF NOT EXISTS user_agent TEXT;
+
+-- Indexes for efficient audit log filtering and compliance queries
+CREATE INDEX IF NOT EXISTS wireline_audit_log_event_type_created_idx
+    ON wireline_audit_log(event_type, created_at DESC);
+CREATE INDEX IF NOT EXISTS wireline_audit_log_severity_created_idx
+    ON wireline_audit_log(severity, created_at DESC);
+CREATE INDEX IF NOT EXISTS wireline_audit_log_resource_idx
+    ON wireline_audit_log(resource_type, resource_id, created_at DESC);
+
 -- Outbound webhooks — per-user destinations that get notified when
 -- specific events fire (call.completed, lead.hot, email.received, etc.).
 CREATE TABLE IF NOT EXISTS wireline_webhooks (
