@@ -578,3 +578,44 @@ CREATE INDEX IF NOT EXISTS wireline_signal_presence_user_idx
 CREATE INDEX IF NOT EXISTS wireline_agent_lessons_user_created_idx
     ON wireline_agent_lessons(user_id, created_at DESC);
 
+-- ────────────────────────────────────────────────────────────────────
+-- OUTBOUND CAMPAIGNS — named batches with schedule + retry config.
+-- Each campaign owns N leads from wireline_outbound_leads via campaign_id.
+-- Status lifecycle: draft → active → paused → completed.
+-- ────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS wireline_outbound_campaigns (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID DEFAULT auth.uid(),
+    name TEXT NOT NULL,
+    goal TEXT,
+    agent_id TEXT REFERENCES wireline_agents(id) ON DELETE SET NULL,
+    status TEXT DEFAULT 'draft',          -- draft | active | paused | completed
+    call_window_start TEXT DEFAULT '09:00',  -- HH:MM (operator local)
+    call_window_end   TEXT DEFAULT '17:00',
+    max_attempts INTEGER DEFAULT 3,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS wireline_outbound_campaigns_user_idx
+    ON wireline_outbound_campaigns(user_id);
+ALTER TABLE wireline_outbound_campaigns ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE tablename = 'wireline_outbound_campaigns'
+          AND policyname = 'Users can manage their own campaigns'
+    ) THEN
+        EXECUTE 'CREATE POLICY "Users can manage their own campaigns" ON wireline_outbound_campaigns FOR ALL USING (auth.uid() = user_id)';
+    END IF;
+END $$;
+
+-- Attach outbound leads to campaigns (nullable — pre-existing leads unaffected).
+ALTER TABLE wireline_outbound_leads ADD COLUMN IF NOT EXISTS campaign_id UUID REFERENCES wireline_outbound_campaigns(id) ON DELETE SET NULL;
+ALTER TABLE wireline_outbound_leads ADD COLUMN IF NOT EXISTS attempts INTEGER DEFAULT 0;
+CREATE INDEX IF NOT EXISTS wireline_outbound_leads_campaign_idx
+    ON wireline_outbound_leads(campaign_id);
+
+-- Appointment enrichment — manual notes + caller phone number.
+ALTER TABLE wireline_appointments ADD COLUMN IF NOT EXISTS notes TEXT;
+ALTER TABLE wireline_appointments ADD COLUMN IF NOT EXISTS phone_number TEXT;
+

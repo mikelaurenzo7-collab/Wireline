@@ -1,6 +1,6 @@
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from "react-router-dom";
-import { Phone, Users, Settings, Activity, MessageSquare, Calendar, PhoneOutgoing, ServerCog, PlugZap, History, Mail, Menu, X, LogOut, User, Terminal, ChevronRight, Zap, Target, Shield, Signal, Globe, Box, LayoutPanelLeft, Database, Command, Sparkles, Waves, Inbox, BarChart3, Loader2, AlertTriangle, PhoneCall } from "lucide-react";
+import { Phone, Users, Settings, Activity, MessageSquare, Calendar, PhoneOutgoing, ServerCog, PlugZap, History, Mail, Menu, X, LogOut, User, Terminal, ChevronRight, Zap, Target, Shield, Signal, Globe, Box, LayoutPanelLeft, Database, Command, Sparkles, Waves, Inbox, BarChart3, Loader2, AlertTriangle, PhoneCall, Radio } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import AuthPortal from "./components/AuthPortal";
 import CommandBar from "./components/CommandBar";
@@ -25,6 +25,7 @@ const Integrations    = lazy(() => import("./components/Integrations"));
 const CallLogs        = lazy(() => import("./components/CallLogs"));
 const EmailInbox      = lazy(() => import("./components/EmailInbox"));
 const KnowledgeBaseManager = lazy(() => import("./components/KnowledgeBaseManager"));
+const LiveMonitor     = lazy(() => import("./components/LiveMonitor"));
 
 type NavItem = {
   label: string;
@@ -38,6 +39,7 @@ type NavGroup = { group: string; items: NavItem[] };
 const NAV_ITEMS: NavGroup[] = [
   { group: "Control Center", items: [
     { label: "Command Atlas", path: "/", icon: Activity },
+    { label: "Live Monitor",  path: "/live", icon: Radio },
     { label: "Triage Inbox", path: "/triage", icon: Inbox },
     { label: "Insights", path: "/insights", icon: BarChart3 },
   ]},
@@ -376,6 +378,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/inbox":         "Inbound Email",
   "/outbound":      "Outbound Dialer",
   "/insights":      "Insights",
+  "/live":          "Live Monitor",
   "/train":         "Neural Atelier",
   "/knowledge":     "Knowledge Atlas",
   "/agents":        "Agent Topology",
@@ -489,6 +492,7 @@ function AppContent() {
                   <Suspense fallback={<RouteFallback />}>
                     <Routes>
                       <Route path="/" element={<PageTransition><ErrorBoundary><DashboardHome /></ErrorBoundary></PageTransition>} />
+                      <Route path="/live" element={<PageTransition><ErrorBoundary><LiveMonitor /></ErrorBoundary></PageTransition>} />
                       <Route path="/triage" element={<PageTransition><ErrorBoundary><TriageInbox /></ErrorBoundary></PageTransition>} />
                       <Route path="/insights" element={<PageTransition><ErrorBoundary><InsightsView /></ErrorBoundary></PageTransition>} />
                       <Route path="/contact/:number" element={<PageTransition><ErrorBoundary><ContactProfile /></ErrorBoundary></PageTransition>} />

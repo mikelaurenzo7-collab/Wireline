@@ -2028,6 +2028,64 @@ app.get("/api/appointments", authenticateUser, async (req: any, res: any) => {
   }
 });
 
+app.post("/api/appointments", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { customer_name, service_type, date, time, phone_number, notes, agent_id, status } = req.body;
+    if (!customer_name?.trim() || !date?.trim() || !time?.trim()) {
+      return res.status(400).json({ error: "customer_name, date, and time are required" });
+    }
+    const { data, error } = await db.from('wireline_appointments').insert({
+      user_id: req.user.id,
+      customer_name: customer_name.trim(),
+      service_type: service_type?.trim() || 'General',
+      date: date.trim(),
+      time: time.trim(),
+      phone_number: phone_number?.trim() || null,
+      notes: notes?.trim() || null,
+      agent_id: agent_id || null,
+      status: status || 'Scheduled',
+    }).select().single();
+    if (error) throw error;
+    res.json({ appointment: data });
+  } catch (error: any) {
+    log.error("Failed to create appointment", { error: error?.message });
+    res.status(500).json({ error: "Failed to create appointment" });
+  }
+});
+
+app.patch("/api/appointments/:id", authenticateUser, async (req: any, res: any) => {
+  try {
+    const allowed = ['status', 'date', 'time', 'customer_name', 'service_type', 'notes', 'phone_number', 'agent_id'];
+    const updates: Record<string, unknown> = {};
+    for (const k of allowed) if (req.body[k] !== undefined) updates[k] = req.body[k];
+    if (Object.keys(updates).length === 0) return res.status(400).json({ error: "No valid fields to update" });
+    const { data, error } = await db.from('wireline_appointments')
+      .update(updates)
+      .eq('id', req.params.id)
+      .eq('user_id', req.user.id)
+      .select().single();
+    if (error) throw error;
+    res.json({ appointment: data });
+  } catch (error: any) {
+    log.error("Failed to update appointment", { error: error?.message });
+    res.status(500).json({ error: "Failed to update appointment" });
+  }
+});
+
+app.delete("/api/appointments/:id", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { error } = await db.from('wireline_appointments')
+      .delete()
+      .eq('id', req.params.id)
+      .eq('user_id', req.user.id);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (error: any) {
+    log.error("Failed to delete appointment", { error: error?.message });
+    res.status(500).json({ error: "Failed to delete appointment" });
+  }
+});
+
 // ==========================================
 // 1.7 AGENTS MANAGEMENT ENDPOINTS
 // ==========================================
@@ -2844,7 +2902,119 @@ app.delete("/api/knowledge/:id", authenticateUser, async (req: any, res: any) =>
 });
 
 // ==========================================
-// 1.8 SETTINGS & OUTBOUND DIALER ENDPOINTS
+// 1.8 CAMPAIGN MANAGER
+// ==========================================
+
+app.get("/api/campaigns", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { data, error } = await db
+      .from('wireline_outbound_campaigns')
+      .select('*')
+      .eq('user_id', req.user.id)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+
+    // Pull lead counts via a single GROUP BY aggregation, then merge.
+    const campaignIds = (data || []).map((c: any) => c.id);
+    let leadStats: Record<string, { total: number; dialed: number; connected: number }> = {};
+    if (campaignIds.length > 0) {
+      const { data: allLeads } = await db
+        .from('wireline_outbound_leads')
+        .select('campaign_id, status')
+        .in('campaign_id', campaignIds);
+
+      for (const row of allLeads ?? []) {
+        const s = leadStats[row.campaign_id] ?? { total: 0, dialed: 0, connected: 0 };
+        s.total++;
+        if (row.status !== 'Pending' && row.status !== 'Queued') s.dialed++;
+        if (row.status === 'Completed') s.connected++;
+        leadStats[row.campaign_id] = s;
+      }
+    }
+
+    const enriched = (data || []).map((c: any) => {
+      const s = leadStats[c.id] ?? { total: 0, dialed: 0, connected: 0 };
+      return { ...c, leads_count: s.total, dialed_count: s.dialed, connected_count: s.connected };
+    });
+
+    res.json({ campaigns: enriched });
+  } catch (error: any) {
+    log.error("Failed to fetch campaigns", { error: error?.message });
+    res.json({ campaigns: [] });
+  }
+});
+
+app.post("/api/campaigns", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { name, goal, agent_id, call_window_start, call_window_end, max_attempts } = req.body;
+    if (!name?.trim()) return res.status(400).json({ error: "name is required" });
+    const { data, error } = await db.from('wireline_outbound_campaigns').insert({
+      user_id: req.user.id,
+      name: name.trim(),
+      goal: goal?.trim() || null,
+      agent_id: agent_id || null,
+      call_window_start: call_window_start || '09:00',
+      call_window_end: call_window_end || '17:00',
+      max_attempts: Number(max_attempts) || 3,
+      status: 'draft',
+    }).select().single();
+    if (error) throw error;
+    res.json({ campaign: data });
+  } catch (error: any) {
+    log.error("Failed to create campaign", { error: error?.message });
+    res.status(500).json({ error: "Failed to create campaign" });
+  }
+});
+
+app.patch("/api/campaigns/:id", authenticateUser, async (req: any, res: any) => {
+  try {
+    const allowed = ['name', 'goal', 'agent_id', 'status', 'call_window_start', 'call_window_end', 'max_attempts'];
+    const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    for (const k of allowed) if (req.body[k] !== undefined) updates[k] = req.body[k];
+    const { data, error } = await db.from('wireline_outbound_campaigns')
+      .update(updates)
+      .eq('id', req.params.id)
+      .eq('user_id', req.user.id)
+      .select().single();
+    if (error) throw error;
+    res.json({ campaign: data });
+  } catch (error: any) {
+    log.error("Failed to update campaign", { error: error?.message });
+    res.status(500).json({ error: "Failed to update campaign" });
+  }
+});
+
+app.delete("/api/campaigns/:id", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { error } = await db.from('wireline_outbound_campaigns')
+      .delete()
+      .eq('id', req.params.id)
+      .eq('user_id', req.user.id);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (error: any) {
+    log.error("Failed to delete campaign", { error: error?.message });
+    res.status(500).json({ error: "Failed to delete campaign" });
+  }
+});
+
+app.get("/api/campaigns/:id/leads", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { data, error } = await db.from('wireline_outbound_leads')
+      .select('*')
+      .eq('campaign_id', req.params.id)
+      .eq('user_id', req.user.id)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    res.json({ leads: data || [] });
+  } catch (error: any) {
+    log.error("Failed to fetch campaign leads", { error: error?.message });
+    res.json({ leads: [] });
+  }
+});
+
+// ==========================================
+// 1.9 SETTINGS & OUTBOUND DIALER ENDPOINTS
 // ==========================================
 app.get("/api/settings", authenticateUser, async (req: any, res: any) => {
   try {
@@ -3138,7 +3308,7 @@ app.post("/api/outbound/dial", authenticateUser, async (req: any, res: any) => {
 
 app.post("/api/outbound/bulk", authenticateUser, async (req: any, res: any) => {
   try {
-     const { leads } = req.body;
+     const { leads, campaign_id } = req.body;
      if (!leads || !leads.length) return res.status(400).json({ error: "No leads provided" });
 
      // SECURITY ENFORCEMENT
@@ -3149,7 +3319,8 @@ app.post("/api/outbound/bulk", authenticateUser, async (req: any, res: any) => {
 
      const leadsWithUser = leads.map((lead: any) => ({
         ...lead,
-        user_id: req.user.id
+        user_id: req.user.id,
+        campaign_id: campaign_id || null,
      }));
 
      const { data, error } = await db.from('wireline_outbound_leads').insert(leadsWithUser).select('id');
