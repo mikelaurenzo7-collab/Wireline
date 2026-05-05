@@ -327,6 +327,23 @@ function claudeRateLimiter(req: any, res: any, next: any) {
   const now = Date.now();
   const hits = (claudeRateLimit.get(key) || []).filter((t: number) => now - t < CLAUDE_RATE_WINDOW_MS);
   if (hits.length >= CLAUDE_RATE_MAX) {
+    // Audit log: rate limit exceeded (non-blocking)
+    const token = req.headers.authorization?.split(" ")[1];
+    // Try to extract userId if we have a token (best effort, don't block)
+    if (token) {
+      db.auth.getUser(token).then(({ data: { user } }) => {
+        if (user) {
+          auditLogger.logSecurity('rate_limit_exceeded', {
+            userId: user.id,
+            resource: 'claude_api',
+            ip: req.ip,
+            userAgent: req.get('user-agent'),
+            metadata: { requests: hits.length, limit: CLAUDE_RATE_MAX }
+          }).catch(console.error);
+        }
+      }).catch(() => {/* best-effort, ignore failures */});
+    }
+    
     res.setHeader("Retry-After", "60");
     return res.status(429).json({
       error: `Rate limit exceeded — ${CLAUDE_RATE_MAX} requests per minute. Slow down.`,
@@ -881,6 +898,14 @@ async function authenticateUser(req: any, res: any, next: any) {
 
   const authHeader = req.headers.authorization;
   if (!authHeader) {
+     // Audit log: missing auth header
+     await auditLogger.logAuth('failed_login', {
+       email: req.body?.email,
+       ip: req.ip,
+       userAgent: req.get('user-agent'),
+       reason: 'missing_token'
+     }).catch(console.error);
+     
      return res.status(401).json({ error: "No authorization header provided" });
   }
 
@@ -888,6 +913,14 @@ async function authenticateUser(req: any, res: any, next: any) {
   const { data: { user }, error } = await db.auth.getUser(token);
 
   if (error || !user) {
+     // Audit log: invalid/expired token
+     await auditLogger.logAuth('failed_login', {
+       email: req.body?.email,
+       ip: req.ip,
+       userAgent: req.get('user-agent'),
+       reason: !token ? 'missing_token' : 'invalid_token'
+     }).catch(console.error);
+     
      return res.status(401).json({ error: "Invalid or expired session" });
   }
 
@@ -2447,6 +2480,15 @@ app.post("/api/agents", authenticateUser, async (req: any, res: any) => {
            : "You are a helpful assistant serving as a phone agent.")
     });
     
+    // Audit log: agent creation
+    await auditLogger.logAgentOperation('created', {
+      userId: req.user.id,
+      agentId: id,
+      agentName: name || "New Agent",
+      metadata: { channel: channel || 'voice', archetype: agentRole },
+      ip: req.ip
+    }).catch(console.error);
+    
     res.json({ success: true, id });
   } catch (error) {
     log.error("Agent creation failed", { error: error?.message || String(error) });
@@ -2556,6 +2598,15 @@ app.put("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
       channel,
       role
     }).eq('id', req.params.id).eq('user_id', req.user.id);
+    
+    // Audit log: agent update
+    await auditLogger.logAgentOperation('updated', {
+      userId: req.user.id,
+      agentId: req.params.id,
+      metadata: { changes: req.body },
+      ip: req.ip
+    }).catch(console.error);
+    
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: "Failed to update agent" });
@@ -2627,6 +2678,14 @@ app.delete("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
     if (deleteErr) throw deleteErr;
 
     log.info("agent deleted", { agentId, userId });
+    
+    // Audit log: agent deletion
+    await auditLogger.logAgentOperation('deleted', {
+      userId: req.user.id,
+      agentId: agentId,
+      ip: req.ip
+    }).catch(console.error);
+    
     res.json({ success: true });
   } catch (error: any) {
     log.error("Failed to delete agent", { error: error?.message });
@@ -3288,6 +3347,14 @@ app.post("/api/settings", authenticateUser, async (req: any, res: any) => {
     } else {
        await db.from('wireline_settings').insert({ ...patch, user_id: req.user.id });
     }
+    
+    // Audit log: settings update
+    await auditLogger.logSettings('updated', {
+      userId: req.user.id,
+      changes: req.body,
+      ip: req.ip
+    }).catch(console.error);
+    
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: "Failed to save settings" });
