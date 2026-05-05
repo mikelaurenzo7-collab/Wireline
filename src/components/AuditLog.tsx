@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Shield, Search, Download, ChevronDown, ChevronRight, AlertTriangle, AlertCircle, XCircle, Info, Clock, User, Globe, Cpu, DollarSign, Activity, Filter, Calendar } from "lucide-react";
 import PageShell, { Panel } from "./PageShell";
@@ -63,7 +63,7 @@ function StatCard({ label, value, icon: Icon, color }: { label: string; value: s
   );
 }
 
-function EventRow({ event, expanded, onToggle }: { event: AuditEvent; expanded: boolean; onToggle: () => void }) {
+const EventRow = React.memo(({ event, expanded, onToggle }: { event: AuditEvent; expanded: boolean; onToggle: () => void }) => {
   const timestamp = new Date(event.created_at).toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',
@@ -74,8 +74,18 @@ function EventRow({ event, expanded, onToggle }: { event: AuditEvent; expanded: 
   return (
     <motion.div
       layout
-      className="relative glass border border-white/8 rounded-xl overflow-hidden hover:border-white/20 transition-all cursor-pointer"
+      role="button"
+      tabIndex={0}
+      aria-expanded={expanded}
+      aria-label={`${event.event_type || event.action} event details`}
+      className="relative glass border border-white/8 rounded-xl overflow-hidden hover:border-white/20 transition-all cursor-pointer outline-none focus:ring-2 focus:ring-brand/50"
       onClick={onToggle}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onToggle();
+        }
+      }}
     >
       <div className="p-4 flex items-center gap-4">
         <SeverityIcon severity={event.severity} />
@@ -160,7 +170,7 @@ function EventRow({ event, expanded, onToggle }: { event: AuditEvent; expanded: 
               {event.metadata && Object.keys(event.metadata).length > 0 && (
                 <div>
                   <p className="text-muted text-xs mb-2">Metadata</p>
-                  <pre className="text-xs text-ink/80 bg-black/20 rounded-lg p-3 overflow-x-auto scrollbar-hide">
+                  <pre className="text-xs text-ink/80 bg-black/20 rounded-lg p-3 overflow-x-auto max-h-48 overflow-y-auto scrollbar-hide">
                     {JSON.stringify(event.metadata, null, 2)}
                   </pre>
                 </div>
@@ -171,7 +181,7 @@ function EventRow({ event, expanded, onToggle }: { event: AuditEvent; expanded: 
       </AnimatePresence>
     </motion.div>
   );
-}
+});
 
 export default function AuditLog() {
   const { error: toastError, success: toastSuccess } = useToast();
@@ -216,10 +226,18 @@ export default function AuditLog() {
         }
 
         const eventsData: AuditResponse = await eventsRes.json();
-        const statsData: AuditStats = await statsRes.json();
+        const statsData: any = await statsRes.json();
+
+        // Map backend response to frontend stats shape
+        const mappedStats: AuditStats = {
+          total: statsData.total_events || 0,
+          api_calls: statsData.total_api_calls || 0,
+          total_cost: statsData.total_cost_usd || 0,
+          critical_count: statsData.by_severity?.critical || 0
+        };
 
         setEvents(eventsData.events);
-        setStats(statsData);
+        setStats(mappedStats);
       } catch (err) {
         console.error('Failed to load audit log:', err);
         toastError('Failed to load audit log', 'Check the console for details.');
@@ -278,23 +296,23 @@ export default function AuditLog() {
     }
   };
 
-  const toggleSeverity = (severity: AuditSeverity) => {
+  const toggleSeverity = useCallback((severity: AuditSeverity) => {
     setSelectedSeverities(prev =>
       prev.includes(severity)
         ? prev.filter(s => s !== severity)
         : [...prev, severity]
     );
-  };
+  }, []);
 
-  const toggleCategory = (category: string) => {
+  const toggleCategory = useCallback((category: string) => {
     setSelectedCategories(prev =>
       prev.includes(category)
         ? prev.filter(c => c !== category)
         : [...prev, category]
     );
-  };
+  }, []);
 
-  const toggleRow = (id: number) => {
+  const toggleRow = useCallback((id: number) => {
     setExpandedRows(prev => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -304,7 +322,7 @@ export default function AuditLog() {
       }
       return next;
     });
-  };
+  }, []);
 
   return (
     <PageShell
@@ -314,7 +332,8 @@ export default function AuditLog() {
       actions={
         <button
           onClick={handleExport}
-          disabled={exporting}
+          disabled={exporting || events.length === 0}
+          aria-label={`Export ${events.length} events as CSV`}
           className="px-4 py-2.5 rounded-full glass border border-white/10 text-[11px] uppercase tracking-[0.3em] text-ink/80 hover:text-brand hover:border-brand/40 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {exporting ? (
@@ -394,6 +413,8 @@ export default function AuditLog() {
           </div>
           <button
             onClick={() => setFiltersExpanded(!filtersExpanded)}
+            aria-label={filtersExpanded ? "Hide filters" : "Show filters"}
+            aria-expanded={filtersExpanded}
             className={cn(
               "px-4 py-3 rounded-xl glass border transition-all flex items-center gap-2 text-sm",
               filtersExpanded
