@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { Users, Plus, Phone, Bot, Save, Loader2, Link as LinkIcon, Copy, Trash2, Megaphone, Mail, Pencil, Sparkles, Terminal, ChevronRight, Zap, Target, Radio, Settings2, Shield, Briefcase, RefreshCw } from "lucide-react";
+import { Users, Plus, Phone, Bot, Save, Loader2, Link as LinkIcon, Copy, Trash2, Megaphone, Mail, Pencil, Sparkles, Terminal, ChevronRight, Zap, Target, Radio, Settings2, Shield, Briefcase, RefreshCw, LayoutGrid } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import { useToast } from "../contexts/ToastContext";
+import AgentTemplates from "./AgentTemplates";
 
 const PREMIUM_VOICES = [
   // 11labs
@@ -54,6 +55,7 @@ function RoleBadge({ role, size = "sm" }: { role?: string; size?: "xs" | "sm" })
 
 export default function FleetSettings() {
   const { success: toastSuccess, error: toastError, warning: toastWarning } = useToast();
+  const [activeTab, setActiveTab] = useState<"templates" | "fleet">("templates");
   const [agents, setAgents] = useState<any[]>([]);
   const [subscription, setSubscription] = useState<{ status: string, max_agents: number }>({ status: 'active', max_agents: 3 });
   const [isLoading, setIsLoading] = useState(true);
@@ -262,6 +264,40 @@ export default function FleetSettings() {
   };
 
   return (
+    <div className="h-full flex flex-col">
+      {/* Tab strip */}
+      <div className="px-4 py-2 border-b border-white/8 flex items-center gap-1.5 shrink-0">
+        <button
+          onClick={() => setActiveTab("templates")}
+          className={cn(
+            "px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] transition-all border flex items-center gap-1.5",
+            activeTab === "templates"
+              ? "bg-brand/15 border-brand/40 text-brand"
+              : "glass border-white/10 text-muted hover:text-ink hover:border-white/25"
+          )}
+        >
+          <LayoutGrid className="w-3 h-3" />
+          Templates
+        </button>
+        <button
+          onClick={() => setActiveTab("fleet")}
+          className={cn(
+            "px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] transition-all border flex items-center gap-1.5",
+            activeTab === "fleet"
+              ? "bg-brand/15 border-brand/40 text-brand"
+              : "glass border-white/10 text-muted hover:text-ink hover:border-white/25"
+          )}
+        >
+          <Shield className="w-3 h-3" />
+          My Fleet
+        </button>
+      </div>
+
+      {/* Tab content */}
+      <div className="flex-1 overflow-hidden">
+        {activeTab === "templates" ? (
+          <AgentTemplates />
+        ) : (
     <div className="h-full flex flex-col md:flex-row">
 
       {/* Sidebar: Agents List */}
@@ -894,6 +930,9 @@ export default function FleetSettings() {
           )}
         </AnimatePresence>
       </main>
+    </div>
+        )}
+      </div>
     </div>
   );
 }
