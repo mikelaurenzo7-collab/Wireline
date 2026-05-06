@@ -26,7 +26,7 @@ import * as claudeBrain from "./src/lib/claude-brain";
 import { AuditLogger } from "./src/lib/audit-logger";
 import { rateLimit, isRedisConfigured, startMemoryCleanup } from "./src/lib/rate-limit";
 import { SentryEvents } from "./src/lib/sentry-events";
-import { AgentFormSchema, DirectiveSchema, KnowledgeSchema, parseFormData } from "./src/lib/form-validators";
+import { AgentFormSchema, DirectiveSchema, KnowledgeSchema, EmailReplySchema, EmailDraftSchema, parseFormData } from "./src/lib/form-validators";
 
 // ────────────────────────────────────────────────────────────────────
 //  Error handling — safely extract message from unknown errors
@@ -6246,7 +6246,13 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
 
 app.post("/api/emails/threads/:id/reply", authenticateUser, async (req: any, res: any) => {
    try {
-      const { body } = req.body;
+      const validation = parseFormData(EmailReplySchema, {
+        body: req.body.body,
+      });
+      if (!validation.success) {
+        return res.status(400).json({ error: "Validation failed", errors: validation.errors });
+      }
+      const { body } = validation.data;
       const { data: thread } = await db.from('wireline_email_threads').select('*, wireline_email_accounts(*)').eq('id', req.params.id).eq('user_id', req.user.id).single();
       
       if (!thread) throw new Error("Thread not found");
@@ -6310,7 +6316,15 @@ app.post("/api/emails/threads/:id/reply", authenticateUser, async (req: any, res
 
 app.post("/api/emails/draft", authenticateUser, async (req: any, res: any) => {
   try {
-     const { subject, messages, context } = req.body;
+     const validation = parseFormData(EmailDraftSchema, {
+       subject: req.body.subject,
+       messages: req.body.messages,
+       context: req.body.context,
+     });
+     if (!validation.success) {
+       return res.status(400).json({ error: "Validation failed", errors: validation.errors });
+     }
+     const { subject, messages, context } = validation.data;
      const prompt = `You are a professional AI assistant drafting an email reply.
 Subject: ${subject}
 Conversation history:

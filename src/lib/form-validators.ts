@@ -54,6 +54,27 @@ export const KnowledgeSchema = z.object({
 
 export type Knowledge = z.infer<typeof KnowledgeSchema>;
 
+// Email reply validation
+export const EmailReplySchema = z.object({
+  body: z.string().min(1, 'Email body cannot be empty').max(5000, 'Email body must be 5000 characters or less'),
+});
+
+export type EmailReply = z.infer<typeof EmailReplySchema>;
+
+// Email draft validation
+export const EmailDraftSchema = z.object({
+  subject: z.string().min(1, 'Subject cannot be empty').max(200, 'Subject must be 200 characters or less'),
+  messages: z.array(
+    z.object({
+      role: z.enum(['user', 'assistant']),
+      content: z.string(),
+    })
+  ).min(1, 'At least one message is required'),
+  context: z.string().max(1000, 'Context must be 1000 characters or less').optional(),
+});
+
+export type EmailDraft = z.infer<typeof EmailDraftSchema>;
+
 // Helper to validate and provide user-friendly error messages
 export function parseFormData<T>(schema: z.ZodSchema<T>, data: unknown): { success: true; data: T } | { success: false; errors: Record<string, string> } {
   try {
