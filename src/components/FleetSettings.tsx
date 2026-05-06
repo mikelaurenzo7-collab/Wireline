@@ -3,6 +3,7 @@ import { Users, Plus, Phone, Bot, Save, Loader2, Link as LinkIcon, Copy, Trash2,
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
+import ConfirmModal from "./ConfirmModal";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import { useToast } from "../contexts/ToastContext";
 import AgentTemplates from "./AgentTemplates";
@@ -242,8 +243,9 @@ export default function FleetSettings() {
     } catch (_) { /* non-critical */ }
   };
 
-  const handleDeleteAgent = async (agentId: string, agentName: string) => {
-    if (!confirm(`DECOMMISSION "${agentName.toUpperCase()}"?\n\nThis permanently removes the agent and all its training data. Historical call logs and leads are preserved.\n\nThis action cannot be undone.`)) return;
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
+
+  const handleDeleteAgent = async (agentId: string) => {
     setIsDeletingAgent(agentId);
     try {
       const resp = await authFetch(`/api/agents/${agentId}`, { method: "DELETE" });
@@ -253,7 +255,7 @@ export default function FleetSettings() {
         if (selectedAgent?.id === agentId) {
           setSelectedAgent(remaining.length > 0 ? remaining[0] : null);
         }
-        toastSuccess("Agent decommissioned", agentName);
+        toastSuccess("Agent decommissioned", deleteConfirm?.name ?? agentId);
       } else {
         const data = await resp.json().catch(() => ({}));
         toastError("Failed to decommission", data.error || "Please try again.");
@@ -265,6 +267,7 @@ export default function FleetSettings() {
   };
 
   return (
+    <>
     <div className="h-full flex flex-col">
       {/* Tab strip */}
       <div className="px-4 py-2 border-b border-white/8 flex items-center gap-1.5 shrink-0">
@@ -370,7 +373,7 @@ export default function FleetSettings() {
                     </div>
                   </button>
                   <button
-                    onClick={e => { e.stopPropagation(); handleDeleteAgent(agent.id, agent.name); }}
+                    onClick={e => { e.stopPropagation(); setDeleteConfirm({ id: agent.id, name: agent.name }); }}
                     disabled={isDeletingAgent === agent.id}
                     title="Decommission agent"
                     className="mr-2 shrink-0 w-7 h-7 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30 disabled:opacity-40 transition-all"
@@ -937,6 +940,21 @@ export default function FleetSettings() {
     </div>
         )}
       </div>
+      <ConfirmModal
+        open={!!deleteConfirm}
+        title="Delete agent?"
+        message={`"${deleteConfirm?.name}" will be permanently removed along with all its training data. This cannot be undone.`}
+        confirmLabel="Delete"
+        danger
+        loading={!!isDeletingAgent}
+        onConfirm={async () => {
+          if (!deleteConfirm) return;
+          await handleDeleteAgent(deleteConfirm.id);
+          setDeleteConfirm(null);
+        }}
+        onCancel={() => setDeleteConfirm(null)}
+      />
     </div>
+    </>
   );
 }
