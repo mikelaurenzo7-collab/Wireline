@@ -35,7 +35,7 @@ const STEPS = [
   {
     id: "number",
     title: "Connect a phone number",
-    body: "Connect a phone number through your carrier integration so inbound callers can reach your agent around the clock.",
+    body: "Connect a phone number through your phone provider so inbound callers can reach your agent around the clock.",
     icon: Phone,
     accent: "#FF6BD9",
     badge: "1 minute",
@@ -104,7 +104,7 @@ export default function OnboardingQuickstart() {
                 <div className="text-[10px] uppercase tracking-[0.4em] text-brand flex items-center gap-2">
                   <Sparkles className="w-3 h-3" /> Get started in 4 steps
                 </div>
-                <h2 className="font-display italic text-3xl md:text-4xl text-ink leading-tight mt-1">Welcome to Wireline</h2>
+                <h2 className="font-display italic text-3xl md:text-4xl text-ink leading-tight mt-1">Welcome to WIRELINE</h2>
               </div>
             </div>
             <div className="flex items-center gap-3">

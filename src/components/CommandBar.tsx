@@ -233,7 +233,7 @@ export default function CommandBar() {
                   </span>
                 </div>
                 <span className="text-[8px] uppercase tracking-[0.4em] text-muted/40">
-                  Wireline
+                  WIRELINE
                 </span>
               </div>
             </div>

@@ -25,7 +25,7 @@ export default function AuthPortal() {
           password,
         });
         if (error) throw error;
-        setMessage("Check your inbox for a confirmation signal.");
+        setMessage("Check your inbox to confirm your email address.");
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -96,11 +96,11 @@ export default function AuthPortal() {
             </div>
           </motion.div>
 
-          <h1 className="font-display italic lowercase text-7xl md:text-8xl text-aurora leading-[0.85] tracking-tight mb-4">
-            wireline
+          <h1 className="brand-wordmark text-6xl md:text-7xl leading-[0.85] mb-4">
+            WIRELINE
           </h1>
           <p className="text-[10px] md:text-xs uppercase tracking-[0.55em] text-muted">
-            Aurora Relay · Omnichannel Fleet
+            AI Voice Platform
           </p>
         </div>
 
@@ -230,9 +230,8 @@ export default function AuthPortal() {
         <div className="mt-10 flex flex-col items-center gap-3 text-muted/60">
           <div className="flex items-center gap-3">
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span className="text-[10px] uppercase tracking-[0.45em]">RSA-4096 · End-to-End Relay</span>
+            <span className="text-[10px] uppercase tracking-[0.45em]">TLS Encrypted · Secured by Supabase</span>
           </div>
-          <p className="text-[9px] uppercase tracking-[0.55em]">Powered by Claude Design</p>
         </div>
       </motion.div>
     </div>

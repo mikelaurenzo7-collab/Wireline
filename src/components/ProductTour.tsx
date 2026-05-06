@@ -16,7 +16,7 @@ interface TourStep {
 const TOUR_STEPS: TourStep[] = [
   {
     id: "welcome",
-    title: "Welcome to Wireline",
+    title: "Welcome to WIRELINE",
     body: "You're about to deploy AI voice + email agents that work 24/7. This quick tour shows you where everything lives.",
     anchor: null,
     cta: "Start tour",

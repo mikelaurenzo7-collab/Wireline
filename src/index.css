@@ -233,6 +233,20 @@
   animation: aurora-pan 14s ease-in-out infinite;
 }
 
+.brand-wordmark {
+  @apply font-display uppercase font-normal;
+  letter-spacing: 0.14em;
+  text-rendering: geometricPrecision;
+  background: linear-gradient(120deg, #7DF9FF 0%, #C58BFF 45%, #FF6BD9 100%);
+  background-size: 220% 220%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: aurora-pan 12s ease-in-out infinite;
+  filter: drop-shadow(0 0 18px rgba(125, 249, 255, 0.28));
+}
+
 /* Iridescent border via mask trick */
 .aurora-ring {
   position: relative;

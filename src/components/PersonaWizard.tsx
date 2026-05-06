@@ -215,7 +215,7 @@ export default function PersonaWizard() {
 
       setVisible(false);
       navigate(route);
-      toastSuccess("Welcome to Wireline!", "Your experience is personalized.");
+      toastSuccess("Welcome to WIRELINE!", "Your experience is personalized.");
     } catch {
       toastError("Could not save preferences", "Please try again.");
     } finally {

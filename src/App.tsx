@@ -1,6 +1,6 @@
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from "react-router-dom";
-import { Phone, Users, Settings, Activity, MessageSquare, Calendar, PhoneOutgoing, ServerCog, PlugZap, History, Mail, Menu, X, LogOut, User, Terminal, ChevronRight, Zap, Target, Shield, Signal, Globe, Box, LayoutPanelLeft, Database, Command, Sparkles, Waves, Inbox, BarChart3, Loader2, AlertTriangle, PhoneCall, Radio, Keyboard } from "lucide-react";
+import { Phone, Users, Settings, Activity, MessageSquare, Calendar, PhoneOutgoing, ServerCog, PlugZap, History, Mail, Menu, X, LogOut, User, Terminal, ChevronRight, ChevronDown, Zap, Target, Shield, Signal, Globe, Box, LayoutPanelLeft, Database, Command, Sparkles, Waves, Inbox, BarChart3, Loader2, AlertTriangle, PhoneCall, Radio, Keyboard } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import AuthPortal from "./components/AuthPortal";
 import CommandBar from "./components/CommandBar";
@@ -42,34 +42,25 @@ type NavItem = {
   dataTour?: string;
 };
 
-type NavGroup = { group: string; items: NavItem[] };
+const NAV_PRIMARY: NavItem[] = [
+  { label: "Dashboard",    path: "/", icon: Activity, dataTour: "dashboard" },
+  { label: "Live Monitor", path: "/live", icon: Radio },
+  { label: "Triage",       path: "/triage", icon: Inbox },
+  { label: "Insights",     path: "/insights", icon: BarChart3, dataTour: "insights" },
+  { label: "Agents",       path: "/agents", icon: Users, dataTour: "agents" },
+  { label: "Training",     path: "/train", icon: MessageSquare, dataTour: "training" },
+];
 
-const NAV_ITEMS: NavGroup[] = [
-  { group: "Overview", items: [
-    { label: "Dashboard",    path: "/", icon: Activity, dataTour: "dashboard" },
-    { label: "Live Monitor", path: "/live", icon: Radio },
-    { label: "Triage",       path: "/triage", icon: Inbox },
-    { label: "Insights",     path: "/insights", icon: BarChart3, dataTour: "insights" },
-  ]},
-  { group: "Communications", items: [
-    { label: "Call Logs",    path: "/logs", icon: History },
-    { label: "Email",        path: "/inbox", icon: Mail },
-    { label: "Outbound",     path: "/outbound", icon: PhoneOutgoing },
-    { label: "Appointments", path: "/appointments", icon: Calendar },
-  ]},
-  { group: "Intelligence", items: [
-    { label: "Training",     path: "/train", icon: MessageSquare, dataTour: "training" },
-    { label: "Knowledge",    path: "/knowledge", icon: Database },
-    { label: "Agents",       path: "/agents", icon: Users, dataTour: "agents" },
-  ]},
-  { group: "Admin", items: [
-    { label: "Integrations", path: "/integrations", icon: PlugZap },
-    { label: "Settings",     path: "/admin", icon: ServerCog },
-  ]},
-  { group: "Compliance", items: [
-    { label: "DNC List",     path: "/dnc", icon: Shield },
-    { label: "Audit Log",    path: "/audit", icon: Shield },
-  ]},
+const NAV_SECONDARY: NavItem[] = [
+  { label: "Call Logs",    path: "/logs", icon: History },
+  { label: "Outbound",     path: "/outbound", icon: PhoneOutgoing },
+  { label: "Email",        path: "/inbox", icon: Mail },
+  { label: "Appointments", path: "/appointments", icon: Calendar },
+  { label: "Knowledge",    path: "/knowledge", icon: Database },
+  { label: "Integrations", path: "/integrations", icon: PlugZap },
+  { label: "Settings",     path: "/admin", icon: ServerCog },
+  { label: "DNC List",     path: "/dnc", icon: Shield },
+  { label: "Audit Log",    path: "/audit", icon: Shield },
 ];
 
 function AuroraBackdrop() {
@@ -102,6 +93,7 @@ function Sidebar({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const isActive = (path: string) => location.pathname === path;
+  const [showMoreNav, setShowMoreNav] = useState(false);
 
   // Live badge counts — poll a lightweight endpoint every 2 minutes.
   const [navBadges, setNavBadges] = useState<Record<string, number>>({});
@@ -123,6 +115,55 @@ function Sidebar({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (
     const interval = setInterval(fetchCounts, 120_000);
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
+
+  useEffect(() => {
+    if (NAV_SECONDARY.some((item) => item.path === location.pathname)) {
+      setShowMoreNav(true);
+    }
+  }, [location.pathname]);
+
+  const renderNavItem = (item: NavItem) => {
+    const active = isActive(item.path);
+    return (
+      <Link
+        key={item.label}
+        to={item.path}
+        onClick={() => setOpen(false)}
+        {...(item.dataTour ? { "data-tour": item.dataTour } : {})}
+        className={cn(
+          "group relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all overflow-hidden",
+          active
+            ? "text-paper"
+            : "text-ink/70 hover:text-ink hover:bg-white/5"
+        )}
+      >
+        {active && (
+          <motion.div
+            layoutId="nav-active"
+            className="absolute inset-0 rounded-lg"
+            style={{
+              background: "linear-gradient(135deg, #7DF9FF 0%, #C58BFF 60%, #FF6BD9 100%)",
+              boxShadow: "0 6px 20px -10px rgba(125,249,255,0.55), 0 0 0 1px rgba(255,255,255,0.20) inset"
+            }}
+            transition={{ type: "spring", stiffness: 400, damping: 35 }}
+          />
+        )}
+        <item.icon className={cn("w-4 h-4 relative z-10 transition-transform shrink-0", active ? "" : "group-hover:translate-x-0.5")} strokeWidth={active ? 2.5 : 1.75} />
+        <span className={cn("text-[12px] lowercase tracking-wide relative z-10 truncate flex-1", active ? "font-medium" : "font-normal")}>
+          {item.label}
+        </span>
+        {(navBadges[item.path] ?? 0) > 0 && (
+          <span className={cn(
+            "relative z-10 shrink-0 px-1.5 py-0.5 rounded-full text-[9px] font-mono leading-none",
+            active ? "bg-white/20 text-paper" : "bg-brand/15 text-brand"
+          )}>
+            {navBadges[item.path]}
+          </span>
+        )}
+        {active && <ChevronRight className="ml-auto w-3.5 h-3.5 relative z-10 shrink-0" />}
+      </Link>
+    );
+  };
 
   return (
     <>
@@ -161,7 +202,7 @@ function Sidebar({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/35 to-transparent" />
               </motion.div>
               <div className="flex flex-col min-w-0">
-                <span className="font-display italic lowercase text-xl text-ink leading-none tracking-tight truncate">wireline</span>
+                <span className="brand-wordmark text-xl leading-none truncate">WIRELINE</span>
                 <span className="text-[8px] tracking-[0.42em] uppercase text-muted mt-1 flex items-center gap-1.5">
                   <span className="w-1 h-1 rounded-full bg-brand indicator-glow" />
                   AI Voice Platform
@@ -200,60 +241,46 @@ function Sidebar({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-2 mt-4 overflow-y-auto pb-3 scrollbar-hide space-y-4 min-h-0">
-            {NAV_ITEMS.map((group) => (
-              <div key={group.group}>
-                <h3 className="px-3 text-[8px] font-semibold uppercase tracking-[0.42em] text-muted/80 mb-2 flex items-center gap-2">
-                  <span className="h-px flex-1 bg-gradient-to-r from-white/0 via-white/20 to-white/0" />
-                  {group.group}
-                  <span className="h-px flex-1 bg-gradient-to-r from-white/0 via-white/20 to-white/0" />
-                </h3>
-                <div className="space-y-0.5">
-                  {group.items.map((item) => {
-                    const active = isActive(item.path);
-                    return (
-                      <Link
-                        key={item.label}
-                        to={item.path}
-                        onClick={() => setOpen(false)}
-                        {...(item.dataTour ? { "data-tour": item.dataTour } : {})}
-                        className={cn(
-                          "group relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all overflow-hidden",
-                          active
-                            ? "text-paper"
-                            : "text-ink/70 hover:text-ink hover:bg-white/5"
-                        )}
-                      >
-                        {active && (
-                          <motion.div
-                            layoutId="nav-active"
-                            className="absolute inset-0 rounded-lg"
-                            style={{
-                              background: "linear-gradient(135deg, #7DF9FF 0%, #C58BFF 60%, #FF6BD9 100%)",
-                              boxShadow: "0 6px 20px -10px rgba(125,249,255,0.55), 0 0 0 1px rgba(255,255,255,0.20) inset"
-                            }}
-                            transition={{ type: "spring", stiffness: 400, damping: 35 }}
-                          />
-                        )}
-                        <item.icon className={cn("w-4 h-4 relative z-10 transition-transform shrink-0", active ? "" : "group-hover:translate-x-0.5")} strokeWidth={active ? 2.5 : 1.75} />
-                        <span className={cn("text-[12px] lowercase tracking-wide relative z-10 truncate flex-1", active ? "font-medium" : "font-normal")}>
-                          {item.label}
-                        </span>
-                        {(navBadges[item.path] ?? 0) > 0 && (
-                          <span className={cn(
-                            "relative z-10 shrink-0 px-1.5 py-0.5 rounded-full text-[9px] font-mono leading-none",
-                            active ? "bg-white/20 text-paper" : "bg-brand/15 text-brand"
-                          )}>
-                            {navBadges[item.path]}
-                          </span>
-                        )}
-                        {active && <ChevronRight className="ml-auto w-3.5 h-3.5 relative z-10 shrink-0" />}
-                      </Link>
-                    );
-                  })}
-                </div>
+          <nav className="flex-1 px-2 mt-4 overflow-y-auto pb-3 space-y-4 min-h-0 pr-1" style={{ scrollbarWidth: "thin" }}>
+            <div>
+              <h3 className="px-3 text-[8px] font-semibold uppercase tracking-[0.42em] text-muted/80 mb-2 flex items-center gap-2">
+                <span className="h-px flex-1 bg-gradient-to-r from-white/0 via-white/20 to-white/0" />
+                Core
+                <span className="h-px flex-1 bg-gradient-to-r from-white/0 via-white/20 to-white/0" />
+              </h3>
+              <div className="space-y-0.5">
+                {NAV_PRIMARY.map(renderNavItem)}
               </div>
-            ))}
+            </div>
+
+            <div>
+              <button
+                onClick={() => setShowMoreNav((v) => !v)}
+                className="w-full px-3 mb-2 flex items-center gap-2 text-[8px] font-semibold uppercase tracking-[0.42em] text-muted/80 hover:text-ink transition-colors"
+                aria-expanded={showMoreNav}
+                aria-label="Toggle more navigation"
+              >
+                <span className="h-px flex-1 bg-gradient-to-r from-white/0 via-white/20 to-white/0" />
+                More
+                <motion.span animate={{ rotate: showMoreNav ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                  <ChevronDown className="w-3 h-3" />
+                </motion.span>
+                <span className="h-px flex-1 bg-gradient-to-r from-white/0 via-white/20 to-white/0" />
+              </button>
+
+              <AnimatePresence initial={false}>
+                {showMoreNav && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-0.5 overflow-hidden"
+                  >
+                    {NAV_SECONDARY.map(renderNavItem)}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </nav>
 
           {/* Footer */}
@@ -281,7 +308,7 @@ function Sidebar({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (
             </div>
             
             <div className="flex items-center justify-between text-[8px] uppercase tracking-[0.38em] text-muted/70">
-              <span className="font-display italic lowercase text-[11px] tracking-tight text-ink/70">wireline</span>
+              <span className="brand-wordmark text-[10px] tracking-[0.2em] opacity-85">WIRELINE</span>
               <span className="flex items-center gap-1.5">
                 <span className="w-1 h-1 rounded-full bg-emerald-500 indicator-glow" />
                 Stable
@@ -496,8 +523,8 @@ function AppContent() {
         </motion.div>
 
         <div className="space-y-4 relative z-10">
-          <h1 className="text-6xl md:text-8xl font-display italic lowercase text-aurora leading-[0.85] tracking-tight">
-            wireline
+          <h1 className="brand-wordmark text-5xl md:text-7xl leading-[0.85]">
+            WIRELINE
           </h1>
           <p className="text-[10px] uppercase tracking-[0.6em] text-muted">Initializing</p>
           <div className="flex items-center justify-center gap-1.5 pt-4">
@@ -544,7 +571,7 @@ function AppContent() {
               <div className="w-8 h-8 rounded-xl flex items-center justify-center shadow-lg" style={{ background: "linear-gradient(135deg, #7DF9FF, #C58BFF, #FF6BD9)" }}>
                 <Waves className="w-4 h-4 text-paper" strokeWidth={2.5} />
               </div>
-              <span className="font-display italic lowercase text-xl text-ink leading-none tracking-tight">wireline</span>
+              <span className="brand-wordmark text-xl leading-none">WIRELINE</span>
             </div>
             <button
               onClick={() => navigate('/admin')}
