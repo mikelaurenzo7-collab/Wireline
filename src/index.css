@@ -308,6 +308,16 @@
   animation: shimmer 2.4s linear infinite;
 }
 
+/* Skeleton sweep — translates a bright stripe across the element */
+@keyframes skeleton-sweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(250%);  }
+}
+
+.skeleton-shimmer {
+  animation: skeleton-sweep 1.8s ease-in-out infinite;
+}
+
 /* Soft glow ring for focused / selected items */
 .ring-aurora {
   box-shadow:

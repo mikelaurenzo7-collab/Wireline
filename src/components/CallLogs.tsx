@@ -11,6 +11,7 @@ import { authFetch } from "../lib/api";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import CsvExportButton from "./CsvExportButton";
 import PageShell, { Panel } from "./PageShell";
+import { PanelSkeleton } from "./Skeleton";
 
 export default function CallLogs() {
   const [calls, setCalls] = useState<any[]>([]);
@@ -124,10 +125,7 @@ export default function CallLogs() {
             }
           >
             {loading ? (
-              <div className="h-full flex flex-col items-center justify-center gap-3">
-                <Loader2 className="w-6 h-6 animate-spin text-brand" />
-                <span className="text-[9px] uppercase tracking-[0.4em] text-muted">Extracting</span>
-              </div>
+              <PanelSkeleton rows={8} />
             ) : filteredCalls.length === 0 ? (
               <div className="h-full flex items-center justify-center text-center px-4">
                 <p className="text-[9px] uppercase tracking-[0.5em] text-muted/60">No signals recorded</p>

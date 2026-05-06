@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  Radio, Phone, Clock, Bot, Loader2, RefreshCw,
+  Radio, Phone, Clock, Bot, RefreshCw,
   PhoneIncoming, PhoneOutgoing, Activity, Signal,
   Users, Zap, AlertCircle, PhoneOff, ChevronRight,
 } from "lucide-react";
@@ -47,6 +47,50 @@ function ElapsedTimer({ startedAt }: { startedAt: string }) {
   const m = Math.floor(secs / 60);
   const s = secs % 60;
   return <span className="tabular-nums font-mono">{m}:{String(s).padStart(2, "0")}</span>;
+}
+
+/** Real-time wall clock */
+function WallClock() {
+  const [time, setTime] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <span className="font-mono tabular-nums text-[10px] text-muted/70">
+      {time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+    </span>
+  );
+}
+
+/** Animated ring for an active call */
+function PulseRing({ size = 40 }: { size?: number }) {
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      {/* Outer animated ring 1 */}
+      <div
+        className="absolute rounded-full border border-emerald-400/40"
+        style={{
+          inset: -8,
+          animation: "ping 1.4s cubic-bezier(0,0,0.2,1) infinite",
+        }}
+      />
+      {/* Outer animated ring 2 (delayed) */}
+      <div
+        className="absolute rounded-full border border-emerald-400/20"
+        style={{
+          inset: -14,
+          animation: "ping 1.4s cubic-bezier(0,0,0.2,1) 0.5s infinite",
+        }}
+      />
+      {/* Core icon */}
+      <div
+        className="w-full h-full rounded-xl glass border border-emerald-500/40 flex items-center justify-center text-emerald-400"
+      >
+        <Phone className="w-4 h-4" />
+      </div>
+    </div>
+  );
 }
 
 export default function LiveMonitor() {
@@ -98,8 +142,11 @@ export default function LiveMonitor() {
       actions={
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full glass border border-white/10 text-[9px] uppercase tracking-[0.3em] text-muted/70">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Live · {lastRefresh.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
+            </span>
+            Live · <WallClock />
           </div>
           <button
             onClick={fetchData}
@@ -112,9 +159,22 @@ export default function LiveMonitor() {
       }
     >
       {loading ? (
-        <div className="h-full flex flex-col items-center justify-center gap-3">
-          <Loader2 className="w-6 h-6 animate-spin text-brand" />
-          <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">Loading…</span>
+        <div className="h-full flex flex-col items-center justify-center gap-4">
+          <div className="relative w-14 h-14">
+            <div
+              className="absolute inset-0 rounded-full opacity-40"
+              style={{
+                background: "conic-gradient(from 0deg, #7DF9FF, #C58BFF, #FF6BD9, #4DFFC4, #7DF9FF)",
+                filter: "blur(1px)",
+                animation: "spin 2s linear infinite",
+              }}
+            />
+            <div className="absolute inset-1.5 rounded-full bg-paper" />
+            <div className="absolute inset-3 rounded-full glass flex items-center justify-center">
+              <Radio className="w-4 h-4 text-brand animate-pulse" />
+            </div>
+          </div>
+          <p className="text-[9px] uppercase tracking-[0.5em] text-muted/60">Establishing connection…</p>
         </div>
       ) : (
         <div className="h-full flex flex-col gap-3 overflow-hidden">
@@ -150,13 +210,23 @@ export default function LiveMonitor() {
                       initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                       className="h-full min-h-[200px] flex flex-col items-center justify-center gap-4 text-center px-6 py-12"
                     >
-                      <div className="w-16 h-16 rounded-2xl glass border border-white/10 flex items-center justify-center">
-                        <PhoneOff className="w-7 h-7 text-muted/50" />
+                      {/* Animated idle rings */}
+                      <div className="relative w-16 h-16">
+                        <div
+                          className="absolute inset-0 rounded-2xl opacity-15"
+                          style={{
+                            background: "linear-gradient(135deg, #7DF9FF, #C58BFF)",
+                            animation: "pulse 3s ease-in-out infinite",
+                          }}
+                        />
+                        <div className="w-full h-full rounded-2xl glass border border-white/10 flex items-center justify-center">
+                          <PhoneOff className="w-7 h-7 text-muted/40" />
+                        </div>
                       </div>
                       <div className="space-y-1.5">
-                        <h3 className="font-display italic lowercase text-2xl text-ink">No active calls</h3>
-                        <p className="text-[10px] uppercase tracking-[0.4em] text-muted/60 max-w-xs">
-                          No active calls at this moment. The monitor updates every 10 seconds.
+                        <h3 className="font-display italic lowercase text-2xl text-ink/70">Idle</h3>
+                        <p className="text-[9px] uppercase tracking-[0.4em] text-muted/50 max-w-[180px]">
+                          No active calls right now
                         </p>
                       </div>
                     </motion.div>
@@ -169,40 +239,35 @@ export default function LiveMonitor() {
                           initial={{ opacity: 0, x: -8 }}
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: 8 }}
-                          className="px-4 py-3.5 hover:bg-white/3 transition-colors"
+                          className="px-4 py-4 hover:bg-white/[0.02] transition-colors"
                         >
-                          <div className="flex items-center gap-3">
-                            {/* Live dot */}
-                            <div className="relative shrink-0">
-                              <div className="w-10 h-10 rounded-xl glass border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                                <Phone className="w-4 h-4" />
-                              </div>
-                              <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-paper animate-pulse" />
-                            </div>
+                          <div className="flex items-center gap-3.5">
+                            {/* Pulse ring avatar */}
+                            <PulseRing />
 
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-0.5">
                                 <span className="font-display italic text-base text-ink leading-none">
                                   {sig.customer_number || "Unknown"}
                                 </span>
-                                <span className="text-[9px] uppercase tracking-[0.3em] text-muted/60">
+                                <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[8px] uppercase tracking-[0.3em] text-emerald-400">
                                   {sig.label || sig.status}
                                 </span>
                               </div>
-                              <div className="flex items-center gap-3 text-[10px] text-muted/70">
+                              <div className="flex items-center gap-3 text-[9px] text-muted/60 mt-0.5">
                                 <span className="inline-flex items-center gap-1">
-                                  <Bot className="w-3 h-3 text-brand" />
+                                  <Bot className="w-2.5 h-2.5 text-brand" />
                                   {agentName(sig.agent_id)}
                                 </span>
+                                <span className="uppercase tracking-[0.25em]">{sig.type}</span>
                               </div>
                             </div>
 
                             <div className="shrink-0 text-right">
-                              <div className="text-[10px] text-emerald-400 flex items-center gap-1.5">
+                              <div className="text-[11px] text-emerald-400 flex items-center gap-1.5 font-mono tabular-nums">
                                 <Clock className="w-3 h-3" />
                                 <ElapsedTimer startedAt={sig.started_at} />
                               </div>
-                              <div className="text-[9px] text-muted/60 uppercase tracking-[0.3em] mt-0.5">{sig.type}</div>
                             </div>
                           </div>
                         </motion.div>
