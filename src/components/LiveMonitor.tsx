@@ -239,20 +239,20 @@ export default function LiveMonitor() {
                           initial={{ opacity: 0, x: -8 }}
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: 8 }}
-                          className="px-4 py-4 hover:bg-white/[0.02] transition-colors"
+                          className="relative px-4 py-4 hover:bg-white/[0.03] transition-colors overflow-hidden"
                         >
-                          <div className="flex items-center gap-3.5">
-                            {/* Pulse ring avatar */}
+                          {/* Green ambient glow for active call */}
+                          <div className="absolute -left-4 top-0 bottom-0 w-1 rounded-r-full bg-emerald-400"
+                            style={{ boxShadow: "0 0 16px rgba(52,211,153,0.8)" }}
+                          />
+                          <div className="flex items-center gap-3.5 pl-2">
                             <PulseRing />
-
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-0.5">
                                 <span className="font-display italic text-base text-ink leading-none">
                                   {sig.customer_number || "Unknown"}
                                 </span>
-                                <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[8px] uppercase tracking-[0.3em] text-emerald-400">
-                                  {sig.label || sig.status}
-                                </span>
+                                <span className="badge-aurora">{sig.label || sig.status}</span>
                               </div>
                               <div className="flex items-center gap-3 text-[9px] text-muted/60 mt-0.5">
                                 <span className="inline-flex items-center gap-1">
@@ -262,7 +262,6 @@ export default function LiveMonitor() {
                                 <span className="uppercase tracking-[0.25em]">{sig.type}</span>
                               </div>
                             </div>
-
                             <div className="shrink-0 text-right">
                               <div className="text-[11px] text-emerald-400 flex items-center gap-1.5 font-mono tabular-nums">
                                 <Clock className="w-3 h-3" />

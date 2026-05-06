@@ -301,8 +301,7 @@ export default function AuthPortal() {
                       required
                       value={email}
                       onChange={e => setEmail(e.target.value)}
-                      className="w-full h-13 px-5 rounded-xl bg-black/30 border border-white/10 outline-none text-ink text-sm placeholder:text-muted/40 focus:border-brand/60 focus:bg-black/40 transition-all tracking-wide"
-                      style={{ height: "52px" }}
+                      className="auth-input"
                       placeholder="operator@company.io"
                     />
                     <div
@@ -324,8 +323,7 @@ export default function AuthPortal() {
                       required
                       value={password}
                       onChange={e => setPassword(e.target.value)}
-                      className="w-full px-5 rounded-xl bg-black/30 border border-white/10 outline-none text-ink text-sm placeholder:text-muted/40 focus:border-brand/60 focus:bg-black/40 transition-all tracking-[0.32em]"
-                      style={{ height: "52px" }}
+                      className="auth-input tracking-[0.32em]"
                       placeholder="••••••••••••"
                     />
                     <div

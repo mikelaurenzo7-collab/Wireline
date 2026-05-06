@@ -152,44 +152,77 @@ export default function CallLogs() {
                       onClick={() => setSelectedCall(call)}
                       aria-label={`Open signal from ${call.customer_number || "Sim Test"}: ${call.summary || "no summary"}`}
                       className={cn(
-                        "w-full text-left flex items-center gap-3 px-3 py-2.5 hover:bg-white/3 transition-all",
-                        selectedCall?.id === call.id && "bg-brand/8 ring-1 ring-inset ring-brand/30"
+                        "group w-full text-left flex items-center gap-3 px-3 py-3 transition-all relative",
+                        selectedCall?.id === call.id
+                          ? "bg-brand/8"
+                          : "hover:bg-white/3"
                       )}
                     >
+                      {/* Active indicator bar */}
+                      {selectedCall?.id === call.id && (
+                        <div className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full"
+                          style={{ background: "linear-gradient(to bottom, #7DF9FF, #C58BFF, #FF6BD9)" }}
+                        />
+                      )}
+
+                      {/* Direction icon */}
                       <div className={cn(
-                        "w-9 h-9 rounded-xl glass border flex items-center justify-center shrink-0",
-                        call.direction === 'inbound' ? "border-brand/30 text-brand" : "border-brand-2/30 text-brand-2"
+                        "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border transition-all",
+                        call.direction === "inbound"
+                          ? "bg-brand/8 border-brand/25 text-brand"
+                          : "bg-brand-2/8 border-brand-2/25 text-brand-2",
+                        selectedCall?.id === call.id && "scale-105"
                       )}>
-                        {call.direction === 'inbound' ? <PhoneIncoming className="w-4 h-4" /> : <PhoneOutgoing className="w-4 h-4" />}
+                        {call.direction === "inbound"
+                          ? <PhoneIncoming className="w-4 h-4" />
+                          : <PhoneOutgoing className="w-4 h-4" />}
                       </div>
+
+                      {/* Content */}
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span className="font-display italic text-sm text-ink truncate">{call.customer_number || "Sim Test"}</span>
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <span className="font-display italic text-sm text-ink truncate">
+                            {call.customer_number || "Sim Test"}
+                          </span>
+                          {/* Lead score badge */}
                           <span className={cn(
-                            "px-1.5 py-0 rounded-full text-[8px] font-mono leading-tight shrink-0",
-                            (call.lead_score || 0) >= 80 ? "bg-rose-500/15 text-rose-500" :
-                            (call.lead_score || 0) >= 50 ? "bg-brand/15 text-brand" :
-                            "bg-white/5 text-muted"
+                            "shrink-0 px-1.5 py-0 rounded-full text-[8px] font-mono leading-tight",
+                            (call.lead_score || 0) >= 80
+                              ? "bg-rose-500/15 text-rose-400 border border-rose-500/25"
+                              : (call.lead_score || 0) >= 50
+                              ? "bg-brand/12 text-brand border border-brand/20"
+                              : "bg-white/5 text-muted/60"
                           )}>
                             {call.lead_score || 0}
                           </span>
+                          {/* QA score badge */}
                           {call.qa_score != null && (
                             <span className={cn(
-                              "px-1.5 py-0 rounded-full text-[8px] font-mono leading-tight shrink-0 border",
-                              call.qa_score >= 75 ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" :
-                              call.qa_score >= 50 ? "bg-amber-500/10 text-amber-400 border-amber-500/20" :
-                              "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                              "shrink-0 px-1.5 py-0 rounded-full text-[8px] font-mono leading-tight border",
+                              call.qa_score >= 75
+                                ? "bg-emerald-500/8 text-emerald-400 border-emerald-500/20"
+                                : call.qa_score >= 50
+                                ? "bg-amber-500/8 text-amber-400 border-amber-500/20"
+                                : "bg-rose-500/8 text-rose-400 border-rose-500/20"
                             )}>
                               ★{call.qa_score}
                             </span>
                           )}
                           <SentimentDot sentiment={call.sentiment} />
                         </div>
-                        <p className="text-[10px] text-muted truncate leading-tight">{call.summary || "Decoding…"}</p>
+                        <p className="text-[10px] text-muted/70 truncate leading-tight">
+                          {call.summary || "Decoding…"}
+                        </p>
                       </div>
+
+                      {/* Date/time */}
                       <div className="text-right shrink-0">
-                        <div className="text-[9px] text-muted">{new Date(call.created_at).toLocaleDateString()}</div>
-                        <div className="text-[8px] text-muted/60 uppercase tracking-[0.22em]">{new Date(call.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                        <div className="text-[9px] text-muted/80">
+                          {new Date(call.created_at).toLocaleDateString()}
+                        </div>
+                        <div className="text-[8px] text-muted/50 uppercase tracking-[0.2em]">
+                          {new Date(call.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </div>
                       </div>
                     </button>
                   </li>
@@ -203,8 +236,16 @@ export default function CallLogs() {
         <div className="col-span-12 lg:col-span-7 xl:col-span-8 h-full">
           {selectedCall ? <CallDetail call={selectedCall} formatDuration={formatDuration} /> : (
             <Panel title="Call Detail" hint="Select a call" icon={FileText}>
-              <div className="h-full flex items-center justify-center text-muted/60 text-[10px] uppercase tracking-[0.5em]">
-                Select a call to view details
+              <div className="h-full flex flex-col items-center justify-center gap-4 text-center">
+                <div className="w-16 h-16 rounded-2xl glass border border-white/10 flex items-center justify-center">
+                  <FileText className="w-8 h-8 text-muted/30" />
+                </div>
+                <div>
+                  <p className="text-sm font-display italic text-ink/60 mb-1">No call selected</p>
+                  <p className="text-[10px] text-muted/50 leading-relaxed max-w-[200px]">
+                    Click any call on the left to view the full transcript, summary, and QA analysis.
+                  </p>
+                </div>
               </div>
             </Panel>
           )}

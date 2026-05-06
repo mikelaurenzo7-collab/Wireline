@@ -488,28 +488,30 @@ export default function KnowledgeBaseManager() {
               const isSelected = selected.has(row.id);
               return (
                 <div key={row.id} className={cn(
-                  "px-6 py-4 flex items-start gap-4 transition-colors",
-                  isSelected ? "bg-brand/5" : "hover:bg-white/3",
+                  "px-6 py-4 flex items-start gap-4 transition-all group",
+                  isSelected ? "bg-brand/5 border-l-2 border-brand/40" : "hover:bg-white/3",
                 )}>
+                  {/* Checkbox */}
                   <button
                     onClick={() => toggleSelect(row.id)}
                     className={cn(
                       "shrink-0 mt-1 w-4 h-4 rounded border-2 flex items-center justify-center transition-all",
-                      isSelected ? "bg-brand border-brand text-paper" : "border-white/30 hover:border-white/50",
+                      isSelected ? "bg-brand border-brand text-paper" : "border-white/20 hover:border-white/50",
                     )}
                   >
                     {isSelected && <Check className="w-2.5 h-2.5" strokeWidth={4} />}
                   </button>
 
+                  {/* Content */}
                   <div className="flex-1 min-w-0 space-y-2">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[10px] uppercase tracking-[0.3em] px-2 py-0.5 rounded-full bg-brand-2/10 border border-brand-2/30 text-brand-2 flex items-center gap-1">
+                      <span className="inline-flex items-center gap-1 text-[9px] uppercase tracking-[0.28em] px-2 py-0.5 rounded-full bg-brand-2/10 border border-brand-2/25 text-brand-2">
                         <Sparkles className="w-2.5 h-2.5" /> {row.agent_name}
                       </span>
                       {row.agent_archetype && (
-                        <span className="text-[9px] uppercase tracking-[0.3em] text-muted">{row.agent_archetype}</span>
+                        <span className="text-[8px] uppercase tracking-[0.3em] text-muted/60">{row.agent_archetype}</span>
                       )}
-                      <span className="text-[9px] uppercase tracking-[0.3em] text-muted ml-auto">
+                      <span className="text-[8px] uppercase tracking-[0.28em] text-muted/50 ml-auto">
                         {new Date(row.created_at).toLocaleDateString()}
                       </span>
                     </div>
@@ -523,24 +525,28 @@ export default function KnowledgeBaseManager() {
                         className="w-full px-4 py-3 rounded-xl bg-black/30 border border-brand/40 outline-none text-ink text-sm leading-relaxed focus:border-brand resize-y font-mono"
                       />
                     ) : (
-                      <p className="text-ink/85 text-sm leading-relaxed whitespace-pre-wrap">{row.content}</p>
+                      <p className="text-ink/80 text-sm leading-relaxed whitespace-pre-wrap
+                                   group-hover:text-ink/90 transition-colors">
+                        {row.content}
+                      </p>
                     )}
                   </div>
 
-                  <div className="shrink-0 flex items-center gap-1.5">
+                  {/* Actions */}
+                  <div className="shrink-0 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                     {isEditing ? (
                       <>
                         <button
                           onClick={saveEdit}
                           disabled={savingId === editing!.id || !editing!.draft.trim()}
-                          className="h-9 px-3 rounded-lg bg-brand text-paper text-[10px] uppercase tracking-[0.25em] flex items-center gap-1.5 disabled:opacity-50"
+                          className="h-8 px-3 rounded-lg bg-brand text-paper text-[9px] uppercase tracking-[0.25em] flex items-center gap-1.5 disabled:opacity-50 hover:opacity-90"
                         >
-                          {savingId === editing!.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                          {savingId === editing!.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
                           Save
                         </button>
                         <button
                           onClick={cancelEdit}
-                          className="h-9 px-3 rounded-lg glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-ink/70 hover:text-ink"
+                          className="h-8 w-8 rounded-lg glass border border-white/10 flex items-center justify-center text-ink/70 hover:text-ink"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
@@ -549,7 +555,7 @@ export default function KnowledgeBaseManager() {
                       <>
                         <button
                           onClick={() => startEdit(row)}
-                          className="h-9 px-3 rounded-lg glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-ink/70 hover:text-brand hover:border-brand/40 flex items-center gap-1.5"
+                          className="h-8 px-3 rounded-lg glass border border-white/10 text-[9px] uppercase tracking-[0.25em] text-ink/60 hover:text-brand hover:border-brand/35 flex items-center gap-1.5"
                         >
                           <Pencil className="w-3 h-3" /> Edit
                         </button>
@@ -558,14 +564,14 @@ export default function KnowledgeBaseManager() {
                             <button
                               onClick={() => removeOne(row.id)}
                               disabled={savingId === row.id}
-                              className="h-9 px-3 rounded-lg bg-rose-500/15 border border-rose-500/40 text-rose-300 text-[10px] uppercase tracking-[0.25em] flex items-center gap-1.5 disabled:opacity-50"
+                              className="h-8 px-3 rounded-lg bg-rose-500/15 border border-rose-500/35 text-rose-400 text-[9px] uppercase tracking-[0.25em] flex items-center gap-1.5 disabled:opacity-50"
                             >
-                              {savingId === row.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                              {savingId === row.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
                               Confirm
                             </button>
                             <button
                               onClick={() => setConfirmDelete(null)}
-                              className="h-9 px-3 rounded-lg glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-ink/70"
+                              className="h-8 px-2 rounded-lg glass border border-white/10 text-[9px] uppercase tracking-[0.25em] text-ink/60"
                             >
                               Cancel
                             </button>
@@ -573,7 +579,7 @@ export default function KnowledgeBaseManager() {
                         ) : (
                           <button
                             onClick={() => setConfirmDelete(row.id)}
-                            className="h-9 w-9 rounded-lg glass border border-white/10 text-ink/70 hover:text-rose-300 hover:border-rose-500/40 flex items-center justify-center"
+                            className="h-8 w-8 rounded-lg glass border border-white/10 text-ink/40 hover:text-rose-400 hover:border-rose-500/30 flex items-center justify-center"
                             title="Delete"
                           >
                             <Trash2 className="w-3.5 h-3.5" />

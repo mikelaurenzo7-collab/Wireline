@@ -551,3 +551,53 @@ select:focus {
   to   { opacity: 1; transform: translateY(0)   scale(1); }
 }
 .animate-count-up { animation: count-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+/* ─────────────────────────  PAGE TITLE GLOW  ────────────────────────── */
+
+/* Large display headings with the aurora gradient */
+.page-title-aurora {
+  background: linear-gradient(120deg, #F2F1FF 0%, #C58BFF 50%, #7DF9FF 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: aurora-pan 16s ease-in-out infinite;
+}
+
+/* Panel header gradient decoration bar */
+.panel-header-rule {
+  height: 1px;
+  background: linear-gradient(90deg, rgba(125,249,255,0.5) 0%, rgba(197,139,255,0.5) 50%, transparent 100%);
+}
+
+/* Auth form input — tall, dark, branded */
+.auth-input {
+  @apply w-full px-5 rounded-xl bg-black/30 border border-white/10 outline-none
+         text-ink text-sm placeholder:text-muted/40 focus:border-brand/60
+         focus:bg-black/40 transition-all;
+  height: 52px;
+}
+
+/* Empty state helper */
+.empty-state-icon {
+  @apply w-16 h-16 rounded-2xl flex items-center justify-center mx-auto;
+  background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+/* Segmented control / tab-toggle surface */
+.tab-toggle-surface {
+  @apply relative flex p-1 rounded-2xl;
+  background: rgba(0, 0, 0, 0.30);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Gradient accent chip / tag */
+.chip-brand {
+  background: linear-gradient(135deg, rgba(125,249,255,0.15), rgba(197,139,255,0.15));
+  border: 1px solid rgba(125,249,255,0.30);
+  color: #7DF9FF;
+  @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.32em] leading-none font-medium;
+}
+

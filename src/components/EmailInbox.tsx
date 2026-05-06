@@ -181,9 +181,9 @@ export default function EmailInbox() {
                   const score = thread.lead_score || 0;
                   const active = selectedThread?.id === thread.id;
                   const scoreTone =
-                    score >= 80 ? "bg-rose-500/15 text-rose-500 border-rose-500/30" :
-                    score >= 50 ? "bg-brand/15 text-brand border-brand/30" :
-                    "bg-white/5 text-muted border-white/10";
+                    score >= 80 ? "bg-rose-500/12 text-rose-400 border-rose-500/25" :
+                    score >= 50 ? "bg-brand/12 text-brand border-brand/25" :
+                    "bg-white/4 text-muted/60 border-white/8";
                   return (
                     <motion.button
                       layout
@@ -192,32 +192,48 @@ export default function EmailInbox() {
                       key={thread.id}
                       onClick={() => setSelectedThread(thread)}
                       className={cn(
-                        "w-full px-4 py-3 text-left transition-colors flex gap-3 items-start",
-                        active ? "bg-white/5" : "hover:bg-white/3"
+                        "group w-full px-4 py-3.5 text-left transition-all flex gap-3 items-start relative",
+                        active
+                          ? "bg-brand/6"
+                          : "hover:bg-white/3"
                       )}
                     >
+                      {/* Active bar */}
+                      {active && (
+                        <div className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full"
+                          style={{ background: "linear-gradient(to bottom, #7DF9FF, #C58BFF)" }}
+                        />
+                      )}
+
+                      {/* Avatar */}
                       <div className={cn(
-                        "w-9 h-9 rounded-lg glass border flex items-center justify-center font-display italic text-base shrink-0",
-                        active ? "border-brand/40 text-brand" : "border-white/10 text-ink/70"
+                        "w-9 h-9 rounded-xl flex items-center justify-center font-display italic text-base shrink-0 border transition-all",
+                        active
+                          ? "border-brand/30 bg-brand/10 text-brand"
+                          : "border-white/10 bg-white/4 text-ink/70 group-hover:text-ink"
                       )}>
                         {thread.customer_email?.[0]?.toUpperCase() || "?"}
                       </div>
+
+                      {/* Content */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2 mb-0.5">
-                          <span className="text-[9px] uppercase tracking-[0.25em] text-muted/70 truncate">{thread.customer_email}</span>
-                          <span className="text-[9px] tabular-nums text-muted/60 shrink-0">
+                          <span className="text-[9px] uppercase tracking-[0.24em] text-muted/60 truncate">
+                            {thread.customer_email}
+                          </span>
+                          <span className="text-[8px] tabular-nums text-muted/50 shrink-0">
                             {new Date(thread.last_message_at).toLocaleDateString()}
                           </span>
                         </div>
-                        <h4 className="font-display italic text-base text-ink leading-tight truncate mb-1">
+                        <h4 className="font-display italic text-sm text-ink leading-tight truncate mb-1">
                           {thread.subject || "(no subject)"}
                         </h4>
                         <div className="flex items-center gap-2">
-                          <p className="text-[10px] text-muted/80 truncate flex-1">
-                            {thread.summary || "Pending analysis"}
+                          <p className="text-[10px] text-muted/70 truncate flex-1">
+                            {thread.summary || "Pending analysis…"}
                           </p>
                           <span className={cn(
-                            "shrink-0 px-1.5 py-0.5 rounded-full border text-[9px] uppercase tracking-[0.2em] tabular-nums",
+                            "shrink-0 px-1.5 py-0.5 rounded-full border text-[8px] font-mono",
                             scoreTone
                           )}>
                             {score}%
