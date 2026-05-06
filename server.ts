@@ -481,6 +481,36 @@ async function emailRateLimiter(req: any, res: any, next: any) {
 // Apply performance monitoring to critical API paths
 app.use("/api", performanceMonitoring(2000));
 
+// Request timeout middleware — prevents hung requests from accumulating connections
+function timeoutMiddleware(timeoutMs: number) {
+  return (req: any, res: any, next: any) => {
+    const timer = setTimeout(() => {
+      if (!res.headersSent) {
+        const endpoint = req.originalUrl || req.path;
+        log.warn("Request timeout", { endpoint, timeoutMs, method: req.method });
+        SentryEvents.slowOperation({
+          operation: `${req.method} ${endpoint}`,
+          duration_ms: timeoutMs,
+          threshold_ms: timeoutMs,
+        });
+        res.status(504).json({ error: "Request timeout — operation took too long", code: "REQUEST_TIMEOUT" });
+      }
+      res.socket?.destroy();
+    }, timeoutMs);
+
+    res.on('finish', () => clearTimeout(timer));
+    res.on('close', () => clearTimeout(timer));
+    next();
+  };
+}
+
+// Apply different timeouts per endpoint category
+app.use("/api/claude", timeoutMiddleware(30_000)); // 30s for Claude API calls
+app.use("/api/emails", timeoutMiddleware(15_000)); // 15s for email operations
+app.use("/api/phone-numbers", timeoutMiddleware(10_000)); // 10s for phone provisioning
+app.use("/api/campaigns", timeoutMiddleware(10_000)); // 10s for campaign operations
+app.use("/api", timeoutMiddleware(20_000)); // 20s default for other endpoints
+
 app.use("/api/claude", (req: any, res: any, next: any) => {
   // Status endpoint is exempt — used by clients to probe availability.
   if (req.path === "/status") return next();
