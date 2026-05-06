@@ -4886,18 +4886,46 @@ app.get("/api/user-preferences", authenticateUser, async (req: any, res: any) =>
 
 app.post("/api/user-preferences", authenticateUser, async (req: any, res: any) => {
   try {
+    // SECURITY: previously spread req.body wholesale. Because spread came
+    // AFTER `user_id: req.user.id`, a request body containing `user_id`
+    // could overwrite the authenticated user's id and impersonate another
+    // user. We now whitelist allowed fields and never trust the body's
+    // user_id / created_at.
+    const ALLOWED_FIELDS = [
+      'persona',
+      'tour_completed',
+      'onboarding_completed',
+      'help_enabled',
+      'keyboard_shortcuts_enabled',
+      'preferences',
+    ] as const;
+
+    const updates: Record<string, unknown> = {};
+    for (const k of ALLOWED_FIELDS) {
+      if (req.body[k] !== undefined) updates[k] = req.body[k];
+    }
+    // Cap arbitrary preferences blob to 32KB to prevent table bloat.
+    if (updates.preferences != null) {
+      if (typeof updates.preferences !== 'object' || Array.isArray(updates.preferences)) {
+        return res.status(400).json({ error: "preferences must be an object" });
+      }
+      if (JSON.stringify(updates.preferences).length > 32_000) {
+        return res.status(400).json({ error: "preferences exceeds 32KB limit" });
+      }
+    }
+
     const { error } = await db
       .from('wireline_user_preferences')
       .upsert({
         user_id: req.user.id,
-        ...req.body,
+        ...updates,
         updated_at: new Date().toISOString(),
       });
 
     if (error) throw error;
     res.json({ success: true });
   } catch (error) {
-    log.error("Failed to update user preferences", { error });
+    log.error("Failed to update user preferences", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to update preferences" });
   }
 });
@@ -4976,16 +5004,35 @@ app.post("/api/onboarding/progress", authenticateUser, async (req: any, res: any
 
 app.post("/api/settings", authenticateUser, async (req: any, res: any) => {
   try {
-    const { vapi_phone_number_id, subscription_status, max_agents, voice_llm_provider, voice_llm_model } = req.body;
+    // SECURITY: subscription_status and max_agents are BILLING-CONTROLLED
+    // — they're written by the Stripe webhook (see syncStripeSubscription)
+    // and gate paid features. Previously this endpoint accepted them from
+    // the request body, letting any authenticated user grant themselves
+    // 'active' status (bypassing billing) and unlimited agents (bypassing
+    // quota). They are now ignored if present and silently dropped.
+    const { vapi_phone_number_id, voice_llm_provider, voice_llm_model } = req.body;
 
-    // Build patch with only the fields the caller actually sent so we
-    // don't accidentally clobber unrelated settings.
+    // Build patch with only the fields the caller is allowed to set.
     const patch: Record<string, any> = { updated_at: new Date().toISOString() };
     if (vapi_phone_number_id !== undefined) patch.vapi_phone_number_id = vapi_phone_number_id;
-    if (subscription_status !== undefined) patch.subscription_status = subscription_status;
-    if (max_agents !== undefined) patch.max_agents = max_agents;
     if (voice_llm_provider !== undefined) patch.voice_llm_provider = voice_llm_provider;
     if (voice_llm_model !== undefined) patch.voice_llm_model = voice_llm_model;
+
+    // Audit attempts to modify privileged fields so we can spot abuse.
+    if (req.body?.subscription_status !== undefined || req.body?.max_agents !== undefined) {
+      void auditLogger.logSecurity('suspicious_activity', {
+        userId: req.user.id,
+        resource: 'wireline_settings',
+        ip: req.ip,
+        metadata: {
+          reason: 'privileged_field_in_user_settings_endpoint',
+          attempted: {
+            subscription_status: req.body?.subscription_status,
+            max_agents: req.body?.max_agents,
+          },
+        },
+      }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
+    }
 
     const { data: existing } = await db.from('wireline_settings').select('id').eq('user_id', req.user.id).single();
 
