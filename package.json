@@ -43,7 +43,8 @@
     "react-router-dom": "^7.14.2",
     "recharts": "^3.8.1",
     "stripe": "^17.7.0",
-    "tailwind-merge": "^3.5.0"
+    "tailwind-merge": "^3.5.0",
+    "web-vitals": "^5.2.0"
   },
   "devDependencies": {
     "@resvg/resvg-js": "^2.6.2",
