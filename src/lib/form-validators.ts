@@ -54,6 +54,31 @@ export const KnowledgeSchema = z.object({
 
 export type Knowledge = z.infer<typeof KnowledgeSchema>;
 
+// Campaign creation validation
+export const CampaignCreateSchema = z.object({
+  name: z.string().min(1, 'Campaign name is required').max(200, 'Name must be 200 characters or less'),
+  goal: z.string().max(1000, 'Goal must be 1000 characters or less').optional().nullable(),
+  agent_id: z.string().uuid('Invalid agent ID').optional().nullable(),
+  call_window_start: z.string().regex(/^\d{2}:\d{2}$/, 'Start time must be in HH:MM format').optional(),
+  call_window_end: z.string().regex(/^\d{2}:\d{2}$/, 'End time must be in HH:MM format').optional(),
+  max_attempts: z.number().int('Max attempts must be an integer').positive('Max attempts must be greater than 0').optional(),
+});
+
+export type Campaign = z.infer<typeof CampaignCreateSchema>;
+
+// Campaign update validation (all fields optional)
+export const CampaignUpdateSchema = z.object({
+  name: z.string().min(1, 'Campaign name is required').max(200, 'Name must be 200 characters or less').optional(),
+  goal: z.string().max(1000, 'Goal must be 1000 characters or less').optional().nullable(),
+  agent_id: z.string().uuid('Invalid agent ID').optional().nullable(),
+  status: z.enum(['draft', 'active', 'paused', 'completed', 'failed']).optional(),
+  call_window_start: z.string().regex(/^\d{2}:\d{2}$/, 'Start time must be in HH:MM format').optional(),
+  call_window_end: z.string().regex(/^\d{2}:\d{2}$/, 'End time must be in HH:MM format').optional(),
+  max_attempts: z.number().int('Max attempts must be an integer').positive('Max attempts must be greater than 0').optional(),
+}).strict();
+
+export type CampaignUpdate = z.infer<typeof CampaignUpdateSchema>;
+
 // Email reply validation
 export const EmailReplySchema = z.object({
   body: z.string().min(1, 'Email body cannot be empty').max(5000, 'Email body must be 5000 characters or less'),

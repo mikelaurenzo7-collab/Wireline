@@ -26,7 +26,7 @@ import * as claudeBrain from "./src/lib/claude-brain";
 import { AuditLogger } from "./src/lib/audit-logger";
 import { rateLimit, isRedisConfigured, startMemoryCleanup } from "./src/lib/rate-limit";
 import { SentryEvents } from "./src/lib/sentry-events";
-import { AgentFormSchema, DirectiveSchema, KnowledgeSchema, EmailReplySchema, EmailDraftSchema, parseFormData } from "./src/lib/form-validators";
+import { AgentFormSchema, DirectiveSchema, KnowledgeSchema, EmailReplySchema, EmailDraftSchema, CampaignCreateSchema, CampaignUpdateSchema, parseFormData } from "./src/lib/form-validators";
 
 // ────────────────────────────────────────────────────────────────────
 //  Error handling — safely extract message from unknown errors
@@ -4285,8 +4285,18 @@ app.get("/api/campaigns", authenticateUser, async (req: any, res: any) => {
 
 app.post("/api/campaigns", authenticateUser, async (req: any, res: any) => {
   try {
-    const { name, goal, agent_id, call_window_start, call_window_end, max_attempts } = req.body;
-    if (!name?.trim()) return res.status(400).json({ error: "name is required" });
+    const validation = parseFormData(CampaignCreateSchema, {
+      name: req.body.name,
+      goal: req.body.goal,
+      agent_id: req.body.agent_id,
+      call_window_start: req.body.call_window_start,
+      call_window_end: req.body.call_window_end,
+      max_attempts: req.body.max_attempts,
+    });
+    if (!validation.success) {
+      return res.status(400).json({ error: "Validation failed", errors: validation.errors });
+    }
+    const { name, goal, agent_id, call_window_start, call_window_end, max_attempts } = validation.data;
     const { data, error } = await db.from('wireline_outbound_campaigns').insert({
       user_id: req.user.id,
       name: name.trim(),
@@ -4307,9 +4317,21 @@ app.post("/api/campaigns", authenticateUser, async (req: any, res: any) => {
 
 app.patch("/api/campaigns/:id", authenticateUser, async (req: any, res: any) => {
   try {
+    const validation = parseFormData(CampaignUpdateSchema, {
+      name: req.body.name,
+      goal: req.body.goal,
+      agent_id: req.body.agent_id,
+      status: req.body.status,
+      call_window_start: req.body.call_window_start,
+      call_window_end: req.body.call_window_end,
+      max_attempts: req.body.max_attempts,
+    });
+    if (!validation.success) {
+      return res.status(400).json({ error: "Validation failed", errors: validation.errors });
+    }
     const allowed = ['name', 'goal', 'agent_id', 'status', 'call_window_start', 'call_window_end', 'max_attempts'];
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
-    for (const k of allowed) if (req.body[k] !== undefined) updates[k] = req.body[k];
+    for (const k of allowed) if (validation.data[k as keyof typeof validation.data] !== undefined) updates[k] = validation.data[k as keyof typeof validation.data];
     const { data, error } = await db.from('wireline_outbound_campaigns')
       .update(updates)
       .eq('id', req.params.id)
