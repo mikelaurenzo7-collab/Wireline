@@ -2608,8 +2608,10 @@ const KNOWLEDGE_GAP_PREFIX = "[KNOWLEDGE GAP]";
 const MAX_RUNTIME_LESSONS = 5;
 
 /** Lead statuses set by in-call tool handlers that must never be overwritten by
- *  the end-of-call Completed update — they carry meaningful outcome signals. */
-const PRESERVED_LEAD_STATUSES = '("Voicemail-Left","Callback-Scheduled","Blocked-DNC")';
+ *  the end-of-call Completed update — they carry meaningful outcome signals.
+ *  NOTE: must be a JS array so supabase-js serializes the `.not('status','in',…)`
+ *  filter correctly (see 57824d0 — the SQL-formatted string form was unreliable). */
+const PRESERVED_LEAD_STATUSES = ['Voicemail-Left', 'Callback-Scheduled', 'Blocked-DNC'] as const;
 
 /** Max characters of lead context/notes shown in search_leads results. */
 const MAX_CONTEXT_PREVIEW_LENGTH = 200;
@@ -3525,13 +3527,15 @@ app.post("/api/fleet/seed", authenticateUser, async (req: any, res: any) => {
 // Update agent settings
 app.put("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
   try {
-    const { name, voice_id, voice_id_inbound, voice_id_outbound, voice_provider, first_message, archetype, ambient_noise, website_url, transfer_phone, email_auto_respond, email_agent_tone, email_signature, channel, role } = req.body;
+    const { name, voice_id, voice_id_inbound, voice_id_outbound, voice_provider, voice_provider_inbound, voice_provider_outbound, first_message, archetype, ambient_noise, website_url, transfer_phone, email_auto_respond, email_agent_tone, email_signature, channel, role } = req.body;
     await db.from('wireline_agents').update({ 
       name, 
       voice_id, 
       voice_id_inbound,
       voice_id_outbound,
       voice_provider, 
+      voice_provider_inbound,
+      voice_provider_outbound,
       first_message, 
       archetype, 
       ambient_noise, 

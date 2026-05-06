@@ -477,6 +477,13 @@ ALTER TABLE wireline_knowledge ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ D
 --         technical_support | lead_qualifier | receptionist | marketing
 ALTER TABLE wireline_agents ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'customer_service';
 
+-- Per-channel voice provider overrides — companions to voice_id_inbound /
+-- voice_id_outbound, allowing operators to use different TTS providers (e.g.
+-- 11labs for outbound, azure for inbound). Falls back to voice_provider when
+-- not set. Read by both the assistant-request webhook and placeOutboundCall.
+ALTER TABLE wireline_agents ADD COLUMN IF NOT EXISTS voice_provider_inbound TEXT;
+ALTER TABLE wireline_agents ADD COLUMN IF NOT EXISTS voice_provider_outbound TEXT;
+
 -- Post-call Claude enrichment columns — sentiment + coaching note stored alongside
 -- lead_score and intent_label. Added as migrations so existing installs upgrade safely.
 ALTER TABLE wireline_call_logs ADD COLUMN IF NOT EXISTS sentiment TEXT DEFAULT 'neutral';
