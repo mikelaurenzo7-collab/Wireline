@@ -72,10 +72,9 @@ export default function DashboardHome() {
 
   const fetchHighPriorityTasks = async () => {
     try {
-      const res = await authFetch("/api/fleet/tasks");
+      const res = await authFetch("/api/fleet/tasks?status=pending&priority=high");
       const data = await res.json();
-      const high = (data.tasks || []).filter((t: any) => t.priority === 'high' && t.status === 'pending');
-      setHighPriorityTasks(high);
+      setHighPriorityTasks(data.tasks || []);
     } catch (e) { console.error("Failed to fetch high priority tasks:", e); }
   };
 

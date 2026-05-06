@@ -2176,13 +2176,15 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
               coaching_note: result.coaching_note,
             }).eq('vapi_call_id', call?.id);
 
-            // 2. Promote a single tactical lesson (if any).
+            // 2. Promote a single tactical lesson (if any) — skip exact duplicates so
+            //    repeated patterns don't crowd the MAX_RUNTIME_LESSONS injection window.
+            //    Uses upsert(ignoreDuplicates) which maps to ON CONFLICT DO NOTHING —
+            //    atomic and race-safe with the unique index on (agent_id, lesson).
             if (result.lesson && result.lesson.trim().length > 0) {
-              await db.from('wireline_agent_lessons').insert({
-                agent_id: webhookAgentId,
-                user_id: agent?.user_id,
-                lesson: result.lesson.trim(),
-              });
+              await db.from('wireline_agent_lessons').upsert(
+                { agent_id: webhookAgentId, user_id: agent?.user_id, lesson: result.lesson.trim() },
+                { onConflict: 'agent_id,lesson', ignoreDuplicates: true }
+              );
             }
 
             // 3. Insert ALL action items as fleet tasks.
@@ -2202,12 +2204,12 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
 
             // 4. Surface knowledge gaps as low-priority lessons (clearly tagged so
             //    they're easy to filter / promote into wireline_knowledge later).
+            //    Deduplicate atomically via the same unique index.
             for (const gap of result.knowledge_gaps || []) {
-              await db.from('wireline_agent_lessons').insert({
-                agent_id: webhookAgentId,
-                user_id: agent?.user_id,
-                lesson: `[KNOWLEDGE GAP] ${gap}`,
-              });
+              await db.from('wireline_agent_lessons').upsert(
+                { agent_id: webhookAgentId, user_id: agent?.user_id, lesson: `[KNOWLEDGE GAP] ${gap}` },
+                { onConflict: 'agent_id,lesson', ignoreDuplicates: true }
+              );
             }
 
             // 5. Surface compliance flags as critical fleet tasks.
@@ -2300,11 +2302,10 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
                 const lessonRes = await lessonModel.generateContent(lessonPrompt);
                 const lessonObj = JSON.parse(lessonRes.response.text() || "{}");
                 if (lessonObj.lesson) {
-                   await db.from('wireline_agent_lessons').insert({
-                      agent_id: webhookAgentId,
-                      user_id: agent?.user_id,
-                      lesson: lessonObj.lesson
-                   });
+                   await db.from('wireline_agent_lessons').upsert(
+                     { agent_id: webhookAgentId, user_id: agent?.user_id, lesson: String(lessonObj.lesson).trim() },
+                     { onConflict: 'agent_id,lesson', ignoreDuplicates: true }
+                   );
                 }
              } catch(e) {}
 
@@ -3847,9 +3848,22 @@ app.get("/api/fleet/presence", authenticateUser, async (req: any, res: any) => {
 
 app.get("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => {
   try {
-    const { data, error } = await db.from('wireline_fleet_tasks')
-                                     .select('*, wireline_agents(name)')
-                                     .eq('user_id', req.user.id);
+    // Optional server-side filters — callers can pass ?status=pending&priority=high
+    // to avoid fetching the full task history when only a subset is needed (e.g.
+    // the DashboardHome high-priority widget).
+    const VALID_STATUSES   = new Set(["pending", "in_progress", "completed", "cancelled"]);
+    const VALID_PRIORITIES = new Set(["high", "medium", "low"]);
+    const statusFilter   = typeof req.query.status   === "string" && VALID_STATUSES.has(req.query.status)   ? req.query.status   : null;
+    const priorityFilter = typeof req.query.priority === "string" && VALID_PRIORITIES.has(req.query.priority) ? req.query.priority : null;
+
+    let query = db.from('wireline_fleet_tasks')
+                  .select('*, wireline_agents(name)')
+                  .eq('user_id', req.user.id);
+
+    if (statusFilter)   query = query.eq('status',   statusFilter);
+    if (priorityFilter) query = query.eq('priority', priorityFilter);
+
+    const { data, error } = await query;
     
     if (error) throw error;
 
@@ -7658,6 +7672,41 @@ async function processScheduledCallbacks(): Promise<void> {
   }
 }
 setInterval(processScheduledCallbacks, CALLBACK_SCHED_INTERVAL_MS).unref?.();
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  STALE SIGNAL-PRESENCE PURGE
+//
+//  wireline_signal_presence rows are normally deleted by the status-update
+//  webhook when Vapi reports call ended/completed.  If that final webhook is
+//  lost (network failure, worker restart, Vapi outage) the row is orphaned
+//  indefinitely.  The Live Monitor then shows a ghost "⚠ Frustrated" entry
+//  that never clears, and nav-counts reports a distress call every 2 minutes.
+//
+//  This sweeper runs every 5 minutes and deletes any presence row whose
+//  started_at is more than PRESENCE_STALE_AFTER_MS old (default: 4 h).
+//  A real call lasting > 4 h is not a valid voice-AI use case, so this
+//  threshold is safe.
+// ─────────────────────────────────────────────────────────────────────────────
+const PRESENCE_PURGE_INTERVAL_MS = 5 * 60_000;      // 5-minute purge tick
+const PRESENCE_STALE_AFTER_MS    = 4 * 60 * 60_000; // 4 hours
+
+async function purgeStalePresence(): Promise<void> {
+  try {
+    const cutoff = new Date(Date.now() - PRESENCE_STALE_AFTER_MS).toISOString();
+    const { error, count } = await db
+      .from("wireline_signal_presence")
+      .delete({ count: "exact" })
+      .lt("started_at", cutoff);
+    if (error) {
+      log.warn("Stale presence purge query error", { error: error.message });
+    } else if (count && count > 0) {
+      log.info("Purged stale signal presence rows", { count });
+    }
+  } catch (err: any) {
+    log.warn("Stale presence purge failed", { error: err?.message || String(err) });
+  }
+}
+setInterval(purgeStalePresence, PRESENCE_PURGE_INTERVAL_MS).unref?.();
 
 // Settings: GET / PUT for the daily-brief schedule. Defaults are
 // reasonable: 13:00 UTC (~9am ET / 6am PT), recipient = user's email,
