@@ -2460,8 +2460,9 @@ app.get("/api/dashboard/stats", authenticateUser, async (req: any, res: any) => 
       const prevAvgScore = prevScoredLogs.length > 0
         ? Math.round(prevScoredLogs.reduce((s: number, l: any) => s + (l.lead_score || 0), 0) / prevScoredLogs.length)
         : 0;
-      const pct = (curr: number, prev: number) =>
-        prev === 0 ? (curr > 0 ? 100 : 0) : Math.round(((curr - prev) / prev) * 100);
+      // Returns null when there's no baseline — UI should show '—' rather than a misleading 100%.
+      const pct = (curr: number, prev: number): number | null =>
+        prev === 0 ? null : Math.round(((curr - prev) / prev) * 100);
       const week_delta = {
         calls_pct: pct(logs.length, prevLogs.length),
         cost_pct:  pct(totalCost, prevCost),
