@@ -1186,7 +1186,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
       // 0. Extract caller identity early so we can pre-load their history in parallel
       const isOutbound = message.type === 'outboundPhoneCall' || message.call?.type === 'outboundPhoneCall';
       const customerNumber = message.call?.customer?.number;
-      const safeCallerPhone = (customerNumber || "").replace(/[^0-9+]/g, '').slice(0, 20);
+      const safeCallerPhone = sanitizePhone(customerNumber);
 
       // 1. Assemble memory from Supabase (+ pre-load caller history in the same round-trip)
       const [agentConfig, directivesData, knowledgeData, personalityData, lessonsData, callerHistoryData] = await Promise.all([
@@ -1208,20 +1208,13 @@ app.post("/api/vapi-webhook", async (req, res) => {
       // Filter knowledge-gap lessons from runtime injection — they are training signals
       // for the operator to review, not real-time performance hints for the agent.
       const lessons = (lessonsData?.data || [])
-        .filter((l: any) => !l.lesson.startsWith('[KNOWLEDGE GAP]'))
+        .filter((l: any) => !l.lesson.startsWith(KNOWLEDGE_GAP_PREFIX))
         .map((l: any) => l.lesson)
         .join('\n');
 
       // Build CALLER PROFILE block — pre-loaded so the agent has context from word 1
       const pastCallHistory: any[] = (callerHistoryData as any)?.data || [];
-      let callerProfile = "";
-      if (pastCallHistory.length > 0) {
-        callerProfile = `## ⚡ CALLER PROFILE — PRE-LOADED\nThis caller has contact history. Use this immediately — do NOT wait to call view_recent_interactions:\n${
-          pastCallHistory.map((c: any) =>
-            `- [${new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}] ${(c.direction || 'call').toUpperCase()} | Intent: ${c.intent_label || 'unknown'} | Tone: ${c.sentiment || 'neutral'} | ${c.summary}`
-          ).join('\n')
-        }\nINSTRUCTION: Reference this history naturally within the first 2 exchanges. Do not recite it verbatim.\n`;
-      }
+      const callerProfile = buildCallerProfileBlock(pastCallHistory, false);
 
       // TEMPORAL AWARENESS: Inject exact current time so the agent knows what "Today" and "Tomorrow" mean
       const currentDateTime = new Date().toLocaleString('en-US', { timeZone: 'America/New_York', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -1413,11 +1406,8 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
             
             log.debug("[MEMORY] Fetching history", { customerPhone });
 
-            // Sanitize the phone number before using it in LIKE patterns.
-            // Vapi delivers phone numbers in E.164 format (+15551234567), so only
-            // digits and the leading '+' are valid. Stripping anything else also
-            // prevents LIKE wildcard characters (% _) from manipulating the query.
-            const safePhone = customerPhone.replace(/[^0-9+]/g, '').slice(0, 20);
+            // Use shared sanitizePhone helper — strips wildcards and limits length.
+            const safePhone = sanitizePhone(customerPhone);
 
             // 1. Fetch last 3 call summaries
             const { data: pastCalls } = await db.from('wireline_call_logs')
@@ -1778,11 +1768,12 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
           });
 
           // Mark the outbound lead as voicemail-left so campaigns don't duplicate
+          // Match all non-terminal statuses (Queued, Called, No-Answer, etc.)
           await db.from('wireline_outbound_leads')
             .update({ status: 'Voicemail-Left', last_called_at: new Date() })
             .eq('customer_number', customerPhone)
             .eq('agent_id', webhookAgentId)
-            .eq('status', 'Queued');
+            .not('status', 'in', '("Completed","Voicemail-Left","Blocked-DNC","Failed")' );
 
           results.push({
             toolCallId: toolCall.id,
@@ -1831,11 +1822,8 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
       const userTurns = turns.filter((t: any) => t.role === "user").slice(-2);
       const combined = userTurns.map((t: any) => (t.content || t.message || "").toLowerCase()).join(" ");
 
-      const ANGRY_SIGNALS = ["angry", "furious", "terrible", "horrible", "ridiculous", "unacceptable", "disgusting", "hate", "sue", "lawyer", "scam", "fraud", "cancel", "refund", "waste", "useless", "incompetent"];
-      const POSITIVE_SIGNALS = ["great", "wonderful", "excellent", "perfect", "love", "thank you", "thanks", "appreciate", "happy", "fantastic", "amazing", "exactly", "that works", "sounds good"];
-
-      const negativeHits = ANGRY_SIGNALS.filter(w => combined.includes(w)).length;
-      const positiveHits = POSITIVE_SIGNALS.filter(w => combined.includes(w)).length;
+      const negativeHits = SENTIMENT_ANGRY_SIGNALS.filter(w => combined.includes(w)).length;
+      const positiveHits = SENTIMENT_POSITIVE_SIGNALS.filter(w => combined.includes(w)).length;
 
       let liveSentimentLabel = "Live · Active";
       if (negativeHits >= 2) liveSentimentLabel = "⚠ Frustrated";
@@ -2402,6 +2390,45 @@ app.delete("/api/appointments/:id", authenticateUser, async (req: any, res: any)
 // Specialist tools (log_payment_promise, create_support_ticket) are gated to
 // the one role that needs them so the LLM isn't distracted by irrelevant tools.
 // ─────────────────────────────────────────────────────────────────────────────
+
+/** Prefix used to tag knowledge-gap lessons — filtered out of runtime injection. */
+const KNOWLEDGE_GAP_PREFIX = "[KNOWLEDGE GAP]";
+
+/** Sentiment keyword arrays — defined at module scope to avoid per-request allocation. */
+const SENTIMENT_ANGRY_SIGNALS = [
+  "angry", "furious", "terrible", "horrible", "ridiculous", "unacceptable",
+  "disgusting", "hate", "sue", "lawyer", "scam", "fraud", "cancel", "refund",
+  "waste", "useless", "incompetent",
+];
+const SENTIMENT_POSITIVE_SIGNALS = [
+  "great", "wonderful", "excellent", "perfect", "love", "thank you", "thanks",
+  "appreciate", "happy", "fantastic", "amazing", "exactly", "that works", "sounds good",
+];
+
+/** Sanitize a phone number for safe use in LIKE patterns and DB queries.
+ *  Strips anything that isn't a digit or leading '+', caps at 20 chars.
+ */
+function sanitizePhone(phone: string | undefined | null): string {
+  return (phone || "").replace(/[^0-9+]/g, "").slice(0, 20);
+}
+
+/** Build the CALLER PROFILE prompt block from a list of past call records.
+ *  Returns an empty string when there is no history so the prompt stays clean.
+ */
+function buildCallerProfileBlock(pastCalls: any[], isOutbound = false): string {
+  if (!pastCalls || pastCalls.length === 0) return "";
+  const heading = isOutbound
+    ? "## ⚡ CONTACT HISTORY — PRE-LOADED"
+    : "## ⚡ CALLER PROFILE — PRE-LOADED";
+  const instruction = isOutbound
+    ? "INSTRUCTION: Reference this naturally. Do not recite it verbatim."
+    : "INSTRUCTION: Reference this history naturally within the first 2 exchanges. Do not recite it verbatim.";
+  const lines = pastCalls.map((c: any) =>
+    `- [${new Date(c.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}] ${(c.direction || "call").toUpperCase()} | Intent: ${c.intent_label || "unknown"} | Tone: ${c.sentiment || "neutral"} | ${c.summary}`
+  );
+  return `${heading}\n${isOutbound ? "This contact has called before. Review and use naturally:" : "This caller has contact history. Use this immediately — do NOT wait to call view_recent_interactions:"}\n${lines.join("\n")}\n${instruction}\n`;
+}
+
 const VAPI_TOOL_DEFS = {
   view_recent_interactions: {
     name: "view_recent_interactions",
@@ -4050,11 +4077,11 @@ type PlaceCallResult = {
  */
 function buildOutboundFirstMessage(role: string, agentName: string, customerName?: string | null): string {
   const name = agentName || "your representative";
-  const customer = customerName ? customerName.split(" ")[0] : "there"; // first name only
+  const customer = customerName ? customerName.split(" ")[0] : "there"; // first name only for all roles
   switch (role) {
     case "collections":
-      // FDCPA-safe: do not disclose debt amount in first message
-      return `Hi, is this ${customerName || "the account holder"}? This is ${name} calling regarding an account matter. Do you have a moment?`;
+      // FDCPA-safe: do not disclose debt amount in first message; use first name only for consistency
+      return `Hi, is this ${customer !== "there" ? customer : "the account holder"}? This is ${name} calling regarding an account matter. Do you have a moment?`;
     case "scheduler":
       return `Hi ${customer}! This is ${name} reaching out about your upcoming appointment. Quick question for you — do you have 30 seconds?`;
     case "technical_support":
@@ -4095,7 +4122,7 @@ async function placeOutboundCall(opts: {
   }
 
   // 2. Agent context + caller history pre-load (parallel for speed)
-  const safeOutboundPhone = (customerNumber || "").replace(/[^0-9+]/g, '').slice(0, 20);
+  const safeOutboundPhone = sanitizePhone(customerNumber);
   const [agentConfig, directivesData, knowledgeData, personalityData, lessonsData, outboundCallerHistory] = await Promise.all([
     db.from('wireline_agents').select('*').eq('id', agentId).single().then(r => r),
     db.from('wireline_directives').select('content, priority').eq('agent_id', agentId).order('priority', { ascending: false }).then(r => r),
@@ -4118,20 +4145,13 @@ async function placeOutboundCall(opts: {
 
   // Filter knowledge-gap lessons — they are training signals, not runtime hints
   const lessons = (lessonsData?.data || [])
-    .filter((l: any) => !l.lesson.startsWith('[KNOWLEDGE GAP]'))
+    .filter((l: any) => !l.lesson.startsWith(KNOWLEDGE_GAP_PREFIX))
     .map((l: any) => l.lesson)
     .join('\n');
 
   // Build caller profile for immediate outbound agent context
   const outboundPastCalls: any[] = (outboundCallerHistory as any)?.data || [];
-  let outboundCallerProfile = "";
-  if (outboundPastCalls.length > 0) {
-    outboundCallerProfile = `## ⚡ CONTACT HISTORY — PRE-LOADED\nThis contact has called before. Review and use naturally:\n${
-      outboundPastCalls.map((c: any) =>
-        `- [${new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}] ${(c.direction || 'call').toUpperCase()} | Intent: ${c.intent_label || 'unknown'} | Tone: ${c.sentiment || 'neutral'} | ${c.summary}`
-      ).join('\n')
-    }\nINSTRUCTION: Reference this naturally. Do not recite it verbatim.\n`;
-  }
+  const outboundCallerProfile = buildCallerProfileBlock(outboundPastCalls, true);
   const currentDateTime = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
   // Derive the archetype from the agent's role for outbound calls
   const outboundAgentRole = agentConfig?.data?.role || DEFAULT_AGENT_ROLE;
