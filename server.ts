@@ -1208,7 +1208,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
       // Filter knowledge-gap lessons from runtime injection — they are training signals
       // for the operator to review, not real-time performance hints for the agent.
       const lessons = (lessonsData?.data || [])
-        .filter((l: any) => l.lesson && !l.lesson.startsWith(KNOWLEDGE_GAP_PREFIX))
+        .filter((l: any) => l.lesson && typeof l.lesson === 'string' && !l.lesson.startsWith(KNOWLEDGE_GAP_PREFIX))
         .map((l: any) => l.lesson)
         .join('\n');
 
@@ -2486,8 +2486,9 @@ const SENTIMENT_POSITIVE_SIGNALS = [
 /** Sanitize a phone number for safe use in LIKE patterns and DB queries.
  *  Strips anything that isn't a digit or leading '+', caps at 20 chars.
  */
+const MAX_PHONE_LENGTH = 20;
 function sanitizePhone(phone: string | undefined | null): string {
-  return (phone || "").replace(/[^0-9+]/g, "").slice(0, 20);
+  return (phone || "").replace(/[^0-9+]/g, "").slice(0, MAX_PHONE_LENGTH);
 }
 
 /** Build the CALLER PROFILE prompt block from a list of past call records.
@@ -3909,7 +3910,7 @@ app.post("/api/campaigns/:id/launch", authenticateUser, async (req: any, res: an
           // Check every 30s rather than calculating exact wait to keep the loop simple.
           while (!isWithinCallWindow()) {
             log.info("Campaign paused — outside call window", { campaignId, window: `${windowStart}-${windowEnd}` });
-            await new Promise(resolve => setTimeout(resolve, 30_000));
+            await new Promise(resolve => setTimeout(resolve, CALL_WINDOW_CHECK_INTERVAL_MS));
             // Re-check campaign status in case it was cancelled during the wait
             const { data: campaignStatus } = await db.from('wireline_outbound_campaigns')
               .select('status').eq('id', campaignId).single();
@@ -4236,8 +4237,10 @@ type PlaceCallResult = {
  */
 function buildOutboundFirstMessage(role: string, agentName: string, customerName?: string | null): string {
   const name = agentName || "your representative";
-  const customer = customerName ? customerName.split(" ")[0] : "there"; // first name only for all roles
-  const hasName = customer !== "there";
+  // Guard against empty strings and whitespace-only names before splitting
+  const firstName = customerName?.trim() ? customerName.trim().split(" ")[0] : null;
+  const customer = firstName || "there";
+  const hasName = !!firstName;
   switch (role) {
     case "collections":
       // FDCPA-safe: do not disclose debt amount in first message; use first name only for consistency
@@ -4305,7 +4308,7 @@ async function placeOutboundCall(opts: {
 
   // Filter knowledge-gap lessons — they are training signals, not runtime hints
   const lessons = (lessonsData?.data || [])
-    .filter((l: any) => l.lesson && !l.lesson.startsWith(KNOWLEDGE_GAP_PREFIX))
+    .filter((l: any) => l.lesson && typeof l.lesson === 'string' && !l.lesson.startsWith(KNOWLEDGE_GAP_PREFIX))
     .map((l: any) => l.lesson)
     .join('\n');
 
@@ -7054,7 +7057,9 @@ setInterval(processScheduledDailyBriefs, DAILY_BRIEF_TICK_MS).unref?.();
 //  This background job polls every 60s, finds due callbacks, and re-dials
 //  them automatically — delivering on the promise the agent made.
 // ─────────────────────────────────────────────────────────────────────────────
-const CALLBACK_SCHED_INTERVAL_MS = 60_000; // 1-minute tick
+const CALLBACK_SCHED_INTERVAL_MS = 60_000; // 1-minute tick balances callback timing precision with DB load
+/** Pause interval used while a campaign waits for its call window to open. */
+const CALL_WINDOW_CHECK_INTERVAL_MS = 30_000; // 30s — short enough to resume promptly when window opens
 let _callbackSchedRunning = false;
 
 async function processScheduledCallbacks(): Promise<void> {

@@ -773,9 +773,12 @@ DECLARE
   -- Strip all non-digit characters except leading '+' so the comparison is
   -- safe and consistent with how customer_number is stored in the table.
   clean_phone TEXT := regexp_replace(p_phone, '[^0-9+]', '', 'g');
+  digits_only TEXT;
 BEGIN
+  -- Compute the digit-only form once to avoid a redundant regexp in the guard.
+  digits_only := regexp_replace(clean_phone, '[^0-9]', '', 'g');
   -- Validate input to prevent misuse — phone must contain at least 7 digits.
-  IF clean_phone IS NULL OR length(regexp_replace(clean_phone, '[^0-9]', '', 'g')) < 7 THEN
+  IF clean_phone IS NULL OR length(digits_only) < 7 THEN
     RETURN;
   END IF;
 
