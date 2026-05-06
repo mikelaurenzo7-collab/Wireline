@@ -3,7 +3,7 @@ import { motion } from "motion/react";
 import {
   BarChart3, TrendingUp, Layers, Calendar, Trophy, AlertOctagon, Loader2,
   RefreshCw, Sparkles, ChevronRight, Users, DollarSign, Brain, Zap,
-  Receipt, Clock, Database, Shield, AlertTriangle, Lock, Save
+  Receipt, Clock, Database, Shield, AlertTriangle, Lock, Save, CheckCircle2 as CheckCircle2Icon,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
@@ -793,17 +793,46 @@ function SpendStat({ label, value, icon: Icon, accent }: { label: string; value:
 
 function Spinner() {
   return (
-    <div className="py-32 flex flex-col items-center gap-4">
-      <Loader2 className="w-10 h-10 animate-spin text-brand" />
-      <p className="text-[10px] uppercase tracking-[0.5em] text-muted">Computing</p>
+    <div className="py-16 flex flex-col items-center gap-4">
+      <div className="relative w-12 h-12">
+        <div
+          className="absolute inset-0 rounded-full opacity-40"
+          style={{
+            background: "conic-gradient(from 0deg, #7DF9FF, #C58BFF, #FF6BD9, #4DFFC4, #7DF9FF)",
+            filter: "blur(1px)",
+            animation: "spin 2s linear infinite",
+          }}
+        />
+        <div className="absolute inset-1.5 rounded-full bg-paper" />
+        <div className="absolute inset-3 rounded-full glass flex items-center justify-center">
+          <div
+            className="w-3 h-3 rounded-full"
+            style={{ background: "linear-gradient(135deg, #7DF9FF, #C58BFF)", boxShadow: "0 0 10px #7DF9FF" }}
+          />
+        </div>
+      </div>
+      <p className="text-[9px] uppercase tracking-[0.5em] text-muted/60 animate-pulse">Computing…</p>
     </div>
   );
 }
 
 function Empty({ label, green }: { label: string; green?: boolean }) {
   return (
-    <div className="rounded-3xl glass border border-white/10 p-16 text-center">
-      <p className={cn("text-[11px] uppercase tracking-[0.4em]", green ? "text-emerald-500/80" : "text-muted")}>{label}</p>
+    <div className="relative aurora-ring rounded-3xl">
+      <div className="relative rounded-3xl glass border border-white/10 p-12 text-center overflow-hidden">
+        <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-64 h-32 rounded-full opacity-20 blur-3xl pointer-events-none"
+          style={{ background: green ? "radial-gradient(circle, #4DFFC4, transparent)" : "radial-gradient(circle, #7DF9FF, transparent)" }} />
+        <div className={cn(
+          "inline-flex items-center justify-center w-12 h-12 rounded-2xl glass border mb-4",
+          green ? "border-emerald-500/30 text-emerald-500" : "border-brand/30 text-brand"
+        )}>
+          {green
+            ? <CheckCircle2Icon className="w-5 h-5" />
+            : <BarChart3 className="w-5 h-5 opacity-60" />
+          }
+        </div>
+        <p className={cn("text-[11px] uppercase tracking-[0.4em]", green ? "text-emerald-500/80" : "text-muted")}>{label}</p>
+      </div>
     </div>
   );
 }
