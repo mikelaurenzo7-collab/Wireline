@@ -21,23 +21,23 @@ export default function CommandBar() {
 
   const commands: CommandItem[] = [
     // ── Navigation ─────────────────────────────────────────
-    { id: 'dash',         label: 'Command Atlas',     description: 'Real-time dashboard + Daily Brief',     icon: Activity,       category: 'Navigation', action: () => navigate('/') },
-    { id: 'triage',       label: 'Triage Inbox',      description: 'Hot leads, compliance, knowledge gaps', icon: Inbox,          category: 'Navigation', action: () => navigate('/triage') },
-    { id: 'insights',     label: 'Insights',          description: 'Funnel, topics, heatmap, leaderboard',  icon: BarChart3,      category: 'Navigation', action: () => navigate('/insights') },
-    { id: 'appointments', label: 'Constellation',     description: 'Booked appointments',                   icon: Calendar,       category: 'Navigation', action: () => navigate('/appointments') },
-    { id: 'logs',         label: 'Voice Archive',     description: 'Call records + transcripts',            icon: History,        category: 'Navigation', action: () => navigate('/logs') },
-    { id: 'inbox',        label: 'Email Inbox',       description: 'Inbound omnichannel email threads',     icon: Mail,           category: 'Navigation', action: () => navigate('/inbox') },
-    { id: 'outbound',     label: 'Outbound Dialer',   description: 'Single + bulk lead dispatch',           icon: PhoneOutgoing,  category: 'Navigation', action: () => navigate('/outbound') },
-    { id: 'train',        label: 'Neural Atelier',    description: 'Train + tune agents',                   icon: MessageSquare,  category: 'Navigation', action: () => navigate('/train') },
-    { id: 'agents',       label: 'Agent Topology',    description: 'Configure autonomous agents',           icon: Bot,            category: 'Navigation', action: () => navigate('/agents') },
-    { id: 'integrations', label: 'Carrier Bridge',    description: 'Phone numbers + integrations',          icon: PlugZap,        category: 'Navigation', action: () => navigate('/integrations') },
-    { id: 'admin',        label: 'Core Settings',     description: 'Account + system core',                 icon: ServerCog,      category: 'Navigation', action: () => navigate('/admin') },
+    { id: 'dash',         label: 'Dashboard',        description: 'Live overview of agents and activity',       icon: Activity,       category: 'Navigation', action: () => navigate('/') },
+    { id: 'triage',       label: 'Triage',           description: 'Hot leads, compliance, knowledge gaps',      icon: Inbox,          category: 'Navigation', action: () => navigate('/triage') },
+    { id: 'insights',     label: 'Insights',         description: 'Funnel, topics, heatmap, leaderboard',       icon: BarChart3,      category: 'Navigation', action: () => navigate('/insights') },
+    { id: 'appointments', label: 'Appointments',     description: 'Booked appointments',                        icon: Calendar,       category: 'Navigation', action: () => navigate('/appointments') },
+    { id: 'logs',         label: 'Call Logs',        description: 'Call records and transcripts',               icon: History,        category: 'Navigation', action: () => navigate('/logs') },
+    { id: 'inbox',        label: 'Email',            description: 'Inbound email threads',                      icon: Mail,           category: 'Navigation', action: () => navigate('/inbox') },
+    { id: 'outbound',     label: 'Outbound',         description: 'Single and bulk lead outreach',              icon: PhoneOutgoing,  category: 'Navigation', action: () => navigate('/outbound') },
+    { id: 'train',        label: 'Training',         description: 'Train and tune agents',                      icon: MessageSquare,  category: 'Navigation', action: () => navigate('/train') },
+    { id: 'agents',       label: 'Agents',           description: 'Configure autonomous agents',                icon: Bot,            category: 'Navigation', action: () => navigate('/agents') },
+    { id: 'integrations', label: 'Integrations',     description: 'Phone numbers and integrations',             icon: PlugZap,        category: 'Navigation', action: () => navigate('/integrations') },
+    { id: 'admin',        label: 'Settings',         description: 'Account and platform settings',              icon: ServerCog,      category: 'Navigation', action: () => navigate('/admin') },
 
     // ── Actions ────────────────────────────────────────────
-    { id: 'forge-agent',  label: 'Forge Agent with Claude',     description: 'Synthesize a complete agent from a goal',  icon: Sparkles,  category: 'Actions', action: () => navigate('/agents') },
-    { id: 'test-call',    label: 'Initiate Test Relay',         description: 'Talk to your agent right now',             icon: PhoneCall, category: 'Actions', action: () => navigate('/') },
-    { id: 'review-agent', label: 'Run Performance Review',      description: 'Deep audit of an agent\'s last N calls',   icon: BarChart3, category: 'Actions', action: () => navigate('/train') },
-    { id: 'ingest-url',   label: 'Ingest Knowledge from URL',   description: 'Claude reads a site and extracts facts',   icon: Zap,       category: 'Actions', action: () => navigate('/train') },
+    { id: 'forge-agent',  label: 'Design Agent with Claude',     description: 'Build a complete agent from a goal',           icon: Sparkles,  category: 'Actions', action: () => navigate('/agents') },
+    { id: 'test-call',    label: 'Start Test Call',              description: 'Talk to your agent right now',                 icon: PhoneCall, category: 'Actions', action: () => navigate('/') },
+    { id: 'review-agent', label: 'Run Performance Review',       description: 'Deep audit of an agent\'s recent calls',       icon: BarChart3, category: 'Actions', action: () => navigate('/train') },
+    { id: 'ingest-url',   label: 'Ingest Knowledge from URL',    description: 'Claude reads a site and extracts facts',       icon: Zap,       category: 'Actions', action: () => navigate('/train') },
   ];
 
   const filteredCommands = commands.filter(c => 

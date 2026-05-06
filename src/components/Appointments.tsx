@@ -390,25 +390,25 @@ export default function AppointmentsView() {
   return (
     <>
       <PageShell
-        title="Constellation"
-        eyebrow="Operations · Commitments"
-        subtitle="Verified service commitments synchronized with the active fleet."
+        title="Appointments"
+        eyebrow="Operations · Schedule"
+        subtitle="Appointments scheduled and managed by your agents."
         actions={actions}
       >
         {isLoading ? (
           <div className="h-full flex items-center justify-center gap-3">
             <Loader2 className="w-5 h-5 animate-spin text-brand" />
-            <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">Syncing fleet</span>
+            <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">Loading…</span>
           </div>
         ) : viewMode === "calendar" ? (
-          <Panel title="calendar" hint="Monthly view" icon={CalendarIcon} flush>
+          <Panel title="Calendar" hint="Monthly view" icon={CalendarIcon} flush>
             <CalendarGrid appointments={appointments} onSelect={a => { setEditTarget(a); setShowModal(true); }} />
           </Panel>
         ) : (
           <div className="h-full grid grid-cols-1 xl:grid-cols-2 gap-3 overflow-hidden">
             {/* Active */}
             <Panel
-              title="active"
+              title="Upcoming"
               hint={`${scheduled.length} scheduled`}
               icon={CalendarIcon}
               scroll flush
@@ -449,7 +449,7 @@ export default function AppointmentsView() {
 
             {/* Completed/Cancelled */}
             <Panel
-              title="history"
+              title="History"
               hint={`${completed.length} records`}
               icon={CheckCircle2}
               scroll flush

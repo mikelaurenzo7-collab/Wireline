@@ -39,26 +39,26 @@ type NavItem = {
 type NavGroup = { group: string; items: NavItem[] };
 
 const NAV_ITEMS: NavGroup[] = [
-  { group: "Control Center", items: [
-    { label: "Command Atlas", path: "/", icon: Activity },
-    { label: "Live Monitor",  path: "/live", icon: Radio },
-    { label: "Triage Inbox", path: "/triage", icon: Inbox },
-    { label: "Insights", path: "/insights", icon: BarChart3 },
+  { group: "Overview", items: [
+    { label: "Dashboard",    path: "/", icon: Activity },
+    { label: "Live Monitor", path: "/live", icon: Radio },
+    { label: "Triage",       path: "/triage", icon: Inbox },
+    { label: "Insights",     path: "/insights", icon: BarChart3 },
   ]},
   { group: "Communications", items: [
-    { label: "Voice Archive", path: "/logs", icon: History },
-    { label: "Inbound Email", path: "/inbox", icon: Mail },
-    { label: "Outbound Dialer", path: "/outbound", icon: PhoneOutgoing },
-    { label: "Constellation", path: "/appointments", icon: Calendar },
+    { label: "Call Logs",    path: "/logs", icon: History },
+    { label: "Email",        path: "/inbox", icon: Mail },
+    { label: "Outbound",     path: "/outbound", icon: PhoneOutgoing },
+    { label: "Appointments", path: "/appointments", icon: Calendar },
   ]},
-  { group: "Intelligence Layer", items: [
-    { label: "Neural Atelier", path: "/train", icon: MessageSquare },
-    { label: "Knowledge Atlas", path: "/knowledge", icon: Database },
-    { label: "Agent Topology", path: "/agents", icon: Users },
+  { group: "Intelligence", items: [
+    { label: "Training",     path: "/train", icon: MessageSquare },
+    { label: "Knowledge",    path: "/knowledge", icon: Database },
+    { label: "Agents",       path: "/agents", icon: Users },
   ]},
-  { group: "Infrastructure", items: [
-    { label: "Carrier Bridge", path: "/integrations", icon: PlugZap },
-    { label: "Core Settings", path: "/admin", icon: ServerCog },
+  { group: "Admin", items: [
+    { label: "Integrations", path: "/integrations", icon: PlugZap },
+    { label: "Settings",     path: "/admin", icon: ServerCog },
   ]}
 ];
 
@@ -154,7 +154,7 @@ function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) =>
                 <span className="font-display italic lowercase text-xl text-ink leading-none tracking-tight truncate">wireline</span>
                 <span className="text-[8px] tracking-[0.42em] uppercase text-muted mt-1 flex items-center gap-1.5">
                   <span className="w-1 h-1 rounded-full bg-brand indicator-glow" />
-                  Aurora Relay
+                  AI Voice Platform
                 </span>
               </div>
             </Link>
@@ -176,7 +176,7 @@ function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) =>
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[11px] font-medium text-ink truncate">{user?.email?.split('@')[0]}</p>
-                  <p className="text-[8px] tracking-[0.28em] uppercase text-muted">Signal Active</p>
+                  <p className="text-[8px] tracking-[0.28em] uppercase text-muted">Online</p>
                 </div>
                 <button
                   onClick={() => signOut()}
@@ -253,24 +253,24 @@ function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) =>
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => navigate('/train')}
-                title="Quick Train"
+                title="Training"
                 className="flex-1 px-3 py-2 rounded-lg glass border border-white/8 hover:border-brand/40 text-[10px] uppercase tracking-[0.28em] text-ink/70 hover:text-ink transition-all flex items-center justify-center gap-1.5"
               >
                 <MessageSquare className="w-3 h-3" />
                 <span>Train</span>
               </button>
               <button
-                onClick={() => navigate('/')}
-                title="Test Call"
+                onClick={() => navigate('/live')}
+                title="Live Monitor"
                 className="flex-1 px-3 py-2 rounded-lg glass border border-white/8 hover:border-brand/40 text-[10px] uppercase tracking-[0.28em] text-ink/70 hover:text-ink transition-all flex items-center justify-center gap-1.5"
               >
-                <PhoneCall className="w-3 h-3" />
-                <span>Test</span>
+                <Radio className="w-3 h-3" />
+                <span>Live</span>
               </button>
             </div>
             
             <div className="flex items-center justify-between text-[8px] uppercase tracking-[0.38em] text-muted/70">
-              <span className="font-display italic lowercase text-[11px] tracking-tight text-ink/70">v∞ · aurora</span>
+              <span className="font-display italic lowercase text-[11px] tracking-tight text-ink/70">wireline</span>
               <span className="flex items-center gap-1.5">
                 <span className="w-1 h-1 rounded-full bg-emerald-500 indicator-glow" />
                 Stable
@@ -291,12 +291,12 @@ function NotFound() {
   return (
     <div className="min-h-[70vh] flex flex-col items-center justify-center gap-6 text-center px-6">
       <div className="font-display italic text-aurora text-[8rem] md:text-[12rem] leading-none">404</div>
-      <p className="text-[10px] uppercase tracking-[0.6em] text-muted">No signal at this coordinate</p>
+      <p className="text-[10px] uppercase tracking-[0.6em] text-muted">Page not found</p>
       <p className="text-ink/55 max-w-md text-sm leading-relaxed">
-        The page you're after doesn't exist on the relay. Use ⌘K to jump anywhere, or head back to the Atlas.
+        This page doesn't exist. Use ⌘K to jump anywhere, or head back to the dashboard.
       </p>
       <Link to="/" className="brutal-btn !py-3 !px-6 !text-[11px] !tracking-[0.3em]">
-        <Activity className="w-3.5 h-3.5" /> Back to Atlas <ChevronRight className="w-3.5 h-3.5" />
+        <Activity className="w-3.5 h-3.5" /> Back to Dashboard <ChevronRight className="w-3.5 h-3.5" />
       </Link>
     </div>
   );
@@ -373,19 +373,19 @@ function PageTransition({ children }: { children: React.ReactNode }) {
 }
 
 const PAGE_TITLES: Record<string, string> = {
-  "/":             "Command Atlas",
-  "/triage":        "Triage Inbox",
-  "/appointments":  "Constellation",
-  "/logs":          "Voice Archive",
-  "/inbox":         "Inbound Email",
-  "/outbound":      "Outbound Dialer",
+  "/":             "Dashboard",
+  "/triage":        "Triage",
+  "/appointments":  "Appointments",
+  "/logs":          "Call Logs",
+  "/inbox":         "Email",
+  "/outbound":      "Outbound",
   "/insights":      "Insights",
   "/live":          "Live Monitor",
-  "/train":         "Neural Atelier",
-  "/knowledge":     "Knowledge Atlas",
-  "/agents":        "Agent Topology",
-  "/integrations":  "Carrier Bridge",
-  "/admin":         "Core Settings",
+  "/train":         "Training",
+  "/knowledge":     "Knowledge",
+  "/agents":        "Agents",
+  "/integrations":  "Integrations",
+  "/admin":         "Settings",
 };
 
 function AppContent() {
@@ -433,7 +433,7 @@ function AppContent() {
           <h1 className="text-6xl md:text-8xl font-display italic lowercase text-aurora leading-[0.85] tracking-tight">
             wireline
           </h1>
-          <p className="text-[10px] uppercase tracking-[0.6em] text-muted">Awakening the Aurora Relay</p>
+          <p className="text-[10px] uppercase tracking-[0.6em] text-muted">Initializing</p>
           <div className="flex items-center justify-center gap-1.5 pt-4">
             {[0, 1, 2].map(i => (
               <motion.span

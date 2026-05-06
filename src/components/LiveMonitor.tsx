@@ -94,7 +94,7 @@ export default function LiveMonitor() {
     <PageShell
       title="Live Monitor"
       eyebrow="Fleet · Real-time"
-      subtitle="Active calls, signal presence, and recent fleet activity — refreshing every 10 seconds"
+      subtitle="Active calls and recent fleet activity — refreshing every 10 seconds"
       actions={
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full glass border border-white/10 text-[9px] uppercase tracking-[0.3em] text-muted/70">
@@ -114,7 +114,7 @@ export default function LiveMonitor() {
       {loading ? (
         <div className="h-full flex flex-col items-center justify-center gap-3">
           <Loader2 className="w-6 h-6 animate-spin text-brand" />
-          <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">Scanning carrier nodes</span>
+          <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">Loading…</span>
         </div>
       ) : (
         <div className="h-full flex flex-col gap-3 overflow-hidden">
@@ -131,7 +131,7 @@ export default function LiveMonitor() {
             {/* Active calls panel */}
             <div className="xl:col-span-5 h-full">
               <Panel
-                title="active calls"
+                title="Active Calls"
                 hint={activeCount > 0 ? `${activeCount} live` : "idle"}
                 icon={Radio}
                 scroll flush
@@ -154,7 +154,7 @@ export default function LiveMonitor() {
                         <PhoneOff className="w-7 h-7 text-muted/50" />
                       </div>
                       <div className="space-y-1.5">
-                        <h3 className="font-display italic lowercase text-2xl text-ink">fleet idle</h3>
+                        <h3 className="font-display italic lowercase text-2xl text-ink">No active calls</h3>
                         <p className="text-[10px] uppercase tracking-[0.4em] text-muted/60 max-w-xs">
                           No active calls at this moment. The monitor updates every 10 seconds.
                         </p>
@@ -215,7 +215,7 @@ export default function LiveMonitor() {
 
             {/* Activity feed */}
             <div className="xl:col-span-7 h-full">
-              <Panel title="recent activity" hint="Fleet events" icon={Activity} scroll flush>
+              <Panel title="Recent Activity" hint="Fleet events" icon={Activity} scroll flush>
                 <AnimatePresence mode="popLayout">
                   {activity.length === 0 ? (
                     <motion.div key="no-activity"

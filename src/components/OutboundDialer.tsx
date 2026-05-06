@@ -303,7 +303,7 @@ export default function OutboundDialer() {
           {/* Configuration */}
           <div className="xl:col-span-5 min-h-0">
             <Panel
-              title="dispatch params"
+              title="Parameters"
               hint={mode === "single" ? "SINGLE CALL" : "BULK UPLOAD"}
               icon={mode === "single" ? Zap : FileSpreadsheet}
               scroll
@@ -493,7 +493,7 @@ export default function OutboundDialer() {
           {/* Operations Queue */}
           <div className="xl:col-span-7 min-h-0">
             <Panel
-              title="operations queue"
+              title="Queue"
               hint={leadsTotal > 0 ? `${leads.length}/${leadsTotal}` : "QUEUE"}
               icon={PlayCircle}
               scroll
@@ -627,7 +627,7 @@ export default function OutboundDialer() {
       {/* Campaign list */}
       <div className="xl:col-span-5 min-h-0">
         <Panel
-          title="campaigns"
+          title="Campaigns"
           hint={`${campaigns.length} total`}
           icon={Megaphone}
           scroll flush
@@ -844,7 +844,7 @@ export default function OutboundDialer() {
             )}
           </Panel>
         ) : (
-          <Panel title="select campaign" hint="Details" icon={Target}>
+          <Panel title="Campaign Details" hint="Details" icon={Target}>
             <div className="h-full flex items-center justify-center">
               <p className="text-[9px] uppercase tracking-[0.5em] text-muted/40">Select a campaign to view details</p>
             </div>
@@ -857,9 +857,9 @@ export default function OutboundDialer() {
   return (
     <>
       <PageShell
-        title="Outbound Dialer"
-        eyebrow="Signal · Dispatch"
-        subtitle="Deploy agents across carrier networks for lead qualification."
+        title="Outbound"
+        eyebrow="Communications · Outbound"
+        subtitle="Run outbound calling campaigns for lead qualification and follow-up."
         actions={<CsvExportButton type="leads" label="Export" />}
         tabs={[
           { id: "dispatch",  label: "Dispatch",  icon: Zap,       content: dispatchTab },

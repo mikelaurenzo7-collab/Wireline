@@ -159,9 +159,9 @@ export default function AdminSettings() {
 
   return (
     <PageShell
-      title="Platform Settings"
+      title="Settings"
       eyebrow="Admin · Configuration"
-      subtitle="Carrier credentials, capacity, and routing parameters."
+      subtitle="API credentials, phone numbers, and platform configuration."
       actions={tabSwitcher}
     >
       {isLoading ? (
@@ -180,7 +180,7 @@ export default function AdminSettings() {
               className="h-full grid grid-cols-1 xl:grid-cols-2 gap-3 min-h-0"
             >
               {/* Carrier authentication */}
-              <Panel title="carrier authentication" hint="VAPI" icon={Cpu} scroll>
+              <Panel title="Vapi Credentials" hint="VAPI" icon={Cpu} scroll>
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <div className="rounded-xl glass border border-brand/30 p-3 space-y-1.5">
@@ -299,7 +299,7 @@ export default function AdminSettings() {
               </Panel>
 
               {/* Hub & routing */}
-              <Panel title="hub routing" hint="CARRIER NUMBERS" icon={Phone} scroll>
+              <Panel title="Phone Numbers" hint="CARRIER NUMBERS" icon={Phone} scroll>
                 <div className="space-y-3">
                   {phoneNumbers.length === 0 ? (
                     <div className="rounded-xl glass border border-white/10 border-dashed py-8 text-center">

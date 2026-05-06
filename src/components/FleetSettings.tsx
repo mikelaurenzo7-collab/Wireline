@@ -268,10 +268,10 @@ export default function FleetSettings() {
       <aside className="w-full md:w-[420px] border-b md:border-b-0 md:border-r border-white/8 h-auto md:h-full flex flex-col shrink-0">
         <div className="px-4 py-3 border-b border-white/8 flex items-center justify-between gap-3 shrink-0">
           <div className="min-w-0">
-            <div className="text-[10px] uppercase tracking-[0.45em] text-brand/80">Fleet · Inventory</div>
+            <div className="text-[10px] uppercase tracking-[0.45em] text-brand/80">Fleet · Agents</div>
             <h2 className="font-display italic lowercase text-2xl text-ink leading-none mt-0.5 flex items-center gap-2">
               <Shield className="w-4 h-4 text-brand" />
-              fleet nodes
+              your agents
             </h2>
           </div>
           <span className="text-[9px] uppercase tracking-[0.3em] text-muted/70 tabular-nums shrink-0">
