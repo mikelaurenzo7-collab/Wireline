@@ -1520,8 +1520,14 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
          try {
            const { to_email, subject, body } = toolCall.function.arguments;
            
-           // Fetch the first connected valid email account
-           const { data: accounts } = await db.from('wireline_email_accounts').select('*').limit(1);
+           // Fetch the agent's assigned email account first, fall back to any connected account.
+           let { data: accounts } = await db.from('wireline_email_accounts')
+             .select('*')
+             .eq('agent_id', webhookAgentId || '')
+             .limit(1);
+           if (!accounts || accounts.length === 0) {
+             ({ data: accounts } = await db.from('wireline_email_accounts').select('*').limit(1));
+           }
            
            if (!accounts || accounts.length === 0) {
               results.push({
@@ -1534,7 +1540,7 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
            const account = accounts[0];
            const curAgentId = webhookAgentId || "default-agent";
 
-           // Create a Fleet Handoff Task (For traceability & Founder monitoring)
+           // Create a Fleet Handoff Task (for traceability & monitoring)
            const { data: task, error: taskError } = await db.from('wireline_fleet_tasks').insert({
               source_type: 'phone_call',
               source_id: message.call?.id || "manual-handoff",
@@ -1548,37 +1554,47 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
 
            if (taskError) throw taskError;
 
-           const oauth2Client = getGoogleOAuthClient(req);
-           oauth2Client.setCredentials({
-             access_token: account.access_token,
-             refresh_token: account.refresh_token,
-             expiry_date: account.expires_at
-           });
+           let dispatchedId = "";
+           let threadKey = "";
 
-           const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
-           const messageParts = [
-             `To: ${to_email}`,
-             `Subject: ${subject}`,
-             'Content-Type: text/plain; charset=utf-8',
-             '',
-             body
-           ];
-           const encodedMessage = Buffer.from(messageParts.join('\n')).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-           
-           const gmailRes = await gmail.users.messages.send({
-             userId: 'me',
-             requestBody: { raw: encodedMessage }
-           });
+           if (account.provider === 'microsoft') {
+             // ── Microsoft Graph path ─────────────────────────────────────────
+             const msResult = await sendEmailViaMicrosoft({ account, to: to_email, subject, body });
+             dispatchedId = msResult.messageId;
+             threadKey    = msResult.conversationId || `ms-call-${Date.now()}`;
+           } else {
+             // ── Gmail path ───────────────────────────────────────────────────
+             const oauth2Client = getGoogleOAuthClient(req);
+             oauth2Client.setCredentials({
+               access_token: account.access_token,
+               refresh_token: account.refresh_token,
+               expiry_date: account.expires_at
+             });
+             const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+             const messageParts = [
+               `To: ${to_email}`,
+               `Subject: ${subject}`,
+               'Content-Type: text/plain; charset=utf-8',
+               '',
+               body
+             ];
+             const encodedMessage = Buffer.from(messageParts.join('\n')).toString('base64')
+               .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+             const gmailRes = await gmail.users.messages.send({
+               userId: 'me',
+               requestBody: { raw: encodedMessage }
+             });
+             dispatchedId = gmailRes.data.id || "";
+             threadKey    = gmailRes.data.threadId || "";
+           }
 
            // OMNICHANNEL SYNC: Log the phone-originated email to the hub
            try {
-              const googleThreadId = gmailRes.data.threadId;
-              let { data: thread } = await db.from('wireline_email_threads').select('*').eq('thread_id', googleThreadId).single();
-              
+              let { data: thread } = await db.from('wireline_email_threads').select('*').eq('thread_id', threadKey).single();
               if (!thread) {
                  const { data: newThread } = await db.from('wireline_email_threads').insert({
                    account_id: account.id,
-                   thread_id: googleThreadId,
+                   thread_id: threadKey,
                    customer_email: to_email,
                    subject: subject,
                    status: 'open',
@@ -1586,22 +1602,17 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
                  }).select('*').single();
                  thread = newThread;
               }
-
               await db.from('wireline_email_messages').insert({
                  thread_id: thread.id,
-                 google_message_id: gmailRes.data.id,
+                 google_message_id: dispatchedId,
                  role: 'ai',
                  content: body
               });
-
-              await db.from('wireline_email_threads').update({
-                 last_message_at: new Date()
-              }).eq('id', thread.id);
+              await db.from('wireline_email_threads').update({ last_message_at: new Date() }).eq('id', thread.id);
            } catch(syncErr: any) {
               log.warn("Vapi tool: omnichannel email sync error", { agentId: webhookAgentId, error: syncErr?.message || String(syncErr) });
            }
 
-           // Mark task as completed
            await db.from('wireline_fleet_tasks').update({ status: 'completed' }).eq('id', task.id);
 
            results.push({
@@ -4769,6 +4780,141 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
           directives = directivesMap.get(account.agent_id) || [];
         }
 
+        // ── Per-account sync: branch by provider ────────────────────────────
+        if (account.provider === 'microsoft') {
+          // ── Microsoft Graph — fetch unread inbox messages ──────────────────
+          let msToken: string;
+          try {
+            msToken = await getMicrosoftAccessToken(account);
+          } catch (tokenErr: any) {
+            log.warn("Email sync: Microsoft token refresh failed", { account: account.email_address, error: tokenErr?.message });
+            continue;
+          }
+
+          const msRes = await fetchWithTimeout(
+            "https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?$filter=isRead eq false&$top=5&$select=id,subject,from,bodyPreview,conversationId,internetMessageId",
+            { headers: { Authorization: `Bearer ${msToken}` } },
+            15_000,
+          );
+          if (!msRes.ok) {
+            log.warn("Email sync: Microsoft Graph list failed", { account: account.email_address, status: msRes.status });
+            continue;
+          }
+          const msData = await msRes.json() as any;
+          const msMsgs: any[] = msData.value || [];
+          if (msMsgs.length === 0) continue;
+
+          const msConvIds = [...new Set(msMsgs.map((m: any) => m.conversationId).filter(Boolean))];
+          const msMsgIds  = msMsgs.map((m: any) => m.id).filter(Boolean);
+
+          const [existingMsThreads, existingMsMsgs] = await Promise.all([
+            msConvIds.length
+              ? db.from('wireline_email_threads').select('*').in('thread_id', msConvIds)
+              : Promise.resolve({ data: [], error: null }),
+            msMsgIds.length
+              ? db.from('wireline_email_messages').select('google_message_id').in('google_message_id', msMsgIds)
+              : Promise.resolve({ data: [], error: null }),
+          ]);
+          const msThreadMap = new Map((existingMsThreads.data || []).map((t: any) => [t.thread_id, t]));
+          const msSeen = new Set((existingMsMsgs.data || []).map((m: any) => m.google_message_id));
+
+          for (const msg of msMsgs) {
+            const convId   = msg.conversationId || `ms-${msg.id}`;
+            const msgId    = msg.id;
+            const subject  = msg.subject || "No Subject";
+            const from     = msg.from?.emailAddress?.address || msg.from?.emailAddress?.name || "";
+            const snippet  = msg.bodyPreview || "";
+
+            if (msSeen.has(msgId)) continue;
+            msSeen.add(msgId);
+            totalNew++;
+
+            let existingThread = msThreadMap.get(convId);
+            if (!existingThread) {
+              const { data: newThread } = await db.from('wireline_email_threads').insert({
+                account_id: account.id,
+                thread_id:  convId,
+                customer_email: from,
+                subject:    subject,
+                status:     'pending_ai',
+              }).select('*').single();
+              existingThread = newThread;
+              if (existingThread) msThreadMap.set(convId, existingThread);
+            }
+
+            await db.from('wireline_email_messages').insert({
+              thread_id:        existingThread!.id,
+              google_message_id: msgId,
+              role:             'customer',
+              content:          snippet,
+            });
+
+            // Mark as read in Outlook
+            await fetchWithTimeout(
+              `https://graph.microsoft.com/v1.0/me/messages/${msgId}`,
+              { method: "PATCH", headers: { Authorization: `Bearer ${msToken}`, "Content-Type": "application/json" }, body: JSON.stringify({ isRead: true }) },
+              10_000,
+            ).catch((e: any) => log.warn("Email sync: MS mark-read failed", { error: e?.message }));
+
+            // Generate AI reply (same Claude/Gemini path as Gmail)
+            const checkCalendarMs = async (date: string) => {
+              const { data } = await db.from('wireline_appointments').select('time').ilike('date', `%${date}%`);
+              return data && data.length > 0
+                ? `Booked times on ${date}: ${data.map((a: any) => a.time).join(', ')}. Offer other times.`
+                : `The entire day on ${date} is fully open.`;
+            };
+            const bookAppointmentMs = async (args: { date: string; time: string; customer_name: string; service_type: string }) => {
+              try {
+                const { data, error } = await db.from('wireline_appointments').insert({
+                  agent_id: activeAgent?.id, date: args.date, time: args.time,
+                  customer_name: args.customer_name, service_type: args.service_type, status: "Scheduled",
+                }).select('id').single();
+                if (error) throw error;
+                return { success: true, reference_id: String(data.id).split('-')[0] };
+              } catch (e: any) { return { success: false, error: e?.message || "Booking failed." }; }
+            };
+
+            let finalReplyMs = "I've received your email and will follow up shortly.";
+            if (claudeBrain.isClaudeAvailable()) {
+              try {
+                const r = await claudeBrain.smartEmailReply({
+                  agentName: activeAgent?.name || "Wireline Agent",
+                  agentTone: activeAgent?.email_agent_tone || "Professional",
+                  agentArchetype: activeAgent?.archetype || "Receptionist",
+                  agentRole: activeAgent?.role || DEFAULT_AGENT_ROLE,
+                  knowledgeBase: knowledge, directives,
+                  fromEmail: from, subject, emailBody: snippet,
+                  onCheckCalendar: checkCalendarMs, onBookAppointment: bookAppointmentMs,
+                });
+                finalReplyMs = r.replyText || finalReplyMs;
+              } catch (err: any) {
+                log.error("Claude email reply failed (MS)", { error: err?.message });
+              }
+            }
+
+            if (activeAgent?.email_signature) finalReplyMs = `${finalReplyMs}\n\n${activeAgent.email_signature}`;
+
+            await db.from('wireline_email_messages').insert({
+              thread_id: existingThread!.id, role: 'ai', content: finalReplyMs,
+            });
+
+            // Auto-respond for Microsoft if enabled
+            if (activeAgent?.email_auto_respond) {
+              try {
+                await sendEmailViaMicrosoft({ account, to: from, subject: `Re: ${subject}`, body: finalReplyMs });
+              } catch (sendErr: any) {
+                log.error("MS auto-respond failed", { error: sendErr?.message });
+              }
+            }
+
+            await db.from('wireline_email_threads').update({
+              summary: snippet.substring(0, 100), last_message_at: new Date(), status: 'open',
+            }).eq('id', existingThread!.id);
+          }
+          continue; // done with this Microsoft account
+        }
+
+        // ── Gmail path ───────────────────────────────────────────────────────
         const oauth2Client = getGoogleOAuthClient(req);
         oauth2Client.setCredentials({
            access_token: account.access_token,
@@ -5089,32 +5235,38 @@ app.post("/api/emails/threads/:id/reply", authenticateUser, async (req: any, res
       if (!thread) throw new Error("Thread not found");
 
       const account = thread.wireline_email_accounts;
-      const oauth2Client = getGoogleOAuthClient(req);
-      oauth2Client.setCredentials({
-         access_token: account.access_token,
-         refresh_token: account.refresh_token,
-         expiry_date: account.expires_at
-      });
 
-      const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
-      
-      // Send via Gmail
-      const messageParts = [
-        `To: ${thread.customer_email}`,
-        `Subject: Re: ${thread.subject}`,
-        'Content-Type: text/plain; charset=utf-8',
-        '',
-        body
-      ];
-      const encodedMessage = Buffer.from(messageParts.join('\n')).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-      
-      await gmail.users.messages.send({
-        userId: 'me',
-        requestBody: {
-          raw: encodedMessage,
-          threadId: thread.thread_id
-        }
-      });
+      if (account.provider === 'microsoft') {
+        // ── Microsoft Graph reply ─────────────────────────────────────────
+        await sendEmailViaMicrosoft({
+          account,
+          to:      thread.customer_email,
+          subject: `Re: ${thread.subject}`,
+          body,
+        });
+      } else {
+        // ── Gmail reply ────────────────────────────────────────────────────
+        const oauth2Client = getGoogleOAuthClient(req);
+        oauth2Client.setCredentials({
+           access_token: account.access_token,
+           refresh_token: account.refresh_token,
+           expiry_date: account.expires_at
+        });
+        const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+        const messageParts = [
+          `To: ${thread.customer_email}`,
+          `Subject: Re: ${thread.subject}`,
+          'Content-Type: text/plain; charset=utf-8',
+          '',
+          body
+        ];
+        const encodedMessage = Buffer.from(messageParts.join('\n')).toString('base64')
+          .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        await gmail.users.messages.send({
+          userId: 'me',
+          requestBody: { raw: encodedMessage, threadId: thread.thread_id }
+        });
+      }
 
       // Save to DB
       await db.from('wireline_email_messages').insert({
@@ -5124,7 +5276,7 @@ app.post("/api/emails/threads/:id/reply", authenticateUser, async (req: any, res
       });
 
       res.json({ success: true });
-   } catch(e) {
+   } catch(e: any) {
       log.error("Reply Error", { error: e?.message || String(e) });
       res.status(500).json({ error: String(e) });
    }
