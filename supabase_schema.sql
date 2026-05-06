@@ -289,8 +289,8 @@ END $$;
 -- Enhanced audit log columns for comprehensive activity monitoring
 -- (auth events, agent ops, settings, billing, security, data operations)
 -- These additions are idempotent — safe to re-run on existing installs.
-ALTER TABLE wireline_audit_log ADD COLUMN IF NOT EXISTS event_type TEXT;
-ALTER TABLE wireline_audit_log ADD COLUMN IF NOT EXISTS severity TEXT DEFAULT 'info';
+ALTER TABLE wireline_audit_log ADD COLUMN IF NOT EXISTS event_type TEXT NOT NULL DEFAULT 'ai.api_call';
+ALTER TABLE wireline_audit_log ADD COLUMN IF NOT EXISTS severity TEXT NOT NULL DEFAULT 'info';
 ALTER TABLE wireline_audit_log ADD COLUMN IF NOT EXISTS actor_email TEXT;
 ALTER TABLE wireline_audit_log ADD COLUMN IF NOT EXISTS resource_type TEXT;
 ALTER TABLE wireline_audit_log ADD COLUMN IF NOT EXISTS resource_id TEXT;

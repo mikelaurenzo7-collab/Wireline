@@ -67,8 +67,8 @@ export type AuditSeverity = 'info' | 'warning' | 'error' | 'critical';
 export interface AuditEvent {
   // Core identification
   id: number;
-  user_id: string;
-  event_type: AuditEventType;
+  user_id?: string; // Optional - can be NULL if auth.uid() is NULL
+  event_type?: AuditEventType; // Optional - nullable column in schema
   severity: AuditSeverity;
   action: string;
   
