@@ -511,6 +511,22 @@ DO $$ BEGIN
 END $$;
 
 -- ────────────────────────────────────────────────────────────────────
+-- STRIPE WEBHOOK IDEMPOTENCY
+-- Stripe retries failed deliveries (and sometimes succeeds twice). We
+-- record every event id we've fully processed; the webhook handler
+-- short-circuits on duplicate ids. Service-role only — never read by
+-- the frontend.
+-- ────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS wireline_stripe_events (
+    event_id TEXT PRIMARY KEY,
+    event_type TEXT NOT NULL,
+    processed_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE wireline_stripe_events ENABLE ROW LEVEL SECURITY;
+-- No RLS policies — service role bypasses RLS, and there's no user_id
+-- to scope by. Frontends should never query this directly.
+
+-- ────────────────────────────────────────────────────────────────────
 -- PERFORMANCE INDEXES — idempotent, safe to re-run on existing installs.
 --
 -- The tables below are queried almost exclusively by (user_id) or

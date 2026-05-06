@@ -1070,6 +1070,37 @@ app.post("/api/stripe-webhook", async (req: any, res: any) => {
     return res.status(400).json({ error: `Webhook Error: ${err?.message}` });
   }
 
+  // Idempotency — Stripe retries on timeouts and occasionally double-
+  // delivers. The unique constraint on event_id means a duplicate insert
+  // returns an error we use as our short-circuit signal. We INSERT first
+  // (claiming the event) and only proceed if the insert succeeded.
+  // If processing later throws, we DELETE the row in the catch so a
+  // retry can replay; otherwise the row stays and prevents replay.
+  const idempotencyKey = event.id;
+  let claimed = false;
+  try {
+    const { error: claimErr } = await db
+      .from("wireline_stripe_events")
+      .insert({ event_id: idempotencyKey, event_type: event.type });
+    if (claimErr) {
+      // Most common case: duplicate key — already processed.
+      log.info("Stripe webhook duplicate event ignored", {
+        eventId: idempotencyKey,
+        eventType: event.type,
+        reason: claimErr.message,
+      });
+      return res.json({ received: true, duplicate: true });
+    }
+    claimed = true;
+  } catch (err: any) {
+    // If the idempotency table doesn't exist yet (schema not migrated),
+    // fail-OPEN: log and proceed. Operators see the warning and run the
+    // schema. Better than blocking all Stripe webhooks on a missing table.
+    log.warn("Stripe idempotency claim failed — proceeding without idempotency guard", {
+      error: err?.message || String(err),
+    });
+  }
+
   try {
     switch (event.type) {
       case "checkout.session.completed": {
@@ -1102,6 +1133,13 @@ app.post("/api/stripe-webhook", async (req: any, res: any) => {
     res.json({ received: true });
   } catch (err: any) {
     log.error("Stripe webhook handler error", { error: err?.message || String(err) });
+    // Release the idempotency claim so Stripe's retry can re-process.
+    if (claimed) {
+      await db.from("wireline_stripe_events").delete().eq("event_id", idempotencyKey).then(
+        () => {},
+        (e: any) => log.warn("Failed to release idempotency claim", { error: e?.message }),
+      );
+    }
     res.status(500).json({ error: err?.message || "Webhook handler failed" });
   }
 });

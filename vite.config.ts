@@ -1,12 +1,34 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import { sentryVitePlugin } from '@sentry/vite-plugin';
 import path from 'path';
 import {defineConfig, loadEnv} from 'vite';
 
 export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');
+
+  // Sentry source-map upload only runs when SENTRY_AUTH_TOKEN is set in
+  // the deploy environment. Without it the plugin no-ops, so dev/local
+  // builds stay free of network calls.
+  const sentryEnabled = !!env.SENTRY_AUTH_TOKEN && !!env.SENTRY_ORG && !!env.SENTRY_PROJECT;
+
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      ...(sentryEnabled
+        ? [sentryVitePlugin({
+            authToken: env.SENTRY_AUTH_TOKEN,
+            org: env.SENTRY_ORG,
+            project: env.SENTRY_PROJECT,
+            release: { name: env.VERCEL_GIT_COMMIT_SHA || undefined },
+            // Sourcemaps are deleted from dist/ after upload to avoid
+            // shipping them publicly.
+            sourcemaps: { filesToDeleteAfterUpload: ['./dist/**/*.map'] },
+            telemetry: false,
+          })]
+        : []),
+    ],
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
     },
@@ -16,6 +38,9 @@ export default defineConfig(({mode}) => {
       },
     },
     build: {
+      // Sourcemaps required for Sentry to symbolicate prod errors. They
+      // are uploaded then stripped from the dist/ output above.
+      sourcemap: sentryEnabled ? true : false,
       // Keep chunks reasonable — 500 kB uncompressed is a good ceiling
       // before we start caring about a given page's specific imports.
       chunkSizeWarningLimit: 600,

@@ -1,0 +1,42 @@
+version: 2
+updates:
+  # npm — weekly batched updates so review fatigue stays low.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    groups:
+      # Group dev-tooling bumps so they land as a single PR.
+      dev-tooling:
+        dependency-type: "development"
+        patterns:
+          - "@types/*"
+          - "@testing-library/*"
+          - "vitest"
+          - "vite"
+          - "@vitejs/*"
+          - "esbuild"
+          - "tsx"
+          - "typescript"
+      # Group all other minor/patch updates.
+      minor-and-patch:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      # React + RouterDOM majors require manual coordination.
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-router-dom"
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions — keep workflow runners on supported versions.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"

@@ -607,3 +607,21 @@ select:focus {
   @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.32em] leading-none font-medium;
 }
 
+
+/* ─────────────────────────────────────────────────────────────────────
+ * Reduced motion — respect operator OS-level preference.
+ * Wireline leans on aurora gradients, scanlines, and motion/react
+ * animations everywhere. For users with prefers-reduced-motion set,
+ * collapse animations to a near-zero duration so they don't induce
+ * vestibular distress, but keep static styling intact.
+ * ─────────────────────────────────────────────────────────────────────*/
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* Aurora orbs and scanlines are decorative-only — hide entirely. */
+  .scanline { display: none !important; }
+}
