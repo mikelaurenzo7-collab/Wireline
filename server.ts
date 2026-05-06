@@ -6455,6 +6455,10 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
 });
 
 app.post("/api/emails/threads/:id/reply", authenticateUser, emailRateLimiter, async (req: any, res: any) => {
+   // Hoisted so the catch handler can include provider context in the
+   // Sentry event without crashing on `ReferenceError: account` if the
+   // failure happens before the thread lookup completes.
+   let account: any = null;
    try {
       const validation = parseFormData(EmailReplySchema, {
         body: req.body.body,
@@ -6464,10 +6468,10 @@ app.post("/api/emails/threads/:id/reply", authenticateUser, emailRateLimiter, as
       }
       const { body } = validation.data;
       const { data: thread } = await db.from('wireline_email_threads').select('*, wireline_email_accounts(*)').eq('id', req.params.id).eq('user_id', req.user.id).single();
-      
+
       if (!thread) throw new Error("Thread not found");
 
-      const account = thread.wireline_email_accounts;
+      account = thread.wireline_email_accounts;
 
       if (account.provider === 'microsoft') {
         // ── Microsoft Graph reply ─────────────────────────────────────────
@@ -6519,7 +6523,7 @@ app.post("/api/emails/threads/:id/reply", authenticateUser, emailRateLimiter, as
       log.error("Reply Error", { error: e?.message || String(e) });
       const errorMsg = getErrorMessage(e);
       SentryEvents.externalServiceError({
-        service: account.provider === 'microsoft' ? 'microsoft-graph' : 'gmail',
+        service: account?.provider === 'microsoft' ? 'microsoft-graph' : (account?.provider === 'gmail' ? 'gmail' : 'unknown'),
         endpoint: '/api/emails/threads/:id/reply',
         error_message: errorMsg,
       });

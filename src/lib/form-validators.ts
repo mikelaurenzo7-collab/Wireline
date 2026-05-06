@@ -140,8 +140,20 @@ export const AppointmentSchema = z.object({
 
 export type Appointment = z.infer<typeof AppointmentSchema>;
 
-// Helper to validate and provide user-friendly error messages
-export function parseFormData<T>(schema: z.ZodSchema<T>, data: unknown): { success: true; data: T } | { success: false; errors: Record<string, string> } {
+// Result shape for `parseFormData`. Both `data` and `errors` are optional
+// so that call sites can do `if (!result.success) { use result.errors }`
+// without relying on discriminated-union narrowing — the project's tsconfig
+// does not enable `strict`, and TS's narrowing of `!validation.success`
+// is unreliable without it. With both fields optional, accessing either
+// on the broader type just yields `undefined`-or-T, which works at every
+// call site.
+export interface FormParseResult<T> {
+  success: boolean;
+  data?: T;
+  errors?: Record<string, string>;
+}
+
+export function parseFormData<T>(schema: z.ZodSchema<T>, data: unknown): FormParseResult<T> {
   try {
     return { success: true, data: schema.parse(data) };
   } catch (err) {

@@ -70,7 +70,7 @@ describe("Component snapshots", () => {
 
   it("SupervisedAgentTuner snapshot", async () => {
     const { default: SupervisedAgentTuner } = await import("../SupervisedAgentTuner");
-    const { container } = harness(<SupervisedAgentTuner />);
+    const { container } = harness(<SupervisedAgentTuner agentId="test-agent-1" />);
     expect(container.innerHTML).toMatchSnapshot();
   });
 

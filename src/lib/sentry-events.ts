@@ -1,12 +1,33 @@
 import * as Sentry from '@sentry/react';
 
-// Track business metrics and operational events in Sentry
-// These appear in Sentry Dashboards as custom metrics for trend analysis
+// Track business metrics and operational events in Sentry.
+// These appear in Sentry Dashboards as custom metrics for trend analysis.
+//
+// The Sentry React SDK's CaptureContext type doesn't expose `measurements`,
+// but the underlying transport accepts it (set on the Event via the scope
+// processor). Since restructuring every call to `Sentry.setMeasurement()`
+// would mean updating every test and lose the single-call ergonomics,
+// we wrap captureMessage in a thin helper that accepts measurements
+// alongside the standard CaptureContext fields.
+type Unit = 'milliseconds' | 'percent' | 'none';
+interface MetricContext {
+  level?: 'info' | 'warning' | 'error';
+  tags?: Record<string, string>;
+  extra?: Record<string, unknown>;
+  measurements?: Record<string, { value: number; unit: Unit }>;
+}
+
+function captureMetric(message: string, ctx: MetricContext) {
+  // Cast: measurements is a valid runtime field on the Event payload but
+  // missing from the public CaptureContext type. This keeps payload shape
+  // unchanged while satisfying the type checker.
+  Sentry.captureMessage(message, ctx as Sentry.CaptureContext);
+}
 
 export const SentryEvents = {
   // Call tracking
   callCompleted: (params: { duration_ms: number; agent_id: string; direction: 'inbound' | 'outbound' }) => {
-    Sentry.captureMessage('Call completed', {
+    captureMetric('Call completed', {
       level: 'info',
       tags: {
         event: 'call_completed',
@@ -30,7 +51,7 @@ export const SentryEvents = {
 
   // Email tracking
   emailSent: (params: { thread_id: string; recipient_count: number }) => {
-    Sentry.captureMessage('Email sent', {
+    captureMetric('Email sent', {
       level: 'info',
       tags: {
         event: 'email_sent',
@@ -52,7 +73,7 @@ export const SentryEvents = {
 
   // Outbound dial tracking
   outboundDialStarted: (params: { lead_count: number; agent_id: string }) => {
-    Sentry.captureMessage('Outbound dial campaign started', {
+    captureMetric('Outbound dial campaign started', {
       level: 'info',
       tags: {
         event: 'outbound_dial_started',
@@ -172,7 +193,7 @@ export const SentryEvents = {
 
   // Spending/budget alerts
   budgetWarning: (params: { user_id: string; spent: number; budget: number }) => {
-    Sentry.captureMessage('Budget warning: approaching limit', {
+    captureMetric('Budget warning: approaching limit', {
       level: 'warning',
       tags: {
         event: 'budget_warning',
@@ -197,7 +218,7 @@ export const SentryEvents = {
 
   // Performance monitoring — track slow operations
   slowOperation: (params: { operation: string; duration_ms: number; threshold_ms: number }) => {
-    Sentry.captureMessage(`Slow operation: ${params.operation}`, {
+    captureMetric(`Slow operation: ${params.operation}`, {
       level: 'warning',
       tags: {
         event: 'slow_operation',
@@ -213,7 +234,7 @@ export const SentryEvents = {
 
   // Cache hit/miss tracking for observability
   cacheOperation: (params: { key: string; hit: boolean; duration_ms?: number }) => {
-    Sentry.captureMessage(`Cache ${params.hit ? 'hit' : 'miss'}: ${params.key}`, {
+    captureMetric(`Cache ${params.hit ? 'hit' : 'miss'}: ${params.key}`, {
       level: 'info',
       tags: {
         event: 'cache_operation',

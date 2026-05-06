@@ -4,6 +4,7 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
+import type { ReactElement } from "react";
 import ErrorBoundary from "../ErrorBoundary";
 
 const { captureException } = vi.hoisted(() => ({ captureException: vi.fn() }));
@@ -12,7 +13,7 @@ vi.mock("../../lib/sentry", () => ({
   captureException,
 }));
 
-function Boom({ message = "kaboom" }: { message?: string }): JSX.Element {
+function Boom({ message = "kaboom" }: { message?: string }): ReactElement {
   throw new Error(message);
 }
 
