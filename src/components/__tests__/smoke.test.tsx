@@ -87,4 +87,58 @@ describe("Top-level page smoke", () => {
     const { container } = harness(<OutboundDialer />);
     await waitFor(() => expect(container.firstChild).toBeTruthy());
   });
+
+  it("CallLogs mounts without throwing", async () => {
+    const { default: CallLogs } = await import("../CallLogs");
+    const { container } = harness(<CallLogs />);
+    await waitFor(() => expect(container.firstChild).toBeTruthy());
+  });
+
+  it("EmailInbox mounts without throwing", async () => {
+    const { default: EmailInbox } = await import("../EmailInbox");
+    const { container } = harness(<EmailInbox />);
+    await waitFor(() => expect(container.firstChild).toBeTruthy());
+  });
+
+  it("InsightsView mounts without throwing", async () => {
+    const { default: InsightsView } = await import("../InsightsView");
+    const { container } = harness(<InsightsView />);
+    await waitFor(() => expect(container.firstChild).toBeTruthy());
+  });
+
+  it("KnowledgeBaseManager mounts without throwing", async () => {
+    const { default: KnowledgeBaseManager } = await import("../KnowledgeBaseManager");
+    const { container } = harness(<KnowledgeBaseManager />);
+    await waitFor(() => expect(container.firstChild).toBeTruthy());
+  });
+
+  it("AgentTraining mounts without throwing", async () => {
+    const { default: AgentTraining } = await import("../AgentTraining");
+    const { container } = harness(<AgentTraining />);
+    await waitFor(() => expect(container.firstChild).toBeTruthy());
+  });
+
+  it("Integrations mounts without throwing", async () => {
+    const { default: Integrations } = await import("../Integrations");
+    const { container } = harness(<Integrations />);
+    await waitFor(() => expect(container.firstChild).toBeTruthy());
+  });
+
+  it("DncManager mounts without throwing", async () => {
+    const { default: DncManager } = await import("../DncManager");
+    const { container } = harness(<DncManager />);
+    await waitFor(() => expect(container.firstChild).toBeTruthy());
+  });
+
+  it("AdminSettings mounts without throwing", async () => {
+    const { default: AdminSettings } = await import("../AdminSettings");
+    const { container } = harness(<AdminSettings />);
+    await waitFor(() => expect(container.firstChild).toBeTruthy());
+  });
+
+  it("Appointments mounts without throwing", async () => {
+    const { default: Appointments } = await import("../Appointments");
+    const { container } = harness(<Appointments />);
+    await waitFor(() => expect(container.firstChild).toBeTruthy());
+  });
 });

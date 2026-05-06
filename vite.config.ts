@@ -76,10 +76,12 @@ export default defineConfig(({mode}) => {
     },
     server: {
       hmr: true,
-      // In local dev, proxy /api/* to the Express server running on port 3000.
+      // In local dev, proxy /api/* to the Express server. Honor PORT so a
+      // developer running the API on a non-default port (e.g. when 3000 is
+      // taken) doesn't have to also edit vite.config.ts.
       proxy: {
         '/api': {
-          target: 'http://localhost:3000',
+          target: `http://localhost:${env.PORT || 3000}`,
           changeOrigin: true,
         },
       },
