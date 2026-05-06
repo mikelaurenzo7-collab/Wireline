@@ -511,6 +511,25 @@ app.use("/api/phone-numbers", timeoutMiddleware(10_000)); // 10s for phone provi
 app.use("/api/campaigns", timeoutMiddleware(10_000)); // 10s for campaign operations
 app.use("/api", timeoutMiddleware(20_000)); // 20s default for other endpoints
 
+// Cache-Control headers for read operations — improves browser/CDN caching
+// Write operations (POST, PATCH, DELETE) should never be cached
+app.use((req: any, res: any, next: any) => {
+  if (req.method === 'GET') {
+    // Static assets: cache longer
+    if (req.path.match(/\.(js|css|png|jpg|svg|woff|woff2|ttf)$/i)) {
+      res.set('Cache-Control', 'public, max-age=31536000, immutable'); // 1 year for hashed assets
+    }
+    // API read endpoints: short-lived cache with revalidation
+    else if (req.path.startsWith('/api/')) {
+      res.set('Cache-Control', 'private, max-age=60, must-revalidate'); // 1 min with revalidation
+    }
+  } else {
+    // Never cache write operations
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  }
+  next();
+});
+
 app.use("/api/claude", (req: any, res: any, next: any) => {
   // Status endpoint is exempt — used by clients to probe availability.
   if (req.path === "/status") return next();
