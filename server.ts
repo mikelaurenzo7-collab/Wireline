@@ -2336,11 +2336,19 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
 
             // 6. Update outbound lead status if applicable — but preserve meaningful
             //    in-call statuses (voicemail left, callback scheduled) set by tool handlers.
-            await db.from('wireline_outbound_leads').update({
+            const { data: updatedLeads } = await db.from('wireline_outbound_leads').update({
               status: 'Completed',
               last_called_at: new Date(),
             }).eq('call_id', call?.id)
-              .not('status', 'in', PRESERVED_LEAD_STATUSES);
+              .not('status', 'in', PRESERVED_LEAD_STATUSES)
+              .select('id');
+
+            // Track successful lead connection for outbound campaigns
+            if (call?.type === "outboundPhoneCall" && updatedLeads?.length ?? 0 > 0) {
+              SentryEvents.leadConnected({
+                agent_id: webhookAgentId,
+              });
+            }
 
             // 7. Outbound webhook events
             const callPayload = {
