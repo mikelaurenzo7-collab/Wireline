@@ -441,6 +441,9 @@ async function claudeRateLimiter(req: any, res: any, next: any) {
   next();
 }
 
+// Apply performance monitoring to critical API paths
+app.use("/api", performanceMonitoring(2000));
+
 app.use("/api/claude", (req: any, res: any, next: any) => {
   // Status endpoint is exempt — used by clients to probe availability.
   if (req.path === "/status") return next();
@@ -478,6 +481,32 @@ function oauthRateLimiter(req: any, res: any, next: any) {
     }
     next();
   }).catch(next);
+}
+
+// Performance monitoring middleware — track slow operations on critical paths
+function performanceMonitoring(slowThresholdMs: number = 2000) {
+  return (req: any, res: any, next: any) => {
+    const start = Date.now();
+    const originalSend = res.send;
+
+    res.send = function (data: any) {
+      const duration = Date.now() - start;
+
+      // Track slow operations for critical endpoints
+      if (duration > slowThresholdMs && /api\/(claude|emails|campaigns|knowledge|agents)/.test(req.path)) {
+        SentryEvents.slowOperation({
+          operation: `${req.method} ${req.path}`,
+          duration_ms: duration,
+          threshold_ms: slowThresholdMs,
+        });
+      }
+
+      res.send = originalSend;
+      return originalSend.call(this, data);
+    };
+
+    next();
+  };
 }
 
 // Initialize AI and DB

@@ -194,6 +194,37 @@ export const SentryEvents = {
       },
     });
   },
+
+  // Performance monitoring — track slow operations
+  slowOperation: (params: { operation: string; duration_ms: number; threshold_ms: number }) => {
+    Sentry.captureMessage(`Slow operation: ${params.operation}`, {
+      level: 'warning',
+      tags: {
+        event: 'slow_operation',
+        operation: params.operation,
+      },
+      measurements: {
+        duration_ms: { value: params.duration_ms, unit: 'milliseconds' },
+        threshold_ms: { value: params.threshold_ms, unit: 'milliseconds' },
+        over_threshold_by_pct: { value: ((params.duration_ms / params.threshold_ms - 1) * 100), unit: 'percent' },
+      },
+    });
+  },
+
+  // Cache hit/miss tracking for observability
+  cacheOperation: (params: { key: string; hit: boolean; duration_ms?: number }) => {
+    Sentry.captureMessage(`Cache ${params.hit ? 'hit' : 'miss'}: ${params.key}`, {
+      level: 'info',
+      tags: {
+        event: 'cache_operation',
+        key: params.key,
+        status: params.hit ? 'hit' : 'miss',
+      },
+      measurements: params.duration_ms ? {
+        lookup_duration_ms: { value: params.duration_ms, unit: 'milliseconds' },
+      } : undefined,
+    });
+  },
 };
 
 // Helper to batch similar events (e.g. reporting multiple call metrics at once)
