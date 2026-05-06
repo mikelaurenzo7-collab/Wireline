@@ -271,7 +271,23 @@ function buildCSP(isDev: boolean): string {
   ].join("; ");
 }
 
-app.use((_req: any, res: any, next: any) => {
+app.use((req: any, res: any, next: any) => {
+  // Attach request metadata to Sentry for context in error traces
+  Sentry.setTag('http.method', req.method);
+  Sentry.setTag('http.path', req.path);
+  Sentry.setContext('http_request', {
+    method: req.method,
+    url: req.originalUrl,
+    path: req.path,
+    ip: req.ip,
+  });
+
+  res.on('finish', () => {
+    // Tag the response status for better error filtering
+    Sentry.setTag('http.status_code', res.statusCode);
+  });
+
+  // Security headers
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
@@ -281,6 +297,7 @@ app.use((_req: any, res: any, next: any) => {
     // 6 months HSTS preload-eligible — only in prod so dev over http stays usable.
     res.setHeader("Strict-Transport-Security", "max-age=15552000; includeSubDomains");
   }
+
   next();
 });
 
@@ -1216,7 +1233,13 @@ async function authenticateUser(req: any, res: any, next: any) {
   }
 
   req.user = user;
-  
+
+  // Attach user context to Sentry for all subsequent events (errors, metrics, etc.)
+  Sentry.setUser({
+    id: user.id,
+    email: user.email,
+  });
+
   // Log successful authentication (non-blocking).
   void auditLogger.logAuth('login', {
     userId: user.id,
@@ -1226,7 +1249,7 @@ async function authenticateUser(req: any, res: any, next: any) {
   }).catch((err) => {
     log.warn("Failed to log auth event", { userId: user.id, error: String(err) });
   });
-  
+
   next();
 }
 
