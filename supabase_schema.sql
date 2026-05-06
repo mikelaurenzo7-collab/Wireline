@@ -750,3 +750,30 @@ ALTER TABLE wireline_signal_presence ADD COLUMN IF NOT EXISTS label TEXT DEFAULT
 -- Existing wireline_agent_lessons table — add index to speed up lesson lookups.
 CREATE INDEX IF NOT EXISTS wireline_agent_lessons_agent_created_idx
     ON wireline_agent_lessons(agent_id, created_at DESC);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Scheduled Callbacks — 2026-05-06
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- When an agent uses schedule_callback tool, the lead gets this timestamp.
+-- The background scheduler polls for lte(now()) and auto-dials.
+ALTER TABLE wireline_outbound_leads ADD COLUMN IF NOT EXISTS callback_scheduled_at TIMESTAMPTZ;
+CREATE INDEX IF NOT EXISTS wireline_outbound_leads_callback_idx
+    ON wireline_outbound_leads(status, callback_scheduled_at)
+    WHERE status = 'Callback-Scheduled';
+
+-- Campaigns: max_attempts and call_window columns are already in the schema.
+-- Add Max-Attempts as a recognised terminal status (documentation only).
+
+-- Increment attempts safely without a read-modify-write race.
+-- Called by the end-of-call-report handler after every outbound call completion.
+CREATE OR REPLACE FUNCTION increment_lead_attempts(p_phone TEXT, p_agent_id TEXT)
+RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  UPDATE wireline_outbound_leads
+  SET attempts = COALESCE(attempts, 0) + 1
+  WHERE ilike(customer_number, '%' || p_phone || '%')
+    AND agent_id = p_agent_id
+    AND status NOT IN ('Completed', 'Blocked-DNC', 'Max-Attempts');
+END;
+$$;
