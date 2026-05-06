@@ -373,7 +373,7 @@ function claudeRateLimiter(req: any, res: any, next: any) {
         limit: CLAUDE_RATE_MAX,
         hasToken: !!token
       }
-    }).catch(console.error);
+    }).catch((err: any) => log.warn('audit log failed', { error: err?.message }));
     
     res.setHeader("Retry-After", "60");
     return res.status(429).json({
@@ -935,7 +935,7 @@ async function authenticateUser(req: any, res: any, next: any) {
        ip: req.ip,
        userAgent: req.get('user-agent'),
        reason: 'missing_token'
-     }).catch(console.error);
+     }).catch((err: any) => log.warn('audit log failed', { error: err?.message }));
      
      return res.status(401).json({ error: "No authorization header provided" });
   }
@@ -950,7 +950,7 @@ async function authenticateUser(req: any, res: any, next: any) {
        ip: req.ip,
        userAgent: req.get('user-agent'),
        reason: !token ? 'missing_token' : 'invalid_token'
-     }).catch(console.error);
+     }).catch((err: any) => log.warn('audit log failed', { error: err?.message }));
      
      return res.status(401).json({ error: "Invalid or expired session" });
   }
@@ -2390,15 +2390,32 @@ app.get("/api/calls", authenticateUser, async (req: any, res: any) => {
 // ==========================================
 app.get("/api/dashboard/stats", authenticateUser, async (req: any, res: any) => {
    try {
-      const [apptRes, leadsRes, logsRes, agentsRes] = await Promise.all([
+      // Compute the 7-day window once so all sub-queries share the same boundary.
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+      // All five queries run in parallel — no serial awaits below this line.
+      const [apptRes, leadsRes, logsRes, agentsRes, hotEmailsRes, recentApptsRes] = await Promise.all([
           db.from('wireline_appointments').select('id', { count: 'exact' }).eq('user_id', req.user.id),
           db.from('wireline_outbound_leads').select('id', { count: 'exact' }).eq('user_id', req.user.id),
           db.from('wireline_call_logs')
-            .select('id, cost, duration_seconds, direction, created_at, lead_score, summary, customer_number, sentiment, coaching_note')
+            // intent_label added so hotCalls can be derived from this result set
+            .select('id, cost, duration_seconds, direction, created_at, lead_score, intent_label, summary, customer_number, sentiment, coaching_note')
             .eq('user_id', req.user.id)
             .order('created_at', { ascending: false })
             .limit(200),
           db.from('wireline_agents').select('id, name, channel, role').eq('user_id', req.user.id),
+          // Hot email threads — only the fields the client actually consumes
+          db.from('wireline_email_threads')
+            .select('id, customer_email, lead_score, intent_label, summary, created_at')
+            .eq('user_id', req.user.id)
+            .gte('lead_score', 75)
+            .order('created_at', { ascending: false })
+            .limit(5),
+          // Appointments created in the last 7 days — scoped to avoid a full-table scan
+          db.from('wireline_appointments')
+            .select('created_at')
+            .eq('user_id', req.user.id)
+            .gte('created_at', sevenDaysAgo),
       ]);
       
       const totalAppointments = apptRes.count || 0;
@@ -2426,13 +2443,14 @@ app.get("/api/dashboard/stats", authenticateUser, async (req: any, res: any) => 
         else sentimentMap['neutral']++;
       }
 
-      // FETCH "HOT LEADS" (AI-Scored High Intent)
-      const { data: hotCalls } = await db.from('wireline_call_logs').select('*').eq('user_id', req.user.id).gte('lead_score', 75).order('created_at', { ascending: false }).limit(5);
-      const { data: hotEmails } = await db.from('wireline_email_threads').select('*').eq('user_id', req.user.id).gte('lead_score', 75).order('created_at', { ascending: false }).limit(5);
+      // HOT LEADS — derive hot calls from the already-fetched logs (avoids a DB round-trip)
+      const hotCalls = logs
+        .filter((l: any) => (l.lead_score || 0) >= 75)
+        .slice(0, 5);
 
       const hotLeads = [
-        ...(hotCalls || []).map((c: any) => ({ id: c.id, type: 'call', contact: c.customer_number, score: c.lead_score, intent: c.intent_label, summary: c.summary, date: c.created_at })),
-        ...(hotEmails || []).map((e: any) => ({ id: e.id, type: 'email', contact: e.customer_email, score: e.lead_score, intent: e.intent_label, summary: e.summary, date: e.created_at }))
+        ...hotCalls.map((c: any) => ({ id: c.id, type: 'call', contact: c.customer_number, score: c.lead_score, intent: c.intent_label, summary: c.summary, date: c.created_at })),
+        ...(hotEmailsRes.data || []).map((e: any) => ({ id: e.id, type: 'email', contact: e.customer_email, score: e.lead_score, intent: e.intent_label, summary: e.summary, date: e.created_at }))
       ].sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
 
       // Compute Chart Data (Last 7 Days)
@@ -2452,8 +2470,7 @@ app.get("/api/dashboard/stats", authenticateUser, async (req: any, res: any) => 
          if (chartDataMap[d]) chartDataMap[d].signals += 1;
       });
 
-      const { data: recentAppts } = await db.from('wireline_appointments').select('created_at').eq('user_id', req.user.id);
-      (recentAppts || []).forEach((appt: any) => {
+      (recentApptsRes.data || []).forEach((appt: any) => {
          const d = new Date(appt.created_at).toISOString().split('T')[0];
          if (chartDataMap[d]) chartDataMap[d].leads += 1;
       });
@@ -3511,7 +3528,7 @@ app.post("/api/agents", authenticateUser, async (req: any, res: any) => {
       agentName: name || "New Agent",
       metadata: { channel: channel || 'voice', archetype: agentRole },
       ip: req.ip
-    }).catch(console.error);
+    }).catch((err: any) => log.warn('audit log failed', { error: err?.message }));
     
     res.json({ success: true, id });
   } catch (error) {
@@ -3629,7 +3646,7 @@ app.put("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
       agentId: req.params.id,
       metadata: { changes: sanitizeForAudit(req.body) },
       ip: req.ip
-    }).catch(console.error);
+    }).catch((err: any) => log.warn('audit log failed', { error: err?.message }));
     
     res.json({ success: true });
   } catch (error) {
@@ -3708,7 +3725,7 @@ app.delete("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
       userId: req.user.id,
       agentId: agentId,
       ip: req.ip
-    }).catch(console.error);
+    }).catch((err: any) => log.warn('audit log failed', { error: err?.message }));
     
     res.json({ success: true });
   } catch (error: any) {
@@ -4547,7 +4564,7 @@ app.post("/api/settings", authenticateUser, async (req: any, res: any) => {
       userId: req.user.id,
       changes: sanitizeForAudit(req.body),
       ip: req.ip
-    }).catch(console.error);
+    }).catch((err: any) => log.warn('audit log failed', { error: err?.message }));
     
     res.json({ success: true });
   } catch (error) {
