@@ -1767,13 +1767,13 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
             status: 'pending',
           });
 
-          // Mark the outbound lead as voicemail-left so campaigns don't duplicate
-          // Match all non-terminal statuses (Queued, Called, No-Answer, etc.)
+          // Mark the outbound lead as voicemail-left so campaigns don't duplicate.
+          // Exclude terminal statuses so we never overwrite a final outcome.
           await db.from('wireline_outbound_leads')
             .update({ status: 'Voicemail-Left', last_called_at: new Date() })
             .eq('customer_number', customerPhone)
             .eq('agent_id', webhookAgentId)
-            .not('status', 'in', '("Completed","Voicemail-Left","Blocked-DNC","Failed")' );
+            .not('status', 'in', ['Completed', 'Voicemail-Left', 'Blocked-DNC', 'Failed']);
 
           results.push({
             toolCallId: toolCall.id,
@@ -4078,10 +4078,11 @@ type PlaceCallResult = {
 function buildOutboundFirstMessage(role: string, agentName: string, customerName?: string | null): string {
   const name = agentName || "your representative";
   const customer = customerName ? customerName.split(" ")[0] : "there"; // first name only for all roles
+  const hasName = customer !== "there";
   switch (role) {
     case "collections":
       // FDCPA-safe: do not disclose debt amount in first message; use first name only for consistency
-      return `Hi, is this ${customer !== "there" ? customer : "the account holder"}? This is ${name} calling regarding an account matter. Do you have a moment?`;
+      return `Hi, is this ${hasName ? customer : "the account holder"}? This is ${name} calling regarding an account matter. Do you have a moment?`;
     case "scheduler":
       return `Hi ${customer}! This is ${name} reaching out about your upcoming appointment. Quick question for you — do you have 30 seconds?`;
     case "technical_support":
@@ -4270,6 +4271,8 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
       backgroundSound: agentConfig?.data?.ambient_noise || 'off',
       ...(outboundServerUrl && { serverUrl: outboundServerUrl }),
       serverUrlSecret: process.env.VAPI_WEBHOOK_SECRET,
+      // conversation-update is required for live sentiment tracking in LiveMonitor.
+      // status-update drives wireline_signal_presence. end-of-call-report triggers post-call enrichment.
       serverMessages: ["tool-calls", "status-update", "conversation-update", "end-of-call-report"],
       model: {
         provider: voiceLlmProvider,
