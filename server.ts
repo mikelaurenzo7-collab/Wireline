@@ -510,6 +510,10 @@ const EMAIL_RATE_MAX = 20; // 20 email operations per minute per user
 const KNOWLEDGE_RATE_WINDOW_MS = 60_000; // 1 minute
 const KNOWLEDGE_RATE_MAX = 100; // 100 knowledge operations per minute per user
 
+// Phone number provisioning rate limiting — Twilio/Vapi calls are expensive, limit bulk assignment
+const PHONE_NUMBER_RATE_WINDOW_MS = 60_000; // 1 minute
+const PHONE_NUMBER_RATE_MAX = 10; // 10 phone number operations per minute per user
+
 async function knowledgeRateLimiter(req: any, res: any, next: any) {
   const userId = req.user?.id;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -540,6 +544,41 @@ async function knowledgeRateLimiter(req: any, res: any, next: any) {
     return res.status(429).json({
       error: `Rate limit exceeded — ${KNOWLEDGE_RATE_MAX} knowledge operations per minute. Please slow down.`,
       code: "KNOWLEDGE_RATE_LIMIT",
+    });
+  }
+  next();
+}
+
+async function phoneNumberRateLimiter(req: any, res: any, next: any) {
+  const userId = req.user?.id;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  const result = await rateLimit(userId, {
+    bucket: "phone_numbers",
+    windowMs: PHONE_NUMBER_RATE_WINDOW_MS,
+    max: PHONE_NUMBER_RATE_MAX,
+  });
+
+  res.setHeader("X-RateLimit-Limit", String(PHONE_NUMBER_RATE_MAX));
+  res.setHeader("X-RateLimit-Remaining", String(result.remaining));
+
+  if (!result.allowed) {
+    void auditLogger.logSecurity('rate_limit_exceeded', {
+      userId,
+      resource: 'phone_numbers_api',
+      ip: req.ip,
+      metadata: { limit: PHONE_NUMBER_RATE_MAX }
+    }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
+
+    SentryEvents.rateLimited({
+      endpoint: '/api/phone-numbers',
+      user_id: userId,
+    });
+
+    res.setHeader("Retry-After", String(Math.ceil(result.resetMs / 1000)));
+    return res.status(429).json({
+      error: `Rate limit exceeded — ${PHONE_NUMBER_RATE_MAX} phone number operations per minute. Please slow down.`,
+      code: "PHONE_NUMBER_RATE_LIMIT",
     });
   }
   next();
@@ -4052,7 +4091,7 @@ app.get("/api/phone-numbers", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-app.post("/api/phone-numbers", authenticateUser, async (req: any, res: any) => {
+app.post("/api/phone-numbers", authenticateUser, phoneNumberRateLimiter, async (req: any, res: any) => {
   try {
     const { phone_number, vapi_number_id } = req.body;
     await db.from('wireline_phone_numbers').insert({ phone_number, vapi_number_id, user_id: req.user.id });
@@ -4062,7 +4101,7 @@ app.post("/api/phone-numbers", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-app.patch("/api/phone-numbers/:id", authenticateUser, async (req: any, res: any) => {
+app.patch("/api/phone-numbers/:id", authenticateUser, phoneNumberRateLimiter, async (req: any, res: any) => {
   try {
     const { agent_id } = req.body;
     await db.from('wireline_phone_numbers').update({ agent_id }).eq('id', req.params.id).eq('user_id', req.user.id);
@@ -4072,7 +4111,7 @@ app.patch("/api/phone-numbers/:id", authenticateUser, async (req: any, res: any)
   }
 });
 
-app.delete("/api/phone-numbers/:id", authenticateUser, async (req: any, res: any) => {
+app.delete("/api/phone-numbers/:id", authenticateUser, phoneNumberRateLimiter, async (req: any, res: any) => {
   try {
     const { error } = await db.from('wireline_phone_numbers')
       .delete()
