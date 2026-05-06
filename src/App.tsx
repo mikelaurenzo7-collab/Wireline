@@ -1,6 +1,6 @@
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from "react-router-dom";
-import { Phone, Users, Settings, Activity, MessageSquare, Calendar, PhoneOutgoing, ServerCog, PlugZap, History, Mail, Menu, X, LogOut, User, Terminal, ChevronRight, ChevronDown, Zap, Target, Shield, Signal, Globe, Box, LayoutPanelLeft, Database, Command, Sparkles, Waves, Inbox, BarChart3, Loader2, AlertTriangle, PhoneCall, Radio, Keyboard } from "lucide-react";
+import { Users, Activity, MessageSquare, Calendar, PhoneOutgoing, ServerCog, PlugZap, History, Mail, Menu, X, LogOut, Shield, Database, Waves, Inbox, BarChart3, Loader2, AlertTriangle, Radio, Keyboard, ChevronRight, User } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import AuthPortal from "./components/AuthPortal";
 import CommandBar from "./components/CommandBar";
@@ -42,26 +42,7 @@ type NavItem = {
   dataTour?: string;
 };
 
-const NAV_PRIMARY: NavItem[] = [
-  { label: "Dashboard",    path: "/", icon: Activity, dataTour: "dashboard" },
-  { label: "Live Monitor", path: "/live", icon: Radio },
-  { label: "Triage",       path: "/triage", icon: Inbox },
-  { label: "Insights",     path: "/insights", icon: BarChart3, dataTour: "insights" },
-  { label: "Agents",       path: "/agents", icon: Users, dataTour: "agents" },
-  { label: "Training",     path: "/train", icon: MessageSquare, dataTour: "training" },
-];
 
-const NAV_SECONDARY: NavItem[] = [
-  { label: "Call Logs",    path: "/logs", icon: History },
-  { label: "Outbound",     path: "/outbound", icon: PhoneOutgoing },
-  { label: "Email",        path: "/inbox", icon: Mail },
-  { label: "Appointments", path: "/appointments", icon: Calendar },
-  { label: "Knowledge",    path: "/knowledge", icon: Database },
-  { label: "Integrations", path: "/integrations", icon: PlugZap },
-  { label: "Settings",     path: "/admin", icon: ServerCog },
-  { label: "DNC List",     path: "/dnc", icon: Shield },
-  { label: "Audit Log",    path: "/audit", icon: Shield },
-];
 
 function AuroraBackdrop() {
   return (
@@ -93,7 +74,6 @@ function Sidebar({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const isActive = (path: string) => location.pathname === path;
-  const [showMoreNav, setShowMoreNav] = useState(false);
 
   // Live badge counts — poll a lightweight endpoint every 2 minutes.
   const [navBadges, setNavBadges] = useState<Record<string, number>>({});
@@ -107,7 +87,6 @@ function Sidebar({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (
           setNavBadges(d as Record<string, number>);
         }
       } catch (e) {
-        // Badges are non-critical; log at debug level so it's visible in devtools.
         console.debug("[nav-badges] fetch failed:", e);
       }
     };
@@ -116,14 +95,9 @@ function Sidebar({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
 
-  useEffect(() => {
-    if (NAV_SECONDARY.some((item) => item.path === location.pathname)) {
-      setShowMoreNav(true);
-    }
-  }, [location.pathname]);
-
   const renderNavItem = (item: NavItem) => {
     const active = isActive(item.path);
+    const badge = navBadges[item.path] ?? 0;
     return (
       <Link
         key={item.label}
@@ -131,40 +105,82 @@ function Sidebar({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (
         onClick={() => setOpen(false)}
         {...(item.dataTour ? { "data-tour": item.dataTour } : {})}
         className={cn(
-          "group relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all overflow-hidden",
-          active
-            ? "text-paper"
-            : "text-ink/70 hover:text-ink hover:bg-white/5"
+          "group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all overflow-hidden",
+          active ? "text-paper" : "text-ink/65 hover:text-ink hover:bg-white/5"
         )}
         aria-label={`Go to ${item.label}`}
       >
         {active && (
           <motion.div
             layoutId="nav-active"
-            className="absolute inset-0 rounded-lg"
-            style={{
-              background: "linear-gradient(135deg, #7DF9FF 0%, #C58BFF 60%, #FF6BD9 100%)",
-              boxShadow: "0 6px 20px -10px rgba(125,249,255,0.55), 0 0 0 1px rgba(255,255,255,0.20) inset"
-            }}
-            transition={{ type: "spring", stiffness: 400, damping: 35 }}
+            className="absolute inset-0 rounded-xl nav-active-bg"
+            transition={{ type: "spring", stiffness: 420, damping: 36 }}
           />
         )}
-        <item.icon className={cn("w-4 h-4 relative z-10 transition-transform shrink-0", active ? "" : "group-hover:translate-x-0.5")} strokeWidth={active ? 2.5 : 1.75} />
-        <span className={cn("text-[12px] tracking-wide relative z-10 truncate flex-1", active ? "font-medium" : "font-normal")}>
+        <div className={cn(
+          "relative z-10 w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all",
+          active ? "bg-white/20" : "bg-white/5 group-hover:bg-white/10"
+        )}>
+          <item.icon
+            className={cn("w-3.5 h-3.5", active ? "text-paper" : "text-ink/60 group-hover:text-ink")}
+            strokeWidth={active ? 2.5 : 1.75}
+          />
+        </div>
+        <span className={cn(
+          "relative z-10 text-[12px] leading-none tracking-wide truncate flex-1",
+          active ? "font-semibold" : "font-normal"
+        )}>
           {item.label}
         </span>
-        {(navBadges[item.path] ?? 0) > 0 && (
+        {badge > 0 && (
           <span className={cn(
-            "relative z-10 shrink-0 px-1.5 py-0.5 rounded-full text-[9px] font-mono leading-none",
-            active ? "bg-white/20 text-paper" : "bg-brand/15 text-brand"
+            "relative z-10 shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full text-[9px] font-mono leading-none flex items-center justify-center",
+            active ? "bg-white/25 text-paper" : "bg-rose-500/20 text-rose-400 border border-rose-500/30"
           )}>
-            {navBadges[item.path]}
+            {badge}
           </span>
         )}
-        {active && <ChevronRight className="ml-auto w-3.5 h-3.5 relative z-10 shrink-0" />}
       </Link>
     );
   };
+
+  const NAV_GROUPS = [
+    {
+      label: "Command Center",
+      items: [
+        { label: "Dashboard",    path: "/",        icon: Activity,     dataTour: "dashboard" },
+        { label: "Live Monitor", path: "/live",     icon: Radio },
+        { label: "Triage",       path: "/triage",   icon: Inbox },
+        { label: "Insights",     path: "/insights", icon: BarChart3,   dataTour: "insights" },
+      ] as NavItem[],
+    },
+    {
+      label: "Agent Fleet",
+      items: [
+        { label: "Agents",    path: "/agents",  icon: Users,        dataTour: "agents" },
+        { label: "Training",  path: "/train",   icon: MessageSquare,dataTour: "training" },
+        { label: "Knowledge", path: "/knowledge",icon: Database },
+      ] as NavItem[],
+    },
+    {
+      label: "Outreach",
+      items: [
+        { label: "Call Logs",    path: "/logs",          icon: History },
+        { label: "Outbound",     path: "/outbound",      icon: PhoneOutgoing },
+        { label: "Email",        path: "/inbox",          icon: Mail },
+        { label: "Appointments", path: "/appointments",  icon: Calendar },
+      ] as NavItem[],
+    },
+    {
+      label: "System",
+      items: [
+        { label: "Integrations", path: "/integrations", icon: PlugZap },
+        { label: "Settings",     path: "/admin",         icon: ServerCog },
+        { label: "DNC List",     path: "/dnc",           icon: Shield },
+        { label: "Audit Log",    path: "/audit",         icon: Shield },
+      ] as NavItem[],
+    },
+  ];
 
   return (
     <>
@@ -181,151 +197,137 @@ function Sidebar({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (
       </AnimatePresence>
 
       <aside className={cn(
-        "fixed inset-y-0 left-0 w-72 flex flex-col h-full z-[70] transition-transform duration-700 lg:relative lg:translate-x-0 lg:z-20 lg:w-64 xl:w-72",
+        "fixed inset-y-0 left-0 w-64 xl:w-68 flex flex-col h-full z-[70] transition-transform duration-500 lg:relative lg:translate-x-0 lg:z-20",
         open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
-        <div className="absolute inset-0 glass-strong border-r border-white/8" />
-        <div className="absolute top-0 right-0 w-px h-full bg-gradient-to-b from-transparent via-cyan-300/40 to-transparent" />
+        {/* Background */}
+        <div className="absolute inset-0 glass-strong" />
+        {/* Right edge shimmer */}
+        <div className="absolute top-0 right-0 w-px h-full"
+          style={{ background: "linear-gradient(to bottom, transparent, rgba(125,249,255,0.30) 30%, rgba(197,139,255,0.25) 70%, transparent)" }}
+        />
 
         <div className="relative z-10 flex flex-col h-full">
-          {/* Header */}
-          <div className="px-5 pt-6 pb-4 border-b border-white/8 flex items-center justify-between">
+          {/* ── Brand header ─────────────────────────────── */}
+          <div className="px-4 pt-5 pb-4 border-b border-white/6 flex items-center justify-between">
             <Link to="/" className="flex items-center gap-3 group min-w-0" onClick={() => setOpen(false)}>
               <motion.div
-                whileHover={{ rotate: 12, scale: 1.06 }}
-                className="relative w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden shrink-0"
+                whileHover={{ rotate: 10, scale: 1.08 }}
+                transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                className="relative w-9 h-9 rounded-xl flex items-center justify-center overflow-hidden shrink-0"
                 style={{
                   background: "linear-gradient(135deg, #7DF9FF 0%, #C58BFF 50%, #FF6BD9 100%)",
-                  boxShadow: "0 8px 24px -10px rgba(125,249,255,0.65), 0 0 0 1px rgba(255,255,255,0.25) inset"
+                  boxShadow: "0 6px 20px -8px rgba(125,249,255,0.65), 0 0 0 1px rgba(255,255,255,0.22) inset"
                 }}
               >
-                <Waves className="w-5 h-5 text-paper relative z-10" strokeWidth={2.5} />
-                <div className="absolute inset-0 bg-gradient-to-tr from-white/35 to-transparent" />
+                <Waves className="w-4.5 h-4.5 text-paper relative z-10" strokeWidth={2.5} />
+                <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent" />
               </motion.div>
-              <div className="flex flex-col min-w-0">
-                <span className="brand-wordmark text-xl leading-none truncate">WIRELINE</span>
-                <span className="text-[8px] tracking-[0.42em] uppercase text-muted mt-1 flex items-center gap-1.5">
-                  <span className="w-1 h-1 rounded-full bg-brand indicator-glow" />
-                  AI Voice Platform
-                </span>
+              <div className="min-w-0">
+                <span className="brand-wordmark text-[18px] leading-none">WIRELINE</span>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"
+                    style={{ boxShadow: "0 0 6px rgba(77,255,196,0.8)" }}
+                  />
+                  <span className="text-[8px] tracking-[0.38em] uppercase text-muted">Online</span>
+                </div>
               </div>
             </Link>
-            <button onClick={() => setOpen(false)} className="lg:hidden w-9 h-9 rounded-full flex items-center justify-center text-ink/60 hover:text-ink hover:bg-white/8 transition-all shrink-0">
-              <X className="w-4 h-4" />
+            <button
+              onClick={() => setOpen(false)}
+              className="lg:hidden icon-btn"
+              aria-label="Close navigation"
+            >
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
 
-          {/* User Card */}
-          <div className="mx-3 mt-4 relative aurora-ring rounded-xl">
-            <div className="relative p-3.5 rounded-xl glass overflow-hidden">
-              <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-35 blur-3xl" style={{ background: "radial-gradient(circle, #7DF9FF, transparent)" }} />
-              <div className="relative z-10 flex items-center gap-3">
-                <div className="relative shrink-0">
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-paper" style={{ background: "linear-gradient(135deg, #7DF9FF, #C58BFF)" }}>
-                    <User className="w-4 h-4" strokeWidth={2.5} />
-                  </div>
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#0F0E2D] bg-emerald-500" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-medium text-ink truncate">{user?.email?.split('@')[0]}</p>
-                  <p className="text-[8px] tracking-[0.28em] uppercase text-muted">Online</p>
-                </div>
-                <button
-                  onClick={() => signOut()}
-                  title="End session"
-                  className="shrink-0 w-8 h-8 rounded-lg text-ink/60 hover:text-rose-500 hover:bg-rose-500/10 border border-white/8 hover:border-rose-500/40 transition-all flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/70"
+          {/* ── User card ────────────────────────────────── */}
+          <div className="px-3 py-3 border-b border-white/6">
+            <div className="relative flex items-center gap-3 px-3 py-2.5 rounded-xl glass border border-white/8">
+              <div className="relative shrink-0">
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-paper font-medium text-sm"
+                  style={{ background: "linear-gradient(135deg, #7DF9FF, #C58BFF)" }}
                 >
-                  <LogOut className="w-3.5 h-3.5" />
-                </button>
+                  {user?.email?.slice(0, 1).toUpperCase() ?? "?"}
+                </div>
+                <span
+                  className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 bg-emerald-500"
+                  style={{ borderColor: "#0F0E2D" }}
+                />
               </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-medium text-ink truncate leading-none mb-0.5">
+                  {user?.email?.split("@")[0]}
+                </p>
+                <p className="text-[8px] tracking-[0.28em] uppercase text-muted truncate">
+                  {user?.email?.split("@")[1]}
+                </p>
+              </div>
+              <button
+                onClick={() => signOut()}
+                title="Sign out"
+                className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-ink/40 hover:text-rose-400 hover:bg-rose-500/10 border border-white/6 hover:border-rose-500/40 transition-all"
+              >
+                <LogOut className="w-3 h-3" />
+              </button>
             </div>
           </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 px-2 mt-4 overflow-y-auto pb-3 space-y-4 min-h-0 pr-1" style={{ scrollbarWidth: "thin" }}>
-            <div>
-              <h3 className="px-3 text-[8px] font-semibold uppercase tracking-[0.42em] text-muted/80 mb-2 flex items-center gap-2">
-                <span className="h-px flex-1 bg-gradient-to-r from-white/0 via-white/20 to-white/0" />
-                Core
-                <span className="h-px flex-1 bg-gradient-to-r from-white/0 via-white/20 to-white/0" />
-              </h3>
-              <div className="space-y-0.5">
-                {NAV_PRIMARY.map(renderNavItem)}
+          {/* ── Navigation ───────────────────────────────── */}
+          <nav
+            className="flex-1 px-2 py-3 overflow-y-auto min-h-0 space-y-5 panel-scroll"
+            aria-label="Main navigation"
+          >
+            {NAV_GROUPS.map(group => (
+              <div key={group.label}>
+                <div className="px-3 mb-1.5 flex items-center gap-2">
+                  <span className="text-[7.5px] font-semibold uppercase tracking-[0.48em] text-muted/50 whitespace-nowrap">
+                    {group.label}
+                  </span>
+                  <span className="h-px flex-1 bg-white/6" />
+                </div>
+                <div className="space-y-0.5">
+                  {group.items.map(renderNavItem)}
+                </div>
               </div>
-            </div>
-
-            <div>
-              <button
-                onClick={() => setShowMoreNav((v) => !v)}
-                className="w-full px-3 mb-2 flex items-center gap-2 text-[8px] font-semibold uppercase tracking-[0.42em] text-muted/80 hover:text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/70 rounded-lg"
-                aria-expanded={showMoreNav}
-                aria-label="Toggle more navigation"
-              >
-                <span className="h-px flex-1 bg-gradient-to-r from-white/0 via-white/20 to-white/0" />
-                More
-                <motion.span animate={{ rotate: showMoreNav ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                  <ChevronDown className="w-3 h-3" />
-                </motion.span>
-                <span className="h-px flex-1 bg-gradient-to-r from-white/0 via-white/20 to-white/0" />
-              </button>
-
-              <AnimatePresence initial={false}>
-                {showMoreNav && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="space-y-0.5 overflow-hidden"
-                  >
-                    {NAV_SECONDARY.map(renderNavItem)}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            ))}
           </nav>
 
-          {/* Footer */}
-          <div className="px-3 py-3 border-t border-white/8 relative space-y-2.5 shrink-0">
+          {/* ── Footer ───────────────────────────────────── */}
+          <div className="px-3 py-3 border-t border-white/6 space-y-2 shrink-0">
             <SystemStatusBadge />
-            
-            {/* Quick Actions */}
+
+            {/* Quick links */}
             <div className="flex items-center gap-1.5">
               <button
-                onClick={() => navigate('/train')}
-                title="Training"
-                className="flex-1 px-3 py-2 rounded-lg glass border border-white/8 hover:border-brand/40 text-[10px] uppercase tracking-[0.28em] text-ink/70 hover:text-ink transition-all flex items-center justify-center gap-1.5"
+                onClick={() => { navigate("/train"); setOpen(false); }}
+                className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg glass border border-white/8 hover:border-brand/40 text-[9px] uppercase tracking-[0.24em] text-ink/60 hover:text-ink transition-all"
               >
                 <MessageSquare className="w-3 h-3" />
-                <span>Train</span>
+                Train
               </button>
               <button
-                onClick={() => navigate('/live')}
-                title="Live Monitor"
-                className="flex-1 px-3 py-2 rounded-lg glass border border-white/8 hover:border-brand/40 text-[10px] uppercase tracking-[0.28em] text-ink/70 hover:text-ink transition-all flex items-center justify-center gap-1.5"
+                onClick={() => { navigate("/live"); setOpen(false); }}
+                className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg glass border border-white/8 hover:border-brand-3/40 text-[9px] uppercase tracking-[0.24em] text-ink/60 hover:text-ink transition-all"
               >
                 <Radio className="w-3 h-3" />
-                <span>Live</span>
+                Live
               </button>
             </div>
-            
-            <div className="flex items-center justify-between text-[8px] uppercase tracking-[0.38em] text-muted/70">
-              <span className="brand-wordmark text-[10px] tracking-[0.2em] opacity-85">WIRELINE</span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-1 h-1 rounded-full bg-emerald-500 indicator-glow" />
-                Stable
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 text-[8px] uppercase tracking-[0.32em] text-muted/60">
-              <Terminal className="w-2.5 h-2.5" />
-              <span>⌘K  Command</span>
-            </div>
+
+            {/* Command shortcut */}
             <button
-              onClick={() => { setOpen(false); onShowShortcuts(); }}
-              className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl text-muted hover:text-ink/70 text-[9px] uppercase tracking-[0.35em] transition-colors w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/70"
+              onClick={onShowShortcuts}
+              className="hidden lg:flex w-full items-center gap-2 px-3 py-2 rounded-xl glass border border-white/8 hover:border-brand/30 text-muted/60 hover:text-ink/80 transition-all group"
+              aria-label="Show keyboard shortcuts"
             >
-              <Keyboard className="w-3 h-3" />
-              <span>Keyboard Shortcuts</span>
-              <span className="ml-auto text-[9px] glass border border-white/10 px-1.5 rounded text-muted">?</span>
+              <Keyboard className="w-3 h-3 shrink-0" />
+              <span className="text-[9px] uppercase tracking-[0.3em] flex-1 text-left">Shortcuts</span>
+              <kbd className="text-[8px] glass border border-white/10 px-1.5 py-0.5 rounded font-mono text-muted/70 group-hover:border-brand/30 group-hover:text-brand transition-all">
+                ?
+              </kbd>
             </button>
           </div>
         </div>

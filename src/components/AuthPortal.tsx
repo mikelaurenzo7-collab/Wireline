@@ -1,8 +1,38 @@
 import React, { useState } from "react";
 import { supabase } from "../lib/supabase";
-import { Phone, ShieldCheck, Mail, Lock, Loader2, ArrowRight, UserPlus, LogIn, Terminal, Shield, Zap, Globe, Target, Activity, AlertTriangle, Waves, Sparkles, Check } from "lucide-react";
+import {
+  ShieldCheck, Mail, Lock, Loader2, ArrowRight, UserPlus, LogIn,
+  Zap, AlertTriangle, Waves, Check, Bot, BarChart3, Radio,
+} from "lucide-react";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
+
+const FEATURES = [
+  {
+    icon: Bot,
+    title: "AI Voice Agents",
+    desc: "Deploy intelligent voice agents that handle inbound and outbound calls 24/7.",
+    accent: "#7DF9FF",
+  },
+  {
+    icon: BarChart3,
+    title: "Real-time Analytics",
+    desc: "Funnel analysis, sentiment scoring, topic clusters and leaderboards in one view.",
+    accent: "#C58BFF",
+  },
+  {
+    icon: Radio,
+    title: "Live Call Monitor",
+    desc: "Watch every active call and intervene with real-time coaching.",
+    accent: "#FF6BD9",
+  },
+  {
+    icon: Zap,
+    title: "Outbound Campaigns",
+    desc: "Upload a CSV, choose your agent, and launch auto-dial campaigns instantly.",
+    accent: "#4DFFC4",
+  },
+];
 
 export default function AuthPortal() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -20,24 +50,18 @@ export default function AuthPortal() {
 
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-        });
+        const { error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
         setMessage("Check your inbox to confirm your email address.");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
     } catch (err: any) {
-      if (err.message === 'Failed to fetch') {
-          setError("Database offline — unable to reach the Supabase cluster.");
+      if (err.message === "Failed to fetch") {
+        setError("Database offline — unable to reach the Supabase cluster.");
       } else {
-          setError(err.message);
+        setError(err.message);
       }
     } finally {
       setLoading(false);
@@ -45,195 +69,325 @@ export default function AuthPortal() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 md:p-10 relative overflow-hidden">
-      {/* Animated aurora backdrop */}
-      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+    <div className="min-h-screen flex relative overflow-hidden">
+      {/* Global aurora backdrop */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <motion.div
-          className="absolute -top-[30%] -left-[20%] w-[80vw] h-[80vw] rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(125,249,255,0.30), transparent 60%)" }}
-          animate={{ x: [0, 40, 0], y: [0, -30, 0], scale: [1, 1.05, 1] }}
-          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute -top-[25%] -left-[15%] w-[70vw] h-[70vw] rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(125,249,255,0.22), transparent 60%)" }}
+          animate={{ x: [0, 40, 0], y: [0, -30, 0] }}
+          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
-          className="absolute -bottom-[25%] -right-[20%] w-[75vw] h-[75vw] rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(255,107,217,0.28), transparent 60%)" }}
-          animate={{ x: [0, -40, 0], y: [0, 30, 0], scale: [1, 1.06, 1] }}
-          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute -bottom-[20%] -right-[15%] w-[65vw] h-[65vw] rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(255,107,217,0.22), transparent 60%)" }}
+          animate={{ x: [0, -35, 0], y: [0, 30, 0] }}
+          transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
-          className="absolute top-[20%] right-[20%] w-[50vw] h-[50vw] rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(197,139,255,0.22), transparent 60%)" }}
-          animate={{ x: [0, -50, 30, 0], y: [0, 40, -20, 0] }}
-          transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-[35%] left-[30%] w-[50vw] h-[50vw] rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(197,139,255,0.18), transparent 60%)" }}
+          animate={{ x: [0, -40, 20, 0], y: [0, 35, -15, 0] }}
+          transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
         />
-
-        {/* Subtle grid */}
-        <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px)", backgroundSize: "80px 80px", maskImage: "radial-gradient(ellipse at center, black 30%, transparent 70%)" }} />
+        {/* Grid overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
+            backgroundSize: "64px 64px",
+          }}
+        />
       </div>
-
       <div className="scanline" />
 
-      <motion.div
-        initial={{ y: 30, opacity: 0, filter: "blur(12px)" }}
-        animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
-        transition={{ type: "spring", damping: 26, stiffness: 90 }}
-        className="w-full max-w-md md:max-w-lg relative z-10"
-      >
-        {/* Hero mark */}
-        <div className="text-center mb-12">
-          <motion.div
-            initial={{ scale: 0.6, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: "spring", stiffness: 80, damping: 14 }}
-            className="relative inline-block mb-8"
-          >
-            <div className="absolute inset-0 blur-3xl opacity-60" style={{ background: "conic-gradient(from 0deg, #7DF9FF, #C58BFF, #FF6BD9, #7DF9FF)" }} />
-            <div className="relative w-24 h-24 rounded-3xl flex items-center justify-center" style={{
+      {/* ── LEFT PANEL — brand showcase ─────────────────────────────────────── */}
+      <div className="hidden lg:flex lg:w-[54%] xl:w-[56%] flex-col relative z-10 p-10 xl:p-14 overflow-hidden">
+        {/* Decorative vertical line on right edge */}
+        <div className="absolute top-0 right-0 w-px h-full"
+          style={{ background: "linear-gradient(to bottom, transparent, rgba(125,249,255,0.35) 30%, rgba(197,139,255,0.35) 70%, transparent)" }}
+        />
+
+        {/* Logo */}
+        <motion.div
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          className="flex items-center gap-3 mb-16"
+        >
+          <div
+            className="relative w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+            style={{
               background: "linear-gradient(135deg, #7DF9FF 0%, #C58BFF 50%, #FF6BD9 100%)",
-              boxShadow: "0 20px 60px -10px rgba(125,249,255,0.55), 0 0 0 1px rgba(255,255,255,0.2) inset"
-            }}>
-              <Waves className="w-12 h-12 text-paper" strokeWidth={2.2} />
-            </div>
-          </motion.div>
+              boxShadow: "0 8px 24px -8px rgba(125,249,255,0.60), 0 0 0 1px rgba(255,255,255,0.22) inset"
+            }}
+          >
+            <Waves className="w-5 h-5 text-paper" strokeWidth={2.5} />
+          </div>
+          <div>
+            <span className="brand-wordmark text-2xl leading-none">WIRELINE</span>
+            <p className="text-[8px] tracking-[0.42em] uppercase text-muted mt-0.5">AI Voice Platform</p>
+          </div>
+        </motion.div>
 
-          <h1 className="brand-wordmark text-6xl md:text-7xl leading-[0.85] mb-4">
-            WIRELINE
-          </h1>
-          <p className="text-[10px] md:text-xs uppercase tracking-[0.55em] text-muted">
-            AI Voice Platform
+        {/* Hero copy */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+          className="mb-12"
+        >
+          <div className="flex items-center gap-2 mb-4">
+            <span className="hero-accent-line" />
+            <span className="text-[9px] uppercase tracking-[0.5em] text-muted/70">The Future of Sales</span>
+          </div>
+          <h2 className="font-display italic text-5xl xl:text-6xl leading-[0.88] tracking-tight mb-6">
+            <span className="text-aurora">AI agents that</span>
+            <br />
+            <span className="text-ink">close deals for you</span>
+          </h2>
+          <p className="text-sm text-muted/80 leading-relaxed max-w-md">
+            Wireline gives your team superhuman voice agents — trained on your playbook,
+            available 24/7, and improving with every call.
           </p>
-        </div>
+        </motion.div>
 
-        {/* Glass auth card */}
-        <div className="relative aurora-ring rounded-3xl">
-          <div className="relative rounded-3xl p-8 md:p-10 glass-strong overflow-hidden">
-            {/* Inner glow */}
-            <div className="absolute -top-32 -right-32 w-64 h-64 rounded-full opacity-30 blur-3xl" style={{ background: "radial-gradient(circle, #7DF9FF, transparent)" }} />
-            <div className="absolute -bottom-32 -left-32 w-64 h-64 rounded-full opacity-30 blur-3xl" style={{ background: "radial-gradient(circle, #FF6BD9, transparent)" }} />
-
-            {/* Tab toggle */}
-            <div className="relative z-10 mb-8">
-              <div className="relative flex p-1 rounded-2xl bg-black/30 border border-white/8">
-                <motion.div
-                  layout
-                  className="absolute inset-y-1 w-[calc(50%-4px)] rounded-xl"
-                  style={{
-                    background: "linear-gradient(135deg, rgba(125,249,255,0.18), rgba(197,139,255,0.18))",
-                    border: "1px solid rgba(125,249,255,0.35)",
-                    left: isSignUp ? "calc(50% + 2px)" : "4px",
-                    boxShadow: "0 8px 24px -8px rgba(125,249,255,0.45)"
-                  }}
-                  transition={{ type: "spring", stiffness: 380, damping: 32 }}
-                />
-                <button
-                  onClick={() => setIsSignUp(false)}
-                  className={cn(
-                    "relative z-10 flex-1 py-3 text-[11px] uppercase tracking-[0.3em] transition-colors",
-                    !isSignUp ? "text-ink" : "text-muted hover:text-ink/70"
-                  )}
-                >
-                  Sign In
-                </button>
-                <button
-                  onClick={() => setIsSignUp(true)}
-                  className={cn(
-                    "relative z-10 flex-1 py-3 text-[11px] uppercase tracking-[0.3em] transition-colors",
-                    isSignUp ? "text-ink" : "text-muted hover:text-ink/70"
-                  )}
-                >
-                  Sign Up
-                </button>
-              </div>
-            </div>
-
-            <form onSubmit={handleAuth} className="relative z-10 space-y-5">
-              <div className="space-y-2">
-                <label className="text-[10px] uppercase tracking-[0.4em] text-muted flex items-center gap-2">
-                  <Mail className="w-3 h-3 text-brand" /> Email
-                </label>
-                <div className="relative group">
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full h-14 px-5 rounded-xl bg-black/30 border border-white/10 outline-none text-ink text-sm placeholder:text-muted/50 focus:border-brand/60 focus:bg-black/40 transition-all tracking-wide"
-                    placeholder="operator@aurora.relay"
-                  />
-                  <div className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity" style={{ boxShadow: "0 0 0 1px rgba(125,249,255,0.4), 0 0 24px rgba(125,249,255,0.25)" }} />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] uppercase tracking-[0.4em] text-muted flex items-center gap-2">
-                  <Lock className="w-3 h-3 text-brand" /> Password
-                </label>
-                <div className="relative group">
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full h-14 px-5 rounded-xl bg-black/30 border border-white/10 outline-none text-ink text-sm placeholder:text-muted/50 focus:border-brand/60 focus:bg-black/40 transition-all tracking-[0.3em]"
-                    placeholder="••••••••••"
-                  />
-                  <div className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity" style={{ boxShadow: "0 0 0 1px rgba(125,249,255,0.4), 0 0 24px rgba(125,249,255,0.25)" }} />
-                </div>
-              </div>
-
-              <AnimatePresence mode="wait">
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -6, height: 0 }}
-                    animate={{ opacity: 1, y: 0, height: "auto" }}
-                    exit={{ opacity: 0, y: -6, height: 0 }}
-                    className="flex items-start gap-3 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs"
-                  >
-                    <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                    <span className="leading-relaxed">{error}</span>
-                  </motion.div>
-                )}
-
-                {message && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -6, height: 0 }}
-                    animate={{ opacity: 1, y: 0, height: "auto" }}
-                    exit={{ opacity: 0, y: -6, height: 0 }}
-                    className="flex items-start gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-xs"
-                  >
-                    <Check className="w-4 h-4 shrink-0 mt-0.5" />
-                    <span className="leading-relaxed">{message}</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="brutal-btn w-full !py-4 !px-6 !text-[12px] !tracking-[0.3em] mt-2"
+        {/* Feature cards */}
+        <div className="grid grid-cols-2 gap-3 mb-12">
+          {FEATURES.map((f, i) => {
+            const Icon = f.icon;
+            return (
+              <motion.div
+                key={f.title}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 + i * 0.08, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                className="relative rounded-xl p-4 glass border border-white/8 overflow-hidden"
               >
-                {loading ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> Connecting</>
-                ) : (
-                  <>
-                    {isSignUp ? <UserPlus className="w-4 h-4" /> : <LogIn className="w-4 h-4" />}
-                    {isSignUp ? "Create Account" : "Sign In"}
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            </form>
-          </div>
+                <div
+                  className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-2xl opacity-20 pointer-events-none"
+                  style={{ background: f.accent }}
+                />
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center mb-3 border border-white/8"
+                  style={{
+                    background: `linear-gradient(135deg, ${f.accent}25, ${f.accent}08)`,
+                    color: f.accent,
+                  }}
+                >
+                  <Icon className="w-4 h-4" />
+                </div>
+                <p className="text-[11px] font-medium text-ink mb-1">{f.title}</p>
+                <p className="text-[10px] text-muted/70 leading-relaxed">{f.desc}</p>
+              </motion.div>
+            );
+          })}
         </div>
 
-        {/* Footer */}
-        <div className="mt-10 flex flex-col items-center gap-3 text-muted/60">
-          <div className="flex items-center gap-3">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span className="text-[10px] uppercase tracking-[0.45em]">TLS Encrypted · Secured by Supabase</span>
+        {/* Trust row */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6, duration: 0.5 }}
+          className="mt-auto flex items-center gap-6"
+        >
+          <div className="flex items-center gap-2 text-muted/60">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="text-[9px] uppercase tracking-[0.38em]">TLS Encrypted</span>
           </div>
+          <div className="h-3 w-px bg-white/10" />
+          <div className="flex items-center gap-2 text-muted/60">
+            <div className="relative w-2 h-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 absolute inset-0 dot-online" />
+            </div>
+            <span className="text-[9px] uppercase tracking-[0.38em]">99.9% Uptime</span>
+          </div>
+          <div className="h-3 w-px bg-white/10" />
+          <span className="text-[9px] uppercase tracking-[0.38em] text-muted/60">Powered by Supabase</span>
+        </motion.div>
+      </div>
+
+      {/* ── RIGHT PANEL — auth form ──────────────────────────────────────────── */}
+      <div className="flex-1 flex flex-col items-center justify-center relative z-10 p-6 md:p-10">
+        {/* Mobile logo */}
+        <div className="lg:hidden mb-10 flex flex-col items-center gap-3">
+          <div
+            className="w-16 h-16 rounded-2xl flex items-center justify-center"
+            style={{
+              background: "linear-gradient(135deg, #7DF9FF 0%, #C58BFF 50%, #FF6BD9 100%)",
+              boxShadow: "0 16px 40px -10px rgba(125,249,255,0.55)"
+            }}
+          >
+            <Waves className="w-8 h-8 text-paper" strokeWidth={2.2} />
+          </div>
+          <h1 className="brand-wordmark text-5xl leading-none">WIRELINE</h1>
+          <p className="text-[9px] uppercase tracking-[0.5em] text-muted">AI Voice Platform</p>
         </div>
-      </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full max-w-md"
+        >
+          {/* Form card */}
+          <div className="relative aurora-ring rounded-3xl">
+            <div className="relative rounded-3xl p-8 md:p-10 glass-strong overflow-hidden">
+              {/* Subtle ambient glows inside card */}
+              <div
+                className="absolute -top-24 -right-24 w-56 h-56 rounded-full opacity-20 blur-3xl pointer-events-none"
+                style={{ background: "radial-gradient(circle, #7DF9FF, transparent)" }}
+              />
+              <div
+                className="absolute -bottom-24 -left-24 w-56 h-56 rounded-full opacity-20 blur-3xl pointer-events-none"
+                style={{ background: "radial-gradient(circle, #FF6BD9, transparent)" }}
+              />
+
+              {/* Header */}
+              <div className="relative z-10 mb-8">
+                <h2 className="font-display italic text-3xl text-ink leading-tight mb-1">
+                  {isSignUp ? "Create account" : "Welcome back"}
+                </h2>
+                <p className="text-[11px] text-muted/70">
+                  {isSignUp
+                    ? "Start your 14-day free trial. No credit card required."
+                    : "Sign in to your Wireline operator console."}
+                </p>
+              </div>
+
+              {/* Tab toggle */}
+              <div className="relative z-10 mb-7">
+                <div className="relative flex p-1 rounded-2xl bg-black/30 border border-white/8">
+                  <motion.div
+                    layout
+                    className="absolute inset-y-1 w-[calc(50%-4px)] rounded-xl"
+                    style={{
+                      background: "linear-gradient(135deg, rgba(125,249,255,0.20), rgba(197,139,255,0.20))",
+                      border: "1px solid rgba(125,249,255,0.35)",
+                      left: isSignUp ? "calc(50% + 2px)" : "4px",
+                      boxShadow: "0 6px 20px -8px rgba(125,249,255,0.5)"
+                    }}
+                    transition={{ type: "spring", stiffness: 400, damping: 34 }}
+                  />
+                  {[
+                    { label: "Sign In", value: false },
+                    { label: "Sign Up", value: true },
+                  ].map(opt => (
+                    <button
+                      key={String(opt.value)}
+                      onClick={() => setIsSignUp(opt.value)}
+                      className={cn(
+                        "relative z-10 flex-1 py-3 text-[11px] uppercase tracking-[0.3em] transition-colors",
+                        isSignUp === opt.value ? "text-ink" : "text-muted hover:text-ink/70"
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <form onSubmit={handleAuth} className="relative z-10 space-y-5">
+                {/* Email */}
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-[0.4em] text-muted/80 flex items-center gap-1.5">
+                    <Mail className="w-3 h-3 text-brand" />
+                    Email
+                  </label>
+                  <div className="relative group">
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      className="auth-input"
+                      placeholder="operator@company.io"
+                    />
+                    <div
+                      className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity"
+                      style={{ boxShadow: "0 0 0 1px rgba(125,249,255,0.4), 0 0 20px rgba(125,249,255,0.18)" }}
+                    />
+                  </div>
+                </div>
+
+                {/* Password */}
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-[0.4em] text-muted/80 flex items-center gap-1.5">
+                    <Lock className="w-3 h-3 text-brand" />
+                    Password
+                  </label>
+                  <div className="relative group">
+                    <input
+                      type="password"
+                      required
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      className="auth-input tracking-[0.32em]"
+                      placeholder="••••••••••••"
+                    />
+                    <div
+                      className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity"
+                      style={{ boxShadow: "0 0 0 1px rgba(125,249,255,0.4), 0 0 20px rgba(125,249,255,0.18)" }}
+                    />
+                  </div>
+                </div>
+
+                {/* Feedback messages */}
+                <AnimatePresence mode="wait">
+                  {error && (
+                    <motion.div
+                      key="error"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="flex items-start gap-3 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs"
+                    >
+                      <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <span className="leading-relaxed">{error}</span>
+                    </motion.div>
+                  )}
+                  {message && (
+                    <motion.div
+                      key="msg"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="flex items-start gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs"
+                    >
+                      <Check className="w-4 h-4 shrink-0 mt-0.5" />
+                      <span className="leading-relaxed">{message}</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Submit */}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="brutal-btn w-full !py-4 !px-6 !text-[12px] !tracking-[0.3em]"
+                >
+                  {loading ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Connecting…</>
+                  ) : isSignUp ? (
+                    <><UserPlus className="w-4 h-4" /> Create Account <ArrowRight className="w-4 h-4" /></>
+                  ) : (
+                    <><LogIn className="w-4 h-4" /> Sign In <ArrowRight className="w-4 h-4" /></>
+                  )}
+                </button>
+              </form>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="mt-6 flex items-center justify-center gap-4">
+            <ShieldCheck className="w-3 h-3 text-muted/40" />
+            <span className="text-[9px] uppercase tracking-[0.42em] text-muted/50">
+              TLS Encrypted · Secured by Supabase
+            </span>
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 }

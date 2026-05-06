@@ -98,10 +98,20 @@ function HotLeads({ items }: { items: any[] }) {
   return (
     <ul className="divide-y divide-white/5">
       {items.map((c) => (
-        <li key={c.id} className="px-4 py-3 flex items-center gap-3">
-          <div className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #FF6BD9, #C58BFF)" }}>
-            <span className="font-display italic text-base text-paper">{c.lead_score}</span>
+        <li key={c.id} className="group px-4 py-3.5 flex items-center gap-3 hover:bg-white/3 transition-all">
+          {/* Score badge */}
+          <div
+            className="shrink-0 w-11 h-11 rounded-xl flex flex-col items-center justify-center"
+            style={{
+              background: "linear-gradient(135deg, rgba(255,107,217,0.25), rgba(197,139,255,0.20))",
+              border: "1px solid rgba(255,107,217,0.30)",
+              boxShadow: "0 0 16px rgba(255,107,217,0.20)"
+            }}
+          >
+            <span className="font-display italic text-lg text-ink leading-none">{c.lead_score}</span>
+            <span className="text-[7px] uppercase tracking-[0.3em] text-brand-3/70 mt-0.5">score</span>
           </div>
+
           <div className="min-w-0 flex-1">
             <Link
               to={`/contact/${encodeURIComponent(c.customer_number || "unknown")}`}
@@ -109,13 +119,19 @@ function HotLeads({ items }: { items: any[] }) {
             >
               {c.customer_number || "Unknown caller"}
             </Link>
-            <p className="text-[11px] text-ink/65 truncate">{c.summary}</p>
-            <div className="flex items-center gap-2 mt-0.5 text-[8px] uppercase tracking-[0.28em] text-muted">
+            <p className="text-[11px] text-muted/70 truncate">{c.summary}</p>
+            <div className="flex items-center gap-2 mt-1 text-[8px] uppercase tracking-[0.26em] text-muted/50">
               <span>{new Date(c.created_at).toLocaleDateString()}</span>
-              <span>·</span>
-              <span>{c.intent_label} intent</span>
+              <span className="w-1 h-1 rounded-full bg-white/15" />
+              <span
+                className="text-brand/80"
+                style={{ textShadow: "0 0 10px rgba(125,249,255,0.5)" }}
+              >
+                {c.intent_label} intent
+              </span>
             </div>
           </div>
+
           <div className="flex items-center gap-1 shrink-0">
             <ClaudeRecipeButton
               recipe="enrich-lead"
@@ -128,7 +144,7 @@ function HotLeads({ items }: { items: any[] }) {
             <Link
               to={`/contact/${encodeURIComponent(c.customer_number || "unknown")}`}
               aria-label={`View contact profile for ${c.customer_number || "unknown caller"}`}
-              className="w-8 h-8 rounded-full glass border border-white/10 flex items-center justify-center text-ink/70 hover:text-brand hover:border-brand/40 transition-all"
+              className="w-8 h-8 rounded-xl glass border border-white/8 flex items-center justify-center text-ink/50 hover:text-brand hover:border-brand/40 transition-all group-hover:border-white/15"
             >
               <ChevronRight className="w-3.5 h-3.5" />
             </Link>

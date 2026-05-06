@@ -343,37 +343,47 @@ export default function FleetSettings() {
               agents.map(agent => (
                 <motion.div
                   layout
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
                   key={agent.id}
                   className={cn(
-                    "w-full flex items-center gap-1 transition-all rounded-xl border group",
+                    "w-full flex items-center gap-1 transition-all rounded-xl border group overflow-hidden",
                     selectedAgent?.id === agent.id
-                      ? "bg-brand/10 border-brand/40"
-                      : "glass border-white/8 hover:border-white/20"
+                      ? "border-brand/35"
+                      : "glass border-white/8 hover:border-white/18"
                   )}
+                  style={selectedAgent?.id === agent.id ? {
+                    background: "linear-gradient(135deg, rgba(125,249,255,0.08), rgba(197,139,255,0.05))"
+                  } : undefined}
                 >
+                  {/* Selected indicator bar */}
+                  {selectedAgent?.id === agent.id && (
+                    <div className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full"
+                      style={{ background: "linear-gradient(to bottom, #7DF9FF, #C58BFF)" }}
+                    />
+                  )}
+
                   <button
                     onClick={() => { setSelectedAgent(agent); fetchAgentPerformance(agent.id); }}
-                    className="flex-1 text-left px-3 py-2.5 flex items-center gap-2.5 min-w-0"
+                    className="flex-1 text-left px-3 py-3 flex items-center gap-2.5 min-w-0"
                   >
                     <div className={cn(
-                      "w-9 h-9 rounded-lg border flex items-center justify-center shrink-0 transition-colors",
+                      "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all border",
                       selectedAgent?.id === agent.id
-                        ? "border-brand/40 text-brand"
-                        : "border-white/10 text-ink/60 group-hover:text-ink"
+                        ? "border-brand/35 bg-brand/12 text-brand"
+                        : "border-white/10 bg-white/3 text-ink/50 group-hover:text-ink group-hover:bg-white/8"
                     )}>
-                      {agent.channel === 'email' ? <Mail className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                      {agent.channel === "email" ? <Mail className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                     </div>
                     <div className="overflow-hidden flex-1 min-w-0">
                       <div className="font-display italic text-base text-ink leading-tight truncate">{agent.name}</div>
                       <div className="flex items-center flex-wrap gap-1.5 mt-1">
                         <RoleBadge role={agent.role} size="xs" />
-                        <span className="text-[9px] uppercase tracking-[0.25em] px-1.5 py-0.5 rounded-full glass border border-white/10 text-muted/80 leading-none">
+                        <span className="text-[8px] uppercase tracking-[0.25em] px-1.5 py-0.5 rounded-full bg-white/5 border border-white/8 text-muted/70 leading-none">
                           {agent.channel}
                         </span>
                         {agentStats[agent.id] && (
-                          <span className="text-[9px] uppercase tracking-[0.22em] px-1.5 py-0.5 rounded-full glass border border-white/10 text-muted/80 leading-none tabular-nums">
+                          <span className="text-[8px] font-mono px-1.5 py-0.5 rounded-full bg-white/5 border border-white/8 text-muted/60 leading-none">
                             {agentStats[agent.id].callCount} calls
                           </span>
                         )}
@@ -385,7 +395,7 @@ export default function FleetSettings() {
                     disabled={isDeletingAgent === agent.id}
                     title="Delete agent"
                     aria-label={`Delete agent ${agent.name}`}
-                    className="mr-2 shrink-0 w-7 h-7 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30 disabled:opacity-40 transition-all"
+                    className="mr-2 shrink-0 w-7 h-7 rounded-lg glass border border-white/8 flex items-center justify-center text-muted/40 hover:text-rose-400 hover:border-rose-500/30 hover:bg-rose-500/8 disabled:opacity-40 transition-all"
                   >
                     {isDeletingAgent === agent.id
                       ? <Loader2 className="w-3 h-3 animate-spin" />

@@ -280,20 +280,25 @@ export default function DncManager() {
                     key={entry.id}
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center justify-between py-3 px-1 gap-3 group"
+                    className="group flex items-center justify-between py-3 px-2 gap-3 hover:bg-white/2 transition-all rounded-lg"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 rounded-lg glass border border-white/10 flex items-center justify-center shrink-0">
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                        style={{ background: "rgba(255,107,217,0.10)", border: "1px solid rgba(255,107,217,0.20)" }}>
                         <Phone className="w-3.5 h-3.5 text-rose-400" />
                       </div>
                       <div className="min-w-0">
                         <p className="font-mono text-sm text-ink truncate">{entry.phone_raw || entry.phone}</p>
-                        <p className="text-[9px] text-muted/70 mt-0.5">
-                          Added {new Date(entry.created_at).toLocaleDateString()} · {reasonLabel(entry.reason)}
-                        </p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-[8px] text-muted/60">
+                            {new Date(entry.created_at).toLocaleDateString()}
+                          </span>
+                          <span className="w-1 h-1 rounded-full bg-white/15" />
+                          <span className="text-[8px] text-muted/60">{reasonLabel(entry.reason)}</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                       <span className={cn(
                         "text-[8px] uppercase tracking-[0.22em] px-2 py-0.5 rounded-full border",
                         sourceColor(entry.source)

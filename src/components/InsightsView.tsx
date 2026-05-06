@@ -326,41 +326,75 @@ function LeaderboardView({ days }: { days: number }) {
   if (loading) return <Spinner />;
   if (!data || !data.agents?.length) return <Empty label="No agents have run calls in this window." />;
 
+  const RANK_STYLES: Array<{ gradient?: string; ring: string; glow: string; textClass: string; iconBg: boolean }> = [
+    {
+      gradient: "linear-gradient(135deg, #7DF9FF 0%, #C58BFF 55%, #FF6BD9 100%)",
+      ring: "border-brand/40",
+      glow: "rgba(125,249,255,0.25)",
+      textClass: "text-paper",
+      iconBg: true,
+    },
+    {
+      gradient: "linear-gradient(135deg, rgba(197,139,255,0.20), rgba(125,249,255,0.10))",
+      ring: "border-brand-2/30",
+      glow: "rgba(197,139,255,0.15)",
+      textClass: "text-brand-2",
+      iconBg: false,
+    },
+    {
+      gradient: "linear-gradient(135deg, rgba(255,107,217,0.15), rgba(197,139,255,0.08))",
+      ring: "border-brand-3/25",
+      glow: "rgba(255,107,217,0.12)",
+      textClass: "text-brand-3",
+      iconBg: false,
+    },
+  ];
+
   return (
     <div className="space-y-3">
-      {data.agents.map((a: any, i: number) => (
-        <motion.div
-          key={a.agent_id}
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: i * 0.05 }}
-          className="relative aurora-ring rounded-2xl"
-        >
-          <div className="relative rounded-2xl glass border border-white/10 p-5 flex items-center gap-5 overflow-hidden">
-            <div className={cn(
-              "shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center font-display italic text-2xl",
-              i === 0 ? "text-paper" : "glass border border-white/10 text-ink/70",
-            )} style={i === 0 ? { background: "linear-gradient(135deg, #7DF9FF, #C58BFF, #FF6BD9)" } : {}}>
-              {i === 0 ? <Trophy className="w-5 h-5" /> : i + 1}
+      {data.agents.map((a: any, i: number) => {
+        const rs = RANK_STYLES[i] ?? { ring: "border-white/8", glow: "transparent", textClass: "text-muted", iconBg: false };
+        return (
+          <motion.div
+            key={a.agent_id}
+            initial={{ opacity: 0, x: -12 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: i * 0.06 }}
+            className={`relative rounded-2xl glass border ${rs.ring} p-5 flex items-center gap-5 overflow-hidden`}
+            style={{ boxShadow: `0 0 40px -20px ${rs.glow}, 0 1px 0 rgba(255,255,255,0.07) inset` }}
+          >
+            {/* Background rank number */}
+            <div className="absolute right-5 top-1/2 -translate-y-1/2 font-display italic text-[96px] leading-none opacity-[0.04] select-none pointer-events-none">
+              {i + 1}
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap mb-1">
+
+            {/* Rank badge */}
+            <div
+              className="shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center font-display italic text-2xl border border-white/10"
+              style={rs.gradient ? { background: rs.gradient } : undefined}
+            >
+              {i === 0
+                ? <Trophy className={`w-5 h-5 ${rs.textClass}`} />
+                : <span className={rs.textClass}>{i + 1}</span>}
+            </div>
+
+            <div className="flex-1 min-w-0 relative">
+              <div className="flex items-center gap-2 flex-wrap mb-2">
                 <h4 className="font-display italic text-2xl text-ink leading-tight">{a.agent_name}</h4>
                 <RolePill role={a.role} />
-                <span className="px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] bg-brand/15 text-brand border border-brand/30">{a.archetype}</span>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-6 gap-3 text-xs">
-                <Stat label="Calls" value={a.total_calls} />
-                <Stat label="Qualified" value={a.qualified} accent="#7DF9FF" />
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+                <Stat label="Calls"     value={a.total_calls} />
+                <Stat label="Qualified" value={a.qualified}    accent="#7DF9FF" />
                 <Stat label="Avg Score" value={a.avg_lead_score} />
-                <Stat label="Bookings" value={a.bookings} />
-                <Stat label="Minutes" value={a.minutes} />
-                <Stat label="$ / Qual" value={a.cost_per_qualified ? `$${a.cost_per_qualified}` : "—"} accent="#FF6BD9" />
+                <Stat label="Bookings"  value={a.bookings} />
+                <Stat label="Minutes"   value={a.minutes} />
+                <Stat label="$/Qual"    value={a.cost_per_qualified ? `$${a.cost_per_qualified}` : "—"} accent="#FF6BD9" />
               </div>
             </div>
-          </div>
-        </motion.div>
-      ))}
+          </motion.div>
+        );
+      })}
     </div>
   );
 }
