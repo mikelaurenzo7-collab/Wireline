@@ -25,6 +25,10 @@ const ACCENT_SHIMMER: Record<string, string> = {
 export function Skeleton({ className, accent = "cyan" }: SkeletonProps) {
   return (
     <div
+      role="status"
+      aria-busy="true"
+      aria-live="polite"
+      aria-label="Loading…"
       className={cn(
         "relative overflow-hidden rounded-lg bg-white/[0.04] border border-white/[0.04]",
         className
