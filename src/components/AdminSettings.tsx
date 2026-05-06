@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { ServerCog, KeyRound, Loader2, Phone, Plus, Link as LinkIcon, Save, ChevronRight, RotateCw, CheckCircle2, Trash2, AlertTriangle, Cpu, CreditCard, Activity, ShieldCheck, Zap, Bot, Wifi } from "lucide-react";
+import { ServerCog, KeyRound, Loader2, Phone, Plus, Link as LinkIcon, Save, ChevronRight, RotateCw, CheckCircle2, Trash2, AlertTriangle, Cpu, CreditCard, Activity, ShieldCheck, Zap, Bot, Wifi, History, TrendingUp, DollarSign, BarChart3, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import WebhooksManager from "./WebhooksManager";
@@ -28,7 +29,7 @@ export default function AdminSettings() {
   const [newNumber, setNewNumber] = useState("");
   const [newNumberVapiId, setNewNumberVapiId] = useState("");
 
-  const [activeTab, setActiveTab] = useState<"carrier" | "subscription" | "system">("carrier");
+  const [activeTab, setActiveTab] = useState<"carrier" | "subscription" | "system" | "activity">("carrier");
 
   const [carrierNumbers, setCarrierNumbers] = useState<any[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -142,7 +143,7 @@ export default function AdminSettings() {
 
   const tabSwitcher = (
     <div className="flex p-1 rounded-full glass border border-white/10">
-      {(["carrier", "subscription", "system"] as const).map(t => (
+      {(["carrier", "subscription", "system", "activity"] as const).map(t => (
         <button
           key={t}
           onClick={() => setActiveTab(t)}
@@ -151,7 +152,7 @@ export default function AdminSettings() {
             activeTab === t ? "bg-brand/20 text-brand" : "text-muted hover:text-ink"
           )}
         >
-          {t === "carrier" ? "Carrier" : t === "subscription" ? "Billing" : "System"}
+          {t === "carrier" ? "Carrier" : t === "subscription" ? "Billing" : t === "system" ? "System" : "Activity"}
         </button>
       ))}
     </div>
@@ -640,8 +641,250 @@ export default function AdminSettings() {
               </Panel>
             </motion.div>
           )}
+          {activeTab === "activity" && (
+            <motion.div
+              key="activity"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="h-full"
+            >
+              <AuditActivityPanel />
+            </motion.div>
+          )}
         </AnimatePresence>
       )}
     </PageShell>
+  );
+}
+
+/* ──────────────────────────  AI Activity Audit Panel  ─────────────── */
+
+/** Minimum cost denominator to avoid division-by-zero in bar chart scaling. */
+const MIN_COST_THRESHOLD = 0.0001;
+
+/** Format an action slug into human-readable display text. */
+function formatActionName(action: string): string {
+  return action.replace(/-/g, ' ');
+}
+
+function AuditActivityPanel() {
+  const [days, setDays] = useState(30);
+  const [summary, setSummary] = useState<any>(null);
+  const [recent, setRecent] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [recentLoading, setRecentLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    authFetch(`/api/audit/summary?days=${days}`)
+      .then(r => r.json())
+      .then(setSummary)
+      .finally(() => setLoading(false));
+  }, [days]);
+
+  useEffect(() => {
+    setRecentLoading(true);
+    authFetch("/api/audit/recent?limit=50")
+      .then(r => r.json())
+      .then(d => setRecent(d.entries || []))
+      .finally(() => setRecentLoading(false));
+  }, []);
+
+  const totals = summary?.totals ?? {};
+  const byAction: any[] = summary?.by_action ?? [];
+  const byDay: any[] = summary?.by_day ?? [];
+  const byModel: any[] = summary?.by_model ?? [];
+  const maxActionCost = Math.max(MIN_COST_THRESHOLD, ...byAction.map((a: any) => Number(a.cost)));
+
+  const windowOpts = [7, 14, 30, 90] as const;
+
+  return (
+    <div className="h-full flex flex-col gap-3 overflow-y-auto scrollbar-hide pb-6">
+      {/* Window selector */}
+      <div className="flex items-center justify-between shrink-0">
+        <h3 className="text-[9px] uppercase tracking-[0.4em] text-muted">AI Usage · Last</h3>
+        <div className="flex p-0.5 rounded-full glass border border-white/10">
+          {windowOpts.map(d => (
+            <button
+              key={d}
+              onClick={() => setDays(d)}
+              className={cn(
+                "px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.22em] transition-colors",
+                days === d ? "bg-brand/20 text-brand" : "text-muted hover:text-ink"
+              )}
+            >
+              {d}d
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-2">
+          <Loader2 className="w-5 h-5 animate-spin text-brand" />
+          <span className="text-[9px] uppercase tracking-[0.4em] text-muted/70">Loading audit data</span>
+        </div>
+      ) : (
+        <>
+          {/* Hero stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 shrink-0">
+            {[
+              { label: "AI Calls",        value: totals.calls ?? 0,                          icon: Activity,    accent: "#7DF9FF" },
+              { label: "Total Cost",      value: `$${Number(totals.cost ?? 0).toFixed(4)}`,  icon: DollarSign,  accent: "#C58BFF" },
+              { label: "Cache Saved",     value: `$${Number(totals.cache_savings_usd ?? 0).toFixed(4)}`, icon: TrendingUp, accent: "#4DFFC4" },
+              { label: "Avg Cost/Call",   value: `$${Number(totals.avg_cost_per_call ?? 0).toFixed(5)}`, icon: BarChart3,  accent: "#FF6BD9" },
+            ].map(({ label, value, icon: Icon, accent }) => (
+              <div key={label} className="relative rounded-xl glass border border-white/10 p-4 overflow-hidden">
+                <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-20 blur-3xl pointer-events-none" style={{ background: `radial-gradient(circle,${accent},transparent)` }} />
+                <div className="flex items-center gap-2 mb-2">
+                  <Icon className="w-3 h-3 shrink-0" style={{ color: accent }} />
+                  <p className="text-[9px] uppercase tracking-[0.32em] text-muted truncate">{label}</p>
+                </div>
+                <p className="font-display italic text-xl leading-none tabular-nums" style={{ color: accent }}>{value}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Daily cost trend + model breakdown */}
+          <div className="grid md:grid-cols-2 gap-3 shrink-0">
+            {/* Daily trend */}
+            <div className="rounded-2xl glass border border-white/10 p-5">
+              <h4 className="text-[9px] uppercase tracking-[0.32em] text-muted mb-4 flex items-center gap-1.5">
+                <TrendingUp className="w-3 h-3" /> Daily Cost Trend
+              </h4>
+              {byDay.length > 1 ? (
+                <div className="h-36">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={byDay} margin={{ top: 4, right: 0, left: -28, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="auditGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#7DF9FF" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#7DF9FF" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                      <XAxis dataKey="day" tick={{ fill: "#8B89B8", fontSize: 9 }} tickLine={false} axisLine={false} />
+                      <YAxis tick={{ fill: "#8B89B8", fontSize: 9 }} tickLine={false} axisLine={false} tickFormatter={(v: number) => `$${v.toFixed(3)}`} />
+                      <Tooltip
+                        contentStyle={{ background: "#0F0E2D", border: "1px solid rgba(125,249,255,0.2)", borderRadius: 8, fontSize: 11 }}
+                        labelStyle={{ color: "#8B89B8" }}
+                        itemStyle={{ color: "#7DF9FF" }}
+                        formatter={(v: any) => [`$${Number(v).toFixed(4)}`, "Cost"]}
+                      />
+                      <Area type="monotone" dataKey="cost" stroke="#7DF9FF" strokeWidth={1.5} fill="url(#auditGrad)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="h-36 flex items-center justify-center text-[10px] text-muted/60">Not enough data yet</div>
+              )}
+            </div>
+
+            {/* Model breakdown */}
+            <div className="rounded-2xl glass border border-white/10 p-5">
+              <h4 className="text-[9px] uppercase tracking-[0.32em] text-muted mb-4 flex items-center gap-1.5">
+                <Bot className="w-3 h-3" /> Model Usage
+              </h4>
+              {byModel.length === 0 ? (
+                <div className="h-36 flex items-center justify-center text-[10px] text-muted/60">No data yet</div>
+              ) : (
+                <div className="space-y-2.5">
+                  {byModel.map((m: any) => {
+                    const maxCost = Math.max(MIN_COST_THRESHOLD, ...byModel.map((x: any) => Number(x.cost)));
+                    const pct = (Number(m.cost) / maxCost) * 100;
+                    return (
+                      <div key={m.model} className="flex items-center gap-3">
+                        <span className="text-[9px] font-mono text-muted w-36 shrink-0 truncate">{m.model || "unknown"}</span>
+                        <div className="flex-1 h-2 rounded-full bg-white/5 overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${pct}%` }}
+                            transition={{ duration: 0.7, ease: "easeOut" }}
+                            className="h-full rounded-full"
+                            style={{ background: "linear-gradient(90deg,#7DF9FF,#C58BFF)" }}
+                          />
+                        </div>
+                        <span className="text-[9px] font-mono text-ink/70 w-16 text-right shrink-0">${Number(m.cost).toFixed(4)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Cost by action */}
+          <div className="rounded-2xl glass border border-white/10 p-5 shrink-0">
+            <h4 className="text-[9px] uppercase tracking-[0.32em] text-muted mb-4 flex items-center gap-1.5">
+              <BarChart3 className="w-3 h-3" /> Cost by Action
+            </h4>
+            {byAction.length === 0 ? (
+              <p className="text-[10px] text-muted/60 text-center py-4">No actions recorded yet</p>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-2">
+                {byAction.map((a: any) => {
+                  const pct = (Number(a.cost) / maxActionCost) * 100;
+                  return (
+                    <div key={a.action} className="flex items-center gap-3">
+                      <span className="text-[9px] text-muted w-36 shrink-0 truncate capitalize">{formatActionName(a.action as string)}</span>
+                      <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${pct}%` }}
+                          transition={{ duration: 0.7, ease: "easeOut" }}
+                          className="h-full rounded-full"
+                          style={{ background: "linear-gradient(90deg,#C58BFF,#FF6BD9)" }}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[8px] font-mono text-ink/60 tabular-nums">{a.calls}×</span>
+                        <span className="text-[9px] font-mono text-ink/80 tabular-nums w-16 text-right">${Number(a.cost).toFixed(4)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Recent audit log */}
+          <div className="rounded-2xl glass border border-white/10 overflow-hidden shrink-0">
+            <div className="px-5 py-3 border-b border-white/8 flex items-center gap-2">
+              <History className="w-3.5 h-3.5 text-muted" />
+              <h4 className="text-[9px] uppercase tracking-[0.32em] text-muted">Recent Activity</h4>
+              {recentLoading && <Loader2 className="w-3 h-3 animate-spin text-brand ml-auto" />}
+            </div>
+            <div className="divide-y divide-white/5 max-h-72 overflow-y-auto scrollbar-hide">
+              {recent.length === 0 && !recentLoading ? (
+                <div className="px-5 py-6 text-center text-[10px] text-muted/60">No AI activity recorded yet</div>
+              ) : (
+                recent.map((entry: any, i: number) => (
+                  <div key={entry.id ?? i} className="px-5 py-2.5 flex items-center gap-3 hover:bg-white/[0.02] transition-colors">
+                    <div className="min-w-0 flex-1 flex items-center gap-3">
+                      <span className="text-[9px] font-mono text-brand/80 shrink-0 capitalize">{formatActionName(entry.action as string || "—")}</span>
+                      <span className="text-[8px] text-muted shrink-0 font-mono">{entry.model || "—"}</span>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      {entry.latency_ms != null && (
+                        <span className="text-[8px] font-mono text-muted/60 tabular-nums flex items-center gap-1">
+                          <Clock className="w-2.5 h-2.5" />{entry.latency_ms}ms
+                        </span>
+                      )}
+                      <span className="text-[9px] font-mono text-ink/70 tabular-nums w-16 text-right">
+                        {entry.cost_usd != null ? `$${Number(entry.cost_usd).toFixed(5)}` : "—"}
+                      </span>
+                      <span className="text-[8px] text-muted/50 tabular-nums w-24 text-right">
+                        {entry.created_at ? new Date(entry.created_at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : ""}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
   );
 }

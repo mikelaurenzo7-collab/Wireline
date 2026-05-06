@@ -3032,6 +3032,83 @@ app.get("/api/campaigns/:id/leads", authenticateUser, async (req: any, res: any)
   }
 });
 
+// Campaign analytics — outcome breakdown, avg duration, cost summary.
+app.get("/api/campaigns/:id/analytics", authenticateUser, async (req: any, res: any) => {
+  try {
+    const campaignId = req.params.id;
+    const userId = req.user.id;
+
+    // Verify campaign ownership
+    const { data: campaign } = await db
+      .from('wireline_outbound_campaigns')
+      .select('id, name, status, created_at')
+      .eq('id', campaignId)
+      .eq('user_id', userId)
+      .single();
+    if (!campaign) return res.status(404).json({ error: "Campaign not found" });
+
+    // Lead outcome breakdown
+    const { data: leads } = await db
+      .from('wireline_outbound_leads')
+      .select('status, call_id')
+      .eq('campaign_id', campaignId)
+      .eq('user_id', userId);
+
+    const outcomeMap: Record<string, number> = {};
+    const callIds: string[] = [];
+    for (const l of leads ?? []) {
+      outcomeMap[l.status] = (outcomeMap[l.status] ?? 0) + 1;
+      if (l.call_id) callIds.push(l.call_id);
+    }
+
+    // Pull call-level stats (duration, cost, lead_score) for enrichment
+    // MIN_ANSWERED_CALL_DURATION_SEC: calls shorter than this are likely
+    // voicemails or immediate hang-ups and should not skew avg duration.
+    const MIN_ANSWERED_CALL_DURATION_SEC = 5;
+    let callStats = { avg_duration_sec: 0, total_cost_usd: 0, avg_lead_score: 0, answered: 0 };
+    if (callIds.length > 0) {
+      const { data: callRows } = await db
+        .from('wireline_call_logs')
+        .select('duration_seconds, cost_usd, lead_score')
+        .in('id', callIds)
+        .eq('user_id', userId);
+      const rows = callRows ?? [];
+      const answered = rows.filter((r: any) => (r.duration_seconds ?? 0) > MIN_ANSWERED_CALL_DURATION_SEC);
+      callStats.answered = answered.length;
+      callStats.avg_duration_sec = answered.length
+        ? Math.round(answered.reduce((s: number, r: any) => s + (r.duration_seconds ?? 0), 0) / answered.length)
+        : 0;
+      callStats.total_cost_usd = rows.reduce((s: number, r: any) => s + Number(r.cost_usd ?? 0), 0);
+      const scored = rows.filter((r: any) => r.lead_score != null);
+      callStats.avg_lead_score = scored.length
+        ? Math.round(scored.reduce((s: number, r: any) => s + (r.lead_score ?? 0), 0) / scored.length)
+        : 0;
+    }
+
+    const total = (leads ?? []).length;
+    // pct is approximate — individual percentages may not sum to exactly 100
+    // due to rounding, but this is acceptable for display purposes.
+    const outcomes = Object.entries(outcomeMap)
+      .map(([status, count]) => ({ status, count, pct: total ? Math.round((count / total) * 100) : 0 }))
+      .sort((a, b) => b.count - a.count);
+
+    res.json({
+      campaign,
+      total,
+      outcomes,
+      call_stats: {
+        answered: callStats.answered,
+        avg_duration_sec: callStats.avg_duration_sec,
+        total_cost_usd: Number(callStats.total_cost_usd.toFixed(4)),
+        avg_lead_score: callStats.avg_lead_score,
+      },
+    });
+  } catch (e: any) {
+    log.error("Campaign analytics failed", { error: e?.message });
+    res.status(500).json({ error: e?.message ?? "Failed to load analytics" });
+  }
+});
+
 // Launch a campaign — dial all queued leads sequentially (fire-and-forget
 // per lead; we respond immediately with a count and let calls resolve async).
 const CAMPAIGN_DIAL_SPACING_MS = 3_000; // 3-second gap to avoid Vapi rate limits
