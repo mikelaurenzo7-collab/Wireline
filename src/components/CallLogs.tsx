@@ -457,7 +457,7 @@ function CallDetail({ call, formatDuration }: { call: any; formatDuration: (s: n
                     </div>
                     <div className="text-left min-w-0">
                       <p className="text-[10px] uppercase tracking-[0.28em] text-brand">{scoring ? "Scoring…" : "Run QA Scoring"}</p>
-                      <p className="text-[9px] text-muted/70 mt-0.5">Claude evaluates this call across 5 quality dimensions</p>
+                      <p className="text-[9px] text-muted/70 mt-0.5">Wireline AI evaluates this call across 5 quality dimensions</p>
                     </div>
                   </button>
                 )}
@@ -515,7 +515,7 @@ function CallDetail({ call, formatDuration }: { call: any; formatDuration: (s: n
                   <div className="h-full min-h-[200px] flex flex-col items-center justify-center gap-2">
                     <Activity className="w-6 h-6 text-muted/40" />
                     <p className="text-[9px] uppercase tracking-[0.4em] text-muted/60">No recording available</p>
-                    <p className="text-[10px] text-muted/40">Recordings are stored by Vapi when enabled</p>
+                    <p className="text-[10px] text-muted/40">Recordings are stored by the voice carrier when enabled</p>
                   </div>
                 )}
               </motion.div>

@@ -15,8 +15,8 @@ interface HealthData {
 }
 
 const CAPABILITY_LABELS: Record<CapabilityKey, string> = {
-  claude: "Claude",
-  vapi: "Vapi",
+  claude: "AI Engine",
+  vapi: "Voice",
   supabase: "DB",
 };
 

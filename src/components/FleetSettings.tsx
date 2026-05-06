@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Users, Plus, Phone, Bot, Save, Loader2, Link as LinkIcon, Copy, Trash2, Megaphone, Mail, Pencil, Sparkles, Terminal, ChevronRight, Zap, Target, Radio, Settings2, Shield, Briefcase, RefreshCw, LayoutGrid } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
-import { authFetch } from "../lib/api";
+import { authFetch, safeJson } from "../lib/api";
 import ConfirmModal from "./ConfirmModal";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import { useToast } from "../contexts/ToastContext";
@@ -146,7 +146,7 @@ export default function FleetSettings() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: newAgentId, name: newAgentName, channel: newAgentChannel, role: newAgentRole })
       });
-      const data = await resp.json();
+      const data = await safeJson(resp);
       
       if (resp.status === 403) {
         toastWarning("Access denied", data.error || "Upgrade your plan.");
@@ -157,7 +157,7 @@ export default function FleetSettings() {
         await fetchAgents();
       }
     } catch (e: any) {
-      toastError("Deployment failed", e.message);
+      toastError("Deployment failed", "Could not reach the server. Please try again.");
     }
     setIsCreating(false);
   };

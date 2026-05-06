@@ -5,6 +5,20 @@ import { supabase } from "./supabase";
 // the UI never spins forever on a stalled fetch.
 const DEFAULT_TIMEOUT_MS = 120_000;
 
+/**
+ * Safely parses a fetch Response as JSON. If the body is not valid JSON
+ * (e.g. an HTML error page from a reverse proxy), returns a generic error
+ * object instead of throwing so callers never surface raw parse errors.
+ */
+export async function safeJson(response: Response): Promise<any> {
+  const text = await response.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { error: "An unexpected error occurred. Please try again." };
+  }
+}
+
 export async function authFetch(url: string, options: RequestInit = {}) {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;

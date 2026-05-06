@@ -113,7 +113,7 @@ export default function DashboardHome() {
     } catch (e) {
       console.error("Failed to start call", e);
       setIsConnecting(false);
-      toastError("Carrier connection failed", "Ensure at least one agent is configured and Vapi key is valid.");
+      toastError("Carrier connection failed", "Ensure at least one agent is configured and try again.");
     }
   };
 

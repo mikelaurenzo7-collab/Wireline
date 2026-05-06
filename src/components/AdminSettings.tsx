@@ -618,13 +618,13 @@ export default function AdminSettings() {
                 <div className="space-y-3">
                   {[
                     {
-                      label: "ANTHROPIC_API_KEY",
-                      desc: "Powers all Claude AI features",
+                      label: "AI Engine",
+                      desc: "Powers all Wireline AI features",
                       ok: !!claudeStatus?.available,
                       icon: Bot,
                     },
                     {
-                      label: "VOICE_PUBLIC_KEY",
+                      label: "Voice SDK",
                       desc: "Voice browser SDK",
                       ok: !!import.meta.env.VITE_VAPI_PUBLIC_KEY,
                       icon: Wifi,

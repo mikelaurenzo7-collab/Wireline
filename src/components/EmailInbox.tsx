@@ -57,7 +57,7 @@ export default function EmailInbox() {
   const handleDraftAI = async () => {
     if (!selectedThread) return;
     setIsDrafting(true);
-    toastInfo("Drafting reply", "Claude is composing your response…");
+    toastInfo("Drafting reply", "Wireline AI is composing your response…");
     try {
       const claudeRes = await authFetch(`/api/claude/email-draft`, {
         method: "POST",

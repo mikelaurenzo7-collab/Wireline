@@ -36,10 +36,10 @@ export default function CommandBar() {
     { id: 'admin',        label: 'Settings',         description: 'Account and platform settings',              icon: ServerCog,      category: 'Navigation', action: () => navigate('/admin') },
 
     // ── Actions ────────────────────────────────────────────
-    { id: 'forge-agent',  label: 'Design Agent with Claude',     description: 'Build a complete agent from a goal',           icon: Sparkles,  category: 'Actions', action: () => navigate('/agents') },
+    { id: 'forge-agent',  label: 'Design Agent with Wireline AI',  description: 'Build a complete agent from a goal',           icon: Sparkles,  category: 'Actions', action: () => navigate('/agents') },
     { id: 'test-call',    label: 'Start Test Call',              description: 'Talk to your agent right now',                 icon: PhoneCall, category: 'Actions', action: () => navigate('/') },
     { id: 'review-agent', label: 'Run Performance Review',       description: 'Deep audit of an agent\'s recent calls',       icon: BarChart3, category: 'Actions', action: () => navigate('/train') },
-    { id: 'ingest-url',   label: 'Ingest Knowledge from URL',    description: 'Claude reads a site and extracts facts',       icon: Zap,       category: 'Actions', action: () => navigate('/train') },
+    { id: 'ingest-url',   label: 'Ingest Knowledge from URL',    description: 'Wireline AI reads a site and extracts facts',  icon: Zap,       category: 'Actions', action: () => navigate('/train') },
   ];
 
   const filteredCommands = commands.filter(c => 
