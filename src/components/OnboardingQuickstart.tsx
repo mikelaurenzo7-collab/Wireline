@@ -18,24 +18,24 @@ interface ProgressData {
 const STEPS = [
   {
     id: "agent",
-    title: "Forge your first agent",
-    body: "Describe what the agent should do in one sentence — Claude designs the name, persona, directives, and seed knowledge automatically.",
+    title: "Create your first agent",
+    body: "Describe what the agent should do in one sentence. Claude will generate the name, persona, directives, and starter knowledge automatically.",
     icon: Hammer,
     accent: "#7DF9FF",
     badge: "~30 seconds",
   },
   {
     id: "knowledge",
-    title: "Teach it about you",
-    body: "Paste your website URL — Claude reads it and extracts services, pricing, hours, and policies as atomic facts you can one-click apply.",
+    title: "Add your business knowledge",
+    body: "Paste your website URL. Claude will extract services, pricing, hours, and policies into structured facts you can apply in one click.",
     icon: Globe,
     accent: "#C58BFF",
     badge: "Instant ingest",
   },
   {
     id: "number",
-    title: "Wire a phone number",
-    body: "Connect a Vapi number from the carrier bridge so real inbound callers actually reach your agent around the clock.",
+    title: "Connect a phone number",
+    body: "Connect a phone number through your carrier integration so inbound callers can reach your agent around the clock.",
     icon: Phone,
     accent: "#FF6BD9",
     badge: "1 minute",
@@ -43,7 +43,7 @@ const STEPS = [
   {
     id: "call",
     title: "Run a live test call",
-    body: "Click the button below to start a live voice call with your agent right now — no phone required, straight from your browser.",
+    body: "Start a live voice test with your agent directly from your browser. No phone is required.",
     icon: Mic,
     accent: "#4DFFC4",
     badge: "Try it now",
@@ -143,7 +143,7 @@ export default function OnboardingQuickstart() {
                 <PhoneCall className="w-5 h-5 text-brand shrink-0" />
                 <div>
                   <p className="text-sm font-medium text-ink leading-tight">Your agent is ready to talk</p>
-                  <p className="text-xs text-ink/50 mt-0.5">Head to the Command Atlas and tap <strong>Initiate Test Relay</strong> to call it live from your browser.</p>
+                  <p className="text-xs text-ink/50 mt-0.5">Open the dashboard and select <strong>Start Test Call</strong> to place a live browser test.</p>
                 </div>
               </div>
               <Link
@@ -151,7 +151,7 @@ export default function OnboardingQuickstart() {
                 className="shrink-0 px-4 py-2.5 rounded-full glass border border-brand/40 text-[11px] uppercase tracking-[0.3em] text-brand hover:bg-brand/10 hover:border-brand/60 transition-all flex items-center gap-2"
               >
                 <PlayCircle className="w-3.5 h-3.5" />
-                Open Atlas
+                Open Dashboard
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>

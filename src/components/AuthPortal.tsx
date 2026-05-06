@@ -141,7 +141,7 @@ export default function AuthPortal() {
                     isSignUp ? "text-ink" : "text-muted hover:text-ink/70"
                   )}
                 >
-                  New Node
+                  Sign Up
                 </button>
               </div>
             </div>
@@ -149,7 +149,7 @@ export default function AuthPortal() {
             <form onSubmit={handleAuth} className="relative z-10 space-y-5">
               <div className="space-y-2">
                 <label className="text-[10px] uppercase tracking-[0.4em] text-muted flex items-center gap-2">
-                  <Mail className="w-3 h-3 text-brand" /> Carrier ID
+                  <Mail className="w-3 h-3 text-brand" /> Email
                 </label>
                 <div className="relative group">
                   <input
@@ -166,7 +166,7 @@ export default function AuthPortal() {
 
               <div className="space-y-2">
                 <label className="text-[10px] uppercase tracking-[0.4em] text-muted flex items-center gap-2">
-                  <Lock className="w-3 h-3 text-brand" /> Cipher Key
+                  <Lock className="w-3 h-3 text-brand" /> Password
                 </label>
                 <div className="relative group">
                   <input
@@ -217,7 +217,7 @@ export default function AuthPortal() {
                 ) : (
                   <>
                     {isSignUp ? <UserPlus className="w-4 h-4" /> : <LogIn className="w-4 h-4" />}
-                    {isSignUp ? "Initialize Node" : "Enter Aurora"}
+                    {isSignUp ? "Create Account" : "Sign In"}
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
