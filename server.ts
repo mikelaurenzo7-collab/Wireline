@@ -506,6 +506,45 @@ const OAUTH_RATE_MAX = 10;
 const EMAIL_RATE_WINDOW_MS = 60_000; // 1 minute
 const EMAIL_RATE_MAX = 20; // 20 email operations per minute per user
 
+// Knowledge base operation rate limiting — protects against bulk learning spam while allowing legitimate agent training
+const KNOWLEDGE_RATE_WINDOW_MS = 60_000; // 1 minute
+const KNOWLEDGE_RATE_MAX = 100; // 100 knowledge operations per minute per user
+
+async function knowledgeRateLimiter(req: any, res: any, next: any) {
+  const userId = req.user?.id;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  const result = await rateLimit(userId, {
+    bucket: "knowledge",
+    windowMs: KNOWLEDGE_RATE_WINDOW_MS,
+    max: KNOWLEDGE_RATE_MAX,
+  });
+
+  res.setHeader("X-RateLimit-Limit", String(KNOWLEDGE_RATE_MAX));
+  res.setHeader("X-RateLimit-Remaining", String(result.remaining));
+
+  if (!result.allowed) {
+    void auditLogger.logSecurity('rate_limit_exceeded', {
+      userId,
+      resource: 'knowledge_api',
+      ip: req.ip,
+      metadata: { limit: KNOWLEDGE_RATE_MAX }
+    }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
+
+    SentryEvents.rateLimited({
+      endpoint: '/api/knowledge',
+      user_id: userId,
+    });
+
+    res.setHeader("Retry-After", String(Math.ceil(result.resetMs / 1000)));
+    return res.status(429).json({
+      error: `Rate limit exceeded — ${KNOWLEDGE_RATE_MAX} knowledge operations per minute. Please slow down.`,
+      code: "KNOWLEDGE_RATE_LIMIT",
+    });
+  }
+  next();
+}
+
 function oauthRateLimiter(req: any, res: any, next: any) {
   const key = req.ip || "anon";
   rateLimit(key, {
@@ -4240,7 +4279,7 @@ app.get("/api/knowledge", authenticateUser, async (req: any, res: any) => {
   } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load knowledge" }); }
 });
 
-app.post("/api/knowledge", authenticateUser, async (req: any, res: any) => {
+app.post("/api/knowledge", authenticateUser, knowledgeRateLimiter, async (req: any, res: any) => {
   try {
     // Validate input using Zod schema
     const validation = parseFormData(KnowledgeSchema, {
@@ -4276,7 +4315,7 @@ app.post("/api/knowledge", authenticateUser, async (req: any, res: any) => {
   } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to create" }); }
 });
 
-app.patch("/api/knowledge/:id", authenticateUser, async (req: any, res: any) => {
+app.patch("/api/knowledge/:id", authenticateUser, knowledgeRateLimiter, async (req: any, res: any) => {
   try {
     // Validate input using Zod schema
     const validation = parseFormData(KnowledgeSchema, {
