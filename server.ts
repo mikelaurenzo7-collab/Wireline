@@ -318,6 +318,14 @@ function healthRateLimiter(req: any, res: any, next: any) {
   healthRateLimit.set(key, hits);
   next();
 }
+setInterval(() => {
+  const cutoff = Date.now() - HEALTH_RATE_WINDOW_MS * 2;
+  for (const [k, hits] of healthRateLimit) {
+    const fresh = hits.filter((t: number) => t > cutoff);
+    if (fresh.length === 0) healthRateLimit.delete(k);
+    else healthRateLimit.set(k, fresh);
+  }
+}, 5 * 60 * 1000).unref?.();
 
 app.get("/api/health", healthRateLimiter, async (_req, res) => {
   const dbStatus = await probeDatabase();

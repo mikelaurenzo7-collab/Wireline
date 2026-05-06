@@ -1,0 +1,17 @@
+{
+  "name": "Wireline",
+  "short_name": "Wireline",
+  "description": "AI voice and email agents for your business — powered by Claude.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#0AC8D4",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

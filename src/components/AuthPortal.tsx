@@ -34,6 +34,27 @@ const FEATURES = [
   },
 ];
 
+type PasswordStrength = { score: 0 | 1 | 2 | 3 | 4; label: string; color: string };
+
+function getPasswordStrength(pw: string): PasswordStrength {
+  if (!pw) return { score: 0, label: "", color: "" };
+  let score = 0;
+  if (pw.length >= 8) score++;
+  if (pw.length >= 12) score++;
+  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+  if (/\d/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  const clamped = Math.min(score, 4) as 0 | 1 | 2 | 3 | 4;
+  const meta: Record<number, { label: string; color: string }> = {
+    0: { label: "Too short",  color: "#FF6B6B" },
+    1: { label: "Weak",       color: "#FF9A5C" },
+    2: { label: "Fair",       color: "#FFD166" },
+    3: { label: "Good",       color: "#4DFFC4" },
+    4: { label: "Strong",     color: "#0AC8D4" },
+  };
+  return { score: clamped, ...meta[clamped] };
+}
+
 export default function AuthPortal() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
@@ -42,12 +63,19 @@ export default function AuthPortal() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
+  const pwStrength = isSignUp ? getPasswordStrength(password) : null;
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
     setMessage(null);
 
+    if (isSignUp && password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+
+    setLoading(true);
     try {
       if (isSignUp) {
         const { error } = await supabase.auth.signUp({ email, password });
@@ -321,6 +349,7 @@ export default function AuthPortal() {
                     <input
                       type="password"
                       required
+                      minLength={isSignUp ? 8 : undefined}
                       value={password}
                       onChange={e => setPassword(e.target.value)}
                       className="auth-input tracking-[0.32em]"
@@ -331,6 +360,25 @@ export default function AuthPortal() {
                       style={{ boxShadow: "0 0 0 1px rgba(10,200,212,0.4), 0 0 20px rgba(10,200,212,0.18)" }}
                     />
                   </div>
+                  {/* Password strength meter — sign-up only */}
+                  {isSignUp && password.length > 0 && pwStrength && (
+                    <div className="space-y-1.5">
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4].map(i => (
+                          <div
+                            key={i}
+                            className="h-1 flex-1 rounded-full transition-all duration-300"
+                            style={{
+                              background: i <= pwStrength.score ? pwStrength.color : "rgba(255,255,255,0.08)",
+                            }}
+                          />
+                        ))}
+                      </div>
+                      <p className="text-[9px] uppercase tracking-[0.3em]" style={{ color: pwStrength.color }}>
+                        {pwStrength.label}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Feedback messages */}

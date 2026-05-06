@@ -75,7 +75,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                 href="/"
                 className="px-5 py-3 rounded-full glass border border-white/10 text-[11px] uppercase tracking-[0.3em] text-ink/80 hover:border-brand/40 hover:text-brand transition-all flex items-center gap-2"
               >
-                <Home className="w-3.5 h-3.5" /> Back to Atlas
+                <Home className="w-3.5 h-3.5" /> Back to Dashboard
               </a>
             </div>
           </div>

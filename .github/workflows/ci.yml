@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    name: typecheck + build
+    name: typecheck + test + build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,6 +22,9 @@ jobs:
 
       - name: TypeScript typecheck
         run: npx tsc --noEmit
+
+      - name: Unit tests
+        run: npm run test:run
 
       - name: Build (vite + esbuild server)
         run: npm run build
