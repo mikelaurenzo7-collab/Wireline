@@ -22,8 +22,8 @@ function Sparkline({ data, width = 64, height = 24 }: { data: number[]; width?: 
     <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="overflow-visible">
       <defs>
         <linearGradient id="sp-grad" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#7DF9FF" stopOpacity="0.8" />
-          <stop offset="100%" stopColor="#C58BFF" stopOpacity="0.8" />
+          <stop offset="0%" stopColor="#0AC8D4" stopOpacity="0.8" />
+          <stop offset="100%" stopColor="#9B59F5" stopOpacity="0.8" />
         </linearGradient>
       </defs>
       <path d={d} fill="none" stroke="url(#sp-grad)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -397,13 +397,13 @@ export default function FleetSettings() {
                       : "glass border-white/8 hover:border-white/18"
                   )}
                   style={selectedAgent?.id === agent.id ? {
-                    background: "linear-gradient(135deg, rgba(125,249,255,0.08), rgba(197,139,255,0.05))"
+                    background: "linear-gradient(135deg, rgba(10,200,212,0.08), rgba(197,139,255,0.05))"
                   } : undefined}
                 >
                   {/* Selected indicator bar */}
                   {selectedAgent?.id === agent.id && (
                     <div className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full"
-                      style={{ background: "linear-gradient(to bottom, #7DF9FF, #C58BFF)" }}
+                      style={{ background: "linear-gradient(to bottom, #0AC8D4, #9B59F5)" }}
                     />
                   )}
 
@@ -547,7 +547,7 @@ export default function FleetSettings() {
               className="max-w-[1200px] mx-auto space-y-3"
             >
               <header className="rounded-2xl glass border border-white/10 p-4 relative overflow-hidden">
-                 <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #C58BFF, transparent)" }} />
+                 <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #9B59F5, transparent)" }} />
 
                  <div className="relative z-10 flex flex-col lg:flex-row items-start justify-between gap-4">
                    <div className="flex-1 w-full space-y-3">
@@ -842,7 +842,7 @@ export default function FleetSettings() {
                  <div className="space-y-3">
                    {/* Personality Matrix */}
                    <section className="rounded-2xl glass border border-white/10 p-4 relative overflow-hidden">
-                     <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #7DF9FF, transparent)" }} />
+                     <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }} />
                      <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
                         <div className="flex items-center gap-2">
                           <Settings2 className="w-4 h-4 text-brand" />

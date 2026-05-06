@@ -57,7 +57,7 @@ export default function DailyBrief() {
   if (needsKey) return (
     <div className="relative aurora-ring rounded-3xl">
       <div className="relative p-7 rounded-3xl glass overflow-hidden flex items-center gap-5">
-        <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #C58BFF, #FF6BD9)" }}>
+        <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #9B59F5, #E040C0)" }}>
           <Brain className="w-7 h-7 text-paper" />
         </div>
         <div className="flex-1">
@@ -84,7 +84,7 @@ export default function DailyBrief() {
 
   if (!data) return null;
 
-  const moodAccent = data.brief.mood === "green" ? "#4DFFC4" : data.brief.mood === "yellow" ? "#FFC07D" : "#FF6BD9";
+  const moodAccent = data.brief.mood === "green" ? "#10B981" : data.brief.mood === "yellow" ? "#FFC07D" : "#E040C0";
   const moodLabel = data.brief.mood === "green" ? "All systems go" : data.brief.mood === "yellow" ? "Watch closely" : "Needs attention";
 
   return (
@@ -94,7 +94,7 @@ export default function DailyBrief() {
     >
       <div className="relative rounded-3xl glass-strong overflow-hidden">
         <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-30 blur-3xl pointer-events-none" style={{ background: `radial-gradient(circle, ${moodAccent}, transparent)` }} />
-        <div className="absolute -bottom-32 -left-32 w-72 h-72 rounded-full opacity-25 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #C58BFF, transparent)" }} />
+        <div className="absolute -bottom-32 -left-32 w-72 h-72 rounded-full opacity-25 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #9B59F5, transparent)" }} />
 
         <div className="relative z-10 px-7 py-5 border-b border-white/8 flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
@@ -163,12 +163,12 @@ export default function DailyBrief() {
           {/* Highlights & Concerns */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {data.brief.highlights.length > 0 && (
-              <Section title="Highlights" icon={Sparkles} accent="#4DFFC4">
+              <Section title="Highlights" icon={Sparkles} accent="#10B981">
                 {data.brief.highlights.map((h, i) => <li key={i}>{h}</li>)}
               </Section>
             )}
             {data.brief.concerns.length > 0 && (
-              <Section title="Concerns" icon={AlertTriangle} accent="#FF6BD9">
+              <Section title="Concerns" icon={AlertTriangle} accent="#E040C0">
                 {data.brief.concerns.map((c, i) => <li key={i}>{c}</li>)}
               </Section>
             )}

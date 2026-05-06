@@ -21,7 +21,7 @@ const STEPS = [
     title: "Create your first agent",
     body: "Describe what the agent should do in one sentence. Wireline AI will generate the name, persona, directives, and starter knowledge automatically.",
     icon: Hammer,
-    accent: "#7DF9FF",
+    accent: "#0AC8D4",
     badge: "~30 seconds",
   },
   {
@@ -29,7 +29,7 @@ const STEPS = [
     title: "Add your business knowledge",
     body: "Paste your website URL. Wireline AI will extract services, pricing, hours, and policies into structured facts you can apply in one click.",
     icon: Globe,
-    accent: "#C58BFF",
+    accent: "#9B59F5",
     badge: "Instant ingest",
   },
   {
@@ -37,7 +37,7 @@ const STEPS = [
     title: "Connect a phone number",
     body: "Connect a phone number through your phone provider so inbound callers can reach your agent around the clock.",
     icon: Phone,
-    accent: "#FF6BD9",
+    accent: "#E040C0",
     badge: "1 minute",
   },
   {
@@ -45,7 +45,7 @@ const STEPS = [
     title: "Run a live test call",
     body: "Start a live voice test with your agent directly from your browser. No phone is required.",
     icon: Mic,
-    accent: "#4DFFC4",
+    accent: "#10B981",
     badge: "Try it now",
   },
 ] as const;
@@ -90,14 +90,14 @@ export default function OnboardingQuickstart() {
       className="relative aurora-ring rounded-3xl"
     >
       <div className="relative rounded-3xl glass-strong overflow-hidden">
-        <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-30 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #7DF9FF, transparent)" }} />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full opacity-25 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #FF6BD9, transparent)" }} />
+        <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-30 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }} />
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full opacity-25 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #E040C0, transparent)" }} />
 
         {/* Header */}
         <div className="relative z-10 px-7 md:px-10 pt-8 pb-6 border-b border-white/8">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #7DF9FF, #C58BFF, #FF6BD9)" }}>
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #0AC8D4, #9B59F5, #E040C0)" }}>
                 <Waves className="w-6 h-6 text-paper" strokeWidth={2.5} />
               </div>
               <div>
@@ -115,7 +115,7 @@ export default function OnboardingQuickstart() {
                   animate={{ width: `${completionPct}%` }}
                   transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
                   className="h-full rounded-full"
-                  style={{ background: "linear-gradient(90deg, #7DF9FF, #C58BFF, #FF6BD9)" }}
+                  style={{ background: "linear-gradient(90deg, #0AC8D4, #9B59F5, #E040C0)" }}
                 />
               </div>
             </div>

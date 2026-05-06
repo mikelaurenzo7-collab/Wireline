@@ -152,7 +152,7 @@ export function PageSpinner() {
         <div
           className="absolute inset-0 rounded-full opacity-40"
           style={{
-            background: "conic-gradient(from 0deg, #7DF9FF, #C58BFF, #FF6BD9, #4DFFC4, #7DF9FF)",
+            background: "conic-gradient(from 0deg, #0AC8D4, #9B59F5, #E040C0, #10B981, #0AC8D4)",
             filter: "blur(1px)",
             animation: "spin 2.4s linear infinite",
           }}
@@ -161,7 +161,7 @@ export function PageSpinner() {
         <div className="absolute inset-3 rounded-full glass flex items-center justify-center">
           <div
             className="w-3 h-3 rounded-full"
-            style={{ background: "linear-gradient(135deg, #7DF9FF, #C58BFF)", boxShadow: "0 0 12px #7DF9FF" }}
+            style={{ background: "linear-gradient(135deg, #0AC8D4, #9B59F5)", boxShadow: "0 0 12px #0AC8D4" }}
           />
         </div>
       </div>

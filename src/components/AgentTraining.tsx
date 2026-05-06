@@ -174,9 +174,9 @@ export default function AgentTraining() {
         <div className="max-w-[1400px] mx-auto w-full mt-3">
           <div className="relative aurora-ring rounded-2xl">
             <div className="relative rounded-2xl glass p-3 flex flex-wrap items-center gap-2 overflow-hidden">
-              <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-25 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #C58BFF, transparent)" }} />
+              <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-25 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #9B59F5, transparent)" }} />
               <div className="relative z-10 flex items-center gap-2 mr-1">
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "linear-gradient(135deg, #7DF9FF, #C58BFF)" }}>
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "linear-gradient(135deg, #0AC8D4, #9B59F5)" }}>
                   <Sparkles className="w-3.5 h-3.5 text-paper" strokeWidth={2.5} />
                 </div>
                 <div>
@@ -394,7 +394,7 @@ export default function AgentTraining() {
 
               {/* Neural Identity */}
               <section className="rounded-2xl glass border border-white/10 p-4 relative overflow-hidden">
-                <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #C58BFF, transparent)" }} />
+                <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #9B59F5, transparent)" }} />
                 <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-xl glass border border-brand-3/30 text-brand-3 flex items-center justify-center shrink-0">
@@ -612,7 +612,7 @@ export default function AgentTraining() {
                   className="rounded-2xl glass border border-white/10 p-4"
                 >
                   <div className="flex items-center gap-2.5 mb-4">
-                    <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #7DF9FF, #C58BFF)" }}>
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #0AC8D4, #9B59F5)" }}>
                       <Sparkles className="w-3.5 h-3.5 text-paper" strokeWidth={2.5} />
                     </div>
                     <div>
@@ -650,7 +650,7 @@ export default function AgentTraining() {
             >
               <div className="max-w-[560px] w-full text-center space-y-6">
                 <div className="relative w-24 h-24 rounded-3xl glass border border-white/10 flex items-center justify-center mx-auto">
-                  <div className="absolute inset-0 rounded-3xl opacity-20 blur-xl" style={{ background: "radial-gradient(circle, #7DF9FF, transparent)" }} />
+                  <div className="absolute inset-0 rounded-3xl opacity-20 blur-xl" style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }} />
                   <PlayCircle className="w-12 h-12 text-brand relative z-10" strokeWidth={1.25} />
                 </div>
                 <div>

@@ -465,7 +465,7 @@ export default function KnowledgeBaseManager() {
                 icon={Database}
                 title="Knowledge base is empty"
                 description="Add facts, policies, FAQs, and product details so your agents can answer customer questions accurately."
-                accent="#C58BFF"
+                accent="#9B59F5"
                 actions={[
                   { label: "Add Knowledge", onClick: () => setShowAdd(true), primary: true },
                   { label: "Ingest from URL", onClick: () => {} },
@@ -646,7 +646,7 @@ function DedupePanel({
   }, 0);
 
   const kindAccent = (k: DedupeCluster["kind"]) =>
-    k === "duplicate" ? "#FF6BD9" : k === "contradiction" ? "#FFC07D" : "#7DF9FF";
+    k === "duplicate" ? "#E040C0" : k === "contradiction" ? "#FFC07D" : "#0AC8D4";
   const kindIcon = (k: DedupeCluster["kind"]) =>
     k === "contradiction" ? AlertTriangle : k === "duplicate" ? Copy : GitMerge;
 
@@ -655,7 +655,7 @@ function DedupePanel({
       <div className="relative rounded-3xl glass-strong border border-white/10 p-6 md:p-7 space-y-5 overflow-hidden">
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #C58BFF, #FF6BD9)" }}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #9B59F5, #E040C0)" }}>
               <Brain className="w-5 h-5 text-paper" />
             </div>
             <div>

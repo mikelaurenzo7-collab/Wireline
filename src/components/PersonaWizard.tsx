@@ -107,7 +107,7 @@ function SelectCard({ option, selected, onSelect, cols = 2 }: SelectCardProps) {
     >
       {selected && (
         <div className="absolute inset-0 rounded-2xl pointer-events-none"
-          style={{ background: "linear-gradient(135deg, rgba(125,249,255,0.08), rgba(197,139,255,0.06))" }}
+          style={{ background: "linear-gradient(135deg, rgba(10,200,212,0.08), rgba(197,139,255,0.06))" }}
         />
       )}
       <div className="relative z-10">
@@ -117,7 +117,7 @@ function SelectCard({ option, selected, onSelect, cols = 2 }: SelectCardProps) {
       </div>
       {selected && (
         <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full flex items-center justify-center"
-          style={{ background: "linear-gradient(135deg, #7DF9FF, #C58BFF)" }}
+          style={{ background: "linear-gradient(135deg, #0AC8D4, #9B59F5)" }}
         >
           <svg className="w-3 h-3 text-black" fill="none" viewBox="0 0 12 12" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M2 6l3 3 5-5" />
@@ -238,7 +238,7 @@ export default function PersonaWizard() {
   return (
     <div
       className="fixed inset-0 flex items-center justify-center z-[200] p-4"
-      style={{ background: "rgba(8,7,30,0.85)", backdropFilter: "blur(20px)" }}
+      style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(20px)" }}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 16 }}
@@ -248,12 +248,12 @@ export default function PersonaWizard() {
       >
         {/* Aurora glow ring */}
         <div className="absolute -inset-px rounded-3xl pointer-events-none z-0"
-          style={{ background: "linear-gradient(135deg, rgba(125,249,255,0.4), rgba(197,139,255,0.3), rgba(255,107,217,0.25))", borderRadius: "24px" }}
+          style={{ background: "linear-gradient(135deg, rgba(10,200,212,0.4), rgba(197,139,255,0.3), rgba(255,107,217,0.25))", borderRadius: "24px" }}
         />
 
         <div className="relative z-10 rounded-3xl overflow-hidden glass-strong border border-white/10">
           {/* Header accent bar */}
-          <div className="h-px w-full" style={{ background: "linear-gradient(90deg, transparent, #7DF9FF, #C58BFF, #FF6BD9, transparent)" }} />
+          <div className="h-px w-full" style={{ background: "linear-gradient(90deg, transparent, #0AC8D4, #9B59F5, #E040C0, transparent)" }} />
 
           <div className="p-8">
             {/* Progress dots */}
@@ -266,7 +266,7 @@ export default function PersonaWizard() {
                     style={{
                       width: i === step ? 32 : 8,
                       background: i <= step
-                        ? "linear-gradient(90deg, #7DF9FF, #C58BFF)"
+                        ? "linear-gradient(90deg, #0AC8D4, #9B59F5)"
                         : "rgba(255,255,255,0.15)",
                     }}
                   />
@@ -415,7 +415,7 @@ export default function PersonaWizard() {
                   >
                     <div className="mb-6 text-center">
                       <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium mb-4"
-                        style={{ background: "linear-gradient(135deg, rgba(125,249,255,0.15), rgba(197,139,255,0.15))", border: "1px solid rgba(125,249,255,0.3)" }}
+                        style={{ background: "linear-gradient(135deg, rgba(10,200,212,0.15), rgba(197,139,255,0.15))", border: "1px solid rgba(10,200,212,0.3)" }}
                       >
                         <Sparkles className="w-3.5 h-3.5 text-cyan-300" />
                         <span className="text-cyan-300">Personalized for {PERSONA_LABELS[persona]}</span>
@@ -426,12 +426,12 @@ export default function PersonaWizard() {
                     {/* Recommendation card */}
                     <div className="relative rounded-2xl p-6 mb-8 overflow-hidden"
                       style={{
-                        background: "linear-gradient(135deg, rgba(125,249,255,0.08), rgba(197,139,255,0.06))",
-                        border: "1px solid rgba(125,249,255,0.25)",
+                        background: "linear-gradient(135deg, rgba(10,200,212,0.08), rgba(197,139,255,0.06))",
+                        border: "1px solid rgba(10,200,212,0.25)",
                       }}
                     >
                       <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
-                        style={{ background: "radial-gradient(circle, #7DF9FF, transparent)" }}
+                        style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }}
                       />
                       <div className="relative z-10">
                         <h3 className="text-lg font-bold text-ink mb-2">{recommendation.headline}</h3>

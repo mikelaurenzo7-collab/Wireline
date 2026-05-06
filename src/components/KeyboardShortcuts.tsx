@@ -108,7 +108,7 @@ export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsPr
                 <div className="flex items-center gap-3">
                   <div
                     className="w-8 h-8 rounded-lg flex items-center justify-center"
-                    style={{ background: "linear-gradient(135deg, #7DF9FF22, #C58BFF22)" }}
+                    style={{ background: "linear-gradient(135deg, #0AC8D422, #9B59F522)" }}
                   >
                     <Keyboard className="w-4 h-4 text-brand" />
                   </div>

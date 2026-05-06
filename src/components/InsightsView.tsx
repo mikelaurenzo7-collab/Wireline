@@ -78,7 +78,7 @@ function FunnelView({ days }: { days: number }) {
     return (
       <div className="relative aurora-ring rounded-3xl">
         <div className="relative rounded-3xl glass-strong overflow-hidden p-10 md:p-14 flex flex-col items-center gap-5 text-center">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #7DF9FF22, #C58BFF22)" }}>
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #0AC8D422, #9B59F522)" }}>
             <TrendingUp className="w-8 h-8 text-brand" />
           </div>
           <div>
@@ -119,7 +119,7 @@ function FunnelView({ days }: { days: number }) {
                   transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: i * 0.06 }}
                   className="absolute inset-y-0 left-0 rounded-full"
                   style={{
-                    background: `linear-gradient(90deg, #7DF9FF, #C58BFF, #FF6BD9)`,
+                    background: `linear-gradient(90deg, #0AC8D4, #9B59F5, #E040C0)`,
                     backgroundSize: "200% 100%",
                   }}
                 />
@@ -191,7 +191,7 @@ function TopicsView() {
                   animate={{ width: `${pct}%` }}
                   transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: i * 0.05 }}
                   className="absolute inset-x-0 bottom-0 h-1"
-                  style={{ background: "linear-gradient(90deg, #7DF9FF, #C58BFF)" }}
+                  style={{ background: "linear-gradient(90deg, #0AC8D4, #9B59F5)" }}
                 />
                 <div className="space-y-2">
                   <div className="flex items-baseline justify-between gap-3">
@@ -271,9 +271,9 @@ function HeatmapView({ days }: { days: number }) {
                           className="aspect-square rounded-md transition-all hover:scale-110 cursor-pointer"
                           style={{
                             background: cell && cell.count > 0
-                              ? `linear-gradient(135deg, rgba(125,249,255,${opacity}), rgba(197,139,255,${opacity * 0.8}))`
-                              : "rgba(255,255,255,0.03)",
-                            border: cell && cell.count > 0 ? `1px solid rgba(125,249,255,${0.2 + intensity * 0.4})` : "1px solid rgba(255,255,255,0.04)",
+                              ? `linear-gradient(135deg, rgba(10,200,212,${opacity}), rgba(197,139,255,${opacity * 0.8}))`
+                              : "rgba(0,0,0,0.03)",
+                            border: cell && cell.count > 0 ? `1px solid rgba(10,200,212,${0.2 + intensity * 0.4})` : "1px solid rgba(0,0,0,0.04)",
                           }}
                           title={`${wd} ${h}:00 — ${cell?.count || 0} calls${cell?.avg_score ? `, avg score ${cell.avg_score}` : ""}`}
                         />
@@ -289,7 +289,7 @@ function HeatmapView({ days }: { days: number }) {
           <span>Less</span>
           <div className="flex gap-1">
             {[0.1, 0.3, 0.55, 0.8, 1].map((o, i) => (
-              <div key={i} className="w-4 h-4 rounded" style={{ background: `linear-gradient(135deg, rgba(125,249,255,${o}), rgba(197,139,255,${o * 0.8}))` }} />
+              <div key={i} className="w-4 h-4 rounded" style={{ background: `linear-gradient(135deg, rgba(10,200,212,${o}), rgba(197,139,255,${o * 0.8}))` }} />
             ))}
           </div>
           <span>More</span>
@@ -328,14 +328,14 @@ function LeaderboardView({ days }: { days: number }) {
 
   const RANK_STYLES: Array<{ gradient?: string; ring: string; glow: string; textClass: string; iconBg: boolean }> = [
     {
-      gradient: "linear-gradient(135deg, #7DF9FF 0%, #C58BFF 55%, #FF6BD9 100%)",
+      gradient: "linear-gradient(135deg, #0AC8D4 0%, #9B59F5 55%, #E040C0 100%)",
       ring: "border-brand/40",
-      glow: "rgba(125,249,255,0.25)",
+      glow: "rgba(10,200,212,0.25)",
       textClass: "text-paper",
       iconBg: true,
     },
     {
-      gradient: "linear-gradient(135deg, rgba(197,139,255,0.20), rgba(125,249,255,0.10))",
+      gradient: "linear-gradient(135deg, rgba(197,139,255,0.20), rgba(10,200,212,0.10))",
       ring: "border-brand-2/30",
       glow: "rgba(197,139,255,0.15)",
       textClass: "text-brand-2",
@@ -361,7 +361,7 @@ function LeaderboardView({ days }: { days: number }) {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.06 }}
             className={`relative rounded-2xl glass border ${rs.ring} p-5 flex items-center gap-5 overflow-hidden`}
-            style={{ boxShadow: `0 0 40px -20px ${rs.glow}, 0 1px 0 rgba(255,255,255,0.07) inset` }}
+            style={{ boxShadow: `0 0 40px -20px ${rs.glow}, 0 1px 0 rgba(255,255,255,0.80) inset` }}
           >
             {/* Background rank number */}
             <div className="absolute right-5 top-1/2 -translate-y-1/2 font-display italic text-[96px] leading-none opacity-[0.04] select-none pointer-events-none">
@@ -385,11 +385,11 @@ function LeaderboardView({ days }: { days: number }) {
               </div>
               <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
                 <Stat label="Calls"     value={a.total_calls} />
-                <Stat label="Qualified" value={a.qualified}    accent="#7DF9FF" />
+                <Stat label="Qualified" value={a.qualified}    accent="#0AC8D4" />
                 <Stat label="Avg Score" value={a.avg_lead_score} />
                 <Stat label="Bookings"  value={a.bookings} />
                 <Stat label="Minutes"   value={a.minutes} />
-                <Stat label="$/Qual"    value={a.cost_per_qualified ? `$${a.cost_per_qualified}` : "—"} accent="#FF6BD9" />
+                <Stat label="$/Qual"    value={a.cost_per_qualified ? `$${a.cost_per_qualified}` : "—"} accent="#E040C0" />
               </div>
             </div>
           </motion.div>
@@ -512,10 +512,10 @@ function AISpendView({ days }: { days: number }) {
       {callsHaveHappened && <>
       {/* Headline cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <SpendStat label="Total Spend" value={`$${totals.cost.toFixed(2)}`} icon={DollarSign} accent="#7DF9FF" />
-        <SpendStat label="Claude Calls" value={String(totals.calls)} icon={Brain} accent="#C58BFF" />
-        <SpendStat label="Avg / Call" value={`$${totals.avg_cost_per_call.toFixed(4)}`} icon={Receipt} accent="#FF6BD9" />
-        <SpendStat label="Saved by Cache" value={`$${totals.cache_savings_usd.toFixed(2)}`} icon={Database} accent="#4DFFC4" />
+        <SpendStat label="Total Spend" value={`$${totals.cost.toFixed(2)}`} icon={DollarSign} accent="#0AC8D4" />
+        <SpendStat label="Claude Calls" value={String(totals.calls)} icon={Brain} accent="#9B59F5" />
+        <SpendStat label="Avg / Call" value={`$${totals.avg_cost_per_call.toFixed(4)}`} icon={Receipt} accent="#E040C0" />
+        <SpendStat label="Saved by Cache" value={`$${totals.cache_savings_usd.toFixed(2)}`} icon={Database} accent="#10B981" />
       </div>
 
       {/* Spend over time */}
@@ -540,7 +540,7 @@ function AISpendView({ days }: { days: number }) {
                       animate={{ width: `${pct}%` }}
                       transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: i * 0.02 }}
                       className="absolute inset-y-0 left-0 rounded-lg flex items-center px-3"
-                      style={{ background: "linear-gradient(90deg, #7DF9FF, #C58BFF)" }}
+                      style={{ background: "linear-gradient(90deg, #0AC8D4, #9B59F5)" }}
                     >
                       <span className="text-[10px] font-mono text-paper font-medium">${d.cost.toFixed(2)}</span>
                     </motion.div>
@@ -572,7 +572,7 @@ function AISpendView({ days }: { days: number }) {
                         initial={{ width: 0 }} animate={{ width: `${pct}%` }}
                         transition={{ duration: 0.6, delay: i * 0.03 }}
                         className="absolute inset-y-0 left-0 rounded-full"
-                        style={{ background: "linear-gradient(90deg, #C58BFF, #FF6BD9)" }}
+                        style={{ background: "linear-gradient(90deg, #9B59F5, #E040C0)" }}
                       />
                     </div>
                     <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.25em] text-muted">
@@ -695,7 +695,7 @@ function SpendBudgetCard() {
   const warnPct = Number(status?.warn_threshold_pct || 80);
   const isOver = limit > 0 && used >= limit;
   const isWarn = limit > 0 && pct >= warnPct && !isOver;
-  const barColor = isOver ? "#FF6B6B" : isWarn ? "#FFC07D" : "#4DFFC4";
+  const barColor = isOver ? "#FF6B6B" : isWarn ? "#FFC07D" : "#10B981";
   const period = status?.period || "—";
 
   return (
@@ -838,7 +838,7 @@ function Spinner() {
         <div
           className="absolute inset-0 rounded-full opacity-40"
           style={{
-            background: "conic-gradient(from 0deg, #7DF9FF, #C58BFF, #FF6BD9, #4DFFC4, #7DF9FF)",
+            background: "conic-gradient(from 0deg, #0AC8D4, #9B59F5, #E040C0, #10B981, #0AC8D4)",
             filter: "blur(1px)",
             animation: "spin 2s linear infinite",
           }}
@@ -847,7 +847,7 @@ function Spinner() {
         <div className="absolute inset-3 rounded-full glass flex items-center justify-center">
           <div
             className="w-3 h-3 rounded-full"
-            style={{ background: "linear-gradient(135deg, #7DF9FF, #C58BFF)", boxShadow: "0 0 10px #7DF9FF" }}
+            style={{ background: "linear-gradient(135deg, #0AC8D4, #9B59F5)", boxShadow: "0 0 10px #0AC8D4" }}
           />
         </div>
       </div>
@@ -861,7 +861,7 @@ function Empty({ label, green }: { label: string; green?: boolean }) {
     <div className="relative aurora-ring rounded-3xl">
       <div className="relative rounded-3xl glass border border-white/10 p-12 text-center overflow-hidden">
         <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-64 h-32 rounded-full opacity-20 blur-3xl pointer-events-none"
-          style={{ background: green ? "radial-gradient(circle, #4DFFC4, transparent)" : "radial-gradient(circle, #7DF9FF, transparent)" }} />
+          style={{ background: green ? "radial-gradient(circle, #10B981, transparent)" : "radial-gradient(circle, #0AC8D4, transparent)" }} />
         <div className={cn(
           "inline-flex items-center justify-center w-12 h-12 rounded-2xl glass border mb-4",
           green ? "border-emerald-500/30 text-emerald-500" : "border-brand/30 text-brand"
@@ -889,11 +889,11 @@ function ErrCard({ error }: { error: string }) {
 /* ─────────────────────────  Quality (QA Scorecard)  ─────────────────── */
 
 function qaColor(score: number) {
-  if (score >= 90) return "#7DF9FF";
-  if (score >= 75) return "#4DFFC4";
+  if (score >= 90) return "#0AC8D4";
+  if (score >= 75) return "#10B981";
   if (score >= 60) return "#FFD166";
   if (score >= 40) return "#FF9A5C";
-  return "#FF6BD9";
+  return "#E040C0";
 }
 
 function QualityView({ days }: { days: number }) {
@@ -915,7 +915,7 @@ function QualityView({ days }: { days: number }) {
       <div className="space-y-4">
         <div className="relative aurora-ring rounded-3xl">
           <div className="relative rounded-3xl glass-strong overflow-hidden p-10 md:p-14 flex flex-col items-center gap-5 text-center">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg,#7DF9FF22,#C58BFF22)" }}>
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg,#0AC8D422,#9B59F522)" }}>
               <Star className="w-8 h-8 text-brand" />
             </div>
             <div>
@@ -947,10 +947,10 @@ function QualityView({ days }: { days: number }) {
       {/* Hero stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "Scored Calls",  value: data.count,     accent: "#7DF9FF" },
+          { label: "Scored Calls",  value: data.count,     accent: "#0AC8D4" },
           { label: "Average Score", value: `${data.avgScore}/100`, accent: qaColor(data.avgScore) },
-          { label: "Opening",       value: `${dims.greeting ?? 0}/20`,  accent: "#C58BFF" },
-          { label: "Closing",       value: `${dims.closing  ?? 0}/20`,  accent: "#4DFFC4" },
+          { label: "Opening",       value: `${dims.greeting ?? 0}/20`,  accent: "#9B59F5" },
+          { label: "Closing",       value: `${dims.closing  ?? 0}/20`,  accent: "#10B981" },
         ].map(({ label, value, accent }) => (
           <div key={label} className="relative rounded-xl glass border border-white/10 p-4 overflow-hidden">
             <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-25 blur-3xl pointer-events-none" style={{ background: `radial-gradient(circle,${accent},transparent)` }} />
@@ -977,7 +977,7 @@ function QualityView({ days }: { days: number }) {
                     animate={{ width: `${(bucket.count / maxDist) * 100}%` }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
                     className="h-full rounded-full"
-                    style={{ background: bucket.color || "#7DF9FF" }}
+                    style={{ background: bucket.color || "#0AC8D4" }}
                   />
                 </div>
                 <span className="text-[9px] font-mono text-ink w-6 text-right shrink-0">{bucket.count}</span>
@@ -994,10 +994,10 @@ function QualityView({ days }: { days: number }) {
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart data={radarData} outerRadius={70}>
-                <PolarGrid stroke="rgba(255,255,255,0.06)" />
-                <PolarAngleAxis dataKey="dimension" tick={{ fill: "#8B89B8", fontSize: 9, fontFamily: "Geist" }} />
+                <PolarGrid stroke="rgba(0,0,0,0.06)" />
+                <PolarAngleAxis dataKey="dimension" tick={{ fill: "#7C7469", fontSize: 9, fontFamily: "Geist" }} />
                 <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
-                <Radar dataKey="score" stroke="#7DF9FF" fill="#7DF9FF" fillOpacity={0.15} strokeWidth={1.5} />
+                <Radar dataKey="score" stroke="#0AC8D4" fill="#0AC8D4" fillOpacity={0.15} strokeWidth={1.5} />
               </RadarChart>
             </ResponsiveContainer>
           </div>
@@ -1015,19 +1015,19 @@ function QualityView({ days }: { days: number }) {
               <AreaChart data={data.trend} margin={{ top: 4, right: 0, left: -28, bottom: 0 }}>
                 <defs>
                   <linearGradient id="qaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#7DF9FF" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#7DF9FF" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#0AC8D4" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#0AC8D4" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                <XAxis dataKey="day" tick={{ fill: "#8B89B8", fontSize: 9 }} tickLine={false} axisLine={false} />
-                <YAxis domain={[0, 100]} tick={{ fill: "#8B89B8", fontSize: 9 }} tickLine={false} axisLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
+                <XAxis dataKey="day" tick={{ fill: "#7C7469", fontSize: 9 }} tickLine={false} axisLine={false} />
+                <YAxis domain={[0, 100]} tick={{ fill: "#7C7469", fontSize: 9 }} tickLine={false} axisLine={false} />
                 <Tooltip
-                  contentStyle={{ background: "#0F0E2D", border: "1px solid rgba(125,249,255,0.2)", borderRadius: 8, fontSize: 11 }}
-                  labelStyle={{ color: "#8B89B8" }}
-                  itemStyle={{ color: "#7DF9FF" }}
+                  contentStyle={{ background: "#F5F0E8", border: "1px solid rgba(10,200,212,0.2)", borderRadius: 8, fontSize: 11 }}
+                  labelStyle={{ color: "#7C7469" }}
+                  itemStyle={{ color: "#0AC8D4" }}
                 />
-                <Area type="monotone" dataKey="avg" stroke="#7DF9FF" strokeWidth={1.5} fill="url(#qaGrad)" name="Avg QA Score" />
+                <Area type="monotone" dataKey="avg" stroke="#0AC8D4" strokeWidth={1.5} fill="url(#qaGrad)" name="Avg QA Score" />
               </AreaChart>
             </ResponsiveContainer>
           </div>

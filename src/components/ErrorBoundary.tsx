@@ -43,9 +43,9 @@ export default class ErrorBoundary extends Component<Props, State> {
       <div className="min-h-[70vh] flex items-center justify-center p-6">
         <div className="relative aurora-ring rounded-3xl max-w-xl w-full">
           <div className="relative rounded-3xl glass-strong overflow-hidden p-8 md:p-10 space-y-6">
-            <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full opacity-30 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #FF6BD9, transparent)" }} />
+            <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full opacity-30 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #E040C0, transparent)" }} />
             <div className="relative z-10 flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #FF6BD9, #C58BFF)" }}>
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #E040C0, #9B59F5)" }}>
                 <AlertOctagon className="w-7 h-7 text-paper" />
               </div>
               <div>

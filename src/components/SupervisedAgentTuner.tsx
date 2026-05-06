@@ -75,7 +75,7 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
       <div className="p-12 flex flex-col items-center justify-center gap-4">
         <div className="relative w-10 h-10">
           <div className="absolute inset-0 rounded-full opacity-40"
-            style={{ background: "conic-gradient(from 0deg, #7DF9FF, #C58BFF, #7DF9FF)", filter: "blur(1px)", animation: "spin 2s linear infinite" }} />
+            style={{ background: "conic-gradient(from 0deg, #0AC8D4, #9B59F5, #0AC8D4)", filter: "blur(1px)", animation: "spin 2s linear infinite" }} />
           <div className="absolute inset-1 rounded-full bg-paper" />
           <div className="absolute inset-2 rounded-full glass flex items-center justify-center">
             <Brain className="w-3 h-3 text-brand" />

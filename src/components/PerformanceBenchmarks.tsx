@@ -90,7 +90,7 @@ function BenchmarkRow({ item }: { item: BenchmarkItem }) {
                 animate={{ width: `${userPct}%` }}
                 transition={{ duration: 1, ease: "easeOut" }}
                 className="absolute top-0 left-0 h-full rounded-full"
-                style={{ background: "linear-gradient(90deg, #7DF9FF, #C58BFF)" }}
+                style={{ background: "linear-gradient(90deg, #0AC8D4, #9B59F5)" }}
               />
               {/* Benchmark marker */}
               <div

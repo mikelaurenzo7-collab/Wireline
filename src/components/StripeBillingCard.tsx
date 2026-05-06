@@ -35,8 +35,8 @@ const PLAN_ICONS: Record<string, any> = {
 };
 
 const PLAN_ACCENTS: Record<string, string> = {
-  starter: "#7DF9FF",
-  pro: "#C58BFF",
+  starter: "#0AC8D4",
+  pro: "#9B59F5",
   enterprise: "#FFC07D",
 };
 
@@ -189,7 +189,7 @@ export default function StripeBillingCard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           {plans.map(plan => {
             const Icon = PLAN_ICONS[plan.id] || Building2;
-            const accent = PLAN_ACCENTS[plan.id] || "#7DF9FF";
+            const accent = PLAN_ACCENTS[plan.id] || "#0AC8D4";
             const isCurrent = sub?.plan === plan.id && hasActive;
             const isBusy = busy === plan.id;
             return (
@@ -273,7 +273,7 @@ export default function StripeBillingCard() {
 function ActiveSubCard({
   sub, busy, onPortal,
 }: { sub: SubscriptionState; busy: boolean; onPortal: () => void }) {
-  const accent = PLAN_ACCENTS[sub.plan || ""] || "#7DF9FF";
+  const accent = PLAN_ACCENTS[sub.plan || ""] || "#0AC8D4";
   const Icon = PLAN_ICONS[sub.plan || ""] || CreditCard;
   const renews = sub.current_period_end ? new Date(sub.current_period_end) : null;
   const daysLeft = renews ? Math.max(0, Math.ceil((renews.getTime() - Date.now()) / 86_400_000)) : null;

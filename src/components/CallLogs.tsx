@@ -137,7 +137,7 @@ export default function CallLogs() {
                 icon={Phone}
                 title="No calls yet"
                 description="When your agents handle calls, transcripts and analytics will appear here. Wire a phone number in Settings to go live."
-                accent="#7DF9FF"
+                accent="#0AC8D4"
                 actions={[
                   { label: "Go to Settings", to: "/admin", primary: true },
                   { label: "Start Outbound", to: "/outbound" },
@@ -161,7 +161,7 @@ export default function CallLogs() {
                       {/* Active indicator bar */}
                       {selectedCall?.id === call.id && (
                         <div className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full"
-                          style={{ background: "linear-gradient(to bottom, #7DF9FF, #C58BFF, #FF6BD9)" }}
+                          style={{ background: "linear-gradient(to bottom, #0AC8D4, #9B59F5, #E040C0)" }}
                         />
                       )}
 
@@ -295,15 +295,15 @@ function CallDetail({ call, formatDuration }: { call: any; formatDuration: (s: n
   const transcriptLines = (call.transcript || "").split('\n').filter((l: string) => l.trim() !== '');
 
   const QA_DIMS = [
-    { key: "greeting",  label: "Opening",   color: "#7DF9FF" },
-    { key: "discovery", label: "Discovery",  color: "#C58BFF" },
-    { key: "solution",  label: "Solution",   color: "#FF6BD9" },
-    { key: "objection", label: "Objections", color: "#4DFFC4" },
+    { key: "greeting",  label: "Opening",   color: "#0AC8D4" },
+    { key: "discovery", label: "Discovery",  color: "#9B59F5" },
+    { key: "solution",  label: "Solution",   color: "#E040C0" },
+    { key: "objection", label: "Objections", color: "#10B981" },
     { key: "closing",   label: "Closing",    color: "#FFD166" },
   ];
 
   const qaColor = (score: number) =>
-    score >= 90 ? "#7DF9FF" : score >= 75 ? "#4DFFC4" : score >= 60 ? "#FFD166" : score >= 40 ? "#FF9A5C" : "#FF6BD9";
+    score >= 90 ? "#0AC8D4" : score >= 75 ? "#10B981" : score >= 60 ? "#FFD166" : score >= 40 ? "#FF9A5C" : "#E040C0";
 
   return (
     <Panel
@@ -388,9 +388,9 @@ function CallDetail({ call, formatDuration }: { call: any; formatDuration: (s: n
                   </p>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  <Stat label="Duration"   value={formatDuration(call.duration_seconds || 0)} accent="#7DF9FF" icon={Clock} />
-                  <Stat label="Cost"       value={`$${(call.cost ?? 0).toFixed(4)}`}          accent="#FF6BD9" />
-                  <Stat label="Lead score" value={`${call.lead_score ?? 0}`}                  accent="#C58BFF" />
+                  <Stat label="Duration"   value={formatDuration(call.duration_seconds || 0)} accent="#0AC8D4" icon={Clock} />
+                  <Stat label="Cost"       value={`$${(call.cost ?? 0).toFixed(4)}`}          accent="#E040C0" />
+                  <Stat label="Lead score" value={`${call.lead_score ?? 0}`}                  accent="#9B59F5" />
                   <Stat label="Sentiment"  value={
                     <span className={cn(
                       "capitalize text-base",
@@ -399,7 +399,7 @@ function CallDetail({ call, formatDuration }: { call: any; formatDuration: (s: n
                     )}>
                       {call.sentiment || "neutral"}
                     </span>
-                  } accent="#4DFFC4" />
+                  } accent="#10B981" />
                 </div>
                 {call.coaching_note && (
                   <div className="rounded-xl glass border border-brand/20 p-4">

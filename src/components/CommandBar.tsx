@@ -110,7 +110,7 @@ export default function CommandBar() {
             {/* Aurora ring border */}
             <div className="absolute inset-0 rounded-2xl p-px overflow-hidden pointer-events-none z-20">
               <div className="absolute inset-0 rounded-2xl" style={{
-                background: "linear-gradient(135deg, rgba(125,249,255,0.6), rgba(197,139,255,0.4) 50%, rgba(255,107,217,0.5))",
+                background: "linear-gradient(135deg, rgba(10,200,212,0.6), rgba(197,139,255,0.4) 50%, rgba(255,107,217,0.5))",
               }} />
             </div>
 

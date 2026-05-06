@@ -13,10 +13,10 @@ type ActivityItem = {
 }
 
 const TYPE_META: Record<string, { icon: typeof Signal; color: string }> = {
-  SIGNAL_ANALYZED:    { icon: Signal,   color: "#7DF9FF" },
-  MISSION_INJECTED:   { icon: Zap,      color: "#C58BFF" },
-  NEURAL_OPTIMIZATION:{ icon: Cpu,      color: "#4DFFC4" },
-  DIGITAL_RELAY:      { icon: Radio,    color: "#FF6BD9" },
+  SIGNAL_ANALYZED:    { icon: Signal,   color: "#0AC8D4" },
+  MISSION_INJECTED:   { icon: Zap,      color: "#9B59F5" },
+  NEURAL_OPTIMIZATION:{ icon: Cpu,      color: "#10B981" },
+  DIGITAL_RELAY:      { icon: Radio,    color: "#E040C0" },
 };
 
 const IMPORTANCE_RING: Record<string, string> = {
@@ -34,7 +34,7 @@ export default function TriggerIntelligenceFeed({ activity }: { activity: Activi
           <div className="relative w-12 h-12">
             <div
               className="absolute inset-0 rounded-full opacity-30 animate-ping"
-              style={{ background: "radial-gradient(circle, rgba(125,249,255,0.5), transparent)" }}
+              style={{ background: "radial-gradient(circle, rgba(10,200,212,0.5), transparent)" }}
             />
             <div className="absolute inset-0 rounded-full glass border border-brand/30 flex items-center justify-center">
               <Waves className="w-5 h-5 text-brand/60" />
@@ -46,7 +46,7 @@ export default function TriggerIntelligenceFeed({ activity }: { activity: Activi
         <ul className="flex-1 divide-y divide-white/5 overflow-y-auto scrollbar-hide">
           <AnimatePresence mode="popLayout">
             {activity.map((item, idx) => {
-              const meta = TYPE_META[item.type] ?? { icon: Activity, color: "#8B89B8" };
+              const meta = TYPE_META[item.type] ?? { icon: Activity, color: "#7C7469" };
               const IconComp = meta.icon;
               const ringCls = IMPORTANCE_RING[item.importance] ?? IMPORTANCE_RING.low;
               return (

@@ -4,10 +4,10 @@ import { useToast, type Toast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
 
 const META = {
-  success: { icon: CheckCircle2, color: "#4DFFC4", border: "border-emerald-500/30", bg: "bg-emerald-500/10" },
+  success: { icon: CheckCircle2, color: "#10B981", border: "border-emerald-500/30", bg: "bg-emerald-500/10" },
   error:   { icon: XCircle,      color: "#FF6B6B", border: "border-rose-500/30",    bg: "bg-rose-500/10" },
   warning: { icon: AlertTriangle,color: "#FFC07D", border: "border-amber-500/30",   bg: "bg-amber-500/10" },
-  info:    { icon: Info,          color: "#7DF9FF", border: "border-brand/30",       bg: "bg-brand/10" },
+  info:    { icon: Info,          color: "#0AC8D4", border: "border-brand/30",       bg: "bg-brand/10" },
 };
 
 function ToastItem({ toast }: { toast: Toast }) {

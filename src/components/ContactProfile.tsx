@@ -128,10 +128,10 @@ export default function ContactProfile() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Calls"       value={String(data.stats.total_calls)}            icon={Phone}      accent="#7DF9FF" />
-        <StatCard label="Minutes"     value={String(data.stats.total_minutes)}          icon={Clock}      accent="#C58BFF" />
-        <StatCard label="Avg Score"   value={String(data.stats.avg_lead_score)}         icon={Target}     accent="#FF6BD9" />
-        <StatCard label="Spend"       value={`$${data.stats.total_cost.toFixed(2)}`}    icon={DollarSign} accent="#4DFFC4" />
+        <StatCard label="Calls"       value={String(data.stats.total_calls)}            icon={Phone}      accent="#0AC8D4" />
+        <StatCard label="Minutes"     value={String(data.stats.total_minutes)}          icon={Clock}      accent="#9B59F5" />
+        <StatCard label="Avg Score"   value={String(data.stats.avg_lead_score)}         icon={Target}     accent="#E040C0" />
+        <StatCard label="Spend"       value={`$${data.stats.total_cost.toFixed(2)}`}    icon={DollarSign} accent="#10B981" />
       </div>
 
       {/* Timeline */}

@@ -160,7 +160,7 @@ export default function DashboardHome() {
         <div className="h-full w-full flex flex-col items-center justify-center gap-4">
           <div className="relative w-20 h-20">
             <div className="absolute inset-0 rounded-full" style={{
-              background: "conic-gradient(from 0deg, #7DF9FF, #C58BFF, #FF6BD9, #4DFFC4, #7DF9FF)",
+              background: "conic-gradient(from 0deg, #0AC8D4, #9B59F5, #E040C0, #10B981, #0AC8D4)",
               filter: "blur(2px)", animation: "spin 8s linear infinite"
             }} />
             <div className="absolute inset-1.5 rounded-full bg-paper" />
@@ -180,10 +180,10 @@ export default function DashboardHome() {
     <div className="h-full flex flex-col gap-3 overflow-hidden">
       {/* ── Hero stat row ─────────────────────────────────────── */}
       <div className="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatTile label="Total Calls"      value={stats?.totalCalls ?? 0}              sub="All time"           icon={PhoneCall}  accent="#7DF9FF" />
-        <StatTile label="Conversion Rate"  value={`${stats?.conversionRate ?? 0}%`}    sub="Intent match"       icon={TrendingUp} accent="#C58BFF" />
-        <StatTile label="Outbound Leads"   value={stats?.totalLeads ?? 0}              sub="Queue depth"        icon={Bot}        accent="#FF6BD9" />
-        <StatTile label="AI Spend"         value={`$${stats?.totalCost ?? "0.00"}`}    sub="Current period"     icon={DollarSign} accent="#4DFFC4" />
+        <StatTile label="Total Calls"      value={stats?.totalCalls ?? 0}              sub="All time"           icon={PhoneCall}  accent="#0AC8D4" />
+        <StatTile label="Conversion Rate"  value={`${stats?.conversionRate ?? 0}%`}    sub="Intent match"       icon={TrendingUp} accent="#9B59F5" />
+        <StatTile label="Outbound Leads"   value={stats?.totalLeads ?? 0}              sub="Queue depth"        icon={Bot}        accent="#E040C0" />
+        <StatTile label="AI Spend"         value={`$${stats?.totalCost ?? "0.00"}`}    sub="Current period"     icon={DollarSign} accent="#10B981" />
       </div>
 
       {/* ── Main grid ────────────────────────────────────────── */}
@@ -194,7 +194,7 @@ export default function DashboardHome() {
             title="Recent Calls"
             hint="latest outcomes"
             icon={HistoryIcon}
-            accent="#7DF9FF"
+            accent="#0AC8D4"
             scroll
             actions={
               <Link to="/logs" className="text-[9px] uppercase tracking-[0.3em] text-muted hover:text-brand transition-colors flex items-center gap-1">
@@ -250,7 +250,7 @@ export default function DashboardHome() {
 
         {/* Agent status */}
         <div className="col-span-12 lg:col-span-4 h-full">
-          <Panel title="Agent Status" hint="fleet · live" icon={Signal} accent="#C58BFF">
+          <Panel title="Agent Status" hint="fleet · live" icon={Signal} accent="#9B59F5">
             <div className="space-y-3 h-full">
               {/* Live call indicator */}
               <div className={cn(
@@ -348,7 +348,7 @@ export default function DashboardHome() {
         {/* Quick actions + chart */}
         <div className="col-span-12 lg:col-span-4 h-full flex flex-col gap-3">
           {/* Quick actions */}
-          <Panel title="Quick Launch" hint="one-click" icon={Zap} accent="#FF6BD9">
+          <Panel title="Quick Launch" hint="one-click" icon={Zap} accent="#E040C0">
             <div className="space-y-2.5">
               {/* Test call */}
               <div className="rounded-xl p-3.5 border border-brand/20 bg-brand/5">
@@ -393,11 +393,11 @@ export default function DashboardHome() {
 
               {/* Action links */}
               {[
-                { to: "/outbound", icon: PhoneCall, label: "Outbound Campaign", sub: "Upload & auto-dial", accent: "#C58BFF" },
-                { to: "/inbox",    icon: Mail,      label: "Email Inbox",        sub: "Review queued emails", accent: "#FF6BD9" },
+                { to: "/outbound", icon: PhoneCall, label: "Outbound Campaign", sub: "Upload & auto-dial", accent: "#9B59F5" },
+                { to: "/inbox",    icon: Mail,      label: "Email Inbox",        sub: "Review queued emails", accent: "#E040C0" },
                 { to: "/triage",   icon: Inbox,     label: "Triage Inbox",
                   sub: hotLeads.length > 0 ? `${hotLeads.length} hot lead${hotLeads.length > 1 ? "s" : ""} waiting` : "Review hot leads",
-                  accent: "#7DF9FF", badge: hotLeads.length || undefined,
+                  accent: "#0AC8D4", badge: hotLeads.length || undefined,
                 },
               ].map(action => {
                 const Icon = action.icon;
@@ -429,7 +429,7 @@ export default function DashboardHome() {
           </Panel>
 
           {/* Sentiment mini-panel */}
-          <Panel title="Sentiment" hint="call health" icon={ShieldCheck} accent="#4DFFC4">
+          <Panel title="Sentiment" hint="call health" icon={ShieldCheck} accent="#10B981">
             {(() => {
               const s = stats?.sentimentBreakdown || { positive: 0, neutral: 0, negative: 0 };
               const total = (s.positive + s.neutral + s.negative) || 1;
@@ -444,9 +444,9 @@ export default function DashboardHome() {
                   </div>
                   <div className="flex-1 space-y-2">
                     {[
-                      { label: "Pos", pct: positivePct, color: "#7DF9FF" },
-                      { label: "Neu", pct: neutralPct,  color: "#C58BFF" },
-                      { label: "Neg", pct: negativePct, color: "#FF6BD9" },
+                      { label: "Pos", pct: positivePct, color: "#0AC8D4" },
+                      { label: "Neu", pct: neutralPct,  color: "#9B59F5" },
+                      { label: "Neg", pct: negativePct, color: "#E040C0" },
                     ].map(({ label, pct, color }) => (
                       <div key={label} className="flex items-center gap-2">
                         <span className="text-[8px] uppercase tracking-[0.2em] text-muted w-6 shrink-0">{label}</span>
