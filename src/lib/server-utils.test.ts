@@ -1,8 +1,8 @@
 // Tests for server-side pure utilities. The sanitizer in particular
 // is the last line of defense against credential leakage into audit logs.
 
-import { describe, it, expect } from "vitest";
-import { getErrorMessage, sanitizeForAudit } from "./server-utils";
+import { describe, it, expect, vi } from "vitest";
+import { getErrorMessage, sanitizeForAudit, ownsRow } from "./server-utils";
 
 describe("getErrorMessage", () => {
   it("extracts the message from a real Error instance", () => {
@@ -164,5 +164,48 @@ describe("sanitizeForAudit — edge cases", () => {
 
   it("handles empty arrays", () => {
     expect(sanitizeForAudit([])).toEqual([]);
+  });
+});
+
+describe("ownsRow", () => {
+  function makeDb(returnedData: unknown) {
+    const maybeSingle = vi.fn().mockResolvedValue({ data: returnedData });
+    const eqUser = vi.fn().mockReturnValue({ maybeSingle });
+    const eqId = vi.fn().mockReturnValue({ eq: eqUser });
+    const select = vi.fn().mockReturnValue({ eq: eqId });
+    const from = vi.fn().mockReturnValue({ select });
+    return { from, select, eqId, eqUser, maybeSingle };
+  }
+
+  it("returns true when the row exists and belongs to the user", async () => {
+    const db = makeDb({ id: "agent-1" });
+    const result = await ownsRow(db, "wireline_agents", "agent-1", "user-1");
+    expect(result).toBe(true);
+  });
+
+  it("returns false when the row is null (not found, or owned by someone else)", async () => {
+    const db = makeDb(null);
+    const result = await ownsRow(db, "wireline_agents", "agent-1", "user-2");
+    expect(result).toBe(false);
+  });
+
+  it("queries the named table", async () => {
+    const db = makeDb({ id: "x" });
+    await ownsRow(db, "wireline_phone_numbers", "p-1", "u-1");
+    expect(db.from).toHaveBeenCalledWith("wireline_phone_numbers");
+  });
+
+  it("filters by both id and user_id (the security invariant)", async () => {
+    const db = makeDb({ id: "x" });
+    await ownsRow(db, "wireline_agents", "a-1", "u-1");
+    expect(db.eqId).toHaveBeenCalledWith("id", "a-1");
+    expect(db.eqUser).toHaveBeenCalledWith("user_id", "u-1");
+  });
+
+  it("works with numeric ids (integer primary keys)", async () => {
+    const db = makeDb({ id: 42 });
+    const result = await ownsRow(db, "wireline_webhook_deliveries", 42, "u-1");
+    expect(result).toBe(true);
+    expect(db.eqId).toHaveBeenCalledWith("id", 42);
   });
 });

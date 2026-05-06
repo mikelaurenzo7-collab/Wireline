@@ -53,3 +53,34 @@ export function sanitizeForAudit(obj: unknown): unknown {
 
   return sanitized;
 }
+
+/**
+ * Verify a user owns a row in `table` matched by id. Returns true if the
+ * row exists AND belongs to userId, false otherwise.
+ *
+ * Used at the top of mutation handlers that take an :id param OR an id
+ * from the body and would otherwise let a user touch another user's row.
+ *
+ * Caller is expected to short-circuit on false:
+ *
+ *   if (!await ownsRow(db, 'wireline_agents', agentId, userId)) {
+ *     return res.status(404).json({ error: 'Agent not found' });
+ *   }
+ *
+ * The `db` parameter is typed loosely so it works with both the Supabase
+ * client this server uses and the test mocks in /src/lib tests.
+ */
+export async function ownsRow(
+  db: { from: (table: string) => any },
+  table: string,
+  id: string | number,
+  userId: string,
+): Promise<boolean> {
+  const { data } = await db
+    .from(table)
+    .select("id")
+    .eq("id", id)
+    .eq("user_id", userId)
+    .maybeSingle();
+  return !!data;
+}
