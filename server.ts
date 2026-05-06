@@ -1450,6 +1450,19 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
                   .limit(2)
                : { data: [] };
 
+            // 3. Fetch the most recent captured customer profile (pain points,
+            //    budget, timeline, objections, next-step) — this is the
+            //    highest-leverage intel for shaping the live conversation.
+            const { data: leadIntel } = safePhone
+               ? await db.from('wireline_outbound_leads')
+                  .select('name, status, context')
+                  .eq('user_id', agent?.user_id)
+                  .ilike('customer_number', `%${safePhone}%`)
+                  .order('created_at', { ascending: false })
+                  .limit(1)
+                  .maybeSingle()
+               : { data: null };
+
             let contextReport = `RECENT CONTEXT FOR ${customerPhone}:\n`;
             if (pastCalls && pastCalls.length > 0) {
                contextReport += "PAST CALL HISTORY:\n" + pastCalls.map(c => `- [${new Date(c.created_at).toLocaleDateString()}] Intent: ${c.intent_label || 'Inquiry'}. Summary: ${c.summary}`).join('\n');
@@ -1459,6 +1472,11 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
 
             if (tasks && tasks.length > 0) {
                contextReport += "\nACTIVE MISSIONS/TASKS:\n" + tasks.map(t => `- [${t.priority.toUpperCase()}] ${t.description} (Status: ${t.status})`).join('\n');
+            }
+
+            if (leadIntel?.context) {
+               const intelPreview = leadIntel.context.slice(0, MAX_CONTEXT_PREVIEW_LENGTH * 4);
+               contextReport += `\nCAPTURED CUSTOMER PROFILE${leadIntel.name ? ` (${leadIntel.name})` : ''}:\n${intelPreview}`;
             }
 
             results.push({
@@ -1514,9 +1532,13 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
       // TOOL 2: BOOK APPOINTMENT
       if (toolCall.function.name === "book_appointment") {
         try {
-          const args = toolCall.function.arguments; 
-          
-          // Insert actual appointment into Supabase
+          const args = toolCall.function.arguments;
+          const customerPhone = payload.call?.customer?.number || message.call?.customer?.number || null;
+          const safeApptPhone = customerPhone ? sanitizePhone(customerPhone) : null;
+
+          // Insert actual appointment into Supabase. Capturing phone_number
+          // (column already in schema) lets ContactProfile / CallLogs deep-link
+          // appointments back to the contact record.
           const { data, error } = await db.from('wireline_appointments').insert({
             agent_id: webhookAgentId,
             user_id: agent?.user_id,
@@ -1525,14 +1547,18 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
             time: args.time || "Unknown Time",
             customer_name: args.customer_name || "Guest",
             service_type: args.service_type || "General Service",
-            status: "Scheduled"
+            status: "Scheduled",
+            phone_number: safeApptPhone || null,
           }).select('id').single();
 
           if (error) throw error;
 
+          const refId = data.id.split('-')[0];
+          // Echo the full confirmation so the LLM can read it back verbatim, per the
+          // CALL CLOSING STANDARD: "read the full confirmation… and get verbal confirmation."
           results.push({
             toolCallId: toolCall.id,
-            result: `Appointment confirmed successfully! Your booking reference ID is ${data.id.split('-')[0]}.`
+            result: `Appointment confirmed. Read this back to the caller verbatim and ask them to confirm: "I have you booked for ${args.service_type || 'General Service'} on ${args.date || 'the requested date'} at ${args.time || 'the requested time'}, under the name ${args.customer_name || 'Guest'}. Your reference number is ${refId}. Did I get all that right?"`,
           });
         } catch (e: any) {
           log.error("Vapi tool: book_appointment failed", { agentId: webhookAgentId, error: e?.message || String(e) });
@@ -1696,18 +1722,24 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
       if (toolCall.function.name === "create_fleet_task") {
         try {
            const { description, priority } = toolCall.function.arguments;
+           // wireline_fleet_tasks has no `source` column — use source_type/source_id
+           // (matching every other tool handler) so this insert actually persists.
            const { data: task, error: taskError } = await db.from('wireline_fleet_tasks').insert({
               user_id: agent?.user_id,
-              agent_id: agent?.id,
+              agent_id: webhookAgentId,
+              task_type: 'follow_up',
               description,
               priority: priority || 'medium',
               status: 'pending',
-              source: 'voice'
+              source_type: 'phone_call',
+              source_id: message.call?.id || payload.call?.id || "in-call",
+              target_channel: 'manual',
            }).select('id').single();
            
            if (taskError) throw taskError;
            results.push({ toolCallId: toolCall.id, result: `Task ${task.id.split('-')[0]} created in mission queue.` });
-        } catch (e) {
+        } catch (e: any) {
+           log.error("Vapi tool: create_fleet_task failed", { agentId: webhookAgentId, error: e?.message || String(e) });
            results.push({ toolCallId: toolCall.id, result: "Failed to create task in mission queue." });
         }
       }
@@ -1718,7 +1750,8 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
            const { query } = toolCall.function.arguments;
            // Sanitize the query to prevent LIKE wildcard injection from LLM output.
            // Keep only characters that are valid in names, emails, and phone numbers.
-           const safeQuery = String(query || '').replace(/[^A-Za-z0-9 @.\-_+]/g, '').slice(0, 80);
+           // Note: `_` and `%` are LIKE wildcards and are intentionally excluded.
+           const safeQuery = String(query || '').replace(/[^A-Za-z0-9 @.\-+]/g, '').slice(0, 80);
            if (!safeQuery) {
              results.push({ toolCallId: toolCall.id, result: "No search query provided. Ask the caller for their name, email, or phone number." });
              continue;
@@ -1754,10 +1787,14 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
           const customerPhone = payload.call?.customer?.number || message.call?.customer?.number;
           if (customerPhone) {
             const safePhone = sanitizePhone(customerPhone);
+            // Preserve in-flight / compliance statuses set by other tool handlers
+            // (Voicemail-Left, Callback-Scheduled, Blocked-DNC) so a final-status
+            // update from the LLM never clobbers a meaningful outcome.
             await db.from('wireline_outbound_leads')
               .update({ status, last_contact_summary: notes || '', last_called_at: new Date() })
               .eq('user_id', agent?.user_id)
-              .ilike('customer_number', `%${safePhone}%`);
+              .ilike('customer_number', `%${safePhone}%`)
+              .not('status', 'in', PRESERVED_LEAD_STATUSES);
           }
           results.push({ toolCallId: toolCall.id, result: `Lead status updated to '${status}'. CRM record saved.` });
         } catch (e: any) {
@@ -1834,12 +1871,17 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
           });
 
           // Mark the outbound lead as voicemail-left so campaigns don't duplicate.
+          // Use sanitized phone + ilike to tolerate format drift (+15555551234 vs
+          // 5555551234), matching update_lead_status / schedule_callback.
           // Exclude terminal statuses so we never overwrite a final outcome.
-          await db.from('wireline_outbound_leads')
-            .update({ status: 'Voicemail-Left', last_called_at: new Date() })
-            .eq('customer_number', customerPhone)
-            .eq('agent_id', webhookAgentId)
-            .not('status', 'in', ['Completed', 'Voicemail-Left', 'Blocked-DNC', 'Failed']);
+          const safeVmPhone = sanitizePhone(customerPhone);
+          if (safeVmPhone) {
+            await db.from('wireline_outbound_leads')
+              .update({ status: 'Voicemail-Left', last_called_at: new Date() })
+              .eq('user_id', agent?.user_id)
+              .ilike('customer_number', `%${safeVmPhone}%`)
+              .not('status', 'in', ['Completed', 'Voicemail-Left', 'Blocked-DNC', 'Failed']);
+          }
 
           results.push({
             toolCallId: toolCall.id,
