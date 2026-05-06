@@ -1973,13 +1973,16 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
           // Update outbound lead context for ANY call (inbound or outbound) where the
           // caller's phone matches a lead in the CRM — so profile intel persists for
           // all future outbound attempts to this number too.
+          // NOTE: ilike('%phone%') (matching update_lead_status / schedule_callback /
+          // leave_voicemail) tolerates format drift between '+15555551234' and
+          // '5555551234'; an exact .eq() match silently dropped real-world matches.
           const safePhone = sanitizePhone(customerPhone);
           if (safePhone) {
             const { data: existingLead } = await db
               .from('wireline_outbound_leads')
               .select('id, context')
-              .eq('customer_number', safePhone)
               .eq('user_id', agent?.user_id)
+              .ilike('customer_number', `%${safePhone}%`)
               .not('status', 'in', ['Blocked-DNC'])
               .order('created_at', { ascending: false })
               .limit(1)
@@ -2160,6 +2163,7 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
             for (const item of result.action_items || []) {
               await db.from('wireline_fleet_tasks').insert({
                 user_id: agent?.user_id,
+                agent_id: webhookAgentId,
                 task_type: 'action_required',
                 description: `Follow-up for ${call?.customer?.number || 'Caller'}: ${item.description}`,
                 source_type: 'phone_call',
@@ -2184,6 +2188,7 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
             for (const flag of result.compliance_flags || []) {
               await db.from('wireline_fleet_tasks').insert({
                 user_id: agent?.user_id,
+                agent_id: webhookAgentId,
                 task_type: 'compliance_review',
                 description: `[COMPLIANCE] Call ${call?.id?.slice(0, 8) || ''} — ${flag}`,
                 source_type: 'phone_call',
@@ -2290,6 +2295,7 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
                 if (taskObj.has_task && taskObj.task_description) {
                    await db.from('wireline_fleet_tasks').insert({
                       user_id: agent?.user_id,
+                      agent_id: webhookAgentId,
                       task_type: 'action_required',
                       description: `FOLLOW-UP FOR ${call?.customer?.number || 'Caller'}: ${taskObj.task_description}`,
                       source_type: 'phone_call',
@@ -5551,6 +5557,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
             let existingThread = msThreadMap.get(convId);
             if (!existingThread) {
               const { data: newThread } = await db.from('wireline_email_threads').insert({
+                user_id: userId,
                 account_id: account.id,
                 thread_id:  convId,
                 customer_email: from,
@@ -5562,6 +5569,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
             }
 
             await db.from('wireline_email_messages').insert({
+              user_id: userId,
               thread_id:        existingThread!.id,
               google_message_id: msgId,
               role:             'customer',
@@ -5575,16 +5583,29 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
               10_000,
             ).catch((e: any) => log.warn("Email sync: MS mark-read failed", { error: e?.message }));
 
-            // Generate AI reply (same Claude/Gemini path as Gmail)
+            // Generate AI reply (same Claude/Gemini path as Gmail).
+            // CRITICAL: scope calendar reads to this operator's user_id —
+            // wireline_appointments holds rows for every tenant, and an
+            // unscoped query would leak (and hallucinate) other operators'
+            // booked times into this reply.
+            // Date is LLM-generated tool-call input — strip LIKE wildcards
+            // (`%`, `_`) and limit length, matching the Vapi check_calendar
+            // handler's sanitization (server.ts ~1502).
             const checkCalendarMs = async (date: string) => {
-              const { data } = await db.from('wireline_appointments').select('time').ilike('date', `%${date}%`);
+              const safeDate = String(date || '').replace(/[^A-Za-z0-9 ,\/\-\.]/g, '').slice(0, 60);
+              if (!safeDate) return `No date provided. Ask the customer which date they need.`;
+              const { data } = await db.from('wireline_appointments')
+                .select('time')
+                .eq('user_id', userId)
+                .ilike('date', `%${safeDate}%`);
               return data && data.length > 0
-                ? `Booked times on ${date}: ${data.map((a: any) => a.time).join(', ')}. Offer other times.`
-                : `The entire day on ${date} is fully open.`;
+                ? `Booked times on ${safeDate}: ${data.map((a: any) => a.time).join(', ')}. Offer other times.`
+                : `The entire day on ${safeDate} is fully open.`;
             };
             const bookAppointmentMs = async (args: { date: string; time: string; customer_name: string; service_type: string }) => {
               try {
                 const { data, error } = await db.from('wireline_appointments').insert({
+                  user_id: userId,
                   agent_id: activeAgent?.id, date: args.date, time: args.time,
                   customer_name: args.customer_name, service_type: args.service_type, status: "Scheduled",
                 }).select('id').single();
@@ -5614,6 +5635,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
             if (activeAgent?.email_signature) finalReplyMs = `${finalReplyMs}\n\n${activeAgent.email_signature}`;
 
             await db.from('wireline_email_messages').insert({
+              user_id: userId,
               thread_id: existingThread!.id, role: 'ai', content: finalReplyMs,
             });
 
@@ -5705,6 +5727,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
            
            if (!existingThread) {
               const { data: newThread } = await db.from('wireline_email_threads').insert({
+                 user_id: userId,
                  account_id: account.id,
                  thread_id: threadId,
                  customer_email: from,
@@ -5723,6 +5746,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
 
            // Save the customer message
            await db.from('wireline_email_messages').insert({
+              user_id: userId,
               thread_id: existingThread!.id,
               google_message_id: msgId,
               role: 'customer',
@@ -5738,16 +5762,26 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
 
            // 3. GENERATE AI RESPONSE — Claude-primary with tool use; Gemini as fallback.
            //    Tool implementations are shared between both paths.
+           //    CRITICAL: scope calendar reads to this operator's user_id so the
+           //    LLM never sees (and never hallucinates back) other tenants' bookings.
+           //    Date is LLM-generated tool-call input — strip LIKE wildcards and
+           //    limit length, matching the Vapi check_calendar handler.
            const checkCalendar = async (date: string) => {
-             const { data } = await db.from('wireline_appointments').select('time').ilike('date', `%${date}%`);
+             const safeDate = String(date || '').replace(/[^A-Za-z0-9 ,\/\-\.]/g, '').slice(0, 60);
+             if (!safeDate) return `No date provided. Ask the customer which date they need.`;
+             const { data } = await db.from('wireline_appointments')
+               .select('time')
+               .eq('user_id', userId)
+               .ilike('date', `%${safeDate}%`);
              if (data && data.length > 0) {
-               return `Booked times on ${date}: ${data.map(a => a.time).join(', ')}. Offer other times.`;
+               return `Booked times on ${safeDate}: ${data.map(a => a.time).join(', ')}. Offer other times.`;
              }
-             return `The entire day on ${date} is fully open.`;
+             return `The entire day on ${safeDate} is fully open.`;
            };
-           const bookAppointment = async (args: { date: string; time: string; customer_name: string; service_type: string }) => {
+            const bookAppointment = async (args: { date: string; time: string; customer_name: string; service_type: string }) => {
              try {
                const { data, error } = await db.from('wireline_appointments').insert({
+                 user_id: userId,
                  agent_id: activeAgent?.id,
                  date: args.date,
                  time: args.time,
@@ -5856,6 +5890,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
 
            // Save the AI message (as a draft in our DB)
            await db.from('wireline_email_messages').insert({
+              user_id: userId,
               thread_id: existingThread!.id,
               role: 'ai',
               content: finalReply
@@ -5886,6 +5921,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
            if (lowerSnippet.includes('call') || lowerSnippet.includes('phone') || lowerSnippet.includes('callback') || lowerSnippet.includes('number')) {
               try {
                  await db.from('wireline_fleet_tasks').insert({
+                    user_id: userId,
                     source_type: 'email_thread',
                     source_id: threadId,
                     target_channel: 'phone',
@@ -5988,6 +6024,7 @@ app.post("/api/emails/threads/:id/reply", authenticateUser, async (req: any, res
 
       // Save to DB
       await db.from('wireline_email_messages').insert({
+         user_id: req.user.id,
          thread_id: thread.id,
          role: 'ai',
          content: body
