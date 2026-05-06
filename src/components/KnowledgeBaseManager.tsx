@@ -659,7 +659,7 @@ function DedupePanel({
               <Brain className="w-5 h-5 text-paper" />
             </div>
             <div>
-              <div className="text-[10px] uppercase tracking-[0.4em] text-brand-2">Claude found {clusters.length} {clusters.length === 1 ? "cluster" : "clusters"}</div>
+              <div className="text-[10px] uppercase tracking-[0.4em] text-brand-2">Wireline AI found {clusters.length} {clusters.length === 1 ? "cluster" : "clusters"}</div>
               <div className="text-sm text-ink/70 mt-1">Pick which fact to keep in each cluster. The rest will be deleted.</div>
             </div>
           </div>
@@ -727,7 +727,7 @@ function DedupePanel({
                             )}
                             {isRecommended && (
                               <span className="px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center gap-1">
-                                <Sparkles className="w-2.5 h-2.5" /> Claude pick
+                                <Sparkles className="w-2.5 h-2.5" /> AI pick
                               </span>
                             )}
                             {m.note && <span className="text-[10px] text-muted/70 italic">{m.note}</span>}

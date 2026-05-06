@@ -62,7 +62,7 @@ export default function DailyBrief() {
         </div>
         <div className="flex-1">
           <h3 className="font-display italic text-2xl text-ink leading-tight">Daily Brief is offline</h3>
-          <p className="text-sm text-ink/55">Set <code className="text-brand font-mono text-xs">ANTHROPIC_API_KEY</code> to receive Claude's morning summary.</p>
+          <p className="text-sm text-ink/55">Contact your administrator to enable the Wireline Daily Brief.</p>
         </div>
       </div>
     </div>
@@ -71,7 +71,7 @@ export default function DailyBrief() {
   if (loading && !data) return (
     <div className="rounded-3xl glass border border-white/10 p-8 flex items-center gap-4">
       <Loader2 className="w-5 h-5 animate-spin text-brand" />
-      <span className="text-[11px] uppercase tracking-[0.4em] text-muted">Claude is reading the room</span>
+      <span className="text-[11px] uppercase tracking-[0.4em] text-muted">Wireline is analyzing your day…</span>
     </div>
   );
 

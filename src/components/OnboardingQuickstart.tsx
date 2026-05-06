@@ -19,7 +19,7 @@ const STEPS = [
   {
     id: "agent",
     title: "Create your first agent",
-    body: "Describe what the agent should do in one sentence. Claude will generate the name, persona, directives, and starter knowledge automatically.",
+    body: "Describe what the agent should do in one sentence. Wireline AI will generate the name, persona, directives, and starter knowledge automatically.",
     icon: Hammer,
     accent: "#7DF9FF",
     badge: "~30 seconds",
@@ -27,7 +27,7 @@ const STEPS = [
   {
     id: "knowledge",
     title: "Add your business knowledge",
-    body: "Paste your website URL. Claude will extract services, pricing, hours, and policies into structured facts you can apply in one click.",
+    body: "Paste your website URL. Wireline AI will extract services, pricing, hours, and policies into structured facts you can apply in one click.",
     icon: Globe,
     accent: "#C58BFF",
     badge: "Instant ingest",

@@ -5,7 +5,7 @@ import {
   BarChart3, Filter, Headphones, Sparkles, Building2, Search, Loader2, MessageCircle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { authFetch } from "../lib/api";
+import { authFetch, safeJson } from "../lib/api";
 import { cn } from "../lib/utils";
 import { useToast } from "../contexts/ToastContext";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
@@ -377,7 +377,7 @@ export default function AgentTemplates() {
           role: template.role,
         }),
       });
-      const data = await resp.json();
+      const data = await safeJson(resp);
       if (!resp.ok) {
         toastError("Deployment failed", data.error || "Please try again.");
       } else {
@@ -385,7 +385,7 @@ export default function AgentTemplates() {
         navigate("/agents");
       }
     } catch (e: any) {
-      toastError("Deployment failed", e.message);
+      toastError("Deployment failed", "Could not reach the server. Please try again.");
     }
     setDeploying(null);
   };

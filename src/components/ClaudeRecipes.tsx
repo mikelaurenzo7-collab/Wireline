@@ -49,7 +49,7 @@ interface RecipeMeta {
 
 const RECIPE_META: Record<Recipe, RecipeMeta> = {
   "brief":              { title: "Pre-Call Brief",       tagline: "Tactical playbook before you dial.",                  icon: Compass,     accent: "#7DF9FF", thinking: true  },
-  "enrich-lead":        { title: "Enrich Lead",          tagline: "Claude searches the web — identity, employer, hooks.", icon: Search,      accent: "#4DFFC4", thinking: false },
+  "enrich-lead":        { title: "Enrich Lead",          tagline: "Wireline AI searches the web — identity, employer, hooks.", icon: Search,      accent: "#4DFFC4", thinking: false },
   "qualify":            { title: "Lead Qualification",   tagline: "BANT-scored evidence, not vibes.",                    icon: Target,      accent: "#C58BFF", thinking: true  },
   "objection-drill":    { title: "Objection Drills",     tagline: "Realistic scenarios with scripted rebuttals.",        icon: ShieldAlert, accent: "#FF6BD9", thinking: false },
   "cold-email":         { title: "Cold Email",           tagline: "Reply-worthy outreach in 120 words.",                 icon: Mail,        accent: "#4DFFC4", thinking: false },
@@ -57,8 +57,8 @@ const RECIPE_META: Record<Recipe, RecipeMeta> = {
   "summarize-thread":   { title: "Thread Summary",       tagline: "Action items + sentiment in one sweep.",              icon: ScrollText,  accent: "#7DF9FF", thinking: false },
   "agent-review":       { title: "Performance Review",   tagline: "Deep audit of your last N calls.",                    icon: BarChart3,   accent: "#C58BFF", thinking: true  },
   "coach":              { title: "Live Call Coach",      tagline: "Real-time take on a transcript — what to say next.",  icon: Headphones,  accent: "#FF6BD9", thinking: false },
-  "knowledge-from-url":      { title: "Ingest from URL",      tagline: "Claude reads your site and extracts agent facts.",    icon: Globe,    accent: "#7DF9FF", thinking: false },
-  "knowledge-from-document": { title: "Ingest from PDF",      tagline: "Upload a brochure, menu, or policy doc — Claude reads it.", icon: FileUp, accent: "#FFC07D", thinking: false },
+  "knowledge-from-url":      { title: "Ingest from URL",      tagline: "Wireline AI reads your site and extracts agent facts.",    icon: Globe,    accent: "#7DF9FF", thinking: false },
+  "knowledge-from-document": { title: "Ingest from PDF",      tagline: "Upload a brochure, menu, or policy doc — Wireline AI reads it.", icon: FileUp, accent: "#FFC07D", thinking: false },
   "agent-forge":             { title: "Agent Forge",          tagline: "Synthesize a complete agent from a goal.",            icon: Hammer,   accent: "#4DFFC4", thinking: true  },
 };
 
@@ -221,8 +221,7 @@ function NoKeyInline() {
     <div className="px-7 py-4 bg-rose-500/10 border-y border-rose-500/30 flex items-center gap-3">
       <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
       <p className="text-xs text-rose-500 leading-relaxed">
-        Claude Brain is offline — set <code className="font-mono">ANTHROPIC_API_KEY</code> to enable this recipe.
-        <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer" className="underline ml-2">Get a key →</a>
+        Wireline AI is currently unavailable. Contact your administrator to enable this feature.
       </p>
     </div>
   );
@@ -464,7 +463,7 @@ function KnowledgeFromUrlForm({ agents, agentId: initAgent, initial, disabled }:
 
   return (
     <FormShell>
-      <Field label="URL" hint={crawl ? "Root URL — Claude follows nav links from here." : "A homepage, services page, FAQ, pricing page — anything customer-facing."}>
+      <Field label="URL" hint={crawl ? "Root URL — Wireline AI follows nav links from here." : "A homepage, services page, FAQ, pricing page — anything customer-facing."}>
         <TextInput value={url} onChange={setUrl} placeholder={crawl ? "https://acme.co" : "https://acme.co/services"} />
       </Field>
 
@@ -516,7 +515,7 @@ function KnowledgeFromUrlForm({ agents, agentId: initAgent, initial, disabled }:
         )}
       </div>
 
-      <Field label="Agent Context (optional)" hint="What's this agent's job? Helps Claude prioritize relevant facts.">
+      <Field label="Agent Context (optional)" hint="What's this agent's job? Helps Wireline AI prioritize relevant facts.">
         <TextInput value={agentContext} onChange={setAgentContext} placeholder="Front-desk receptionist for HVAC service company." />
       </Field>
       <RunButton
@@ -810,7 +809,7 @@ function EnrichLeadForm({ initial, disabled }: { initial?: any; disabled: boolea
   return (
     <FormShell>
       <p className="text-[11px] text-ink/55 leading-relaxed">
-        Claude runs up to 5 web searches to identify who's calling and where they work. Use the operator context to narrow the search — names + companies on a phone are usually too generic alone.
+        Wireline AI runs up to 5 web searches to identify who's calling and where they work. Use the operator context to narrow the search — names + companies on a phone are usually too generic alone.
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Field label="Customer Name" hint="Optional but big lift in match quality."><TextInput value={name} onChange={setName} placeholder="Jordan Pike" /></Field>
@@ -819,7 +818,7 @@ function EnrichLeadForm({ initial, disabled }: { initial?: any; disabled: boolea
       <Field label="Operator Context" hint="What do you already know? Source of the lead, the company they mentioned, etc.">
         <TextArea value={context} onChange={setContext} placeholder="Filled out demo form. Mentioned 'we use Salesforce' in the comments." rows={3} />
       </Field>
-      <Field label="Industry Hint" hint="Optional. Speeds Claude up by narrowing the search.">
+      <Field label="Industry Hint" hint="Optional. Speeds Wireline AI up by narrowing the search.">
         <TextInput value={industryHint} onChange={setIndustryHint} placeholder="B2B SaaS · Healthcare · Real estate" />
       </Field>
       <RunButton onClick={run} loading={loading} disabled={disabled || !number} label="Research Lead" />
@@ -921,7 +920,7 @@ function QualifyForm({ callId, initial, disabled }: { callId?: string; initial?:
   return (
     <FormShell>
       {!callId && (
-        <Field label="Transcript or Email Body" hint="Paste the conversation text. Claude scores it against BANT with evidence.">
+        <Field label="Transcript or Email Body" hint="Paste the conversation text. Wireline AI scores it against BANT with evidence.">
           <TextArea value={transcript} onChange={setTranscript} placeholder="Customer: I'm exploring options for our 200-seat team..." rows={10} />
         </Field>
       )}
@@ -1502,13 +1501,13 @@ function KnowledgeFromDocumentForm({ agents, agentId: initAgent, disabled }: { a
               </div>
               <div className="space-y-1">
                 <p className="text-sm text-ink/85">Drop a PDF here, or click to choose</p>
-                <p className="text-[10px] uppercase tracking-[0.3em] text-muted">Up to 32 MB · Claude reads it natively</p>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-muted">Up to 32 MB · Wireline AI reads it natively</p>
               </div>
             </>
           )}
         </label>
       </Field>
-      <Field label="Agent Context (optional)" hint="What's this agent's job? Helps Claude prioritize relevant facts.">
+      <Field label="Agent Context (optional)" hint="What's this agent's job? Helps Wireline AI prioritize relevant facts.">
         <TextInput value={agentContext} onChange={setAgentContext} placeholder="Front-desk agent for HVAC service company." />
       </Field>
       <RunButton onClick={run} loading={loading} disabled={disabled || !file} label="Read & Extract" />

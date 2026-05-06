@@ -506,7 +506,7 @@ function AISpendView({ days }: { days: number }) {
       <SpendBudgetCard />
 
       {!callsHaveHappened && (
-        <Empty label="No Claude calls in this window — try a longer range or run a recipe." />
+        <Empty label="No AI usage in this window — try a longer range or run a recipe." />
       )}
 
       {callsHaveHappened && <>
@@ -713,7 +713,7 @@ function SpendBudgetCard() {
           </div>
           {status?.hard_capped_now && (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs">
-              <Lock className="w-3.5 h-3.5" /> Hard cap active — Claude calls are blocked
+              <Lock className="w-3.5 h-3.5" /> Hard cap active — AI calls are blocked
             </div>
           )}
           {!status?.hard_capped_now && isWarn && (
@@ -783,7 +783,7 @@ function SpendBudgetCard() {
                   ? "bg-rose-500/15 border-rose-500/40 text-rose-300"
                   : "glass border-white/10 text-ink/70 hover:border-white/30",
               )}
-              title="When on, Claude calls return HTTP 402 once you've reached the monthly limit."
+              title="When on, AI calls return HTTP 402 once you've reached the monthly limit."
             >
               <Lock className="w-3.5 h-3.5" /> Hard cap {draft.hard_cap ? "on" : "off"}
             </button>
@@ -921,7 +921,7 @@ function QualityView({ days }: { days: number }) {
             <div>
               <h3 className="font-display italic text-3xl text-ink mb-2">No QA scores yet</h3>
               <p className="text-sm text-ink/55 max-w-sm leading-relaxed">
-                Open a call in Call Logs and click <strong className="text-brand">Score QA</strong> to have Claude evaluate it against the 5-dimension quality rubric.
+                Open a call in Call Logs and click <strong className="text-brand">Score QA</strong> to have Wireline AI evaluate it against the 5-dimension quality rubric.
               </p>
             </div>
           </div>

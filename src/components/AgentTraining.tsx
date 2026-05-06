@@ -180,7 +180,7 @@ export default function AgentTraining() {
                   <Sparkles className="w-3.5 h-3.5 text-paper" strokeWidth={2.5} />
                 </div>
                 <div>
-                  <div className="text-[9px] uppercase tracking-[0.35em] text-brand">Claude Brain</div>
+                  <div className="text-[9px] uppercase tracking-[0.35em] text-brand">Wireline AI</div>
                   <div className="text-[10px] text-ink/60">Wire intelligent recipes into this agent.</div>
                 </div>
               </div>

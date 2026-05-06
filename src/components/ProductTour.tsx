@@ -37,15 +37,15 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     id: "training",
-    title: "Train Agents with Claude",
-    body: "Type instructions, paste your website URL, or upload a PDF. Claude reads it and extracts facts your agent will use in every call.",
+    title: "Train Agents with Wireline AI",
+    body: "Type instructions, paste your website URL, or upload a PDF. Wireline AI reads it and extracts facts your agent will use in every call.",
     anchor: '[data-tour="training"]',
     cta: "Next",
   },
   {
     id: "insights",
     title: "AI-Powered Insights",
-    body: "After calls, Claude scores leads, clusters topics, and identifies what's working vs. what to fix — automatically.",
+    body: "After calls, Wireline AI scores leads, clusters topics, and identifies what's working vs. what to fix — automatically.",
     anchor: '[data-tour="insights"]',
     cta: "Next",
   },
