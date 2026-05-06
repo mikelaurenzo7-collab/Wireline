@@ -137,15 +137,15 @@ export default function DashboardHome() {
           : "brutal-btn !py-0 !px-4 !h-9"
       )}
     >
-      {isConnecting ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Sync</>
+      {isConnecting ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Connecting</>
         : isConnected ? <><Square className="w-3 h-3 fill-current" /> End Call</>
-        : <><Mic className="w-3.5 h-3.5" /> Test Relay</>}
+        : <><Mic className="w-3.5 h-3.5" /> Test Call</>}
     </button>
   );
 
   if (isLoading && !stats) {
     return (
-      <PageShell title="Command Atlas" eyebrow="Today" actions={voiceButton}>
+      <PageShell title="Dashboard" eyebrow="Today" actions={voiceButton}>
         <div className="h-full w-full flex flex-col items-center justify-center gap-4">
           <div className="relative w-20 h-20">
             <div className="absolute inset-0 rounded-full" style={{
@@ -157,7 +157,7 @@ export default function DashboardHome() {
               <Target className="w-7 h-7 text-aurora" strokeWidth={1.5} />
             </div>
           </div>
-          <p className="text-aurora text-[10px] uppercase tracking-[0.5em]">Syncing Carrier Nodes</p>
+          <p className="text-aurora text-[10px] uppercase tracking-[0.5em]">Loading…</p>
         </div>
       </PageShell>
     );
@@ -169,15 +169,15 @@ export default function DashboardHome() {
     <div className="h-full grid grid-cols-12 grid-rows-6 gap-3">
       {/* 4 stat tiles */}
       <div className="col-span-12 lg:col-span-8 row-span-2 grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatTile label="Carrier Signals" value={stats?.totalCalls ?? 0}              sub="Live dispatch total"  icon={PhoneCall}  accent="#7DF9FF" />
-        <StatTile label="Routing Precision" value={`${stats?.conversionRate ?? 0}%`}  sub="Intent fulfillment"   icon={TrendingUp} accent="#C58BFF" />
-        <StatTile label="Outbound Leads"   value={stats?.totalLeads ?? 0}             sub="Queue depth"          icon={Bot}        accent="#FF6BD9" />
-        <StatTile label="Operational Burn" value={`$${stats?.totalCost ?? "0.00"}`}   sub="Carrier expenditure"  icon={DollarSign} accent="#4DFFC4" />
+        <StatTile label="Total Calls"      value={stats?.totalCalls ?? 0}              sub="All time"           icon={PhoneCall}  accent="#7DF9FF" />
+        <StatTile label="Conversion Rate"  value={`${stats?.conversionRate ?? 0}%`}    sub="Intent match"       icon={TrendingUp} accent="#C58BFF" />
+        <StatTile label="Outbound Leads"   value={stats?.totalLeads ?? 0}              sub="Queue depth"        icon={Bot}        accent="#FF6BD9" />
+        <StatTile label="Total Cost"       value={`$${stats?.totalCost ?? "0.00"}`}    sub="Current period"     icon={DollarSign} accent="#4DFFC4" />
       </div>
 
       {/* Mission integrity */}
       <div className="col-span-12 lg:col-span-4 row-span-2 lg:row-span-6">
-        <Panel title="Mission Integrity" hint="Aurora Health" icon={ShieldCheck}>
+        <Panel title="System Health" hint="Status" icon={ShieldCheck}>
           <div className="h-full flex flex-col gap-3">
             <div className="flex flex-wrap gap-1.5">
               {(stats?.agents || []).slice(0, 3).map((a: any, i: number) => (
@@ -189,7 +189,7 @@ export default function DashboardHome() {
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="p-3 rounded-lg glass border border-white/8">
-                <div className="text-[8px] uppercase tracking-[0.3em] text-brand mb-1">Dispersion</div>
+                <div className="text-[8px] uppercase tracking-[0.3em] text-brand mb-1">Call Minutes</div>
                 <div className="font-display italic text-2xl text-ink leading-none">{stats?.totalMinutes || 0}<span className="text-xs text-muted/60 ml-1 not-italic">min</span></div>
               </div>
               <div className="p-3 rounded-lg glass border border-white/8">
@@ -246,7 +246,7 @@ export default function DashboardHome() {
 
       {/* Chart */}
       <div className="col-span-12 lg:col-span-8 row-span-4">
-        <Panel title="Signal Metrics" hint="7 day trail" icon={BarChart3}>
+        <Panel title="Call Volume" hint="7-day trend" icon={BarChart3}>
           <div className="h-full w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData} margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
@@ -283,7 +283,7 @@ export default function DashboardHome() {
   const Brief = (
     <div className="h-full grid grid-cols-12 gap-3">
       <div className="col-span-12 lg:col-span-7 h-full overflow-hidden">
-        <Panel title="Daily Brief" hint="Claude Atelier" icon={Sparkles} scroll>
+        <Panel title="Daily Brief" hint="AI Summary" icon={Sparkles} scroll>
           <DailyBrief />
         </Panel>
       </div>
@@ -299,8 +299,8 @@ export default function DashboardHome() {
     <div className="h-full grid grid-cols-12 gap-3">
       <div className="col-span-12 lg:col-span-7 h-full">
         <Panel
-          title="High-Intent Signals"
-          hint={`${hotLeads.length} hot`}
+          title="Hot Leads"
+          hint={`${hotLeads.length} pending`}
           icon={Target}
           scroll
           flush
@@ -336,14 +336,14 @@ export default function DashboardHome() {
           ) : (
             <div className="h-full flex flex-col items-center justify-center gap-2 text-muted/50">
               <Radio className="w-8 h-8 opacity-30 animate-pulse" />
-              <p className="text-[9px] uppercase tracking-[0.5em]">Sector silence</p>
+              <p className="text-[9px] uppercase tracking-[0.5em]">No leads yet</p>
             </div>
           )}
         </Panel>
       </div>
 
       <div className="col-span-12 lg:col-span-5 h-full grid grid-rows-2 gap-3">
-        <Panel title="Live Relay" hint="WebSocket" icon={Signal} scroll flush>
+        <Panel title="Active Calls" hint="WebSocket" icon={Signal} scroll flush>
           {activeSignals.length > 0 ? (
             <ul className="divide-y divide-white/5">
               {activeSignals.map((sig: any, idx: number) => (
@@ -364,7 +364,7 @@ export default function DashboardHome() {
             </ul>
           ) : (
             <div className="h-full flex items-center justify-center">
-              <p className="text-[9px] uppercase tracking-[0.5em] text-muted/50">No live carriers</p>
+              <p className="text-[9px] uppercase tracking-[0.5em] text-muted/50">No active calls</p>
             </div>
           )}
         </Panel>
@@ -379,7 +379,7 @@ export default function DashboardHome() {
     <div className="h-full grid grid-cols-12 gap-3">
       <div className="col-span-12 lg:col-span-8 h-full">
         <Panel
-          title="Recent Signals"
+          title="Recent Calls"
           hint={`${recentLogs.length} captured`}
           icon={Mic}
           scroll
@@ -392,7 +392,7 @@ export default function DashboardHome() {
         >
           {recentLogs.length === 0 ? (
             <div className="h-full flex items-center justify-center">
-              <p className="text-[9px] uppercase tracking-[0.5em] text-muted/40">Idle signal state</p>
+              <p className="text-[9px] uppercase tracking-[0.5em] text-muted/40">No calls yet</p>
             </div>
           ) : (
             <ul className="divide-y divide-white/5">
@@ -423,7 +423,7 @@ export default function DashboardHome() {
         </Panel>
       </div>
       <div className="col-span-12 lg:col-span-4 h-full">
-        <Panel title="Trigger Feed" hint="Live activity" icon={Activity} scroll>
+        <Panel title="Activity Feed" hint="Live activity" icon={Activity} scroll>
           <TriggerIntelligenceFeed activity={systemActivity} />
         </Panel>
       </div>
@@ -433,8 +433,8 @@ export default function DashboardHome() {
   return (
     <PageShell
       eyebrow={`Today · ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}`}
-      title="Command Atlas"
-      subtitle="Live tactical oversight of autonomous agent dispersion"
+      title="Dashboard"
+      subtitle="Live overview of your agents and activity"
       actions={
         <>
           {highPriorityTasks.length > 0 && (

@@ -15,7 +15,7 @@ export default function AgentTraining() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "HUB CONNECTION ESTABLISHED. I am the Wireline Neural Liaison. Provide tactical directives or background intelligence to calibrate your fleet."
+      content: "Connected. Send instructions or background information to train your agent."
     }
   ]);
   const [input, setInput] = useState("");

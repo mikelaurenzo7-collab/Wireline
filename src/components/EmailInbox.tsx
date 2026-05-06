@@ -145,15 +145,15 @@ export default function EmailInbox() {
 
   return (
     <PageShell
-      title="Inbound Email"
-      eyebrow="Signal · Inbox"
-      subtitle={`${threads.length} thread${threads.length === 1 ? '' : 's'} routed to the relay.`}
+      title="Email"
+      eyebrow="Communications · Email"
+      subtitle={`${threads.length} thread${threads.length === 1 ? '' : 's'} in your inbox.`}
       actions={syncAction}
     >
       <div className="h-full flex flex-col lg:flex-row gap-3 min-h-0">
         {/* Thread list */}
         <Panel
-          title="threads"
+          title="Threads"
           hint="ALL CONVERSATIONS"
           icon={Inbox}
           scroll
@@ -234,7 +234,7 @@ export default function EmailInbox() {
 
         {/* Detail */}
         <Panel
-          title={selectedThread ? "thread" : "select a thread"}
+          title={selectedThread ? "Thread" : "Select a thread"}
           hint={selectedThread ? "DETAIL" : "INBOX"}
           icon={Mail}
           flush

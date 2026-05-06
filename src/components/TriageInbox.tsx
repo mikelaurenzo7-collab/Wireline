@@ -51,8 +51,8 @@ export default function TriageInbox() {
   return (
     <PageShell
       eyebrow={`Today's Inbox · ${totalAttention} items`}
-      title="Needs Attention"
-      subtitle="Hot leads, compliance flags, knowledge gaps, open tasks, and escalations — surfaced in one place"
+      title="Triage"
+      subtitle="Hot leads, compliance flags, knowledge gaps, open tasks, and escalations."
       actions={
         <>
           <CsvExportButton type="tasks" label="CSV" />

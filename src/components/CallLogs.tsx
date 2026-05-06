@@ -96,17 +96,17 @@ export default function CallLogs() {
 
   return (
     <PageShell
-      eyebrow="Signal Channels · Voice"
-      title="Voice Archive"
-      subtitle="Carrier signal threads and tactical fleet responses"
+      eyebrow="Communications · Voice"
+      title="Call Logs"
+      subtitle="Recorded calls and agent responses"
       actions={actions}
     >
       <div className="h-full grid grid-cols-12 gap-3">
         {/* List pane */}
         <div className="col-span-12 lg:col-span-5 xl:col-span-4 h-full">
           <Panel
-            title={`${filteredCalls.length} signals`}
-            hint={loading ? "Loading…" : "Archive"}
+            title={`${filteredCalls.length} calls`}
+            hint={loading ? "Loading…" : "All calls"}
             icon={Database}
             scroll
             flush
@@ -180,9 +180,9 @@ export default function CallLogs() {
         {/* Detail pane */}
         <div className="col-span-12 lg:col-span-7 xl:col-span-8 h-full">
           {selectedCall ? <CallDetail call={selectedCall} formatDuration={formatDuration} /> : (
-            <Panel title="Detail" hint="Select a signal" icon={FileText}>
+            <Panel title="Call Detail" hint="Select a call" icon={FileText}>
               <div className="h-full flex items-center justify-center text-muted/60 text-[10px] uppercase tracking-[0.5em]">
-                Awaiting selection
+                Select a call to view details
               </div>
             </Panel>
           )}

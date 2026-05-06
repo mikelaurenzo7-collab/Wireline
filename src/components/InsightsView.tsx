@@ -24,9 +24,9 @@ export default function InsightsView() {
 
   return (
     <PageShell
-      eyebrow="Deep Analytics · Business Intelligence"
+      eyebrow="Analytics · Business Intelligence"
       title="Insights"
-      subtitle="Funnel, topic clusters, time heatmaps, leaderboards, and clustered failure modes"
+      subtitle="Funnel analysis, topic clusters, heatmaps, leaderboards, and failure modes."
       actions={
         <>
           <select
