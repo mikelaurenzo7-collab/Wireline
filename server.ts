@@ -441,6 +441,43 @@ async function claudeRateLimiter(req: any, res: any, next: any) {
   next();
 }
 
+async function emailRateLimiter(req: any, res: any, next: any) {
+  const userId = req.user?.id;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  const result = await rateLimit(userId, {
+    bucket: "email",
+    windowMs: EMAIL_RATE_WINDOW_MS,
+    max: EMAIL_RATE_MAX,
+  });
+
+  res.setHeader("X-RateLimit-Limit", String(EMAIL_RATE_MAX));
+  res.setHeader("X-RateLimit-Remaining", String(result.remaining));
+
+  if (!result.allowed) {
+    // Audit log: email rate limit exceeded
+    void auditLogger.logSecurity('rate_limit_exceeded', {
+      userId,
+      resource: 'email_api',
+      ip: req.ip,
+      metadata: { limit: EMAIL_RATE_MAX }
+    }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
+
+    // Track email rate limiting in Sentry
+    SentryEvents.rateLimited({
+      endpoint: '/api/emails',
+      user_id: userId,
+    });
+
+    res.setHeader("Retry-After", String(Math.ceil(result.resetMs / 1000)));
+    return res.status(429).json({
+      error: `Rate limit exceeded — ${EMAIL_RATE_MAX} email operations per minute. Please slow down.`,
+      code: "EMAIL_RATE_LIMIT",
+    });
+  }
+  next();
+}
+
 // Apply performance monitoring to critical API paths
 app.use("/api", performanceMonitoring(2000));
 
@@ -464,6 +501,10 @@ app.use(["/api/train/extract", "/api/agents/:id/optimize"], (req: any, res: any,
 // ────────────────────────────────────────────────────────────────────
 const OAUTH_RATE_WINDOW_MS = 5 * 60_000;
 const OAUTH_RATE_MAX = 10;
+
+// Email operation rate limiting — prevents spam and API quota exhaustion
+const EMAIL_RATE_WINDOW_MS = 60_000; // 1 minute
+const EMAIL_RATE_MAX = 20; // 20 email operations per minute per user
 
 function oauthRateLimiter(req: any, res: any, next: any) {
   const key = req.ip || "anon";
@@ -6295,7 +6336,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-app.post("/api/emails/threads/:id/reply", authenticateUser, async (req: any, res: any) => {
+app.post("/api/emails/threads/:id/reply", authenticateUser, emailRateLimiter, async (req: any, res: any) => {
    try {
       const validation = parseFormData(EmailReplySchema, {
         body: req.body.body,
@@ -6368,7 +6409,7 @@ app.post("/api/emails/threads/:id/reply", authenticateUser, async (req: any, res
    }
 });
 
-app.post("/api/emails/draft", authenticateUser, async (req: any, res: any) => {
+app.post("/api/emails/draft", authenticateUser, emailRateLimiter, async (req: any, res: any) => {
   try {
      const validation = parseFormData(EmailDraftSchema, {
        subject: req.body.subject,
