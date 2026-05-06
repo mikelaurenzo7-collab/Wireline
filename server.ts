@@ -1313,7 +1313,7 @@ Never interpret silence as rejection or disinterest. Silence often means the cal
 - Objection memory: When a caller raises an objection you address and they acknowledge, do NOT re-raise it later. Each objection is resolved once, then set aside.
 
 ## TOOL USE MANDATES
-ESCALATION (use 'escalate_to_human' tool when ANY of these apply):
+ESCALATION (use 'escalate_to_human' tool when ANY of these apply — ALWAYS include a "reason"):
 1. Caller explicitly asks for a human or supervisor — honor it after the second request.
 2. Profanity, verbal abuse, or clear emotional crisis from the caller.
 3. Legal or liability language is used ("I'm going to sue," "my lawyer said").
@@ -1545,11 +1545,40 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
 
       // TOOL 3: ESCALATE TO HUMAN
       if (toolCall.function.name === "escalate_to_human") {
-         const dest = agent?.transfer_phone || "the front office";
-         results.push({
-           toolCallId: toolCall.id,
-           result: `Please say: 'I am transferring you to ${dest} now, please hold on.' Then, simulate the hold process.`
-         });
+        try {
+          const { reason } = toolCall.function.arguments;
+          if (!reason) {
+            log.warn("Vapi tool: escalate_to_human called without reason — schema violation", { agentId: webhookAgentId });
+          }
+          const dest = agent?.transfer_phone || "the front office";
+          const customerPhone = payload.call?.customer?.number || message.call?.customer?.number || "Unknown";
+
+          // Log the escalation as a high-priority fleet task so operators see it immediately.
+          await db.from('wireline_fleet_tasks').insert({
+            user_id: agent?.user_id,
+            agent_id: webhookAgentId,
+            task_type: 'escalation',
+            description: `[ESCALATION] Caller ${customerPhone} — ${reason || "No reason provided"}. Transferring to: ${dest}`,
+            source_type: 'phone_call',
+            source_id: message.call?.id || payload.call?.id || "in-call",
+            target_channel: 'manual',
+            priority: 'high',
+            status: 'pending',
+          }).then(undefined, (e: any) => {
+            log.warn("Vapi tool: escalate_to_human fleet task insert failed", { error: e?.message });
+          });
+
+          results.push({
+            toolCallId: toolCall.id,
+            result: `Say: "I completely understand — I'm connecting you with ${dest} right now. Please hold for just a moment." Then remain on the line, politely acknowledge them, and allow the transfer to complete. Do not end the call yourself.`,
+          });
+        } catch {
+          const dest = agent?.transfer_phone || "the front office";
+          results.push({
+            toolCallId: toolCall.id,
+            result: `Say: "I'm connecting you with ${dest} right now. Please hold for just a moment." Remain on the line and allow the transfer to complete.`,
+          });
+        }
       }
 
       // TOOL 4: ROUTING HANDOFF (PHONE -> EMAIL)
@@ -1695,18 +1724,26 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
              continue;
            }
            const { data: leads } = await db.from('wireline_outbound_leads')
-             .select('name, status, last_contact_summary')
+             .select('name, status, email, customer_number, last_contact_summary, context')
              .or(`name.ilike.%${safeQuery}%,email.ilike.%${safeQuery}%,customer_number.ilike.%${safeQuery}%`)
              .eq('user_id', agent?.user_id)
              .limit(3);
            
            if (leads && leads.length > 0) {
-              results.push({ toolCallId: toolCall.id, result: `Found matching intelligence: ${leads.map(l => `${l.name} (${l.status}): ${l.last_contact_summary || 'No prior notes'}`).join('; ')}` });
+              const summaries = leads.map(l => {
+                const parts = [`${l.name} (${l.status})`];
+                if (l.email) parts.push(`Email: ${l.email}`);
+                if (l.customer_number) parts.push(`Phone: ${l.customer_number}`);
+                if (l.last_contact_summary) parts.push(`Last contact: ${l.last_contact_summary}`);
+                if (l.context) parts.push(`Notes: ${l.context.slice(0, MAX_CONTEXT_PREVIEW_LENGTH)}`);
+                return parts.join(' | ');
+              });
+              results.push({ toolCallId: toolCall.id, result: `Found ${leads.length} matching record(s):\n${summaries.join('\n')}` });
            } else {
-              results.push({ toolCallId: toolCall.id, result: "No matching lead profiles found in current sector." });
+              results.push({ toolCallId: toolCall.id, result: "No matching lead profiles found. This may be a new contact." });
            }
         } catch (e) {
-           results.push({ toolCallId: toolCall.id, result: "Intelligence database is currently unreachable." });
+           results.push({ toolCallId: toolCall.id, result: "Lead database is currently unreachable." });
         }
       }
 
@@ -1887,17 +1924,20 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
             next_step_agreed ? `Next step: ${next_step_agreed}`    : null,
           ].filter(Boolean).join(" | ");
 
-          // Update outbound lead context if this is an outbound call.
+          // Update outbound lead context for ANY call (inbound or outbound) where the
+          // caller's phone matches a lead in the CRM — so profile intel persists for
+          // all future outbound attempts to this number too.
           const safePhone = sanitizePhone(customerPhone);
           if (safePhone) {
             const { data: existingLead } = await db
               .from('wireline_outbound_leads')
               .select('id, context')
               .eq('customer_number', safePhone)
-              .eq('agent_id', webhookAgentId)
-              .not('status', 'in', ['Completed', 'Blocked-DNC'])
+              .eq('user_id', agent?.user_id)
+              .not('status', 'in', ['Blocked-DNC'])
+              .order('created_at', { ascending: false })
               .limit(1)
-              .single();
+              .maybeSingle();
 
             if (existingLead) {
               const existing = existingLead.context ? `${existingLead.context}\n` : "";
@@ -2107,11 +2147,13 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
               });
             }
 
-            // 6. Update outbound lead status if applicable.
+            // 6. Update outbound lead status if applicable — but preserve meaningful
+            //    in-call statuses (voicemail left, callback scheduled) set by tool handlers.
             await db.from('wireline_outbound_leads').update({
               status: 'Completed',
               last_called_at: new Date(),
-            }).eq('call_id', call?.id);
+            }).eq('call_id', call?.id)
+              .not('status', 'in', PRESERVED_LEAD_STATUSES);
 
             // 7. Outbound webhook events
             const callPayload = {
@@ -2168,7 +2210,8 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
              await db.from('wireline_outbound_leads').update({
                status: "Completed",
                last_called_at: new Date()
-             }).eq('call_id', call?.id);
+             }).eq('call_id', call?.id)
+               .not('status', 'in', PRESERVED_LEAD_STATUSES);
 
              try {
                 const lessonPrompt = `Identify exactly ONE tactical improvement for this agent. JSON ONLY: { "lesson": "string" }. Transcript: ${message.transcript}`;
@@ -2215,11 +2258,13 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
           }
         }
         
-        // If it was outbound, let's update the lead status
+        // Safety net: if both pipelines skipped (e.g. no transcript), still mark
+        // the lead completed — but preserve meaningful in-call statuses.
         if (call?.type === "outboundPhoneCall") {
            await db.from('wireline_outbound_leads')
-             .update({ status: 'Completed' })
-             .eq('call_id', call?.id);
+             .update({ status: 'Completed', last_called_at: new Date() })
+             .eq('call_id', call?.id)
+             .not('status', 'in', PRESERVED_LEAD_STATUSES);
         }
 
         return res.json({ success: true });
@@ -2562,6 +2607,13 @@ const KNOWLEDGE_GAP_PREFIX = "[KNOWLEDGE GAP]";
  *  slots carry actionable coaching notes, not operator-review items. */
 const MAX_RUNTIME_LESSONS = 5;
 
+/** Lead statuses set by in-call tool handlers that must never be overwritten by
+ *  the end-of-call Completed update — they carry meaningful outcome signals. */
+const PRESERVED_LEAD_STATUSES = '("Voicemail-Left","Callback-Scheduled","Blocked-DNC")';
+
+/** Max characters of lead context/notes shown in search_leads results. */
+const MAX_CONTEXT_PREVIEW_LENGTH = 200;
+
 /** Sentiment keyword arrays — defined at module scope to avoid per-request allocation. */
 const SENTIMENT_ANGRY_SIGNALS = [
   "angry", "furious", "terrible", "horrible", "ridiculous", "unacceptable",
@@ -2693,8 +2745,17 @@ const VAPI_TOOL_DEFS = {
   },
   escalate_to_human: {
     name: "escalate_to_human",
-    description: "Transfers the call to a human. Use if the caller is very upset, asks for a real person more than once, or the issue is beyond your authority.",
-    parameters: { type: "object", properties: {}, required: [] },
+    description: "Transfers the call to a human agent. Use if the caller is very upset, asks for a real person more than once, the issue is beyond your authority, or legal/liability language is used.",
+    parameters: {
+      type: "object",
+      properties: {
+        reason: {
+          type: "string",
+          description: "Brief reason for the escalation (e.g. 'Caller requested a supervisor', 'Legal threat — needs manager', 'Complex billing dispute beyond agent authority'). Used to brief the human agent taking the call.",
+        },
+      },
+      required: ["reason"],
+    },
   },
   create_fleet_task: {
     name: "create_fleet_task",
@@ -4591,7 +4652,7 @@ async function placeOutboundCall(opts: {
   const outboundRawProfileDesc = (outboundCapturedProfile as any)?.data?.description || "";
   const outboundCustomerIntelBlock = buildCustomerIntelBlock(outboundRawProfileDesc, true);
 
-  const currentDateTime = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
+  const currentDateTime = new Date().toLocaleString('en-US', { timeZone: 'America/New_York', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   // Derive archetype and temperature from the agent's role using the shared helper.
   const outboundAgentRole = agentConfig?.data?.role || DEFAULT_AGENT_ROLE;
   const archetype = OUTBOUND_ARCHETYPE_BY_ROLE[outboundAgentRole] || agentConfig?.data?.archetype || 'The Closer';
@@ -4657,6 +4718,7 @@ Today is ${currentDateTime} (Eastern Time). Calculate specific dates for "tomorr
 
 ## TOOL MANDATES
 - Voicemail: Use leave_voicemail tool IMMEDIATELY when you reach an answering machine. Do not start speaking first.
+- Escalation: If the contact asks for a human/supervisor (second request) or uses legal/liability language, use escalate_to_human tool with a clear "reason" describing why. Never escalate without stating the reason.
 - Callback scheduling: If the contact asks to be called back at a specific time, use schedule_callback tool immediately. Calculate the exact ISO datetime from what they say and confirm it back to them. "Perfect — I have you down for [exact time]. You'll hear from me then."
 - Email follow-up: If the contact wants information sent: use send_email tool. "I'll send that to you right now — what email?"
 - Lead outcome: Use update_lead_status at the END of every live call — never leave the outcome unlogged.
@@ -4709,8 +4771,8 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
       },
       recordingEnabled: true,
       voice: {
-        provider: agentConfig?.data?.voice_provider || "11labs",
-        voiceId: agentConfig?.data?.voice_id || "bIHbv24MWmeRgasZH58o",
+        provider: agentConfig?.data?.voice_provider_outbound || agentConfig?.data?.voice_provider || "11labs",
+        voiceId: agentConfig?.data?.voice_id_outbound || agentConfig?.data?.voice_id || "bIHbv24MWmeRgasZH58o",
       },
     },
   };
