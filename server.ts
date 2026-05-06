@@ -1,3 +1,18 @@
+import dotenv from "dotenv";
+dotenv.config();
+
+// Sentry must be imported and initialized BEFORE other modules so its
+// instrumentation can wrap http/express. Graceful no-op when SENTRY_DSN is unset.
+import * as Sentry from "@sentry/node";
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV || "development",
+    tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE ?? 0.1),
+    release: process.env.VERCEL_GIT_COMMIT_SHA || undefined,
+  });
+}
+
 import express from "express";
 import cors from "cors";
 import path from "path";
@@ -6,12 +21,10 @@ import { SchemaType } from "@google/generative-ai";
 import { createClient } from "@supabase/supabase-js";
 import { google } from "googleapis";
 import Stripe from "stripe";
-import dotenv from "dotenv";
 import { randomUUID } from "node:crypto";
 import * as claudeBrain from "./src/lib/claude-brain";
 import { AuditLogger } from "./src/lib/audit-logger";
-
-dotenv.config();
+import { rateLimit, isRedisConfigured, startMemoryCleanup } from "./src/lib/rate-limit";
 
 // ────────────────────────────────────────────────────────────────────
 //  Sanitization for audit logs — redacts sensitive fields like API keys,
@@ -118,6 +131,13 @@ function validateStartupEnv() {
   if (!process.env.ANTHROPIC_API_KEY) recommended.push("ANTHROPIC_API_KEY");
   if (!process.env.VAPI_WEBHOOK_SECRET) recommended.push("VAPI_WEBHOOK_SECRET");
   if (!process.env.APP_URL) recommended.push("APP_URL");
+  // CORS_ORIGINS in prod: cross-origin browser requests will fail without it
+  // (the cors middleware rejects unknown origins). APP_URL is auto-added to
+  // the allowlist if set, so this is only a hard requirement when serving
+  // API + frontend from different origins.
+  if (IS_PROD && !process.env.CORS_ORIGINS && !process.env.APP_URL) {
+    recommended.push("CORS_ORIGINS");
+  }
 
   if (missing.length) {
     if (IS_PROD) {
@@ -351,103 +371,97 @@ app.get("/api/health", healthRateLimiter, async (_req, res) => {
 //
 //  Claude Opus 4.7 is expensive ($5/M input, $25/M output). A single
 //  user accidentally hammering an endpoint (or a rogue script) could
-//  rack up real $$. Cap at 60 requests / minute / user. Uses a
-//  rolling 60-second window in-memory — fine for single-process
-//  deployment; swap to Redis if you go multi-region.
+//  rack up real $$. Cap at 60 requests / minute / user.
+//
+//  Uses Upstash Redis when UPSTASH_REDIS_REST_URL is set (required for
+//  serverless / multi-region). Falls back to per-process memory otherwise.
+//  At boot, log which mode we're in so operators know.
 // ────────────────────────────────────────────────────────────────────
-const claudeRateLimit = new Map<string, number[]>();
 const CLAUDE_RATE_WINDOW_MS = 60_000;
 const CLAUDE_RATE_MAX = 60;
+
+if (isRedisConfigured()) {
+  log.info("Rate limiter: Upstash Redis (distributed)");
+} else if (IS_PROD) {
+  log.warn("Rate limiter: in-memory only — set UPSTASH_REDIS_REST_URL for distributed limits in production");
+} else {
+  log.info("Rate limiter: in-memory (dev mode)");
+}
+
+// Start the in-memory bucket janitor so the fallback Map doesn't leak
+// memory in long-lived deployments.
+startMemoryCleanup();
 
 // Reusable per-user rate-limiter for any endpoint that calls Claude.
 // Keys by Bearer token (available before authenticateUser runs); falls
 // back to IP so unauthenticated edge cases are still covered.
-function claudeRateLimiter(req: any, res: any, next: any) {
+async function claudeRateLimiter(req: any, res: any, next: any) {
   const token = req.headers.authorization?.split(" ")[1];
   const key = token || req.ip || "anon";
-  const now = Date.now();
-  const hits = (claudeRateLimit.get(key) || []).filter((t: number) => now - t < CLAUDE_RATE_WINDOW_MS);
-  if (hits.length >= CLAUDE_RATE_MAX) {
-    // Audit log: rate limit exceeded (non-blocking, synchronous)
-    // Don't do async user lookup here — causes unbounded work under attack.
-    // Accept we don't have userId at this point; log with available data.
+  const result = await rateLimit(key, {
+    bucket: "claude",
+    windowMs: CLAUDE_RATE_WINDOW_MS,
+    max: CLAUDE_RATE_MAX,
+  });
+  res.setHeader("X-RateLimit-Limit", String(CLAUDE_RATE_MAX));
+  res.setHeader("X-RateLimit-Remaining", String(result.remaining));
+  if (!result.allowed) {
+    // Audit log: rate limit exceeded (non-blocking).
     void auditLogger.logSecurity('rate_limit_exceeded', {
       userId: undefined,
       resource: 'claude_api',
       ip: req.ip,
       userAgent: req.get('user-agent'),
-      metadata: { 
-        requests: hits.length, 
-        limit: CLAUDE_RATE_MAX,
-        hasToken: !!token
-      }
+      metadata: { limit: CLAUDE_RATE_MAX, hasToken: !!token }
     }).catch((err: any) => log.warn('audit log failed', { error: err?.message }));
-    
-    res.setHeader("Retry-After", "60");
+
+    res.setHeader("Retry-After", String(Math.ceil(result.resetMs / 1000)));
     return res.status(429).json({
       error: `Rate limit exceeded — ${CLAUDE_RATE_MAX} requests per minute. Slow down.`,
       code: "CLAUDE_RATE_LIMIT",
     });
   }
-  hits.push(now);
-  claudeRateLimit.set(key, hits);
   next();
 }
 
 app.use("/api/claude", (req: any, res: any, next: any) => {
   // Status endpoint is exempt — used by clients to probe availability.
   if (req.path === "/status") return next();
-  claudeRateLimiter(req, res, next);
+  claudeRateLimiter(req, res, next).catch(next);
 });
 
 // Extend Claude rate limiting to non-/api/claude/* endpoints that also
 // make Claude calls so they share the same per-user budget.
-app.use(["/api/train/extract", "/api/agents/:id/optimize"], claudeRateLimiter);
-
-// Keep the rate-limit map from growing forever — purge stale buckets every
-// 5 minutes. Cheap operation; map rarely has more than a few hundred keys.
-setInterval(() => {
-  const cutoff = Date.now() - CLAUDE_RATE_WINDOW_MS * 2;
-  for (const [k, hits] of claudeRateLimit) {
-    const fresh = hits.filter((t: number) => t > cutoff);
-    if (fresh.length === 0) claudeRateLimit.delete(k);
-    else claudeRateLimit.set(k, fresh);
-  }
-}, 5 * 60 * 1000).unref?.();
+app.use(["/api/train/extract", "/api/agents/:id/optimize"], (req: any, res: any, next: any) => {
+  claudeRateLimiter(req, res, next).catch(next);
+});
 
 // ────────────────────────────────────────────────────────────────────
 //  IP-based rate limit for unauthenticated OAuth initiation.
 //  Prevents a crawler from generating unlimited Google OAuth flows.
 //  10 requests per 5 minutes per IP is generous for legitimate use.
+//  Uses the same Redis-backed limiter as Claude (see src/lib/rate-limit).
 // ────────────────────────────────────────────────────────────────────
-const oauthRateLimit = new Map<string, number[]>();
 const OAUTH_RATE_WINDOW_MS = 5 * 60_000;
 const OAUTH_RATE_MAX = 10;
 
 function oauthRateLimiter(req: any, res: any, next: any) {
   const key = req.ip || "anon";
-  const now = Date.now();
-  const hits = (oauthRateLimit.get(key) || []).filter((t: number) => now - t < OAUTH_RATE_WINDOW_MS);
-  if (hits.length >= OAUTH_RATE_MAX) {
-    res.setHeader("Retry-After", String(Math.ceil(OAUTH_RATE_WINDOW_MS / 1000)));
-    return res.status(429).json({
-      error: "Too many OAuth requests. Please wait before trying again.",
-      code: "OAUTH_RATE_LIMIT",
-    });
-  }
-  hits.push(now);
-  oauthRateLimit.set(key, hits);
-  next();
+  rateLimit(key, {
+    bucket: "oauth",
+    windowMs: OAUTH_RATE_WINDOW_MS,
+    max: OAUTH_RATE_MAX,
+  }).then((result) => {
+    if (!result.allowed) {
+      res.setHeader("Retry-After", String(Math.ceil(result.resetMs / 1000)));
+      return res.status(429).json({
+        error: "Too many OAuth requests. Please wait before trying again.",
+        code: "OAUTH_RATE_LIMIT",
+      });
+    }
+    next();
+  }).catch(next);
 }
-
-setInterval(() => {
-  const cutoff = Date.now() - OAUTH_RATE_WINDOW_MS * 2;
-  for (const [k, hits] of oauthRateLimit) {
-    const fresh = hits.filter((t: number) => t > cutoff);
-    if (fresh.length === 0) oauthRateLimit.delete(k);
-    else oauthRateLimit.set(k, fresh);
-  }
-}, 10 * 60 * 1000).unref?.();
 
 // Initialize AI and DB
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
@@ -9499,6 +9513,11 @@ app.use((err: any, req: express.Request, res: express.Response, _next: express.N
     error: err?.message || String(err),
     stack: err?.stack,
   });
+  if (process.env.SENTRY_DSN) {
+    Sentry.captureException(err, {
+      tags: { requestId: (res as any).locals?.requestId, path: req.path, method: req.method },
+    });
+  }
   res.status(500).json({ error: 'Internal Server Error', requestId: (res as any).locals?.requestId });
 });
 
@@ -9565,9 +9584,17 @@ process.on("unhandledRejection", (reason: any) => {
     error: reason?.message || String(reason),
     stack: reason?.stack,
   });
+  if (process.env.SENTRY_DSN) {
+    Sentry.captureException(reason instanceof Error ? reason : new Error(String(reason)));
+  }
 });
 process.on("uncaughtException", (err: Error) => {
   log.error("uncaughtException", { error: err.message, stack: err.stack });
+  if (process.env.SENTRY_DSN) {
+    Sentry.captureException(err);
+    // Give Sentry up to 2s to flush before we exit.
+    Sentry.close(2000).catch(() => {});
+  }
   // Best practice: process is in an unknown state — exit so the
   // platform's restart policy boots us fresh. Skipped on Vercel where
   // each invocation is its own process.

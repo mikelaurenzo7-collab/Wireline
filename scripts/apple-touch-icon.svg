@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 180 180">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="180" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#0AC8D4"/>
+      <stop offset="50%"  stop-color="#9B59F5"/>
+      <stop offset="100%" stop-color="#E040C0"/>
+    </linearGradient>
+  </defs>
+  <!-- iOS adds its own corner-rounding mask, but include a square fill so it
+       looks correct on Android home screens too -->
+  <rect width="180" height="180" fill="url(#g)"/>
+  <path d="M40 115 Q70 70 90 115 Q110 160 140 115" stroke="white" stroke-width="13" stroke-linecap="round" fill="none"/>
+  <path d="M50 80 Q72 50 90 80 Q108 110 130 80" stroke="white" stroke-width="11" stroke-linecap="round" fill="none" opacity="0.75"/>
+  <path d="M60 50 Q75 30 90 50 Q105 70 120 50" stroke="white" stroke-width="10" stroke-linecap="round" fill="none" opacity="0.5"/>
+</svg>

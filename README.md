@@ -99,7 +99,24 @@ npm run dev
    - All `/api/*` requests route to the serverless function; everything else is served from the CDN.
 5. **Google OAuth redirect URI** — if using Gmail integration, register `https://YOUR_APP_URL/api/oauth/google/callback` in your Google Cloud Console OAuth client.
 6. **Stripe webhook endpoint** — register `https://YOUR_APP_URL/api/stripe-webhook` in the Stripe dashboard and paste the signing secret into `STRIPE_WEBHOOK_SECRET`.
-7. **Vapi server URL** — set your Vapi assistant's server URL to `https://YOUR_APP_URL/api/vapi-webhook`.
+7. **Vapi server URL** — set your Vapi assistant's server URL to `https://YOUR_APP_URL/api/vapi-webhook`. **Important:** set `VAPI_WEBHOOK_SECRET` to a random string and configure the same value as the assistant's `serverUrlSecret`. In production, the `/api/vapi-webhook` endpoint **rejects all requests** when `VAPI_WEBHOOK_SECRET` is unset — this prevents anonymous webhook spam from racking up Claude/Vapi spend.
+
+### Recommended for production
+
+These are *strongly* recommended for any deployment serving real traffic. Run `npm run check-prod-env` locally to see which are missing:
+
+- **`UPSTASH_REDIS_REST_URL`** + **`UPSTASH_REDIS_REST_TOKEN`** — without these, rate limits fall back to per-process in-memory state, which on Vercel's serverless functions resets every cold start (giving near-zero protection against runaway Claude spend). Free tier of Upstash is enough for most deployments.
+- **`SENTRY_DSN`** + **`VITE_SENTRY_DSN`** — backend + frontend error monitoring. Without these, exceptions only surface in Vercel's runtime logs (no alerting, no aggregation, no source maps).
+- **`CORS_ORIGINS`** — comma-separated list of origins allowed to call the API. Required when serving the API and frontend from different origins.
+- **`APP_URL`** — canonical URL for OAuth redirects and email links. Auto-derived from `VERCEL_URL` on preview deploys; set explicitly for production custom domains.
+
+### Pre-deploy check
+
+```bash
+PRODUCTION_CHECK=1 npm run check-prod-env
+```
+
+Exits 1 if required vars are missing, 2 if recommended vars are missing. Wire this into your deploy pipeline to catch misconfiguration before traffic hits.
 
 ## Environment
 

@@ -55,15 +55,28 @@ function getPasswordStrength(pw: string): PasswordStrength {
   return { score: clamped, ...meta[clamped] };
 }
 
+type AuthMode = "signin" | "signup" | "reset";
+
 export default function AuthPortal() {
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [mode, setMode] = useState<AuthMode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
+  const isSignUp = mode === "signup";
+  const isReset  = mode === "reset";
   const pwStrength = isSignUp ? getPasswordStrength(password) : null;
+
+  // Keep the existing 2-tab toggle behavior working: setIsSignUp(true|false)
+  // becomes setMode('signup'|'signin'). Reset is reached via the
+  // 'Forgot password?' link only.
+  const setIsSignUp = (v: boolean) => {
+    setMode(v ? "signup" : "signin");
+    setError(null);
+    setMessage(null);
+  };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,7 +90,14 @@ export default function AuthPortal() {
 
     setLoading(true);
     try {
-      if (isSignUp) {
+      if (isReset) {
+        // Supabase emails the user a magic link that lands on /reset-password
+        // (operator-configurable in the Supabase dashboard → Auth → URL config).
+        const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/` : undefined;
+        const { error } = await supabase.auth.resetPasswordForEmail(email, redirectTo ? { redirectTo } : undefined);
+        if (error) throw error;
+        setMessage("If that email is registered, a reset link is on its way.");
+      } else if (isSignUp) {
         const { error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
         setMessage("Check your inbox to confirm your email address.");
@@ -275,16 +295,19 @@ export default function AuthPortal() {
               {/* Header */}
               <div className="relative z-10 mb-8">
                 <h2 className="font-display italic text-3xl text-ink leading-tight mb-1">
-                  {isSignUp ? "Create account" : "Welcome back"}
+                  {isReset ? "Reset password" : isSignUp ? "Create account" : "Welcome back"}
                 </h2>
                 <p className="text-[11px] text-muted/70">
-                  {isSignUp
+                  {isReset
+                    ? "Enter your email and we'll send you a reset link."
+                    : isSignUp
                     ? "Start your 14-day free trial. No credit card required."
                     : "Sign in to your Wireline operator console."}
                 </p>
               </div>
 
-              {/* Tab toggle */}
+              {/* Tab toggle — hidden in reset mode */}
+              {!isReset && (
               <div className="relative z-10 mb-7">
                 <div className="relative flex p-1 rounded-2xl bg-black/8 border border-black/10">
                   <motion.div
@@ -315,6 +338,7 @@ export default function AuthPortal() {
                   ))}
                 </div>
               </div>
+              )}
 
               <form onSubmit={handleAuth} className="relative z-10 space-y-5">
                 {/* Email */}
@@ -339,12 +363,24 @@ export default function AuthPortal() {
                   </div>
                 </div>
 
-                {/* Password */}
+                {/* Password — hidden in reset mode */}
+                {!isReset && (
                 <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.4em] text-muted/80 flex items-center gap-1.5">
-                    <Lock className="w-3 h-3 text-brand" />
-                    Password
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] uppercase tracking-[0.4em] text-muted/80 flex items-center gap-1.5">
+                      <Lock className="w-3 h-3 text-brand" />
+                      Password
+                    </label>
+                    {!isSignUp && (
+                      <button
+                        type="button"
+                        onClick={() => { setMode("reset"); setError(null); setMessage(null); }}
+                        className="text-[9px] uppercase tracking-[0.3em] text-muted/60 hover:text-brand transition-colors"
+                      >
+                        Forgot?
+                      </button>
+                    )}
+                  </div>
                   <div className="relative group">
                     <input
                       type="password"
@@ -380,6 +416,18 @@ export default function AuthPortal() {
                     </div>
                   )}
                 </div>
+                )}
+
+                {/* Reset-mode footer — link back to sign-in */}
+                {isReset && (
+                  <button
+                    type="button"
+                    onClick={() => { setMode("signin"); setError(null); setMessage(null); }}
+                    className="text-[10px] uppercase tracking-[0.3em] text-muted/60 hover:text-brand transition-colors"
+                  >
+                    ← Back to sign in
+                  </button>
+                )}
 
                 {/* Feedback messages */}
                 <AnimatePresence mode="wait">
@@ -417,6 +465,8 @@ export default function AuthPortal() {
                 >
                   {loading ? (
                     <><Loader2 className="w-4 h-4 animate-spin" /> Connecting…</>
+                  ) : isReset ? (
+                    <><Mail className="w-4 h-4" /> Send Reset Link <ArrowRight className="w-4 h-4" /></>
                   ) : isSignUp ? (
                     <><UserPlus className="w-4 h-4" /> Create Account <ArrowRight className="w-4 h-4" /></>
                   ) : (

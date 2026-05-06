@@ -1,5 +1,6 @@
 import { Component, ErrorInfo, ReactNode } from "react";
 import { AlertOctagon, RefreshCw, Home } from "lucide-react";
+import { captureException } from "../lib/sentry";
 
 interface Props {
   children: ReactNode;
@@ -28,9 +29,9 @@ export default class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    // Surface to the console for engineering visibility. Could ship to
-    // Sentry/etc here without changing the UX.
+    // Console for engineering visibility + Sentry (no-ops when DSN unset).
     console.error("ErrorBoundary caught:", error, info);
+    captureException(error, { componentStack: info.componentStack });
   }
 
   reset = () => this.setState({ error: null });
