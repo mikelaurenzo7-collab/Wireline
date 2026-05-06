@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Mail, Send, Loader2, User, ChevronRight, Inbox, RotateCw, Bot, Phone, Terminal } from "lucide-react";
+import { Mail, Send, Loader2, User, ChevronRight, Inbox, RotateCw, Bot, Phone, Terminal, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
@@ -16,6 +16,8 @@ export default function EmailInbox() {
   const [messages, setMessages] = useState<any[]>([]);
   const [replyText, setReplyText] = useState("");
   const [isDrafting, setIsDrafting] = useState(false);
+  const [quickReplies, setQuickReplies] = useState<Array<{ label: string; body: string }>>([]);
+  const [isLoadingQuickReplies, setIsLoadingQuickReplies] = useState(false);
 
   const fetchThreads = async () => {
     try {
@@ -93,8 +95,34 @@ export default function EmailInbox() {
   };
 
   useEffect(() => {
-    if (selectedThread) fetchMessages(selectedThread.id);
+    if (selectedThread) {
+      fetchMessages(selectedThread.id);
+      setQuickReplies([]);
+    }
   }, [selectedThread?.id]);
+
+  const fetchQuickReplies = async () => {
+    if (!selectedThread) return;
+    setIsLoadingQuickReplies(true);
+    setQuickReplies([]);
+    try {
+      const res = await authFetch("/api/claude/email-quick-replies", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ threadId: selectedThread.id }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setQuickReplies(data.suggestions || []);
+      } else if (res.status === 503) {
+        toastError("Quick replies unavailable", "Claude API key not configured.");
+      }
+    } catch (e: any) {
+      toastError("Quick replies failed", e.message);
+    } finally {
+      setIsLoadingQuickReplies(false);
+    }
+  };
 
   const sendReply = async () => {
     if (!replyText.trim() || !selectedThread) return;
@@ -350,8 +378,34 @@ export default function EmailInbox() {
                 </div>
 
                 {/* Reply composer */}
-                <div className="shrink-0 px-4 py-3 border-t border-white/8 space-y-3">
-                  <div className="rounded-xl glass border border-white/10 focus-within:border-brand/40 transition-colors overflow-hidden">
+                <div className="shrink-0 px-4 py-3 border-t border-black/7 space-y-3">
+                  {/* Quick reply chips */}
+                  {(quickReplies.length > 0 || isLoadingQuickReplies) && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Zap className="w-3 h-3 text-brand" />
+                        <span className="text-[9px] uppercase tracking-[0.3em] text-muted/70">Quick replies</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {isLoadingQuickReplies ? (
+                          Array.from({ length: 3 }).map((_, i) => (
+                            <div key={i} className="h-7 w-28 rounded-full bg-black/5 animate-pulse" />
+                          ))
+                        ) : quickReplies.map((r, i) => (
+                          <button
+                            key={i}
+                            onClick={() => setReplyText(r.body)}
+                            title={r.body}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full glass border border-black/10 text-ink/70 text-[10px] tracking-wide hover:border-brand/40 hover:text-ink hover:bg-brand/5 transition-all"
+                          >
+                            <span>{r.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="rounded-xl glass border border-black/10 focus-within:border-brand/35 transition-colors overflow-hidden">
                     <div className="px-3 pt-2.5 pb-1 flex items-center gap-2 text-muted/70">
                       <Terminal className="w-3 h-3" />
                       <span className="text-[9px] uppercase tracking-[0.35em]">Compose reply</span>
@@ -369,9 +423,18 @@ export default function EmailInbox() {
                     </p>
                     <div className="flex items-center gap-2">
                       <button
+                        onClick={fetchQuickReplies}
+                        disabled={isLoadingQuickReplies}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full glass border border-black/10 text-ink text-[10px] uppercase tracking-[0.25em] hover:border-brand/35 transition-colors disabled:opacity-50"
+                        title="Generate 3 quick-reply options"
+                      >
+                        {isLoadingQuickReplies ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3 text-brand" />}
+                        Quick
+                      </button>
+                      <button
                         onClick={handleDraftAI}
                         disabled={isDrafting}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full glass border border-white/10 text-ink text-[10px] uppercase tracking-[0.25em] hover:border-brand/40 transition-colors disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full glass border border-black/10 text-ink text-[10px] uppercase tracking-[0.25em] hover:border-brand/35 transition-colors disabled:opacity-50"
                       >
                         {isDrafting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Bot className="w-3 h-3 text-brand" />}
                         AI draft

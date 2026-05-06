@@ -95,14 +95,14 @@ export default function PageShell({
 
         {/* Gradient separator line */}
         <div className="h-px" style={{
-          background: "linear-gradient(90deg, rgba(125,249,255,0.25) 0%, rgba(197,139,255,0.20) 40%, rgba(255,107,217,0.15) 70%, transparent 100%)"
+          background: "linear-gradient(90deg, rgba(10,200,212,0.20) 0%, rgba(155,89,245,0.15) 40%, rgba(224,64,192,0.10) 70%, transparent 100%)"
         }} />
       </motion.header>
 
       {/* Tab strip */}
       {tabs && tabs.length > 0 && (
         <div className="shrink-0 flex items-center gap-1 mb-4 overflow-x-auto scrollbar-hide">
-          <div className="flex items-center gap-1 p-1 rounded-2xl glass border border-white/8">
+          <div className="flex items-center gap-1 p-1 rounded-2xl glass border border-black/8">
             {tabs.map(tab => {
               const Icon = tab.icon;
               const active = tab.id === activeId;
@@ -113,8 +113,8 @@ export default function PageShell({
                   className={cn(
                     "relative shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all text-[10px] uppercase tracking-[0.22em] font-medium",
                     active
-                      ? "text-paper"
-                      : "text-muted hover:text-ink hover:bg-white/5"
+                      ? "text-white"
+                      : "text-muted hover:text-ink hover:bg-black/5"
                   )}
                 >
                   {active && (
@@ -122,8 +122,8 @@ export default function PageShell({
                       layoutId="tab-active-bg"
                       className="absolute inset-0 rounded-xl"
                       style={{
-                        background: "linear-gradient(135deg, #7DF9FF 0%, #C58BFF 55%, #FF6BD9 100%)",
-                        boxShadow: "0 4px 16px -8px rgba(125,249,255,0.6), 0 0 0 1px rgba(255,255,255,0.18) inset"
+                        background: "linear-gradient(135deg, #0AC8D4 0%, #9B59F5 55%, #E040C0 100%)",
+                        boxShadow: "0 3px 12px -6px rgba(10,200,212,0.50), 0 0 0 1px rgba(255,255,255,0.18) inset"
                       }}
                       transition={{ type: "spring", stiffness: 420, damping: 36 }}
                     />
@@ -134,7 +134,7 @@ export default function PageShell({
                     {tab.badge != null && tab.badge !== 0 && (
                       <span className={cn(
                         "ml-0.5 px-1.5 py-px rounded-full text-[8px] font-mono leading-none",
-                        active ? "bg-white/20 text-paper" : "bg-white/8 text-muted"
+                        active ? "bg-white/20 text-white" : "bg-black/8 text-muted"
                       )}>
                         {tab.badge}
                       </span>
@@ -193,11 +193,11 @@ export function Panel({
   return (
     <section
       className={cn(
-        "relative rounded-2xl glass border border-white/8 flex flex-col h-full min-h-0 overflow-hidden",
+        "relative rounded-2xl glass border border-black/8 flex flex-col h-full min-h-0 overflow-hidden",
         className
       )}
       style={{
-        boxShadow: "0 1px 0 rgba(255,255,255,0.07) inset, 0 0 0 1px rgba(125,249,255,0.04), 0 24px 72px -24px rgba(0,0,0,0.75), 0 8px 32px -12px rgba(125,249,255,0.12)"
+        boxShadow: "0 1px 0 rgba(255,255,255,0.80) inset, 0 0 0 1px rgba(10,200,212,0.03), 0 8px 32px -10px rgba(0,0,0,0.10), 0 3px 12px -4px rgba(10,200,212,0.06)"
       }}
     >
       {/* Subtle ambient glow behind header */}
@@ -213,11 +213,11 @@ export function Panel({
           <div className="flex items-center gap-2.5 min-w-0">
             {Icon && (
               <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-white/10"
+                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-black/8"
                 style={{
-                  background: `linear-gradient(135deg, ${accent}22, ${accent}08)`,
+                  background: `linear-gradient(135deg, ${accent}18, ${accent}06)`,
                   color: accent,
-                  boxShadow: `0 0 12px ${accent}30`
+                  boxShadow: `0 0 10px ${accent}20`
                 }}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -241,7 +241,7 @@ export function Panel({
       {/* Header separator */}
       {(title || actions) && (
         <div className="shrink-0 mx-4 h-px" style={{
-          background: "linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.10) 40%, rgba(255,255,255,0.04))"
+          background: "linear-gradient(90deg, rgba(0,0,0,0.04), rgba(0,0,0,0.07) 40%, rgba(0,0,0,0.03))"
         }} />
       )}
 
@@ -272,7 +272,7 @@ export function StatTile({
 }) {
   const trendPositive = trend && trend.value >= 0;
   return (
-    <div className="relative rounded-2xl glass border border-white/8 p-5 overflow-hidden card-interactive">
+    <div className="relative rounded-2xl glass border border-black/8 p-5 overflow-hidden card-interactive">
       {/* Ambient glow */}
       <div
         className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-25 blur-3xl pointer-events-none"
@@ -291,9 +291,9 @@ export function StatTile({
           </p>
           {Icon && (
             <div
-              className="w-7 h-7 rounded-lg flex items-center justify-center border border-white/8 shrink-0"
+              className="w-7 h-7 rounded-lg flex items-center justify-center border border-black/8 shrink-0"
               style={{
-                background: `linear-gradient(135deg, ${accent}20, ${accent}06)`,
+                background: `linear-gradient(135deg, ${accent}18, ${accent}06)`,
                 color: accent,
               }}
             >
