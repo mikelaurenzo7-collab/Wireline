@@ -789,3 +789,13 @@ BEGIN
     AND status NOT IN ('Completed', 'Blocked-DNC', 'Max-Attempts');
 END;
 $$;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Agent Lesson Deduplication — 2026-05-06
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Composite unique index prevents the same lesson text from appearing more than
+-- once per agent. The post-call pipeline uses this via ON CONFLICT DO NOTHING
+-- (ignoreDuplicates:true upsert) which is atomic and race-safe — no
+-- check-then-insert window.
+CREATE UNIQUE INDEX IF NOT EXISTS wireline_agent_lessons_agent_lesson_uniq
+    ON wireline_agent_lessons(agent_id, lesson);
