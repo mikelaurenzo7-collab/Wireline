@@ -129,7 +129,10 @@ function validateStartupEnv() {
 validateStartupEnv();
 
 const app = express();
-const PORT = 3000;
+// Hosting platforms (Railway, Render, Fly, Heroku) inject PORT — honor it
+// or fall back to 3000 for local dev. Without this, the platform's
+// router can't reach the bound port and health checks fail.
+const PORT = Number(process.env.PORT) || 3000;
 
 // ────────────────────────────────────────────────────────────────────
 //  CORS — locked down to an explicit allowlist via CORS_ORIGINS

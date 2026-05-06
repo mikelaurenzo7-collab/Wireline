@@ -29,6 +29,12 @@ jobs:
       - name: Build (vite + esbuild server)
         run: npm run build
 
+      - name: Server bootstrap smoke test
+        # Catches ESM/CJS extension mismatches, top-level import crashes,
+        # and missing-module errors that the bundler can't surface.
+        # Spawns dist/server.cjs, verifies /api/health responds, kills it.
+        run: npm run smoke:server
+
       - name: Production env check (informational)
         # Surfaces missing env vars in CI logs without blocking the build.
         # CI doesn't have prod secrets — the script exits 0 here so this
