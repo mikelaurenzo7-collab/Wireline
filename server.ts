@@ -2104,6 +2104,105 @@ app.get("/api/dashboard/stats", authenticateUser, async (req: any, res: any) => 
    }
 });
 
+// Performance benchmarks — compare user's stats against industry averages
+app.get("/api/dashboard/benchmarks", authenticateUser, async (req: any, res: any) => {
+  try {
+    const userId = req.user.id;
+
+    // Fetch user's actual stats for the last 30 days
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+    const [callsResult, leadsResult, agentsResult] = await Promise.all([
+      db.from('wireline_call_logs')
+        .select('duration_seconds, lead_score, intent_label, cost, qa_score')
+        .eq('user_id', userId)
+        .gte('created_at', thirtyDaysAgo),
+      db.from('wireline_outbound_leads')
+        .select('status')
+        .eq('user_id', userId)
+        .gte('created_at', thirtyDaysAgo),
+      db.from('wireline_agents')
+        .select('id')
+        .eq('user_id', userId),
+    ]);
+
+    const calls = callsResult.data || [];
+    const leads = leadsResult.data || [];
+    const agentCount = agentsResult.data?.length || 0;
+
+    // Calculate user metrics
+    const totalCalls = calls.length;
+    const avgDuration = totalCalls > 0
+      ? Math.round(calls.reduce((s: number, c: any) => s + (c.duration_seconds || 0), 0) / totalCalls)
+      : 0;
+    const hotLeadsCount = calls.filter((c: any) => (c.lead_score || 0) >= 70).length;
+    const conversionRate = totalCalls > 0 ? Math.round((hotLeadsCount / totalCalls) * 100) : 0;
+    const avgLeadScore = totalCalls > 0
+      ? Math.round(calls.reduce((s: number, c: any) => s + (c.lead_score || 0), 0) / totalCalls)
+      : 0;
+    const dialedLeads = leads.length;
+    const contactedLeads = leads.filter((l: any) => ['Completed', 'Interested', 'Callback'].includes(l.status)).length;
+    const contactRate = dialedLeads > 0 ? Math.round((contactedLeads / dialedLeads) * 100) : 0;
+
+    // Industry benchmarks (research-based averages for AI voice agents)
+    const benchmarks = {
+      call_volume: {
+        label: "Monthly Call Volume",
+        user: totalCalls,
+        benchmark: 150,
+        unit: "calls",
+        better_when: "higher",
+        tip: "Run an outbound campaign to increase volume — aim for 5-10 calls per hour per agent.",
+      },
+      avg_duration: {
+        label: "Avg Call Duration",
+        user: avgDuration,
+        benchmark: 180,
+        unit: "sec",
+        better_when: "closer",
+        tip: "Calls under 60s often indicate hang-ups. Calls over 5min may mean the agent isn't qualifying fast enough.",
+      },
+      lead_score: {
+        label: "Avg Lead Score",
+        user: avgLeadScore,
+        benchmark: 55,
+        unit: "/ 100",
+        better_when: "higher",
+        tip: "Improve lead score by refining your agent's qualification questions in Agent Training.",
+      },
+      conversion_rate: {
+        label: "Hot Lead Rate",
+        user: conversionRate,
+        benchmark: 22,
+        unit: "%",
+        better_when: "higher",
+        tip: "Hot lead rate below 10% usually means targeting issues. Review your outbound lead list quality.",
+      },
+      contact_rate: {
+        label: "Outbound Contact Rate",
+        user: contactRate,
+        benchmark: 35,
+        unit: "%",
+        better_when: "higher",
+        tip: "Contact rate improves with better timing — try calling between 10am-12pm and 4pm-6pm local time.",
+      },
+      agent_utilization: {
+        label: "Agent Utilization",
+        user: agentCount > 0 ? Math.min(100, Math.round((totalCalls / (agentCount * 100)) * 100)) : 0,
+        benchmark: 70,
+        unit: "%",
+        better_when: "higher",
+        tip: "Deploy more agents or increase your outbound campaign volume to improve utilization.",
+      },
+    };
+
+    res.json({ benchmarks, period: "30d", total_calls: totalCalls });
+  } catch (error) {
+    log.error("Benchmarks endpoint failed", { error });
+    res.status(500).json({ error: "Failed to fetch benchmarks" });
+  }
+});
+
 // ==========================================
 // 1.6 APPOINTMENTS RETRIEVAL ENDPOINT
 // ==========================================
@@ -2465,6 +2564,90 @@ app.post("/api/agents/:id/apply-role", authenticateUser, async (req: any, res: a
     res.json({ success: true, content: template });
   } catch (error) {
     res.status(500).json({ error: "Failed to apply role template" });
+  }
+});
+
+// Export agent config as JSON
+app.get("/api/agents/:id/export", authenticateUser, async (req: any, res: any) => {
+  try {
+    const agentId = req.params.id;
+    const userId = req.user.id;
+
+    const [agentRes, personalityRes, directivesRes, knowledgeRes] = await Promise.all([
+      db.from('wireline_agents').select('*').eq('id', agentId).eq('user_id', userId).single(),
+      db.from('wireline_personality').select('content').eq('agent_id', agentId).single(),
+      db.from('wireline_directives').select('content, priority').eq('agent_id', agentId).eq('user_id', userId),
+      db.from('wireline_knowledge').select('content').eq('agent_id', agentId).eq('user_id', userId),
+    ]);
+
+    if (!agentRes.data) return res.status(404).json({ error: 'Agent not found' });
+
+    const exportData = {
+      wireline_export_version: 1,
+      exported_at: new Date().toISOString(),
+      agent: {
+        name: agentRes.data.name,
+        channel: agentRes.data.channel,
+        role: agentRes.data.role,
+        personality: personalityRes.data?.content ?? '',
+        directives: (directivesRes.data ?? []).map((d: any) => ({ content: d.content, priority: d.priority })),
+        knowledge: (knowledgeRes.data ?? []).map((k: any) => k.content),
+      },
+    };
+
+    res.setHeader('Content-Disposition', `attachment; filename="${agentRes.data.name.replace(/\s+/g, '_')}_config.json"`);
+    res.setHeader('Content-Type', 'application/json');
+    res.json(exportData);
+  } catch (err) {
+    res.status(500).json({ error: 'Export failed' });
+  }
+});
+
+// Import agent config from JSON
+app.post("/api/agents/:id/import", authenticateUser, async (req: any, res: any) => {
+  try {
+    const agentId = req.params.id;
+    const userId = req.user.id;
+    const payload = req.body;
+
+    // Validate structure
+    if (!payload?.wireline_export_version || !payload?.agent) {
+      return res.status(400).json({ error: 'Invalid export file format' });
+    }
+
+    const { personality, directives, knowledge } = payload.agent;
+
+    // Replace personality
+    if (personality) {
+      await db.from('wireline_personality').upsert(
+        { agent_id: agentId, user_id: userId, content: personality },
+        { onConflict: 'agent_id' }
+      );
+    }
+
+    // Merge directives (append new ones)
+    if (Array.isArray(directives) && directives.length > 0) {
+      await db.from('wireline_directives').insert(
+        directives.map((d: any) => ({ agent_id: agentId, user_id: userId, content: d.content, priority: d.priority ?? 5 }))
+      );
+    }
+
+    // Merge knowledge (append new ones)
+    if (Array.isArray(knowledge) && knowledge.length > 0) {
+      await db.from('wireline_knowledge').insert(
+        knowledge.map((k: string) => ({ agent_id: agentId, user_id: userId, content: k }))
+      );
+    }
+
+    const imported = {
+      personality: !!personality,
+      directives: directives?.length ?? 0,
+      knowledge: knowledge?.length ?? 0,
+    };
+
+    res.json({ success: true, imported });
+  } catch (err) {
+    res.status(500).json({ error: 'Import failed' });
   }
 });
 
@@ -3352,6 +3535,97 @@ app.get("/api/settings", authenticateUser, async (req: any, res: any) => {
     res.json(data || {});
   } catch (error) {
     res.json({});
+  }
+});
+
+// User preferences endpoints
+app.get("/api/user-preferences", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { data, error } = await db
+      .from('wireline_user_preferences')
+      .select('*')
+      .eq('user_id', req.user.id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error; // PGRST116 = not found
+
+    res.json(data || {
+      user_id: req.user.id,
+      tour_completed: false,
+      onboarding_completed: false,
+      help_enabled: true,
+      keyboard_shortcuts_enabled: true,
+      preferences: {},
+    });
+  } catch (error) {
+    log.error("Failed to fetch user preferences", { error });
+    res.status(500).json({ error: "Failed to fetch preferences" });
+  }
+});
+
+app.post("/api/user-preferences", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { error } = await db
+      .from('wireline_user_preferences')
+      .upsert({
+        user_id: req.user.id,
+        ...req.body,
+        updated_at: new Date().toISOString(),
+      });
+
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (error) {
+    log.error("Failed to update user preferences", { error });
+    res.status(500).json({ error: "Failed to update preferences" });
+  }
+});
+
+// Onboarding progress endpoints
+app.get("/api/onboarding/progress", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { data, error } = await db
+      .from('wireline_onboarding_progress')
+      .select('step_id, completed, completed_at, metadata')
+      .eq('user_id', req.user.id);
+
+    if (error) throw error;
+
+    const progress = (data || []).reduce((acc, row) => {
+      acc[row.step_id] = {
+        completed: row.completed,
+        completed_at: row.completed_at,
+        metadata: row.metadata,
+      };
+      return acc;
+    }, {} as Record<string, any>);
+
+    res.json({ progress });
+  } catch (error) {
+    log.error("Failed to fetch onboarding progress", { error });
+    res.status(500).json({ error: "Failed to fetch progress" });
+  }
+});
+
+app.post("/api/onboarding/progress", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { step_id, metadata } = req.body;
+    
+    const { error } = await db
+      .from('wireline_onboarding_progress')
+      .upsert({
+        user_id: req.user.id,
+        step_id,
+        completed: true,
+        completed_at: new Date().toISOString(),
+        metadata: metadata || {},
+      });
+
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (error) {
+    log.error("Failed to update onboarding progress", { error });
+    res.status(500).json({ error: "Failed to update progress" });
   }
 });
 

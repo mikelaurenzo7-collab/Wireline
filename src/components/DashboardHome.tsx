@@ -14,6 +14,7 @@ import { cn } from "../lib/utils";
 import FleetTaskBridge from "./FleetTaskBridge";
 import TriggerIntelligenceFeed from "./TriggerIntelligenceFeed";
 import DailyBrief from "./DailyBrief";
+import PerformanceBenchmarks from "./PerformanceBenchmarks";
 import OnboardingQuickstart from "./OnboardingQuickstart";
 import PageShell, { Panel, StatTile } from "./PageShell";
 import { authFetch } from "../lib/api";
@@ -290,6 +291,11 @@ export default function DashboardHome() {
       <div className="col-span-12 lg:col-span-5 h-full overflow-hidden">
         <Panel title="Quickstart" hint="First-run" icon={Activity} scroll>
           <OnboardingQuickstart />
+        </Panel>
+      </div>
+      <div className="col-span-12 h-full overflow-hidden">
+        <Panel title="How am I doing?" hint="Performance · 30-day window" icon={TrendingUp} scroll>
+          <PerformanceBenchmarks />
         </Panel>
       </div>
     </div>

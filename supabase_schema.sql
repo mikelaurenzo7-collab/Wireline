@@ -687,3 +687,48 @@ ALTER TABLE wireline_call_logs ADD COLUMN IF NOT EXISTS qa_breakdown JSONB;
 CREATE INDEX IF NOT EXISTS wireline_call_logs_qa_score_idx
     ON wireline_call_logs(user_id, qa_score)
     WHERE qa_score IS NOT NULL;
+
+-- User preferences and journey tracking for personalized UX
+CREATE TABLE IF NOT EXISTS wireline_user_preferences (
+    user_id UUID PRIMARY KEY,
+    persona TEXT,
+    tour_completed BOOLEAN DEFAULT FALSE,
+    onboarding_completed BOOLEAN DEFAULT FALSE,
+    help_enabled BOOLEAN DEFAULT TRUE,
+    keyboard_shortcuts_enabled BOOLEAN DEFAULT TRUE,
+    preferences JSONB DEFAULT '{}',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE wireline_user_preferences ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'wireline_user_preferences' 
+        AND policyname = 'Users can manage their own preferences'
+    ) THEN
+        EXECUTE 'CREATE POLICY "Users can manage their own preferences" ON wireline_user_preferences FOR ALL USING (auth.uid() = user_id)';
+    END IF;
+END $$;
+
+-- Onboarding progress tracking
+CREATE TABLE IF NOT EXISTS wireline_onboarding_progress (
+    user_id UUID,
+    step_id TEXT,
+    completed BOOLEAN DEFAULT FALSE,
+    completed_at TIMESTAMPTZ,
+    metadata JSONB,
+    PRIMARY KEY (user_id, step_id)
+);
+
+ALTER TABLE wireline_onboarding_progress ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'wireline_onboarding_progress' 
+        AND policyname = 'Users can manage their own onboarding progress'
+    ) THEN
+        EXECUTE 'CREATE POLICY "Users can manage their own onboarding progress" ON wireline_onboarding_progress FOR ALL USING (auth.uid() = user_id)';
+    END IF;
+END $$;

@@ -6,6 +6,7 @@ import { authFetch } from "../lib/api";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import { useToast } from "../contexts/ToastContext";
 import AgentTemplates from "./AgentTemplates";
+import AgentExportImport from "./AgentExportImport";
 
 const PREMIUM_VOICES = [
   // 11labs
@@ -760,13 +761,16 @@ export default function FleetSettings() {
                             <p className="text-[10px] uppercase tracking-[0.3em] text-muted/70 mt-1">Base heuristic instructions</p>
                           </div>
                         </div>
-                        <button
-                          onClick={() => updatePersonality(agentConfig.personality)}
-                          className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-all"
-                        >
-                          <Save className="w-3.5 h-3.5" />
-                          Save
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <AgentExportImport agentId={selectedAgent.id} agentName={selectedAgent.name} />
+                          <button
+                            onClick={() => updatePersonality(agentConfig.personality)}
+                            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-all"
+                          >
+                            <Save className="w-3.5 h-3.5" />
+                            Save
+                          </button>
+                        </div>
                      </div>
                      <textarea
                        value={agentConfig.personality}
