@@ -1256,44 +1256,10 @@ app.post("/api/vapi-webhook", async (req, res) => {
       // forcing every outbound call to be a high-pressure closer. A collections
       // agent calling about a balance should not sound like a sales rep.
       const agentRole = agentConfig?.data?.role || DEFAULT_AGENT_ROLE;
-      const OUTBOUND_ARCHETYPE_BY_ROLE: Record<string, string> = {
-        sales:             'The Closer',
-        lead_qualifier:    'The Closer',
-        marketing:         'The Closer',
-        customer_service:  'The Empath',
-        technical_support: 'Support Tech',
-        collections:       'The Collector',
-        scheduler:         'Receptionist',
-        receptionist:      'Receptionist',
-      };
       const archetype = isOutbound
         ? (OUTBOUND_ARCHETYPE_BY_ROLE[agentRole] || 'The Closer')
         : (agentConfig?.data?.archetype || 'Receptionist');
-      
-      let archetypeRules = "";
-      let llmTemp = 0.4;
-      
-      switch(archetype) {
-         case 'The Closer':
-            archetypeRules = "You are a consultative closer. Lead with discovery — uncover the prospect's pain before pitching. If a lead hesitates, ask an open-ended question to surface the real objection, then address it with evidence. Offer a concrete next step (demo, proposal, decision call) in every conversation.";
-            llmTemp = 0.7;
-            break;
-         case 'Support Tech':
-            archetypeRules = "You are highly analytical, patient, and precise. You ask clarifying troubleshooting questions one at a time. You do not rush. You summarize your findings before proposing a fix, and you verify the fix worked before closing.";
-            llmTemp = 0.2;
-            break;
-         case 'The Empath':
-            archetypeRules = "If a caller sounds frustrated, your first words must be a validating statement like 'I completely hear you, that's incredibly stressful. Let me fix this for you.' You acknowledge before you fix, always.";
-            llmTemp = 0.6;
-            break;
-         case 'The Collector':
-            archetypeRules = "You are firm, professional, and fully compliant with debt collection regulations. You always verify identity before discussing account details. You present the balance factually, listen to the customer's situation, and offer payment plan options before escalating. You never threaten, never harass, and document every promise made.";
-            llmTemp = 0.3;
-            break;
-         default: // Receptionist
-            archetypeRules = "You are an expert at handling phone calls where people are often in a hurry. Never use platitudes like 'I hope you're having a wonderful day.' Get straight to the value. You are cheerful, polite, and highly efficient.";
-            llmTemp = 0.4;
-      }
+      const { rules: archetypeRules, temp: llmTemp } = getArchetypeConfig(archetype);
 
       const ambientNoiseActive = agentConfig?.data?.ambient_noise && agentConfig?.data?.ambient_noise !== 'off';
       const roleProtocol = ROLE_SPECIFIC_PROTOCOLS[agentRole] || "";
@@ -1459,10 +1425,12 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
             // Use shared sanitizePhone helper — strips wildcards and limits length.
             const safePhone = sanitizePhone(customerPhone);
 
-            // 1. Fetch last 3 call summaries
+            // 1. Fetch last 3 call summaries — scope to the sanitized phone to prevent
+            //    wildcard injection, and to this agent for access isolation.
             const { data: pastCalls } = await db.from('wireline_call_logs')
                .select('summary, intent_label, created_at')
-               .eq('customer_number', customerPhone)
+               .eq('customer_number', safePhone)
+               .eq('agent_id', webhookAgentId)
                .order('created_at', { ascending: false })
                .limit(3);
 
@@ -1716,9 +1684,17 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
       if (toolCall.function.name === "search_leads") {
         try {
            const { query } = toolCall.function.arguments;
+           // Sanitize the query to prevent LIKE wildcard injection from LLM output.
+           // Keep only characters that are valid in names, emails, and phone numbers.
+           const safeQuery = String(query || '').replace(/[^A-Za-z0-9 @.\-_+]/g, '').slice(0, 80);
+           if (!safeQuery) {
+             results.push({ toolCallId: toolCall.id, result: "No search query provided. Ask the caller for their name, email, or phone number." });
+             continue;
+           }
            const { data: leads } = await db.from('wireline_outbound_leads')
              .select('name, status, last_contact_summary')
-             .or(`name.ilike.%${query}%,email.ilike.%${query}%`)
+             .or(`name.ilike.%${safeQuery}%,email.ilike.%${safeQuery}%,customer_number.ilike.%${safeQuery}%`)
+             .eq('user_id', agent?.user_id)
              .limit(3);
            
            if (leads && leads.length > 0) {
@@ -2591,6 +2567,9 @@ const SENTIMENT_ANGRY_SIGNALS = [
   "false advertising", "wasted my time", "never again", "disgusted",
   "no one cares", "bbb complaint", "posting online", "absolutely ridiculous",
   "worst experience", "completely unacceptable", "outrageous",
+  "unbelievable", "disappointed", "been on hold", "waiting forever",
+  "third time calling", "calling back again", "no one helped", "terrible service",
+  "fed up", "done with you", "this is a joke", "get me a supervisor",
 ];
 const SENTIMENT_POSITIVE_SIGNALS = [
   "great", "wonderful", "excellent", "perfect", "love", "thank you", "thanks",
@@ -2598,6 +2577,9 @@ const SENTIMENT_POSITIVE_SIGNALS = [
   "let's move forward", "i'm interested", "send me the details", "sounds perfect",
   "let's do it", "i'll take it", "when can we start", "i'm sold", "sign me up",
   "that's exactly what i need", "makes total sense", "i'm ready", "let's go ahead",
+  "sounds great", "perfect timing", "absolutely", "you've been very helpful",
+  "i'll definitely", "book it", "yes please", "that's what i was looking for",
+  "much better", "really appreciate", "you're the best", "makes sense",
 ];
 
 /** Sanitize a phone number for safe use in LIKE patterns and DB queries.
@@ -2647,6 +2629,57 @@ function buildCustomerIntelBlock(rawDescription: string, isOutbound = false): st
   return isOutbound
     ? `## ⚡ CUSTOMER INTEL — FROM PREVIOUS CALLS\n${intel}\nUSE THIS: This contact has shared this intel before. Reference it naturally to show continuity and build immediate trust.`
     : `## ⚡ CUSTOMER INTEL — FROM PREVIOUS CALLS\n${intel}\nUSE THIS: Weave this context in naturally. It tells you what this contact cares about and where they stand.`;
+}
+
+/**
+ * Maps each agent role to the outbound archetype that best fits how that role
+ * should conduct an outbound call.  Defined at module scope so inbound and
+ * outbound assistant-request handlers share the same mapping without duplication.
+ */
+const OUTBOUND_ARCHETYPE_BY_ROLE: Record<string, string> = {
+  sales:             'The Closer',
+  lead_qualifier:    'The Closer',
+  marketing:         'The Closer',
+  customer_service:  'The Empath',
+  technical_support: 'Support Tech',
+  collections:       'The Collector',
+  scheduler:         'Receptionist',
+  receptionist:      'Receptionist',
+};
+
+/**
+ * Returns { rules, temp } for the given archetype string.
+ * Used identically by the inbound assistant-request handler (for outbound-flagged
+ * calls) and by placeOutboundCall so the archetype logic is never duplicated.
+ */
+function getArchetypeConfig(archetype: string): { rules: string; temp: number } {
+  switch (archetype) {
+    case 'The Closer':
+      return {
+        rules: "You are a consultative closer. Lead with discovery — uncover the prospect's pain before pitching. If a lead hesitates, ask an open-ended question to surface the real objection, then address it with evidence. Offer a concrete next step (demo, proposal, decision call) in every conversation.",
+        temp: 0.7,
+      };
+    case 'Support Tech':
+      return {
+        rules: "You are highly analytical, patient, and precise. You ask clarifying troubleshooting questions one at a time. You do not rush. You summarize your findings before proposing a fix, and you verify the fix worked before closing.",
+        temp: 0.2,
+      };
+    case 'The Empath':
+      return {
+        rules: "If a caller sounds frustrated, your first words must be a validating statement like 'I completely hear you, that's incredibly stressful. Let me fix this for you.' You acknowledge before you fix, always.",
+        temp: 0.6,
+      };
+    case 'The Collector':
+      return {
+        rules: "You are firm, professional, and fully compliant with debt collection regulations. You always verify identity before discussing account details. You present the balance factually, listen to the customer's situation, and offer payment plan options before escalating. You never threaten, never harass, and document every promise made.",
+        temp: 0.3,
+      };
+    default: // Receptionist
+      return {
+        rules: "You are an expert at handling phone calls where people are often in a hurry. Never use platitudes like 'I hope you're having a wonderful day.' Get straight to the value. You are cheerful, polite, and highly efficient.",
+        temp: 0.4,
+      };
+  }
 }
 
 const VAPI_TOOL_DEFS = {
@@ -2838,12 +2871,17 @@ type VapiToolName = keyof typeof VAPI_TOOL_DEFS;
 // Maps each agent role to the subset of tools it may call during a live call.
 const ROLE_TOOL_SETS: Record<string, VapiToolName[]> = {
   sales:             ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
-  customer_service:  ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "check_calendar_availability", "book_appointment", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
+  // customer_service: search_leads lets the agent pull up account history mid-call;
+  // update_lead_status ensures every interaction outcome is logged in the CRM.
+  customer_service:  ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "check_calendar_availability", "book_appointment", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
   scheduler:         ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "check_calendar_availability", "book_appointment", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
-  collections:       ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "log_payment_promise", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
-  technical_support: ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "create_support_ticket", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
+  // collections: search_leads is required to verify account details before discussing a debt (FDCPA).
+  collections:       ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "log_payment_promise", "update_lead_status", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
+  // technical_support: search_leads to pull up the customer's record; update_lead_status to log the case outcome.
+  technical_support: ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "create_support_ticket", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
   lead_qualifier:    ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
-  receptionist:      ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "check_calendar_availability", "book_appointment", "schedule_callback", "capture_customer_profile"],
+  // receptionist: leave_voicemail needed for outbound follow-up calls routed through this role.
+  receptionist:      ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "check_calendar_availability", "book_appointment", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
   marketing:         ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
 };
 
@@ -4472,6 +4510,8 @@ function buildOutboundFirstMessage(role: string, agentName: string, customerName
       return `Hi ${customer}, this is ${name}. You'd recently expressed interest in us, and I wanted to connect. Do you have 2 minutes?`;
     case "marketing":
       return `Hi ${customer}, it's ${name} — I'm reaching out because I think we have something really relevant for you. Is now an okay time?`;
+    case "receptionist":
+      return `Hi ${customer}, this is ${name} following up on your message. Do you have a quick moment?`;
     case "sales":
     default:
       return `Hi ${customer}, this is ${name} calling. I wanted to reach out personally — do you have 30 seconds?`;
@@ -4549,42 +4589,10 @@ async function placeOutboundCall(opts: {
   const outboundCustomerIntelBlock = buildCustomerIntelBlock(outboundRawProfileDesc, true);
 
   const currentDateTime = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
-  // Derive the archetype from the agent's role for outbound calls
+  // Derive archetype and temperature from the agent's role using the shared helper.
   const outboundAgentRole = agentConfig?.data?.role || DEFAULT_AGENT_ROLE;
-  const OUTBOUND_ARCHETYPE_BY_ROLE: Record<string, string> = {
-    sales:             'The Closer',
-    lead_qualifier:    'The Closer',
-    marketing:         'The Closer',
-    customer_service:  'The Empath',
-    technical_support: 'Support Tech',
-    collections:       'The Collector',
-    scheduler:         'Receptionist',
-    receptionist:      'Receptionist',
-  };
   const archetype = OUTBOUND_ARCHETYPE_BY_ROLE[outboundAgentRole] || agentConfig?.data?.archetype || 'The Closer';
-  let archetypeRules = "";
-  let llmTemp = 0.4;
-  switch (archetype) {
-    case 'The Closer':
-      archetypeRules = "You are a consultative closer. Lead with discovery — uncover the prospect's pain before pitching. If a lead hesitates, ask an open-ended question to surface the real objection, then address it with evidence. Offer a concrete next step (demo, proposal, decision call) in every conversation.";
-      llmTemp = 0.7;
-      break;
-    case 'Support Tech':
-      archetypeRules = "You are highly analytical, patient, and precise. You ask clarifying troubleshooting questions one at a time. You do not rush. You summarize your findings before proposing a fix, and you verify the fix worked before closing.";
-      llmTemp = 0.2;
-      break;
-    case 'The Empath':
-      archetypeRules = "If a caller sounds frustrated, your first words must be a validating statement like 'I completely hear you, that's incredibly stressful. Let me fix this for you.' You acknowledge before you fix, always.";
-      llmTemp = 0.6;
-      break;
-    case 'The Collector':
-      archetypeRules = "You are firm, professional, and fully compliant with debt collection regulations. You always verify identity before discussing account details. You present the balance factually, listen to the customer's situation, and offer payment plan options before escalating. You never threaten, never harass, and document every promise made.";
-      llmTemp = 0.3;
-      break;
-    default:
-      archetypeRules = "You are an expert at handling phone calls where people are often in a hurry. Never use platitudes like 'I hope you're having a wonderful day.' Get straight to the value. You are cheerful, polite, and highly efficient.";
-      llmTemp = 0.4;
-  }
+  const { rules: archetypeRules, temp: llmTemp } = getArchetypeConfig(archetype);
   const ambientNoiseActive = agentConfig?.data?.ambient_noise && agentConfig?.data?.ambient_noise !== 'off';
   const roleProtocol = ROLE_SPECIFIC_PROTOCOLS[outboundAgentRole] || "";
   // Respect user's voice LLM settings (same as inbound). Fallback to Gemini Flash.
@@ -4610,6 +4618,8 @@ ${archetypeRules}
 You are calling ${customerName || "a customer"}.
 Objective: ${context || "Check in and offer assistance."}
 Execute this objective naturally — integrate it into the conversation, don't read it like a script.
+
+${agentConfig?.data?.website_url ? `## COMPANY WEBSITE\nYour company's official website: ${agentConfig.data.website_url}. For detailed specs, pricing pages, or information not in your knowledge base, direct the contact here or offer to send the link by email.` : ""}
 
 ${lessons ? `## LEARNED IMPROVEMENTS (APPLY THESE)\nYour previous call analysis identified these adjustments — apply them actively:\n${lessons}\n` : ""}
 
@@ -4648,6 +4658,7 @@ Today is ${currentDateTime} (Eastern Time). Calculate specific dates for "tomorr
 - Email follow-up: If the contact wants information sent: use send_email tool. "I'll send that to you right now — what email?"
 - Lead outcome: Use update_lead_status at the END of every live call — never leave the outcome unlogged.
 - Tasks: Use create_fleet_task for any promised follow-up that requires human action.
+- Scheduling: Always check_calendar_availability BEFORE confirming any appointment slot. Never promise a time from memory.
 - Scheduling: Always check_calendar_availability before confirming any slot.
 - Customer intel: Use capture_customer_profile whenever you learn something meaningful — budget, pain points, timeline, decision authority, objections, or agreed next steps. Capture it in the moment, not at the end. This data travels with the contact across all future calls.
 
