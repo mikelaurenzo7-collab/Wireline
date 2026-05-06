@@ -5787,7 +5787,8 @@ app.get("/api/oauth/microsoft/url", oauthRateLimiter, (req: express.Request, res
     });
     res.json({ url: `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${params}` });
   } catch (e: any) {
-    res.status(500).json({ error: e.message || "Failed to generate Microsoft OAuth URL." });
+    log.error("Microsoft OAuth URL generation failed", { error: getErrorMessage(e) });
+    res.status(500).json({ error: "Failed to generate Microsoft OAuth URL." });
   }
 });
 
@@ -6451,9 +6452,11 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
      }
 
      res.json({ success: true, synced: totalNew });
-  } catch(e) {
-     log.error("Sync Error", { error: e?.message || String(e) });
-     res.status(500).json({ error: String(e) });
+  } catch(e: any) {
+     // Log the full error for diagnostics; return a generic message to the
+     // client to avoid leaking internal stack traces / file paths.
+     log.error("Email sync error", { error: getErrorMessage(e) });
+     res.status(500).json({ error: "Email sync failed" });
   }
 });
 
