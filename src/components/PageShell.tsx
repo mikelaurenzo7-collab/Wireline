@@ -71,7 +71,7 @@ export default function PageShell({
               {eyebrow}
             </p>
           )}
-          <h1 className="font-display italic lowercase text-3xl md:text-4xl lg:text-5xl leading-[0.92] tracking-tight text-ink truncate">
+          <h1 className="font-display italic text-3xl md:text-4xl lg:text-5xl leading-[0.92] tracking-tight text-ink truncate">
             <span className="text-aurora">{title}</span>
           </h1>
           {subtitle && (
@@ -179,7 +179,7 @@ export function Panel({
               </div>
             )}
             {title && (
-              <h3 className="font-display italic lowercase text-base md:text-lg text-ink leading-none truncate">
+              <h3 className="font-display italic text-base md:text-lg text-ink leading-none truncate">
                 {title}
               </h3>
             )}
@@ -195,7 +195,7 @@ export function Panel({
       <div
         className={cn(
           "flex-1 min-h-0",
-          scroll ? "overflow-y-auto scrollbar-hide" : "overflow-hidden",
+          scroll ? "overflow-y-auto" : "overflow-hidden",
           !flush && "p-4",
           bodyClassName
         )}

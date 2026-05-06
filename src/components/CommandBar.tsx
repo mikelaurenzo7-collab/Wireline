@@ -132,7 +132,7 @@ export default function CommandBar() {
             </div>
 
             {/* Results */}
-            <div className="relative z-10 glass-strong rounded-b-2xl max-h-[420px] overflow-y-auto scrollbar-hide">
+            <div className="relative z-10 glass-strong rounded-b-2xl max-h-[420px] overflow-y-auto">
               {filteredCommands.length > 0 ? (
                 <div className="py-2">
                   {['Navigation', 'Actions'].map(category => {

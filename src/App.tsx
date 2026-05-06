@@ -136,6 +136,7 @@ function Sidebar({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (
             ? "text-paper"
             : "text-ink/70 hover:text-ink hover:bg-white/5"
         )}
+        aria-label={`Go to ${item.label}`}
       >
         {active && (
           <motion.div
@@ -149,7 +150,7 @@ function Sidebar({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (
           />
         )}
         <item.icon className={cn("w-4 h-4 relative z-10 transition-transform shrink-0", active ? "" : "group-hover:translate-x-0.5")} strokeWidth={active ? 2.5 : 1.75} />
-        <span className={cn("text-[12px] lowercase tracking-wide relative z-10 truncate flex-1", active ? "font-medium" : "font-normal")}>
+        <span className={cn("text-[12px] tracking-wide relative z-10 truncate flex-1", active ? "font-medium" : "font-normal")}>
           {item.label}
         </span>
         {(navBadges[item.path] ?? 0) > 0 && (
@@ -232,7 +233,7 @@ function Sidebar({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (
                 <button
                   onClick={() => signOut()}
                   title="End session"
-                  className="shrink-0 w-8 h-8 rounded-lg text-ink/60 hover:text-rose-500 hover:bg-rose-500/10 border border-white/8 hover:border-rose-500/40 transition-all flex items-center justify-center"
+                  className="shrink-0 w-8 h-8 rounded-lg text-ink/60 hover:text-rose-500 hover:bg-rose-500/10 border border-white/8 hover:border-rose-500/40 transition-all flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/70"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                 </button>
@@ -256,7 +257,7 @@ function Sidebar({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (
             <div>
               <button
                 onClick={() => setShowMoreNav((v) => !v)}
-                className="w-full px-3 mb-2 flex items-center gap-2 text-[8px] font-semibold uppercase tracking-[0.42em] text-muted/80 hover:text-ink transition-colors"
+                className="w-full px-3 mb-2 flex items-center gap-2 text-[8px] font-semibold uppercase tracking-[0.42em] text-muted/80 hover:text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/70 rounded-lg"
                 aria-expanded={showMoreNav}
                 aria-label="Toggle more navigation"
               >
@@ -320,10 +321,10 @@ function Sidebar({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (
             </div>
             <button
               onClick={() => { setOpen(false); onShowShortcuts(); }}
-              className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl text-muted hover:text-ink/70 text-[9px] uppercase tracking-[0.35em] transition-colors w-full"
+              className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl text-muted hover:text-ink/70 text-[9px] uppercase tracking-[0.35em] transition-colors w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/70"
             >
               <Keyboard className="w-3 h-3" />
-              <span>Keyboard shortcuts</span>
+              <span>Keyboard Shortcuts</span>
               <span className="ml-auto text-[9px] glass border border-white/10 px-1.5 rounded text-muted">?</span>
             </button>
           </div>
@@ -563,7 +564,7 @@ function AppContent() {
               onClick={() => setSidebarOpen(true)}
               aria-label="Open navigation menu"
               aria-expanded={sidebarOpen}
-              className="w-10 h-10 rounded-xl glass border border-white/12 flex items-center justify-center hover:border-brand/50 transition-all active:scale-95"
+              className="w-10 h-10 rounded-xl glass border border-white/12 flex items-center justify-center hover:border-brand/50 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/70"
             >
               <Menu className="w-5 h-5 text-ink" />
             </button>
@@ -575,7 +576,8 @@ function AppContent() {
             </div>
             <button
               onClick={() => navigate('/admin')}
-              className="w-10 h-10 rounded-xl glass border border-white/12 flex items-center justify-center hover:border-brand/50 transition-all active:scale-95"
+              aria-label="Open settings"
+              className="w-10 h-10 rounded-xl glass border border-white/12 flex items-center justify-center hover:border-brand/50 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/70"
             >
               <User className="w-5 h-5 text-ink/70" />
             </button>
