@@ -22,6 +22,10 @@ import { useToast } from "../contexts/ToastContext";
 
 const vapi = new Vapi(import.meta.env.VITE_VAPI_PUBLIC_KEY || "");
 
+/** Lead score thresholds for color-coding hot leads in the Fleet tab. */
+const HOT_LEAD_THRESHOLD = 80;
+const WARM_LEAD_THRESHOLD = 60;
+
 export default function DashboardHome() {
   const { error: toastError } = useToast();
   const [isConnecting, setIsConnecting] = useState(false);
@@ -508,26 +512,61 @@ export default function DashboardHome() {
         >
           {hotLeads.length > 0 ? (
             <ul className="divide-y divide-white/5">
-              {hotLeads.map((lead: any) => (
-                <li key={lead.id}>
-                  <Link to={lead.type === 'call' ? "/logs" : "/inbox"}
-                    className="group flex items-center justify-between gap-3 px-4 py-3 hover:bg-white/2 transition-all">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-9 h-9 rounded-xl glass border border-white/10 flex items-center justify-center text-brand shrink-0">
-                        {lead.type === 'call' ? <PhoneCall className="w-4 h-4" /> : <Mail className="w-4 h-4" />}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span className="font-display italic text-base text-ink truncate">{lead.contact}</span>
-                          <span className="px-1.5 py-0.5 rounded-full bg-brand/15 border border-brand/30 text-[8px] uppercase tracking-[0.22em] text-brand">{lead.score}%</span>
+              {hotLeads.map((lead: any) => {
+                const score = lead.score ?? 0;
+                const isHot = score >= HOT_LEAD_THRESHOLD;
+                const scoreColor = score >= HOT_LEAD_THRESHOLD ? "#10B981" : score >= WARM_LEAD_THRESHOLD ? "#0AC8D4" : "#9B59F5";
+                return (
+                  <li key={lead.id}>
+                    <Link to={lead.type === 'call' ? "/logs" : "/inbox"}
+                      className={cn(
+                        "group flex items-center justify-between gap-3 px-4 py-3 transition-all",
+                        isHot ? "hover:bg-emerald-500/5" : "hover:bg-white/2"
+                      )}>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={cn(
+                          "w-9 h-9 rounded-xl glass border flex items-center justify-center shrink-0 transition-all",
+                          isHot
+                            ? "border-emerald-500/40 text-emerald-400"
+                            : "border-white/10 text-brand"
+                        )}>
+                          {isHot && (
+                            <span className="absolute w-9 h-9 rounded-xl border border-emerald-500/30 animate-ping opacity-30" />
+                          )}
+                          {lead.type === 'call' ? <PhoneCall className="w-4 h-4" /> : <Mail className="w-4 h-4" />}
                         </div>
-                        <p className="text-[11px] text-muted truncate max-w-md leading-tight">{lead.summary}</p>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-display italic text-base text-ink truncate">{lead.contact}</span>
+                            <span
+                              className="px-1.5 py-0.5 rounded-full text-[8px] uppercase tracking-[0.22em] border shrink-0"
+                              style={{
+                                background: `${scoreColor}18`,
+                                borderColor: `${scoreColor}40`,
+                                color: scoreColor,
+                              }}
+                            >
+                              {score}%
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-muted truncate max-w-md leading-tight mb-1.5">{lead.summary}</p>
+                          {/* Score bar */}
+                          <div className="w-full h-0.5 rounded-full bg-white/5 overflow-hidden">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${score}%` }}
+                              transition={{ duration: 0.8, delay: 0.1 }}
+                              className="h-full rounded-full"
+                              style={{ background: scoreColor }}
+                            />
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-ink/40 group-hover:text-ink transition-colors shrink-0" />
-                  </Link>
-                </li>
-              ))}
+                      <ChevronRight className="w-4 h-4 text-ink/40 group-hover:text-ink transition-colors shrink-0" />
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <div className="h-full flex flex-col items-center justify-center gap-2 text-muted/50">
