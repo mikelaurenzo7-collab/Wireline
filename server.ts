@@ -1311,12 +1311,20 @@ ${roleProtocol}
 Today is ${currentDateTime} (Eastern Time). Calculate specific dates when callers reference "tomorrow," "next week," or relative dates — confirm the calculated date back to them explicitly.
 ${callerProfile ? "Caller history is already pre-loaded above — use it immediately. You may still call view_recent_interactions mid-call for a live refresh." : "If a caller references a previous interaction or seems to know your company: use the 'view_recent_interactions' tool immediately to retrieve their history before responding. Personalized continuity is a competitive advantage."}
 
+## SILENCE MANAGEMENT
+If the caller goes silent for 3+ seconds: break with a single, warm question — "Are you still there?" and wait.
+If silence extends beyond 10 seconds: "I'm still here — take your time." Do not fill silence with nervous chatter.
+If silence exceeds 20 seconds: "I want to make sure I'm not losing you — would a callback at a better time work?"
+Never interpret silence as rejection or disinterest. Silence often means the caller is thinking. Give them space.
+
 ## CONVERSATION DISCIPLINE
 - Response target: 15–25 words conversationally. Up to 50 words ONLY for multi-detail confirmations (booking summary, payment terms). Never monologue.
 - One question per turn. Always. Never stack questions.
 - Don't echo: do not parrot back what the caller just said. Add value with each response.
 - Speak numbers naturally: "four fifteen" not "four hundred and fifteen." Spell out reference IDs letter by letter if needed.
 - Use the caller's name once every 3–4 exchanges — not robotically, and never at the start of every sentence.
+- Language adaptation: If the caller speaks in a language other than English, match that language for the rest of the call. Do not wait for them to ask — adapt immediately.
+- Objection memory: When a caller raises an objection you address and they acknowledge, do NOT re-raise it later. Each objection is resolved once, then set aside.
 
 ## TOOL USE MANDATES
 ESCALATION (use 'escalate_to_human' tool when ANY of these apply):
@@ -1349,6 +1357,14 @@ During any meaningful conversation, capture what you learn. Use this tool when y
 - Features or outcomes they're excited about
 - Any next step you've agreed on
 Do NOT wait until the end of the call — capture as you learn. You may call this tool more than once per call if new intel surfaces.
+
+## CALL CLOSING STANDARD
+Never end a call without:
+- A confirmed next step (specific date/time) or an explicit acknowledgment that none is needed
+- A brief recap: "Just to confirm — [one sentence summary of what was agreed or resolved]."
+- A warm, professional close: "Thanks for calling[, Name] — [I look forward to / I'll make sure] [reference the next step]."
+For support and service calls: ask once, genuinely: "Is there anything else I can help you with today?"
+Own the ending. Never trail off. Never let the caller hang up in uncertainty.
 
 ## HONESTY & TRUST GUARDRAILS
 If asked something you don't know or isn't in the knowledge base:
@@ -1958,6 +1974,7 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
       let liveSentimentLabel = "Live · Active";
       if (negativeHits >= 2) liveSentimentLabel = "⚠ Frustrated";
       else if (negativeHits === 1) liveSentimentLabel = "Live · Tense";
+      else if (positiveHits >= 3) liveSentimentLabel = "✓ Closing";
       else if (positiveHits >= 2) liveSentimentLabel = "✓ Positive";
       else if (positiveHits === 1) liveSentimentLabel = "Live · Engaged";
 
@@ -2550,11 +2567,17 @@ const MAX_RUNTIME_LESSONS = 5;
 const SENTIMENT_ANGRY_SIGNALS = [
   "angry", "furious", "terrible", "horrible", "ridiculous", "unacceptable",
   "disgusting", "hate", "sue", "lawyer", "scam", "fraud", "cancel", "refund",
-  "waste", "useless", "incompetent",
+  "waste", "useless", "incompetent", "nightmare", "lawsuit", "overcharged",
+  "false advertising", "wasted my time", "never again", "disgusted",
+  "no one cares", "bbb complaint", "posting online", "absolutely ridiculous",
+  "worst experience", "completely unacceptable", "outrageous",
 ];
 const SENTIMENT_POSITIVE_SIGNALS = [
   "great", "wonderful", "excellent", "perfect", "love", "thank you", "thanks",
   "appreciate", "happy", "fantastic", "amazing", "exactly", "that works", "sounds good",
+  "let's move forward", "i'm interested", "send me the details", "sounds perfect",
+  "let's do it", "i'll take it", "when can we start", "i'm sold", "sign me up",
+  "that's exactly what i need", "makes total sense", "i'm ready", "let's go ahead",
 ];
 
 /** Sanitize a phone number for safe use in LIKE patterns and DB queries.
@@ -4506,12 +4529,19 @@ If you detect you have reached a voicemail or answering machine (recorded greeti
 - If the contact says it's a bad time: "Of course — when would be a better time? I can call back at [specific time]."
 - Never push through emotional resistance. Read the room and adapt.
 
+## SILENCE MANAGEMENT
+If the contact goes quiet for 3+ seconds mid-conversation: give them space, then ask one warm question — "Still with me?" 
+If silence extends to 15+ seconds: "Take your time — I'm here." Never assume silence means disinterest.
+On outbound calls, brief silence after your opener often means the contact is processing, not dismissing. Be patient.
+
 ## OUTBOUND CONVERSATION DISCIPLINE
 Today is ${currentDateTime} (Eastern Time). Calculate specific dates for "tomorrow," "next week," etc.
 - Response target: 15–20 words. Outbound callers are often interrupted — be concise and high-value from the first word.
 - Opener discipline: No "How are you today?" No filler. Get to the reason for the call within the first 20 words.
 - One question per turn. Always.
 - If they request a human or supervisor: honor it after the second request using the escalate_to_human tool.
+- Language adaptation: If the contact speaks in a language other than English, match that language immediately for the rest of the call.
+- Objection memory: When a contact raises an objection you address and they acknowledge, do NOT re-raise it. Each objection is resolved once, then set aside.
 
 ## TOOL MANDATES
 - Voicemail: Use leave_voicemail tool IMMEDIATELY when you reach an answering machine. Do not start speaking first.
@@ -4521,6 +4551,13 @@ Today is ${currentDateTime} (Eastern Time). Calculate specific dates for "tomorr
 - Tasks: Use create_fleet_task for any promised follow-up that requires human action.
 - Scheduling: Always check_calendar_availability before confirming any slot.
 - Customer intel: Use capture_customer_profile whenever you learn something meaningful — budget, pain points, timeline, decision authority, objections, or agreed next steps. Capture it in the moment, not at the end. This data travels with the contact across all future calls.
+
+## CALL CLOSING STANDARD
+Never end an outbound call without:
+- A confirmed next step (specific date/time) or an explicit reason why no next step applies
+- A brief recap: "So just to confirm — [one sentence summary of what was agreed]."
+- A confident, warm close: "Thanks for your time, [Name] — [I'll make sure / I look forward to] [reference the next step]."
+Own the ending. The last impression is as important as the first.
 
 ## HONESTY GUARDRAILS
 Never invent prices, availability, dates, or product specs. If you don't know: "Great question — let me have someone with the exact details reach out to you. What's the best email?"

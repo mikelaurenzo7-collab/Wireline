@@ -82,6 +82,14 @@ function SentimentBadge({ label, status }: { label?: string; status?: string }) 
       </span>
     );
   }
+  if (text.includes("Closing")) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] uppercase tracking-[0.25em] bg-violet-500/15 border border-violet-500/30 text-violet-400">
+        <span className="w-1 h-1 rounded-full bg-violet-400 animate-pulse" />
+        {text}
+      </span>
+    );
+  }
   if (text.includes("Positive")) {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] uppercase tracking-[0.25em] bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
@@ -216,6 +224,39 @@ export default function LiveMonitor() {
         </div>
       ) : (
         <div className="h-full flex flex-col gap-3 overflow-hidden">
+          {/* Distress alert banner — appears when any active call hits frustrated/tense state */}
+          {(() => {
+            const distressedCalls = signals.filter(s =>
+              s.label?.includes("⚠") || s.label?.toLowerCase().includes("frustrated")
+            );
+            if (distressedCalls.length === 0) return null;
+            return (
+              <motion.div
+                key="distress-banner"
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-xl border border-rose-500/40 bg-rose-500/8"
+              >
+                <span className="relative flex h-2 w-2 shrink-0">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75 animate-ping" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500" />
+                </span>
+                <div className="flex-1 min-w-0">
+                  <span className="text-[10px] font-medium text-rose-400 uppercase tracking-[0.28em]">
+                    Distress signal{distressedCalls.length > 1 ? `s (${distressedCalls.length})` : ""} detected
+                  </span>
+                  <span className="text-[9px] text-rose-400/70 ml-2">
+                    {distressedCalls.map(s => agentName(s.agent_id)).join(", ")} — consider escalating to human
+                  </span>
+                </div>
+                <span className="text-[8px] uppercase tracking-[0.3em] text-rose-400/60 shrink-0">
+                  De-escalate → Acknowledge → Escalate
+                </span>
+              </motion.div>
+            );
+          })()}
+
           {/* Stat row */}
           <div className="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-3">
             <StatTile label="Active Calls"       value={activeCount}       sub="Live right now"        icon={Radio}     accent="#0AC8D4" />
