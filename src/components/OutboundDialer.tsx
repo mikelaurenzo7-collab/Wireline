@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Loader2, PlayCircle, Plus, Phone, UploadCloud, Bot, Radar, Zap, Terminal, Shield, FileSpreadsheet, ChevronRight, Search, Trash2, AlertTriangle, CheckCircle2, Megaphone, Target, Pause, Play, X, Clock, Users, Activity, BarChart3, Rocket } from "lucide-react";
+import { Loader2, PlayCircle, Plus, Phone, UploadCloud, Bot, Radar, Zap, Terminal, Shield, FileSpreadsheet, ChevronRight, Search, Trash2, AlertTriangle, CheckCircle2, Megaphone, Target, Pause, Play, X, Clock, Users, Activity, BarChart3, Rocket, RefreshCw, TrendingUp, DollarSign, Award } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Papa from "papaparse";
 import { cn } from "../lib/utils";
@@ -42,8 +42,31 @@ export default function OutboundDialer() {
   const [campaignLeadsLoading, setCampaignLeadsLoading] = useState(false);
   const [showCampaignModal, setShowCampaignModal] = useState(false);
   const [bulkCampaignId, setBulkCampaignId] = useState<string>("");
+  const [campaignAnalytics, setCampaignAnalytics] = useState<any | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
   useEffect(() => { fetchData(); fetchCampaigns(); }, []);
+
+  // Live-poll lead statuses when a running campaign is selected.
+  useEffect(() => {
+    if (!selectedCampaign || selectedCampaign.status !== "running") return;
+    const interval = setInterval(() => {
+      fetchCampaignLeads(selectedCampaign.id);
+      fetchCampaigns(); // refresh dialed_count / connected_count on list too
+    }, 10_000);
+    return () => clearInterval(interval);
+  }, [selectedCampaign?.id, selectedCampaign?.status]);
+
+  const fetchCampaignAnalytics = async (id: string) => {
+    setAnalyticsLoading(true);
+    try {
+      const res = await authFetch(`/api/campaigns/${id}/analytics`);
+      const data = await res.json();
+      setCampaignAnalytics(data);
+    } catch (e) { console.error("Failed to fetch campaign analytics:", e); }
+    setAnalyticsLoading(false);
+  };
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -286,6 +309,8 @@ export default function OutboundDialer() {
 
   const handleSelectCampaign = (c: any) => {
     setSelectedCampaign(c);
+    setCampaignAnalytics(null);
+    setShowAnalytics(false);
     fetchCampaignLeads(c.id);
   };
 
@@ -722,6 +747,21 @@ export default function OutboundDialer() {
             scroll flush
             actions={
               <div className="flex items-center gap-1.5">
+                {/* Analytics button */}
+                <button
+                  onClick={() => {
+                    if (!showAnalytics) fetchCampaignAnalytics(selectedCampaign.id);
+                    setShowAnalytics(p => !p);
+                  }}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[10px] uppercase tracking-[0.25em] transition-colors",
+                    showAnalytics
+                      ? "bg-brand/20 border-brand/50 text-brand"
+                      : "glass border-white/10 text-muted hover:text-brand hover:border-brand/40"
+                  )}
+                >
+                  <TrendingUp className="w-3 h-3" /> Analytics
+                </button>
                 {/* Launch button — dials all queued leads via server fire-and-forget */}
                 {selectedCampaign.status !== "running" && selectedCampaign.status !== "completed" && (
                   <button
@@ -766,6 +806,113 @@ export default function OutboundDialer() {
               </div>
             }
           >
+            {/* Live progress bar when running */}
+            {selectedCampaign.status === "running" && selectedCampaign.leads_count > 0 && (
+              <div className="px-4 pt-3 pb-0">
+                <div className="rounded-xl bg-brand/8 border border-brand/20 p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-brand" />
+                      </span>
+                      <span className="text-[9px] uppercase tracking-[0.3em] text-brand">Live · Dialing in progress</span>
+                    </div>
+                    <span className="text-[9px] font-mono text-muted tabular-nums">
+                      {selectedCampaign.dialed_count ?? 0} / {selectedCampaign.leads_count} dialed
+                    </span>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full bg-white/5 overflow-hidden">
+                    <motion.div
+                      animate={{ width: `${selectedCampaign.leads_count > 0 ? Math.round(((selectedCampaign.dialed_count ?? 0) / selectedCampaign.leads_count) * 100) : 0}%` }}
+                      transition={{ duration: 0.6, ease: "easeOut" }}
+                      className="h-full rounded-full"
+                      style={{ background: "linear-gradient(90deg,#7DF9FF,#C58BFF)" }}
+                    />
+                  </div>
+                  <div className="flex items-center gap-1 mt-1.5">
+                    <RefreshCw className="w-2.5 h-2.5 text-muted/50 animate-spin" style={{ animationDuration: "3s" }} />
+                    <span className="text-[8px] text-muted/50">Refreshing every 10s</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Analytics panel */}
+            <AnimatePresence>
+              {showAnalytics && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="px-4 pt-3">
+                    {analyticsLoading ? (
+                      <div className="flex items-center justify-center py-6 gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin text-brand" />
+                        <span className="text-[9px] uppercase tracking-[0.3em] text-muted">Loading analytics</span>
+                      </div>
+                    ) : campaignAnalytics ? (
+                      <div className="space-y-3 pb-3">
+                        {/* Call stats */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                          {[
+                            { label: "Answered",     value: campaignAnalytics.call_stats?.answered ?? 0,                             icon: Phone,       accent: "#4DFFC4" },
+                            { label: "Avg Duration",  value: `${campaignAnalytics.call_stats?.avg_duration_sec ?? 0}s`,               icon: Clock,       accent: "#7DF9FF" },
+                            { label: "Total Cost",    value: `$${(campaignAnalytics.call_stats?.total_cost_usd ?? 0).toFixed(3)}`,    icon: DollarSign,  accent: "#C58BFF" },
+                            { label: "Avg Score",     value: campaignAnalytics.call_stats?.avg_lead_score > 0 ? campaignAnalytics.call_stats.avg_lead_score : "—", icon: Award, accent: "#FF6BD9" },
+                          ].map(({ label, value, icon: Icon, accent }) => (
+                            <div key={label} className="rounded-xl glass border border-white/8 p-3">
+                              <div className="flex items-center gap-1.5 mb-1.5">
+                                <Icon className="w-3 h-3 shrink-0" style={{ color: accent }} />
+                                <span className="text-[8px] uppercase tracking-[0.28em] text-muted">{label}</span>
+                              </div>
+                              <div className="font-display italic text-lg leading-none tabular-nums" style={{ color: accent }}>{value}</div>
+                            </div>
+                          ))}
+                        </div>
+                        {/* Outcome breakdown */}
+                        {(campaignAnalytics.outcomes ?? []).length > 0 && (
+                          <div className="rounded-xl glass border border-white/8 p-3">
+                            <h5 className="text-[8px] uppercase tracking-[0.3em] text-muted mb-2.5 flex items-center gap-1.5">
+                              <BarChart3 className="w-3 h-3" /> Lead Outcomes
+                            </h5>
+                            <div className="space-y-1.5">
+                              {campaignAnalytics.outcomes.map((o: any) => {
+                                const color =
+                                  o.status === "Completed" ? "#4DFFC4" :
+                                  o.status === "Failed" || o.status?.includes("Fail") ? "#FF6BD9" :
+                                  o.status === "Queued" ? "#7DF9FF" :
+                                  o.status?.includes("Blocked") ? "#FF9A5C" :
+                                  "#8B89B8";
+                                return (
+                                  <div key={o.status} className="flex items-center gap-2.5">
+                                    <span className="text-[9px] text-muted w-28 shrink-0">{o.status}</span>
+                                    <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
+                                      <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${o.pct}%` }}
+                                        transition={{ duration: 0.6 }}
+                                        className="h-full rounded-full"
+                                        style={{ background: color }}
+                                      />
+                                    </div>
+                                    <span className="text-[9px] font-mono text-ink/70 w-8 text-right shrink-0 tabular-nums">{o.count}</span>
+                                    <span className="text-[8px] text-muted/60 w-7 text-right shrink-0 tabular-nums">{o.pct}%</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* Stats row */}
             <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-2 border-b border-white/8">
               {[
