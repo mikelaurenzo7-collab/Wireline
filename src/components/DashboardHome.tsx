@@ -179,14 +179,19 @@ export default function DashboardHome() {
 
   /* ─── Tab content builders ──────────────────────────────────────────── */
 
+  const delta = stats?.week_delta ?? {};
+
   const Pulse = (
     <div className="h-full flex flex-col gap-3 overflow-hidden">
       {/* ── Hero stat row ─────────────────────────────────────── */}
       <div className="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatTile label="Total Calls"      value={stats?.totalCalls ?? 0}              sub="All time"           icon={PhoneCall}  accent="#0AC8D4" />
-        <StatTile label="Conversion Rate"  value={`${stats?.conversionRate ?? 0}%`}    sub="Intent match"       icon={TrendingUp} accent="#9B59F5" />
-        <StatTile label="Outbound Leads"   value={stats?.totalLeads ?? 0}              sub="Queue depth"        icon={Bot}        accent="#E040C0" />
-        <StatTile label="AI Spend"         value={`$${stats?.totalCost ?? "0.00"}`}    sub="Current period"     icon={DollarSign} accent="#10B981" />
+        <StatTile label="Total Calls"      value={stats?.totalCalls ?? 0}              sub="All time"           icon={PhoneCall}  accent="#0AC8D4"
+          trend={delta.calls_pct != null ? { value: delta.calls_pct, label: "vs last 7d" } : undefined} />
+        <StatTile label="Avg Lead Score"   value={stats?.avgLeadScore ? `${stats.avgLeadScore}/100` : "—"}  sub="BANT quality"       icon={TrendingUp} accent="#9B59F5"
+          trend={delta.score_pct != null ? { value: delta.score_pct, label: "vs last 7d" } : undefined} />
+        <StatTile label="Conversion Rate"  value={`${stats?.conversionRate ?? 0}%`}    sub="Appointments / calls" icon={Target}    accent="#E040C0" />
+        <StatTile label="AI Spend"         value={`$${stats?.totalCost ?? "0.00"}`}    sub="Current period"     icon={DollarSign} accent="#10B981"
+          trend={delta.cost_pct != null ? { value: -(delta.cost_pct), label: "vs last 7d" } : undefined} />
       </div>
 
       {/* ── Main grid ────────────────────────────────────────── */}
@@ -337,6 +342,26 @@ export default function DashboardHome() {
                 </div>
               )}
 
+              {/* Today's volume strip */}
+              {stats && (
+                <div className="mt-auto pt-2 flex items-center justify-between gap-2 border-t border-black/5">
+                  <div className="text-center flex-1">
+                    <div className="font-mono text-sm font-medium text-ink leading-none">{stats.inboundCount ?? 0}</div>
+                    <div className="text-[8px] uppercase tracking-[0.3em] text-muted mt-0.5">Inbound</div>
+                  </div>
+                  <div className="h-6 w-px bg-black/8" />
+                  <div className="text-center flex-1">
+                    <div className="font-mono text-sm font-medium text-ink leading-none">{stats.outboundCount ?? 0}</div>
+                    <div className="text-[8px] uppercase tracking-[0.3em] text-muted mt-0.5">Outbound</div>
+                  </div>
+                  <div className="h-6 w-px bg-black/8" />
+                  <div className="text-center flex-1">
+                    <div className="font-mono text-sm font-medium text-ink leading-none">{stats.totalMinutes ?? 0}</div>
+                    <div className="text-[8px] uppercase tracking-[0.3em] text-muted mt-0.5">Minutes</div>
+                  </div>
+                </div>
+              )}
+
               {!(stats?.agents?.length) && (
                 <div className="flex items-center justify-center py-4">
                   <Link to="/agents" className="text-[10px] text-brand/70 hover:text-brand transition-colors uppercase tracking-[0.28em]">
@@ -360,16 +385,41 @@ export default function DashboardHome() {
                 </p>
                 {voiceAgents.length > 0 ? (
                   <div className="space-y-2">
-                    <select
-                      aria-label="Select agent to dial"
-                      value={selectedDialAgentId}
-                      onChange={e => setSelectedDialAgentId(e.target.value)}
-                      className="w-full h-8 px-2.5 rounded-lg bg-black/40 border border-white/12 text-[11px] text-ink outline-none focus:border-brand/60"
-                    >
-                      {voiceAgents.map((a: any) => (
-                        <option key={a.id} value={a.id}>{a.name}</option>
-                      ))}
-                    </select>
+                    {/* Styled agent selector — pill buttons instead of a native <select> */}
+                    {voiceAgents.length <= 4 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {voiceAgents.map((a: any) => (
+                          <button
+                            key={a.id}
+                            onClick={() => setSelectedDialAgentId(a.id)}
+                            className={cn(
+                              "px-2.5 h-7 rounded-full text-[10px] font-medium transition-all border truncate max-w-[140px]",
+                              selectedDialAgentId === a.id
+                                ? "text-white border-transparent"
+                                : "text-muted border-black/10 hover:text-ink hover:border-black/20 glass"
+                            )}
+                            style={selectedDialAgentId === a.id ? {
+                              background: "linear-gradient(135deg, #0AC8D4 0%, #9B59F5 100%)",
+                              boxShadow: "0 2px 8px -4px rgba(10,200,212,0.50)"
+                            } : undefined}
+                            title={a.name}
+                          >
+                            {a.name}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <select
+                        aria-label="Select agent to dial"
+                        value={selectedDialAgentId}
+                        onChange={e => setSelectedDialAgentId(e.target.value)}
+                        className="w-full h-8 px-2.5 rounded-lg glass border border-black/10 text-[11px] text-ink outline-none focus:border-brand/60"
+                      >
+                        {voiceAgents.map((a: any) => (
+                          <option key={a.id} value={a.id}>{a.name}</option>
+                        ))}
+                      </select>
+                    )}
                     <button
                       onClick={toggleCall}
                       disabled={isConnecting}

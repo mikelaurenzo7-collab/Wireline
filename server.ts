@@ -2391,11 +2391,13 @@ app.get("/api/calls", authenticateUser, async (req: any, res: any) => {
 // ==========================================
 app.get("/api/dashboard/stats", authenticateUser, async (req: any, res: any) => {
    try {
-      // Compute the 7-day window once so all sub-queries share the same boundary.
-      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      // Compute time windows once so all sub-queries share the same boundaries.
+      const now = Date.now();
+      const sevenDaysAgo     = new Date(now - 7  * 24 * 60 * 60 * 1000).toISOString();
+      const fourteenDaysAgo  = new Date(now - 14 * 24 * 60 * 60 * 1000).toISOString();
 
-      // All five queries run in parallel — no serial awaits below this line.
-      const [apptRes, leadsRes, logsRes, agentsRes, hotEmailsRes, recentApptsRes] = await Promise.all([
+      // All queries run in parallel — no serial awaits below this line.
+      const [apptRes, leadsRes, logsRes, agentsRes, hotEmailsRes, recentApptsRes, prevLogsRes] = await Promise.all([
           db.from('wireline_appointments').select('id', { count: 'exact' }).eq('user_id', req.user.id),
           db.from('wireline_outbound_leads').select('id', { count: 'exact' }).eq('user_id', req.user.id),
           db.from('wireline_call_logs')
@@ -2417,12 +2419,20 @@ app.get("/api/dashboard/stats", authenticateUser, async (req: any, res: any) => 
             .select('created_at')
             .eq('user_id', req.user.id)
             .gte('created_at', sevenDaysAgo),
+          // Prior 7-day window (days 8-14) — used for week-over-week trend arrows
+          db.from('wireline_call_logs')
+            .select('id, cost, lead_score, created_at')
+            .eq('user_id', req.user.id)
+            .gte('created_at', fourteenDaysAgo)
+            .lt('created_at', sevenDaysAgo)
+            .limit(500),
       ]);
       
       const totalAppointments = apptRes.count || 0;
       const totalLeads = leadsRes.count || 0;
       const logs = logsRes.data || [];
       const agents = agentsRes.data || [];
+      const prevLogs = prevLogsRes.data || [];
       
       const totalMinutes = Math.ceil(logs.reduce((acc: number, l: any) => acc + (l.duration_seconds || 0), 0) / 60);
       const totalCost = logs.reduce((acc: number, l: any) => acc + (Number(l.cost) || 0), 0);
@@ -2443,6 +2453,20 @@ app.get("/api/dashboard/stats", authenticateUser, async (req: any, res: any) => 
         if (s in sentimentMap) sentimentMap[s]++;
         else sentimentMap['neutral']++;
       }
+
+      // Week-over-week delta — compare current 7 days to the prior 7 days.
+      const prevCost = prevLogs.reduce((acc: number, l: any) => acc + (Number(l.cost) || 0), 0);
+      const prevScoredLogs = prevLogs.filter((l: any) => (l.lead_score ?? 0) > 0);
+      const prevAvgScore = prevScoredLogs.length > 0
+        ? Math.round(prevScoredLogs.reduce((s: number, l: any) => s + (l.lead_score || 0), 0) / prevScoredLogs.length)
+        : 0;
+      const pct = (curr: number, prev: number) =>
+        prev === 0 ? (curr > 0 ? 100 : 0) : Math.round(((curr - prev) / prev) * 100);
+      const week_delta = {
+        calls_pct: pct(logs.length, prevLogs.length),
+        cost_pct:  pct(totalCost, prevCost),
+        score_pct: pct(avgLeadScore, prevAvgScore),
+      };
 
       // HOT LEADS — derive hot calls from the already-fetched logs (avoids a DB round-trip)
       const hotCalls = logs
@@ -2496,6 +2520,7 @@ app.get("/api/dashboard/stats", authenticateUser, async (req: any, res: any) => 
          conversionRate,
          avgLeadScore,
          sentimentBreakdown: sentimentMap,
+         week_delta,
          agents,
          recentLogs: logs.slice(0, 100),
          hotLeads,

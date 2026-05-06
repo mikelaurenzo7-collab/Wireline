@@ -1,6 +1,6 @@
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from "react-router-dom";
-import { Users, Activity, MessageSquare, Calendar, PhoneOutgoing, ServerCog, PlugZap, History, Mail, Menu, X, LogOut, Shield, Database, Waves, Inbox, BarChart3, Loader2, AlertTriangle, Radio, Keyboard, ChevronRight, User } from "lucide-react";
+import { Users, Activity, MessageSquare, Calendar, PhoneOutgoing, ServerCog, PlugZap, History, Mail, Menu, X, LogOut, Shield, Database, Waves, Inbox, BarChart3, Loader2, AlertTriangle, Radio, Keyboard, ChevronRight, User, Ban, ScrollText } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import AuthPortal from "./components/AuthPortal";
 import CommandBar from "./components/CommandBar";
@@ -176,8 +176,8 @@ function Sidebar({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (
       items: [
         { label: "Integrations", path: "/integrations", icon: PlugZap },
         { label: "Settings",     path: "/admin",         icon: ServerCog },
-        { label: "DNC List",     path: "/dnc",           icon: Shield },
-        { label: "Audit Log",    path: "/audit",         icon: Shield },
+        { label: "DNC List",     path: "/dnc",           icon: Ban },
+        { label: "Audit Log",    path: "/audit",         icon: ScrollText },
       ] as NavItem[],
     },
   ];
