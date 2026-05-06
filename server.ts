@@ -1339,6 +1339,17 @@ Search for existing context before discussing account details. Update the lead s
 CALLBACK SCHEDULING (use 'schedule_callback' tool):
 When an inbound caller requests a callback at a specific time, use the schedule_callback tool immediately. Calculate the exact ISO 8601 datetime from what they say. Confirm it back to them: "I have you down for [exact time] — you'll hear from us then."
 
+CUSTOMER PROFILE CAPTURE (use 'capture_customer_profile' tool):
+During any meaningful conversation, capture what you learn. Use this tool when you discover:
+- Pain points, challenges, or specific frustrations the caller mentions
+- Budget range or pricing sensitivity (even vague: "looking for something affordable")
+- Timeline or urgency ("need this before summer", "just browsing for now")
+- Whether they're the decision-maker or need sign-off from others
+- Key objections or hesitations they raise
+- Features or outcomes they're excited about
+- Any next step you've agreed on
+Do NOT wait until the end of the call — capture as you learn. You may call this tool more than once per call if new intel surfaces.
+
 ## HONESTY & TRUST GUARDRAILS
 If asked something you don't know or isn't in the knowledge base:
 → "That's a great question — I want to make sure I give you accurate information. Let me connect you with someone who can confirm that for you. What's the best email to reach you?"
@@ -1838,6 +1849,69 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
         } catch (e: any) {
           log.error("Vapi tool: schedule_callback failed", { agentId: webhookAgentId, error: e?.message || String(e) });
           results.push({ toolCallId: toolCall.id, result: "Callback noted — confirm the time to the caller and our team will follow up manually." });
+        }
+      }
+
+      // TOOL 12: CAPTURE CUSTOMER PROFILE — structured intel from the live call
+      if (toolCall.function.name === "capture_customer_profile") {
+        try {
+          const {
+            pain_points, budget_range, timeline, decision_authority,
+            objections, interests, next_step_agreed,
+          } = toolCall.function.arguments;
+          const customerPhone = payload.call?.customer?.number || message.call?.customer?.number || "Unknown";
+
+          // Build a structured profile note string.
+          const profileNote = [
+            `Pain points: ${pain_points || "(none noted)"}`,
+            budget_range    ? `Budget: ${budget_range}`            : null,
+            timeline        ? `Timeline: ${timeline}`              : null,
+            `Decision authority: ${decision_authority || "unknown"}`,
+            objections      ? `Objections: ${objections}`          : null,
+            interests       ? `Interests: ${interests}`            : null,
+            next_step_agreed ? `Next step: ${next_step_agreed}`    : null,
+          ].filter(Boolean).join(" | ");
+
+          // Update outbound lead context if this is an outbound call.
+          const safePhone = sanitizePhone(customerPhone);
+          if (safePhone) {
+            const { data: existingLead } = await db
+              .from('wireline_outbound_leads')
+              .select('id, context')
+              .eq('customer_number', safePhone)
+              .eq('agent_id', webhookAgentId)
+              .not('status', 'in', ['Completed', 'Blocked-DNC'])
+              .limit(1)
+              .single();
+
+            if (existingLead) {
+              const existing = existingLead.context ? `${existingLead.context}\n` : "";
+              await db.from('wireline_outbound_leads')
+                .update({ context: `${existing}[Profile captured ${new Date().toISOString().slice(0, 10)}] ${profileNote}` })
+                .eq('id', existingLead.id);
+            }
+          }
+
+          // Always log as a fleet task so operators see the intel.
+          await db.from('wireline_fleet_tasks').insert({
+            user_id: agent?.user_id,
+            agent_id: webhookAgentId,
+            task_type: 'customer_profile_captured',
+            description: `[CUSTOMER PROFILE] ${customerPhone} — ${profileNote}`,
+            source_type: 'phone_call',
+            source_id: message.call?.id || payload.call?.id || "live",
+            target_channel: 'manual',
+            priority: 'low',
+            status: 'pending',
+          });
+
+          results.push({
+            toolCallId: toolCall.id,
+            result: "Customer profile captured and saved. This context will be available for all future interactions with this contact.",
+          });
+        } catch (e: any) {
+          log.error("Vapi tool: capture_customer_profile failed", { agentId: webhookAgentId, error: e?.message || String(e) });
+          results.push({ toolCallId: toolCall.id, result: "Profile noted — continue the conversation." });
         }
       }
     }
@@ -2651,20 +2725,59 @@ const VAPI_TOOL_DEFS = {
       required: ["callback_datetime", "notes"],
     },
   },
+  capture_customer_profile: {
+    name: "capture_customer_profile",
+    description: "Saves structured notes about the customer gathered during this call. Call this any time you learn something meaningful — budget range, timeline, key pain points, objections, decision-maker status, or interests. This enriches the customer's profile so the next agent has full context and doesn't repeat questions.",
+    parameters: {
+      type: "object",
+      properties: {
+        pain_points: {
+          type: "string",
+          description: "The customer's main challenges or frustrations as they expressed them, in their own words or a close paraphrase.",
+        },
+        budget_range: {
+          type: "string",
+          description: "Any budget or price range mentioned (e.g., '$5,000–$10,000/year', 'Under $500/month'). Leave blank if not discussed.",
+        },
+        timeline: {
+          type: "string",
+          description: "Urgency or timeline they mentioned (e.g., 'Needs solution by Q3', 'Just researching for now'). Leave blank if not discussed.",
+        },
+        decision_authority: {
+          type: "string",
+          enum: ["decision_maker", "influencer", "gatekeeper", "unknown"],
+          description: "Whether this person can sign off on a purchase or must involve others.",
+        },
+        objections: {
+          type: "string",
+          description: "Any hesitations, objections, or concerns raised (e.g., 'Worried about switching costs', 'Already evaluating Competitor X'). Leave blank if none.",
+        },
+        interests: {
+          type: "string",
+          description: "Features, outcomes, or topics they expressed genuine interest in.",
+        },
+        next_step_agreed: {
+          type: "string",
+          description: "Any concrete next step both parties agreed on (e.g., 'Demo on Friday', 'Will send proposal by EOD'). Leave blank if none.",
+        },
+      },
+      required: ["pain_points", "decision_authority"],
+    },
+  },
 } as const;
 
 type VapiToolName = keyof typeof VAPI_TOOL_DEFS;
 
 // Maps each agent role to the subset of tools it may call during a live call.
 const ROLE_TOOL_SETS: Record<string, VapiToolName[]> = {
-  sales:             ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "leave_voicemail", "schedule_callback"],
-  customer_service:  ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "check_calendar_availability", "book_appointment", "schedule_callback"],
+  sales:             ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
+  customer_service:  ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "check_calendar_availability", "book_appointment", "schedule_callback", "capture_customer_profile"],
   scheduler:         ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "check_calendar_availability", "book_appointment", "leave_voicemail", "schedule_callback"],
-  collections:       ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "log_payment_promise", "leave_voicemail", "schedule_callback"],
-  technical_support: ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "create_support_ticket", "schedule_callback"],
-  lead_qualifier:    ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "leave_voicemail", "schedule_callback"],
+  collections:       ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "log_payment_promise", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
+  technical_support: ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "create_support_ticket", "schedule_callback", "capture_customer_profile"],
+  lead_qualifier:    ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
   receptionist:      ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "check_calendar_availability", "book_appointment", "schedule_callback"],
-  marketing:         ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "leave_voicemail", "schedule_callback"],
+  marketing:         ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
 };
 
 /** Returns the Vapi `functions` array scoped to the given agent role. */
@@ -4407,6 +4520,7 @@ Today is ${currentDateTime} (Eastern Time). Calculate specific dates for "tomorr
 - Lead outcome: Use update_lead_status at the END of every live call — never leave the outcome unlogged.
 - Tasks: Use create_fleet_task for any promised follow-up that requires human action.
 - Scheduling: Always check_calendar_availability before confirming any slot.
+- Customer intel: Use capture_customer_profile whenever you learn something meaningful — budget, pain points, timeline, decision authority, objections, or agreed next steps. Capture it in the moment, not at the end. This data travels with the contact across all future calls.
 
 ## HONESTY GUARDRAILS
 Never invent prices, availability, dates, or product specs. If you don't know: "Great question — let me have someone with the exact details reach out to you. What's the best email?"
@@ -6183,6 +6297,51 @@ app.post("/api/claude/email-draft", authenticateUser, async (req: any, res: any)
       draft: result.draft,
       diagnostics: { cacheRead: result.cacheRead, cacheCreate: result.cacheCreate },
     });
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
+// Quick reply suggestions — 3 ready-to-send short options for a thread.
+app.post("/api/claude/email-quick-replies", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { threadId, agentId } = req.body;
+    if (!threadId) return res.status(400).json({ error: "threadId required" });
+
+    const { data: thread } = await db.from("wireline_email_threads").select("subject, agent_id").eq("id", threadId).eq("user_id", req.user.id).single();
+    if (!thread) return res.status(404).json({ error: "Thread not found." });
+
+    const targetAgentId = agentId || thread.agent_id;
+    let agentName = "Wireline Agent";
+    let agentTone = "Professional";
+    let agentRole: string | undefined;
+    let agentSignature = "";
+    let knowledgeBase: string[] = [];
+
+    if (targetAgentId) {
+      const [{ data: agent }, { data: knowledge }] = await Promise.all([
+        db.from("wireline_agents").select("name, email_agent_tone, email_signature, role").eq("id", targetAgentId).eq("user_id", req.user.id).single(),
+        db.from("wireline_knowledge").select("content").eq("agent_id", targetAgentId).eq("user_id", req.user.id).limit(20),
+      ]);
+      if (agent) {
+        agentName = agent.name;
+        agentTone = agent.email_agent_tone || "Professional";
+        agentSignature = agent.email_signature || "";
+        agentRole = agent.role || DEFAULT_AGENT_ROLE;
+      }
+      knowledgeBase = (knowledge ?? []).map((k: any) => k.content);
+    }
+
+    const { data: msgs } = await db.from("wireline_email_messages").select("role, content").eq("thread_id", threadId).order("created_at", { ascending: true }).limit(12);
+
+    const result = await claudeBrain.quickReplies({
+      agentName, agentTone, agentRole, agentSignature,
+      knowledgeBase,
+      threadSubject: thread.subject || "(no subject)",
+      threadMessages: (msgs ?? []) as any,
+    });
+
+    res.json({ suggestions: result.suggestions });
   } catch (e) {
     claudeErr(res, e);
   }

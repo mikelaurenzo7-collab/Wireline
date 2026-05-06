@@ -1080,6 +1080,34 @@ export const TOOLS = {
       additionalProperties: false,
     },
   } as ToolSchema,
+
+  /** Quick email reply suggestions — 3 short, ready-to-send reply options. */
+  quickReplies: {
+    name: "deliver_quick_replies",
+    description: "Deliver 3 short, distinct, ready-to-send email reply options for the latest customer message.",
+    input_schema: {
+      type: "object",
+      properties: {
+        suggestions: {
+          type: "array",
+          description: "Exactly 3 reply options.",
+          items: {
+            type: "object",
+            properties: {
+              label: { type: "string", description: "Short 2-4 word action label shown as a chip (e.g. 'Confirm & proceed')." },
+              body: { type: "string", description: "Complete email body, ≤60 words, plain text, no placeholders." },
+            },
+            required: ["label", "body"],
+            additionalProperties: false,
+          },
+          minItems: 3,
+          maxItems: 3,
+        },
+      },
+      required: ["suggestions"],
+      additionalProperties: false,
+    },
+  } as ToolSchema,
 } as const;
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -2121,4 +2149,50 @@ Search the web, then call deliver_lead_enrichment.`;
   throw new Error(
     `Claude did not return enrichment (stop_reason=${response.stop_reason}). Try again with more operator context.`,
   );
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+ *  Quick Reply Suggestions — returns 3 short, ready-to-send reply options
+ *  for an email thread. Used by the Email Inbox to surface one-click drafts.
+ * ──────────────────────────────────────────────────────────────────── */
+
+export interface QuickRepliesInput {
+  agentName: string;
+  agentTone: string;
+  agentRole?: string;
+  agentSignature?: string;
+  knowledgeBase: string[];
+  threadSubject: string;
+  threadMessages: Array<{ role: string; content: string }>;
+}
+
+export interface QuickRepliesResult {
+  suggestions: Array<{ label: string; body: string }>;
+}
+
+export async function quickReplies(input: QuickRepliesInput): Promise<QuickRepliesResult> {
+  const system = `You are ${input.agentName}, an email agent${input.agentRole ? ` (${input.agentRole.replace(/_/g, " ")})` : ""}. Tone: ${input.agentTone}.
+${input.knowledgeBase.length ? `Knowledge base:\n${input.knowledgeBase.map(k => `- ${k}`).join("\n")}` : ""}
+
+Generate exactly 3 distinct quick-reply options for the latest customer message.
+Each reply must be complete, ready-to-send as-is (≤60 words), with no placeholders or brackets.
+Make each option clearly different in approach (e.g., confirming, requesting info, offering alternatives).
+Plain text only — no markdown, no lists inside the body.
+${input.agentSignature ? `Append this signature to each:\n${input.agentSignature}` : ""}`;
+
+  const lastFew = input.threadMessages.slice(-6);
+  const user = `Subject: ${input.threadSubject}
+
+RECENT THREAD:
+${lastFew.map((m, i) => `[${i + 1}] ${m.role.toUpperCase()}\n${m.content}`).join("\n\n")}
+
+Deliver 3 quick-reply options using the deliver_quick_replies tool.`;
+
+  return runStructured<QuickRepliesResult>({
+    system,
+    user,
+    tool: TOOLS.quickReplies,
+    cacheSystem: true,
+    maxTokens: 1024,
+  });
 }

@@ -49,19 +49,19 @@ function AuroraBackdrop() {
     <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
       <motion.div
         className="absolute -top-[20%] -left-[10%] w-[85vw] h-[85vw] rounded-full"
-        style={{ background: "radial-gradient(circle at center, rgba(125,249,255,0.24), transparent 58%)" }}
+        style={{ background: "radial-gradient(circle at center, rgba(10,200,212,0.09), transparent 58%)" }}
         animate={{ x: [0, 50, 0], y: [0, -40, 0] }}
         transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
         className="absolute -bottom-[20%] -right-[10%] w-[75vw] h-[75vw] rounded-full"
-        style={{ background: "radial-gradient(circle at center, rgba(255,107,217,0.20), transparent 58%)" }}
+        style={{ background: "radial-gradient(circle at center, rgba(224,64,192,0.07), transparent 58%)" }}
         animate={{ x: [0, -40, 0], y: [0, 50, 0] }}
         transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
         className="absolute top-[40%] left-[40%] w-[60vw] h-[60vw] rounded-full"
-        style={{ background: "radial-gradient(circle at center, rgba(197,139,255,0.20), transparent 58%)" }}
+        style={{ background: "radial-gradient(circle at center, rgba(155,89,245,0.07), transparent 58%)" }}
         animate={{ x: [0, 70, -30, 0], y: [0, -50, 40, 0] }}
         transition={{ duration: 35, repeat: Infinity, ease: "easeInOut" }}
       />
@@ -204,12 +204,12 @@ function Sidebar({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (
         <div className="absolute inset-0 glass-strong" />
         {/* Right edge shimmer */}
         <div className="absolute top-0 right-0 w-px h-full"
-          style={{ background: "linear-gradient(to bottom, transparent, rgba(125,249,255,0.30) 30%, rgba(197,139,255,0.25) 70%, transparent)" }}
+          style={{ background: "linear-gradient(to bottom, transparent, rgba(10,200,212,0.22) 30%, rgba(155,89,245,0.18) 70%, transparent)" }}
         />
 
         <div className="relative z-10 flex flex-col h-full">
           {/* ── Brand header ─────────────────────────────── */}
-          <div className="px-4 pt-5 pb-4 border-b border-white/6 flex items-center justify-between">
+          <div className="px-4 pt-5 pb-4 border-b border-black/7 flex items-center justify-between">
             <Link to="/" className="flex items-center gap-3 group min-w-0" onClick={() => setOpen(false)}>
               <motion.div
                 whileHover={{ rotate: 10, scale: 1.08 }}
@@ -243,18 +243,18 @@ function Sidebar({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (
           </div>
 
           {/* ── User card ────────────────────────────────── */}
-          <div className="px-3 py-3 border-b border-white/6">
-            <div className="relative flex items-center gap-3 px-3 py-2.5 rounded-xl glass border border-white/8">
+          <div className="px-3 py-3 border-b border-black/7">
+            <div className="relative flex items-center gap-3 px-3 py-2.5 rounded-xl glass border border-black/8">
               <div className="relative shrink-0">
                 <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-paper font-medium text-sm"
-                  style={{ background: "linear-gradient(135deg, #7DF9FF, #C58BFF)" }}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white font-medium text-sm"
+                  style={{ background: "linear-gradient(135deg, #0AC8D4, #9B59F5)" }}
                 >
                   {user?.email?.slice(0, 1).toUpperCase() ?? "?"}
                 </div>
                 <span
                   className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 bg-emerald-500"
-                  style={{ borderColor: "#0F0E2D" }}
+                  style={{ borderColor: "#F5F0E8" }}
                 />
               </div>
               <div className="min-w-0 flex-1">
@@ -268,7 +268,7 @@ function Sidebar({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (
               <button
                 onClick={() => signOut()}
                 title="Sign out"
-                className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-ink/40 hover:text-rose-400 hover:bg-rose-500/10 border border-white/6 hover:border-rose-500/40 transition-all"
+                className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-ink/40 hover:text-rose-600 hover:bg-rose-500/8 border border-black/7 hover:border-rose-500/35 transition-all"
               >
                 <LogOut className="w-3 h-3" />
               </button>
@@ -283,10 +283,10 @@ function Sidebar({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (
             {NAV_GROUPS.map(group => (
               <div key={group.label}>
                 <div className="px-3 mb-1.5 flex items-center gap-2">
-                  <span className="text-[7.5px] font-semibold uppercase tracking-[0.48em] text-muted/50 whitespace-nowrap">
+                  <span className="text-[7.5px] font-semibold uppercase tracking-[0.48em] text-muted/55 whitespace-nowrap">
                     {group.label}
                   </span>
-                  <span className="h-px flex-1 bg-white/6" />
+                  <span className="h-px flex-1 bg-black/7" />
                 </div>
                 <div className="space-y-0.5">
                   {group.items.map(renderNavItem)}
@@ -296,21 +296,21 @@ function Sidebar({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (
           </nav>
 
           {/* ── Footer ───────────────────────────────────── */}
-          <div className="px-3 py-3 border-t border-white/6 space-y-2 shrink-0">
+          <div className="px-3 py-3 border-t border-black/7 space-y-2 shrink-0">
             <SystemStatusBadge />
 
             {/* Quick links */}
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => { navigate("/train"); setOpen(false); }}
-                className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg glass border border-white/8 hover:border-brand/40 text-[9px] uppercase tracking-[0.24em] text-ink/60 hover:text-ink transition-all"
+                className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg glass border border-black/8 hover:border-brand/35 text-[9px] uppercase tracking-[0.24em] text-ink/55 hover:text-ink transition-all"
               >
                 <MessageSquare className="w-3 h-3" />
                 Train
               </button>
               <button
                 onClick={() => { navigate("/live"); setOpen(false); }}
-                className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg glass border border-white/8 hover:border-brand-3/40 text-[9px] uppercase tracking-[0.24em] text-ink/60 hover:text-ink transition-all"
+                className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg glass border border-black/8 hover:border-brand-3/35 text-[9px] uppercase tracking-[0.24em] text-ink/55 hover:text-ink transition-all"
               >
                 <Radio className="w-3 h-3" />
                 Live
@@ -320,12 +320,12 @@ function Sidebar({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (
             {/* Command shortcut */}
             <button
               onClick={onShowShortcuts}
-              className="hidden lg:flex w-full items-center gap-2 px-3 py-2 rounded-xl glass border border-white/8 hover:border-brand/30 text-muted/60 hover:text-ink/80 transition-all group"
+              className="hidden lg:flex w-full items-center gap-2 px-3 py-2 rounded-xl glass border border-black/8 hover:border-brand/25 text-muted/65 hover:text-ink/80 transition-all group"
               aria-label="Show keyboard shortcuts"
             >
               <Keyboard className="w-3 h-3 shrink-0" />
               <span className="text-[9px] uppercase tracking-[0.3em] flex-1 text-left">Shortcuts</span>
-              <kbd className="text-[8px] glass border border-white/10 px-1.5 py-0.5 rounded font-mono text-muted/70 group-hover:border-brand/30 group-hover:text-brand transition-all">
+              <kbd className="text-[8px] glass border border-black/10 px-1.5 py-0.5 rounded font-mono text-muted/70 group-hover:border-brand/25 group-hover:text-brand transition-all">
                 ?
               </kbd>
             </button>
@@ -355,7 +355,7 @@ function RouteFallback() {
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
       <div className="relative w-16 h-16">
-        <div className="absolute inset-0 rounded-full" style={{ background: "conic-gradient(from 0deg, #7DF9FF, #C58BFF, #FF6BD9, #4DFFC4, #7DF9FF)", filter: "blur(1px)", animation: "spin 4s linear infinite" }} />
+        <div className="absolute inset-0 rounded-full" style={{ background: "conic-gradient(from 0deg, #0AC8D4, #9B59F5, #E040C0, #10B981, #0AC8D4)", filter: "blur(1px)", animation: "spin 4s linear infinite" }} />
         <div className="absolute inset-1 rounded-full bg-paper" />
         <div className="absolute inset-2 rounded-full glass flex items-center justify-center">
           <Loader2 className="w-5 h-5 text-aurora animate-spin" />
@@ -511,7 +511,7 @@ function AppContent() {
           className="relative w-44 h-44 mb-12"
         >
           <div className="absolute inset-0 rounded-full" style={{
-            background: "conic-gradient(from 0deg, #7DF9FF, #C58BFF, #FF6BD9, #4DFFC4, #7DF9FF)",
+            background: "conic-gradient(from 0deg, #0AC8D4, #9B59F5, #E040C0, #10B981, #0AC8D4)",
             filter: "blur(2px)"
           }} />
           <div className="absolute inset-2 rounded-full bg-paper" />
@@ -561,25 +561,25 @@ function AppContent() {
 
       <main className="flex-1 overflow-hidden relative flex flex-col z-10">
          {/* Mobile Header */}
-         <div className="lg:hidden p-4 flex items-center justify-between z-30 sticky top-0 glass-strong border-b border-white/10 shrink-0 shadow-lg">
+         <div className="lg:hidden p-4 flex items-center justify-between z-30 sticky top-0 glass-strong border-b border-black/8 shrink-0 shadow-sm">
             <button
               onClick={() => setSidebarOpen(true)}
               aria-label="Open navigation menu"
               aria-expanded={sidebarOpen}
-              className="w-10 h-10 rounded-xl glass border border-white/12 flex items-center justify-center hover:border-brand/50 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/70"
+              className="w-10 h-10 rounded-xl glass border border-black/10 flex items-center justify-center hover:border-brand/40 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60"
             >
               <Menu className="w-5 h-5 text-ink" />
             </button>
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center shadow-lg" style={{ background: "linear-gradient(135deg, #7DF9FF, #C58BFF, #FF6BD9)" }}>
-                <Waves className="w-4 h-4 text-paper" strokeWidth={2.5} />
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center shadow-sm" style={{ background: "linear-gradient(135deg, #0AC8D4, #9B59F5, #E040C0)" }}>
+                <Waves className="w-4 h-4 text-white" strokeWidth={2.5} />
               </div>
               <span className="brand-wordmark text-xl leading-none">WIRELINE</span>
             </div>
             <button
               onClick={() => navigate('/admin')}
               aria-label="Open settings"
-              className="w-10 h-10 rounded-xl glass border border-white/12 flex items-center justify-center hover:border-brand/50 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/70"
+              className="w-10 h-10 rounded-xl glass border border-black/10 flex items-center justify-center hover:border-brand/40 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60"
             >
               <User className="w-5 h-5 text-ink/70" />
             </button>
