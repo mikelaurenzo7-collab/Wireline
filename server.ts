@@ -26,6 +26,7 @@ import * as claudeBrain from "./src/lib/claude-brain";
 import { AuditLogger } from "./src/lib/audit-logger";
 import { rateLimit, isRedisConfigured, startMemoryCleanup } from "./src/lib/rate-limit";
 import { SentryEvents } from "./src/lib/sentry-events";
+import { AgentFormSchema, DirectiveSchema, KnowledgeSchema, parseFormData } from "./src/lib/form-validators";
 
 // ────────────────────────────────────────────────────────────────────
 //  Error handling — safely extract message from unknown errors
@@ -3630,11 +3631,22 @@ app.post("/api/agents/:id/import", authenticateUser, async (req: any, res: any) 
 
 app.post("/api/agents", authenticateUser, async (req: any, res: any) => {
   try {
+    // Validate input using Zod schema
+    const validation = parseFormData(AgentFormSchema, {
+      name: req.body.name,
+      role: req.body.role,
+      personality: req.body.personality
+    });
+
+    if (!validation.success) {
+      return res.status(400).json({ error: "Validation failed", errors: validation.errors });
+    }
+
     // SECURITY ENFORCEMENT: Check Subscription Status for this specific user
     const { data: userSettings } = await db.from('wireline_settings').select('subscription_status, max_agents').eq('user_id', req.user.id).single();
-    
+
     // Gating mechanism: Prevent agent creation if the account is unpaid
-    const subscriptionStatus = userSettings?.subscription_status || 'active'; 
+    const subscriptionStatus = userSettings?.subscription_status || 'active';
     if (subscriptionStatus !== 'active') {
        return res.status(403).json({ error: "Access Denied: Please upgrade your billing plan." });
     }
@@ -3642,42 +3654,47 @@ app.post("/api/agents", authenticateUser, async (req: any, res: any) => {
     // Agent Limit Check
     const maxAgents = userSettings?.max_agents || 3;
     const { count: agentCount } = await db.from('wireline_agents').select('*', { count: 'exact', head: true }).eq('user_id', req.user.id);
-    
+
     if (agentCount !== null && agentCount >= maxAgents) {
       return res.status(403).json({ error: `Quota Exceeded: Your plan only allows ${maxAgents} agents.` });
     }
 
-    const { id, name, voice_id, channel, role } = req.body;
+    const { id, voice_id, channel } = req.body;
+    const { name, role, personality } = validation.data;
     const agentRole = role || DEFAULT_AGENT_ROLE;
+    const agentId = id || `agent-${Date.now()}`;
     await db.from('wireline_agents').insert({
-      id: id || `agent-${Date.now()}`,
+      id: agentId,
       user_id: req.user.id,
-      name: name || "New Agent",
+      name,
       voice_id: voice_id || 'bIHbv24MWmeRgasZH58o',
       channel: channel || 'voice',
       role: agentRole
     });
-    
-    // Seed role-appropriate default personality
+
+    // Use provided personality or fall back to role-appropriate template
+    const personalityContent = personality
+      || ROLE_PERSONALITY_TEMPLATES[agentRole as keyof typeof ROLE_PERSONALITY_TEMPLATES]
+      || (channel === 'email'
+        ? "You are a professional email agent specialized in clear, efficient communication."
+        : "You are a helpful assistant serving as a phone agent.");
+
     await db.from('wireline_personality').insert({
-       agent_id: id,
+       agent_id: agentId,
        user_id: req.user.id,
-       content: ROLE_PERSONALITY_TEMPLATES[agentRole as keyof typeof ROLE_PERSONALITY_TEMPLATES]
-         ?? (channel === 'email'
-           ? "You are a professional email agent specialized in clear, efficient communication."
-           : "You are a helpful assistant serving as a phone agent.")
+       content: personalityContent
     });
     
     // Audit log: agent creation
     void auditLogger.logAgentOperation('created', {
       userId: req.user.id,
-      agentId: id,
-      agentName: name || "New Agent",
+      agentId,
+      agentName: name,
       metadata: { channel: channel || 'voice', archetype: agentRole },
       ip: req.ip
     }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
-    
-    res.json({ success: true, id });
+
+    res.json({ success: true, id: agentId });
   } catch (error) {
     log.error("Agent creation failed", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to create agent" });
@@ -3768,7 +3785,19 @@ app.post("/api/fleet/seed", authenticateUser, async (req: any, res: any) => {
 // Update agent settings
 app.put("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
   try {
-    const { name, voice_id, voice_id_inbound, voice_id_outbound, voice_provider, first_message, archetype, ambient_noise, website_url, transfer_phone, email_auto_respond, email_agent_tone, email_signature, channel, role } = req.body;
+    // Validate core fields using Zod schema
+    const validation = parseFormData(AgentFormSchema, {
+      name: req.body.name,
+      role: req.body.role,
+      personality: req.body.personality
+    });
+
+    if (!validation.success) {
+      return res.status(400).json({ error: "Validation failed", errors: validation.errors });
+    }
+
+    const { name, role, personality } = validation.data;
+    const { voice_id, voice_id_inbound, voice_id_outbound, voice_provider, first_message, archetype, ambient_noise, website_url, transfer_phone, email_auto_respond, email_agent_tone, email_signature, channel } = req.body;
     await db.from('wireline_agents').update({ 
       name, 
       voice_id, 
@@ -4143,9 +4172,17 @@ app.get("/api/knowledge", authenticateUser, async (req: any, res: any) => {
 
 app.post("/api/knowledge", authenticateUser, async (req: any, res: any) => {
   try {
-    const content = (req.body?.content || "").toString().trim();
+    // Validate input using Zod schema
+    const validation = parseFormData(KnowledgeSchema, {
+      content: req.body.content
+    });
+
+    if (!validation.success) {
+      return res.status(400).json({ error: "Validation failed", errors: validation.errors });
+    }
+
+    const content = validation.data.content;
     const agent_id = (req.body?.agent_id || "").toString();
-    if (!content) return res.status(400).json({ error: "content is required" });
     if (!agent_id) return res.status(400).json({ error: "agent_id is required" });
 
     // Confirm the agent belongs to this user before insert.
@@ -4171,8 +4208,16 @@ app.post("/api/knowledge", authenticateUser, async (req: any, res: any) => {
 
 app.patch("/api/knowledge/:id", authenticateUser, async (req: any, res: any) => {
   try {
-    const content = (req.body?.content || "").toString().trim();
-    if (!content) return res.status(400).json({ error: "content is required" });
+    // Validate input using Zod schema
+    const validation = parseFormData(KnowledgeSchema, {
+      content: req.body.content
+    });
+
+    if (!validation.success) {
+      return res.status(400).json({ error: "Validation failed", errors: validation.errors });
+    }
+
+    const content = validation.data.content;
     const { data, error } = await db.from("wireline_knowledge")
       .update({ content: content.slice(0, 8000) })
       .eq("id", req.params.id)
