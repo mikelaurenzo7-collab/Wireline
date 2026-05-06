@@ -48,18 +48,18 @@ interface RecipeMeta {
 }
 
 const RECIPE_META: Record<Recipe, RecipeMeta> = {
-  "brief":              { title: "Pre-Call Brief",       tagline: "Tactical playbook before you dial.",                  icon: Compass,     accent: "#7DF9FF", thinking: true  },
-  "enrich-lead":        { title: "Enrich Lead",          tagline: "Wireline AI searches the web — identity, employer, hooks.", icon: Search,      accent: "#4DFFC4", thinking: false },
-  "qualify":            { title: "Lead Qualification",   tagline: "BANT-scored evidence, not vibes.",                    icon: Target,      accent: "#C58BFF", thinking: true  },
-  "objection-drill":    { title: "Objection Drills",     tagline: "Realistic scenarios with scripted rebuttals.",        icon: ShieldAlert, accent: "#FF6BD9", thinking: false },
-  "cold-email":         { title: "Cold Email",           tagline: "Reply-worthy outreach in 120 words.",                 icon: Mail,        accent: "#4DFFC4", thinking: false },
+  "brief":              { title: "Pre-Call Brief",       tagline: "Tactical playbook before you dial.",                  icon: Compass,     accent: "#0AC8D4", thinking: true  },
+  "enrich-lead":        { title: "Enrich Lead",          tagline: "Wireline AI searches the web — identity, employer, hooks.", icon: Search,      accent: "#10B981", thinking: false },
+  "qualify":            { title: "Lead Qualification",   tagline: "BANT-scored evidence, not vibes.",                    icon: Target,      accent: "#9B59F5", thinking: true  },
+  "objection-drill":    { title: "Objection Drills",     tagline: "Realistic scenarios with scripted rebuttals.",        icon: ShieldAlert, accent: "#E040C0", thinking: false },
+  "cold-email":         { title: "Cold Email",           tagline: "Reply-worthy outreach in 120 words.",                 icon: Mail,        accent: "#10B981", thinking: false },
   "persona-clone":      { title: "Persona Clone",        tagline: "Distill a person's voice from samples.",              icon: Wand2,       accent: "#FFC07D", thinking: true  },
-  "summarize-thread":   { title: "Thread Summary",       tagline: "Action items + sentiment in one sweep.",              icon: ScrollText,  accent: "#7DF9FF", thinking: false },
-  "agent-review":       { title: "Performance Review",   tagline: "Deep audit of your last N calls.",                    icon: BarChart3,   accent: "#C58BFF", thinking: true  },
-  "coach":              { title: "Live Call Coach",      tagline: "Real-time take on a transcript — what to say next.",  icon: Headphones,  accent: "#FF6BD9", thinking: false },
-  "knowledge-from-url":      { title: "Ingest from URL",      tagline: "Wireline AI reads your site and extracts agent facts.",    icon: Globe,    accent: "#7DF9FF", thinking: false },
+  "summarize-thread":   { title: "Thread Summary",       tagline: "Action items + sentiment in one sweep.",              icon: ScrollText,  accent: "#0AC8D4", thinking: false },
+  "agent-review":       { title: "Performance Review",   tagline: "Deep audit of your last N calls.",                    icon: BarChart3,   accent: "#9B59F5", thinking: true  },
+  "coach":              { title: "Live Call Coach",      tagline: "Real-time take on a transcript — what to say next.",  icon: Headphones,  accent: "#E040C0", thinking: false },
+  "knowledge-from-url":      { title: "Ingest from URL",      tagline: "Wireline AI reads your site and extracts agent facts.",    icon: Globe,    accent: "#0AC8D4", thinking: false },
   "knowledge-from-document": { title: "Ingest from PDF",      tagline: "Upload a brochure, menu, or policy doc — Wireline AI reads it.", icon: FileUp, accent: "#FFC07D", thinking: false },
-  "agent-forge":             { title: "Agent Forge",          tagline: "Synthesize a complete agent from a goal.",            icon: Hammer,   accent: "#4DFFC4", thinking: true  },
+  "agent-forge":             { title: "Agent Forge",          tagline: "Synthesize a complete agent from a goal.",            icon: Hammer,   accent: "#10B981", thinking: true  },
 };
 
 interface AgentLite { id: string; name: string; archetype: string; }
@@ -802,9 +802,9 @@ function EnrichLeadForm({ initial, disabled }: { initial?: any; disabled: boolea
     } catch (e: any) { setErr(e.message); } finally { setLoading(false); }
   };
 
-  const confidenceAccent = enrichment?.research_confidence === "high" ? "#4DFFC4"
+  const confidenceAccent = enrichment?.research_confidence === "high" ? "#10B981"
     : enrichment?.research_confidence === "medium" ? "#FFC07D"
-    : "#FF6BD9";
+    : "#E040C0";
 
   return (
     <FormShell>

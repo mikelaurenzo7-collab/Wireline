@@ -12,25 +12,25 @@ const FEATURES = [
     icon: Bot,
     title: "AI Voice Agents",
     desc: "Deploy intelligent voice agents that handle inbound and outbound calls 24/7.",
-    accent: "#7DF9FF",
+    accent: "#0AC8D4",
   },
   {
     icon: BarChart3,
     title: "Real-time Analytics",
     desc: "Funnel analysis, sentiment scoring, topic clusters and leaderboards in one view.",
-    accent: "#C58BFF",
+    accent: "#9B59F5",
   },
   {
     icon: Radio,
     title: "Live Call Monitor",
     desc: "Watch every active call and intervene with real-time coaching.",
-    accent: "#FF6BD9",
+    accent: "#E040C0",
   },
   {
     icon: Zap,
     title: "Outbound Campaigns",
     desc: "Upload a CSV, choose your agent, and launch auto-dial campaigns instantly.",
-    accent: "#4DFFC4",
+    accent: "#10B981",
   },
 ];
 
@@ -74,7 +74,7 @@ export default function AuthPortal() {
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <motion.div
           className="absolute -top-[25%] -left-[15%] w-[70vw] h-[70vw] rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(125,249,255,0.22), transparent 60%)" }}
+          style={{ background: "radial-gradient(circle, rgba(10,200,212,0.22), transparent 60%)" }}
           animate={{ x: [0, 40, 0], y: [0, -30, 0] }}
           transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
         />
@@ -106,7 +106,7 @@ export default function AuthPortal() {
       <div className="hidden lg:flex lg:w-[54%] xl:w-[56%] flex-col relative z-10 p-10 xl:p-14 overflow-hidden">
         {/* Decorative vertical line on right edge */}
         <div className="absolute top-0 right-0 w-px h-full"
-          style={{ background: "linear-gradient(to bottom, transparent, rgba(125,249,255,0.35) 30%, rgba(197,139,255,0.35) 70%, transparent)" }}
+          style={{ background: "linear-gradient(to bottom, transparent, rgba(10,200,212,0.35) 30%, rgba(197,139,255,0.35) 70%, transparent)" }}
         />
 
         {/* Logo */}
@@ -119,8 +119,8 @@ export default function AuthPortal() {
           <div
             className="relative w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
             style={{
-              background: "linear-gradient(135deg, #7DF9FF 0%, #C58BFF 50%, #FF6BD9 100%)",
-              boxShadow: "0 8px 24px -8px rgba(125,249,255,0.60), 0 0 0 1px rgba(255,255,255,0.22) inset"
+              background: "linear-gradient(135deg, #0AC8D4 0%, #9B59F5 50%, #E040C0 100%)",
+              boxShadow: "0 8px 24px -8px rgba(10,200,212,0.60), 0 0 0 1px rgba(255,255,255,0.22) inset"
             }}
           >
             <Waves className="w-5 h-5 text-paper" strokeWidth={2.5} />
@@ -215,8 +215,8 @@ export default function AuthPortal() {
           <div
             className="w-16 h-16 rounded-2xl flex items-center justify-center"
             style={{
-              background: "linear-gradient(135deg, #7DF9FF 0%, #C58BFF 50%, #FF6BD9 100%)",
-              boxShadow: "0 16px 40px -10px rgba(125,249,255,0.55)"
+              background: "linear-gradient(135deg, #0AC8D4 0%, #9B59F5 50%, #E040C0 100%)",
+              boxShadow: "0 16px 40px -10px rgba(10,200,212,0.55)"
             }}
           >
             <Waves className="w-8 h-8 text-paper" strokeWidth={2.2} />
@@ -237,11 +237,11 @@ export default function AuthPortal() {
               {/* Subtle ambient glows inside card */}
               <div
                 className="absolute -top-24 -right-24 w-56 h-56 rounded-full opacity-20 blur-3xl pointer-events-none"
-                style={{ background: "radial-gradient(circle, #7DF9FF, transparent)" }}
+                style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }}
               />
               <div
                 className="absolute -bottom-24 -left-24 w-56 h-56 rounded-full opacity-20 blur-3xl pointer-events-none"
-                style={{ background: "radial-gradient(circle, #FF6BD9, transparent)" }}
+                style={{ background: "radial-gradient(circle, #E040C0, transparent)" }}
               />
 
               {/* Header */}
@@ -258,15 +258,15 @@ export default function AuthPortal() {
 
               {/* Tab toggle */}
               <div className="relative z-10 mb-7">
-                <div className="relative flex p-1 rounded-2xl bg-black/30 border border-white/8">
+                <div className="relative flex p-1 rounded-2xl bg-black/8 border border-black/10">
                   <motion.div
                     layout
                     className="absolute inset-y-1 w-[calc(50%-4px)] rounded-xl"
                     style={{
-                      background: "linear-gradient(135deg, rgba(125,249,255,0.20), rgba(197,139,255,0.20))",
-                      border: "1px solid rgba(125,249,255,0.35)",
+                      background: "linear-gradient(135deg, rgba(10,200,212,0.20), rgba(197,139,255,0.20))",
+                      border: "1px solid rgba(10,200,212,0.35)",
                       left: isSignUp ? "calc(50% + 2px)" : "4px",
-                      boxShadow: "0 6px 20px -8px rgba(125,249,255,0.5)"
+                      boxShadow: "0 6px 20px -8px rgba(10,200,212,0.5)"
                     }}
                     transition={{ type: "spring", stiffness: 400, damping: 34 }}
                   />
@@ -306,7 +306,7 @@ export default function AuthPortal() {
                     />
                     <div
                       className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity"
-                      style={{ boxShadow: "0 0 0 1px rgba(125,249,255,0.4), 0 0 20px rgba(125,249,255,0.18)" }}
+                      style={{ boxShadow: "0 0 0 1px rgba(10,200,212,0.4), 0 0 20px rgba(10,200,212,0.18)" }}
                     />
                   </div>
                 </div>
@@ -328,7 +328,7 @@ export default function AuthPortal() {
                     />
                     <div
                       className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity"
-                      style={{ boxShadow: "0 0 0 1px rgba(125,249,255,0.4), 0 0 20px rgba(125,249,255,0.18)" }}
+                      style={{ boxShadow: "0 0 0 1px rgba(10,200,212,0.4), 0 0 20px rgba(10,200,212,0.18)" }}
                     />
                   </div>
                 </div>

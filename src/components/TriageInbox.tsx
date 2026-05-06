@@ -50,7 +50,7 @@ export default function TriageInbox() {
           icon={Inbox}
           title="All clear"
           description="No items need attention right now. Triage surfaces follow-ups, hot leads, and escalations from your agent activity."
-          accent="#4DFFC4"
+          accent="#10B981"
           actions={[
             { label: "View Call Logs", to: "/logs" },
             { label: "View Dashboard", to: "/" },
@@ -125,7 +125,7 @@ function HotLeads({ items }: { items: any[] }) {
               <span className="w-1 h-1 rounded-full bg-white/15" />
               <span
                 className="text-brand/80"
-                style={{ textShadow: "0 0 10px rgba(125,249,255,0.5)" }}
+                style={{ textShadow: "0 0 10px rgba(10,200,212,0.5)" }}
               >
                 {c.intent_label} intent
               </span>

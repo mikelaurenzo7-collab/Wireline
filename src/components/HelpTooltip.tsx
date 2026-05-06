@@ -63,12 +63,10 @@ export function HelpTooltip({
             className={`absolute z-[200] max-w-xs pointer-events-none ${PLACEMENT_CLASSES[placement]}`}
           >
             <div
-              className="rounded-lg border px-3 py-2 shadow-xl"
+              className="glass-elevated rounded-lg border px-3 py-2 shadow-xl"
               style={{
-                background: "rgba(15, 14, 45, 0.92)",
-                backdropFilter: "blur(16px)",
-                borderColor: "rgba(125, 249, 255, 0.25)",
-                boxShadow: "0 0 0 1px rgba(125,249,255,0.08) inset, 0 8px 24px rgba(0,0,0,0.5)",
+                borderColor: "rgba(10, 200, 212, 0.20)",
+                boxShadow: "0 1px 0 rgba(255,255,255,0.9) inset, 0 8px 24px rgba(0,0,0,0.12), 0 0 0 1px rgba(10,200,212,0.06)",
               }}
             >
               {title && (

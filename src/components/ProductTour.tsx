@@ -162,8 +162,8 @@ export default function ProductTour() {
               left: anchorRect.left - 4,
               width: anchorRect.width + 8,
               height: anchorRect.height + 8,
-              boxShadow: "0 0 0 2px rgba(125,249,255,0.7), 0 0 16px rgba(125,249,255,0.35)",
-              border: "2px solid rgba(125,249,255,0.8)",
+              boxShadow: "0 0 0 2px rgba(10,200,212,0.7), 0 0 16px rgba(10,200,212,0.35)",
+              border: "2px solid rgba(10,200,212,0.8)",
             }}
           />
         )}
@@ -206,12 +206,10 @@ export default function ProductTour() {
           }
         >
           <div
-            className="rounded-2xl border p-5 shadow-2xl"
+            className="glass-elevated rounded-2xl border p-5 shadow-2xl"
             style={{
-              background: "rgba(15, 14, 45, 0.96)",
-              backdropFilter: "blur(24px)",
-              borderColor: "rgba(125, 249, 255, 0.3)",
-              boxShadow: "0 0 0 1px rgba(125,249,255,0.1) inset, 0 24px 64px rgba(0,0,0,0.7), 0 0 40px rgba(125,249,255,0.08)",
+              borderColor: "rgba(10, 200, 212, 0.18)",
+              boxShadow: "0 1px 0 rgba(255,255,255,0.9) inset, 0 24px 64px rgba(0,0,0,0.12), 0 0 0 1px rgba(10,200,212,0.06)",
             }}
           >
             {/* Header row */}
@@ -242,8 +240,8 @@ export default function ProductTour() {
                       width: i === stepIndex ? 16 : 6,
                       height: 6,
                       background: i === stepIndex
-                        ? "linear-gradient(90deg, #7DF9FF, #C58BFF)"
-                        : "rgba(255,255,255,0.3)",
+                        ? "linear-gradient(90deg, #0AC8D4, #9B59F5)"
+                        : "rgba(0,0,0,0.15)",
                       transition: "width 0.3s ease",
                     }}
                   />

@@ -216,8 +216,8 @@ function Sidebar({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (
                 transition={{ type: "spring", stiffness: 400, damping: 20 }}
                 className="relative w-9 h-9 rounded-xl flex items-center justify-center overflow-hidden shrink-0"
                 style={{
-                  background: "linear-gradient(135deg, #7DF9FF 0%, #C58BFF 50%, #FF6BD9 100%)",
-                  boxShadow: "0 6px 20px -8px rgba(125,249,255,0.65), 0 0 0 1px rgba(255,255,255,0.22) inset"
+                  background: "linear-gradient(135deg, #0AC8D4 0%, #9B59F5 50%, #E040C0 100%)",
+                  boxShadow: "0 6px 20px -8px rgba(10,200,212,0.65), 0 0 0 1px rgba(255,255,255,0.22) inset"
                 }}
               >
                 <Waves className="w-4.5 h-4.5 text-paper relative z-10" strokeWidth={2.5} />

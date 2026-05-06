@@ -202,7 +202,7 @@ export default function LiveMonitor() {
             <div
               className="absolute inset-0 rounded-full opacity-40"
               style={{
-                background: "conic-gradient(from 0deg, #7DF9FF, #C58BFF, #FF6BD9, #4DFFC4, #7DF9FF)",
+                background: "conic-gradient(from 0deg, #0AC8D4, #9B59F5, #E040C0, #10B981, #0AC8D4)",
                 filter: "blur(1px)",
                 animation: "spin 2s linear infinite",
               }}
@@ -218,10 +218,10 @@ export default function LiveMonitor() {
         <div className="h-full flex flex-col gap-3 overflow-hidden">
           {/* Stat row */}
           <div className="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <StatTile label="Active Calls"       value={activeCount}       sub="Live right now"        icon={Radio}     accent="#7DF9FF" />
-            <StatTile label="Fleet Size"         value={agents.length}     sub="Configured agents"     icon={Users}     accent="#C58BFF" />
-            <StatTile label="Recent Activity"    value={todayCallCount}    sub="Events in feed"        icon={Activity}  accent="#FF6BD9" />
-            <StatTile label="Avg Lead Score"     value={avgLeadScore}      sub="Recent calls"          icon={Zap}       accent="#4DFFC4" />
+            <StatTile label="Active Calls"       value={activeCount}       sub="Live right now"        icon={Radio}     accent="#0AC8D4" />
+            <StatTile label="Fleet Size"         value={agents.length}     sub="Configured agents"     icon={Users}     accent="#9B59F5" />
+            <StatTile label="Recent Activity"    value={todayCallCount}    sub="Events in feed"        icon={Activity}  accent="#E040C0" />
+            <StatTile label="Avg Lead Score"     value={avgLeadScore}      sub="Recent calls"          icon={Zap}       accent="#10B981" />
           </div>
 
           {/* Main grid */}
@@ -253,7 +253,7 @@ export default function LiveMonitor() {
                         <div
                           className="absolute inset-0 rounded-2xl opacity-15"
                           style={{
-                            background: "linear-gradient(135deg, #7DF9FF, #C58BFF)",
+                            background: "linear-gradient(135deg, #0AC8D4, #9B59F5)",
                             animation: "pulse 3s ease-in-out infinite",
                           }}
                         />

@@ -856,7 +856,7 @@ export default function OutboundDialer() {
                       animate={{ width: `${selectedCampaign.leads_count > 0 ? Math.round(((selectedCampaign.dialed_count ?? 0) / selectedCampaign.leads_count) * 100) : 0}%` }}
                       transition={{ duration: 0.6, ease: "easeOut" }}
                       className="h-full rounded-full"
-                      style={{ background: "linear-gradient(90deg,#7DF9FF,#C58BFF)" }}
+                      style={{ background: "linear-gradient(90deg,#0AC8D4,#9B59F5)" }}
                     />
                   </div>
                   <div className="flex items-center gap-1 mt-1.5">
@@ -887,10 +887,10 @@ export default function OutboundDialer() {
                         {/* Call stats */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                           {[
-                            { label: "Answered",     value: campaignAnalytics.call_stats?.answered ?? 0,                             icon: Phone,       accent: "#4DFFC4" },
-                            { label: "Avg Duration",  value: `${campaignAnalytics.call_stats?.avg_duration_sec ?? 0}s`,               icon: Clock,       accent: "#7DF9FF" },
-                            { label: "Total Cost",    value: `$${(campaignAnalytics.call_stats?.total_cost_usd ?? 0).toFixed(3)}`,    icon: DollarSign,  accent: "#C58BFF" },
-                            { label: "Avg Score",     value: campaignAnalytics.call_stats?.avg_lead_score != null ? campaignAnalytics.call_stats.avg_lead_score : "—", icon: Award, accent: "#FF6BD9" },
+                            { label: "Answered",     value: campaignAnalytics.call_stats?.answered ?? 0,                             icon: Phone,       accent: "#10B981" },
+                            { label: "Avg Duration",  value: `${campaignAnalytics.call_stats?.avg_duration_sec ?? 0}s`,               icon: Clock,       accent: "#0AC8D4" },
+                            { label: "Total Cost",    value: `$${(campaignAnalytics.call_stats?.total_cost_usd ?? 0).toFixed(3)}`,    icon: DollarSign,  accent: "#9B59F5" },
+                            { label: "Avg Score",     value: campaignAnalytics.call_stats?.avg_lead_score != null ? campaignAnalytics.call_stats.avg_lead_score : "—", icon: Award, accent: "#E040C0" },
                           ].map(({ label, value, icon: Icon, accent }) => (
                             <div key={label} className="rounded-xl glass border border-white/8 p-3">
                               <div className="flex items-center gap-1.5 mb-1.5">
@@ -910,11 +910,11 @@ export default function OutboundDialer() {
                             <div className="space-y-1.5">
                               {campaignAnalytics.outcomes.map((o: any) => {
                                 const color =
-                                  o.status === "Completed" ? "#4DFFC4" :
-                                  o.status === "Failed" || o.status?.includes("Fail") ? "#FF6BD9" :
-                                  o.status === "Queued" ? "#7DF9FF" :
+                                  o.status === "Completed" ? "#10B981" :
+                                  o.status === "Failed" || o.status?.includes("Fail") ? "#E040C0" :
+                                  o.status === "Queued" ? "#0AC8D4" :
                                   o.status?.includes("Blocked") ? "#FF9A5C" :
-                                  "#8B89B8";
+                                  "#7C7469";
                                 return (
                                   <div key={o.status} className="flex items-center gap-2.5">
                                     <span className="text-[9px] text-muted w-28 shrink-0">{o.status}</span>
@@ -945,10 +945,10 @@ export default function OutboundDialer() {
             {/* Stats row */}
             <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-2 border-b border-white/8">
               {[
-                { label: "Leads",     value: selectedCampaign.leads_count,     accent: "#7DF9FF" },
-                { label: "Dialed",    value: selectedCampaign.dialed_count,     accent: "#C58BFF" },
-                { label: "Connected", value: selectedCampaign.connected_count,  accent: "#4DFFC4" },
-                { label: "Window",    value: `${selectedCampaign.call_window_start}–${selectedCampaign.call_window_end}`, accent: "#FF6BD9" },
+                { label: "Leads",     value: selectedCampaign.leads_count,     accent: "#0AC8D4" },
+                { label: "Dialed",    value: selectedCampaign.dialed_count,     accent: "#9B59F5" },
+                { label: "Connected", value: selectedCampaign.connected_count,  accent: "#10B981" },
+                { label: "Window",    value: `${selectedCampaign.call_window_start}–${selectedCampaign.call_window_end}`, accent: "#E040C0" },
               ].map(s => (
                 <div key={s.label} className="rounded-lg glass border border-white/8 p-2.5">
                   <div className="text-[8px] uppercase tracking-[0.3em] mb-1" style={{ color: s.accent }}>{s.label}</div>

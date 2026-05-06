@@ -757,10 +757,10 @@ function AuditActivityPanel() {
           {/* Hero stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 shrink-0">
             {[
-              { label: "AI Calls",        value: totals.calls ?? 0,                          icon: Activity,    accent: "#7DF9FF" },
-              { label: "Total Cost",      value: `$${Number(totals.cost ?? 0).toFixed(4)}`,  icon: DollarSign,  accent: "#C58BFF" },
-              { label: "Cache Saved",     value: `$${Number(totals.cache_savings_usd ?? 0).toFixed(4)}`, icon: TrendingUp, accent: "#4DFFC4" },
-              { label: "Avg Cost/Call",   value: `$${Number(totals.avg_cost_per_call ?? 0).toFixed(5)}`, icon: BarChart3,  accent: "#FF6BD9" },
+              { label: "AI Calls",        value: totals.calls ?? 0,                          icon: Activity,    accent: "#0AC8D4" },
+              { label: "Total Cost",      value: `$${Number(totals.cost ?? 0).toFixed(4)}`,  icon: DollarSign,  accent: "#9B59F5" },
+              { label: "Cache Saved",     value: `$${Number(totals.cache_savings_usd ?? 0).toFixed(4)}`, icon: TrendingUp, accent: "#10B981" },
+              { label: "Avg Cost/Call",   value: `$${Number(totals.avg_cost_per_call ?? 0).toFixed(5)}`, icon: BarChart3,  accent: "#E040C0" },
             ].map(({ label, value, icon: Icon, accent }) => (
               <div key={label} className="relative rounded-xl glass border border-white/10 p-4 overflow-hidden">
                 <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-20 blur-3xl pointer-events-none" style={{ background: `radial-gradient(circle,${accent},transparent)` }} />
@@ -786,20 +786,20 @@ function AuditActivityPanel() {
                     <AreaChart data={byDay} margin={{ top: 4, right: 0, left: -28, bottom: 0 }}>
                       <defs>
                         <linearGradient id="auditGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#7DF9FF" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="#7DF9FF" stopOpacity={0} />
+                          <stop offset="5%" stopColor="#0AC8D4" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#0AC8D4" stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                      <XAxis dataKey="day" tick={{ fill: "#8B89B8", fontSize: 9 }} tickLine={false} axisLine={false} />
-                      <YAxis tick={{ fill: "#8B89B8", fontSize: 9 }} tickLine={false} axisLine={false} tickFormatter={(v: number) => `$${v.toFixed(3)}`} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
+                      <XAxis dataKey="day" tick={{ fill: "#7C7469", fontSize: 9 }} tickLine={false} axisLine={false} />
+                      <YAxis tick={{ fill: "#7C7469", fontSize: 9 }} tickLine={false} axisLine={false} tickFormatter={(v: number) => `$${v.toFixed(3)}`} />
                       <Tooltip
-                        contentStyle={{ background: "#0F0E2D", border: "1px solid rgba(125,249,255,0.2)", borderRadius: 8, fontSize: 11 }}
-                        labelStyle={{ color: "#8B89B8" }}
-                        itemStyle={{ color: "#7DF9FF" }}
+                        contentStyle={{ background: "#F5F0E8", border: "1px solid rgba(10,200,212,0.2)", borderRadius: 8, fontSize: 11 }}
+                        labelStyle={{ color: "#7C7469" }}
+                        itemStyle={{ color: "#0AC8D4" }}
                         formatter={(v: any) => [`$${Number(v).toFixed(4)}`, "Cost"]}
                       />
-                      <Area type="monotone" dataKey="cost" stroke="#7DF9FF" strokeWidth={1.5} fill="url(#auditGrad)" />
+                      <Area type="monotone" dataKey="cost" stroke="#0AC8D4" strokeWidth={1.5} fill="url(#auditGrad)" />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -829,7 +829,7 @@ function AuditActivityPanel() {
                             animate={{ width: `${pct}%` }}
                             transition={{ duration: 0.7, ease: "easeOut" }}
                             className="h-full rounded-full"
-                            style={{ background: "linear-gradient(90deg,#7DF9FF,#C58BFF)" }}
+                            style={{ background: "linear-gradient(90deg,#0AC8D4,#9B59F5)" }}
                           />
                         </div>
                         <span className="text-[9px] font-mono text-ink/70 w-16 text-right shrink-0">${Number(m.cost).toFixed(4)}</span>
@@ -861,7 +861,7 @@ function AuditActivityPanel() {
                           animate={{ width: `${pct}%` }}
                           transition={{ duration: 0.7, ease: "easeOut" }}
                           className="h-full rounded-full"
-                          style={{ background: "linear-gradient(90deg,#C58BFF,#FF6BD9)" }}
+                          style={{ background: "linear-gradient(90deg,#9B59F5,#E040C0)" }}
                         />
                       </div>
                       <div className="flex items-center gap-2 shrink-0">

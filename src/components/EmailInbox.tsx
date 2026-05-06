@@ -229,7 +229,7 @@ export default function EmailInbox() {
                       {/* Active bar */}
                       {active && (
                         <div className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full"
-                          style={{ background: "linear-gradient(to bottom, #7DF9FF, #C58BFF)" }}
+                          style={{ background: "linear-gradient(to bottom, #0AC8D4, #9B59F5)" }}
                         />
                       )}
 

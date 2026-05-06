@@ -188,7 +188,7 @@ interface PanelProps {
 
 export function Panel({
   title, hint, actions, icon: Icon, scroll = false, children,
-  className, bodyClassName, flush = false, accent = "#7DF9FF",
+  className, bodyClassName, flush = false, accent = "#0AC8D4",
 }: PanelProps) {
   return (
     <section
@@ -261,7 +261,7 @@ export function Panel({
 
 /* Compact stat tile — drop-in for hero metric grids.  */
 export function StatTile({
-  label, value, sub, icon: Icon, accent = "#7DF9FF", trend,
+  label, value, sub, icon: Icon, accent = "#0AC8D4", trend,
 }: {
   label: string;
   value: ReactNode;

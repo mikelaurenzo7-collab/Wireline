@@ -208,10 +208,10 @@ export default function DncManager() {
         {/* Stat bar */}
         <div className="col-span-12 grid grid-cols-2 sm:grid-cols-4 gap-3 h-fit">
           {[
-            { label: "Total Blocked",  value: stats.total,  accent: "#FF6BD9", icon: Shield },
-            { label: "Manual Entries", value: stats.manual, accent: "#7DF9FF", icon: Plus },
-            { label: "CSV Imported",   value: stats.csv,    accent: "#C58BFF", icon: FileText },
-            { label: "Opt-Out",        value: stats.optOut, accent: "#4DFFC4", icon: CheckCircle2 },
+            { label: "Total Blocked",  value: stats.total,  accent: "#E040C0", icon: Shield },
+            { label: "Manual Entries", value: stats.manual, accent: "#0AC8D4", icon: Plus },
+            { label: "CSV Imported",   value: stats.csv,    accent: "#9B59F5", icon: FileText },
+            { label: "Opt-Out",        value: stats.optOut, accent: "#10B981", icon: CheckCircle2 },
           ].map(({ label, value, accent, icon: Icon }) => (
             <div key={label} className="relative rounded-xl glass border border-white/10 p-4 overflow-hidden">
               <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-25 blur-3xl pointer-events-none" style={{ background: `radial-gradient(circle,${accent},transparent)` }} />
@@ -251,7 +251,7 @@ export default function DncManager() {
               </div>
             ) : filtered.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center gap-4 text-center">
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg,rgba(255,107,217,0.15),rgba(125,249,255,0.15))" }}>
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg,rgba(255,107,217,0.15),rgba(10,200,212,0.15))" }}>
                   <Shield className="w-7 h-7 text-rose-400" />
                 </div>
                 <div>
@@ -348,7 +348,7 @@ export default function DncManager() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            style={{ background: "rgba(7,6,26,0.85)", backdropFilter: "blur(12px)" }}
+            style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(12px)" }}
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}

@@ -43,7 +43,7 @@ export default function ConfirmModal({
           >
             <div className="relative rounded-2xl glass-strong p-6 overflow-hidden">
               <div className="absolute -top-16 -right-16 w-32 h-32 rounded-full blur-3xl opacity-30 pointer-events-none"
-                style={{ background: danger ? "radial-gradient(circle, #FF6BD9, transparent)" : "radial-gradient(circle, #7DF9FF, transparent)" }} />
+                style={{ background: danger ? "radial-gradient(circle, #E040C0, transparent)" : "radial-gradient(circle, #0AC8D4, transparent)" }} />
 
               <div className="relative z-10 flex items-start gap-4 mb-5">
                 <div className={cn(
