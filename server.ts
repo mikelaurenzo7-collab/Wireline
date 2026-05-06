@@ -27,23 +27,32 @@ import { AuditLogger } from "./src/lib/audit-logger";
 import { rateLimit, isRedisConfigured, startMemoryCleanup } from "./src/lib/rate-limit";
 
 // ────────────────────────────────────────────────────────────────────
+//  Error handling — safely extract message from unknown errors
+// ────────────────────────────────────────────────────────────────────
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  return String(error);
+}
+
+// ────────────────────────────────────────────────────────────────────
 //  Sanitization for audit logs — redacts sensitive fields like API keys,
 //  secrets, passwords, tokens from objects before logging. Prevents
 //  credential leakage in audit trail.
 // ────────────────────────────────────────────────────────────────────
-function sanitizeForAudit(obj: any): any {
+function sanitizeForAudit(obj: unknown): unknown {
   if (!obj || typeof obj !== 'object') return obj;
-  
+
   const sensitivePatterns = [
     'key', 'secret', 'password', 'token', 'credential', 'auth'
   ];
-  
-  const sanitized: any = Array.isArray(obj) ? [] : {};
-  
+
+  const sanitized: Record<string, unknown> = Array.isArray(obj) ? {} : {};
+
   for (const [key, value] of Object.entries(obj)) {
     const keyLower = key.toLowerCase();
     const isSensitive = sensitivePatterns.some(pattern => keyLower.includes(pattern));
-    
+
     if (isSensitive) {
       sanitized[key] = '[REDACTED]';
     } else if (typeof value === 'object' && value !== null) {
@@ -52,7 +61,7 @@ function sanitizeForAudit(obj: any): any {
       sanitized[key] = value;
     }
   }
-  
+
   return sanitized;
 }
 
@@ -315,7 +324,7 @@ async function probeDatabase(timeoutMs = 1500): Promise<{ ok: boolean; latency_m
     if (result?.error) return { ok: false, latency_ms: Date.now() - t0, error: result.error.message };
     return { ok: true, latency_ms: Date.now() - t0 };
   } catch (err: any) {
-    return { ok: false, latency_ms: Date.now() - t0, error: err?.message || String(err) };
+    return { ok: false, latency_ms: Date.now() - t0, error: getErrorMessage(err) };
   }
 }
 
@@ -413,7 +422,7 @@ async function claudeRateLimiter(req: any, res: any, next: any) {
       ip: req.ip,
       userAgent: req.get('user-agent'),
       metadata: { limit: CLAUDE_RATE_MAX, hasToken: !!token }
-    }).catch((err: any) => log.warn('audit log failed', { error: err?.message }));
+    }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
 
     res.setHeader("Retry-After", String(Math.ceil(result.resetMs / 1000)));
     return res.status(429).json({
@@ -690,7 +699,7 @@ async function attemptWebhookDelivery(deliveryId: number) {
     if (!ok) errMsg = `HTTP ${r.status}`;
   } catch (err: any) {
     statusCode = 0;
-    errMsg = err?.name === "AbortError" ? `Timed out after ${WEBHOOK_TIMEOUT_MS}ms` : (err?.message || String(err));
+    errMsg = err?.name === "AbortError" ? `Timed out after ${WEBHOOK_TIMEOUT_MS}ms` : (getErrorMessage(err));
   } finally {
     clearTimeout(timer);
   }
@@ -762,7 +771,7 @@ async function dispatchWebhook(userId: string, event: WebhookEvent, data: any) {
     // scheduler picks them up once their backoff elapses.
     await Promise.all((inserted || []).map((d: any) => attemptWebhookDelivery(d.id)));
   } catch (err: any) {
-    log.error("Webhook dispatch failed", { error: err?.message || String(err) });
+    log.error("Webhook dispatch failed", { error: getErrorMessage(err) });
   }
 }
 
@@ -792,11 +801,11 @@ async function processWebhookRetries() {
     // outbound concurrency bounded and the load on Supabase modest.
     for (const d of due) {
       try { await attemptWebhookDelivery(d.id); } catch (err: any) {
-        log.error("Webhook retry attempt failed", { id: d.id, error: err?.message || String(err) });
+        log.error("Webhook retry attempt failed", { id: d.id, error: getErrorMessage(err) });
       }
     }
   } catch (err: any) {
-    log.error("Webhook scheduler tick failed", { error: err?.message || String(err) });
+    log.error("Webhook scheduler tick failed", { error: getErrorMessage(err) });
   } finally {
     _webhookSchedRunning = false;
   }
@@ -904,7 +913,7 @@ async function evaluateSpend(userId: string, deltaUsd: number) {
       });
     }
   } catch (err: any) {
-    log.error("evaluateSpend failed", { error: err?.message || String(err) });
+    log.error("evaluateSpend failed", { error: getErrorMessage(err) });
   }
 }
 
@@ -957,7 +966,7 @@ async function authenticateUser(req: any, res: any, next: any) {
        ip: req.ip,
        userAgent: req.get('user-agent'),
        reason: 'missing_token'
-     }).catch((err: any) => log.warn('audit log failed', { error: err?.message }));
+     }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
      
      return res.status(401).json({ error: "No authorization header provided" });
   }
@@ -972,7 +981,7 @@ async function authenticateUser(req: any, res: any, next: any) {
        ip: req.ip,
        userAgent: req.get('user-agent'),
        reason: !token ? 'missing_token' : 'invalid_token'
-     }).catch((err: any) => log.warn('audit log failed', { error: err?.message }));
+     }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
      
      return res.status(401).json({ error: "Invalid or expired session" });
   }
@@ -1066,8 +1075,8 @@ app.post("/api/stripe-webhook", async (req: any, res: any) => {
     // express.raw populated req.body as a Buffer — pass it through verbatim.
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err: any) {
-    log.warn("Stripe webhook signature verification failed", { error: err?.message });
-    return res.status(400).json({ error: `Webhook Error: ${err?.message}` });
+    log.warn("Stripe webhook signature verification failed", { error: getErrorMessage(err) });
+    return res.status(400).json({ error: `Webhook Error: ${getErrorMessage(err)}` });
   }
 
   // Idempotency — Stripe retries on timeouts and occasionally double-
@@ -1097,7 +1106,7 @@ app.post("/api/stripe-webhook", async (req: any, res: any) => {
     // fail-OPEN: log and proceed. Operators see the warning and run the
     // schema. Better than blocking all Stripe webhooks on a missing table.
     log.warn("Stripe idempotency claim failed — proceeding without idempotency guard", {
-      error: err?.message || String(err),
+      error: getErrorMessage(err),
     });
   }
 
@@ -1132,7 +1141,7 @@ app.post("/api/stripe-webhook", async (req: any, res: any) => {
     }
     res.json({ received: true });
   } catch (err: any) {
-    log.error("Stripe webhook handler error", { error: err?.message || String(err) });
+    log.error("Stripe webhook handler error", { error: getErrorMessage(err) });
     // Release the idempotency claim so Stripe's retry can re-process.
     if (claimed) {
       await db.from("wireline_stripe_events").delete().eq("event_id", idempotencyKey).then(
@@ -1140,7 +1149,7 @@ app.post("/api/stripe-webhook", async (req: any, res: any) => {
         (e: any) => log.warn("Failed to release idempotency claim", { error: e?.message }),
       );
     }
-    res.status(500).json({ error: err?.message || "Webhook handler failed" });
+    res.status(500).json({ error: getErrorMessage(err) || "Webhook handler failed" });
   }
 });
 
@@ -2323,7 +2332,7 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
 
             claudeAnalysisDone = true;
           } catch (err: any) {
-            log.warn("Claude post-call analysis failed; falling back to Gemini", { agentId: webhookAgentId, error: err?.message || String(err) });
+            log.warn("Claude post-call analysis failed; falling back to Gemini", { agentId: webhookAgentId, error: getErrorMessage(err) });
           }
         }
 
@@ -2441,7 +2450,7 @@ app.get("/api/calls", authenticateUser, async (req: any, res: any) => {
        total: count || 0
     });
   } catch (error: any) {
-    log.error("Failed to fetch calls", { error: error?.message || String(error) });
+    log.error("Failed to fetch calls", { error: getErrorMessage(error) });
     res.json({ calls: [], hasMore: false, total: 0 }); // Fail gracefully if table not created
   }
 });
@@ -2706,7 +2715,7 @@ app.get("/api/appointments", authenticateUser, async (req: any, res: any) => {
     if (error) throw error;
     res.json({ appointments: appointments || [] });
   } catch (error: any) {
-    log.error("Failed to fetch appointments", { error: error?.message || String(error) });
+    log.error("Failed to fetch appointments", { error: getErrorMessage(error) });
     res.json({ appointments: [] }); 
   }
 });
@@ -2731,7 +2740,7 @@ app.post("/api/appointments", authenticateUser, async (req: any, res: any) => {
     if (error) throw error;
     res.json({ appointment: data });
   } catch (error: any) {
-    log.error("Failed to create appointment", { error: error?.message });
+    log.error("Failed to create appointment", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to create appointment" });
   }
 });
@@ -2750,7 +2759,7 @@ app.patch("/api/appointments/:id", authenticateUser, async (req: any, res: any) 
     if (error) throw error;
     res.json({ appointment: data });
   } catch (error: any) {
-    log.error("Failed to update appointment", { error: error?.message });
+    log.error("Failed to update appointment", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to update appointment" });
   }
 });
@@ -2764,7 +2773,7 @@ app.delete("/api/appointments/:id", authenticateUser, async (req: any, res: any)
     if (error) throw error;
     res.json({ success: true });
   } catch (error: any) {
-    log.error("Failed to delete appointment", { error: error?.message });
+    log.error("Failed to delete appointment", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to delete appointment" });
   }
 });
@@ -3441,7 +3450,7 @@ Never leave someone on hold for more than 3 minutes without offering to call bac
 app.get("/api/agents", authenticateUser, async (req: any, res: any) => {
   try {
     const { data: agents, error } = await db.from('wireline_agents').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false });
-    if (error) log.warn("Failed to fetch agents", { userId: req.user.id, error: error?.message });
+    if (error) log.warn("Failed to fetch agents", { userId: req.user.id, error: getErrorMessage(error) });
     res.json({ agents: agents || [] });
   } catch (error) {
     res.json({ agents: [] }); 
@@ -3615,11 +3624,11 @@ app.post("/api/agents", authenticateUser, async (req: any, res: any) => {
       agentName: name || "New Agent",
       metadata: { channel: channel || 'voice', archetype: agentRole },
       ip: req.ip
-    }).catch((err: any) => log.warn('audit log failed', { error: err?.message }));
+    }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
     
     res.json({ success: true, id });
   } catch (error) {
-    log.error("Agent creation failed", { error: error?.message || String(error) });
+    log.error("Agent creation failed", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to create agent" });
   }
 });
@@ -3700,7 +3709,7 @@ app.post("/api/fleet/seed", authenticateUser, async (req: any, res: any) => {
     }
     res.json({ success: true, count: specializedAgents.length });
   } catch (error) {
-    log.error("Fleet seeding failed", { error: error?.message || String(error) });
+    log.error("Fleet seeding failed", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to seed fleet" });
   }
 });
@@ -3733,7 +3742,7 @@ app.put("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
       agentId: req.params.id,
       metadata: { changes: sanitizeForAudit(req.body) },
       ip: req.ip
-    }).catch((err: any) => log.warn('audit log failed', { error: err?.message }));
+    }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
     
     res.json({ success: true });
   } catch (error) {
@@ -3790,7 +3799,7 @@ app.delete("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
 
     nullResults.forEach((r, i) => {
       if (r.status === "rejected" || (r.status === "fulfilled" && (r.value as any)?.error)) {
-        const reason = r.status === "rejected" ? r.reason?.message : (r.value as any)?.error?.message;
+        const reason = r.status === "rejected" ? getErrorMessage(r.reason) : (r.value as any)?.error?.message;
         log.warn(`agent delete: failed to null agent_id on ${nullTables[i].label}`, { agentId, reason });
       }
     });
@@ -3812,11 +3821,11 @@ app.delete("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
       userId: req.user.id,
       agentId: agentId,
       ip: req.ip
-    }).catch((err: any) => log.warn('audit log failed', { error: err?.message }));
+    }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
     
     res.json({ success: true });
   } catch (error: any) {
-    log.error("Failed to delete agent", { error: error?.message });
+    log.error("Failed to delete agent", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to delete agent." });
   }
 });
@@ -3883,7 +3892,7 @@ app.delete("/api/phone-numbers/:id", authenticateUser, async (req: any, res: any
     if (error) throw error;
     res.json({ success: true });
   } catch (error: any) {
-    log.error("Failed to delete phone number", { error: error?.message });
+    log.error("Failed to delete phone number", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to delete phone number." });
   }
 });
@@ -3910,7 +3919,7 @@ app.get("/api/carrier/numbers", authenticateUser, async (req: any, res: any) => 
 
     res.json({ numbers: formatted });
   } catch (error) {
-    log.error("Vapi sync error", { error: error?.message || String(error) });
+    log.error("Vapi sync error", { error: getErrorMessage(error) });
     res.json({ numbers: [] });
   }
 });
@@ -3927,7 +3936,7 @@ app.get("/api/fleet/presence", authenticateUser, async (req: any, res: any) => {
     if (error) throw error;
     res.json({ signals: data || [] });
   } catch (error) {
-    log.error("Presence fetch failed", { error: error?.message || String(error) });
+    log.error("Presence fetch failed", { error: getErrorMessage(error) });
     res.json({ signals: [] });
   }
 });
@@ -3966,7 +3975,7 @@ app.get("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => {
 
     res.json({ tasks: sortedTasks });
   } catch (error) {
-    log.error("Fetch tasks failed", { error: error?.message || String(error) });
+    log.error("Fetch tasks failed", { error: getErrorMessage(error) });
     res.json({ tasks: [] });
   }
 });
@@ -4024,7 +4033,7 @@ app.post("/api/agent-config/:id/manual", authenticateUser, async (req: any, res:
     
     res.json({ success: true });
   } catch (error) {
-    log.error("Manual config error", { error: error?.message || String(error) });
+    log.error("Manual config error", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to update" });
   }
 });
@@ -4173,7 +4182,7 @@ app.get("/api/campaigns", authenticateUser, async (req: any, res: any) => {
 
     res.json({ campaigns: enriched });
   } catch (error: any) {
-    log.error("Failed to fetch campaigns", { error: error?.message });
+    log.error("Failed to fetch campaigns", { error: getErrorMessage(error) });
     res.json({ campaigns: [] });
   }
 });
@@ -4195,7 +4204,7 @@ app.post("/api/campaigns", authenticateUser, async (req: any, res: any) => {
     if (error) throw error;
     res.json({ campaign: data });
   } catch (error: any) {
-    log.error("Failed to create campaign", { error: error?.message });
+    log.error("Failed to create campaign", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to create campaign" });
   }
 });
@@ -4213,7 +4222,7 @@ app.patch("/api/campaigns/:id", authenticateUser, async (req: any, res: any) => 
     if (error) throw error;
     res.json({ campaign: data });
   } catch (error: any) {
-    log.error("Failed to update campaign", { error: error?.message });
+    log.error("Failed to update campaign", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to update campaign" });
   }
 });
@@ -4227,7 +4236,7 @@ app.delete("/api/campaigns/:id", authenticateUser, async (req: any, res: any) =>
     if (error) throw error;
     res.json({ success: true });
   } catch (error: any) {
-    log.error("Failed to delete campaign", { error: error?.message });
+    log.error("Failed to delete campaign", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to delete campaign" });
   }
 });
@@ -4242,7 +4251,7 @@ app.get("/api/campaigns/:id/leads", authenticateUser, async (req: any, res: any)
     if (error) throw error;
     res.json({ leads: data || [] });
   } catch (error: any) {
-    log.error("Failed to fetch campaign leads", { error: error?.message });
+    log.error("Failed to fetch campaign leads", { error: getErrorMessage(error) });
     res.json({ leads: [] });
   }
 });
@@ -4464,7 +4473,7 @@ app.post("/api/campaigns/:id/launch", authenticateUser, async (req: any, res: an
       }
     })();
   } catch (error: any) {
-    log.error("Campaign launch failed", { error: error?.message });
+    log.error("Campaign launch failed", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to launch campaign." });
   }
 });
@@ -4500,7 +4509,7 @@ app.post("/api/campaigns/:id/retry-failed", authenticateUser, async (req: any, r
 
     res.json({ success: true, reset: failed.length });
   } catch (error: any) {
-    log.error("Retry failed leads error", { error: error?.message });
+    log.error("Retry failed leads error", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to retry leads." });
   }
 });
@@ -4527,7 +4536,7 @@ app.post("/api/campaigns/:id/stop", authenticateUser, claudeRateLimiter, async (
     if (error) throw error;
     res.json({ success: true });
   } catch (error: any) {
-    log.error("Campaign stop failed", { error: error?.message });
+    log.error("Campaign stop failed", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to stop campaign." });
   }
 });
@@ -4664,7 +4673,7 @@ app.post("/api/settings", authenticateUser, async (req: any, res: any) => {
       userId: req.user.id,
       changes: sanitizeForAudit(req.body),
       ip: req.ip
-    }).catch((err: any) => log.warn('audit log failed', { error: err?.message }));
+    }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
     
     res.json({ success: true });
   } catch (error) {
@@ -4721,7 +4730,7 @@ app.delete("/api/outbound/:id", authenticateUser, async (req: any, res: any) => 
     if (error) throw error;
     res.json({ success: true });
   } catch (error: any) {
-    log.error("Failed to delete lead", { error: error?.message });
+    log.error("Failed to delete lead", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to delete lead." });
   }
 });
@@ -5024,7 +5033,7 @@ app.post("/api/outbound/dial", authenticateUser, async (req: any, res: any) => {
 
     res.json({ success: true, callId: result.callId });
   } catch (error: any) {
-    log.error("Outbound call failed", { error: error?.message || String(error) });
+    log.error("Outbound call failed", { error: getErrorMessage(error) });
     res.status(500).json({ error: error.message || "Failed to dispatch call." });
   }
 });
@@ -5123,7 +5132,7 @@ app.post("/api/train/extract", authenticateUser, async (req: any, res: any) => {
         maxTokens: 1024,
       });
     } catch (err) {
-      log.error("Claude extraction failed; falling back to Gemini", { error: err?.message || String(err) });
+      log.error("Claude extraction failed; falling back to Gemini", { error: getErrorMessage(err) });
     }
   }
 
@@ -5157,7 +5166,7 @@ Respond ONLY in strict, valid JSON format (no markdown):
         personality: geminiParsed.personality || "",
       };
     } catch (err) {
-      log.error("Gemini extraction fallback failed", { error: err?.message || String(err) });
+      log.error("Gemini extraction fallback failed", { error: getErrorMessage(err) });
     }
   }
 
@@ -5181,7 +5190,7 @@ Respond ONLY in strict, valid JSON format (no markdown):
       });
     }
   } catch (err) {
-    log.error("Training persistence failed", { error: err?.message || String(err) });
+    log.error("Training persistence failed", { error: getErrorMessage(err) });
     return res.status(500).json({ error: "Failed to save training data" });
   }
 
@@ -5238,7 +5247,7 @@ app.post("/api/train/save", authenticateUser, async (req: any, res: any) => {
 
     res.json({ success: true });
   } catch (error) {
-    log.error("Training save error", { error: error?.message || String(error) });
+    log.error("Training save error", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to save intelligence patterns" });
   }
 });
@@ -5432,7 +5441,7 @@ async function sendEmailViaMicrosoft(opts: {
   );
   if (!r.ok) {
     const err = await r.json().catch(() => ({})) as any;
-    throw new Error(err?.error?.message || `Microsoft Graph sendMail failed: ${r.status}`);
+    throw new Error(getErrorMessage(err) || `Microsoft Graph sendMail failed: ${r.status}`);
   }
   // Graph returns 202 with no body for sendMail — conversationId is unavailable
   // here; we use a random ID that the sync will backfill on the next poll.
@@ -5771,7 +5780,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
                 });
                 finalReplyMs = r.replyText || finalReplyMs;
               } catch (err: any) {
-                log.error("Claude email reply failed (MS)", { error: err?.message });
+                log.error("Claude email reply failed (MS)", { error: getErrorMessage(err) });
               }
             }
 
@@ -5958,7 +5967,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
                });
                finalReply = result.replyText || finalReply;
              } catch (err) {
-               log.error("Claude email reply failed; falling back to Gemini", { error: err?.message || String(err) });
+               log.error("Claude email reply failed; falling back to Gemini", { error: getErrorMessage(err) });
              }
            }
 
@@ -6094,7 +6103,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
                     const r = await claudeBrain.scoreIntent({ subject, body: snippet });
                     score = r.score || 0; label = r.label || 'none';
                  } catch (err) {
-                    log.error("Claude email scoring failed; falling back to Gemini", { error: err?.message || String(err) });
+                    log.error("Claude email scoring failed; falling back to Gemini", { error: getErrorMessage(err) });
                  }
               }
               if (label === 'none' && score === 0) {
@@ -6234,7 +6243,7 @@ app.post("/api/agents/:id/optimize", authenticateUser, async (req: any, res: any
                full_review: review,
             });
          } catch (err) {
-            log.error("Claude optimize failed; falling back to Gemini", { error: err?.message || String(err) });
+            log.error("Claude optimize failed; falling back to Gemini", { error: getErrorMessage(err) });
          }
       }
 
@@ -6472,17 +6481,17 @@ function withAudit(actionPrefix: string) {
       Promise.resolve(db.from("wireline_audit_log").insert(rows))
         .then(({ error }: any) => {
           if (error) {
-            log.error("Audit insert failed", { error: error?.message || String(error) });
+            log.error("Audit insert failed", { error: getErrorMessage(error) });
             return;
           }
           // After the spend is persisted, evaluate against the budget and
           // fire spend.warning / spend.exceeded webhooks if a threshold
           // crossed. Also fire-and-forget — never block the response.
           evaluateSpend(req.user.id, deltaUsd).catch((err: any) =>
-            log.error("evaluateSpend exception", { error: err?.message || String(err) }),
+            log.error("evaluateSpend exception", { error: getErrorMessage(err) }),
           );
         })
-        .catch((err: any) => log.error("Audit insert exception", { error: err?.message || String(err) }));
+        .catch((err: any) => log.error("Audit insert exception", { error: getErrorMessage(err) }));
     });
     claudeBrain.runInAuditContext(ctx, () => next());
   };
@@ -7253,9 +7262,9 @@ async function processIntakeLead(key: any, input: IntakeLeadInput, idemHeaderOve
       } catch (err: any) {
         await db.from("wireline_outbound_leads").update({
           status: "AutoDialFailed",
-          metadata: { ...(metadata || {}), auto_dial_error: err?.message || String(err) },
+          metadata: { ...(metadata || {}), auto_dial_error: getErrorMessage(err) },
         }).eq("id", inserted.id);
-        log.warn("Auto-dial threw for lead", { leadId: inserted.id, error: err?.message || String(err) });
+        log.warn("Auto-dial threw for lead", { leadId: inserted.id, error: getErrorMessage(err) });
       }
     })();
   }
@@ -7354,7 +7363,7 @@ app.post("/api/intake/leads", async (req: any, res: any) => {
     const results = await Promise.all(
       (leads as IntakeLeadInput[]).map((lead) => processIntakeLead(key, lead).catch((err: any) => ({
         ok: false,
-        error: err?.message || String(err),
+        error: getErrorMessage(err),
         code: "PROCESS_FAILED",
       } as IntakeLeadResult))),
     );
@@ -7662,7 +7671,7 @@ async function processScheduledDailyBriefs() {
       } catch (err: any) {
         // Persist the error so the operator can see why delivery failed,
         // but DON'T mark sent — we'll retry on the next tick.
-        const message = err?.message || String(err);
+        const message = getErrorMessage(err);
         await db.from("wireline_settings").update({
           daily_brief_last_error: message.slice(0, 500),
         }).eq("user_id", row.user_id);
@@ -7670,7 +7679,7 @@ async function processScheduledDailyBriefs() {
       }
     }
   } catch (err) {
-    log.error("Daily-brief scheduler tick failed", { error: err?.message || String(err) });
+    log.error("Daily-brief scheduler tick failed", { error: getErrorMessage(err) });
   } finally {
     _briefSchedRunning = false;
   }
@@ -7752,7 +7761,7 @@ async function processScheduledCallbacks(): Promise<void> {
       }
     }
   } catch (err: any) {
-    log.error("Callback scheduler tick failed", { error: err?.message || String(err) });
+    log.error("Callback scheduler tick failed", { error: getErrorMessage(err) });
   } finally {
     _callbackSchedRunning = false;
   }
@@ -7789,7 +7798,7 @@ async function purgeStalePresence(): Promise<void> {
       log.info("Purged stale signal presence rows", { count });
     }
   } catch (err: any) {
-    log.warn("Stale presence purge failed", { error: err?.message || String(err) });
+    log.warn("Stale presence purge failed", { error: getErrorMessage(err) });
   }
 }
 setInterval(purgeStalePresence, PRESENCE_PURGE_INTERVAL_MS).unref?.();
@@ -9399,7 +9408,7 @@ app.post("/api/qa/score-batch", authenticateUser, claudeRateLimiter, withAudit("
             .eq("user_id", req.user.id);
           scored++;
         } catch (err: any) {
-          log.warn("Batch QA: single call scoring failed", { callId: call.id, error: err?.message });
+          log.warn("Batch QA: single call scoring failed", { callId: call.id, error: getErrorMessage(err) });
           failed++;
         }
       }));
@@ -9548,7 +9557,7 @@ app.use((err: any, req: express.Request, res: express.Response, _next: express.N
     requestId: (res as any).locals?.requestId,
     method: req.method,
     path: req.path,
-    error: err?.message || String(err),
+    error: getErrorMessage(err),
     stack: err?.stack,
   });
   if (process.env.SENTRY_DSN) {
