@@ -4931,7 +4931,31 @@ app.get("/api/onboarding/progress", authenticateUser, async (req: any, res: any)
 app.post("/api/onboarding/progress", authenticateUser, async (req: any, res: any) => {
   try {
     const { step_id, metadata } = req.body;
-    
+
+    // Validate the step_id — small, alphanumeric-with-hyphens identifiers
+    // (matches the values the frontend tour emits). Rejecting anything else
+    // prevents accidental megastrings or injected JSONPath in the row key.
+    if (typeof step_id !== "string" || step_id.length === 0 || step_id.length > 100) {
+      return res.status(400).json({ error: "Invalid step_id" });
+    }
+    if (!/^[a-zA-Z0-9_\-]+$/.test(step_id)) {
+      return res.status(400).json({ error: "step_id must be alphanumeric with hyphens or underscores" });
+    }
+
+    // Cap the metadata payload to ~16KB to prevent a single user from
+    // ballooning the table with arbitrary blobs.
+    let metaToStore: Record<string, unknown> = {};
+    if (metadata != null) {
+      if (typeof metadata !== "object" || Array.isArray(metadata)) {
+        return res.status(400).json({ error: "metadata must be an object" });
+      }
+      const serialized = JSON.stringify(metadata);
+      if (serialized.length > 16_000) {
+        return res.status(400).json({ error: "metadata exceeds 16KB limit" });
+      }
+      metaToStore = metadata;
+    }
+
     const { error } = await db
       .from('wireline_onboarding_progress')
       .upsert({
@@ -4939,13 +4963,13 @@ app.post("/api/onboarding/progress", authenticateUser, async (req: any, res: any
         step_id,
         completed: true,
         completed_at: new Date().toISOString(),
-        metadata: metadata || {},
+        metadata: metaToStore,
       });
 
     if (error) throw error;
     res.json({ success: true });
   } catch (error) {
-    log.error("Failed to update onboarding progress", { error });
+    log.error("Failed to update onboarding progress", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to update progress" });
   }
 });
