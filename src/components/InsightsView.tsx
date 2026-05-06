@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
 import {
   BarChart3, TrendingUp, Layers, Calendar, Trophy, AlertOctagon, Loader2,
@@ -901,17 +901,17 @@ function QualityView({ days }: { days: number }) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [scoring, setScoring] = useState(false);
-  const { success: toastSuccess, error: toastError } = useToast();
+  const { success: toastSuccess, error: toastError, warning: toastWarning } = useToast();
 
-  const fetchStats = () => {
+  const fetchStats = useCallback(() => {
     setLoading(true);
     authFetch(`/api/qa/stats?days=${days}`)
       .then(r => r.json())
       .then(setData)
       .finally(() => setLoading(false));
-  };
+  }, [days]);
 
-  useEffect(() => { fetchStats(); }, [days]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchStats(); }, [fetchStats]);
 
   const handleScoreAll = async () => {
     setScoring(true);
@@ -925,8 +925,10 @@ function QualityView({ days }: { days: number }) {
       if (!res.ok) throw new Error(d.error || "Batch scoring failed");
       if (d.scored === 0 && d.total === 0) {
         toastSuccess("All caught up", "No unscored calls found in this period.");
+      } else if (d.failed > 0) {
+        toastWarning("Batch QA partial", `Scored ${d.scored} call${d.scored === 1 ? "" : "s"}, ${d.failed} failed. Check logs for details.`);
       } else {
-        toastSuccess("Batch QA complete", `Scored ${d.scored} call${d.scored === 1 ? "" : "s"}${d.failed > 0 ? `, ${d.failed} failed` : ""}.`);
+        toastSuccess("Batch QA complete", `Scored ${d.scored} call${d.scored === 1 ? "" : "s"}.`);
       }
       fetchStats();
     } catch (e: any) {

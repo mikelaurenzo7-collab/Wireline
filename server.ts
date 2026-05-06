@@ -4029,6 +4029,7 @@ app.get("/api/campaigns/:id/analytics", authenticateUser, async (req: any, res: 
 // Launch a campaign — dial all queued leads sequentially (fire-and-forget
 // per lead; we respond immediately with a count and let calls resolve async).
 const CAMPAIGN_DIAL_SPACING_MS = 3_000; // 3-second gap to avoid Vapi rate limits
+const MAX_BATCH_SCORE_LIMIT = 50;       // absolute ceiling for a single score-batch request
 
 app.post("/api/campaigns/:id/launch", authenticateUser, async (req: any, res: any) => {
   try {
@@ -4208,7 +4209,7 @@ app.post("/api/campaigns/:id/retry-failed", authenticateUser, async (req: any, r
 
 // Stop a running campaign — sets status back to 'paused' so the async
 // loop's inter-lead status check will halt it cleanly within one dial cycle.
-app.post("/api/campaigns/:id/stop", authenticateUser, async (req: any, res: any) => {
+app.post("/api/campaigns/:id/stop", authenticateUser, claudeRateLimiter, async (req: any, res: any) => {
   try {
     const campaignId = req.params.id;
     const { data: campaign, error: campErr } = await db
@@ -9007,20 +9008,18 @@ app.post("/api/qa/score-batch", authenticateUser, claudeRateLimiter, withAudit("
     return res.status(503).json({ error: "Claude is not configured." });
   }
   try {
-    const limit = Math.min(50, Math.max(1, parseInt(String(req.body.limit || "20"), 10)));
+    const limit = Math.min(MAX_BATCH_SCORE_LIMIT, Math.max(1, parseInt(String(req.body.limit || "20"), 10)));
     const days  = req.body.days ? Math.min(90, Math.max(1, parseInt(String(req.body.days), 10))) : undefined;
     const since = days ? new Date(Date.now() - days * 86_400_000).toISOString() : undefined;
 
-    let query = db
+    const baseQuery = db
       .from("wireline_call_logs")
       .select("id, summary, transcript, sentiment, direction, duration_seconds, agent_id, wireline_agents(role)")
       .eq("user_id", req.user.id)
       .is("qa_score", null)
       .order("created_at", { ascending: false })
       .limit(limit);
-    if (since) query = query.gte("created_at", since);
-
-    const { data: calls, error } = await query;
+    const { data: calls, error } = await (since ? baseQuery.gte("created_at", since) : baseQuery);
     if (error) throw error;
     if (!calls || calls.length === 0) {
       return res.json({ scored: 0, skipped: 0, failed: 0, total: 0 });
@@ -9030,7 +9029,9 @@ app.post("/api/qa/score-batch", authenticateUser, claudeRateLimiter, withAudit("
     const CONCURRENCY = 3;
     let scored = 0, skipped = 0, failed = 0;
 
-    // Simple semaphore — process at most CONCURRENCY calls simultaneously.
+    // Simple promise-chain semaphore — each slot is a chained promise so at most
+    // CONCURRENCY scoring requests run simultaneously. Array.prototype.map executes
+    // the callback synchronously in index order, so slotIdx increments are safe.
     const sem = Array.from({ length: CONCURRENCY }, () => Promise.resolve());
     let slotIdx = 0;
 
@@ -9060,7 +9061,8 @@ app.post("/api/qa/score-batch", authenticateUser, claudeRateLimiter, withAudit("
             .eq("id", call.id)
             .eq("user_id", req.user.id);
           scored++;
-        } catch {
+        } catch (err: any) {
+          log.warn("Batch QA: single call scoring failed", { callId: call.id, error: err?.message });
           failed++;
         }
       }));
