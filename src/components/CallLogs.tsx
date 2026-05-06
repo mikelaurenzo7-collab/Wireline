@@ -220,7 +220,7 @@ function CallDetail({ call, formatDuration }: { call: any; formatDuration: (s: n
   React.useEffect(() => {
     setQaScore(call.qa_score ?? null);
     setQaBreakdown(call.qa_breakdown ?? null);
-  }, [call.id]);
+  }, [call.id, call.qa_score, call.qa_breakdown]);
 
   const handleScoreQa = async () => {
     setScoring(true);

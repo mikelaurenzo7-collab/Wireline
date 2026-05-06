@@ -127,7 +127,7 @@ export default function DncManager() {
             const phone = row.phone || row.number || row.Phone || row.Number || row.phone_number || "";
             const reason = row.reason || row.Reason || "csv";
             return { phone: phone.trim(), reason, source: "csv" };
-          }).filter((r: { phone: string }) => r.phone);
+          }).filter((r: { phone: string }) => r.phone && /\d/.test(r.phone));
 
           if (rows.length === 0) {
             toastError("No valid numbers found", "Ensure your CSV has a 'phone' or 'number' column.");

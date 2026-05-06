@@ -3081,7 +3081,7 @@ app.post("/api/campaigns/:id/launch", authenticateUser, async (req: any, res: an
             if (lead.customer_number && await isDncBlocked(req.user.id, lead.customer_number)) {
               log.warn("Campaign: lead skipped — DNC match", { leadId: lead.id });
               await db.from('wireline_outbound_leads')
-                .update({ status: 'DNC', last_called_at: new Date().toISOString() })
+                .update({ status: 'Blocked-DNC' })
                 .eq('id', lead.id);
               await new Promise(resolve => setTimeout(resolve, CAMPAIGN_DIAL_SPACING_MS));
               continue;
@@ -6939,16 +6939,17 @@ app.post("/api/qa/score/:callId", authenticateUser, withAudit("qa"), async (req:
     const transcript = (call as any).transcript || "";
     const summary = (call as any).summary || "";
 
-    const prompt = `You are a call quality auditor for an enterprise voice AI platform.
+    const QA_DIMENSIONS = ["greeting", "discovery", "solution", "objection", "closing"] as const;
+    const QA_SYSTEM = "You are a call quality auditor for an enterprise voice AI platform. You evaluate calls objectively and return valid JSON only.";
 
-Score this ${(call as any).direction || "inbound"} call against a 5-dimension rubric. Each dimension is worth 0–20 points (total 0–100).
+    const prompt = `Score this ${(call as any).direction || "inbound"} call against a 5-dimension rubric. Each dimension is worth 0–20 points (total 0–100).
 
 Dimensions:
-1. Opening & Greeting — professional, warm, identified company/purpose clearly
-2. Problem Discovery — asked good open-ended questions, understood the customer's situation
-3. Solution Presentation — clear, relevant, addressed actual needs
-4. Objection Handling — handled pushback calmly and effectively, didn't oversell
-5. Closing & Next Steps — strong close, set clear next steps or outcome
+1. Opening & Greeting (greeting) — professional, warm, identified company/purpose clearly
+2. Problem Discovery (discovery) — asked good open-ended questions, understood the customer's situation
+3. Solution Presentation (solution) — clear, relevant, addressed actual needs
+4. Objection Handling (objection) — handled pushback calmly and effectively, didn't oversell
+5. Closing & Next Steps (closing) — strong close, set clear next steps or outcome
 
 Call Summary: ${summary || "(none)"}
 Call Transcript (excerpt): ${transcript ? transcript.slice(0, 3000) : "(not available)"}
@@ -6965,7 +6966,7 @@ Respond with ONLY valid JSON in this exact shape:
   "notes": "<1-2 sentence coaching observation>"
 }`;
 
-    const { text: raw } = await claudeBrain.runCompletion({ system: "You are a call quality auditor for an enterprise voice AI platform.", user: prompt, maxTokens: 256 });
+    const { text: raw } = await claudeBrain.runCompletion({ system: QA_SYSTEM, user: prompt, maxTokens: 256 });
     let breakdown: any;
     try {
       const jsonMatch = raw.match(/\{[\s\S]*\}/);
@@ -6980,7 +6981,7 @@ Respond with ONLY valid JSON in this exact shape:
 
     const score = Math.min(
       100,
-      Math.max(0, (breakdown.greeting || 0) + (breakdown.discovery || 0) + (breakdown.solution || 0) + (breakdown.objection || 0) + (breakdown.closing || 0))
+      Math.max(0, QA_DIMENSIONS.reduce((sum, dim) => sum + (Number(breakdown[dim]) || 0), 0))
     );
 
     await db
