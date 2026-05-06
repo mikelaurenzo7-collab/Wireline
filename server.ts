@@ -6989,7 +6989,17 @@ app.post("/api/claude/call-playbook", authenticateUser, async (req: any, res: an
 // Promote a Claude-suggested directive into the agent's directive table.
 app.post("/api/claude/agent-review/apply-directive", authenticateUser, async (req: any, res: any) => {
   try {
-    const { agentId, directive, priority } = req.body;
+    // Validate directive input
+    const validation = parseFormData(DirectiveSchema, {
+      content: req.body.directive
+    });
+
+    if (!validation.success) {
+      return res.status(400).json({ error: "Validation failed", errors: validation.errors });
+    }
+
+    const { agentId, priority } = req.body;
+    const { content: directive } = validation.data;
     const { data: agent } = await db.from("wireline_agents").select("id").eq("id", agentId).eq("user_id", req.user.id).single();
     if (!agent) return res.status(404).json({ error: "Agent not found." });
     const priorityMap: Record<string, number> = { critical: 10, high: 7, medium: 5, low: 3 };
