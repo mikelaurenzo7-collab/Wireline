@@ -1521,10 +1521,9 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
            const { to_email, subject, body } = toolCall.function.arguments;
            
            // Fetch the agent's assigned email account first, fall back to any connected account.
-           let { data: accounts } = await db.from('wireline_email_accounts')
-             .select('*')
-             .eq('agent_id', webhookAgentId || '')
-             .limit(1);
+           let { data: accounts } = webhookAgentId
+             ? await db.from('wireline_email_accounts').select('*').eq('agent_id', webhookAgentId).limit(1)
+             : { data: [] as any[] };
            if (!accounts || accounts.length === 0) {
              ({ data: accounts } = await db.from('wireline_email_accounts').select('*').limit(1));
            }
@@ -1578,8 +1577,7 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
                '',
                body
              ];
-             const encodedMessage = Buffer.from(messageParts.join('\n')).toString('base64')
-               .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+             const encodedMessage = Buffer.from(messageParts.join('\n')).toString('base64url');
              const gmailRes = await gmail.users.messages.send({
                userId: 'me',
                requestBody: { raw: encodedMessage }
@@ -4525,6 +4523,7 @@ async function getMicrosoftAccessToken(account: {
   expires_at: number;
 }): Promise<string> {
   // Refresh 60 s early to prevent edge-of-expiry failures.
+  // If expires_at is missing/zero, always refresh to be safe.
   if (account.expires_at && Date.now() < account.expires_at - 60_000) {
     return account.access_token;
   }
@@ -4567,8 +4566,8 @@ async function sendEmailViaMicrosoft(opts: {
     throw new Error(err?.error?.message || `Microsoft Graph sendMail failed: ${r.status}`);
   }
   // Graph returns 202 with no body for sendMail — conversationId is unavailable
-  // here; we use a placeholder that the sync will backfill on the next poll.
-  return { messageId: `ms-${Date.now()}`, conversationId: "" };
+  // here; we use a random ID that the sync will backfill on the next poll.
+  return { messageId: `ms-${randomUUID()}`, conversationId: "" };
 }
 
 app.get("/api/oauth/microsoft/url", oauthRateLimiter, (req: express.Request, res: express.Response) => {
@@ -4792,7 +4791,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
           }
 
           const msRes = await fetchWithTimeout(
-            "https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?$filter=isRead eq false&$top=5&$select=id,subject,from,bodyPreview,conversationId,internetMessageId",
+            "https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?$filter=isRead eq false&$top=50&$select=id,subject,from,bodyPreview,conversationId,internetMessageId",
             { headers: { Authorization: `Bearer ${msToken}` } },
             15_000,
           );
@@ -5151,7 +5150,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
                      `Subject: Re: ${subject}\r\n` +
                      `Content-Type: text/plain; charset=utf-8\r\n\r\n` +
                      `${finalReply}`
-                  ).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+                  ).toString('base64url');
 
                   await gmail.users.messages.send({
                      userId: 'me',
@@ -5260,8 +5259,7 @@ app.post("/api/emails/threads/:id/reply", authenticateUser, async (req: any, res
           '',
           body
         ];
-        const encodedMessage = Buffer.from(messageParts.join('\n')).toString('base64')
-          .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        const encodedMessage = Buffer.from(messageParts.join('\n')).toString('base64url');
         await gmail.users.messages.send({
           userId: 'me',
           requestBody: { raw: encodedMessage, threadId: thread.thread_id }
@@ -6643,7 +6641,7 @@ async function sendDailyBriefEmail(userId: string, opts?: { force?: boolean }) {
     ``,
     `--${boundary}--`,
   ].join("\r\n");
-  const encoded = Buffer.from(messageParts).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const encoded = Buffer.from(messageParts).toString("base64url");
   await gmail.users.messages.send({ userId: "me", requestBody: { raw: encoded } });
 
   return { recipient, subject };

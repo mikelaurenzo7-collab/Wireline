@@ -78,7 +78,8 @@ export default function Integrations() {
       const res = await authFetch('/api/oauth/microsoft/url');
       const { url, error } = await res.json();
       if (error) throw new Error(error);
-      openOAuthPopup(url);
+      const win = window.open(url, 'oauth_popup', 'width=600,height=820');
+      if (!win) toastWarning("Popup blocked", "Allow popups for this site to connect your account.");
     } catch (e: any) {
       toastError("Outlook connection failed", e?.message || "Could not start Microsoft OAuth.");
     }
