@@ -769,10 +769,19 @@ CREATE INDEX IF NOT EXISTS wireline_outbound_leads_callback_idx
 -- Called by the end-of-call-report handler after every outbound call completion.
 CREATE OR REPLACE FUNCTION increment_lead_attempts(p_phone TEXT, p_agent_id TEXT)
 RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+  -- Strip all non-digit characters except leading '+' so the comparison is
+  -- safe and consistent with how customer_number is stored in the table.
+  clean_phone TEXT := regexp_replace(p_phone, '[^0-9+]', '', 'g');
 BEGIN
+  -- Validate input to prevent misuse — phone must contain at least 7 digits.
+  IF clean_phone IS NULL OR length(regexp_replace(clean_phone, '[^0-9]', '', 'g')) < 7 THEN
+    RETURN;
+  END IF;
+
   UPDATE wireline_outbound_leads
   SET attempts = COALESCE(attempts, 0) + 1
-  WHERE ilike(customer_number, '%' || p_phone || '%')
+  WHERE regexp_replace(customer_number, '[^0-9+]', '', 'g') = clean_phone
     AND agent_id = p_agent_id
     AND status NOT IN ('Completed', 'Blocked-DNC', 'Max-Attempts');
 END;

@@ -1194,7 +1194,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
         db.from('wireline_directives').select('content, priority').eq('agent_id', webhookAgentId).order('priority', { ascending: false }),
         db.from('wireline_knowledge').select('content').eq('agent_id', webhookAgentId),
         db.from('wireline_personality').select('content').eq('agent_id', webhookAgentId).single(),
-        db.from('wireline_agent_lessons').select('lesson').eq('agent_id', webhookAgentId).order('created_at', { ascending: false }).limit(5),
+        db.from('wireline_agent_lessons').select('lesson').eq('agent_id', webhookAgentId).order('created_at', { ascending: false }).limit(MAX_RUNTIME_LESSONS),
         safeCallerPhone
           ? db.from('wireline_call_logs')
               .select('summary, intent_label, sentiment, created_at, direction')
@@ -1208,7 +1208,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
       // Filter knowledge-gap lessons from runtime injection — they are training signals
       // for the operator to review, not real-time performance hints for the agent.
       const lessons = (lessonsData?.data || [])
-        .filter((l: any) => !l.lesson.startsWith(KNOWLEDGE_GAP_PREFIX))
+        .filter((l: any) => l.lesson && !l.lesson.startsWith(KNOWLEDGE_GAP_PREFIX))
         .map((l: any) => l.lesson)
         .join('\n');
 
@@ -2466,6 +2466,11 @@ app.delete("/api/appointments/:id", authenticateUser, async (req: any, res: any)
 
 /** Prefix used to tag knowledge-gap lessons — filtered out of runtime injection. */
 const KNOWLEDGE_GAP_PREFIX = "[KNOWLEDGE GAP]";
+
+/** Number of recent lessons to inject into the live agent system prompt.
+ *  [KNOWLEDGE GAP] lessons are filtered before reaching this limit so all 5
+ *  slots carry actionable coaching notes, not operator-review items. */
+const MAX_RUNTIME_LESSONS = 5;
 
 /** Sentiment keyword arrays — defined at module scope to avoid per-request allocation. */
 const SENTIMENT_ANGRY_SIGNALS = [
@@ -3885,12 +3890,15 @@ app.post("/api/campaigns/:id/launch", authenticateUser, async (req: any, res: an
     const windowEnd   = campaign.call_window_end   || '21:00';
 
     /** Returns true when the current UTC hour:minute falls within the operator's
-     *  configured calling window (compared naively as HH:MM strings so no tz
-     *  library is needed — operators set the window relative to their local time
-     *  and should configure APP_TZ if they need stricter enforcement). */
+     *  configured calling window. Both the window strings and the comparison use
+     *  UTC HH:MM so behaviour is consistent regardless of server timezone.
+     *  NOTE: campaigns are memory-volatile — if the server restarts while a loop
+     *  is paused outside the window, the in-flight campaign will not auto-resume.
+     *  Operators can re-launch the campaign from the UI; leads already marked
+     *  'Dialing' will not be double-dialed (status guard prevents re-queue). */
     function isWithinCallWindow(): boolean {
       const now = new Date();
-      const hhmm = now.toTimeString().slice(0, 5); // "HH:MM"
+      const hhmm = now.toISOString().slice(11, 16); // "HH:MM" in UTC
       return hhmm >= windowStart && hhmm <= windowEnd;
     }
 
@@ -4169,7 +4177,8 @@ app.get("/api/outbound", authenticateUser, async (req: any, res: any) => {
 
 // Returns upcoming scheduled callbacks for the operator dashboard.
 // Sorted by soonest first, capped at 50 for display purposes.
-app.get("/api/callbacks", authenticateUser, async (req: any, res: any) => {
+// Rate-limited to 30 req/min per user to prevent scraping.
+app.get("/api/callbacks", claudeRateLimiter, authenticateUser, async (req: any, res: any) => {
   try {
     const { data, error } = await db
       .from('wireline_outbound_leads')
@@ -4279,7 +4288,7 @@ async function placeOutboundCall(opts: {
     db.from('wireline_directives').select('content, priority').eq('agent_id', agentId).order('priority', { ascending: false }).then(r => r),
     db.from('wireline_knowledge').select('content').eq('agent_id', agentId).then(r => r),
     db.from('wireline_personality').select('content').eq('agent_id', agentId).single().then(r => r),
-    db.from('wireline_agent_lessons').select('lesson').eq('agent_id', agentId).order('created_at', { ascending: false }).limit(5).then(r => r),
+    db.from('wireline_agent_lessons').select('lesson').eq('agent_id', agentId).order('created_at', { ascending: false }).limit(MAX_RUNTIME_LESSONS).then(r => r),
     safeOutboundPhone
       ? db.from('wireline_call_logs')
           .select('summary, intent_label, sentiment, created_at, direction')
@@ -4296,7 +4305,7 @@ async function placeOutboundCall(opts: {
 
   // Filter knowledge-gap lessons — they are training signals, not runtime hints
   const lessons = (lessonsData?.data || [])
-    .filter((l: any) => !l.lesson.startsWith(KNOWLEDGE_GAP_PREFIX))
+    .filter((l: any) => l.lesson && !l.lesson.startsWith(KNOWLEDGE_GAP_PREFIX))
     .map((l: any) => l.lesson)
     .join('\n');
 
@@ -7069,11 +7078,19 @@ async function processScheduledCallbacks(): Promise<void> {
 
     for (const lead of dueLeads) {
       try {
-        // Immediately mark as Dialing so concurrent ticks don't double-dial
-        await db.from('wireline_outbound_leads')
+        // Atomically claim the lead by transitioning Callback-Scheduled → Dialing.
+        // If another scheduler tick already claimed it, the filter will match 0
+        // rows and we skip the dial to prevent double-calling.
+        const { data: claimed } = await db.from('wireline_outbound_leads')
           .update({ status: 'Dialing', last_called_at: now.toISOString() })
           .eq('id', lead.id)
-          .eq('status', 'Callback-Scheduled'); // guard against race
+          .eq('status', 'Callback-Scheduled') // race guard
+          .select('id');
+
+        if (!claimed || claimed.length === 0) {
+          log.info("Callback scheduler: lead already claimed — skipping", { leadId: lead.id });
+          continue;
+        }
 
         const context = lead.last_contact_summary
           ? `CALLBACK (as promised): ${lead.last_contact_summary}`

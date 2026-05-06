@@ -1116,7 +1116,7 @@ function CallbacksList({ callbacks, loading, onRefresh }: { callbacks: any[]; lo
         {callbacks.map((cb) => {
           const scheduledAt = new Date(cb.callback_scheduled_at);
           const isPast = scheduledAt < now;
-          const minutesUntil = Math.round((scheduledAt.getTime() - now.getTime()) / 60_000);
+          const minutesUntil = Math.max(0, Math.round((scheduledAt.getTime() - now.getTime()) / 60_000));
           const relativeLabel = isPast
             ? "Dialing soon…"
             : minutesUntil < 60
