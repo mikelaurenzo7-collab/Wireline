@@ -660,6 +660,14 @@ export default function AdminSettings() {
 
 /* ──────────────────────────  AI Activity Audit Panel  ─────────────── */
 
+/** Minimum cost denominator to avoid division-by-zero in bar chart scaling. */
+const MIN_COST_THRESHOLD = 0.0001;
+
+/** Format an action slug into human-readable display text. */
+function formatActionName(action: string): string {
+  return action.replace(/-/g, ' ');
+}
+
 function AuditActivityPanel() {
   const [days, setDays] = useState(30);
   const [summary, setSummary] = useState<any>(null);
@@ -687,7 +695,7 @@ function AuditActivityPanel() {
   const byAction: any[] = summary?.by_action ?? [];
   const byDay: any[] = summary?.by_day ?? [];
   const byModel: any[] = summary?.by_model ?? [];
-  const maxActionCost = Math.max(0.0001, ...byAction.map((a: any) => Number(a.cost)));
+  const maxActionCost = Math.max(MIN_COST_THRESHOLD, ...byAction.map((a: any) => Number(a.cost)));
 
   const windowOpts = [7, 14, 30, 90] as const;
 
@@ -783,7 +791,7 @@ function AuditActivityPanel() {
               ) : (
                 <div className="space-y-2.5">
                   {byModel.map((m: any) => {
-                    const maxCost = Math.max(0.0001, ...byModel.map((x: any) => Number(x.cost)));
+                    const maxCost = Math.max(MIN_COST_THRESHOLD, ...byModel.map((x: any) => Number(x.cost)));
                     const pct = (Number(m.cost) / maxCost) * 100;
                     return (
                       <div key={m.model} className="flex items-center gap-3">
@@ -819,7 +827,7 @@ function AuditActivityPanel() {
                   const pct = (Number(a.cost) / maxActionCost) * 100;
                   return (
                     <div key={a.action} className="flex items-center gap-3">
-                      <span className="text-[9px] text-muted w-36 shrink-0 truncate capitalize">{(a.action as string).replace(/-/g, ' ')}</span>
+                      <span className="text-[9px] text-muted w-36 shrink-0 truncate capitalize">{formatActionName(a.action as string)}</span>
                       <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
@@ -854,7 +862,7 @@ function AuditActivityPanel() {
                 recent.map((entry: any, i: number) => (
                   <div key={entry.id ?? i} className="px-5 py-2.5 flex items-center gap-3 hover:bg-white/[0.02] transition-colors">
                     <div className="min-w-0 flex-1 flex items-center gap-3">
-                      <span className="text-[9px] font-mono text-brand/80 shrink-0 capitalize">{(entry.action as string || "—").replace(/-/g, ' ')}</span>
+                      <span className="text-[9px] font-mono text-brand/80 shrink-0 capitalize">{formatActionName(entry.action as string || "—")}</span>
                       <span className="text-[8px] text-muted shrink-0 font-mono">{entry.model || "—"}</span>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">

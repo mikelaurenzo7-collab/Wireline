@@ -3062,6 +3062,9 @@ app.get("/api/campaigns/:id/analytics", authenticateUser, async (req: any, res: 
     }
 
     // Pull call-level stats (duration, cost, lead_score) for enrichment
+    // MIN_ANSWERED_CALL_DURATION_SEC: calls shorter than this are likely
+    // voicemails or immediate hang-ups and should not skew avg duration.
+    const MIN_ANSWERED_CALL_DURATION_SEC = 5;
     let callStats = { avg_duration_sec: 0, total_cost_usd: 0, avg_lead_score: 0, answered: 0 };
     if (callIds.length > 0) {
       const { data: callRows } = await db
@@ -3070,7 +3073,7 @@ app.get("/api/campaigns/:id/analytics", authenticateUser, async (req: any, res: 
         .in('id', callIds)
         .eq('user_id', userId);
       const rows = callRows ?? [];
-      const answered = rows.filter((r: any) => (r.duration_seconds ?? 0) > 5);
+      const answered = rows.filter((r: any) => (r.duration_seconds ?? 0) > MIN_ANSWERED_CALL_DURATION_SEC);
       callStats.answered = answered.length;
       callStats.avg_duration_sec = answered.length
         ? Math.round(answered.reduce((s: number, r: any) => s + (r.duration_seconds ?? 0), 0) / answered.length)
@@ -3083,6 +3086,8 @@ app.get("/api/campaigns/:id/analytics", authenticateUser, async (req: any, res: 
     }
 
     const total = (leads ?? []).length;
+    // pct is approximate — individual percentages may not sum to exactly 100
+    // due to rounding, but this is acceptable for display purposes.
     const outcomes = Object.entries(outcomeMap)
       .map(([status, count]) => ({ status, count, pct: total ? Math.round((count / total) * 100) : 0 }))
       .sort((a, b) => b.count - a.count);

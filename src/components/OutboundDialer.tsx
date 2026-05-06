@@ -861,7 +861,7 @@ export default function OutboundDialer() {
                             { label: "Answered",     value: campaignAnalytics.call_stats?.answered ?? 0,                             icon: Phone,       accent: "#4DFFC4" },
                             { label: "Avg Duration",  value: `${campaignAnalytics.call_stats?.avg_duration_sec ?? 0}s`,               icon: Clock,       accent: "#7DF9FF" },
                             { label: "Total Cost",    value: `$${(campaignAnalytics.call_stats?.total_cost_usd ?? 0).toFixed(3)}`,    icon: DollarSign,  accent: "#C58BFF" },
-                            { label: "Avg Score",     value: campaignAnalytics.call_stats?.avg_lead_score > 0 ? campaignAnalytics.call_stats.avg_lead_score : "—", icon: Award, accent: "#FF6BD9" },
+                            { label: "Avg Score",     value: campaignAnalytics.call_stats?.avg_lead_score != null ? campaignAnalytics.call_stats.avg_lead_score : "—", icon: Award, accent: "#FF6BD9" },
                           ].map(({ label, value, icon: Icon, accent }) => (
                             <div key={label} className="rounded-xl glass border border-white/8 p-3">
                               <div className="flex items-center gap-1.5 mb-1.5">
