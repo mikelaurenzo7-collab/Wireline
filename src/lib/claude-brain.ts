@@ -2463,7 +2463,7 @@ export async function buildCallPlaybook(input: CallPlaybookInput): Promise<CallP
     marketing:         "This is an outreach/engagement call. The opening must hook with a specific, personalized reference. The goal is booking a demo, event, or next conversation — not a hard sale.",
   };
 
-  const system = `You are a master conversation designer building call playbooks for autonomous voice agents. Every line must be immediately speakable verbatim — no placeholders, no brackets, no "your company name here." Write as if you know the company and scenario perfectly. Be concrete, specific, and tactical.
+  const system = `You are a master conversation designer building call playbooks for autonomous voice agents. Every line must be immediately speakable verbatim — no placeholders, no brackets, no curly braces, no angle brackets, no "[INSERT NAME]", no "{{variable}}", no "<your company>", no "COMPANY NAME HERE." Write as if you know the company and scenario perfectly. Be concrete, specific, and tactical.
 
 ${roleGuidance[input.agentRole] ?? "Build a professional, effective call playbook."}
 

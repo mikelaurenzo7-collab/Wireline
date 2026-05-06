@@ -8918,7 +8918,7 @@ app.post("/api/qa/score/:callId", authenticateUser, withAudit("qa"), async (req:
     const { callId } = req.params;
     const { data: call, error: callErr } = await db
       .from("wireline_call_logs")
-      .select("id, summary, transcript, sentiment, direction, duration_seconds, coaching_note, agent_id")
+      .select("id, summary, transcript, sentiment, direction, duration_seconds, coaching_note, agent_id, wireline_agents(role)")
       .eq("id", callId)
       .eq("user_id", req.user.id)
       .single();
@@ -8929,10 +8929,8 @@ app.post("/api/qa/score/:callId", authenticateUser, withAudit("qa"), async (req:
       return res.status(503).json({ error: "Claude is not configured." });
     }
 
-    // Look up agent role for role-specific scoring guidance.
-    const agentRole = call.agent_id
-      ? (await db.from("wireline_agents").select("role").eq("id", call.agent_id).single())?.data?.role ?? undefined
-      : undefined;
+    // Agent role is fetched via the relation above — used for role-specific QA guidance.
+    const agentRole: string | undefined = (call as any).wireline_agents?.role ?? undefined;
 
     const breakdown = await claudeBrain.qaScore({
       direction: ((call as any).direction || "inbound") as "inbound" | "outbound",
