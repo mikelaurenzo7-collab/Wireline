@@ -3077,6 +3077,15 @@ app.post("/api/campaigns/:id/launch", authenticateUser, async (req: any, res: an
       try {
         for (const lead of queued) {
           try {
+            // DNC compliance — skip leads whose number is on the Do Not Call list.
+            if (lead.customer_number && await isDncBlocked(req.user.id, lead.customer_number)) {
+              log.warn("Campaign: lead skipped — DNC match", { leadId: lead.id });
+              await db.from('wireline_outbound_leads')
+                .update({ status: 'Blocked-DNC' })
+                .eq('id', lead.id);
+              await new Promise(resolve => setTimeout(resolve, CAMPAIGN_DIAL_SPACING_MS));
+              continue;
+            }
             const result = await placeOutboundCall({
               userId: req.user.id,
               agentId: lead.agent_id || campaign.agent_id,
@@ -3417,6 +3426,12 @@ app.post("/api/outbound/dial", authenticateUser, async (req: any, res: any) => {
     const { agentId, customerName, customerNumber, context } = req.body;
     if (!agentId || !customerNumber) {
       return res.status(400).json({ error: "agentId and customerNumber are required." });
+    }
+
+    // DNC compliance check — block calls to numbers on the Do Not Call list.
+    if (await isDncBlocked(req.user.id, customerNumber)) {
+      log.warn("Outbound dial blocked by DNC list", { customerNumber });
+      return res.status(403).json({ error: "This number is on the Do Not Call list and cannot be dialed.", dncBlocked: true });
     }
 
     const result = await placeOutboundCall({
@@ -6812,6 +6827,249 @@ app.post("/api/claude/forge/create", authenticateUser, async (req: any, res: any
     res.json({ success: true, agentId });
   } catch (e) {
     claudeErr(res, e);
+  }
+});
+
+// ==========================================
+// DNC (DO NOT CALL) LIST — Compliance
+// ==========================================
+// Normalize a phone number to digits only for consistent matching.
+function normalizeDncPhone(raw: string): string {
+  return raw.replace(/\D/g, "");
+}
+
+// Check whether a phone number is on the DNC list for a given user.
+// Returns true if the call should be blocked.
+async function isDncBlocked(userId: string, phone: string): Promise<boolean> {
+  const normalized = normalizeDncPhone(phone);
+  if (!normalized) return false;
+  const { data } = await db
+    .from("wireline_dnc_list")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("phone", normalized)
+    .limit(1);
+  return !!(data && data.length > 0);
+}
+
+// List DNC entries
+app.get("/api/dnc", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { data, error } = await db
+      .from("wireline_dnc_list")
+      .select("id, phone, phone_raw, reason, source, created_at")
+      .eq("user_id", req.user.id)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    res.json({ entries: data || [] });
+  } catch (e: any) {
+    log.error("DNC list fetch failed", { error: e?.message });
+    res.status(500).json({ error: "Failed to fetch DNC list." });
+  }
+});
+
+// Add one or more numbers to DNC list
+app.post("/api/dnc", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { entries } = req.body as { entries: Array<{ phone: string; reason?: string; source?: string }> };
+    if (!entries || entries.length === 0) {
+      return res.status(400).json({ error: "entries array is required." });
+    }
+    const rows = entries
+      .filter((e: any) => e.phone)
+      .map((e: any) => ({
+        user_id: req.user.id,
+        phone: normalizeDncPhone(e.phone),
+        phone_raw: e.phone,
+        reason: e.reason || null,
+        source: e.source || "manual",
+      }))
+      .filter((r: any) => r.phone.length > 0);
+
+    if (rows.length === 0) return res.status(400).json({ error: "No valid phone numbers provided." });
+
+    const { data, error } = await db
+      .from("wireline_dnc_list")
+      .upsert(rows, { onConflict: "user_id,phone", ignoreDuplicates: true })
+      .select("id");
+    if (error) throw error;
+    res.json({ success: true, added: data?.length ?? 0 });
+  } catch (e: any) {
+    log.error("DNC add failed", { error: e?.message });
+    res.status(500).json({ error: "Failed to add to DNC list." });
+  }
+});
+
+// Remove a number from DNC list
+app.delete("/api/dnc/:id", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { error } = await db
+      .from("wireline_dnc_list")
+      .delete()
+      .eq("id", req.params.id)
+      .eq("user_id", req.user.id);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (e: any) {
+    log.error("DNC delete failed", { error: e?.message });
+    res.status(500).json({ error: "Failed to remove DNC entry." });
+  }
+});
+
+// ==========================================
+// QA SCORING — Claude-powered call quality
+// ==========================================
+// Score a call against a 5-dimension QA rubric (20 pts each = 100 total).
+app.post("/api/qa/score/:callId", authenticateUser, withAudit("qa"), async (req: any, res: any) => {
+  try {
+    const { callId } = req.params;
+    const { data: call, error: callErr } = await db
+      .from("wireline_call_logs")
+      .select("id, summary, transcript, sentiment, direction, duration_seconds, coaching_note")
+      .eq("id", callId)
+      .eq("user_id", req.user.id)
+      .single();
+
+    if (callErr || !call) return res.status(404).json({ error: "Call not found." });
+
+    if (!claudeBrain.isClaudeAvailable()) {
+      return res.status(503).json({ error: "Claude is not configured." });
+    }
+
+    const transcript = (call as any).transcript || "";
+    const summary = (call as any).summary || "";
+
+    const QA_DIMENSIONS = ["greeting", "discovery", "solution", "objection", "closing"] as const;
+    const QA_SYSTEM = "You are a call quality auditor for an enterprise voice AI platform. You evaluate calls objectively and return valid JSON only.";
+
+    const prompt = `Score this ${(call as any).direction || "inbound"} call against a 5-dimension rubric. Each dimension is worth 0–20 points (total 0–100).
+
+Dimensions:
+1. Opening & Greeting (greeting) — professional, warm, identified company/purpose clearly
+2. Problem Discovery (discovery) — asked good open-ended questions, understood the customer's situation
+3. Solution Presentation (solution) — clear, relevant, addressed actual needs
+4. Objection Handling (objection) — handled pushback calmly and effectively, didn't oversell
+5. Closing & Next Steps (closing) — strong close, set clear next steps or outcome
+
+Call Summary: ${summary || "(none)"}
+Call Transcript (excerpt): ${transcript ? transcript.slice(0, 3000) : "(not available)"}
+Sentiment: ${(call as any).sentiment || "neutral"}
+Duration: ${(call as any).duration_seconds ? Math.round((call as any).duration_seconds / 60) + " minutes" : "unknown"}
+
+Respond with ONLY valid JSON in this exact shape:
+{
+  "greeting": <0-20>,
+  "discovery": <0-20>,
+  "solution": <0-20>,
+  "objection": <0-20>,
+  "closing": <0-20>,
+  "notes": "<1-2 sentence coaching observation>"
+}`;
+
+    const { text: raw } = await claudeBrain.runCompletion({ system: QA_SYSTEM, user: prompt, maxTokens: 256 });
+    let breakdown: any;
+    try {
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      breakdown = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+    } catch (_) {
+      breakdown = null;
+    }
+
+    if (!breakdown || typeof breakdown.greeting !== "number") {
+      return res.status(422).json({ error: "QA scoring returned an unexpected format." });
+    }
+
+    const score = Math.min(
+      100,
+      Math.max(0, QA_DIMENSIONS.reduce((sum, dim) => sum + (Number(breakdown[dim]) || 0), 0))
+    );
+
+    await db
+      .from("wireline_call_logs")
+      .update({ qa_score: score, qa_breakdown: breakdown })
+      .eq("id", callId)
+      .eq("user_id", req.user.id);
+
+    res.json({ success: true, score, breakdown });
+  } catch (e: any) {
+    log.error("QA scoring failed", { error: e?.message });
+    res.status(500).json({ error: "QA scoring failed." });
+  }
+});
+
+// Aggregate QA stats for the Insights Quality tab.
+app.get("/api/qa/stats", authenticateUser, async (req: any, res: any) => {
+  try {
+    const days = Math.min(90, Math.max(1, parseInt(String(req.query.days || "30"), 10)));
+    const since = new Date(Date.now() - days * 86_400_000).toISOString();
+
+    const { data: calls, error } = await db
+      .from("wireline_call_logs")
+      .select("qa_score, qa_breakdown, direction, agent_id, created_at")
+      .eq("user_id", req.user.id)
+      .gte("created_at", since)
+      .not("qa_score", "is", null)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    if (!calls || calls.length === 0) {
+      return res.json({ count: 0, avgScore: 0, distribution: [], dimensions: {}, trend: [] });
+    }
+
+    const avgScore = Math.round(calls.reduce((s: number, c: any) => s + (c.qa_score || 0), 0) / calls.length);
+
+    // Score distribution buckets
+    const distribution = [
+      { label: "Poor (0–39)",       min: 0,  max: 39,  count: 0, color: "#FF6BD9" },
+      { label: "Fair (40–59)",      min: 40, max: 59,  count: 0, color: "#FF9A5C" },
+      { label: "Good (60–74)",      min: 60, max: 74,  count: 0, color: "#FFD166" },
+      { label: "Great (75–89)",     min: 75, max: 89,  count: 0, color: "#4DFFC4" },
+      { label: "Excellent (90+)",   min: 90, max: 100, count: 0, color: "#7DF9FF" },
+    ];
+    calls.forEach((c: any) => {
+      const bucket = distribution.find((b) => c.qa_score >= b.min && c.qa_score <= b.max);
+      if (bucket) bucket.count++;
+    });
+
+    // Average by QA dimension
+    const dims = { greeting: 0, discovery: 0, solution: 0, objection: 0, closing: 0 };
+    let dimCount = 0;
+    calls.forEach((c: any) => {
+      if (c.qa_breakdown && typeof c.qa_breakdown === "object") {
+        dims.greeting  += Number(c.qa_breakdown.greeting)  || 0;
+        dims.discovery += Number(c.qa_breakdown.discovery) || 0;
+        dims.solution  += Number(c.qa_breakdown.solution)  || 0;
+        dims.objection += Number(c.qa_breakdown.objection) || 0;
+        dims.closing   += Number(c.qa_breakdown.closing)   || 0;
+        dimCount++;
+      }
+    });
+    const dimensions = dimCount > 0
+      ? {
+          greeting:  +(dims.greeting  / dimCount).toFixed(1),
+          discovery: +(dims.discovery / dimCount).toFixed(1),
+          solution:  +(dims.solution  / dimCount).toFixed(1),
+          objection: +(dims.objection / dimCount).toFixed(1),
+          closing:   +(dims.closing   / dimCount).toFixed(1),
+        }
+      : dims;
+
+    // 7-day trend (or last 7 available days)
+    const byDay: Record<string, number[]> = {};
+    calls.forEach((c: any) => {
+      const day = c.created_at.slice(0, 10);
+      if (!byDay[day]) byDay[day] = [];
+      byDay[day].push(c.qa_score);
+    });
+    const trend = Object.entries(byDay)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-7)
+      .map(([day, scores]) => ({ day, avg: Math.round(scores.reduce((s, n) => s + n, 0) / scores.length) }));
+
+    res.json({ count: calls.length, avgScore, distribution, dimensions, trend });
+  } catch (e: any) {
+    log.error("QA stats failed", { error: e?.message });
+    res.status(500).json({ error: "Failed to fetch QA stats." });
   }
 });
 
