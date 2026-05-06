@@ -2838,12 +2838,12 @@ type VapiToolName = keyof typeof VAPI_TOOL_DEFS;
 // Maps each agent role to the subset of tools it may call during a live call.
 const ROLE_TOOL_SETS: Record<string, VapiToolName[]> = {
   sales:             ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
-  customer_service:  ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "check_calendar_availability", "book_appointment", "schedule_callback", "capture_customer_profile"],
-  scheduler:         ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "check_calendar_availability", "book_appointment", "leave_voicemail", "schedule_callback"],
+  customer_service:  ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "check_calendar_availability", "book_appointment", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
+  scheduler:         ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "check_calendar_availability", "book_appointment", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
   collections:       ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "log_payment_promise", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
-  technical_support: ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "create_support_ticket", "schedule_callback", "capture_customer_profile"],
+  technical_support: ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "create_support_ticket", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
   lead_qualifier:    ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
-  receptionist:      ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "check_calendar_availability", "book_appointment", "schedule_callback"],
+  receptionist:      ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "check_calendar_availability", "book_appointment", "schedule_callback", "capture_customer_profile"],
   marketing:         ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
 };
 
@@ -6475,6 +6475,37 @@ app.post("/api/claude/agent-review", authenticateUser, async (req: any, res: any
   }
 });
 
+// Call Playbook Builder — generates a complete role+scenario call script.
+// Returns opening hook, discovery questions, objection handlers, closings, and a voicemail.
+app.post("/api/claude/call-playbook", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { agentId, scenario } = req.body;
+    if (!agentId) return res.status(400).json({ error: "agentId required" });
+    if (!scenario?.trim()) return res.status(400).json({ error: "scenario required" });
+
+    const [{ data: agent }, { data: knowledgeRows }, { data: directiveRows }, { data: settings }] = await Promise.all([
+      db.from("wireline_agents").select("name, role").eq("id", agentId).eq("user_id", req.user.id).single(),
+      db.from("wireline_knowledge").select("content").eq("agent_id", agentId).eq("user_id", req.user.id).limit(20),
+      db.from("wireline_directives").select("content").eq("agent_id", agentId).eq("user_id", req.user.id).order("priority", { ascending: false }).limit(10),
+      db.from("wireline_settings").select("company_name").eq("user_id", req.user.id).maybeSingle(),
+    ]);
+    if (!agent) return res.status(404).json({ error: "Agent not found." });
+
+    const playbook = await claudeBrain.buildCallPlaybook({
+      agentName: agent.name,
+      agentRole: agent.role || DEFAULT_AGENT_ROLE,
+      scenario: scenario.trim(),
+      knowledgeBase: (knowledgeRows ?? []).map((k: any) => k.content),
+      directives: (directiveRows ?? []).map((d: any) => d.content),
+      companyName: (settings as any)?.company_name || undefined,
+    });
+
+    res.json({ playbook });
+  } catch (e) {
+    claudeErr(res, e);
+  }
+});
+
 // Promote a Claude-suggested directive into the agent's directive table.
 app.post("/api/claude/agent-review/apply-directive", authenticateUser, async (req: any, res: any) => {
   try {
@@ -8887,7 +8918,7 @@ app.post("/api/qa/score/:callId", authenticateUser, withAudit("qa"), async (req:
     const { callId } = req.params;
     const { data: call, error: callErr } = await db
       .from("wireline_call_logs")
-      .select("id, summary, transcript, sentiment, direction, duration_seconds, coaching_note")
+      .select("id, summary, transcript, sentiment, direction, duration_seconds, coaching_note, agent_id, wireline_agents(role)")
       .eq("id", callId)
       .eq("user_id", req.user.id)
       .single();
@@ -8898,57 +8929,31 @@ app.post("/api/qa/score/:callId", authenticateUser, withAudit("qa"), async (req:
       return res.status(503).json({ error: "Claude is not configured." });
     }
 
-    const transcript = (call as any).transcript || "";
-    const summary = (call as any).summary || "";
+    // Agent role is fetched via the relation above — used for role-specific QA guidance.
+    const agentRole: string | undefined = (call as any).wireline_agents?.role ?? undefined;
+
+    const breakdown = await claudeBrain.qaScore({
+      direction: ((call as any).direction || "inbound") as "inbound" | "outbound",
+      agentRole,
+      summary: (call as any).summary || "",
+      transcript: (call as any).transcript || "",
+      sentiment: (call as any).sentiment || "neutral",
+      durationSeconds: (call as any).duration_seconds,
+    });
 
     const QA_DIMENSIONS = ["greeting", "discovery", "solution", "objection", "closing"] as const;
-    const QA_SYSTEM = "You are a call quality auditor for an enterprise voice AI platform. You evaluate calls objectively and return valid JSON only.";
-
-    const prompt = `Score this ${(call as any).direction || "inbound"} call against a 5-dimension rubric. Each dimension is worth 0–20 points (total 0–100).
-
-Dimensions:
-1. Opening & Greeting (greeting) — professional, warm, identified company/purpose clearly
-2. Problem Discovery (discovery) — asked good open-ended questions, understood the customer's situation
-3. Solution Presentation (solution) — clear, relevant, addressed actual needs
-4. Objection Handling (objection) — handled pushback calmly and effectively, didn't oversell
-5. Closing & Next Steps (closing) — strong close, set clear next steps or outcome
-
-Call Summary: ${summary || "(none)"}
-Call Transcript (excerpt): ${transcript ? transcript.slice(0, 3000) : "(not available)"}
-Sentiment: ${(call as any).sentiment || "neutral"}
-Duration: ${(call as any).duration_seconds ? Math.round((call as any).duration_seconds / 60) + " minutes" : "unknown"}
-
-Respond with ONLY valid JSON in this exact shape:
-{
-  "greeting": <0-20>,
-  "discovery": <0-20>,
-  "solution": <0-20>,
-  "objection": <0-20>,
-  "closing": <0-20>,
-  "notes": "<1-2 sentence coaching observation>"
-}`;
-
-    const { text: raw } = await claudeBrain.runCompletion({ system: QA_SYSTEM, user: prompt, maxTokens: 256 });
-    let breakdown: any;
-    try {
-      const jsonMatch = raw.match(/\{[\s\S]*\}/);
-      breakdown = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
-    } catch (_) {
-      breakdown = null;
-    }
-
-    if (!breakdown || typeof breakdown.greeting !== "number") {
-      return res.status(422).json({ error: "QA scoring returned an unexpected format." });
-    }
-
     const score = Math.min(
       100,
       Math.max(0, QA_DIMENSIONS.reduce((sum, dim) => sum + (Number(breakdown[dim]) || 0), 0))
     );
 
+    // Persist score + breakdown. Also write coaching_note if we generated one.
+    const updatePayload: any = { qa_score: score, qa_breakdown: breakdown };
+    if (breakdown.coaching_note) updatePayload.coaching_note = breakdown.coaching_note;
+
     await db
       .from("wireline_call_logs")
-      .update({ qa_score: score, qa_breakdown: breakdown })
+      .update(updatePayload)
       .eq("id", callId)
       .eq("user_id", req.user.id);
 
