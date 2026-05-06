@@ -13,6 +13,9 @@ import {
   CampaignUpdateSchema,
   EmailReplySchema,
   EmailDraftSchema,
+  OutboundLeadSchema,
+  OutboundBulkSchema,
+  AppointmentSchema,
   parseFormData,
 } from "./form-validators";
 
@@ -248,6 +251,130 @@ describe("EmailDraftSchema", () => {
       messages: [{ role: "system", content: "x" }],
     });
     expect(r.success).toBe(false);
+  });
+});
+
+describe("OutboundLeadSchema", () => {
+  it("accepts a minimal lead with just a phone number", () => {
+    expect(OutboundLeadSchema.safeParse({ phone_number: "+15551234567" }).success).toBe(true);
+  });
+
+  it("rejects empty phone number", () => {
+    expect(OutboundLeadSchema.safeParse({ phone_number: "" }).success).toBe(false);
+  });
+
+  it("rejects phone numbers with letters or invalid characters", () => {
+    expect(OutboundLeadSchema.safeParse({ phone_number: "555-CALL-ME" }).success).toBe(false);
+  });
+
+  it("accepts E.164 with formatting punctuation", () => {
+    expect(OutboundLeadSchema.safeParse({ phone_number: "+1 (555) 123-4567" }).success).toBe(true);
+  });
+
+  it("rejects malformed email when present", () => {
+    expect(
+      OutboundLeadSchema.safeParse({ phone_number: "555-1212", email: "not-an-email" }).success,
+    ).toBe(false);
+  });
+
+  it("passes through extra CRM fields (passthrough mode)", () => {
+    const r = OutboundLeadSchema.safeParse({
+      phone_number: "+15551212",
+      crm_external_id: "abc-123",
+      lifetime_value_usd: 4500,
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect((r.data as any).crm_external_id).toBe("abc-123");
+    }
+  });
+
+  it("caps notes at 2000 chars", () => {
+    expect(
+      OutboundLeadSchema.safeParse({ phone_number: "+15551212", notes: "x".repeat(2001) }).success,
+    ).toBe(false);
+  });
+});
+
+describe("OutboundBulkSchema", () => {
+  const lead = { phone_number: "+15551212" };
+
+  it("accepts a small batch", () => {
+    expect(OutboundBulkSchema.safeParse({ leads: [lead, lead] }).success).toBe(true);
+  });
+
+  it("rejects an empty batch", () => {
+    expect(OutboundBulkSchema.safeParse({ leads: [] }).success).toBe(false);
+  });
+
+  it("caps batch size at 5000 leads to prevent megabatch DOS", () => {
+    const big = Array(5001).fill(lead);
+    expect(OutboundBulkSchema.safeParse({ leads: big }).success).toBe(false);
+  });
+
+  it("accepts exactly 5000 leads (boundary)", () => {
+    const max = Array(5000).fill(lead);
+    expect(OutboundBulkSchema.safeParse({ leads: max }).success).toBe(true);
+  });
+
+  it("validates campaign_id as UUID when provided", () => {
+    expect(
+      OutboundBulkSchema.safeParse({ leads: [lead], campaign_id: "not-uuid" }).success,
+    ).toBe(false);
+    expect(
+      OutboundBulkSchema.safeParse({
+        leads: [lead],
+        campaign_id: "550e8400-e29b-41d4-a716-446655440000",
+      }).success,
+    ).toBe(true);
+  });
+
+  it("rejects when any lead in the batch is malformed", () => {
+    const r = OutboundBulkSchema.safeParse({
+      leads: [lead, { phone_number: "" }],
+    });
+    expect(r.success).toBe(false);
+  });
+});
+
+describe("AppointmentSchema", () => {
+  it("accepts minimal valid appointment", () => {
+    expect(
+      AppointmentSchema.safeParse({
+        customer_name: "Acme Corp",
+        date: "2026-05-10",
+        time: "14:00",
+      }).success,
+    ).toBe(true);
+  });
+
+  it("rejects missing customer_name", () => {
+    expect(
+      AppointmentSchema.safeParse({ customer_name: "", date: "2026-05-10", time: "14:00" }).success,
+    ).toBe(false);
+  });
+
+  it("rejects missing date", () => {
+    expect(
+      AppointmentSchema.safeParse({ customer_name: "x", date: "", time: "14:00" }).success,
+    ).toBe(false);
+  });
+
+  it("rejects missing time", () => {
+    expect(
+      AppointmentSchema.safeParse({ customer_name: "x", date: "2026-05-10", time: "" }).success,
+    ).toBe(false);
+  });
+
+  it("validates agent_id as UUID when provided", () => {
+    expect(
+      AppointmentSchema.safeParse({
+        customer_name: "x",
+        date: "d",
+        time: "t",
+        agent_id: "not-uuid",
+      }).success,
+    ).toBe(false);
   });
 });
 

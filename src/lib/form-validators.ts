@@ -100,6 +100,46 @@ export const EmailDraftSchema = z.object({
 
 export type EmailDraft = z.infer<typeof EmailDraftSchema>;
 
+// Outbound lead — single contact submitted to /api/outbound/dial.
+// Phone number format kept liberal (E.164 with optional formatting)
+// because Vapi handles normalization downstream.
+export const OutboundLeadSchema = z.object({
+  phone_number: z
+    .string()
+    .min(7, 'Phone number is required')
+    .max(32, 'Phone number must be 32 characters or less')
+    .regex(/^[+\-()\s\d]+$/, 'Phone number contains invalid characters'),
+  name: z.string().max(200, 'Name must be 200 characters or less').optional().nullable(),
+  email: z.string().email('Invalid email address').optional().nullable(),
+  notes: z.string().max(2000, 'Notes must be 2000 characters or less').optional().nullable(),
+  status: z.string().max(50, 'Status must be 50 characters or less').optional(),
+}).passthrough(); // Allow extra fields (custom CRM data) to flow through
+
+export type OutboundLead = z.infer<typeof OutboundLeadSchema>;
+
+// Bulk outbound — capped at 5000 leads/request so a single accidental
+// upload can't lock a database transaction or starve the dial queue.
+export const OutboundBulkSchema = z.object({
+  leads: z
+    .array(OutboundLeadSchema)
+    .min(1, 'At least one lead is required')
+    .max(5000, 'Cannot submit more than 5000 leads per request'),
+  campaign_id: z.string().uuid('Invalid campaign ID').optional().nullable(),
+});
+
+export type OutboundBulk = z.infer<typeof OutboundBulkSchema>;
+
+// Appointment — created from voice/email triage flows.
+export const AppointmentSchema = z.object({
+  customer_name: z.string().min(1, 'Customer name is required').max(200, 'Customer name must be 200 characters or less'),
+  date: z.string().min(1, 'Date is required').max(40, 'Date string is too long'),
+  time: z.string().min(1, 'Time is required').max(40, 'Time string is too long'),
+  notes: z.string().max(2000, 'Notes must be 2000 characters or less').optional().nullable(),
+  agent_id: z.string().uuid('Invalid agent ID').optional().nullable(),
+});
+
+export type Appointment = z.infer<typeof AppointmentSchema>;
+
 // Helper to validate and provide user-friendly error messages
 export function parseFormData<T>(schema: z.ZodSchema<T>, data: unknown): { success: true; data: T } | { success: false; errors: Record<string, string> } {
   try {

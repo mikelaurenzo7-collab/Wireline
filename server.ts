@@ -26,7 +26,7 @@ import * as claudeBrain from "./src/lib/claude-brain";
 import { AuditLogger } from "./src/lib/audit-logger";
 import { rateLimit, isRedisConfigured, startMemoryCleanup } from "./src/lib/rate-limit";
 import { SentryEvents } from "./src/lib/sentry-events";
-import { AgentFormSchema, DirectiveSchema, KnowledgeSchema, EmailReplySchema, EmailDraftSchema, CampaignCreateSchema, CampaignUpdateSchema, parseFormData } from "./src/lib/form-validators";
+import { AgentFormSchema, DirectiveSchema, KnowledgeSchema, EmailReplySchema, EmailDraftSchema, CampaignCreateSchema, CampaignUpdateSchema, OutboundBulkSchema, parseFormData } from "./src/lib/form-validators";
 import { getErrorMessage, sanitizeForAudit } from "./src/lib/server-utils";
 
 // On Vercel, VERCEL_URL is automatically set to the deployment hostname
@@ -5345,8 +5345,14 @@ app.post("/api/outbound/dial", authenticateUser, async (req: any, res: any) => {
 
 app.post("/api/outbound/bulk", authenticateUser, async (req: any, res: any) => {
   try {
-     const { leads, campaign_id } = req.body;
-     if (!leads || !leads.length) return res.status(400).json({ error: "No leads provided" });
+     const validation = parseFormData(OutboundBulkSchema, {
+       leads: req.body.leads,
+       campaign_id: req.body.campaign_id,
+     });
+     if (!validation.success) {
+       return res.status(400).json({ error: "Validation failed", errors: validation.errors });
+     }
+     const { leads, campaign_id } = validation.data;
 
      // SECURITY ENFORCEMENT
      const { data: userSettings } = await db.from('wireline_settings').select('subscription_status').eq('user_id', req.user.id).single();
