@@ -1426,13 +1426,16 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
             const safePhone = sanitizePhone(customerPhone);
 
             // 1. Fetch last 3 call summaries — scope to the sanitized phone to prevent
-            //    wildcard injection, and to this agent for access isolation.
-            const { data: pastCalls } = await db.from('wireline_call_logs')
+            //    wildcard injection. Scope to this agent when possible for access isolation,
+            //    but fall back to user-scoped results when webhookAgentId is unavailable.
+            const callLogsQuery = db.from('wireline_call_logs')
                .select('summary, intent_label, created_at')
                .eq('customer_number', safePhone)
-               .eq('agent_id', webhookAgentId)
                .order('created_at', { ascending: false })
                .limit(3);
+            const { data: pastCalls } = webhookAgentId
+               ? await callLogsQuery.eq('agent_id', webhookAgentId)
+               : await callLogsQuery.eq('user_id', agent?.user_id);
 
             // 2. Fetch any open tasks mentioning this customer's phone number.
             //    Tasks are linked by description (which includes the phone) or by the
@@ -4659,7 +4662,6 @@ Today is ${currentDateTime} (Eastern Time). Calculate specific dates for "tomorr
 - Lead outcome: Use update_lead_status at the END of every live call — never leave the outcome unlogged.
 - Tasks: Use create_fleet_task for any promised follow-up that requires human action.
 - Scheduling: Always check_calendar_availability BEFORE confirming any appointment slot. Never promise a time from memory.
-- Scheduling: Always check_calendar_availability before confirming any slot.
 - Customer intel: Use capture_customer_profile whenever you learn something meaningful — budget, pain points, timeline, decision authority, objections, or agreed next steps. Capture it in the moment, not at the end. This data travels with the contact across all future calls.
 
 ## CALL CLOSING STANDARD
