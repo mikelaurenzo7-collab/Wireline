@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Keyboard } from "lucide-react";
 
@@ -47,10 +47,30 @@ function Kbd({ children }: { children: React.ReactNode }) {
 }
 
 export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsProps) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (!open) return;
+    // Move focus to close button when modal opens
+    closeRef.current?.focus();
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") { onClose(); return; }
+      if (e.key === "Tab" && dialogRef.current) {
+        const focusables = Array.from(
+          dialogRef.current.querySelectorAll<HTMLElement>(
+            'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          )
+        );
+        if (!focusables.length) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (e.shiftKey) {
+          if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+        } else {
+          if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -77,6 +97,7 @@ export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsPr
             exit={{ opacity: 0, scale: 0.96, y: 12 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
             className="fixed inset-x-4 top-[10%] z-[91] mx-auto max-w-2xl"
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-label="Keyboard shortcuts"
@@ -97,6 +118,7 @@ export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsPr
                   </div>
                 </div>
                 <button
+                  ref={closeRef}
                   onClick={onClose}
                   aria-label="Close keyboard shortcuts"
                   className="w-8 h-8 rounded-lg flex items-center justify-center text-ink/50 hover:text-ink hover:bg-white/8 border border-white/8 hover:border-white/20 transition-all"

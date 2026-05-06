@@ -34,6 +34,13 @@ export default function AdminSettings() {
   const [carrierNumbers, setCarrierNumbers] = useState<any[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
 
+  const providerDocsUrl = {
+    google: "https://ai.google.dev/gemini-api/docs/models",
+    anthropic: "https://docs.anthropic.com/en/docs/about-claude/models/overview",
+    openai: "https://platform.openai.com/docs/models",
+    groq: "https://console.groq.com/docs/models",
+  }[settings.voice_llm_provider] ?? "https://platform.openai.com/docs/models";
+
   useEffect(() => { fetchData(); fetchClaudeStatus(); }, []);
 
   const fetchClaudeStatus = async () => {
@@ -142,10 +149,13 @@ export default function AdminSettings() {
   };
 
   const tabSwitcher = (
-    <div className="flex p-1 rounded-full glass border border-white/10">
+    <div className="flex p-1 rounded-full glass border border-white/10" role="tablist">
       {(["carrier", "subscription", "system", "activity"] as const).map(t => (
         <button
           key={t}
+          role="tab"
+          aria-selected={activeTab === t}
+          aria-controls={`admin-panel-${t}`}
           onClick={() => setActiveTab(t)}
           className={cn(
             "px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.25em] transition-colors",
@@ -175,6 +185,9 @@ export default function AdminSettings() {
           {activeTab === "carrier" ? (
             <motion.div
               key="carrier"
+              id="admin-panel-carrier"
+              role="tabpanel"
+              tabIndex={0}
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
@@ -212,8 +225,9 @@ export default function AdminSettings() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">Fallback Wireline number ID</label>
+                    <label htmlFor="vapi-phone-number-id" className="text-[9px] uppercase tracking-[0.3em] text-muted/70">Fallback Wireline number ID</label>
                     <input
+                      id="vapi-phone-number-id"
                       type="text"
                       value={settings.vapi_phone_number_id}
                       onChange={e => setSettings({ ...settings, vapi_phone_number_id: e.target.value })}
@@ -241,6 +255,7 @@ export default function AdminSettings() {
                         <button
                           key={p.v}
                           type="button"
+                          aria-pressed={settings.voice_llm_provider === p.v}
                           onClick={() => setSettings({
                             ...settings,
                             voice_llm_provider: p.v,
@@ -266,8 +281,9 @@ export default function AdminSettings() {
                       ))}
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">Model ID</label>
+                      <label htmlFor="voice-llm-model" className="text-[9px] uppercase tracking-[0.3em] text-muted/70">Model ID</label>
                       <input
+                        id="voice-llm-model"
                         type="text"
                         value={settings.voice_llm_model}
                         onChange={(e) => setSettings({ ...settings, voice_llm_model: e.target.value })}
@@ -275,7 +291,9 @@ export default function AdminSettings() {
                         className="w-full text-sm bg-black/30 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 font-mono"
                       />
                       <p className="text-[10px] text-muted/70 leading-relaxed">
-                        Supported models may change over time. Check your voice provider docs for the current list.
+                        Supported models may change over time. Check your
+                        <a href={providerDocsUrl} target="_blank" rel="noopener noreferrer" className="text-brand mx-1 underline">provider documentation</a>
+                        for the current list.
                       </p>
                     </div>
                   </div>
@@ -324,6 +342,7 @@ export default function AdminSettings() {
                             <LinkIcon className="w-3 h-3 text-brand" />
                             <div className="relative">
                               <select
+                                aria-label={`Assign agent to ${pt.phone_number}`}
                                 value={pt.agent_id || ""}
                                 onChange={(e) => updateNumberAgent(pt.id, e.target.value)}
                                 className="text-xs bg-black/30 border border-white/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink min-w-[150px]"
@@ -339,7 +358,7 @@ export default function AdminSettings() {
                               onClick={() => deletePhoneNumber(pt.id)}
                               disabled={isDeletingNumber === pt.id}
                               title="Delete phone number"
-                              aria-label={`Delete phone number ${pt.number || pt.phone_number || ''}`}
+                              aria-label={`Delete phone number ${pt.phone_number}`}
                               className="w-7 h-7 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30 disabled:opacity-40 transition-all"
                             >
                               {isDeletingNumber === pt.id
@@ -424,6 +443,9 @@ export default function AdminSettings() {
           ) : (
             <motion.div
               key="subscription"
+              id="admin-panel-subscription"
+              role="tabpanel"
+              tabIndex={0}
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
@@ -541,6 +563,9 @@ export default function AdminSettings() {
           {activeTab === "system" && (
             <motion.div
               key="system"
+              id="admin-panel-system"
+              role="tabpanel"
+              tabIndex={0}
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
@@ -599,7 +624,7 @@ export default function AdminSettings() {
                       icon: Bot,
                     },
                     {
-                      label: "WIRELINE_VOICE_PUBLIC_KEY",
+                      label: "VOICE_PUBLIC_KEY",
                       desc: "Voice browser SDK",
                       ok: !!import.meta.env.VITE_VAPI_PUBLIC_KEY,
                       icon: Wifi,
@@ -643,6 +668,9 @@ export default function AdminSettings() {
           {activeTab === "activity" && (
             <motion.div
               key="activity"
+              id="admin-panel-activity"
+              role="tabpanel"
+              tabIndex={0}
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}

@@ -270,8 +270,11 @@ export default function FleetSettings() {
     <>
     <div className="h-full flex flex-col">
       {/* Tab strip */}
-      <div className="px-4 py-2 border-b border-white/8 flex items-center gap-1.5 shrink-0">
+      <div className="px-4 py-2 border-b border-white/8 flex items-center gap-1.5 shrink-0" role="tablist">
         <button
+          role="tab"
+          aria-selected={activeTab === "templates"}
+          aria-controls="fleet-panel-templates"
           onClick={() => setActiveTab("templates")}
           className={cn(
             "px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] transition-all border flex items-center gap-1.5",
@@ -284,6 +287,9 @@ export default function FleetSettings() {
           Templates
         </button>
         <button
+          role="tab"
+          aria-selected={activeTab === "fleet"}
+          aria-controls="fleet-panel-fleet"
           onClick={() => setActiveTab("fleet")}
           className={cn(
             "px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] transition-all border flex items-center gap-1.5",
@@ -300,9 +306,11 @@ export default function FleetSettings() {
       {/* Tab content */}
       <div className="flex-1 overflow-hidden">
         {activeTab === "templates" ? (
-          <AgentTemplates />
+          <div id="fleet-panel-templates" role="tabpanel" tabIndex={0} className="h-full overflow-hidden">
+            <AgentTemplates />
+          </div>
         ) : (
-    <div className="h-full flex flex-col md:flex-row">
+    <div id="fleet-panel-fleet" role="tabpanel" tabIndex={0} className="h-full flex flex-col md:flex-row">
 
       {/* Sidebar: Agents List */}
       <aside className="w-full md:w-[420px] border-b md:border-b-0 md:border-r border-white/8 h-auto md:h-full flex flex-col shrink-0">
@@ -413,8 +421,8 @@ export default function FleetSettings() {
             </div>
 
             <div className="flex p-1 rounded-full glass border border-white/10">
-              <button onClick={() => setNewAgentChannel('voice')} className={cn("flex-1 py-1 rounded-full text-[10px] uppercase tracking-[0.25em] transition-colors", newAgentChannel === 'voice' ? "bg-brand/15 text-brand" : "text-muted hover:text-ink")}>Voice</button>
-              <button onClick={() => setNewAgentChannel('email')} className={cn("flex-1 py-1 rounded-full text-[10px] uppercase tracking-[0.25em] transition-colors", newAgentChannel === 'email' ? "bg-brand/15 text-brand" : "text-muted hover:text-ink")}>Email</button>
+              <button aria-pressed={newAgentChannel === 'voice'} onClick={() => setNewAgentChannel('voice')} className={cn("flex-1 py-1 rounded-full text-[10px] uppercase tracking-[0.25em] transition-colors", newAgentChannel === 'voice' ? "bg-brand/15 text-brand" : "text-muted hover:text-ink")}>Voice</button>
+              <button aria-pressed={newAgentChannel === 'email'} onClick={() => setNewAgentChannel('email')} className={cn("flex-1 py-1 rounded-full text-[10px] uppercase tracking-[0.25em] transition-colors", newAgentChannel === 'email' ? "bg-brand/15 text-brand" : "text-muted hover:text-ink")}>Email</button>
             </div>
 
             <div className="space-y-3">

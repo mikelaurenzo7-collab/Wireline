@@ -75,6 +75,7 @@ export default function CallLogs() {
         <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
         <input
           type="text"
+          aria-label="Search calls"
           placeholder="Search signals…"
           className="h-9 w-44 lg:w-60 pl-8 pr-3 rounded-full glass border border-white/10 text-[11px] text-ink placeholder:text-muted/60 focus:border-brand/40 focus:outline-none transition-all"
           value={search}
@@ -84,6 +85,7 @@ export default function CallLogs() {
       <div className="relative">
         <Filter className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
         <select
+          aria-label="Filter by call direction"
           className="h-9 pl-8 pr-7 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.22em] text-ink appearance-none focus:border-brand/40 focus:outline-none transition-all cursor-pointer"
           value={filter}
           onChange={e => setFilter(e.target.value as any)}
@@ -119,6 +121,7 @@ export default function CallLogs() {
                 <button
                   onClick={loadMore}
                   disabled={loadingMore}
+                  aria-label="Load more calls"
                   className="text-[9px] uppercase tracking-[0.3em] text-muted hover:text-ink transition-colors flex items-center gap-1"
                 >
                   {loadingMore ? <Loader2 className="w-3 h-3 animate-spin" /> : <Signal className="w-3 h-3" />}
@@ -213,9 +216,9 @@ export default function CallLogs() {
 
 function SentimentDot({ sentiment }: { sentiment?: string }) {
   const s = (sentiment || 'neutral').toLowerCase();
-  if (s === 'positive') return <SmilePlus className="w-3 h-3 text-emerald-400 shrink-0" />;
-  if (s === 'negative') return <Frown className="w-3 h-3 text-rose-400 shrink-0" />;
-  return <Meh className="w-3 h-3 text-muted/40 shrink-0" />;
+  if (s === 'positive') return <SmilePlus className="w-3 h-3 text-emerald-400 shrink-0" aria-label="Positive sentiment" />;
+  if (s === 'negative') return <Frown className="w-3 h-3 text-rose-400 shrink-0" aria-label="Negative sentiment" />;
+  return <Meh className="w-3 h-3 text-muted/40 shrink-0" aria-label="Neutral sentiment" />;
 }
 
 function CallDetail({ call, formatDuration }: { call: any; formatDuration: (s: number) => string }) {
@@ -296,7 +299,7 @@ function CallDetail({ call, formatDuration }: { call: any; formatDuration: (s: n
     >
       <div className="h-full flex flex-col">
         {/* Sub-tabs */}
-        <div className="shrink-0 px-3 pt-2.5 pb-2 border-b border-white/5 flex items-center gap-1.5">
+        <div className="shrink-0 px-3 pt-2.5 pb-2 border-b border-white/5 flex items-center gap-1.5" role="tablist">
           {([
             { id: "summary",   label: "Summary",    icon: FileText },
             { id: "transcript",label: "Transcript", icon: MessageCircle },
@@ -306,6 +309,9 @@ function CallDetail({ call, formatDuration }: { call: any; formatDuration: (s: n
             return (
               <button
                 key={t.id}
+                role="tab"
+                aria-selected={active}
+                aria-controls={`call-panel-${t.id}`}
                 onClick={() => setTab(t.id)}
                 className={cn(
                   "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] uppercase tracking-[0.22em] transition-all",
@@ -329,7 +335,7 @@ function CallDetail({ call, formatDuration }: { call: any; formatDuration: (s: n
         <div className="flex-1 min-h-0 overflow-hidden">
           <AnimatePresence mode="wait">
             {tab === "summary" && (
-              <motion.div key="s" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              <motion.div key="s" id="call-panel-summary" role="tabpanel" tabIndex={0} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.18 }}
                 className="h-full overflow-y-auto scrollbar-hide p-4 space-y-3">
                 <div className="rounded-xl glass border border-white/8 p-4">
@@ -417,7 +423,7 @@ function CallDetail({ call, formatDuration }: { call: any; formatDuration: (s: n
               </motion.div>
             )}
             {tab === "transcript" && (
-              <motion.div key="t" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              <motion.div key="t" id="call-panel-transcript" role="tabpanel" tabIndex={0} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.18 }}
                 className="h-full overflow-y-auto scrollbar-hide p-4 space-y-2">
                 {transcriptLines.length === 0 ? (
@@ -447,7 +453,7 @@ function CallDetail({ call, formatDuration }: { call: any; formatDuration: (s: n
               </motion.div>
             )}
             {tab === "record" && (
-              <motion.div key="r" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              <motion.div key="r" id="call-panel-record" role="tabpanel" tabIndex={0} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.18 }}
                 className="h-full overflow-y-auto scrollbar-hide p-4 space-y-3">
                 {call.recording_url ? (
