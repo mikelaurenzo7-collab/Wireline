@@ -1189,7 +1189,7 @@ app.post("/api/vapi-webhook", async (req, res) => {
       const safeCallerPhone = sanitizePhone(customerNumber);
 
       // 1. Assemble memory from Supabase (+ pre-load caller history and customer intel in the same round-trip)
-      const [agentConfig, directivesData, knowledgeData, personalityData, lessonsData, callerHistoryData, capturedProfileData] = await Promise.all([
+      const [agentConfig, directivesData, knowledgeData, personalityData, lessonsData, callerHistoryData, capturedProfileData, callerLeadData] = await Promise.all([
         db.from('wireline_agents').select('*').eq('id', webhookAgentId).single(),
         db.from('wireline_directives').select('content, priority').eq('agent_id', webhookAgentId).order('priority', { ascending: false }),
         db.from('wireline_knowledge').select('content').eq('agent_id', webhookAgentId),
@@ -1205,12 +1205,31 @@ app.post("/api/vapi-webhook", async (req, res) => {
           : Promise.resolve({ data: [] }),
         // Load the most recent customer profile captured in a previous call — gives the
         // agent immediate access to pain points, budget, timeline, and agreed next steps.
-        safeCallerPhone
+        // Scoped to user_id (not agent_id) so intel captured by ANY agent in the operator's
+        // fleet surfaces here — e.g. sales did discovery, support now handles the live call.
+        safeCallerPhone && agent?.user_id
           ? db.from('wireline_fleet_tasks')
               .select('description, created_at')
-              .eq('agent_id', webhookAgentId)
+              .eq('user_id', agent.user_id)
               .eq('task_type', 'customer_profile_captured')
               .ilike('description', `%${safeCallerPhone}%`)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle()
+          : Promise.resolve({ data: null }),
+        // Look up the caller in the operator's CRM (wireline_outbound_leads). When an
+        // inbound caller matches a known lead — or an outbound dial targets a known
+        // lead — we surface lead.name + status + context in the system prompt so the
+        // agent opens the call already knowing who they are and what's outstanding
+        // ("Hi Sarah, thanks for calling back about the proposal").
+        // Format-tolerant ilike + user_id scoping matches the pattern PR #65
+        // standardized for every other lead lookup in this file.
+        safeCallerPhone && agent?.user_id
+          ? db.from('wireline_outbound_leads')
+              .select('customer_name, status, context')
+              .eq('user_id', agent.user_id)
+              .ilike('customer_number', `%${safeCallerPhone}%`)
+              .not('status', 'in', ['Blocked-DNC'])
               .order('created_at', { ascending: false })
               .limit(1)
               .maybeSingle()
@@ -1237,19 +1256,26 @@ app.post("/api/vapi-webhook", async (req, res) => {
       // TEMPORAL AWARENESS: Inject exact current time so the agent knows what "Today" and "Tomorrow" mean
       const currentDateTime = new Date().toLocaleString('en-US', { timeZone: 'America/New_York', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-      // 1.5. GET LEAD CONTEXT (OUTBOUND ONLY)
+      // 1.5. LEAD INTEL — works for BOTH inbound and outbound.
+      //
+      //  - Outbound: framed as MISSION OBJECTIVE so the closer/collector knows
+      //    why they're dialing.
+      //  - Inbound: framed as INBOUND CRM MATCH so the agent recognizes the
+      //    caller from word 1 ("Hi Sarah, thanks for calling back about the
+      //    proposal we discussed Tuesday").
+      //
+      // Status is included in both so the agent has continuity cues —
+      // 'Voicemail-Left' means follow-up after a left voicemail,
+      // 'Callback-Scheduled' means honoring a callback they requested.
       let leadContext = "";
-      if (isOutbound && customerNumber) {
-         const { data: lead } = await db.from('wireline_outbound_leads')
-            .select('context, customer_name')
-            .eq('customer_number', customerNumber)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single();
-         
-         if (lead) {
-            leadContext = `MISSION OBJECTIVE: You are calling ${lead.customer_name}. REASON FOR CALL: ${lead.context}`;
-         }
+      const callerLead: any = (callerLeadData as any)?.data || null;
+      if (callerLead) {
+        const name   = callerLead.customer_name || "this contact";
+        const status = callerLead.status || "Unknown";
+        const ctx    = callerLead.context || "(no prior context)";
+        leadContext = isOutbound
+          ? `MISSION OBJECTIVE: You are calling ${name} (CRM status: ${status}). REASON FOR CALL: ${ctx}`
+          : `INBOUND CRM MATCH: This caller is ${name} — they're a known contact in your CRM (status: ${status}). PRIOR CONTEXT: ${ctx}\nUSE THIS: Greet them by name, reference the open thread naturally, do not ask them to re-explain who they are or why they're calling.`;
       }
 
       // For outbound calls, derive the archetype from the agent's role rather than
@@ -1279,7 +1305,7 @@ ${personalityData?.data?.content || "You are a highly professional, empathetic, 
 ## YOUR TACTICAL APPROACH FOR THIS ROLE
 ${archetypeRules}
 
-${leadContext ? `## ⚡ MISSION BRIEF — READ BEFORE SPEAKING\n${leadContext}\n` : ""}
+${leadContext ? `## ⚡ ${isOutbound ? "MISSION BRIEF" : "CRM MATCH"} — READ BEFORE SPEAKING\n${leadContext}\n` : ""}
 
 ${agentConfig?.data?.website_url ? `## COMPANY WEBSITE\nYour company's official website: ${agentConfig.data.website_url}. For detailed specs, pricing pages, or information not in your knowledge base, direct callers here.` : ""}
 
