@@ -179,7 +179,7 @@ export const SentryEvents = {
       },
       measurements: {
         spent_percent: {
-          value: (spent / budget) * 100,
+          value: params.budget > 0 ? (params.spent / params.budget) * 100 : 0,
           unit: 'percent',
         },
       },

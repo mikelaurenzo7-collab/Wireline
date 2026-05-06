@@ -27,45 +27,7 @@ import { AuditLogger } from "./src/lib/audit-logger";
 import { rateLimit, isRedisConfigured, startMemoryCleanup } from "./src/lib/rate-limit";
 import { SentryEvents } from "./src/lib/sentry-events";
 import { AgentFormSchema, DirectiveSchema, KnowledgeSchema, EmailReplySchema, EmailDraftSchema, CampaignCreateSchema, CampaignUpdateSchema, parseFormData } from "./src/lib/form-validators";
-
-// ────────────────────────────────────────────────────────────────────
-//  Error handling — safely extract message from unknown errors
-// ────────────────────────────────────────────────────────────────────
-function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  if (typeof error === 'string') return error;
-  return String(error);
-}
-
-// ────────────────────────────────────────────────────────────────────
-//  Sanitization for audit logs — redacts sensitive fields like API keys,
-//  secrets, passwords, tokens from objects before logging. Prevents
-//  credential leakage in audit trail.
-// ────────────────────────────────────────────────────────────────────
-function sanitizeForAudit(obj: unknown): unknown {
-  if (!obj || typeof obj !== 'object') return obj;
-
-  const sensitivePatterns = [
-    'key', 'secret', 'password', 'token', 'credential', 'auth'
-  ];
-
-  const sanitized: Record<string, unknown> = Array.isArray(obj) ? {} : {};
-
-  for (const [key, value] of Object.entries(obj)) {
-    const keyLower = key.toLowerCase();
-    const isSensitive = sensitivePatterns.some(pattern => keyLower.includes(pattern));
-
-    if (isSensitive) {
-      sanitized[key] = '[REDACTED]';
-    } else if (typeof value === 'object' && value !== null) {
-      sanitized[key] = sanitizeForAudit(value);
-    } else {
-      sanitized[key] = value;
-    }
-  }
-
-  return sanitized;
-}
+import { getErrorMessage, sanitizeForAudit } from "./src/lib/server-utils";
 
 // On Vercel, VERCEL_URL is automatically set to the deployment hostname
 // (e.g. "myapp-abc123.vercel.app") with no protocol or trailing slash.

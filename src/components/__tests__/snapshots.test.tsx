@@ -4,7 +4,7 @@
 // unintended UI changes during refactoring. Snapshots are version-controlled
 // and must be explicitly reviewed/approved when changed.
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { ToastProvider } from "../../contexts/ToastContext";
@@ -51,6 +51,15 @@ const harness = (node: React.ReactNode) =>
 describe("Component snapshots", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Freeze time so components that render the clock produce stable snapshots.
+    // shouldAdvanceTime keeps timers usable for React effects but the wall clock
+    // returned by Date.now() / new Date() stays pinned to the snapshot baseline.
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.setSystemTime(new Date("2026-01-01T12:00:00Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("LiveMonitor snapshot", async () => {
