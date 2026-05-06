@@ -37,7 +37,8 @@ export type Recipe =
   | "coach"
   | "knowledge-from-url"
   | "knowledge-from-document"
-  | "agent-forge";
+  | "agent-forge"
+  | "call-playbook";
 
 interface RecipeMeta {
   title: string;
@@ -60,6 +61,7 @@ const RECIPE_META: Record<Recipe, RecipeMeta> = {
   "knowledge-from-url":      { title: "Ingest from URL",      tagline: "Wireline AI reads your site and extracts agent facts.",    icon: Globe,    accent: "#0AC8D4", thinking: false },
   "knowledge-from-document": { title: "Ingest from PDF",      tagline: "Upload a brochure, menu, or policy doc — Wireline AI reads it.", icon: FileUp, accent: "#FFC07D", thinking: false },
   "agent-forge":             { title: "Agent Forge",          tagline: "Synthesize a complete agent from a goal.",            icon: Hammer,   accent: "#10B981", thinking: true  },
+  "call-playbook":           { title: "Call Playbook",        tagline: "Full script — opener, discovery, objections, close, voicemail.", icon: ScrollText, accent: "#FFC07D", thinking: true },
 };
 
 interface AgentLite { id: string; name: string; archetype: string; }
@@ -209,6 +211,7 @@ function RecipeModal({
             {recipe === "knowledge-from-url"      && <KnowledgeFromUrlForm      agents={agents} agentId={agentId} initial={initial} disabled={!available} />}
             {recipe === "knowledge-from-document" && <KnowledgeFromDocumentForm agents={agents} agentId={agentId} disabled={!available} />}
             {recipe === "agent-forge"             && <AgentForgeForm            initial={initial} disabled={!available} />}
+            {recipe === "call-playbook"           && <CallPlaybookForm          agents={agents} agentId={agentId} initial={initial} disabled={!available} />}
           </div>
         </div>
       </motion.div>
@@ -1568,6 +1571,135 @@ function KnowledgeFromDocumentForm({ agents, agentId: initAgent, disabled }: { a
              applied ? <><Check className="w-4 h-4" /> Applied {applied} entries</> :
              <><Zap className="w-4 h-4" /> Apply {selected.size} Entries <ArrowRight className="w-4 h-4" /></>}
           </button>
+        </div>
+      )}
+    </FormShell>
+  );
+}
+
+/* ────────────────────  Call Playbook  ──────────────────────────── */
+
+const TECHNIQUE_LABEL: Record<string, string> = {
+  acknowledge_redirect: "Acknowledge & Redirect",
+  reframe_roi: "Reframe ROI",
+  social_proof: "Social Proof",
+  feel_felt_found: "Feel / Felt / Found",
+  clarifying_question: "Clarifying Question",
+};
+
+function CallPlaybookForm({ agents, agentId: initAgent, initial, disabled }: { agents: AgentLite[]; agentId?: string; initial?: any; disabled: boolean }) {
+  const [agentId, setAgentId] = useState(initAgent || agents[0]?.id || "");
+  const [scenario, setScenario] = useState(initial?.scenario ?? "");
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [playbook, setPlaybook] = useState<any>(null);
+
+  useEffect(() => { if (!agentId && agents[0]) setAgentId(agents[0].id); }, [agents]);
+
+  const run = async () => {
+    setLoading(true); setErr(null); setPlaybook(null);
+    try {
+      const r = await authFetch("/api/claude/call-playbook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agentId, scenario }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error);
+      setPlaybook(data.playbook);
+    } catch (e: any) { setErr(e.message); } finally { setLoading(false); }
+  };
+
+  return (
+    <FormShell>
+      <Field label="Agent">
+        <Select
+          value={agentId}
+          onChange={setAgentId}
+          options={agents.map((a) => ({ value: a.id, label: a.name }))}
+        />
+      </Field>
+      <Field label="Scenario" hint="What type of call should this playbook handle?">
+        <TextArea
+          value={scenario}
+          onChange={setScenario}
+          rows={3}
+          placeholder="An inbound caller asking about pricing and whether we can match a competitor's quote."
+        />
+      </Field>
+      <RunButton onClick={run} loading={loading} disabled={disabled || !agentId || !scenario} label="Build Playbook" />
+
+      {err && <ErrCard error={err} />}
+
+      {playbook && (
+        <div className="space-y-4 pt-3">
+          <ResultCard title="Opening Hook" copyText={playbook.opening_hook}>
+            <p className="text-ink/90 italic text-sm leading-relaxed">"{playbook.opening_hook}"</p>
+            {playbook.purpose_statement && (
+              <p className="text-ink/60 text-sm mt-2">Then: "{playbook.purpose_statement}"</p>
+            )}
+          </ResultCard>
+
+          {playbook.discovery_questions?.length > 0 && (
+            <ResultCard title="Discovery Questions">
+              <div className="space-y-3">
+                {playbook.discovery_questions.map((q: any, i: number) => (
+                  <div key={i} className="border-l-2 border-brand/40 pl-3">
+                    <p className="text-ink/90 text-sm font-medium">{i + 1}. "{q.question}"</p>
+                    <p className="text-muted text-[11px] mt-0.5">Intent: {q.intent}</p>
+                    {q.follow_up && <p className="text-ink/60 text-[11px] mt-1">Follow-up: "{q.follow_up}"</p>}
+                  </div>
+                ))}
+              </div>
+            </ResultCard>
+          )}
+
+          <ResultCard title="Value Proposition Script" copyText={playbook.value_prop_script}>
+            <p className="text-ink/90 text-sm leading-relaxed italic">"{playbook.value_prop_script}"</p>
+          </ResultCard>
+
+          {playbook.objection_handlers?.length > 0 && (
+            <ResultCard title="Objection Handlers">
+              <div className="space-y-4">
+                {playbook.objection_handlers.map((o: any, i: number) => (
+                  <div key={i} className="rounded-xl bg-white/5 p-4 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-ink/70 text-xs italic">"{o.objection}"</p>
+                      <span className="shrink-0 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.25em] bg-amber-500/15 text-amber-500 border border-amber-500/30">
+                        {TECHNIQUE_LABEL[o.technique] ?? o.technique}
+                      </span>
+                    </div>
+                    <p className="text-ink/90 text-sm">"{o.response}"</p>
+                  </div>
+                ))}
+              </div>
+            </ResultCard>
+          )}
+
+          {playbook.closing_variants?.length > 0 && (
+            <ResultCard title="Closing Variants">
+              <div className="space-y-3">
+                {playbook.closing_variants.map((c: any, i: number) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <span className="shrink-0 mt-0.5 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.25em] bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+                      {c.style?.replace(/_/g, " ")}
+                    </span>
+                    <p className="text-ink/90 text-sm italic">"{c.script}"</p>
+                  </div>
+                ))}
+              </div>
+            </ResultCard>
+          )}
+
+          <ResultCard title="Voicemail Script" copyText={playbook.voicemail_script}>
+            <p className="text-ink/90 text-sm leading-relaxed italic">"{playbook.voicemail_script}"</p>
+          </ResultCard>
+
+          {playbook.success_criteria && (
+            <ResultCard title="Success Criteria">
+              <p className="text-emerald-500/90 text-sm">{playbook.success_criteria}</p>
+            </ResultCard>
+          )}
         </div>
       )}
     </FormShell>

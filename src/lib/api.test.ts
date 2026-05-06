@@ -73,9 +73,48 @@ describe("authFetch", () => {
 });
 
 // ──────────────────────────────────────────────────────────
-//  AUDIT API ENDPOINTS — integration tests
+//  AUDIT API ENDPOINTS — unit tests (fetch is mocked)
 // ──────────────────────────────────────────────────────────
 describe('Audit API Endpoints', () => {
+  const originalFetch = global.fetch;
+
+  beforeEach(() => {
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.includes('/api/audit/export')) {
+        return Promise.resolve(
+          new Response('date,event_type\n2026-01-01,agent.created', {
+            status: 200,
+            headers: { 'Content-Type': 'text/csv' },
+          }),
+        );
+      }
+      if (url.includes('/api/audit/stats')) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              total_events: 42,
+              by_severity: { low: 10, medium: 20, high: 12 },
+              total_cost_usd: 1.23,
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } },
+          ),
+        );
+      }
+      // /api/audit/events
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({ events: [{ id: 1, event_type: 'agent.created' }] }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+    });
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    vi.clearAllMocks();
+  });
+
   it('should fetch audit events with filters', async () => {
     const response = await fetch('/api/audit/events?event_type=agent.created&days=7', {
       headers: { Authorization: 'Bearer test-token' }

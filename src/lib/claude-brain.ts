@@ -1108,6 +1108,156 @@ export const TOOLS = {
       additionalProperties: false,
     },
   } as ToolSchema,
+
+  /** Call quality scoring — 5 dimensions × 20 pts = 100 total. */
+  qaScore: {
+    name: "score_call_quality",
+    description:
+      "Score a call recording/transcript against a 5-dimension QA rubric. Each dimension is 0–20 points (total 0–100). Be precise and evidence-based — cite specific moments in the transcript where the score was earned or lost.",
+    input_schema: {
+      type: "object",
+      properties: {
+        greeting: {
+          type: "integer",
+          minimum: 0,
+          maximum: 20,
+          description: "Opening & Greeting — professional, warm, identified company and purpose clearly.",
+        },
+        discovery: {
+          type: "integer",
+          minimum: 0,
+          maximum: 20,
+          description: "Problem Discovery — asked thoughtful open-ended questions, understood the customer's actual situation.",
+        },
+        solution: {
+          type: "integer",
+          minimum: 0,
+          maximum: 20,
+          description: "Solution Presentation — clear, relevant, directly addressed the customer's stated needs.",
+        },
+        objection: {
+          type: "integer",
+          minimum: 0,
+          maximum: 20,
+          description: "Objection Handling — handled pushback calmly, didn't oversell, addressed concerns with evidence.",
+        },
+        closing: {
+          type: "integer",
+          minimum: 0,
+          maximum: 20,
+          description: "Closing & Next Steps — strong close, set clear next steps or outcome, no ambiguity.",
+        },
+        coaching_note: {
+          type: "string",
+          description: "One sentence the operator should act on — the single highest-leverage improvement for this agent.",
+        },
+        strengths: {
+          type: "array",
+          items: { type: "string" },
+          description: "1–3 specific things the agent did well on this call.",
+        },
+        improvements: {
+          type: "array",
+          items: { type: "string" },
+          description: "1–3 specific, actionable improvements for next time.",
+        },
+      },
+      required: ["greeting", "discovery", "solution", "objection", "closing", "coaching_note"],
+      additionalProperties: false,
+    },
+  } as ToolSchema,
+
+  /** Call playbook — branching script for a role + scenario. */
+  callPlaybook: {
+    name: "build_call_playbook",
+    description:
+      "Build a complete call playbook for an agent role and scenario: opening hook, discovery questions, value prop delivery, objection handlers, closing variants, and a voicemail script. Make every line ready to say verbatim.",
+    input_schema: {
+      type: "object",
+      properties: {
+        opening_hook: {
+          type: "string",
+          description: "The exact words the agent should say when the call connects (≤25 words). Warm, specific, and professional.",
+        },
+        purpose_statement: {
+          type: "string",
+          description: "One sentence explaining the call's purpose after the greeting (≤20 words).",
+        },
+        discovery_questions: {
+          type: "array",
+          description: "4–6 open-ended questions to uncover needs, in order of priority.",
+          items: {
+            type: "object",
+            properties: {
+              question: { type: "string", description: "The exact question to ask." },
+              intent: { type: "string", description: "What this question is designed to uncover (≤10 words)." },
+              follow_up: { type: "string", description: "A natural follow-up if the answer is vague (≤15 words)." },
+            },
+            required: ["question", "intent"],
+            additionalProperties: false,
+          },
+        },
+        value_prop_script: {
+          type: "string",
+          description: "The core value proposition delivered in 2–3 sentences. Outcome-first, proof point included.",
+        },
+        objection_handlers: {
+          type: "array",
+          description: "Top 4 objections with a scripted response for each.",
+          items: {
+            type: "object",
+            properties: {
+              objection: { type: "string", description: "Exact words or paraphrase of the objection." },
+              response: { type: "string", description: "Complete scripted response (2–4 sentences)." },
+              technique: {
+                type: "string",
+                enum: ["acknowledge_redirect", "reframe_roi", "social_proof", "feel_felt_found", "clarifying_question"],
+              },
+            },
+            required: ["objection", "response", "technique"],
+            additionalProperties: false,
+          },
+        },
+        closing_variants: {
+          type: "array",
+          description: "3 closing scripts — assumptive, alternative-choice, and soft ask.",
+          items: {
+            type: "object",
+            properties: {
+              style: {
+                type: "string",
+                enum: ["assumptive", "alternative_choice", "soft_ask"],
+              },
+              script: { type: "string", description: "Complete closing line (≤30 words)." },
+            },
+            required: ["style", "script"],
+            additionalProperties: false,
+          },
+          minItems: 3,
+          maxItems: 3,
+        },
+        voicemail_script: {
+          type: "string",
+          description: "A 15–20 second voicemail script (spoken aloud) for when nobody answers. Includes name, company, reason, callback number placeholder.",
+        },
+        success_criteria: {
+          type: "string",
+          description: "What a 'win' looks like on this type of call in one sentence.",
+        },
+      },
+      required: [
+        "opening_hook",
+        "purpose_statement",
+        "discovery_questions",
+        "value_prop_script",
+        "objection_handlers",
+        "closing_variants",
+        "voicemail_script",
+        "success_criteria",
+      ],
+      additionalProperties: false,
+    },
+  } as ToolSchema,
 } as const;
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -2194,5 +2344,148 @@ Deliver 3 quick-reply options using the deliver_quick_replies tool.`;
     tool: TOOLS.quickReplies,
     cacheSystem: true,
     maxTokens: 1024,
+  });
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+ *  QA Scoring — structured 5-dimension call quality evaluation.
+ *  Replaces the fragile runCompletion+regex-JSON path in the QA endpoint.
+ * ──────────────────────────────────────────────────────────────────── */
+
+export interface QaScoreInput {
+  direction: "inbound" | "outbound";
+  agentRole?: string;
+  summary: string;
+  transcript: string;
+  sentiment?: string;
+  durationSeconds?: number;
+}
+
+export interface QaScoreResult {
+  greeting: number;
+  discovery: number;
+  solution: number;
+  objection: number;
+  closing: number;
+  coaching_note: string;
+  strengths?: string[];
+  improvements?: string[];
+}
+
+export async function qaScore(input: QaScoreInput): Promise<QaScoreResult> {
+  let roleGuidance = "";
+  if (input.agentRole) {
+    const guidance: Record<string, string> = {
+      sales:             "Sales context: weight discovery and closing heavily. A perfect call has 3+ discovery questions, a compelling pitch tied to the customer's stated pain, and an explicit next step. A failed close (no commitment) is a hard cap on the closing score.",
+      lead_qualifier:    "Lead qualifier context: discovery is the whole job. Score discovery and closing against BANT coverage (Budget, Authority, Need, Timeline). 'Closing' means a clear qualified/disqualified decision + handoff package.",
+      collections:       "Collections context: compliance is paramount. Any FDCPA/TCPA violation (no mini-Miranda, no identity verification, abusive language) → greeting score ≤ 5. Objection handling and payment resolution drive the rest.",
+      scheduler:         "Scheduler context: booking accuracy is the primary metric. A confirmed appointment with date/time/reference ID is a strong close. Failing to check availability before confirming is a critical error.",
+      technical_support: "Support context: diagnostic rigor is paramount. Award discovery points for structured troubleshooting (one question at a time, systematic elimination). Closing is verified resolution — not just 'let me know if it happens again'.",
+      customer_service:  "Customer service context: emotional acknowledgment and resolution completeness matter most. Award discovery points for understanding the root issue (not just the surface complaint). Closing = customer confirmed satisfaction.",
+      receptionist:      "Receptionist context: routing accuracy and message completeness are everything. Score closing on whether the caller's need was fully addressed — message taken or correct transfer made.",
+      marketing:         "Marketing context: engagement and next-step conversion are the metrics. Score closing based on whether the prospect agreed to any concrete next step (demo, trial, callback). Disengaged exit with no next step = low closing score.",
+    };
+    roleGuidance = guidance[input.agentRole] ?? "";
+  }
+
+  const system = `You are a call quality auditor for an enterprise voice AI platform. Evaluate calls objectively and with specificity — cite concrete moments from the transcript when scoring.${roleGuidance ? `\n\n${roleGuidance}` : ""}`;
+
+  const user = `Score this ${input.direction} call against the 5-dimension QA rubric.
+
+Summary: ${input.summary || "(none)"}
+Sentiment: ${input.sentiment || "neutral"}
+Duration: ${input.durationSeconds ? Math.round(input.durationSeconds / 60) + " minutes" : "unknown"}
+${input.agentRole ? `Agent role: ${input.agentRole.replace(/_/g, " ")}` : ""}
+
+Transcript (up to 3000 chars):
+${input.transcript ? input.transcript.slice(0, 3000) + (input.transcript.length > 3000 ? "…" : "") : "(not available)"}
+
+Score each dimension 0–20 and provide a concise, actionable coaching note.`;
+
+  return runStructured<QaScoreResult>({
+    system,
+    user,
+    tool: TOOLS.qaScore,
+    deepThink: false,
+    maxTokens: 512,
+    model: "claude-opus-4-7",
+  });
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+ *  Call Playbook Builder — generates a complete branching call script for
+ *  a given agent role + scenario. Useful for AgentTraining and operators
+ *  who want to preview exactly how their agents should handle calls.
+ * ──────────────────────────────────────────────────────────────────── */
+
+export interface CallPlaybookInput {
+  agentName: string;
+  agentRole: string;
+  scenario: string;
+  knowledgeBase?: string[];
+  directives?: string[];
+  companyName?: string;
+  /** Vague or specific — e.g. "B2B SaaS", "home services", etc. */
+  industry?: string;
+}
+
+export interface CallPlaybookResult {
+  opening_hook: string;
+  purpose_statement: string;
+  discovery_questions: Array<{
+    question: string;
+    intent: string;
+    follow_up?: string;
+  }>;
+  value_prop_script: string;
+  objection_handlers: Array<{
+    objection: string;
+    response: string;
+    technique: string;
+  }>;
+  closing_variants: Array<{
+    style: "assumptive" | "alternative_choice" | "soft_ask";
+    script: string;
+  }>;
+  voicemail_script: string;
+  success_criteria: string;
+}
+
+export async function buildCallPlaybook(input: CallPlaybookInput): Promise<CallPlaybookResult> {
+  const roleGuidance: Record<string, string> = {
+    sales:             "This is a revenue-generating call. The playbook must drive toward a demo, proposal, or purchase commitment. Every question should move the prospect closer to a buying decision.",
+    lead_qualifier:    "This is a qualification call. The playbook must systematically uncover BANT (Budget, Authority, Need, Timeline) without feeling like an interrogation. The 'close' is a qualified handoff, not a purchase.",
+    collections:       "This is a collections call. The playbook MUST include the FDCPA mini-Miranda in the opening. Every script line must be compliant. The goal is a payment commitment or arrangement.",
+    scheduler:         "This is a scheduling call. Every script line assumes the goal is booking a confirmed appointment. Include explicit calendar-check prompts before any time commitment.",
+    technical_support: "This is a support call. The playbook follows a diagnostic hierarchy: environment → restart → configuration → escalation. Discovery questions are diagnostic, not sales-oriented.",
+    customer_service:  "This is a service call. The opening must lead with empathy before solutions. Discovery uncovers the root issue. The close confirms full resolution and customer satisfaction.",
+    receptionist:      "This is a routing call. The opening is the company's first impression. Discovery determines exactly where to route the caller. The close is an accurate transfer or complete message.",
+    marketing:         "This is an outreach/engagement call. The opening must hook with a specific, personalized reference. The goal is booking a demo, event, or next conversation — not a hard sale.",
+  };
+
+  const system = `You are a master conversation designer building call playbooks for autonomous voice agents. Every line must be immediately speakable verbatim — no placeholders, no brackets, no "your company name here." Write as if you know the company and scenario perfectly. Be concrete, specific, and tactical.
+
+${roleGuidance[input.agentRole] ?? "Build a professional, effective call playbook."}
+
+${input.knowledgeBase?.length ? `Knowledge base facts to ground the scripts:\n${input.knowledgeBase.slice(0, 20).map(k => `• ${k}`).join("\n")}` : ""}
+
+${input.directives?.length ? `Agent directives to respect:\n${input.directives.slice(0, 10).map(d => `• ${d}`).join("\n")}` : ""}`;
+
+  const user = `Build a complete call playbook for:
+- Agent: ${input.agentName}
+- Role: ${input.agentRole.replace(/_/g, " ")}
+- Scenario: ${input.scenario}
+${input.companyName ? `- Company: ${input.companyName}` : ""}
+${input.industry ? `- Industry: ${input.industry}` : ""}
+
+Make every script line immediately usable. Deliver the playbook now.`;
+
+  return runStructured<CallPlaybookResult>({
+    system,
+    user,
+    tool: TOOLS.callPlaybook,
+    deepThink: true,
+    cacheSystem: true,
+    maxTokens: 6144,
   });
 }
