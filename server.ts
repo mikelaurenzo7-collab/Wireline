@@ -1250,6 +1250,20 @@ app.post("/api/vapi-webhook", async (req, res) => {
          if (lead) {
             leadContext = `MISSION OBJECTIVE: You are calling ${lead.customer_name}. REASON FOR CALL: ${lead.context}`;
          }
+      } else if (!isOutbound && safeCallerPhone) {
+        // Inbound: if caller's phone matches a CRM lead, pre-load their profile
+        // so the agent delivers a personalized experience without a tool call.
+        const { data: inboundLead } = await db.from('wireline_outbound_leads')
+          .select('context, customer_name, status')
+          .eq('customer_number', safeCallerPhone)
+          .eq('user_id', agent.user_id)
+          .not('status', 'in', '("Blocked-DNC")')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (inboundLead) {
+          leadContext = `CRM ALERT: ${inboundLead.customer_name || 'This caller'} is a known contact (Status: ${inboundLead.status}).${inboundLead.context ? ` Context: ${inboundLead.context}` : ''}`;
+        }
       }
 
       // For outbound calls, derive the archetype from the agent's role rather than
@@ -1279,7 +1293,7 @@ ${personalityData?.data?.content || "You are a highly professional, empathetic, 
 ## YOUR TACTICAL APPROACH FOR THIS ROLE
 ${archetypeRules}
 
-${leadContext ? `## ⚡ MISSION BRIEF — READ BEFORE SPEAKING\n${leadContext}\n` : ""}
+${leadContext ? `## ⚡ CONTACT INTEL — PRE-LOADED\n${leadContext}\n` : ""}
 
 ${agentConfig?.data?.website_url ? `## COMPANY WEBSITE\nYour company's official website: ${agentConfig.data.website_url}. For detailed specs, pricing pages, or information not in your knowledge base, direct callers here.` : ""}
 
@@ -1450,6 +1464,39 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
                   .limit(2)
                : { data: [] };
 
+            // 3. Check for a scheduled callback committed to this phone number.
+            const { data: callbackLead } = safePhone
+               ? await db.from('wireline_outbound_leads')
+                  .select('callback_scheduled_at, last_contact_summary, customer_name')
+                  .eq('customer_number', safePhone)
+                  .eq('user_id', agent?.user_id)
+                  .eq('status', 'Callback-Scheduled')
+                  .order('created_at', { ascending: false })
+                  .limit(1)
+                  .maybeSingle()
+               : { data: null };
+
+            // 4. Look up the caller's CRM name, then find their most recent booked appointment.
+            const { data: leadRecord } = safePhone
+               ? await db.from('wireline_outbound_leads')
+                  .select('customer_name')
+                  .eq('customer_number', safePhone)
+                  .eq('user_id', agent?.user_id)
+                  .limit(1)
+                  .maybeSingle()
+               : { data: null };
+            const callerFirstName = leadRecord?.customer_name?.trim().split(' ')[0] || '';
+            const { data: appointment } = callerFirstName
+               ? await db.from('wireline_appointments')
+                  .select('date, time, service_type, status')
+                  .eq('user_id', agent?.user_id)
+                  .eq('status', 'Scheduled')
+                  .ilike('customer_name', `%${callerFirstName}%`)
+                  .order('created_at', { ascending: false })
+                  .limit(1)
+                  .maybeSingle()
+               : { data: null };
+
             let contextReport = `RECENT CONTEXT FOR ${customerPhone}:\n`;
             if (pastCalls && pastCalls.length > 0) {
                contextReport += "PAST CALL HISTORY:\n" + pastCalls.map(c => `- [${new Date(c.created_at).toLocaleDateString()}] Intent: ${c.intent_label || 'Inquiry'}. Summary: ${c.summary}`).join('\n');
@@ -1457,8 +1504,19 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
                contextReport += "No previous voice interaction history found.\n";
             }
 
+            if (callbackLead) {
+               const cbTime = callbackLead.callback_scheduled_at
+                 ? new Date(callbackLead.callback_scheduled_at).toLocaleString("en-US", { timeZone: "America/New_York", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
+                 : "time unspecified";
+               contextReport += `\nSCHEDULED CALLBACK: ${callbackLead.customer_name || 'This contact'} was expecting a callback at ${cbTime} ET.${callbackLead.last_contact_summary ? ` Notes: ${callbackLead.last_contact_summary}` : ''}`;
+            }
+
+            if (appointment) {
+               contextReport += `\nUPCOMING APPOINTMENT: ${appointment.service_type} on ${appointment.date} at ${appointment.time} (${appointment.status}).`;
+            }
+
             if (tasks && tasks.length > 0) {
-               contextReport += "\nACTIVE MISSIONS/TASKS:\n" + tasks.map(t => `- [${t.priority.toUpperCase()}] ${t.description} (Status: ${t.status})`).join('\n');
+               contextReport += "\nACTIVE TASKS:\n" + tasks.map(t => `- [${t.priority.toUpperCase()}] ${t.description} (Status: ${t.status})`).join('\n');
             }
 
             results.push({
@@ -1529,6 +1587,17 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
           }).select('id').single();
 
           if (error) throw error;
+
+          // Fire appointment.booked webhook so external CRMs / Zapier / Slack get notified.
+          dispatchWebhook(agent?.user_id, "appointment.booked", {
+            appointment_id: data.id,
+            agent_id: webhookAgentId,
+            call_id: message.call?.id,
+            customer_name: args.customer_name,
+            date: args.date,
+            time: args.time,
+            service_type: args.service_type,
+          }).catch((err: unknown) => log.warn("webhook dispatch failed", { event: "appointment.booked", error: (err as any)?.message || String(err) }));
 
           results.push({
             toolCallId: toolCall.id,
@@ -1702,7 +1771,9 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
               description,
               priority: priority || 'medium',
               status: 'pending',
-              source: 'voice'
+              task_type: 'action_required',
+              source_type: 'phone_call',
+              source_id: message.call?.id || payload.call?.id || "in-call",
            }).select('id').single();
            
            if (taskError) throw taskError;
@@ -1757,7 +1828,7 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
             await db.from('wireline_outbound_leads')
               .update({ status, last_contact_summary: notes || '', last_called_at: new Date() })
               .eq('user_id', agent?.user_id)
-              .ilike('customer_number', `%${safePhone}%`);
+              .eq('customer_number', safePhone);
           }
           results.push({ toolCallId: toolCall.id, result: `Lead status updated to '${status}'. CRM record saved.` });
         } catch (e: any) {
@@ -1835,11 +1906,14 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
 
           // Mark the outbound lead as voicemail-left so campaigns don't duplicate.
           // Exclude terminal statuses so we never overwrite a final outcome.
-          await db.from('wireline_outbound_leads')
-            .update({ status: 'Voicemail-Left', last_called_at: new Date() })
-            .eq('customer_number', customerPhone)
-            .eq('agent_id', webhookAgentId)
-            .not('status', 'in', ['Completed', 'Voicemail-Left', 'Blocked-DNC', 'Failed']);
+          const safeVmPhone = sanitizePhone(customerPhone);
+          if (safeVmPhone) {
+            await db.from('wireline_outbound_leads')
+              .update({ status: 'Voicemail-Left', last_called_at: new Date() })
+              .eq('customer_number', safeVmPhone)
+              .eq('agent_id', webhookAgentId)
+              .not('status', 'in', ['Completed', 'Voicemail-Left', 'Blocked-DNC', 'Failed']);
+          }
 
           results.push({
             toolCallId: toolCall.id,
@@ -1878,7 +1952,7 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
               last_called_at: new Date(),
             })
             .eq('user_id', agent?.user_id)
-            .ilike('customer_number', `%${safePhone}%`)
+            .eq('customer_number', safePhone)
             .not('status', 'in', ['Completed', 'Blocked-DNC']);
 
           // Also log as a fleet task so the operator can see the commitment
@@ -2038,6 +2112,7 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
         await db.from('wireline_call_logs').insert({
            vapi_call_id: call?.id || "unknown",
            agent_id: webhookAgentId,
+           user_id: agent?.user_id,
            direction: call?.type === "outboundPhoneCall" ? "outbound" : "inbound",
            customer_number: call?.customer?.number || "",
            duration_seconds: duration,
@@ -2100,13 +2175,20 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
               coaching_note: result.coaching_note,
             }).eq('vapi_call_id', call?.id);
 
-            // 2. Promote a single tactical lesson (if any).
+            // 2. Promote a single tactical lesson (if any) — skip if identical lesson already exists.
             if (result.lesson && result.lesson.trim().length > 0) {
-              await db.from('wireline_agent_lessons').insert({
-                agent_id: webhookAgentId,
-                user_id: agent?.user_id,
-                lesson: result.lesson.trim(),
-              });
+              const lessonText = result.lesson.trim();
+              const { count: dupCount } = await db.from('wireline_agent_lessons')
+                .select('id', { count: 'exact', head: true })
+                .eq('agent_id', webhookAgentId)
+                .eq('lesson', lessonText);
+              if (!dupCount || dupCount === 0) {
+                await db.from('wireline_agent_lessons').insert({
+                  agent_id: webhookAgentId,
+                  user_id: agent?.user_id,
+                  lesson: lessonText,
+                });
+              }
             }
 
             // 3. Insert ALL action items as fleet tasks.
@@ -2125,12 +2207,20 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
 
             // 4. Surface knowledge gaps as low-priority lessons (clearly tagged so
             //    they're easy to filter / promote into wireline_knowledge later).
+            //    Deduplicate by exact text to avoid flooding the lessons table.
             for (const gap of result.knowledge_gaps || []) {
-              await db.from('wireline_agent_lessons').insert({
-                agent_id: webhookAgentId,
-                user_id: agent?.user_id,
-                lesson: `[KNOWLEDGE GAP] ${gap}`,
-              });
+              const gapLesson = `[KNOWLEDGE GAP] ${gap}`;
+              const { count: gapDup } = await db.from('wireline_agent_lessons')
+                .select('id', { count: 'exact', head: true })
+                .eq('agent_id', webhookAgentId)
+                .eq('lesson', gapLesson);
+              if (!gapDup || gapDup === 0) {
+                await db.from('wireline_agent_lessons').insert({
+                  agent_id: webhookAgentId,
+                  user_id: agent?.user_id,
+                  lesson: gapLesson,
+                });
+              }
             }
 
             // 5. Surface compliance flags as critical fleet tasks.
@@ -2222,11 +2312,18 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
                 const lessonRes = await lessonModel.generateContent(lessonPrompt);
                 const lessonObj = JSON.parse(lessonRes.response.text() || "{}");
                 if (lessonObj.lesson) {
-                   await db.from('wireline_agent_lessons').insert({
-                      agent_id: webhookAgentId,
-                      user_id: agent?.user_id,
-                      lesson: lessonObj.lesson
-                   });
+                   const geminiLesson = String(lessonObj.lesson).trim();
+                   const { count: geminiDup } = await db.from('wireline_agent_lessons')
+                     .select('id', { count: 'exact', head: true })
+                     .eq('agent_id', webhookAgentId)
+                     .eq('lesson', geminiLesson);
+                   if (!geminiDup || geminiDup === 0) {
+                     await db.from('wireline_agent_lessons').insert({
+                       agent_id: webhookAgentId,
+                       user_id: agent?.user_id,
+                       lesson: geminiLesson,
+                     });
+                   }
                 }
              } catch(e) {}
 
@@ -2625,6 +2722,10 @@ const SENTIMENT_ANGRY_SIGNALS = [
   "unbelievable", "disappointed", "been on hold", "waiting forever",
   "third time calling", "calling back again", "no one helped", "terrible service",
   "fed up", "done with you", "this is a joke", "get me a supervisor",
+  "this is insane", "beyond frustrated", "sick of this", "give me a refund",
+  "this is theft", "report you", "attorney general", "class action",
+  "this is criminal", "i'm done", "waste of money", "absolute garbage",
+  "you people", "talk to someone real", "not acceptable", "this is wrong",
 ];
 const SENTIMENT_POSITIVE_SIGNALS = [
   "great", "wonderful", "excellent", "perfect", "love", "thank you", "thanks",
@@ -2635,6 +2736,10 @@ const SENTIMENT_POSITIVE_SIGNALS = [
   "sounds great", "perfect timing", "absolutely", "you've been very helpful",
   "i'll definitely", "book it", "yes please", "that's what i was looking for",
   "much better", "really appreciate", "you're the best", "makes sense",
+  "this is helpful", "i'm excited", "can't wait", "looking forward to it",
+  "you've solved it", "this is exactly", "works for me", "that makes it easy",
+  "happy to proceed", "where do i sign", "send the contract", "move forward",
+  "this is what i needed", "very impressed", "outstanding", "above and beyond",
 ];
 
 /** Sanitize a phone number for safe use in LIKE patterns and DB queries.
