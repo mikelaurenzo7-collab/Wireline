@@ -1183,24 +1183,48 @@ app.post("/api/vapi-webhook", async (req, res) => {
     log.info("Vapi assistant-request", { requestId: res.locals?.requestId, agentId: webhookAgentId });
 
     try {
-      // 1. Assemble memory from Supabase
-      const [agentConfig, directivesData, knowledgeData, personalityData, lessonsData] = await Promise.all([
+      // 0. Extract caller identity early so we can pre-load their history in parallel
+      const isOutbound = message.type === 'outboundPhoneCall' || message.call?.type === 'outboundPhoneCall';
+      const customerNumber = message.call?.customer?.number;
+      const safeCallerPhone = (customerNumber || "").replace(/[^0-9+]/g, '').slice(0, 20);
+
+      // 1. Assemble memory from Supabase (+ pre-load caller history in the same round-trip)
+      const [agentConfig, directivesData, knowledgeData, personalityData, lessonsData, callerHistoryData] = await Promise.all([
         db.from('wireline_agents').select('*').eq('id', webhookAgentId).single(),
         db.from('wireline_directives').select('content, priority').eq('agent_id', webhookAgentId).order('priority', { ascending: false }),
         db.from('wireline_knowledge').select('content').eq('agent_id', webhookAgentId),
         db.from('wireline_personality').select('content').eq('agent_id', webhookAgentId).single(),
-        db.from('wireline_agent_lessons').select('lesson').eq('agent_id', webhookAgentId).order('created_at', { ascending: false }).limit(3)
+        db.from('wireline_agent_lessons').select('lesson').eq('agent_id', webhookAgentId).order('created_at', { ascending: false }).limit(5),
+        safeCallerPhone
+          ? db.from('wireline_call_logs')
+              .select('summary, intent_label, sentiment, created_at, direction')
+              .eq('customer_number', safeCallerPhone)
+              .eq('agent_id', webhookAgentId)
+              .order('created_at', { ascending: false })
+              .limit(3)
+          : Promise.resolve({ data: [] }),
       ]);
 
-      const lessons = (lessonsData?.data || []).map((l: any) => l.lesson).join('\n');
+      // Filter knowledge-gap lessons from runtime injection — they are training signals
+      // for the operator to review, not real-time performance hints for the agent.
+      const lessons = (lessonsData?.data || [])
+        .filter((l: any) => !l.lesson.startsWith('[KNOWLEDGE GAP]'))
+        .map((l: any) => l.lesson)
+        .join('\n');
 
+      // Build CALLER PROFILE block — pre-loaded so the agent has context from word 1
+      const pastCallHistory: any[] = (callerHistoryData as any)?.data || [];
+      let callerProfile = "";
+      if (pastCallHistory.length > 0) {
+        callerProfile = `## ⚡ CALLER PROFILE — PRE-LOADED\nThis caller has contact history. Use this immediately — do NOT wait to call view_recent_interactions:\n${
+          pastCallHistory.map((c: any) =>
+            `- [${new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}] ${(c.direction || 'call').toUpperCase()} | Intent: ${c.intent_label || 'unknown'} | Tone: ${c.sentiment || 'neutral'} | ${c.summary}`
+          ).join('\n')
+        }\nINSTRUCTION: Reference this history naturally within the first 2 exchanges. Do not recite it verbatim.\n`;
+      }
 
       // TEMPORAL AWARENESS: Inject exact current time so the agent knows what "Today" and "Tomorrow" mean
       const currentDateTime = new Date().toLocaleString('en-US', { timeZone: 'America/New_York', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-
-      // Determine Call Direction and Archetype Behavior
-      const isOutbound = message.type === 'outboundPhoneCall' || message.call?.type === 'outboundPhoneCall';
-      const customerNumber = message.call?.customer?.number;
 
       // 1.5. GET LEAD CONTEXT (OUTBOUND ONLY)
       let leadContext = "";
@@ -1268,6 +1292,8 @@ app.post("/api/vapi-webhook", async (req, res) => {
 You are ${agentConfig?.data?.name || 'Wireline Agent'}, a ${agentRole.replace(/_/g, ' ')} specialist for this company. You are not a chatbot or a phone tree — you are a trained professional operating at the highest level of your role.
 ${ambientNoiseActive ? "You are operating from a professional office environment. Speak with focused, professional energy." : ""}
 
+${callerProfile}
+
 ## YOUR PROFESSIONAL CHARACTER & METHOD
 ${personalityData?.data?.content || "You are a highly professional, empathetic, and effective representative who puts the caller's outcome first."}
 
@@ -1290,7 +1316,7 @@ ${roleProtocol}
 
 ## MEMORY & CONTINUITY
 Today is ${currentDateTime} (Eastern Time). Calculate specific dates when callers reference "tomorrow," "next week," or relative dates — confirm the calculated date back to them explicitly.
-If a caller references a previous interaction or seems to know your company: use the 'view_recent_interactions' tool immediately to retrieve their history before responding. Personalized continuity is a competitive advantage.
+${callerProfile ? "Caller history is already pre-loaded above — use it immediately. You may still call view_recent_interactions mid-call for a live refresh." : "If a caller references a previous interaction or seems to know your company: use the 'view_recent_interactions' tool immediately to retrieve their history before responding. Personalized continuity is a competitive advantage."}
 
 ## CONVERSATION DISCIPLINE
 - Response target: 15–25 words conversationally. Up to 50 words ONLY for multi-detail confirmations (booking summary, payment terms). Never monologue.
@@ -1731,6 +1757,42 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
           results.push({ toolCallId: toolCall.id, result: "Failed to create support ticket. Please note the issue details and file a ticket manually." });
         }
       }
+
+      // TOOL 10: LEAVE VOICEMAIL (outbound — agent has reached an answering machine)
+      if (toolCall.function.name === "leave_voicemail") {
+        try {
+          const { voicemail_message } = toolCall.function.arguments;
+          const customerPhone = payload.call?.customer?.number || message.call?.customer?.number || "Unknown";
+
+          // Log the voicemail attempt as a fleet task so operators know outreach happened
+          await db.from('wireline_fleet_tasks').insert({
+            user_id: agent?.user_id,
+            agent_id: webhookAgentId,
+            task_type: 'voicemail_left',
+            description: `[VOICEMAIL LEFT] ${customerPhone} — Message: "${voicemail_message}"`,
+            source_type: 'phone_call',
+            source_id: message.call?.id || payload.call?.id || "outbound",
+            target_channel: 'manual',
+            priority: 'low',
+            status: 'pending',
+          });
+
+          // Mark the outbound lead as voicemail-left so campaigns don't duplicate
+          await db.from('wireline_outbound_leads')
+            .update({ status: 'Voicemail-Left', last_called_at: new Date() })
+            .eq('customer_number', customerPhone)
+            .eq('agent_id', webhookAgentId)
+            .eq('status', 'Queued');
+
+          results.push({
+            toolCallId: toolCall.id,
+            result: "Voicemail logged. Deliver your message now — speak naturally and end with 'I look forward to connecting with you.' Then say goodbye to conclude the call.",
+          });
+        } catch (e: any) {
+          log.error("Vapi tool: leave_voicemail failed", { agentId: webhookAgentId, error: e?.message || String(e) });
+          results.push({ toolCallId: toolCall.id, result: "Voicemail logged. Deliver your message and say goodbye." });
+        }
+      }
     }
     
     res.json({ results });
@@ -1757,6 +1819,34 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
            await db.from('wireline_signal_presence').delete().eq('id', callId);
         }
      }
+  }
+
+  // LIVE SENTIMENT TRACKING — conversation-update messages carry the running transcript.
+  // Lightweight keyword scan on the last user turns to surface emotional state
+  // in LiveMonitor without an LLM API call on every turn.
+  if (message && message.type === "conversation-update") {
+    const callId = payload.call?.id || message.call?.id;
+    if (callId) {
+      const turns: any[] = message.conversation || message.messages || [];
+      const userTurns = turns.filter((t: any) => t.role === "user").slice(-2);
+      const combined = userTurns.map((t: any) => (t.content || t.message || "").toLowerCase()).join(" ");
+
+      const ANGRY_SIGNALS = ["angry", "furious", "terrible", "horrible", "ridiculous", "unacceptable", "disgusting", "hate", "sue", "lawyer", "scam", "fraud", "cancel", "refund", "waste", "useless", "incompetent"];
+      const POSITIVE_SIGNALS = ["great", "wonderful", "excellent", "perfect", "love", "thank you", "thanks", "appreciate", "happy", "fantastic", "amazing", "exactly", "that works", "sounds good"];
+
+      const negativeHits = ANGRY_SIGNALS.filter(w => combined.includes(w)).length;
+      const positiveHits = POSITIVE_SIGNALS.filter(w => combined.includes(w)).length;
+
+      let liveSentimentLabel = "Live · Active";
+      if (negativeHits >= 2) liveSentimentLabel = "⚠ Frustrated";
+      else if (negativeHits === 1) liveSentimentLabel = "Live · Tense";
+      else if (positiveHits >= 2) liveSentimentLabel = "✓ Positive";
+      else if (positiveHits === 1) liveSentimentLabel = "Live · Engaged";
+
+      await db.from('wireline_signal_presence')
+        .update({ label: liveSentimentLabel })
+        .eq('id', callId);
+    }
   }
 
   if (message && message.type === "end-of-call-report") {
@@ -2426,20 +2516,31 @@ const VAPI_TOOL_DEFS = {
       required: ["issue_summary", "severity"],
     },
   },
+  leave_voicemail: {
+    name: "leave_voicemail",
+    description: "Call this tool IMMEDIATELY when you detect you have reached an answering machine or voicemail. After calling it, deliver a concise 15-20 second voicemail and then say goodbye to end the call.",
+    parameters: {
+      type: "object",
+      properties: {
+        voicemail_message: { type: "string", description: "The exact text of the voicemail you are about to leave (15-20 seconds when spoken)." },
+      },
+      required: ["voicemail_message"],
+    },
+  },
 } as const;
 
 type VapiToolName = keyof typeof VAPI_TOOL_DEFS;
 
 // Maps each agent role to the subset of tools it may call during a live call.
 const ROLE_TOOL_SETS: Record<string, VapiToolName[]> = {
-  sales:             ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status"],
+  sales:             ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "leave_voicemail"],
   customer_service:  ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "check_calendar_availability", "book_appointment"],
-  scheduler:         ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "check_calendar_availability", "book_appointment"],
-  collections:       ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "log_payment_promise"],
+  scheduler:         ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "check_calendar_availability", "book_appointment", "leave_voicemail"],
+  collections:       ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "log_payment_promise", "leave_voicemail"],
   technical_support: ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "create_support_ticket"],
-  lead_qualifier:    ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status"],
+  lead_qualifier:    ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "leave_voicemail"],
   receptionist:      ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "check_calendar_availability", "book_appointment"],
-  marketing:         ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status"],
+  marketing:         ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "leave_voicemail"],
 };
 
 /** Returns the Vapi `functions` array scoped to the given agent role. */
@@ -3943,6 +4044,33 @@ type PlaceCallResult = {
   error?: string;
 };
 
+/** Generates a role-appropriate opening line for outbound calls.
+ *  The first 5 words are what the contact hears before deciding to engage —
+ *  these openers are tight, natural, and avoid generic filler phrases.
+ */
+function buildOutboundFirstMessage(role: string, agentName: string, customerName?: string | null): string {
+  const name = agentName || "your representative";
+  const customer = customerName ? customerName.split(" ")[0] : "there"; // first name only
+  switch (role) {
+    case "collections":
+      // FDCPA-safe: do not disclose debt amount in first message
+      return `Hi, is this ${customerName || "the account holder"}? This is ${name} calling regarding an account matter. Do you have a moment?`;
+    case "scheduler":
+      return `Hi ${customer}! This is ${name} reaching out about your upcoming appointment. Quick question for you — do you have 30 seconds?`;
+    case "technical_support":
+      return `Hi ${customer}, this is ${name} from our technical team following up on your case. Is now an okay time to troubleshoot?`;
+    case "customer_service":
+      return `Hi ${customer}, this is ${name} — I'm following up personally. Is now a good moment to talk?`;
+    case "lead_qualifier":
+      return `Hi ${customer}, this is ${name}. You'd recently expressed interest in us, and I wanted to connect. Do you have 2 minutes?`;
+    case "marketing":
+      return `Hi ${customer}, it's ${name} — I'm reaching out because I think we have something really relevant for you. Is now an okay time?`;
+    case "sales":
+    default:
+      return `Hi ${customer}, this is ${name} calling. I wanted to reach out personally — do you have 30 seconds?`;
+  }
+}
+
 async function placeOutboundCall(opts: {
   userId: string;
   agentId: string;
@@ -3966,20 +4094,44 @@ async function placeOutboundCall(opts: {
     return { ok: false, status: 400, error: "Platform Error: Master telecom carrier not configured. Please ensure VAPI_PRIVATE_KEY is set in environment secrets." };
   }
 
-  // 2. Agent context
-  const [agentConfig, directivesData, knowledgeData, personalityData, lessonsData] = await Promise.all([
+  // 2. Agent context + caller history pre-load (parallel for speed)
+  const safeOutboundPhone = (customerNumber || "").replace(/[^0-9+]/g, '').slice(0, 20);
+  const [agentConfig, directivesData, knowledgeData, personalityData, lessonsData, outboundCallerHistory] = await Promise.all([
     db.from('wireline_agents').select('*').eq('id', agentId).single().then(r => r),
     db.from('wireline_directives').select('content, priority').eq('agent_id', agentId).order('priority', { ascending: false }).then(r => r),
     db.from('wireline_knowledge').select('content').eq('agent_id', agentId).then(r => r),
     db.from('wireline_personality').select('content').eq('agent_id', agentId).single().then(r => r),
-    db.from('wireline_agent_lessons').select('lesson').eq('agent_id', agentId).order('created_at', { ascending: false }).limit(3).then(r => r),
+    db.from('wireline_agent_lessons').select('lesson').eq('agent_id', agentId).order('created_at', { ascending: false }).limit(5).then(r => r),
+    safeOutboundPhone
+      ? db.from('wireline_call_logs')
+          .select('summary, intent_label, sentiment, created_at, direction')
+          .eq('customer_number', safeOutboundPhone)
+          .eq('agent_id', agentId)
+          .order('created_at', { ascending: false })
+          .limit(3)
+      : Promise.resolve({ data: [] }),
   ]);
 
   if (!agentConfig?.data) {
     return { ok: false, status: 404, error: `Agent ${agentId} not found.` };
   }
 
-  const lessons = (lessonsData?.data || []).map((l: any) => l.lesson).join('\n');
+  // Filter knowledge-gap lessons — they are training signals, not runtime hints
+  const lessons = (lessonsData?.data || [])
+    .filter((l: any) => !l.lesson.startsWith('[KNOWLEDGE GAP]'))
+    .map((l: any) => l.lesson)
+    .join('\n');
+
+  // Build caller profile for immediate outbound agent context
+  const outboundPastCalls: any[] = (outboundCallerHistory as any)?.data || [];
+  let outboundCallerProfile = "";
+  if (outboundPastCalls.length > 0) {
+    outboundCallerProfile = `## ⚡ CONTACT HISTORY — PRE-LOADED\nThis contact has called before. Review and use naturally:\n${
+      outboundPastCalls.map((c: any) =>
+        `- [${new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}] ${(c.direction || 'call').toUpperCase()} | Intent: ${c.intent_label || 'unknown'} | Tone: ${c.sentiment || 'neutral'} | ${c.summary}`
+      ).join('\n')
+    }\nINSTRUCTION: Reference this naturally. Do not recite it verbatim.\n`;
+  }
   const currentDateTime = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
   // Derive the archetype from the agent's role for outbound calls
   const outboundAgentRole = agentConfig?.data?.role || DEFAULT_AGENT_ROLE;
@@ -4028,6 +4180,8 @@ async function placeOutboundCall(opts: {
 You are ${agentConfig?.data?.name || "a scheduling agent"}, a ${outboundAgentRole.replace(/_/g, ' ')} specialist making an outbound call.
 ${ambientNoiseActive ? "You are operating from a professional office environment. Speak with focused, professional energy." : ""}
 
+${outboundCallerProfile}
+
 ## YOUR PROFESSIONAL CHARACTER & METHOD
 ${personalityData?.data?.content || "You are a highly professional, empathetic, and effective representative who puts the caller's outcome first."}
 
@@ -4043,6 +4197,13 @@ ${lessons ? `## LEARNED IMPROVEMENTS (APPLY THESE)\nYour previous call analysis 
 
 ${roleProtocol}
 
+## VOICEMAIL PROTOCOL
+If you detect you have reached a voicemail or answering machine (recorded greeting, beep, or "please leave a message"):
+1. IMMEDIATELY call the leave_voicemail tool before speaking.
+2. After the tool responds, deliver a clear, professional voicemail: identify yourself and your company, state the reason for your call in ONE sentence, leave a callback number if available, and close with "I look forward to connecting with you."
+3. Keep the voicemail under 20 seconds total.
+4. Say goodbye naturally to end the call.
+
 ## EMOTIONAL INTELLIGENCE
 - If the contact sounds surprised, annoyed, or busy: acknowledge it immediately ("I know this is unexpected — I'll be brief"). Respect their time.
 - If the contact is warm and engaged: reciprocate the energy. Build rapport before going to the objective.
@@ -4057,8 +4218,9 @@ Today is ${currentDateTime} (Eastern Time). Calculate specific dates for "tomorr
 - If they request a human or supervisor: honor it after the second request using the escalate_to_human tool.
 
 ## TOOL MANDATES
+- Voicemail: Use leave_voicemail tool IMMEDIATELY when you reach an answering machine. Do not start speaking first.
 - Email follow-up: If the contact wants information sent: use send_email tool. "I'll send that to you right now — what email?"
-- Lead outcome: Use update_lead_status at the END of every call — never leave the outcome unlogged.
+- Lead outcome: Use update_lead_status at the END of every live call — never leave the outcome unlogged.
 - Tasks: Use create_fleet_task for any promised follow-up that requires human action.
 - Scheduling: Always check_calendar_availability before confirming any slot.
 
@@ -4084,11 +4246,11 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
     customer: { number: customerNumber },
     assistant: {
       name: agentConfig?.data?.name || "Wireline Outbound Agent",
-      firstMessage: agentConfig?.data?.first_message || `Hi ${customerName ? customerName : 'there'}, this is ${agentConfig?.data?.name || 'your representative'} calling.`,
+      firstMessage: agentConfig?.data?.first_message || buildOutboundFirstMessage(outboundAgentRole, agentConfig?.data?.name || "your representative", customerName),
       backgroundSound: agentConfig?.data?.ambient_noise || 'off',
       ...(outboundServerUrl && { serverUrl: outboundServerUrl }),
       serverUrlSecret: process.env.VAPI_WEBHOOK_SECRET,
-      serverMessages: ["tool-calls", "status-update", "end-of-call-report"],
+      serverMessages: ["tool-calls", "status-update", "conversation-update", "end-of-call-report"],
       model: {
         provider: voiceLlmProvider,
         model: voiceLlmModel,

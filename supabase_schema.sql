@@ -734,3 +734,19 @@ DO $$ BEGIN
         EXECUTE 'CREATE POLICY "Users can manage their own onboarding progress" ON wireline_onboarding_progress FOR ALL USING (auth.uid() = user_id)';
     END IF;
 END $$;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Agent Performance Improvements — 2026-05-06
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- Live sentiment label for active calls (populated by conversation-update webhooks).
+-- Values: "Live · Active" | "Live · Engaged" | "Live · Tense" | "✓ Positive" | "⚠ Frustrated"
+ALTER TABLE wireline_signal_presence ADD COLUMN IF NOT EXISTS label TEXT DEFAULT 'Live · Active';
+
+-- Voicemail-Left is a valid outbound lead status (set by leave_voicemail tool).
+-- No schema change needed — wireline_outbound_leads.status is free-text.
+
+-- Index for lesson filtering (knowledge-gap lessons excluded from runtime injection).
+-- Existing wireline_agent_lessons table — add index to speed up lesson lookups.
+CREATE INDEX IF NOT EXISTS wireline_agent_lessons_agent_created_idx
+    ON wireline_agent_lessons(agent_id, created_at DESC);
