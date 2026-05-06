@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Brain, ArrowUpCircle, Trash2, CheckCircle2, Zap, Sparkles, Terminal, Activity, Loader2 } from "lucide-react";
-import { cn } from "../lib/utils";
+import { Brain, ArrowUpCircle, Trash2, CheckCircle2, Zap, Terminal, Loader2 } from "lucide-react";
 import { authFetch } from "../lib/api";
+import { useToast } from "../contexts/ToastContext";
 
 type Lesson = {
   id: string;
@@ -11,9 +11,11 @@ type Lesson = {
 }
 
 export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
+  const { success: toastSuccess, error: toastError } = useToast();
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isPromoting, setIsPromoting] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     fetchLessons();
@@ -24,8 +26,8 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
       const res = await authFetch(`/api/agents/${agentId}/lessons`);
       const data = await res.json();
       setLessons(data.lessons || []);
-    } catch (e) {
-      console.error("Failed to fetch lessons");
+    } catch {
+      toastError("Load failed", "Could not fetch training observations.");
     } finally {
       setIsLoading(false);
     }
@@ -34,25 +36,37 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
   const promoteToDirective = async (lesson: Lesson) => {
     setIsPromoting(lesson.id);
     try {
-      await authFetch(`/api/agents/${agentId}/promote`, {
+      const resp = await authFetch(`/api/agents/${agentId}/promote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lessonId: lesson.id, content: lesson.lesson })
       });
-      setLessons(prev => prev.filter(l => l.id !== lesson.id));
-    } catch (e) {
-      console.error("Promotion failed");
+      if (resp.ok) {
+        setLessons(prev => prev.filter(l => l.id !== lesson.id));
+        toastSuccess("Promoted to directive", "Observation is now a hard constraint.");
+      } else {
+        toastError("Promotion failed", "Could not promote this observation.");
+      }
+    } catch {
+      toastError("Promotion failed", "Network error — please try again.");
     } finally {
       setIsPromoting(null);
     }
   };
 
   const deleteLesson = async (id: string) => {
+    setIsDeleting(id);
     try {
-      await authFetch(`/api/agents/${agentId}/lessons/${id}`, { method: 'DELETE' });
-      setLessons(prev => prev.filter(l => l.id !== id));
-    } catch (e) {
-      console.error("Failed to delete lesson:", e);
+      const resp = await authFetch(`/api/agents/${agentId}/lessons/${id}`, { method: 'DELETE' });
+      if (resp.ok) {
+        setLessons(prev => prev.filter(l => l.id !== id));
+      } else {
+        toastError("Delete failed", "Could not discard this observation.");
+      }
+    } catch {
+      toastError("Delete failed", "Network error — please try again.");
+    } finally {
+      setIsDeleting(null);
     }
   };
 
@@ -142,10 +156,13 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
                           </button>
                           <button
                             onClick={() => deleteLesson(lesson.id)}
+                            disabled={isDeleting === lesson.id}
                             title="Discard"
-                            className="h-7 w-7 rounded-lg glass border border-white/10 text-muted/60 hover:text-rose-500 hover:border-rose-500/30 transition-all flex items-center justify-center"
+                            className="h-7 w-7 rounded-lg glass border border-white/10 text-muted/60 hover:text-rose-500 hover:border-rose-500/30 transition-all flex items-center justify-center disabled:opacity-50"
                           >
-                            <Trash2 className="w-3 h-3" />
+                            {isDeleting === lesson.id
+                              ? <Loader2 className="w-3 h-3 animate-spin" />
+                              : <Trash2 className="w-3 h-3" />}
                           </button>
                         </div>
                       </div>
@@ -154,10 +171,9 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
                         {lesson.lesson}
                       </p>
 
-                      <div className="flex items-center gap-1.5 text-[9px] text-brand/70">
-                        <Activity className="w-3 h-3" />
-                        <span className="uppercase tracking-[0.3em]">Potential accuracy lift: +12%</span>
-                      </div>
+                      <p className="text-[8px] uppercase tracking-[0.3em] text-muted/50">
+                        Captured {new Date(lesson.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </p>
                     </div>
                   </div>
                 </motion.div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, Plus, Phone, Bot, Save, Loader2, Link as LinkIcon, Copy, Trash2, Megaphone, Mail, Pencil, Sparkles, Terminal, ChevronRight, Zap, Target, Radio, Settings2, Shield, Briefcase, RefreshCw, LayoutGrid } from "lucide-react";
+import { Users, Plus, Phone, Bot, Save, Loader2, Link as LinkIcon, Copy, Trash2, Megaphone, Mail, Pencil, Sparkles, Terminal, ChevronRight, Zap, Target, Radio, Settings2, Shield, Briefcase, RefreshCw, LayoutGrid, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch, safeJson } from "../lib/api";
@@ -8,6 +8,31 @@ import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import { useToast } from "../contexts/ToastContext";
 import AgentTemplates from "./AgentTemplates";
 import AgentExportImport from "./AgentExportImport";
+
+/** Tiny SVG sparkline — renders a 7-value array as a smooth path. */
+function Sparkline({ data, width = 64, height = 24 }: { data: number[]; width?: number; height?: number }) {
+  if (!data || data.length < 2) return null;
+  const max = Math.max(...data, 1);
+  const pts = data.map((v, i) => [
+    (i / (data.length - 1)) * width,
+    height - (v / max) * (height - 2) - 1,
+  ] as [number, number]);
+  const d = pts.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+  return (
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="overflow-visible">
+      <defs>
+        <linearGradient id="sp-grad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#7DF9FF" stopOpacity="0.8" />
+          <stop offset="100%" stopColor="#C58BFF" stopOpacity="0.8" />
+        </linearGradient>
+      </defs>
+      <path d={d} fill="none" stroke="url(#sp-grad)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      {pts.map(([x, y], i) => (
+        <circle key={i} cx={x} cy={y} r="1.5" fill="url(#sp-grad)" />
+      ))}
+    </svg>
+  );
+}
 
 const PREMIUM_VOICES = [
   // 11labs
@@ -197,11 +222,20 @@ export default function FleetSettings() {
 
   const updatePersonality = async (val: string) => {
     setAgentConfig({ ...agentConfig, personality: val });
-    await authFetch(`/api/agent-config/${selectedAgent.id}/manual`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: "personality", content: val })
-    });
+    try {
+      const resp = await authFetch(`/api/agent-config/${selectedAgent.id}/manual`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "personality", content: val })
+      });
+      if (resp.ok) {
+        toastSuccess("Behavioral engine saved", "Agent personality updated.");
+      } else {
+        toastError("Save failed", "Could not update the behavioral engine.");
+      }
+    } catch {
+      toastError("Save failed", "Network error — please try again.");
+    }
   };
 
   const saveManualEntry = async (type: 'directive' | 'knowledge', content: string, overrideId?: string) => {
@@ -217,16 +251,26 @@ export default function FleetSettings() {
             await fetchAgentConfig(selectedAgent.id);
             if (type === 'directive') { setEditingDirective(null); setNewDirective(""); }
             if (type === 'knowledge') { setEditingKnowledge(null); setNewKnowledge(""); }
+        } else {
+            toastError("Save failed", `Could not save ${type}. Please try again.`);
         }
-    } catch (e) {
-        console.error(e);
+    } catch {
+        toastError("Save failed", "Network error — please try again.");
     }
     setIsSavingEntry(false);
   };
 
   const deleteRule = async (type: string, rowId: string) => {
-    await authFetch(`/api/agent-config/${selectedAgent.id}/${type}/${rowId}`, { method: "DELETE" });
-    fetchAgentConfig(selectedAgent.id);
+    try {
+      const resp = await authFetch(`/api/agent-config/${selectedAgent.id}/${type}/${rowId}`, { method: "DELETE" });
+      if (resp.ok) {
+        fetchAgentConfig(selectedAgent.id);
+      } else {
+        toastError("Delete failed", "Could not remove the entry. Please try again.");
+      }
+    } catch {
+      toastError("Delete failed", "Network error — please try again.");
+    }
   };
 
   const [isDeletingAgent, setIsDeletingAgent] = useState<string | null>(null);
@@ -571,26 +615,50 @@ export default function FleetSettings() {
                      const total = (s.sentiment.positive + s.sentiment.neutral + s.sentiment.negative) || 1;
                      const posPct = Math.round((s.sentiment.positive / total) * 100);
                      return (
-                       <div className="md:col-span-2 grid grid-cols-3 gap-2 mb-2">
-                         <div className="rounded-lg glass border border-white/8 p-2.5">
-                           <div className="text-[8px] uppercase tracking-[0.3em] text-brand mb-1">Calls</div>
-                           <div className="font-display italic text-xl text-ink">{s.callCount}</div>
+                       <div className="md:col-span-2 space-y-2 mb-2">
+                         <div className="grid grid-cols-4 gap-2">
+                           <div className="rounded-lg glass border border-white/8 p-2.5">
+                             <div className="text-[8px] uppercase tracking-[0.3em] text-brand mb-1">Calls</div>
+                             <div className="font-display italic text-xl text-ink">{s.callCount}</div>
+                           </div>
+                           <div className="rounded-lg glass border border-white/8 p-2.5">
+                             <div className="text-[8px] uppercase tracking-[0.3em] text-brand mb-1 flex items-center gap-1">
+                               <Clock className="w-2 h-2" /> Min
+                             </div>
+                             <div className="font-display italic text-xl text-ink">{s.totalMinutes}</div>
+                           </div>
+                           <div className="rounded-lg glass border border-white/8 p-2.5">
+                             <div className="text-[8px] uppercase tracking-[0.3em] text-brand mb-1">Avg Score</div>
+                             <div className="font-display italic text-xl text-ink">{s.avgScore > 0 ? s.avgScore : <span className="text-muted/60 text-sm not-italic">—</span>}</div>
+                           </div>
+                           <div className="rounded-lg glass border border-white/8 p-2.5 relative">
+                             <div className="text-[8px] uppercase tracking-[0.3em] text-brand mb-1">Sentiment</div>
+                             <div className="font-display italic text-xl text-ink">{posPct}%<span className="text-xs text-muted not-italic ml-1">pos</span></div>
+                             <button
+                               onClick={() => fetchAgentPerformance(selectedAgent.id, true)}
+                               title="Refresh stats"
+                               className="absolute top-2 right-2 w-5 h-5 flex items-center justify-center rounded-full glass border border-white/10 text-muted/50 hover:text-brand transition-colors"
+                             >
+                               <RefreshCw className="w-2.5 h-2.5" />
+                             </button>
+                           </div>
                          </div>
-                         <div className="rounded-lg glass border border-white/8 p-2.5">
-                           <div className="text-[8px] uppercase tracking-[0.3em] text-brand mb-1">Avg Score</div>
-                           <div className="font-display italic text-xl text-ink">{s.avgScore}</div>
-                         </div>
-                         <div className="rounded-lg glass border border-white/8 p-2.5 relative">
-                           <div className="text-[8px] uppercase tracking-[0.3em] text-brand mb-1">Sentiment</div>
-                           <div className="font-display italic text-xl text-ink">{posPct}%<span className="text-xs text-muted not-italic ml-1">pos</span></div>
-                           <button
-                             onClick={() => fetchAgentPerformance(selectedAgent.id, true)}
-                             title="Refresh stats"
-                             className="absolute top-2 right-2 w-5 h-5 flex items-center justify-center rounded-full glass border border-white/10 text-muted/50 hover:text-brand transition-colors"
-                           >
-                             <RefreshCw className="w-2.5 h-2.5" />
-                           </button>
-                         </div>
+                         {/* 7-day activity sparkline */}
+                         {s.sparkline && s.sparkline.some((v: number) => v > 0) && (
+                           <div className="rounded-lg glass border border-white/8 px-3 py-2 flex items-center gap-3">
+                             <span className="text-[8px] uppercase tracking-[0.3em] text-muted/70 shrink-0">7d</span>
+                             <div className="flex-1 min-w-0">
+                               <Sparkline data={s.sparkline} width={160} height={20} />
+                             </div>
+                             <div className="flex gap-2 shrink-0">
+                               {s.sparkline.map((v: number, i: number) => (
+                                 <span key={`day-${i}`} className="text-[8px] font-mono tabular-nums text-muted/50" title={`${v} call${v !== 1 ? 's' : ''}`}>
+                                   {v}
+                                 </span>
+                               ))}
+                             </div>
+                           </div>
+                         )}
                        </div>
                      );
                    })()}
