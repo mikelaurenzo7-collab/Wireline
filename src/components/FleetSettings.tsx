@@ -57,6 +57,8 @@ export const AGENT_ROLES = [
   { value: "lead_qualifier",    label: "Lead Qualifier",    description: "Screens and scores inbound prospects",       color: "orange",  tw: { bg: "bg-orange-500/10",  text: "text-orange-400",  border: "border-orange-500/25",  dot: "bg-orange-400"  } },
   { value: "receptionist",      label: "Receptionist",      description: "Routes calls and creates first impressions", color: "cyan",    tw: { bg: "bg-cyan-500/10",    text: "text-cyan-400",    border: "border-cyan-500/25",    dot: "bg-cyan-400"    } },
   { value: "marketing",         label: "Marketing",         description: "Nurtures prospects and runs campaigns",      color: "purple",  tw: { bg: "bg-purple-500/10",  text: "text-purple-400",  border: "border-purple-500/25",  dot: "bg-purple-400"  } },
+  { value: "hr_screener",       label: "HR Screener",       description: "Screens candidates and books interviews",    color: "sky",     tw: { bg: "bg-sky-500/10",     text: "text-sky-400",     border: "border-sky-500/25",     dot: "bg-sky-400"     } },
+  { value: "retention_specialist", label: "Retention",      description: "Prevents churn and wins back lost customers",color: "teal",    tw: { bg: "bg-teal-500/10",    text: "text-teal-400",    border: "border-teal-500/25",    dot: "bg-teal-400"    } },
 ] as const;
 
 type RoleValue = typeof AGENT_ROLES[number]["value"];

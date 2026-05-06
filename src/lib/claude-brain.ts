@@ -1585,6 +1585,8 @@ const ROLE_ANALYSIS_GUIDANCE: Record<string, string> = {
   marketing:         "This agent runs outreach campaigns. Score higher when the prospect expressed interest, booked a demo, registered for an event, or agreed to a follow-up.",
   receptionist:      "This agent routes calls and takes messages. Score higher when the caller was properly routed or a complete, accurate message was captured.",
   customer_service:  "This agent handles support. Score higher when the customer's issue was resolved and satisfaction expressed. Note any unresolved items.",
+  hr_screener:       "This agent screens candidates. Score higher when work authorization, relevant experience, availability, and compensation alignment were confirmed, and a clear next step (interview booked or graceful decline) was communicated. Note EEOC compliance — flag any legally prohibited questions.",
+  retention_specialist: "This agent prevents churn. Score higher when the root cause of dissatisfaction was identified, a specific retention offer was made, and the customer committed to staying. Score moderately when a callback or review was agreed upon. Note win-back vs. save context.",
 };
 
 export interface PostCallInput {

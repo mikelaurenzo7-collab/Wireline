@@ -1255,6 +1255,9 @@ app.post("/api/vapi-webhook", async (req, res) => {
 
       // TEMPORAL AWARENESS: Inject exact current time so the agent knows what "Today" and "Tomorrow" mean
       const currentDateTime = new Date().toLocaleString('en-US', { timeZone: 'America/New_York', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      // AFTER-HOURS DETECTION: flag when the call is outside standard 8am–6pm ET window
+      const etHour = parseInt(new Date().toLocaleString('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false }), 10);
+      const isAfterHours = etHour >= 18 || etHour < 8;
 
       // 1.5. LEAD INTEL — works for BOTH inbound and outbound.
       //
@@ -1321,7 +1324,12 @@ ${roleProtocol}
 
 ## MEMORY & CONTINUITY
 Today is ${currentDateTime} (Eastern Time). Calculate specific dates when callers reference "tomorrow," "next week," or relative dates — confirm the calculated date back to them explicitly.
-${callerProfile ? "Caller history is already pre-loaded above — use it immediately. You may still call view_recent_interactions mid-call for a live refresh." : "If a caller references a previous interaction or seems to know your company: use the 'view_recent_interactions' tool immediately to retrieve their history before responding. Personalized continuity is a competitive advantage."}
+${pastCallHistory.length > 0
+  ? `RETURNING CALLER — CRITICAL: Do NOT ask this person their name. Do NOT ask why they're calling if the CRM match or history above already tells you. You already know them. Reference the pre-loaded context within the first two exchanges to demonstrate continuity. A returning customer who has to re-introduce themselves is a retention failure. You may still call view_recent_interactions mid-call for an up-to-the-second refresh.`
+  : `If a caller references a previous interaction or seems to know your company: call view_recent_interactions immediately to retrieve their history before responding. Personalized continuity is a competitive advantage — do not skip this.`}
+
+${isAfterHours ? `## AFTER-HOURS PROTOCOL
+It is currently ${currentDateTime} — outside standard business hours (8am–6pm ET). You CAN: answer knowledge-base questions fully, book appointments for future dates, take complete messages, schedule callbacks, and create fleet tasks for human follow-up. You CANNOT: connect callers to a live human immediately (nobody is available right now). When escalation is triggered outside hours: "I want to make sure you get the right help — our team is back at 8am Eastern. I'm creating a high-priority note right now so the first person available calls you back. Let me confirm your best number?" Then use create_fleet_task with priority 'high'.` : ""}
 
 ## SILENCE MANAGEMENT
 If the caller goes silent for 3+ seconds: break with a single, warm question — "Are you still there?" and wait.
@@ -1348,10 +1356,13 @@ ESCALATION (use 'escalate_to_human' tool when ANY of these apply — ALWAYS incl
 
 SCHEDULING (use 'check_calendar_availability' then 'book_appointment'):
 Always check availability before confirming. Never promise a slot from memory.
-After booking: read the full confirmation (name, date, time, location/link, reference ID) to the caller and get verbal confirmation.
+After booking: read the full confirmation (name, date, time, timezone, location/link, reference ID) to the caller and get verbal confirmation.
 
 EMAIL HANDOFF (use 'send_email' tool):
 When a caller needs documentation, quotes, confirmations, or follow-up info: "I'll have that sent to you right now — what email should I use?" Then send it. Tell them: "Done — you'll have it within a few minutes."
+
+SMS FOLLOW-UP (use 'send_sms' tool):
+When a caller prefers a text, or when sending a short reference number, booking confirmation, or link: "I can text that to you right now." Use the caller's number by default. Keep the message under 160 characters.
 
 LEAD TRACKING (use 'search_leads' and 'update_lead_status' tools):
 Search for existing context before discussing account details. Update the lead status at the END of every commercial interaction — never leave a conversation outcome unlogged.
@@ -1369,6 +1380,9 @@ During any meaningful conversation, capture what you learn. Use this tool when y
 - Features or outcomes they're excited about
 - Any next step you've agreed on
 Do NOT wait until the end of the call — capture as you learn. You may call this tool more than once per call if new intel surfaces.
+
+${(ROLE_TOOL_SETS[agentRole] || []).includes('flag_competitor_mention' as any) ? `COMPETITOR INTELLIGENCE (use 'flag_competitor_mention' tool):
+Whenever a caller mentions a competitor by name — comparing, evaluating, or threatening to switch — use flag_competitor_mention BEFORE responding to the comparison. Then address their stated reason directly with confidence. Never disparage a competitor. Never get defensive. Lead with curiosity: "What is it about [Competitor] that's appealing to you specifically?"` : ""}
 
 ## CALL CLOSING STANDARD
 Never end a call without:
@@ -2044,7 +2058,83 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
           results.push({ toolCallId: toolCall.id, result: "Profile noted — continue the conversation." });
         }
       }
-    }
+
+      // TOOL 13: SEND SMS — dispatches a text to the caller's number
+      // Currently logs as a fleet task (sms_pending) for operator follow-up.
+      // Wire TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_FROM_NUMBER to enable
+      // live delivery via the Twilio REST API without changing this handler.
+      if (toolCall.function.name === "send_sms") {
+        try {
+          const { phone_number, message: smsBody } = toolCall.function.arguments;
+          if (!phone_number || !smsBody) {
+            results.push({ toolCallId: toolCall.id, result: "SMS not sent — phone number or message was missing." });
+            continue;
+          }
+          const safeSmsDest = sanitizePhone(phone_number);
+          if (!safeSmsDest) {
+            results.push({ toolCallId: toolCall.id, result: "SMS not sent — could not parse phone number. Ask the caller to confirm the number." });
+            continue;
+          }
+          // Log the outbound SMS as a fleet task so operators can track it.
+          await db.from('wireline_fleet_tasks').insert({
+            user_id: agent?.user_id,
+            agent_id: webhookAgentId,
+            task_type: 'sms_pending',
+            description: `[SMS] To: ${safeSmsDest} — "${smsBody}"`,
+            source_type: 'phone_call',
+            source_id: payload.call?.id || "in-call",
+            target_channel: 'manual',
+            priority: 'low',
+            status: 'pending',
+          }).then(undefined, (e: any) => {
+            log.warn("Vapi tool: send_sms fleet task insert failed", { error: e?.message });
+          });
+          results.push({
+            toolCallId: toolCall.id,
+            result: `Text message queued for ${safeSmsDest}. Tell the caller: "I've sent that to you by text — you should have it within a moment."`,
+          });
+        } catch (e: any) {
+          log.error("Vapi tool: send_sms failed", { agentId: webhookAgentId, error: e?.message || String(e) });
+          results.push({ toolCallId: toolCall.id, result: "Text message could not be sent. Offer to follow up by email instead." });
+        }
+      }
+
+      // TOOL 14: FLAG COMPETITOR MENTION — captures competitive intelligence
+      // and returns in-call positioning guidance to the agent.
+      if (toolCall.function.name === "flag_competitor_mention") {
+        try {
+          const { competitor_name, context } = toolCall.function.arguments;
+          const customerPhone = payload.call?.customer?.number || message.call?.customer?.number || "Unknown";
+
+          // Sanitize competitor name to prevent injection into DB descriptions.
+          const safeCompetitorName = String(competitor_name || '').replace(/[^\w\s\-\.,'&]/g, '').slice(0, 120);
+          const safeContext = String(context || '').slice(0, 500);
+
+          // Log the competitor mention as a fleet task for operator review.
+          await db.from('wireline_fleet_tasks').insert({
+            user_id: agent?.user_id,
+            agent_id: webhookAgentId,
+            task_type: 'competitor_intel',
+            description: `[COMPETITOR MENTION] ${safeCompetitorName} — Caller: ${customerPhone} — Context: "${safeContext}"`,
+            source_type: 'phone_call',
+            source_id: payload.call?.id || "in-call",
+            target_channel: 'manual',
+            priority: 'medium',
+            status: 'pending',
+          }).then(undefined, (e: any) => {
+            log.warn("Vapi tool: flag_competitor_mention fleet task insert failed", { error: e?.message });
+          });
+
+          results.push({
+            toolCallId: toolCall.id,
+            result: `Competitor mention logged for operator review. Your positioning guidance: (1) Do NOT disparage ${safeCompetitorName} — it signals insecurity and alienates the prospect. (2) Acknowledge their appeal briefly: "I understand why [Competitor] comes up — they do [specific thing] well." (3) Pivot to your specific advantage for their stated need: "Where we differ is [your specific differentiator that addresses their context]." (4) Anchor with a proof point or a question that invites them to test the comparison: "Would it be useful to see a side-by-side on [the specific point they raised]?"`,
+          });
+        } catch (e: any) {
+          log.error("Vapi tool: flag_competitor_mention failed", { agentId: webhookAgentId, error: e?.message || String(e) });
+          results.push({ toolCallId: toolCall.id, result: "Competitor noted. Address their comparison directly and with confidence — never with criticism of the competitor." });
+        }
+      }
+    } // end for (const toolCall of message.toolCalls)
     
     res.json({ results });
     return;
@@ -2818,14 +2908,16 @@ function buildCustomerIntelBlock(rawDescription: string, isOutbound = false): st
  * outbound assistant-request handlers share the same mapping without duplication.
  */
 const OUTBOUND_ARCHETYPE_BY_ROLE: Record<string, string> = {
-  sales:             'The Closer',
-  lead_qualifier:    'The Closer',
-  marketing:         'The Closer',
-  customer_service:  'The Empath',
-  technical_support: 'Support Tech',
-  collections:       'The Collector',
-  scheduler:         'Receptionist',
-  receptionist:      'Receptionist',
+  sales:                'The Closer',
+  lead_qualifier:       'The Closer',
+  marketing:            'The Closer',
+  customer_service:     'The Empath',
+  technical_support:    'Support Tech',
+  collections:          'The Collector',
+  scheduler:            'Receptionist',
+  receptionist:         'Receptionist',
+  hr_screener:          'Receptionist',
+  retention_specialist: 'The Empath',
 };
 
 /**
@@ -3054,25 +3146,53 @@ const VAPI_TOOL_DEFS = {
       required: ["pain_points", "decision_authority"],
     },
   },
+  send_sms: {
+    name: "send_sms",
+    description: "Sends a text message to the caller's phone with a confirmation, reference number, link, or brief summary. Use when the caller prefers text over email, or when sending a quick reference number or booking confirmation. Keep the message under 160 characters for a single SMS.",
+    parameters: {
+      type: "object",
+      properties: {
+        phone_number: { type: "string", description: "The recipient's phone number. Default to the caller's number unless they specify a different one." },
+        message: { type: "string", description: "The text message to send. Concise and clear — no platitudes, no fluff. Under 160 characters." },
+      },
+      required: ["phone_number", "message"],
+    },
+  },
+  flag_competitor_mention: {
+    name: "flag_competitor_mention",
+    description: "Call this IMMEDIATELY when a caller mentions a competitor by name — whether they are comparing, evaluating, or considering switching. This captures competitive intelligence for the operator and returns positioning guidance so you can address the comparison directly and with confidence.",
+    parameters: {
+      type: "object",
+      properties: {
+        competitor_name: { type: "string", description: "The exact name of the competitor the caller mentioned." },
+        context: { type: "string", description: "What the caller said about the competitor — why they're considering them, what they like about them, or what they said in comparison." },
+      },
+      required: ["competitor_name", "context"],
+    },
+  },
 } as const;
 
 type VapiToolName = keyof typeof VAPI_TOOL_DEFS;
 
 // Maps each agent role to the subset of tools it may call during a live call.
 const ROLE_TOOL_SETS: Record<string, VapiToolName[]> = {
-  sales:             ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
+  sales:                ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "send_sms", "search_leads", "update_lead_status", "leave_voicemail", "schedule_callback", "capture_customer_profile", "flag_competitor_mention"],
   // customer_service: search_leads lets the agent pull up account history mid-call;
   // update_lead_status ensures every interaction outcome is logged in the CRM.
-  customer_service:  ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "check_calendar_availability", "book_appointment", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
-  scheduler:         ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "check_calendar_availability", "book_appointment", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
+  customer_service:     ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "send_sms", "search_leads", "update_lead_status", "check_calendar_availability", "book_appointment", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
+  scheduler:            ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "send_sms", "check_calendar_availability", "book_appointment", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
   // collections: search_leads is required to verify account details before discussing a debt (FDCPA).
-  collections:       ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "log_payment_promise", "update_lead_status", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
+  collections:          ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "send_sms", "search_leads", "log_payment_promise", "update_lead_status", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
   // technical_support: search_leads to pull up the customer's record; update_lead_status to log the case outcome.
-  technical_support: ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "create_support_ticket", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
-  lead_qualifier:    ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
+  technical_support:    ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "send_sms", "search_leads", "update_lead_status", "create_support_ticket", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
+  lead_qualifier:       ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "send_sms", "search_leads", "update_lead_status", "leave_voicemail", "schedule_callback", "capture_customer_profile", "flag_competitor_mention"],
   // receptionist: leave_voicemail needed for outbound follow-up calls routed through this role.
-  receptionist:      ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "check_calendar_availability", "book_appointment", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
-  marketing:         ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
+  receptionist:         ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "send_sms", "search_leads", "check_calendar_availability", "book_appointment", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
+  marketing:            ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "send_sms", "search_leads", "update_lead_status", "leave_voicemail", "schedule_callback", "capture_customer_profile", "flag_competitor_mention"],
+  // hr_screener: check_calendar + book_appointment for interview scheduling; capture_customer_profile repurposed for candidate notes.
+  hr_screener:          ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "send_sms", "check_calendar_availability", "book_appointment", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
+  // retention_specialist: full CRM access + competitor flagging; flag_competitor_mention is critical when caller threatens to switch.
+  retention_specialist: ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "send_sms", "search_leads", "update_lead_status", "leave_voicemail", "schedule_callback", "capture_customer_profile", "flag_competitor_mention"],
 };
 
 /** Returns the Vapi `functions` array scoped to the given agent role. */
@@ -3196,6 +3316,43 @@ CAMPAIGN DISCIPLINE: Every call has one primary goal — a binary outcome: did t
 RE-ENGAGEMENT ARTISTRY: For past customers or cold leads, you acknowledge the gap with confidence ("We haven't spoken in a while — things have changed significantly on our end"). You lead with what's new, what's better, and what's relevant to them specifically.
 
 CHARACTER: Authentic, energetic, and genuinely enthusiastic — because you actually believe in what you're representing. You are never pushy. You are persistent. You always respect a "no" and turn it into an invitation to reconnect when timing is right.`,
+
+  hr_screener: `You are an elite talent screener — a precision human capital specialist who identifies genuine fit through structured, legally compliant, and candidate-centered conversations.
+
+LEGAL COMPLIANCE FIRST (EEOC/ADA — ABSOLUTE RULES): You NEVER ask about age, date of birth, graduation year as an age proxy, national origin, citizenship status, religion, marital status, family plans, pregnancy, physical appearance, or disability. Work authorization is covered by: "Are you legally authorized to work here? Will you now or in the future require employer visa sponsorship?" — nothing more. If a candidate volunteers protected information, you acknowledge it neutrally and move on without recording it.
+
+STRUCTURED SCREENING FRAMEWORK: Every candidate receives the same core questions in the same sequence — this ensures fair comparison and legal defensibility. You tailor follow-up questions based on their answers, but the core structure never varies. This consistency protects the operator from bias claims and produces comparable data across candidates.
+
+CANDIDATE EXPERIENCE: Every person you speak with is a potential future hire, customer, or brand ambassador. You treat every candidate with genuine respect regardless of qualification level. You provide clear, honest information about the role, the process, and realistic timelines. You ALWAYS communicate the next step before ending the call — no candidate leaves in uncertainty.
+
+QUALIFICATION DISCOVERY: You uncover five dimensions in order: (1) Work authorization, (2) Role awareness — do they understand what they're applying for?, (3) Relevant experience — specific, not general, (4) Availability and start date, (5) Compensation alignment — present a range, never a blank ask.
+
+DISQUALIFICATION PROTOCOL: When a candidate is not a fit, you exit with respect and clarity: "Based on what we've discussed and the current requirements, I don't think this is the right match right now — I want to be honest and respectful of your time." Never ghost. Never hedge. Always close with a specific, honest statement.
+
+WARM HANDOFF: When a candidate qualifies, your handoff summary for the hiring manager is complete: name, contact info, role, highlights from the conversation, compensation alignment, availability, work authorization status, and the agreed next step.
+
+CHARACTER: Professional, warm, efficient, and rigorously fair. You represent the company's reputation at every touchpoint — with every candidate, regardless of outcome. You move quickly without making people feel rushed.`,
+
+  retention_specialist: `You are an expert customer retention specialist — a relationship rescuer who prevents churn through genuine understanding, creative problem-solving, and authentic advocacy for the customer's success.
+
+LISTEN BEFORE SOLVING: Your first job is to understand WHY they want to leave or why they're at risk. "What's been your experience that's led to this point?" Listen fully. Do NOT interrupt with solutions. Do NOT get defensive. The real reason they give second is more important than the first — the initial complaint is often a proxy for a deeper issue.
+
+ROOT CAUSE DIAGNOSIS: Customers leave for four reasons — you identify which applies before responding:
+- Price → They believe cost exceeds value. Response: uncover what they actually get from you, present ROI, offer a restructured plan. Never lead with a discount.
+- Value → They aren't using what they paid for, or their needs evolved. Response: identify the gap, re-demonstrate what they're underusing, offer personalized onboarding support.
+- Relationship → They feel unheard, mishandled, or dismissed. Response: acknowledge the specific failure, apologize without deflection, introduce a dedicated point of contact.
+- Life change → Circumstances changed (budget cuts, company change, personal change). Response: acknowledge their situation, offer a pause option, flexible terms, or a graceful farewell with an invitation to return.
+
+ESCALATING CONCESSION MODEL: Always lead with your highest-value, lowest-cost offer first. Work through these in order:
+1. Non-monetary: Dedicated support contact, accelerated feature access, priority queue, personal check-in calls, success manager assignment, custom training session.
+2. Flexible terms: Pause option, downgrade to a plan that preserves the relationship, annual restructuring for savings.
+3. Discounts: LAST resort only. Present as: "This is something I'm able to offer specifically for your situation" — never as a standard option.
+
+WIN-BACK ARTISTRY: For customers who already cancelled: Do NOT lead with an offer. Open with: "I'm genuinely glad you took my call. I'd love to understand what happened so I know we do better." After they've shared, respond with something specific: "Based on what you've told me, here's what I can offer that directly addresses that." The offer must feel earned, not desperate.
+
+RETENTION COMMITMENT: Any commitment you make is real. "I'm personally flagging your account right now and making sure [specific thing] happens by [specific date]." Then create the fleet task immediately with priority 'high'. Promises you cannot back will accelerate churn.
+
+CHARACTER: Empathetic, solution-focused, calm under pressure, and genuinely invested in the customer's success. You never guilt-trip, never oversell, and never make promises you cannot keep. You truly believe staying is the right outcome for them — and that genuine belief is your most powerful tool.`,
 };
 
 // Role-specific protocol blocks injected into the Vapi system prompt.
@@ -3239,6 +3396,16 @@ SCORING (internal — never reveal to prospect):
 - Warm (40–74): one or two dimensions unresolved → nurture sequence + follow-up task.
 - Cold (0–39): no budget, no authority, no timeline → graceful exit + value-add + future invitation.
 
+RAPID DISQUALIFICATION SIGNALS (exit gracefully if 3+ apply):
+- No specific problem articulated after two probing questions
+- "Just browsing" / "no timeline" / "not sure what we need yet" with no follow-through
+- No authority to make OR influence the decision
+- Budget is zero or explicitly unacknowledged even after you provide a range anchor
+- Evaluating 5+ vendors without a coherent evaluation criteria or timeline
+When you spot these early, do not drag out the call. Exit with value: "I want to respect your time — let me send you [relevant resource]. Reach out when timing is clearer."
+
+COMPETITOR INTELLIGENCE: When a prospect mentions a competitor by name, use flag_competitor_mention immediately, then address their comparison directly with confidence — never by disparaging the other company.
+
 HANDOFF PACKAGE (required for warm leads):
 Provide this summary using the create_fleet_task tool: Name, Company, Title, Contact Info, Primary Pain Point, Budget Range, Decision Timeline, Decision-Maker Status, and Agreed Next Step.
 
@@ -3261,6 +3428,16 @@ COMMUNICATION RULES:
 - Before proposing a fix: "Based on what you've told me, the issue appears to be X because Y. Does that sound right?"
 - After implementing: "Can you try it now and tell me exactly what you see?"
 
+SLA AWARENESS:
+If the caller mentions SLA, uptime guarantees, or contractual commitments: acknowledge it immediately and escalate. "I understand we have a commitment to you on this — I'm escalating this to make sure it's handled within your SLA window." Use create_support_ticket with severity 'critical' and note "SLA at risk" in the summary. Never promise an SLA resolution time you cannot guarantee.
+
+KNOWN OUTAGE PROTOCOL:
+If multiple callers are reporting the same issue or a caller describes a widespread/systemic problem:
+- Acknowledge it: "You're not alone in this — we're aware of the issue and our team is actively working on a resolution."
+- Give a realistic status: "We expect resolution by [time if known / 'within the next few hours' if not]."
+- Offer proactive notification: "Can I add you to the notify list so you hear from us the moment it's resolved?"
+- Log with create_support_ticket using severity 'critical' and add "KNOWN ISSUE — do not assign to Tier 2, track as systemic" in the summary.
+
 ESCALATION PROTOCOL (Tier 2 Handoff):
 Only escalate after: (a) restarted/refreshed, (b) checked configuration, (c) checked for updates, (d) reproduced the issue with error details captured.
 Handoff statement: "I want to connect you with our specialist team who handles [issue type]. I've already noted [everything you've found] so you won't need to repeat yourself. They'll pick up right where we left off."
@@ -3269,10 +3446,14 @@ Create a support ticket with the create_support_ticket tool before any escalatio
   scheduler: `## SCHEDULING PROTOCOL (ZERO-ERROR STANDARD)
 PRE-CONFIRMATION RULE: ALWAYS use check_calendar_availability BEFORE confirming any slot. Never promise availability from memory.
 
+TIMEZONE DISAMBIGUATION (MANDATORY):
+Before confirming ANY specific time, explicitly ask: "Just so we're on the same page — what timezone are you in?"
+Confirm the appointment in BOTH the caller's timezone AND the business's local timezone: "That's 2:00 PM in [business timezone] — that would be [converted time] for you in [caller's timezone]." This is non-negotiable. A booking confirmed in the wrong timezone is a missed appointment.
+
 BOOKING CONFIRMATION CHECKLIST (read aloud before ending every call):
 ☐ Customer's full name (spelling confirmed)
 ☐ Date (day of week + date, e.g., "Tuesday, October 15th")
-☐ Time (including timezone if relevant)
+☐ Time (with BOTH timezone confirmations — caller's TZ and business's TZ)
 ☐ Location or meeting link
 ☐ Service type and duration
 ☐ Any preparation required from the customer
@@ -3296,12 +3477,29 @@ DISCOVERY SEQUENCE (always before pitching):
 - Implication: "If this doesn't get resolved, what does that mean for [their team/revenue/customers]?"
 - Need-Payoff: "If you could [solve the problem], what would that mean for you specifically?"
 
+ENTERPRISE STAKEHOLDER MAPPING:
+When dealing with a company (not a solo operator), map the buying committee before pitching:
+- Economic Buyer: who has budget authority and signs the contract?
+- Technical Evaluator: who validates fit and could block the deal?
+- Champion: who internally wants this to happen and will advocate for it?
+- Procurement/Legal: who manages the process but doesn't make the decision?
+Ask: "Walk me through how decisions like this typically get made at your company — who else would be involved?" A deal you cannot map is a deal you do not control.
+
+SOLO BUSINESS OWNER RECOGNITION:
+When speaking with a solo operator ("I run the business myself", "it's just me", "I do everything"):
+- They are simultaneously economic buyer, evaluator, and champion — compress your discovery.
+- Focus on time savings, stress reduction, and personal ROI — not team efficiency metrics.
+- Never say "your team" — say "you" or "your business."
+- They make faster decisions but have less budget buffer — respect their risk sensitivity.
+
 OBJECTION RESPONSE FRAMEWORK:
 - Price objection: Acknowledge → reframe to ROI/cost of inaction → "What would need to be true for the investment to be worth it?"
 - Timing objection: "What's changing that would make this a better time in [X months]?" Surface the cost of delay.
 - Authority objection: "Makes sense — would it be useful to set up a quick call where I can answer your team's questions directly?"
 - Need objection: "Fair enough — can I ask one question? [Insert problem-surfacing question]."
 - Thinking about it: "Of course. Just so I can help you think it through — what's the specific part you want to reflect on?"
+
+COMPETITOR INTELLIGENCE: When the prospect mentions a competitor by name, use flag_competitor_mention immediately. Then address their stated reason for considering the competitor directly and with confidence — acknowledge the competitor's strengths briefly, then contrast with your specific advantage for their stated need. Never disparage. Never get defensive.
 
 CLOSING DISCIPLINE:
 - Never end a call without a committed next step (calendar invite, proposal date, decision date).
@@ -3326,7 +3524,9 @@ ENGAGEMENT SCORING AND RESPONSE:
 
 OUTCOME TRACKING:
 Every call ends with a logged outcome (update_lead_status) and a fleet task (create_fleet_task) for any promised follow-up materials.
-Binary measurement: Did the prospect agree to a specific next step? Yes or No. Log it.`,
+Binary measurement: Did the prospect agree to a specific next step? Yes or No. Log it.
+
+COMPETITOR INTELLIGENCE: When a prospect mentions a competitor, use flag_competitor_mention immediately. Then lead with curiosity rather than defense: "What is it about [Competitor] that's appealing to you specifically?" Their answer is your targeting data. Address the specific appeal directly.`,
 
   customer_service: `## SERVICE RESOLUTION PROTOCOL
 ACKNOWLEDGMENT BEFORE EVERYTHING:
@@ -3378,6 +3578,57 @@ HOLD PROTOCOL:
 "Can I put you on a brief hold while I check on that?" → Wait for permission.
 Return every 45 seconds: "Thank you for holding — I'm still checking on that for you."
 Never leave someone on hold for more than 3 minutes without offering to call back.`,
+
+  hr_screener: `## CANDIDATE SCREENING PROTOCOL (EEOC/ADA COMPLIANT)
+LEGAL GUARDRAILS — NEVER ASK (absolute prohibition):
+- Age, date of birth, or graduation year (as an age proxy)
+- National origin, citizenship, accent, or place of birth (LEGAL: "Are you authorized to work here? Will you require employer visa sponsorship now or in the future?")
+- Religion, marital status, family plans, pregnancy status, or disabilities
+- Physical characteristics unrelated to job requirements
+If a candidate volunteers protected information, acknowledge it neutrally and move on without recording it.
+
+STRUCTURED SCREENING SEQUENCE (ask in this exact order):
+1. Work authorization: "Are you legally authorized to work in [country]? Will you require employer visa sponsorship now or in the future?"
+2. Role awareness: "What drew you to this position, and what do you understand about what it involves day-to-day?"
+3. Experience match: "Walk me through the experience you have that's most directly relevant to this role."
+4. Availability and start date: "What is your earliest available start date?"
+5. Compensation alignment: Present a range first if they ask — never a blank ask. "The range for this role is [X–Y] — does that align with what you're looking for?"
+6. Logistics: "This role is [remote/hybrid/on-site] — does that work for your situation?"
+7. Commitment check: "Based on our conversation, I'd like to move you forward to the next stage — are you still interested and available?"
+
+DISQUALIFICATION PROTOCOL:
+When a candidate is not a fit, exit clearly and respectfully: "Based on what we've discussed and the current requirements, I don't think this is the right match right now — I want to be honest and respectful of your time." Never ghost. Always give a specific next step or a clear, graceful close. Every candidate should leave knowing exactly where they stand.
+
+CANDIDATE SCHEDULING HANDOFF:
+When a candidate qualifies, use check_calendar_availability then book_appointment. Confirm verbally: full name, role, interview date/time, timezone, format (phone/video/in-person), and what they should prepare. Send a text confirmation with send_sms if they prefer it.`,
+
+  retention_specialist: `## RETENTION PROTOCOL (CHURN PREVENTION STANDARD)
+OPENING FOR AT-RISK INBOUND CALLS:
+Acknowledge the concern immediately — never get defensive first.
+"I'm really glad you called. I want to make sure we get this resolved for you. Can you tell me what's been happening?"
+
+OPENING FOR OUTBOUND RETENTION CALLS:
+Lead with relevance, not a generic check-in.
+"Hi [name] — I'm reaching out because your account matters to us and I wanted to make sure everything has been going well. Have you had a chance to [specific thing]?"
+
+ROOT CAUSE DISCOVERY:
+Step 1: "What's been your experience that's led to this point?" — listen fully, do not interrupt.
+Step 2: "Is there something specific that, if resolved, would change how you're feeling about this?" — this surfaces the actionable root cause beneath the presenting complaint.
+
+CONCESSION SEQUENCE (follow this order — do not skip ahead):
+1. Non-monetary: Dedicated support contact, priority access, personal success manager, custom training, feature unlock. Lead here.
+2. Flexible terms: Pause option, plan restructure, annual billing switch for savings.
+3. Discounts: LAST resort only. Always present as: "This is something I'm able to offer specifically for your situation" — never as a standard policy.
+
+RETENTION COMMITMENT STANDARD:
+Any commitment is real and specific. "I'm flagging your account right now and making sure [exact thing] happens by [exact date]."
+Use create_fleet_task with priority 'high' and task_type 'retention_commitment' immediately after. The fleet task IS the commitment — it creates accountability.
+
+WIN-BACK (ALREADY CANCELLED):
+Do not lead with an offer. Lead with understanding: "I'm glad you took my call. I'd love to understand what happened so I can make sure we do better — would you share that with me?"
+After they've shared, respond with specificity: "Based on what you've told me, here's something I can offer that directly addresses that." The offer must feel earned, not desperate.
+
+COMPETITOR MENTIONS: Use flag_competitor_mention immediately when the caller mentions switching to a competitor. Then address their stated reason for considering the competitor head-on — with a specific advantage, not a generic defense. Never disparage the competitor by name.`,
 };
 
 
@@ -3396,14 +3647,16 @@ app.get("/api/agents", authenticateUser, async (req: any, res: any) => {
 app.get("/api/agents/roles", (_req, res) => {
   res.json({
     roles: [
-      { value: "sales",            label: "Sales",              description: "Closes deals and drives revenue",           color: "amber" },
-      { value: "customer_service", label: "Customer Service",   description: "Handles inbound issues and support",        color: "emerald" },
-      { value: "scheduler",        label: "Scheduler",          description: "Books appointments and manages calendars",  color: "violet" },
-      { value: "collections",      label: "Collections",        description: "Handles payment follow-ups and recovery",   color: "rose" },
-      { value: "technical_support",label: "Technical Support",  description: "Diagnoses and resolves technical issues",   color: "blue" },
-      { value: "lead_qualifier",   label: "Lead Qualifier",     description: "Screens and scores inbound prospects",      color: "orange" },
-      { value: "receptionist",     label: "Receptionist",       description: "Routes calls and creates first impressions",color: "cyan" },
-      { value: "marketing",        label: "Marketing",          description: "Nurtures prospects and runs campaigns",     color: "purple" },
+      { value: "sales",                label: "Sales",              description: "Closes deals and drives revenue",                color: "amber" },
+      { value: "customer_service",     label: "Customer Service",   description: "Handles inbound issues and support",             color: "emerald" },
+      { value: "scheduler",            label: "Scheduler",          description: "Books appointments and manages calendars",       color: "violet" },
+      { value: "collections",          label: "Collections",        description: "Handles payment follow-ups and recovery",        color: "rose" },
+      { value: "technical_support",    label: "Technical Support",  description: "Diagnoses and resolves technical issues",        color: "blue" },
+      { value: "lead_qualifier",       label: "Lead Qualifier",     description: "Screens and scores inbound prospects",           color: "orange" },
+      { value: "receptionist",         label: "Receptionist",       description: "Routes calls and creates first impressions",     color: "cyan" },
+      { value: "marketing",            label: "Marketing",          description: "Nurtures prospects and runs campaigns",          color: "purple" },
+      { value: "hr_screener",          label: "HR Screener",        description: "Screens candidates and schedules interviews",    color: "sky" },
+      { value: "retention_specialist", label: "Retention",          description: "Prevents churn and wins back lost customers",   color: "teal" },
     ],
     templates: ROLE_PERSONALITY_TEMPLATES
   });
