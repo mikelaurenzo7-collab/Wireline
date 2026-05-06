@@ -1,10 +1,11 @@
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from "react-router-dom";
-import { Phone, Users, Settings, Activity, MessageSquare, Calendar, PhoneOutgoing, ServerCog, PlugZap, History, Mail, Menu, X, LogOut, User, Terminal, ChevronRight, Zap, Target, Shield, Signal, Globe, Box, LayoutPanelLeft, Database, Command, Sparkles, Waves, Inbox, BarChart3, Loader2, AlertTriangle, PhoneCall, Radio } from "lucide-react";
+import { Phone, Users, Settings, Activity, MessageSquare, Calendar, PhoneOutgoing, ServerCog, PlugZap, History, Mail, Menu, X, LogOut, User, Terminal, ChevronRight, Zap, Target, Shield, Signal, Globe, Box, LayoutPanelLeft, Database, Command, Sparkles, Waves, Inbox, BarChart3, Loader2, AlertTriangle, PhoneCall, Radio, Keyboard } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import AuthPortal from "./components/AuthPortal";
 import CommandBar from "./components/CommandBar";
 import ErrorBoundary from "./components/ErrorBoundary";
+import KeyboardShortcuts from "./components/KeyboardShortcuts";
 import PersonaWizard from "./components/PersonaWizard";
 import ProductTour from "./components/ProductTour";
 import SystemStatusBadge from "./components/SystemStatusBadge";
@@ -96,7 +97,7 @@ function AuroraBackdrop() {
   );
 }
 
-function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) => void }) {
+function Sidebar({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (open: boolean) => void; onShowShortcuts: () => void }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
@@ -290,6 +291,14 @@ function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) =>
               <Terminal className="w-2.5 h-2.5" />
               <span>⌘K  Command</span>
             </div>
+            <button
+              onClick={() => { setOpen(false); onShowShortcuts(); }}
+              className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl text-muted hover:text-ink/70 text-[9px] uppercase tracking-[0.35em] transition-colors w-full"
+            >
+              <Keyboard className="w-3 h-3" />
+              <span>Keyboard shortcuts</span>
+              <span className="ml-auto text-[9px] glass border border-white/10 px-1.5 rounded text-muted">?</span>
+            </button>
           </div>
         </div>
       </aside>
@@ -400,9 +409,56 @@ const PAGE_TITLES: Record<string, string> = {
 
 function AppContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const { user, loading } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!user) return;
+
+    let lastKey = '';
+    let lastKeyTime = 0;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable) return;
+
+      const now = Date.now();
+      const key = e.key.toUpperCase();
+
+      if (e.key === '?' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        setShowShortcuts(prev => !prev);
+        return;
+      }
+
+      if (lastKey === 'G' && now - lastKeyTime < 1500) {
+        e.preventDefault();
+        const routes: Record<string, string> = {
+          D: '/',
+          L: '/logs',
+          T: '/triage',
+          I: '/insights',
+          A: '/agents',
+          R: '/train',
+          O: '/outbound',
+          S: '/admin',
+        };
+        if (routes[key]) {
+          navigate(routes[key]);
+        }
+        lastKey = '';
+        return;
+      }
+
+      lastKey = key;
+      lastKeyTime = now;
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [user, navigate]);
 
   useEffect(() => {
     const label =
@@ -470,7 +526,8 @@ function AppContent() {
       <CommandBar />
       <PersonaWizard />
       <ProductTour />
-      <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
+      <KeyboardShortcuts open={showShortcuts} onClose={() => setShowShortcuts(false)} />
+      <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} onShowShortcuts={() => setShowShortcuts(true)} />
 
       <main className="flex-1 overflow-hidden relative flex flex-col z-10">
          {/* Mobile Header */}
