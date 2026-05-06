@@ -2565,7 +2565,7 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
               .select('id');
 
             // Track successful lead connection for outbound campaigns
-            if (call?.type === "outboundPhoneCall" && updatedLeads?.length ?? 0 > 0) {
+            if (call?.type === "outboundPhoneCall" && (updatedLeads?.length ?? 0) > 0) {
               SentryEvents.leadConnected({
                 agent_id: webhookAgentId,
               });
