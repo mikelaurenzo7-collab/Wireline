@@ -12,6 +12,20 @@ import PageShell, { Panel, StatTile } from "./PageShell";
 
 const POLL_INTERVAL_MS = 10_000;
 
+/**
+ * Sentiment labels emitted by server.ts (conversation-update handler) that
+ * indicate a call is in distress. Must stay in sync with the label strings
+ * set in server.ts around the negativeHits/liveSentimentLabel logic.
+ */
+const DISTRESS_LABEL_PREFIXES = ["⚠", "frustrated"] as const;
+
+/** Returns true when a live signal label indicates a distressed call. */
+function isDistressedLabel(label: string | undefined): boolean {
+  if (!label) return false;
+  const l = label.toLowerCase();
+  return DISTRESS_LABEL_PREFIXES.some(p => l.includes(p.toLowerCase()));
+}
+
 type SignalEntry = {
   id: string;          // call_id
   agent_id: string;
@@ -226,9 +240,7 @@ export default function LiveMonitor() {
         <div className="h-full flex flex-col gap-3 overflow-hidden">
           {/* Distress alert banner — appears when any active call hits frustrated/tense state */}
           {(() => {
-            const distressedCalls = signals.filter(s =>
-              s.label?.includes("⚠") || s.label?.toLowerCase().includes("frustrated")
-            );
+            const distressedCalls = signals.filter(s => isDistressedLabel(s.label));
             if (distressedCalls.length === 0) return null;
             return (
               <motion.div

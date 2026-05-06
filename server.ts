@@ -1188,8 +1188,8 @@ app.post("/api/vapi-webhook", async (req, res) => {
       const customerNumber = message.call?.customer?.number;
       const safeCallerPhone = sanitizePhone(customerNumber);
 
-      // 1. Assemble memory from Supabase (+ pre-load caller history in the same round-trip)
-      const [agentConfig, directivesData, knowledgeData, personalityData, lessonsData, callerHistoryData] = await Promise.all([
+      // 1. Assemble memory from Supabase (+ pre-load caller history and customer intel in the same round-trip)
+      const [agentConfig, directivesData, knowledgeData, personalityData, lessonsData, callerHistoryData, capturedProfileData] = await Promise.all([
         db.from('wireline_agents').select('*').eq('id', webhookAgentId).single(),
         db.from('wireline_directives').select('content, priority').eq('agent_id', webhookAgentId).order('priority', { ascending: false }),
         db.from('wireline_knowledge').select('content').eq('agent_id', webhookAgentId),
@@ -1203,6 +1203,18 @@ app.post("/api/vapi-webhook", async (req, res) => {
               .order('created_at', { ascending: false })
               .limit(3)
           : Promise.resolve({ data: [] }),
+        // Load the most recent customer profile captured in a previous call — gives the
+        // agent immediate access to pain points, budget, timeline, and agreed next steps.
+        safeCallerPhone
+          ? db.from('wireline_fleet_tasks')
+              .select('description, created_at')
+              .eq('agent_id', webhookAgentId)
+              .eq('task_type', 'customer_profile_captured')
+              .ilike('description', `%${safeCallerPhone}%`)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle()
+          : Promise.resolve({ data: null }),
       ]);
 
       // Filter knowledge-gap lessons from runtime injection — they are training signals
@@ -1215,6 +1227,12 @@ app.post("/api/vapi-webhook", async (req, res) => {
       // Build CALLER PROFILE block — pre-loaded so the agent has context from word 1
       const pastCallHistory: any[] = (callerHistoryData as any)?.data || [];
       const callerProfile = buildCallerProfileBlock(pastCallHistory, false);
+
+      // Build CUSTOMER INTEL block from previously captured profile data.
+      // This pre-arms the agent with pain points, budget, timeline, and agreed next
+      // steps from prior calls — no tool call required.
+      const rawProfileDesc = (capturedProfileData as any)?.data?.description || "";
+      const customerIntelBlock = buildCustomerIntelBlock(rawProfileDesc, false);
 
       // TEMPORAL AWARENESS: Inject exact current time so the agent knows what "Today" and "Tomorrow" mean
       const currentDateTime = new Date().toLocaleString('en-US', { timeZone: 'America/New_York', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -1286,6 +1304,8 @@ You are ${agentConfig?.data?.name || 'Wireline Agent'}, a ${agentRole.replace(/_
 ${ambientNoiseActive ? "You are operating from a professional office environment. Speak with focused, professional energy." : ""}
 
 ${callerProfile}
+
+${customerIntelBlock}
 
 ## YOUR PROFESSIONAL CHARACTER & METHOD
 ${personalityData?.data?.content || "You are a highly professional, empathetic, and effective representative who puts the caller's outcome first."}
@@ -2603,6 +2623,30 @@ function buildCallerProfileBlock(pastCalls: any[], isOutbound = false): string {
     `- [${new Date(c.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}] ${(c.direction || "call").toUpperCase()} | Intent: ${c.intent_label || "unknown"} | Tone: ${c.sentiment || "neutral"} | ${c.summary}`
   );
   return `${heading}\n${isOutbound ? "This contact has called before. Review and use naturally:" : "This caller has contact history. Use this immediately — do NOT wait to call view_recent_interactions:"}\n${lines.join("\n")}\n${instruction}\n`;
+}
+
+/**
+ * Extract the intel payload from a customer_profile_captured task description.
+ * Format: "[CUSTOMER PROFILE] <phone> — <intel>"
+ * Splitting on " — " is intentionally simple so the helper stays resilient
+ * to phone number format changes.
+ */
+function extractCapturedProfileIntel(description: string): string {
+  if (!description) return "";
+  const separatorIdx = description.indexOf(" — ");
+  return separatorIdx >= 0 ? description.slice(separatorIdx + 3).trim() : description.trim();
+}
+
+/**
+ * Build a CUSTOMER INTEL block to inject into agent system prompts when a
+ * contact has had profile data captured in a previous call.
+ */
+function buildCustomerIntelBlock(rawDescription: string, isOutbound = false): string {
+  const intel = extractCapturedProfileIntel(rawDescription);
+  if (!intel) return "";
+  return isOutbound
+    ? `## ⚡ CUSTOMER INTEL — FROM PREVIOUS CALLS\n${intel}\nUSE THIS: This contact has shared this intel before. Reference it naturally to show continuity and build immediate trust.`
+    : `## ⚡ CUSTOMER INTEL — FROM PREVIOUS CALLS\n${intel}\nUSE THIS: Weave this context in naturally. It tells you what this contact cares about and where they stand.`;
 }
 
 const VAPI_TOOL_DEFS = {
@@ -4422,7 +4466,7 @@ async function placeOutboundCall(opts: {
 
   // 2. Agent context + caller history pre-load (parallel for speed)
   const safeOutboundPhone = sanitizePhone(customerNumber);
-  const [agentConfig, directivesData, knowledgeData, personalityData, lessonsData, outboundCallerHistory] = await Promise.all([
+  const [agentConfig, directivesData, knowledgeData, personalityData, lessonsData, outboundCallerHistory, outboundCapturedProfile] = await Promise.all([
     db.from('wireline_agents').select('*').eq('id', agentId).single().then(r => r),
     db.from('wireline_directives').select('content, priority').eq('agent_id', agentId).order('priority', { ascending: false }).then(r => r),
     db.from('wireline_knowledge').select('content').eq('agent_id', agentId).then(r => r),
@@ -4436,6 +4480,17 @@ async function placeOutboundCall(opts: {
           .order('created_at', { ascending: false })
           .limit(3)
       : Promise.resolve({ data: [] }),
+    // Pre-load previously captured customer profile intel for this contact.
+    safeOutboundPhone
+      ? db.from('wireline_fleet_tasks')
+          .select('description, created_at')
+          .eq('agent_id', agentId)
+          .eq('task_type', 'customer_profile_captured')
+          .ilike('description', `%${safeOutboundPhone}%`)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
   if (!agentConfig?.data) {
@@ -4451,6 +4506,11 @@ async function placeOutboundCall(opts: {
   // Build caller profile for immediate outbound agent context
   const outboundPastCalls: any[] = (outboundCallerHistory as any)?.data || [];
   const outboundCallerProfile = buildCallerProfileBlock(outboundPastCalls, true);
+
+  // Build CUSTOMER INTEL block from previously captured profile data (outbound path)
+  const outboundRawProfileDesc = (outboundCapturedProfile as any)?.data?.description || "";
+  const outboundCustomerIntelBlock = buildCustomerIntelBlock(outboundRawProfileDesc, true);
+
   const currentDateTime = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
   // Derive the archetype from the agent's role for outbound calls
   const outboundAgentRole = agentConfig?.data?.role || DEFAULT_AGENT_ROLE;
@@ -4500,6 +4560,8 @@ You are ${agentConfig?.data?.name || "a scheduling agent"}, a ${outboundAgentRol
 ${ambientNoiseActive ? "You are operating from a professional office environment. Speak with focused, professional energy." : ""}
 
 ${outboundCallerProfile}
+
+${outboundCustomerIntelBlock}
 
 ## YOUR PROFESSIONAL CHARACTER & METHOD
 ${personalityData?.data?.content || "You are a highly professional, empathetic, and effective representative who puts the caller's outcome first."}

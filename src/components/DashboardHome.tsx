@@ -22,6 +22,10 @@ import { useToast } from "../contexts/ToastContext";
 
 const vapi = new Vapi(import.meta.env.VITE_VAPI_PUBLIC_KEY || "");
 
+/** Lead score thresholds for color-coding hot leads in the Fleet tab. */
+const HOT_LEAD_THRESHOLD = 80;
+const WARM_LEAD_THRESHOLD = 60;
+
 export default function DashboardHome() {
   const { error: toastError } = useToast();
   const [isConnecting, setIsConnecting] = useState(false);
@@ -510,8 +514,8 @@ export default function DashboardHome() {
             <ul className="divide-y divide-white/5">
               {hotLeads.map((lead: any) => {
                 const score = lead.score ?? 0;
-                const isHot = score >= 80;
-                const scoreColor = score >= 80 ? "#10B981" : score >= 60 ? "#0AC8D4" : "#9B59F5";
+                const isHot = score >= HOT_LEAD_THRESHOLD;
+                const scoreColor = score >= HOT_LEAD_THRESHOLD ? "#10B981" : score >= WARM_LEAD_THRESHOLD ? "#0AC8D4" : "#9B59F5";
                 return (
                   <li key={lead.id}>
                     <Link to={lead.type === 'call' ? "/logs" : "/inbox"}
