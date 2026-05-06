@@ -1683,6 +1683,7 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
               let { data: thread } = await db.from('wireline_email_threads').select('*').eq('thread_id', threadKey).single();
               if (!thread) {
                  const { data: newThread } = await db.from('wireline_email_threads').insert({
+                   user_id: agent?.user_id,
                    account_id: account.id,
                    thread_id: threadKey,
                    customer_email: to_email,
@@ -1692,7 +1693,10 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
                  }).select('*').single();
                  thread = newThread;
               }
+              // user_id is required so the message is visible to the operator
+              // through RLS-protected reads in EmailInbox (auth.uid() = user_id).
               await db.from('wireline_email_messages').insert({
+                 user_id: agent?.user_id,
                  thread_id: thread.id,
                  google_message_id: dispatchedId,
                  role: 'ai',
@@ -2078,6 +2082,7 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
         }
 
         await db.from('wireline_call_logs').insert({
+           user_id: agent?.user_id,
            vapi_call_id: call?.id || "unknown",
            agent_id: webhookAgentId,
            direction: call?.type === "outboundPhoneCall" ? "outbound" : "inbound",
