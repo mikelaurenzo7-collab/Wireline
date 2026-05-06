@@ -1183,24 +1183,41 @@ app.post("/api/vapi-webhook", async (req, res) => {
     log.info("Vapi assistant-request", { requestId: res.locals?.requestId, agentId: webhookAgentId });
 
     try {
-      // 1. Assemble memory from Supabase
-      const [agentConfig, directivesData, knowledgeData, personalityData, lessonsData] = await Promise.all([
+      // 0. Extract caller identity early so we can pre-load their history in parallel
+      const isOutbound = message.type === 'outboundPhoneCall' || message.call?.type === 'outboundPhoneCall';
+      const customerNumber = message.call?.customer?.number;
+      const safeCallerPhone = sanitizePhone(customerNumber);
+
+      // 1. Assemble memory from Supabase (+ pre-load caller history in the same round-trip)
+      const [agentConfig, directivesData, knowledgeData, personalityData, lessonsData, callerHistoryData] = await Promise.all([
         db.from('wireline_agents').select('*').eq('id', webhookAgentId).single(),
         db.from('wireline_directives').select('content, priority').eq('agent_id', webhookAgentId).order('priority', { ascending: false }),
         db.from('wireline_knowledge').select('content').eq('agent_id', webhookAgentId),
         db.from('wireline_personality').select('content').eq('agent_id', webhookAgentId).single(),
-        db.from('wireline_agent_lessons').select('lesson').eq('agent_id', webhookAgentId).order('created_at', { ascending: false }).limit(3)
+        db.from('wireline_agent_lessons').select('lesson').eq('agent_id', webhookAgentId).order('created_at', { ascending: false }).limit(MAX_RUNTIME_LESSONS),
+        safeCallerPhone
+          ? db.from('wireline_call_logs')
+              .select('summary, intent_label, sentiment, created_at, direction')
+              .eq('customer_number', safeCallerPhone)
+              .eq('agent_id', webhookAgentId)
+              .order('created_at', { ascending: false })
+              .limit(3)
+          : Promise.resolve({ data: [] }),
       ]);
 
-      const lessons = (lessonsData?.data || []).map((l: any) => l.lesson).join('\n');
+      // Filter knowledge-gap lessons from runtime injection — they are training signals
+      // for the operator to review, not real-time performance hints for the agent.
+      const lessons = (lessonsData?.data || [])
+        .filter((l: any) => l.lesson && typeof l.lesson === 'string' && !l.lesson.startsWith(KNOWLEDGE_GAP_PREFIX))
+        .map((l: any) => l.lesson)
+        .join('\n');
 
+      // Build CALLER PROFILE block — pre-loaded so the agent has context from word 1
+      const pastCallHistory: any[] = (callerHistoryData as any)?.data || [];
+      const callerProfile = buildCallerProfileBlock(pastCallHistory, false);
 
       // TEMPORAL AWARENESS: Inject exact current time so the agent knows what "Today" and "Tomorrow" mean
       const currentDateTime = new Date().toLocaleString('en-US', { timeZone: 'America/New_York', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-
-      // Determine Call Direction and Archetype Behavior
-      const isOutbound = message.type === 'outboundPhoneCall' || message.call?.type === 'outboundPhoneCall';
-      const customerNumber = message.call?.customer?.number;
 
       // 1.5. GET LEAD CONTEXT (OUTBOUND ONLY)
       let leadContext = "";
@@ -1268,6 +1285,8 @@ app.post("/api/vapi-webhook", async (req, res) => {
 You are ${agentConfig?.data?.name || 'Wireline Agent'}, a ${agentRole.replace(/_/g, ' ')} specialist for this company. You are not a chatbot or a phone tree — you are a trained professional operating at the highest level of your role.
 ${ambientNoiseActive ? "You are operating from a professional office environment. Speak with focused, professional energy." : ""}
 
+${callerProfile}
+
 ## YOUR PROFESSIONAL CHARACTER & METHOD
 ${personalityData?.data?.content || "You are a highly professional, empathetic, and effective representative who puts the caller's outcome first."}
 
@@ -1290,7 +1309,7 @@ ${roleProtocol}
 
 ## MEMORY & CONTINUITY
 Today is ${currentDateTime} (Eastern Time). Calculate specific dates when callers reference "tomorrow," "next week," or relative dates — confirm the calculated date back to them explicitly.
-If a caller references a previous interaction or seems to know your company: use the 'view_recent_interactions' tool immediately to retrieve their history before responding. Personalized continuity is a competitive advantage.
+${callerProfile ? "Caller history is already pre-loaded above — use it immediately. You may still call view_recent_interactions mid-call for a live refresh." : "If a caller references a previous interaction or seems to know your company: use the 'view_recent_interactions' tool immediately to retrieve their history before responding. Personalized continuity is a competitive advantage."}
 
 ## CONVERSATION DISCIPLINE
 - Response target: 15–25 words conversationally. Up to 50 words ONLY for multi-detail confirmations (booking summary, payment terms). Never monologue.
@@ -1316,6 +1335,9 @@ When a caller needs documentation, quotes, confirmations, or follow-up info: "I'
 
 LEAD TRACKING (use 'search_leads' and 'update_lead_status' tools):
 Search for existing context before discussing account details. Update the lead status at the END of every commercial interaction — never leave a conversation outcome unlogged.
+
+CALLBACK SCHEDULING (use 'schedule_callback' tool):
+When an inbound caller requests a callback at a specific time, use the schedule_callback tool immediately. Calculate the exact ISO 8601 datetime from what they say. Confirm it back to them: "I have you down for [exact time] — you'll hear from us then."
 
 ## HONESTY & TRUST GUARDRAILS
 If asked something you don't know or isn't in the knowledge base:
@@ -1387,11 +1409,8 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
             
             log.debug("[MEMORY] Fetching history", { customerPhone });
 
-            // Sanitize the phone number before using it in LIKE patterns.
-            // Vapi delivers phone numbers in E.164 format (+15551234567), so only
-            // digits and the leading '+' are valid. Stripping anything else also
-            // prevents LIKE wildcard characters (% _) from manipulating the query.
-            const safePhone = customerPhone.replace(/[^0-9+]/g, '').slice(0, 20);
+            // Use shared sanitizePhone helper — strips wildcards and limits length.
+            const safePhone = sanitizePhone(customerPhone);
 
             // 1. Fetch last 3 call summaries
             const { data: pastCalls } = await db.from('wireline_call_logs')
@@ -1671,7 +1690,7 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
           const { status, notes } = toolCall.function.arguments;
           const customerPhone = payload.call?.customer?.number || message.call?.customer?.number;
           if (customerPhone) {
-            const safePhone = customerPhone.replace(/[^0-9+]/g, '').slice(0, 20);
+            const safePhone = sanitizePhone(customerPhone);
             await db.from('wireline_outbound_leads')
               .update({ status, last_contact_summary: notes || '', last_called_at: new Date() })
               .eq('user_id', agent?.user_id)
@@ -1731,6 +1750,96 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
           results.push({ toolCallId: toolCall.id, result: "Failed to create support ticket. Please note the issue details and file a ticket manually." });
         }
       }
+
+      // TOOL 10: LEAVE VOICEMAIL (outbound — agent has reached an answering machine)
+      if (toolCall.function.name === "leave_voicemail") {
+        try {
+          const { voicemail_message } = toolCall.function.arguments;
+          const customerPhone = payload.call?.customer?.number || message.call?.customer?.number || "Unknown";
+
+          // Log the voicemail attempt as a fleet task so operators know outreach happened
+          await db.from('wireline_fleet_tasks').insert({
+            user_id: agent?.user_id,
+            agent_id: webhookAgentId,
+            task_type: 'voicemail_left',
+            description: `[VOICEMAIL LEFT] ${customerPhone} — Message: "${voicemail_message}"`,
+            source_type: 'phone_call',
+            source_id: message.call?.id || payload.call?.id || "outbound",
+            target_channel: 'manual',
+            priority: 'low',
+            status: 'pending',
+          });
+
+          // Mark the outbound lead as voicemail-left so campaigns don't duplicate.
+          // Exclude terminal statuses so we never overwrite a final outcome.
+          await db.from('wireline_outbound_leads')
+            .update({ status: 'Voicemail-Left', last_called_at: new Date() })
+            .eq('customer_number', customerPhone)
+            .eq('agent_id', webhookAgentId)
+            .not('status', 'in', ['Completed', 'Voicemail-Left', 'Blocked-DNC', 'Failed']);
+
+          results.push({
+            toolCallId: toolCall.id,
+            result: "Voicemail logged. Deliver your message now — speak naturally and end with 'I look forward to connecting with you.' Then say goodbye to conclude the call.",
+          });
+        } catch (e: any) {
+          log.error("Vapi tool: leave_voicemail failed", { agentId: webhookAgentId, error: e?.message || String(e) });
+          results.push({ toolCallId: toolCall.id, result: "Voicemail logged. Deliver your message and say goodbye." });
+        }
+      }
+
+      // TOOL 11: SCHEDULE CALLBACK — agent books a specific date/time for an auto-redial
+      if (toolCall.function.name === "schedule_callback") {
+        try {
+          const { callback_datetime, notes } = toolCall.function.arguments;
+          const customerPhone = payload.call?.customer?.number || message.call?.customer?.number || "Unknown";
+
+          const scheduledAt = new Date(callback_datetime);
+          if (isNaN(scheduledAt.getTime())) throw new Error("Invalid callback datetime provided.");
+
+          const safePhone = sanitizePhone(customerPhone);
+          const friendlyTime = scheduledAt.toLocaleString("en-US", {
+            timeZone: "America/New_York",
+            weekday: "long",
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+          });
+
+          await db.from('wireline_outbound_leads')
+            .update({
+              status: 'Callback-Scheduled',
+              callback_scheduled_at: scheduledAt.toISOString(),
+              last_contact_summary: notes || `Callback scheduled for ${friendlyTime} ET`,
+              last_called_at: new Date(),
+            })
+            .eq('user_id', agent?.user_id)
+            .ilike('customer_number', `%${safePhone}%`)
+            .not('status', 'in', ['Completed', 'Blocked-DNC']);
+
+          // Also log as a fleet task so the operator can see the commitment
+          await db.from('wireline_fleet_tasks').insert({
+            user_id: agent?.user_id,
+            agent_id: webhookAgentId,
+            task_type: 'callback_scheduled',
+            description: `[CALLBACK] ${customerPhone} — ${friendlyTime} ET${notes ? ` — ${notes}` : ''}`,
+            source_type: 'phone_call',
+            source_id: message.call?.id || payload.call?.id || "in-call",
+            target_channel: 'manual',
+            priority: 'medium',
+            status: 'pending',
+          });
+
+          results.push({
+            toolCallId: toolCall.id,
+            result: `Callback confirmed for ${friendlyTime} Eastern Time. The system will automatically call them back. Tell the contact: "I have you scheduled for a callback on ${friendlyTime} Eastern — you'll hear from us then." Then say goodbye.`,
+          });
+        } catch (e: any) {
+          log.error("Vapi tool: schedule_callback failed", { agentId: webhookAgentId, error: e?.message || String(e) });
+          results.push({ toolCallId: toolCall.id, result: "Callback noted — confirm the time to the caller and our team will follow up manually." });
+        }
+      }
     }
     
     res.json({ results });
@@ -1759,6 +1868,31 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
      }
   }
 
+  // LIVE SENTIMENT TRACKING — conversation-update messages carry the running transcript.
+  // Lightweight keyword scan on the last user turns to surface emotional state
+  // in LiveMonitor without an LLM API call on every turn.
+  if (message && message.type === "conversation-update") {
+    const callId = payload.call?.id || message.call?.id;
+    if (callId) {
+      const turns: any[] = message.conversation || message.messages || [];
+      const userTurns = turns.filter((t: any) => t.role === "user").slice(-2);
+      const combined = userTurns.map((t: any) => (t.content || t.message || "").toLowerCase()).join(" ");
+
+      const negativeHits = SENTIMENT_ANGRY_SIGNALS.filter(w => combined.includes(w)).length;
+      const positiveHits = SENTIMENT_POSITIVE_SIGNALS.filter(w => combined.includes(w)).length;
+
+      let liveSentimentLabel = "Live · Active";
+      if (negativeHits >= 2) liveSentimentLabel = "⚠ Frustrated";
+      else if (negativeHits === 1) liveSentimentLabel = "Live · Tense";
+      else if (positiveHits >= 2) liveSentimentLabel = "✓ Positive";
+      else if (positiveHits === 1) liveSentimentLabel = "Live · Engaged";
+
+      await db.from('wireline_signal_presence')
+        .update({ label: liveSentimentLabel })
+        .eq('id', callId);
+    }
+  }
+
   if (message && message.type === "end-of-call-report") {
     log.info("Vapi end-of-call-report received", { requestId: res.locals?.requestId, agentId: webhookAgentId, callId: message.call?.id });
     
@@ -1782,6 +1916,23 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
            transcript: message.transcript || "",
            recording_url: message.recordingUrl || message.stereoRecordingUrl || null
         });
+
+        // Auto-increment attempts on outbound leads when a call completes.
+        // This keeps the attempts counter accurate regardless of whether the
+        // campaign loop incremented it (covers single-dial and retry flows).
+        if (call?.customer?.number && call?.type === "outboundPhoneCall") {
+          const safeNum = sanitizePhone(call.customer.number);
+          if (safeNum) {
+            // Fire-and-forget — never await so errors don't block the main pipeline.
+            (async () => {
+              try {
+                await db.rpc('increment_lead_attempts', { p_phone: safeNum, p_agent_id: webhookAgentId });
+              } catch {
+                // RPC may not exist in older deployments — silent no-op.
+              }
+            })();
+          }
+        }
 
         // ────────────────────────────────────────────────────────────
         //  POST-CALL ENRICHMENT
@@ -2312,6 +2463,51 @@ app.delete("/api/appointments/:id", authenticateUser, async (req: any, res: any)
 // Specialist tools (log_payment_promise, create_support_ticket) are gated to
 // the one role that needs them so the LLM isn't distracted by irrelevant tools.
 // ─────────────────────────────────────────────────────────────────────────────
+
+/** Prefix used to tag knowledge-gap lessons — filtered out of runtime injection. */
+const KNOWLEDGE_GAP_PREFIX = "[KNOWLEDGE GAP]";
+
+/** Number of recent lessons to inject into the live agent system prompt.
+ *  [KNOWLEDGE GAP] lessons are filtered before reaching this limit so all 5
+ *  slots carry actionable coaching notes, not operator-review items. */
+const MAX_RUNTIME_LESSONS = 5;
+
+/** Sentiment keyword arrays — defined at module scope to avoid per-request allocation. */
+const SENTIMENT_ANGRY_SIGNALS = [
+  "angry", "furious", "terrible", "horrible", "ridiculous", "unacceptable",
+  "disgusting", "hate", "sue", "lawyer", "scam", "fraud", "cancel", "refund",
+  "waste", "useless", "incompetent",
+];
+const SENTIMENT_POSITIVE_SIGNALS = [
+  "great", "wonderful", "excellent", "perfect", "love", "thank you", "thanks",
+  "appreciate", "happy", "fantastic", "amazing", "exactly", "that works", "sounds good",
+];
+
+/** Sanitize a phone number for safe use in LIKE patterns and DB queries.
+ *  Strips anything that isn't a digit or leading '+', caps at 20 chars.
+ */
+const MAX_PHONE_LENGTH = 20;
+function sanitizePhone(phone: string | undefined | null): string {
+  return (phone || "").replace(/[^0-9+]/g, "").slice(0, MAX_PHONE_LENGTH);
+}
+
+/** Build the CALLER PROFILE prompt block from a list of past call records.
+ *  Returns an empty string when there is no history so the prompt stays clean.
+ */
+function buildCallerProfileBlock(pastCalls: any[], isOutbound = false): string {
+  if (!pastCalls || pastCalls.length === 0) return "";
+  const heading = isOutbound
+    ? "## ⚡ CONTACT HISTORY — PRE-LOADED"
+    : "## ⚡ CALLER PROFILE — PRE-LOADED";
+  const instruction = isOutbound
+    ? "INSTRUCTION: Reference this naturally. Do not recite it verbatim."
+    : "INSTRUCTION: Reference this history naturally within the first 2 exchanges. Do not recite it verbatim.";
+  const lines = pastCalls.map((c: any) =>
+    `- [${new Date(c.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}] ${(c.direction || "call").toUpperCase()} | Intent: ${c.intent_label || "unknown"} | Tone: ${c.sentiment || "neutral"} | ${c.summary}`
+  );
+  return `${heading}\n${isOutbound ? "This contact has called before. Review and use naturally:" : "This caller has contact history. Use this immediately — do NOT wait to call view_recent_interactions:"}\n${lines.join("\n")}\n${instruction}\n`;
+}
+
 const VAPI_TOOL_DEFS = {
   view_recent_interactions: {
     name: "view_recent_interactions",
@@ -2426,20 +2622,49 @@ const VAPI_TOOL_DEFS = {
       required: ["issue_summary", "severity"],
     },
   },
+  leave_voicemail: {
+    name: "leave_voicemail",
+    description: "Call this tool IMMEDIATELY when you detect you have reached an answering machine or voicemail. After calling it, deliver a concise 15-20 second voicemail and then say goodbye to end the call.",
+    parameters: {
+      type: "object",
+      properties: {
+        voicemail_message: { type: "string", description: "The exact text of the voicemail you are about to leave (15-20 seconds when spoken)." },
+      },
+      required: ["voicemail_message"],
+    },
+  },
+  schedule_callback: {
+    name: "schedule_callback",
+    description: "Schedules an automatic callback for this contact at a specific date and time they requested. Use when the contact says they are busy and asks to be called back later. The system will automatically re-dial them at the promised time — confirm the time to the caller before ending the call.",
+    parameters: {
+      type: "object",
+      properties: {
+        callback_datetime: {
+          type: "string",
+          description: "ISO 8601 datetime for the callback in the contact's local timezone (e.g. '2026-05-07T14:00:00-05:00'). Calculate this from what the caller says — 'Tuesday at 2pm', 'tomorrow morning at 10', 'next Monday afternoon'. Today is injected into your system prompt so you can calculate the correct date.",
+        },
+        notes: {
+          type: "string",
+          description: "Context to include when calling back — what you were discussing, what to follow up on.",
+        },
+      },
+      required: ["callback_datetime", "notes"],
+    },
+  },
 } as const;
 
 type VapiToolName = keyof typeof VAPI_TOOL_DEFS;
 
 // Maps each agent role to the subset of tools it may call during a live call.
 const ROLE_TOOL_SETS: Record<string, VapiToolName[]> = {
-  sales:             ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status"],
-  customer_service:  ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "check_calendar_availability", "book_appointment"],
-  scheduler:         ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "check_calendar_availability", "book_appointment"],
-  collections:       ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "log_payment_promise"],
-  technical_support: ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "create_support_ticket"],
-  lead_qualifier:    ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status"],
-  receptionist:      ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "check_calendar_availability", "book_appointment"],
-  marketing:         ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status"],
+  sales:             ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "leave_voicemail", "schedule_callback"],
+  customer_service:  ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "check_calendar_availability", "book_appointment", "schedule_callback"],
+  scheduler:         ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "check_calendar_availability", "book_appointment", "leave_voicemail", "schedule_callback"],
+  collections:       ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "log_payment_promise", "leave_voicemail", "schedule_callback"],
+  technical_support: ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "create_support_ticket", "schedule_callback"],
+  lead_qualifier:    ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "leave_voicemail", "schedule_callback"],
+  receptionist:      ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "check_calendar_availability", "book_appointment", "schedule_callback"],
+  marketing:         ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "leave_voicemail", "schedule_callback"],
 };
 
 /** Returns the Vapi `functions` array scoped to the given agent role. */
@@ -3632,7 +3857,7 @@ app.post("/api/campaigns/:id/launch", authenticateUser, async (req: any, res: an
     // Verify campaign belongs to user and is not already running.
     const { data: campaign, error: campErr } = await db
       .from('wireline_outbound_campaigns')
-      .select('id, name, agent_id, status')
+      .select('id, name, agent_id, status, call_window_start, call_window_end, max_attempts')
       .eq('id', campaignId)
       .eq('user_id', req.user.id)
       .single();
@@ -3642,7 +3867,7 @@ app.post("/api/campaigns/:id/launch", authenticateUser, async (req: any, res: an
     // Fetch queued leads for this campaign.
     const { data: queued } = await db
       .from('wireline_outbound_leads')
-      .select('id, customer_name, customer_number, context, agent_id')
+      .select('id, customer_name, customer_number, context, agent_id, attempts')
       .eq('campaign_id', campaignId)
       .eq('user_id', req.user.id)
       .eq('status', 'Queued');
@@ -3662,9 +3887,39 @@ app.post("/api/campaigns/:id/launch", authenticateUser, async (req: any, res: an
     // Fire-and-forget: dial sequentially with a configurable gap between calls
     // so the Vapi rate limiter is not hit. The entire async body is wrapped in
     // try/catch so a thrown error always marks the campaign completed/failed.
+    const windowStart = campaign.call_window_start || '09:00';
+    const windowEnd   = campaign.call_window_end   || '21:00';
+
+    /** Returns true when the current UTC hour:minute falls within the operator's
+     *  configured calling window. Both the window strings and the comparison use
+     *  UTC HH:MM so behaviour is consistent regardless of server timezone.
+     *  NOTE: campaigns are memory-volatile — if the server restarts while a loop
+     *  is paused outside the window, the in-flight campaign will not auto-resume.
+     *  Operators can re-launch the campaign from the UI; leads already marked
+     *  'Dialing' will not be double-dialed (status guard prevents re-queue). */
+    function isWithinCallWindow(): boolean {
+      const now = new Date();
+      const hhmm = now.toISOString().slice(11, 16); // "HH:MM" in UTC
+      return hhmm >= windowStart && hhmm <= windowEnd;
+    }
+
     (async () => {
       try {
         for (const lead of queued) {
+          // Respect the operator's call window — pause until we're within it.
+          // Check every 30s rather than calculating exact wait to keep the loop simple.
+          while (!isWithinCallWindow()) {
+            log.info("Campaign paused — outside call window", { campaignId, window: `${windowStart}-${windowEnd}` });
+            await new Promise(resolve => setTimeout(resolve, CALL_WINDOW_CHECK_INTERVAL_MS));
+            // Re-check campaign status in case it was cancelled during the wait
+            const { data: campaignStatus } = await db.from('wireline_outbound_campaigns')
+              .select('status').eq('id', campaignId).single();
+            if (!campaignStatus || campaignStatus.status !== 'running') {
+              log.info("Campaign stopped during window wait", { campaignId });
+              return;
+            }
+          }
+
           try {
             // DNC compliance — skip leads whose number is on the Do Not Call list.
             if (lead.customer_number && await isDncBlocked(req.user.id, lead.customer_number)) {
@@ -3675,6 +3930,18 @@ app.post("/api/campaigns/:id/launch", authenticateUser, async (req: any, res: an
               await new Promise(resolve => setTimeout(resolve, CAMPAIGN_DIAL_SPACING_MS));
               continue;
             }
+
+            // Enforce max_attempts per lead
+            const maxAttempts = campaign.max_attempts || 3;
+            if ((lead.attempts || 0) >= maxAttempts) {
+              log.info("Campaign: lead max_attempts reached — skipping", { leadId: lead.id, attempts: lead.attempts });
+              await db.from('wireline_outbound_leads')
+                .update({ status: 'Max-Attempts' })
+                .eq('id', lead.id);
+              await new Promise(resolve => setTimeout(resolve, CAMPAIGN_DIAL_SPACING_MS));
+              continue;
+            }
+
             const result = await placeOutboundCall({
               userId: req.user.id,
               agentId: lead.agent_id || campaign.agent_id,
@@ -3684,7 +3951,7 @@ app.post("/api/campaigns/:id/launch", authenticateUser, async (req: any, res: an
             });
             const newStatus = result.ok ? 'Dialing' : 'Failed';
             await db.from('wireline_outbound_leads')
-              .update({ status: newStatus, last_called_at: new Date().toISOString(), attempts: 1 })
+              .update({ status: newStatus, last_called_at: new Date().toISOString(), attempts: (lead.attempts || 0) + 1 })
               .eq('id', lead.id);
           } catch (e) {
             log.error("Campaign launch: lead dial failed", { leadId: lead.id, error: (e as any)?.message });
@@ -3909,6 +4176,27 @@ app.get("/api/outbound", authenticateUser, async (req: any, res: any) => {
   }
 });
 
+// Returns upcoming scheduled callbacks for the operator dashboard.
+// Sorted by soonest first, capped at 50 for display purposes.
+// Rate-limited to 30 req/min per user to prevent scraping.
+app.get("/api/callbacks", claudeRateLimiter, authenticateUser, async (req: any, res: any) => {
+  try {
+    const { data, error } = await db
+      .from('wireline_outbound_leads')
+      .select('id, customer_name, customer_number, callback_scheduled_at, last_contact_summary, agent_id, attempts')
+      .eq('user_id', req.user.id)
+      .eq('status', 'Callback-Scheduled')
+      .not('callback_scheduled_at', 'is', null)
+      .order('callback_scheduled_at', { ascending: true })
+      .limit(50);
+    if (error) throw error;
+    res.json({ callbacks: data || [] });
+  } catch (e: any) {
+    log.error("GET /api/callbacks failed", { error: e?.message });
+    res.status(500).json({ error: "Failed to load callbacks." });
+  }
+});
+
 app.delete("/api/outbound/:id", authenticateUser, async (req: any, res: any) => {
   try {
     const { error } = await db.from('wireline_outbound_leads')
@@ -3943,6 +4231,36 @@ type PlaceCallResult = {
   error?: string;
 };
 
+/** Generates a role-appropriate opening line for outbound calls.
+ *  The first 5 words are what the contact hears before deciding to engage —
+ *  these openers are tight, natural, and avoid generic filler phrases.
+ */
+function buildOutboundFirstMessage(role: string, agentName: string, customerName?: string | null): string {
+  const name = agentName || "your representative";
+  // Guard against empty strings and whitespace-only names before splitting
+  const firstName = customerName?.trim() ? customerName.trim().split(" ")[0] : null;
+  const customer = firstName || "there";
+  const hasName = !!firstName;
+  switch (role) {
+    case "collections":
+      // FDCPA-safe: do not disclose debt amount in first message; use first name only for consistency
+      return `Hi, is this ${hasName ? customer : "the account holder"}? This is ${name} calling regarding an account matter. Do you have a moment?`;
+    case "scheduler":
+      return `Hi ${customer}! This is ${name} reaching out about your upcoming appointment. Quick question for you — do you have 30 seconds?`;
+    case "technical_support":
+      return `Hi ${customer}, this is ${name} from our technical team following up on your case. Is now an okay time to troubleshoot?`;
+    case "customer_service":
+      return `Hi ${customer}, this is ${name} — I'm following up personally. Is now a good moment to talk?`;
+    case "lead_qualifier":
+      return `Hi ${customer}, this is ${name}. You'd recently expressed interest in us, and I wanted to connect. Do you have 2 minutes?`;
+    case "marketing":
+      return `Hi ${customer}, it's ${name} — I'm reaching out because I think we have something really relevant for you. Is now an okay time?`;
+    case "sales":
+    default:
+      return `Hi ${customer}, this is ${name} calling. I wanted to reach out personally — do you have 30 seconds?`;
+  }
+}
+
 async function placeOutboundCall(opts: {
   userId: string;
   agentId: string;
@@ -3966,20 +4284,37 @@ async function placeOutboundCall(opts: {
     return { ok: false, status: 400, error: "Platform Error: Master telecom carrier not configured. Please ensure VAPI_PRIVATE_KEY is set in environment secrets." };
   }
 
-  // 2. Agent context
-  const [agentConfig, directivesData, knowledgeData, personalityData, lessonsData] = await Promise.all([
+  // 2. Agent context + caller history pre-load (parallel for speed)
+  const safeOutboundPhone = sanitizePhone(customerNumber);
+  const [agentConfig, directivesData, knowledgeData, personalityData, lessonsData, outboundCallerHistory] = await Promise.all([
     db.from('wireline_agents').select('*').eq('id', agentId).single().then(r => r),
     db.from('wireline_directives').select('content, priority').eq('agent_id', agentId).order('priority', { ascending: false }).then(r => r),
     db.from('wireline_knowledge').select('content').eq('agent_id', agentId).then(r => r),
     db.from('wireline_personality').select('content').eq('agent_id', agentId).single().then(r => r),
-    db.from('wireline_agent_lessons').select('lesson').eq('agent_id', agentId).order('created_at', { ascending: false }).limit(3).then(r => r),
+    db.from('wireline_agent_lessons').select('lesson').eq('agent_id', agentId).order('created_at', { ascending: false }).limit(MAX_RUNTIME_LESSONS).then(r => r),
+    safeOutboundPhone
+      ? db.from('wireline_call_logs')
+          .select('summary, intent_label, sentiment, created_at, direction')
+          .eq('customer_number', safeOutboundPhone)
+          .eq('agent_id', agentId)
+          .order('created_at', { ascending: false })
+          .limit(3)
+      : Promise.resolve({ data: [] }),
   ]);
 
   if (!agentConfig?.data) {
     return { ok: false, status: 404, error: `Agent ${agentId} not found.` };
   }
 
-  const lessons = (lessonsData?.data || []).map((l: any) => l.lesson).join('\n');
+  // Filter knowledge-gap lessons — they are training signals, not runtime hints
+  const lessons = (lessonsData?.data || [])
+    .filter((l: any) => l.lesson && typeof l.lesson === 'string' && !l.lesson.startsWith(KNOWLEDGE_GAP_PREFIX))
+    .map((l: any) => l.lesson)
+    .join('\n');
+
+  // Build caller profile for immediate outbound agent context
+  const outboundPastCalls: any[] = (outboundCallerHistory as any)?.data || [];
+  const outboundCallerProfile = buildCallerProfileBlock(outboundPastCalls, true);
   const currentDateTime = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
   // Derive the archetype from the agent's role for outbound calls
   const outboundAgentRole = agentConfig?.data?.role || DEFAULT_AGENT_ROLE;
@@ -4028,6 +4363,8 @@ async function placeOutboundCall(opts: {
 You are ${agentConfig?.data?.name || "a scheduling agent"}, a ${outboundAgentRole.replace(/_/g, ' ')} specialist making an outbound call.
 ${ambientNoiseActive ? "You are operating from a professional office environment. Speak with focused, professional energy." : ""}
 
+${outboundCallerProfile}
+
 ## YOUR PROFESSIONAL CHARACTER & METHOD
 ${personalityData?.data?.content || "You are a highly professional, empathetic, and effective representative who puts the caller's outcome first."}
 
@@ -4043,6 +4380,13 @@ ${lessons ? `## LEARNED IMPROVEMENTS (APPLY THESE)\nYour previous call analysis 
 
 ${roleProtocol}
 
+## VOICEMAIL PROTOCOL
+If you detect you have reached a voicemail or answering machine (recorded greeting, beep, or "please leave a message"):
+1. IMMEDIATELY call the leave_voicemail tool before speaking.
+2. After the tool responds, deliver a clear, professional voicemail: identify yourself and your company, state the reason for your call in ONE sentence, leave a callback number if available, and close with "I look forward to connecting with you."
+3. Keep the voicemail under 20 seconds total.
+4. Say goodbye naturally to end the call.
+
 ## EMOTIONAL INTELLIGENCE
 - If the contact sounds surprised, annoyed, or busy: acknowledge it immediately ("I know this is unexpected — I'll be brief"). Respect their time.
 - If the contact is warm and engaged: reciprocate the energy. Build rapport before going to the objective.
@@ -4057,8 +4401,10 @@ Today is ${currentDateTime} (Eastern Time). Calculate specific dates for "tomorr
 - If they request a human or supervisor: honor it after the second request using the escalate_to_human tool.
 
 ## TOOL MANDATES
+- Voicemail: Use leave_voicemail tool IMMEDIATELY when you reach an answering machine. Do not start speaking first.
+- Callback scheduling: If the contact asks to be called back at a specific time, use schedule_callback tool immediately. Calculate the exact ISO datetime from what they say and confirm it back to them. "Perfect — I have you down for [exact time]. You'll hear from me then."
 - Email follow-up: If the contact wants information sent: use send_email tool. "I'll send that to you right now — what email?"
-- Lead outcome: Use update_lead_status at the END of every call — never leave the outcome unlogged.
+- Lead outcome: Use update_lead_status at the END of every live call — never leave the outcome unlogged.
 - Tasks: Use create_fleet_task for any promised follow-up that requires human action.
 - Scheduling: Always check_calendar_availability before confirming any slot.
 
@@ -4084,11 +4430,13 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
     customer: { number: customerNumber },
     assistant: {
       name: agentConfig?.data?.name || "Wireline Outbound Agent",
-      firstMessage: agentConfig?.data?.first_message || `Hi ${customerName ? customerName : 'there'}, this is ${agentConfig?.data?.name || 'your representative'} calling.`,
+      firstMessage: agentConfig?.data?.first_message || buildOutboundFirstMessage(outboundAgentRole, agentConfig?.data?.name || "your representative", customerName),
       backgroundSound: agentConfig?.data?.ambient_noise || 'off',
       ...(outboundServerUrl && { serverUrl: outboundServerUrl }),
       serverUrlSecret: process.env.VAPI_WEBHOOK_SECRET,
-      serverMessages: ["tool-calls", "status-update", "end-of-call-report"],
+      // conversation-update is required for live sentiment tracking in LiveMonitor.
+      // status-update drives wireline_signal_presence. end-of-call-report triggers post-call enrichment.
+      serverMessages: ["tool-calls", "status-update", "conversation-update", "end-of-call-report"],
       model: {
         provider: voiceLlmProvider,
         model: voiceLlmModel,
@@ -6700,6 +7048,88 @@ async function processScheduledDailyBriefs() {
   }
 }
 setInterval(processScheduledDailyBriefs, DAILY_BRIEF_TICK_MS).unref?.();
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  SCHEDULED CALLBACK AUTO-DIALER
+//
+//  When an agent uses the schedule_callback tool, the lead is marked
+//  'Callback-Scheduled' with a callback_scheduled_at timestamp.
+//  This background job polls every 60s, finds due callbacks, and re-dials
+//  them automatically — delivering on the promise the agent made.
+// ─────────────────────────────────────────────────────────────────────────────
+const CALLBACK_SCHED_INTERVAL_MS = 60_000; // 1-minute tick balances callback timing precision with DB load
+/** Pause interval used while a campaign waits for its call window to open. */
+const CALL_WINDOW_CHECK_INTERVAL_MS = 30_000; // 30s — short enough to resume promptly when window opens
+let _callbackSchedRunning = false;
+
+async function processScheduledCallbacks(): Promise<void> {
+  if (_callbackSchedRunning) return;
+  _callbackSchedRunning = true;
+  try {
+    const now = new Date();
+
+    // Find leads where callback_scheduled_at is in the past and status is still Callback-Scheduled.
+    // Limit to 10 per tick to avoid hammering Vapi rate limits.
+    const { data: dueLeads } = await db
+      .from('wireline_outbound_leads')
+      .select('id, user_id, agent_id, customer_name, customer_number, last_contact_summary')
+      .eq('status', 'Callback-Scheduled')
+      .lte('callback_scheduled_at', now.toISOString())
+      .limit(10);
+
+    if (!dueLeads || dueLeads.length === 0) return;
+
+    log.info("Callback scheduler: dialing due callbacks", { count: dueLeads.length });
+
+    for (const lead of dueLeads) {
+      try {
+        // Atomically claim the lead by transitioning Callback-Scheduled → Dialing.
+        // If another scheduler tick already claimed it, the filter will match 0
+        // rows and we skip the dial to prevent double-calling.
+        const { data: claimed } = await db.from('wireline_outbound_leads')
+          .update({ status: 'Dialing', last_called_at: now.toISOString() })
+          .eq('id', lead.id)
+          .eq('status', 'Callback-Scheduled') // race guard
+          .select('id');
+
+        if (!claimed || claimed.length === 0) {
+          log.info("Callback scheduler: lead already claimed — skipping", { leadId: lead.id });
+          continue;
+        }
+
+        const context = lead.last_contact_summary
+          ? `CALLBACK (as promised): ${lead.last_contact_summary}`
+          : "This is an automatic callback as promised during our last call.";
+
+        const result = await placeOutboundCall({
+          userId: lead.user_id,
+          agentId: lead.agent_id,
+          customerName: lead.customer_name,
+          customerNumber: lead.customer_number,
+          context,
+        });
+
+        if (!result.ok) {
+          // Revert to Failed so operator can see it
+          await db.from('wireline_outbound_leads')
+            .update({ status: 'Failed' })
+            .eq('id', lead.id);
+          log.warn("Callback scheduler: dial failed", { leadId: lead.id, error: result.error });
+        }
+      } catch (e: any) {
+        log.error("Callback scheduler: lead error", { leadId: lead.id, error: e?.message });
+        await db.from('wireline_outbound_leads')
+          .update({ status: 'Failed' })
+          .eq('id', lead.id);
+      }
+    }
+  } catch (err: any) {
+    log.error("Callback scheduler tick failed", { error: err?.message || String(err) });
+  } finally {
+    _callbackSchedRunning = false;
+  }
+}
+setInterval(processScheduledCallbacks, CALLBACK_SCHED_INTERVAL_MS).unref?.();
 
 // Settings: GET / PUT for the daily-brief schedule. Defaults are
 // reasonable: 13:00 UTC (~9am ET / 6am PT), recipient = user's email,

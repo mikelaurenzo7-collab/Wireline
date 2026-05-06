@@ -734,3 +734,58 @@ DO $$ BEGIN
         EXECUTE 'CREATE POLICY "Users can manage their own onboarding progress" ON wireline_onboarding_progress FOR ALL USING (auth.uid() = user_id)';
     END IF;
 END $$;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Agent Performance Improvements — 2026-05-06
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- Live sentiment label for active calls (populated by conversation-update webhooks).
+-- Values: "Live · Active" | "Live · Engaged" | "Live · Tense" | "✓ Positive" | "⚠ Frustrated"
+ALTER TABLE wireline_signal_presence ADD COLUMN IF NOT EXISTS label TEXT DEFAULT 'Live · Active';
+
+-- Voicemail-Left is a valid outbound lead status (set by leave_voicemail tool).
+-- No schema change needed — wireline_outbound_leads.status is free-text.
+
+-- Index for lesson filtering (knowledge-gap lessons excluded from runtime injection).
+-- Existing wireline_agent_lessons table — add index to speed up lesson lookups.
+CREATE INDEX IF NOT EXISTS wireline_agent_lessons_agent_created_idx
+    ON wireline_agent_lessons(agent_id, created_at DESC);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Scheduled Callbacks — 2026-05-06
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- When an agent uses schedule_callback tool, the lead gets this timestamp.
+-- The background scheduler polls for lte(now()) and auto-dials.
+ALTER TABLE wireline_outbound_leads ADD COLUMN IF NOT EXISTS callback_scheduled_at TIMESTAMPTZ;
+CREATE INDEX IF NOT EXISTS wireline_outbound_leads_callback_idx
+    ON wireline_outbound_leads(status, callback_scheduled_at)
+    WHERE status = 'Callback-Scheduled';
+
+-- Campaigns: max_attempts and call_window columns are already in the schema.
+-- Add Max-Attempts as a recognised terminal status (documentation only).
+
+-- Increment attempts safely without a read-modify-write race.
+-- Called by the end-of-call-report handler after every outbound call completion.
+CREATE OR REPLACE FUNCTION increment_lead_attempts(p_phone TEXT, p_agent_id TEXT)
+RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+  -- Strip all non-digit characters except leading '+' so the comparison is
+  -- safe and consistent with how customer_number is stored in the table.
+  clean_phone TEXT := regexp_replace(p_phone, '[^0-9+]', '', 'g');
+  digits_only TEXT;
+BEGIN
+  -- Compute the digit-only form once to avoid a redundant regexp in the guard.
+  digits_only := regexp_replace(clean_phone, '[^0-9]', '', 'g');
+  -- Validate input to prevent misuse — phone must contain at least 7 digits.
+  IF clean_phone IS NULL OR length(digits_only) < 7 THEN
+    RETURN;
+  END IF;
+
+  UPDATE wireline_outbound_leads
+  SET attempts = COALESCE(attempts, 0) + 1
+  WHERE regexp_replace(customer_number, '[^0-9+]', '', 'g') = clean_phone
+    AND agent_id = p_agent_id
+    AND status NOT IN ('Completed', 'Blocked-DNC', 'Max-Attempts');
+END;
+$$;

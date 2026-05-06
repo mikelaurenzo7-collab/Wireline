@@ -63,9 +63,47 @@ function WallClock() {
   );
 }
 
+/** Color-coded sentiment badge for live calls */
+function SentimentBadge({ label, status }: { label?: string; status?: string }) {
+  const text = label || status || "Live";
+  if (text.includes("Frustrated")) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] uppercase tracking-[0.25em] bg-rose-500/15 border border-rose-500/30 text-rose-400">
+        <span className="w-1 h-1 rounded-full bg-rose-400 animate-pulse" />
+        {text}
+      </span>
+    );
+  }
+  if (text.includes("Tense")) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] uppercase tracking-[0.25em] bg-amber-500/15 border border-amber-500/30 text-amber-400">
+        <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
+        {text}
+      </span>
+    );
+  }
+  if (text.includes("Positive")) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] uppercase tracking-[0.25em] bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+        <span className="w-1 h-1 rounded-full bg-emerald-400" />
+        {text}
+      </span>
+    );
+  }
+  if (text.includes("Engaged")) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] uppercase tracking-[0.25em] bg-cyan-500/15 border border-cyan-500/30 text-cyan-400">
+        <span className="w-1 h-1 rounded-full bg-cyan-400" />
+        {text}
+      </span>
+    );
+  }
+  // Default: aurora badge
+  return <span className="badge-aurora">{text}</span>;
+}
+
 /** Animated ring for an active call */
-function PulseRing({ size = 40 }: { size?: number }) {
-  return (
+function PulseRing({ size = 40 }: { size?: number }) {  return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       {/* Outer animated ring 1 */}
       <div
@@ -252,7 +290,7 @@ export default function LiveMonitor() {
                                 <span className="font-display italic text-base text-ink leading-none">
                                   {sig.customer_number || "Unknown"}
                                 </span>
-                                <span className="badge-aurora">{sig.label || sig.status}</span>
+                                <SentimentBadge label={sig.label} status={sig.status} />
                               </div>
                               <div className="flex items-center gap-3 text-[9px] text-muted/60 mt-0.5">
                                 <span className="inline-flex items-center gap-1">
