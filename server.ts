@@ -6464,10 +6464,11 @@ app.get("/api/agents/:id/lessons", authenticateUser, async (req: any, res: any) 
 app.post("/api/agents/:id/promote", authenticateUser, async (req: any, res: any) => {
    try {
       const { lessonId, content } = req.body;
+      const agentId = req.params.id;
       // Insert into wireline_directives (the table that agent-config reads from).
       // Priority 5 = medium on the 1-10 scale used throughout the app.
       const { error: promoError } = await db.from('wireline_directives').insert({
-         agent_id: req.params.id,
+         agent_id: agentId,
          content: content,
          priority: 5,
          user_id: req.user.id
@@ -6478,7 +6479,13 @@ app.post("/api/agents/:id/promote", authenticateUser, async (req: any, res: any)
       await db.from('wireline_agent_lessons').delete()
          .eq('id', lessonId)
          .eq('user_id', req.user.id);
-      
+
+      // Track agent optimization when lessons are promoted to directives
+      SentryEvents.agentOptimized({
+        agent_id: agentId,
+        metric_improved: 'instruction_baseline',
+      });
+
       res.json({ success: true });
    } catch (e) {
       res.status(500).json({ error: "Promotion failed" });
