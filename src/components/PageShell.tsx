@@ -60,62 +60,90 @@ export default function PageShell({
     <div className="h-full w-full flex flex-col overflow-hidden">
       {/* Header */}
       <motion.header
-        initial={{ y: -8, opacity: 0 }}
+        initial={{ y: -10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-        className="shrink-0 flex items-end justify-between gap-6 pb-4 mb-4 border-b border-white/10"
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        className="shrink-0 pb-5 mb-1"
       >
-        <div className="min-w-0">
-          {eyebrow && (
-            <p className="text-[9px] uppercase tracking-[0.48em] text-muted/80 mb-2 truncate">
-              {eyebrow}
-            </p>
-          )}
-          <h1 className="font-display italic text-3xl md:text-4xl lg:text-5xl leading-[0.92] tracking-tight text-ink truncate">
-            <span className="text-aurora">{title}</span>
-          </h1>
-          {subtitle && (
-            <p className="text-[11px] text-muted/80 mt-2 truncate max-w-2xl leading-relaxed">
-              {subtitle}
-            </p>
+        {/* eyebrow + actions row */}
+        <div className="flex items-start justify-between gap-6 mb-3">
+          <div className="min-w-0 flex-1">
+            {eyebrow && (
+              <div className="flex items-center gap-2 mb-2.5">
+                <span className="hero-accent-line shrink-0" />
+                <p className="text-[9px] uppercase tracking-[0.52em] text-muted/70 truncate">
+                  {eyebrow}
+                </p>
+              </div>
+            )}
+            <h1 className="font-display italic leading-[0.88] tracking-tight text-ink truncate"
+              style={{ fontSize: "clamp(2rem, 4vw, 3.25rem)" }}
+            >
+              <span className="text-aurora">{title}</span>
+            </h1>
+            {subtitle && (
+              <p className="text-[11px] text-muted/70 mt-2.5 max-w-2xl leading-relaxed truncate">
+                {subtitle}
+              </p>
+            )}
+          </div>
+
+          {actions && (
+            <div className="shrink-0 flex items-center gap-2 pt-1">{actions}</div>
           )}
         </div>
 
-        {actions && (
-          <div className="shrink-0 flex items-center gap-2">{actions}</div>
-        )}
+        {/* Gradient separator line */}
+        <div className="h-px" style={{
+          background: "linear-gradient(90deg, rgba(125,249,255,0.25) 0%, rgba(197,139,255,0.20) 40%, rgba(255,107,217,0.15) 70%, transparent 100%)"
+        }} />
       </motion.header>
 
       {/* Tab strip */}
       {tabs && tabs.length > 0 && (
-        <div className="shrink-0 flex items-center gap-1.5 mb-4 overflow-x-auto scrollbar-hide">
-          {tabs.map(tab => {
-            const Icon = tab.icon;
-            const active = tab.id === activeId;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveId(tab.id)}
-                className={cn(
-                  "shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-full transition-all border text-[11px] uppercase tracking-[0.24em]",
-                  active
-                    ? "bg-white/10 border-brand/50 text-ink ring-aurora shadow-lg"
-                    : "bg-transparent border-white/8 text-muted hover:text-ink hover:border-white/25"
-                )}
-              >
-                {Icon && <Icon className={cn("w-3.5 h-3.5", active ? "text-brand" : "")} />}
-                <span>{tab.label}</span>
-                {tab.badge != null && tab.badge !== 0 && (
-                  <span className={cn(
-                    "ml-1 px-2 py-0.5 rounded-full text-[9px] font-mono leading-none",
-                    active ? "bg-brand/25 text-brand" : "bg-white/8 text-muted"
-                  )}>
-                    {tab.badge}
+        <div className="shrink-0 flex items-center gap-1 mb-4 overflow-x-auto scrollbar-hide">
+          <div className="flex items-center gap-1 p-1 rounded-2xl glass border border-white/8">
+            {tabs.map(tab => {
+              const Icon = tab.icon;
+              const active = tab.id === activeId;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveId(tab.id)}
+                  className={cn(
+                    "relative shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all text-[10px] uppercase tracking-[0.22em] font-medium",
+                    active
+                      ? "text-paper"
+                      : "text-muted hover:text-ink hover:bg-white/5"
+                  )}
+                >
+                  {active && (
+                    <motion.div
+                      layoutId="tab-active-bg"
+                      className="absolute inset-0 rounded-xl"
+                      style={{
+                        background: "linear-gradient(135deg, #7DF9FF 0%, #C58BFF 55%, #FF6BD9 100%)",
+                        boxShadow: "0 4px 16px -8px rgba(125,249,255,0.6), 0 0 0 1px rgba(255,255,255,0.18) inset"
+                      }}
+                      transition={{ type: "spring", stiffness: 420, damping: 36 }}
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center gap-1.5">
+                    {Icon && <Icon className="w-3 h-3" />}
+                    {tab.label}
+                    {tab.badge != null && tab.badge !== 0 && (
+                      <span className={cn(
+                        "ml-0.5 px-1.5 py-px rounded-full text-[8px] font-mono leading-none",
+                        active ? "bg-white/20 text-paper" : "bg-white/8 text-muted"
+                      )}>
+                        {tab.badge}
+                      </span>
+                    )}
                   </span>
-                )}
-              </button>
-            );
-          })}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -124,9 +152,9 @@ export default function PageShell({
         {tabs && activeTab ? (
           <motion.div
             key={activeTab.id}
-            initial={{ opacity: 0, y: 6 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
             className="h-full w-full"
           >
             {activeTab.content}
@@ -154,37 +182,54 @@ interface PanelProps {
   bodyClassName?: string;
   /** Render the body without padding (e.g. tables/audio). */
   flush?: boolean;
+  /** Accent color for the icon bg glow. */
+  accent?: string;
 }
 
 export function Panel({
   title, hint, actions, icon: Icon, scroll = false, children,
-  className, bodyClassName, flush = false,
+  className, bodyClassName, flush = false, accent = "#7DF9FF",
 }: PanelProps) {
   return (
     <section
       className={cn(
-        "relative rounded-2xl glass border border-white/10 flex flex-col h-full min-h-0 overflow-hidden shadow-2xl",
+        "relative rounded-2xl glass border border-white/8 flex flex-col h-full min-h-0 overflow-hidden",
         className
       )}
       style={{
-        boxShadow: "0 1px 0 rgba(255, 255, 255, 0.08) inset, 0 0 0 1px rgba(125, 249, 255, 0.04), 0 20px 60px -20px rgba(0, 0, 0, 0.7), 0 8px 24px -8px rgba(125, 249, 255, 0.15)"
+        boxShadow: "0 1px 0 rgba(255,255,255,0.07) inset, 0 0 0 1px rgba(125,249,255,0.04), 0 24px 72px -24px rgba(0,0,0,0.75), 0 8px 32px -12px rgba(125,249,255,0.12)"
       }}
     >
+      {/* Subtle ambient glow behind header */}
+      {Icon && (
+        <div
+          className="absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none opacity-20 blur-3xl"
+          style={{ background: `radial-gradient(circle, ${accent}, transparent)` }}
+        />
+      )}
+
       {(title || actions) && (
-        <header className="shrink-0 px-4 py-3 flex items-center justify-between gap-3 border-b border-white/10">
+        <header className="relative shrink-0 px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
             {Icon && (
-              <div className="w-8 h-8 rounded-lg glass border border-white/12 flex items-center justify-center text-brand shrink-0">
-                <Icon className="w-4 h-4" />
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-white/10"
+                style={{
+                  background: `linear-gradient(135deg, ${accent}22, ${accent}08)`,
+                  color: accent,
+                  boxShadow: `0 0 12px ${accent}30`
+                }}
+              >
+                <Icon className="w-3.5 h-3.5" />
               </div>
             )}
             {title && (
-              <h3 className="font-display italic text-base md:text-lg text-ink leading-none truncate">
+              <h3 className="font-display italic text-base text-ink leading-none truncate">
                 {title}
               </h3>
             )}
             {hint && (
-              <span className="text-[9px] uppercase tracking-[0.32em] text-muted/70 truncate ml-1">
+              <span className="text-[9px] uppercase tracking-[0.30em] text-muted/60 truncate ml-1">
                 {hint}
               </span>
             )}
@@ -192,10 +237,18 @@ export function Panel({
           {actions && <div className="shrink-0 flex items-center gap-1.5">{actions}</div>}
         </header>
       )}
+
+      {/* Header separator */}
+      {(title || actions) && (
+        <div className="shrink-0 mx-4 h-px" style={{
+          background: "linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.10) 40%, rgba(255,255,255,0.04))"
+        }} />
+      )}
+
       <div
         className={cn(
           "flex-1 min-h-0",
-          scroll ? "overflow-y-auto" : "overflow-hidden",
+          scroll ? "overflow-y-auto panel-scroll" : "overflow-hidden",
           !flush && "p-4",
           bodyClassName
         )}
@@ -208,34 +261,65 @@ export function Panel({
 
 /* Compact stat tile — drop-in for hero metric grids.  */
 export function StatTile({
-  label, value, sub, icon: Icon, accent = "#7DF9FF",
+  label, value, sub, icon: Icon, accent = "#7DF9FF", trend,
 }: {
   label: string;
   value: ReactNode;
   sub?: string;
   icon?: React.ComponentType<{ className?: string }>;
   accent?: string;
+  trend?: { value: number; label?: string };
 }) {
+  const trendPositive = trend && trend.value >= 0;
   return (
-    <div className="relative rounded-xl glass border border-white/10 p-4 overflow-hidden shadow-lg">
+    <div className="relative rounded-2xl glass border border-white/8 p-5 overflow-hidden card-interactive">
+      {/* Ambient glow */}
       <div
-        className="absolute -top-8 -right-8 w-28 h-28 rounded-full opacity-30 blur-3xl pointer-events-none"
+        className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-25 blur-3xl pointer-events-none"
         style={{ background: `radial-gradient(circle, ${accent}, transparent)` }}
       />
-      <div className="relative flex items-start justify-between mb-2.5">
-        <p className="text-[9px] uppercase tracking-[0.32em] text-muted font-medium">{label}</p>
-        {Icon && (
-          <div className="w-7 h-7 rounded-lg glass border border-white/12 flex items-center justify-center" style={{ color: accent }}>
-            <Icon className="w-3.5 h-3.5" />
-          </div>
-        )}
+      {/* Bottom gradient line */}
+      <div
+        className="absolute bottom-0 left-0 right-0 h-px opacity-60"
+        style={{ background: `linear-gradient(90deg, transparent, ${accent}55, transparent)` }}
+      />
+
+      <div className="relative">
+        <div className="flex items-start justify-between mb-3">
+          <p className="text-[9px] uppercase tracking-[0.38em] text-muted font-medium leading-none">
+            {label}
+          </p>
+          {Icon && (
+            <div
+              className="w-7 h-7 rounded-lg flex items-center justify-center border border-white/8 shrink-0"
+              style={{
+                background: `linear-gradient(135deg, ${accent}20, ${accent}06)`,
+                color: accent,
+              }}
+            >
+              <Icon className="w-3.5 h-3.5" />
+            </div>
+          )}
+        </div>
+
+        <div className="font-display italic text-3xl md:text-4xl text-ink leading-none tracking-tight truncate mb-2">
+          {value}
+        </div>
+
+        <div className="flex items-center gap-2">
+          {sub && (
+            <p className="text-[9px] uppercase tracking-[0.28em] text-muted truncate flex-1">{sub}</p>
+          )}
+          {trend && (
+            <span className={cn(
+              "shrink-0 text-[9px] font-mono font-medium",
+              trendPositive ? "text-emerald-400" : "text-rose-400"
+            )}>
+              {trendPositive ? "↑" : "↓"} {Math.abs(trend.value)}%
+            </span>
+          )}
+        </div>
       </div>
-      <div className="font-display italic text-2xl md:text-3xl lg:text-4xl text-ink leading-none tracking-tight truncate">
-        {value}
-      </div>
-      {sub && (
-        <p className="text-[9px] uppercase tracking-[0.32em] text-muted mt-2 truncate">{sub}</p>
-      )}
     </div>
   );
 }
