@@ -6500,6 +6500,12 @@ function claudeErr(res: any, e: any) {
     });
   }
   log.error("Claude endpoint error", { error: e?.message || String(e) });
+  // Track API errors in Sentry for operational visibility
+  SentryEvents.apiError({
+    endpoint: '/api/claude/*',
+    status: 500,
+    error_type: e?.name || 'ClaudeError',
+  });
   return res.status(500).json({ error: e?.message ?? "Claude error" });
 }
 
