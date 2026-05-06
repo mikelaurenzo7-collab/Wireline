@@ -4086,6 +4086,15 @@ app.post("/api/campaigns/:id/launch", authenticateUser, async (req: any, res: an
     (async () => {
       try {
         for (const lead of queued) {
+          // Honor stop requests between leads — operator may have hit the Stop
+          // button via POST /api/campaigns/:id/stop while the loop was running.
+          const { data: campaignCheck } = await db.from('wireline_outbound_campaigns')
+            .select('status').eq('id', campaignId).single();
+          if (!campaignCheck || campaignCheck.status !== 'running') {
+            log.info("Campaign stopped by operator between leads", { campaignId });
+            return;
+          }
+
           // Respect the operator's call window — pause until we're within it.
           // Check every 30s rather than calculating exact wait to keep the loop simple.
           while (!isWithinCallWindow()) {
@@ -4194,6 +4203,33 @@ app.post("/api/campaigns/:id/retry-failed", authenticateUser, async (req: any, r
   } catch (error: any) {
     log.error("Retry failed leads error", { error: error?.message });
     res.status(500).json({ error: "Failed to retry leads." });
+  }
+});
+
+// Stop a running campaign — sets status back to 'paused' so the async
+// loop's inter-lead status check will halt it cleanly within one dial cycle.
+app.post("/api/campaigns/:id/stop", authenticateUser, async (req: any, res: any) => {
+  try {
+    const campaignId = req.params.id;
+    const { data: campaign, error: campErr } = await db
+      .from('wireline_outbound_campaigns')
+      .select('id, status')
+      .eq('id', campaignId)
+      .eq('user_id', req.user.id)
+      .single();
+    if (campErr || !campaign) return res.status(404).json({ error: "Campaign not found." });
+    if (campaign.status !== 'running') {
+      return res.status(409).json({ error: "Campaign is not currently running." });
+    }
+    const { error } = await db.from('wireline_outbound_campaigns')
+      .update({ status: 'paused', updated_at: new Date().toISOString() })
+      .eq('id', campaignId)
+      .eq('user_id', req.user.id);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (error: any) {
+    log.error("Campaign stop failed", { error: error?.message });
+    res.status(500).json({ error: "Failed to stop campaign." });
   }
 });
 
@@ -8964,6 +9000,80 @@ app.post("/api/qa/score/:callId", authenticateUser, withAudit("qa"), async (req:
   }
 });
 
+// Batch-score all unscored calls (or up to `limit`) for the authenticated user.
+// Runs with concurrency=3 to avoid hammering Claude. Returns scored/skipped/failed counts.
+app.post("/api/qa/score-batch", authenticateUser, claudeRateLimiter, withAudit("qa"), async (req: any, res: any) => {
+  if (!claudeBrain.isClaudeAvailable()) {
+    return res.status(503).json({ error: "Claude is not configured." });
+  }
+  try {
+    const limit = Math.min(50, Math.max(1, parseInt(String(req.body.limit || "20"), 10)));
+    const days  = req.body.days ? Math.min(90, Math.max(1, parseInt(String(req.body.days), 10))) : undefined;
+    const since = days ? new Date(Date.now() - days * 86_400_000).toISOString() : undefined;
+
+    let query = db
+      .from("wireline_call_logs")
+      .select("id, summary, transcript, sentiment, direction, duration_seconds, agent_id, wireline_agents(role)")
+      .eq("user_id", req.user.id)
+      .is("qa_score", null)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (since) query = query.gte("created_at", since);
+
+    const { data: calls, error } = await query;
+    if (error) throw error;
+    if (!calls || calls.length === 0) {
+      return res.json({ scored: 0, skipped: 0, failed: 0, total: 0 });
+    }
+
+    const QA_DIMENSIONS = ["greeting", "discovery", "solution", "objection", "closing"] as const;
+    const CONCURRENCY = 3;
+    let scored = 0, skipped = 0, failed = 0;
+
+    // Simple semaphore — process at most CONCURRENCY calls simultaneously.
+    const sem = Array.from({ length: CONCURRENCY }, () => Promise.resolve());
+    let slotIdx = 0;
+
+    const tasks = calls.map((call: any) => {
+      const slot = slotIdx % CONCURRENCY;
+      slotIdx++;
+      return (sem[slot] = sem[slot].then(async () => {
+        try {
+          if (!call.transcript && !call.summary) { skipped++; return; }
+          const agentRole: string | undefined = (call as any).wireline_agents?.role ?? undefined;
+          const breakdown = await claudeBrain.qaScore({
+            direction: (call.direction || "inbound") as "inbound" | "outbound",
+            agentRole,
+            summary: call.summary || "",
+            transcript: call.transcript || "",
+            sentiment: call.sentiment || "neutral",
+            durationSeconds: call.duration_seconds,
+          });
+          const score = Math.min(
+            100,
+            Math.max(0, QA_DIMENSIONS.reduce((s, d) => s + (Number(breakdown[d]) || 0), 0))
+          );
+          const updatePayload: any = { qa_score: score, qa_breakdown: breakdown };
+          if (breakdown.coaching_note) updatePayload.coaching_note = breakdown.coaching_note;
+          await db.from("wireline_call_logs")
+            .update(updatePayload)
+            .eq("id", call.id)
+            .eq("user_id", req.user.id);
+          scored++;
+        } catch {
+          failed++;
+        }
+      }));
+    });
+
+    await Promise.all(tasks);
+    res.json({ scored, skipped, failed, total: calls.length });
+  } catch (e: any) {
+    log.error("Batch QA scoring failed", { error: e?.message });
+    res.status(500).json({ error: "Batch QA scoring failed." });
+  }
+});
+
 // Aggregate QA stats for the Insights Quality tab.
 app.get("/api/qa/stats", authenticateUser, async (req: any, res: any) => {
   try {
@@ -9053,6 +9163,7 @@ app.get("/api/nav-counts", authenticateUser, async (req: any, res: any) => {
       { count: triageCount },
       { count: emailCount },
       { count: outboundCount },
+      { data: liveSignals },
     ] = await Promise.all([
       // Triage: pending fleet tasks (any type)
       db.from("wireline_fleet_tasks")
@@ -9069,17 +9180,27 @@ app.get("/api/nav-counts", authenticateUser, async (req: any, res: any) => {
         .select("id", { count: "exact", head: true })
         .eq("user_id", userId)
         .eq("status", "queued"),
+      // Live: active calls whose sentiment label indicates distress ("⚠ Frustrated")
+      db.from("wireline_signal_presence")
+        .select("label")
+        .eq("user_id", userId),
     ]);
 
+    // Count signals whose label starts with the distress prefix (⚠).
+    const distressedCount = (liveSignals ?? []).filter(
+      (s: any) => typeof s.label === "string" && s.label.startsWith("⚠")
+    ).length;
+
     res.json({
-      "/triage":   triageCount  ?? 0,
-      "/inbox":    emailCount   ?? 0,
-      "/outbound": outboundCount ?? 0,
+      "/triage":   triageCount    ?? 0,
+      "/inbox":    emailCount     ?? 0,
+      "/outbound": outboundCount  ?? 0,
+      "/live":     distressedCount,
     });
   } catch (e) {
     // Never 500 on a non-critical badge endpoint
     log.warn("nav-counts failed", { error: e instanceof Error ? e.message : String(e) });
-    res.json({ "/triage": 0, "/inbox": 0, "/outbound": 0 });
+    res.json({ "/triage": 0, "/inbox": 0, "/outbound": 0, "/live": 0 });
   }
 });
 

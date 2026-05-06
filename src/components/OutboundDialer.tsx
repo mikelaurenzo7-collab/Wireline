@@ -33,6 +33,7 @@ export default function OutboundDialer() {
   const [uploadStats, setUploadStats] = useState("");
   const [isDeletingLead, setIsDeletingLead] = useState<number | string | null>(null);
   const [launchingCampaignId, setLaunchingCampaignId] = useState<string | null>(null);
+  const [stoppingCampaignId, setStoppingCampaignId] = useState<string | null>(null);
 
   // Campaign state
   const [campaigns, setCampaigns] = useState<any[]>([]);
@@ -159,6 +160,21 @@ export default function OutboundDialer() {
       toastError("Launch failed", e.message);
     }
     setLaunchingCampaignId(null);
+  };
+
+  const stopCampaign = async (campaignId: string) => {
+    setStoppingCampaignId(campaignId);
+    try {
+      const res = await authFetch(`/api/campaigns/${campaignId}/stop`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      toastSuccess("Campaign stopped", "Dialing will halt after the current lead.");
+      setCampaigns(prev => prev.map(c => c.id === campaignId ? { ...c, status: 'paused' } : c));
+      if (selectedCampaign?.id === campaignId) setSelectedCampaign((p: any) => ({ ...p, status: 'paused' }));
+    } catch (e: any) {
+      toastError("Stop failed", e.message);
+    }
+    setStoppingCampaignId(null);
   };
 
   const retryFailedLeads = async (campaignId: string) => {
@@ -802,6 +818,19 @@ export default function OutboundDialer() {
                       ? <Loader2 className="w-3 h-3 animate-spin" />
                       : <Rocket className="w-3 h-3" />}
                     Launch
+                  </button>
+                )}
+                {/* Stop button — halts a running campaign after the current lead finishes */}
+                {selectedCampaign.status === "running" && (
+                  <button
+                    onClick={() => stopCampaign(selectedCampaign.id)}
+                    disabled={stoppingCampaignId === selectedCampaign.id}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500/15 border border-rose-500/40 text-rose-400 text-[10px] uppercase tracking-[0.25em] hover:bg-rose-500/25 transition-colors disabled:opacity-50"
+                  >
+                    {stoppingCampaignId === selectedCampaign.id
+                      ? <Loader2 className="w-3 h-3 animate-spin" />
+                      : <Pause className="w-3 h-3" />}
+                    Stop
                   </button>
                 )}
                 {selectedCampaign.status === "draft" && (
