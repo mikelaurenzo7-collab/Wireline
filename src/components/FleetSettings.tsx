@@ -322,8 +322,8 @@ export default function FleetSettings() {
         <div className="px-3 py-3 flex-1 overflow-y-auto space-y-2 scrollbar-hide">
           <AnimatePresence mode="popLayout">
             {isLoading ? (
-              <div className="flex flex-col items-center justify-center gap-3 py-12">
-                <Loader2 className="w-5 h-5 animate-spin text-brand" />
+              <div role="status" aria-live="polite" className="flex flex-col items-center justify-center gap-3 py-12">
+                <Loader2 className="w-5 h-5 animate-spin text-brand" aria-hidden="true" />
                 <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">Loading fleet</span>
               </div>
             ) : agents.length === 0 ? (
@@ -375,7 +375,8 @@ export default function FleetSettings() {
                   <button
                     onClick={e => { e.stopPropagation(); setDeleteConfirm({ id: agent.id, name: agent.name }); }}
                     disabled={isDeletingAgent === agent.id}
-                    title="Decommission agent"
+                    title="Delete agent"
+                    aria-label={`Delete agent ${agent.name}`}
                     className="mr-2 shrink-0 w-7 h-7 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30 disabled:opacity-40 transition-all"
                   >
                     {isDeletingAgent === agent.id
@@ -747,8 +748,8 @@ export default function FleetSettings() {
               </header>
 
               {isConfigLoading ? (
-                 <div className="flex flex-col items-center justify-center gap-3 py-20">
-                   <Loader2 className="w-5 h-5 animate-spin text-brand" />
+                 <div role="status" aria-live="polite" className="flex flex-col items-center justify-center gap-3 py-20">
+                   <Loader2 className="w-5 h-5 animate-spin text-brand" aria-hidden="true" />
                    <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">Loading configuration</span>
                  </div>
               ) : (
@@ -827,8 +828,8 @@ export default function FleetSettings() {
                                    <div className="flex gap-2 items-start justify-between">
                                       <div className="flex-1 text-sm text-ink/90 leading-relaxed">{d.content}</div>
                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
-                                        <button onClick={() => setEditingDirective({ id: d.id, content: d.content })} className="w-6 h-6 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-ink hover:border-white/30"><Pencil className="w-3 h-3" /></button>
-                                        <button onClick={() => deleteRule("directive", d.id)} className="w-6 h-6 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30"><Trash2 className="w-3 h-3" /></button>
+                                        <button onClick={() => setEditingDirective({ id: d.id, content: d.content })} aria-label="Edit directive" title="Edit directive" className="w-6 h-6 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-ink hover:border-white/30"><Pencil className="w-3 h-3" /></button>
+                                        <button onClick={() => deleteRule("directive", d.id)} aria-label="Delete directive" title="Delete directive" className="w-6 h-6 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30"><Trash2 className="w-3 h-3" /></button>
                                       </div>
                                    </div>
                                 )}
@@ -850,6 +851,7 @@ export default function FleetSettings() {
                              <button
                                onClick={() => saveManualEntry('directive', newDirective)}
                                disabled={!newDirective || isSavingEntry}
+                               aria-label="Add directive"
                                className="w-9 h-9 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-500 flex items-center justify-center hover:bg-rose-500/25 disabled:opacity-50"
                              >
                                <Plus className="w-3.5 h-3.5" />
@@ -900,8 +902,8 @@ export default function FleetSettings() {
                                    <div className="flex gap-2 items-start justify-between">
                                       <div className="flex-1 text-sm text-ink/90 leading-relaxed">{k.content}</div>
                                       <div className="opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
-                                        <button onClick={() => setEditingKnowledge({ id: k.id, content: k.content })} className="w-6 h-6 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-ink hover:border-white/30"><Pencil className="w-3 h-3" /></button>
-                                        <button onClick={() => deleteRule("knowledge", k.id)} className="w-6 h-6 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-blue-400 hover:border-blue-500/30"><Trash2 className="w-3 h-3" /></button>
+                                        <button onClick={() => setEditingKnowledge({ id: k.id, content: k.content })} aria-label="Edit knowledge fact" title="Edit knowledge fact" className="w-6 h-6 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-ink hover:border-white/30"><Pencil className="w-3 h-3" /></button>
+                                        <button onClick={() => deleteRule("knowledge", k.id)} aria-label="Delete knowledge fact" title="Delete knowledge fact" className="w-6 h-6 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-blue-400 hover:border-blue-500/30"><Trash2 className="w-3 h-3" /></button>
                                       </div>
                                    </div>
                                 )}
@@ -923,6 +925,7 @@ export default function FleetSettings() {
                              <button
                                onClick={() => saveManualEntry('knowledge', newKnowledge)}
                                disabled={!newKnowledge || isSavingEntry}
+                               aria-label="Add knowledge fact"
                                className="w-9 h-9 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-400 flex items-center justify-center hover:bg-blue-500/25 disabled:opacity-50"
                              >
                                <Plus className="w-3.5 h-3.5" />

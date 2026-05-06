@@ -166,8 +166,8 @@ export default function AdminSettings() {
       actions={tabSwitcher}
     >
       {isLoading ? (
-        <div className="h-full flex flex-col items-center justify-center gap-3">
-          <Loader2 className="w-5 h-5 animate-spin text-brand" />
+        <div role="status" aria-live="polite" className="h-full flex flex-col items-center justify-center gap-3">
+          <Loader2 className="w-5 h-5 animate-spin text-brand" aria-hidden="true" />
           <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">Loading settings</span>
         </div>
       ) : (
@@ -181,7 +181,7 @@ export default function AdminSettings() {
               className="h-full grid grid-cols-1 xl:grid-cols-2 gap-3 min-h-0"
             >
               {/* Carrier authentication */}
-              <Panel title="Vapi Credentials" hint="VAPI" icon={Cpu} scroll>
+              <Panel title="Wireline Credentials" hint="VOICE" icon={Cpu} scroll>
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <div className="rounded-xl glass border border-brand/30 p-3 space-y-1.5">
@@ -212,7 +212,7 @@ export default function AdminSettings() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">Fallback Vapi number ID</label>
+                    <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">Fallback Wireline number ID</label>
                     <input
                       type="text"
                       value={settings.vapi_phone_number_id}
@@ -228,7 +228,7 @@ export default function AdminSettings() {
                       <div className="text-[10px] uppercase tracking-[0.4em] text-brand">Voice LLM</div>
                       <h4 className="font-display italic lowercase text-xl text-ink leading-tight mt-0.5">voice brain for live calls</h4>
                       <p className="text-[10px] text-muted/80 mt-1 leading-relaxed">
-                        Vapi runs each voice call through this LLM. Defaults to Gemini Flash.
+                        Wireline routes each voice call through this LLM. Defaults to Gemini Flash.
                       </p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -275,9 +275,7 @@ export default function AdminSettings() {
                         className="w-full text-sm bg-black/30 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 font-mono"
                       />
                       <p className="text-[10px] text-muted/70 leading-relaxed">
-                        Vapi's supported models change — check the
-                        <a href="https://docs.vapi.ai/customization/multilingual/customize-models" target="_blank" rel="noopener noreferrer" className="text-brand mx-1 underline">Vapi docs</a>
-                        for the current list.
+                        Supported models may change over time. Check your voice provider docs for the current list.
                       </p>
                     </div>
                   </div>
@@ -340,7 +338,8 @@ export default function AdminSettings() {
                             <button
                               onClick={() => deletePhoneNumber(pt.id)}
                               disabled={isDeletingNumber === pt.id}
-                              title="Remove carrier number"
+                              title="Delete phone number"
+                              aria-label={`Delete phone number ${pt.number || pt.phone_number || ''}`}
                               className="w-7 h-7 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30 disabled:opacity-40 transition-all"
                             >
                               {isDeletingNumber === pt.id
@@ -407,7 +406,7 @@ export default function AdminSettings() {
                         type="text"
                         value={newNumberVapiId}
                         onChange={e => setNewNumberVapiId(e.target.value)}
-                        placeholder="Vapi number ID"
+                        placeholder="Wireline number ID"
                         className="w-full text-sm bg-black/30 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 font-mono"
                       />
                     </div>
@@ -600,8 +599,8 @@ export default function AdminSettings() {
                       icon: Bot,
                     },
                     {
-                      label: "VITE_VAPI_PUBLIC_KEY",
-                      desc: "Voice AI browser SDK",
+                      label: "WIRELINE_VOICE_PUBLIC_KEY",
+                      desc: "Voice browser SDK",
                       ok: !!import.meta.env.VITE_VAPI_PUBLIC_KEY,
                       icon: Wifi,
                     },
@@ -721,8 +720,8 @@ function AuditActivityPanel() {
       </div>
 
       {loading ? (
-        <div className="flex-1 flex flex-col items-center justify-center gap-2">
-          <Loader2 className="w-5 h-5 animate-spin text-brand" />
+        <div role="status" aria-live="polite" className="flex-1 flex flex-col items-center justify-center gap-2">
+          <Loader2 className="w-5 h-5 animate-spin text-brand" aria-hidden="true" />
           <span className="text-[9px] uppercase tracking-[0.4em] text-muted/70">Loading audit data</span>
         </div>
       ) : (

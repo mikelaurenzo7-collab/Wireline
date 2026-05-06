@@ -98,6 +98,7 @@ export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsPr
                 </div>
                 <button
                   onClick={onClose}
+                  aria-label="Close keyboard shortcuts"
                   className="w-8 h-8 rounded-lg flex items-center justify-center text-ink/50 hover:text-ink hover:bg-white/8 border border-white/8 hover:border-white/20 transition-all"
                 >
                   <X className="w-3.5 h-3.5" />
