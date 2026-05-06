@@ -6329,10 +6329,13 @@ app.post("/api/emails/threads/:id/reply", authenticateUser, async (req: any, res
       res.json({ success: true });
    } catch(e: any) {
       log.error("Reply Error", { error: e?.message || String(e) });
-      SentryEvents.emailFailed({
-        reason: getErrorMessage(e),
+      const errorMsg = getErrorMessage(e);
+      SentryEvents.externalServiceError({
+        service: account.provider === 'microsoft' ? 'microsoft-graph' : 'gmail',
+        endpoint: '/api/emails/threads/:id/reply',
+        error_message: errorMsg,
       });
-      res.status(500).json({ error: String(e) });
+      res.status(500).json({ error: errorMsg });
    }
 });
 
@@ -6362,7 +6365,13 @@ Draft only the plain text email body. Do not include a subject line. Be professi
 
      res.json({ draft: aiRes.response.text() });
   } catch (e) {
-     log.error("Draft error", { error: e?.message || String(e) });
+     const errorMsg = getErrorMessage(e);
+     log.error("Draft error", { error: errorMsg });
+     SentryEvents.aiApiFailure({
+       endpoint: '/api/emails/draft',
+       error_message: errorMsg,
+       model: 'gemini-1.5-flash',
+     });
      res.status(500).json({ error: "Failed to draft reply" });
   }
 });
@@ -6588,19 +6597,24 @@ app.delete("/api/agents/:id/lessons/:lessonId", authenticateUser, async (req: an
 //  CLAUDE BRAIN — advanced agent capabilities
 // ==========================================
 
-function claudeErr(res: any, e: any) {
+function claudeErr(res: any, e: any, endpoint: string = '/api/claude') {
   if (e instanceof claudeBrain.ClaudeUnavailableError) {
+    SentryEvents.aiApiFailure({
+      endpoint,
+      error_message: e.message,
+      model: 'claude',
+    });
     return res.status(503).json({
       error: e.message,
       code: "CLAUDE_OFFLINE",
     });
   }
-  log.error("Claude endpoint error", { error: e?.message || String(e) });
-  // Track API errors in Sentry for operational visibility
-  SentryEvents.apiError({
-    endpoint: '/api/claude/*',
-    status: 500,
-    error_type: e?.name || 'ClaudeError',
+  log.error("Claude endpoint error", { error: e?.message || String(e), endpoint });
+  // Track AI API errors with detailed context for debugging
+  SentryEvents.aiApiFailure({
+    endpoint,
+    error_message: e?.message || String(e),
+    model: 'claude',
   });
   return res.status(500).json({ error: e?.message ?? "Claude error" });
 }
