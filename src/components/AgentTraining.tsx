@@ -348,7 +348,7 @@ export default function AgentTraining() {
                   <button
                     onClick={handleOptimize}
                     disabled={isOptimizing}
-                    className="brutal-btn !py-2 !px-5 !text-[10px] !tracking-[0.28em]"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-brand/40 bg-brand/8 text-brand text-[10px] uppercase tracking-[0.28em] hover:bg-brand/15 transition-all disabled:opacity-50"
                   >
                     {isOptimizing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Activity className="w-3.5 h-3.5" />}
                     {isOptimizing ? 'Analyzing…' : 'Initiate analysis'}

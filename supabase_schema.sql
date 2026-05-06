@@ -251,6 +251,8 @@ BEGIN
 END $$;
 ALTER TABLE wireline_email_accounts ADD COLUMN IF NOT EXISTS email_address TEXT;
 ALTER TABLE wireline_email_accounts ADD COLUMN IF NOT EXISTS provider TEXT DEFAULT 'google';
+-- agent_id links an email account to a specific agent for routing.
+ALTER TABLE wireline_email_accounts ADD COLUMN IF NOT EXISTS agent_id UUID REFERENCES wireline_agents(id) ON DELETE SET NULL;
 
 -- Voice LLM picker — operators can route the actual Vapi voice agent through
 -- Anthropic instead of Gemini. Persisted on the per-user settings row.
