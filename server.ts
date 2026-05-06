@@ -6005,9 +6005,24 @@ app.get("/api/emails/accounts", authenticateUser, async (req: any, res: any) => 
 app.patch("/api/emails/accounts/:id", authenticateUser, async (req: any, res: any) => {
   try {
     const { agent_id } = req.body;
+
+    // SECURITY: if assigning to an agent, verify it belongs to the caller.
+    // Same class of bug as the phone-numbers endpoint — without this an
+    // attacker could route their inbound email to another user's agent.
+    if (agent_id) {
+      const { data: agent } = await db
+        .from('wireline_agents')
+        .select('id')
+        .eq('id', agent_id)
+        .eq('user_id', req.user.id)
+        .maybeSingle();
+      if (!agent) return res.status(404).json({ error: "Agent not found" });
+    }
+
     await db.from('wireline_email_accounts').update({ agent_id }).eq('id', req.params.id).eq('user_id', req.user.id);
     res.json({ success: true });
   } catch (error) {
+    log.error("Failed to update account mapping", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to update account mapping" });
   }
 });
