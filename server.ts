@@ -25,6 +25,7 @@ import { randomUUID } from "node:crypto";
 import * as claudeBrain from "./src/lib/claude-brain";
 import { AuditLogger } from "./src/lib/audit-logger";
 import { rateLimit, isRedisConfigured, startMemoryCleanup } from "./src/lib/rate-limit";
+import { SentryEvents } from "./src/lib/sentry-events";
 
 // ────────────────────────────────────────────────────────────────────
 //  Error handling — safely extract message from unknown errors
@@ -424,6 +425,12 @@ async function claudeRateLimiter(req: any, res: any, next: any) {
       metadata: { limit: CLAUDE_RATE_MAX, hasToken: !!token }
     }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
 
+    // Track rate limiting in Sentry
+    SentryEvents.rateLimited({
+      endpoint: '/api/claude',
+      user_id: req.user?.id,
+    });
+
     res.setHeader("Retry-After", String(Math.ceil(result.resetMs / 1000)));
     return res.status(429).json({
       error: `Rate limit exceeded — ${CLAUDE_RATE_MAX} requests per minute. Slow down.`,
@@ -738,6 +745,15 @@ async function attemptWebhookDelivery(deliveryId: number) {
     last_status: statusCode,
     last_error: errMsg,
   }).eq("id", hook.id);
+
+  // Track webhook delivery failure when max attempts reached
+  if (reachedDead) {
+    SentryEvents.webhookDeliveryFailed({
+      webhook_id: hook.id,
+      attempt: newAttempts,
+      status_code: statusCode || undefined,
+    });
+  }
 }
 
 async function dispatchWebhook(userId: string, event: WebhookEvent, data: any) {
@@ -911,6 +927,21 @@ async function evaluateSpend(userId: string, deltaUsd: number) {
         hard_cap: snap.budget.hard_cap,
         at: new Date().toISOString(),
       });
+
+      // Track budget thresholds in Sentry
+      if (t.event === "spend.exceeded") {
+        SentryEvents.budgetExceeded({
+          user_id: userId,
+          spent: Number(snap.mtdCost.toFixed(4)),
+          budget: limit,
+        });
+      } else if (t.event === "spend.warning") {
+        SentryEvents.budgetWarning({
+          user_id: userId,
+          spent: Number(snap.mtdCost.toFixed(4)),
+          budget: limit,
+        });
+      }
     }
   } catch (err: any) {
     log.error("evaluateSpend failed", { error: getErrorMessage(err) });
@@ -2192,6 +2223,13 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
            recording_url: message.recordingUrl || message.stereoRecordingUrl || null
         });
 
+        // Track call completion in Sentry for business metrics
+        SentryEvents.callCompleted({
+          duration_ms: duration * 1000,
+          agent_id: webhookAgentId,
+          direction: call?.type === "outboundPhoneCall" ? "outbound" : "inbound",
+        });
+
         // Auto-increment attempts on outbound leads when a call completes.
         // This keeps the attempts counter accurate regardless of whether the
         // campaign loop incremented it (covers single-dial and retry flows).
@@ -2419,6 +2457,11 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
         return res.json({ success: true });
     } catch(e: any) {
       log.error("Failed to save call log", { agentId: webhookAgentId, error: e?.message || String(e) });
+      SentryEvents.callFailed({
+        error: getErrorMessage(e),
+        agent_id: webhookAgentId,
+        reason: "Failed to process call completion",
+      });
       return res.json({ success: false });
     }
   }
@@ -5031,6 +5074,11 @@ app.post("/api/outbound/dial", authenticateUser, async (req: any, res: any) => {
       status: "Dialing",
     });
 
+    SentryEvents.outboundDialStarted({
+      lead_count: 1,
+      agent_id: agentId,
+    });
+
     res.json({ success: true, callId: result.callId });
   } catch (error: any) {
     log.error("Outbound call failed", { error: getErrorMessage(error) });
@@ -5057,7 +5105,16 @@ app.post("/api/outbound/bulk", authenticateUser, async (req: any, res: any) => {
 
      const { data, error } = await db.from('wireline_outbound_leads').insert(leadsWithUser).select('id');
      if (error) throw error;
-     
+
+     // Track bulk campaign start
+     if (data?.length > 0) {
+       const { data: agent } = await db.from('wireline_agents').select('id').eq('user_id', req.user.id).limit(1).single();
+       SentryEvents.outboundDialStarted({
+         lead_count: data.length,
+         agent_id: agent?.id || "unknown",
+       });
+     }
+
      res.json({ success: true, inserted: data.length });
   } catch (error: any) {
      res.status(500).json({ error: "Failed to queue leads" });
@@ -6182,9 +6239,18 @@ app.post("/api/emails/threads/:id/reply", authenticateUser, async (req: any, res
          content: body
       });
 
+      // Track email sent in Sentry
+      SentryEvents.emailSent({
+        thread_id: thread.id,
+        recipient_count: 1,
+      });
+
       res.json({ success: true });
    } catch(e: any) {
       log.error("Reply Error", { error: e?.message || String(e) });
+      SentryEvents.emailFailed({
+        reason: getErrorMessage(e),
+      });
       res.status(500).json({ error: String(e) });
    }
 });
