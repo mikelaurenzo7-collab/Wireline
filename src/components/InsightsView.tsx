@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
 import {
   BarChart3, TrendingUp, Layers, Calendar, Trophy, AlertOctagon, Loader2,
   RefreshCw, Sparkles, ChevronRight, Users, DollarSign, Brain, Zap,
   Receipt, Clock, Database, Shield, AlertTriangle, Lock, Save, CheckCircle2 as CheckCircle2Icon,
-  Star,
+  Star, Play,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
@@ -15,6 +15,7 @@ import { cn } from "../lib/utils";
 import CsvExportButton from "./CsvExportButton";
 import { AGENT_ROLES } from "./FleetSettings";
 import PageShell from "./PageShell";
+import { useToast } from "../contexts/ToastContext";
 
 type View = "funnel" | "topics" | "heatmap" | "leaderboard" | "failures" | "spend" | "quality";
 
@@ -899,14 +900,43 @@ function qaColor(score: number) {
 function QualityView({ days }: { days: number }) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [scoring, setScoring] = useState(false);
+  const { success: toastSuccess, error: toastError, warning: toastWarning } = useToast();
 
-  useEffect(() => {
+  const fetchStats = useCallback(() => {
     setLoading(true);
     authFetch(`/api/qa/stats?days=${days}`)
       .then(r => r.json())
       .then(setData)
       .finally(() => setLoading(false));
   }, [days]);
+
+  useEffect(() => { fetchStats(); }, [fetchStats]);
+
+  const handleScoreAll = async () => {
+    setScoring(true);
+    try {
+      const res = await authFetch(`/api/qa/score-batch`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ limit: 20, days }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || "Batch scoring failed");
+      if (d.scored === 0 && d.total === 0) {
+        toastSuccess("All caught up", "No unscored calls found in this period.");
+      } else if (d.failed > 0) {
+        toastWarning("Batch QA partial", `Scored ${d.scored} call${d.scored === 1 ? "" : "s"}, ${d.failed} failed. Check logs for details.`);
+      } else {
+        toastSuccess("Batch QA complete", `Scored ${d.scored} call${d.scored === 1 ? "" : "s"}.`);
+      }
+      fetchStats();
+    } catch (e: any) {
+      toastError("Batch scoring failed", e.message);
+    } finally {
+      setScoring(false);
+    }
+  };
 
   if (loading) return <Spinner />;
 
@@ -921,9 +951,17 @@ function QualityView({ days }: { days: number }) {
             <div>
               <h3 className="font-display italic text-3xl text-ink mb-2">No QA scores yet</h3>
               <p className="text-sm text-ink/55 max-w-sm leading-relaxed">
-                Open a call in Call Logs and click <strong className="text-brand">Score QA</strong> to have Wireline AI evaluate it against the 5-dimension quality rubric.
+                Score an individual call in Call Logs, or use <strong className="text-brand">Score All Unscored</strong> below to batch-evaluate up to 20 calls at once.
               </p>
             </div>
+            <button
+              onClick={handleScoreAll}
+              disabled={scoring}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-brand/15 border border-brand/40 text-brand text-[11px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-colors disabled:opacity-50"
+            >
+              {scoring ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+              {scoring ? "Scoring…" : "Score All Unscored"}
+            </button>
           </div>
         </div>
       </div>
@@ -944,6 +982,18 @@ function QualityView({ days }: { days: number }) {
 
   return (
     <div className="space-y-4 pb-6">
+      {/* Action bar */}
+      <div className="flex items-center justify-end">
+        <button
+          onClick={handleScoreAll}
+          disabled={scoring}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-colors disabled:opacity-50"
+        >
+          {scoring ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
+          {scoring ? "Scoring…" : "Score All Unscored"}
+        </button>
+      </div>
+
       {/* Hero stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
