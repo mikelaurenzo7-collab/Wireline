@@ -270,7 +270,18 @@ export function StatTile({
   accent?: string;
   trend?: { value: number; label?: string };
 }) {
-  const trendPositive = trend && trend.value >= 0;
+  const trendDir: "positive" | "neutral" | "negative" =
+    !trend       ? "neutral"
+    : trend.value > 0  ? "positive"
+    : trend.value === 0 ? "neutral"
+    : "negative";
+
+  const TREND_STYLES = {
+    positive: { color: "text-emerald-400", arrow: "↑" },
+    neutral:  { color: "text-amber-400",   arrow: "→" },
+    negative: { color: "text-rose-400",    arrow: "↓" },
+  } as const;
+
   return (
     <div className="relative rounded-2xl glass border border-black/8 p-5 overflow-hidden card-interactive">
       {/* Ambient glow */}
@@ -312,10 +323,13 @@ export function StatTile({
           )}
           {trend && (
             <span className={cn(
-              "shrink-0 text-[9px] font-mono font-medium",
-              trendPositive ? "text-emerald-400" : "text-rose-400"
+              "shrink-0 text-[9px] font-mono font-medium flex flex-col items-end leading-none gap-0.5",
+              TREND_STYLES[trendDir].color,
             )}>
-              {trendPositive ? "↑" : "↓"} {Math.abs(trend.value)}%
+              <span>{TREND_STYLES[trendDir].arrow} {Math.abs(trend.value)}%</span>
+              {trend.label && (
+                <span className="text-[8px] font-normal tracking-wide opacity-60">{trend.label}</span>
+              )}
             </span>
           )}
         </div>

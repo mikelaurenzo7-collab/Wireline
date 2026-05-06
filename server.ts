@@ -2401,8 +2401,9 @@ app.get("/api/dashboard/stats", authenticateUser, async (req: any, res: any) => 
           db.from('wireline_appointments').select('id', { count: 'exact' }).eq('user_id', req.user.id),
           db.from('wireline_outbound_leads').select('id', { count: 'exact' }).eq('user_id', req.user.id),
           db.from('wireline_call_logs')
-            // intent_label added so hotCalls can be derived from this result set
-            .select('id, cost, duration_seconds, direction, created_at, lead_score, intent_label, summary, customer_number, sentiment, coaching_note')
+            // count: 'exact' gives the true all-time total even though rows are capped at 200.
+            // intent_label added so hotCalls can be derived from this result set.
+            .select('id, cost, duration_seconds, direction, created_at, lead_score, intent_label, summary, customer_number, sentiment, coaching_note', { count: 'exact' })
             .eq('user_id', req.user.id)
             .order('created_at', { ascending: false })
             .limit(200),
@@ -2433,6 +2434,8 @@ app.get("/api/dashboard/stats", authenticateUser, async (req: any, res: any) => 
       const logs = logsRes.data || [];
       const agents = agentsRes.data || [];
       const prevLogs = prevLogsRes.data || [];
+      // Use the exact count from Supabase so totalCalls reflects all-time, not just the 200-row fetch window.
+      const allTimeTotalCalls = logsRes.count ?? logs.length;
       
       const totalMinutes = Math.ceil(logs.reduce((acc: number, l: any) => acc + (l.duration_seconds || 0), 0) / 60);
       const totalCost = logs.reduce((acc: number, l: any) => acc + (Number(l.cost) || 0), 0);
@@ -2513,7 +2516,7 @@ app.get("/api/dashboard/stats", authenticateUser, async (req: any, res: any) => 
       res.json({
          totalAppointments,
          totalLeads,
-         totalCalls: logs.length,
+         totalCalls: allTimeTotalCalls,
          totalMinutes,
          totalCost: totalCost.toFixed(2),
          inboundCount,
