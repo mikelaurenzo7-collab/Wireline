@@ -13,7 +13,7 @@ vi.mock("./supabase", () => ({
 }));
 
 // Import after mock is registered.
-const { authFetch } = await import("./api");
+const { authFetch, safeJson } = await import("./api");
 
 describe("authFetch", () => {
   const originalFetch = global.fetch;
@@ -69,6 +69,46 @@ describe("authFetch", () => {
     await authFetch("/api/test");
     const callArgs = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(callArgs[1].headers?.Authorization).toBeUndefined();
+  });
+});
+
+describe("safeJson", () => {
+  it("parses a valid JSON response", async () => {
+    const res = new Response(JSON.stringify({ ok: true, value: 42 }), {
+      headers: { "Content-Type": "application/json" },
+    });
+    const parsed = await safeJson<{ ok: boolean; value: number }>(res);
+    expect(parsed).toEqual({ ok: true, value: 42 });
+  });
+
+  it("returns a generic error object on invalid JSON without throwing", async () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const res = new Response("<html>500 internal server error</html>", {
+      headers: { "Content-Type": "text/html" },
+    });
+    const parsed = await safeJson(res);
+    expect(parsed).toEqual({ error: expect.stringContaining("unexpected error") });
+    consoleSpy.mockRestore();
+  });
+
+  it("handles empty response body", async () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const res = new Response("");
+    const parsed = await safeJson(res);
+    expect(parsed).toEqual({ error: expect.any(String) });
+    consoleSpy.mockRestore();
+  });
+
+  it("parses arrays correctly", async () => {
+    const res = new Response(JSON.stringify([1, 2, 3]));
+    const parsed = await safeJson<number[]>(res);
+    expect(parsed).toEqual([1, 2, 3]);
+  });
+
+  it("parses null correctly", async () => {
+    const res = new Response("null");
+    const parsed = await safeJson(res);
+    expect(parsed).toBeNull();
   });
 });
 

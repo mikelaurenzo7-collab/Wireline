@@ -25,36 +25,9 @@ import { randomUUID } from "node:crypto";
 import * as claudeBrain from "./src/lib/claude-brain";
 import { AuditLogger } from "./src/lib/audit-logger";
 import { rateLimit, isRedisConfigured, startMemoryCleanup } from "./src/lib/rate-limit";
-
-// ────────────────────────────────────────────────────────────────────
-//  Sanitization for audit logs — redacts sensitive fields like API keys,
-//  secrets, passwords, tokens from objects before logging. Prevents
-//  credential leakage in audit trail.
-// ────────────────────────────────────────────────────────────────────
-function sanitizeForAudit(obj: any): any {
-  if (!obj || typeof obj !== 'object') return obj;
-  
-  const sensitivePatterns = [
-    'key', 'secret', 'password', 'token', 'credential', 'auth'
-  ];
-  
-  const sanitized: any = Array.isArray(obj) ? [] : {};
-  
-  for (const [key, value] of Object.entries(obj)) {
-    const keyLower = key.toLowerCase();
-    const isSensitive = sensitivePatterns.some(pattern => keyLower.includes(pattern));
-    
-    if (isSensitive) {
-      sanitized[key] = '[REDACTED]';
-    } else if (typeof value === 'object' && value !== null) {
-      sanitized[key] = sanitizeForAudit(value);
-    } else {
-      sanitized[key] = value;
-    }
-  }
-  
-  return sanitized;
-}
+import { SentryEvents } from "./src/lib/sentry-events";
+import { AgentFormSchema, DirectiveSchema, KnowledgeSchema, EmailReplySchema, EmailDraftSchema, CampaignCreateSchema, CampaignUpdateSchema, OutboundBulkSchema, parseFormData } from "./src/lib/form-validators";
+import { getErrorMessage, sanitizeForAudit } from "./src/lib/server-utils";
 
 // On Vercel, VERCEL_URL is automatically set to the deployment hostname
 // (e.g. "myapp-abc123.vercel.app") with no protocol or trailing slash.
@@ -260,7 +233,23 @@ function buildCSP(isDev: boolean): string {
   ].join("; ");
 }
 
-app.use((_req: any, res: any, next: any) => {
+app.use((req: any, res: any, next: any) => {
+  // Attach request metadata to Sentry for context in error traces
+  Sentry.setTag('http.method', req.method);
+  Sentry.setTag('http.path', req.path);
+  Sentry.setContext('http_request', {
+    method: req.method,
+    url: req.originalUrl,
+    path: req.path,
+    ip: req.ip,
+  });
+
+  res.on('finish', () => {
+    // Tag the response status for better error filtering
+    Sentry.setTag('http.status_code', res.statusCode);
+  });
+
+  // Security headers
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
@@ -270,6 +259,7 @@ app.use((_req: any, res: any, next: any) => {
     // 6 months HSTS preload-eligible — only in prod so dev over http stays usable.
     res.setHeader("Strict-Transport-Security", "max-age=15552000; includeSubDomains");
   }
+
   next();
 });
 
@@ -315,7 +305,7 @@ async function probeDatabase(timeoutMs = 1500): Promise<{ ok: boolean; latency_m
     if (result?.error) return { ok: false, latency_ms: Date.now() - t0, error: result.error.message };
     return { ok: true, latency_ms: Date.now() - t0 };
   } catch (err: any) {
-    return { ok: false, latency_ms: Date.now() - t0, error: err?.message || String(err) };
+    return { ok: false, latency_ms: Date.now() - t0, error: getErrorMessage(err) };
   }
 }
 
@@ -413,7 +403,13 @@ async function claudeRateLimiter(req: any, res: any, next: any) {
       ip: req.ip,
       userAgent: req.get('user-agent'),
       metadata: { limit: CLAUDE_RATE_MAX, hasToken: !!token }
-    }).catch((err: any) => log.warn('audit log failed', { error: err?.message }));
+    }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
+
+    // Track rate limiting in Sentry
+    SentryEvents.rateLimited({
+      endpoint: '/api/claude',
+      user_id: req.user?.id,
+    });
 
     res.setHeader("Retry-After", String(Math.ceil(result.resetMs / 1000)));
     return res.status(429).json({
@@ -423,6 +419,95 @@ async function claudeRateLimiter(req: any, res: any, next: any) {
   }
   next();
 }
+
+async function emailRateLimiter(req: any, res: any, next: any) {
+  const userId = req.user?.id;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  const result = await rateLimit(userId, {
+    bucket: "email",
+    windowMs: EMAIL_RATE_WINDOW_MS,
+    max: EMAIL_RATE_MAX,
+  });
+
+  res.setHeader("X-RateLimit-Limit", String(EMAIL_RATE_MAX));
+  res.setHeader("X-RateLimit-Remaining", String(result.remaining));
+
+  if (!result.allowed) {
+    // Audit log: email rate limit exceeded
+    void auditLogger.logSecurity('rate_limit_exceeded', {
+      userId,
+      resource: 'email_api',
+      ip: req.ip,
+      metadata: { limit: EMAIL_RATE_MAX }
+    }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
+
+    // Track email rate limiting in Sentry
+    SentryEvents.rateLimited({
+      endpoint: '/api/emails',
+      user_id: userId,
+    });
+
+    res.setHeader("Retry-After", String(Math.ceil(result.resetMs / 1000)));
+    return res.status(429).json({
+      error: `Rate limit exceeded — ${EMAIL_RATE_MAX} email operations per minute. Please slow down.`,
+      code: "EMAIL_RATE_LIMIT",
+    });
+  }
+  next();
+}
+
+// Apply performance monitoring to critical API paths
+app.use("/api", performanceMonitoring(2000));
+
+// Request timeout middleware — prevents hung requests from accumulating connections
+function timeoutMiddleware(timeoutMs: number) {
+  return (req: any, res: any, next: any) => {
+    const timer = setTimeout(() => {
+      if (!res.headersSent) {
+        const endpoint = req.originalUrl || req.path;
+        log.warn("Request timeout", { endpoint, timeoutMs, method: req.method });
+        SentryEvents.slowOperation({
+          operation: `${req.method} ${endpoint}`,
+          duration_ms: timeoutMs,
+          threshold_ms: timeoutMs,
+        });
+        res.status(504).json({ error: "Request timeout — operation took too long", code: "REQUEST_TIMEOUT" });
+      }
+      res.socket?.destroy();
+    }, timeoutMs);
+
+    res.on('finish', () => clearTimeout(timer));
+    res.on('close', () => clearTimeout(timer));
+    next();
+  };
+}
+
+// Apply different timeouts per endpoint category
+app.use("/api/claude", timeoutMiddleware(30_000)); // 30s for Claude API calls
+app.use("/api/emails", timeoutMiddleware(15_000)); // 15s for email operations
+app.use("/api/phone-numbers", timeoutMiddleware(10_000)); // 10s for phone provisioning
+app.use("/api/campaigns", timeoutMiddleware(10_000)); // 10s for campaign operations
+app.use("/api", timeoutMiddleware(20_000)); // 20s default for other endpoints
+
+// Cache-Control headers for read operations — improves browser/CDN caching
+// Write operations (POST, PATCH, DELETE) should never be cached
+app.use((req: any, res: any, next: any) => {
+  if (req.method === 'GET') {
+    // Static assets: cache longer
+    if (req.path.match(/\.(js|css|png|jpg|svg|woff|woff2|ttf)$/i)) {
+      res.set('Cache-Control', 'public, max-age=31536000, immutable'); // 1 year for hashed assets
+    }
+    // API read endpoints: short-lived cache with revalidation
+    else if (req.path.startsWith('/api/')) {
+      res.set('Cache-Control', 'private, max-age=60, must-revalidate'); // 1 min with revalidation
+    }
+  } else {
+    // Never cache write operations
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  }
+  next();
+});
 
 app.use("/api/claude", (req: any, res: any, next: any) => {
   // Status endpoint is exempt — used by clients to probe availability.
@@ -445,6 +530,88 @@ app.use(["/api/train/extract", "/api/agents/:id/optimize"], (req: any, res: any,
 const OAUTH_RATE_WINDOW_MS = 5 * 60_000;
 const OAUTH_RATE_MAX = 10;
 
+// Email operation rate limiting — prevents spam and API quota exhaustion
+const EMAIL_RATE_WINDOW_MS = 60_000; // 1 minute
+const EMAIL_RATE_MAX = 20; // 20 email operations per minute per user
+
+// Knowledge base operation rate limiting — protects against bulk learning spam while allowing legitimate agent training
+const KNOWLEDGE_RATE_WINDOW_MS = 60_000; // 1 minute
+const KNOWLEDGE_RATE_MAX = 100; // 100 knowledge operations per minute per user
+
+// Phone number provisioning rate limiting — Twilio/Vapi calls are expensive, limit bulk assignment
+const PHONE_NUMBER_RATE_WINDOW_MS = 60_000; // 1 minute
+const PHONE_NUMBER_RATE_MAX = 10; // 10 phone number operations per minute per user
+
+async function knowledgeRateLimiter(req: any, res: any, next: any) {
+  const userId = req.user?.id;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  const result = await rateLimit(userId, {
+    bucket: "knowledge",
+    windowMs: KNOWLEDGE_RATE_WINDOW_MS,
+    max: KNOWLEDGE_RATE_MAX,
+  });
+
+  res.setHeader("X-RateLimit-Limit", String(KNOWLEDGE_RATE_MAX));
+  res.setHeader("X-RateLimit-Remaining", String(result.remaining));
+
+  if (!result.allowed) {
+    void auditLogger.logSecurity('rate_limit_exceeded', {
+      userId,
+      resource: 'knowledge_api',
+      ip: req.ip,
+      metadata: { limit: KNOWLEDGE_RATE_MAX }
+    }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
+
+    SentryEvents.rateLimited({
+      endpoint: '/api/knowledge',
+      user_id: userId,
+    });
+
+    res.setHeader("Retry-After", String(Math.ceil(result.resetMs / 1000)));
+    return res.status(429).json({
+      error: `Rate limit exceeded — ${KNOWLEDGE_RATE_MAX} knowledge operations per minute. Please slow down.`,
+      code: "KNOWLEDGE_RATE_LIMIT",
+    });
+  }
+  next();
+}
+
+async function phoneNumberRateLimiter(req: any, res: any, next: any) {
+  const userId = req.user?.id;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  const result = await rateLimit(userId, {
+    bucket: "phone_numbers",
+    windowMs: PHONE_NUMBER_RATE_WINDOW_MS,
+    max: PHONE_NUMBER_RATE_MAX,
+  });
+
+  res.setHeader("X-RateLimit-Limit", String(PHONE_NUMBER_RATE_MAX));
+  res.setHeader("X-RateLimit-Remaining", String(result.remaining));
+
+  if (!result.allowed) {
+    void auditLogger.logSecurity('rate_limit_exceeded', {
+      userId,
+      resource: 'phone_numbers_api',
+      ip: req.ip,
+      metadata: { limit: PHONE_NUMBER_RATE_MAX }
+    }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
+
+    SentryEvents.rateLimited({
+      endpoint: '/api/phone-numbers',
+      user_id: userId,
+    });
+
+    res.setHeader("Retry-After", String(Math.ceil(result.resetMs / 1000)));
+    return res.status(429).json({
+      error: `Rate limit exceeded — ${PHONE_NUMBER_RATE_MAX} phone number operations per minute. Please slow down.`,
+      code: "PHONE_NUMBER_RATE_LIMIT",
+    });
+  }
+  next();
+}
+
 function oauthRateLimiter(req: any, res: any, next: any) {
   const key = req.ip || "anon";
   rateLimit(key, {
@@ -461,6 +628,32 @@ function oauthRateLimiter(req: any, res: any, next: any) {
     }
     next();
   }).catch(next);
+}
+
+// Performance monitoring middleware — track slow operations on critical paths
+function performanceMonitoring(slowThresholdMs: number = 2000) {
+  return (req: any, res: any, next: any) => {
+    const start = Date.now();
+    const originalSend = res.send;
+
+    res.send = function (data: any) {
+      const duration = Date.now() - start;
+
+      // Track slow operations for critical endpoints
+      if (duration > slowThresholdMs && /api\/(claude|emails|campaigns|knowledge|agents)/.test(req.path)) {
+        SentryEvents.slowOperation({
+          operation: `${req.method} ${req.path}`,
+          duration_ms: duration,
+          threshold_ms: slowThresholdMs,
+        });
+      }
+
+      res.send = originalSend;
+      return originalSend.call(this, data);
+    };
+
+    next();
+  };
 }
 
 // Initialize AI and DB
@@ -690,7 +883,7 @@ async function attemptWebhookDelivery(deliveryId: number) {
     if (!ok) errMsg = `HTTP ${r.status}`;
   } catch (err: any) {
     statusCode = 0;
-    errMsg = err?.name === "AbortError" ? `Timed out after ${WEBHOOK_TIMEOUT_MS}ms` : (err?.message || String(err));
+    errMsg = err?.name === "AbortError" ? `Timed out after ${WEBHOOK_TIMEOUT_MS}ms` : (getErrorMessage(err));
   } finally {
     clearTimeout(timer);
   }
@@ -729,6 +922,15 @@ async function attemptWebhookDelivery(deliveryId: number) {
     last_status: statusCode,
     last_error: errMsg,
   }).eq("id", hook.id);
+
+  // Track webhook delivery failure when max attempts reached
+  if (reachedDead) {
+    SentryEvents.webhookDeliveryFailed({
+      webhook_id: hook.id,
+      attempt: newAttempts,
+      status_code: statusCode || undefined,
+    });
+  }
 }
 
 async function dispatchWebhook(userId: string, event: WebhookEvent, data: any) {
@@ -762,7 +964,7 @@ async function dispatchWebhook(userId: string, event: WebhookEvent, data: any) {
     // scheduler picks them up once their backoff elapses.
     await Promise.all((inserted || []).map((d: any) => attemptWebhookDelivery(d.id)));
   } catch (err: any) {
-    log.error("Webhook dispatch failed", { error: err?.message || String(err) });
+    log.error("Webhook dispatch failed", { error: getErrorMessage(err) });
   }
 }
 
@@ -792,11 +994,11 @@ async function processWebhookRetries() {
     // outbound concurrency bounded and the load on Supabase modest.
     for (const d of due) {
       try { await attemptWebhookDelivery(d.id); } catch (err: any) {
-        log.error("Webhook retry attempt failed", { id: d.id, error: err?.message || String(err) });
+        log.error("Webhook retry attempt failed", { id: d.id, error: getErrorMessage(err) });
       }
     }
   } catch (err: any) {
-    log.error("Webhook scheduler tick failed", { error: err?.message || String(err) });
+    log.error("Webhook scheduler tick failed", { error: getErrorMessage(err) });
   } finally {
     _webhookSchedRunning = false;
   }
@@ -902,9 +1104,24 @@ async function evaluateSpend(userId: string, deltaUsd: number) {
         hard_cap: snap.budget.hard_cap,
         at: new Date().toISOString(),
       });
+
+      // Track budget thresholds in Sentry
+      if (t.event === "spend.exceeded") {
+        SentryEvents.budgetExceeded({
+          user_id: userId,
+          spent: Number(snap.mtdCost.toFixed(4)),
+          budget: limit,
+        });
+      } else if (t.event === "spend.warning") {
+        SentryEvents.budgetWarning({
+          user_id: userId,
+          spent: Number(snap.mtdCost.toFixed(4)),
+          budget: limit,
+        });
+      }
     }
   } catch (err: any) {
-    log.error("evaluateSpend failed", { error: err?.message || String(err) });
+    log.error("evaluateSpend failed", { error: getErrorMessage(err) });
   }
 }
 
@@ -957,7 +1174,7 @@ async function authenticateUser(req: any, res: any, next: any) {
        ip: req.ip,
        userAgent: req.get('user-agent'),
        reason: 'missing_token'
-     }).catch((err: any) => log.warn('audit log failed', { error: err?.message }));
+     }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
      
      return res.status(401).json({ error: "No authorization header provided" });
   }
@@ -972,13 +1189,19 @@ async function authenticateUser(req: any, res: any, next: any) {
        ip: req.ip,
        userAgent: req.get('user-agent'),
        reason: !token ? 'missing_token' : 'invalid_token'
-     }).catch((err: any) => log.warn('audit log failed', { error: err?.message }));
+     }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
      
      return res.status(401).json({ error: "Invalid or expired session" });
   }
 
   req.user = user;
-  
+
+  // Attach user context to Sentry for all subsequent events (errors, metrics, etc.)
+  Sentry.setUser({
+    id: user.id,
+    email: user.email,
+  });
+
   // Log successful authentication (non-blocking).
   void auditLogger.logAuth('login', {
     userId: user.id,
@@ -988,7 +1211,7 @@ async function authenticateUser(req: any, res: any, next: any) {
   }).catch((err) => {
     log.warn("Failed to log auth event", { userId: user.id, error: String(err) });
   });
-  
+
   next();
 }
 
@@ -1066,8 +1289,8 @@ app.post("/api/stripe-webhook", async (req: any, res: any) => {
     // express.raw populated req.body as a Buffer — pass it through verbatim.
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err: any) {
-    log.warn("Stripe webhook signature verification failed", { error: err?.message });
-    return res.status(400).json({ error: `Webhook Error: ${err?.message}` });
+    log.warn("Stripe webhook signature verification failed", { error: getErrorMessage(err) });
+    return res.status(400).json({ error: `Webhook Error: ${getErrorMessage(err)}` });
   }
 
   // Idempotency — Stripe retries on timeouts and occasionally double-
@@ -1097,7 +1320,7 @@ app.post("/api/stripe-webhook", async (req: any, res: any) => {
     // fail-OPEN: log and proceed. Operators see the warning and run the
     // schema. Better than blocking all Stripe webhooks on a missing table.
     log.warn("Stripe idempotency claim failed — proceeding without idempotency guard", {
-      error: err?.message || String(err),
+      error: getErrorMessage(err),
     });
   }
 
@@ -1132,7 +1355,7 @@ app.post("/api/stripe-webhook", async (req: any, res: any) => {
     }
     res.json({ received: true });
   } catch (err: any) {
-    log.error("Stripe webhook handler error", { error: err?.message || String(err) });
+    log.error("Stripe webhook handler error", { error: getErrorMessage(err) });
     // Release the idempotency claim so Stripe's retry can re-process.
     if (claimed) {
       await db.from("wireline_stripe_events").delete().eq("event_id", idempotencyKey).then(
@@ -1140,7 +1363,7 @@ app.post("/api/stripe-webhook", async (req: any, res: any) => {
         (e: any) => log.warn("Failed to release idempotency claim", { error: e?.message }),
       );
     }
-    res.status(500).json({ error: err?.message || "Webhook handler failed" });
+    res.status(500).json({ error: getErrorMessage(err) || "Webhook handler failed" });
   }
 });
 
@@ -2183,6 +2406,13 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
            recording_url: message.recordingUrl || message.stereoRecordingUrl || null
         });
 
+        // Track call completion in Sentry for business metrics
+        SentryEvents.callCompleted({
+          duration_ms: duration * 1000,
+          agent_id: webhookAgentId,
+          direction: call?.type === "outboundPhoneCall" ? "outbound" : "inbound",
+        });
+
         // Auto-increment attempts on outbound leads when a call completes.
         // This keeps the attempts counter accurate regardless of whether the
         // campaign loop incremented it (covers single-dial and retry flows).
@@ -2289,11 +2519,19 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
 
             // 6. Update outbound lead status if applicable — but preserve meaningful
             //    in-call statuses (voicemail left, callback scheduled) set by tool handlers.
-            await db.from('wireline_outbound_leads').update({
+            const { data: updatedLeads } = await db.from('wireline_outbound_leads').update({
               status: 'Completed',
               last_called_at: new Date(),
             }).eq('call_id', call?.id)
-              .not('status', 'in', PRESERVED_LEAD_STATUSES);
+              .not('status', 'in', PRESERVED_LEAD_STATUSES)
+              .select('id');
+
+            // Track successful lead connection for outbound campaigns
+            if (call?.type === "outboundPhoneCall" && (updatedLeads?.length ?? 0) > 0) {
+              SentryEvents.leadConnected({
+                agent_id: webhookAgentId,
+              });
+            }
 
             // 7. Outbound webhook events
             const callPayload = {
@@ -2323,7 +2561,7 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
 
             claudeAnalysisDone = true;
           } catch (err: any) {
-            log.warn("Claude post-call analysis failed; falling back to Gemini", { agentId: webhookAgentId, error: err?.message || String(err) });
+            log.warn("Claude post-call analysis failed; falling back to Gemini", { agentId: webhookAgentId, error: getErrorMessage(err) });
           }
         }
 
@@ -2410,6 +2648,11 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
         return res.json({ success: true });
     } catch(e: any) {
       log.error("Failed to save call log", { agentId: webhookAgentId, error: e?.message || String(e) });
+      SentryEvents.callFailed({
+        error: getErrorMessage(e),
+        agent_id: webhookAgentId,
+        reason: "Failed to process call completion",
+      });
       return res.json({ success: false });
     }
   }
@@ -2441,7 +2684,7 @@ app.get("/api/calls", authenticateUser, async (req: any, res: any) => {
        total: count || 0
     });
   } catch (error: any) {
-    log.error("Failed to fetch calls", { error: error?.message || String(error) });
+    log.error("Failed to fetch calls", { error: getErrorMessage(error) });
     res.json({ calls: [], hasMore: false, total: 0 }); // Fail gracefully if table not created
   }
 });
@@ -2706,7 +2949,7 @@ app.get("/api/appointments", authenticateUser, async (req: any, res: any) => {
     if (error) throw error;
     res.json({ appointments: appointments || [] });
   } catch (error: any) {
-    log.error("Failed to fetch appointments", { error: error?.message || String(error) });
+    log.error("Failed to fetch appointments", { error: getErrorMessage(error) });
     res.json({ appointments: [] }); 
   }
 });
@@ -2731,7 +2974,7 @@ app.post("/api/appointments", authenticateUser, async (req: any, res: any) => {
     if (error) throw error;
     res.json({ appointment: data });
   } catch (error: any) {
-    log.error("Failed to create appointment", { error: error?.message });
+    log.error("Failed to create appointment", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to create appointment" });
   }
 });
@@ -2750,7 +2993,7 @@ app.patch("/api/appointments/:id", authenticateUser, async (req: any, res: any) 
     if (error) throw error;
     res.json({ appointment: data });
   } catch (error: any) {
-    log.error("Failed to update appointment", { error: error?.message });
+    log.error("Failed to update appointment", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to update appointment" });
   }
 });
@@ -2764,7 +3007,7 @@ app.delete("/api/appointments/:id", authenticateUser, async (req: any, res: any)
     if (error) throw error;
     res.json({ success: true });
   } catch (error: any) {
-    log.error("Failed to delete appointment", { error: error?.message });
+    log.error("Failed to delete appointment", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to delete appointment" });
   }
 });
@@ -3441,7 +3684,7 @@ Never leave someone on hold for more than 3 minutes without offering to call bac
 app.get("/api/agents", authenticateUser, async (req: any, res: any) => {
   try {
     const { data: agents, error } = await db.from('wireline_agents').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false });
-    if (error) log.warn("Failed to fetch agents", { userId: req.user.id, error: error?.message });
+    if (error) log.warn("Failed to fetch agents", { userId: req.user.id, error: getErrorMessage(error) });
     res.json({ agents: agents || [] });
   } catch (error) {
     res.json({ agents: [] }); 
@@ -3570,11 +3813,22 @@ app.post("/api/agents/:id/import", authenticateUser, async (req: any, res: any) 
 
 app.post("/api/agents", authenticateUser, async (req: any, res: any) => {
   try {
+    // Validate input using Zod schema
+    const validation = parseFormData(AgentFormSchema, {
+      name: req.body.name,
+      role: req.body.role,
+      personality: req.body.personality
+    });
+
+    if (!validation.success) {
+      return res.status(400).json({ error: "Validation failed", errors: validation.errors });
+    }
+
     // SECURITY ENFORCEMENT: Check Subscription Status for this specific user
     const { data: userSettings } = await db.from('wireline_settings').select('subscription_status, max_agents').eq('user_id', req.user.id).single();
-    
+
     // Gating mechanism: Prevent agent creation if the account is unpaid
-    const subscriptionStatus = userSettings?.subscription_status || 'active'; 
+    const subscriptionStatus = userSettings?.subscription_status || 'active';
     if (subscriptionStatus !== 'active') {
        return res.status(403).json({ error: "Access Denied: Please upgrade your billing plan." });
     }
@@ -3582,44 +3836,49 @@ app.post("/api/agents", authenticateUser, async (req: any, res: any) => {
     // Agent Limit Check
     const maxAgents = userSettings?.max_agents || 3;
     const { count: agentCount } = await db.from('wireline_agents').select('*', { count: 'exact', head: true }).eq('user_id', req.user.id);
-    
+
     if (agentCount !== null && agentCount >= maxAgents) {
       return res.status(403).json({ error: `Quota Exceeded: Your plan only allows ${maxAgents} agents.` });
     }
 
-    const { id, name, voice_id, channel, role } = req.body;
+    const { id, voice_id, channel } = req.body;
+    const { name, role, personality } = validation.data;
     const agentRole = role || DEFAULT_AGENT_ROLE;
+    const agentId = id || `agent-${Date.now()}`;
     await db.from('wireline_agents').insert({
-      id: id || `agent-${Date.now()}`,
+      id: agentId,
       user_id: req.user.id,
-      name: name || "New Agent",
+      name,
       voice_id: voice_id || 'bIHbv24MWmeRgasZH58o',
       channel: channel || 'voice',
       role: agentRole
     });
-    
-    // Seed role-appropriate default personality
+
+    // Use provided personality or fall back to role-appropriate template
+    const personalityContent = personality
+      || ROLE_PERSONALITY_TEMPLATES[agentRole as keyof typeof ROLE_PERSONALITY_TEMPLATES]
+      || (channel === 'email'
+        ? "You are a professional email agent specialized in clear, efficient communication."
+        : "You are a helpful assistant serving as a phone agent.");
+
     await db.from('wireline_personality').insert({
-       agent_id: id,
+       agent_id: agentId,
        user_id: req.user.id,
-       content: ROLE_PERSONALITY_TEMPLATES[agentRole as keyof typeof ROLE_PERSONALITY_TEMPLATES]
-         ?? (channel === 'email'
-           ? "You are a professional email agent specialized in clear, efficient communication."
-           : "You are a helpful assistant serving as a phone agent.")
+       content: personalityContent
     });
     
     // Audit log: agent creation
     void auditLogger.logAgentOperation('created', {
       userId: req.user.id,
-      agentId: id,
-      agentName: name || "New Agent",
+      agentId,
+      agentName: name,
       metadata: { channel: channel || 'voice', archetype: agentRole },
       ip: req.ip
-    }).catch((err: any) => log.warn('audit log failed', { error: err?.message }));
-    
-    res.json({ success: true, id });
+    }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
+
+    res.json({ success: true, id: agentId });
   } catch (error) {
-    log.error("Agent creation failed", { error: error?.message || String(error) });
+    log.error("Agent creation failed", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to create agent" });
   }
 });
@@ -3700,7 +3959,7 @@ app.post("/api/fleet/seed", authenticateUser, async (req: any, res: any) => {
     }
     res.json({ success: true, count: specializedAgents.length });
   } catch (error) {
-    log.error("Fleet seeding failed", { error: error?.message || String(error) });
+    log.error("Fleet seeding failed", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to seed fleet" });
   }
 });
@@ -3708,7 +3967,19 @@ app.post("/api/fleet/seed", authenticateUser, async (req: any, res: any) => {
 // Update agent settings
 app.put("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
   try {
-    const { name, voice_id, voice_id_inbound, voice_id_outbound, voice_provider, first_message, archetype, ambient_noise, website_url, transfer_phone, email_auto_respond, email_agent_tone, email_signature, channel, role } = req.body;
+    // Validate core fields using Zod schema
+    const validation = parseFormData(AgentFormSchema, {
+      name: req.body.name,
+      role: req.body.role,
+      personality: req.body.personality
+    });
+
+    if (!validation.success) {
+      return res.status(400).json({ error: "Validation failed", errors: validation.errors });
+    }
+
+    const { name, role, personality } = validation.data;
+    const { voice_id, voice_id_inbound, voice_id_outbound, voice_provider, first_message, archetype, ambient_noise, website_url, transfer_phone, email_auto_respond, email_agent_tone, email_signature, channel } = req.body;
     await db.from('wireline_agents').update({ 
       name, 
       voice_id, 
@@ -3733,7 +4004,7 @@ app.put("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
       agentId: req.params.id,
       metadata: { changes: sanitizeForAudit(req.body) },
       ip: req.ip
-    }).catch((err: any) => log.warn('audit log failed', { error: err?.message }));
+    }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
     
     res.json({ success: true });
   } catch (error) {
@@ -3790,7 +4061,7 @@ app.delete("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
 
     nullResults.forEach((r, i) => {
       if (r.status === "rejected" || (r.status === "fulfilled" && (r.value as any)?.error)) {
-        const reason = r.status === "rejected" ? r.reason?.message : (r.value as any)?.error?.message;
+        const reason = r.status === "rejected" ? getErrorMessage(r.reason) : (r.value as any)?.error?.message;
         log.warn(`agent delete: failed to null agent_id on ${nullTables[i].label}`, { agentId, reason });
       }
     });
@@ -3812,11 +4083,11 @@ app.delete("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
       userId: req.user.id,
       agentId: agentId,
       ip: req.ip
-    }).catch((err: any) => log.warn('audit log failed', { error: err?.message }));
+    }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
     
     res.json({ success: true });
   } catch (error: any) {
-    log.error("Failed to delete agent", { error: error?.message });
+    log.error("Failed to delete agent", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to delete agent." });
   }
 });
@@ -3854,7 +4125,7 @@ app.get("/api/phone-numbers", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-app.post("/api/phone-numbers", authenticateUser, async (req: any, res: any) => {
+app.post("/api/phone-numbers", authenticateUser, phoneNumberRateLimiter, async (req: any, res: any) => {
   try {
     const { phone_number, vapi_number_id } = req.body;
     await db.from('wireline_phone_numbers').insert({ phone_number, vapi_number_id, user_id: req.user.id });
@@ -3864,7 +4135,7 @@ app.post("/api/phone-numbers", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-app.patch("/api/phone-numbers/:id", authenticateUser, async (req: any, res: any) => {
+app.patch("/api/phone-numbers/:id", authenticateUser, phoneNumberRateLimiter, async (req: any, res: any) => {
   try {
     const { agent_id } = req.body;
     await db.from('wireline_phone_numbers').update({ agent_id }).eq('id', req.params.id).eq('user_id', req.user.id);
@@ -3874,7 +4145,7 @@ app.patch("/api/phone-numbers/:id", authenticateUser, async (req: any, res: any)
   }
 });
 
-app.delete("/api/phone-numbers/:id", authenticateUser, async (req: any, res: any) => {
+app.delete("/api/phone-numbers/:id", authenticateUser, phoneNumberRateLimiter, async (req: any, res: any) => {
   try {
     const { error } = await db.from('wireline_phone_numbers')
       .delete()
@@ -3883,7 +4154,7 @@ app.delete("/api/phone-numbers/:id", authenticateUser, async (req: any, res: any
     if (error) throw error;
     res.json({ success: true });
   } catch (error: any) {
-    log.error("Failed to delete phone number", { error: error?.message });
+    log.error("Failed to delete phone number", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to delete phone number." });
   }
 });
@@ -3910,7 +4181,7 @@ app.get("/api/carrier/numbers", authenticateUser, async (req: any, res: any) => 
 
     res.json({ numbers: formatted });
   } catch (error) {
-    log.error("Vapi sync error", { error: error?.message || String(error) });
+    log.error("Vapi sync error", { error: getErrorMessage(error) });
     res.json({ numbers: [] });
   }
 });
@@ -3927,7 +4198,7 @@ app.get("/api/fleet/presence", authenticateUser, async (req: any, res: any) => {
     if (error) throw error;
     res.json({ signals: data || [] });
   } catch (error) {
-    log.error("Presence fetch failed", { error: error?.message || String(error) });
+    log.error("Presence fetch failed", { error: getErrorMessage(error) });
     res.json({ signals: [] });
   }
 });
@@ -3966,7 +4237,7 @@ app.get("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => {
 
     res.json({ tasks: sortedTasks });
   } catch (error) {
-    log.error("Fetch tasks failed", { error: error?.message || String(error) });
+    log.error("Fetch tasks failed", { error: getErrorMessage(error) });
     res.json({ tasks: [] });
   }
 });
@@ -4024,7 +4295,7 @@ app.post("/api/agent-config/:id/manual", authenticateUser, async (req: any, res:
     
     res.json({ success: true });
   } catch (error) {
-    log.error("Manual config error", { error: error?.message || String(error) });
+    log.error("Manual config error", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to update" });
   }
 });
@@ -4081,11 +4352,19 @@ app.get("/api/knowledge", authenticateUser, async (req: any, res: any) => {
   } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load knowledge" }); }
 });
 
-app.post("/api/knowledge", authenticateUser, async (req: any, res: any) => {
+app.post("/api/knowledge", authenticateUser, knowledgeRateLimiter, async (req: any, res: any) => {
   try {
-    const content = (req.body?.content || "").toString().trim();
+    // Validate input using Zod schema
+    const validation = parseFormData(KnowledgeSchema, {
+      content: req.body.content
+    });
+
+    if (!validation.success) {
+      return res.status(400).json({ error: "Validation failed", errors: validation.errors });
+    }
+
+    const content = validation.data.content;
     const agent_id = (req.body?.agent_id || "").toString();
-    if (!content) return res.status(400).json({ error: "content is required" });
     if (!agent_id) return res.status(400).json({ error: "agent_id is required" });
 
     // Confirm the agent belongs to this user before insert.
@@ -4109,10 +4388,18 @@ app.post("/api/knowledge", authenticateUser, async (req: any, res: any) => {
   } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to create" }); }
 });
 
-app.patch("/api/knowledge/:id", authenticateUser, async (req: any, res: any) => {
+app.patch("/api/knowledge/:id", authenticateUser, knowledgeRateLimiter, async (req: any, res: any) => {
   try {
-    const content = (req.body?.content || "").toString().trim();
-    if (!content) return res.status(400).json({ error: "content is required" });
+    // Validate input using Zod schema
+    const validation = parseFormData(KnowledgeSchema, {
+      content: req.body.content
+    });
+
+    if (!validation.success) {
+      return res.status(400).json({ error: "Validation failed", errors: validation.errors });
+    }
+
+    const content = validation.data.content;
     const { data, error } = await db.from("wireline_knowledge")
       .update({ content: content.slice(0, 8000) })
       .eq("id", req.params.id)
@@ -4173,15 +4460,25 @@ app.get("/api/campaigns", authenticateUser, async (req: any, res: any) => {
 
     res.json({ campaigns: enriched });
   } catch (error: any) {
-    log.error("Failed to fetch campaigns", { error: error?.message });
+    log.error("Failed to fetch campaigns", { error: getErrorMessage(error) });
     res.json({ campaigns: [] });
   }
 });
 
 app.post("/api/campaigns", authenticateUser, async (req: any, res: any) => {
   try {
-    const { name, goal, agent_id, call_window_start, call_window_end, max_attempts } = req.body;
-    if (!name?.trim()) return res.status(400).json({ error: "name is required" });
+    const validation = parseFormData(CampaignCreateSchema, {
+      name: req.body.name,
+      goal: req.body.goal,
+      agent_id: req.body.agent_id,
+      call_window_start: req.body.call_window_start,
+      call_window_end: req.body.call_window_end,
+      max_attempts: req.body.max_attempts,
+    });
+    if (!validation.success) {
+      return res.status(400).json({ error: "Validation failed", errors: validation.errors });
+    }
+    const { name, goal, agent_id, call_window_start, call_window_end, max_attempts } = validation.data;
     const { data, error } = await db.from('wireline_outbound_campaigns').insert({
       user_id: req.user.id,
       name: name.trim(),
@@ -4195,16 +4492,28 @@ app.post("/api/campaigns", authenticateUser, async (req: any, res: any) => {
     if (error) throw error;
     res.json({ campaign: data });
   } catch (error: any) {
-    log.error("Failed to create campaign", { error: error?.message });
+    log.error("Failed to create campaign", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to create campaign" });
   }
 });
 
 app.patch("/api/campaigns/:id", authenticateUser, async (req: any, res: any) => {
   try {
+    const validation = parseFormData(CampaignUpdateSchema, {
+      name: req.body.name,
+      goal: req.body.goal,
+      agent_id: req.body.agent_id,
+      status: req.body.status,
+      call_window_start: req.body.call_window_start,
+      call_window_end: req.body.call_window_end,
+      max_attempts: req.body.max_attempts,
+    });
+    if (!validation.success) {
+      return res.status(400).json({ error: "Validation failed", errors: validation.errors });
+    }
     const allowed = ['name', 'goal', 'agent_id', 'status', 'call_window_start', 'call_window_end', 'max_attempts'];
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
-    for (const k of allowed) if (req.body[k] !== undefined) updates[k] = req.body[k];
+    for (const k of allowed) if (validation.data[k as keyof typeof validation.data] !== undefined) updates[k] = validation.data[k as keyof typeof validation.data];
     const { data, error } = await db.from('wireline_outbound_campaigns')
       .update(updates)
       .eq('id', req.params.id)
@@ -4213,7 +4522,7 @@ app.patch("/api/campaigns/:id", authenticateUser, async (req: any, res: any) => 
     if (error) throw error;
     res.json({ campaign: data });
   } catch (error: any) {
-    log.error("Failed to update campaign", { error: error?.message });
+    log.error("Failed to update campaign", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to update campaign" });
   }
 });
@@ -4227,7 +4536,7 @@ app.delete("/api/campaigns/:id", authenticateUser, async (req: any, res: any) =>
     if (error) throw error;
     res.json({ success: true });
   } catch (error: any) {
-    log.error("Failed to delete campaign", { error: error?.message });
+    log.error("Failed to delete campaign", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to delete campaign" });
   }
 });
@@ -4242,7 +4551,7 @@ app.get("/api/campaigns/:id/leads", authenticateUser, async (req: any, res: any)
     if (error) throw error;
     res.json({ leads: data || [] });
   } catch (error: any) {
-    log.error("Failed to fetch campaign leads", { error: error?.message });
+    log.error("Failed to fetch campaign leads", { error: getErrorMessage(error) });
     res.json({ leads: [] });
   }
 });
@@ -4464,7 +4773,7 @@ app.post("/api/campaigns/:id/launch", authenticateUser, async (req: any, res: an
       }
     })();
   } catch (error: any) {
-    log.error("Campaign launch failed", { error: error?.message });
+    log.error("Campaign launch failed", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to launch campaign." });
   }
 });
@@ -4500,7 +4809,7 @@ app.post("/api/campaigns/:id/retry-failed", authenticateUser, async (req: any, r
 
     res.json({ success: true, reset: failed.length });
   } catch (error: any) {
-    log.error("Retry failed leads error", { error: error?.message });
+    log.error("Retry failed leads error", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to retry leads." });
   }
 });
@@ -4527,7 +4836,7 @@ app.post("/api/campaigns/:id/stop", authenticateUser, claudeRateLimiter, async (
     if (error) throw error;
     res.json({ success: true });
   } catch (error: any) {
-    log.error("Campaign stop failed", { error: error?.message });
+    log.error("Campaign stop failed", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to stop campaign." });
   }
 });
@@ -4664,7 +4973,7 @@ app.post("/api/settings", authenticateUser, async (req: any, res: any) => {
       userId: req.user.id,
       changes: sanitizeForAudit(req.body),
       ip: req.ip
-    }).catch((err: any) => log.warn('audit log failed', { error: err?.message }));
+    }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
     
     res.json({ success: true });
   } catch (error) {
@@ -4721,7 +5030,7 @@ app.delete("/api/outbound/:id", authenticateUser, async (req: any, res: any) => 
     if (error) throw error;
     res.json({ success: true });
   } catch (error: any) {
-    log.error("Failed to delete lead", { error: error?.message });
+    log.error("Failed to delete lead", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to delete lead." });
   }
 });
@@ -5022,17 +5331,28 @@ app.post("/api/outbound/dial", authenticateUser, async (req: any, res: any) => {
       status: "Dialing",
     });
 
+    SentryEvents.outboundDialStarted({
+      lead_count: 1,
+      agent_id: agentId,
+    });
+
     res.json({ success: true, callId: result.callId });
   } catch (error: any) {
-    log.error("Outbound call failed", { error: error?.message || String(error) });
+    log.error("Outbound call failed", { error: getErrorMessage(error) });
     res.status(500).json({ error: error.message || "Failed to dispatch call." });
   }
 });
 
 app.post("/api/outbound/bulk", authenticateUser, async (req: any, res: any) => {
   try {
-     const { leads, campaign_id } = req.body;
-     if (!leads || !leads.length) return res.status(400).json({ error: "No leads provided" });
+     const validation = parseFormData(OutboundBulkSchema, {
+       leads: req.body.leads,
+       campaign_id: req.body.campaign_id,
+     });
+     if (!validation.success) {
+       return res.status(400).json({ error: "Validation failed", errors: validation.errors });
+     }
+     const { leads, campaign_id } = validation.data;
 
      // SECURITY ENFORCEMENT
      const { data: userSettings } = await db.from('wireline_settings').select('subscription_status').eq('user_id', req.user.id).single();
@@ -5048,7 +5368,16 @@ app.post("/api/outbound/bulk", authenticateUser, async (req: any, res: any) => {
 
      const { data, error } = await db.from('wireline_outbound_leads').insert(leadsWithUser).select('id');
      if (error) throw error;
-     
+
+     // Track bulk campaign start
+     if (data?.length > 0) {
+       const { data: agent } = await db.from('wireline_agents').select('id').eq('user_id', req.user.id).limit(1).single();
+       SentryEvents.outboundDialStarted({
+         lead_count: data.length,
+         agent_id: agent?.id || "unknown",
+       });
+     }
+
      res.json({ success: true, inserted: data.length });
   } catch (error: any) {
      res.status(500).json({ error: "Failed to queue leads" });
@@ -5123,7 +5452,7 @@ app.post("/api/train/extract", authenticateUser, async (req: any, res: any) => {
         maxTokens: 1024,
       });
     } catch (err) {
-      log.error("Claude extraction failed; falling back to Gemini", { error: err?.message || String(err) });
+      log.error("Claude extraction failed; falling back to Gemini", { error: getErrorMessage(err) });
     }
   }
 
@@ -5157,7 +5486,7 @@ Respond ONLY in strict, valid JSON format (no markdown):
         personality: geminiParsed.personality || "",
       };
     } catch (err) {
-      log.error("Gemini extraction fallback failed", { error: err?.message || String(err) });
+      log.error("Gemini extraction fallback failed", { error: getErrorMessage(err) });
     }
   }
 
@@ -5181,7 +5510,7 @@ Respond ONLY in strict, valid JSON format (no markdown):
       });
     }
   } catch (err) {
-    log.error("Training persistence failed", { error: err?.message || String(err) });
+    log.error("Training persistence failed", { error: getErrorMessage(err) });
     return res.status(500).json({ error: "Failed to save training data" });
   }
 
@@ -5238,7 +5567,7 @@ app.post("/api/train/save", authenticateUser, async (req: any, res: any) => {
 
     res.json({ success: true });
   } catch (error) {
-    log.error("Training save error", { error: error?.message || String(error) });
+    log.error("Training save error", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to save intelligence patterns" });
   }
 });
@@ -5432,7 +5761,7 @@ async function sendEmailViaMicrosoft(opts: {
   );
   if (!r.ok) {
     const err = await r.json().catch(() => ({})) as any;
-    throw new Error(err?.error?.message || `Microsoft Graph sendMail failed: ${r.status}`);
+    throw new Error(getErrorMessage(err) || `Microsoft Graph sendMail failed: ${r.status}`);
   }
   // Graph returns 202 with no body for sendMail — conversationId is unavailable
   // here; we use a random ID that the sync will backfill on the next poll.
@@ -5771,7 +6100,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
                 });
                 finalReplyMs = r.replyText || finalReplyMs;
               } catch (err: any) {
-                log.error("Claude email reply failed (MS)", { error: err?.message });
+                log.error("Claude email reply failed (MS)", { error: getErrorMessage(err) });
               }
             }
 
@@ -5958,7 +6287,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
                });
                finalReply = result.replyText || finalReply;
              } catch (err) {
-               log.error("Claude email reply failed; falling back to Gemini", { error: err?.message || String(err) });
+               log.error("Claude email reply failed; falling back to Gemini", { error: getErrorMessage(err) });
              }
            }
 
@@ -6094,7 +6423,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
                     const r = await claudeBrain.scoreIntent({ subject, body: snippet });
                     score = r.score || 0; label = r.label || 'none';
                  } catch (err) {
-                    log.error("Claude email scoring failed; falling back to Gemini", { error: err?.message || String(err) });
+                    log.error("Claude email scoring failed; falling back to Gemini", { error: getErrorMessage(err) });
                  }
               }
               if (label === 'none' && score === 0) {
@@ -6125,9 +6454,15 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-app.post("/api/emails/threads/:id/reply", authenticateUser, async (req: any, res: any) => {
+app.post("/api/emails/threads/:id/reply", authenticateUser, emailRateLimiter, async (req: any, res: any) => {
    try {
-      const { body } = req.body;
+      const validation = parseFormData(EmailReplySchema, {
+        body: req.body.body,
+      });
+      if (!validation.success) {
+        return res.status(400).json({ error: "Validation failed", errors: validation.errors });
+      }
+      const { body } = validation.data;
       const { data: thread } = await db.from('wireline_email_threads').select('*, wireline_email_accounts(*)').eq('id', req.params.id).eq('user_id', req.user.id).single();
       
       if (!thread) throw new Error("Thread not found");
@@ -6173,16 +6508,36 @@ app.post("/api/emails/threads/:id/reply", authenticateUser, async (req: any, res
          content: body
       });
 
+      // Track email sent in Sentry
+      SentryEvents.emailSent({
+        thread_id: thread.id,
+        recipient_count: 1,
+      });
+
       res.json({ success: true });
    } catch(e: any) {
       log.error("Reply Error", { error: e?.message || String(e) });
-      res.status(500).json({ error: String(e) });
+      const errorMsg = getErrorMessage(e);
+      SentryEvents.externalServiceError({
+        service: account.provider === 'microsoft' ? 'microsoft-graph' : 'gmail',
+        endpoint: '/api/emails/threads/:id/reply',
+        error_message: errorMsg,
+      });
+      res.status(500).json({ error: errorMsg });
    }
 });
 
-app.post("/api/emails/draft", authenticateUser, async (req: any, res: any) => {
+app.post("/api/emails/draft", authenticateUser, emailRateLimiter, async (req: any, res: any) => {
   try {
-     const { subject, messages, context } = req.body;
+     const validation = parseFormData(EmailDraftSchema, {
+       subject: req.body.subject,
+       messages: req.body.messages,
+       context: req.body.context,
+     });
+     if (!validation.success) {
+       return res.status(400).json({ error: "Validation failed", errors: validation.errors });
+     }
+     const { subject, messages, context } = validation.data;
      const prompt = `You are a professional AI assistant drafting an email reply.
 Subject: ${subject}
 Conversation history:
@@ -6198,7 +6553,13 @@ Draft only the plain text email body. Do not include a subject line. Be professi
 
      res.json({ draft: aiRes.response.text() });
   } catch (e) {
-     log.error("Draft error", { error: e?.message || String(e) });
+     const errorMsg = getErrorMessage(e);
+     log.error("Draft error", { error: errorMsg });
+     SentryEvents.aiApiFailure({
+       endpoint: '/api/emails/draft',
+       error_message: errorMsg,
+       model: 'gemini-1.5-flash',
+     });
      res.status(500).json({ error: "Failed to draft reply" });
   }
 });
@@ -6234,7 +6595,7 @@ app.post("/api/agents/:id/optimize", authenticateUser, async (req: any, res: any
                full_review: review,
             });
          } catch (err) {
-            log.error("Claude optimize failed; falling back to Gemini", { error: err?.message || String(err) });
+            log.error("Claude optimize failed; falling back to Gemini", { error: getErrorMessage(err) });
          }
       }
 
@@ -6381,10 +6742,11 @@ app.get("/api/agents/:id/lessons", authenticateUser, async (req: any, res: any) 
 app.post("/api/agents/:id/promote", authenticateUser, async (req: any, res: any) => {
    try {
       const { lessonId, content } = req.body;
+      const agentId = req.params.id;
       // Insert into wireline_directives (the table that agent-config reads from).
       // Priority 5 = medium on the 1-10 scale used throughout the app.
       const { error: promoError } = await db.from('wireline_directives').insert({
-         agent_id: req.params.id,
+         agent_id: agentId,
          content: content,
          priority: 5,
          user_id: req.user.id
@@ -6395,7 +6757,13 @@ app.post("/api/agents/:id/promote", authenticateUser, async (req: any, res: any)
       await db.from('wireline_agent_lessons').delete()
          .eq('id', lessonId)
          .eq('user_id', req.user.id);
-      
+
+      // Track agent optimization when lessons are promoted to directives
+      SentryEvents.agentOptimized({
+        agent_id: agentId,
+        metric_improved: 'instruction_baseline',
+      });
+
       res.json({ success: true });
    } catch (e) {
       res.status(500).json({ error: "Promotion failed" });
@@ -6417,14 +6785,25 @@ app.delete("/api/agents/:id/lessons/:lessonId", authenticateUser, async (req: an
 //  CLAUDE BRAIN — advanced agent capabilities
 // ==========================================
 
-function claudeErr(res: any, e: any) {
+function claudeErr(res: any, e: any, endpoint: string = '/api/claude') {
   if (e instanceof claudeBrain.ClaudeUnavailableError) {
+    SentryEvents.aiApiFailure({
+      endpoint,
+      error_message: e.message,
+      model: 'claude',
+    });
     return res.status(503).json({
       error: e.message,
       code: "CLAUDE_OFFLINE",
     });
   }
-  log.error("Claude endpoint error", { error: e?.message || String(e) });
+  log.error("Claude endpoint error", { error: e?.message || String(e), endpoint });
+  // Track AI API errors with detailed context for debugging
+  SentryEvents.aiApiFailure({
+    endpoint,
+    error_message: e?.message || String(e),
+    model: 'claude',
+  });
   return res.status(500).json({ error: e?.message ?? "Claude error" });
 }
 
@@ -6472,17 +6851,17 @@ function withAudit(actionPrefix: string) {
       Promise.resolve(db.from("wireline_audit_log").insert(rows))
         .then(({ error }: any) => {
           if (error) {
-            log.error("Audit insert failed", { error: error?.message || String(error) });
+            log.error("Audit insert failed", { error: getErrorMessage(error) });
             return;
           }
           // After the spend is persisted, evaluate against the budget and
           // fire spend.warning / spend.exceeded webhooks if a threshold
           // crossed. Also fire-and-forget — never block the response.
           evaluateSpend(req.user.id, deltaUsd).catch((err: any) =>
-            log.error("evaluateSpend exception", { error: err?.message || String(err) }),
+            log.error("evaluateSpend exception", { error: getErrorMessage(err) }),
           );
         })
-        .catch((err: any) => log.error("Audit insert exception", { error: err?.message || String(err) }));
+        .catch((err: any) => log.error("Audit insert exception", { error: getErrorMessage(err) }));
     });
     claudeBrain.runInAuditContext(ctx, () => next());
   };
@@ -6848,7 +7227,17 @@ app.post("/api/claude/call-playbook", authenticateUser, async (req: any, res: an
 // Promote a Claude-suggested directive into the agent's directive table.
 app.post("/api/claude/agent-review/apply-directive", authenticateUser, async (req: any, res: any) => {
   try {
-    const { agentId, directive, priority } = req.body;
+    // Validate directive input
+    const validation = parseFormData(DirectiveSchema, {
+      content: req.body.directive
+    });
+
+    if (!validation.success) {
+      return res.status(400).json({ error: "Validation failed", errors: validation.errors });
+    }
+
+    const { agentId, priority } = req.body;
+    const { content: directive } = validation.data;
     const { data: agent } = await db.from("wireline_agents").select("id").eq("id", agentId).eq("user_id", req.user.id).single();
     if (!agent) return res.status(404).json({ error: "Agent not found." });
     const priorityMap: Record<string, number> = { critical: 10, high: 7, medium: 5, low: 3 };
@@ -7253,9 +7642,9 @@ async function processIntakeLead(key: any, input: IntakeLeadInput, idemHeaderOve
       } catch (err: any) {
         await db.from("wireline_outbound_leads").update({
           status: "AutoDialFailed",
-          metadata: { ...(metadata || {}), auto_dial_error: err?.message || String(err) },
+          metadata: { ...(metadata || {}), auto_dial_error: getErrorMessage(err) },
         }).eq("id", inserted.id);
-        log.warn("Auto-dial threw for lead", { leadId: inserted.id, error: err?.message || String(err) });
+        log.warn("Auto-dial threw for lead", { leadId: inserted.id, error: getErrorMessage(err) });
       }
     })();
   }
@@ -7354,7 +7743,7 @@ app.post("/api/intake/leads", async (req: any, res: any) => {
     const results = await Promise.all(
       (leads as IntakeLeadInput[]).map((lead) => processIntakeLead(key, lead).catch((err: any) => ({
         ok: false,
-        error: err?.message || String(err),
+        error: getErrorMessage(err),
         code: "PROCESS_FAILED",
       } as IntakeLeadResult))),
     );
@@ -7662,7 +8051,7 @@ async function processScheduledDailyBriefs() {
       } catch (err: any) {
         // Persist the error so the operator can see why delivery failed,
         // but DON'T mark sent — we'll retry on the next tick.
-        const message = err?.message || String(err);
+        const message = getErrorMessage(err);
         await db.from("wireline_settings").update({
           daily_brief_last_error: message.slice(0, 500),
         }).eq("user_id", row.user_id);
@@ -7670,7 +8059,7 @@ async function processScheduledDailyBriefs() {
       }
     }
   } catch (err) {
-    log.error("Daily-brief scheduler tick failed", { error: err?.message || String(err) });
+    log.error("Daily-brief scheduler tick failed", { error: getErrorMessage(err) });
   } finally {
     _briefSchedRunning = false;
   }
@@ -7752,7 +8141,7 @@ async function processScheduledCallbacks(): Promise<void> {
       }
     }
   } catch (err: any) {
-    log.error("Callback scheduler tick failed", { error: err?.message || String(err) });
+    log.error("Callback scheduler tick failed", { error: getErrorMessage(err) });
   } finally {
     _callbackSchedRunning = false;
   }
@@ -7789,7 +8178,7 @@ async function purgeStalePresence(): Promise<void> {
       log.info("Purged stale signal presence rows", { count });
     }
   } catch (err: any) {
-    log.warn("Stale presence purge failed", { error: err?.message || String(err) });
+    log.warn("Stale presence purge failed", { error: getErrorMessage(err) });
   }
 }
 setInterval(purgeStalePresence, PRESENCE_PURGE_INTERVAL_MS).unref?.();
@@ -9399,7 +9788,7 @@ app.post("/api/qa/score-batch", authenticateUser, claudeRateLimiter, withAudit("
             .eq("user_id", req.user.id);
           scored++;
         } catch (err: any) {
-          log.warn("Batch QA: single call scoring failed", { callId: call.id, error: err?.message });
+          log.warn("Batch QA: single call scoring failed", { callId: call.id, error: getErrorMessage(err) });
           failed++;
         }
       }));
@@ -9548,7 +9937,7 @@ app.use((err: any, req: express.Request, res: express.Response, _next: express.N
     requestId: (res as any).locals?.requestId,
     method: req.method,
     path: req.path,
-    error: err?.message || String(err),
+    error: getErrorMessage(err),
     stack: err?.stack,
   });
   if (process.env.SENTRY_DSN) {
