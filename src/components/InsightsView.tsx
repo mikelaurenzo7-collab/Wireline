@@ -28,6 +28,8 @@ export default function InsightsView() {
     </div>
   );
 
+  const DAY_OPTIONS = [7, 14, 30, 60, 90];
+
   return (
     <PageShell
       eyebrow="Analytics · Business Intelligence"
@@ -35,12 +37,27 @@ export default function InsightsView() {
       subtitle="Funnel analysis, topic clusters, heatmaps, leaderboards, and failure modes."
       actions={
         <>
-          <select
-            value={days} onChange={(e) => setDays(parseInt(e.target.value))}
-            className="px-3 h-9 rounded-full glass border border-white/10 outline-none text-ink text-[11px] focus:border-brand/60 transition-all"
-          >
-            {[7, 14, 30, 60, 90].map((d) => <option key={d} value={d}>{d}d</option>)}
-          </select>
+          {/* Styled segmented control — matches the Aurora Cream design system */}
+          <div className="flex items-center gap-px p-1 rounded-full glass border border-black/8">
+            {DAY_OPTIONS.map((d) => (
+              <button
+                key={d}
+                onClick={() => setDays(d)}
+                className={cn(
+                  "h-7 px-3 rounded-full text-[10px] font-medium tracking-wide transition-all",
+                  days === d
+                    ? "text-white"
+                    : "text-muted hover:text-ink"
+                )}
+                style={days === d ? {
+                  background: "linear-gradient(135deg, #0AC8D4 0%, #9B59F5 55%, #E040C0 100%)",
+                  boxShadow: "0 2px 8px -4px rgba(10,200,212,0.50)"
+                } : undefined}
+              >
+                {d}d
+              </button>
+            ))}
+          </div>
           <CsvExportButton type="calls" label="CSV" />
         </>
       }
