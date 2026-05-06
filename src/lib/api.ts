@@ -10,11 +10,12 @@ const DEFAULT_TIMEOUT_MS = 120_000;
  * (e.g. an HTML error page from a reverse proxy), returns a generic error
  * object instead of throwing so callers never surface raw parse errors.
  */
-export async function safeJson(response: Response): Promise<any> {
+export async function safeJson<T = any>(response: Response): Promise<T | { error: string }> {
   const text = await response.text();
   try {
-    return JSON.parse(text);
-  } catch {
+    return JSON.parse(text) as T;
+  } catch (parseError) {
+    console.error("JSON parse failed:", text.slice(0, 200), parseError);
     return { error: "An unexpected error occurred. Please try again." };
   }
 }

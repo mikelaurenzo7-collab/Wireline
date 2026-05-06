@@ -218,9 +218,9 @@ function RecipeModal({
 
 function NoKeyInline() {
   return (
-    <div className="px-7 py-4 bg-amber-500/10 border-y border-amber-500/30 flex items-center gap-3">
-      <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
-      <p className="text-xs text-amber-500 leading-relaxed">
+    <div className="px-7 py-4 bg-rose-500/10 border-y border-rose-500/30 flex items-center gap-3">
+      <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
+      <p className="text-xs text-rose-500 leading-relaxed">
         Wireline AI is currently unavailable. Contact your administrator to enable this feature.
       </p>
     </div>
