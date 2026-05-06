@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import AuthPortal from "./components/AuthPortal";
 import CommandBar from "./components/CommandBar";
 import ErrorBoundary from "./components/ErrorBoundary";
+import PersonaWizard from "./components/PersonaWizard";
 import ProductTour from "./components/ProductTour";
 import SystemStatusBadge from "./components/SystemStatusBadge";
 import ToastStack from "./components/Toast";
@@ -467,6 +468,7 @@ function AppContent() {
       <AuroraBackdrop />
       <div className="scanline" />
       <CommandBar />
+      <PersonaWizard />
       <ProductTour />
       <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
 
