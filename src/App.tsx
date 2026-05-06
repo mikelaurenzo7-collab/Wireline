@@ -28,6 +28,7 @@ const CallLogs        = lazy(() => import("./components/CallLogs"));
 const EmailInbox      = lazy(() => import("./components/EmailInbox"));
 const KnowledgeBaseManager = lazy(() => import("./components/KnowledgeBaseManager"));
 const LiveMonitor     = lazy(() => import("./components/LiveMonitor"));
+const DncManager      = lazy(() => import("./components/DncManager"));
 
 type NavItem = {
   label: string;
@@ -59,7 +60,10 @@ const NAV_ITEMS: NavGroup[] = [
   { group: "Admin", items: [
     { label: "Integrations", path: "/integrations", icon: PlugZap },
     { label: "Settings",     path: "/admin", icon: ServerCog },
-  ]}
+  ]},
+  { group: "Compliance", items: [
+    { label: "DNC List",     path: "/dnc", icon: Shield },
+  ]},
 ];
 
 function AuroraBackdrop() {
@@ -507,6 +511,7 @@ function AppContent() {
                       <Route path="/agents" element={<PageTransition><ErrorBoundary><FleetSettings /></ErrorBoundary></PageTransition>} />
                       <Route path="/integrations" element={<PageTransition><ErrorBoundary><Integrations /></ErrorBoundary></PageTransition>} />
                       <Route path="/admin" element={<PageTransition><ErrorBoundary><AdminSettings /></ErrorBoundary></PageTransition>} />
+                      <Route path="/dnc" element={<PageTransition><ErrorBoundary><DncManager /></ErrorBoundary></PageTransition>} />
                       <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
                     </Routes>
                   </Suspense>

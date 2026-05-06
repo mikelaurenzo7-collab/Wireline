@@ -619,3 +619,52 @@ CREATE INDEX IF NOT EXISTS wireline_outbound_leads_campaign_idx
 ALTER TABLE wireline_appointments ADD COLUMN IF NOT EXISTS notes TEXT;
 ALTER TABLE wireline_appointments ADD COLUMN IF NOT EXISTS phone_number TEXT;
 
+
+-- ────────────────────────────────────────────────────────────────────
+-- DO NOT CALL (DNC) LIST — compliance-critical for outbound operations.
+-- Every outbound dial and campaign launch checks this list and skips
+-- any number that appears here, protecting operators from TCPA/DNC violations.
+-- Numbers are stored normalized (digits only, E.164-compatible) so that
+-- "+1 (555) 123-4567" and "5551234567" both resolve to the same entry.
+-- ────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS wireline_dnc_list (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id     UUID NOT NULL DEFAULT auth.uid(),
+    phone       TEXT NOT NULL,              -- normalized: digits only
+    phone_raw   TEXT,                       -- original string for display
+    reason      TEXT,                       -- optional: 'opt-out' | 'legal' | 'custom'
+    source      TEXT DEFAULT 'manual',      -- 'manual' | 'csv' | 'opt-out'
+    created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS wireline_dnc_list_user_phone_idx
+    ON wireline_dnc_list(user_id, phone);
+
+CREATE INDEX IF NOT EXISTS wireline_dnc_list_user_created_idx
+    ON wireline_dnc_list(user_id, created_at DESC);
+
+ALTER TABLE wireline_dnc_list ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE tablename = 'wireline_dnc_list'
+          AND policyname = 'Users can manage their own DNC list'
+    ) THEN
+        EXECUTE 'CREATE POLICY "Users can manage their own DNC list" ON wireline_dnc_list FOR ALL USING (auth.uid() = user_id)';
+    END IF;
+END $$;
+
+-- ────────────────────────────────────────────────────────────────────
+-- CALL QA SCORING — Claude evaluates every completed call against a
+-- 5-dimension rubric (0–20 pts each, 100 total). Scores are stored
+-- alongside the call log so they are available in both the call detail
+-- view and the aggregate Insights → Quality tab.
+-- ────────────────────────────────────────────────────────────────────
+ALTER TABLE wireline_call_logs ADD COLUMN IF NOT EXISTS qa_score INTEGER;
+ALTER TABLE wireline_call_logs ADD COLUMN IF NOT EXISTS qa_breakdown JSONB;
+-- qa_breakdown shape: { greeting: N, discovery: N, solution: N, objection: N, closing: N, notes: "..." }
+
+CREATE INDEX IF NOT EXISTS wireline_call_logs_qa_score_idx
+    ON wireline_call_logs(user_id, qa_score)
+    WHERE qa_score IS NOT NULL;

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import {
   PhoneIncoming, PhoneOutgoing, Clock, FileText, Search, Loader2,
   MessageCircle, ChevronRight, Database, Activity, Signal, ExternalLink,
-  Download, Filter, SmilePlus, Meh, Frown, MessageSquare,
+  Download, Filter, SmilePlus, Meh, Frown, MessageSquare, Star, Sparkles,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
@@ -12,6 +12,7 @@ import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import CsvExportButton from "./CsvExportButton";
 import PageShell, { Panel } from "./PageShell";
 import { PanelSkeleton } from "./Skeleton";
+import { useToast } from "../contexts/ToastContext";
 
 export default function CallLogs() {
   const [calls, setCalls] = useState<any[]>([]);
@@ -159,6 +160,16 @@ export default function CallLogs() {
                           )}>
                             {call.lead_score || 0}
                           </span>
+                          {call.qa_score != null && (
+                            <span className={cn(
+                              "px-1.5 py-0 rounded-full text-[8px] font-mono leading-tight shrink-0 border",
+                              call.qa_score >= 75 ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" :
+                              call.qa_score >= 50 ? "bg-amber-500/10 text-amber-400 border-amber-500/20" :
+                              "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                            )}>
+                              ★{call.qa_score}
+                            </span>
+                          )}
                           <SentimentDot sentiment={call.sentiment} />
                         </div>
                         <p className="text-[10px] text-muted truncate leading-tight">{call.summary || "Decoding…"}</p>
@@ -198,10 +209,47 @@ function SentimentDot({ sentiment }: { sentiment?: string }) {
 }
 
 function CallDetail({ call, formatDuration }: { call: any; formatDuration: (s: number) => string }) {
+  const { success: toastSuccess, error: toastError } = useToast();
   type DTab = "summary" | "transcript" | "record";
   const [tab, setTab] = useState<DTab>("summary");
+  const [scoring, setScoring] = useState(false);
+  const [qaScore, setQaScore] = useState<number | null>(call.qa_score ?? null);
+  const [qaBreakdown, setQaBreakdown] = useState<any>(call.qa_breakdown ?? null);
+
+  // Reset QA state when call changes
+  React.useEffect(() => {
+    setQaScore(call.qa_score ?? null);
+    setQaBreakdown(call.qa_breakdown ?? null);
+  }, [call.id]);
+
+  const handleScoreQa = async () => {
+    setScoring(true);
+    try {
+      const r = await authFetch(`/api/qa/score/${call.id}`, { method: "POST" });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || "Scoring failed");
+      setQaScore(d.score);
+      setQaBreakdown(d.breakdown);
+      toastSuccess("QA scored", `Call scored ${d.score}/100.`);
+    } catch (e: any) {
+      toastError("QA scoring failed", e.message);
+    } finally {
+      setScoring(false);
+    }
+  };
 
   const transcriptLines = (call.transcript || "").split('\n').filter((l: string) => l.trim() !== '');
+
+  const QA_DIMS = [
+    { key: "greeting",  label: "Opening",   color: "#7DF9FF" },
+    { key: "discovery", label: "Discovery",  color: "#C58BFF" },
+    { key: "solution",  label: "Solution",   color: "#FF6BD9" },
+    { key: "objection", label: "Objections", color: "#4DFFC4" },
+    { key: "closing",   label: "Closing",    color: "#FFD166" },
+  ];
+
+  const qaColor = (score: number) =>
+    score >= 90 ? "#7DF9FF" : score >= 75 ? "#4DFFC4" : score >= 60 ? "#FFD166" : score >= 40 ? "#FF9A5C" : "#FF6BD9";
 
   return (
     <Panel
@@ -217,6 +265,20 @@ function CallDetail({ call, formatDuration }: { call: any; formatDuration: (s: n
       flush
       actions={
         <div className="flex items-center gap-1">
+          <button
+            onClick={handleScoreQa}
+            disabled={scoring}
+            title="Run QA scoring with Claude"
+            className={cn(
+              "h-7 px-2.5 rounded-full border text-[9px] uppercase tracking-[0.22em] transition-all flex items-center gap-1 shrink-0",
+              qaScore !== null
+                ? "glass border-white/10 text-muted hover:text-brand hover:border-brand/30"
+                : "bg-brand/10 border-brand/30 text-brand hover:bg-brand/20"
+            )}
+          >
+            {scoring ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Star className="w-2.5 h-2.5" />}
+            {qaScore !== null ? `QA ${qaScore}` : "Score QA"}
+          </button>
           <ClaudeRecipeButton recipe="coach"   callId={call.id} label="Coach"   />
           <ClaudeRecipeButton recipe="qualify" callId={call.id} label="Qualify" />
         </div>
@@ -289,6 +351,58 @@ function CallDetail({ call, formatDuration }: { call: any; formatDuration: (s: n
                     </div>
                     <p className="text-[12px] text-ink/80 leading-relaxed">{call.coaching_note}</p>
                   </div>
+                )}
+                {/* QA Scorecard */}
+                {qaScore !== null && qaBreakdown ? (
+                  <div className="rounded-xl glass border border-white/8 p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="text-[9px] uppercase tracking-[0.3em] flex items-center gap-1.5" style={{ color: qaColor(qaScore) }}>
+                        <Star className="w-3 h-3" /> QA Scorecard
+                      </div>
+                      <div className="font-display italic text-2xl leading-none" style={{ color: qaColor(qaScore) }}>
+                        {qaScore}<span className="text-xs text-muted/60 ml-1 not-italic">/100</span>
+                      </div>
+                    </div>
+                    <div className="space-y-2 mb-3">
+                      {QA_DIMS.map(({ key, label, color }) => {
+                        const val = qaBreakdown[key] ?? 0;
+                        return (
+                          <div key={key} className="flex items-center gap-2">
+                            <span className="text-[9px] uppercase tracking-[0.22em] text-muted w-20 shrink-0">{label}</span>
+                            <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${(val / 20) * 100}%` }}
+                                transition={{ duration: 0.8, ease: "easeOut" }}
+                                className="h-full rounded-full"
+                                style={{ background: color }}
+                              />
+                            </div>
+                            <span className="text-[9px] font-mono text-ink w-8 text-right shrink-0">{val}/20</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {qaBreakdown.notes && (
+                      <p className="text-[11px] text-ink/65 leading-relaxed border-t border-white/8 pt-2 mt-2">
+                        <Sparkles className="w-3 h-3 inline mr-1 text-brand" />{qaBreakdown.notes}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleScoreQa}
+                    disabled={scoring}
+                    className="w-full rounded-xl glass border border-brand/20 hover:border-brand/40 p-3 flex items-center gap-3 transition-all group"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-brand/10 border border-brand/20 flex items-center justify-center shrink-0">
+                      {scoring ? <Loader2 className="w-3.5 h-3.5 animate-spin text-brand" /> : <Star className="w-3.5 h-3.5 text-brand" />}
+                    </div>
+                    <div className="text-left min-w-0">
+                      <p className="text-[10px] uppercase tracking-[0.28em] text-brand">{scoring ? "Scoring…" : "Run QA Scoring"}</p>
+                      <p className="text-[9px] text-muted/70 mt-0.5">Claude evaluates this call across 5 quality dimensions</p>
+                    </div>
+                  </button>
                 )}
               </motion.div>
             )}
