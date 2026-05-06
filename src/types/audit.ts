@@ -43,6 +43,7 @@ export type AuditEventType =
   | 'security.suspicious_activity'
   | 'security.api_key_created'
   | 'security.api_key_deleted'
+  | 'security.api_key_rotated'
   
   // Data operations
   | 'data.export'

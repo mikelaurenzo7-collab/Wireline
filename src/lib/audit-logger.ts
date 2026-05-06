@@ -163,7 +163,7 @@ export class AuditLogger {
   ) {
     const eventTypeMap: Record<typeof action, AuditEventType> = {
       'updated': 'settings.updated',
-      'api_key_rotated': 'settings.api_key_rotated'
+      'api_key_rotated': 'security.api_key_rotated'
     };
 
     return await this.log({
