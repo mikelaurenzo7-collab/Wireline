@@ -5,6 +5,7 @@ import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import SupervisedAgentTuner from "./SupervisedAgentTuner";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
+import { HelpTooltip } from "./HelpTooltip";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -197,9 +198,24 @@ export default function AgentTraining() {
 
         <nav className="flex flex-wrap gap-1.5 max-w-[1400px] mx-auto w-full mt-3">
           {[
-            { id: 'admin', label: 'Neural relay', icon: MessageSquare },
-            { id: 'database', label: 'Directive registry', icon: Database },
-            { id: 'simulator', label: 'Mission sandbox', icon: PlayCircle }
+            {
+              id: 'admin',
+              label: 'Neural relay',
+              icon: MessageSquare,
+              help: "Configure directives and knowledge that shape your agent's behavior",
+            },
+            {
+              id: 'database',
+              label: 'Directive registry',
+              icon: Database,
+              help: 'View and edit all training data stored for this agent',
+            },
+            {
+              id: 'simulator',
+              label: 'Mission sandbox',
+              icon: PlayCircle,
+              help: 'Test your agent with simulated conversations',
+            },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -211,7 +227,13 @@ export default function AgentTraining() {
                   : "glass border-white/10 text-muted hover:border-white/20 hover:text-ink"
               )}
             >
-              <tab.icon className="w-3 h-3" /> {tab.label}
+              <tab.icon className="w-3 h-3" />
+              <span>{tab.label}</span>
+              <HelpTooltip content={tab.help} placement="top">
+                <span className="w-4 h-4 rounded-full border border-current/30 text-[8px] flex items-center justify-center opacity-70 hover:opacity-100">
+                  ?
+                </span>
+              </HelpTooltip>
             </button>
           ))}
         </nav>

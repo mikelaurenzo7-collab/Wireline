@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
+import EmptyState from "./EmptyState";
 
 interface KnowledgeRow {
   id: number;
@@ -459,14 +460,26 @@ export default function KnowledgeBaseManager() {
           )}
 
           {!loading && filtered.length === 0 && (
-            <div className="p-16 text-center">
-              <BookOpen className="w-10 h-10 mx-auto text-muted/40 mb-3" />
-              <p className="text-[11px] uppercase tracking-[0.4em] text-muted">
-                {rows.length === 0
-                  ? "No knowledge yet — ingest from URL/PDF in Neural Atelier"
-                  : "No matches for this filter"}
-              </p>
-            </div>
+            rows.length === 0 ? (
+              <EmptyState
+                icon={Database}
+                title="Knowledge base is empty"
+                description="Add facts, policies, FAQs, and product details so your agents can answer customer questions accurately."
+                accent="#C58BFF"
+                actions={[
+                  { label: "Add Knowledge", onClick: () => setShowAdd(true), primary: true },
+                  { label: "Ingest from URL", onClick: () => {} },
+                ]}
+                className="py-12"
+              />
+            ) : (
+              <div className="p-16 text-center">
+                <BookOpen className="w-10 h-10 mx-auto text-muted/40 mb-3" />
+                <p className="text-[11px] uppercase tracking-[0.4em] text-muted">
+                  No matches for this filter
+                </p>
+              </div>
+            )
           )}
 
           <div className="divide-y divide-white/5">

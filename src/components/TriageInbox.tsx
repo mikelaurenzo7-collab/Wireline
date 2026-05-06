@@ -2,13 +2,14 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Flame, ShieldAlert, BookOpen, ListTodo, AlertOctagon,
-  ChevronRight, Loader2, Plus, RefreshCw, Pencil, X,
+  ChevronRight, Loader2, Plus, RefreshCw, Pencil, X, Inbox,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import CsvExportButton from "./CsvExportButton";
 import PageShell, { Panel } from "./PageShell";
+import EmptyState from "./EmptyState";
 
 interface TriageData {
   hot_leads: any[];
@@ -44,6 +45,18 @@ export default function TriageInbox() {
           <Loader2 className="w-6 h-6 animate-spin text-brand" />
           <p className="text-[9px] uppercase tracking-[0.4em] text-muted">Scanning the fleet</p>
         </div>
+      ) : totalAttention === 0 ? (
+        <EmptyState
+          icon={Inbox}
+          title="All clear"
+          description="No items need attention right now. Triage surfaces follow-ups, hot leads, and escalations from your agent activity."
+          accent="#4DFFC4"
+          actions={[
+            { label: "View Call Logs", to: "/logs" },
+            { label: "View Dashboard", to: "/" },
+          ]}
+          className="h-full py-10"
+        />
       ) : body}
     </Panel>
   );

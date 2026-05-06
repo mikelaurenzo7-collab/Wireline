@@ -3,6 +3,7 @@ import {
   PhoneIncoming, PhoneOutgoing, Clock, FileText, Search, Loader2,
   MessageCircle, ChevronRight, Database, Activity, Signal, ExternalLink,
   Download, Filter, SmilePlus, Meh, Frown, MessageSquare, Star, Sparkles,
+  Phone,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
@@ -12,6 +13,7 @@ import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import CsvExportButton from "./CsvExportButton";
 import PageShell, { Panel } from "./PageShell";
 import { PanelSkeleton } from "./Skeleton";
+import EmptyState from "./EmptyState";
 import { useToast } from "../contexts/ToastContext";
 
 export default function CallLogs() {
@@ -128,9 +130,17 @@ export default function CallLogs() {
             {loading ? (
               <PanelSkeleton rows={8} />
             ) : filteredCalls.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-center px-4">
-                <p className="text-[9px] uppercase tracking-[0.5em] text-muted/60">No signals recorded</p>
-              </div>
+              <EmptyState
+                icon={Phone}
+                title="No calls yet"
+                description="When your agents handle calls, transcripts and analytics will appear here. Wire a phone number in Settings to go live."
+                accent="#7DF9FF"
+                actions={[
+                  { label: "Go to Settings", to: "/admin", primary: true },
+                  { label: "Start Outbound", to: "/outbound" },
+                ]}
+                className="h-full py-10"
+              />
             ) : (
               <ul className="divide-y divide-white/5">
                 {filteredCalls.map(call => (
