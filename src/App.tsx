@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import AuthPortal from "./components/AuthPortal";
 import CommandBar from "./components/CommandBar";
 import ErrorBoundary from "./components/ErrorBoundary";
+import ProductTour from "./components/ProductTour";
 import SystemStatusBadge from "./components/SystemStatusBadge";
 import ToastStack from "./components/Toast";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -36,16 +37,17 @@ type NavItem = {
   path: string;
   icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   badge?: number;
+  dataTour?: string;
 };
 
 type NavGroup = { group: string; items: NavItem[] };
 
 const NAV_ITEMS: NavGroup[] = [
   { group: "Overview", items: [
-    { label: "Dashboard",    path: "/", icon: Activity },
+    { label: "Dashboard",    path: "/", icon: Activity, dataTour: "dashboard" },
     { label: "Live Monitor", path: "/live", icon: Radio },
     { label: "Triage",       path: "/triage", icon: Inbox },
-    { label: "Insights",     path: "/insights", icon: BarChart3 },
+    { label: "Insights",     path: "/insights", icon: BarChart3, dataTour: "insights" },
   ]},
   { group: "Communications", items: [
     { label: "Call Logs",    path: "/logs", icon: History },
@@ -54,9 +56,9 @@ const NAV_ITEMS: NavGroup[] = [
     { label: "Appointments", path: "/appointments", icon: Calendar },
   ]},
   { group: "Intelligence", items: [
-    { label: "Training",     path: "/train", icon: MessageSquare },
+    { label: "Training",     path: "/train", icon: MessageSquare, dataTour: "training" },
     { label: "Knowledge",    path: "/knowledge", icon: Database },
-    { label: "Agents",       path: "/agents", icon: Users },
+    { label: "Agents",       path: "/agents", icon: Users, dataTour: "agents" },
   ]},
   { group: "Admin", items: [
     { label: "Integrations", path: "/integrations", icon: PlugZap },
@@ -212,6 +214,7 @@ function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) =>
                         key={item.label}
                         to={item.path}
                         onClick={() => setOpen(false)}
+                        {...(item.dataTour ? { "data-tour": item.dataTour } : {})}
                         className={cn(
                           "group relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all overflow-hidden",
                           active
@@ -464,6 +467,7 @@ function AppContent() {
       <AuroraBackdrop />
       <div className="scanline" />
       <CommandBar />
+      <ProductTour />
       <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
 
       <main className="flex-1 overflow-hidden relative flex flex-col z-10">
