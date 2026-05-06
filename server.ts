@@ -1486,12 +1486,15 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
                   .maybeSingle()
                : { data: null };
             const callerFirstName = leadRecord?.customer_name?.trim().split(' ')[0] || '';
-            const { data: appointment } = callerFirstName
+            // Sanitize callerFirstName to prevent SQL wildcard injection before using in ILIKE.
+            // Keep only letters, digits, hyphens, and apostrophes (valid in names).
+            const safeFirstName = callerFirstName.replace(/[^A-Za-z0-9'\-]/g, '').slice(0, 40);
+            const { data: appointment } = safeFirstName
                ? await db.from('wireline_appointments')
                   .select('date, time, service_type, status')
                   .eq('user_id', agent?.user_id)
                   .eq('status', 'Scheduled')
-                  .ilike('customer_name', `%${callerFirstName}%`)
+                  .ilike('customer_name', `%${safeFirstName}%`)
                   .order('created_at', { ascending: false })
                   .limit(1)
                   .maybeSingle()
@@ -1597,7 +1600,7 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
             date: args.date,
             time: args.time,
             service_type: args.service_type,
-          }).catch((err: unknown) => log.warn("webhook dispatch failed", { event: "appointment.booked", error: (err as any)?.message || String(err) }));
+          }).catch((err: unknown) => log.warn("webhook dispatch failed", { event: "appointment.booked", appointment_id: data.id, customer_name: args.customer_name, error: (err as any)?.message || String(err) }));
 
           results.push({
             toolCallId: toolCall.id,
