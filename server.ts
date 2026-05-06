@@ -3720,12 +3720,25 @@ app.post("/api/agents/:id/apply-role", authenticateUser, async (req: any, res: a
     const template = ROLE_PERSONALITY_TEMPLATES[role as keyof typeof ROLE_PERSONALITY_TEMPLATES];
     if (!template) return res.status(400).json({ error: "Unknown role" });
 
+    // SECURITY: verify the agent belongs to the caller before upserting.
+    // We use the service-role client (bypasses RLS) so without this check
+    // a user could overwrite another user's agent's personality by
+    // guessing the agent_id (and the upsert's onConflict: 'agent_id'
+    // would even reassign ownership via the user_id field).
+    const { data: agent } = await db
+      .from('wireline_agents')
+      .select('id')
+      .eq('id', req.params.id)
+      .eq('user_id', req.user.id)
+      .maybeSingle();
+    if (!agent) return res.status(404).json({ error: "Agent not found" });
+
     await db.from('wireline_personality')
-      .upsert({ agent_id: req.params.id, user_id: req.user.id, content: template }, { onConflict: 'agent_id' })
-      .eq('agent_id', req.params.id);
+      .upsert({ agent_id: req.params.id, user_id: req.user.id, content: template }, { onConflict: 'agent_id' });
 
     res.json({ success: true, content: template });
   } catch (error) {
+    log.error("Failed to apply role template", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to apply role template" });
   }
 });
@@ -3777,6 +3790,17 @@ app.post("/api/agents/:id/import", authenticateUser, async (req: any, res: any) 
     if (!payload?.wireline_export_version || !payload?.agent) {
       return res.status(400).json({ error: 'Invalid export file format' });
     }
+
+    // SECURITY: verify the target agent belongs to the caller. Without
+    // this, the personality upsert (onConflict: 'agent_id') would let
+    // any authenticated user overwrite another user's agent.
+    const { data: ownedAgent } = await db
+      .from('wireline_agents')
+      .select('id')
+      .eq('id', agentId)
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (!ownedAgent) return res.status(404).json({ error: 'Agent not found' });
 
     const { personality, directives, knowledge } = payload.agent;
 
@@ -4279,9 +4303,24 @@ app.post("/api/agent-config/:id/manual", authenticateUser, async (req: any, res:
     const agentId = req.params.id;
     const { type, content, overrideId } = req.body; // type is 'personality', 'directive', or 'knowledge'
     const userId = req.user.id;
-    
+
+    // SECURITY: verify the agent belongs to the caller. Without this,
+    // a user could pass an agent_id they don't own and create personality/
+    // directive/knowledge rows on someone else's agent (the upsert/insert
+    // bypasses RLS via the service-role client).
+    const { data: ownedAgent } = await db
+      .from('wireline_agents')
+      .select('id')
+      .eq('id', agentId)
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (!ownedAgent) return res.status(404).json({ error: "Agent not found" });
+
     if (type === 'personality') {
-       await db.from('wireline_personality').upsert({ agent_id: agentId, content, user_id: userId });
+       await db.from('wireline_personality').upsert(
+         { agent_id: agentId, content, user_id: userId },
+         { onConflict: 'agent_id' }
+       );
     } else if (type === 'directive') {
        if (overrideId) {
           await db.from('wireline_directives').update({ content }).eq('id', overrideId).eq('user_id', userId);
@@ -4294,8 +4333,10 @@ app.post("/api/agent-config/:id/manual", authenticateUser, async (req: any, res:
        } else {
           await db.from('wireline_knowledge').insert({ agent_id: agentId, content, user_id: userId });
        }
+    } else {
+       return res.status(400).json({ error: "Invalid type — must be personality, directive, or knowledge" });
     }
-    
+
     res.json({ success: true });
   } catch (error) {
     log.error("Manual config error", { error: getErrorMessage(error) });
