@@ -4165,9 +4165,25 @@ app.post("/api/phone-numbers", authenticateUser, phoneNumberRateLimiter, async (
 app.patch("/api/phone-numbers/:id", authenticateUser, phoneNumberRateLimiter, async (req: any, res: any) => {
   try {
     const { agent_id } = req.body;
+
+    // SECURITY: if assigning to an agent, verify it belongs to the caller.
+    // Without this, a user could route their inbound calls to another
+    // user's agent — billing/usage attribution would land on the agent
+    // owner, not the phone number owner.
+    if (agent_id) {
+      const { data: agent } = await db
+        .from('wireline_agents')
+        .select('id')
+        .eq('id', agent_id)
+        .eq('user_id', req.user.id)
+        .maybeSingle();
+      if (!agent) return res.status(404).json({ error: "Agent not found" });
+    }
+
     await db.from('wireline_phone_numbers').update({ agent_id }).eq('id', req.params.id).eq('user_id', req.user.id);
     res.json({ success: true });
   } catch (error) {
+    log.error("Failed to update phone number assignment", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to update phone number assignment" });
   }
 });
