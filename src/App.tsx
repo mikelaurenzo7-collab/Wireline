@@ -191,7 +191,13 @@ function FloatingRail({ open, setOpen, onShowShortcuts }: { open: boolean; setOp
 
   const renderRailItem = (item: NavItem) => {
     const active = isActive(item);
-    const badge = navBadges[item.path] ?? 0;
+    // Sum badge counts for this entry's primary path AND every owned
+    // sub-path. Without this, post-consolidation hub entries (Channels
+    // owns /logs+/outbound+/inbox+/appointments; Settings owns /admin
+    // +/dnc+/audit) would silently drop attention indicators that
+    // /api/nav-counts still reports against the original sub-paths.
+    const badge = (navBadges[item.path] ?? 0)
+      + (item.matches?.reduce((sum, m) => sum + (navBadges[m] ?? 0), 0) ?? 0);
     return (
       <Link
         key={item.label}
