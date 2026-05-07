@@ -20,6 +20,33 @@ export async function safeJson<T = any>(response: Response): Promise<T | { error
   }
 }
 
+// Compose a caller's AbortSignal with our request-timeout signal so
+// `authFetch` always enforces DEFAULT_TIMEOUT_MS even when the caller
+// owns cancellation. Prefers the native AbortSignal.any() (Chromium 116+
+// / FF 124+ / Safari 17.4+) and falls back to a manual listener bridge
+// for older runtimes.
+function combineSignals(...signals: AbortSignal[]): AbortSignal {
+  const live = signals.filter(Boolean);
+  if (live.length === 1) return live[0];
+  // Try the native AbortSignal.any first (Chromium 116+, FF 124+, Safari
+  // 17.4+). Some test runtimes (notably happy-dom) ship a broken stub
+  // that throws when invoked; treat that as "not available" and fall
+  // through to the manual bridge instead of propagating the failure.
+  type AnyFn = (this: typeof AbortSignal, signals: AbortSignal[]) => AbortSignal;
+  const anyFn = (AbortSignal as unknown as { any?: AnyFn }).any;
+  if (typeof anyFn === "function") {
+    try { return anyFn.call(AbortSignal, live); } catch { /* fall through */ }
+  }
+  // Fallback: forward the first signal that aborts to a fresh controller.
+  const controller = new AbortController();
+  const onAbort = (s: AbortSignal) => controller.abort(s.reason);
+  for (const s of live) {
+    if (s.aborted) { onAbort(s); break; }
+    s.addEventListener("abort", () => onAbort(s), { once: true });
+  }
+  return controller.signal;
+}
+
 export async function authFetch(url: string, options: RequestInit = {}) {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
@@ -29,16 +56,16 @@ export async function authFetch(url: string, options: RequestInit = {}) {
     ...(token ? { "Authorization": `Bearer ${token}` } : {}),
   };
 
-  // Honor a caller-provided AbortSignal if present; otherwise install our
-  // own deadline. We don't override an explicit signal so callers that
-  // already manage cancellation (e.g. streaming endpoints) keep control.
-  if (options.signal) {
-    return fetch(url, { ...options, headers });
-  }
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), DEFAULT_TIMEOUT_MS);
+  // Always install the deadline. If the caller supplied a signal we
+  // compose both so caller-driven cancellation still works while a
+  // hung backend can't leave the UI waiting past DEFAULT_TIMEOUT_MS.
+  const timeoutCtrl = new AbortController();
+  const timer = setTimeout(() => timeoutCtrl.abort(), DEFAULT_TIMEOUT_MS);
+  const signal = options.signal
+    ? combineSignals(options.signal, timeoutCtrl.signal)
+    : timeoutCtrl.signal;
   try {
-    return await fetch(url, { ...options, headers, signal: ctrl.signal });
+    return await fetch(url, { ...options, headers, signal });
   } finally {
     clearTimeout(timer);
   }

@@ -53,11 +53,51 @@ describe("authFetch", () => {
     expect(callArgs[1].headers?.["Content-Type"]).toBe("application/json");
   });
 
-  it("honors a caller-supplied AbortSignal instead of installing its own", async () => {
+  it("aborts the request when the internal timeout fires, even with a caller signal", async () => {
+    // Regression: passing a caller signal used to disable authFetch's
+    // 120s deadline, so a hung backend could leave the UI waiting forever.
+    // Hold the fetch open with a never-resolving promise, then advance
+    // fake time past DEFAULT_TIMEOUT_MS and assert the composed signal
+    // surfaces the abort.
+    vi.useFakeTimers();
+    let observed: AbortSignal | undefined;
+    global.fetch = vi.fn().mockImplementation((_url, init) => {
+      observed = (init as RequestInit).signal as AbortSignal;
+      return new Promise<Response>(() => { /* hang forever */ });
+    });
+
+    const ctrl = new AbortController();
+    void authFetch("/api/slow", { signal: ctrl.signal });
+    // Drain the supabase.getSession microtask chain so the fetch dispatch
+    // (and the timeout setup) actually run. We *don't* run pending timers
+    // here — that would fire the deadline before we can observe the
+    // pre-timeout state.
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(observed).toBeDefined();
+    expect(observed!.aborted).toBe(false);
+    vi.advanceTimersByTime(120_001);
+    expect(observed!.aborted).toBe(true);
+    vi.useRealTimers();
+  });
+
+  it("honors caller cancellation while still enforcing its timeout deadline", async () => {
+    // Caller-driven aborts must still propagate to fetch (the previous
+    // behaviour). Composing with the timeout signal means we no longer
+    // pass the caller's signal through verbatim, so we assert via
+    // observable abort behaviour instead of object identity.
+    let observed: AbortSignal | undefined;
+    global.fetch = vi.fn().mockImplementation(async (_url, init) => {
+      observed = (init as RequestInit).signal as AbortSignal;
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    });
+
     const ctrl = new AbortController();
     await authFetch("/api/test", { signal: ctrl.signal });
-    const callArgs = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
-    expect(callArgs[1].signal).toBe(ctrl.signal);
+    expect(observed).toBeDefined();
+    expect(observed!.aborted).toBe(false);
+    ctrl.abort(new Error("user cancelled"));
+    expect(observed!.aborted).toBe(true);
   });
 
   it("omits the auth header when no session is available", async () => {
