@@ -80,13 +80,17 @@ export default function InsightsView() {
 function FunnelView({ days }: { days: number }) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    setLoading(true);
-    authFetch(`/api/insights/funnel?days=${days}`).then((r) => r.json()).then(setData).finally(() => setLoading(false));
+    setLoading(true); setErr(null);
+    authFetch(`/api/insights/funnel?days=${days}`)
+      .then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`); return d; })
+      .then(setData).catch((e) => setErr(e.message)).finally(() => setLoading(false));
   }, [days]);
 
   if (loading) return <Spinner />;
+  if (err) return <ErrCard error={err} />;
   if (!data) return null;
 
   const stages = data.stages || [];
@@ -247,13 +251,17 @@ function TopicsView() {
 function HeatmapView({ days }: { days: number }) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    setLoading(true);
-    authFetch(`/api/insights/heatmap?days=${days}`).then((r) => r.json()).then(setData).finally(() => setLoading(false));
+    setLoading(true); setErr(null);
+    authFetch(`/api/insights/heatmap?days=${days}`)
+      .then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`); return d; })
+      .then(setData).catch((e) => setErr(e.message)).finally(() => setLoading(false));
   }, [days]);
 
   if (loading) return <Spinner />;
+  if (err) return <ErrCard error={err} />;
   if (!data) return null;
 
   const grid = data.grid || [];
@@ -336,13 +344,17 @@ function RolePill({ role }: { role?: string }) {
 function LeaderboardView({ days }: { days: number }) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    setLoading(true);
-    authFetch(`/api/insights/leaderboard?days=${days}`).then((r) => r.json()).then(setData).finally(() => setLoading(false));
+    setLoading(true); setErr(null);
+    authFetch(`/api/insights/leaderboard?days=${days}`)
+      .then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`); return d; })
+      .then(setData).catch((e) => setErr(e.message)).finally(() => setLoading(false));
   }, [days]);
 
   if (loading) return <Spinner />;
+  if (err) return <ErrCard error={err} />;
   if (!data || !data.agents?.length) return <Empty label="No agents have run calls in this window." />;
 
   const RANK_STYLES: Array<{ gradient?: string; ring: string; glow: string; textClass: string; iconBg: boolean }> = [
@@ -506,13 +518,17 @@ function FailureModesView() {
 function AISpendView({ days }: { days: number }) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    setLoading(true);
-    authFetch(`/api/audit/summary?days=${days}`).then((r) => r.json()).then(setData).finally(() => setLoading(false));
+    setLoading(true); setErr(null);
+    authFetch(`/api/audit/summary?days=${days}`)
+      .then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`); return d; })
+      .then(setData).catch((e) => setErr(e.message)).finally(() => setLoading(false));
   }, [days]);
 
   if (loading) return <Spinner />;
+  if (err) return <ErrCard error={err} />;
   if (!data || !data.totals) return null;
 
   const { totals, by_day = [], by_action = [], by_model = [] } = data;
