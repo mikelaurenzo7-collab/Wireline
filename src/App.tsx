@@ -69,11 +69,79 @@ function AuroraBackdrop() {
   );
 }
 
-function Sidebar({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (open: boolean) => void; onShowShortcuts: () => void }) {
+// ────────────────────────────────────────────────────────────────────────
+//  FloatingRail — the navigation re-imagined as a free-floating glass dock.
+//
+//  Wall-attached sidebars belong to desktop OS chrome. Wireline is a
+//  carrier-grade control surface, so the rail behaves more like a HUD
+//  element: it floats with margins from the edges, runs in icon-only
+//  mode by default to give the page its full breathing room, expands
+//  on demand for power users, and surfaces labels via fade-in tooltips
+//  when hovered. Active item gets the aurora gradient pill — the same
+//  layoutId animation flows between routes.
+// ────────────────────────────────────────────────────────────────────────
+const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
+  {
+    label: "Command Center",
+    items: [
+      { label: "Dashboard",    path: "/",        icon: Activity,     dataTour: "dashboard" },
+      { label: "Live Monitor", path: "/live",     icon: Radio },
+      { label: "Triage",       path: "/triage",   icon: Inbox },
+      { label: "Insights",     path: "/insights", icon: BarChart3,   dataTour: "insights" },
+    ],
+  },
+  {
+    label: "Agent Fleet",
+    items: [
+      { label: "Agents",    path: "/agents",   icon: Users,         dataTour: "agents" },
+      { label: "Training",  path: "/train",    icon: MessageSquare, dataTour: "training" },
+      { label: "Knowledge", path: "/knowledge",icon: Database },
+    ],
+  },
+  {
+    label: "Outreach",
+    items: [
+      { label: "Call Logs",    path: "/logs",          icon: History },
+      { label: "Outbound",     path: "/outbound",      icon: PhoneOutgoing },
+      { label: "Email",        path: "/inbox",          icon: Mail },
+      { label: "Appointments", path: "/appointments",  icon: Calendar },
+    ],
+  },
+  {
+    label: "System",
+    items: [
+      { label: "Integrations", path: "/integrations", icon: PlugZap },
+      { label: "Settings",     path: "/admin",         icon: ServerCog },
+      { label: "DNC List",     path: "/dnc",           icon: Ban },
+      { label: "Audit Log",    path: "/audit",         icon: ScrollText },
+    ],
+  },
+];
+
+const RAIL_PINNED_KEY = "wireline.rail.pinned";
+
+function FloatingRail({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (open: boolean) => void; onShowShortcuts: () => void }) {
   const location = useLocation();
-  const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const isActive = (path: string) => location.pathname === path;
+
+  // Pin = persistent expanded state (label visible). Persists across reloads.
+  const [pinned, setPinned] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try { return window.localStorage.getItem(RAIL_PINNED_KEY) === "1"; } catch { return false; }
+  });
+  const togglePin = () => {
+    setPinned(p => {
+      const next = !p;
+      try { window.localStorage.setItem(RAIL_PINNED_KEY, next ? "1" : "0"); } catch {}
+      return next;
+    });
+  };
+
+  // On mobile, the rail is always "expanded" inside the drawer for
+  // touch-friendly tap targets. On desktop, expansion follows `pinned`.
+  // We render labels iff expanded.
+  const expanded = pinned;
 
   // Live badge counts — poll a lightweight endpoint every 2 minutes.
   const [navBadges, setNavBadges] = useState<Record<string, number>>({});
@@ -95,7 +163,7 @@ function Sidebar({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
 
-  const renderNavItem = (item: NavItem) => {
+  const renderRailItem = (item: NavItem) => {
     const active = isActive(item.path);
     const badge = navBadges[item.path] ?? 0;
     return (
@@ -105,85 +173,78 @@ function Sidebar({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (
         onClick={() => setOpen(false)}
         {...(item.dataTour ? { "data-tour": item.dataTour } : {})}
         className={cn(
-          "group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all overflow-hidden",
-          active ? "text-paper" : "text-ink/65 hover:text-ink hover:bg-white/5"
+          "group relative flex items-center rounded-xl transition-colors h-11",
+          // Collapsed: center the icon. Expanded: padded with label.
+          expanded ? "px-2.5 gap-3" : "justify-center",
+          // Mobile drawer is always expanded.
+          "max-lg:px-2.5 max-lg:gap-3 max-lg:justify-start",
+          active ? "text-paper" : "text-ink/65 hover:text-ink"
         )}
         aria-label={`Go to ${item.label}`}
+        aria-current={active ? "page" : undefined}
       >
         {active && (
           <motion.div
-            layoutId="nav-active"
+            layoutId="rail-active"
             className="absolute inset-0 rounded-xl nav-active-bg"
             transition={{ type: "spring", stiffness: 420, damping: 36 }}
           />
         )}
         <div className={cn(
           "relative z-10 w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all",
-          active ? "bg-white/20" : "bg-white/5 group-hover:bg-white/10"
+          active ? "bg-white/20" : "group-hover:bg-white/8"
         )}>
           <item.icon
-            className={cn("w-3.5 h-3.5", active ? "text-paper" : "text-ink/60 group-hover:text-ink")}
+            className={cn("w-4 h-4", active ? "text-paper" : "text-ink/60 group-hover:text-ink")}
             strokeWidth={active ? 2.5 : 1.75}
           />
         </div>
+
+        {/* Label — visible inline when expanded; otherwise floats out as a
+            hover-revealed tooltip to the right of the rail. The tooltip is
+            CSS-only (group-hover) so it costs zero JS per item. */}
         <span className={cn(
-          "relative z-10 text-[12px] leading-none tracking-wide truncate flex-1",
+          "relative z-10 text-[12px] leading-none tracking-wide truncate min-w-0",
+          expanded ? "flex-1 max-lg:flex-1" : "hidden max-lg:inline-block max-lg:flex-1",
           active ? "font-semibold" : "font-normal"
         )}>
           {item.label}
         </span>
+
+        {/* Hover tooltip (collapsed desktop only). aria-hidden so screen
+            readers use the aria-label on the link instead. */}
+        {!expanded && (
+          <span
+            aria-hidden="true"
+            className="hidden lg:flex pointer-events-none absolute left-[calc(100%+10px)] top-1/2 -translate-y-1/2 items-center h-8 px-3 rounded-lg glass-strong border border-black/8 text-[11px] tracking-wide text-ink whitespace-nowrap shadow-md opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 group-focus-visible:opacity-100 group-focus-visible:translate-x-0 transition-all duration-150 z-50"
+          >
+            {item.label}
+            {badge > 0 && (
+              <span className="ml-2 px-1.5 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[9px] font-mono leading-none">
+                {badge}
+              </span>
+            )}
+          </span>
+        )}
+
         {badge > 0 && (
           <span className={cn(
             "relative z-10 shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full text-[9px] font-mono leading-none flex items-center justify-center",
+            // In collapsed mode the badge becomes a small dot indicator
+            // anchored to the icon corner — keeps the rail tidy.
+            !expanded && "absolute top-1.5 right-1.5 max-lg:relative max-lg:top-auto max-lg:right-auto min-w-[10px] h-[10px] p-0",
             active ? "bg-white/25 text-paper" : "bg-rose-500/20 text-rose-400 border border-rose-500/30"
           )}>
-            {badge}
+            {expanded ? badge : <span className="max-lg:inline hidden">{badge}</span>}
           </span>
         )}
       </Link>
     );
   };
 
-  const NAV_GROUPS = [
-    {
-      label: "Command Center",
-      items: [
-        { label: "Dashboard",    path: "/",        icon: Activity,     dataTour: "dashboard" },
-        { label: "Live Monitor", path: "/live",     icon: Radio },
-        { label: "Triage",       path: "/triage",   icon: Inbox },
-        { label: "Insights",     path: "/insights", icon: BarChart3,   dataTour: "insights" },
-      ] as NavItem[],
-    },
-    {
-      label: "Agent Fleet",
-      items: [
-        { label: "Agents",    path: "/agents",  icon: Users,        dataTour: "agents" },
-        { label: "Training",  path: "/train",   icon: MessageSquare,dataTour: "training" },
-        { label: "Knowledge", path: "/knowledge",icon: Database },
-      ] as NavItem[],
-    },
-    {
-      label: "Outreach",
-      items: [
-        { label: "Call Logs",    path: "/logs",          icon: History },
-        { label: "Outbound",     path: "/outbound",      icon: PhoneOutgoing },
-        { label: "Email",        path: "/inbox",          icon: Mail },
-        { label: "Appointments", path: "/appointments",  icon: Calendar },
-      ] as NavItem[],
-    },
-    {
-      label: "System",
-      items: [
-        { label: "Integrations", path: "/integrations", icon: PlugZap },
-        { label: "Settings",     path: "/admin",         icon: ServerCog },
-        { label: "DNC List",     path: "/dnc",           icon: Ban },
-        { label: "Audit Log",    path: "/audit",         icon: ScrollText },
-      ] as NavItem[],
-    },
-  ];
-
   return (
     <>
+      {/* Mobile backdrop */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -196,142 +257,256 @@ function Sidebar({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (
         )}
       </AnimatePresence>
 
-      <aside className={cn(
-        "fixed inset-y-0 left-0 w-64 xl:w-68 flex flex-col h-full z-[70] transition-transform duration-500 lg:relative lg:translate-x-0 lg:z-20",
-        open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-      )}>
-        {/* Background */}
-        <div className="absolute inset-0 glass-strong" />
-        {/* Right edge shimmer */}
-        <div className="absolute top-0 right-0 w-px h-full"
-          style={{ background: "linear-gradient(to bottom, transparent, rgba(10,200,212,0.22) 30%, rgba(155,89,245,0.18) 70%, transparent)" }}
+      {/* The rail — fixed-floating on desktop with tasteful margin from the
+          viewport edges. On mobile it slides in as a drawer. */}
+      <aside
+        aria-label="Main navigation"
+        className={cn(
+          // Desktop: fixed-floating, in flow via a sibling spacer below.
+          "fixed top-3 bottom-3 left-3 z-[70] flex flex-col transition-[width,transform] duration-300 ease-out",
+          // Mobile width when open
+          "w-[260px]",
+          // Desktop width — collapsed vs expanded
+          expanded ? "lg:w-[228px]" : "lg:w-[68px]",
+          // Open/closed transform (mobile only — desktop is always visible).
+          open ? "translate-x-0" : "-translate-x-[calc(100%+0.75rem)] lg:translate-x-0"
+        )}
+        // Honor iOS safe-area when the drawer extends to the device edge.
+        style={{
+          paddingTop: "max(0px, env(safe-area-inset-top, 0))",
+          paddingBottom: "max(0px, env(safe-area-inset-bottom, 0))",
+        }}
+      >
+        {/* Floating glass card */}
+        <div
+          className="absolute inset-0 rounded-3xl glass-strong border border-black/8"
+          style={{
+            boxShadow:
+              "0 1px 0 rgba(255,255,255,0.80) inset, " +
+              "0 0 0 1px rgba(10,200,212,0.04), " +
+              "0 24px 60px -28px rgba(0,0,0,0.30), " +
+              "0 8px 24px -8px rgba(10,200,212,0.10)",
+          }}
+        />
+        {/* Aurora-tinted vertical accent on the trailing edge — purely decorative */}
+        <div
+          aria-hidden="true"
+          className="absolute top-6 bottom-6 right-0 w-px rounded-full pointer-events-none opacity-60"
+          style={{ background: "linear-gradient(to bottom, transparent, rgba(10,200,212,0.45) 30%, rgba(155,89,245,0.38) 70%, transparent)" }}
         />
 
-        <div className="relative z-10 flex flex-col h-full">
-          {/* ── Brand header ─────────────────────────────── */}
-          <div className="px-4 pt-5 pb-4 border-b border-black/7 flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-3 group min-w-0" onClick={() => setOpen(false)}>
+        {/* Inner content — overflow hidden so corners stay smooth */}
+        <div className="relative z-10 flex flex-col h-full p-2.5 overflow-hidden">
+          {/* ── Brand row ─────────────────────────────────── */}
+          <div className={cn(
+            "flex items-center gap-2.5 mb-3",
+            expanded ? "px-1.5" : "justify-center",
+            "max-lg:justify-start max-lg:px-1.5"
+          )}>
+            <Link
+              to="/"
+              onClick={() => setOpen(false)}
+              className="relative flex items-center gap-2.5 group min-w-0"
+              aria-label="Wireline home"
+            >
               <motion.div
-                whileHover={{ rotate: 10, scale: 1.08 }}
+                whileHover={{ rotate: 8, scale: 1.06 }}
+                whileTap={{ scale: 0.96 }}
                 transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                className="relative w-9 h-9 rounded-xl flex items-center justify-center overflow-hidden shrink-0"
+                className="relative w-10 h-10 rounded-2xl flex items-center justify-center overflow-hidden shrink-0"
                 style={{
                   background: "linear-gradient(135deg, #0AC8D4 0%, #9B59F5 50%, #E040C0 100%)",
-                  boxShadow: "0 6px 20px -8px rgba(10,200,212,0.65), 0 0 0 1px rgba(255,255,255,0.22) inset"
+                  boxShadow: "0 6px 20px -8px rgba(10,200,212,0.65), 0 0 0 1px rgba(255,255,255,0.22) inset",
                 }}
               >
-                <Waves className="w-4.5 h-4.5 text-paper relative z-10" strokeWidth={2.5} />
+                <Waves className="w-5 h-5 text-paper relative z-10" strokeWidth={2.5} />
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent" />
               </motion.div>
-              <div className="min-w-0">
-                <span className="brand-wordmark text-[18px] leading-none">WIRELINE</span>
-                <div className="flex items-center gap-1.5 mt-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"
-                    style={{ boxShadow: "0 0 6px rgba(77,255,196,0.8)" }}
-                  />
-                  <span className="text-[8px] tracking-[0.38em] uppercase text-muted">Online</span>
-                </div>
+              {/* Wordmark only when expanded (desktop) or always on mobile drawer. */}
+              <div className={cn(
+                "min-w-0 leading-none",
+                expanded ? "flex flex-col gap-1" : "hidden",
+                "max-lg:flex max-lg:flex-col max-lg:gap-1"
+              )}>
+                <span className="brand-wordmark text-[17px] leading-none">WIRELINE</span>
+                <span className="text-[8px] tracking-[0.38em] uppercase text-muted/70 leading-none">Carrier OS</span>
               </div>
             </Link>
+
+            {/* Mobile close — only inside the drawer */}
             <button
               onClick={() => setOpen(false)}
-              className="lg:hidden icon-btn"
+              className="lg:hidden ml-auto w-9 h-9 rounded-lg flex items-center justify-center text-ink/60 hover:text-ink hover:bg-white/5 transition-colors"
               aria-label="Close navigation"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
 
-          {/* ── User card ────────────────────────────────── */}
-          <div className="px-3 py-3 border-b border-black/7">
-            <div className="relative flex items-center gap-3 px-3 py-2.5 rounded-xl glass border border-black/8">
-              <div className="relative shrink-0">
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white font-medium text-sm"
-                  style={{ background: "linear-gradient(135deg, #0AC8D4, #9B59F5)" }}
-                >
-                  {user?.email?.slice(0, 1).toUpperCase() ?? "?"}
-                </div>
-                <span
-                  className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 bg-emerald-500"
-                  style={{ borderColor: "#F5F0E8" }}
-                />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-medium text-ink truncate leading-none mb-0.5">
-                  {user?.email?.split("@")[0]}
-                </p>
-                <p className="text-[8px] tracking-[0.28em] uppercase text-muted truncate">
-                  {user?.email?.split("@")[1]}
-                </p>
-              </div>
-              <button
-                onClick={() => signOut()}
-                title="Sign out"
-                className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-ink/40 hover:text-rose-600 hover:bg-rose-500/8 border border-black/7 hover:border-rose-500/35 transition-all"
-              >
-                <LogOut className="w-3 h-3" />
-              </button>
-            </div>
-          </div>
-
-          {/* ── Navigation ───────────────────────────────── */}
-          <nav
-            className="flex-1 px-2 py-3 overflow-y-auto min-h-0 space-y-5 panel-scroll"
-            aria-label="Main navigation"
-          >
-            {NAV_GROUPS.map(group => (
+          {/* ── Navigation ────────────────────────────────── */}
+          <nav className="flex-1 min-h-0 overflow-y-auto panel-scroll -mx-0.5 px-0.5 py-1 space-y-2.5">
+            {NAV_GROUPS.map((group, gIdx) => (
               <div key={group.label}>
-                <div className="px-3 mb-1.5 flex items-center gap-2">
+                {/* Group label — shown inline only when expanded; collapsed
+                    state uses a thin gradient hairline as a separator instead. */}
+                <div className={cn(
+                  expanded ? "block max-lg:block" : "hidden max-lg:block",
+                  "px-3 mb-1 flex items-center gap-2"
+                )}>
+                  {gIdx === 0 ? null : <span className="h-px flex-1 bg-black/8" />}
                   <span className="text-[7.5px] font-semibold uppercase tracking-[0.48em] text-muted/55 whitespace-nowrap">
                     {group.label}
                   </span>
-                  <span className="h-px flex-1 bg-black/7" />
+                  <span className="h-px flex-1 bg-black/8" />
                 </div>
+                {gIdx > 0 && !expanded && (
+                  <div className={cn(
+                    "max-lg:hidden mx-3 my-2 h-px opacity-50",
+                    "bg-gradient-to-r from-transparent via-black/12 to-transparent"
+                  )} aria-hidden="true" />
+                )}
                 <div className="space-y-0.5">
-                  {group.items.map(renderNavItem)}
+                  {group.items.map(renderRailItem)}
                 </div>
               </div>
             ))}
           </nav>
 
-          {/* ── Footer ───────────────────────────────────── */}
-          <div className="px-3 py-3 border-t border-black/7 space-y-2 shrink-0">
-            <SystemStatusBadge />
-
-            {/* Quick links */}
-            <div className="flex items-center gap-1.5">
+          {/* ── Footer cluster ────────────────────────────── */}
+          <div className={cn(
+            "shrink-0 mt-2 pt-2.5 space-y-1.5 border-t border-black/8",
+            expanded ? "" : "flex flex-col items-center max-lg:items-stretch"
+          )}>
+            {/* Status badge — always shown; the component's own internals
+                handle compact rendering. Only label-bearing rendering is
+                in expanded mode. */}
+            {(expanded) && (
+              <div className="px-1.5 max-lg:block">
+                <SystemStatusBadge />
+              </div>
+            )}
+            <div className={cn("max-lg:hidden", !expanded && "block", expanded && "hidden")}>
+              {/* Collapsed: a small status dot with hover tooltip. */}
               <button
-                onClick={() => { navigate("/train"); setOpen(false); }}
-                className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg glass border border-black/8 hover:border-brand/35 text-[9px] uppercase tracking-[0.24em] text-ink/55 hover:text-ink transition-all"
+                type="button"
+                onClick={togglePin}
+                className="group relative w-11 h-11 rounded-xl flex items-center justify-center hover:bg-white/5 transition-colors"
+                aria-label="Expand navigation rail"
+                title="Expand"
               >
-                <MessageSquare className="w-3 h-3" />
-                Train
-              </button>
-              <button
-                onClick={() => { navigate("/live"); setOpen(false); }}
-                className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg glass border border-black/8 hover:border-brand-3/35 text-[9px] uppercase tracking-[0.24em] text-ink/55 hover:text-ink transition-all"
-              >
-                <Radio className="w-3 h-3" />
-                Live
+                <span className="w-2 h-2 rounded-full bg-emerald-500" style={{ boxShadow: "0 0 8px rgba(77,255,196,0.7)" }} />
+                <span className="pointer-events-none absolute left-[calc(100%+10px)] top-1/2 -translate-y-1/2 h-8 px-3 rounded-lg glass-strong border border-black/8 text-[11px] tracking-wide text-ink whitespace-nowrap shadow-md opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-150 flex items-center gap-2 z-50">
+                  System healthy
+                  <span className="text-[9px] uppercase tracking-[0.3em] text-muted">Expand →</span>
+                </span>
               </button>
             </div>
 
-            {/* Command shortcut */}
+            {/* Shortcuts trigger */}
             <button
               onClick={onShowShortcuts}
-              className="hidden lg:flex w-full items-center gap-2 px-3 py-2 rounded-xl glass border border-black/8 hover:border-brand/25 text-muted/65 hover:text-ink/80 transition-all group"
+              className={cn(
+                "group relative h-11 rounded-xl text-muted/65 hover:text-ink hover:bg-white/5 transition-colors flex items-center",
+                expanded ? "px-2.5 gap-3" : "justify-center w-11",
+                "max-lg:px-2.5 max-lg:gap-3 max-lg:w-full max-lg:justify-start"
+              )}
               aria-label="Show keyboard shortcuts"
             >
-              <Keyboard className="w-3 h-3 shrink-0" />
-              <span className="text-[9px] uppercase tracking-[0.3em] flex-1 text-left">Shortcuts</span>
-              <kbd className="text-[8px] glass border border-black/10 px-1.5 py-0.5 rounded font-mono text-muted/70 group-hover:border-brand/25 group-hover:text-brand transition-all">
+              <Keyboard className="w-4 h-4 shrink-0" />
+              <span className={cn(
+                "text-[10px] uppercase tracking-[0.3em] flex-1 text-left",
+                expanded ? "block" : "hidden",
+                "max-lg:block"
+              )}>
+                Shortcuts
+              </span>
+              <kbd className={cn(
+                "text-[8px] glass border border-black/10 px-1.5 py-0.5 rounded font-mono text-muted/70 group-hover:border-brand/25 group-hover:text-brand transition-all",
+                expanded ? "block" : "hidden",
+                "max-lg:block"
+              )}>
                 ?
               </kbd>
+              {!expanded && (
+                <span aria-hidden="true" className="hidden lg:flex pointer-events-none absolute left-[calc(100%+10px)] top-1/2 -translate-y-1/2 items-center h-8 px-3 rounded-lg glass-strong border border-black/8 text-[11px] tracking-wide text-ink whitespace-nowrap shadow-md opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-150 z-50">
+                  Shortcuts <kbd className="ml-2 text-[9px] glass border border-black/10 px-1.5 py-0.5 rounded font-mono text-muted/70">?</kbd>
+                </span>
+              )}
+            </button>
+
+            {/* User cluster — always interactive, shows email when expanded. */}
+            <div className={cn(
+              "rounded-xl border border-black/8 glass overflow-hidden",
+              expanded ? "p-2 max-lg:p-2" : "p-1.5 max-lg:p-2"
+            )}>
+              <div className={cn(
+                "flex items-center gap-2.5",
+                expanded ? "" : "flex-col gap-2 max-lg:flex-row max-lg:gap-2.5"
+              )}>
+                <div className="relative shrink-0">
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-white font-medium text-sm"
+                    style={{ background: "linear-gradient(135deg, #0AC8D4, #9B59F5)" }}
+                    aria-hidden="true"
+                  >
+                    {user?.email?.slice(0, 1).toUpperCase() ?? "?"}
+                  </div>
+                  <span
+                    className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 bg-emerald-500"
+                    style={{ borderColor: "#F5F0E8" }}
+                    aria-hidden="true"
+                  />
+                </div>
+                <div className={cn(
+                  "min-w-0 flex-1",
+                  expanded ? "block" : "hidden",
+                  "max-lg:block"
+                )}>
+                  <p className="text-[11px] font-medium text-ink truncate leading-none mb-0.5">
+                    {user?.email?.split("@")[0]}
+                  </p>
+                  <p className="text-[8px] tracking-[0.28em] uppercase text-muted truncate">
+                    {user?.email?.split("@")[1]}
+                  </p>
+                </div>
+                <button
+                  onClick={() => signOut()}
+                  title="Sign out"
+                  aria-label="Sign out"
+                  className={cn(
+                    "shrink-0 rounded-lg flex items-center justify-center text-ink/40 hover:text-rose-600 hover:bg-rose-500/8 border border-black/7 hover:border-rose-500/35 transition-colors",
+                    expanded ? "w-7 h-7" : "w-7 h-7"
+                  )}
+                >
+                  <LogOut className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+
+            {/* Pin/expand toggle (desktop only) — bottom of the rail */}
+            <button
+              type="button"
+              onClick={togglePin}
+              className="hidden lg:flex w-full h-7 items-center justify-center rounded-lg text-[8px] uppercase tracking-[0.32em] text-muted/55 hover:text-ink hover:bg-white/5 transition-colors"
+              aria-label={expanded ? "Collapse navigation" : "Expand navigation"}
+              title={expanded ? "Collapse" : "Expand"}
+            >
+              <ChevronRight className={cn("w-3 h-3 transition-transform", expanded && "rotate-180")} />
             </button>
           </div>
         </div>
       </aside>
+
+      {/* Layout spacer — fills the same width as the floating rail so the
+          main column lays out correctly without absolute positioning gymnastics.
+          Visible only on lg; mobile is overlay-style. Width tracks rail state. */}
+      <div
+        aria-hidden="true"
+        className={cn(
+          "hidden lg:block shrink-0 transition-[width] duration-300 ease-out",
+          expanded ? "w-[244px]" : "w-[84px]"
+        )}
+      />
     </>
   );
 }
@@ -557,7 +732,7 @@ function AppContent() {
       <PersonaWizard />
       <ProductTour />
       <KeyboardShortcuts open={showShortcuts} onClose={() => setShowShortcuts(false)} />
-      <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} onShowShortcuts={() => setShowShortcuts(true)} />
+      <FloatingRail open={sidebarOpen} setOpen={setSidebarOpen} onShowShortcuts={() => setShowShortcuts(true)} />
 
       <main className="flex-1 overflow-hidden relative flex flex-col z-10">
          {/* Mobile Header — sticky at top with safe-area inset so the
