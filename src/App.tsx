@@ -735,34 +735,39 @@ function AppContent() {
       <FloatingRail open={sidebarOpen} setOpen={setSidebarOpen} onShowShortcuts={() => setShowShortcuts(true)} />
 
       <main className="flex-1 overflow-hidden relative flex flex-col z-10">
-         {/* Mobile Header — sticky at top with safe-area inset so the
-             buttons stay out of the iOS notch / Dynamic Island. */}
+         {/* Mobile Header — re-styled as a floating glass bar with rounded
+             corners (matches the floating rail). Uses safe-area-inset so
+             nothing hides under iOS notches / Dynamic Island. */}
          <div
-           className="lg:hidden px-3 py-3 flex items-center justify-between z-30 sticky top-0 glass-strong border-b border-black/8 shrink-0 shadow-sm"
+           className="lg:hidden sticky top-0 z-30 px-3 pt-3 pb-2 shrink-0"
            style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0))" }}
          >
-            <button
-              onClick={() => setSidebarOpen(true)}
-              aria-label="Open navigation menu"
-              aria-expanded={sidebarOpen}
-              // 44x44 = WCAG 2.5.5 + Apple HIG touch target minimum.
-              className="w-11 h-11 rounded-xl glass border border-black/10 flex items-center justify-center hover:border-brand/40 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60"
-            >
-              <Menu className="w-5 h-5 text-ink" />
-            </button>
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center shadow-sm" style={{ background: "linear-gradient(135deg, #0AC8D4, #9B59F5, #E040C0)" }}>
-                <Waves className="w-4 h-4 text-white" strokeWidth={2.5} />
-              </div>
-              <span className="brand-wordmark text-xl leading-none">WIRELINE</span>
-            </div>
-            <button
-              onClick={() => navigate('/admin')}
-              aria-label="Open settings"
-              className="w-11 h-11 rounded-xl glass border border-black/10 flex items-center justify-center hover:border-brand/40 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60"
-            >
-              <User className="w-5 h-5 text-ink/70" />
-            </button>
+           <div className="flex items-center justify-between gap-2 px-2 py-2 rounded-2xl glass-strong border border-black/8 shadow-md"
+             style={{ boxShadow: "0 1px 0 rgba(255,255,255,0.80) inset, 0 8px 24px -10px rgba(0,0,0,0.20), 0 3px 12px -4px rgba(10,200,212,0.08)" }}
+           >
+             <button
+               onClick={() => setSidebarOpen(true)}
+               aria-label="Open navigation menu"
+               aria-expanded={sidebarOpen}
+               // 44x44 hit target (WCAG 2.5.5 / Apple HIG minimum).
+               className="w-11 h-11 rounded-xl flex items-center justify-center hover:bg-white/5 active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60"
+             >
+               <Menu className="w-5 h-5 text-ink" />
+             </button>
+             <Link to="/" className="flex items-center gap-2.5 min-w-0">
+               <div className="w-8 h-8 rounded-xl flex items-center justify-center shadow-sm shrink-0" style={{ background: "linear-gradient(135deg, #0AC8D4, #9B59F5, #E040C0)" }}>
+                 <Waves className="w-4 h-4 text-white" strokeWidth={2.5} />
+               </div>
+               <span className="brand-wordmark text-lg leading-none truncate">WIRELINE</span>
+             </Link>
+             <button
+               onClick={() => navigate('/admin')}
+               aria-label="Open settings"
+               className="w-11 h-11 rounded-xl flex items-center justify-center hover:bg-white/5 active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60"
+             >
+               <User className="w-5 h-5 text-ink/70" />
+             </button>
+           </div>
          </div>
 
          <TrialBanner />
