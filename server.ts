@@ -30,6 +30,7 @@ import { AgentFormSchema, DirectiveSchema, KnowledgeSchema, EmailReplySchema, Em
 import { getErrorMessage, sanitizeForAudit } from "./src/lib/server-utils";
 import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "./src/lib/agent-runtime";
 import { computeScorecard } from "./src/lib/agent-scorecard";
+import { computeDashboardStats } from "./src/lib/dashboard-stats";
 
 // On Vercel, VERCEL_URL is automatically set to the deployment hostname
 // (e.g. "myapp-abc123.vercel.app") with no protocol or trailing slash.
@@ -2775,102 +2776,23 @@ app.get("/api/dashboard/stats", authenticateUser, async (req: any, res: any) => 
       
       const totalAppointments = apptRes.count || 0;
       const totalLeads = leadsRes.count || 0;
-      const logs = logsRes.data || [];
-      const agents = agentsRes.data || [];
-      const prevLogs = prevLogsRes.data || [];
-      
-      const totalMinutes = Math.ceil(logs.reduce((acc: number, l: any) => acc + (l.duration_seconds || 0), 0) / 60);
-      const totalCost = logs.reduce((acc: number, l: any) => acc + (Number(l.cost) || 0), 0);
-      const inboundCount = logs.filter((l: any) => l.direction === 'inbound').length;
-      const outboundCount = logs.filter((l: any) => l.direction === 'outbound').length;
-      const conversionRate = logs.length > 0 ? ((totalAppointments / logs.length) * 100).toFixed(1) : 0;
 
-      // Average lead score across all scored calls
-      const scoredLogs = logs.filter((l: any) => (l.lead_score ?? 0) > 0);
-      const avgLeadScore = scoredLogs.length > 0
-        ? Math.round(scoredLogs.reduce((s: number, l: any) => s + (l.lead_score || 0), 0) / scoredLogs.length)
-        : 0;
-
-      // Sentiment breakdown (positive / neutral / negative)
-      const sentimentMap: Record<string, number> = { positive: 0, neutral: 0, negative: 0 };
-      for (const l of logs) {
-        const s = (l.sentiment || 'neutral').toLowerCase();
-        if (s in sentimentMap) sentimentMap[s]++;
-        else sentimentMap['neutral']++;
-      }
-
-      // Week-over-week delta — compare current 7 days to the prior 7 days.
-      const prevCost = prevLogs.reduce((acc: number, l: any) => acc + (Number(l.cost) || 0), 0);
-      const prevScoredLogs = prevLogs.filter((l: any) => (l.lead_score ?? 0) > 0);
-      const prevAvgScore = prevScoredLogs.length > 0
-        ? Math.round(prevScoredLogs.reduce((s: number, l: any) => s + (l.lead_score || 0), 0) / prevScoredLogs.length)
-        : 0;
-      // Returns null when there's no baseline — UI should show '—' rather than a misleading 100%.
-      const pct = (curr: number, prev: number): number | null =>
-        prev === 0 ? null : Math.round(((curr - prev) / prev) * 100);
-      const week_delta = {
-        calls_pct: pct(logs.length, prevLogs.length),
-        cost_pct:  pct(totalCost, prevCost),
-        score_pct: pct(avgLeadScore, prevAvgScore),
-      };
-
-      // HOT LEADS — derive hot calls from the already-fetched logs (avoids a DB round-trip)
-      const hotCalls = logs
-        .filter((l: any) => (l.lead_score || 0) >= 75)
-        .slice(0, 5);
-
-      const hotLeads = [
-        ...hotCalls.map((c: any) => ({ id: c.id, type: 'call', contact: c.customer_number, score: c.lead_score, intent: c.intent_label, summary: c.summary, date: c.created_at })),
-        ...(hotEmailsRes.data || []).map((e: any) => ({ id: e.id, type: 'email', contact: e.customer_email, score: e.lead_score, intent: e.intent_label, summary: e.summary, date: e.created_at }))
-      ].sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
-
-      // Compute Chart Data (Last 7 Days)
-      const last7Days = Array.from({ length: 7 }, (_, i) => {
-         const d = new Date();
-         d.setDate(d.getDate() - (6 - i));
-         return d.toISOString().split('T')[0];
-      });
-
-      const chartDataMap: Record<string, { signals: number, leads: number }> = {};
-      last7Days.forEach(dateStr => {
-         chartDataMap[dateStr] = { signals: 0, leads: 0 };
-      });
-
-      logs.forEach((l: any) => {
-         const d = new Date(l.created_at).toISOString().split('T')[0];
-         if (chartDataMap[d]) chartDataMap[d].signals += 1;
-      });
-
-      (recentApptsRes.data || []).forEach((appt: any) => {
-         const d = new Date(appt.created_at).toISOString().split('T')[0];
-         if (chartDataMap[d]) chartDataMap[d].leads += 1;
-      });
-
-      const chartData = last7Days.map(dateStr => {
-         const date = new Date(dateStr + "T12:00:00");
-         return {
-            name: date.toLocaleDateString('en-US', { weekday: 'short' }),
-            signals: chartDataMap[dateStr].signals,
-            leads: chartDataMap[dateStr].leads
-         };
+      // Hand the rows to the pure stats math (src/lib/dashboard-stats.ts)
+      // so each derivation — totals, sentiment, week-delta, hot leads,
+      // 7-day chart series — is unit-tested in isolation.
+      const stats = computeDashboardStats({
+        totalAppointments,
+        totalLeads,
+        logs:        logsRes.data || [],
+        prevLogs:    prevLogsRes.data || [],
+        hotEmails:   hotEmailsRes.data || [],
+        recentAppts: recentApptsRes.data || [],
       });
 
       res.json({
-         totalAppointments,
-         totalLeads,
-         totalCalls: logs.length,
-         totalMinutes,
-         totalCost: totalCost.toFixed(2),
-         inboundCount,
-         outboundCount,
-         conversionRate,
-         avgLeadScore,
-         sentimentBreakdown: sentimentMap,
-         week_delta,
-         agents,
-         recentLogs: logs.slice(0, 100),
-         hotLeads,
-         chartData
+         ...stats,
+         agents: agentsRes.data || [],
+         recentLogs: (logsRes.data || []).slice(0, 100),
       });
    } catch(e: any) {
       log.error("Dashboard stats error", { error: e?.message || String(e) });
