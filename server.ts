@@ -2943,17 +2943,29 @@ app.get("/api/dashboard/benchmarks", authenticateUser, async (req: any, res: any
 // ==========================================
 app.get("/api/appointments", authenticateUser, async (req: any, res: any) => {
   try {
-    const { data: appointments, error } = await db
+    // Hard cap to prevent 'load all my historical appointments' from
+    // shipping a multi-MB response. Default 200, max 1000.
+    const limitRaw = parseInt(req.query.limit as string);
+    const offsetRaw = parseInt(req.query.offset as string);
+    const limit = Math.min(isNaN(limitRaw) ? 200 : limitRaw, 1000);
+    const offset = isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw);
+
+    const { data: appointments, error, count } = await db
       .from('wireline_appointments')
-      .select('*')
+      .select('*', { count: 'exact' })
       .eq('user_id', req.user.id)
-      .order('created_at', { ascending: false });
-      
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
     if (error) throw error;
-    res.json({ appointments: appointments || [] });
+    res.json({
+      appointments: appointments || [],
+      total: count || 0,
+      hasMore: count ? (offset + limit) < count : false,
+    });
   } catch (error: any) {
     log.error("Failed to fetch appointments", { error: getErrorMessage(error) });
-    res.json({ appointments: [] }); 
+    res.json({ appointments: [], total: 0, hasMore: false });
   }
 });
 
@@ -4263,7 +4275,9 @@ app.get("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => {
     if (statusFilter)   query = query.eq('status',   statusFilter);
     if (priorityFilter) query = query.eq('priority', priorityFilter);
 
-    const { data, error } = await query;
+    // Hard cap on returned rows — protects against unfiltered loads
+    // ballooning into multi-thousand-row responses on busy fleets.
+    const { data, error } = await query.limit(1000);
     
     if (error) throw error;
 
@@ -4603,13 +4617,25 @@ app.delete("/api/campaigns/:id", authenticateUser, async (req: any, res: any) =>
 
 app.get("/api/campaigns/:id/leads", authenticateUser, async (req: any, res: any) => {
   try {
-    const { data, error } = await db.from('wireline_outbound_leads')
-      .select('*')
+    // Bounded fetch: bulk endpoint accepts up to 5000 leads, so a campaign
+    // can have many. Stream them in chunks instead of loading everything.
+    const limitRaw = parseInt(req.query.limit as string);
+    const offsetRaw = parseInt(req.query.offset as string);
+    const limit = Math.min(isNaN(limitRaw) ? 200 : limitRaw, 1000);
+    const offset = isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw);
+
+    const { data, error, count } = await db.from('wireline_outbound_leads')
+      .select('*', { count: 'exact' })
       .eq('campaign_id', req.params.id)
       .eq('user_id', req.user.id)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
     if (error) throw error;
-    res.json({ leads: data || [] });
+    res.json({
+      leads: data || [],
+      total: count || 0,
+      hasMore: count ? (offset + limit) < count : false,
+    });
   } catch (error: any) {
     log.error("Failed to fetch campaign leads", { error: getErrorMessage(error) });
     res.json({ leads: [] });
@@ -6043,27 +6069,45 @@ app.delete("/api/emails/accounts/:id", authenticateUser, async (req: any, res: a
 
 app.get("/api/emails/threads", authenticateUser, async (req: any, res: any) => {
   try {
-    const { data: threads, error } = await db.from('wireline_email_threads')
-                                           .select('*')
+    // Pagination + hard cap so a heavy user with thousands of threads
+    // doesn't ship 50MB of JSON to the client on every load.
+    const limitRaw = parseInt(req.query.limit as string);
+    const offsetRaw = parseInt(req.query.offset as string);
+    const limit = Math.min(isNaN(limitRaw) ? 100 : limitRaw, 500);
+    const offset = isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw);
+
+    const { data: threads, error, count } = await db.from('wireline_email_threads')
+                                           .select('*', { count: 'exact' })
                                            .eq('user_id', req.user.id)
-                                           .order('last_message_at', { ascending: false });
+                                           .order('last_message_at', { ascending: false })
+                                           .range(offset, offset + limit - 1);
     if (error) throw error;
-    res.json({ threads: threads || [] });
+    res.json({
+      threads: threads || [],
+      total: count || 0,
+      hasMore: count ? (offset + limit) < count : false,
+    });
   } catch(e) {
+    log.error("Failed to fetch email threads", { error: getErrorMessage(e) });
     res.status(500).json({ error: "Failed to fetch threads" });
   }
 });
 
 app.get("/api/emails/threads/:id/messages", authenticateUser, async (req: any, res: any) => {
   try {
+    // Hard cap at 1000 messages per thread — a normal thread is < 50,
+    // but a runaway autoresponder loop or a sync bug shouldn't be able
+    // to ship a multi-MB response.
     const { data: messages, error } = await db.from('wireline_email_messages')
                                              .select('*')
                                              .eq('thread_id', req.params.id)
                                              .eq('user_id', req.user.id)
-                                             .order('created_at', { ascending: true });
+                                             .order('created_at', { ascending: true })
+                                             .limit(1000);
     if (error) throw error;
     res.json({ messages: messages || [] });
   } catch(e) {
+    log.error("Failed to fetch email thread messages", { error: getErrorMessage(e) });
     res.status(500).json({ error: "Failed to fetch messages" });
   }
 });
