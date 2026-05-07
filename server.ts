@@ -2991,16 +2991,34 @@ app.post("/api/appointments", authenticateUser, async (req: any, res: any) => {
     if (!customer_name?.trim() || !date?.trim() || !time?.trim()) {
       return res.status(400).json({ error: "customer_name, date, and time are required" });
     }
+    // Bound the free-text fields so a single appointment can't be a megablob.
+    if (typeof customer_name !== 'string' || customer_name.length > 200) {
+      return res.status(400).json({ error: "customer_name must be 200 characters or less" });
+    }
+    if (notes && (typeof notes !== 'string' || notes.length > 2000)) {
+      return res.status(400).json({ error: "notes must be 2000 characters or less" });
+    }
+    // Same ownership check as the campaigns endpoint — prevents booking
+    // appointments that route to another user's agent for follow-ups.
+    if (agent_id) {
+      const { data: agent } = await db
+        .from('wireline_agents')
+        .select('id')
+        .eq('id', agent_id)
+        .eq('user_id', req.user.id)
+        .maybeSingle();
+      if (!agent) return res.status(404).json({ error: "Agent not found" });
+    }
     const { data, error } = await db.from('wireline_appointments').insert({
       user_id: req.user.id,
       customer_name: customer_name.trim(),
-      service_type: service_type?.trim() || 'General',
+      service_type: typeof service_type === 'string' ? service_type.trim() || 'General' : 'General',
       date: date.trim(),
       time: time.trim(),
-      phone_number: phone_number?.trim() || null,
-      notes: notes?.trim() || null,
+      phone_number: typeof phone_number === 'string' ? phone_number.trim() || null : null,
+      notes: typeof notes === 'string' ? notes.trim() || null : null,
       agent_id: agent_id || null,
-      status: status || 'Scheduled',
+      status: typeof status === 'string' && status ? status : 'Scheduled',
     }).select().single();
     if (error) throw error;
     res.json({ appointment: data });
@@ -3016,6 +3034,27 @@ app.patch("/api/appointments/:id", authenticateUser, async (req: any, res: any) 
     const updates: Record<string, unknown> = {};
     for (const k of allowed) if (req.body[k] !== undefined) updates[k] = req.body[k];
     if (Object.keys(updates).length === 0) return res.status(400).json({ error: "No valid fields to update" });
+
+    // Bound free-text fields when present so they can't grow unboundedly.
+    if (typeof updates.customer_name === 'string' && updates.customer_name.length > 200) {
+      return res.status(400).json({ error: "customer_name must be 200 characters or less" });
+    }
+    if (typeof updates.notes === 'string' && updates.notes.length > 2000) {
+      return res.status(400).json({ error: "notes must be 2000 characters or less" });
+    }
+
+    // Same agent ownership check as POST — caller can't reroute their
+    // appointment to another user's agent.
+    if (updates.agent_id) {
+      const { data: agent } = await db
+        .from('wireline_agents')
+        .select('id')
+        .eq('id', updates.agent_id as string)
+        .eq('user_id', req.user.id)
+        .maybeSingle();
+      if (!agent) return res.status(404).json({ error: "Agent not found" });
+    }
+
     const { data, error } = await db.from('wireline_appointments')
       .update(updates)
       .eq('id', req.params.id)
@@ -4568,7 +4607,21 @@ app.post("/api/campaigns", authenticateUser, async (req: any, res: any) => {
     if (!validation.success) {
       return res.status(400).json({ error: "Validation failed", errors: validation.errors });
     }
-    const { name, goal, agent_id, call_window_start, call_window_end, max_attempts } = validation.data;
+    const { name, goal, agent_id, call_window_start, call_window_end, max_attempts } = validation.data!;
+
+    // SECURITY: same ownership check as the PATCH path — without it the
+    // attacker could create a campaign that dials leads through another
+    // user's agent (and bills against that user).
+    if (agent_id) {
+      const { data: agent } = await db
+        .from('wireline_agents')
+        .select('id')
+        .eq('id', agent_id)
+        .eq('user_id', req.user.id)
+        .maybeSingle();
+      if (!agent) return res.status(404).json({ error: "Agent not found" });
+    }
+
     const { data, error } = await db.from('wireline_outbound_campaigns').insert({
       user_id: req.user.id,
       name: name.trim(),
@@ -4601,9 +4654,23 @@ app.patch("/api/campaigns/:id", authenticateUser, async (req: any, res: any) => 
     if (!validation.success) {
       return res.status(400).json({ error: "Validation failed", errors: validation.errors });
     }
+
+    // SECURITY: if reassigning the campaign to an agent, verify the
+    // caller owns that agent — otherwise the campaign would dial leads
+    // through (and bill against) another user's agent.
+    if (validation.data?.agent_id) {
+      const { data: agent } = await db
+        .from('wireline_agents')
+        .select('id')
+        .eq('id', validation.data.agent_id)
+        .eq('user_id', req.user.id)
+        .maybeSingle();
+      if (!agent) return res.status(404).json({ error: "Agent not found" });
+    }
+
     const allowed = ['name', 'goal', 'agent_id', 'status', 'call_window_start', 'call_window_end', 'max_attempts'];
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
-    for (const k of allowed) if (validation.data[k as keyof typeof validation.data] !== undefined) updates[k] = validation.data[k as keyof typeof validation.data];
+    for (const k of allowed) if (validation.data?.[k as keyof typeof validation.data] !== undefined) updates[k] = validation.data[k as keyof typeof validation.data];
     const { data, error } = await db.from('wireline_outbound_campaigns')
       .update(updates)
       .eq('id', req.params.id)
