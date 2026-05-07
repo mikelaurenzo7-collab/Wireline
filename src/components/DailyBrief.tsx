@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -41,16 +41,30 @@ export default function DailyBrief() {
   const [err, setErr] = useState<string | null>(null);
   const [needsKey, setNeedsKey] = useState(false);
   const [showSchedule, setShowSchedule] = useState(false);
+  // Mounted guard: load() runs both on mount and on the operator's
+  // "Refresh" click. The latter is always in-mount, but the mount path
+  // can resolve after navigation away — without this, late responses
+  // would call setState on an unmounted DailyBrief.
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const load = async (refresh = false) => {
-    setLoading(true); setErr(null);
+    if (mountedRef.current) { setLoading(true); setErr(null); }
     try {
       const r = await authFetch(`/api/insights/daily-brief${refresh ? "?refresh=1" : ""}`);
       const d = await r.json();
+      if (!mountedRef.current) return;
       if (r.status === 503) { setNeedsKey(true); return; }
       if (!r.ok) throw new Error(d.error);
       setData(d);
-    } catch (e: any) { setErr(e.message); } finally { setLoading(false); }
+    } catch (e: any) {
+      if (mountedRef.current) setErr(e.message);
+    } finally {
+      if (mountedRef.current) setLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, []);

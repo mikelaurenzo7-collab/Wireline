@@ -710,19 +710,31 @@ function AuditActivityPanel() {
   const [recentLoading, setRecentLoading] = useState(true);
 
   useEffect(() => {
+    // days-keyed: rapid window changes (7d → 30d → 90d) could let a slow
+    // older response overwrite the newer state. Active-flag + abort match
+    // the pattern used by InsightsView's AISpendView fetching the same
+    // /api/audit/summary endpoint.
+    let active = true;
+    const controller = new AbortController();
     setLoading(true);
-    authFetch(`/api/audit/summary?days=${days}`)
-      .then(r => r.json())
-      .then(setSummary)
-      .finally(() => setLoading(false));
+    authFetch(`/api/audit/summary?days=${days}`, { signal: controller.signal })
+      .then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`); return d; })
+      .then(d => { if (active) setSummary(d); })
+      .catch((e: any) => { if (active && e?.name !== "AbortError") setSummary(null); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; controller.abort(); };
   }, [days]);
 
   useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
     setRecentLoading(true);
-    authFetch("/api/audit/recent?limit=50")
+    authFetch("/api/audit/recent?limit=50", { signal: controller.signal })
       .then(r => r.json())
-      .then(d => setRecent(d.entries || []))
-      .finally(() => setRecentLoading(false));
+      .then(d => { if (active) setRecent(d.entries || []); })
+      .catch(() => { /* mount-only fetch, transient errors caught */ })
+      .finally(() => { if (active) setRecentLoading(false); });
+    return () => { active = false; controller.abort(); };
   }, []);
 
   const totals = summary?.totals ?? {};
