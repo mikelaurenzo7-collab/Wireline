@@ -1923,15 +1923,31 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
       if (toolCall.function.name === "send_email") {
          try {
            const { to_email, subject, body } = toolCall.function.arguments;
-           
-           // Fetch the agent's assigned email account first, fall back to any connected account.
+
+           // SECURITY: scope all account lookups to the agent's owner.
+           // Earlier the fallback fetched ANY email account in the database
+           // — for a multi-tenant fleet that could send mail through another
+           //   user's connected inbox. We only fall back within the same
+           //   user.
+           const ownerUserId = agent?.user_id;
+           if (!ownerUserId) {
+              log.warn("Vapi tool: send_email called without resolvable user", { webhookAgentId });
+              results.push({
+                toolCallId: toolCall.id,
+                result: "Email system unavailable for this call. Inform the customer."
+              });
+              continue;
+           }
+
+           // Try the agent's assigned account first, then any of the
+           // owner's connected accounts.
            let { data: accounts } = webhookAgentId
-             ? await db.from('wireline_email_accounts').select('*').eq('agent_id', webhookAgentId).limit(1)
+             ? await db.from('wireline_email_accounts').select('*').eq('agent_id', webhookAgentId).eq('user_id', ownerUserId).limit(1)
              : { data: [] as any[] };
            if (!accounts || accounts.length === 0) {
-             ({ data: accounts } = await db.from('wireline_email_accounts').select('*').limit(1));
+             ({ data: accounts } = await db.from('wireline_email_accounts').select('*').eq('user_id', ownerUserId).limit(1));
            }
-           
+
            if (!accounts || accounts.length === 0) {
               results.push({
                 toolCallId: toolCall.id,
