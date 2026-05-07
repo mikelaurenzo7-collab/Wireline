@@ -343,6 +343,29 @@
   animation: skeleton-sweep 1.8s ease-in-out infinite;
 }
 
+/* Route-load progress sweep — used by the lazy-route fallback strip. The
+   sweep hits 100% well before the typical chunk parse/eval finishes so
+   the user sees motion immediately on navigate, even on fast networks. */
+@keyframes route-progress-sweep {
+  0%   { transform: translateX(0%);   }
+  100% { transform: translateX(420%); }
+}
+
+/* Honor the OS reduced-motion preference for continuous decorative
+   animations. Keeps the rest of the design (gradients, structure) but
+   stops the constant pan/drift/shimmer motion that some users find
+   distracting or that wastes battery on laptops. */
+@media (prefers-reduced-motion: reduce) {
+  .text-aurora,
+  .brand-wordmark,
+  .animate-aurora-drift,
+  .animate-pulse-intense,
+  .skeleton-shimmer,
+  .shimmer-line {
+    animation: none !important;
+  }
+}
+
 /* Soft glow ring for focused / selected items */
 .ring-aurora {
   box-shadow:

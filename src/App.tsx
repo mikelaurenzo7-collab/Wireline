@@ -537,17 +537,59 @@ function NotFound() {
   );
 }
 
+// Route loading state. The previous big-centered-spinner caused a visible
+// "empty page" jump on every navigation. This skeleton mirrors PageShell's
+// layout (eyebrow, title, separator, body grid) so the new route slots in
+// without a layout shift, and the gradient progress strip + body shimmer
+// signal motion. Stays subtle when the chunk loads in <100ms (the most
+// common case after warmup), and doesn't feel jarring when it takes longer.
 function RouteFallback() {
   return (
-    <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
-      <div className="relative w-16 h-16">
-        <div className="absolute inset-0 rounded-full" style={{ background: "conic-gradient(from 0deg, #0AC8D4, #9B59F5, #E040C0, #10B981, #0AC8D4)", filter: "blur(1px)", animation: "spin 4s linear infinite" }} />
-        <div className="absolute inset-1 rounded-full bg-paper" />
-        <div className="absolute inset-2 rounded-full glass flex items-center justify-center">
-          <Loader2 className="w-5 h-5 text-aurora animate-spin" />
-        </div>
+    <div className="h-full w-full flex flex-col" aria-live="polite" aria-busy="true">
+      {/* Top progress strip — animated gradient that reads as "loading"
+          without the user having to look anywhere specific. */}
+      <div className="shrink-0 h-px relative overflow-hidden mb-5" aria-hidden="true">
+        <div
+          className="absolute inset-y-0 -left-1/3 w-1/3 rounded-full"
+          style={{
+            background: "linear-gradient(90deg, transparent, rgba(10,200,212,0.95) 40%, rgba(155,89,245,0.85) 60%, transparent)",
+            animation: "route-progress-sweep 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite",
+          }}
+        />
       </div>
-      <p className="text-[10px] uppercase tracking-[0.5em] text-muted">Streaming</p>
+
+      {/* Eyebrow placeholder */}
+      <div className="shrink-0 mb-2.5 h-2 w-32 rounded-full bg-black/8 overflow-hidden relative" aria-hidden="true">
+        <div className="absolute inset-0 skeleton-shimmer" style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent)" }} />
+      </div>
+
+      {/* Title placeholder — matches the clamp(1.6rem, 6vw, 3.25rem) height */}
+      <div className="shrink-0 h-12 md:h-14 w-2/3 max-w-md rounded-xl bg-black/6 overflow-hidden relative mb-3" aria-hidden="true">
+        <div className="absolute inset-0 skeleton-shimmer" style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent)" }} />
+      </div>
+
+      {/* Subtitle placeholder */}
+      <div className="shrink-0 h-3 w-1/2 max-w-sm rounded-full bg-black/5 mb-4" aria-hidden="true" />
+
+      {/* Header separator (matches PageShell's gradient line) */}
+      <div className="shrink-0 h-px mb-6" style={{
+        background: "linear-gradient(90deg, rgba(10,200,212,0.20) 0%, rgba(155,89,245,0.15) 40%, rgba(224,64,192,0.10) 70%, transparent 100%)"
+      }} aria-hidden="true" />
+
+      {/* Body card shimmer */}
+      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 content-start">
+        {[0, 1, 2, 3, 4, 5].map(i => (
+          <div
+            key={i}
+            className="rounded-2xl glass border border-black/8 h-32 overflow-hidden relative"
+            aria-hidden="true"
+          >
+            <div className="absolute inset-0 skeleton-shimmer" style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)" }} />
+          </div>
+        ))}
+      </div>
+
+      <span className="sr-only">Loading page…</span>
     </div>
   );
 }
@@ -597,12 +639,17 @@ function TrialBanner() {
 }
 
 function PageTransition({ children }: { children: React.ReactNode }) {
+  // Tightened from 550ms+blur(10px) → 220ms opacity+y. The blur filter
+  // forced a full-layer repaint on every frame and the wait+exit pairing
+  // (mode="wait" on AnimatePresence) compounded into ~1.1s of perceived
+  // navigation lag. The new transition is short enough to feel snappy
+  // without losing the soft "settle" cue between pages.
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16, filter: "blur(10px)" }}
-      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      exit={{ opacity: 0, y: -12, filter: "blur(10px)" }}
-      transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
       className="h-full"
     >
       {children}
@@ -856,7 +903,11 @@ function AppContent() {
          <div className="flex-1 relative flex flex-col min-h-0 overflow-hidden">
             <div className="flex-1 overflow-hidden relative z-10 min-h-0">
               <div className="h-full max-w-[1920px] mx-auto px-4 md:px-6 lg:px-8 xl:px-10 py-4 md:py-5 lg:py-6 flex flex-col">
-                <AnimatePresence mode="wait">
+                {/* No mode="wait" — letting the new page mount in parallel
+                    with the old one's exit cuts ~250ms of perceived
+                    navigation lag. The PageTransition's short opacity
+                    fade still gives a clean visual handoff. */}
+                <AnimatePresence>
                   <Suspense fallback={<RouteFallback />}>
                     <Routes>
                       <Route path="/" element={<PageTransition><ErrorBoundary><DashboardHome /></ErrorBoundary></PageTransition>} />
