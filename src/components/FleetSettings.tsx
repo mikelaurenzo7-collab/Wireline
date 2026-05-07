@@ -8,6 +8,7 @@ import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import { useToast } from "../contexts/ToastContext";
 import AgentTemplates from "./AgentTemplates";
 import AgentExportImport from "./AgentExportImport";
+import AgentBusinessProfile from "./AgentBusinessProfile";
 
 /** Tiny SVG sparkline — renders a 7-value array as a smooth path. */
 function Sparkline({ data, width = 64, height = 24 }: { data: number[]; width?: number; height?: number }) {
@@ -888,6 +889,23 @@ export default function FleetSettings() {
                        placeholder="Define the agent's identity, tone, and behavioral patterns…"
                      />
                    </section>
+
+                   {/* Business profile — hours / compliance / guardrails / variables / KPI focus.
+                       Each change saves immediately via updateAgentMeta, matching the
+                       inline-save pattern used by name / website / first_message above. */}
+                   <AgentBusinessProfile
+                     value={{
+                       business_hours:        selectedAgent.business_hours,
+                       timezone:              selectedAgent.timezone,
+                       compliance_mode:       selectedAgent.compliance_mode,
+                       disallowed_topics:     selectedAgent.disallowed_topics,
+                       escalation_keywords:   selectedAgent.escalation_keywords,
+                       business_variables:    selectedAgent.business_variables,
+                       out_of_hours_message:  selectedAgent.out_of_hours_message,
+                       kpi_focus:             selectedAgent.kpi_focus,
+                     }}
+                     onChange={(profile) => updateAgentMeta(profile)}
+                   />
 
                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                      {/* Directives */}

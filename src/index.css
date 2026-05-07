@@ -456,6 +456,26 @@ select:focus {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) inset;
 }
 
+/* Compact input variants used by the AgentBusinessProfile editor.
+   Slimmer than .input-field — designed to live alongside chips,
+   time pickers, and key/value rows in dense settings panels. */
+.input-base {
+  @apply h-9 px-2.5 rounded-lg bg-black/5 border border-black/10 text-ink
+         text-sm placeholder:text-muted/55 outline-none transition-colors
+         focus:border-brand/45 focus:bg-white/55 disabled:opacity-50;
+}
+.input-time {
+  @apply h-9 px-2.5 rounded-lg bg-black/5 border border-black/10 text-ink
+         text-sm tabular-nums outline-none transition-colors
+         focus:border-brand/45 focus:bg-white/55
+         disabled:opacity-40 disabled:cursor-not-allowed;
+}
+.textarea-base {
+  @apply w-full px-3 py-2 rounded-lg bg-black/5 border border-black/10 text-ink
+         text-sm placeholder:text-muted/55 outline-none transition-colors
+         focus:border-brand/45 focus:bg-white/55 resize-none leading-relaxed;
+}
+
 /* Section separator — decorative gradient line */
 .section-divider {
   height: 1px;
