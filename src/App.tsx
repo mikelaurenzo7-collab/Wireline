@@ -846,15 +846,21 @@ function AppContent() {
       {/* All four are visually inert until the user invokes them, so
           a null Suspense fallback is fine — nothing flickers when their
           chunks resolve. KeyboardShortcuts is gated on showShortcuts so
-          its chunk is only fetched the first time the user presses ?. */}
-      <Suspense fallback={null}>
-        <CommandBar />
-        <PersonaWizard />
-        <ProductTour />
-        {showShortcuts && (
-          <KeyboardShortcuts open={showShortcuts} onClose={() => setShowShortcuts(false)} />
-        )}
-      </Suspense>
+          its chunk is only fetched the first time the user presses ?.
+          Wrapped in an ErrorBoundary with a null fallback so a chunk-load
+          rejection (stale deploy, transient network) silently drops these
+          non-critical surfaces instead of unmounting the whole shell —
+          Suspense doesn't catch errors, only the suspended state. */}
+      <ErrorBoundary fallback={null}>
+        <Suspense fallback={null}>
+          <CommandBar />
+          <PersonaWizard />
+          <ProductTour />
+          {showShortcuts && (
+            <KeyboardShortcuts open={showShortcuts} onClose={() => setShowShortcuts(false)} />
+          )}
+        </Suspense>
+      </ErrorBoundary>
       <FloatingRail open={sidebarOpen} setOpen={setSidebarOpen} onShowShortcuts={() => setShowShortcuts(true)} />
 
       <main className="flex-1 overflow-hidden relative flex flex-col z-10">
@@ -906,7 +912,15 @@ function AppContent() {
                 {/* No mode="wait" — letting the new page mount in parallel
                     with the old one's exit cuts ~250ms of perceived
                     navigation lag. The PageTransition's short opacity
-                    fade still gives a clean visual handoff. */}
+                    fade still gives a clean visual handoff.
+
+                    The outer ErrorBoundary catches lazy-route chunk-load
+                    failures (stale deploy, transient network) that happen
+                    BEFORE the per-route ErrorBoundary inside each <Route>
+                    has a chance to mount. Without it, a single failed
+                    chunk fetch blanks the whole content area and the
+                    inner boundaries never run. */}
+                <ErrorBoundary>
                 <AnimatePresence>
                   <Suspense fallback={<RouteFallback />}>
                     <Routes>
@@ -930,6 +944,7 @@ function AppContent() {
                     </Routes>
                   </Suspense>
                 </AnimatePresence>
+                </ErrorBoundary>
               </div>
             </div>
          </div>
