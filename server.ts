@@ -6216,11 +6216,13 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
           const msMsgIds  = msMsgs.map((m: any) => m.id).filter(Boolean);
 
           const [existingMsThreads, existingMsMsgs] = await Promise.all([
+            // Defense-in-depth: scope to userId so a Graph-emitted
+            // conversationId can never resolve to another tenant's thread.
             msConvIds.length
-              ? db.from('wireline_email_threads').select('*').in('thread_id', msConvIds)
+              ? db.from('wireline_email_threads').select('*').eq('user_id', userId).in('thread_id', msConvIds)
               : Promise.resolve({ data: [], error: null }),
             msMsgIds.length
-              ? db.from('wireline_email_messages').select('google_message_id').in('google_message_id', msMsgIds)
+              ? db.from('wireline_email_messages').select('google_message_id').eq('user_id', userId).in('google_message_id', msMsgIds)
               : Promise.resolve({ data: [], error: null }),
           ]);
           const msThreadMap = new Map((existingMsThreads.data || []).map((t: any) => [t.thread_id, t]));
@@ -6382,11 +6384,14 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
         const googleMsgIds = msgDetails.map((m: any) => m.data.id!).filter(Boolean);
 
         const [existingThreadsRes, existingMsgsRes] = await Promise.all([
+          // Defense-in-depth: scope to userId. Gmail thread IDs are
+          // globally unique, but pinning to user_id ensures a stale row
+          // from a deleted account can't bleed into another tenant's sync.
           threadIds.length
-            ? db.from('wireline_email_threads').select('*').in('thread_id', threadIds)
+            ? db.from('wireline_email_threads').select('*').eq('user_id', userId).in('thread_id', threadIds)
             : Promise.resolve({ data: [], error: null }),
           googleMsgIds.length
-            ? db.from('wireline_email_messages').select('google_message_id').in('google_message_id', googleMsgIds)
+            ? db.from('wireline_email_messages').select('google_message_id').eq('user_id', userId).in('google_message_id', googleMsgIds)
             : Promise.resolve({ data: [], error: null }),
         ]);
         if (existingThreadsRes.error) log.warn("Email sync: thread batch-check failed", { error: existingThreadsRes.error.message });
