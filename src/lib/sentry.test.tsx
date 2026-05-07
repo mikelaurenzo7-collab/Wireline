@@ -33,9 +33,10 @@ describe("sentry wrapper", () => {
       expect(sentryInit).not.toHaveBeenCalled();
     });
 
-    it("captureException falls back to console.error when not initialized", async () => {
+    it("captureException falls back to console.error after init resolves with no DSN", async () => {
       const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-      const { captureException } = await import("./sentry");
+      const { initSentry, captureException } = await import("./sentry");
+      await initSentry();
       const err = new Error("local dev error");
       captureException(err, { route: "/agents" });
       expect(consoleSpy).toHaveBeenCalledWith("[wireline]", err, { route: "/agents" });
@@ -45,9 +46,23 @@ describe("sentry wrapper", () => {
 
     it("captureException without context still falls back to console.error safely", async () => {
       const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-      const { captureException } = await import("./sentry");
+      const { initSentry, captureException } = await import("./sentry");
+      await initSentry();
       captureException(new Error("no context"));
       expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
+    it("buffers captureException calls made before init resolves, then drains to console", async () => {
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const { initSentry, captureException } = await import("./sentry");
+      // Capture BEFORE init runs — should be buffered, no console call yet.
+      captureException(new Error("early-1"), { phase: "render" });
+      captureException(new Error("early-2"));
+      expect(consoleSpy).not.toHaveBeenCalled();
+      // Init flushes the queue to console because no DSN is set.
+      await initSentry();
+      expect(consoleSpy).toHaveBeenCalledTimes(2);
       consoleSpy.mockRestore();
     });
   });
@@ -84,6 +99,19 @@ describe("sentry wrapper", () => {
       expect(sentryCaptureException).toHaveBeenCalledWith(err, {
         extra: { user_id: "u-1" },
       });
+    });
+
+    it("buffers captureException calls made before init resolves, then drains to Sentry", async () => {
+      const { initSentry, captureException } = await import("./sentry");
+      // Render-phase errors fire before the lazy @sentry/react import lands.
+      // Without buffering, those would be silently dropped on slow networks.
+      captureException(new Error("early"), { phase: "render" });
+      expect(sentryCaptureException).not.toHaveBeenCalled();
+      await initSentry();
+      expect(sentryCaptureException).toHaveBeenCalledWith(
+        expect.objectContaining({ message: "early" }),
+        { extra: { phase: "render" } },
+      );
     });
 
     it("captureException without context omits the extra object", async () => {
