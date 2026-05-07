@@ -38,7 +38,12 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (!this.state.error) return this.props.children;
-    if (this.props.fallback) return this.props.fallback;
+    // Use `in` so an explicit `fallback={null}` (used by App.tsx to
+    // silently drop non-critical lazy chrome on chunk-load failure)
+    // is honored. A truthy check would treat null as "no fallback"
+    // and render the full crash panel instead, which is the opposite
+    // of what those callers want.
+    if ("fallback" in this.props) return this.props.fallback;
 
     return (
       <div className="min-h-[70vh] flex items-center justify-center p-6">

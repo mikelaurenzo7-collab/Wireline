@@ -75,6 +75,19 @@ describe("ErrorBoundary", () => {
     expect(screen.queryByText(/This view crashed/i)).not.toBeInTheDocument();
   });
 
+  it("honors fallback={null} (renders nothing instead of the default panel)", () => {
+    // Used by App.tsx's lazy chrome group: a chunk-load failure for
+    // CommandBar/PersonaWizard/etc. should silently drop those non-
+    // critical surfaces, NOT render the full crash UI in the shell.
+    const { container } = render(
+      <ErrorBoundary fallback={null}>
+        <Boom />
+      </ErrorBoundary>,
+    );
+    expect(screen.queryByText(/This view crashed/i)).not.toBeInTheDocument();
+    expect(container.firstChild).toBeNull();
+  });
+
   it("'Try Again' button resets the boundary and re-renders children", () => {
     let shouldThrow = true;
     function Conditional() {
