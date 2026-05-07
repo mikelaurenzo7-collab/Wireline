@@ -13,53 +13,85 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout
+        id: checkout
+        continue-on-error: true
         uses: actions/checkout@v4
 
-      - name: Runner diagnostics
-        run: |
-          echo "Working directory: $(pwd)"
-          echo "git: $(git --version)"
-          echo "Files: $(ls -1 | head -20 | tr '\n' ' ')"
-
       - name: Setup Node.js
+        id: setup
+        continue-on-error: true
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      - name: Node + npm versions
+      - name: Diagnostic dump (always runs)
+        if: always()
         run: |
-          node --version
-          npm --version
-          echo "lockfileVersion: $(node -e 'console.log(require(\"./package-lock.json\").lockfileVersion)')"
+          echo "=== checkout outcome: ${{ steps.checkout.outcome }} ==="
+          echo "=== setup outcome:    ${{ steps.setup.outcome }} ==="
+          echo "=== pwd:              $(pwd) ==="
+          echo "=== whoami:           $(whoami) ==="
+          echo "=== node:             $(node --version 2>&1 || echo MISSING) ==="
+          echo "=== npm:              $(npm --version 2>&1 || echo MISSING) ==="
+          echo "=== files (first 30) ==="
+          ls -la | head -30
+          echo "=== package-lock.json present: $(test -f package-lock.json && echo YES || echo NO) ==="
+          echo "=== net (registry.npmjs.org) ==="
+          curl -sS -o /dev/null -w "registry.npmjs.org: %{http_code} (%{time_total}s)\n" https://registry.npmjs.org/ || echo "curl failed"
 
       - name: Install dependencies
         id: install
-        run: npm ci --no-audit --no-fund
-
-      - name: Dump npm logs on failure
-        if: always() && steps.install.outcome == 'failure'
+        continue-on-error: true
         run: |
-          for f in $(ls -t ~/.npm/_logs/ 2>/dev/null | head -2); do
-            echo "--- ~/.npm/_logs/$f ---"
-            cat "$HOME/.npm/_logs/$f" || true
-          done
-          echo "Reachability:"
-          curl -sS -o /dev/null -w "registry.npmjs.org: %{http_code} (%{time_total}s)\n" https://registry.npmjs.org/ || true
+          set +e
+          npm ci --no-audit --no-fund 2>&1 | tee /tmp/npm-ci.log
+          echo "=== npm ci exit: $? ==="
+
+      - name: Dump npm debug logs (always runs)
+        if: always()
+        run: |
+          echo "=== install outcome: ${{ steps.install.outcome }} ==="
+          if [ -d ~/.npm/_logs/ ]; then
+            for f in $(ls -t ~/.npm/_logs/ 2>/dev/null | head -2); do
+              echo "--- ~/.npm/_logs/$f ---"
+              cat "$HOME/.npm/_logs/$f" || true
+            done
+          else
+            echo "no ~/.npm/_logs directory"
+          fi
 
       - name: TypeScript typecheck
+        id: typecheck
+        continue-on-error: true
         run: npx tsc --noEmit
 
       - name: Unit tests
+        id: tests
+        continue-on-error: true
         run: npm run test:run
 
-      - name: Build (vite + esbuild server)
+      - name: Build
+        id: build
+        continue-on-error: true
         run: npm run build
 
-      - name: Server bootstrap smoke test
+      - name: Smoke server
+        id: smoke
+        continue-on-error: true
         run: npm run smoke:server
 
-      - name: Production env check (informational)
-        run: node scripts/check-prod-env.mjs || true
-
-      - name: Audit (high severity, non-blocking)
-        run: npm audit --audit-level=high || true
+      - name: Final summary + fail if any blocker failed
+        if: always()
+        run: |
+          echo "=== Step outcomes ==="
+          echo "checkout:  ${{ steps.checkout.outcome }}"
+          echo "setup:     ${{ steps.setup.outcome }}"
+          echo "install:   ${{ steps.install.outcome }}"
+          echo "typecheck: ${{ steps.typecheck.outcome }}"
+          echo "tests:     ${{ steps.tests.outcome }}"
+          echo "build:     ${{ steps.build.outcome }}"
+          echo "smoke:     ${{ steps.smoke.outcome }}"
+          # Fail the job if any blocker failed.
+          for o in "${{ steps.checkout.outcome }}" "${{ steps.setup.outcome }}" "${{ steps.install.outcome }}" "${{ steps.typecheck.outcome }}" "${{ steps.tests.outcome }}" "${{ steps.build.outcome }}" "${{ steps.smoke.outcome }}"; do
+            if [ "$o" = "failure" ]; then exit 1; fi
+          done
