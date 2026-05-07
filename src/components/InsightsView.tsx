@@ -83,10 +83,14 @@ function FunnelView({ days }: { days: number }) {
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
+    let active = true;
     setLoading(true); setErr(null);
     authFetch(`/api/insights/funnel?days=${days}`)
       .then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`); return d; })
-      .then(setData).catch((e) => setErr(e.message)).finally(() => setLoading(false));
+      .then((d) => { if (active) setData(d); })
+      .catch((e) => { if (active) setErr(e instanceof Error ? e.message : "Request failed"); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, [days]);
 
   if (loading) return <Spinner />;
@@ -254,10 +258,14 @@ function HeatmapView({ days }: { days: number }) {
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
+    let active = true;
     setLoading(true); setErr(null);
     authFetch(`/api/insights/heatmap?days=${days}`)
       .then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`); return d; })
-      .then(setData).catch((e) => setErr(e.message)).finally(() => setLoading(false));
+      .then((d) => { if (active) setData(d); })
+      .catch((e) => { if (active) setErr(e instanceof Error ? e.message : "Request failed"); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, [days]);
 
   if (loading) return <Spinner />;
@@ -347,10 +355,14 @@ function LeaderboardView({ days }: { days: number }) {
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
+    let active = true;
     setLoading(true); setErr(null);
     authFetch(`/api/insights/leaderboard?days=${days}`)
       .then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`); return d; })
-      .then(setData).catch((e) => setErr(e.message)).finally(() => setLoading(false));
+      .then((d) => { if (active) setData(d); })
+      .catch((e) => { if (active) setErr(e instanceof Error ? e.message : "Request failed"); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, [days]);
 
   if (loading) return <Spinner />;
@@ -521,10 +533,14 @@ function AISpendView({ days }: { days: number }) {
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
+    let active = true;
     setLoading(true); setErr(null);
     authFetch(`/api/audit/summary?days=${days}`)
       .then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`); return d; })
-      .then(setData).catch((e) => setErr(e.message)).finally(() => setLoading(false));
+      .then((d) => { if (active) setData(d); })
+      .catch((e) => { if (active) setErr(e instanceof Error ? e.message : "Request failed"); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, [days]);
 
   if (loading) return <Spinner />;

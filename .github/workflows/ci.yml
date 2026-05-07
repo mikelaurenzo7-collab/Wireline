@@ -6,19 +6,55 @@ on:
   pull_request:
     branches: [main]
 
+# Cancel in-progress runs for the same ref on new pushes — saves runner minutes
+# and prevents stale results racing the latest commit.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: typecheck + test + build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Diagnostic: surfaces the runner's actual environment so when something
+      # fails before npm ci we can see exactly what state the runner is in
+      # (node version mismatch, missing tools, network issues, etc.).
+      - name: Runner diagnostics
+        run: |
+          echo "::group::Runner state"
+          echo "Working directory: $(pwd)"
+          echo "Node:  $(node --version 2>&1 || echo 'not installed')"
+          echo "npm:   $(npm --version 2>&1 || echo 'not installed')"
+          echo "git:   $(git --version 2>&1)"
+          echo "OS:    $(uname -a)"
+          echo "Files: $(ls -1 | head -20 | tr '\n' ' ')"
+          echo "lockfileVersion: $(node -e "console.log(require('./package-lock.json').lockfileVersion)" 2>&1 || echo 'unreadable')"
+          echo "::endgroup::"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version-file: ".nvmrc"
+
+      # Cache npm separately from setup-node so a cache miss/service hiccup
+      # doesn't abort the whole step. Restore-keys lets us hydrate from a
+      # close-enough cache if the exact lockfile hash changes.
+      - name: Restore npm cache
+        id: npm-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node20-npm-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node20-npm-
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --no-audit --no-fund
 
       - name: TypeScript typecheck
         run: npx tsc --noEmit
