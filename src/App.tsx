@@ -612,6 +612,60 @@ const PAGE_TITLES: Record<string, string> = {
   "/admin":         "Settings",
 };
 
+/**
+ * Each route gets a tonal accent — a 2-color gradient that surfaces in
+ * the top page-accent strip. The accents pull from the brand palette
+ * (cyan/purple/magenta/emerald/amber) so they always feel native to
+ * the design, just shifted in weight per surface. Unknown routes fall
+ * back to the full aurora.
+ */
+const ROUTE_ACCENTS: Record<string, [string, string]> = {
+  "/":             ["#0AC8D4", "#9B59F5"],
+  "/triage":        ["#FFC07D", "#E040C0"],
+  "/live":          ["#0AC8D4", "#10B981"],
+  "/insights":      ["#9B59F5", "#E040C0"],
+  "/logs":          ["#0AC8D4", "#9B59F5"],
+  "/inbox":         ["#9B59F5", "#0AC8D4"],
+  "/outbound":      ["#E040C0", "#FFC07D"],
+  "/appointments":  ["#10B981", "#0AC8D4"],
+  "/agents":        ["#0AC8D4", "#9B59F5"],
+  "/train":         ["#9B59F5", "#0AC8D4"],
+  "/knowledge":     ["#10B981", "#9B59F5"],
+  "/integrations":  ["#0AC8D4", "#10B981"],
+  "/admin":         ["#9B59F5", "#0AC8D4"],
+  "/dnc":           ["#E040C0", "#FF6B6B"],
+  "/audit":         ["#9B59F5", "#FFC07D"],
+};
+function getRouteAccent(pathname: string): [string, string] {
+  if (ROUTE_ACCENTS[pathname]) return ROUTE_ACCENTS[pathname];
+  // Match prefix routes like /contact/:number
+  const prefix = "/" + pathname.split("/")[1];
+  return ROUTE_ACCENTS[prefix] ?? ["#0AC8D4", "#E040C0"];
+}
+
+/**
+ * Thin animated accent strip at the top of the page area — a subtle
+ * tonal cue for "where you are" that recolors when the route changes.
+ * 2px tall, full content width, fades-in on route change.
+ */
+function RouteAccentStrip() {
+  const location = useLocation();
+  const [from, to] = getRouteAccent(location.pathname);
+  return (
+    <div className="relative h-px shrink-0">
+      <motion.div
+        key={location.pathname}
+        initial={{ opacity: 0, scaleX: 0 }}
+        animate={{ opacity: 1, scaleX: 1 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="absolute inset-0 origin-left"
+        style={{ background: `linear-gradient(90deg, transparent 0%, ${from} 18%, ${to} 78%, transparent 100%)` }}
+        aria-hidden="true"
+      />
+    </div>
+  );
+}
+
 function AppContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -769,6 +823,11 @@ function AppContent() {
              </button>
            </div>
          </div>
+
+         {/* Tonal route accent — recolors with the active page so the
+             page area gets a subtle "where you are" cue without the
+             full header chrome of a desktop app. */}
+         <RouteAccentStrip />
 
          <TrialBanner />
 
