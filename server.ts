@@ -32,6 +32,7 @@ import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "./src/lib/ag
 import { computeScorecard } from "./src/lib/agent-scorecard";
 import { computeDashboardStats } from "./src/lib/dashboard-stats";
 import { extractCapturedProfileIntel, buildCustomerIntelBlock } from "./src/lib/customer-intel";
+import { compileActivityFeed } from "./src/lib/fleet-activity";
 
 // On Vercel, VERCEL_URL is automatically set to the deployment hostname
 // (e.g. "myapp-abc123.vercel.app") with no protocol or trailing slash.
@@ -6945,46 +6946,14 @@ app.get("/api/fleet/activity", authenticateUser, async (req: any, res: any) => {
           db.from('wireline_email_threads').select('id, customer_email, lead_score, intent_label, created_at').eq('user_id', req.user.id).order('created_at', { ascending: false }).limit(5)
       ]);
 
-      const activity = [
-         ...(logs.data || []).map(l => ({ 
-            id: l.id, 
-            type: 'SIGNAL_ANALYZED', 
-            trigger: 'Voice Ingestion', 
-            action: `Intent extracted: ${l.intent_label || 'Analysis Pending'}`, 
-            meta: l.customer_number,
-            timestamp: l.created_at,
-            importance: l.lead_score > 70 ? 'high' : 'medium'
-         })),
-         ...(tasks.data || []).map(t => ({ 
-            id: t.id, 
-            type: 'MISSION_INJECTED', 
-            trigger: 'Functional Requirement Detected', 
-            action: `New Task: ${t.description.substring(0, 50)}...`, 
-            meta: t.status,
-            timestamp: t.created_at,
-            importance: t.priority === 'high' ? 'critical' : 'medium'
-         })),
-         ...(lessons.data || []).map(l => ({ 
-            id: l.id, 
-            type: 'NEURAL_OPTIMIZATION', 
-            trigger: 'Behavioral Deviation', 
-            action: `Lesson Learned: ${l.lesson.substring(0, 50)}...`, 
-            meta: 'Agent Refinement',
-            timestamp: l.created_at,
-            importance: 'low'
-         })),
-         ...(emails.data || []).map(e => ({ 
-            id: e.id, 
-            type: 'DIGITAL_RELAY', 
-            trigger: 'OMNI_CHANNEL_SYNC', 
-            action: `Email Thread Synced: ${e.intent_label || 'Scanning'}`, 
-            meta: e.customer_email,
-            timestamp: e.created_at,
-            importance: 'medium'
-         }))
-      ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      const activity = compileActivityFeed({
+         logs:    logs.data    || [],
+         tasks:   tasks.data   || [],
+         lessons: lessons.data || [],
+         emails:  emails.data  || [],
+      });
 
-      res.json({ activity: activity.slice(0, 15) });
+      res.json({ activity });
    } catch(e) {
       log.error("Activity feed error", { error: e?.message || String(e) });
       res.status(500).json({ error: "Failed to fetch activity" });

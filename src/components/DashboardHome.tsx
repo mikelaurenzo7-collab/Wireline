@@ -51,16 +51,24 @@ export default function DashboardHome() {
       fetchSystemActivity();
     }, 30_000);
 
+    // Track the post-call refresh timer so an unmount within the 3s
+    // window doesn't trigger setState on a dead component (the React
+    // warning + the leaked setTimeout firing fetchStats into the void).
+    const callEndTimers = new Set<ReturnType<typeof setTimeout>>();
+
     vapi.on("call-start", () => { setIsConnecting(false); setIsConnected(true); });
     vapi.on("call-end", () => {
       setIsConnecting(false); setIsConnected(false);
-      setTimeout(() => fetchStats(), 3000);
+      const t = setTimeout(() => { callEndTimers.delete(t); fetchStats(); }, 3000);
+      callEndTimers.add(t);
     });
 
     return () => {
       clearInterval(signalPulse);
       vapi.removeAllListeners("call-start");
       vapi.removeAllListeners("call-end");
+      callEndTimers.forEach(clearTimeout);
+      callEndTimers.clear();
     };
   }, []);
 

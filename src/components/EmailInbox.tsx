@@ -47,10 +47,36 @@ export default function EmailInbox() {
 
   useEffect(() => { fetchThreads(); }, []);
 
+  // Guarded against the rapid-thread-switch race: if the user clicks
+  // thread A → B before A's response lands, A's late resolve must not
+  // overwrite B's messages. AbortController cancels in-flight fetches
+  // for switched-away threads, and the post-resolve guard ignores any
+  // response whose threadId no longer matches the selection.
+  useEffect(() => {
+    if (!selectedThread) return;
+    const threadId = selectedThread.id;
+    const controller = new AbortController();
+    let active = true;
+    setQuickReplies([]);
+    (async () => {
+      try {
+        const res = await authFetch(`/api/emails/threads/${threadId}/messages`, { signal: controller.signal });
+        const data = await res.json();
+        if (active) setMessages(data.messages || []);
+      } catch (e: any) {
+        if (e?.name === 'AbortError') return;
+        if (active) console.error("Failed to fetch messages:", e);
+      }
+    })();
+    return () => { active = false; controller.abort(); };
+  }, [selectedThread?.id]);
+
   const fetchMessages = async (threadId: string) => {
     try {
       const res = await authFetch(`/api/emails/threads/${threadId}/messages`);
       const data = await res.json();
+      // Don't clobber a newer thread's messages if the user has since switched away.
+      if (selectedThread?.id !== threadId) return;
       setMessages(data.messages || []);
     } catch (e) {
       console.error("Failed to fetch messages:", e);
@@ -95,12 +121,6 @@ export default function EmailInbox() {
     }
   };
 
-  useEffect(() => {
-    if (selectedThread) {
-      fetchMessages(selectedThread.id);
-      setQuickReplies([]);
-    }
-  }, [selectedThread?.id]);
 
   const fetchQuickReplies = async () => {
     if (!selectedThread) return;
