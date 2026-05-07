@@ -27,9 +27,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.npm
-          key: ${{ runner.os }}-node20-npm-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-node-${{ hashFiles('.nvmrc') }}-npm-${{ hashFiles('package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-node20-npm-
+            ${{ runner.os }}-node-${{ hashFiles('.nvmrc') }}-npm-
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
