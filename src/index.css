@@ -367,6 +367,28 @@ select {
   background-color: rgba(0, 0, 0, 0.04);
 }
 
+/* iOS Safari auto-zooms on focus when input font-size < 16px. Force a
+   minimum 16px on touch devices so the page doesn't suddenly scale up
+   the moment a user taps an input. Desktop / pointer:fine devices keep
+   our compact text-sm sizing. */
+@media (pointer: coarse) {
+  input[type="email"],
+  input[type="password"],
+  input[type="text"],
+  input[type="search"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="date"],
+  input[type="datetime-local"],
+  input[type="time"],
+  input:not([type]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
 input:focus,
 textarea:focus,
 select:focus {

@@ -2,7 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- viewport-fit=cover ensures the page paints under iOS notches/Dynamic Island
+         (we use env(safe-area-inset-*) in critical surfaces like the toast stack
+         to keep tap targets out of the cutouts). -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
     <!-- Primary meta -->
     <title>Wireline — AI Voice &amp; Email Agents for Your Business</title>

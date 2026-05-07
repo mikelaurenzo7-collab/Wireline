@@ -58,17 +58,21 @@ export default function ConfirmModal({
                 </div>
                 <button
                   onClick={onCancel}
-                  className="ml-auto w-8 h-8 rounded-full glass border border-white/10 flex items-center justify-center text-ink/40 hover:text-ink hover:border-white/20 transition-all shrink-0"
+                  aria-label="Close"
+                  className="ml-auto w-11 h-11 sm:w-8 sm:h-8 -m-1.5 sm:m-0 rounded-full glass border border-white/10 flex items-center justify-center text-ink/40 hover:text-ink hover:border-white/20 transition-all shrink-0 active:scale-95"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
                 </button>
               </div>
 
-              <div className="relative z-10 flex gap-3">
+              {/* Buttons: stacked on phones, side-by-side from sm up so we
+                  don't squeeze "Cancel" / "Confirm danger" labels into 35px
+                  pills on narrow screens. h-11 = 44px touch target. */}
+              <div className="relative z-10 flex flex-col-reverse sm:flex-row gap-2 sm:gap-3">
                 <button
                   onClick={onCancel}
                   disabled={loading}
-                  className="flex-1 h-10 rounded-xl glass border border-white/10 text-[11px] uppercase tracking-[0.25em] text-muted hover:text-ink hover:border-white/20 transition-all"
+                  className="flex-1 h-11 rounded-xl glass border border-white/10 text-[11px] uppercase tracking-[0.25em] text-muted hover:text-ink hover:border-white/20 transition-all active:scale-95"
                 >
                   {cancelLabel}
                 </button>
@@ -76,10 +80,10 @@ export default function ConfirmModal({
                   onClick={onConfirm}
                   disabled={loading}
                   className={cn(
-                    "flex-1 h-10 rounded-xl text-[11px] uppercase tracking-[0.25em] flex items-center justify-center gap-1.5 transition-all",
+                    "flex-1 h-11 rounded-xl text-[11px] uppercase tracking-[0.25em] flex items-center justify-center gap-1.5 transition-all active:scale-95",
                     danger
                       ? "bg-rose-500/20 border border-rose-500/40 text-rose-400 hover:bg-rose-500/30"
-                      : "brutal-btn !py-0 !h-10"
+                      : "brutal-btn !py-0 !h-11"
                   )}
                 >
                   {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}

@@ -23,7 +23,9 @@ function ToastItem({ toast }: { toast: Toast }) {
       exit={{ opacity: 0, y: -8, scale: 0.94, transition: { duration: 0.18 } }}
       transition={{ type: "spring", stiffness: 380, damping: 32 }}
       className={cn(
-        "relative w-80 max-w-[92vw] rounded-2xl glass border shadow-2xl overflow-hidden",
+        // Full-width on mobile (parent strip already handles padding);
+        // fixed-width on sm+ to keep the desktop stack tidy.
+        "relative w-full sm:w-80 max-w-full sm:max-w-[92vw] rounded-2xl glass border shadow-2xl overflow-hidden",
         m.border,
       )}
     >
@@ -42,9 +44,11 @@ function ToastItem({ toast }: { toast: Toast }) {
         </div>
         <button
           onClick={() => dismiss(toast.id)}
-          className="shrink-0 w-6 h-6 flex items-center justify-center rounded-lg text-muted hover:text-ink hover:bg-white/8 transition-all mt-0.5"
+          aria-label="Dismiss notification"
+          // Larger hit area on touch devices; visible icon stays small.
+          className="shrink-0 w-9 h-9 sm:w-6 sm:h-6 -m-1.5 sm:m-0 sm:mt-0.5 flex items-center justify-center rounded-lg text-muted hover:text-ink hover:bg-white/8 transition-all"
         >
-          <X className="w-3 h-3" />
+          <X className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
         </button>
       </div>
     </motion.div>
@@ -57,7 +61,13 @@ export default function ToastStack() {
     <div
       aria-live="polite"
       aria-atomic="false"
-      className="fixed bottom-5 right-5 z-[9999] flex flex-col gap-2 items-end pointer-events-none"
+      // On mobile: full-width bottom strip (with safe-area inset for
+      // notched devices) so toasts aren't squeezed into a corner.
+      // On sm+: classic bottom-right stack.
+      className="fixed inset-x-3 bottom-3 sm:inset-x-auto sm:bottom-5 sm:right-5 z-[9999] flex flex-col gap-2 items-stretch sm:items-end pointer-events-none"
+      style={{
+        paddingBottom: "env(safe-area-inset-bottom, 0)",
+      }}
     >
       <AnimatePresence initial={false} mode="sync">
         {toasts.map(t => (

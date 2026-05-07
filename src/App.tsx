@@ -560,13 +560,18 @@ function AppContent() {
       <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} onShowShortcuts={() => setShowShortcuts(true)} />
 
       <main className="flex-1 overflow-hidden relative flex flex-col z-10">
-         {/* Mobile Header */}
-         <div className="lg:hidden p-4 flex items-center justify-between z-30 sticky top-0 glass-strong border-b border-black/8 shrink-0 shadow-sm">
+         {/* Mobile Header — sticky at top with safe-area inset so the
+             buttons stay out of the iOS notch / Dynamic Island. */}
+         <div
+           className="lg:hidden px-3 py-3 flex items-center justify-between z-30 sticky top-0 glass-strong border-b border-black/8 shrink-0 shadow-sm"
+           style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0))" }}
+         >
             <button
               onClick={() => setSidebarOpen(true)}
               aria-label="Open navigation menu"
               aria-expanded={sidebarOpen}
-              className="w-10 h-10 rounded-xl glass border border-black/10 flex items-center justify-center hover:border-brand/40 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60"
+              // 44x44 = WCAG 2.5.5 + Apple HIG touch target minimum.
+              className="w-11 h-11 rounded-xl glass border border-black/10 flex items-center justify-center hover:border-brand/40 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60"
             >
               <Menu className="w-5 h-5 text-ink" />
             </button>
@@ -579,7 +584,7 @@ function AppContent() {
             <button
               onClick={() => navigate('/admin')}
               aria-label="Open settings"
-              className="w-10 h-10 rounded-xl glass border border-black/10 flex items-center justify-center hover:border-brand/40 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60"
+              className="w-11 h-11 rounded-xl glass border border-black/10 flex items-center justify-center hover:border-brand/40 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60"
             >
               <User className="w-5 h-5 text-ink/70" />
             </button>
