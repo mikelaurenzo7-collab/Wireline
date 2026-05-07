@@ -5336,7 +5336,22 @@ async function placeOutboundCall(opts: {
 }): Promise<PlaceCallResult> {
   const { userId, agentId, customerName, customerNumber, context } = opts;
 
-  // 0. Subscription guard
+  // 0a. SECURITY: verify the caller owns the agent. Without this an
+  // attacker could pass any agentId, and the loader below would happily
+  // pull another user's full agent persona (knowledge, directives,
+  // lessons) and dial through it — both data exfiltration AND billing
+  // attribution risk.
+  const { data: ownedAgent } = await db
+    .from('wireline_agents')
+    .select('id')
+    .eq('id', agentId)
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (!ownedAgent) {
+    return { ok: false, status: 404, error: "Agent not found." };
+  }
+
+  // 0b. Subscription guard
   const { data: userSettings } = await db.from('wireline_settings').select('*').eq('user_id', userId).single();
   const subscriptionStatus = userSettings?.subscription_status || 'active';
   if (subscriptionStatus !== 'active') {
@@ -5579,7 +5594,8 @@ app.post("/api/outbound/dial", authenticateUser, async (req: any, res: any) => {
     res.json({ success: true, callId: result.callId });
   } catch (error: any) {
     log.error("Outbound call failed", { error: getErrorMessage(error) });
-    res.status(500).json({ error: error.message || "Failed to dispatch call." });
+    // Don't leak the raw error message; log full server-side, return safe message to client.
+    res.status(500).json({ error: "Failed to dispatch call." });
   }
 });
 
@@ -5592,7 +5608,7 @@ app.post("/api/outbound/bulk", authenticateUser, async (req: any, res: any) => {
      if (!validation.success) {
        return res.status(400).json({ error: "Validation failed", errors: validation.errors });
      }
-     const { leads, campaign_id } = validation.data;
+     const { leads, campaign_id } = validation.data!;
 
      // SECURITY ENFORCEMENT
      const { data: userSettings } = await db.from('wireline_settings').select('subscription_status').eq('user_id', req.user.id).single();
@@ -5600,7 +5616,20 @@ app.post("/api/outbound/bulk", authenticateUser, async (req: any, res: any) => {
         return res.status(403).json({ error: "Access Denied: Inactive billing plan." });
      }
 
-     const leadsWithUser = leads.map((lead: any) => ({
+     // Verify campaign_id (when supplied) belongs to the caller. Without
+     // this an attacker could attribute their leads to another user's
+     // campaign, polluting the campaign's analytics + lead pool.
+     if (campaign_id) {
+       const { data: ownedCampaign } = await db
+         .from('wireline_outbound_campaigns')
+         .select('id')
+         .eq('id', campaign_id)
+         .eq('user_id', req.user.id)
+         .maybeSingle();
+       if (!ownedCampaign) return res.status(404).json({ error: "Campaign not found" });
+     }
+
+     const leadsWithUser = (leads || []).map((lead: any) => ({
         ...lead,
         user_id: req.user.id,
         campaign_id: campaign_id || null,
@@ -7032,11 +7061,31 @@ app.post("/api/agents/:id/promote", authenticateUser, async (req: any, res: any)
    try {
       const { lessonId, content } = req.body;
       const agentId = req.params.id;
+
+      // SECURITY: verify the caller owns the target agent before inserting
+      // a directive against it. Without this, an attacker could promote a
+      // lesson into another user's agent's directives.
+      const { data: ownedAgent } = await db
+        .from('wireline_agents')
+        .select('id')
+        .eq('id', agentId)
+        .eq('user_id', req.user.id)
+        .maybeSingle();
+      if (!ownedAgent) return res.status(404).json({ error: "Agent not found" });
+
+      // Validate content shape — keeps the directive within table limits.
+      if (typeof content !== 'string' || content.trim().length === 0) {
+        return res.status(400).json({ error: "content is required" });
+      }
+      if (content.length > 1000) {
+        return res.status(400).json({ error: "content must be 1000 characters or less" });
+      }
+
       // Insert into wireline_directives (the table that agent-config reads from).
       // Priority 5 = medium on the 1-10 scale used throughout the app.
       const { error: promoError } = await db.from('wireline_directives').insert({
          agent_id: agentId,
-         content: content,
+         content: content.trim(),
          priority: 5,
          user_id: req.user.id
       });
