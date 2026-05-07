@@ -369,9 +369,13 @@ function LeaderboardView({ days }: { days: number }) {
     },
   ];
 
+  // API contract returns agents: AgentRow[]; treat partial responses
+  // (missing array) as the empty state rather than crashing the render.
+  const agentRows = Array.isArray(data?.agents) ? data.agents : [];
+
   return (
     <div className="space-y-3">
-      {data.agents.map((a: any, i: number) => {
+      {agentRows.map((a: any, i: number) => {
         const rs = RANK_STYLES[i] ?? { ring: "border-white/8", glow: "transparent", textClass: "text-muted", iconBg: false };
         return (
           <motion.div

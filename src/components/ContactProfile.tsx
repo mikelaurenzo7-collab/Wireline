@@ -146,13 +146,21 @@ export default function ContactProfile() {
             </h2>
             <span className="text-[10px] uppercase tracking-[0.3em] text-muted">{data.timeline.length} events</span>
           </div>
-          {data.timeline.length === 0 ? (
-            <div className="p-16 text-center text-muted/60 text-[11px] uppercase tracking-[0.4em]">No interactions on file.</div>
-          ) : (
-            <div className="divide-y divide-white/5">
-              {data.timeline.map((e) => <TimelineRow key={`${e.type}-${e.id}`} event={e} />)}
-            </div>
-          )}
+          {(() => {
+            // Defensive: API returns timeline: ContactEvent[]; but on a
+            // partial response the array could be missing. Default it
+            // before .length / .map so the page renders the empty state
+            // instead of crashing with "Cannot read length of undefined".
+            const timeline = Array.isArray(data.timeline) ? data.timeline : [];
+            if (timeline.length === 0) {
+              return <div className="p-16 text-center text-muted/60 text-[11px] uppercase tracking-[0.4em]">No interactions on file.</div>;
+            }
+            return (
+              <div className="divide-y divide-white/5">
+                {timeline.map((e) => <TimelineRow key={`${e.type}-${e.id}`} event={e} />)}
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>
