@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   Activity, PhoneCall, Mic, Square, Loader2, TrendingUp, DollarSign,
@@ -9,7 +9,6 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
 import { motion } from "motion/react";
-import Vapi from "@vapi-ai/web";
 import { cn } from "../lib/utils";
 import FleetTaskBridge from "./FleetTaskBridge";
 import TriggerIntelligenceFeed from "./TriggerIntelligenceFeed";
@@ -22,7 +21,15 @@ import { authFetch } from "../lib/api";
 import { formatDate } from "../lib/safe-date";
 import { useToast } from "../contexts/ToastContext";
 
-const vapi = new Vapi(import.meta.env.VITE_VAPI_PUBLIC_KEY || "");
+// @vapi-ai/web is ~300KB minified and only matters when the operator
+// clicks "Start call". Loaded lazily on first call attempt so the
+// dashboard's first paint doesn't pay for the WebRTC SDK upfront.
+type VapiInstance = {
+  on: (event: string, cb: () => void) => void;
+  removeAllListeners: (event: string) => void;
+  start: (assistant: unknown) => Promise<unknown>;
+  stop: () => void;
+};
 
 /** Lead score thresholds for color-coding hot leads in the Fleet tab. */
 const HOT_LEAD_THRESHOLD = 80;
@@ -38,6 +45,11 @@ export default function DashboardHome() {
   const [highPriorityTasks, setHighPriorityTasks] = useState<any[]>([]);
   const [systemActivity, setSystemActivity] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  // Lazily-instantiated Vapi instance. Stays null until the first
+  // toggleCall click. Listeners attach inside ensureVapi the first
+  // time it runs.
+  const vapiRef = useRef<VapiInstance | null>(null);
+  const callEndTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
 
   useEffect(() => {
     fetchStats();
@@ -51,26 +63,36 @@ export default function DashboardHome() {
       fetchSystemActivity();
     }, 30_000);
 
-    // Track the post-call refresh timer so an unmount within the 3s
-    // window doesn't trigger setState on a dead component (the React
-    // warning + the leaked setTimeout firing fetchStats into the void).
-    const callEndTimers = new Set<ReturnType<typeof setTimeout>>();
-
-    vapi.on("call-start", () => { setIsConnecting(false); setIsConnected(true); });
-    vapi.on("call-end", () => {
-      setIsConnecting(false); setIsConnected(false);
-      const t = setTimeout(() => { callEndTimers.delete(t); fetchStats(); }, 3000);
-      callEndTimers.add(t);
-    });
-
     return () => {
       clearInterval(signalPulse);
-      vapi.removeAllListeners("call-start");
-      vapi.removeAllListeners("call-end");
-      callEndTimers.forEach(clearTimeout);
-      callEndTimers.clear();
+      // If the operator never started a call, vapi was never loaded —
+      // nothing to detach. Otherwise remove the listeners we attached
+      // and clear any pending post-call refresh timers.
+      if (vapiRef.current) {
+        vapiRef.current.removeAllListeners("call-start");
+        vapiRef.current.removeAllListeners("call-end");
+      }
+      callEndTimersRef.current.forEach(clearTimeout);
+      callEndTimersRef.current.clear();
     };
   }, []);
+
+  // Lazy-load + memoize the Vapi instance. The dynamic import keeps
+  // ~300KB of WebRTC SDK out of /dashboard's initial paint; we only
+  // pay the bytes when the operator actually starts a call.
+  const ensureVapi = async (): Promise<VapiInstance> => {
+    if (vapiRef.current) return vapiRef.current;
+    const { default: Vapi } = await import("@vapi-ai/web");
+    const v = new Vapi(import.meta.env.VITE_VAPI_PUBLIC_KEY || "") as unknown as VapiInstance;
+    v.on("call-start", () => { setIsConnecting(false); setIsConnected(true); });
+    v.on("call-end", () => {
+      setIsConnecting(false); setIsConnected(false);
+      const t = setTimeout(() => { callEndTimersRef.current.delete(t); fetchStats(); }, 3000);
+      callEndTimersRef.current.add(t);
+    });
+    vapiRef.current = v;
+    return v;
+  };
 
   const fetchActiveSignals = async () => {
     try {
@@ -105,9 +127,12 @@ export default function DashboardHome() {
   };
 
   const toggleCall = async () => {
-    if (isConnected) { vapi.stop(); return; }
+    if (isConnected) { vapiRef.current?.stop(); return; }
     setIsConnecting(true);
     try {
+      // Load the SDK + instantiate listeners on first click. Subsequent
+      // calls reuse the same instance.
+      const vapi = await ensureVapi();
       let targetAgentId = "default-agent";
       if (selectedDialAgentId) {
         targetAgentId = selectedDialAgentId;
