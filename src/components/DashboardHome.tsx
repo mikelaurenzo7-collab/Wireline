@@ -50,8 +50,15 @@ export default function DashboardHome() {
   // time it runs.
   const vapiRef = useRef<VapiInstance | null>(null);
   const callEndTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+  // Tracks whether this Dashboard instance is still mounted. Critical
+  // for the lazy-Vapi flow: if the operator clicks Start Call and then
+  // navigates away while @vapi-ai/web is still loading, the eventual
+  // Vapi listeners would otherwise call setState on a dead component
+  // and the spawned setTimeout would fire fetchStats into the void.
+  const mountedRef = useRef(true);
 
   useEffect(() => {
+    mountedRef.current = true;
     fetchStats();
     fetchActiveSignals();
     fetchHighPriorityTasks();
@@ -64,13 +71,15 @@ export default function DashboardHome() {
     }, 30_000);
 
     return () => {
+      mountedRef.current = false;
       clearInterval(signalPulse);
       // If the operator never started a call, vapi was never loaded —
-      // nothing to detach. Otherwise remove the listeners we attached
-      // and clear any pending post-call refresh timers.
+      // nothing to detach. Otherwise remove the listeners we attached,
+      // best-effort stop any in-flight call, and clear pending timers.
       if (vapiRef.current) {
         vapiRef.current.removeAllListeners("call-start");
         vapiRef.current.removeAllListeners("call-end");
+        try { vapiRef.current.stop(); } catch { /* not in a call, fine */ }
       }
       callEndTimersRef.current.forEach(clearTimeout);
       callEndTimersRef.current.clear();
@@ -79,15 +88,28 @@ export default function DashboardHome() {
 
   // Lazy-load + memoize the Vapi instance. The dynamic import keeps
   // ~300KB of WebRTC SDK out of /dashboard's initial paint; we only
-  // pay the bytes when the operator actually starts a call.
-  const ensureVapi = async (): Promise<VapiInstance> => {
+  // pay the bytes when the operator actually starts a call. Returns
+  // null when the dashboard unmounted during the import so callers
+  // can bail without dispatching to a dead component.
+  const ensureVapi = async (): Promise<VapiInstance | null> => {
     if (vapiRef.current) return vapiRef.current;
     const { default: Vapi } = await import("@vapi-ai/web");
+    if (!mountedRef.current) return null;
     const v = new Vapi(import.meta.env.VITE_VAPI_PUBLIC_KEY || "") as unknown as VapiInstance;
-    v.on("call-start", () => { setIsConnecting(false); setIsConnected(true); });
+    // Listener bodies gate on mountedRef so a call-end fired after a
+    // late navigation can't write to unmounted state. We still leave
+    // them attached because the cleanup effect already detaches them.
+    v.on("call-start", () => {
+      if (!mountedRef.current) return;
+      setIsConnecting(false); setIsConnected(true);
+    });
     v.on("call-end", () => {
+      if (!mountedRef.current) return;
       setIsConnecting(false); setIsConnected(false);
-      const t = setTimeout(() => { callEndTimersRef.current.delete(t); fetchStats(); }, 3000);
+      const t = setTimeout(() => {
+        callEndTimersRef.current.delete(t);
+        if (mountedRef.current) fetchStats();
+      }, 3000);
       callEndTimersRef.current.add(t);
     });
     vapiRef.current = v;
@@ -133,6 +155,8 @@ export default function DashboardHome() {
       // Load the SDK + instantiate listeners on first click. Subsequent
       // calls reuse the same instance.
       const vapi = await ensureVapi();
+      // Bail if the operator navigated away during the SDK import.
+      if (!mountedRef.current || !vapi) return;
       let targetAgentId = "default-agent";
       if (selectedDialAgentId) {
         targetAgentId = selectedDialAgentId;
@@ -145,13 +169,19 @@ export default function DashboardHome() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: { type: "assistant-request" } })
       });
+      // The webhook fetch can outlast the dashboard too — bail before
+      // committing to a real call from a dead component.
+      if (!mountedRef.current) return;
       const data = await res.json();
+      if (!mountedRef.current) return;
       if (data.assistant) await vapi.start(data.assistant);
       else throw new Error("No assistant configuration returned");
     } catch (e) {
       console.error("Failed to start call", e);
-      setIsConnecting(false);
-      toastError("Carrier connection failed", "Ensure at least one agent is configured and try again.");
+      if (mountedRef.current) {
+        setIsConnecting(false);
+        toastError("Carrier connection failed", "Ensure at least one agent is configured and try again.");
+      }
     }
   };
 
