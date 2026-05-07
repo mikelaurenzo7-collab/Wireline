@@ -8,9 +8,8 @@ import {
 import { Link } from "react-router-dom";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
+import { supabase } from "../lib/supabase";
 import PageShell, { Panel, StatTile } from "./PageShell";
-
-const POLL_INTERVAL_MS = 10_000;
 
 /**
  * Sentiment labels emitted by server.ts (conversation-update handler) that
@@ -159,7 +158,6 @@ export default function LiveMonitor() {
   const [agents, setAgents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(new Date());
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchData = async () => {
     try {
@@ -180,8 +178,41 @@ export default function LiveMonitor() {
 
   useEffect(() => {
     fetchData();
-    intervalRef.current = setInterval(fetchData, POLL_INTERVAL_MS);
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+
+    // Subscribe to real-time updates for active signals
+    const signalsChannel = supabase
+      .channel("live-signals")
+      .on(
+        "postgres_changes",
+        { event: "*", table: "wireline_signal_presence", schema: "public" },
+        () => {
+          // Re-fetch all data when presence changes. Alternatively, we could
+          // perform local state mutation, but a fresh fetch ensures consistency
+          // with other related stats and activity.
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    // Activity feed also benefits from real-time updates
+    const activityChannel = supabase
+      .channel("live-activity")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", table: "wireline_call_logs", schema: "public" },
+        () => fetchData()
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", table: "wireline_fleet_tasks", schema: "public" },
+        () => fetchData()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(signalsChannel);
+      supabase.removeChannel(activityChannel);
+    };
   }, []);
 
   const agentName = (id: string) => agents.find(a => a.id === id)?.name ?? id.slice(0, 8);
@@ -198,7 +229,7 @@ export default function LiveMonitor() {
     <PageShell
       title="Live Monitor"
       eyebrow="Fleet · Real-time"
-      subtitle="Active calls and recent fleet activity — refreshing every 10 seconds"
+      subtitle="Active calls and recent fleet activity — connected via neural link"
       actions={
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full glass border border-white/10 text-[9px] uppercase tracking-[0.3em] text-muted/70">

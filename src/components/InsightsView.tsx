@@ -1,4 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
+import ComplianceView from "./ComplianceView";
+import ROIView from "./ROIView";
 import { motion } from "motion/react";
 import {
   BarChart3, TrendingUp, Layers, Calendar, Trophy, AlertOctagon, Loader2,
@@ -69,6 +71,8 @@ export default function InsightsView() {
         { id: "failures",    label: "Failures",    icon: AlertOctagon, content: wrap(<FailureModesView />) },
         { id: "spend",       label: "AI Spend",    icon: Receipt,      content: wrap(<AISpendView     days={days} />) },
         { id: "quality",     label: "Quality",     icon: Star,         content: wrap(<QualityView     days={days} />) },
+{ id: "compliance",  label: "Compliance",  icon: Shield,       content: wrap(<ComplianceView  days={days} />) },
+{ id: "roi",         label: "ROI",            icon: DollarSign,   content: wrap(<ROIView         days={days} />) },
       ]}
     />
   );

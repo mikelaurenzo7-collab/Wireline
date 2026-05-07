@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import KnowledgeAtlasIngest from "./KnowledgeAtlasIngest";
 import { motion, AnimatePresence } from "motion/react";
 import {
   BookOpen, Search, Loader2, Filter, Save, Trash2, X, Check, Pencil,
@@ -283,6 +284,7 @@ export default function KnowledgeBaseManager() {
           </button>
         </div>
       </motion.header>
+<KnowledgeAtlasIngest agents={agents} onRefresh={refresh} />
 
       {/* Add-fact form */}
       <AnimatePresence>

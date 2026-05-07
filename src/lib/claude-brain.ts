@@ -7,13 +7,13 @@
  * thinking on the deep-analysis paths. All of this is centralized here so the
  * endpoints stay short and consistent.
  *
- * Default model: claude-opus-4-7 (current most-capable; adaptive thinking only).
+ * Default model: claude-3-7-sonnet-20250219 (current most-capable; adaptive thinking only).
  */
 
 import Anthropic from "@anthropic-ai/sdk";
 import { AsyncLocalStorage } from "node:async_hooks";
 
-const DEFAULT_MODEL = "claude-opus-4-7";
+const DEFAULT_MODEL = "claude-3-7-sonnet-20250219";
 
 /* ────────────────────────────────────────────────────────────────────────
  *  Audit capture — every Claude API round trip pushes its meta into the
@@ -1750,13 +1750,13 @@ After crawling, extract every concrete fact a customer-service agent would need:
 
   let _t = Date.now();
   let response = await client.messages.create({
-    model: "claude-opus-4-7",
+    model: "claude-3-7-sonnet-20250219",
     max_tokens: maxTokens,
     system,
     tools,
     messages,
   });
-  recordUsage("claude-opus-4-7", response, Date.now() - _t);
+  recordUsage("claude-3-7-sonnet-20250219", response, Date.now() - _t);
 
   // Server-side tool loop — `pause_turn` means Claude hit the per-request
   // server-side iteration cap (10 by default) and needs us to re-send the
@@ -1768,13 +1768,13 @@ After crawling, extract every concrete fact a customer-service agent would need:
     messages.push({ role: "assistant", content: response.content });
     _t = Date.now();
     response = await client.messages.create({
-      model: "claude-opus-4-7",
+      model: "claude-3-7-sonnet-20250219",
       max_tokens: maxTokens,
       system,
       tools,
       messages,
     });
-    recordUsage("claude-opus-4-7", response, Date.now() - _t);
+    recordUsage("claude-3-7-sonnet-20250219", response, Date.now() - _t);
   }
 
   for (const block of response.content) {
@@ -1807,7 +1807,7 @@ export async function knowledgeFromDocument(input: KnowledgeFromDocumentInput) {
 
   const t0 = Date.now();
   const response = await client.messages.create({
-    model: "claude-opus-4-7",
+    model: "claude-3-7-sonnet-20250219",
     max_tokens: 8192,
     system,
     tools: [TOOLS.knowledgeFromUrl],
@@ -1834,7 +1834,7 @@ export async function knowledgeFromDocument(input: KnowledgeFromDocumentInput) {
     ],
   });
 
-  recordUsage("claude-opus-4-7", response, Date.now() - t0);
+  recordUsage("claude-3-7-sonnet-20250219", response, Date.now() - t0);
   for (const block of response.content) {
     if (block.type === "tool_use" && block.name === "deliver_knowledge_entries") {
       return block.input as { page_summary: string; entries: Array<{ fact: string; category: string }> };
@@ -1946,7 +1946,7 @@ ${input.knowledgeBase.length ? input.knowledgeBase.map((k) => `- ${k}`).join("\n
 
   while (safety-- > 0) {
     const body: Anthropic.MessageCreateParams = {
-      model: "claude-opus-4-7",
+      model: "claude-3-7-sonnet-20250219",
       max_tokens: 4096,
       system: [
         { type: "text", text: system, cache_control: { type: "ephemeral" } },
@@ -1957,7 +1957,7 @@ ${input.knowledgeBase.length ? input.knowledgeBase.map((k) => `- ${k}`).join("\n
 
     const _t = Date.now();
     const response = await client.messages.create(body);
-    recordUsage("claude-opus-4-7", response, Date.now() - _t);
+    recordUsage("claude-3-7-sonnet-20250219", response, Date.now() - _t);
 
     if (response.stop_reason === "tool_use") {
       messages.push({ role: "assistant", content: response.content });
@@ -2261,7 +2261,7 @@ Search the web, then call deliver_lead_enrichment.`;
     { role: "user", content: userPrompt },
   ];
 
-  const model = "claude-opus-4-7";
+  const model = "claude-3-7-sonnet-20250219";
   const maxTokens = 4096;
 
   let _t = Date.now();
@@ -2408,7 +2408,7 @@ Score each dimension 0–20 and provide a concise, actionable coaching note.`;
     tool: TOOLS.qaScore,
     deepThink: false,
     maxTokens: 512,
-    model: "claude-opus-4-7",
+    model: "claude-3-7-sonnet-20250219",
   });
 }
 
@@ -2417,6 +2417,79 @@ Score each dimension 0–20 and provide a concise, actionable coaching note.`;
  *  a given agent role + scenario. Useful for AgentTraining and operators
  *  who want to preview exactly how their agents should handle calls.
  * ──────────────────────────────────────────────────────────────────── */
+
+export interface SimulateConversationInput {
+  agentName: string;
+  agentArchetype: string;
+  agentRole?: string;
+  personality?: string;
+  knowledgeBase: string[];
+  directives: string[];
+  mode: "voice" | "email";
+  messages: Array<{ role: "user" | "assistant"; content: string }>;
+}
+
+/**
+ * Mission Sandbox Simulation — allows operators to test their agent
+ * configuration in a chat-like interface. Supports both voice (concise)
+ * and email (formatted) modes.
+ */
+export async function simulateConversation(input: SimulateConversationInput): Promise<{
+  text: string;
+  cacheRead: number;
+  cacheCreate: number;
+}> {
+  const client = getClient();
+  const roleGuidance = input.agentRole ? (ROLE_ANALYSIS_GUIDANCE[input.agentRole] ?? "") : "";
+
+  const system = `## IDENTITY
+You are ${input.agentName}, an autonomous ${input.mode} agent for the company.
+Archetype: ${input.agentArchetype}.${input.agentRole ? `\nRole: ${input.agentRole}.${roleGuidance ? ` ${roleGuidance}` : ""}` : ""}
+
+## PERSONALITY
+${input.personality || "Professional, helpful, and concise."}
+
+## ABSOLUTE RULES
+${input.directives.length ? input.directives.map((d) => `- ${d}`).join("\n") : "(none — exercise good judgment)"}
+
+## KNOWLEDGE BASE
+${input.knowledgeBase.length ? input.knowledgeBase.map((k) => `- ${k}`).join("\n") : "(none — be conservative; never invent facts)"}
+
+## SIMULATION MODE: ${input.mode.toUpperCase()}
+${
+  input.mode === "voice"
+    ? "CONVERSATION PROTOCOL: This is a VOICE simulation. Speak naturally. Keep responses short (15-25 words). One question per turn. No markdown, no bullet points, no bold text."
+    : "RELAY PROTOCOL: This is an EMAIL simulation. Use professional formatting. Acknowledge the query immediately. Keep it under 120 words."
+}
+
+Act as the agent. Follow your rules and personality strictly. Use the knowledge base to answer questions.`;
+
+  const t0 = Date.now();
+  const response = await client.messages.create({
+    model: "claude-3-7-sonnet-20250219",
+    max_tokens: 2048,
+    system: [
+      { type: "text", text: system, cache_control: { type: "ephemeral" } },
+    ],
+    messages: input.messages.map(m => ({
+      role: m.role,
+      content: m.content
+    })),
+  });
+
+  recordUsage("claude-3-7-sonnet-20250219", response, Date.now() - t0);
+
+  let text = "";
+  for (const block of response.content) {
+    if (block.type === "text") text += block.text;
+  }
+
+  return {
+    text: text.trim(),
+    cacheRead: response.usage.cache_read_input_tokens ?? 0,
+    cacheCreate: response.usage.cache_creation_input_tokens ?? 0,
+  };
+}
 
 export interface CallPlaybookInput {
   agentName: string;

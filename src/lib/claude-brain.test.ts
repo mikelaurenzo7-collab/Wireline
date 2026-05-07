@@ -11,26 +11,28 @@ import {
 } from "./claude-brain";
 
 describe("estimateCost — Opus 4.x default rates", () => {
+  const OPUS = "claude-3-opus-20240229";
+
   it("returns 0 for empty usage", () => {
-    expect(estimateCost({})).toBe(0);
+    expect(estimateCost({}, OPUS)).toBe(0);
   });
 
   it("computes input_tokens at $5/M", () => {
     // 1M input tokens * $5/M = $5
-    expect(estimateCost({ input_tokens: 1_000_000 })).toBeCloseTo(5, 5);
+    expect(estimateCost({ input_tokens: 1_000_000 }, OPUS)).toBeCloseTo(5, 5);
   });
 
   it("computes output_tokens at $25/M", () => {
-    expect(estimateCost({ output_tokens: 1_000_000 })).toBeCloseTo(25, 5);
+    expect(estimateCost({ output_tokens: 1_000_000 }, OPUS)).toBeCloseTo(25, 5);
   });
 
   it("computes cache reads at ~10% of input rate (Opus: $0.50/M)", () => {
     // 1M cache_read_input_tokens * (5 * 0.10) = $0.50
-    expect(estimateCost({ cache_read_input_tokens: 1_000_000 })).toBeCloseTo(0.5, 5);
+    expect(estimateCost({ cache_read_input_tokens: 1_000_000 }, OPUS)).toBeCloseTo(0.5, 5);
   });
 
   it("computes cache writes at 1.25x input rate (Opus: $6.25/M)", () => {
-    expect(estimateCost({ cache_creation_input_tokens: 1_000_000 })).toBeCloseTo(6.25, 5);
+    expect(estimateCost({ cache_creation_input_tokens: 1_000_000 }, OPUS)).toBeCloseTo(6.25, 5);
   });
 
   it("sums all components", () => {
@@ -39,7 +41,7 @@ describe("estimateCost — Opus 4.x default rates", () => {
       output_tokens: 50_000,
       cache_read_input_tokens: 200_000,
       cache_creation_input_tokens: 10_000,
-    });
+    }, OPUS);
     // 100k * $5/M + 50k * $25/M + 200k * $0.50/M + 10k * $6.25/M
     // = 0.5 + 1.25 + 0.1 + 0.0625 = 1.9125
     expect(cost).toBeCloseTo(1.9125, 4);

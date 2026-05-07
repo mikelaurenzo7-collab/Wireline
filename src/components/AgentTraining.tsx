@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Send, Bot, User, CheckCircle2, Loader2, Users, Database, PlayCircle, MessageSquare, Trash2, Mail, Phone, Search, Activity, Plus, Pencil, Save, X, Sparkles, Terminal, ChevronRight, ChevronDown, Zap, Target, Clock } from "lucide-react";
+import { Send, Bot, User, CheckCircle2, Loader2, Users, Database, PlayCircle, MessageSquare, Trash2, Mail, Phone, Search, Activity, Plus, Pencil, Save, X, Sparkles, Terminal, ChevronRight, ChevronDown, Zap, Target, Clock, RotateCw } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
@@ -36,6 +36,12 @@ export default function AgentTraining() {
   const [isSavingEntry, setIsSavingEntry] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [optSuggestions, setOptSuggestions] = useState<any>(null);
+
+  // Simulation state
+  const [simMessages, setSimMessages] = useState<Message[]>([]);
+  const [simInput, setSimInput] = useState("");
+  const [simMode, setSimMode] = useState<"voice" | "email">("voice");
+  const [isSimulating, setIsSimulating] = useState(false);
 
   useEffect(() => {
     authFetch("/api/agents").then(res => res.json()).then(data => {
@@ -137,6 +143,42 @@ export default function AgentTraining() {
       ...prev,
       suggestions: prev.suggestions.filter((s: string) => s !== suggestion)
     }));
+  };
+
+  const handleSimulate = async () => {
+    if (!simInput.trim() || isSimulating) return;
+    if (selectedAgentId === "default-agent") return;
+
+    const userMsg: Message = { role: "user", content: simInput };
+    const newMessages = [...simMessages, userMsg];
+    setSimMessages(newMessages);
+    setSimInput("");
+    setIsSimulating(true);
+
+    try {
+      const res = await authFetch("/api/train/simulate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          agentId: selectedAgentId,
+          messages: newMessages,
+          mode: simMode
+        })
+      });
+      const data = await res.json();
+      if (data.text) {
+        setSimMessages(prev => [...prev, { role: "assistant", content: data.text }]);
+      }
+    } catch (e) {
+      console.error("Simulation failed", e);
+    } finally {
+      setIsSimulating(false);
+    }
+  };
+
+  const resetSimulation = () => {
+    setSimMessages([]);
+    setSimInput("");
   };
 
   return (
@@ -647,33 +689,143 @@ export default function AgentTraining() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="h-full flex items-center justify-center p-6"
+              className="h-full flex flex-col p-4 max-w-[1000px] mx-auto"
             >
-              <div className="max-w-[560px] w-full text-center space-y-6">
-                <div className="relative w-24 h-24 rounded-3xl glass border border-white/10 flex items-center justify-center mx-auto">
-                  <div className="absolute inset-0 rounded-3xl opacity-20 blur-xl" style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }} />
-                  <PlayCircle className="w-12 h-12 text-brand relative z-10" strokeWidth={1.25} />
+              {selectedAgentId === 'default-agent' ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-center gap-4">
+                  <div className="w-16 h-16 rounded-2xl glass border border-white/10 flex items-center justify-center text-muted">
+                    <PlayCircle className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h3 className="font-display italic lowercase text-2xl text-ink">select an agent</h3>
+                    <p className="text-[10px] uppercase tracking-[0.4em] text-muted/70 max-w-sm">
+                      Simulation requires a specific agent profile to load directives and knowledge.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="font-display italic lowercase text-4xl text-ink mb-2">mission sandbox</h2>
-                  <p className="text-muted/70 text-sm leading-relaxed max-w-md mx-auto">
-                    Validate neural directives and engagement patterns in a zero-risk isolated environment.
-                  </p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {[
-                    { label: 'Voice Protocol', icon: Phone, desc: 'Simulate high-latency voice relay exchanges' },
-                    { label: 'Neural Relay',   icon: Mail, desc: 'Pre-calculate automated signal replies' }
-                  ].map((sim) => (
-                    <div key={sim.label} className="rounded-xl glass border border-white/8 border-dashed p-4 text-left opacity-50 cursor-not-allowed">
-                      <sim.icon className="w-5 h-5 text-muted mb-2" />
-                      <h4 className="font-display italic lowercase text-base text-ink mb-1">{sim.label.toLowerCase()}</h4>
-                      <p className="text-[11px] text-muted/70 leading-relaxed">{sim.desc}</p>
-                      <div className="mt-3 text-[9px] uppercase tracking-[0.3em] text-muted/50">Dormant · Offline</div>
+              ) : (
+                <div className="flex-1 flex flex-col min-h-0 glass border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
+                  {/* Header */}
+                  <div className="px-5 py-4 border-b border-white/8 flex items-center justify-between bg-white/3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-brand/10 border border-brand/30 flex items-center justify-center">
+                        <PlayCircle className="w-5 h-5 text-brand" />
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase tracking-[0.35em] text-brand">Mission Sandbox</div>
+                        <div className="text-sm font-medium text-ink">Testing: {agents.find(a => a.id === selectedAgentId)?.name}</div>
+                      </div>
                     </div>
-                  ))}
+
+                    <div className="flex items-center gap-2">
+                      <div className="flex bg-black/40 rounded-full p-1 border border-white/10">
+                        <button
+                          onClick={() => setSimMode("voice")}
+                          className={cn(
+                            "px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.2em] transition-all",
+                            simMode === "voice" ? "bg-brand text-paper shadow-lg" : "text-muted hover:text-ink"
+                          )}
+                        >
+                          Voice
+                        </button>
+                        <button
+                          onClick={() => setSimMode("email")}
+                          className={cn(
+                            "px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.2em] transition-all",
+                            simMode === "email" ? "bg-brand text-paper shadow-lg" : "text-muted hover:text-ink"
+                          )}
+                        >
+                          Email
+                        </button>
+                      </div>
+                      <button
+                        onClick={resetSimulation}
+                        className="p-2 rounded-xl glass border border-white/10 text-muted hover:text-rose-400 hover:border-rose-400/30 transition-all"
+                        title="Reset simulation"
+                      >
+                        <RotateCw className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Message Area */}
+                  <div className="flex-1 overflow-y-auto p-6 space-y-4 panel-scroll">
+                    {simMessages.length === 0 ? (
+                      <div className="h-full flex flex-col items-center justify-center text-center gap-4 py-12">
+                        <div className="w-12 h-12 rounded-full border border-white/5 flex items-center justify-center animate-pulse">
+                          <Bot className="w-6 h-6 text-muted/30" />
+                        </div>
+                        <p className="text-[11px] uppercase tracking-[0.4em] text-muted/50 leading-relaxed max-w-xs">
+                          Initialize engagement by sending the first message.
+                        </p>
+                      </div>
+                    ) : (
+                      simMessages.map((msg, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          className={cn(
+                            "flex flex-col max-w-[85%]",
+                            msg.role === "user" ? "ml-auto items-end" : "items-start"
+                          )}
+                        >
+                          <div className="flex items-center gap-2 mb-1 px-1">
+                            <span className="text-[8px] uppercase tracking-[0.3em] text-muted/60">
+                              {msg.role === "user" ? "You" : "Agent"}
+                            </span>
+                          </div>
+                          <div className={cn(
+                            "px-4 py-3 rounded-2xl text-[13px] leading-relaxed shadow-sm",
+                            msg.role === "user"
+                              ? "bg-brand/10 border border-brand/20 text-ink rounded-tr-none"
+                              : "glass border border-white/10 text-ink rounded-tl-none font-display italic text-base"
+                          )}>
+                            {msg.content}
+                          </div>
+                        </motion.div>
+                      ))
+                    )}
+                    {isSimulating && (
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-start max-w-[85%]">
+                        <div className="flex items-center gap-2 mb-1 px-1">
+                          <span className="text-[8px] uppercase tracking-[0.3em] text-muted/60">Agent</span>
+                        </div>
+                        <div className="px-4 py-3 rounded-2xl glass border border-white/10 flex items-center gap-2.5 rounded-tl-none">
+                          <div className="flex gap-1">
+                            <span className="w-1 h-1 rounded-full bg-brand animate-bounce" style={{ animationDelay: '0ms' }} />
+                            <span className="w-1 h-1 rounded-full bg-brand animate-bounce" style={{ animationDelay: '150ms' }} />
+                            <span className="w-1 h-1 rounded-full bg-brand animate-bounce" style={{ animationDelay: '300ms' }} />
+                          </div>
+                          <span className="text-[10px] uppercase tracking-[0.3em] text-brand">Processing…</span>
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+
+                  {/* Input Area */}
+                  <div className="p-4 border-t border-white/8 bg-black/20">
+                    <div className="flex items-center gap-2 glass border border-white/10 rounded-2xl px-3 py-1 focus-within:border-brand/40 transition-all shadow-inner">
+                      <input
+                        type="text"
+                        className="flex-1 bg-transparent py-3 outline-none text-sm text-ink placeholder:text-muted/40 px-2"
+                        placeholder={simMode === "voice" ? "Speak to agent…" : "Compose email to agent…"}
+                        value={simInput}
+                        onChange={e => setSimInput(e.target.value)}
+                        onKeyDown={e => e.key === "Enter" && handleSimulate()}
+                        disabled={isSimulating}
+                      />
+                      <button
+                        onClick={handleSimulate}
+                        disabled={isSimulating || !simInput.trim()}
+                        className="w-10 h-10 rounded-xl bg-brand text-paper flex items-center justify-center hover:scale-105 active:scale-95 disabled:opacity-40 disabled:scale-100 transition-all shadow-lg"
+                      >
+                        <Send className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

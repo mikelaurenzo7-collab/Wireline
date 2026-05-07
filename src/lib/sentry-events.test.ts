@@ -108,12 +108,12 @@ describe("SentryEvents.aiApiFailure", () => {
     SentryEvents.aiApiFailure({
       endpoint: "/api/claude/recipes",
       error_message: "rate limited upstream",
-      model: "claude-opus-4-7",
+      model: "claude-3-7-sonnet-20250219",
       input_tokens: 1024,
       attempt: 2,
     });
     const args = captureMessage.mock.calls[0];
-    expect(args[1].tags.model).toBe("claude-opus-4-7");
+    expect(args[1].tags.model).toBe("claude-3-7-sonnet-20250219");
     expect(args[1].tags.attempt).toBe("2");
     expect(args[1].extra.input_tokens).toBe(1024);
   });

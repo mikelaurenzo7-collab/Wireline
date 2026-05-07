@@ -18,6 +18,7 @@ import PerformanceBenchmarks from "./PerformanceBenchmarks";
 import OnboardingQuickstart from "./OnboardingQuickstart";
 import PageShell, { Panel, StatTile } from "./PageShell";
 import { authFetch } from "../lib/api";
+import { supabase } from "../lib/supabase";
 import { useToast } from "../contexts/ToastContext";
 
 const vapi = new Vapi(import.meta.env.VITE_VAPI_PUBLIC_KEY || "");
@@ -43,11 +44,38 @@ export default function DashboardHome() {
     fetchHighPriorityTasks();
     fetchSystemActivity();
 
-    const signalPulse = setInterval(() => {
-      fetchActiveSignals();
-      fetchHighPriorityTasks();
-      fetchSystemActivity();
-    }, 30_000);
+    // Subscribe to real-time updates
+    const signalsChannel = supabase
+      .channel("dashboard-signals")
+      .on(
+        "postgres_changes",
+        { event: "*", table: "wireline_signal_presence", schema: "public" },
+        () => {
+          fetchActiveSignals();
+          fetchStats(); // Update counters
+        }
+      )
+      .subscribe();
+
+    const activityChannel = supabase
+      .channel("dashboard-activity")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", table: "wireline_call_logs", schema: "public" },
+        () => {
+          fetchSystemActivity();
+          fetchStats();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", table: "wireline_fleet_tasks", schema: "public" },
+        () => {
+          fetchHighPriorityTasks();
+          fetchSystemActivity();
+        }
+      )
+      .subscribe();
 
     vapi.on("call-start", () => { setIsConnecting(false); setIsConnected(true); });
     vapi.on("call-end", () => {
@@ -56,7 +84,8 @@ export default function DashboardHome() {
     });
 
     return () => {
-      clearInterval(signalPulse);
+      supabase.removeChannel(signalsChannel);
+      supabase.removeChannel(activityChannel);
       vapi.removeAllListeners("call-start");
       vapi.removeAllListeners("call-end");
     };
