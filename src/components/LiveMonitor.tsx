@@ -8,6 +8,7 @@ import {
 import { Link } from "react-router-dom";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
+import { formatTime, safeDate } from "../lib/safe-date";
 import PageShell, { Panel, StatTile } from "./PageShell";
 
 const POLL_INTERVAL_MS = 10_000;
@@ -52,7 +53,8 @@ type ActivityEntry = {
 
 /** Live elapsed time ticker for an active call. */
 function ElapsedTimer({ startedAt }: { startedAt: string }) {
-  const startMs = new Date(startedAt).getTime();
+  // safeDate handles Postgres-style "YYYY-MM-DD HH:MM:SS+00" + nullish.
+  const startMs = (safeDate(startedAt) ?? new Date()).getTime();
   const [secs, setSecs] = useState(() => Math.max(0, Math.floor((Date.now() - startMs) / 1000)));
   useEffect(() => {
     const id = setInterval(() => setSecs(Math.max(0, Math.floor((Date.now() - startMs) / 1000))), 1000);
@@ -448,7 +450,7 @@ function ActivityRow({ ev, agentName }: { ev: ActivityEntry; agentName: (id: str
     : ev.type === "task" ? AlertCircle
     : Signal;
 
-  const timeStr = new Date(ev.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const timeStr = formatTime(ev.created_at, { hour: "2-digit", minute: "2-digit" });
 
   return (
     <div className="flex items-center gap-3">

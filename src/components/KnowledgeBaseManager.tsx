@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
+import { formatDate } from "../lib/safe-date";
 import EmptyState from "./EmptyState";
 
 interface KnowledgeRow {
@@ -512,7 +513,7 @@ export default function KnowledgeBaseManager() {
                         <span className="text-[8px] uppercase tracking-[0.3em] text-muted/60">{row.agent_archetype}</span>
                       )}
                       <span className="text-[8px] uppercase tracking-[0.28em] text-muted/50 ml-auto">
-                        {new Date(row.created_at).toLocaleDateString()}
+                        {formatDate(row.created_at)}
                       </span>
                     </div>
 

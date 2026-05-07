@@ -18,6 +18,7 @@ import PerformanceBenchmarks from "./PerformanceBenchmarks";
 import OnboardingQuickstart from "./OnboardingQuickstart";
 import PageShell, { Panel, StatTile } from "./PageShell";
 import { authFetch } from "../lib/api";
+import { formatDate } from "../lib/safe-date";
 import { useToast } from "../contexts/ToastContext";
 
 const vapi = new Vapi(import.meta.env.VITE_VAPI_PUBLIC_KEY || "");
@@ -697,7 +698,7 @@ export default function DashboardHome() {
                     </div>
                     <div className="text-right shrink-0">
                       <div className="font-mono text-[11px] text-ink/90">{Math.ceil((call.duration_seconds || 0) / 60)}m {(call.duration_seconds || 0) % 60}s</div>
-                      <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-0.5">{new Date(call.created_at).toLocaleDateString()}</div>
+                      <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-0.5">{formatDate(call.created_at)}</div>
                     </div>
                   </Link>
                 </li>

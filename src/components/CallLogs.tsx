@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
+import { formatDate, formatTime } from "../lib/safe-date";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import CsvExportButton from "./CsvExportButton";
 import PageShell, { Panel } from "./PageShell";
@@ -224,10 +225,10 @@ export default function CallLogs() {
                       {/* Date/time */}
                       <div className="text-right shrink-0">
                         <div className="text-[9px] text-muted/80">
-                          {new Date(call.created_at).toLocaleDateString()}
+                          {formatDate(call.created_at)}
                         </div>
                         <div className="text-[8px] text-muted/50 uppercase tracking-[0.2em]">
-                          {new Date(call.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          {formatTime(call.created_at, { hour: "2-digit", minute: "2-digit" })}
                         </div>
                       </div>
                     </button>

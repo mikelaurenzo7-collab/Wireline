@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
+import { formatDateTime } from "../lib/safe-date";
 import WebhooksManager from "./WebhooksManager";
 import IntakeKeysManager from "./IntakeKeysManager";
 import StripeBillingCard from "./StripeBillingCard";
@@ -902,7 +903,7 @@ function AuditActivityPanel() {
                         {entry.cost_usd != null ? `$${Number(entry.cost_usd).toFixed(5)}` : "—"}
                       </span>
                       <span className="text-[8px] text-muted/50 tabular-nums w-24 text-right">
-                        {entry.created_at ? new Date(entry.created_at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : ""}
+                        {formatDateTime(entry.created_at, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }, "")}
                       </span>
                     </div>
                   </div>

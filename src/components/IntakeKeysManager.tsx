@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
+import { formatDateTime } from "../lib/safe-date";
 
 interface IntakeKey {
   id: string;
@@ -287,7 +288,7 @@ export default function IntakeKeysManager() {
                   <div className="flex items-center gap-3 flex-wrap text-[11px] text-muted">
                     <span className="font-mono">{k.key_prefix}…</span>
                     <span>{k.use_count || 0} uses</span>
-                    {k.last_used_at && <span>last {new Date(k.last_used_at).toLocaleString()}</span>}
+                    {k.last_used_at && <span>last {formatDateTime(k.last_used_at)}</span>}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">

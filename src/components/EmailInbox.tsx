@@ -3,6 +3,7 @@ import { Mail, Send, Loader2, User, ChevronRight, Inbox, RotateCw, Bot, Phone, T
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
+import { formatDate, formatTime } from "../lib/safe-date";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import PageShell, { Panel } from "./PageShell";
 import { useToast } from "../contexts/ToastContext";
@@ -251,7 +252,7 @@ export default function EmailInbox() {
                             {thread.customer_email}
                           </span>
                           <span className="text-[8px] tabular-nums text-muted/50 shrink-0">
-                            {new Date(thread.last_message_at).toLocaleDateString()}
+                            {formatDate(thread.last_message_at)}
                           </span>
                         </div>
                         <h4 className="font-display italic text-sm text-ink leading-tight truncate mb-1">
@@ -374,7 +375,7 @@ export default function EmailInbox() {
                           <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</p>
                         </div>
                         <span className="text-[9px] uppercase tracking-[0.3em] text-muted/50 mt-1.5 tabular-nums">
-                          {new Date(msg.created_at).toLocaleTimeString()}
+                          {formatTime(msg.created_at)}
                         </span>
                       </motion.div>
                     ))}

@@ -3,6 +3,7 @@ import { Send, Bot, User, CheckCircle2, Loader2, Users, Database, PlayCircle, Me
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
+import { formatDate } from "../lib/safe-date";
 import SupervisedAgentTuner from "./SupervisedAgentTuner";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import { HelpTooltip } from "./HelpTooltip";
@@ -630,7 +631,7 @@ export default function AgentTraining() {
                         <p className="text-sm text-ink/90 leading-relaxed">{lesson.lesson}</p>
                         <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/8">
                           <Clock className="w-3 h-3 text-muted/60" />
-                          <span className="text-[9px] uppercase tracking-[0.3em] text-muted/60">{new Date(lesson.created_at).toLocaleDateString()}</span>
+                          <span className="text-[9px] uppercase tracking-[0.3em] text-muted/60">{formatDate(lesson.created_at)}</span>
                         </div>
                       </div>
                     ))}

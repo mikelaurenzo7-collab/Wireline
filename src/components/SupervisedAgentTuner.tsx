@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Brain, ArrowUpCircle, Trash2, CheckCircle2, Zap, Terminal, Loader2 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
+import { formatDate, formatDateTime } from "../lib/safe-date";
 
 type Lesson = {
   id: string;
@@ -140,7 +141,7 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
                     <div className="flex-1 min-w-0 space-y-2">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-[8px] uppercase tracking-[0.3em] text-muted/60">
-                          Observation · {new Date(lesson.created_at).toLocaleDateString()}
+                          Observation · {formatDate(lesson.created_at)}
                         </span>
                         <div className="flex items-center gap-1.5">
                           <button
@@ -172,7 +173,7 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
                       </p>
 
                       <p className="text-[8px] uppercase tracking-[0.3em] text-muted/50">
-                        Captured {new Date(lesson.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        Captured {formatDateTime(lesson.created_at, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                   </div>

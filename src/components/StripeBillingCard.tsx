@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
+import { safeDate, formatDate } from "../lib/safe-date";
 
 interface Plan {
   id: "starter" | "pro" | "enterprise";
@@ -275,7 +276,7 @@ function ActiveSubCard({
 }: { sub: SubscriptionState; busy: boolean; onPortal: () => void }) {
   const accent = PLAN_ACCENTS[sub.plan || ""] || "#0AC8D4";
   const Icon = PLAN_ICONS[sub.plan || ""] || CreditCard;
-  const renews = sub.current_period_end ? new Date(sub.current_period_end) : null;
+  const renews = safeDate(sub.current_period_end);
   const daysLeft = renews ? Math.max(0, Math.ceil((renews.getTime() - Date.now()) / 86_400_000)) : null;
 
   const statusBadge =
@@ -318,7 +319,7 @@ function ActiveSubCard({
               {renews && (
                 <>
                   {sub.max_agents ? " · " : ""}
-                  renews {renews.toLocaleDateString()}
+                  renews {formatDate(renews)}
                   {daysLeft !== null ? ` · ${daysLeft}d` : ""}
                 </>
               )}

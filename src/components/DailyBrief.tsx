@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
+import { formatDate, formatDateTime } from "../lib/safe-date";
 
 interface BriefData {
   brief: {
@@ -84,8 +85,33 @@ export default function DailyBrief() {
 
   if (!data) return null;
 
-  const moodAccent = data.brief.mood === "green" ? "#10B981" : data.brief.mood === "yellow" ? "#FFC07D" : "#E040C0";
-  const moodLabel = data.brief.mood === "green" ? "All systems go" : data.brief.mood === "yellow" ? "Watch closely" : "Needs attention";
+  // Defensive defaults — Claude's structured-output sometimes returns
+  // partial shapes (missing fields, null arrays). Don't let a thin API
+  // response crash the render with "Cannot read property X of undefined".
+  const brief = {
+    headline: data.brief?.headline ?? "Today's brief",
+    mood: data.brief?.mood ?? "yellow",
+    key_metrics_takeaway: data.brief?.key_metrics_takeaway ?? "",
+    highlights: Array.isArray(data.brief?.highlights) ? data.brief!.highlights : [],
+    concerns: Array.isArray(data.brief?.concerns) ? data.brief!.concerns : [],
+    action_items: Array.isArray(data.brief?.action_items) ? data.brief!.action_items : [],
+  };
+  const stats = {
+    total_calls: Number(data.stats_yesterday?.total_calls ?? 0),
+    total_minutes: Number(data.stats_yesterday?.total_minutes ?? 0),
+    avg_lead_score: Number(data.stats_yesterday?.avg_lead_score ?? 0),
+    high_intent_count: Number(data.stats_yesterday?.high_intent_count ?? 0),
+    cost: Number(data.stats_yesterday?.cost ?? 0),
+    appointments_booked: Number(data.stats_yesterday?.appointments_booked ?? 0),
+  };
+  const weekDelta = {
+    calls_pct: Number.isFinite(data.week_delta?.calls_pct) ? data.week_delta!.calls_pct : 0,
+    score_pct: Number.isFinite(data.week_delta?.score_pct) ? data.week_delta!.score_pct : 0,
+    cost_pct:  Number.isFinite(data.week_delta?.cost_pct)  ? data.week_delta!.cost_pct  : 0,
+  };
+
+  const moodAccent = brief.mood === "green" ? "#10B981" : brief.mood === "yellow" ? "#FFC07D" : "#E040C0";
+  const moodLabel = brief.mood === "green" ? "All systems go" : brief.mood === "yellow" ? "Watch closely" : "Needs attention";
 
   return (
     <motion.div
@@ -103,7 +129,7 @@ export default function DailyBrief() {
             </div>
             <div>
               <div className="text-[10px] uppercase tracking-[0.4em] text-brand flex items-center gap-2">
-                <Brain className="w-3 h-3" /> Daily Brief · {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                <Brain className="w-3 h-3" /> Daily Brief · {formatDate(new Date(), { weekday: 'long', month: 'long', day: 'numeric' }, "Today", 'en-US')}
               </div>
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="w-2 h-2 rounded-full" style={{ background: moodAccent, boxShadow: `0 0 12px ${moodAccent}` }} />
@@ -148,40 +174,40 @@ export default function DailyBrief() {
         <div className="relative z-10 p-7 space-y-7">
           {/* Headline */}
           <div className="space-y-3">
-            <h2 className="font-display italic text-3xl md:text-5xl text-ink leading-tight">{data.brief.headline}</h2>
-            <p className="text-ink/60 text-sm md:text-base leading-relaxed max-w-3xl">{data.brief.key_metrics_takeaway}</p>
+            <h2 className="font-display italic text-3xl md:text-5xl text-ink leading-tight">{brief.headline}</h2>
+            <p className="text-ink/60 text-sm md:text-base leading-relaxed max-w-3xl">{brief.key_metrics_takeaway}</p>
           </div>
 
           {/* Quick stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Quick label="Calls"        value={data.stats_yesterday.total_calls}        delta={data.week_delta.calls_pct} />
-            <Quick label="Avg Score"    value={data.stats_yesterday.avg_lead_score}     delta={data.week_delta.score_pct} />
-            <Quick label="High Intent"  value={data.stats_yesterday.high_intent_count} />
-            <Quick label="Spend"        value={`$${data.stats_yesterday.cost.toFixed(2)}`} delta={data.week_delta.cost_pct} invertDelta />
+            <Quick label="Calls"        value={stats.total_calls}        delta={weekDelta.calls_pct} />
+            <Quick label="Avg Score"    value={stats.avg_lead_score}     delta={weekDelta.score_pct} />
+            <Quick label="High Intent"  value={stats.high_intent_count} />
+            <Quick label="Spend"        value={`$${stats.cost.toFixed(2)}`} delta={weekDelta.cost_pct} invertDelta />
           </div>
 
           {/* Highlights & Concerns */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {data.brief.highlights.length > 0 && (
+            {brief.highlights.length > 0 && (
               <Section title="Highlights" icon={Sparkles} accent="#10B981">
-                {data.brief.highlights.map((h, i) => <li key={i}>{h}</li>)}
+                {brief.highlights.map((h, i) => <li key={i}>{h}</li>)}
               </Section>
             )}
-            {data.brief.concerns.length > 0 && (
+            {brief.concerns.length > 0 && (
               <Section title="Concerns" icon={AlertTriangle} accent="#E040C0">
-                {data.brief.concerns.map((c, i) => <li key={i}>{c}</li>)}
+                {brief.concerns.map((c, i) => <li key={i}>{c}</li>)}
               </Section>
             )}
           </div>
 
           {/* Action items */}
-          {data.brief.action_items.length > 0 && (
+          {brief.action_items.length > 0 && (
             <div className="space-y-2.5">
               <h4 className="text-[10px] uppercase tracking-[0.4em] text-brand flex items-center gap-2">
                 <Zap className="w-3 h-3" /> Do today
               </h4>
               <div className="space-y-2">
-                {data.brief.action_items.map((a, i) => (
+                {brief.action_items.map((a, i) => (
                   <div key={i} className="rounded-xl glass border border-white/10 p-4 flex items-start gap-3">
                     <span className={cn(
                       "shrink-0 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] mt-0.5",
@@ -381,7 +407,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
 
           {lastSentAt && (
             <div className="text-[10px] uppercase tracking-[0.3em] text-emerald-500/70">
-              Last sent {new Date(lastSentAt).toLocaleString()}
+              Last sent {formatDateTime(lastSentAt, undefined, "—")}
             </div>
           )}
           {lastError && (

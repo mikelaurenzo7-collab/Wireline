@@ -5,6 +5,7 @@ import PageShell, { Panel } from "./PageShell";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
+import { formatDateTime } from "../lib/safe-date";
 import type { AuditEvent, AuditSeverity, AuditEventType } from "../types/audit";
 
 interface AuditStats {
@@ -64,12 +65,12 @@ function StatCard({ label, value, icon: Icon, color }: { label: string; value: s
 }
 
 const EventRow = React.memo(({ event, expanded, onToggle }: { event: AuditEvent; expanded: boolean; onToggle: () => void }) => {
-  const timestamp = new Date(event.created_at).toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const timestamp = formatDateTime(
+    event.created_at,
+    { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' },
+    "—",
+    'en-US',
+  );
 
   return (
     <motion.div

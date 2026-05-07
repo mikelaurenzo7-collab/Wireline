@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "motion/react";
 import { Activity, Zap, Cpu, Signal, Radio, Waves } from "lucide-react";
 import { cn } from "../lib/utils";
+import { formatTime } from "../lib/safe-date";
 
 type ActivityItem = {
   id: string;
@@ -78,7 +79,7 @@ export default function TriggerIntelligenceFeed({ activity }: { activity: Activi
                         {item.trigger}
                       </span>
                       <span className="text-[8px] font-mono text-muted/50 shrink-0 tabular-nums">
-                        {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                        {formatTime(item.timestamp, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                       </span>
                     </div>
                     <p className="text-[11px] text-ink/90 leading-snug truncate">{item.action}</p>

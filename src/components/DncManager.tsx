@@ -7,6 +7,7 @@ import {
 import Papa from "papaparse";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
+import { formatDate } from "../lib/safe-date";
 import CsvExportButton from "./CsvExportButton";
 import PageShell, { Panel } from "./PageShell";
 import { useToast } from "../contexts/ToastContext";
@@ -291,7 +292,7 @@ export default function DncManager() {
                         <p className="font-mono text-sm text-ink truncate">{entry.phone_raw || entry.phone}</p>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           <span className="text-[8px] text-muted/60">
-                            {new Date(entry.created_at).toLocaleDateString()}
+                            {formatDate(entry.created_at)}
                           </span>
                           <span className="w-1 h-1 rounded-full bg-white/15" />
                           <span className="text-[8px] text-muted/60">{reasonLabel(entry.reason)}</span>

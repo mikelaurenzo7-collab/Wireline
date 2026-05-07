@@ -9,6 +9,7 @@ import {
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
+import { formatDate, formatDateTime } from "../lib/safe-date";
 
 interface ContactData {
   number: string;
@@ -74,7 +75,7 @@ export default function ContactProfile() {
   );
 
   const displayName = data.customer_name || data.number;
-  const lastTouch = data.stats.last_touch ? new Date(data.stats.last_touch).toLocaleDateString() : "—";
+  const lastTouch = formatDate(data.stats.last_touch);
 
   return (
     <div className="h-full overflow-y-auto scrollbar-hide w-full max-w-[1500px] mx-auto space-y-4">
@@ -206,7 +207,7 @@ const TimelineRow: React.FC<{ event: ContactData["timeline"][number] }> = ({ eve
               "bg-zinc-500/15 text-zinc-300 border border-zinc-500/30",
             )}>{event.lead_score}/100</span>
           )}
-          <span className="text-[10px] text-muted">{new Date(event.ts).toLocaleString()}</span>
+          <span className="text-[10px] text-muted">{formatDateTime(event.ts)}</span>
         </div>
         <p className="text-sm text-ink/85 mt-2 line-clamp-2">{event.summary}</p>
         {isCall && (

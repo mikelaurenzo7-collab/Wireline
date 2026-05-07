@@ -14,6 +14,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import { authFetch } from "./lib/api";
 import { cn } from "./lib/utils";
+import { safeDate } from "./lib/safe-date";
 
 // All route surfaces are code-split. Initial bundle holds only the
 // app shell + auth + command bar; pages stream in on demand.
@@ -550,8 +551,11 @@ function TrialBanner() {
       .then(d => {
         const sub = d.subscription;
         if (sub?.status === "trialing" && sub?.current_period_end) {
-          const ms = new Date(sub.current_period_end).getTime() - Date.now();
-          setDaysLeft(Math.max(0, Math.ceil(ms / 86_400_000)));
+          const periodEnd = safeDate(sub.current_period_end);
+          if (periodEnd) {
+            const ms = periodEnd.getTime() - Date.now();
+            setDaysLeft(Math.max(0, Math.ceil(ms / 86_400_000)));
+          }
         }
       })
       .catch(() => {});

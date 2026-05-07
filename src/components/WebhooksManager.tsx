@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
+import { formatDateTime, formatTime } from "../lib/safe-date";
 
 interface WebhookRow {
   id: string;
@@ -334,7 +335,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
           </div>
           {hook.last_triggered_at && (
             <div className="text-[10px] uppercase tracking-[0.3em] text-muted mt-2 flex items-center gap-2">
-              <span>Last fired: {new Date(hook.last_triggered_at).toLocaleString()}</span>
+              <span>Last fired: {formatDateTime(hook.last_triggered_at)}</span>
               {hook.delivery_count !== null && hook.delivery_count > 0 && <span>· {hook.delivery_count} deliveries</span>}
               {hook.last_error && <span className="text-rose-500">· {hook.last_error}</span>}
             </div>
@@ -426,12 +427,12 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                       {d.last_status_code !== null && d.last_status_code > 0 && (
                         <span className="font-mono text-muted">HTTP {d.last_status_code}</span>
                       )}
-                      <span className="text-muted">{new Date(d.created_at).toLocaleString()}</span>
+                      <span className="text-muted">{formatDateTime(d.created_at)}</span>
                       {d.last_error && (
                         <span className="text-rose-400/80 font-mono truncate max-w-[40ch]" title={d.last_error}>{d.last_error}</span>
                       )}
                       {d.next_attempt_at && d.status === "pending" && (
-                        <span className="text-amber-400/80">next {new Date(d.next_attempt_at).toLocaleTimeString()}</span>
+                        <span className="text-amber-400/80">next {formatTime(d.next_attempt_at)}</span>
                       )}
                       <div className="ml-auto flex items-center gap-1">
                         {!isSuccess && (

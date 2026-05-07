@@ -3,6 +3,7 @@ import { Phone, Mail, CheckCircle2, Clock, Loader2, Bot, ChevronRight, Calendar,
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
+import { formatTime } from "../lib/safe-date";
 
 export default function FleetTaskBridge() {
   const [tasks, setTasks] = useState<any[]>([]);
@@ -200,7 +201,7 @@ export default function FleetTaskBridge() {
                     )}
                     <span className="text-[9px] uppercase tracking-[0.3em] text-muted/50 ml-auto">
                       <Clock className="w-2.5 h-2.5 inline mr-1" />
-                      {new Date(task.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {formatTime(task.created_at, { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
 

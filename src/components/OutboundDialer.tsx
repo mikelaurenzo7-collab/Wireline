@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import Papa from "papaparse";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
+import { formatDate, safeDate } from "../lib/safe-date";
 import { Link } from "react-router-dom";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import CsvExportButton from "./CsvExportButton";
@@ -1040,7 +1041,7 @@ export default function OutboundDialer() {
                         </Link>
                       </div>
                       <div className="text-[9px] text-muted/50 tabular-nums shrink-0">
-                        {new Date(lead.created_at).toLocaleDateString()}
+                        {formatDate(lead.created_at)}
                       </div>
                     </div>
                   ))}
@@ -1143,7 +1144,11 @@ function CallbacksList({ callbacks, loading, onRefresh }: { callbacks: any[]; lo
       </div>
       <ul className="flex-1 overflow-y-auto divide-y divide-white/5 scrollbar-hide">
         {callbacks.map((cb) => {
-          const scheduledAt = new Date(cb.callback_scheduled_at);
+          const scheduledAt = safeDate(cb.callback_scheduled_at);
+          // Skip rows with unparsable timestamps — render a placeholder
+          // instead of crashing the list with "The string did not match
+          // the expected pattern" on Safari.
+          if (!scheduledAt) return null;
           const isPast = scheduledAt < now;
           const minutesUntil = Math.max(0, Math.round((scheduledAt.getTime() - now.getTime()) / 60_000));
           const relativeLabel = isPast

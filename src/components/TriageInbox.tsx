@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
+import { formatDate, formatDateTime } from "../lib/safe-date";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import CsvExportButton from "./CsvExportButton";
 import PageShell, { Panel } from "./PageShell";
@@ -121,7 +122,7 @@ function HotLeads({ items }: { items: any[] }) {
             </Link>
             <p className="text-[11px] text-muted/70 truncate">{c.summary}</p>
             <div className="flex items-center gap-2 mt-1 text-[8px] uppercase tracking-[0.26em] text-muted/50">
-              <span>{new Date(c.created_at).toLocaleDateString()}</span>
+              <span>{formatDate(c.created_at)}</span>
               <span className="w-1 h-1 rounded-full bg-white/15" />
               <span
                 className="text-brand/80"
@@ -167,7 +168,7 @@ function ComplianceList({ items }: { items: any[] }) {
           <div className="flex-1 min-w-0">
             <div className="text-[8px] uppercase tracking-[0.28em] text-rose-500 mb-0.5">Compliance · {t.priority}</div>
             <p className="text-[12px] text-ink/90 leading-snug">{t.description}</p>
-            <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-1">{new Date(t.created_at).toLocaleString()}</div>
+            <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-1">{formatDateTime(t.created_at)}</div>
           </div>
         </li>
       ))}
@@ -218,7 +219,7 @@ const KnowledgeGapRow: React.FC<{ gap: any; onPromoted: () => void }> = ({ gap, 
             <p className="text-[12px] text-ink/90 leading-snug">{cleaned}</p>
           )}
           <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-1">
-            Agent · <span className="font-mono">{gap.agent_id}</span> · {new Date(gap.created_at).toLocaleDateString()}
+            Agent · <span className="font-mono">{gap.agent_id}</span> · {formatDate(gap.created_at)}
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
@@ -261,7 +262,7 @@ function OpenTasks({ items }: { items: any[] }) {
             <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-1 flex items-center gap-2">
               <span>{t.target_channel || "manual"}</span>
               <span>·</span>
-              <span>{new Date(t.created_at).toLocaleString()}</span>
+              <span>{formatDateTime(t.created_at)}</span>
             </div>
           </div>
           <ChevronRight className="w-3.5 h-3.5 text-muted shrink-0" />
@@ -289,7 +290,7 @@ function Escalations({ items }: { items: any[] }) {
             </Link>
             <p className="text-[11px] text-ink/70 truncate">{c.summary}</p>
             <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-0.5">
-              {new Date(c.created_at).toLocaleString()}
+              {formatDateTime(c.created_at)}
             </div>
           </div>
           <ClaudeRecipeButton recipe="coach" callId={c.id} label="Coach" variant="compact" />
