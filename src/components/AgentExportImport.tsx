@@ -39,28 +39,45 @@ export default function AgentExportImport({ agentId, agentName }: Props) {
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    // Reject obviously-bad files before reading them — most exports are
+    // < 100KB; we cap at 5MB to avoid OOM if the user picks the wrong file.
+    const MAX_BYTES = 5 * 1024 * 1024;
+    if (file.size > MAX_BYTES) {
+      toastError("Import failed", "File is too large (max 5 MB).");
+      if (fileRef.current) fileRef.current.value = "";
+      return;
+    }
     setIsImporting(true);
     setImported(null);
     try {
       const text = await file.text();
-      const payload = JSON.parse(text);
+      let payload: unknown;
+      try {
+        payload = JSON.parse(text);
+      } catch {
+        throw new Error("File is not valid JSON.");
+      }
+      // Smoke-check the export shape so we don't post arbitrary user data.
+      if (!payload || typeof payload !== "object") {
+        throw new Error("Export file is malformed (expected an object).");
+      }
       const res = await authFetch(`/api/agents/${agentId}/import`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
-        const err = await res.json();
+        const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Import failed");
       }
       const data = await res.json();
       setImported(data.imported);
       toastSuccess(
         "Config imported",
-        `${data.imported.directives} directives + ${data.imported.knowledge} knowledge items merged.`
+        `${data.imported?.directives ?? 0} directives + ${data.imported?.knowledge ?? 0} knowledge items merged.`
       );
     } catch (err: any) {
-      toastError("Import failed", err.message || "Invalid file format.");
+      toastError("Import failed", err?.message || "Invalid file format.");
     } finally {
       setIsImporting(false);
       if (fileRef.current) fileRef.current.value = "";
