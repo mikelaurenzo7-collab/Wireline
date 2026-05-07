@@ -6,12 +6,6 @@ on:
   pull_request:
     branches: [main]
 
-# Cancel in-progress runs for the same ref on new pushes — saves runner minutes
-# and prevents stale results racing the latest commit.
-concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   build:
     name: typecheck + test + build
@@ -21,57 +15,36 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Diagnostic: surfaces the runner's actual environment so when something
-      # fails before npm ci we can see exactly what state the runner is in
-      # (node version mismatch, missing tools, network issues, etc.).
       - name: Runner diagnostics
         run: |
-          echo "::group::Runner state"
           echo "Working directory: $(pwd)"
-          echo "Node:  $(node --version 2>&1 || echo 'not installed')"
-          echo "npm:   $(npm --version 2>&1 || echo 'not installed')"
-          echo "git:   $(git --version 2>&1)"
-          echo "OS:    $(uname -a)"
+          echo "git: $(git --version)"
           echo "Files: $(ls -1 | head -20 | tr '\n' ' ')"
-          echo "lockfileVersion: $(node -e "console.log(require('./package-lock.json').lockfileVersion)" 2>&1 || echo 'unreadable')"
-          echo "::endgroup::"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: ".nvmrc"
+          node-version: "20"
 
-      # Cache npm separately from setup-node so a cache miss/service hiccup
-      # doesn't abort the whole step. Restore-keys lets us hydrate from a
-      # close-enough cache if the exact lockfile hash changes.
-      - name: Restore npm cache
-        id: npm-cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node20-npm-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node20-npm-
+      - name: Node + npm versions
+        run: |
+          node --version
+          npm --version
+          echo "lockfileVersion: $(node -e 'console.log(require(\"./package-lock.json\").lockfileVersion)')"
 
       - name: Install dependencies
         id: install
-        run: npm ci --no-audit --no-fund --loglevel=verbose
+        run: npm ci --no-audit --no-fund
 
-      # If install fails, the previous step's output is usually truncated.
-      # Dumping the latest npm debug log here surfaces the underlying error
-      # (network, registry auth, native-binary download, etc.).
       - name: Dump npm logs on failure
-        if: failure() && steps.install.conclusion == 'failure'
+        if: always() && steps.install.outcome == 'failure'
         run: |
-          echo "::group::npm debug logs"
-          for f in $(ls -t ~/.npm/_logs/ 2>/dev/null | head -3); do
+          for f in $(ls -t ~/.npm/_logs/ 2>/dev/null | head -2); do
             echo "--- ~/.npm/_logs/$f ---"
             cat "$HOME/.npm/_logs/$f" || true
           done
-          echo "::endgroup::"
-          echo "::group::Reachability"
+          echo "Reachability:"
           curl -sS -o /dev/null -w "registry.npmjs.org: %{http_code} (%{time_total}s)\n" https://registry.npmjs.org/ || true
-          echo "::endgroup::"
 
       - name: TypeScript typecheck
         run: npx tsc --noEmit
@@ -83,19 +56,10 @@ jobs:
         run: npm run build
 
       - name: Server bootstrap smoke test
-        # Catches ESM/CJS extension mismatches, top-level import crashes,
-        # and missing-module errors that the bundler can't surface.
-        # Spawns dist/server.cjs, verifies /api/health responds, kills it.
         run: npm run smoke:server
 
       - name: Production env check (informational)
-        # Surfaces missing env vars in CI logs without blocking the build.
-        # CI doesn't have prod secrets — the script exits 0 here so this
-        # step is purely informational. Set PRODUCTION_CHECK=1 in deploy
-        # workflows to make missing recommended vars a hard fail.
         run: node scripts/check-prod-env.mjs || true
 
       - name: Audit (high severity, non-blocking)
-        # `audit` exits non-zero on findings; we surface the report but
-        # don't fail CI on transitive vulns we can't immediately fix.
         run: npm audit --audit-level=high || true
