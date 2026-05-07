@@ -124,8 +124,8 @@ export default function FleetSettings() {
       if (!selectedAgent && agentsRes.agents?.length > 0) {
          setSelectedAgent(agentsRes.agents[0]);
       }
-    } catch (e) {
-      console.error(e);
+    } catch {
+      toastError("Failed to load fleet", "Check your connection and refresh.");
     }
     setIsLoading(false);
   };
@@ -147,8 +147,8 @@ export default function FleetSettings() {
        const res = await authFetch(`/api/agent-config/${id}`);
        const data = await res.json();
        setAgentConfig(data);
-    } catch (e) {
-      console.error(e);
+    } catch {
+      toastError("Failed to load agent config", "Could not fetch configuration for this agent.");
     }
     setIsConfigLoading(false);
   };

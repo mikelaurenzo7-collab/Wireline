@@ -24,8 +24,8 @@ export default function Integrations() {
       const res = await authFetch("/api/emails/accounts");
       const data = await res.json();
       setAccounts(data.accounts || []);
-    } catch (e) {
-      console.error(e);
+    } catch {
+      toastError("Failed to load accounts", "Check your connection and refresh.");
     }
   };
 
@@ -34,8 +34,8 @@ export default function Integrations() {
       const res = await authFetch("/api/agents");
       const data = await res.json();
       setAgents(data.agents || []);
-    } catch (e) {
-      console.error(e);
+    } catch {
+      // Non-critical background fetch — agents list used for assignment dropdown only.
     }
   };
 
@@ -88,23 +88,25 @@ export default function Integrations() {
   const handleDisconnect = async (id: string) => {
     if (!confirm('Disconnect this carrier?')) return;
     try {
-      await authFetch(`/api/emails/accounts/${id}`, { method: 'DELETE' });
+      const r = await authFetch(`/api/emails/accounts/${id}`, { method: 'DELETE' });
+      if (!r.ok) throw new Error();
       fetchAccounts();
-    } catch (e) {
-      console.error(e);
+    } catch {
+      toastError("Disconnect failed", "Could not remove the email account.");
     }
   };
 
   const updateAccountAgent = async (accountId: string, agentId: string) => {
     try {
-      await authFetch(`/api/emails/accounts/${accountId}`, {
+      const r = await authFetch(`/api/emails/accounts/${accountId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ agent_id: agentId === 'none' ? null : agentId })
       });
+      if (!r.ok) throw new Error();
       fetchAccounts();
-    } catch (e) {
-      console.error(e);
+    } catch {
+      toastError("Update failed", "Could not change the assigned agent.");
     }
   };
 

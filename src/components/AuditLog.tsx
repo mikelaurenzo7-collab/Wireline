@@ -239,9 +239,8 @@ export default function AuditLog() {
 
         setEvents(eventsData.events);
         setStats(mappedStats);
-      } catch (err) {
-        console.error('Failed to load audit log:', err);
-        toastError('Failed to load audit log', 'Check the console for details.');
+      } catch {
+        toastError('Failed to load audit log', 'Check your connection and try again.');
       } finally {
         setLoading(false);
       }
@@ -289,8 +288,7 @@ export default function AuditLog() {
       URL.revokeObjectURL(url);
 
       toastSuccess('Export complete', 'Audit log downloaded successfully.');
-    } catch (err) {
-      console.error('Export failed:', err);
+    } catch {
       toastError('Export failed', 'Could not download audit log.');
     } finally {
       setExporting(false);

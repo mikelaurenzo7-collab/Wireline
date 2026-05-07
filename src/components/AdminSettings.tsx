@@ -71,8 +71,8 @@ export default function AdminSettings() {
       }
       setAgents(agentsRes.agents || []);
       setPhoneNumbers(numbersRes.numbers || []);
-    } catch (e) {
-      console.error(e);
+    } catch {
+      toastError("Failed to load settings", "Check your connection and refresh.");
     }
     setIsLoading(false);
   };
@@ -83,8 +83,8 @@ export default function AdminSettings() {
       const res = await authFetch("/api/carrier/numbers");
       const data = await res.json();
       setCarrierNumbers(data.numbers || []);
-    } catch (e) {
-      console.error(e);
+    } catch {
+      toastError("Carrier sync failed", "Could not fetch carrier numbers.");
     }
     setIsSyncing(false);
   };
@@ -124,14 +124,15 @@ export default function AdminSettings() {
 
   const updateNumberAgent = async (id: string, agent_id: string) => {
     try {
-      await authFetch(`/api/phone-numbers/${id}`, {
+      const r = await authFetch(`/api/phone-numbers/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ agent_id })
       });
+      if (!r.ok) throw new Error();
       fetchData();
-    } catch (e) {
-      console.error(e);
+    } catch {
+      toastError("Update failed", "Could not reassign the phone number.");
     }
   };
 
@@ -142,9 +143,11 @@ export default function AdminSettings() {
       const resp = await authFetch(`/api/phone-numbers/${id}`, { method: "DELETE" });
       if (resp.ok) {
         setPhoneNumbers(prev => prev.filter(n => n.id !== id));
+      } else {
+        throw new Error();
       }
-    } catch (e) {
-      console.error(e);
+    } catch {
+      toastError("Delete failed", "Could not remove the carrier number.");
     }
     setIsDeletingNumber(null);
   };

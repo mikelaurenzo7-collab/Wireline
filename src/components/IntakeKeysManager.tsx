@@ -7,6 +7,7 @@ import {
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { formatDateTime } from "../lib/safe-date";
+import { useToast } from "../contexts/ToastContext";
 
 interface IntakeKey {
   id: string;
@@ -21,6 +22,7 @@ interface IntakeKey {
 }
 
 export default function IntakeKeysManager() {
+  const { error: toastError } = useToast();
   const [keys, setKeys] = useState<IntakeKey[]>([]);
   const [agents, setAgents] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +46,8 @@ export default function IntakeKeysManager() {
       ]);
       setKeys(keysRes.keys || []);
       setAgents(agentsRes.agents || []);
+    } catch {
+      toastError("Failed to load API keys", "Check your connection and refresh.");
     } finally { setLoading(false); }
   };
 
@@ -80,29 +84,44 @@ export default function IntakeKeysManager() {
   };
 
   const toggleActive = async (k: IntakeKey) => {
-    await authFetch(`/api/intake/keys/${k.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ active: !k.active }),
-    });
-    refresh();
+    try {
+      const r = await authFetch(`/api/intake/keys/${k.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active: !k.active }),
+      });
+      if (!r.ok) throw new Error();
+      refresh();
+    } catch {
+      toastError("Update failed", "Could not change key status.");
+    }
   };
 
   const toggleAutoDial = async (k: IntakeKey) => {
-    if (!k.default_agent_id) return; // can't auto-dial without an agent
-    await authFetch(`/api/intake/keys/${k.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ auto_dial: !k.auto_dial }),
-    });
-    refresh();
+    if (!k.default_agent_id) return;
+    try {
+      const r = await authFetch(`/api/intake/keys/${k.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ auto_dial: !k.auto_dial }),
+      });
+      if (!r.ok) throw new Error();
+      refresh();
+    } catch {
+      toastError("Update failed", "Could not change auto-dial setting.");
+    }
   };
 
   const remove = async (id: string) => {
-    await authFetch(`/api/intake/keys/${id}`, { method: "DELETE" });
-    setConfirmDelete(null);
-    if (justCreated?.id === id) setJustCreated(null);
-    refresh();
+    try {
+      const r = await authFetch(`/api/intake/keys/${id}`, { method: "DELETE" });
+      if (!r.ok) throw new Error();
+      setConfirmDelete(null);
+      if (justCreated?.id === id) setJustCreated(null);
+      refresh();
+    } catch {
+      toastError("Delete failed", "Could not remove the API key.");
+    }
   };
 
   const copyKey = async () => {

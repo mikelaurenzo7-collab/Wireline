@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import PageShell, { Panel } from "./PageShell";
+import { useToast } from "../contexts/ToastContext";
 
 type Appointment = {
   id: string;
@@ -302,6 +303,7 @@ function CalendarGrid({ appointments, onSelect }: { appointments: Appointment[];
 
 /* ─── Main component ─────────────────────────────────────────────── */
 export default function AppointmentsView() {
+  const { error: toastError } = useToast();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [agents, setAgents] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -319,8 +321,8 @@ export default function AppointmentsView() {
       ]);
       setAppointments(apptRes.appointments || []);
       setAgents(agentRes.agents || []);
-    } catch (e) {
-      console.error("Failed to fetch appointments:", e);
+    } catch {
+      toastError("Failed to load appointments", "Check your connection and refresh.");
     }
     setIsLoading(false);
   };
@@ -341,9 +343,10 @@ export default function AppointmentsView() {
     if (!confirm("Cancel and remove this appointment?")) return;
     setDeletingId(id);
     try {
-      await authFetch(`/api/appointments/${id}`, { method: "DELETE" });
+      const r = await authFetch(`/api/appointments/${id}`, { method: "DELETE" });
+      if (!r.ok) throw new Error();
       setAppointments(prev => prev.filter(a => a.id !== id));
-    } catch (e) { console.error("Delete failed:", e); }
+    } catch { toastError("Delete failed", "Could not remove the appointment."); }
     setDeletingId(null);
   };
 
@@ -357,8 +360,10 @@ export default function AppointmentsView() {
       const data = await res.json();
       if (data.appointment) {
         setAppointments(prev => prev.map(a => a.id === id ? data.appointment : a));
+      } else {
+        throw new Error();
       }
-    } catch (e) { console.error("Status update failed:", e); }
+    } catch { toastError("Update failed", "Could not change appointment status."); }
   };
 
   const scheduled = appointments.filter(a => !["Completed", "Cancelled"].includes(a.status));

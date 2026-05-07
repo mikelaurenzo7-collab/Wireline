@@ -98,33 +98,52 @@ async function fetchWithTimeout(
 //  secrets. Log warnings (not errors) in dev so local hacking still works.
 // ────────────────────────────────────────────────────────────────────
 function validateStartupEnv() {
+  // Always required: without these the server can't read/write the DB at all.
   const required = [
     ["VITE_SUPABASE_URL", process.env.VITE_SUPABASE_URL],
     ["VITE_SUPABASE_ANON_KEY", process.env.VITE_SUPABASE_ANON_KEY],
-  ] as const;
+  ] as [string, string | undefined][];
+
+  // Production-required: in prod, missing these means core features are broken.
+  // In dev we warn so local hacking without full env still works.
+  const prodRequired = [
+    // Server-side DB ops (vapi webhook, background jobs, RLS bypass) need service role.
+    // Without it the server falls back to anon key and most writes silently fail RLS.
+    ["SUPABASE_SERVICE_ROLE_KEY", process.env.SUPABASE_SERVICE_ROLE_KEY],
+    // Vapi webhook rejects all events when this is unset — voice agents stop working.
+    ["VAPI_WEBHOOK_SECRET", process.env.VAPI_WEBHOOK_SECRET],
+    // CORS + OAuth redirects need a canonical URL in prod.
+    ["APP_URL", process.env.APP_URL],
+  ] as [string, string | undefined][];
+
   const missing = required.filter(([, v]) => !v).map(([k]) => k);
+  const missingProdRequired = prodRequired.filter(([, v]) => !v).map(([k]) => k);
   const recommended: string[] = [];
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) recommended.push("SUPABASE_SERVICE_ROLE_KEY");
-  if (!process.env.ANTHROPIC_API_KEY) recommended.push("ANTHROPIC_API_KEY");
-  if (!process.env.VAPI_WEBHOOK_SECRET) recommended.push("VAPI_WEBHOOK_SECRET");
-  if (!process.env.APP_URL) recommended.push("APP_URL");
-  // CORS_ORIGINS in prod: cross-origin browser requests will fail without it
-  // (the cors middleware rejects unknown origins). APP_URL is auto-added to
-  // the allowlist if set, so this is only a hard requirement when serving
-  // API + frontend from different origins.
+  if (!process.env.ANTHROPIC_API_KEY) recommended.push("ANTHROPIC_API_KEY (all /api/claude/* endpoints will 503)");
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    recommended.push("UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN (rate limits fall back to in-process memory, which resets on cold starts)");
+  }
+  if (!process.env.SENTRY_DSN) recommended.push("SENTRY_DSN (no server-side error tracking)");
+  // CORS_ORIGINS in prod: cross-origin browser requests will fail without it.
+  // APP_URL is auto-added to the allowlist, so only required when API + frontend
+  // are on different origins AND APP_URL is not set.
   if (IS_PROD && !process.env.CORS_ORIGINS && !process.env.APP_URL) {
-    recommended.push("CORS_ORIGINS");
+    recommended.push("CORS_ORIGINS (or APP_URL) — browser requests will be rejected by CORS");
   }
 
   if (missing.length) {
     if (IS_PROD) {
       log.error("Refusing to start: required env vars are missing", { missing });
-      // Exit synchronously so the platform restart loop kicks in instead of
-      // accepting traffic in a broken state.
       process.exit(1);
     } else {
       log.warn("Required env vars missing (dev mode — continuing with placeholders)", { missing });
     }
+  }
+  if (IS_PROD && missingProdRequired.length) {
+    log.error("Refusing to start: production-required env vars are missing", { missing: missingProdRequired });
+    process.exit(1);
+  } else if (!IS_PROD && missingProdRequired.length) {
+    log.warn("Production-required env vars not set (dev mode — some features will be degraded)", { missing: missingProdRequired });
   }
   if (recommended.length) {
     log.warn("Recommended env vars not set", { recommended });
@@ -7314,13 +7333,16 @@ function withAudit(actionPrefix: string) {
 
 // Auto-instrument every Claude path + the Claude-backed insights paths.
 // /status is unauthenticated and doesn't make Claude calls — let it through.
-// Otherwise: authenticate → spend hard-cap → audit context → handler.
-// Hard-cap is checked BEFORE the audit context is established because
-// blocked requests don't make Claude calls so they don't need auditing.
+// Otherwise: authenticate → rate-limit → spend hard-cap → audit context → handler.
+// Rate limit sits before the spend cap so hammering requests get 429s without
+// reading the budget row. Hard-cap is before audit so blocked requests don't
+// create audit rows (they don't actually call Claude).
 app.use("/api/claude", (req: any, res: any, next: any) => {
   if (req.path === "/status") return next();
   return authenticateUser(req, res, () =>
-    enforceSpendCap(req, res, () => withAudit("claude")(req, res, next)),
+    claudeRateLimiter(req, res, () =>
+      enforceSpendCap(req, res, () => withAudit("claude")(req, res, next)),
+    ),
   );
 });
 app.use(["/api/insights/topics", "/api/insights/failure-modes", "/api/insights/daily-brief"],

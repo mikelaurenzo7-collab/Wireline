@@ -7,10 +7,12 @@ import { formatDate } from "../lib/safe-date";
 import SupervisedAgentTuner from "./SupervisedAgentTuner";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import { HelpTooltip } from "./HelpTooltip";
+import { useToast } from "../contexts/ToastContext";
 
 type Message = { role: "user" | "assistant"; content: string };
 
 export default function AgentTraining() {
+  const { error: toastError, success: toastSuccess } = useToast();
   const [activeTab, setActiveTab] = useState<'admin' | 'simulator' | 'database'>('admin');
   const [agents, setAgents] = useState<any[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState("default-agent");
@@ -48,13 +50,16 @@ export default function AgentTraining() {
   const fetchKnowledge = async () => {
     try {
       const res = await authFetch(`/api/agent-config/${selectedAgentId}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setKnowledge(data.knowledge || []);
       setDirectives(data.directives || []);
       setPersonality(data.personality || "");
       setPersonalityDraft(data.personality || "");
       setLessons(data.lessons || []);
-    } catch(e) {}
+    } catch {
+      toastError("Failed to load agent configuration", "Check your connection and try again.");
+    }
   };
 
   const handleSend = async () => {
@@ -88,10 +93,13 @@ export default function AgentTraining() {
   };
 
   const deleteItem = async (id: string, type: 'knowledge' | 'directive') => {
-     try {
-       await authFetch(`/api/agent-config/${selectedAgentId}/${type}/${id}`, { method: 'DELETE' });
-       fetchKnowledge();
-     } catch(e) {}
+    try {
+      const res = await authFetch(`/api/agent-config/${selectedAgentId}/${type}/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      fetchKnowledge();
+    } catch {
+      toastError("Delete failed", "Could not remove the entry. Please try again.");
+    }
   };
 
   const saveManualEntry = async (type: 'directive' | 'knowledge' | 'personality', content: string, overrideId?: string) => {
@@ -113,8 +121,8 @@ export default function AgentTraining() {
                 if (type === 'knowledge') { setEditingKnowledge(null); setNewKnowledge(""); }
             }
         }
-    } catch (e) {
-        console.error(e);
+    } catch {
+      toastError("Save failed", "Could not save the entry. Please try again.");
     }
     setIsSavingEntry(false);
   };
@@ -126,8 +134,8 @@ export default function AgentTraining() {
       const res = await authFetch(`/api/agents/${selectedAgentId}/optimize`, { method: "POST" });
       const data = await res.json();
       setOptSuggestions(data);
-    } catch (e) {
-      console.error(e);
+    } catch {
+      toastError("Optimization failed", "Could not fetch optimization suggestions.");
     }
     setIsOptimizing(false);
   };

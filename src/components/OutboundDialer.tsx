@@ -87,8 +87,8 @@ export default function OutboundDialer() {
       setLeads(leadsData.leads || []);
       setLeadsHasMore(leadsData.hasMore || false);
       setLeadsTotal(leadsData.total || 0);
-    } catch (e) {
-      console.error(e);
+    } catch {
+      toastError("Failed to load dialer", "Check your connection and refresh.");
     }
     setIsLoading(false);
   };
@@ -101,8 +101,8 @@ export default function OutboundDialer() {
       setLeads(prev => [...prev, ...(data.leads || [])]);
       setLeadsHasMore(data.hasMore || false);
       setLeadsTotal(data.total || 0);
-    } catch (e) {
-      console.error(e);
+    } catch {
+      toastError("Load failed", "Could not fetch more leads.");
     }
     setIsLoadingMore(false);
   };
@@ -114,9 +114,11 @@ export default function OutboundDialer() {
       const resp = await authFetch(`/api/outbound/${id}`, { method: "DELETE" });
       if (resp.ok) {
         setLeads(prev => prev.filter(l => l.id !== id));
+      } else {
+        throw new Error();
       }
-    } catch (e) {
-      console.error("Failed to delete lead:", e);
+    } catch {
+      toastError("Delete failed", "Could not remove the lead.");
     }
     setIsDeletingLead(null);
   };
@@ -273,8 +275,8 @@ export default function OutboundDialer() {
           setLeads(prev => prev.map(l => l.id === lead.id ? { ...l, status: "Dialing" } : l));
         }
         await new Promise(resolve => setTimeout(resolve, 2000));
-      } catch (e) {
-        console.error("Failed batch call", e);
+      } catch {
+        // Individual call failure — log in UI via stats, keep batch running.
       }
     }
 
@@ -290,7 +292,7 @@ export default function OutboundDialer() {
       const res = await authFetch("/api/campaigns");
       const data = await res.json();
       setCampaigns(data.campaigns || []);
-    } catch (e) { console.error("Failed to fetch campaigns:", e); }
+    } catch { toastError("Failed to load campaigns", "Check your connection and refresh."); }
     setCampaignLoading(false);
   };
 
@@ -300,7 +302,7 @@ export default function OutboundDialer() {
       const res = await authFetch("/api/callbacks");
       const data = await res.json();
       setCallbacks(data.callbacks || []);
-    } catch (e) { console.error("Failed to fetch callbacks:", e); }
+    } catch { toastError("Failed to load callbacks", "Check your connection and refresh."); }
     setCallbacksLoading(false);
   };
 
@@ -310,7 +312,7 @@ export default function OutboundDialer() {
       const res = await authFetch(`/api/campaigns/${id}/leads`);
       const data = await res.json();
       setCampaignLeads(data.leads || []);
-    } catch (e) { console.error("Failed to fetch campaign leads:", e); }
+    } catch { toastError("Failed to load campaign leads", "Check your connection and refresh."); }
     setCampaignLeadsLoading(false);
   };
 
@@ -326,7 +328,7 @@ export default function OutboundDialer() {
         setCampaigns(prev => prev.map(c => c.id === id ? { ...c, ...data.campaign } : c));
         if (selectedCampaign?.id === id) setSelectedCampaign((prev: any) => ({ ...prev, ...data.campaign }));
       }
-    } catch (e) { console.error("Failed to set campaign status:", e); }
+    } catch { toastError("Update failed", "Could not change campaign status."); }
   };
 
   const deleteCampaign = async (id: string) => {
@@ -335,7 +337,7 @@ export default function OutboundDialer() {
       await authFetch(`/api/campaigns/${id}`, { method: "DELETE" });
       setCampaigns(prev => prev.filter(c => c.id !== id));
       if (selectedCampaign?.id === id) setSelectedCampaign(null);
-    } catch (e) { console.error("Failed to delete campaign:", e); }
+    } catch { toastError("Delete failed", "Could not delete the campaign."); }
   };
 
   const handleSelectCampaign = (c: any) => {

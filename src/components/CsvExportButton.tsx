@@ -40,9 +40,8 @@ export default function CsvExportButton({
       URL.revokeObjectURL(url);
       setDone(true);
       setTimeout(() => setDone(false), 2000);
-    } catch (err) {
-      console.error("CSV export failed:", err);
-      toastError("Export failed", "Check the console for details.");
+    } catch {
+      toastError("Export failed", "Could not download the CSV. Try again.");
     } finally { setBusy(false); }
   };
 

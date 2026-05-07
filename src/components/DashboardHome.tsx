@@ -115,8 +115,7 @@ export default function DashboardHome() {
       const data = await res.json();
       if (data.assistant) await vapi.start(data.assistant);
       else throw new Error("No assistant configuration returned");
-    } catch (e) {
-      console.error("Failed to start call", e);
+    } catch {
       setIsConnecting(false);
       toastError("Carrier connection failed", "Ensure at least one agent is configured and try again.");
     }
