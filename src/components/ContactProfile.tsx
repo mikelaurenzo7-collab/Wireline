@@ -50,15 +50,24 @@ export default function ContactProfile() {
 
   useEffect(() => {
     if (!number) return;
+    let active = true;
+    const controller = new AbortController();
+    setLoading(true); setErr(null);
+    setData(null);
     (async () => {
-      setLoading(true); setErr(null);
       try {
-        const r = await authFetch(`/api/contacts/${encodeURIComponent(number)}`);
+        const r = await authFetch(`/api/contacts/${encodeURIComponent(number)}`, { signal: controller.signal });
         const d = await r.json();
-        if (!r.ok) throw new Error(d.error);
-        setData(d);
-      } catch (e: any) { setErr(e.message); } finally { setLoading(false); }
+        if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
+        if (active) setData(d);
+      } catch (e: any) {
+        if (e?.name === 'AbortError') return;
+        if (active) setErr(e instanceof Error ? e.message : "Request failed");
+      } finally {
+        if (active) setLoading(false);
+      }
     })();
+    return () => { active = false; controller.abort(); };
   }, [number]);
 
   if (loading) return (

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Users, Plus, Phone, Bot, Save, Loader2, Link as LinkIcon, Copy, Trash2, Megaphone, Mail, Pencil, Sparkles, Terminal, ChevronRight, ChevronLeft, Zap, Target, Radio, Settings2, Shield, Briefcase, RefreshCw, LayoutGrid, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
@@ -98,6 +98,16 @@ export default function FleetSettings() {
   
   const [isConfigLoading, setIsConfigLoading] = useState(false);
   const [agentConfig, setAgentConfig] = useState<any>({ personality: "", directives: [], knowledge: [] });
+  // Tracks the currently-selected agent so async fetchAgentConfig calls
+  // don't overwrite agentConfig with a stale agent's data when the operator
+  // switches selection mid-flight. fetchAgentConfig is invoked from many
+  // places (the selection effect, post-save refresh, manual refresh) so
+  // a single ref-based guard is simpler than threading AbortController
+  // through every caller.
+  const selectedAgentIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    selectedAgentIdRef.current = selectedAgent?.id ?? null;
+  }, [selectedAgent?.id]);
 
   const [editingDirective, setEditingDirective] = useState<{ id: string; content: string } | null>(null);
   const [editingKnowledge, setEditingKnowledge] = useState<{ id: string; content: string } | null>(null);
@@ -146,11 +156,16 @@ export default function FleetSettings() {
     try {
        const res = await authFetch(`/api/agent-config/${id}`);
        const data = await res.json();
+       // Drop the response if the operator has since switched agents;
+       // otherwise we'd render Agent A's personality/directives under
+       // Agent B's header.
+       if (selectedAgentIdRef.current !== id) return;
        setAgentConfig(data);
     } catch (e) {
       console.error(e);
+    } finally {
+      if (selectedAgentIdRef.current === id) setIsConfigLoading(false);
     }
-    setIsConfigLoading(false);
   };
 
   const handleCreateAgent = async () => {
