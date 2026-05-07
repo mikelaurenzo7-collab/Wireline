@@ -6141,16 +6141,20 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
 
      // Batch-fetch all agent-specific data for accounts that reference a specific agent.
      // Collecting unique agent IDs first avoids repeated single-row queries inside the loop.
+     // Defense-in-depth: filter every batch query by user_id so a stale
+     // account row referencing a foreign agent_id (created before the
+     // ownership check on /api/emails/accounts was added) can never cause
+     // cross-tenant data to leak into this user's email-sync context.
      const agentIds = [...new Set(accounts.map((a: any) => a.agent_id).filter(Boolean))];
      const [agentRows, knowledgeRows, directiveRows] = await Promise.all([
        agentIds.length
-         ? db.from('wireline_agents').select('*').in('id', agentIds)
+         ? db.from('wireline_agents').select('*').eq('user_id', userId).in('id', agentIds)
          : Promise.resolve({ data: [], error: null }),
        agentIds.length
-         ? db.from('wireline_knowledge').select('agent_id, content').in('agent_id', agentIds)
+         ? db.from('wireline_knowledge').select('agent_id, content').eq('user_id', userId).in('agent_id', agentIds)
          : Promise.resolve({ data: [], error: null }),
        agentIds.length
-         ? db.from('wireline_directives').select('agent_id, content').in('agent_id', agentIds)
+         ? db.from('wireline_directives').select('agent_id, content').eq('user_id', userId).in('agent_id', agentIds)
          : Promise.resolve({ data: [], error: null }),
      ]);
      if (agentRows.error) log.warn("Email sync: failed to batch-fetch agents", { error: agentRows.error.message });
