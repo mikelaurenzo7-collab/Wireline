@@ -9,6 +9,7 @@ import { useToast } from "../contexts/ToastContext";
 import AgentTemplates from "./AgentTemplates";
 import AgentExportImport from "./AgentExportImport";
 import AgentBusinessProfile from "./AgentBusinessProfile";
+import AgentScorecard from "./AgentScorecard";
 
 /** Tiny SVG sparkline — renders a 7-value array as a smooth path. */
 function Sparkline({ data, width = 64, height = 24 }: { data: number[]; width?: number; height?: number }) {
@@ -905,6 +906,16 @@ export default function FleetSettings() {
                        kpi_focus:             selectedAgent.kpi_focus,
                      }}
                      onChange={(profile) => updateAgentMeta(profile)}
+                   />
+
+                   {/* Outcome-aligned scorecard — re-keys on the kpi_focus
+                       change so editing the focus refreshes the metric
+                       definition without a hard reload. */}
+                   <AgentScorecard
+                     key={`${selectedAgent.id}:${selectedAgent.kpi_focus || 'general'}`}
+                     agentId={selectedAgent.id}
+                     days={30}
+                     title={`Performance · 30d · ${selectedAgent.kpi_focus || 'general'}`}
                    />
 
                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
