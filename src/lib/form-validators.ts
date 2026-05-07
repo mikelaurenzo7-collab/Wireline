@@ -38,6 +38,58 @@ export const AgentFormSchema = z.object({
 
 export type AgentForm = z.infer<typeof AgentFormSchema>;
 
+// ── Agent business-profile (hours / compliance / guardrails) ──────────
+// Applied at runtime by buildAgentRuntimeContext to layer business
+// rules on top of the agent's role-derived system prompt. Each field
+// is optional so partial PATCH-style updates work.
+
+const HHMM = z.string().regex(/^\d{1,2}:\d{2}$/, 'Time must be HH:MM (24-hour)');
+
+export const DayHoursSchema = z.object({
+  open:   HHMM.optional(),
+  close:  HHMM.optional(),
+  closed: z.boolean().optional(),
+}).strict();
+
+export const BusinessHoursSchema = z.object({
+  mon: DayHoursSchema.optional(),
+  tue: DayHoursSchema.optional(),
+  wed: DayHoursSchema.optional(),
+  thu: DayHoursSchema.optional(),
+  fri: DayHoursSchema.optional(),
+  sat: DayHoursSchema.optional(),
+  sun: DayHoursSchema.optional(),
+}).strict();
+
+export const ComplianceModeSchema = z.enum(['none', 'hipaa', 'pci', 'gdpr', 'financial', 'legal']);
+export const KpiFocusSchema       = z.enum(['general', 'conversions', 'qualifications', 'resolutions', 'satisfaction']);
+
+// Variables: keys are simple identifiers, values are short strings/numbers.
+// Bounded so the prompt budget can't be blown by a single jumbo placeholder.
+export const BusinessVariablesSchema = z.record(
+  z.string().regex(/^[a-zA-Z_][a-zA-Z0-9_]{0,40}$/, 'Variable key must be alphanumeric/underscore (max 41 chars)'),
+  z.union([
+    z.string().max(500, 'Variable value must be 500 characters or less'),
+    z.number(),
+  ]),
+).refine((obj) => Object.keys(obj).length <= 32, {
+  message: 'At most 32 variables allowed',
+});
+
+export const AgentBusinessProfileSchema = z.object({
+  business_hours:        BusinessHoursSchema.optional(),
+  // IANA tz strings can be long-ish (e.g. "America/Argentina/Buenos_Aires").
+  timezone:              z.string().min(1).max(64).optional(),
+  compliance_mode:       ComplianceModeSchema.optional(),
+  disallowed_topics:     z.array(z.string().max(120)).max(24, 'At most 24 disallowed topics').optional(),
+  escalation_keywords:   z.array(z.string().max(120)).max(24, 'At most 24 escalation keywords').optional(),
+  business_variables:    BusinessVariablesSchema.optional(),
+  out_of_hours_message:  z.string().max(500, 'Out-of-hours message must be 500 characters or less').optional().nullable(),
+  kpi_focus:             KpiFocusSchema.optional(),
+}).strict();
+
+export type AgentBusinessProfile = z.infer<typeof AgentBusinessProfileSchema>;
+
 // Directive input validation
 export const DirectiveSchema = z.object({
   id: z.string().optional(),

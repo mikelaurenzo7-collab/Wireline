@@ -26,8 +26,9 @@ import * as claudeBrain from "./src/lib/claude-brain";
 import { AuditLogger } from "./src/lib/audit-logger";
 import { rateLimit, isRedisConfigured, startMemoryCleanup } from "./src/lib/rate-limit";
 import { SentryEvents } from "./src/lib/sentry-events";
-import { AgentFormSchema, DirectiveSchema, KnowledgeSchema, EmailReplySchema, EmailDraftSchema, CampaignCreateSchema, CampaignUpdateSchema, OutboundBulkSchema, parseFormData } from "./src/lib/form-validators";
+import { AgentFormSchema, DirectiveSchema, KnowledgeSchema, EmailReplySchema, EmailDraftSchema, CampaignCreateSchema, CampaignUpdateSchema, OutboundBulkSchema, AgentBusinessProfileSchema, parseFormData } from "./src/lib/form-validators";
 import { getErrorMessage, sanitizeForAudit } from "./src/lib/server-utils";
+import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "./src/lib/agent-runtime";
 
 // On Vercel, VERCEL_URL is automatically set to the deployment hostname
 // (e.g. "myapp-abc123.vercel.app") with no protocol or trailing slash.
@@ -1677,10 +1678,31 @@ ${(directivesData?.data || []).map((d: any) => `[PRIORITY ${d.priority}] ${d.con
 ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "No specific knowledge base entries loaded. Rely on your training and the caller's context."}
       `;
 
+      // Apply the agent's business profile (hours / compliance / guardrails
+      // / variables / KPI focus) to the system prompt. For inbound calls
+      // we don't refuse the call out-of-hours — the caller is already on
+      // the line. Instead, when out-of-hours we override the first message
+      // with the operator's out-of-hours announcement.
+      const inboundRuntimeProfile: AgentRuntimeProfile = {
+        timezone: agentConfig?.data?.timezone,
+        business_hours: agentConfig?.data?.business_hours,
+        compliance_mode: agentConfig?.data?.compliance_mode,
+        disallowed_topics: agentConfig?.data?.disallowed_topics,
+        escalation_keywords: agentConfig?.data?.escalation_keywords,
+        business_variables: agentConfig?.data?.business_variables,
+        out_of_hours_message: agentConfig?.data?.out_of_hours_message,
+        kpi_focus: agentConfig?.data?.kpi_focus,
+      };
+      const inboundRuntime = buildAgentRuntimeContext(systemPrompt, inboundRuntimeProfile);
+      const inboundFirstMessage =
+        (!inboundRuntime.inHours && inboundRuntime.outOfHoursMessage)
+          ? inboundRuntime.outOfHoursMessage
+          : (agentConfig?.data?.first_message || "Hello! Thank you for calling. How can I help you today?");
+
       const responsePayload = {
         assistant: {
           name: agentConfig?.data?.name || "Wireline Agent",
-          firstMessage: agentConfig?.data?.first_message || "Hello! Thank you for calling. How can I help you today?",
+          firstMessage: inboundFirstMessage,
           serverUrlSecret: VAPI_WEBHOOK_SECRET,
           serverMessages: ["tool-calls", "status-update", "conversation-update", "end-of-call-report"],
           backgroundSound: agentConfig?.data?.ambient_noise || 'off',
@@ -1691,7 +1713,7 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
           model: {
             provider: voiceLlmProvider,
             model: voiceLlmModel,
-            systemPrompt: systemPrompt,
+            systemPrompt: inboundRuntime.prompt,
             temperature: llmTemp,
           },
           recordingEnabled: true,
@@ -4072,26 +4094,66 @@ app.put("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
       return res.status(400).json({ error: "Validation failed", errors: validation.errors });
     }
 
-    const { name, role, personality } = validation.data;
+    // Validate the optional business-profile block. Each field is
+    // optional so partial updates work; unknown fields are rejected
+    // (strict mode) so callers can't sneak in arbitrary columns.
+    const profileFields = [
+      'business_hours',
+      'timezone',
+      'compliance_mode',
+      'disallowed_topics',
+      'escalation_keywords',
+      'business_variables',
+      'out_of_hours_message',
+      'kpi_focus',
+    ] as const;
+    const profileInput: Record<string, unknown> = {};
+    for (const k of profileFields) {
+      if (req.body[k] !== undefined) profileInput[k] = req.body[k];
+    }
+    const profileValidation = parseFormData(AgentBusinessProfileSchema, profileInput);
+    if (!profileValidation.success) {
+      return res.status(400).json({ error: "Validation failed", errors: profileValidation.errors });
+    }
+
+    const { name, role, personality } = validation.data!;
     const { voice_id, voice_id_inbound, voice_id_outbound, voice_provider, first_message, archetype, ambient_noise, website_url, transfer_phone, email_auto_respond, email_agent_tone, email_signature, channel } = req.body;
-    await db.from('wireline_agents').update({ 
-      name, 
-      voice_id, 
+
+    // Build the update payload — start with core fields, then merge
+    // any business-profile fields the caller actually sent (so a
+    // partial PATCH-style update doesn't clobber existing hours / mode
+    // / variables when the caller is only changing the agent's name).
+    const update: Record<string, unknown> = {
+      name,
+      voice_id,
       voice_id_inbound,
       voice_id_outbound,
-      voice_provider, 
-      first_message, 
-      archetype, 
-      ambient_noise, 
-      website_url, 
-      transfer_phone, 
-      email_auto_respond, 
-      email_agent_tone, 
+      voice_provider,
+      first_message,
+      archetype,
+      ambient_noise,
+      website_url,
+      transfer_phone,
+      email_auto_respond,
+      email_agent_tone,
       email_signature,
       channel,
-      role
-    }).eq('id', req.params.id).eq('user_id', req.user.id);
-    
+      role,
+    };
+    if (profileValidation.data) {
+      for (const k of profileFields) {
+        if ((profileValidation.data as any)[k] !== undefined) {
+          (update as any)[k] = (profileValidation.data as any)[k];
+        }
+      }
+    }
+    // personality is not stored on the agent row — it lives in
+    // wireline_personality. The caller passes it in for the AgentForm
+    // contract, but we only care that it validated.
+    void personality;
+
+    await db.from('wireline_agents').update(update).eq('id', req.params.id).eq('user_id', req.user.id);
+
     // Audit log: agent update (sanitize sensitive fields)
     void auditLogger.logAgentOperation('updated', {
       userId: req.user.id,
@@ -4099,9 +4161,10 @@ app.put("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
       metadata: { changes: sanitizeForAudit(req.body) },
       ip: req.ip
     }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
-    
+
     res.json({ success: true });
   } catch (error) {
+    log.error("Failed to update agent", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to update agent" });
   }
 });
@@ -5503,6 +5566,32 @@ ${(directivesData?.data || []).map((d: any) => `[PRIORITY ${d.priority}] ${d.con
 ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "No specific knowledge base entries loaded."}
     `;
 
+  // Layer the agent's business profile (hours, compliance, guardrails,
+  // variables, KPI focus) onto the role-derived system prompt. If the
+  // current time is outside business hours, refuse the dial — saves the
+  // Vapi invocation cost and prevents off-hours customer outreach.
+  const runtimeProfile: AgentRuntimeProfile = {
+    timezone: agentConfig?.data?.timezone,
+    business_hours: agentConfig?.data?.business_hours,
+    compliance_mode: agentConfig?.data?.compliance_mode,
+    disallowed_topics: agentConfig?.data?.disallowed_topics,
+    escalation_keywords: agentConfig?.data?.escalation_keywords,
+    business_variables: agentConfig?.data?.business_variables,
+    out_of_hours_message: agentConfig?.data?.out_of_hours_message,
+    kpi_focus: agentConfig?.data?.kpi_focus,
+  };
+  const runtime = buildAgentRuntimeContext(systemPrompt, runtimeProfile);
+  if (!runtime.inHours) {
+    return {
+      ok: false,
+      status: 409,
+      error:
+        runtime.outOfHoursMessage
+        || "Outbound dialing is suspended outside this agent's configured business hours.",
+    };
+  }
+  const finalSystemPrompt = runtime.prompt;
+
   // Construct the server URL so Vapi can route tool-call and end-of-call
   // webhooks back to this agent's endpoint. Without this, outbound calls
   // have no tools and no post-call enrichment.
@@ -5525,7 +5614,7 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
       model: {
         provider: voiceLlmProvider,
         model: voiceLlmModel,
-        systemPrompt: systemPrompt,
+        systemPrompt: finalSystemPrompt,
         temperature: llmTemp,
         functions: buildRoleToolDefs(outboundAgentRole),
       },

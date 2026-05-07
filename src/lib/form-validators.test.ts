@@ -16,6 +16,9 @@ import {
   OutboundLeadSchema,
   OutboundBulkSchema,
   AppointmentSchema,
+  AgentBusinessProfileSchema,
+  BusinessHoursSchema,
+  BusinessVariablesSchema,
   parseFormData,
 } from "./form-validators";
 
@@ -421,5 +424,115 @@ describe("parseFormData helper", () => {
       // Path includes index + field — e.g. "messages.0.role"
       expect(keys.some((k) => k.includes("messages") && k.includes("role"))).toBe(true);
     }
+  });
+});
+
+describe("BusinessHoursSchema", () => {
+  it("accepts a typical M-F 9-5 schedule", () => {
+    expect(BusinessHoursSchema.safeParse({
+      mon: { open: "09:00", close: "17:00" },
+      tue: { open: "09:00", close: "17:00" },
+      wed: { open: "09:00", close: "17:00" },
+      thu: { open: "09:00", close: "17:00" },
+      fri: { open: "09:00", close: "17:00" },
+      sat: { closed: true },
+      sun: { closed: true },
+    }).success).toBe(true);
+  });
+
+  it("accepts partial schedules (only the days that matter)", () => {
+    expect(BusinessHoursSchema.safeParse({ thu: { open: "10:00", close: "14:00" } }).success).toBe(true);
+  });
+
+  it("accepts an overnight window (close < open)", () => {
+    expect(BusinessHoursSchema.safeParse({ fri: { open: "22:00", close: "06:00" } }).success).toBe(true);
+  });
+
+  it("rejects a non-HH:MM time string", () => {
+    expect(BusinessHoursSchema.safeParse({ mon: { open: "9am", close: "5pm" } }).success).toBe(false);
+  });
+
+  it("rejects unknown day keys (strict)", () => {
+    expect(BusinessHoursSchema.safeParse({ funday: { open: "09:00", close: "17:00" } } as any).success).toBe(false);
+  });
+});
+
+describe("BusinessVariablesSchema", () => {
+  it("accepts simple identifier keys + string/number values", () => {
+    expect(BusinessVariablesSchema.safeParse({
+      business_name: "Acme",
+      max_seats: 50,
+      website: "https://acme.test",
+    }).success).toBe(true);
+  });
+
+  it("rejects keys starting with a digit", () => {
+    expect(BusinessVariablesSchema.safeParse({ "1bad": "x" }).success).toBe(false);
+  });
+
+  it("rejects values longer than 500 chars", () => {
+    expect(BusinessVariablesSchema.safeParse({ blob: "x".repeat(501) }).success).toBe(false);
+  });
+
+  it("rejects more than 32 variables", () => {
+    const big: Record<string, string> = {};
+    for (let i = 0; i < 33; i++) big[`v${i}`] = "x";
+    expect(BusinessVariablesSchema.safeParse(big).success).toBe(false);
+  });
+
+  it("accepts up to 32 variables (boundary)", () => {
+    const ok: Record<string, string> = {};
+    for (let i = 0; i < 32; i++) ok[`v${i}`] = "x";
+    expect(BusinessVariablesSchema.safeParse(ok).success).toBe(true);
+  });
+});
+
+describe("AgentBusinessProfileSchema", () => {
+  it("accepts a fully-populated profile", () => {
+    const r = AgentBusinessProfileSchema.safeParse({
+      business_hours: { mon: { open: "09:00", close: "17:00" }, sat: { closed: true } },
+      timezone: "America/New_York",
+      compliance_mode: "hipaa",
+      disallowed_topics: ["medical advice", "legal opinions"],
+      escalation_keywords: ["lawsuit", "speak to a manager"],
+      business_variables: { business_name: "Acme Pharmacy" },
+      out_of_hours_message: "Thanks for calling — we'll be back at 9am.",
+      kpi_focus: "satisfaction",
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("accepts an empty profile (all fields optional)", () => {
+    expect(AgentBusinessProfileSchema.safeParse({}).success).toBe(true);
+  });
+
+  it("rejects unknown compliance modes", () => {
+    expect(AgentBusinessProfileSchema.safeParse({ compliance_mode: "sox" }).success).toBe(false);
+  });
+
+  it("rejects unknown kpi focus values", () => {
+    expect(AgentBusinessProfileSchema.safeParse({ kpi_focus: "vibes" }).success).toBe(false);
+  });
+
+  it("caps disallowed_topics at 24", () => {
+    const big = Array(25).fill("topic");
+    expect(AgentBusinessProfileSchema.safeParse({ disallowed_topics: big }).success).toBe(false);
+  });
+
+  it("caps escalation_keywords at 24", () => {
+    const big = Array(25).fill("trigger");
+    expect(AgentBusinessProfileSchema.safeParse({ escalation_keywords: big }).success).toBe(false);
+  });
+
+  it("caps out_of_hours_message at 500 chars", () => {
+    expect(AgentBusinessProfileSchema.safeParse({ out_of_hours_message: "x".repeat(501) }).success).toBe(false);
+  });
+
+  it("strict mode rejects unknown top-level keys", () => {
+    expect(AgentBusinessProfileSchema.safeParse({ some_random_key: "x" } as any).success).toBe(false);
+  });
+
+  it("allows out_of_hours_message to be explicitly null (clearing the value)", () => {
+    expect(AgentBusinessProfileSchema.safeParse({ out_of_hours_message: null }).success).toBe(true);
   });
 });
