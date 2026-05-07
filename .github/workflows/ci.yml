@@ -54,7 +54,24 @@ jobs:
             ${{ runner.os }}-node20-npm-
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        id: install
+        run: npm ci --no-audit --no-fund --loglevel=verbose
+
+      # If install fails, the previous step's output is usually truncated.
+      # Dumping the latest npm debug log here surfaces the underlying error
+      # (network, registry auth, native-binary download, etc.).
+      - name: Dump npm logs on failure
+        if: failure() && steps.install.conclusion == 'failure'
+        run: |
+          echo "::group::npm debug logs"
+          for f in $(ls -t ~/.npm/_logs/ 2>/dev/null | head -3); do
+            echo "--- ~/.npm/_logs/$f ---"
+            cat "$HOME/.npm/_logs/$f" || true
+          done
+          echo "::endgroup::"
+          echo "::group::Reachability"
+          curl -sS -o /dev/null -w "registry.npmjs.org: %{http_code} (%{time_total}s)\n" https://registry.npmjs.org/ || true
+          echo "::endgroup::"
 
       - name: TypeScript typecheck
         run: npx tsc --noEmit
