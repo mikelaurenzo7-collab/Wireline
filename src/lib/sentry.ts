@@ -37,24 +37,50 @@ export async function initSentry() {
     return;
   }
 
-  const Sentry = await import("@sentry/react");
+  // If the chunk fails to load (CSP, blocked request, stale deploy,
+  // network drop) we must still drain the buffer somewhere — otherwise
+  // later captureException calls would silently append to a queue that
+  // never flushes. Fall back to console output and mark the state as
+  // "noop" so subsequent calls go straight to console too.
+  let Sentry: SentryNamespace;
+  try {
+    Sentry = await import("@sentry/react");
+  } catch (loadErr) {
+    // eslint-disable-next-line no-console
+    console.error("[wireline] Sentry SDK failed to load:", loadErr);
+    state = "noop";
+    flushPendingToConsole();
+    return;
+  }
   sentryRef = Sentry;
 
-  Sentry.init({
-    dsn,
-    environment: import.meta.env.MODE,
-    // Default sample rates — operator can override via VITE_SENTRY_TRACES_SAMPLE_RATE.
-    tracesSampleRate: Number(import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE ?? 0.1),
-    // Release tag picks up Vercel's auto-set commit SHA when present.
-    release: (import.meta.env.VITE_VERCEL_GIT_COMMIT_SHA as string | undefined) || undefined,
-    // Filter out noisy 'cancelled fetch' / 'AbortError' that fire when users
-    // navigate away mid-request — those aren't real errors.
-    beforeSend(event, hint) {
-      const err = hint?.originalException as any;
-      if (err?.name === "AbortError") return null;
-      return event;
-    },
-  });
+  try {
+    Sentry.init({
+      dsn,
+      environment: import.meta.env.MODE,
+      // Default sample rates — operator can override via VITE_SENTRY_TRACES_SAMPLE_RATE.
+      tracesSampleRate: Number(import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE ?? 0.1),
+      // Release tag picks up Vercel's auto-set commit SHA when present.
+      release: (import.meta.env.VITE_VERCEL_GIT_COMMIT_SHA as string | undefined) || undefined,
+      // Filter out noisy 'cancelled fetch' / 'AbortError' that fire when users
+      // navigate away mid-request — those aren't real errors.
+      beforeSend(event, hint) {
+        const err = hint?.originalException as any;
+        if (err?.name === "AbortError") return null;
+        return event;
+      },
+    });
+  } catch (initErr) {
+    // Same shape as the import-load failure: SDK is loaded but init blew
+    // up (bad DSN format, conflicting global state, etc.). Don't trap
+    // future errors in the pending queue.
+    // eslint-disable-next-line no-console
+    console.error("[wireline] Sentry init failed:", initErr);
+    sentryRef = null;
+    state = "noop";
+    flushPendingToConsole();
+    return;
+  }
   state = "ready";
 
   // Drain anything captured before the dynamic import resolved.

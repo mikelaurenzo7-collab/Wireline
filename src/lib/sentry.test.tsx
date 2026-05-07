@@ -147,5 +147,49 @@ describe("sentry wrapper", () => {
       await initSentry();
       expect(sentryInit.mock.calls[0][0].tracesSampleRate).toBe(0.1);
     });
+
+    it("falls back to console.error if Sentry.init throws (SDK loaded but init failed)", async () => {
+      // Regression: a thrown init left state stuck on "pending" so all
+      // future captureException calls silently appended to the bounded
+      // queue and never flushed to anywhere observable.
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      sentryInit.mockImplementationOnce(() => { throw new Error("bad DSN format"); });
+      const { initSentry, captureException } = await import("./sentry");
+      // Buffer a call before init runs.
+      captureException(new Error("early"), { phase: "render" });
+      await initSentry();
+      // The thrown init should have transitioned state → noop and
+      // drained the queue to console, not Sentry.
+      expect(sentryCaptureException).not.toHaveBeenCalled();
+      // Also covers the ongoing "noop" path: post-init calls go straight
+      // to console rather than being silently buffered forever.
+      captureException(new Error("post-init"), { phase: "click" });
+      // Two console errors for the captured exceptions plus one for the
+      // SDK-init failure log line.
+      expect(consoleSpy).toHaveBeenCalledTimes(3);
+      consoleSpy.mockRestore();
+    });
+
+    it("falls back to console.error if the lazy @sentry/react chunk fails to load", async () => {
+      // Use vi.doMock to inject an import-failing mock for this test only.
+      vi.resetModules();
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      vi.doMock("@sentry/react", () => {
+        throw new Error("chunk load failed (network blocked)");
+      });
+      try {
+        const { initSentry, captureException } = await import("./sentry");
+        captureException(new Error("early"));
+        await initSentry();
+        // No Sentry call (we're using the per-test doMock that throws),
+        // and post-init calls now hit console directly.
+        captureException(new Error("post-init"));
+        // 1 for the load-failure log line + 2 captured errors.
+        expect(consoleSpy).toHaveBeenCalledTimes(3);
+      } finally {
+        vi.doUnmock("@sentry/react");
+        consoleSpy.mockRestore();
+      }
+    });
   });
 });
