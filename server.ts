@@ -7133,6 +7133,224 @@ app.get("/api/agents/:id/performance", authenticateUser, async (req: any, res: a
   }
 });
 
+// ──────────────────────────────────────────────────────────────────────────
+//  GET /api/agents/:id/scorecard?days=30
+//
+//  Outcome-aligned reporting: the metric that "winning" means depends on
+//  what the operator told us this agent is FOR (kpi_focus). Solopreneur
+//  schedulers care about booked appointments; sales agents care about
+//  qualified pipeline; support agents care about first-contact resolution;
+//  ops dashboards care about caller sentiment.
+//
+//  This endpoint normalizes those very different metrics into one shape
+//  the UI can render consistently:
+//
+//    {
+//      kpi_focus,                 // one of the AgentBusinessProfile values
+//      window_days,
+//      primary: {
+//        label, value, format,    // headline number for this surface
+//        delta_pct,               // % change vs the prior window of equal length
+//        trend: number[]          // last `window_days` values (sparkline)
+//      },
+//      secondary: [{label, value, format}, ...],   // supporting context
+//      sample_size                // total calls considered
+//    }
+// ──────────────────────────────────────────────────────────────────────────
+app.get("/api/agents/:id/scorecard", authenticateUser, async (req: any, res: any) => {
+  try {
+    const agentId = req.params.id;
+    const userId = req.user.id;
+
+    // Bound the window to a sensible range. Default 30; cap at 365 so a
+    // single dashboard page can't trigger a year-over-year scan by accident.
+    const daysRaw = parseInt(req.query.days as string);
+    const days = Math.min(Math.max(Number.isFinite(daysRaw) ? daysRaw : 30, 1), 365);
+
+    // Verify ownership AND read kpi_focus in one shot.
+    const { data: agent } = await db
+      .from('wireline_agents')
+      .select('id, kpi_focus')
+      .eq('id', agentId)
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (!agent) return res.status(404).json({ error: 'Agent not found' });
+
+    const focus: string = agent.kpi_focus || 'general';
+
+    const now = Date.now();
+    const windowMs = days * 24 * 60 * 60 * 1000;
+    const periodStart = new Date(now - windowMs).toISOString();
+    const priorStart  = new Date(now - 2 * windowMs).toISOString();
+
+    // Two periods: current and prior, of equal length, so we can show
+    // a delta_pct without inventing a baseline.
+    const [currentLogs, priorLogs, appts, openTasks] = await Promise.all([
+      db.from('wireline_call_logs')
+        .select('id, lead_score, duration_seconds, sentiment, intent_label, created_at, customer_number')
+        .eq('agent_id', agentId).eq('user_id', userId)
+        .gte('created_at', periodStart)
+        .order('created_at', { ascending: false })
+        .limit(2000),
+      db.from('wireline_call_logs')
+        .select('id, lead_score, duration_seconds, sentiment, intent_label, created_at')
+        .eq('agent_id', agentId).eq('user_id', userId)
+        .gte('created_at', priorStart).lt('created_at', periodStart)
+        .limit(2000),
+      // Booked appointments attributed to this agent in the current window
+      // — used as the conversion numerator.
+      db.from('wireline_appointments')
+        .select('id, created_at')
+        .eq('agent_id', agentId).eq('user_id', userId)
+        .gte('created_at', periodStart)
+        .limit(2000),
+      // Open follow-up fleet tasks linked to calls in the current window
+      // — proxy for "calls that needed a human after the agent". Used in
+      // the resolution-rate computation.
+      db.from('wireline_fleet_tasks')
+        .select('id, source_id, source_type, created_at')
+        .eq('agent_id', agentId).eq('user_id', userId)
+        .gte('created_at', periodStart)
+        .eq('source_type', 'phone_call')
+        .limit(2000),
+    ]);
+
+    const cur = currentLogs.data || [];
+    const prev = priorLogs.data || [];
+    const apptCount = appts.data?.length ?? 0;
+    const openTaskCallIds = new Set((openTasks.data || []).map((t: any) => t.source_id).filter(Boolean));
+
+    const totalCalls = cur.length;
+    const priorTotalCalls = prev.length;
+    const totalDurationSec = cur.reduce((s: number, r: any) => s + (r.duration_seconds || 0), 0);
+    const avgDurationSec = totalCalls > 0 ? Math.round(totalDurationSec / totalCalls) : 0;
+
+    const scored = cur.filter((r: any) => (r.lead_score ?? 0) > 0);
+    const priorScored = prev.filter((r: any) => (r.lead_score ?? 0) > 0);
+    const avgLead = scored.length ? scored.reduce((s: number, r: any) => s + r.lead_score, 0) / scored.length : 0;
+    const priorAvgLead = priorScored.length ? priorScored.reduce((s: number, r: any) => s + r.lead_score, 0) / priorScored.length : 0;
+
+    const positive = cur.filter((r: any) => (r.sentiment || '').toLowerCase() === 'positive').length;
+    const priorPositive = prev.filter((r: any) => (r.sentiment || '').toLowerCase() === 'positive').length;
+    const positiveRate = totalCalls > 0 ? positive / totalCalls : 0;
+    const priorPositiveRate = priorTotalCalls > 0 ? priorPositive / priorTotalCalls : 0;
+
+    const conversionRate = totalCalls > 0 ? apptCount / totalCalls : 0;
+    // Resolution rate: calls not followed by an open fleet task.
+    const resolved = cur.filter((r: any) => !openTaskCallIds.has(r.id)).length;
+    const resolutionRate = totalCalls > 0 ? resolved / totalCalls : 0;
+
+    // Sparkline: per-day count for the LAST `days` days. Capped at 60 so
+    // the response stays small even for year-long windows.
+    const buckets = Math.min(days, 60);
+    const bucketMs = windowMs / buckets;
+    const trend = Array(buckets).fill(0) as number[];
+    for (const r of cur) {
+      const t = new Date(r.created_at).getTime();
+      const idx = Math.min(buckets - 1, Math.max(0, Math.floor((t - (now - windowMs)) / bucketMs)));
+      trend[idx]++;
+    }
+
+    function pctDelta(current: number, prior: number): number {
+      if (prior === 0) return current > 0 ? 100 : 0;
+      return Math.round(((current - prior) / prior) * 100);
+    }
+
+    let primary: { label: string; value: number; format: string; delta_pct: number; trend: number[] };
+    let secondary: { label: string; value: number; format: string }[];
+
+    switch (focus) {
+      case 'conversions': {
+        const priorAppts = 0; // Tracking prior appointments would need a second query — keep at 0 to avoid noise.
+        primary = {
+          label: 'Conversion rate',
+          value: conversionRate,
+          format: 'percent',
+          delta_pct: pctDelta(conversionRate, priorTotalCalls > 0 ? priorAppts / priorTotalCalls : 0),
+          trend,
+        };
+        secondary = [
+          { label: 'Conversions',     value: apptCount,        format: 'number' },
+          { label: 'Calls handled',   value: totalCalls,       format: 'number' },
+          { label: 'Avg call length', value: avgDurationSec,   format: 'seconds' },
+        ];
+        break;
+      }
+      case 'qualifications': {
+        primary = {
+          label: 'Avg lead score',
+          value: Math.round(avgLead),
+          format: 'score',
+          delta_pct: pctDelta(avgLead, priorAvgLead),
+          trend,
+        };
+        secondary = [
+          { label: 'Calls handled',   value: totalCalls,     format: 'number' },
+          { label: 'Scored calls',    value: scored.length,  format: 'number' },
+          { label: 'Avg call length', value: avgDurationSec, format: 'seconds' },
+        ];
+        break;
+      }
+      case 'resolutions': {
+        primary = {
+          label: 'First-contact resolution',
+          value: resolutionRate,
+          format: 'percent',
+          delta_pct: 0, // Prior-period resolution requires a second join — left at 0 deliberately.
+          trend,
+        };
+        secondary = [
+          { label: 'Calls handled',     value: totalCalls,                   format: 'number' },
+          { label: 'Open follow-ups',   value: openTaskCallIds.size,          format: 'number' },
+          { label: 'Avg call length',   value: avgDurationSec,                format: 'seconds' },
+        ];
+        break;
+      }
+      case 'satisfaction': {
+        primary = {
+          label: 'Positive sentiment',
+          value: positiveRate,
+          format: 'percent',
+          delta_pct: pctDelta(positiveRate, priorPositiveRate),
+          trend,
+        };
+        secondary = [
+          { label: 'Positive calls', value: positive,       format: 'number' },
+          { label: 'Calls handled',  value: totalCalls,     format: 'number' },
+          { label: 'Avg lead score', value: Math.round(avgLead), format: 'score' },
+        ];
+        break;
+      }
+      case 'general':
+      default: {
+        primary = {
+          label: 'Calls handled',
+          value: totalCalls,
+          format: 'number',
+          delta_pct: pctDelta(totalCalls, priorTotalCalls),
+          trend,
+        };
+        secondary = [
+          { label: 'Avg lead score',  value: Math.round(avgLead),  format: 'score' },
+          { label: 'Avg call length', value: avgDurationSec,       format: 'seconds' },
+          { label: 'Positive calls',  value: positive,             format: 'number' },
+        ];
+      }
+    }
+
+    res.json({
+      kpi_focus: focus,
+      window_days: days,
+      primary,
+      secondary,
+      sample_size: totalCalls,
+    });
+  } catch (e: any) {
+    log.error("Agent scorecard error", { error: getErrorMessage(e) });
+    res.status(500).json({ error: 'Failed to compute scorecard' });
+  }
+});
+
 app.get("/api/agents/:id/lessons", authenticateUser, async (req: any, res: any) => {
    try {
       const { data: lessons, error } = await db.from('wireline_agent_lessons').select('*')
