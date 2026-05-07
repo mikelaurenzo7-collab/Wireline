@@ -63,13 +63,14 @@ export default function PageShell({
         initial={{ y: -10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="shrink-0 pb-5 mb-1"
+        className="shrink-0 pb-3 sm:pb-5 mb-1"
       >
-        {/* eyebrow + actions row */}
-        <div className="flex items-start justify-between gap-6 mb-3">
+        {/* eyebrow + actions row — stacks on mobile so action buttons
+            don't get squeezed against the title or fall off-canvas. */}
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-6 mb-3">
           <div className="min-w-0 flex-1">
             {eyebrow && (
-              <div className="flex items-center gap-2 mb-2.5">
+              <div className="flex items-center gap-2 mb-2 sm:mb-2.5">
                 <span className="hero-accent-line shrink-0" />
                 <p className="text-[9px] uppercase tracking-[0.52em] text-muted/70 truncate">
                   {eyebrow}
@@ -77,19 +78,21 @@ export default function PageShell({
               </div>
             )}
             <h1 className="font-display italic leading-[0.88] tracking-tight text-ink truncate"
-              style={{ fontSize: "clamp(2rem, 4vw, 3.25rem)" }}
+              // Smaller floor on phones; the original 2rem was too tall to
+              // share a line with mobile-header buttons on narrow screens.
+              style={{ fontSize: "clamp(1.6rem, 6vw, 3.25rem)" }}
             >
               <span className="text-aurora">{title}</span>
             </h1>
             {subtitle && (
-              <p className="text-[11px] text-muted/70 mt-2.5 max-w-2xl leading-relaxed truncate">
+              <p className="text-[11px] text-muted/70 mt-2 sm:mt-2.5 max-w-2xl leading-relaxed line-clamp-2 sm:truncate">
                 {subtitle}
               </p>
             )}
           </div>
 
           {actions && (
-            <div className="shrink-0 flex items-center gap-2 pt-1">{actions}</div>
+            <div className="shrink-0 flex flex-wrap items-center gap-2 sm:pt-1">{actions}</div>
           )}
         </div>
 

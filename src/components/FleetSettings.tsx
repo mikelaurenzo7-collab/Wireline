@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, Plus, Phone, Bot, Save, Loader2, Link as LinkIcon, Copy, Trash2, Megaphone, Mail, Pencil, Sparkles, Terminal, ChevronRight, Zap, Target, Radio, Settings2, Shield, Briefcase, RefreshCw, LayoutGrid, Clock } from "lucide-react";
+import { Users, Plus, Phone, Bot, Save, Loader2, Link as LinkIcon, Copy, Trash2, Megaphone, Mail, Pencil, Sparkles, Terminal, ChevronRight, ChevronLeft, Zap, Target, Radio, Settings2, Shield, Briefcase, RefreshCw, LayoutGrid, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch, safeJson } from "../lib/api";
@@ -356,8 +356,12 @@ export default function FleetSettings() {
         ) : (
     <div id="fleet-panel-fleet" role="tabpanel" tabIndex={0} className="h-full flex flex-col md:flex-row">
 
-      {/* Sidebar: Agents List */}
-      <aside className="w-full md:w-[420px] border-b md:border-b-0 md:border-r border-white/8 h-auto md:h-full flex flex-col shrink-0">
+      {/* Sidebar: Agents List — full-width on mobile; collapses when an
+          agent is selected so the detail editor gets the full viewport. */}
+      <aside className={cn(
+        "w-full md:w-[420px] border-b md:border-b-0 md:border-r border-white/8 h-auto md:h-full flex flex-col shrink-0",
+        selectedAgent && "hidden md:flex"
+      )}>
         <div className="px-4 py-3 border-b border-white/8 flex items-center justify-between gap-3 shrink-0">
           <div className="min-w-0">
             <div className="text-[10px] uppercase tracking-[0.45em] text-brand/80">Fleet · Agents</div>
@@ -520,8 +524,23 @@ export default function FleetSettings() {
         </div>
       </aside>
 
-      {/* Main Panel: Agent Configuration */}
-      <main className="flex-1 h-full overflow-y-auto px-3 py-3 scrollbar-hide">
+      {/* Main Panel: Agent Configuration — hidden on mobile when nothing
+          is selected (the list takes the full viewport in that state). */}
+      <main className={cn(
+        "flex-1 h-full overflow-y-auto px-3 py-3 scrollbar-hide",
+        !selectedAgent && "hidden md:block"
+      )}>
+        {/* Mobile-only back button — clears selectedAgent so the list
+            reappears. Hidden on md+ where both panes coexist. */}
+        {selectedAgent && (
+          <button
+            onClick={() => setSelectedAgent(null)}
+            aria-label="Back to agent list"
+            className="md:hidden mb-3 inline-flex items-center gap-2 px-3 h-10 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.28em] text-ink/80 hover:border-brand/40 active:scale-95 transition-all"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" /> Back to fleet
+          </button>
+        )}
         <AnimatePresence mode="wait">
           {!selectedAgent ? (
             <motion.div

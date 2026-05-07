@@ -3,7 +3,7 @@ import {
   PhoneIncoming, PhoneOutgoing, Clock, FileText, Search, Loader2,
   MessageCircle, ChevronRight, Database, Activity, Signal, ExternalLink,
   Download, Filter, SmilePlus, Meh, Frown, MessageSquare, Star, Sparkles,
-  Phone,
+  Phone, ArrowLeft,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
@@ -108,8 +108,14 @@ export default function CallLogs() {
       actions={actions}
     >
       <div className="h-full grid grid-cols-12 gap-3">
-        {/* List pane */}
-        <div className="col-span-12 lg:col-span-5 xl:col-span-4 h-full">
+        {/* List pane — hidden on mobile when a call is selected so the
+            detail pane gets the full viewport. The detail's "Back" affordance
+            (rendered below in the empty-detail branch + inside CallDetail)
+            clears selectedCall to bring the list back. */}
+        <div className={cn(
+          "col-span-12 lg:col-span-5 xl:col-span-4 h-full",
+          selectedCall && "hidden lg:block"
+        )}>
           <Panel
             title={`${filteredCalls.length} calls`}
             hint={loading ? "Loading…" : "All calls"}
@@ -232,9 +238,13 @@ export default function CallLogs() {
           </Panel>
         </div>
 
-        {/* Detail pane */}
-        <div className="col-span-12 lg:col-span-7 xl:col-span-8 h-full">
-          {selectedCall ? <CallDetail call={selectedCall} formatDuration={formatDuration} /> : (
+        {/* Detail pane — hidden on mobile when nothing is selected so the
+            list takes the full viewport. */}
+        <div className={cn(
+          "col-span-12 lg:col-span-7 xl:col-span-8 h-full",
+          !selectedCall && "hidden lg:block"
+        )}>
+          {selectedCall ? <CallDetail call={selectedCall} formatDuration={formatDuration} onBack={() => setSelectedCall(null)} /> : (
             <Panel title="Call Detail" hint="Select a call" icon={FileText}>
               <div className="h-full flex flex-col items-center justify-center gap-4 text-center">
                 <div className="w-16 h-16 rounded-2xl glass border border-white/10 flex items-center justify-center">
@@ -262,7 +272,7 @@ function SentimentDot({ sentiment }: { sentiment?: string }) {
   return <Meh className="w-3 h-3 text-muted/40 shrink-0" aria-label="Neutral sentiment" />;
 }
 
-function CallDetail({ call, formatDuration }: { call: any; formatDuration: (s: number) => string }) {
+function CallDetail({ call, formatDuration, onBack }: { call: any; formatDuration: (s: number) => string; onBack?: () => void }) {
   const { success: toastSuccess, error: toastError } = useToast();
   type DTab = "summary" | "transcript" | "record";
   const [tab, setTab] = useState<DTab>("summary");
@@ -318,7 +328,16 @@ function CallDetail({ call, formatDuration }: { call: any; formatDuration: (s: n
       icon={call.direction === "inbound" ? PhoneIncoming : PhoneOutgoing}
       flush
       actions={
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-wrap justify-end">
+          {onBack && (
+            <button
+              onClick={onBack}
+              aria-label="Back to call list"
+              className="lg:hidden h-7 px-2 rounded-full border glass border-white/10 text-muted hover:text-ink hover:border-white/30 transition-all flex items-center gap-1 shrink-0 text-[9px] uppercase tracking-[0.22em]"
+            >
+              <ArrowLeft className="w-2.5 h-2.5" /> Back
+            </button>
+          )}
           <button
             onClick={handleScoreQa}
             disabled={scoring}

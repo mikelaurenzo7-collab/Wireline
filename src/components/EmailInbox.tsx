@@ -179,14 +179,15 @@ export default function EmailInbox() {
       actions={syncAction}
     >
       <div className="h-full flex flex-col lg:flex-row gap-3 min-h-0">
-        {/* Thread list */}
+        {/* Thread list — full-width on mobile; hides when a thread is
+            selected so the reader gets the full viewport. */}
         <Panel
           title="Threads"
           hint="ALL CONVERSATIONS"
           icon={Inbox}
           scroll
           flush
-          className="lg:w-[420px] shrink-0"
+          className={cn("lg:w-[420px] shrink-0", selectedThread && "hidden lg:flex")}
           actions={
             <span className="text-[9px] uppercase tracking-[0.3em] text-muted/70 tabular-nums">
               {threads.length}
@@ -294,13 +295,16 @@ export default function EmailInbox() {
                 className="h-full flex flex-col min-h-0"
               >
                 {/* Subject header */}
-                <div className="shrink-0 px-4 py-3 border-b border-white/8 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
+                <div className="shrink-0 px-3 sm:px-4 py-3 border-b border-white/8 flex items-center justify-between gap-2 sm:gap-3">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                     <button
-                      className="lg:hidden w-8 h-8 rounded-lg glass border border-white/10 flex items-center justify-center text-ink shrink-0"
+                      // 44x44 hit area meets the WCAG 2.5.5 / Apple HIG touch
+                      // target minimum on mobile; the visible icon stays small.
+                      className="lg:hidden w-11 h-11 rounded-lg glass border border-white/10 flex items-center justify-center text-ink shrink-0 active:scale-95 transition-transform"
                       onClick={() => setSelectedThread(null)}
+                      aria-label="Back to thread list"
                     >
-                      <ChevronRight className="w-3.5 h-3.5 rotate-180" />
+                      <ChevronRight className="w-4 h-4 rotate-180" />
                     </button>
                     <div className={cn(
                       "shrink-0 w-12 h-12 rounded-xl glass border flex flex-col items-center justify-center",
