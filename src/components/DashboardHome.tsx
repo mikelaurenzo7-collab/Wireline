@@ -17,6 +17,7 @@ import DailyBrief from "./DailyBrief";
 import PerformanceBenchmarks from "./PerformanceBenchmarks";
 import OnboardingQuickstart from "./OnboardingQuickstart";
 import PageShell, { Panel, StatTile } from "./PageShell";
+import WidgetBoundary from "./WidgetBoundary";
 import { authFetch } from "../lib/api";
 import { formatDate } from "../lib/safe-date";
 import { useToast } from "../contexts/ToastContext";
@@ -529,17 +530,23 @@ export default function DashboardHome() {
     <div className="h-full grid grid-cols-12 gap-3">
       <div className="col-span-12 lg:col-span-7 h-full overflow-hidden">
         <Panel title="Daily Brief" hint="AI Summary" icon={Sparkles} scroll>
-          <DailyBrief />
+          <WidgetBoundary label="Daily Brief">
+            <DailyBrief />
+          </WidgetBoundary>
         </Panel>
       </div>
       <div className="col-span-12 lg:col-span-5 h-full overflow-hidden">
         <Panel title="Quickstart" hint="First-run" icon={Activity} scroll>
-          <OnboardingQuickstart />
+          <WidgetBoundary label="Quickstart">
+            <OnboardingQuickstart />
+          </WidgetBoundary>
         </Panel>
       </div>
       <div className="col-span-12 h-full overflow-hidden">
         <Panel title="How am I doing?" hint="Performance · 30-day window" icon={TrendingUp} scroll>
-          <PerformanceBenchmarks />
+          <WidgetBoundary label="Performance Benchmarks">
+            <PerformanceBenchmarks />
+          </WidgetBoundary>
         </Panel>
       </div>
     </div>
@@ -654,7 +661,9 @@ export default function DashboardHome() {
           )}
         </Panel>
         <Panel title="Fleet Tasks" hint="Bridge" icon={Inbox} scroll>
-          <FleetTaskBridge />
+          <WidgetBoundary label="Fleet Tasks">
+            <FleetTaskBridge />
+          </WidgetBoundary>
         </Panel>
       </div>
     </div>
@@ -709,7 +718,9 @@ export default function DashboardHome() {
       </div>
       <div className="col-span-12 lg:col-span-4 h-full">
         <Panel title="Activity Feed" hint="Live activity" icon={Activity} scroll>
-          <TriggerIntelligenceFeed activity={systemActivity} />
+          <WidgetBoundary label="Activity Feed">
+            <TriggerIntelligenceFeed activity={systemActivity} />
+          </WidgetBoundary>
         </Panel>
       </div>
     </div>
