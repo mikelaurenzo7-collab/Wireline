@@ -31,6 +31,7 @@ import { getErrorMessage, sanitizeForAudit } from "./src/lib/server-utils";
 import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "./src/lib/agent-runtime";
 import { computeScorecard } from "./src/lib/agent-scorecard";
 import { computeDashboardStats } from "./src/lib/dashboard-stats";
+import { extractCapturedProfileIntel, buildCustomerIntelBlock } from "./src/lib/customer-intel";
 
 // On Vercel, VERCEL_URL is automatically set to the deployment hostname
 // (e.g. "myapp-abc123.vercel.app") with no protocol or trailing slash.
@@ -3103,29 +3104,9 @@ function buildCallerProfileBlock(pastCalls: any[], isOutbound = false): string {
   return `${heading}\n${isOutbound ? "This contact has called before. Review and use naturally:" : "This caller has contact history. Use this immediately — do NOT wait to call view_recent_interactions:"}\n${lines.join("\n")}\n${instruction}\n`;
 }
 
-/**
- * Extract the intel payload from a customer_profile_captured task description.
- * Format: "[CUSTOMER PROFILE] <phone> — <intel>"
- * Splitting on " — " is intentionally simple so the helper stays resilient
- * to phone number format changes.
- */
-function extractCapturedProfileIntel(description: string): string {
-  if (!description) return "";
-  const separatorIdx = description.indexOf(" — ");
-  return separatorIdx >= 0 ? description.slice(separatorIdx + 3).trim() : description.trim();
-}
-
-/**
- * Build a CUSTOMER INTEL block to inject into agent system prompts when a
- * contact has had profile data captured in a previous call.
- */
-function buildCustomerIntelBlock(rawDescription: string, isOutbound = false): string {
-  const intel = extractCapturedProfileIntel(rawDescription);
-  if (!intel) return "";
-  return isOutbound
-    ? `## ⚡ CUSTOMER INTEL — FROM PREVIOUS CALLS\n${intel}\nUSE THIS: This contact has shared this intel before. Reference it naturally to show continuity and build immediate trust.`
-    : `## ⚡ CUSTOMER INTEL — FROM PREVIOUS CALLS\n${intel}\nUSE THIS: Weave this context in naturally. It tells you what this contact cares about and where they stand.`;
-}
+// extractCapturedProfileIntel + buildCustomerIntelBlock now live in
+// src/lib/customer-intel.ts so they can be unit-tested in isolation.
+// (Removed inline definitions; see imports above.)
 
 /**
  * Maps each agent role to the outbound archetype that best fits how that role

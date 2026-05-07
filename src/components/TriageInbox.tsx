@@ -11,6 +11,7 @@ import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import CsvExportButton from "./CsvExportButton";
 import PageShell, { Panel } from "./PageShell";
 import EmptyState from "./EmptyState";
+import WidgetBoundary from "./WidgetBoundary";
 
 interface TriageData {
   hot_leads: any[];
@@ -81,11 +82,11 @@ export default function TriageInbox() {
         </>
       }
       tabs={[
-        { id: "hot",         label: "Hot Leads",     icon: Flame,        badge: counts.hot_leads,       content: wrap(Flame, "Hot intent", <HotLeads items={data?.hot_leads || []} />) },
-        { id: "compliance",  label: "Compliance",    icon: ShieldAlert,  badge: counts.compliance,      content: wrap(ShieldAlert, "Flags",  <ComplianceList items={data?.compliance || []} />) },
-        { id: "knowledge",   label: "Gaps",          icon: BookOpen,     badge: counts.knowledge_gaps,  content: wrap(BookOpen, "Capture",   <KnowledgeGaps items={data?.knowledge_gaps || []} onRefresh={fetchData} />) },
-        { id: "tasks",       label: "Tasks",         icon: ListTodo,     badge: counts.pending_tasks,   content: wrap(ListTodo, "Open",      <OpenTasks items={data?.pending_tasks || []} />) },
-        { id: "escalations", label: "Escalations",   icon: AlertOctagon, badge: counts.escalations,     content: wrap(AlertOctagon, "Critical", <Escalations items={data?.escalations || []} />) },
+        { id: "hot",         label: "Hot Leads",     icon: Flame,        badge: counts.hot_leads,       content: wrap(Flame, "Hot intent", <WidgetBoundary label="Hot Leads"><HotLeads items={data?.hot_leads || []} /></WidgetBoundary>) },
+        { id: "compliance",  label: "Compliance",    icon: ShieldAlert,  badge: counts.compliance,      content: wrap(ShieldAlert, "Flags",  <WidgetBoundary label="Compliance"><ComplianceList items={data?.compliance || []} /></WidgetBoundary>) },
+        { id: "knowledge",   label: "Gaps",          icon: BookOpen,     badge: counts.knowledge_gaps,  content: wrap(BookOpen, "Capture",   <WidgetBoundary label="Knowledge Gaps"><KnowledgeGaps items={data?.knowledge_gaps || []} onRefresh={fetchData} /></WidgetBoundary>) },
+        { id: "tasks",       label: "Tasks",         icon: ListTodo,     badge: counts.pending_tasks,   content: wrap(ListTodo, "Open",      <WidgetBoundary label="Open Tasks"><OpenTasks items={data?.pending_tasks || []} /></WidgetBoundary>) },
+        { id: "escalations", label: "Escalations",   icon: AlertOctagon, badge: counts.escalations,     content: wrap(AlertOctagon, "Critical", <WidgetBoundary label="Escalations"><Escalations items={data?.escalations || []} /></WidgetBoundary>) },
       ]}
     />
   );
