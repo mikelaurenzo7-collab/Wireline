@@ -6994,14 +6994,27 @@ function claudeErr(res: any, e: any, endpoint: string = '/api/claude') {
       code: "CLAUDE_OFFLINE",
     });
   }
-  log.error("Claude endpoint error", { error: e?.message || String(e), endpoint });
+
+  const errorMsg = getErrorMessage(e);
+  log.error("Claude endpoint error", { error: errorMsg, endpoint });
   // Track AI API errors with detailed context for debugging
   SentryEvents.aiApiFailure({
     endpoint,
-    error_message: e?.message || String(e),
+    error_message: errorMsg,
     model: 'claude',
   });
-  return res.status(500).json({ error: e?.message ?? "Claude error" });
+
+  // Surface known Anthropic SDK error shapes (rate limit, validation,
+  // overload) — these are useful to the client. Otherwise return a
+  // generic message so internal stack traces / file paths don't leak.
+  const isKnownApiError =
+    e?.status >= 400 && e?.status < 600 &&
+    typeof e?.message === 'string' &&
+    e.message.length < 500;
+
+  return res.status(500).json({
+    error: isKnownApiError ? e.message : "Claude request failed",
+  });
 }
 
 /**
