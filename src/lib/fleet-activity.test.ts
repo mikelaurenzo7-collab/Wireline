@@ -45,7 +45,7 @@ describe('callLogToActivity', () => {
     expect(a.importance).toBe('medium');
   });
 
-  it('null lead_score is treated as low importance (not crashing)', () => {
+  it('null lead_score is treated as medium importance (not crashing)', () => {
     const a = callLogToActivity({ id: '3', created_at: T(0), lead_score: null });
     expect(a.importance).toBe('medium');
   });

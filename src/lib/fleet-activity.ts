@@ -116,9 +116,10 @@ export function emailThreadToActivity(e: EmailThreadRow): ActivityEntry {
   };
 }
 
-// Returns NaN-safe ms timestamp so unsorted/garbage created_at values
-// don't poison the comparison. NaN comparisons are always false, so
-// invalid rows sink to the bottom rather than crashing the sort.
+// Returns a safe ms timestamp for sort comparisons. Invalid created_at
+// strings are mapped to 0 (Unix epoch) so they sort to the bottom of any
+// real-world feed. We deliberately avoid returning NaN — a comparator that
+// returns NaN is implementation-defined per the ECMAScript spec.
 function ts(s: string): number {
   const t = new Date(s).getTime();
   return Number.isFinite(t) ? t : 0;

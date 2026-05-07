@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Mail, Send, Loader2, User, ChevronRight, Inbox, RotateCw, Bot, Phone, Terminal, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
@@ -19,6 +19,15 @@ export default function EmailInbox() {
   const [isDrafting, setIsDrafting] = useState(false);
   const [quickReplies, setQuickReplies] = useState<Array<{ label: string; body: string }>>([]);
   const [isLoadingQuickReplies, setIsLoadingQuickReplies] = useState(false);
+
+  // Tracks the currently-selected thread id for use inside async callbacks
+  // whose closures would otherwise capture a stale `selectedThread`. Updated
+  // synchronously by the effect below so any guard that reads it sees the
+  // latest selection at resolution time.
+  const selectedThreadIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    selectedThreadIdRef.current = selectedThread?.id ?? null;
+  }, [selectedThread?.id]);
 
   const fetchThreads = async () => {
     try {
@@ -57,6 +66,9 @@ export default function EmailInbox() {
     const threadId = selectedThread.id;
     const controller = new AbortController();
     let active = true;
+    // Clear immediately so thread B's header never renders over thread A's
+    // body during the fetch interval.
+    setMessages([]);
     setQuickReplies([]);
     (async () => {
       try {
@@ -75,8 +87,9 @@ export default function EmailInbox() {
     try {
       const res = await authFetch(`/api/emails/threads/${threadId}/messages`);
       const data = await res.json();
-      // Don't clobber a newer thread's messages if the user has since switched away.
-      if (selectedThread?.id !== threadId) return;
+      // Compare against the ref (live) rather than the closure-captured
+      // `selectedThread`, which would always equal threadId at call time.
+      if (selectedThreadIdRef.current !== threadId) return;
       setMessages(data.messages || []);
     } catch (e) {
       console.error("Failed to fetch messages:", e);

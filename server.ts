@@ -6946,6 +6946,11 @@ app.get("/api/fleet/activity", authenticateUser, async (req: any, res: any) => {
           db.from('wireline_email_threads').select('id, customer_email, lead_score, intent_label, created_at').eq('user_id', req.user.id).order('created_at', { ascending: false }).limit(5)
       ]);
 
+      // Surface backend failures explicitly instead of returning a
+      // misleading 200 with an empty feed.
+      const queryError = logs.error || tasks.error || lessons.error || emails.error;
+      if (queryError) throw queryError;
+
       const activity = compileActivityFeed({
          logs:    logs.data    || [],
          tasks:   tasks.data   || [],
