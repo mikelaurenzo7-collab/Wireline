@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import PageShell, { Panel } from "./PageShell";
+import HubTabs, { CHANNELS_HUB } from "./HubTabs";
 
 type Appointment = {
   id: string;
@@ -389,6 +390,9 @@ export default function AppointmentsView() {
 
   return (
     <>
+      <div className="h-full flex flex-col min-h-0">
+        <HubTabs tabs={CHANNELS_HUB} label="Channels sub-navigation" />
+        <div className="flex-1 min-h-0">
       <PageShell
         title="Appointments"
         eyebrow="Operations · Schedule"
@@ -481,6 +485,8 @@ export default function AppointmentsView() {
           </div>
         )}
       </PageShell>
+        </div>
+      </div>
 
       <AnimatePresence>
         {showModal && (

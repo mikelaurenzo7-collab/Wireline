@@ -9,6 +9,7 @@ import WebhooksManager from "./WebhooksManager";
 import IntakeKeysManager from "./IntakeKeysManager";
 import StripeBillingCard from "./StripeBillingCard";
 import PageShell, { Panel } from "./PageShell";
+import HubTabs, { SYSTEM_HUB } from "./HubTabs";
 import { useToast } from "../contexts/ToastContext";
 
 export default function AdminSettings() {
@@ -170,6 +171,9 @@ export default function AdminSettings() {
   );
 
   return (
+    <div className="h-full flex flex-col min-h-0">
+    <HubTabs tabs={SYSTEM_HUB} label="System sub-navigation" />
+    <div className="flex-1 min-h-0">
     <PageShell
       title="Settings"
       eyebrow="Admin · Configuration"
@@ -683,6 +687,8 @@ export default function AdminSettings() {
         </AnimatePresence>
       )}
     </PageShell>
+    </div>
+    </div>
   );
 }
 

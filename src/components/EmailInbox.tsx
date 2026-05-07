@@ -6,6 +6,7 @@ import { authFetch } from "../lib/api";
 import { formatDate, formatTime } from "../lib/safe-date";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import PageShell, { Panel } from "./PageShell";
+import HubTabs, { CHANNELS_HUB } from "./HubTabs";
 import { useToast } from "../contexts/ToastContext";
 
 export default function EmailInbox() {
@@ -206,6 +207,9 @@ export default function EmailInbox() {
   );
 
   return (
+    <div className="h-full flex flex-col min-h-0">
+    <HubTabs tabs={CHANNELS_HUB} label="Channels sub-navigation" />
+    <div className="flex-1 min-h-0">
     <PageShell
       title="Email"
       eyebrow="Communications · Email"
@@ -508,5 +512,7 @@ export default function EmailInbox() {
         </Panel>
       </div>
     </PageShell>
+    </div>
+    </div>
   );
 }

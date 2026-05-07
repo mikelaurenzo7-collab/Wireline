@@ -7,6 +7,7 @@ import { formatDate } from "../lib/safe-date";
 import SupervisedAgentTuner from "./SupervisedAgentTuner";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import { HelpTooltip } from "./HelpTooltip";
+import HubTabs, { TRAINING_HUB } from "./HubTabs";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -240,6 +241,12 @@ export default function AgentTraining() {
           ))}
         </nav>
       </header>
+
+      <div className="px-4 md:px-6 pt-3">
+        <div className="max-w-[1400px] mx-auto w-full">
+          <HubTabs tabs={TRAINING_HUB} label="Training sub-navigation" />
+        </div>
+      </div>
 
       <main className="flex-1 min-h-0 relative">
         <AnimatePresence mode="wait">

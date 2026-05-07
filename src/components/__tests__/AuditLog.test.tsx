@@ -1,6 +1,7 @@
 // src/components/__tests__/AuditLog.test.tsx
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { ToastProvider } from '../../contexts/ToastContext';
 import AuditLog from '../AuditLog';
 
@@ -8,8 +9,14 @@ vi.mock('../../lib/api', () => ({
   authFetch: vi.fn()
 }));
 
+// AuditLog now renders the System HubTabs which calls useLocation —
+// MemoryRouter provides the Router context the hook requires.
 const renderWithProviders = (component: React.ReactElement) => {
-  return render(<ToastProvider>{component}</ToastProvider>);
+  return render(
+    <MemoryRouter initialEntries={["/audit"]}>
+      <ToastProvider>{component}</ToastProvider>
+    </MemoryRouter>,
+  );
 };
 
 describe('AuditLog Component', () => {

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Shield, Search, Download, ChevronDown, ChevronRight, AlertTriangle, AlertCircle, XCircle, Info, Clock, User, Globe, Cpu, DollarSign, Activity, Filter, Calendar } from "lucide-react";
 import PageShell, { Panel } from "./PageShell";
+import HubTabs, { SYSTEM_HUB } from "./HubTabs";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
@@ -326,6 +327,9 @@ export default function AuditLog() {
   }, []);
 
   return (
+    <div className="h-full flex flex-col min-h-0">
+    <HubTabs tabs={SYSTEM_HUB} label="System sub-navigation" />
+    <div className="flex-1 min-h-0">
     <PageShell
       title="Audit Log"
       subtitle="System activity monitoring & compliance"
@@ -519,5 +523,7 @@ export default function AuditLog() {
         </Panel>
       </div>
     </PageShell>
+    </div>
+    </div>
   );
 }

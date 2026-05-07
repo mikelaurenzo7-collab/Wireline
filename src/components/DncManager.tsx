@@ -10,6 +10,7 @@ import { cn } from "../lib/utils";
 import { formatDate } from "../lib/safe-date";
 import CsvExportButton from "./CsvExportButton";
 import PageShell, { Panel } from "./PageShell";
+import HubTabs, { SYSTEM_HUB } from "./HubTabs";
 import { useToast } from "../contexts/ToastContext";
 
 interface DncEntry {
@@ -166,6 +167,9 @@ export default function DncManager() {
   };
 
   return (
+    <div className="h-full flex flex-col min-h-0">
+    <HubTabs tabs={SYSTEM_HUB} label="System sub-navigation" />
+    <div className="flex-1 min-h-0">
     <PageShell
       eyebrow="Compliance · Outbound Protection"
       title="DNC List"
@@ -430,5 +434,7 @@ export default function DncManager() {
         )}
       </AnimatePresence>
     </PageShell>
+    </div>
+    </div>
   );
 }

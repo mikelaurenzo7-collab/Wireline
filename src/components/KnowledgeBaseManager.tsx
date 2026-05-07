@@ -6,6 +6,7 @@ import {
   Plus, Brain, Copy, AlertTriangle, GitMerge, ChevronDown,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
+import HubTabs, { TRAINING_HUB } from "./HubTabs";
 import { cn } from "../lib/utils";
 import { formatDate } from "../lib/safe-date";
 import EmptyState from "./EmptyState";
@@ -225,6 +226,7 @@ export default function KnowledgeBaseManager() {
 
   return (
     <div className="h-full overflow-y-auto scrollbar-hide w-full max-w-[1700px] mx-auto space-y-4">
+      <HubTabs tabs={TRAINING_HUB} label="Training sub-navigation" />
       <motion.header
         initial={{ y: -16, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}

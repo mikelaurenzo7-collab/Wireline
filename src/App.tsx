@@ -48,6 +48,14 @@ type NavItem = {
   icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   badge?: number;
   dataTour?: string;
+  /**
+   * Additional pathnames (or path prefixes) that should mark this rail
+   * item as active. Used for hub entries (Training covers /train and
+   * /knowledge; Channels covers /logs, /outbound, /inbox, /appointments;
+   * Settings covers /admin, /dnc, /audit) so the rail stays in sync
+   * with the operator's location across deep-linked sub-pages.
+   */
+  matches?: string[];
 };
 
 
@@ -89,39 +97,39 @@ function AuroraBackdrop() {
 //  layoutId animation flows between routes.
 // ────────────────────────────────────────────────────────────────────────
 const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
+  // Heavy-consolidated 8-item rail. Live Monitor merged into Dashboard's
+  // Live tab. Knowledge folded under Training (HubTabs at the top of
+  // /train + /knowledge cross-link them). Logs/Outbound/Email/Appointments
+  // become "Channels" — same HubTabs treatment. DNC + Audit folded under
+  // Settings. Existing deep-link URLs keep working unchanged.
   {
-    label: "Command Center",
+    label: "Workspace",
     items: [
-      { label: "Dashboard",    path: "/",        icon: Activity,     dataTour: "dashboard" },
-      { label: "Live Monitor", path: "/live",     icon: Radio },
-      { label: "Triage",       path: "/triage",   icon: Inbox },
-      { label: "Insights",     path: "/insights", icon: BarChart3,   dataTour: "insights" },
+      { label: "Dashboard", path: "/",        icon: Activity,   dataTour: "dashboard", matches: ["/live"] },
+      { label: "Triage",    path: "/triage",  icon: Inbox },
+      { label: "Insights",  path: "/insights",icon: BarChart3,  dataTour: "insights" },
     ],
   },
   {
-    label: "Agent Fleet",
+    label: "Fleet",
     items: [
-      { label: "Agents",    path: "/agents",   icon: Users,         dataTour: "agents" },
-      { label: "Training",  path: "/train",    icon: MessageSquare, dataTour: "training" },
-      { label: "Knowledge", path: "/knowledge",icon: Database },
+      { label: "Agents",   path: "/agents",  icon: Users,         dataTour: "agents" },
+      { label: "Training", path: "/train",   icon: MessageSquare, dataTour: "training", matches: ["/knowledge"] },
     ],
   },
   {
-    label: "Outreach",
+    label: "Channels",
     items: [
-      { label: "Call Logs",    path: "/logs",          icon: History },
-      { label: "Outbound",     path: "/outbound",      icon: PhoneOutgoing },
-      { label: "Email",        path: "/inbox",          icon: Mail },
-      { label: "Appointments", path: "/appointments",  icon: Calendar },
+      { label: "Channels", path: "/logs",  icon: Radio,
+        matches: ["/outbound", "/inbox", "/appointments"] },
     ],
   },
   {
     label: "System",
     items: [
       { label: "Integrations", path: "/integrations", icon: PlugZap },
-      { label: "Settings",     path: "/admin",         icon: ServerCog },
-      { label: "DNC List",     path: "/dnc",           icon: Ban },
-      { label: "Audit Log",    path: "/audit",         icon: ScrollText },
+      { label: "Settings",     path: "/admin",        icon: ServerCog,
+        matches: ["/dnc", "/audit"] },
     ],
   },
 ];
@@ -131,7 +139,14 @@ const RAIL_PINNED_KEY = "wireline.rail.pinned";
 function FloatingRail({ open, setOpen, onShowShortcuts }: { open: boolean; setOpen: (open: boolean) => void; onShowShortcuts: () => void }) {
   const location = useLocation();
   const { user, signOut } = useAuth();
-  const isActive = (path: string) => location.pathname === path;
+  // A rail item is active when the current pathname matches its path or
+  // any of its `matches` (used by hub entries that own multiple URLs —
+  // e.g. Channels owns /logs + /outbound + /inbox + /appointments).
+  const isActive = (item: NavItem) => {
+    if (location.pathname === item.path) return true;
+    if (!item.matches) return false;
+    return item.matches.some(m => location.pathname === m || location.pathname.startsWith(`${m}/`));
+  };
 
   // Pin = persistent expanded state (label visible). Persists across reloads.
   const [pinned, setPinned] = useState<boolean>(() => {
@@ -175,7 +190,7 @@ function FloatingRail({ open, setOpen, onShowShortcuts }: { open: boolean; setOp
   }, []);
 
   const renderRailItem = (item: NavItem) => {
-    const active = isActive(item.path);
+    const active = isActive(item);
     const badge = navBadges[item.path] ?? 0;
     return (
       <Link

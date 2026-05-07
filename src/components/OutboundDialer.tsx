@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import CsvExportButton from "./CsvExportButton";
 import PageShell, { Panel } from "./PageShell";
+import HubTabs, { CHANNELS_HUB } from "./HubTabs";
 import { useToast } from "../contexts/ToastContext";
 
 export default function OutboundDialer() {
@@ -1062,6 +1063,9 @@ export default function OutboundDialer() {
 
   return (
     <>
+      <div className="h-full flex flex-col min-h-0">
+        <HubTabs tabs={CHANNELS_HUB} label="Channels sub-navigation" />
+        <div className="flex-1 min-h-0">
       <PageShell
         title="Outbound"
         eyebrow="Communications · Outbound"
@@ -1077,6 +1081,8 @@ export default function OutboundDialer() {
           )},
         ]}
       />
+        </div>
+      </div>
       <AnimatePresence>
         {showCampaignModal && (
           <CreateCampaignModal

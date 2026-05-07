@@ -13,6 +13,7 @@ import { formatDate, formatTime } from "../lib/safe-date";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import CsvExportButton from "./CsvExportButton";
 import PageShell, { Panel } from "./PageShell";
+import HubTabs, { CHANNELS_HUB } from "./HubTabs";
 import { PanelSkeleton } from "./Skeleton";
 import EmptyState from "./EmptyState";
 import { useToast } from "../contexts/ToastContext";
@@ -102,6 +103,9 @@ export default function CallLogs() {
   );
 
   return (
+    <div className="h-full flex flex-col min-h-0">
+    <HubTabs tabs={CHANNELS_HUB} label="Channels sub-navigation" />
+    <div className="flex-1 min-h-0">
     <PageShell
       eyebrow="Communications · Voice"
       title="Call Logs"
@@ -263,6 +267,8 @@ export default function CallLogs() {
         </div>
       </div>
     </PageShell>
+    </div>
+    </div>
   );
 }
 
