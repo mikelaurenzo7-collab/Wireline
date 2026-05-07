@@ -18,21 +18,28 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
   const [isPromoting, setIsPromoting] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
+  // agentId-keyed effect with a cancel guard. Parent (FleetSettings)
+  // currently force-remounts via key={selectedAgent.id}, which masks the
+  // race today — but defense in depth: if a future caller mounts this
+  // long-lived and just changes agentId, A's lessons must not land
+  // under B's header.
   useEffect(() => {
-    fetchLessons();
+    let cancelled = false;
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const res = await authFetch(`/api/agents/${agentId}/lessons`, { signal: controller.signal });
+        const data = await res.json();
+        if (!cancelled) setLessons(data.lessons || []);
+      } catch (e: any) {
+        if (cancelled || e?.name === "AbortError") return;
+        toastError("Load failed", "Could not fetch training observations.");
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; controller.abort(); };
   }, [agentId]);
-
-  const fetchLessons = async () => {
-    try {
-      const res = await authFetch(`/api/agents/${agentId}/lessons`);
-      const data = await res.json();
-      setLessons(data.lessons || []);
-    } catch {
-      toastError("Load failed", "Could not fetch training observations.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const promoteToDirective = async (lesson: Lesson) => {
     setIsPromoting(lesson.id);

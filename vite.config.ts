@@ -47,10 +47,14 @@ export default defineConfig(({mode}) => {
       rollupOptions: {
         output: {
           manualChunks(id) {
-            // Heavy chart library — only loaded by Insights + Dashboard views.
-            if (id.includes('node_modules/recharts') || id.includes('node_modules/d3-')) {
-              return 'vendor-charts';
-            }
+            // NOTE: previously bucketed recharts/d3 into vendor-charts, but
+            // that caused Vite to emit a hard `import "./vendor-charts.js"`
+            // side-effect line into EVERY lazy route chunk (including
+            // DashboardHome / CommandBar / ContactProfile / etc.) — so
+            // visiting any route fetched the 379KB chart vendor. Letting
+            // rollup decide chunking inlines recharts only into the chunks
+            // that import it (InsightsView, AdminSettings), keeping it off
+            // the critical path everywhere else.
             // Sentry SDK — pulled by lib/sentry.ts via dynamic import. Without
             // its own chunk rule rollup folds it into a sibling chunk and the
             // browser fetches ~100KB of telemetry SDK on every visit even when

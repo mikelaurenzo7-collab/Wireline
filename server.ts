@@ -33,6 +33,7 @@ import { computeScorecard } from "./src/lib/agent-scorecard";
 import { computeDashboardStats } from "./src/lib/dashboard-stats";
 import { extractCapturedProfileIntel, buildCustomerIntelBlock } from "./src/lib/customer-intel";
 import { compileActivityFeed } from "./src/lib/fleet-activity";
+import { computeAgentPerformance, emptyAgentPerformance } from "./src/lib/agent-performance";
 
 // On Vercel, VERCEL_URL is automatically set to the deployment hostname
 // (e.g. "myapp-abc123.vercel.app") with no protocol or trailing slash.
@@ -6981,33 +6982,10 @@ app.get("/api/agents/:id/performance", authenticateUser, async (req: any, res: a
       .order('created_at', { ascending: false })
       .limit(500);
 
-    const rows = logs || [];
-    const callCount = rows.length;
-    const totalMinutes = Math.ceil(rows.reduce((s: number, r: any) => s + (r.duration_seconds || 0), 0) / 60);
-    const scored = rows.filter((r: any) => (r.lead_score ?? 0) > 0);
-    const avgScore = scored.length ? Math.round(scored.reduce((s: number, r: any) => s + r.lead_score, 0) / scored.length) : 0;
-    const sentiment: Record<string, number> = { positive: 0, neutral: 0, negative: 0 };
-    for (const r of rows) {
-      const k = (r.sentiment || 'neutral').toLowerCase();
-      if (k in sentiment) sentiment[k]++; else sentiment['neutral']++;
-    }
-    // Calls per day (last 7d) for sparkline
-    const last7 = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(); d.setDate(d.getDate() - (6 - i));
-      return d.toISOString().split('T')[0];
-    });
-    const byDay: Record<string, number> = {};
-    last7.forEach(d => { byDay[d] = 0; });
-    rows.forEach((r: any) => {
-      const d = new Date(r.created_at).toISOString().split('T')[0];
-      if (d in byDay) byDay[d]++;
-    });
-    const sparkline = last7.map(d => byDay[d]);
-
-    res.json({ callCount, totalMinutes, avgScore, sentiment, sparkline });
+    res.json(computeAgentPerformance({ rows: logs || [] }));
   } catch (e: any) {
     log.error("Agent performance error", { error: e?.message });
-    res.json({ callCount: 0, totalMinutes: 0, avgScore: 0, sentiment: { positive: 0, neutral: 0, negative: 0 }, sparkline: [] });
+    res.json(emptyAgentPerformance());
   }
 });
 

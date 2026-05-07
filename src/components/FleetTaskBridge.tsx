@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Phone, Mail, CheckCircle2, Clock, Loader2, Bot, ChevronRight, Calendar, ChevronDown, AlertTriangle, RotateCw } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
@@ -9,35 +9,56 @@ export default function FleetTaskBridge() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [agents, setAgents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [resolutionNotes, setResolutionNotes] = useState<Record<string, string>>({});
+  // Dead-component guard for the polling loop and the initial loads —
+  // unmount during a 30s tick should not write state.
+  const mountedRef = useRef(true);
 
-  const fetchTasks = async () => {
+  const fetchTasks = async (signal?: AbortSignal) => {
     try {
-      const res = await authFetch("/api/fleet/tasks");
+      const res = await authFetch("/api/fleet/tasks", signal ? { signal } : {});
       const data = await res.json();
+      if (!mountedRef.current) return;
       setTasks(data.tasks || []);
-    } catch (e) {
-      console.error(e);
+      setError(null);
+    } catch (e: any) {
+      if (e?.name === "AbortError") return;
+      if (mountedRef.current) {
+        console.error(e);
+        // Distinguish "queue clear" (success + 0 tasks) from "API down"
+        // — without this, a failed /api/fleet/tasks just left the panel
+        // showing the "All handoffs processed" empty state.
+        setError("Couldn't reach the fleet task service.");
+      }
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   };
 
-  const fetchAgents = async () => {
+  const fetchAgents = async (signal?: AbortSignal) => {
     try {
-      const res = await authFetch("/api/agents");
+      const res = await authFetch("/api/agents", signal ? { signal } : {});
       const data = await res.json();
+      if (!mountedRef.current) return;
       setAgents(data.agents || []);
-    } catch (e) {
-      console.error("Failed to fetch agents:", e);
+    } catch (e: any) {
+      if (e?.name === "AbortError") return;
+      if (mountedRef.current) console.error("Failed to fetch agents:", e);
     }
   };
 
   useEffect(() => {
-    fetchTasks();
-    fetchAgents();
-    const interval = setInterval(fetchTasks, 30000);
-    return () => clearInterval(interval);
+    mountedRef.current = true;
+    const controller = new AbortController();
+    fetchTasks(controller.signal);
+    fetchAgents(controller.signal);
+    const interval = setInterval(() => fetchTasks(controller.signal), 30000);
+    return () => {
+      mountedRef.current = false;
+      clearInterval(interval);
+      controller.abort();
+    };
   }, []);
 
   const updateStatus = async (id: string, status: string) => {
@@ -97,6 +118,22 @@ export default function FleetTaskBridge() {
     );
   }
 
+  // Show the error state ahead of "queue clear" so a failed /api/fleet/tasks
+  // doesn't masquerade as an empty success.
+  if (error && tasks.length === 0) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center gap-3 py-12 text-center">
+        <div className="w-12 h-12 rounded-2xl glass border border-rose-500/30 flex items-center justify-center text-rose-500">
+          <AlertTriangle className="w-5 h-5" />
+        </div>
+        <div className="space-y-1 max-w-xs">
+          <h4 className="font-display italic lowercase text-lg text-ink">queue offline</h4>
+          <p className="text-[10px] uppercase tracking-[0.4em] text-muted/70">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
   if (tasks.length === 0) {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-3 py-12 text-center">
@@ -116,7 +153,7 @@ export default function FleetTaskBridge() {
       <div className="flex items-center justify-between">
         <span className="text-[9px] uppercase tracking-[0.3em] text-muted/70 tabular-nums">{tasks.length} task{tasks.length === 1 ? '' : 's'}</span>
         <button
-          onClick={fetchTasks}
+          onClick={() => fetchTasks()}
           className="inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.3em] text-muted/70 hover:text-brand transition-colors"
           title="Refresh"
         >

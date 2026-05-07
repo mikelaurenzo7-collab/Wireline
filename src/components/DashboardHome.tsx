@@ -5,9 +5,6 @@ import {
   ArrowUpRight, BarChart3, Mail, ChevronRight, Bot, Signal, Target,
   Radio, Sparkles, Inbox, History as HistoryIcon, ShieldCheck, Zap, Users,
 } from "lucide-react";
-import {
-  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
-} from "recharts";
 import { motion } from "motion/react";
 import { cn } from "../lib/utils";
 import FleetTaskBridge from "./FleetTaskBridge";

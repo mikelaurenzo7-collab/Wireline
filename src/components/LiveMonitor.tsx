@@ -163,27 +163,42 @@ export default function LiveMonitor() {
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const fetchData = async () => {
+  // mountedRef tracks whether the LiveMonitor is still alive; both the
+  // initial fetch and the 10s poll bail before setState if it flipped
+  // false during an in-flight request. AbortController cancels the
+  // network leg cleanly so authFetch's deadline timer drains too.
+  const mountedRef = useRef(true);
+
+  const fetchData = async (signal: AbortSignal) => {
     try {
       const [signalRes, activityRes, agentsRes] = await Promise.all([
-        authFetch("/api/fleet/presence").then(r => r.json()),
-        authFetch("/api/fleet/activity").then(r => r.json()),
-        authFetch("/api/agents").then(r => r.json()),
+        authFetch("/api/fleet/presence", { signal }).then(r => r.json()),
+        authFetch("/api/fleet/activity", { signal }).then(r => r.json()),
+        authFetch("/api/agents", { signal }).then(r => r.json()),
       ]);
+      if (!mountedRef.current) return;
       setSignals(signalRes.signals || []);
       setActivity(activityRes.activity || []);
       setAgents(agentsRes.agents || []);
       setLastRefresh(new Date());
-    } catch (e) {
-      console.error("LiveMonitor fetch failed:", e);
+    } catch (e: any) {
+      if (e?.name === "AbortError") return;
+      if (mountedRef.current) console.error("LiveMonitor fetch failed:", e);
+    } finally {
+      if (mountedRef.current) setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
-    fetchData();
-    intervalRef.current = setInterval(fetchData, POLL_INTERVAL_MS);
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+    mountedRef.current = true;
+    const controller = new AbortController();
+    fetchData(controller.signal);
+    intervalRef.current = setInterval(() => fetchData(controller.signal), POLL_INTERVAL_MS);
+    return () => {
+      mountedRef.current = false;
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      controller.abort();
+    };
   }, []);
 
   const agentName = (id: string) => agents.find(a => a.id === id)?.name ?? id.slice(0, 8);
@@ -211,7 +226,7 @@ export default function LiveMonitor() {
             Live · <WallClock />
           </div>
           <button
-            onClick={fetchData}
+            onClick={() => { const c = new AbortController(); fetchData(c.signal); }}
             className="h-9 px-3 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5"
           >
             <RefreshCw className="w-3 h-3" />

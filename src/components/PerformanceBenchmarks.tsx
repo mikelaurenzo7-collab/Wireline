@@ -149,16 +149,25 @@ export default function PerformanceBenchmarks() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    authFetch("/api/dashboard/benchmarks")
+    // Race guard: if the panel unmounts (tab swap, route change) while
+    // /api/dashboard/benchmarks is in flight, the late response must not
+    // call setState on a dead component. AbortController also lets
+    // authFetch's deadline drain cleanly on cancel.
+    let cancelled = false;
+    const controller = new AbortController();
+    authFetch("/api/dashboard/benchmarks", { signal: controller.signal })
       .then((r: any) => r.json())
       .then((d: BenchmarksData) => {
+        if (cancelled) return;
         setData(d);
         setLoading(false);
       })
-      .catch(() => {
+      .catch((e: any) => {
+        if (cancelled || e?.name === "AbortError") return;
         setError("Failed to load benchmarks");
         setLoading(false);
       });
+    return () => { cancelled = true; controller.abort(); };
   }, []);
 
   if (loading) {
