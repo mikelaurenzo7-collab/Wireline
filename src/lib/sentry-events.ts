@@ -1,4 +1,7 @@
-import * as Sentry from '@sentry/react';
+// Use @sentry/node here — this module is imported only by server.ts
+// (verified via grep). Importing @sentry/react in a Node-only module
+// pulled in browser-globals deps that broke Vercel's serverless bundler.
+import * as Sentry from '@sentry/node';
 
 // Track business metrics and operational events in Sentry.
 // These appear in Sentry Dashboards as custom metrics for trend analysis.

@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const { captureMessage } = vi.hoisted(() => ({ captureMessage: vi.fn() }));
 
-vi.mock("@sentry/react", () => ({
+vi.mock("@sentry/node", () => ({
   captureMessage,
 }));
 
