@@ -9283,9 +9283,24 @@ app.post("/api/claude/coach", authenticateUser, async (req: any, res: any) => {
 app.post("/api/claude/knowledge-from-url", authenticateUser, async (req: any, res: any) => {
   try {
     const { url, agentContext, maxEntries, maxPages } = req.body;
-    if (!url || typeof url !== "string") return res.status(400).json({ error: "url required." });
-    try { new URL(url); } catch { return res.status(400).json({ error: "url is not a valid URL." }); }
-    const result = await claudeBrain.knowledgeFromUrl({ url, agentContext, maxEntries, maxPages });
+    if (!url || typeof url !== "string" || url.length > 2048) {
+      return res.status(400).json({ error: "url required (max 2048 chars)." });
+    }
+    let parsedUrl: URL;
+    try { parsedUrl = new URL(url); }
+    catch { return res.status(400).json({ error: "url is not a valid URL." }); }
+    // Only allow http/https — file:// or javascript: would trip Claude's
+    // web_search tool with weird errors and waste an invocation.
+    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+      return res.status(400).json({ error: "url must use http:// or https://" });
+    }
+    if (agentContext != null && (typeof agentContext !== "string" || agentContext.length > 2000)) {
+      return res.status(400).json({ error: "agentContext must be a string ≤ 2000 characters." });
+    }
+    const safeMaxEntries = Math.max(1, Math.min(50, Number(maxEntries) || 12));
+    const safeMaxPages   = Math.max(1, Math.min(20, Number(maxPages)   || 5));
+
+    const result = await claudeBrain.knowledgeFromUrl({ url, agentContext, maxEntries: safeMaxEntries, maxPages: safeMaxPages });
     res.json(result);
   } catch (e) {
     claudeErr(res, e);
@@ -9299,13 +9314,29 @@ app.post("/api/claude/knowledge-from-document", authenticateUser, async (req: an
     if (!pdfBase64 || typeof pdfBase64 !== "string") {
       return res.status(400).json({ error: "pdfBase64 required (base64-encoded PDF, no data: prefix)." });
     }
+    // Cap the encoded PDF at ~30MB raw (40MB base64). Anthropic rejects
+    // documents larger than that anyway and the body parser was a soft
+    // 50MB ceiling — without an explicit cap an oversized PDF would cost
+    // a Claude invocation just to be rejected upstream.
+    if (pdfBase64.length > 40 * 1024 * 1024) {
+      return res.status(413).json({ error: "PDF exceeds 30MB limit. Split it into smaller documents." });
+    }
     // Quick sanity check: PDF starts with %PDF-
     let head = "";
     try { head = Buffer.from(pdfBase64.slice(0, 16), "base64").toString("utf8", 0, 5); } catch {}
     if (!head.startsWith("%PDF")) {
       return res.status(400).json({ error: "File does not look like a valid PDF." });
     }
-    const result = await claudeBrain.knowledgeFromDocument({ pdfBase64, fileName, agentContext, maxEntries });
+    // Bound auxiliary inputs.
+    if (fileName != null && (typeof fileName !== "string" || fileName.length > 255)) {
+      return res.status(400).json({ error: "fileName must be a string ≤ 255 characters." });
+    }
+    if (agentContext != null && (typeof agentContext !== "string" || agentContext.length > 2000)) {
+      return res.status(400).json({ error: "agentContext must be a string ≤ 2000 characters." });
+    }
+    const safeMaxEntries = Math.max(1, Math.min(50, Number(maxEntries) || 12));
+
+    const result = await claudeBrain.knowledgeFromDocument({ pdfBase64, fileName, agentContext, maxEntries: safeMaxEntries });
     res.json(result);
   } catch (e) {
     claudeErr(res, e);
