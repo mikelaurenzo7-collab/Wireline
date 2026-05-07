@@ -29,7 +29,7 @@ describe("sentry wrapper", () => {
   describe("DSN unset", () => {
     it("does not call Sentry.init when VITE_SENTRY_DSN is absent", async () => {
       const { initSentry } = await import("./sentry");
-      initSentry();
+      await initSentry();
       expect(sentryInit).not.toHaveBeenCalled();
     });
 
@@ -61,7 +61,7 @@ describe("sentry wrapper", () => {
 
     it("initializes Sentry with DSN, env, sample rate, and release tag", async () => {
       const { initSentry } = await import("./sentry");
-      initSentry();
+      await initSentry();
       expect(sentryInit).toHaveBeenCalledTimes(1);
       const config = sentryInit.mock.calls[0][0];
       expect(config.dsn).toBe("https://example@sentry.io/12345");
@@ -71,14 +71,14 @@ describe("sentry wrapper", () => {
 
     it("is idempotent — calling initSentry twice only initializes once", async () => {
       const { initSentry } = await import("./sentry");
-      initSentry();
-      initSentry();
+      await initSentry();
+      await initSentry();
       expect(sentryInit).toHaveBeenCalledTimes(1);
     });
 
     it("captureException forwards to Sentry.captureException after init", async () => {
       const { initSentry, captureException } = await import("./sentry");
-      initSentry();
+      await initSentry();
       const err = new Error("prod error");
       captureException(err, { user_id: "u-1" });
       expect(sentryCaptureException).toHaveBeenCalledWith(err, {
@@ -88,14 +88,14 @@ describe("sentry wrapper", () => {
 
     it("captureException without context omits the extra object", async () => {
       const { initSentry, captureException } = await import("./sentry");
-      initSentry();
+      await initSentry();
       captureException(new Error("simple"));
       expect(sentryCaptureException).toHaveBeenCalledWith(expect.any(Error), undefined);
     });
 
     it("beforeSend filters AbortError so navigation cancellations aren't reported", async () => {
       const { initSentry } = await import("./sentry");
-      initSentry();
+      await initSentry();
       const beforeSend = sentryInit.mock.calls[0][0].beforeSend;
       const abortErr = Object.assign(new Error("cancelled"), { name: "AbortError" });
       const result = beforeSend({ event: "x" }, { originalException: abortErr });
@@ -104,7 +104,7 @@ describe("sentry wrapper", () => {
 
     it("beforeSend allows real errors through unchanged", async () => {
       const { initSentry } = await import("./sentry");
-      initSentry();
+      await initSentry();
       const beforeSend = sentryInit.mock.calls[0][0].beforeSend;
       const realErr = new Error("genuine failure");
       const event = { event: "x" };
@@ -116,7 +116,7 @@ describe("sentry wrapper", () => {
       vi.unstubAllEnvs();
       vi.stubEnv("VITE_SENTRY_DSN", "https://example@sentry.io/12345");
       const { initSentry } = await import("./sentry");
-      initSentry();
+      await initSentry();
       expect(sentryInit.mock.calls[0][0].tracesSampleRate).toBe(0.1);
     });
   });

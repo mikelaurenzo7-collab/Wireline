@@ -3,13 +3,20 @@ import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from "re
 import { Users, Activity, MessageSquare, Calendar, PhoneOutgoing, ServerCog, PlugZap, History, Mail, Menu, X, LogOut, Shield, Database, Waves, Inbox, BarChart3, Loader2, AlertTriangle, Radio, Keyboard, ChevronRight, User, Ban, ScrollText } from "lucide-react";
 import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import AuthPortal from "./components/AuthPortal";
-import CommandBar from "./components/CommandBar";
 import ErrorBoundary from "./components/ErrorBoundary";
-import KeyboardShortcuts from "./components/KeyboardShortcuts";
-import PersonaWizard from "./components/PersonaWizard";
-import ProductTour from "./components/ProductTour";
 import SystemStatusBadge from "./components/SystemStatusBadge";
 import ToastStack from "./components/Toast";
+
+// First-render-non-critical UI surfaces. CommandBar registers a
+// keyboard listener but its heavy render only matters when opened;
+// PersonaWizard/ProductTour are first-run-only; KeyboardShortcuts
+// only mounts when the user opens the cheat-sheet. Lazy-loading these
+// shaves their transitive motion/lucide imports out of the initial
+// bundle on every page load.
+const CommandBar         = lazy(() => import("./components/CommandBar"));
+const PersonaWizard      = lazy(() => import("./components/PersonaWizard"));
+const ProductTour        = lazy(() => import("./components/ProductTour"));
+const KeyboardShortcuts  = lazy(() => import("./components/KeyboardShortcuts"));
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import { authFetch } from "./lib/api";
@@ -128,8 +135,11 @@ function FloatingRail({ open, setOpen, onShowShortcuts }: { open: boolean; setOp
 
   // Pin = persistent expanded state (label visible). Persists across reloads.
   const [pinned, setPinned] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    try { return window.localStorage.getItem(RAIL_PINNED_KEY) === "1"; } catch { return false; }
+    if (typeof window === "undefined") return true;
+    // Default to expanded (pinned) for new users — labels are easier to learn.
+    // We only consider the rail collapsed when the user has explicitly
+    // collapsed it, which we record as "0" in localStorage.
+    try { return window.localStorage.getItem(RAIL_PINNED_KEY) !== "0"; } catch { return true; }
   });
   const togglePin = () => {
     setPinned(p => {
@@ -786,10 +796,18 @@ function AppContent() {
     <div className="flex h-screen text-ink font-sans overflow-hidden relative">
       <AuroraBackdrop />
       <div className="scanline" />
-      <CommandBar />
-      <PersonaWizard />
-      <ProductTour />
-      <KeyboardShortcuts open={showShortcuts} onClose={() => setShowShortcuts(false)} />
+      {/* All four are visually inert until the user invokes them, so
+          a null Suspense fallback is fine — nothing flickers when their
+          chunks resolve. KeyboardShortcuts is gated on showShortcuts so
+          its chunk is only fetched the first time the user presses ?. */}
+      <Suspense fallback={null}>
+        <CommandBar />
+        <PersonaWizard />
+        <ProductTour />
+        {showShortcuts && (
+          <KeyboardShortcuts open={showShortcuts} onClose={() => setShowShortcuts(false)} />
+        )}
+      </Suspense>
       <FloatingRail open={sidebarOpen} setOpen={setSidebarOpen} onShowShortcuts={() => setShowShortcuts(true)} />
 
       <main className="flex-1 overflow-hidden relative flex flex-col z-10">

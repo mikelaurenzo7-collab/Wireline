@@ -51,6 +51,14 @@ export default defineConfig(({mode}) => {
             if (id.includes('node_modules/recharts') || id.includes('node_modules/d3-')) {
               return 'vendor-charts';
             }
+            // Sentry SDK — pulled by lib/sentry.ts via dynamic import. Without
+            // its own chunk rule rollup folds it into a sibling chunk and the
+            // browser fetches ~100KB of telemetry SDK on every visit even when
+            // VITE_SENTRY_DSN is unset. Isolate it so the chunk is only
+            // requested by initSentry's await import('@sentry/react').
+            if (id.includes('node_modules/@sentry')) {
+              return 'vendor-sentry';
+            }
             // Vapi browser SDK — only used in DashboardHome live-call widget.
             if (id.includes('node_modules/@vapi-ai')) {
               return 'vendor-vapi';
