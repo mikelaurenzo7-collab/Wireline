@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   build:
     name: typecheck + test + build
@@ -24,41 +28,81 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Diagnostic dump (always runs)
+      - name: Capture diagnostics to file
         if: always()
+        id: diag
         run: |
-          echo "=== checkout outcome: ${{ steps.checkout.outcome }} ==="
-          echo "=== setup outcome:    ${{ steps.setup.outcome }} ==="
-          echo "=== pwd:              $(pwd) ==="
-          echo "=== whoami:           $(whoami) ==="
-          echo "=== node:             $(node --version 2>&1 || echo MISSING) ==="
-          echo "=== npm:              $(npm --version 2>&1 || echo MISSING) ==="
-          echo "=== files (first 30) ==="
-          ls -la | head -30
-          echo "=== package-lock.json present: $(test -f package-lock.json && echo YES || echo NO) ==="
-          echo "=== net (registry.npmjs.org) ==="
-          curl -sS -o /dev/null -w "registry.npmjs.org: %{http_code} (%{time_total}s)\n" https://registry.npmjs.org/ || echo "curl failed"
+          {
+            echo "## CI diagnostic dump"
+            echo ""
+            echo "**Commit:** \`${{ github.sha }}\`"
+            echo "**Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo ""
+            echo "### Step outcomes (so far)"
+            echo "- checkout: \`${{ steps.checkout.outcome }}\`"
+            echo "- setup:    \`${{ steps.setup.outcome }}\`"
+            echo ""
+            echo "### Runner state"
+            echo '```'
+            echo "pwd: $(pwd)"
+            echo "user: $(whoami)"
+            echo "node: $(node --version 2>&1 || echo MISSING)"
+            echo "npm:  $(npm --version 2>&1 || echo MISSING)"
+            echo "lockfile present: $(test -f package-lock.json && echo YES || echo NO)"
+            echo "lockfile version: $(node -p "require('./package-lock.json').lockfileVersion" 2>&1 || echo unreadable)"
+            echo '```'
+            echo ""
+            echo "### Files"
+            echo '```'
+            ls -1 2>&1 | head -25
+            echo '```'
+            echo ""
+            echo "### Network"
+            echo '```'
+            curl -sS -o /dev/null -w "registry.npmjs.org: HTTP %{http_code} in %{time_total}s\n" https://registry.npmjs.org/ 2>&1 || echo "curl failed"
+            echo '```'
+          } > /tmp/diag.md
+          cat /tmp/diag.md
 
       - name: Install dependencies
         id: install
         continue-on-error: true
         run: |
-          set +e
           npm ci --no-audit --no-fund 2>&1 | tee /tmp/npm-ci.log
-          echo "=== npm ci exit: $? ==="
+          echo "exit=$?" > /tmp/npm-ci.exit
 
-      - name: Dump npm debug logs (always runs)
+      - name: Append npm logs to diagnostic
         if: always()
         run: |
-          echo "=== install outcome: ${{ steps.install.outcome }} ==="
-          if [ -d ~/.npm/_logs/ ]; then
-            for f in $(ls -t ~/.npm/_logs/ 2>/dev/null | head -2); do
-              echo "--- ~/.npm/_logs/$f ---"
-              cat "$HOME/.npm/_logs/$f" || true
-            done
-          else
-            echo "no ~/.npm/_logs directory"
-          fi
+          {
+            echo ""
+            echo "### npm ci"
+            echo "- outcome: \`${{ steps.install.outcome }}\`"
+            echo ""
+            echo "**stdout (last 80 lines):**"
+            echo '```'
+            tail -80 /tmp/npm-ci.log 2>/dev/null || echo "no stdout captured"
+            echo '```'
+            echo ""
+            echo "**latest npm debug log:**"
+            echo '```'
+            latest=$(ls -t ~/.npm/_logs/ 2>/dev/null | head -1)
+            if [ -n "$latest" ]; then
+              tail -200 "$HOME/.npm/_logs/$latest" 2>/dev/null
+            else
+              echo "no ~/.npm/_logs/ entries"
+            fi
+            echo '```'
+          } >> /tmp/diag.md
+
+      - name: Post diagnostic as PR comment
+        if: always() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment "${{ github.event.pull_request.number }}" \
+            --repo "${{ github.repository }}" \
+            --body-file /tmp/diag.md || echo "gh pr comment failed (non-fatal)"
 
       - name: TypeScript typecheck
         id: typecheck
@@ -80,10 +124,9 @@ jobs:
         continue-on-error: true
         run: npm run smoke:server
 
-      - name: Final summary + fail if any blocker failed
+      - name: Final summary + gate
         if: always()
         run: |
-          echo "=== Step outcomes ==="
           echo "checkout:  ${{ steps.checkout.outcome }}"
           echo "setup:     ${{ steps.setup.outcome }}"
           echo "install:   ${{ steps.install.outcome }}"
@@ -91,7 +134,6 @@ jobs:
           echo "tests:     ${{ steps.tests.outcome }}"
           echo "build:     ${{ steps.build.outcome }}"
           echo "smoke:     ${{ steps.smoke.outcome }}"
-          # Fail the job if any blocker failed.
           for o in "${{ steps.checkout.outcome }}" "${{ steps.setup.outcome }}" "${{ steps.install.outcome }}" "${{ steps.typecheck.outcome }}" "${{ steps.tests.outcome }}" "${{ steps.build.outcome }}" "${{ steps.smoke.outcome }}"; do
             if [ "$o" = "failure" ]; then exit 1; fi
           done
