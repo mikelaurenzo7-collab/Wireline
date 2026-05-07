@@ -10,6 +10,7 @@ import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import { formatDate, formatDateTime } from "../lib/safe-date";
+import { formatMoney, safeFixed } from "../lib/safe-number";
 
 interface ContactData {
   number: string;
@@ -132,7 +133,7 @@ export default function ContactProfile() {
         <StatCard label="Calls"       value={String(data.stats.total_calls)}            icon={Phone}      accent="#0AC8D4" />
         <StatCard label="Minutes"     value={String(data.stats.total_minutes)}          icon={Clock}      accent="#9B59F5" />
         <StatCard label="Avg Score"   value={String(data.stats.avg_lead_score)}         icon={Target}     accent="#E040C0" />
-        <StatCard label="Spend"       value={`$${data.stats.total_cost.toFixed(2)}`}    icon={DollarSign} accent="#10B981" />
+        <StatCard label="Spend"       value={formatMoney(data.stats?.total_cost, 2)}   icon={DollarSign} accent="#10B981" />
       </div>
 
       {/* Timeline */}
@@ -216,7 +217,7 @@ const TimelineRow: React.FC<{ event: ContactData["timeline"][number] }> = ({ eve
               <span>{Math.floor((event.duration_seconds || 0) / 60)}m {(event.duration_seconds || 0) % 60}s</span>
             )}
             {event.cost !== undefined && event.cost > 0 && (
-              <><span>·</span><span>${Number(event.cost).toFixed(3)}</span></>
+              <><span>·</span><span>${safeFixed(event.cost, 3)}</span></>
             )}
             {event.intent_label && <><span>·</span><span>{event.intent_label} intent</span></>}
           </div>

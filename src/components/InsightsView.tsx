@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
+import { formatMoney, safeFixed } from "../lib/safe-number";
 import CsvExportButton from "./CsvExportButton";
 import { AGENT_ROLES } from "./FleetSettings";
 import PageShell from "./PageShell";
@@ -530,10 +531,10 @@ function AISpendView({ days }: { days: number }) {
       {callsHaveHappened && <>
       {/* Headline cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <SpendStat label="Total Spend" value={`$${totals.cost.toFixed(2)}`} icon={DollarSign} accent="#0AC8D4" />
+        <SpendStat label="Total Spend" value={formatMoney(totals?.cost, 2)} icon={DollarSign} accent="#0AC8D4" />
         <SpendStat label="Claude Calls" value={String(totals.calls)} icon={Brain} accent="#9B59F5" />
-        <SpendStat label="Avg / Call" value={`$${totals.avg_cost_per_call.toFixed(4)}`} icon={Receipt} accent="#E040C0" />
-        <SpendStat label="Saved by Cache" value={`$${totals.cache_savings_usd.toFixed(2)}`} icon={Database} accent="#10B981" />
+        <SpendStat label="Avg / Call" value={formatMoney(totals?.avg_cost_per_call, 4)} icon={Receipt} accent="#E040C0" />
+        <SpendStat label="Saved by Cache" value={formatMoney(totals?.cache_savings_usd, 2)} icon={Database} accent="#10B981" />
       </div>
 
       {/* Spend over time */}
@@ -560,7 +561,7 @@ function AISpendView({ days }: { days: number }) {
                       className="absolute inset-y-0 left-0 rounded-lg flex items-center px-3"
                       style={{ background: "linear-gradient(90deg, #0AC8D4, #9B59F5)" }}
                     >
-                      <span className="text-[10px] font-mono text-paper font-medium">${d.cost.toFixed(2)}</span>
+                      <span className="text-[10px] font-mono text-paper font-medium">${safeFixed(d.cost, 2)}</span>
                     </motion.div>
                     <span className="absolute inset-y-0 right-3 flex items-center text-[10px] text-muted">{d.calls} calls</span>
                   </div>
@@ -583,7 +584,7 @@ function AISpendView({ days }: { days: number }) {
                   <div key={a.action} className="space-y-1">
                     <div className="flex items-baseline justify-between gap-3">
                       <span className="text-sm text-ink/85 truncate">{a.action}</span>
-                      <span className="font-display italic text-lg text-aurora tabular-nums shrink-0">${a.cost.toFixed(3)}</span>
+                      <span className="font-display italic text-lg text-aurora tabular-nums shrink-0">${safeFixed(a.cost, 3)}</span>
                     </div>
                     <div className="relative h-1.5 rounded-full bg-white/5 overflow-hidden">
                       <motion.div
@@ -614,7 +615,7 @@ function AISpendView({ days }: { days: number }) {
                     <div className="text-sm font-mono text-ink/90">{m.model}</div>
                     <div className="text-[10px] uppercase tracking-[0.25em] text-muted mt-1">{m.calls} calls</div>
                   </div>
-                  <div className="font-display italic text-2xl text-aurora">${m.cost.toFixed(2)}</div>
+                  <div className="font-display italic text-2xl text-aurora">${safeFixed(m.cost, 2)}</div>
                 </div>
               ))}
             </div>
@@ -746,9 +747,9 @@ function SpendBudgetCard() {
           <div className="space-y-2">
             <div className="flex items-baseline justify-between">
               <div className="font-display italic text-3xl text-ink leading-none">
-                ${used.toFixed(2)} <span className="text-ink/50 text-xl">/ ${limit.toFixed(2)}</span>
+                ${safeFixed(used, 2)} <span className="text-ink/50 text-xl">/ ${safeFixed(limit, 2)}</span>
               </div>
-              <div className="text-[10px] uppercase tracking-[0.3em] text-muted">{pct.toFixed(1)}% used</div>
+              <div className="text-[10px] uppercase tracking-[0.3em] text-muted">{safeFixed(pct, 1)}% used</div>
             </div>
             <div className="relative h-3 rounded-full bg-white/5 overflow-hidden">
               {/* Warn-threshold tick */}

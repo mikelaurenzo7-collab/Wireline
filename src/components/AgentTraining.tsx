@@ -273,7 +273,7 @@ export default function AgentTraining() {
                         ? "glass border-white/8 text-ink"
                         : "bg-brand/8 border-brand/20 text-ink font-display italic"
                     )}>
-                      {msg.content.split('\n').map((line, lIdx) => (
+                      {(msg.content ?? '').split('\n').map((line, lIdx) => (
                         <p key={lIdx} className={cn(lIdx > 0 && "mt-1.5", (line.startsWith('>') || line.startsWith('**')) && "text-brand")}>
                           {line.replace(/^\*\*/g, '').replace(/^>\s?/, '')}
                         </p>
