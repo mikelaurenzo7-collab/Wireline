@@ -1,9 +1,13 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 
-// Capture the onAuthStateChange callback that api.ts registers at module
-// load time so tests can simulate auth-state changes (e.g. sign-out) to
-// clear the module-level token cache without re-importing the module.
-let _triggerAuthChange: (event: string, session: { access_token?: string } | null) => void = () => {};
+// vi.mock is hoisted above all imports, so the factory cannot reference
+// outer-scope variables — use vi.hoisted() to create refs that survive hoisting.
+// authChangeRef.trigger is reassigned by the mockImplementation below to the
+// real listener that api.ts registers, so tests can drive auth-state changes
+// (e.g. SIGNED_OUT) to clear the module-level token cache.
+const authChangeRef = vi.hoisted(() => ({
+  trigger: (_event: string, _session: { access_token?: string } | null): void => {},
+}));
 
 // Mock supabase before importing the module under test so the import side
 // effect (createClient) uses the mock rather than the real SDK.
@@ -15,8 +19,8 @@ vi.mock("./supabase", () => ({
       }),
       // Captures the listener registered by api.ts at module load so tests
       // can drive auth-state changes (e.g. clear the cached token on SIGNED_OUT).
-      onAuthStateChange: vi.fn().mockImplementation((cb: typeof _triggerAuthChange) => {
-        _triggerAuthChange = cb;
+      onAuthStateChange: vi.fn().mockImplementation((cb) => {
+        authChangeRef.trigger = cb;
         return { data: { subscription: { unsubscribe: vi.fn() } } };
       }),
     },
@@ -120,7 +124,7 @@ describe("authFetch", () => {
     // Clear the module-level token cache that was populated at import time.
     // Without this, getBearerToken() returns the cached "test-token" and
     // never calls getSession(), so the Authorization header is always set.
-    _triggerAuthChange("SIGNED_OUT", null);
+    authChangeRef.trigger("SIGNED_OUT", null);
 
     await authFetch("/api/test");
     const callArgs = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
