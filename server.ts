@@ -35,6 +35,7 @@ import { extractCapturedProfileIntel, buildCustomerIntelBlock } from "./src/lib/
 import { compileActivityFeed } from "./src/lib/fleet-activity";
 import { computeAgentPerformance, emptyAgentPerformance } from "./src/lib/agent-performance";
 import { computeAuditSummary } from "./src/lib/audit-summary";
+import { computeDashboardBenchmarks } from "./src/lib/dashboard-benchmarks";
 
 // On Vercel, VERCEL_URL is automatically set to the deployment hostname
 // (e.g. "myapp-abc123.vercel.app") with no protocol or trailing slash.
@@ -2826,77 +2827,12 @@ app.get("/api/dashboard/benchmarks", authenticateUser, async (req: any, res: any
         .eq('user_id', userId),
     ]);
 
-    const calls = callsResult.data || [];
-    const leads = leadsResult.data || [];
-    const agentCount = agentsResult.data?.length || 0;
-
-    // Calculate user metrics
-    const totalCalls = calls.length;
-    const avgDuration = totalCalls > 0
-      ? Math.round(calls.reduce((s: number, c: any) => s + (c.duration_seconds || 0), 0) / totalCalls)
-      : 0;
-    const hotLeadsCount = calls.filter((c: any) => (c.lead_score || 0) >= 70).length;
-    const conversionRate = totalCalls > 0 ? Math.round((hotLeadsCount / totalCalls) * 100) : 0;
-    const avgLeadScore = totalCalls > 0
-      ? Math.round(calls.reduce((s: number, c: any) => s + (c.lead_score || 0), 0) / totalCalls)
-      : 0;
-    const dialedLeads = leads.length;
-    const contactedLeads = leads.filter((l: any) => ['Completed', 'Interested', 'Callback'].includes(l.status)).length;
-    const contactRate = dialedLeads > 0 ? Math.round((contactedLeads / dialedLeads) * 100) : 0;
-
-    // Industry benchmarks (research-based averages for AI voice agents)
-    const benchmarks = {
-      call_volume: {
-        label: "Monthly Call Volume",
-        user: totalCalls,
-        benchmark: 150,
-        unit: "calls",
-        better_when: "higher",
-        tip: "Run an outbound campaign to increase volume — aim for 5-10 calls per hour per agent.",
-      },
-      avg_duration: {
-        label: "Avg Call Duration",
-        user: avgDuration,
-        benchmark: 180,
-        unit: "sec",
-        better_when: "closer",
-        tip: "Calls under 60s often indicate hang-ups. Calls over 5min may mean the agent isn't qualifying fast enough.",
-      },
-      lead_score: {
-        label: "Avg Lead Score",
-        user: avgLeadScore,
-        benchmark: 55,
-        unit: "/ 100",
-        better_when: "higher",
-        tip: "Improve lead score by refining your agent's qualification questions in Agent Training.",
-      },
-      conversion_rate: {
-        label: "Hot Lead Rate",
-        user: conversionRate,
-        benchmark: 22,
-        unit: "%",
-        better_when: "higher",
-        tip: "Hot lead rate below 10% usually means targeting issues. Review your outbound lead list quality.",
-      },
-      contact_rate: {
-        label: "Outbound Contact Rate",
-        user: contactRate,
-        benchmark: 35,
-        unit: "%",
-        better_when: "higher",
-        tip: "Contact rate improves with better timing — try calling between 10am-12pm and 4pm-6pm local time.",
-      },
-      agent_utilization: {
-        label: "Agent Utilization",
-        user: agentCount > 0 ? Math.min(100, Math.round((totalCalls / (agentCount * 100)) * 100)) : 0,
-        benchmark: 70,
-        unit: "%",
-        better_when: "higher",
-        tip: "Deploy more agents or increase your outbound campaign volume to improve utilization.",
-      },
-    };
-
-    res.json({ benchmarks, period: "30d", total_calls: totalCalls });
+    const result = computeDashboardBenchmarks({
+      calls: callsResult.data || [],
+      leads: leadsResult.data || [],
+      agentCount: agentsResult.data?.length || 0,
+    });
+    res.json({ ...result, period: "30d" });
   } catch (error) {
     log.error("Benchmarks endpoint failed", { error });
     res.status(500).json({ error: "Failed to fetch benchmarks" });
