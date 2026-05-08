@@ -8,6 +8,12 @@ vi.mock("./supabase", () => ({
       getSession: vi.fn().mockResolvedValue({
         data: { session: { access_token: "test-token" } },
       }),
+      // Required by the module-level onAuthStateChange listener in api.ts
+      // that keeps the cached bearer token in sync. Without this stub the
+      // import itself throws "supabase.auth.onAuthStateChange is not a function".
+      onAuthStateChange: vi.fn().mockReturnValue({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      }),
     },
   },
 }));
