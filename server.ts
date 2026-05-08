@@ -2897,6 +2897,8 @@ app.get("/api/appointments", authenticateUser, async (req: any, res: any) => {
   }
 });
 
+const APPOINTMENT_STATUSES = ['Scheduled', 'Confirmed', 'Completed', 'Cancelled', 'No-Show'] as const;
+
 app.post("/api/appointments", authenticateUser, async (req: any, res: any) => {
   try {
     const { customer_name, service_type, date, time, phone_number, notes, agent_id, status } = req.body;
@@ -2930,7 +2932,7 @@ app.post("/api/appointments", authenticateUser, async (req: any, res: any) => {
       phone_number: typeof phone_number === 'string' ? phone_number.trim() || null : null,
       notes: typeof notes === 'string' ? notes.trim() || null : null,
       agent_id: agent_id || null,
-      status: typeof status === 'string' && status ? status : 'Scheduled',
+      status: APPOINTMENT_STATUSES.includes(status) ? status : 'Scheduled',
     }).select().single();
     if (error) throw error;
     res.json({ appointment: data });
@@ -2953,6 +2955,9 @@ app.patch("/api/appointments/:id", authenticateUser, async (req: any, res: any) 
     }
     if (typeof updates.notes === 'string' && updates.notes.length > 2000) {
       return res.status(400).json({ error: "notes must be 2000 characters or less" });
+    }
+    if (updates.status !== undefined && !APPOINTMENT_STATUSES.includes(updates.status as any)) {
+      return res.status(400).json({ error: `status must be one of: ${APPOINTMENT_STATUSES.join(', ')}` });
     }
 
     // Same agent ownership check as POST — caller can't reroute their
@@ -4292,11 +4297,15 @@ app.get("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => {
   }
 });
 
+const FLEET_TASK_STATUSES = ['pending', 'open', 'in_progress', 'completed', 'cancelled'] as const;
+const FLEET_TASK_PRIORITIES = ['low', 'medium', 'high'] as const;
+
 app.post("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => {
   try {
     const { source_type, source_id, target_channel, customer_info, task_type, description, agent_id, priority, due_date } = req.body;
+    const safePriority = FLEET_TASK_PRIORITIES.includes(priority) ? priority : 'medium';
     await db.from('wireline_fleet_tasks').insert({
-       source_type, source_id, target_channel, customer_info, task_type, description, agent_id, status: 'pending', user_id: req.user.id, priority: priority || 'medium', due_date
+       source_type, source_id, target_channel, customer_info, task_type, description, agent_id, status: 'pending', user_id: req.user.id, priority: safePriority, due_date
     });
     res.json({ success: true });
   } catch (error) {
@@ -4308,8 +4317,18 @@ app.patch("/api/fleet/tasks/:id", authenticateUser, async (req: any, res: any) =
   try {
     const { status, priority, due_date, agent_id, resolution_notes } = req.body;
     const updateData: any = {};
-    if (status) updateData.status = status;
-    if (priority) updateData.priority = priority;
+    if (status !== undefined) {
+      if (!FLEET_TASK_STATUSES.includes(status)) {
+        return res.status(400).json({ error: `status must be one of: ${FLEET_TASK_STATUSES.join(', ')}` });
+      }
+      updateData.status = status;
+    }
+    if (priority !== undefined) {
+      if (!FLEET_TASK_PRIORITIES.includes(priority)) {
+        return res.status(400).json({ error: `priority must be one of: ${FLEET_TASK_PRIORITIES.join(', ')}` });
+      }
+      updateData.priority = priority;
+    }
     if (due_date !== undefined) updateData.due_date = due_date;
     if (agent_id !== undefined) updateData.agent_id = agent_id;
     if (resolution_notes !== undefined) updateData.resolution_notes = resolution_notes;
@@ -4338,6 +4357,17 @@ app.post("/api/agent-config/:id/manual", authenticateUser, async (req: any, res:
       .eq('user_id', userId)
       .maybeSingle();
     if (!ownedAgent) return res.status(404).json({ error: "Agent not found" });
+
+    // Bound content length per type so a caller can't store arbitrarily large
+    // text blobs (matches the limits enforced by the dedicated POST/PATCH routes).
+    if (typeof content !== 'string' || !content.trim()) {
+      return res.status(400).json({ error: "content is required." });
+    }
+    const MAX_CONTENT: Record<string, number> = { personality: 8000, directive: 2000, knowledge: 2000 };
+    const max = MAX_CONTENT[type];
+    if (max && content.length > max) {
+      return res.status(400).json({ error: `content must be ${max} characters or less.` });
+    }
 
     if (type === 'personality') {
        await db.from('wireline_personality').upsert(
@@ -6865,7 +6895,11 @@ app.post("/api/agents/:id/optimize", authenticateUser, async (req: any, res: any
 
       const result = await model.generateContent(prompt);
       const aiText = result.response.text();
-      res.json(JSON.parse(aiText || "{}"));
+      let parsed: any = {};
+      try { parsed = JSON.parse(aiText || "{}"); } catch {
+        return res.status(502).json({ error: "Optimizer returned malformed JSON." });
+      }
+      res.json(parsed);
    } catch (e) {
       res.status(500).json({ error: "Optimization protocol failed" });
    }
@@ -9742,6 +9776,11 @@ app.post("/api/knowledge-gaps/:lessonId/promote", authenticateUser, async (req: 
       lesson.lesson.replace(/^\[KNOWLEDGE GAP\]\s*/, "").trim();
 
     if (!content) return res.status(400).json({ error: "Content is empty." });
+    // Match the limit enforced by POST/PATCH /api/knowledge so promoted entries
+    // can't exceed what a normal knowledge insert would allow.
+    if (content.length > 2000) {
+      return res.status(400).json({ error: "Content must be 2000 characters or less." });
+    }
 
     await db.from("wireline_knowledge").insert({
       agent_id: lesson.agent_id,
