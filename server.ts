@@ -38,6 +38,7 @@ import { computeAuditSummary } from "./src/lib/audit-summary";
 import { computeDashboardBenchmarks } from "./src/lib/dashboard-benchmarks";
 import { buildContactProfile, normalizePhoneTail } from "./src/lib/contact-profile";
 import { computeOutcomeBreakdown, computeCallStats, callIdsFromLeads } from "./src/lib/campaign-analytics";
+import { isPrivateIp, isPrivateIpv6, isSsrfUrl, validateWebhookUrl, hostnameResolvesToPrivate } from "./src/lib/webhook-validators";
 
 // On Vercel, VERCEL_URL is automatically set to the deployment hostname
 // (e.g. "myapp-abc123.vercel.app") with no protocol or trailing slash.
@@ -868,12 +869,23 @@ async function attemptWebhookDelivery(deliveryId: number) {
     }).eq("id", deliveryId);
     return;
   }
-  // Delivery-time SSRF guard: catch URLs that pre-date the registration
-  // validator or were inserted directly into the DB. Permanent failure — no retry.
+  // Delivery-time SSRF guard layer 1: pattern check (sync, catches IP literals
+  // and grandfathered rows). Permanent failure — no retry.
   if (isSsrfUrl(hook.url)) {
     await db.from("wireline_webhook_deliveries").update({
       status: "dead",
       last_error: "Blocked: webhook URL targets a private or internal address.",
+      attempts: (row.attempts || 0) + 1,
+    }).eq("id", deliveryId);
+    return;
+  }
+  // Delivery-time SSRF guard layer 2: DNS resolution (async, guards against DNS
+  // rebinding where a domain was registered pointing at a public IP then switched
+  // to a private one after the registration-time check passed).
+  if (await hostnameResolvesToPrivate(hook.url)) {
+    await db.from("wireline_webhook_deliveries").update({
+      status: "dead",
+      last_error: "Blocked: webhook URL hostname resolves to a private or internal address.",
       attempts: (row.attempts || 0) + 1,
     }).eq("id", deliveryId);
     return;
@@ -7596,102 +7608,6 @@ app.post("/api/claude/agent-review/apply-directive", authenticateUser, async (re
 //    Body: { event, timestamp, data }
 // ──────────────────────────────────────────────────────────
 
-function isPrivateIp(ip: string): boolean {
-  return (
-    ip === "0.0.0.0" ||
-    /^127\./.test(ip) ||
-    /^10\./.test(ip) ||
-    /^172\.(1[6-9]|2\d|3[01])\./.test(ip) ||
-    /^192\.168\./.test(ip) ||
-    /^169\.254\./.test(ip)
-  );
-}
-
-function isPrivateIpv6(ip: string): boolean {
-  const h = ip.toLowerCase();
-  return (
-    h === "::1" ||
-    h === "::" ||            // unspecified — binds to all interfaces
-    /^fe[89ab]/i.test(h) ||  // fe80::/10 link-local (fe80–febf)
-    /^f[cd]/i.test(h) ||     // fc00::/7 ULA
-    /^::ffff:/i.test(h)      // IPv4-mapped
-  );
-}
-
-// Sync SSRF guard — pattern checks only, no DNS. Used at delivery time to
-// catch URLs that pre-date the registration validator or were inserted directly.
-function isSsrfUrl(raw: string): boolean {
-  let parsed: URL;
-  try { parsed = new URL(raw); } catch { return true; }
-  const rawHost = parsed.hostname.toLowerCase();
-  const host = rawHost.startsWith('[') ? rawHost.slice(1, -1) : rawHost;
-  return (
-    /^::ffff:/i.test(host) ||
-    host === "::" ||
-    host === "::1" ||
-    host === "localhost" ||
-    host === "0.0.0.0" ||
-    /^127\./.test(host) ||
-    /^10\./.test(host) ||
-    /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
-    /^192\.168\./.test(host) ||
-    /^169\.254\./.test(host) ||
-    /^f[cd]/i.test(host) ||      // fc00::/7 ULA
-    /^fe[89ab]/i.test(host)      // fe80::/10 link-local
-  );
-}
-
-// Block private/loopback/link-local hosts to prevent SSRF via webhook URLs.
-// Also does a DNS pre-check for domain names so a domain resolving to a private
-// IP is rejected at registration time (does not protect against DNS rebinding
-// after registration — that requires network-level controls).
-async function validateWebhookUrl(raw: string): Promise<string | null> {
-  let parsed: URL;
-  try { parsed = new URL(raw); } catch { return "Invalid URL."; }
-  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
-    return "Webhook URL must use http or https.";
-  }
-  // URL.hostname includes brackets for IPv6 literals (e.g. "[::1]") — strip them.
-  const rawHost = parsed.hostname.toLowerCase();
-  const host = rawHost.startsWith('[') ? rawHost.slice(1, -1) : rawHost;
-  // Block IPv4-mapped IPv6 (::ffff:x.x.x.x / ::ffff:xx:xx) — reaches IPv4 private space.
-  if (/^::ffff:/i.test(host)) {
-    return "Webhook URL must not target private or internal addresses.";
-  }
-  // Block loopback, private RFC-1918, link-local (fe80::/10), ULA, and unspecified.
-  if (
-    host === "localhost" ||
-    host === "0.0.0.0" ||
-    /^127\./.test(host) ||
-    /^10\./.test(host) ||
-    /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
-    /^192\.168\./.test(host) ||
-    /^169\.254\./.test(host) ||
-    /^::1$/.test(host) ||
-    host === "::" ||             // unspecified — binds to all interfaces
-    /^f[cd]/i.test(host) ||      // fc00::/7 ULA (fc** and fd**)
-    /^fe[89ab]/i.test(host)      // fe80::/10 link-local (fe80–febf)
-  ) {
-    return "Webhook URL must not target private or internal addresses.";
-  }
-  // For domain names, resolve every A and AAAA answer and reject if any is private.
-  // Using all:true ensures a host with both a public and a private record can't
-  // slip through by having the sampled address be the public one.
-  // Won't stop DNS rebinding after registration — that requires network controls.
-  const isIpLiteral = /^[\d.]+$/.test(host) || host.includes(':');
-  if (!isIpLiteral) {
-    const { lookup } = await import("node:dns/promises");
-    const BLOCKED = "Webhook URL must not target private or internal addresses.";
-    try {
-      const addrs = await lookup(host, { all: true });
-      for (const { address, family } of addrs) {
-        if (family === 4 && isPrivateIp(address)) return BLOCKED;
-        if (family === 6 && isPrivateIpv6(address)) return BLOCKED;
-      }
-    } catch { /* DNS failure — allow through; delivery will fail naturally */ }
-  }
-  return null;
-}
 
 app.get("/api/webhooks", authenticateUser, async (req: any, res: any) => {
   try {
