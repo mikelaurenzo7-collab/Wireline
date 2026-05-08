@@ -7588,13 +7588,22 @@ app.post("/api/claude/agent-review/apply-directive", authenticateUser, async (re
 
 function isPrivateIp(ip: string): boolean {
   return (
-    ip === "::1" ||
     ip === "0.0.0.0" ||
     /^127\./.test(ip) ||
     /^10\./.test(ip) ||
     /^172\.(1[6-9]|2\d|3[01])\./.test(ip) ||
     /^192\.168\./.test(ip) ||
     /^169\.254\./.test(ip)
+  );
+}
+
+function isPrivateIpv6(ip: string): boolean {
+  const h = ip.toLowerCase();
+  return (
+    h === "::1" ||
+    /^fe[89ab]/i.test(h) ||  // fe80::/10 link-local (fe80–febf)
+    /^f[cd]/i.test(h) ||     // fc00::/7 ULA
+    /^::ffff:/i.test(h)      // IPv4-mapped
   );
 }
 
@@ -7615,7 +7624,7 @@ async function validateWebhookUrl(raw: string): Promise<string | null> {
   if (/^::ffff:/i.test(host)) {
     return "Webhook URL must not target private or internal addresses.";
   }
-  // Block loopback, private RFC-1918, link-local, and unspecified addresses.
+  // Block loopback, private RFC-1918, link-local (fe80::/10), ULA, and unspecified.
   if (
     host === "localhost" ||
     host === "0.0.0.0" ||
@@ -7625,24 +7634,27 @@ async function validateWebhookUrl(raw: string): Promise<string | null> {
     /^192\.168\./.test(host) ||
     /^169\.254\./.test(host) ||
     /^::1$/.test(host) ||
-    /^f[cd]/i.test(host) ||  // fc00::/7 ULA (covers fc** and fd** prefixes)
-    /^fe80:/i.test(host)
+    /^f[cd]/i.test(host) ||      // fc00::/7 ULA (fc** and fd**)
+    /^fe[89ab]/i.test(host)      // fe80::/10 link-local (fe80–febf)
   ) {
     return "Webhook URL must not target private or internal addresses.";
   }
-  // For domain names, resolve and check the resulting IP. Blocks domains that
-  // always point to a private address; won't stop DNS rebinding after registration.
+  // For domain names, resolve A and AAAA records and validate both. Blocks domains
+  // that point to private addresses; won't stop DNS rebinding after registration.
   const isIpLiteral = /^[\d.]+$/.test(host) || host.includes(':');
   if (!isIpLiteral) {
+    const { lookup } = await import("node:dns/promises");
+    const BLOCKED = "Webhook URL must not target private or internal addresses.";
+    // Check A record (IPv4)
     try {
-      const { lookup } = await import("node:dns/promises");
       const { address } = await lookup(host, { family: 4 });
-      if (isPrivateIp(address)) {
-        return "Webhook URL must not target private or internal addresses.";
-      }
-    } catch {
-      // DNS lookup failed — allow through; delivery will fail naturally.
-    }
+      if (isPrivateIp(address)) return BLOCKED;
+    } catch { /* no A record — domain may be IPv6-only */ }
+    // Check AAAA record (IPv6) — a domain with only AAAA pointing at ::1 etc. must also be blocked.
+    try {
+      const { address } = await lookup(host, { family: 6 });
+      if (isPrivateIpv6(address)) return BLOCKED;
+    } catch { /* no AAAA record or DNS failure — allow through; delivery will fail naturally */ }
   }
   return null;
 }
