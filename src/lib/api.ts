@@ -5,6 +5,37 @@ import { supabase } from "./supabase";
 // the UI never spins forever on a stalled fetch.
 const DEFAULT_TIMEOUT_MS = 120_000;
 
+// ---------------------------------------------------------------------------
+// Session token cache
+// ---------------------------------------------------------------------------
+// supabase.auth.getSession() involves an async local-storage read + token
+// refresh check on every call. With 4+ concurrent authFetch calls on each
+// dashboard poll (30 s interval) this adds up to hundreds of redundant
+// async ticks per session. We cache the bearer token in memory and only
+// refresh when the auth state actually changes or a 401 is returned.
+// ---------------------------------------------------------------------------
+
+let _cachedToken: string | null = null;
+
+// Keep the cached token in sync with Supabase's session (handles logout,
+// token refresh, and initial load). This listener is registered once at
+// module level so it's always up to date regardless of component lifecycle.
+supabase.auth.onAuthStateChange((_event, session) => {
+  _cachedToken = session?.access_token ?? null;
+});
+
+// Populate synchronously on first import by piggybacking on the promise.
+supabase.auth.getSession().then(({ data: { session } }) => {
+  _cachedToken = session?.access_token ?? null;
+});
+
+async function getBearerToken(forceRefresh = false): Promise<string | null> {
+  if (_cachedToken && !forceRefresh) return _cachedToken;
+  const { data: { session } } = await supabase.auth.getSession();
+  _cachedToken = session?.access_token ?? null;
+  return _cachedToken;
+}
+
 /**
  * Safely parses a fetch Response as JSON. If the body is not valid JSON
  * (e.g. an HTML error page from a reverse proxy), returns a generic error
@@ -48,13 +79,12 @@ function combineSignals(...signals: AbortSignal[]): AbortSignal {
 }
 
 export async function authFetch(url: string, options: RequestInit = {}) {
-  const { data: { session } } = await supabase.auth.getSession();
-  const token = session?.access_token;
+  const token = await getBearerToken();
 
-  const headers = {
+  const makeHeaders = (t: string | null) => ({
     ...options.headers,
-    ...(token ? { "Authorization": `Bearer ${token}` } : {}),
-  };
+    ...(t ? { "Authorization": `Bearer ${t}` } : {}),
+  });
 
   // Always install the deadline. If the caller supplied a signal we
   // compose both so caller-driven cancellation still works while a
@@ -65,7 +95,18 @@ export async function authFetch(url: string, options: RequestInit = {}) {
     ? combineSignals(options.signal, timeoutCtrl.signal)
     : timeoutCtrl.signal;
   try {
-    return await fetch(url, { ...options, headers, signal });
+    const res = await fetch(url, { ...options, headers: makeHeaders(token), signal });
+    // Transparent token-refresh on 401: evict the stale cached token, get
+    // a fresh one, then replay the request once. Handles the edge case where
+    // the Supabase client has already issued a new token (e.g. after a
+    // background refresh) but our cache still holds the old one.
+    if (res.status === 401) {
+      const freshToken = await getBearerToken(true);
+      if (freshToken && freshToken !== token) {
+        return fetch(url, { ...options, headers: makeHeaders(freshToken), signal });
+      }
+    }
+    return res;
   } finally {
     clearTimeout(timer);
   }

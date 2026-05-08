@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { motion } from "motion/react";
 import {
   BarChart3, TrendingUp, Layers, Calendar, Trophy, AlertOctagon, Loader2,
@@ -20,16 +20,30 @@ import { useToast } from "../contexts/ToastContext";
 
 type View = "funnel" | "topics" | "heatmap" | "leaderboard" | "failures" | "spend" | "quality";
 
+const DAY_OPTIONS = [7, 14, 30, 60, 90] as const;
+
+function ScrollWrap({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="h-full w-full overflow-y-auto scrollbar-hide pr-1">
+      {children}
+    </div>
+  );
+}
+
 export default function InsightsView() {
   const [days, setDays] = useState(30);
 
-  const wrap = (node: React.ReactNode) => (
-    <div className="h-full w-full overflow-y-auto scrollbar-hide pr-1">
-      {node}
-    </div>
-  );
-
-  const DAY_OPTIONS = [7, 14, 30, 60, 90];
+  // Memoize tabs so PageShell doesn't re-render the tab strip on every
+  // keystroke / state update that doesn't affect the day window.
+  const tabs = useMemo(() => [
+    { id: "funnel",      label: "Funnel",      icon: TrendingUp,   content: <ScrollWrap><FunnelView      days={days} /></ScrollWrap> },
+    { id: "topics",      label: "Topics",      icon: Layers,       content: <ScrollWrap><TopicsView /></ScrollWrap> },
+    { id: "heatmap",     label: "Heatmap",     icon: Calendar,     content: <ScrollWrap><HeatmapView     days={days} /></ScrollWrap> },
+    { id: "leaderboard", label: "Leaderboard", icon: Trophy,       content: <ScrollWrap><LeaderboardView days={days} /></ScrollWrap> },
+    { id: "failures",    label: "Failures",    icon: AlertOctagon, content: <ScrollWrap><FailureModesView /></ScrollWrap> },
+    { id: "spend",       label: "AI Spend",    icon: Receipt,      content: <ScrollWrap><AISpendView     days={days} /></ScrollWrap> },
+    { id: "quality",     label: "Quality",     icon: Star,         content: <ScrollWrap><QualityView     days={days} /></ScrollWrap> },
+  ], [days]);
 
   return (
     <PageShell
@@ -62,15 +76,7 @@ export default function InsightsView() {
           <CsvExportButton type="calls" label="CSV" />
         </>
       }
-      tabs={[
-        { id: "funnel",      label: "Funnel",      icon: TrendingUp,   content: wrap(<FunnelView      days={days} />) },
-        { id: "topics",      label: "Topics",      icon: Layers,       content: wrap(<TopicsView />) },
-        { id: "heatmap",     label: "Heatmap",     icon: Calendar,     content: wrap(<HeatmapView     days={days} />) },
-        { id: "leaderboard", label: "Leaderboard", icon: Trophy,       content: wrap(<LeaderboardView days={days} />) },
-        { id: "failures",    label: "Failures",    icon: AlertOctagon, content: wrap(<FailureModesView />) },
-        { id: "spend",       label: "AI Spend",    icon: Receipt,      content: wrap(<AISpendView     days={days} />) },
-        { id: "quality",     label: "Quality",     icon: Star,         content: wrap(<QualityView     days={days} />) },
-      ]}
+      tabs={tabs}
     />
   );
 }

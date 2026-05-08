@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   Activity, PhoneCall, Mic, Square, Loader2, TrendingUp, DollarSign,
@@ -31,6 +31,11 @@ type VapiInstance = {
 /** Lead score thresholds for color-coding hot leads in the Fleet tab. */
 const HOT_LEAD_THRESHOLD = 80;
 const WARM_LEAD_THRESHOLD = 60;
+
+// Computed once at module load time; the day doesn't change during a session.
+const TODAY_LABEL = new Date().toLocaleDateString("en-US", {
+  weekday: "long", month: "long", day: "numeric",
+});
 
 export default function DashboardHome() {
   const { error: toastError } = useToast();
@@ -194,7 +199,14 @@ export default function DashboardHome() {
 
   const recentLogs: any[] = stats?.recentLogs || [];
   const hotLeads: any[]   = stats?.hotLeads || [];
-  const voiceAgents: any[] = (stats?.agents || []).filter((a: any) => a.channel === 'voice' || a.channel === 'omnichannel' || !a.channel);
+  // Memoized so the identity is stable across renders — the effect below
+  // depends on this array and would fire on every render without memoization.
+  const voiceAgents: any[] = useMemo(
+    () => (stats?.agents || []).filter(
+      (a: any) => a.channel === "voice" || a.channel === "omnichannel" || !a.channel
+    ),
+    [stats?.agents]
+  );
 
   useEffect(() => {
     if (!selectedDialAgentId && voiceAgents.length > 0) {
@@ -788,7 +800,7 @@ export default function DashboardHome() {
 
   return (
     <PageShell
-      eyebrow={`Today · ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}`}
+      eyebrow={`Today · ${TODAY_LABEL}`}
       title="Dashboard"
       subtitle="Live overview of your agents and activity"
       actions={

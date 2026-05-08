@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from "react";
+import React, { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from "react-router-dom";
 import { Users, Activity, MessageSquare, Calendar, PhoneOutgoing, ServerCog, PlugZap, History, Mail, Menu, X, LogOut, Shield, Database, Waves, Inbox, BarChart3, Loader2, AlertTriangle, Radio, Keyboard, ChevronRight, User, Ban, ScrollText } from "lucide-react";
 import { motion, AnimatePresence, MotionConfig } from "motion/react";
@@ -62,22 +62,33 @@ type NavItem = {
 
 function AuroraBackdrop() {
   return (
-    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
+      {/* will-change:transform promotes each orb to its own compositor layer
+          so the browser doesn't repaint the page background on every frame. */}
       <motion.div
         className="absolute -top-[20%] -left-[10%] w-[85vw] h-[85vw] rounded-full"
-        style={{ background: "radial-gradient(circle at center, rgba(10,200,212,0.09), transparent 58%)" }}
+        style={{
+          background: "radial-gradient(circle at center, rgba(10,200,212,0.09), transparent 58%)",
+          willChange: "transform",
+        }}
         animate={{ x: [0, 50, 0], y: [0, -40, 0] }}
         transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
         className="absolute -bottom-[20%] -right-[10%] w-[75vw] h-[75vw] rounded-full"
-        style={{ background: "radial-gradient(circle at center, rgba(224,64,192,0.07), transparent 58%)" }}
+        style={{
+          background: "radial-gradient(circle at center, rgba(224,64,192,0.07), transparent 58%)",
+          willChange: "transform",
+        }}
         animate={{ x: [0, -40, 0], y: [0, 50, 0] }}
         transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
         className="absolute top-[40%] left-[40%] w-[60vw] h-[60vw] rounded-full"
-        style={{ background: "radial-gradient(circle at center, rgba(155,89,245,0.07), transparent 58%)" }}
+        style={{
+          background: "radial-gradient(circle at center, rgba(155,89,245,0.07), transparent 58%)",
+          willChange: "transform",
+        }}
         animate={{ x: [0, 70, -30, 0], y: [0, -50, 40, 0] }}
         transition={{ duration: 35, repeat: Infinity, ease: "easeInOut" }}
       />
@@ -142,11 +153,11 @@ function FloatingRail({ open, setOpen, onShowShortcuts }: { open: boolean; setOp
   // A rail item is active when the current pathname matches its path or
   // any of its `matches` (used by hub entries that own multiple URLs —
   // e.g. Channels owns /logs + /outbound + /inbox + /appointments).
-  const isActive = (item: NavItem) => {
+  const isActive = useCallback((item: NavItem) => {
     if (location.pathname === item.path) return true;
     if (!item.matches) return false;
     return item.matches.some(m => location.pathname === m || location.pathname.startsWith(`${m}/`));
-  };
+  }, [location.pathname]);
 
   // Pin = persistent expanded state (label visible). Persists across reloads.
   const [pinned, setPinned] = useState<boolean>(() => {
@@ -189,7 +200,7 @@ function FloatingRail({ open, setOpen, onShowShortcuts }: { open: boolean; setOp
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
 
-  const renderRailItem = (item: NavItem) => {
+  const renderRailItem = useCallback((item: NavItem) => {
     const active = isActive(item);
     // Sum badge counts for this entry's primary path AND every owned
     // sub-path. Without this, post-consolidation hub entries (Channels
@@ -272,7 +283,7 @@ function FloatingRail({ open, setOpen, onShowShortcuts }: { open: boolean; setOp
         )}
       </Link>
     );
-  };
+  }, [isActive, navBadges, expanded, setOpen]);
 
   return (
     <>
