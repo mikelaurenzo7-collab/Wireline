@@ -868,6 +868,16 @@ async function attemptWebhookDelivery(deliveryId: number) {
     }).eq("id", deliveryId);
     return;
   }
+  // Delivery-time SSRF guard: catch URLs that pre-date the registration
+  // validator or were inserted directly into the DB. Permanent failure — no retry.
+  if (isSsrfUrl(hook.url)) {
+    await db.from("wireline_webhook_deliveries").update({
+      status: "dead",
+      last_error: "Blocked: webhook URL targets a private or internal address.",
+      attempts: (row.attempts || 0) + 1,
+    }).eq("id", deliveryId);
+    return;
+  }
 
   const crypto = await import("node:crypto");
   const payloadStr = JSON.stringify(row.payload);
@@ -7601,9 +7611,33 @@ function isPrivateIpv6(ip: string): boolean {
   const h = ip.toLowerCase();
   return (
     h === "::1" ||
+    h === "::" ||            // unspecified — binds to all interfaces
     /^fe[89ab]/i.test(h) ||  // fe80::/10 link-local (fe80–febf)
     /^f[cd]/i.test(h) ||     // fc00::/7 ULA
     /^::ffff:/i.test(h)      // IPv4-mapped
+  );
+}
+
+// Sync SSRF guard — pattern checks only, no DNS. Used at delivery time to
+// catch URLs that pre-date the registration validator or were inserted directly.
+function isSsrfUrl(raw: string): boolean {
+  let parsed: URL;
+  try { parsed = new URL(raw); } catch { return true; }
+  const rawHost = parsed.hostname.toLowerCase();
+  const host = rawHost.startsWith('[') ? rawHost.slice(1, -1) : rawHost;
+  return (
+    /^::ffff:/i.test(host) ||
+    host === "::" ||
+    host === "::1" ||
+    host === "localhost" ||
+    host === "0.0.0.0" ||
+    /^127\./.test(host) ||
+    /^10\./.test(host) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
+    /^192\.168\./.test(host) ||
+    /^169\.254\./.test(host) ||
+    /^f[cd]/i.test(host) ||      // fc00::/7 ULA
+    /^fe[89ab]/i.test(host)      // fe80::/10 link-local
   );
 }
 
@@ -7634,6 +7668,7 @@ async function validateWebhookUrl(raw: string): Promise<string | null> {
     /^192\.168\./.test(host) ||
     /^169\.254\./.test(host) ||
     /^::1$/.test(host) ||
+    host === "::" ||             // unspecified — binds to all interfaces
     /^f[cd]/i.test(host) ||      // fc00::/7 ULA (fc** and fd**)
     /^fe[89ab]/i.test(host)      // fe80::/10 link-local (fe80–febf)
   ) {
