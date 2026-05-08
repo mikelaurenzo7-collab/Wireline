@@ -21,7 +21,7 @@ import { SchemaType } from "@google/generative-ai";
 import { createClient } from "@supabase/supabase-js";
 import { google } from "googleapis";
 import Stripe from "stripe";
-import { randomUUID } from "node:crypto";
+import { randomUUID, timingSafeEqual as cryptoTimingSafeEqual } from "node:crypto";
 import * as claudeBrain from "./src/lib/claude-brain";
 import { AuditLogger } from "./src/lib/audit-logger";
 import { rateLimit, isRedisConfigured, startMemoryCleanup } from "./src/lib/rate-limit";
@@ -1398,10 +1398,10 @@ const VAPI_WEBHOOK_SECRET = process.env.VAPI_WEBHOOK_SECRET || (IS_PROD ? "" : "
 let _warnedAboutVapiSecret = false;
 
 function timingSafeEq(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let mismatch = 0;
-  for (let i = 0; i < a.length; i++) mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return mismatch === 0;
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return cryptoTimingSafeEqual(bufA, bufB);
 }
 
 app.post("/api/vapi-webhook", async (req, res) => {
@@ -2717,7 +2717,7 @@ app.get("/api/calls", authenticateUser, async (req: any, res: any) => {
   try {
     const limitRaw = parseInt(req.query.limit as string);
     const offsetRaw = parseInt(req.query.offset as string);
-    const limit = Math.min(isNaN(limitRaw) ? 50 : limitRaw, 200);
+    const limit = Math.min(Math.max(1, isNaN(limitRaw) ? 50 : limitRaw), 200);
     const offset = isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw);
     
     const { data: calls, error, count } = await db
@@ -2850,7 +2850,7 @@ app.get("/api/appointments", authenticateUser, async (req: any, res: any) => {
     // shipping a multi-MB response. Default 200, max 1000.
     const limitRaw = parseInt(req.query.limit as string);
     const offsetRaw = parseInt(req.query.offset as string);
-    const limit = Math.min(isNaN(limitRaw) ? 200 : limitRaw, 1000);
+    const limit = Math.min(Math.max(1, isNaN(limitRaw) ? 200 : limitRaw), 1000);
     const offset = isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw);
 
     const { data: appointments, error, count } = await db
@@ -3705,7 +3705,12 @@ app.get("/api/agents/:id/export", authenticateUser, async (req: any, res: any) =
       },
     };
 
-    res.setHeader('Content-Disposition', `attachment; filename="${agentRes.data.name.replace(/\s+/g, '_')}_config.json"`);
+    const safeName = agentRes.data.name
+      .replace(/[^\w\s-]/g, '')   // strip non-word chars (quotes, newlines, path chars)
+      .replace(/\s+/g, '_')
+      .slice(0, 64)
+      || 'agent';
+    res.setHeader('Content-Disposition', `attachment; filename="${safeName}_config.json"`);
     res.setHeader('Content-Type', 'application/json');
     res.json(exportData);
   } catch (err) {
@@ -4612,7 +4617,7 @@ app.get("/api/campaigns/:id/leads", authenticateUser, async (req: any, res: any)
     // can have many. Stream them in chunks instead of loading everything.
     const limitRaw = parseInt(req.query.limit as string);
     const offsetRaw = parseInt(req.query.offset as string);
-    const limit = Math.min(isNaN(limitRaw) ? 200 : limitRaw, 1000);
+    const limit = Math.min(Math.max(1, isNaN(limitRaw) ? 200 : limitRaw), 1000);
     const offset = isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw);
 
     const { data, error, count } = await db.from('wireline_outbound_leads')
@@ -5100,7 +5105,7 @@ app.get("/api/outbound", authenticateUser, async (req: any, res: any) => {
   try {
     const limitRaw = parseInt(req.query.limit as string);
     const offsetRaw = parseInt(req.query.offset as string);
-    const limit = Math.min(isNaN(limitRaw) ? 100 : limitRaw, 500);
+    const limit = Math.min(Math.max(1, isNaN(limitRaw) ? 100 : limitRaw), 500);
     const offset = isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw);
     const { data, count, error } = await db
       .from('wireline_outbound_leads')
@@ -6086,7 +6091,7 @@ app.get("/api/emails/threads", authenticateUser, async (req: any, res: any) => {
     // doesn't ship 50MB of JSON to the client on every load.
     const limitRaw = parseInt(req.query.limit as string);
     const offsetRaw = parseInt(req.query.offset as string);
-    const limit = Math.min(isNaN(limitRaw) ? 100 : limitRaw, 500);
+    const limit = Math.min(Math.max(1, isNaN(limitRaw) ? 100 : limitRaw), 500);
     const offset = isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw);
 
     const { data: threads, error, count } = await db.from('wireline_email_threads')
@@ -7578,6 +7583,32 @@ app.post("/api/claude/agent-review/apply-directive", authenticateUser, async (re
 //    Body: { event, timestamp, data }
 // ──────────────────────────────────────────────────────────
 
+// Block private/loopback/link-local hosts to prevent SSRF via webhook URLs.
+function validateWebhookUrl(raw: string): string | null {
+  let parsed: URL;
+  try { parsed = new URL(raw); } catch { return "Invalid URL."; }
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+    return "Webhook URL must use http or https.";
+  }
+  const host = parsed.hostname.toLowerCase();
+  // Block loopback, private RFC-1918, link-local, and unspecified addresses.
+  if (
+    host === "localhost" ||
+    host === "0.0.0.0" ||
+    /^127\./.test(host) ||
+    /^10\./.test(host) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
+    /^192\.168\./.test(host) ||
+    /^169\.254\./.test(host) ||
+    /^::1$/.test(host) ||
+    /^fc00:/i.test(host) ||
+    /^fe80:/i.test(host)
+  ) {
+    return "Webhook URL must not target private or internal addresses.";
+  }
+  return null;
+}
+
 app.get("/api/webhooks", authenticateUser, async (req: any, res: any) => {
   try {
     const { data, error } = await db.from("wireline_webhooks")
@@ -7593,9 +7624,13 @@ app.post("/api/webhooks", authenticateUser, async (req: any, res: any) => {
     if (!name || !url || !Array.isArray(events) || events.length === 0) {
       return res.status(400).json({ error: "name, url, and events[] required." });
     }
-    try { new URL(url); } catch { return res.status(400).json({ error: "Invalid URL." }); }
+    const urlErr = validateWebhookUrl(url);
+    if (urlErr) return res.status(400).json({ error: urlErr });
     const bad = events.filter((e: string) => !WEBHOOK_EVENTS.includes(e as WebhookEvent));
     if (bad.length) return res.status(400).json({ error: `Unknown events: ${bad.join(", ")}` });
+    if (secret !== undefined && secret !== null && secret !== "" && String(secret).length < 16) {
+      return res.status(400).json({ error: "Webhook secret must be at least 16 characters." });
+    }
 
     const { data, error } = await db.from("wireline_webhooks").insert({
       user_id: req.user.id, name, url, events, secret: secret || null, active: active ?? true,
@@ -7611,7 +7646,10 @@ app.patch("/api/webhooks/:id", authenticateUser, async (req: any, res: any) => {
     for (const k of ["name", "url", "events", "secret", "active"]) {
       if (req.body[k] !== undefined) patch[k] = req.body[k];
     }
-    if (patch.url) { try { new URL(patch.url); } catch { return res.status(400).json({ error: "Invalid URL." }); } }
+    if (patch.url) { const urlErr = validateWebhookUrl(patch.url); if (urlErr) return res.status(400).json({ error: urlErr }); }
+    if (patch.secret !== undefined && patch.secret !== null && patch.secret !== "" && String(patch.secret).length < 16) {
+      return res.status(400).json({ error: "Webhook secret must be at least 16 characters." });
+    }
     if (patch.events) {
       if (!Array.isArray(patch.events) || patch.events.some((e: string) => !WEBHOOK_EVENTS.includes(e as WebhookEvent))) {
         return res.status(400).json({ error: "Invalid events." });
