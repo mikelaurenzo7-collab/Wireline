@@ -103,7 +103,7 @@ export async function authFetch(url: string, options: RequestInit = {}) {
     if (res.status === 401) {
       const freshToken = await getBearerToken(true);
       if (freshToken && freshToken !== token) {
-        return fetch(url, { ...options, headers: makeHeaders(freshToken), signal });
+        return await fetch(url, { ...options, headers: makeHeaders(freshToken), signal });
       }
     }
     return res;
