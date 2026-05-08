@@ -7674,22 +7674,21 @@ async function validateWebhookUrl(raw: string): Promise<string | null> {
   ) {
     return "Webhook URL must not target private or internal addresses.";
   }
-  // For domain names, resolve A and AAAA records and validate both. Blocks domains
-  // that point to private addresses; won't stop DNS rebinding after registration.
+  // For domain names, resolve every A and AAAA answer and reject if any is private.
+  // Using all:true ensures a host with both a public and a private record can't
+  // slip through by having the sampled address be the public one.
+  // Won't stop DNS rebinding after registration — that requires network controls.
   const isIpLiteral = /^[\d.]+$/.test(host) || host.includes(':');
   if (!isIpLiteral) {
     const { lookup } = await import("node:dns/promises");
     const BLOCKED = "Webhook URL must not target private or internal addresses.";
-    // Check A record (IPv4)
     try {
-      const { address } = await lookup(host, { family: 4 });
-      if (isPrivateIp(address)) return BLOCKED;
-    } catch { /* no A record — domain may be IPv6-only */ }
-    // Check AAAA record (IPv6) — a domain with only AAAA pointing at ::1 etc. must also be blocked.
-    try {
-      const { address } = await lookup(host, { family: 6 });
-      if (isPrivateIpv6(address)) return BLOCKED;
-    } catch { /* no AAAA record or DNS failure — allow through; delivery will fail naturally */ }
+      const addrs = await lookup(host, { all: true });
+      for (const { address, family } of addrs) {
+        if (family === 4 && isPrivateIp(address)) return BLOCKED;
+        if (family === 6 && isPrivateIpv6(address)) return BLOCKED;
+      }
+    } catch { /* DNS failure — allow through; delivery will fail naturally */ }
   }
   return null;
 }
