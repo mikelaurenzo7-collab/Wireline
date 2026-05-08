@@ -34,6 +34,7 @@ import { computeDashboardStats } from "./src/lib/dashboard-stats";
 import { extractCapturedProfileIntel, buildCustomerIntelBlock } from "./src/lib/customer-intel";
 import { compileActivityFeed } from "./src/lib/fleet-activity";
 import { computeAgentPerformance, emptyAgentPerformance } from "./src/lib/agent-performance";
+import { computeAuditSummary } from "./src/lib/audit-summary";
 
 // On Vercel, VERCEL_URL is automatically set to the deployment hostname
 // (e.g. "myapp-abc123.vercel.app") with no protocol or trailing slash.
@@ -8648,81 +8649,16 @@ app.get("/api/audit/summary", authenticateUser, async (req: any, res: any) => {
     const days = Math.min(parseInt((req.query.days as string) || "30"), 365);
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-    const { data: rows } = await db
+    const { data: rows, error } = await db
       .from("wireline_audit_log")
       .select("action, provider, model, input_tokens, output_tokens, cache_read_tokens, cache_create_tokens, cost_usd, latency_ms, created_at")
       .eq("user_id", req.user.id)
       .gte("created_at", since)
       .order("created_at", { ascending: false })
       .limit(5000);
+    if (error) throw error;
 
-    const all = rows || [];
-    const num = (n: any) => Number(n || 0);
-
-    // Totals
-    const totals = all.reduce((acc: any, r: any) => {
-      acc.calls += 1;
-      acc.cost += num(r.cost_usd);
-      acc.input += num(r.input_tokens);
-      acc.output += num(r.output_tokens);
-      acc.cache_read += num(r.cache_read_tokens);
-      acc.cache_create += num(r.cache_create_tokens);
-      return acc;
-    }, { calls: 0, cost: 0, input: 0, output: 0, cache_read: 0, cache_create: 0 });
-
-    // Cache savings — what we'd have paid if cache_read tokens were full-price input.
-    // 0.10x rate means we save 0.90x the equivalent input cost.
-    const inputRate = (model: string) =>
-      model?.includes("haiku") ? 1 : model?.includes("sonnet") ? 3 : 5;
-    const cacheSavings = all.reduce((s: number, r: any) =>
-      s + (num(r.cache_read_tokens) * inputRate(r.model) * 0.90) / 1_000_000, 0);
-
-    // By day
-    const byDayMap: Record<string, { day: string; calls: number; cost: number }> = {};
-    for (const r of all) {
-      const day = (r.created_at || "").slice(0, 10);
-      const b = byDayMap[day] ||= { day, calls: 0, cost: 0 };
-      b.calls += 1;
-      b.cost += num(r.cost_usd);
-    }
-    const byDay = Object.values(byDayMap).sort((a, b) => a.day.localeCompare(b.day));
-
-    // By action
-    const byActionMap: Record<string, { action: string; calls: number; cost: number; avg_latency_ms: number; _latencySum: number }> = {};
-    for (const r of all) {
-      const a = byActionMap[r.action] ||= { action: r.action, calls: 0, cost: 0, avg_latency_ms: 0, _latencySum: 0 };
-      a.calls += 1;
-      a.cost += num(r.cost_usd);
-      a._latencySum += num(r.latency_ms);
-    }
-    const byAction = Object.values(byActionMap).map(a => {
-      a.avg_latency_ms = Math.round(a._latencySum / Math.max(1, a.calls));
-      delete (a as any)._latencySum;
-      return a;
-    }).sort((a, b) => b.cost - a.cost);
-
-    // By model
-    const byModelMap: Record<string, { model: string; calls: number; cost: number }> = {};
-    for (const r of all) {
-      const key = r.model || "unknown";
-      const m = byModelMap[key] ||= { model: key, calls: 0, cost: 0 };
-      m.calls += 1;
-      m.cost += num(r.cost_usd);
-    }
-    const byModel = Object.values(byModelMap).sort((a, b) => b.cost - a.cost);
-
-    res.json({
-      window_days: days,
-      totals: {
-        ...totals,
-        cost: Number(totals.cost.toFixed(4)),
-        cache_savings_usd: Number(cacheSavings.toFixed(4)),
-        avg_cost_per_call: totals.calls ? Number((totals.cost / totals.calls).toFixed(4)) : 0,
-      },
-      by_day: byDay.map(d => ({ ...d, cost: Number(d.cost.toFixed(4)) })),
-      by_action: byAction.map(a => ({ ...a, cost: Number(a.cost.toFixed(4)) })),
-      by_model: byModel.map(m => ({ ...m, cost: Number(m.cost.toFixed(4)) })),
-    });
+    res.json(computeAuditSummary({ rows: rows || [], windowDays: days }));
   } catch (e: any) {
     res.status(500).json({ error: e?.message ?? "Audit summary failed" });
   }
