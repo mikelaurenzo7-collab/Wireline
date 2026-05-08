@@ -7586,8 +7586,23 @@ app.post("/api/claude/agent-review/apply-directive", authenticateUser, async (re
 //    Body: { event, timestamp, data }
 // ──────────────────────────────────────────────────────────
 
+function isPrivateIp(ip: string): boolean {
+  return (
+    ip === "::1" ||
+    ip === "0.0.0.0" ||
+    /^127\./.test(ip) ||
+    /^10\./.test(ip) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(ip) ||
+    /^192\.168\./.test(ip) ||
+    /^169\.254\./.test(ip)
+  );
+}
+
 // Block private/loopback/link-local hosts to prevent SSRF via webhook URLs.
-function validateWebhookUrl(raw: string): string | null {
+// Also does a DNS pre-check for domain names so a domain resolving to a private
+// IP is rejected at registration time (does not protect against DNS rebinding
+// after registration — that requires network-level controls).
+async function validateWebhookUrl(raw: string): Promise<string | null> {
   let parsed: URL;
   try { parsed = new URL(raw); } catch { return "Invalid URL."; }
   if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
@@ -7596,6 +7611,10 @@ function validateWebhookUrl(raw: string): string | null {
   // URL.hostname includes brackets for IPv6 literals (e.g. "[::1]") — strip them.
   const rawHost = parsed.hostname.toLowerCase();
   const host = rawHost.startsWith('[') ? rawHost.slice(1, -1) : rawHost;
+  // Block IPv4-mapped IPv6 (::ffff:x.x.x.x / ::ffff:xx:xx) — reaches IPv4 private space.
+  if (/^::ffff:/i.test(host)) {
+    return "Webhook URL must not target private or internal addresses.";
+  }
   // Block loopback, private RFC-1918, link-local, and unspecified addresses.
   if (
     host === "localhost" ||
@@ -7610,6 +7629,20 @@ function validateWebhookUrl(raw: string): string | null {
     /^fe80:/i.test(host)
   ) {
     return "Webhook URL must not target private or internal addresses.";
+  }
+  // For domain names, resolve and check the resulting IP. Blocks domains that
+  // always point to a private address; won't stop DNS rebinding after registration.
+  const isIpLiteral = /^[\d.]+$/.test(host) || host.includes(':');
+  if (!isIpLiteral) {
+    try {
+      const { lookup } = await import("node:dns/promises");
+      const { address } = await lookup(host, { family: 4 });
+      if (isPrivateIp(address)) {
+        return "Webhook URL must not target private or internal addresses.";
+      }
+    } catch {
+      // DNS lookup failed — allow through; delivery will fail naturally.
+    }
   }
   return null;
 }
@@ -7629,7 +7662,7 @@ app.post("/api/webhooks", authenticateUser, async (req: any, res: any) => {
     if (!name || !url || !Array.isArray(events) || events.length === 0) {
       return res.status(400).json({ error: "name, url, and events[] required." });
     }
-    const urlErr = validateWebhookUrl(url);
+    const urlErr = await validateWebhookUrl(url);
     if (urlErr) return res.status(400).json({ error: urlErr });
     const bad = events.filter((e: string) => !WEBHOOK_EVENTS.includes(e as WebhookEvent));
     if (bad.length) return res.status(400).json({ error: `Unknown events: ${bad.join(", ")}` });
@@ -7651,7 +7684,7 @@ app.patch("/api/webhooks/:id", authenticateUser, async (req: any, res: any) => {
     for (const k of ["name", "url", "events", "secret", "active"]) {
       if (req.body[k] !== undefined) patch[k] = req.body[k];
     }
-    if (patch.url) { const urlErr = validateWebhookUrl(patch.url); if (urlErr) return res.status(400).json({ error: urlErr }); }
+    if (patch.url) { const urlErr = await validateWebhookUrl(patch.url); if (urlErr) return res.status(400).json({ error: urlErr }); }
     if (patch.secret !== undefined && patch.secret !== null && patch.secret !== "" && String(patch.secret).length < 16) {
       return res.status(400).json({ error: "Webhook secret must be at least 16 characters." });
     }
