@@ -1328,7 +1328,7 @@ app.post("/api/stripe-webhook", async (req: any, res: any) => {
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err: any) {
     log.warn("Stripe webhook signature verification failed", { error: getErrorMessage(err) });
-    return res.status(400).json({ error: `Webhook Error: ${getErrorMessage(err)}` });
+    return res.status(400).json({ error: "Webhook signature verification failed." });
   }
 
   // Idempotency — Stripe retries on timeouts and occasionally double-

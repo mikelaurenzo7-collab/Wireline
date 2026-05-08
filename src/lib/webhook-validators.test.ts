@@ -79,6 +79,14 @@ describe("isSsrfUrl", () => {
     "https://fc-cdn.example.com/",
     "https://feb-promo.example.com/",
     "https://fe80-marketing.example.com/",
+    // Domains that happen to start with IPv4-prefix-like labels must not be
+    // flagged — they're not IPv4 literals.
+    "https://10.example.com/",
+    "https://192.168.example.com/",
+    "https://127.example.com/",
+    "https://172.16.example.com/",
+    "https://169.254.example.com/",
+    "https://100.64.example.com/",
   ])("allows %s", (url) => expect(isSsrfUrl(url)).toBe(false));
 });
 
@@ -172,6 +180,15 @@ describe("validateWebhookUrl — DNS checks for domain names", () => {
 
     mockLookup.mockResolvedValueOnce([{ address: "1.2.3.4", family: 4 }]);
     expect(await validateWebhookUrl("https://feb-promo.example.com/")).toBeNull();
+  });
+
+  it("does not flag domains that begin with IPv4-prefix-like labels", async () => {
+    // 10.example.com isn't an IPv4 literal — must be resolved, not pattern-rejected.
+    mockLookup.mockResolvedValueOnce([{ address: "1.2.3.4", family: 4 }]);
+    expect(await validateWebhookUrl("https://10.example.com/")).toBeNull();
+
+    mockLookup.mockResolvedValueOnce([{ address: "1.2.3.4", family: 4 }]);
+    expect(await validateWebhookUrl("https://192.168.example.com/")).toBeNull();
   });
 });
 

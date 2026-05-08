@@ -27,12 +27,18 @@ export function isPrivateIpv6(ip: string): boolean {
   );
 }
 
+// True only for hostnames that look like an IPv4 literal (four numeric octets).
+// Used to gate IPv4 private-range checks so legitimate domains like
+// "10.example.com" or "192.168.example.com" aren't rejected before DNS resolution.
+const IPV4_LITERAL_RE = /^\d{1,3}(\.\d{1,3}){3}$/;
+
 /** Sync SSRF guard — pattern checks only, no DNS. */
 export function isSsrfUrl(raw: string): boolean {
   let parsed: URL;
   try { parsed = new URL(raw); } catch { return true; }
   const rawHost = parsed.hostname.toLowerCase();
   const host = rawHost.startsWith("[") ? rawHost.slice(1, -1) : rawHost;
+  const isIpv4Literal = IPV4_LITERAL_RE.test(host);
   // IPv6 prefix checks must only run on IPv6 literals (presence of ":") — otherwise
   // legitimate domains like "fd-prod.example.com" or "feb-promo.example.com" would
   // be flagged as private.
@@ -43,12 +49,12 @@ export function isSsrfUrl(raw: string): boolean {
     host === "::1" ||
     host === "localhost" ||
     host === "0.0.0.0" ||
-    /^127\./.test(host) ||
-    /^10\./.test(host) ||
-    /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
-    /^192\.168\./.test(host) ||
-    /^169\.254\./.test(host) ||
-    CGN_RE.test(host) ||                            // 100.64.0.0/10 CGN
+    (isIpv4Literal && /^127\./.test(host)) ||
+    (isIpv4Literal && /^10\./.test(host)) ||
+    (isIpv4Literal && /^172\.(1[6-9]|2\d|3[01])\./.test(host)) ||
+    (isIpv4Literal && /^192\.168\./.test(host)) ||
+    (isIpv4Literal && /^169\.254\./.test(host)) ||
+    (isIpv4Literal && CGN_RE.test(host)) ||         // 100.64.0.0/10 CGN
     (isIpv6Literal && /^f[cd]/i.test(host)) ||      // fc00::/7 ULA
     (isIpv6Literal && /^fe[89ab]/i.test(host))      // fe80::/10 link-local
   );
@@ -70,18 +76,20 @@ export async function validateWebhookUrl(raw: string): Promise<string | null> {
   const host = rawHost.startsWith("[") ? rawHost.slice(1, -1) : rawHost;
 
   if (/^::ffff:/i.test(host)) return PRIVATE_MSG;
-  // IPv6 prefix checks must only run on IPv6 literals — otherwise domains like
-  // "fd-prod.example.com" would be incorrectly flagged.
+  // IP-literal-only checks: gate IPv4 prefix checks on a parsed IPv4 literal and
+  // IPv6 prefix checks on host containing ":" — otherwise legitimate domains
+  // like "10.example.com" or "fd-prod.example.com" would be wrongly flagged.
+  const isIpv4Literal = IPV4_LITERAL_RE.test(host);
   const isIpv6Literal = host.includes(":");
   if (
     host === "localhost" ||
     host === "0.0.0.0" ||
-    /^127\./.test(host) ||
-    /^10\./.test(host) ||
-    /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
-    /^192\.168\./.test(host) ||
-    /^169\.254\./.test(host) ||
-    CGN_RE.test(host) ||                            // 100.64.0.0/10 CGN
+    (isIpv4Literal && /^127\./.test(host)) ||
+    (isIpv4Literal && /^10\./.test(host)) ||
+    (isIpv4Literal && /^172\.(1[6-9]|2\d|3[01])\./.test(host)) ||
+    (isIpv4Literal && /^192\.168\./.test(host)) ||
+    (isIpv4Literal && /^169\.254\./.test(host)) ||
+    (isIpv4Literal && CGN_RE.test(host)) ||         // 100.64.0.0/10 CGN
     /^::1$/.test(host) ||
     host === "::" ||
     (isIpv6Literal && /^f[cd]/i.test(host)) ||
