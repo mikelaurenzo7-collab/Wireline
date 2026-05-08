@@ -2897,7 +2897,7 @@ app.get("/api/appointments", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-const APPOINTMENT_STATUSES = ['Scheduled', 'Confirmed', 'Completed', 'Cancelled', 'No-Show'] as const;
+const APPOINTMENT_STATUSES = ['Scheduled', 'Confirmed', 'Completed', 'Cancelled', 'Rescheduled'] as const;
 
 app.post("/api/appointments", authenticateUser, async (req: any, res: any) => {
   try {

@@ -1,6 +1,9 @@
 // Pure SSRF-guard helpers for webhook URL validation.
 // Extracted from server.ts so they can be unit-tested independently.
 
+// Matches 100.64.0.0/10 — Carrier-grade NAT (RFC 6598). 100.{64..127}.x.x.
+const CGN_RE = /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./;
+
 export function isPrivateIp(ip: string): boolean {
   return (
     ip === "0.0.0.0" ||
@@ -8,7 +11,8 @@ export function isPrivateIp(ip: string): boolean {
     /^10\./.test(ip) ||
     /^172\.(1[6-9]|2\d|3[01])\./.test(ip) ||
     /^192\.168\./.test(ip) ||
-    /^169\.254\./.test(ip)
+    /^169\.254\./.test(ip) ||
+    CGN_RE.test(ip)
   );
 }
 
@@ -44,6 +48,7 @@ export function isSsrfUrl(raw: string): boolean {
     /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
     /^192\.168\./.test(host) ||
     /^169\.254\./.test(host) ||
+    CGN_RE.test(host) ||                            // 100.64.0.0/10 CGN
     (isIpv6Literal && /^f[cd]/i.test(host)) ||      // fc00::/7 ULA
     (isIpv6Literal && /^fe[89ab]/i.test(host))      // fe80::/10 link-local
   );
@@ -76,6 +81,7 @@ export async function validateWebhookUrl(raw: string): Promise<string | null> {
     /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
     /^192\.168\./.test(host) ||
     /^169\.254\./.test(host) ||
+    CGN_RE.test(host) ||                            // 100.64.0.0/10 CGN
     /^::1$/.test(host) ||
     host === "::" ||
     (isIpv6Literal && /^f[cd]/i.test(host)) ||
