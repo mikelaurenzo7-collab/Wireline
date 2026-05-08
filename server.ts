@@ -38,6 +38,8 @@ import { computeAuditSummary } from "./src/lib/audit-summary";
 import { computeDashboardBenchmarks } from "./src/lib/dashboard-benchmarks";
 import { buildContactProfile, normalizePhoneTail } from "./src/lib/contact-profile";
 import { computeOutcomeBreakdown, computeCallStats, callIdsFromLeads } from "./src/lib/campaign-analytics";
+import { computeFunnelStages, computeHeatmapGrid, computeLeaderboard } from "./src/lib/insights-compute";
+import { computeQAStats } from "./src/lib/qa-stats";
 
 // On Vercel, VERCEL_URL is automatically set to the deployment hostname
 // (e.g. "myapp-abc123.vercel.app") with no protocol or trailing slash.
@@ -9373,26 +9375,7 @@ app.get("/api/insights/funnel", authenticateUser, async (req: any, res: any) => 
       db.from("wireline_outbound_leads").select("status").eq("user_id", req.user.id).gte("created_at", since),
     ]);
 
-    const totalCalls = calls?.length || 0;
-    const connected = (calls || []).filter((c: any) => (c.duration_seconds || 0) > 10).length;
-    const qualified = (calls || []).filter((c: any) => (c.lead_score || 0) >= 50).length;
-    const highIntent = (calls || []).filter((c: any) => c.intent_label === "high").length;
-    const bookings = (appts || []).length;
-    const completed = (appts || []).filter((a: any) => a.status === "Completed").length;
-    const queuedLeads = (leads || []).filter((l: any) => l.status === "Pending" || l.status === "Queued").length;
-
-    res.json({
-      window_days: days,
-      stages: [
-        { name: "Queued",     count: queuedLeads },
-        { name: "Calls",      count: totalCalls },
-        { name: "Connected",  count: connected },
-        { name: "Qualified",  count: qualified },
-        { name: "High intent", count: highIntent },
-        { name: "Booked",     count: bookings },
-        { name: "Completed",  count: completed },
-      ],
-    });
+    res.json(computeFunnelStages(calls || [], appts || [], leads || [], days));
   } catch (e) { claudeErr(res, e); }
 });
 
@@ -9407,24 +9390,7 @@ app.get("/api/insights/heatmap", authenticateUser, async (req: any, res: any) =>
       .eq("user_id", req.user.id)
       .gte("created_at", since);
 
-    // 7×24 grid: counts and avg lead score
-    const grid: { hour: number; weekday: number; count: number; avg_score: number }[] = [];
-    const buckets: Record<string, { c: number; s: number }> = {};
-    for (const c of calls || []) {
-      const d = new Date(c.created_at);
-      const key = `${d.getDay()}-${d.getHours()}`;
-      const b = buckets[key] || { c: 0, s: 0 };
-      b.c++;
-      b.s += c.lead_score || 0;
-      buckets[key] = b;
-    }
-    for (let w = 0; w < 7; w++) {
-      for (let h = 0; h < 24; h++) {
-        const b = buckets[`${w}-${h}`] || { c: 0, s: 0 };
-        grid.push({ weekday: w, hour: h, count: b.c, avg_score: b.c ? Math.round(b.s / b.c) : 0 });
-      }
-    }
-    res.json({ window_days: days, grid });
+    res.json(computeHeatmapGrid(calls || [], days));
   } catch (e) { claudeErr(res, e); }
 });
 
@@ -9440,43 +9406,7 @@ app.get("/api/insights/leaderboard", authenticateUser, async (req: any, res: any
       db.from("wireline_appointments").select("agent_id").eq("user_id", req.user.id).gte("created_at", since),
     ]);
 
-    const callsByAgent: Record<string, any[]> = {};
-    for (const c of calls || []) {
-      const id = c.agent_id || "unknown";
-      (callsByAgent[id] ||= []).push(c);
-    }
-    const apptsByAgent: Record<string, number> = {};
-    for (const a of appts || []) apptsByAgent[a.agent_id || "unknown"] = (apptsByAgent[a.agent_id || "unknown"] || 0) + 1;
-
-    const rows = (agents || []).map((a: any) => {
-      const calls = callsByAgent[a.id] || [];
-      const total = calls.length;
-      const qualified = calls.filter((c) => (c.lead_score || 0) >= 50).length;
-      const highIntent = calls.filter((c) => c.intent_label === "high").length;
-      const minutes = Math.round(calls.reduce((s, c) => s + (c.duration_seconds || 0), 0) / 60);
-      const cost = Number(calls.reduce((s, c) => s + Number(c.cost || 0), 0).toFixed(2));
-      const avgScore = total ? Math.round(calls.reduce((s, c) => s + (c.lead_score || 0), 0) / total) : 0;
-      const bookings = apptsByAgent[a.id] || 0;
-      const costPerQualified = qualified ? Number((cost / qualified).toFixed(2)) : 0;
-      return {
-        agent_id: a.id,
-        agent_name: a.name,
-        archetype: a.archetype,
-        role: a.role || DEFAULT_AGENT_ROLE,
-        channel: a.channel,
-        total_calls: total,
-        qualified,
-        high_intent: highIntent,
-        bookings,
-        avg_lead_score: avgScore,
-        minutes,
-        cost,
-        cost_per_qualified: costPerQualified,
-        conversion_rate: total ? Math.round((qualified / total) * 100) : 0,
-      };
-    }).sort((a: any, b: any) => b.qualified - a.qualified);
-
-    res.json({ window_days: days, agents: rows });
+    res.json(computeLeaderboard(agents || [], calls || [], appts || [], days));
   } catch (e) { claudeErr(res, e); }
 });
 
@@ -10032,61 +9962,8 @@ app.get("/api/qa/stats", authenticateUser, async (req: any, res: any) => {
       .order("created_at", { ascending: false });
 
     if (error) throw error;
-    if (!calls || calls.length === 0) {
-      return res.json({ count: 0, avgScore: 0, distribution: [], dimensions: {}, trend: [] });
-    }
 
-    const avgScore = Math.round(calls.reduce((s: number, c: any) => s + (c.qa_score || 0), 0) / calls.length);
-
-    // Score distribution buckets
-    const distribution = [
-      { label: "Poor (0–39)",       min: 0,  max: 39,  count: 0, color: "#FF6BD9" },
-      { label: "Fair (40–59)",      min: 40, max: 59,  count: 0, color: "#FF9A5C" },
-      { label: "Good (60–74)",      min: 60, max: 74,  count: 0, color: "#FFD166" },
-      { label: "Great (75–89)",     min: 75, max: 89,  count: 0, color: "#4DFFC4" },
-      { label: "Excellent (90+)",   min: 90, max: 100, count: 0, color: "#7DF9FF" },
-    ];
-    calls.forEach((c: any) => {
-      const bucket = distribution.find((b) => c.qa_score >= b.min && c.qa_score <= b.max);
-      if (bucket) bucket.count++;
-    });
-
-    // Average by QA dimension
-    const dims = { greeting: 0, discovery: 0, solution: 0, objection: 0, closing: 0 };
-    let dimCount = 0;
-    calls.forEach((c: any) => {
-      if (c.qa_breakdown && typeof c.qa_breakdown === "object") {
-        dims.greeting  += Number(c.qa_breakdown.greeting)  || 0;
-        dims.discovery += Number(c.qa_breakdown.discovery) || 0;
-        dims.solution  += Number(c.qa_breakdown.solution)  || 0;
-        dims.objection += Number(c.qa_breakdown.objection) || 0;
-        dims.closing   += Number(c.qa_breakdown.closing)   || 0;
-        dimCount++;
-      }
-    });
-    const dimensions = dimCount > 0
-      ? {
-          greeting:  +(dims.greeting  / dimCount).toFixed(1),
-          discovery: +(dims.discovery / dimCount).toFixed(1),
-          solution:  +(dims.solution  / dimCount).toFixed(1),
-          objection: +(dims.objection / dimCount).toFixed(1),
-          closing:   +(dims.closing   / dimCount).toFixed(1),
-        }
-      : dims;
-
-    // 7-day trend (or last 7 available days)
-    const byDay: Record<string, number[]> = {};
-    calls.forEach((c: any) => {
-      const day = c.created_at.slice(0, 10);
-      if (!byDay[day]) byDay[day] = [];
-      byDay[day].push(c.qa_score);
-    });
-    const trend = Object.entries(byDay)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .slice(-7)
-      .map(([day, scores]) => ({ day, avg: Math.round(scores.reduce((s, n) => s + n, 0) / scores.length) }));
-
-    res.json({ count: calls.length, avgScore, distribution, dimensions, trend });
+    res.json(computeQAStats(calls || []));
   } catch (e: any) {
     log.error("QA stats failed", { error: e?.message });
     res.status(500).json({ error: "Failed to fetch QA stats." });
