@@ -7606,7 +7606,7 @@ function validateWebhookUrl(raw: string): string | null {
     /^192\.168\./.test(host) ||
     /^169\.254\./.test(host) ||
     /^::1$/.test(host) ||
-    /^fc00:/i.test(host) ||
+    /^f[cd]/i.test(host) ||  // fc00::/7 ULA (covers fc** and fd** prefixes)
     /^fe80:/i.test(host)
   ) {
     return "Webhook URL must not target private or internal addresses.";
