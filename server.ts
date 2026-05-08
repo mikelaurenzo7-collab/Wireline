@@ -36,6 +36,7 @@ import { compileActivityFeed } from "./src/lib/fleet-activity";
 import { computeAgentPerformance, emptyAgentPerformance } from "./src/lib/agent-performance";
 import { computeAuditSummary } from "./src/lib/audit-summary";
 import { computeDashboardBenchmarks } from "./src/lib/dashboard-benchmarks";
+import { buildContactProfile, normalizePhoneTail } from "./src/lib/contact-profile";
 
 // On Vercel, VERCEL_URL is automatically set to the deployment hostname
 // (e.g. "myapp-abc123.vercel.app") with no protocol or trailing slash.
@@ -9753,12 +9754,11 @@ app.post("/api/knowledge-gaps/:lessonId/promote", authenticateUser, async (req: 
 app.get("/api/contacts/:number", authenticateUser, async (req: any, res: any) => {
   try {
     const number = decodeURIComponent(req.params.number);
-    // Strip non-digits then take the last 10 — gives us a normalized form.
-    const norm = number.replace(/\D/g, "").slice(-10);
+    const norm = normalizePhoneTail(number);
     if (!norm) return res.status(400).json({ error: "Invalid phone number." });
 
     // Match: exact, or anything ending in the same last-10-digits.
-    const [{ data: calls }, { data: leads }, { data: appts }] = await Promise.all([
+    const [callsRes, leadsRes, apptsRes] = await Promise.all([
       db.from("wireline_call_logs")
         .select("id, agent_id, direction, customer_number, duration_seconds, cost, summary, transcript, recording_url, lead_score, intent_label, created_at")
         .eq("user_id", req.user.id)
@@ -9775,66 +9775,13 @@ app.get("/api/contacts/:number", authenticateUser, async (req: any, res: any) =>
         .order("created_at", { ascending: false }),
     ]);
 
-    // The first lead/call gives us a candidate name.
-    const customerName =
-      leads?.[0]?.customer_name ||
-      appts?.[0]?.customer_name ||
-      null;
-
-    // Build a unified timeline.
-    const timeline: any[] = [];
-    for (const c of calls || []) {
-      timeline.push({
-        type: c.direction === "inbound" ? "call_in" : "call_out",
-        id: c.id,
-        ts: c.created_at,
-        duration_seconds: c.duration_seconds,
-        cost: c.cost,
-        summary: c.summary,
-        lead_score: c.lead_score,
-        intent_label: c.intent_label,
-        recording_url: c.recording_url,
-        agent_id: c.agent_id,
-      });
-    }
-    for (const a of appts || []) {
-      // Only include appointments where the customer name matches one of our leads/calls
-      if (customerName && a.customer_name && a.customer_name.toLowerCase().trim() === customerName.toLowerCase().trim()) {
-        timeline.push({
-          type: "appointment",
-          id: a.id,
-          ts: a.created_at,
-          summary: `${a.service_type} — ${a.date} ${a.time}`,
-          status: a.status,
-          agent_id: a.agent_id,
-        });
-      }
-    }
-    timeline.sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime());
-
-    const totalCalls = calls?.length || 0;
-    const totalMinutes = Math.round((calls || []).reduce((s: number, c: any) => s + (c.duration_seconds || 0), 0) / 60);
-    const totalCost = Number((calls || []).reduce((s: number, c: any) => s + Number(c.cost || 0), 0).toFixed(2));
-    const avgScore = totalCalls ? Math.round((calls || []).reduce((s: number, c: any) => s + (c.lead_score || 0), 0) / totalCalls) : 0;
-    const lastTouch = calls?.[0]?.created_at || leads?.[0]?.created_at || null;
-
-    res.json({
-      number: number,
+    res.json(buildContactProfile({
+      number,
       normalized: norm,
-      customer_name: customerName,
-      stats: {
-        total_calls: totalCalls,
-        total_minutes: totalMinutes,
-        total_cost: totalCost,
-        avg_lead_score: avgScore,
-        last_touch: lastTouch,
-        outbound_leads: leads?.length || 0,
-        appointments: appts?.filter((a: any) => customerName && a.customer_name?.toLowerCase().trim() === customerName.toLowerCase().trim()).length || 0,
-      },
-      timeline,
-      leads: leads || [],
-      appointments: (appts || []).filter((a: any) => customerName && a.customer_name?.toLowerCase().trim() === customerName.toLowerCase().trim()),
-    });
+      calls:  callsRes.data  || [],
+      leads:  leadsRes.data  || [],
+      appts:  apptsRes.data  || [],
+    }));
   } catch (e) { claudeErr(res, e); }
 });
 
