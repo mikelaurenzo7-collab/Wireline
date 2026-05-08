@@ -29,6 +29,10 @@ export function isSsrfUrl(raw: string): boolean {
   try { parsed = new URL(raw); } catch { return true; }
   const rawHost = parsed.hostname.toLowerCase();
   const host = rawHost.startsWith("[") ? rawHost.slice(1, -1) : rawHost;
+  // IPv6 prefix checks must only run on IPv6 literals (presence of ":") — otherwise
+  // legitimate domains like "fd-prod.example.com" or "feb-promo.example.com" would
+  // be flagged as private.
+  const isIpv6Literal = host.includes(":");
   return (
     /^::ffff:/i.test(host) ||
     host === "::" ||
@@ -40,8 +44,8 @@ export function isSsrfUrl(raw: string): boolean {
     /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
     /^192\.168\./.test(host) ||
     /^169\.254\./.test(host) ||
-    /^f[cd]/i.test(host) ||      // fc00::/7 ULA
-    /^fe[89ab]/i.test(host)      // fe80::/10 link-local
+    (isIpv6Literal && /^f[cd]/i.test(host)) ||      // fc00::/7 ULA
+    (isIpv6Literal && /^fe[89ab]/i.test(host))      // fe80::/10 link-local
   );
 }
 
@@ -61,6 +65,9 @@ export async function validateWebhookUrl(raw: string): Promise<string | null> {
   const host = rawHost.startsWith("[") ? rawHost.slice(1, -1) : rawHost;
 
   if (/^::ffff:/i.test(host)) return PRIVATE_MSG;
+  // IPv6 prefix checks must only run on IPv6 literals — otherwise domains like
+  // "fd-prod.example.com" would be incorrectly flagged.
+  const isIpv6Literal = host.includes(":");
   if (
     host === "localhost" ||
     host === "0.0.0.0" ||
@@ -71,8 +78,8 @@ export async function validateWebhookUrl(raw: string): Promise<string | null> {
     /^169\.254\./.test(host) ||
     /^::1$/.test(host) ||
     host === "::" ||
-    /^f[cd]/i.test(host) ||
-    /^fe[89ab]/i.test(host)
+    (isIpv6Literal && /^f[cd]/i.test(host)) ||
+    (isIpv6Literal && /^fe[89ab]/i.test(host))
   ) {
     return PRIVATE_MSG;
   }

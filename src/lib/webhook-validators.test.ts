@@ -67,6 +67,12 @@ describe("isSsrfUrl", () => {
     "https://example.com/webhook",
     "https://hooks.slack.com/services/abc",
     "http://1.1.1.1/",
+    // Domains that happen to start with IPv6-prefix-like characters must not
+    // be flagged — they're not IPv6 literals (no colon).
+    "https://fd-prod.example.com/",
+    "https://fc-cdn.example.com/",
+    "https://feb-promo.example.com/",
+    "https://fe80-marketing.example.com/",
   ])("allows %s", (url) => expect(isSsrfUrl(url)).toBe(false));
 });
 
@@ -151,6 +157,15 @@ describe("validateWebhookUrl — DNS checks for domain names", () => {
   it("allows a domain when DNS lookup fails (conservative fail-open)", async () => {
     mockLookup.mockRejectedValueOnce(new Error("SERVFAIL"));
     expect(await validateWebhookUrl("https://dns-fail.example.com/")).toBeNull();
+  });
+
+  it("does not flag domains that begin with IPv6 prefix-like characters", async () => {
+    // fd-prod.example.com isn't an IPv6 literal (no colon) — it must be resolved.
+    mockLookup.mockResolvedValueOnce([{ address: "1.2.3.4", family: 4 }]);
+    expect(await validateWebhookUrl("https://fd-prod.example.com/")).toBeNull();
+
+    mockLookup.mockResolvedValueOnce([{ address: "1.2.3.4", family: 4 }]);
+    expect(await validateWebhookUrl("https://feb-promo.example.com/")).toBeNull();
   });
 });
 
