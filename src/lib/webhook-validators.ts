@@ -3,6 +3,8 @@
 
 // Matches 100.64.0.0/10 — Carrier-grade NAT (RFC 6598). 100.{64..127}.x.x.
 const CGN_RE = /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./;
+// Matches 198.18.0.0/15 — Benchmarking networks (RFC 2544).
+const BENCH_RE = /^198\.(1[89])\./;
 
 export function isPrivateIp(ip: string): boolean {
   return (
@@ -12,7 +14,11 @@ export function isPrivateIp(ip: string): boolean {
     /^172\.(1[6-9]|2\d|3[01])\./.test(ip) ||
     /^192\.168\./.test(ip) ||
     /^169\.254\./.test(ip) ||
-    CGN_RE.test(ip)
+    CGN_RE.test(ip) ||
+    BENCH_RE.test(ip) ||           // 198.18.0.0/15 benchmarking
+    /^192\.0\.2\./.test(ip) ||     // 192.0.2.0/24 TEST-NET-1 (RFC 5737)
+    /^198\.51\.100\./.test(ip) ||  // 198.51.100.0/24 TEST-NET-2 (RFC 5737)
+    /^203\.0\.113\./.test(ip)      // 203.0.113.0/24 TEST-NET-3 (RFC 5737)
   );
 }
 
@@ -44,19 +50,9 @@ export function isSsrfUrl(raw: string): boolean {
   // be flagged as private.
   const isIpv6Literal = host.includes(":");
   return (
-    /^::ffff:/i.test(host) ||
-    host === "::" ||
-    host === "::1" ||
     host === "localhost" ||
-    host === "0.0.0.0" ||
-    (isIpv4Literal && /^127\./.test(host)) ||
-    (isIpv4Literal && /^10\./.test(host)) ||
-    (isIpv4Literal && /^172\.(1[6-9]|2\d|3[01])\./.test(host)) ||
-    (isIpv4Literal && /^192\.168\./.test(host)) ||
-    (isIpv4Literal && /^169\.254\./.test(host)) ||
-    (isIpv4Literal && CGN_RE.test(host)) ||         // 100.64.0.0/10 CGN
-    (isIpv6Literal && /^f[cd]/i.test(host)) ||      // fc00::/7 ULA
-    (isIpv6Literal && /^fe[89ab]/i.test(host))      // fe80::/10 link-local
+    (isIpv4Literal && isPrivateIp(host)) ||
+    (isIpv6Literal && isPrivateIpv6(host))
   );
 }
 
@@ -75,7 +71,6 @@ export async function validateWebhookUrl(raw: string): Promise<string | null> {
   const rawHost = parsed.hostname.toLowerCase();
   const host = rawHost.startsWith("[") ? rawHost.slice(1, -1) : rawHost;
 
-  if (/^::ffff:/i.test(host)) return PRIVATE_MSG;
   // IP-literal-only checks: gate IPv4 prefix checks on a parsed IPv4 literal and
   // IPv6 prefix checks on host containing ":" — otherwise legitimate domains
   // like "10.example.com" or "fd-prod.example.com" would be wrongly flagged.
@@ -83,17 +78,8 @@ export async function validateWebhookUrl(raw: string): Promise<string | null> {
   const isIpv6Literal = host.includes(":");
   if (
     host === "localhost" ||
-    host === "0.0.0.0" ||
-    (isIpv4Literal && /^127\./.test(host)) ||
-    (isIpv4Literal && /^10\./.test(host)) ||
-    (isIpv4Literal && /^172\.(1[6-9]|2\d|3[01])\./.test(host)) ||
-    (isIpv4Literal && /^192\.168\./.test(host)) ||
-    (isIpv4Literal && /^169\.254\./.test(host)) ||
-    (isIpv4Literal && CGN_RE.test(host)) ||         // 100.64.0.0/10 CGN
-    /^::1$/.test(host) ||
-    host === "::" ||
-    (isIpv6Literal && /^f[cd]/i.test(host)) ||
-    (isIpv6Literal && /^fe[89ab]/i.test(host))
+    (isIpv4Literal && isPrivateIp(host)) ||
+    (isIpv6Literal && isPrivateIpv6(host))
   ) {
     return PRIVATE_MSG;
   }

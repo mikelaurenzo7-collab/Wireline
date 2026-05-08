@@ -38,7 +38,7 @@ import { computeAuditSummary } from "./src/lib/audit-summary";
 import { computeDashboardBenchmarks } from "./src/lib/dashboard-benchmarks";
 import { buildContactProfile, normalizePhoneTail } from "./src/lib/contact-profile";
 import { computeOutcomeBreakdown, computeCallStats, callIdsFromLeads } from "./src/lib/campaign-analytics";
-import { isPrivateIp, isPrivateIpv6, isSsrfUrl, validateWebhookUrl, hostnameResolvesToPrivate } from "./src/lib/webhook-validators";
+import { isPrivateIp, isPrivateIpv6, isSsrfUrl, validateWebhookUrl } from "./src/lib/webhook-validators";
 
 // On Vercel, VERCEL_URL is automatically set to the deployment hostname
 // (e.g. "myapp-abc123.vercel.app") with no protocol or trailing slash.
@@ -879,16 +879,31 @@ async function attemptWebhookDelivery(deliveryId: number) {
     }).eq("id", deliveryId);
     return;
   }
-  // Delivery-time SSRF guard layer 2: DNS resolution (async, guards against DNS
-  // rebinding where a domain was registered pointing at a public IP then switched
-  // to a private one after the registration-time check passed).
-  if (await hostnameResolvesToPrivate(hook.url)) {
-    await db.from("wireline_webhook_deliveries").update({
-      status: "dead",
-      last_error: "Blocked: webhook URL hostname resolves to a private or internal address.",
-      attempts: (row.attempts || 0) + 1,
-    }).eq("id", deliveryId);
-    return;
+  // Delivery-time SSRF guard: resolve DNS, validate every A/AAAA answer, then
+  // pin the undici dispatcher to the validated IP so the pre-check and the actual
+  // TCP connect use the same address (eliminates the TOCTOU gap present in a
+  // separate hostnameResolvesToPrivate + fetch() pattern).
+  const parsedDeliveryUrl = new URL(hook.url);
+  const rawDeliveryHost = parsedDeliveryUrl.hostname.toLowerCase();
+  const deliveryHost = rawDeliveryHost.startsWith("[") ? rawDeliveryHost.slice(1, -1) : rawDeliveryHost;
+  const isDeliveryIpLiteral = /^[\d.]+$/.test(deliveryHost) || deliveryHost.includes(":");
+  let pinnedIp: string | null = null;
+  let pinnedFamily: 4 | 6 = 4;
+  if (!isDeliveryIpLiteral) {
+    const { lookup } = await import("node:dns/promises");
+    let resolvedAddrs: Array<{ address: string; family: number }> = [];
+    try { resolvedAddrs = await lookup(deliveryHost, { all: true }); } catch { /* DNS fail — pass through */ }
+    for (const { address, family } of resolvedAddrs) {
+      if ((family === 4 && isPrivateIp(address)) || (family === 6 && isPrivateIpv6(address))) {
+        await db.from("wireline_webhook_deliveries").update({
+          status: "dead",
+          last_error: "Blocked: webhook URL hostname resolves to a private or internal address.",
+          attempts: (row.attempts || 0) + 1,
+        }).eq("id", deliveryId);
+        return;
+      }
+      if (pinnedIp === null) { pinnedIp = address; pinnedFamily = family as 4 | 6; }
+    }
   }
 
   const crypto = await import("node:crypto");
@@ -905,6 +920,19 @@ async function attemptWebhookDelivery(deliveryId: number) {
     headers["X-Wireline-Signature"] = `sha256=${sig}`;
   }
 
+  // Use undici so we can attach a dispatcher that pins the TCP connection to
+  // the pre-validated IP — the global fetch() re-resolves the hostname
+  // independently, which would re-open the DNS rebinding window.
+  const { fetch: undiciFetch, Agent: UndiciAgent } = await import("undici");
+  const dispatcher = pinnedIp !== null
+    ? new UndiciAgent({
+        connect: {
+          lookup: (_h: string, _o: unknown, cb: (err: Error | null, addr: string, fam: 4 | 6) => void) =>
+            cb(null, pinnedIp!, pinnedFamily),
+        } as any,
+      })
+    : new UndiciAgent(); // IP literal or DNS-fail path: isSsrfUrl already validated
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), WEBHOOK_TIMEOUT_MS);
   const nowIso = new Date().toISOString();
@@ -915,7 +943,7 @@ async function attemptWebhookDelivery(deliveryId: number) {
     // redirect:'error' prevents SSRF via open-redirect: a public URL that
     // redirects to 127.0.0.1 or 169.254.x would pass registration checks
     // but still reach an internal host if redirects were followed.
-    const r = await fetch(hook.url, { method: "POST", headers, body: payloadStr, signal: controller.signal, redirect: "error" });
+    const r = await (undiciFetch as any)(hook.url, { method: "POST", headers, body: payloadStr, signal: controller.signal, redirect: "error", dispatcher });
     statusCode = r.status;
     ok = r.ok;
     if (!ok) errMsg = `HTTP ${r.status}`;

@@ -20,12 +20,20 @@ describe("isPrivateIp", () => {
     "0.0.0.0",
     // 100.64.0.0/10 — Carrier-grade NAT (RFC 6598). Covers 100.64–100.127.
     "100.64.0.1", "100.65.0.0", "100.99.255.255", "100.110.0.1", "100.127.255.255",
+    // 198.18.0.0/15 — Benchmarking (RFC 2544). Covers 198.18–198.19.
+    "198.18.0.1", "198.18.255.255", "198.19.0.0", "198.19.255.255",
+    // RFC 5737 documentation ranges.
+    "192.0.2.1", "192.0.2.255",      // TEST-NET-1
+    "198.51.100.1", "198.51.100.255", // TEST-NET-2
+    "203.0.113.1", "203.0.113.255",   // TEST-NET-3
   ])("blocks %s", (ip) => expect(isPrivateIp(ip)).toBe(true));
 
   it.each([
     "1.1.1.1", "8.8.8.8", "172.15.0.1", "172.32.0.1", "192.169.0.1",
     // Just outside the CGN range — must be allowed.
     "100.63.255.255", "100.128.0.0",
+    // Just outside the benchmarking range — must be allowed.
+    "198.17.255.255", "198.20.0.0",
   ])("allows %s", (ip) => expect(isPrivateIp(ip)).toBe(false));
 });
 
@@ -59,6 +67,12 @@ describe("isSsrfUrl", () => {
     "http://169.254.169.254/latest/meta-data",
     "http://100.64.0.1/",
     "http://100.127.255.255/",
+    // Benchmarking / documentation ranges.
+    "http://198.18.0.1/",
+    "http://198.19.255.255/",
+    "http://192.0.2.1/",
+    "http://198.51.100.1/",
+    "http://203.0.113.1/",
     "http://[::1]/",
     "http://[::]/",
     "http://[fe80::1]/",
@@ -189,6 +203,18 @@ describe("validateWebhookUrl — DNS checks for domain names", () => {
 
     mockLookup.mockResolvedValueOnce([{ address: "1.2.3.4", family: 4 }]);
     expect(await validateWebhookUrl("https://192.168.example.com/")).toBeNull();
+  });
+
+  it("blocks literal benchmarking and documentation IPs", async () => {
+    expect(await validateWebhookUrl("http://198.18.0.1/")).toMatch(/private/);
+    expect(await validateWebhookUrl("http://192.0.2.1/")).toMatch(/private/);
+    expect(await validateWebhookUrl("http://198.51.100.1/")).toMatch(/private/);
+    expect(await validateWebhookUrl("http://203.0.113.1/")).toMatch(/private/);
+  });
+
+  it("blocks a domain whose A record resolves to a benchmarking IP", async () => {
+    mockLookup.mockResolvedValueOnce([{ address: "198.18.0.1", family: 4 }]);
+    expect(await validateWebhookUrl("https://bench.example.com/")).toMatch(/private/);
   });
 });
 
