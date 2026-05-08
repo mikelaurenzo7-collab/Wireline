@@ -890,7 +890,10 @@ async function attemptWebhookDelivery(deliveryId: number) {
   let errMsg: string | null = null;
   let ok = false;
   try {
-    const r = await fetch(hook.url, { method: "POST", headers, body: payloadStr, signal: controller.signal });
+    // redirect:'error' prevents SSRF via open-redirect: a public URL that
+    // redirects to 127.0.0.1 or 169.254.x would pass registration checks
+    // but still reach an internal host if redirects were followed.
+    const r = await fetch(hook.url, { method: "POST", headers, body: payloadStr, signal: controller.signal, redirect: "error" });
     statusCode = r.status;
     ok = r.ok;
     if (!ok) errMsg = `HTTP ${r.status}`;
@@ -7590,7 +7593,9 @@ function validateWebhookUrl(raw: string): string | null {
   if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
     return "Webhook URL must use http or https.";
   }
-  const host = parsed.hostname.toLowerCase();
+  // URL.hostname includes brackets for IPv6 literals (e.g. "[::1]") — strip them.
+  const rawHost = parsed.hostname.toLowerCase();
+  const host = rawHost.startsWith('[') ? rawHost.slice(1, -1) : rawHost;
   // Block loopback, private RFC-1918, link-local, and unspecified addresses.
   if (
     host === "localhost" ||
