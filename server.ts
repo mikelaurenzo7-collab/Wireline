@@ -1429,7 +1429,7 @@ app.post("/api/stripe-webhook", async (req: any, res: any) => {
         (e: any) => log.warn("Failed to release idempotency claim", { error: e?.message }),
       );
     }
-    res.status(500).json({ error: getErrorMessage(err) || "Webhook handler failed" });
+    res.status(500).json({ error: "Webhook handler failed" });
   }
 });
 
@@ -4474,7 +4474,7 @@ app.get("/api/knowledge", authenticateUser, async (req: any, res: any) => {
       agents: (agents || []).map((a: any) => ({ id: a.id, name: a.name, archetype: a.archetype })),
       total: knowledge.length,
     });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load knowledge" }); }
+  } catch (e: any) { log.error("Failed to load knowledge", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load knowledge" }); }
 });
 
 app.post("/api/knowledge", authenticateUser, knowledgeRateLimiter, async (req: any, res: any) => {
@@ -4510,7 +4510,7 @@ app.post("/api/knowledge", authenticateUser, knowledgeRateLimiter, async (req: a
         agent_archetype: agent.archetype,
       },
     });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to create" }); }
+  } catch (e: any) { log.error("Failed to create", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to create" }); }
 });
 
 app.patch("/api/knowledge/:id", authenticateUser, knowledgeRateLimiter, async (req: any, res: any) => {
@@ -4533,7 +4533,7 @@ app.patch("/api/knowledge/:id", authenticateUser, knowledgeRateLimiter, async (r
       .single();
     if (error) throw error;
     res.json({ knowledge: data });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to update" }); }
+  } catch (e: any) { log.error("Failed to update", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to update" }); }
 });
 
 app.delete("/api/knowledge/:id", authenticateUser, async (req: any, res: any) => {
@@ -4544,7 +4544,7 @@ app.delete("/api/knowledge/:id", authenticateUser, async (req: any, res: any) =>
       .eq("user_id", req.user.id);
     if (error) throw error;
     res.json({ success: true });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to delete" }); }
+  } catch (e: any) { log.error("Failed to delete", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to delete" }); }
 });
 
 // ==========================================
@@ -4761,7 +4761,7 @@ app.get("/api/campaigns/:id/analytics", authenticateUser, async (req: any, res: 
     res.json({ campaign, total, outcomes, call_stats });
   } catch (e: any) {
     log.error("Campaign analytics failed", { error: e?.message });
-    res.status(500).json({ error: e?.message ?? "Failed to load analytics" });
+    res.status(500).json({ error: "Failed to load analytics" });
   }
 });
 
@@ -7677,7 +7677,7 @@ app.get("/api/webhooks", authenticateUser, async (req: any, res: any) => {
       .select("*").eq("user_id", req.user.id).order("created_at", { ascending: false });
     if (error) throw error;
     res.json({ webhooks: data || [], available_events: WEBHOOK_EVENTS });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load webhooks" }); }
+  } catch (e: any) { log.error("Failed to load webhooks", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load webhooks" }); }
 });
 
 app.post("/api/webhooks", authenticateUser, async (req: any, res: any) => {
@@ -7699,7 +7699,7 @@ app.post("/api/webhooks", authenticateUser, async (req: any, res: any) => {
     }).select().single();
     if (error) throw error;
     res.json({ webhook: data });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to create webhook" }); }
+  } catch (e: any) { log.error("Failed to create webhook", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to create webhook" }); }
 });
 
 app.patch("/api/webhooks/:id", authenticateUser, async (req: any, res: any) => {
@@ -7721,14 +7721,14 @@ app.patch("/api/webhooks/:id", authenticateUser, async (req: any, res: any) => {
       .eq("id", req.params.id).eq("user_id", req.user.id).select().single();
     if (error) throw error;
     res.json({ webhook: data });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to update" }); }
+  } catch (e: any) { log.error("Failed to update", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to update" }); }
 });
 
 app.delete("/api/webhooks/:id", authenticateUser, async (req: any, res: any) => {
   try {
     await db.from("wireline_webhooks").delete().eq("id", req.params.id).eq("user_id", req.user.id);
     res.json({ success: true });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to delete" }); }
+  } catch (e: any) { log.error("Failed to delete", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to delete" }); }
 });
 
 app.post("/api/webhooks/:id/test", authenticateUser, async (req: any, res: any) => {
@@ -7739,7 +7739,7 @@ app.post("/api/webhooks/:id/test", authenticateUser, async (req: any, res: any) 
       test: true, message: "This is a test ping from Wireline.", at: new Date().toISOString(),
     });
     res.json({ success: true, message: "Test dispatched. Check the URL." });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Test failed" }); }
+  } catch (e: any) { log.error("Test failed", { error: getErrorMessage(e) }); res.status(500).json({ error: "Test failed" }); }
 });
 
 // Per-hook delivery history — newest first. Operators use this to
@@ -7760,7 +7760,7 @@ app.get("/api/webhooks/:id/deliveries", authenticateUser, async (req: any, res: 
       .limit(limit);
     if (error) throw error;
     res.json({ deliveries: data || [] });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load deliveries" }); }
+  } catch (e: any) { log.error("Failed to load deliveries", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load deliveries" }); }
 });
 
 // Manually requeue a delivery — clears terminal state and runs an
@@ -7783,7 +7783,7 @@ app.post("/api/webhooks/deliveries/:id/retry", authenticateUser, async (req: any
       log.warn("webhook delivery attempt failed", { delivery_id: id, error: (err as any)?.message || String(err) })
     );
     res.json({ success: true });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Retry failed" }); }
+  } catch (e: any) { log.error("Retry failed", { error: getErrorMessage(e) }); res.status(500).json({ error: "Retry failed" }); }
 });
 
 app.delete("/api/webhooks/deliveries/:id", authenticateUser, async (req: any, res: any) => {
@@ -7793,7 +7793,7 @@ app.delete("/api/webhooks/deliveries/:id", authenticateUser, async (req: any, re
     await db.from("wireline_webhook_deliveries")
       .delete().eq("id", id).eq("user_id", req.user.id);
     res.json({ success: true });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Discard failed" }); }
+  } catch (e: any) { log.error("Discard failed", { error: getErrorMessage(e) }); res.status(500).json({ error: "Discard failed" }); }
 });
 
 // ──────────────────────────────────────────────────────────
@@ -8094,7 +8094,7 @@ app.post("/api/intake/lead", async (req: any, res: any) => {
     return res.status(status).json({ error: result.error, code: result.code });
   } catch (e: any) {
     log.error("Intake lead failed", { error: e?.message || String(e) });
-    res.status(500).json({ error: e?.message ?? "Intake failed" });
+    res.status(500).json({ error: "Intake failed" });
   }
 });
 
@@ -8169,7 +8169,7 @@ app.post("/api/intake/leads", async (req: any, res: any) => {
     });
   } catch (e: any) {
     log.error("Bulk intake failed", { error: e?.message || String(e) });
-    res.status(500).json({ error: e?.message ?? "Bulk intake failed" });
+    res.status(500).json({ error: "Bulk intake failed" });
   }
 });
 
@@ -8183,7 +8183,7 @@ app.get("/api/intake/keys", authenticateUser, async (req: any, res: any) => {
       .order("created_at", { ascending: false });
     if (error) throw error;
     res.json({ keys: data || [] });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load keys" }); }
+  } catch (e: any) { log.error("Failed to load keys", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load keys" }); }
 });
 
 app.post("/api/intake/keys", authenticateUser, async (req: any, res: any) => {
@@ -8206,7 +8206,7 @@ app.post("/api/intake/keys", authenticateUser, async (req: any, res: any) => {
     if (error) throw error;
     // Plaintext is returned ONCE — we never store or expose it again.
     res.json({ key: data, plaintext });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to create key" }); }
+  } catch (e: any) { log.error("Failed to create key", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to create key" }); }
 });
 
 app.patch("/api/intake/keys/:id", authenticateUser, async (req: any, res: any) => {
@@ -8221,14 +8221,14 @@ app.patch("/api/intake/keys/:id", authenticateUser, async (req: any, res: any) =
       .select("id, name, key_prefix, default_agent_id, auto_dial, active, last_used_at, use_count, created_at").single();
     if (error) throw error;
     res.json({ key: data });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to update key" }); }
+  } catch (e: any) { log.error("Failed to update key", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to update key" }); }
 });
 
 app.delete("/api/intake/keys/:id", authenticateUser, async (req: any, res: any) => {
   try {
     await db.from("wireline_intake_keys").delete().eq("id", req.params.id).eq("user_id", req.user.id);
     res.json({ success: true });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to delete key" }); }
+  } catch (e: any) { log.error("Failed to delete key", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to delete key" }); }
 });
 
 // ──────────────────────────────────────────────────────────
@@ -8607,7 +8607,7 @@ app.get("/api/daily-brief/settings", authenticateUser, async (req: any, res: any
       gmail_connected: !!accounts?.[0]?.email_address,
       gmail_address: accounts?.[0]?.email_address || null,
     });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load settings" }); }
+  } catch (e: any) { log.error("Failed to load settings", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load settings" }); }
 });
 
 app.put("/api/daily-brief/settings", authenticateUser, async (req: any, res: any) => {
@@ -8628,7 +8628,7 @@ app.put("/api/daily-brief/settings", authenticateUser, async (req: any, res: any
     }, { onConflict: "user_id" });
 
     res.json({ success: true });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to save settings" }); }
+  } catch (e: any) { log.error("Failed to save settings", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to save settings" }); }
 });
 
 // Send-now — operator-triggered preview email so they can confirm
@@ -8640,7 +8640,7 @@ app.post("/api/daily-brief/send-now", authenticateUser, async (req: any, res: an
     res.json({ success: true, ...result });
   } catch (e: any) {
     if (e?.code === "CLAUDE_OFFLINE") return res.status(503).json({ error: e.message, code: e.code });
-    res.status(500).json({ error: e?.message ?? "Send failed" });
+    res.status(500).json({ error: "Send failed" });
   }
 });
 
@@ -8665,7 +8665,7 @@ app.get("/api/audit/summary", authenticateUser, async (req: any, res: any) => {
 
     res.json(computeAuditSummary({ rows: rows || [], windowDays: days }));
   } catch (e: any) {
-    res.status(500).json({ error: e?.message ?? "Audit summary failed" });
+    res.status(500).json({ error: "Audit summary failed" });
   }
 });
 
@@ -8682,7 +8682,7 @@ app.get("/api/audit/recent", authenticateUser, async (req: any, res: any) => {
     if (error) throw error;
     res.json({ entries: data || [] });
   } catch (e: any) {
-    res.status(500).json({ error: e?.message ?? "Audit fetch failed" });
+    res.status(500).json({ error: "Audit fetch failed" });
   }
 });
 
@@ -8938,7 +8938,7 @@ app.get("/api/spend/budget", authenticateUser, async (req: any, res: any) => {
         updated_at: null,
       },
     });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load budget" }); }
+  } catch (e: any) { log.error("Failed to load budget", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load budget" }); }
 });
 
 app.put("/api/spend/budget", authenticateUser, async (req: any, res: any) => {
@@ -8964,7 +8964,7 @@ app.put("/api/spend/budget", authenticateUser, async (req: any, res: any) => {
     // Force a cache refresh so the new limit takes effect on the next request.
     budgetCache.delete(req.user.id);
     res.json({ budget: data });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to save budget" }); }
+  } catch (e: any) { log.error("Failed to save budget", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to save budget" }); }
 });
 
 app.get("/api/spend/status", authenticateUser, async (req: any, res: any) => {
@@ -8987,7 +8987,7 @@ app.get("/api/spend/status", authenticateUser, async (req: any, res: any) => {
       hard_capped_now: !!(snap.budget?.hard_cap && limit > 0 && snap.mtdCost >= limit),
       alerts_fired: alerts || [],
     });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load spend status" }); }
+  } catch (e: any) { log.error("Failed to load spend status", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load spend status" }); }
 });
 
 // ──────────────────────────────────────────────────────────
@@ -9028,7 +9028,7 @@ app.get("/api/billing/status", authenticateUser, async (req: any, res: any) => {
         updated_at: sub.updated_at,
       } : null,
     });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load status" }); }
+  } catch (e: any) { log.error("Failed to load status", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load status" }); }
 });
 
 // Start a Stripe Checkout session for a plan. Idempotent on
@@ -9098,7 +9098,7 @@ app.post("/api/billing/checkout", authenticateUser, async (req: any, res: any) =
     res.json({ url: session.url });
   } catch (e: any) {
     log.error("Checkout creation failed", { error: e?.message || String(e) });
-    res.status(500).json({ error: e?.message ?? "Checkout failed" });
+    res.status(500).json({ error: "Checkout failed" });
   }
 });
 
@@ -9120,7 +9120,7 @@ app.post("/api/billing/portal", authenticateUser, async (req: any, res: any) => 
     res.json({ url: portal.url });
   } catch (e: any) {
     log.error("Portal session failed", { error: e?.message || String(e) });
-    res.status(500).json({ error: e?.message ?? "Portal failed" });
+    res.status(500).json({ error: "Portal failed" });
   }
 });
 
@@ -9184,7 +9184,7 @@ app.get("/api/export/:type.csv", authenticateUser, async (req: any, res: any) =>
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     res.send(rowsToCsv(data || [], def.columns));
   } catch (e: any) {
-    res.status(500).json({ error: e?.message ?? "Export failed" });
+    res.status(500).json({ error: "Export failed" });
   }
 });
 
