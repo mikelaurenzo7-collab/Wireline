@@ -8301,7 +8301,7 @@ app.post("/api/intake/leads", async (req: any, res: any) => {
       db.from("wireline_intake_keys").update({
         last_used_at: nowIso,
         use_count: (key.use_count || 0) + successes,
-      }).eq("id", key.id).then(() => {}, () => {});
+      }).eq("id", key.id).then(() => {}, (err: any) => log.warn("intake key usage update failed", { keyId: key.id, error: getErrorMessage(err) }));
     }
 
     res.json({
