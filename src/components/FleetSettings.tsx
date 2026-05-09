@@ -136,6 +136,7 @@ export default function FleetSettings() {
       }
     } catch (e) {
       console.error(e);
+      toastError("Agent fleet unavailable", "Could not load agents. Please refresh.");
     }
     setIsLoading(false);
   };
@@ -163,6 +164,7 @@ export default function FleetSettings() {
        setAgentConfig(data);
     } catch (e) {
       console.error(e);
+      if (selectedAgentIdRef.current === id) toastError("Config unavailable", "Could not load agent configuration.");
     } finally {
       if (selectedAgentIdRef.current === id) setIsConfigLoading(false);
     }

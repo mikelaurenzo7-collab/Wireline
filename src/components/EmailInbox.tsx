@@ -37,6 +37,7 @@ export default function EmailInbox() {
       setThreads(data.threads || []);
     } catch (e) {
       console.error("Failed to fetch threads:", e);
+      toastError("Inbox unavailable", "Could not load email threads. Please refresh.");
     } finally {
       setLoading(false);
     }
@@ -94,6 +95,7 @@ export default function EmailInbox() {
       setMessages(data.messages || []);
     } catch (e) {
       console.error("Failed to fetch messages:", e);
+      toastError("Messages unavailable", "Could not load messages for this thread.");
     }
   };
 

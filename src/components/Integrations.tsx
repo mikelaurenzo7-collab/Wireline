@@ -94,6 +94,7 @@ export default function Integrations() {
       fetchAccounts();
     } catch (e) {
       console.error(e);
+      toastError("Disconnect failed", "Could not disconnect this account. Please try again.");
     }
   };
 
@@ -107,6 +108,7 @@ export default function Integrations() {
       fetchAccounts();
     } catch (e) {
       console.error(e);
+      toastError("Assignment failed", "Could not update the agent for this account.");
     }
   };
 

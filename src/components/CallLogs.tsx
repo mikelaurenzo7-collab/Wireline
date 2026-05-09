@@ -19,6 +19,7 @@ import EmptyState from "./EmptyState";
 import { useToast } from "../contexts/ToastContext";
 
 export default function CallLogs() {
+  const { error: toastError } = useToast();
   const [calls, setCalls] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -40,6 +41,7 @@ export default function CallLogs() {
       setOffset(currentOffset + (data.calls?.length || 0));
     } catch (e) {
       console.error("Failed to fetch calls:", e);
+      if (!append) toastError("Call logs unavailable", "Could not load call history. Please refresh.");
     } finally {
       if (!append) setLoading(false); else setLoadingMore(false);
     }

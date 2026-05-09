@@ -79,6 +79,7 @@ export default function AdminSettings() {
       setPhoneNumbers(numbersRes.numbers || []);
     } catch (e) {
       console.error(e);
+      toastError("Settings unavailable", "Could not load settings. Please refresh.");
     }
     setIsLoading(false);
   };
@@ -91,6 +92,7 @@ export default function AdminSettings() {
       setCarrierNumbers(data.numbers || []);
     } catch (e) {
       console.error(e);
+      toastError("Sync failed", "Could not fetch carrier numbers from Vapi.");
     }
     setIsSyncing(false);
   };
@@ -138,6 +140,7 @@ export default function AdminSettings() {
       fetchData();
     } catch (e) {
       console.error(e);
+      toastError("Assignment failed", "Could not update the agent for this number.");
     }
   };
 
@@ -151,6 +154,7 @@ export default function AdminSettings() {
       }
     } catch (e) {
       console.error(e);
+      toastError("Delete failed", "Could not remove this carrier number. Please try again.");
     }
     setIsDeletingNumber(null);
   };
