@@ -4,6 +4,7 @@ import { Brain, ArrowUpCircle, Trash2, CheckCircle2, Zap, Terminal, Loader2 } fr
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { formatDate, formatDateTime } from "../lib/safe-date";
+import ConfirmModal from "./ConfirmModal";
 
 type Lesson = {
   id: string;
@@ -17,6 +18,7 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isPromoting, setIsPromoting] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [confirmLesson, setConfirmLesson] = useState<string | null>(null);
 
   // agentId-keyed effect with a cancel guard. Parent (FleetSettings)
   // currently force-remounts via key={selectedAgent.id}, which masks the
@@ -63,6 +65,7 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
   };
 
   const deleteLesson = async (id: string) => {
+    setConfirmLesson(null);
     setIsDeleting(id);
     try {
       const resp = await authFetch(`/api/agents/${agentId}/lessons/${id}`, { method: 'DELETE' });
@@ -95,6 +98,7 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
   }
 
   return (
+    <>
     <div className="relative aurora-ring rounded-2xl overflow-hidden">
       <div className="relative rounded-2xl glass border border-white/10 overflow-hidden">
         {/* Header */}
@@ -154,6 +158,7 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
                           <button
                             onClick={() => promoteToDirective(lesson)}
                             disabled={isPromoting === lesson.id}
+                            aria-label="Promote lesson to directive"
                             title="Promote to directive"
                             className="h-7 px-2.5 rounded-lg glass border border-brand/25 text-brand hover:bg-brand/15 transition-all text-[9px] uppercase tracking-[0.25em] flex items-center gap-1.5 disabled:opacity-50"
                           >
@@ -163,8 +168,9 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
                             Promote
                           </button>
                           <button
-                            onClick={() => deleteLesson(lesson.id)}
+                            onClick={() => setConfirmLesson(lesson.id)}
                             disabled={isDeleting === lesson.id}
+                            aria-label="Discard lesson"
                             title="Discard"
                             className="h-7 w-7 rounded-lg glass border border-white/10 text-muted/60 hover:text-rose-500 hover:border-rose-500/30 transition-all flex items-center justify-center disabled:opacity-50"
                           >
@@ -191,5 +197,15 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
         </div>
       </div>
     </div>
+    <ConfirmModal
+      open={confirmLesson !== null}
+      title="Discard Observation"
+      message="Remove this lesson? The agent will no longer learn from this interaction."
+      danger
+      confirmLabel="Discard"
+      onConfirm={() => confirmLesson && deleteLesson(confirmLesson)}
+      onCancel={() => setConfirmLesson(null)}
+    />
+    </>
   );
 }

@@ -11,6 +11,7 @@ import CsvExportButton from "./CsvExportButton";
 import PageShell, { Panel } from "./PageShell";
 import HubTabs, { CHANNELS_HUB } from "./HubTabs";
 import { useToast } from "../contexts/ToastContext";
+import ConfirmModal from "./ConfirmModal";
 
 export default function OutboundDialer() {
   const { success: toastSuccess, error: toastError, info: toastInfo } = useToast();
@@ -44,6 +45,7 @@ export default function OutboundDialer() {
   const [campaignLeads, setCampaignLeads] = useState<any[]>([]);
   const [campaignLeadsLoading, setCampaignLeadsLoading] = useState(false);
   const [showCampaignModal, setShowCampaignModal] = useState(false);
+  const [confirmState, setConfirmState] = useState<{ title: string; message: string; danger?: boolean; onConfirm: () => void } | null>(null);
   const [bulkCampaignId, setBulkCampaignId] = useState<string>("");
   const [campaignAnalytics, setCampaignAnalytics] = useState<any | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
@@ -108,22 +110,31 @@ export default function OutboundDialer() {
     setIsLoadingMore(false);
   };
 
-  const deleteLead = async (id: number | string) => {
-    if (!confirm("Remove this lead from the queue?")) return;
-    setIsDeletingLead(id);
-    try {
-      const resp = await authFetch(`/api/outbound/${id}`, { method: "DELETE" });
-      if (resp.ok) {
-        setLeads(prev => prev.filter(l => l.id !== id));
-      }
-    } catch (e) {
-      console.error("Failed to delete lead:", e);
-    }
-    setIsDeletingLead(null);
+  const deleteLead = (id: number | string) => {
+    setConfirmState({
+      title: "Remove Lead",
+      message: "Remove this lead from the queue?",
+      danger: true,
+      onConfirm: async () => {
+        setConfirmState(null);
+        setIsDeletingLead(id);
+        try {
+          const resp = await authFetch(`/api/outbound/${id}`, { method: "DELETE" });
+          if (resp.ok) setLeads(prev => prev.filter(l => l.id !== id));
+        } catch (e) { console.error("Failed to delete lead:", e); }
+        setIsDeletingLead(null);
+      },
+    });
   };
+
+  const PHONE_RE = /^\+?[1-9]\d{7,14}$/;
 
   const dispatchCall = async () => {
     if (!selectedAgentId || !customerNumber) return;
+    if (!PHONE_RE.test(customerNumber.replace(/[\s\-().]/g, ""))) {
+      setDialError("Invalid phone number — use E.164 format, e.g. +12025551234");
+      return;
+    }
     setIsDialing(true);
     setDialError("");
     try {
@@ -248,11 +259,20 @@ export default function OutboundDialer() {
     });
   };
 
-  const launchQueue = async () => {
+  const launchQueue = () => {
     const queued = leads.filter(l => l.status === "Queued");
     if (queued.length === 0) return;
-    if (!window.confirm(`Dispatch ${queued.length} queued call${queued.length === 1 ? '' : 's'} sequentially?`)) return;
+    setConfirmState({
+      title: "Launch Queue",
+      message: `Dispatch ${queued.length} queued call${queued.length === 1 ? '' : 's'} sequentially?`,
+      onConfirm: async () => {
+        setConfirmState(null);
+        doLaunchQueue(queued);
+      },
+    });
+  };
 
+  const doLaunchQueue = async (queued: any[]) => {
     setIsDialing(true);
     setUploadStats(`Dispatching ${queued.length} call${queued.length === 1 ? '' : 's'}…`);
     toastInfo("Queue launched", `Dispatching ${queued.length} calls sequentially…`);
@@ -330,13 +350,20 @@ export default function OutboundDialer() {
     } catch (e) { console.error("Failed to set campaign status:", e); }
   };
 
-  const deleteCampaign = async (id: string) => {
-    if (!confirm("Delete this campaign? Leads will be unlinked but not removed.")) return;
-    try {
-      await authFetch(`/api/campaigns/${id}`, { method: "DELETE" });
-      setCampaigns(prev => prev.filter(c => c.id !== id));
-      if (selectedCampaign?.id === id) setSelectedCampaign(null);
-    } catch (e) { console.error("Failed to delete campaign:", e); }
+  const deleteCampaign = (id: string) => {
+    setConfirmState({
+      title: "Delete Campaign",
+      message: "Delete this campaign? Leads will be unlinked but not removed.",
+      danger: true,
+      onConfirm: async () => {
+        setConfirmState(null);
+        try {
+          await authFetch(`/api/campaigns/${id}`, { method: "DELETE" });
+          setCampaigns(prev => prev.filter(c => c.id !== id));
+          if (selectedCampaign?.id === id) setSelectedCampaign(null);
+        } catch (e) { console.error("Failed to delete campaign:", e); }
+      },
+    });
   };
 
   const handleSelectCampaign = (c: any) => {
@@ -1095,6 +1122,17 @@ export default function OutboundDialer() {
           />
         )}
       </AnimatePresence>
+      {confirmState && (
+        <ConfirmModal
+          open
+          title={confirmState.title}
+          message={confirmState.message}
+          danger={confirmState.danger}
+          confirmLabel={confirmState.danger ? "Delete" : "Confirm"}
+          onConfirm={confirmState.onConfirm}
+          onCancel={() => setConfirmState(null)}
+        />
+      )}
     </>
   );
 }
@@ -1215,6 +1253,7 @@ function CreateCampaignModal({ agents, onClose, onCreated }: { agents: any[]; on
 
   const save = async () => {
     if (!form.name.trim()) { setErr("Campaign name is required."); return; }
+    if (form.call_window_start >= form.call_window_end) { setErr("Call window end time must be after start time."); return; }
     setSaving(true); setErr("");
     try {
       const res = await authFetch("/api/campaigns", {
@@ -1272,11 +1311,11 @@ function CreateCampaignModal({ agents, onClose, onCreated }: { agents: any[]; on
               <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70 flex items-center gap-1.5">
                 <Clock className="w-2.5 h-2.5 text-brand" /> Window start
               </label>
-              <input type="time" className={inputCls} value={form.call_window_start} onChange={e => set("call_window_start", e.target.value)} />
+              <input type="time" aria-label="Call window start time" className={inputCls} value={form.call_window_start} onChange={e => set("call_window_start", e.target.value)} />
             </div>
             <div className="space-y-1.5">
               <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">Window end</label>
-              <input type="time" className={inputCls} value={form.call_window_end} onChange={e => set("call_window_end", e.target.value)} />
+              <input type="time" aria-label="Call window end time" className={inputCls} value={form.call_window_end} onChange={e => set("call_window_end", e.target.value)} />
             </div>
           </div>
           <div className="space-y-1.5">

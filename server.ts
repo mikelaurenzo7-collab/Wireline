@@ -2918,7 +2918,7 @@ app.get("/api/calls", authenticateUser, async (req: any, res: any) => {
     });
   } catch (error: any) {
     log.error("Failed to fetch calls", { error: getErrorMessage(error) });
-    res.json({ calls: [], hasMore: false, total: 0 }); // Fail gracefully if table not created
+    res.status(500).json({ error: "Failed to fetch calls" });
   }
 });
 
@@ -4318,8 +4318,9 @@ app.get("/api/phone-numbers", authenticateUser, async (req: any, res: any) => {
     const { data, error } = await db.from('wireline_phone_numbers').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false }).limit(200);
     if (error) throw error;
     res.json({ numbers: data || [] });
-  } catch (error) {
-    res.json({ numbers: [] });
+  } catch (error: any) {
+    log.error("Failed to fetch phone numbers", { error: getErrorMessage(error) });
+    res.status(500).json({ error: "Failed to fetch phone numbers" });
   }
 });
 
@@ -4915,7 +4916,16 @@ app.post("/api/campaigns/:id/launch", authenticateUser, async (req: any, res: an
       .eq('user_id', req.user.id)
       .single();
     if (campErr || !campaign) return res.status(404).json({ error: "Campaign not found." });
-    if (campaign.status === 'running') return res.status(409).json({ error: "Campaign is already running." });
+
+    // Atomically transition to 'running' — prevents a second concurrent
+    // launch request from seeing status='pending' and double-dialing leads.
+    const { data: claimed } = await db.from('wireline_outbound_campaigns')
+      .update({ status: 'running', updated_at: new Date().toISOString() })
+      .eq('id', campaignId)
+      .eq('user_id', req.user.id)
+      .neq('status', 'running')
+      .select('id');
+    if (!claimed?.length) return res.status(409).json({ error: "Campaign is already running." });
 
     // Fetch queued leads for this campaign.
     const { data: queued } = await db
@@ -4926,14 +4936,12 @@ app.post("/api/campaigns/:id/launch", authenticateUser, async (req: any, res: an
       .eq('status', 'Queued');
 
     if (!queued || queued.length === 0) {
+      // No leads to dial — immediately complete so the campaign doesn't stay 'running'.
+      await db.from('wireline_outbound_campaigns')
+        .update({ status: 'completed', updated_at: new Date().toISOString() })
+        .eq('id', campaignId).eq('user_id', req.user.id);
       return res.status(400).json({ error: "No queued leads in this campaign." });
     }
-
-    // Mark campaign as running.
-    await db.from('wireline_outbound_campaigns')
-      .update({ status: 'running', updated_at: new Date().toISOString() })
-      .eq('id', campaignId)
-      .eq('user_id', req.user.id);
 
     res.json({ success: true, dispatching: queued.length });
 
@@ -5116,8 +5124,9 @@ app.get("/api/settings", authenticateUser, async (req: any, res: any) => {
        delete data.vapi_private_key; // Never send secret to client
     }
     res.json(data || {});
-  } catch (error) {
-    res.json({});
+  } catch (error: any) {
+    log.error("Failed to fetch settings", { error: getErrorMessage(error) });
+    res.status(500).json({ error: "Failed to fetch settings" });
   }
 });
 
@@ -8226,11 +8235,8 @@ app.post("/api/intake/lead", async (req: any, res: any) => {
     if (result.ok) {
       // Bump usage stats fire-and-forget — only on real (not replayed) inserts.
       if (!result.idempotent_replay) {
-        const nowIso = new Date().toISOString();
-        db.from("wireline_intake_keys").update({
-          last_used_at: nowIso,
-          use_count: (key.use_count || 0) + 1,
-        }).eq("id", key.id).then(() => {}, (err: any) => log.warn("intake key usage update failed", { keyId: key.id, error: getErrorMessage(err) }));
+        db.rpc("increment_intake_key_use_count", { key_id: key.id, delta: 1 })
+          .then(() => {}, (err: any) => log.warn("intake key usage update failed", { keyId: key.id, error: getErrorMessage(err) }));
       }
       return res.json(result);
     }
@@ -8297,11 +8303,8 @@ app.post("/api/intake/leads", async (req: any, res: any) => {
 
     const successes = results.filter(r => r.ok).length;
     if (successes > 0) {
-      const nowIso = new Date().toISOString();
-      db.from("wireline_intake_keys").update({
-        last_used_at: nowIso,
-        use_count: (key.use_count || 0) + successes,
-      }).eq("id", key.id).then(() => {}, (err: any) => log.warn("intake key usage update failed", { keyId: key.id, error: getErrorMessage(err) }));
+      db.rpc("increment_intake_key_use_count", { key_id: key.id, delta: successes })
+        .then(() => {}, (err: any) => log.warn("intake key usage update failed", { keyId: key.id, error: getErrorMessage(err) }));
     }
 
     res.json({
@@ -8953,9 +8956,11 @@ app.get("/api/audit/stats", authenticateUser, async (req: any, res: any) => {
       const type = event.event_type || event.action || 'unknown';
       byType[type] = (byType[type] || 0) + 1;
       
-      // Sum costs
+      // Sum costs — guard against non-numeric DB values so one bad row
+      // doesn't poison the running total with NaN.
       if (event.cost_usd) {
-        totalCost += parseFloat(event.cost_usd);
+        const cost = parseFloat(event.cost_usd);
+        if (isFinite(cost)) totalCost += cost;
       }
       
       // Count API calls

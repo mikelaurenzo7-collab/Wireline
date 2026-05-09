@@ -79,8 +79,15 @@ export default function DncManager() {
     return !q || (e.phone_raw || e.phone).includes(q) || (e.reason || "").toLowerCase().includes(q);
   });
 
+  const PHONE_RE = /^\+?[1-9]\d{7,14}$/;
+
   const handleAdd = async () => {
-    if (!addPhone.trim()) return;
+    const normalized = addPhone.trim().replace(/[\s\-().]/g, "");
+    if (!normalized) return;
+    if (!PHONE_RE.test(normalized)) {
+      toastError("Invalid phone number", "Use E.164 format, e.g. +12025551234");
+      return;
+    }
     setAdding(true);
     try {
       const r = await authFetch("/api/dnc", {
@@ -331,6 +338,7 @@ export default function DncManager() {
                       ) : (
                         <button
                           onClick={() => setConfirmId(entry.id)}
+                          aria-label={`Remove ${entry.phone} from DNC list`}
                           className="h-7 w-7 rounded-full glass border border-white/10 text-muted hover:text-rose-400 hover:border-rose-500/30 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100"
                         >
                           <Trash2 className="w-3 h-3" />
@@ -383,6 +391,7 @@ export default function DncManager() {
                     <Phone className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
                     <input
                       type="tel"
+                      aria-label="Phone number to add to DNC list"
                       placeholder="+1 (555) 123-4567"
                       value={addPhone}
                       onChange={e => setAddPhone(e.target.value)}
@@ -395,6 +404,7 @@ export default function DncManager() {
                 <div>
                   <label className="block text-[9px] uppercase tracking-[0.32em] text-muted mb-2">Reason</label>
                   <select
+                    aria-label="Reason for adding to DNC list"
                     value={addReason}
                     onChange={e => setAddReason(e.target.value)}
                     className="w-full h-10 px-3 rounded-xl glass border border-white/10 text-sm text-ink focus:border-rose-400/50 focus:outline-none transition-all"

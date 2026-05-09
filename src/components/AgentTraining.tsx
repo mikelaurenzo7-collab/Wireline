@@ -8,6 +8,7 @@ import SupervisedAgentTuner from "./SupervisedAgentTuner";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import { HelpTooltip } from "./HelpTooltip";
 import HubTabs, { TRAINING_HUB } from "./HubTabs";
+import ConfirmModal from "./ConfirmModal";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -36,6 +37,7 @@ export default function AgentTraining() {
   const [newDirective, setNewDirective] = useState("");
   const [newKnowledge, setNewKnowledge] = useState("");
   const [isSavingEntry, setIsSavingEntry] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; type: 'knowledge' | 'directive' } | null>(null);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [optSuggestions, setOptSuggestions] = useState<any>(null);
 
@@ -142,6 +144,7 @@ export default function AgentTraining() {
   };
 
   return (
+    <>
     <div className="flex flex-col h-full overflow-hidden">
       <header className="shrink-0 px-4 md:px-6 pt-4 pb-3 sticky top-0 z-30 backdrop-blur-xl bg-paper/70 border-b border-white/8">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 max-w-[1400px] mx-auto w-full">
@@ -508,7 +511,7 @@ export default function AgentTraining() {
                               </div>
                               <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 shrink-0">
                                 <button onClick={() => setEditingDirective({ id: d.id, content: d.content })} className="w-6 h-6 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-ink hover:border-white/30"><Pencil className="w-3 h-3" /></button>
-                                <button onClick={() => deleteItem(d.id, 'directive')} className="w-6 h-6 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30"><Trash2 className="w-3 h-3" /></button>
+                                <button onClick={() => setConfirmDelete({ id: d.id, type: 'directive' })} aria-label="Delete directive" className="w-6 h-6 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30"><Trash2 className="w-3 h-3" /></button>
                               </div>
                             </div>
                           )}
@@ -582,7 +585,7 @@ export default function AgentTraining() {
                               <div className="flex-1 text-sm text-ink/90 leading-relaxed">{k.content}</div>
                               <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 shrink-0">
                                 <button onClick={() => setEditingKnowledge({ id: k.id, content: k.content })} className="w-6 h-6 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-ink hover:border-white/30"><Pencil className="w-3 h-3" /></button>
-                                <button onClick={() => deleteItem(k.id, 'knowledge')} className="w-6 h-6 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-blue-400 hover:border-blue-500/30"><Trash2 className="w-3 h-3" /></button>
+                                <button onClick={() => setConfirmDelete({ id: k.id, type: 'knowledge' })} aria-label="Delete knowledge entry" className="w-6 h-6 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-blue-400 hover:border-blue-500/30"><Trash2 className="w-3 h-3" /></button>
                               </div>
                             </div>
                           )}
@@ -687,5 +690,17 @@ export default function AgentTraining() {
         </AnimatePresence>
       </main>
     </div>
+    <ConfirmModal
+      open={confirmDelete !== null}
+      title={confirmDelete?.type === 'directive' ? "Delete Directive" : "Delete Knowledge Entry"}
+      message={confirmDelete?.type === 'directive'
+        ? "Remove this directive? The agent will no longer follow this instruction."
+        : "Remove this knowledge entry? The agent will no longer have access to this fact."}
+      danger
+      confirmLabel="Delete"
+      onConfirm={() => { if (confirmDelete) { deleteItem(confirmDelete.id, confirmDelete.type); setConfirmDelete(null); } }}
+      onCancel={() => setConfirmDelete(null)}
+    />
+    </>
   );
 }
