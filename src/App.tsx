@@ -4,6 +4,7 @@ import { Users, Activity, MessageSquare, Calendar, PhoneOutgoing, ServerCog, Plu
 import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import AuthPortal from "./components/AuthPortal";
 import { PrivacyPolicy, TermsOfService } from "./components/LegalPage";
+import CookieConsent from "./components/CookieConsent";
 import ErrorBoundary from "./components/ErrorBoundary";
 import SystemStatusBadge from "./components/SystemStatusBadge";
 import ToastStack from "./components/Toast";
@@ -989,6 +990,7 @@ export default function App() {
           <ToastProvider>
             <AppContent />
             <ToastStack />
+            <CookieConsent />
           </ToastProvider>
         </AuthProvider>
       </BrowserRouter>

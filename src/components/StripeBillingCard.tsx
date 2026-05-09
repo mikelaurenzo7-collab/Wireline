@@ -183,11 +183,19 @@ export default function StripeBillingCard() {
       <div className="rounded-2xl glass border border-white/10 p-8 md:p-10 space-y-8">
         <div className="border-b border-white/8 pb-6">
           <h3 className="font-display italic lowercase text-3xl text-ink">
-            {hasActive ? "change plan" : "activate billing"}
+            {hasActive ? "change plan" : "choose a plan"}
           </h3>
-          <p className="text-[10px] uppercase tracking-[0.4em] text-muted/70 mt-2">
-            {hasActive ? "Manage from the Stripe portal above for upgrades, downgrades, and cancellation." : "Pick a tier to start. Cancel any time."}
-          </p>
+          {!hasActive && (
+            <p className="text-[12px] text-muted/70 mt-1.5 leading-relaxed max-w-lg">
+              Each agent replaces hours of human intake, follow-up, and triage work — for a fraction of the cost.
+              No setup fees. Cancel anytime.
+            </p>
+          )}
+          {hasActive && (
+            <p className="text-[10px] uppercase tracking-[0.4em] text-muted/70 mt-2">
+              Use the Stripe portal above to upgrade, downgrade, or cancel.
+            </p>
+          )}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           {plans.map(plan => {
@@ -210,6 +218,12 @@ export default function StripeBillingCard() {
                   <div className="absolute -top-3 right-4 px-3 py-1 rounded-full text-paper text-[9px] uppercase tracking-[0.3em]"
                     style={{ background: `linear-gradient(135deg, ${accent}, ${accent}99)` }}>
                     Current plan
+                  </div>
+                )}
+                {!isCurrent && plan.id === "pro" && (
+                  <div className="absolute -top-3 left-4 px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.3em]"
+                    style={{ background: "linear-gradient(135deg, #9B59F5, #6B3FCF)", color: "#fff" }}>
+                    Most popular
                   </div>
                 )}
                 <div className="flex items-center justify-between">
@@ -256,17 +270,24 @@ export default function StripeBillingCard() {
                       : <>{hasActive ? "Switch" : "Subscribe"} <ArrowRight className="w-3 h-3" /></>}
                 </button>
                 {!plan.configured && (
-                  <p className="text-[9px] font-mono text-amber-400/80 text-center">
-                    Price not configured ({plan.id} env var missing)
+                  <p className="text-[9px] font-mono text-amber-400/80 text-center leading-relaxed">
+                    Set <span className="text-brand">STRIPE_{plan.id.toUpperCase()}_PRICE_ID</span> in Vercel to activate
                   </p>
                 )}
               </motion.div>
             );
           })}
         </div>
-        <div className="text-[10px] uppercase tracking-[0.35em] text-muted/50 flex items-center gap-2 border-t border-white/6 pt-6">
-          <Shield className="w-3 h-3" />
-          Payments processed by Stripe · PCI DSS Level 1 · Cancel anytime
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/6 pt-6">
+          <div className="text-[10px] uppercase tracking-[0.35em] text-muted/50 flex items-center gap-2">
+            <Shield className="w-3 h-3" />
+            Stripe · PCI DSS Level 1 · Cancel anytime
+          </div>
+          <div className="flex items-center gap-3 text-[9px] text-muted/40 uppercase tracking-[0.2em]">
+            <a href="/privacy" className="hover:text-muted/70 transition-colors">Privacy</a>
+            <span>·</span>
+            <a href="/terms" className="hover:text-muted/70 transition-colors">Terms</a>
+          </div>
         </div>
       </div>
     </div>
