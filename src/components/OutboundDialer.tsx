@@ -71,7 +71,7 @@ export default function OutboundDialer() {
       const res = await authFetch(`/api/campaigns/${id}/analytics`);
       const data = await res.json();
       setCampaignAnalytics(data);
-    } catch (e) { console.error("Failed to fetch campaign analytics:", e); }
+    } catch (e) { console.error("Failed to fetch campaign analytics:", e); toastError("Analytics unavailable", "Could not load campaign analytics."); }
     setAnalyticsLoading(false);
   };
 
@@ -90,6 +90,7 @@ export default function OutboundDialer() {
       setLeadsTotal(leadsData.total || 0);
     } catch (e) {
       console.error(e);
+      toastError("Load failed", "Could not load leads or agents. Check your connection and try again.");
     }
     setIsLoading(false);
   };
@@ -104,6 +105,7 @@ export default function OutboundDialer() {
       setLeadsTotal(data.total || 0);
     } catch (e) {
       console.error(e);
+      toastError("Load more failed", "Could not load additional leads.");
     }
     setIsLoadingMore(false);
   };
@@ -118,6 +120,7 @@ export default function OutboundDialer() {
       }
     } catch (e) {
       console.error("Failed to delete lead:", e);
+      toastError("Delete failed", "Could not remove this lead. Please try again.");
     }
     setIsDeletingLead(null);
   };
@@ -276,6 +279,7 @@ export default function OutboundDialer() {
         await new Promise(resolve => setTimeout(resolve, 2000));
       } catch (e) {
         console.error("Failed batch call", e);
+        toastError("Batch call error", `Could not dispatch call to ${lead.customer_number || "unknown number"}.`);
       }
     }
 
@@ -291,7 +295,7 @@ export default function OutboundDialer() {
       const res = await authFetch("/api/campaigns");
       const data = await res.json();
       setCampaigns(data.campaigns || []);
-    } catch (e) { console.error("Failed to fetch campaigns:", e); }
+    } catch (e) { console.error("Failed to fetch campaigns:", e); toastError("Campaigns unavailable", "Could not load campaigns."); }
     setCampaignLoading(false);
   };
 
@@ -301,7 +305,7 @@ export default function OutboundDialer() {
       const res = await authFetch("/api/callbacks");
       const data = await res.json();
       setCallbacks(data.callbacks || []);
-    } catch (e) { console.error("Failed to fetch callbacks:", e); }
+    } catch (e) { console.error("Failed to fetch callbacks:", e); toastError("Callbacks unavailable", "Could not load scheduled callbacks."); }
     setCallbacksLoading(false);
   };
 
@@ -311,7 +315,7 @@ export default function OutboundDialer() {
       const res = await authFetch(`/api/campaigns/${id}/leads`);
       const data = await res.json();
       setCampaignLeads(data.leads || []);
-    } catch (e) { console.error("Failed to fetch campaign leads:", e); }
+    } catch (e) { console.error("Failed to fetch campaign leads:", e); toastError("Leads unavailable", "Could not load leads for this campaign."); }
     setCampaignLeadsLoading(false);
   };
 
@@ -327,7 +331,7 @@ export default function OutboundDialer() {
         setCampaigns(prev => prev.map(c => c.id === id ? { ...c, ...data.campaign } : c));
         if (selectedCampaign?.id === id) setSelectedCampaign((prev: any) => ({ ...prev, ...data.campaign }));
       }
-    } catch (e) { console.error("Failed to set campaign status:", e); }
+    } catch (e) { console.error("Failed to set campaign status:", e); toastError("Status update failed", "Could not change campaign status. Please try again."); }
   };
 
   const deleteCampaign = async (id: string) => {
@@ -336,7 +340,7 @@ export default function OutboundDialer() {
       await authFetch(`/api/campaigns/${id}`, { method: "DELETE" });
       setCampaigns(prev => prev.filter(c => c.id !== id));
       if (selectedCampaign?.id === id) setSelectedCampaign(null);
-    } catch (e) { console.error("Failed to delete campaign:", e); }
+    } catch (e) { console.error("Failed to delete campaign:", e); toastError("Delete failed", "Could not delete this campaign. Please try again."); }
   };
 
   const handleSelectCampaign = (c: any) => {

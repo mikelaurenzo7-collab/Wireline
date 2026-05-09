@@ -68,7 +68,16 @@ export default function OnboardingQuickstart() {
     })();
   }, []);
 
-  if (loading || !progress) return null;
+  if (loading || !progress) return (
+    <div className="space-y-3 animate-pulse px-1">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="flex items-center gap-3">
+          <div className="w-6 h-6 rounded-full bg-white/8 shrink-0" />
+          <div className="flex-1 h-4 rounded-lg bg-white/8" style={{ width: `${60 + i * 10}%` }} />
+        </div>
+      ))}
+    </div>
+  );
 
   const completion = {
     agent:     progress.agents > 0,

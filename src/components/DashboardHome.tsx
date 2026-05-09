@@ -142,7 +142,10 @@ export default function DashboardHome() {
       const res = await authFetch("/api/dashboard/stats");
       const data = await res.json();
       setStats(data);
-    } catch (e) { console.error(e); } finally { setIsLoading(false); }
+    } catch (e) {
+      console.error(e);
+      toastError("Dashboard unavailable", "Could not load stats. Check your connection and refresh.");
+    } finally { setIsLoading(false); }
   };
 
   const toggleCall = async () => {
