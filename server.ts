@@ -934,7 +934,8 @@ async function attemptWebhookDelivery(deliveryId: number) {
   if (!isDeliveryIpLiteral) {
     const { lookup } = await import("node:dns/promises");
     let resolvedAddrs: Array<{ address: string; family: number }> = [];
-    try { resolvedAddrs = await lookup(deliveryHost, { all: true }); } catch { /* DNS fail — pass through */ }
+    let dnsError = false;
+    try { resolvedAddrs = await lookup(deliveryHost, { all: true }); } catch { dnsError = true; }
     for (const { address, family } of resolvedAddrs) {
       if ((family === 4 && isPrivateIp(address)) || (family === 6 && isPrivateIpv6(address))) {
         await db.from("wireline_webhook_deliveries").update({
@@ -945,6 +946,23 @@ async function attemptWebhookDelivery(deliveryId: number) {
         return;
       }
       if (pinnedIp === null) { pinnedIp = address; pinnedFamily = family as 4 | 6; }
+    }
+    // Fail closed: if DNS lookup failed we have no validated IP to pin.
+    // Proceeding with an unpinned fetch would let the webhook owner answer
+    // SERVFAIL to the precheck and a private address to fetch()'s own DNS.
+    // Treat as a transient (retryable) failure — DNS may recover.
+    if (dnsError || pinnedIp === null) {
+      const newAttempts = (row.attempts || 0) + 1;
+      const max = row.max_attempts || WEBHOOK_DEFAULT_MAX_ATTEMPTS;
+      const reachedDead = newAttempts >= max;
+      const backoff = WEBHOOK_RETRY_BACKOFF_MS[Math.min(newAttempts - 1, WEBHOOK_RETRY_BACKOFF_MS.length - 1)];
+      await db.from("wireline_webhook_deliveries").update({
+        status: reachedDead ? "dead" : "pending",
+        attempts: newAttempts,
+        last_error: "DNS resolution failed; will retry.",
+        next_attempt_at: reachedDead ? null : new Date(Date.now() + backoff).toISOString(),
+      }).eq("id", deliveryId);
+      return;
     }
   }
 
