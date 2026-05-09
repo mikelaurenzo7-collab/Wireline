@@ -44,6 +44,7 @@ const PLAN_ACCENTS: Record<string, string> = {
 export default function StripeBillingCard() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [sub, setSub] = useState<SubscriptionState | null>(null);
+  const [agentCount, setAgentCount] = useState<number>(0);
   const [stripeConfigured, setStripeConfigured] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null); // plan_id | "portal"
@@ -59,6 +60,7 @@ export default function StripeBillingCard() {
       ]);
       setStripeConfigured(!!statusRes.stripe_configured && !!plansRes.stripe_configured);
       setSub(statusRes.subscription || null);
+      setAgentCount(statusRes.agent_count ?? 0);
       setPlans(plansRes.plans || []);
     } catch (e: any) {
       setError(e?.message || "Load failed");
@@ -167,7 +169,7 @@ export default function StripeBillingCard() {
     <div className="space-y-8">
       {/* Active subscription card */}
       {sub?.has_subscription && (
-        <ActiveSubCard sub={sub} busy={busy === "portal"} onPortal={openPortal} />
+        <ActiveSubCard sub={sub} agentCount={agentCount} busy={busy === "portal"} onPortal={openPortal} />
       )}
 
       {error && (
@@ -272,8 +274,8 @@ export default function StripeBillingCard() {
 }
 
 function ActiveSubCard({
-  sub, busy, onPortal,
-}: { sub: SubscriptionState; busy: boolean; onPortal: () => void }) {
+  sub, agentCount, busy, onPortal,
+}: { sub: SubscriptionState; agentCount: number; busy: boolean; onPortal: () => void }) {
   const accent = PLAN_ACCENTS[sub.plan || ""] || "#0AC8D4";
   const Icon = PLAN_ICONS[sub.plan || ""] || CreditCard;
   const renews = safeDate(sub.current_period_end);
@@ -315,7 +317,11 @@ function ActiveSubCard({
               {sub.plan_name || sub.plan || "—"}
             </h3>
             <p className="text-[10px] uppercase tracking-[0.35em] text-muted/60">
-              {sub.max_agents ? `${sub.max_agents} agent nodes` : ""}
+              {sub.max_agents ? (
+                <span className={agentCount >= sub.max_agents ? "text-amber-400" : ""}>
+                  {agentCount} / {sub.max_agents} agents
+                </span>
+              ) : ""}
               {renews && (
                 <>
                   {sub.max_agents ? " · " : ""}

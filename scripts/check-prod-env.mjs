@@ -20,14 +20,18 @@ const required = [
 ];
 
 const recommended = [
-  ["ANTHROPIC_API_KEY",     "Claude — required for /api/claude/* recipes"],
-  ["VAPI_PRIVATE_KEY",      "Vapi — required for outbound/inbound voice agents"],
-  ["VAPI_WEBHOOK_SECRET",   "Vapi webhook auth — REJECTS webhooks in prod when unset"],
-  ["APP_URL",               "Canonical URL — required for OAuth redirects + email links"],
-  ["CORS_ORIGINS",          "CORS allowlist — required in prod or browser API calls fail"],
-  ["STRIPE_SECRET_KEY",     "Stripe — billing endpoints return 503 when unset"],
-  ["STRIPE_WEBHOOK_SECRET", "Stripe webhook signature verification"],
-  ["OAUTH_STATE_SECRET",    "HMAC secret for OAuth CSRF state tokens (falls back to STRIPE_WEBHOOK_SECRET)"],
+  ["ANTHROPIC_API_KEY",         "Claude — required for /api/claude/* recipes"],
+  ["VITE_VAPI_PUBLIC_KEY",      "Vapi — required for browser-side test calls from the dashboard"],
+  ["VAPI_PRIVATE_KEY",          "Vapi — required for outbound/inbound voice agents"],
+  ["VAPI_WEBHOOK_SECRET",       "Vapi webhook auth — REJECTS webhooks in prod when unset"],
+  ["APP_URL",                   "Canonical URL — required for OAuth redirects + email links"],
+  ["CORS_ORIGINS",              "CORS allowlist — required in prod or browser API calls fail"],
+  ["STRIPE_SECRET_KEY",         "Stripe — billing endpoints return 503 when unset"],
+  ["STRIPE_WEBHOOK_SECRET",     "Stripe webhook signature verification"],
+  ["STRIPE_STARTER_PRICE_ID",   "Stripe price ID for the Starter plan"],
+  ["STRIPE_PRO_PRICE_ID",       "Stripe price ID for the Pro plan"],
+  ["STRIPE_ENTERPRISE_PRICE_ID","Stripe price ID for the Enterprise plan"],
+  ["OAUTH_STATE_SECRET",        "HMAC secret for OAuth CSRF state tokens (falls back to STRIPE_WEBHOOK_SECRET)"],
 ];
 
 const optional = [

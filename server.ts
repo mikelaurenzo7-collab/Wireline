@@ -1186,7 +1186,7 @@ async function getBudgetSnapshot(userId: string, force = false): Promise<BudgetC
   }
   const [{ data: budget }, { data: rows }] = await Promise.all([
     db.from("wireline_spend_budgets").select("monthly_limit_usd, hard_cap, warn_threshold_pct, enabled").eq("user_id", userId).maybeSingle(),
-    db.from("wireline_audit_log").select("cost_usd").eq("user_id", userId).gte("created_at", periodStartIso(period)),
+    db.from("wireline_audit_log").select("cost_usd").eq("user_id", userId).gte("created_at", periodStartIso(period)).limit(10000),
   ]);
   const mtdCost = (rows || []).reduce((s: number, r: any) => s + Number(r.cost_usd || 0), 0);
   const entry: BudgetCacheEntry = {
@@ -5316,6 +5316,77 @@ app.post("/api/settings", authenticateUser, async (req: any, res: any) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// GDPR / data-deletion: DELETE /api/user/account
+// Permanently erases all user-owned rows from every wireline_* table and then
+// deletes the Supabase auth record.  Requires the authenticated user to confirm
+// their intent by passing { confirm: "DELETE MY ACCOUNT" } in the body.
+// ─────────────────────────────────────────────────────────────────────────────
+app.delete("/api/user/account", authenticateUser, async (req: any, res: any) => {
+  const CONFIRMATION_PHRASE = "DELETE MY ACCOUNT";
+  if (req.body?.confirm !== CONFIRMATION_PHRASE) {
+    return res.status(400).json({
+      error: `Send { "confirm": "${CONFIRMATION_PHRASE}" } to confirm permanent deletion.`,
+    });
+  }
+  const uid = req.user.id;
+  try {
+    // Delete all user-owned rows across every wireline_* table.  Order matters
+    // for FKs: child tables first, then parents.
+    const tables = [
+      "wireline_audit_log",
+      "wireline_signal_presence",
+      "wireline_fleet_tasks",
+      "wireline_webhook_deliveries",
+      "wireline_webhooks",
+      "wireline_intake_keys",
+      "wireline_agent_lessons",
+      "wireline_directives",
+      "wireline_knowledge",
+      "wireline_personality",
+      "wireline_email_messages",
+      "wireline_email_threads",
+      "wireline_email_accounts",
+      "wireline_call_logs",
+      "wireline_outbound_leads",
+      "wireline_outbound_campaigns",
+      "wireline_appointments",
+      "wireline_dnc_list",
+      "wireline_phone_numbers",
+      "wireline_agents",
+      "wireline_spend_alerts",
+      "wireline_spend_budgets",
+      "wireline_stripe_events",
+      "wireline_subscriptions",
+      "wireline_onboarding_progress",
+      "wireline_user_preferences",
+      "wireline_settings",
+    ];
+    for (const table of tables) {
+      const { error } = await (db as any).from(table).delete().eq("user_id", uid);
+      if (error) log.warn(`account deletion: ${table} error`, { error: error.message });
+    }
+
+    // Delete the Supabase auth record last — once gone the user is fully
+    // unauthenticated and cannot make further requests.
+    const adminClient = createClient(
+      process.env.VITE_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    );
+    const { error: authErr } = await adminClient.auth.admin.deleteUser(uid);
+    if (authErr) {
+      log.error("account deletion: auth.admin.deleteUser failed", { uid, error: authErr.message });
+      return res.status(500).json({ error: "Data deleted but auth record removal failed — contact support." });
+    }
+
+    void auditLogger.logSecurity("suspicious_activity", { userId: uid, ip: req.ip, metadata: { reason: "account_self_deleted" } }).catch(() => {});
+    res.status(204).send();
+  } catch (err: any) {
+    log.error("account deletion failed", { uid, error: getErrorMessage(err) });
+    res.status(500).json({ error: "Account deletion failed. Please contact support." });
+  }
+});
+
 app.get("/api/outbound", authenticateUser, async (req: any, res: any) => {
   try {
     const limitRaw = parseInt(req.query.limit as string);
@@ -5451,6 +5522,12 @@ async function placeOutboundCall(opts: {
   const subscriptionStatus = userSettings?.subscription_status || 'active';
   if (subscriptionStatus !== 'active') {
     return { ok: false, status: 403, error: "Access Denied: Please upgrade your billing plan to access outbound dialing." };
+  }
+
+  // 0c. DNC compliance — checked on every code path (manual dial, campaign,
+  //     intake auto-dial, and scheduled callbacks) so no caller can bypass it.
+  if (customerNumber && await isDncBlocked(userId, customerNumber)) {
+    return { ok: false, status: 403, error: "DNC blocked: this number is on the Do Not Call list." };
   }
 
   // 1. Vapi config
@@ -9154,12 +9231,16 @@ app.get("/api/billing/plans", (_req: any, res: any) => {
 // Operator-facing read of their current sub.
 app.get("/api/billing/status", authenticateUser, async (req: any, res: any) => {
   try {
-    const { data: sub } = await db.from("wireline_subscriptions")
-      .select("plan, status, current_period_end, cancel_at_period_end, stripe_customer_id, stripe_subscription_id, updated_at")
-      .eq("user_id", req.user.id).maybeSingle();
+    const [{ data: sub }, { count: agentCount }] = await Promise.all([
+      db.from("wireline_subscriptions")
+        .select("plan, status, current_period_end, cancel_at_period_end, stripe_customer_id, stripe_subscription_id, updated_at")
+        .eq("user_id", req.user.id).maybeSingle(),
+      db.from("wireline_agents").select("id", { count: "exact", head: true }).eq("user_id", req.user.id),
+    ]);
     const planMeta = sub?.plan ? planById(sub.plan) : null;
     res.json({
       stripe_configured: stripeAvailable(),
+      agent_count: agentCount ?? 0,
       subscription: sub ? {
         plan: sub.plan,
         plan_name: planMeta?.name || null,

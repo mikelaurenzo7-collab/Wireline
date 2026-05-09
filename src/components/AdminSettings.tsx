@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { ServerCog, KeyRound, Loader2, Phone, Plus, Link as LinkIcon, Save, ChevronRight, RotateCw, CheckCircle2, Trash2, AlertTriangle, Cpu, CreditCard, Activity, ShieldCheck, Zap, Bot, Wifi, History, TrendingUp, DollarSign, BarChart3, Clock } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
 import { motion, AnimatePresence } from "motion/react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { cn } from "../lib/utils";
@@ -14,6 +16,7 @@ import { useToast } from "../contexts/ToastContext";
 
 export default function AdminSettings() {
   const { success: toastSuccess, error: toastError } = useToast();
+  const { signOut } = useAuth();
   const [settings, setSettings] = useState({
     vapi_phone_number_id: "",
     subscription_status: "active",
@@ -35,6 +38,8 @@ export default function AdminSettings() {
 
   const [carrierNumbers, setCarrierNumbers] = useState<any[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   const providerDocsUrl = {
     google: "https://ai.google.dev/gemini-api/docs/models",
@@ -148,6 +153,26 @@ export default function AdminSettings() {
       console.error(e);
     }
     setIsDeletingNumber(null);
+  };
+
+  const deleteAccount = async () => {
+    if (deleteConfirmText !== "DELETE MY ACCOUNT") return;
+    setDeletingAccount(true);
+    try {
+      const res = await authFetch("/api/user/account", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: "DELETE MY ACCOUNT" }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error || "Deletion failed");
+      }
+      await signOut();
+    } catch (e: any) {
+      toastError("Account deletion failed", e.message);
+      setDeletingAccount(false);
+    }
   };
 
   const tabSwitcher = (
@@ -560,6 +585,50 @@ export default function AdminSettings() {
                         <span className="text-brand tabular-nums">{Math.max(0, settings.max_agents - agents.length)} free</span>
                       </div>
                     </div>
+                  </div>
+                </div>
+              </Panel>
+
+              {/* Danger Zone */}
+              <Panel title="Danger Zone" hint="Irreversible actions" icon={AlertTriangle} scroll>
+                <div className="space-y-5">
+                  <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-4 space-y-3">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                      <div className="space-y-1">
+                        <p className="text-[11px] font-medium text-rose-400 uppercase tracking-[0.2em]">Delete account</p>
+                        <p className="text-xs text-muted/80">
+                          Permanently deletes your account and all associated data — agents, call logs, knowledge base,
+                          email threads, campaigns, and billing records. This action cannot be undone.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] text-muted">
+                        Type <span className="font-mono text-rose-400">DELETE MY ACCOUNT</span> to confirm:
+                      </p>
+                      <input
+                        type="text"
+                        value={deleteConfirmText}
+                        onChange={e => setDeleteConfirmText(e.target.value)}
+                        placeholder="DELETE MY ACCOUNT"
+                        className="w-full h-9 px-3 rounded-lg bg-black/40 border border-rose-500/20 text-xs font-mono text-ink outline-none focus:border-rose-500/50 transition-all placeholder:text-muted/40"
+                      />
+                      <button
+                        onClick={deleteAccount}
+                        disabled={deletingAccount || deleteConfirmText !== "DELETE MY ACCOUNT"}
+                        className="w-full h-9 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-400 text-[11px] uppercase tracking-[0.2em] hover:bg-rose-500/20 transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
+                      >
+                        {deletingAccount ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                        {deletingAccount ? "Deleting…" : "Delete my account"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 text-[10px] text-muted/60 border-t border-white/5 pt-3">
+                    <Link to="/privacy" className="hover:text-muted transition-colors">Privacy Policy</Link>
+                    <span>·</span>
+                    <Link to="/terms" className="hover:text-muted transition-colors">Terms of Service</Link>
                   </div>
                 </div>
               </Panel>

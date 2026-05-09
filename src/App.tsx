@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from "re
 import { Users, Activity, MessageSquare, Calendar, PhoneOutgoing, ServerCog, PlugZap, History, Mail, Menu, X, LogOut, Shield, Database, Waves, Inbox, BarChart3, Loader2, AlertTriangle, Radio, Keyboard, ChevronRight, User, Ban, ScrollText } from "lucide-react";
 import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import AuthPortal from "./components/AuthPortal";
+import { PrivacyPolicy, TermsOfService } from "./components/LegalPage";
 import ErrorBoundary from "./components/ErrorBoundary";
 import SystemStatusBadge from "./components/SystemStatusBadge";
 import ToastStack from "./components/Toast";
@@ -855,6 +856,10 @@ function AppContent() {
       </div>
     );
   }
+
+  // Legal pages are public — accessible before auth.
+  if (location.pathname === "/privacy") return <PrivacyPolicy />;
+  if (location.pathname === "/terms")   return <TermsOfService />;
 
   if (!user) {
     return <AuthPortal />;
