@@ -18,6 +18,8 @@ function ToastItem({ toast }: { toast: Toast }) {
   return (
     <motion.div
       layout
+      role={toast.type === "error" ? "alert" : "status"}
+      aria-live={toast.type === "error" ? "assertive" : "polite"}
       initial={{ opacity: 0, y: 16, scale: 0.96 }}
       animate={{ opacity: 1, y: 0,  scale: 1 }}
       exit={{ opacity: 0, y: -8, scale: 0.94, transition: { duration: 0.18 } }}
@@ -59,8 +61,10 @@ export default function ToastStack() {
   const { toasts } = useToast();
   return (
     <div
+      role="log"
       aria-live="polite"
       aria-atomic="false"
+      aria-label="Notifications"
       // On mobile: full-width bottom strip (with safe-area inset for
       // notched devices) so toasts aren't squeezed into a corner.
       // On sm+: classic bottom-right stack.

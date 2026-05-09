@@ -886,3 +886,39 @@ CREATE INDEX IF NOT EXISTS wireline_user_preferences_user_id_idx
 -- Supports: WHERE user_id = ? AND lead_score >= 75 ORDER BY created_at DESC
 CREATE INDEX IF NOT EXISTS wireline_email_threads_user_score_idx
     ON wireline_email_threads(user_id, lead_score DESC, created_at DESC);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Additional Performance Indexes — 2026-05-09
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- Contact-profile lookups: customer history aggregation joins on customer_number
+-- Supports: WHERE user_id = ? AND customer_number = ? ORDER BY created_at DESC
+CREATE INDEX IF NOT EXISTS wireline_call_logs_customer_number_idx
+    ON wireline_call_logs(user_id, customer_number, created_at DESC);
+
+-- Outbound lead lookup by phone: DNC checks and contact-profile enrichment
+CREATE INDEX IF NOT EXISTS wireline_outbound_leads_customer_number_idx
+    ON wireline_outbound_leads(user_id, customer_number);
+
+-- Campaign status filter: used by launch/stop/analytics queries
+CREATE INDEX IF NOT EXISTS wireline_outbound_campaigns_status_idx
+    ON wireline_outbound_campaigns(user_id, status);
+
+-- Fleet task priority queue: pending tasks ordered by priority descending
+CREATE INDEX IF NOT EXISTS wireline_fleet_tasks_status_priority_idx
+    ON wireline_fleet_tasks(user_id, status, priority DESC)
+    WHERE status = 'pending';
+
+-- Daily brief scheduler: pull users with brief enabled, ordered by send_at
+-- Supports: WHERE daily_brief_enabled = true AND daily_brief_send_at <= ?
+CREATE INDEX IF NOT EXISTS wireline_settings_brief_enabled_idx
+    ON wireline_settings(daily_brief_enabled, daily_brief_send_at)
+    WHERE daily_brief_enabled = true;
+
+-- Email threads per account: render inbox grouped by account
+CREATE INDEX IF NOT EXISTS wireline_email_threads_account_idx
+    ON wireline_email_threads(account_id, created_at DESC);
+
+-- Appointments by status: upcoming vs history split
+CREATE INDEX IF NOT EXISTS wireline_appointments_user_status_idx
+    ON wireline_appointments(user_id, status, created_at DESC);

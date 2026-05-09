@@ -16,6 +16,7 @@ import { formatMoney, safeFixed } from "../lib/safe-number";
 import CsvExportButton from "./CsvExportButton";
 import { AGENT_ROLES } from "./FleetSettings";
 import PageShell from "./PageShell";
+import WidgetBoundary from "./WidgetBoundary";
 import { useToast } from "../contexts/ToastContext";
 
 type View = "funnel" | "topics" | "heatmap" | "leaderboard" | "failures" | "spend" | "quality";
@@ -23,10 +24,12 @@ type View = "funnel" | "topics" | "heatmap" | "leaderboard" | "failures" | "spen
 export default function InsightsView() {
   const [days, setDays] = useState(30);
 
-  const wrap = (node: React.ReactNode) => (
-    <div className="h-full w-full overflow-y-auto scrollbar-hide pr-1">
-      {node}
-    </div>
+  const wrap = (label: string, node: React.ReactNode) => (
+    <WidgetBoundary label={label}>
+      <div className="h-full w-full overflow-y-auto scrollbar-hide pr-1">
+        {node}
+      </div>
+    </WidgetBoundary>
   );
 
   const DAY_OPTIONS = [7, 14, 30, 60, 90];
@@ -63,13 +66,13 @@ export default function InsightsView() {
         </>
       }
       tabs={[
-        { id: "funnel",      label: "Funnel",      icon: TrendingUp,   content: wrap(<FunnelView      days={days} />) },
-        { id: "topics",      label: "Topics",      icon: Layers,       content: wrap(<TopicsView />) },
-        { id: "heatmap",     label: "Heatmap",     icon: Calendar,     content: wrap(<HeatmapView     days={days} />) },
-        { id: "leaderboard", label: "Leaderboard", icon: Trophy,       content: wrap(<LeaderboardView days={days} />) },
-        { id: "failures",    label: "Failures",    icon: AlertOctagon, content: wrap(<FailureModesView />) },
-        { id: "spend",       label: "AI Spend",    icon: Receipt,      content: wrap(<AISpendView     days={days} />) },
-        { id: "quality",     label: "Quality",     icon: Star,         content: wrap(<QualityView     days={days} />) },
+        { id: "funnel",      label: "Funnel",      icon: TrendingUp,   content: wrap("Funnel",      <FunnelView      days={days} />) },
+        { id: "topics",      label: "Topics",      icon: Layers,       content: wrap("Topics",      <TopicsView />) },
+        { id: "heatmap",     label: "Heatmap",     icon: Calendar,     content: wrap("Heatmap",     <HeatmapView     days={days} />) },
+        { id: "leaderboard", label: "Leaderboard", icon: Trophy,       content: wrap("Leaderboard", <LeaderboardView days={days} />) },
+        { id: "failures",    label: "Failures",    icon: AlertOctagon, content: wrap("Failures",    <FailureModesView />) },
+        { id: "spend",       label: "AI Spend",    icon: Receipt,      content: wrap("AI Spend",    <AISpendView     days={days} />) },
+        { id: "quality",     label: "Quality",     icon: Star,         content: wrap("Quality",     <QualityView     days={days} />) },
       ]}
     />
   );

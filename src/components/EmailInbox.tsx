@@ -7,6 +7,8 @@ import { formatDate, formatTime } from "../lib/safe-date";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import PageShell, { Panel } from "./PageShell";
 import HubTabs, { CHANNELS_HUB } from "./HubTabs";
+import { PanelSkeleton } from "./Skeleton";
+import EmptyState from "./EmptyState";
 import { useToast } from "../contexts/ToastContext";
 
 export default function EmailInbox() {
@@ -236,14 +238,18 @@ export default function EmailInbox() {
         >
           <AnimatePresence mode="popLayout">
             {loading ? (
-              <div className="h-full flex flex-col items-center justify-center gap-3 py-16">
-                <Loader2 className="w-5 h-5 animate-spin text-brand" />
-                <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">Loading threads</span>
-              </div>
+              <PanelSkeleton rows={6} />
             ) : threads.length === 0 ? (
-              <div className="h-full flex items-center justify-center px-8 text-center">
-                <p className="text-[10px] uppercase tracking-[0.4em] text-muted/70">No threads yet</p>
-              </div>
+              <EmptyState
+                icon={Mail}
+                title="No threads yet"
+                description="Connect a Gmail or Outlook account in Carrier Bridge so agents can receive and reply to emails."
+                accent="#0AC8D4"
+                actions={[
+                  { label: "Connect Email", to: "/integrations", primary: true },
+                ]}
+                className="h-full py-10"
+              />
             ) : (
               <div className="divide-y divide-white/6">
                 {threads.map(thread => {

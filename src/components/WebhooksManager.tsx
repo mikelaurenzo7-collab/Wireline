@@ -8,6 +8,7 @@ import {
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { formatDateTime, formatTime } from "../lib/safe-date";
+import { PanelSkeleton } from "./Skeleton";
 
 interface WebhookRow {
   id: string;
@@ -98,14 +99,12 @@ export default function WebhooksManager() {
 
         <div className="relative z-10 space-y-2">
           {loading ? (
-            <div className="flex items-center gap-3 px-4 py-6 text-muted text-xs">
-              <Loader2 className="w-4 h-4 animate-spin" /> Loading webhooks…
-            </div>
+            <PanelSkeleton rows={3} />
           ) : hooks.length === 0 ? (
-            <div className="rounded-xl bg-black/20 border border-dashed border-white/10 p-6 text-center">
-              <Webhook className="w-8 h-8 text-muted/40 mx-auto mb-2" />
+            <div className="rounded-xl bg-black/20 border border-dashed border-white/10 p-6 text-center space-y-2">
+              <Webhook className="w-8 h-8 text-muted/40 mx-auto" />
               <p className="text-[11px] uppercase tracking-[0.4em] text-muted">No webhooks configured</p>
-              <p className="text-xs text-ink/55 mt-2">Click <span className="text-brand">Add Webhook</span> to push events to Slack / CRM / Zapier.</p>
+              <p className="text-xs text-ink/55">Click <span className="text-brand">Add Webhook</span> to push events to Slack, CRM, or Zapier.</p>
             </div>
           ) : (
             hooks.map((h) => <HookRow key={h.id} hook={h} onChanged={refresh} />)
