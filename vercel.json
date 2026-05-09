@@ -23,7 +23,7 @@
       ]
     },
     {
-      "source": "/:all*.:ext(js|css|png|jpg|svg|ico|woff|woff2)",
+      "source": "/assets/:path*",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]

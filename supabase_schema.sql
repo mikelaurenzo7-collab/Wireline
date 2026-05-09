@@ -881,3 +881,8 @@ CREATE INDEX IF NOT EXISTS wireline_stripe_events_event_id_idx
 -- User preferences lookups
 CREATE INDEX IF NOT EXISTS wireline_user_preferences_user_id_idx
     ON wireline_user_preferences(user_id);
+
+-- Hot-lead triage: filter email threads by user + lead_score threshold, ordered by recency.
+-- Supports: WHERE user_id = ? AND lead_score >= 75 ORDER BY created_at DESC
+CREATE INDEX IF NOT EXISTS wireline_email_threads_user_score_idx
+    ON wireline_email_threads(user_id, lead_score DESC, created_at DESC);
