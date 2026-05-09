@@ -1026,7 +1026,7 @@ async function attemptWebhookDelivery(deliveryId: number) {
     clearTimeout(timer);
     // Close the per-delivery agent so its connection pool and timers don't
     // accumulate across deliveries (each call creates a fresh agent).
-    dispatcher.close().catch(() => {});
+    dispatcher.close().catch((err: any) => log.warn("webhook dispatcher close failed", { error: getErrorMessage(err) }));
   }
 
   const newAttempts = (row.attempts || 0) + 1;
@@ -1079,7 +1079,8 @@ async function dispatchWebhook(userId: string, event: WebhookEvent, data: any) {
     const { data: hooks } = await db.from("wireline_webhooks")
       .select("id, events")
       .eq("user_id", userId)
-      .eq("active", true);
+      .eq("active", true)
+      .limit(100);
     const targetIds = (hooks || [])
       .filter((h: any) => Array.isArray(h.events) && h.events.includes(event))
       .map((h: any) => h.id);
@@ -1183,7 +1184,7 @@ async function getBudgetSnapshot(userId: string, force = false): Promise<BudgetC
   }
   const [{ data: budget }, { data: rows }] = await Promise.all([
     db.from("wireline_spend_budgets").select("monthly_limit_usd, hard_cap, warn_threshold_pct, enabled").eq("user_id", userId).maybeSingle(),
-    db.from("wireline_audit_log").select("cost_usd").eq("user_id", userId).gte("created_at", periodStartIso(period)),
+    db.from("wireline_audit_log").select("cost_usd").eq("user_id", userId).gte("created_at", periodStartIso(period)).limit(10000),
   ]);
   const mtdCost = (rows || []).reduce((s: number, r: any) => s + Number(r.cost_usd || 0), 0);
   const entry: BudgetCacheEntry = {
@@ -1470,7 +1471,7 @@ async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
     current_period_end: sub.current_period_end
       ? new Date(sub.current_period_end * 1000).toISOString() : null,
     at: new Date().toISOString(),
-  }).catch(() => {});
+  }).catch((err: any) => log.warn("subscription.changed webhook dispatch failed", { userId, error: getErrorMessage(err) }));
 }
 
 app.post("/api/stripe-webhook", async (req: any, res: any) => {
@@ -3001,14 +3002,17 @@ app.get("/api/dashboard/benchmarks", authenticateUser, async (req: any, res: any
       db.from('wireline_call_logs')
         .select('duration_seconds, lead_score, intent_label, cost, qa_score')
         .eq('user_id', userId)
-        .gte('created_at', thirtyDaysAgo),
+        .gte('created_at', thirtyDaysAgo)
+        .limit(5000),
       db.from('wireline_outbound_leads')
         .select('status')
         .eq('user_id', userId)
-        .gte('created_at', thirtyDaysAgo),
+        .gte('created_at', thirtyDaysAgo)
+        .limit(5000),
       db.from('wireline_agents')
         .select('id')
-        .eq('user_id', userId),
+        .eq('user_id', userId)
+        .limit(500),
     ]);
 
     const result = computeDashboardBenchmarks({
@@ -4311,7 +4315,7 @@ app.get("/api/agent-config/:id", authenticateUser, async (req: any, res: any) =>
 // ==========================================
 app.get("/api/phone-numbers", authenticateUser, async (req: any, res: any) => {
   try {
-    const { data, error } = await db.from('wireline_phone_numbers').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false });
+    const { data, error } = await db.from('wireline_phone_numbers').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false }).limit(200);
     if (error) throw error;
     res.json({ numbers: data || [] });
   } catch (error) {
@@ -6355,7 +6359,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
   try {
      const userId = req.user.id;
      // 1. Fetch connected accounts
-     const { data: accounts } = await db.from('wireline_email_accounts').select('*').eq('user_id', userId);
+     const { data: accounts } = await db.from('wireline_email_accounts').select('*').eq('user_id', userId).limit(50);
      if (!accounts || accounts.length === 0) return res.json({ success: true, count: 0 });
 
      // Fleet Synchronization
@@ -6370,13 +6374,13 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
      const agentIds = [...new Set(accounts.map((a: any) => a.agent_id).filter(Boolean))];
      const [agentRows, knowledgeRows, directiveRows] = await Promise.all([
        agentIds.length
-         ? db.from('wireline_agents').select('*').eq('user_id', userId).in('id', agentIds)
+         ? db.from('wireline_agents').select('*').eq('user_id', userId).in('id', agentIds).limit(500)
          : Promise.resolve({ data: [], error: null }),
        agentIds.length
-         ? db.from('wireline_knowledge').select('agent_id, content').eq('user_id', userId).in('agent_id', agentIds)
+         ? db.from('wireline_knowledge').select('agent_id, content').eq('user_id', userId).in('agent_id', agentIds).limit(500)
          : Promise.resolve({ data: [], error: null }),
        agentIds.length
-         ? db.from('wireline_directives').select('agent_id, content').eq('user_id', userId).in('agent_id', agentIds)
+         ? db.from('wireline_directives').select('agent_id, content').eq('user_id', userId).in('agent_id', agentIds).limit(500)
          : Promise.resolve({ data: [], error: null }),
      ]);
      if (agentRows.error) log.warn("Email sync: failed to batch-fetch agents", { error: agentRows.error.message });
@@ -8226,7 +8230,7 @@ app.post("/api/intake/lead", async (req: any, res: any) => {
         db.from("wireline_intake_keys").update({
           last_used_at: nowIso,
           use_count: (key.use_count || 0) + 1,
-        }).eq("id", key.id).then(() => {}, () => {});
+        }).eq("id", key.id).then(() => {}, (err: any) => log.warn("intake key usage update failed", { keyId: key.id, error: getErrorMessage(err) }));
       }
       return res.json(result);
     }
@@ -9619,9 +9623,9 @@ app.get("/api/insights/funnel", authenticateUser, async (req: any, res: any) => 
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
     const [{ data: calls }, { data: appts }, { data: leads }] = await Promise.all([
-      db.from("wireline_call_logs").select("lead_score, intent_label, duration_seconds").eq("user_id", req.user.id).gte("created_at", since),
-      db.from("wireline_appointments").select("status").eq("user_id", req.user.id).gte("created_at", since),
-      db.from("wireline_outbound_leads").select("status").eq("user_id", req.user.id).gte("created_at", since),
+      db.from("wireline_call_logs").select("lead_score, intent_label, duration_seconds").eq("user_id", req.user.id).gte("created_at", since).limit(5000),
+      db.from("wireline_appointments").select("status").eq("user_id", req.user.id).gte("created_at", since).limit(5000),
+      db.from("wireline_outbound_leads").select("status").eq("user_id", req.user.id).gte("created_at", since).limit(5000),
     ]);
 
     const totalCalls = calls?.length || 0;
@@ -9687,8 +9691,8 @@ app.get("/api/insights/leaderboard", authenticateUser, async (req: any, res: any
 
     const [{ data: agents }, { data: calls }, { data: appts }] = await Promise.all([
       db.from("wireline_agents").select("id, name, archetype, channel, role").eq("user_id", req.user.id).limit(500),
-      db.from("wireline_call_logs").select("agent_id, lead_score, intent_label, duration_seconds, cost").eq("user_id", req.user.id).gte("created_at", since),
-      db.from("wireline_appointments").select("agent_id").eq("user_id", req.user.id).gte("created_at", since),
+      db.from("wireline_call_logs").select("agent_id, lead_score, intent_label, duration_seconds, cost").eq("user_id", req.user.id).gte("created_at", since).limit(5000),
+      db.from("wireline_appointments").select("agent_id").eq("user_id", req.user.id).gte("created_at", since).limit(2000),
     ]);
 
     const callsByAgent: Record<string, any[]> = {};
@@ -9811,11 +9815,11 @@ async function computeDailyBrief(userId: string, opts?: { force?: boolean }) {
   const wStart = new Date(); wStart.setDate(wStart.getDate() - 7);
 
   const [{ data: yCalls }, { data: wCalls }, { data: appts }, { data: tasks }, { data: leads }, { data: wins }, { data: losses }] = await Promise.all([
-    db.from("wireline_call_logs").select("lead_score, intent_label, duration_seconds, cost, summary, customer_number").eq("user_id", userId).gte("created_at", yStart.toISOString()).lt("created_at", yEnd.toISOString()),
-    db.from("wireline_call_logs").select("lead_score, duration_seconds, cost").eq("user_id", userId).gte("created_at", wStart.toISOString()),
-    db.from("wireline_appointments").select("id").eq("user_id", userId).gte("created_at", yStart.toISOString()).lt("created_at", yEnd.toISOString()),
+    db.from("wireline_call_logs").select("lead_score, intent_label, duration_seconds, cost, summary, customer_number").eq("user_id", userId).gte("created_at", yStart.toISOString()).lt("created_at", yEnd.toISOString()).limit(1000),
+    db.from("wireline_call_logs").select("lead_score, duration_seconds, cost").eq("user_id", userId).gte("created_at", wStart.toISOString()).limit(5000),
+    db.from("wireline_appointments").select("id").eq("user_id", userId).gte("created_at", yStart.toISOString()).lt("created_at", yEnd.toISOString()).limit(500),
     db.from("wireline_fleet_tasks").select("priority, description").eq("user_id", userId).eq("status", "pending").order("created_at", { ascending: false }).limit(8),
-    db.from("wireline_outbound_leads").select("id").eq("user_id", userId).eq("status", "Pending"),
+    db.from("wireline_outbound_leads").select("id").eq("user_id", userId).eq("status", "Pending").limit(1000),
     db.from("wireline_call_logs").select("customer_number, lead_score, summary").eq("user_id", userId).gte("created_at", yStart.toISOString()).gte("lead_score", 70).order("lead_score", { ascending: false }).limit(3),
     db.from("wireline_call_logs").select("customer_number, lead_score, summary").eq("user_id", userId).gte("created_at", yStart.toISOString()).lt("lead_score", 30).order("created_at", { ascending: false }).limit(3),
   ]);
