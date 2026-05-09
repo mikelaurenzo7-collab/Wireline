@@ -21,7 +21,7 @@ import { SchemaType } from "@google/generative-ai";
 import { createClient } from "@supabase/supabase-js";
 import { google } from "googleapis";
 import Stripe from "stripe";
-import { randomUUID } from "node:crypto";
+import { randomUUID, timingSafeEqual as cryptoTimingSafeEqual } from "node:crypto";
 import * as claudeBrain from "./src/lib/claude-brain";
 import { AuditLogger } from "./src/lib/audit-logger";
 import { rateLimit, isRedisConfigured, startMemoryCleanup } from "./src/lib/rate-limit";
@@ -38,6 +38,7 @@ import { computeAuditSummary } from "./src/lib/audit-summary";
 import { computeDashboardBenchmarks } from "./src/lib/dashboard-benchmarks";
 import { buildContactProfile, normalizePhoneTail } from "./src/lib/contact-profile";
 import { computeOutcomeBreakdown, computeCallStats, callIdsFromLeads } from "./src/lib/campaign-analytics";
+import { isPrivateIp, isPrivateIpv6, isSsrfUrl, validateWebhookUrl } from "./src/lib/webhook-validators";
 
 // On Vercel, VERCEL_URL is automatically set to the deployment hostname
 // (e.g. "myapp-abc123.vercel.app") with no protocol or trailing slash.
@@ -543,6 +544,48 @@ app.use(["/api/train/extract", "/api/agents/:id/optimize"], (req: any, res: any,
 const OAUTH_RATE_WINDOW_MS = 5 * 60_000;
 const OAUTH_RATE_MAX = 10;
 
+// ────────────────────────────────────────────────────────────────────
+//  OAuth CSRF state — stateless signed tokens (no session required).
+//  Format: `<nonce>.<ts_base36>.<hmac_base64url>`
+//  Expires after 15 minutes; verified in each callback handler.
+// ────────────────────────────────────────────────────────────────────
+const OAUTH_STATE_SECRET =
+  process.env.OAUTH_STATE_SECRET ||
+  process.env.STRIPE_WEBHOOK_SECRET ||
+  "wireline-dev-oauth-state-secret"; // overridden in production by env
+
+function generateOAuthState(): string {
+  const { createHmac } = require("node:crypto") as typeof import("node:crypto");
+  const nonce = randomUUID().replace(/-/g, "");
+  const ts = Date.now().toString(36);
+  const payload = `${nonce}.${ts}`;
+  const sig = createHmac("sha256", OAUTH_STATE_SECRET).update(payload).digest("base64url");
+  return `${payload}.${sig}`;
+}
+
+function verifyOAuthState(state: string | undefined): boolean {
+  if (!state) return false;
+  try {
+    const { createHmac } = require("node:crypto") as typeof import("node:crypto");
+    const lastDot = state.lastIndexOf(".");
+    if (lastDot <= 0) return false;
+    const payload = state.slice(0, lastDot);
+    const sig = state.slice(lastDot + 1);
+    const expected = createHmac("sha256", OAUTH_STATE_SECRET).update(payload).digest("base64url");
+    // Timing-safe comparison to prevent HMAC oracle attacks.
+    const sigBuf = Buffer.from(sig);
+    const expBuf = Buffer.from(expected);
+    if (sigBuf.length !== expBuf.length || !cryptoTimingSafeEqual(sigBuf, expBuf)) return false;
+    // Verify the timestamp portion (second segment) is within 15 minutes.
+    const tsPart = payload.split(".")[1];
+    if (!tsPart) return false;
+    const ageMs = Date.now() - parseInt(tsPart, 36);
+    return ageMs >= 0 && ageMs < 15 * 60_000;
+  } catch {
+    return false;
+  }
+}
+
 // Email operation rate limiting — prevents spam and API quota exhaustion
 const EMAIL_RATE_WINDOW_MS = 60_000; // 1 minute
 const EMAIL_RATE_MAX = 20; // 20 email operations per minute per user
@@ -868,6 +911,60 @@ async function attemptWebhookDelivery(deliveryId: number) {
     }).eq("id", deliveryId);
     return;
   }
+  // Delivery-time SSRF guard layer 1: pattern check (sync, catches IP literals
+  // and grandfathered rows). Permanent failure — no retry.
+  if (isSsrfUrl(hook.url)) {
+    await db.from("wireline_webhook_deliveries").update({
+      status: "dead",
+      last_error: "Blocked: webhook URL targets a private or internal address.",
+      attempts: (row.attempts || 0) + 1,
+    }).eq("id", deliveryId);
+    return;
+  }
+  // Delivery-time SSRF guard: resolve DNS, validate every A/AAAA answer, then
+  // pin the undici dispatcher to the validated IP so the pre-check and the actual
+  // TCP connect use the same address (eliminates the TOCTOU gap present in a
+  // separate hostnameResolvesToPrivate + fetch() pattern).
+  const parsedDeliveryUrl = new URL(hook.url);
+  const rawDeliveryHost = parsedDeliveryUrl.hostname.toLowerCase();
+  const deliveryHost = rawDeliveryHost.startsWith("[") ? rawDeliveryHost.slice(1, -1) : rawDeliveryHost;
+  const isDeliveryIpLiteral = /^[\d.]+$/.test(deliveryHost) || deliveryHost.includes(":");
+  let pinnedIp: string | null = null;
+  let pinnedFamily: 4 | 6 = 4;
+  if (!isDeliveryIpLiteral) {
+    const { lookup } = await import("node:dns/promises");
+    let resolvedAddrs: Array<{ address: string; family: number }> = [];
+    let dnsError = false;
+    try { resolvedAddrs = await lookup(deliveryHost, { all: true }); } catch { dnsError = true; }
+    for (const { address, family } of resolvedAddrs) {
+      if ((family === 4 && isPrivateIp(address)) || (family === 6 && isPrivateIpv6(address))) {
+        await db.from("wireline_webhook_deliveries").update({
+          status: "dead",
+          last_error: "Blocked: webhook URL hostname resolves to a private or internal address.",
+          attempts: (row.attempts || 0) + 1,
+        }).eq("id", deliveryId);
+        return;
+      }
+      if (pinnedIp === null) { pinnedIp = address; pinnedFamily = family as 4 | 6; }
+    }
+    // Fail closed: if DNS lookup failed we have no validated IP to pin.
+    // Proceeding with an unpinned fetch would let the webhook owner answer
+    // SERVFAIL to the precheck and a private address to fetch()'s own DNS.
+    // Treat as a transient (retryable) failure — DNS may recover.
+    if (dnsError || pinnedIp === null) {
+      const newAttempts = (row.attempts || 0) + 1;
+      const max = row.max_attempts || WEBHOOK_DEFAULT_MAX_ATTEMPTS;
+      const reachedDead = newAttempts >= max;
+      const backoff = WEBHOOK_RETRY_BACKOFF_MS[Math.min(newAttempts - 1, WEBHOOK_RETRY_BACKOFF_MS.length - 1)];
+      await db.from("wireline_webhook_deliveries").update({
+        status: reachedDead ? "dead" : "pending",
+        attempts: newAttempts,
+        last_error: "DNS resolution failed; will retry.",
+        next_attempt_at: reachedDead ? null : new Date(Date.now() + backoff).toISOString(),
+      }).eq("id", deliveryId);
+      return;
+    }
+  }
 
   const crypto = await import("node:crypto");
   const payloadStr = JSON.stringify(row.payload);
@@ -883,6 +980,19 @@ async function attemptWebhookDelivery(deliveryId: number) {
     headers["X-Wireline-Signature"] = `sha256=${sig}`;
   }
 
+  // Use undici so we can attach a dispatcher that pins the TCP connection to
+  // the pre-validated IP — the global fetch() re-resolves the hostname
+  // independently, which would re-open the DNS rebinding window.
+  const { fetch: undiciFetch, Agent: UndiciAgent } = await import("undici");
+  const dispatcher = pinnedIp !== null
+    ? new UndiciAgent({
+        connect: {
+          lookup: (_h: string, _o: unknown, cb: (err: Error | null, addr: string, fam: 4 | 6) => void) =>
+            cb(null, pinnedIp!, pinnedFamily),
+        } as any,
+      })
+    : new UndiciAgent(); // IP literal or DNS-fail path: isSsrfUrl already validated
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), WEBHOOK_TIMEOUT_MS);
   const nowIso = new Date().toISOString();
@@ -890,7 +1000,10 @@ async function attemptWebhookDelivery(deliveryId: number) {
   let errMsg: string | null = null;
   let ok = false;
   try {
-    const r = await fetch(hook.url, { method: "POST", headers, body: payloadStr, signal: controller.signal });
+    // redirect:'error' prevents SSRF via open-redirect: a public URL that
+    // redirects to 127.0.0.1 or 169.254.x would pass registration checks
+    // but still reach an internal host if redirects were followed.
+    const r = await (undiciFetch as any)(hook.url, { method: "POST", headers, body: payloadStr, signal: controller.signal, redirect: "error", dispatcher });
     statusCode = r.status;
     ok = r.ok;
     if (!ok) errMsg = `HTTP ${r.status}`;
@@ -899,6 +1012,9 @@ async function attemptWebhookDelivery(deliveryId: number) {
     errMsg = err?.name === "AbortError" ? `Timed out after ${WEBHOOK_TIMEOUT_MS}ms` : (getErrorMessage(err));
   } finally {
     clearTimeout(timer);
+    // Close the per-delivery agent so its connection pool and timers don't
+    // accumulate across deliveries (each call creates a fresh agent).
+    dispatcher.close().catch(() => {});
   }
 
   const newAttempts = (row.attempts || 0) + 1;
@@ -1303,7 +1419,7 @@ app.post("/api/stripe-webhook", async (req: any, res: any) => {
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err: any) {
     log.warn("Stripe webhook signature verification failed", { error: getErrorMessage(err) });
-    return res.status(400).json({ error: `Webhook Error: ${getErrorMessage(err)}` });
+    return res.status(400).json({ error: "Webhook signature verification failed." });
   }
 
   // Idempotency — Stripe retries on timeouts and occasionally double-
@@ -1376,7 +1492,7 @@ app.post("/api/stripe-webhook", async (req: any, res: any) => {
         (e: any) => log.warn("Failed to release idempotency claim", { error: e?.message }),
       );
     }
-    res.status(500).json({ error: getErrorMessage(err) || "Webhook handler failed" });
+    res.status(500).json({ error: "Webhook handler failed" });
   }
 });
 
@@ -1398,10 +1514,10 @@ const VAPI_WEBHOOK_SECRET = process.env.VAPI_WEBHOOK_SECRET || (IS_PROD ? "" : "
 let _warnedAboutVapiSecret = false;
 
 function timingSafeEq(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let mismatch = 0;
-  for (let i = 0; i < a.length; i++) mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return mismatch === 0;
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return cryptoTimingSafeEqual(bufA, bufB);
 }
 
 app.post("/api/vapi-webhook", async (req, res) => {
@@ -2717,7 +2833,7 @@ app.get("/api/calls", authenticateUser, async (req: any, res: any) => {
   try {
     const limitRaw = parseInt(req.query.limit as string);
     const offsetRaw = parseInt(req.query.offset as string);
-    const limit = Math.min(isNaN(limitRaw) ? 50 : limitRaw, 200);
+    const limit = Math.min(Math.max(1, isNaN(limitRaw) ? 50 : limitRaw), 200);
     const offset = isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw);
     
     const { data: calls, error, count } = await db
@@ -2850,7 +2966,7 @@ app.get("/api/appointments", authenticateUser, async (req: any, res: any) => {
     // shipping a multi-MB response. Default 200, max 1000.
     const limitRaw = parseInt(req.query.limit as string);
     const offsetRaw = parseInt(req.query.offset as string);
-    const limit = Math.min(isNaN(limitRaw) ? 200 : limitRaw, 1000);
+    const limit = Math.min(Math.max(1, isNaN(limitRaw) ? 200 : limitRaw), 1000);
     const offset = isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw);
 
     const { data: appointments, error, count } = await db
@@ -2871,6 +2987,8 @@ app.get("/api/appointments", authenticateUser, async (req: any, res: any) => {
     res.json({ appointments: [], total: 0, hasMore: false });
   }
 });
+
+const APPOINTMENT_STATUSES = ['Scheduled', 'Confirmed', 'Completed', 'Cancelled', 'Rescheduled'] as const;
 
 app.post("/api/appointments", authenticateUser, async (req: any, res: any) => {
   try {
@@ -2905,7 +3023,7 @@ app.post("/api/appointments", authenticateUser, async (req: any, res: any) => {
       phone_number: typeof phone_number === 'string' ? phone_number.trim() || null : null,
       notes: typeof notes === 'string' ? notes.trim() || null : null,
       agent_id: agent_id || null,
-      status: typeof status === 'string' && status ? status : 'Scheduled',
+      status: APPOINTMENT_STATUSES.includes(status) ? status : 'Scheduled',
     }).select().single();
     if (error) throw error;
     res.json({ appointment: data });
@@ -2928,6 +3046,9 @@ app.patch("/api/appointments/:id", authenticateUser, async (req: any, res: any) 
     }
     if (typeof updates.notes === 'string' && updates.notes.length > 2000) {
       return res.status(400).json({ error: "notes must be 2000 characters or less" });
+    }
+    if (updates.status !== undefined && !APPOINTMENT_STATUSES.includes(updates.status as any)) {
+      return res.status(400).json({ error: `status must be one of: ${APPOINTMENT_STATUSES.join(', ')}` });
     }
 
     // Same agent ownership check as POST — caller can't reroute their
@@ -3705,7 +3826,12 @@ app.get("/api/agents/:id/export", authenticateUser, async (req: any, res: any) =
       },
     };
 
-    res.setHeader('Content-Disposition', `attachment; filename="${agentRes.data.name.replace(/\s+/g, '_')}_config.json"`);
+    const safeName = agentRes.data.name
+      .replace(/[^\w\s-]/g, '')   // strip non-word chars (quotes, newlines, path chars)
+      .replace(/\s+/g, '_')
+      .slice(0, 64)
+      || 'agent';
+    res.setHeader('Content-Disposition', `attachment; filename="${safeName}_config.json"`);
     res.setHeader('Content-Type', 'application/json');
     res.json(exportData);
   } catch (err) {
@@ -4262,11 +4388,15 @@ app.get("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => {
   }
 });
 
+const FLEET_TASK_STATUSES = ['pending', 'open', 'in_progress', 'completed', 'cancelled'] as const;
+const FLEET_TASK_PRIORITIES = ['low', 'medium', 'high'] as const;
+
 app.post("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => {
   try {
     const { source_type, source_id, target_channel, customer_info, task_type, description, agent_id, priority, due_date } = req.body;
+    const safePriority = FLEET_TASK_PRIORITIES.includes(priority) ? priority : 'medium';
     await db.from('wireline_fleet_tasks').insert({
-       source_type, source_id, target_channel, customer_info, task_type, description, agent_id, status: 'pending', user_id: req.user.id, priority: priority || 'medium', due_date
+       source_type, source_id, target_channel, customer_info, task_type, description, agent_id, status: 'pending', user_id: req.user.id, priority: safePriority, due_date
     });
     res.json({ success: true });
   } catch (error) {
@@ -4278,8 +4408,18 @@ app.patch("/api/fleet/tasks/:id", authenticateUser, async (req: any, res: any) =
   try {
     const { status, priority, due_date, agent_id, resolution_notes } = req.body;
     const updateData: any = {};
-    if (status) updateData.status = status;
-    if (priority) updateData.priority = priority;
+    if (status !== undefined) {
+      if (!FLEET_TASK_STATUSES.includes(status)) {
+        return res.status(400).json({ error: `status must be one of: ${FLEET_TASK_STATUSES.join(', ')}` });
+      }
+      updateData.status = status;
+    }
+    if (priority !== undefined) {
+      if (!FLEET_TASK_PRIORITIES.includes(priority)) {
+        return res.status(400).json({ error: `priority must be one of: ${FLEET_TASK_PRIORITIES.join(', ')}` });
+      }
+      updateData.priority = priority;
+    }
     if (due_date !== undefined) updateData.due_date = due_date;
     if (agent_id !== undefined) updateData.agent_id = agent_id;
     if (resolution_notes !== undefined) updateData.resolution_notes = resolution_notes;
@@ -4308,6 +4448,17 @@ app.post("/api/agent-config/:id/manual", authenticateUser, async (req: any, res:
       .eq('user_id', userId)
       .maybeSingle();
     if (!ownedAgent) return res.status(404).json({ error: "Agent not found" });
+
+    // Bound content length per type so a caller can't store arbitrarily large
+    // text blobs (matches the limits enforced by the dedicated POST/PATCH routes).
+    if (typeof content !== 'string' || !content.trim()) {
+      return res.status(400).json({ error: "content is required." });
+    }
+    const MAX_CONTENT: Record<string, number> = { personality: 8000, directive: 2000, knowledge: 2000 };
+    const max = MAX_CONTENT[type];
+    if (max && content.length > max) {
+      return res.status(400).json({ error: `content must be ${max} characters or less.` });
+    }
 
     if (type === 'personality') {
        await db.from('wireline_personality').upsert(
@@ -4386,7 +4537,7 @@ app.get("/api/knowledge", authenticateUser, async (req: any, res: any) => {
       agents: (agents || []).map((a: any) => ({ id: a.id, name: a.name, archetype: a.archetype })),
       total: knowledge.length,
     });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load knowledge" }); }
+  } catch (e: any) { log.error("Failed to load knowledge", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load knowledge" }); }
 });
 
 app.post("/api/knowledge", authenticateUser, knowledgeRateLimiter, async (req: any, res: any) => {
@@ -4422,7 +4573,7 @@ app.post("/api/knowledge", authenticateUser, knowledgeRateLimiter, async (req: a
         agent_archetype: agent.archetype,
       },
     });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to create" }); }
+  } catch (e: any) { log.error("Failed to create", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to create" }); }
 });
 
 app.patch("/api/knowledge/:id", authenticateUser, knowledgeRateLimiter, async (req: any, res: any) => {
@@ -4445,7 +4596,7 @@ app.patch("/api/knowledge/:id", authenticateUser, knowledgeRateLimiter, async (r
       .single();
     if (error) throw error;
     res.json({ knowledge: data });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to update" }); }
+  } catch (e: any) { log.error("Failed to update", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to update" }); }
 });
 
 app.delete("/api/knowledge/:id", authenticateUser, async (req: any, res: any) => {
@@ -4456,7 +4607,7 @@ app.delete("/api/knowledge/:id", authenticateUser, async (req: any, res: any) =>
       .eq("user_id", req.user.id);
     if (error) throw error;
     res.json({ success: true });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to delete" }); }
+  } catch (e: any) { log.error("Failed to delete", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to delete" }); }
 });
 
 // ==========================================
@@ -4612,7 +4763,7 @@ app.get("/api/campaigns/:id/leads", authenticateUser, async (req: any, res: any)
     // can have many. Stream them in chunks instead of loading everything.
     const limitRaw = parseInt(req.query.limit as string);
     const offsetRaw = parseInt(req.query.offset as string);
-    const limit = Math.min(isNaN(limitRaw) ? 200 : limitRaw, 1000);
+    const limit = Math.min(Math.max(1, isNaN(limitRaw) ? 200 : limitRaw), 1000);
     const offset = isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw);
 
     const { data, error, count } = await db.from('wireline_outbound_leads')
@@ -4673,7 +4824,7 @@ app.get("/api/campaigns/:id/analytics", authenticateUser, async (req: any, res: 
     res.json({ campaign, total, outcomes, call_stats });
   } catch (e: any) {
     log.error("Campaign analytics failed", { error: e?.message });
-    res.status(500).json({ error: e?.message ?? "Failed to load analytics" });
+    res.status(500).json({ error: "Failed to load analytics" });
   }
 });
 
@@ -5100,7 +5251,7 @@ app.get("/api/outbound", authenticateUser, async (req: any, res: any) => {
   try {
     const limitRaw = parseInt(req.query.limit as string);
     const offsetRaw = parseInt(req.query.offset as string);
-    const limit = Math.min(isNaN(limitRaw) ? 100 : limitRaw, 500);
+    const limit = Math.min(Math.max(1, isNaN(limitRaw) ? 100 : limitRaw), 500);
     const offset = isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw);
     const { data, count, error } = await db
       .from('wireline_outbound_leads')
@@ -5756,15 +5907,19 @@ app.get('/api/oauth/google/url', oauthRateLimiter, (req, res) => {
   const authUrl = oauth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: SCOPES,
-    prompt: 'consent' // Forces consent screen to always get a refresh token
+    prompt: 'consent', // Forces consent screen to always get a refresh token
+    state: generateOAuthState(),
   });
-  
+
   res.json({ url: authUrl });
 });
 
 app.get(['/api/oauth/google/callback', '/api/oauth/google/callback/'], oauthRateLimiter, async (req, res) => {
-  const { code } = req.query;
-  
+  const { code, state } = req.query;
+
+  if (!verifyOAuthState(state as string | undefined)) {
+    return res.status(400).send("Invalid or expired OAuth state. Please restart the sign-in flow.");
+  }
   if (!code || typeof code !== 'string') {
     return res.status(400).send("No code provided by Google.");
   }
@@ -5951,6 +6106,7 @@ app.get("/api/oauth/microsoft/url", oauthRateLimiter, (req: express.Request, res
       response_mode: "query",
       scope:         MS_SCOPES,
       prompt:        "consent",
+      state:         generateOAuthState(),
     });
     res.json({ url: `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${params}` });
   } catch (e: any) {
@@ -5963,10 +6119,13 @@ app.get(
   ["/api/oauth/microsoft/callback", "/api/oauth/microsoft/callback/"],
   oauthRateLimiter,
   async (req: express.Request, res: express.Response) => {
-    const { code, error: msError } = req.query as Record<string, string>;
+    const { code, state, error: msError } = req.query as Record<string, string>;
     if (msError) {
       log.warn("Microsoft OAuth error returned", { error: msError });
       return res.status(400).send("Microsoft sign-in was declined or failed. Please try again.");
+    }
+    if (!verifyOAuthState(state)) {
+      return res.status(400).send("Invalid or expired OAuth state. Please restart the sign-in flow.");
     }
     if (!code) return res.status(400).send("No authorization code provided.");
 
@@ -6086,7 +6245,7 @@ app.get("/api/emails/threads", authenticateUser, async (req: any, res: any) => {
     // doesn't ship 50MB of JSON to the client on every load.
     const limitRaw = parseInt(req.query.limit as string);
     const offsetRaw = parseInt(req.query.offset as string);
-    const limit = Math.min(isNaN(limitRaw) ? 100 : limitRaw, 500);
+    const limit = Math.min(Math.max(1, isNaN(limitRaw) ? 100 : limitRaw), 500);
     const offset = isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw);
 
     const { data: threads, error, count } = await db.from('wireline_email_threads')
@@ -6835,7 +6994,11 @@ app.post("/api/agents/:id/optimize", authenticateUser, async (req: any, res: any
 
       const result = await model.generateContent(prompt);
       const aiText = result.response.text();
-      res.json(JSON.parse(aiText || "{}"));
+      let parsed: any = {};
+      try { parsed = JSON.parse(aiText || "{}"); } catch {
+        return res.status(502).json({ error: "Optimizer returned malformed JSON." });
+      }
+      res.json(parsed);
    } catch (e) {
       res.status(500).json({ error: "Optimization protocol failed" });
    }
@@ -7578,13 +7741,14 @@ app.post("/api/claude/agent-review/apply-directive", authenticateUser, async (re
 //    Body: { event, timestamp, data }
 // ──────────────────────────────────────────────────────────
 
+
 app.get("/api/webhooks", authenticateUser, async (req: any, res: any) => {
   try {
     const { data, error } = await db.from("wireline_webhooks")
       .select("*").eq("user_id", req.user.id).order("created_at", { ascending: false });
     if (error) throw error;
     res.json({ webhooks: data || [], available_events: WEBHOOK_EVENTS });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load webhooks" }); }
+  } catch (e: any) { log.error("Failed to load webhooks", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load webhooks" }); }
 });
 
 app.post("/api/webhooks", authenticateUser, async (req: any, res: any) => {
@@ -7593,16 +7757,20 @@ app.post("/api/webhooks", authenticateUser, async (req: any, res: any) => {
     if (!name || !url || !Array.isArray(events) || events.length === 0) {
       return res.status(400).json({ error: "name, url, and events[] required." });
     }
-    try { new URL(url); } catch { return res.status(400).json({ error: "Invalid URL." }); }
+    const urlErr = await validateWebhookUrl(url);
+    if (urlErr) return res.status(400).json({ error: urlErr });
     const bad = events.filter((e: string) => !WEBHOOK_EVENTS.includes(e as WebhookEvent));
     if (bad.length) return res.status(400).json({ error: `Unknown events: ${bad.join(", ")}` });
+    if (secret !== undefined && secret !== null && secret !== "" && String(secret).length < 16) {
+      return res.status(400).json({ error: "Webhook secret must be at least 16 characters." });
+    }
 
     const { data, error } = await db.from("wireline_webhooks").insert({
       user_id: req.user.id, name, url, events, secret: secret || null, active: active ?? true,
     }).select().single();
     if (error) throw error;
     res.json({ webhook: data });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to create webhook" }); }
+  } catch (e: any) { log.error("Failed to create webhook", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to create webhook" }); }
 });
 
 app.patch("/api/webhooks/:id", authenticateUser, async (req: any, res: any) => {
@@ -7611,7 +7779,10 @@ app.patch("/api/webhooks/:id", authenticateUser, async (req: any, res: any) => {
     for (const k of ["name", "url", "events", "secret", "active"]) {
       if (req.body[k] !== undefined) patch[k] = req.body[k];
     }
-    if (patch.url) { try { new URL(patch.url); } catch { return res.status(400).json({ error: "Invalid URL." }); } }
+    if (patch.url) { const urlErr = await validateWebhookUrl(patch.url); if (urlErr) return res.status(400).json({ error: urlErr }); }
+    if (patch.secret !== undefined && patch.secret !== null && patch.secret !== "" && String(patch.secret).length < 16) {
+      return res.status(400).json({ error: "Webhook secret must be at least 16 characters." });
+    }
     if (patch.events) {
       if (!Array.isArray(patch.events) || patch.events.some((e: string) => !WEBHOOK_EVENTS.includes(e as WebhookEvent))) {
         return res.status(400).json({ error: "Invalid events." });
@@ -7621,14 +7792,14 @@ app.patch("/api/webhooks/:id", authenticateUser, async (req: any, res: any) => {
       .eq("id", req.params.id).eq("user_id", req.user.id).select().single();
     if (error) throw error;
     res.json({ webhook: data });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to update" }); }
+  } catch (e: any) { log.error("Failed to update", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to update" }); }
 });
 
 app.delete("/api/webhooks/:id", authenticateUser, async (req: any, res: any) => {
   try {
     await db.from("wireline_webhooks").delete().eq("id", req.params.id).eq("user_id", req.user.id);
     res.json({ success: true });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to delete" }); }
+  } catch (e: any) { log.error("Failed to delete", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to delete" }); }
 });
 
 app.post("/api/webhooks/:id/test", authenticateUser, async (req: any, res: any) => {
@@ -7639,7 +7810,7 @@ app.post("/api/webhooks/:id/test", authenticateUser, async (req: any, res: any) 
       test: true, message: "This is a test ping from Wireline.", at: new Date().toISOString(),
     });
     res.json({ success: true, message: "Test dispatched. Check the URL." });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Test failed" }); }
+  } catch (e: any) { log.error("Test failed", { error: getErrorMessage(e) }); res.status(500).json({ error: "Test failed" }); }
 });
 
 // Per-hook delivery history — newest first. Operators use this to
@@ -7660,7 +7831,7 @@ app.get("/api/webhooks/:id/deliveries", authenticateUser, async (req: any, res: 
       .limit(limit);
     if (error) throw error;
     res.json({ deliveries: data || [] });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load deliveries" }); }
+  } catch (e: any) { log.error("Failed to load deliveries", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load deliveries" }); }
 });
 
 // Manually requeue a delivery — clears terminal state and runs an
@@ -7683,7 +7854,7 @@ app.post("/api/webhooks/deliveries/:id/retry", authenticateUser, async (req: any
       log.warn("webhook delivery attempt failed", { delivery_id: id, error: (err as any)?.message || String(err) })
     );
     res.json({ success: true });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Retry failed" }); }
+  } catch (e: any) { log.error("Retry failed", { error: getErrorMessage(e) }); res.status(500).json({ error: "Retry failed" }); }
 });
 
 app.delete("/api/webhooks/deliveries/:id", authenticateUser, async (req: any, res: any) => {
@@ -7693,7 +7864,7 @@ app.delete("/api/webhooks/deliveries/:id", authenticateUser, async (req: any, re
     await db.from("wireline_webhook_deliveries")
       .delete().eq("id", id).eq("user_id", req.user.id);
     res.json({ success: true });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Discard failed" }); }
+  } catch (e: any) { log.error("Discard failed", { error: getErrorMessage(e) }); res.status(500).json({ error: "Discard failed" }); }
 });
 
 // ──────────────────────────────────────────────────────────
@@ -7994,7 +8165,7 @@ app.post("/api/intake/lead", async (req: any, res: any) => {
     return res.status(status).json({ error: result.error, code: result.code });
   } catch (e: any) {
     log.error("Intake lead failed", { error: e?.message || String(e) });
-    res.status(500).json({ error: e?.message ?? "Intake failed" });
+    res.status(500).json({ error: "Intake failed" });
   }
 });
 
@@ -8069,7 +8240,7 @@ app.post("/api/intake/leads", async (req: any, res: any) => {
     });
   } catch (e: any) {
     log.error("Bulk intake failed", { error: e?.message || String(e) });
-    res.status(500).json({ error: e?.message ?? "Bulk intake failed" });
+    res.status(500).json({ error: "Bulk intake failed" });
   }
 });
 
@@ -8083,7 +8254,7 @@ app.get("/api/intake/keys", authenticateUser, async (req: any, res: any) => {
       .order("created_at", { ascending: false });
     if (error) throw error;
     res.json({ keys: data || [] });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load keys" }); }
+  } catch (e: any) { log.error("Failed to load keys", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load keys" }); }
 });
 
 app.post("/api/intake/keys", authenticateUser, async (req: any, res: any) => {
@@ -8106,7 +8277,7 @@ app.post("/api/intake/keys", authenticateUser, async (req: any, res: any) => {
     if (error) throw error;
     // Plaintext is returned ONCE — we never store or expose it again.
     res.json({ key: data, plaintext });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to create key" }); }
+  } catch (e: any) { log.error("Failed to create key", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to create key" }); }
 });
 
 app.patch("/api/intake/keys/:id", authenticateUser, async (req: any, res: any) => {
@@ -8121,14 +8292,14 @@ app.patch("/api/intake/keys/:id", authenticateUser, async (req: any, res: any) =
       .select("id, name, key_prefix, default_agent_id, auto_dial, active, last_used_at, use_count, created_at").single();
     if (error) throw error;
     res.json({ key: data });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to update key" }); }
+  } catch (e: any) { log.error("Failed to update key", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to update key" }); }
 });
 
 app.delete("/api/intake/keys/:id", authenticateUser, async (req: any, res: any) => {
   try {
     await db.from("wireline_intake_keys").delete().eq("id", req.params.id).eq("user_id", req.user.id);
     res.json({ success: true });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to delete key" }); }
+  } catch (e: any) { log.error("Failed to delete key", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to delete key" }); }
 });
 
 // ──────────────────────────────────────────────────────────
@@ -8507,7 +8678,7 @@ app.get("/api/daily-brief/settings", authenticateUser, async (req: any, res: any
       gmail_connected: !!accounts?.[0]?.email_address,
       gmail_address: accounts?.[0]?.email_address || null,
     });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load settings" }); }
+  } catch (e: any) { log.error("Failed to load settings", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load settings" }); }
 });
 
 app.put("/api/daily-brief/settings", authenticateUser, async (req: any, res: any) => {
@@ -8528,7 +8699,7 @@ app.put("/api/daily-brief/settings", authenticateUser, async (req: any, res: any
     }, { onConflict: "user_id" });
 
     res.json({ success: true });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to save settings" }); }
+  } catch (e: any) { log.error("Failed to save settings", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to save settings" }); }
 });
 
 // Send-now — operator-triggered preview email so they can confirm
@@ -8540,7 +8711,7 @@ app.post("/api/daily-brief/send-now", authenticateUser, async (req: any, res: an
     res.json({ success: true, ...result });
   } catch (e: any) {
     if (e?.code === "CLAUDE_OFFLINE") return res.status(503).json({ error: e.message, code: e.code });
-    res.status(500).json({ error: e?.message ?? "Send failed" });
+    res.status(500).json({ error: "Send failed" });
   }
 });
 
@@ -8565,7 +8736,7 @@ app.get("/api/audit/summary", authenticateUser, async (req: any, res: any) => {
 
     res.json(computeAuditSummary({ rows: rows || [], windowDays: days }));
   } catch (e: any) {
-    res.status(500).json({ error: e?.message ?? "Audit summary failed" });
+    res.status(500).json({ error: "Audit summary failed" });
   }
 });
 
@@ -8582,7 +8753,7 @@ app.get("/api/audit/recent", authenticateUser, async (req: any, res: any) => {
     if (error) throw error;
     res.json({ entries: data || [] });
   } catch (e: any) {
-    res.status(500).json({ error: e?.message ?? "Audit fetch failed" });
+    res.status(500).json({ error: "Audit fetch failed" });
   }
 });
 
@@ -8838,7 +9009,7 @@ app.get("/api/spend/budget", authenticateUser, async (req: any, res: any) => {
         updated_at: null,
       },
     });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load budget" }); }
+  } catch (e: any) { log.error("Failed to load budget", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load budget" }); }
 });
 
 app.put("/api/spend/budget", authenticateUser, async (req: any, res: any) => {
@@ -8864,7 +9035,7 @@ app.put("/api/spend/budget", authenticateUser, async (req: any, res: any) => {
     // Force a cache refresh so the new limit takes effect on the next request.
     budgetCache.delete(req.user.id);
     res.json({ budget: data });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to save budget" }); }
+  } catch (e: any) { log.error("Failed to save budget", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to save budget" }); }
 });
 
 app.get("/api/spend/status", authenticateUser, async (req: any, res: any) => {
@@ -8887,7 +9058,7 @@ app.get("/api/spend/status", authenticateUser, async (req: any, res: any) => {
       hard_capped_now: !!(snap.budget?.hard_cap && limit > 0 && snap.mtdCost >= limit),
       alerts_fired: alerts || [],
     });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load spend status" }); }
+  } catch (e: any) { log.error("Failed to load spend status", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load spend status" }); }
 });
 
 // ──────────────────────────────────────────────────────────
@@ -8928,7 +9099,7 @@ app.get("/api/billing/status", authenticateUser, async (req: any, res: any) => {
         updated_at: sub.updated_at,
       } : null,
     });
-  } catch (e: any) { res.status(500).json({ error: e?.message ?? "Failed to load status" }); }
+  } catch (e: any) { log.error("Failed to load status", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load status" }); }
 });
 
 // Start a Stripe Checkout session for a plan. Idempotent on
@@ -8998,7 +9169,7 @@ app.post("/api/billing/checkout", authenticateUser, async (req: any, res: any) =
     res.json({ url: session.url });
   } catch (e: any) {
     log.error("Checkout creation failed", { error: e?.message || String(e) });
-    res.status(500).json({ error: e?.message ?? "Checkout failed" });
+    res.status(500).json({ error: "Checkout failed" });
   }
 });
 
@@ -9020,7 +9191,7 @@ app.post("/api/billing/portal", authenticateUser, async (req: any, res: any) => 
     res.json({ url: portal.url });
   } catch (e: any) {
     log.error("Portal session failed", { error: e?.message || String(e) });
-    res.status(500).json({ error: e?.message ?? "Portal failed" });
+    res.status(500).json({ error: "Portal failed" });
   }
 });
 
@@ -9084,7 +9255,7 @@ app.get("/api/export/:type.csv", authenticateUser, async (req: any, res: any) =>
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     res.send(rowsToCsv(data || [], def.columns));
   } catch (e: any) {
-    res.status(500).json({ error: e?.message ?? "Export failed" });
+    res.status(500).json({ error: "Export failed" });
   }
 });
 
@@ -9704,6 +9875,11 @@ app.post("/api/knowledge-gaps/:lessonId/promote", authenticateUser, async (req: 
       lesson.lesson.replace(/^\[KNOWLEDGE GAP\]\s*/, "").trim();
 
     if (!content) return res.status(400).json({ error: "Content is empty." });
+    // Match the limit enforced by POST/PATCH /api/knowledge so promoted entries
+    // can't exceed what a normal knowledge insert would allow.
+    if (content.length > 2000) {
+      return res.status(400).json({ error: "Content must be 2000 characters or less." });
+    }
 
     await db.from("wireline_knowledge").insert({
       agent_id: lesson.agent_id,
