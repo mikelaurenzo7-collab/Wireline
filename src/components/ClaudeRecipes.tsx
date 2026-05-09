@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
+import WidgetBoundary from "./WidgetBoundary";
 
 export type Recipe =
   | "brief"
@@ -198,21 +199,23 @@ function RecipeModal({
           </div>
 
           {available === false && <NoKeyInline />}
-          <div className="flex-1 overflow-y-auto scrollbar-hide">
-            {recipe === "brief"              && <BriefForm           agents={agents} agentId={agentId} initial={initial} disabled={!available} />}
-            {recipe === "enrich-lead"        && <EnrichLeadForm      initial={initial} disabled={!available} />}
-            {recipe === "qualify"            && <QualifyForm         callId={callId} initial={initial} disabled={!available} />}
-            {recipe === "objection-drill"    && <ObjectionDrillForm  agents={agents} agentId={agentId} initial={initial} disabled={!available} />}
-            {recipe === "cold-email"         && <ColdEmailForm       agents={agents} agentId={agentId} initial={initial} disabled={!available} />}
-            {recipe === "persona-clone"      && <PersonaCloneForm    agents={agents} agentId={agentId} disabled={!available} />}
-            {recipe === "summarize-thread"   && <ThreadSummaryForm   threadId={threadId} disabled={!available} />}
-            {recipe === "agent-review"       && <AgentReviewForm     agents={agents} agentId={agentId} disabled={!available} />}
-            {recipe === "coach"              && <CoachForm           callId={callId} initial={initial} disabled={!available} />}
-            {recipe === "knowledge-from-url"      && <KnowledgeFromUrlForm      agents={agents} agentId={agentId} initial={initial} disabled={!available} />}
-            {recipe === "knowledge-from-document" && <KnowledgeFromDocumentForm agents={agents} agentId={agentId} disabled={!available} />}
-            {recipe === "agent-forge"             && <AgentForgeForm            initial={initial} disabled={!available} />}
-            {recipe === "call-playbook"           && <CallPlaybookForm          agents={agents} agentId={agentId} initial={initial} disabled={!available} />}
-          </div>
+          <WidgetBoundary label={meta.title}>
+            <div className="flex-1 overflow-y-auto scrollbar-hide">
+              {recipe === "brief"              && <BriefForm           agents={agents} agentId={agentId} initial={initial} disabled={!available} />}
+              {recipe === "enrich-lead"        && <EnrichLeadForm      initial={initial} disabled={!available} />}
+              {recipe === "qualify"            && <QualifyForm         callId={callId} initial={initial} disabled={!available} />}
+              {recipe === "objection-drill"    && <ObjectionDrillForm  agents={agents} agentId={agentId} initial={initial} disabled={!available} />}
+              {recipe === "cold-email"         && <ColdEmailForm       agents={agents} agentId={agentId} initial={initial} disabled={!available} />}
+              {recipe === "persona-clone"      && <PersonaCloneForm    agents={agents} agentId={agentId} disabled={!available} />}
+              {recipe === "summarize-thread"   && <ThreadSummaryForm   threadId={threadId} disabled={!available} />}
+              {recipe === "agent-review"       && <AgentReviewForm     agents={agents} agentId={agentId} disabled={!available} />}
+              {recipe === "coach"              && <CoachForm           callId={callId} initial={initial} disabled={!available} />}
+              {recipe === "knowledge-from-url"      && <KnowledgeFromUrlForm      agents={agents} agentId={agentId} initial={initial} disabled={!available} />}
+              {recipe === "knowledge-from-document" && <KnowledgeFromDocumentForm agents={agents} agentId={agentId} disabled={!available} />}
+              {recipe === "agent-forge"             && <AgentForgeForm            initial={initial} disabled={!available} />}
+              {recipe === "call-playbook"           && <CallPlaybookForm          agents={agents} agentId={agentId} initial={initial} disabled={!available} />}
+            </div>
+          </WidgetBoundary>
         </div>
       </motion.div>
     </motion.div>

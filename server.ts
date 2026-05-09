@@ -627,6 +627,7 @@ async function dialRateLimiter(req: any, res: any, next: any) {
   res.setHeader("X-RateLimit-Remaining", String(result.remaining));
   if (!result.allowed) {
     void auditLogger.logSecurity('rate_limit_exceeded', { userId, resource: 'outbound_dial', ip: req.ip, metadata: { limit: DIAL_RATE_MAX } }).catch(() => {});
+    res.setHeader("Retry-After", String(Math.ceil(DIAL_RATE_WINDOW_MS / 1000)));
     return res.status(429).json({ error: `Rate limit exceeded — ${DIAL_RATE_MAX} outbound dials per minute. Please slow down.`, code: "DIAL_RATE_LIMIT" });
   }
   next();
@@ -8660,11 +8661,41 @@ async function sendDailyBriefEmail(userId: string, opts?: { force?: boolean }) {
 // .unref() so it never blocks process exit. Re-entrancy guard so a
 // slow batch doesn't overlap with itself.
 const DAILY_BRIEF_TICK_MS = 5 * 60 * 1000;
+// Lock TTL slightly longer than one tick so the key expires if the process
+// crashes without releasing it. On single-instance deploys the in-process
+// boolean is enough; the Redis lock is only needed for multi-instance.
+const DAILY_BRIEF_LOCK_TTL_S = Math.ceil((DAILY_BRIEF_TICK_MS / 1000) * 1.5);
+const DAILY_BRIEF_LOCK_KEY = "wireline:sched:daily_brief:lock";
 let _briefSchedRunning = false;
 
-async function processScheduledDailyBriefs() {
-  if (_briefSchedRunning) return;
+async function acquireBriefLock(): Promise<boolean> {
+  if (isRedisConfigured()) {
+    try {
+      const { Redis: UpstashRedis } = await import("@upstash/redis");
+      const r = new UpstashRedis({ url: process.env.UPSTASH_REDIS_REST_URL!, token: process.env.UPSTASH_REDIS_REST_TOKEN! });
+      const result = await r.set(DAILY_BRIEF_LOCK_KEY, "1", { nx: true, ex: DAILY_BRIEF_LOCK_TTL_S });
+      return result === "OK";
+    } catch { /* fall through to in-process guard */ }
+  }
+  if (_briefSchedRunning) return false;
   _briefSchedRunning = true;
+  return true;
+}
+
+async function releaseBriefLock(): Promise<void> {
+  _briefSchedRunning = false;
+  if (isRedisConfigured()) {
+    try {
+      const { Redis: UpstashRedis } = await import("@upstash/redis");
+      const r = new UpstashRedis({ url: process.env.UPSTASH_REDIS_REST_URL!, token: process.env.UPSTASH_REDIS_REST_TOKEN! });
+      await r.del(DAILY_BRIEF_LOCK_KEY);
+    } catch { /* best-effort release */ }
+  }
+}
+
+async function processScheduledDailyBriefs() {
+  const locked = await acquireBriefLock();
+  if (!locked) return;
   try {
     const now = new Date();
     const utcHHMM = `${String(now.getUTCHours()).padStart(2, "0")}:${String(now.getUTCMinutes()).padStart(2, "0")}`;
@@ -8704,7 +8735,7 @@ async function processScheduledDailyBriefs() {
   } catch (err) {
     log.error("Daily-brief scheduler tick failed", { error: getErrorMessage(err) });
   } finally {
-    _briefSchedRunning = false;
+    await releaseBriefLock();
   }
 }
 setInterval(processScheduledDailyBriefs, DAILY_BRIEF_TICK_MS).unref?.();
@@ -9524,6 +9555,10 @@ app.post("/api/claude/knowledge-from-url", authenticateUser, async (req: any, re
     // web_search tool with weird errors and waste an invocation.
     if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
       return res.status(400).json({ error: "url must use http:// or https://" });
+    }
+    // SSRF protection: block private/internal addresses (same guard used for webhooks).
+    if (isSsrfUrl(url)) {
+      return res.status(400).json({ error: "url targets a private or internal address and cannot be crawled." });
     }
     if (agentContext != null && (typeof agentContext !== "string" || agentContext.length > 2000)) {
       return res.status(400).json({ error: "agentContext must be a string ≤ 2000 characters." });

@@ -212,7 +212,7 @@ export function Panel({
       )}
 
       {(title || actions) && (
-        <header className="relative shrink-0 px-4 py-3 flex items-center justify-between gap-3">
+        <header className="relative shrink-0 px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2.5 min-w-0">
             {Icon && (
               <div
@@ -237,7 +237,7 @@ export function Panel({
               </span>
             )}
           </div>
-          {actions && <div className="shrink-0 flex items-center gap-1.5">{actions}</div>}
+          {actions && <div className="flex flex-wrap items-center gap-1.5">{actions}</div>}
         </header>
       )}
 
