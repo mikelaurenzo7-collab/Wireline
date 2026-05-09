@@ -922,3 +922,238 @@ CREATE INDEX IF NOT EXISTS wireline_email_threads_account_idx
 -- Appointments by status: upcoming vs history split
 CREATE INDEX IF NOT EXISTS wireline_appointments_user_status_idx
     ON wireline_appointments(user_id, status, created_at DESC);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- TCPA / Recording-Consent Ledger  (append-only, never UPDATE rows)
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS wireline_consent_log (
+    id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id     UUID NOT NULL,
+    call_id     TEXT,
+    customer_number TEXT NOT NULL,
+    event       TEXT NOT NULL,          -- disclosure_played | consent_granted | consent_revoked | opt_out_requested | recording_started | recording_stopped
+    rule_version TEXT NOT NULL,         -- e.g. "2025.1"
+    rule        TEXT NOT NULL,          -- one_party | two_party
+    state       TEXT,                   -- USPS abbreviation inferred from phone
+    metadata    JSONB DEFAULT '{}',
+    created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- RLS: a user may only read their own consent log; inserts happen via service role.
+ALTER TABLE wireline_consent_log ENABLE ROW LEVEL SECURITY;
+CREATE POLICY IF NOT EXISTS "wireline_consent_log_select" ON wireline_consent_log
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE INDEX IF NOT EXISTS wireline_consent_log_user_call_idx
+    ON wireline_consent_log(user_id, call_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS wireline_consent_log_customer_idx
+    ON wireline_consent_log(user_id, customer_number, created_at DESC);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Per-Tenant Quota Overrides
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS wireline_quota_limits (
+    id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id     UUID NOT NULL,
+    dimension   TEXT NOT NULL,          -- claude_tokens_daily | voice_minutes_daily | concurrent_dials | knowledge_rows | intake_rpm
+    value       BIGINT NOT NULL,
+    enabled     BOOLEAN DEFAULT TRUE,
+    updated_at  TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(user_id, dimension)
+);
+
+ALTER TABLE wireline_quota_limits ENABLE ROW LEVEL SECURITY;
+CREATE POLICY IF NOT EXISTS "wireline_quota_limits_select" ON wireline_quota_limits
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE INDEX IF NOT EXISTS wireline_quota_limits_user_idx
+    ON wireline_quota_limits(user_id);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Per-Tenant Quota Usage Counters
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS wireline_quota_usage (
+    id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id     UUID NOT NULL,
+    dimension   TEXT NOT NULL,
+    period_key  TEXT NOT NULL,          -- "YYYY-MM-DD" for daily, "YYYY-MM-DDTHH:MM" for minute
+    used        BIGINT NOT NULL DEFAULT 0,
+    updated_at  TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(user_id, dimension, period_key)
+);
+
+ALTER TABLE wireline_quota_usage ENABLE ROW LEVEL SECURITY;
+CREATE POLICY IF NOT EXISTS "wireline_quota_usage_select" ON wireline_quota_usage
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE INDEX IF NOT EXISTS wireline_quota_usage_user_period_idx
+    ON wireline_quota_usage(user_id, dimension, period_key DESC);
+
+-- Atomic increment RPC (used by QuotaTracker.checkAndIncrement).
+-- Returns: { used: bigint, allowed: boolean }
+CREATE OR REPLACE FUNCTION wireline_quota_increment(
+    p_user_id    UUID,
+    p_dimension  TEXT,
+    p_period_key TEXT,
+    p_delta      BIGINT,
+    p_limit      BIGINT
+) RETURNS JSONB
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_used BIGINT;
+BEGIN
+    INSERT INTO wireline_quota_usage(user_id, dimension, period_key, used, updated_at)
+         VALUES (p_user_id, p_dimension, p_period_key, p_delta, NOW())
+    ON CONFLICT (user_id, dimension, period_key)
+    DO UPDATE SET used = wireline_quota_usage.used + p_delta, updated_at = NOW()
+    RETURNING used INTO v_used;
+    RETURN jsonb_build_object('used', v_used, 'allowed', v_used <= p_limit);
+END;
+$$;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Async Job Queue (wireline_jobs)
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS wireline_jobs (
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id      UUID NOT NULL,
+    type         TEXT NOT NULL,         -- post_call_enrichment | webhook_delivery | daily_brief | campaign_dial | consent_check
+    payload      JSONB NOT NULL DEFAULT '{}',
+    status       TEXT NOT NULL DEFAULT 'pending', -- pending | running | done | failed | dead
+    attempts     INTEGER NOT NULL DEFAULT 0,
+    max_attempts INTEGER NOT NULL DEFAULT 5,
+    run_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    started_at   TIMESTAMPTZ,
+    finished_at  TIMESTAMPTZ,
+    error        TEXT,
+    created_at   TIMESTAMPTZ DEFAULT NOW(),
+    updated_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE wireline_jobs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY IF NOT EXISTS "wireline_jobs_select" ON wireline_jobs
+    FOR SELECT USING (auth.uid() = user_id);
+
+-- Polling index: claim next pending job ordered by run_at
+CREATE INDEX IF NOT EXISTS wireline_jobs_pending_idx
+    ON wireline_jobs(status, run_at ASC)
+    WHERE status IN ('pending', 'failed');
+
+-- User + status for admin dashboards
+CREATE INDEX IF NOT EXISTS wireline_jobs_user_status_idx
+    ON wireline_jobs(user_id, status, created_at DESC);
+
+-- Atomic claim RPC (SELECT FOR UPDATE SKIP LOCKED pattern)
+CREATE OR REPLACE FUNCTION wireline_claim_job(
+    p_types TEXT[] DEFAULT NULL
+) RETURNS wireline_jobs
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_job wireline_jobs;
+BEGIN
+    SELECT * INTO v_job
+    FROM wireline_jobs
+    WHERE status = 'pending'
+      AND run_at <= NOW()
+      AND (p_types IS NULL OR type = ANY(p_types))
+    ORDER BY run_at ASC
+    LIMIT 1
+    FOR UPDATE SKIP LOCKED;
+
+    IF NOT FOUND THEN RETURN NULL; END IF;
+
+    UPDATE wireline_jobs
+       SET status     = 'running',
+           started_at = NOW(),
+           attempts   = attempts + 1,
+           updated_at = NOW()
+     WHERE id = v_job.id
+    RETURNING * INTO v_job;
+
+    RETURN v_job;
+END;
+$$;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- SOC 2 — Team Members (RBAC)
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS wireline_team_members (
+    id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id      UUID NOT NULL,       -- maps to wireline_settings.user_id of the account owner
+    user_id        UUID NOT NULL,
+    email          TEXT NOT NULL,
+    role           TEXT NOT NULL DEFAULT 'viewer', -- owner | admin | operator | viewer | auditor
+    invited_by     UUID,
+    last_active_at TIMESTAMPTZ,
+    revoked_at     TIMESTAMPTZ,
+    created_at     TIMESTAMPTZ DEFAULT NOW(),
+    updated_at     TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(tenant_id, user_id)
+);
+
+ALTER TABLE wireline_team_members ENABLE ROW LEVEL SECURITY;
+CREATE POLICY IF NOT EXISTS "wireline_team_members_select" ON wireline_team_members
+    FOR SELECT USING (
+        auth.uid() = user_id OR
+        auth.uid() = tenant_id
+    );
+
+CREATE INDEX IF NOT EXISTS wireline_team_members_tenant_idx
+    ON wireline_team_members(tenant_id, role, created_at DESC);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- SOC 2 — Change Log (CC8.1 change management)
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS wireline_change_log (
+    id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    tenant_id       UUID NOT NULL,
+    actor_user_id   UUID NOT NULL,
+    actor_email     TEXT NOT NULL,
+    change_type     TEXT NOT NULL,      -- access_grant | access_revoke | role_change | config_change | agent_deploy | schema_migration | secret_rotation
+    target_user_id  UUID,
+    target_email    TEXT,
+    previous_value  TEXT,
+    new_value       TEXT,
+    justification   TEXT,
+    approved_by     UUID,
+    metadata        JSONB DEFAULT '{}',
+    created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE wireline_change_log ENABLE ROW LEVEL SECURITY;
+CREATE POLICY IF NOT EXISTS "wireline_change_log_select" ON wireline_change_log
+    FOR SELECT USING (auth.uid() = tenant_id OR auth.uid() = actor_user_id);
+
+CREATE INDEX IF NOT EXISTS wireline_change_log_tenant_idx
+    ON wireline_change_log(tenant_id, created_at DESC);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- SOC 2 — Incident Records (CC7.3 / A1.2)
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS wireline_incidents (
+    id                   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id            UUID,           -- NULL = platform-wide incident
+    severity             TEXT NOT NULL,  -- P1 | P2 | P3 | P4
+    title                TEXT NOT NULL,
+    description          TEXT,
+    detected_at          TIMESTAMPTZ NOT NULL,
+    resolved_at          TIMESTAMPTZ,
+    root_cause           TEXT,
+    remediation          TEXT,
+    reporter_email       TEXT NOT NULL,
+    affected_systems     TEXT[] NOT NULL DEFAULT '{}',
+    customer_notified    BOOLEAN DEFAULT FALSE,
+    notification_sent_at TIMESTAMPTZ,
+    notification_deadline TIMESTAMPTZ,
+    created_at           TIMESTAMPTZ DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE wireline_incidents ENABLE ROW LEVEL SECURITY;
+CREATE POLICY IF NOT EXISTS "wireline_incidents_select" ON wireline_incidents
+    FOR SELECT USING (auth.uid() = tenant_id OR tenant_id IS NULL);
+
+CREATE INDEX IF NOT EXISTS wireline_incidents_tenant_severity_idx
+    ON wireline_incidents(tenant_id, severity, detected_at DESC);

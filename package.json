@@ -1,6 +1,7 @@
 {
   "name": "wireline",
   "private": true,
+  "license": "UNLICENSED",
   "version": "1.0.0",
   "type": "module",
   "engines": {
@@ -13,9 +14,10 @@
     "start": "node dist/server.cjs",
     "preview": "vite preview",
     "clean": "rm -rf dist",
-    "lint": "tsc --noEmit",
+    "lint": "node --max-old-space-size=4096 ./node_modules/typescript/bin/tsc --noEmit",
     "test": "vitest",
     "test:run": "vitest run",
+    "verify": "npm run lint && npm run test:run && npm run build",
     "smoke:server": "node scripts/smoke-server.mjs",
     "assets": "node scripts/render-image-assets.mjs",
     "check-prod-env": "node scripts/check-prod-env.mjs"

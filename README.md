@@ -118,6 +118,212 @@ PRODUCTION_CHECK=1 npm run check-prod-env
 
 Exits 1 if required vars are missing, 2 if recommended vars are missing. Wire this into your deploy pipeline to catch misconfiguration before traffic hits.
 
+## Single-tenant / self-hosted deployment
+
+Wireline ships with a multi-stage production Dockerfile and docker-compose stack for
+single-tenant deployments (on-premise, VPC, or air-gapped environments).
+
+### Build and run with Docker Compose
+
+```bash
+# Copy .env.example → .env and fill in your keys
+cp .env.example .env
+
+# Build and launch (app + Valkey Redis for rate-limit counters)
+docker-compose up -d
+
+# App runs on http://localhost:3000
+# Redis on localhost:6379 (internal only)
+```
+
+The compose stack includes:
+- **App service** — builds from `Dockerfile`, runs as non-root `wireline` user, restarts unless stopped
+- **Valkey Redis** — OSS Redis fork, 128MB maxmemory with allkeys-lru eviction, persistent volume
+- **Healthcheck** — Docker monitors `GET /api/health` every 30s
+
+### Docker build options
+
+```bash
+# Build standalone image
+docker build -t wireline:latest .
+
+# Run with external Redis
+docker run -d \
+  -p 3000:3000 \
+  --env-file .env \
+  -e UPSTASH_REDIS_REST_URL=https://your-redis.upstash.io \
+  -e UPSTASH_REDIS_REST_TOKEN=your_token \
+  wireline:latest
+```
+
+The Dockerfile is multi-stage (deps → builder → runtime) using `node:22-alpine` for minimal footprint.
+Health probe: `wget -qO- http://localhost:3000/api/health || exit 1` (every 30s).
+
+## TCPA compliance & recording consent
+
+Wireline enforces **TCPA + state recording-consent** rules before every outbound call.
+
+### Pre-dial consent gate
+
+Every call to `/api/outbound/dial` passes through:
+1. **Internal DNC check** — blocks calls to numbers in `wireline_dnc`
+2. **Express written consent check** — blocks cold marketing calls without prior opt-in
+3. **Jurisdiction inference** — area code → state → one-party vs two-party consent rule
+4. **Disclosure generation** — if call proceeds, agent receives the jurisdiction-specific recording disclosure script in the system prompt
+
+**API endpoint:** `GET /api/tcpa/consent-check?phone=+14155551234&is_marketing=true`
+
+Returns:
+```json
+{
+  "allowed": true,
+  "rule": "two_party",
+  "inferred_state": "CA",
+  "must_disclose_recording": true,
+  "must_offer_opt_out": true,
+  "disclosure_script": "This call is being recorded. You may ask me to stop recording at any time...",
+  "consent_rule_version": "2025.1"
+}
+```
+
+### Post-call opt-out detection
+
+At call end, the Vapi webhook runs regex-based opt-out detection on the transcript:
+- Pattern match: "don't record", "stop recording", "do not call", etc.
+- If matched → append-only ledger row in `wireline_consent_log` with `event='opt_out_requested'`
+- If matched → auto-add to `wireline_dnc` so future campaigns respect the opt-out
+
+**Ledger fields:** `user_id`, `call_id`, `customer_number`, `event`, `rule`, `state`, `rule_version`, `metadata`, `created_at`
+
+**Area code coverage:** ~300 NANP area codes mapped to USPS state codes. Unknown area codes default to two-party (conservative).
+
+See `src/lib/tcpa-consent.ts` for full implementation + tests.
+
+## Per-tenant quotas
+
+Hard caps prevent runaway AI/voice spend. Every operator has five quota dimensions:
+- **`claude_tokens_daily`** — Claude API tokens per UTC day
+- **`voice_minutes_daily`** — Vapi voice minutes per UTC day
+- **`concurrent_dials`** — max simultaneous outbound calls
+- **`knowledge_rows`** — max facts in `wireline_knowledge` per agent
+- **`intake_rpm`** — inbound lead ingestion rate (requests per minute)
+
+### Plan defaults
+
+| Plan | Claude tokens/day | Voice min/day | Concurrent dials | Knowledge rows | Intake RPM |
+|------|------------------|---------------|------------------|----------------|------------|
+| Free | 10,000 | 30 | 1 | 100 | 10 |
+| Starter | 100,000 | 300 | 3 | 500 | 30 |
+| Pro | 1,000,000 | 1,500 | 10 | 2,000 | 100 |
+| Enterprise | 10,000,000 | 10,000 | 50 | 10,000 | 500 |
+
+Plan is derived from `wireline_settings.subscription_status` (Stripe-synced).
+
+### Per-tenant overrides
+
+**API:** `PUT /api/quotas/override`
+```json
+{
+  "dimension": "voice_minutes_daily",
+  "value": 5000,
+  "enabled": true
+}
+```
+
+Overrides are stored in `wireline_quota_limits` and take precedence when `enabled=true`.
+Disable to revert back to plan default. Quote increases OR decreases are allowed.
+
+**Usage check:** `GET /api/quotas` returns current usage + limits + remaining across all dimensions.
+
+**Enforcement:**
+- `/api/outbound/dial` checks `voice_minutes_daily` before placing calls → HTTP 429 with `Retry-After` on exhaustion
+- Claude endpoints check `claude_tokens_daily` (future: token-based metering per call)
+- Intake API enforces `intake_rpm` per key
+
+**Implementation:** Atomic Postgres RPC (`wireline_quota_increment`) with SELECT FOR UPDATE + UPSERT. Non-atomic fallback for compatibility with older schema versions.
+
+See `src/lib/tenant-quotas.ts` for full implementation + tests.
+
+## Async job queue & background workers
+
+Long-running operations (Claude post-call enrichment, webhook delivery, campaign dials) run asynchronously via a Postgres-backed durable job queue.
+
+### Queue table: `wireline_jobs`
+
+Each job has: `type`, `payload`, `status`, `attempts`, `max_attempts`, `run_at`, RPC-based atomic claim.
+
+**Job types:**
+- `post_call_enrichment` — the Vapi webhook enqueues this instead of blocking the HTTP response with a multi-second Claude call
+- `webhook_delivery` — retryable outbound webhook dispatch
+- `daily_brief` — scheduled morning email
+- `campaign_dial` — bulk dialer background task
+- `consent_check` — async TCPA pre-flight (future use)
+
+**Status flow:** `pending` → `running` → `done` | `failed` (with exponential backoff: 30s, 2m, 10m, 1h) → `dead` after max attempts.
+
+### Worker modes
+
+**Long-lived server (Docker / local):**
+```typescript
+// server.ts boots a background worker on startup
+startWorker(db, handleJob, { pollIntervalMs: 10_000 });
+```
+Polls every 10s, claims up to 10 jobs, processes in parallel, retries on failure.
+
+**Vercel serverless:**
+```bash
+# vercel.json → cron trigger
+POST /api/jobs/sweep
+```
+One sweep per invocation (no persistent timer). Call this every minute from Vercel Cron.
+
+**Manual drain:** `POST /api/jobs/sweep` (authenticated) processes up to 10 jobs and returns `{ processed: n }`.
+
+**Queue stats:** `GET /api/jobs/stats` → `{ pending, running, failed, dead, done_last_hour }`
+
+See `src/lib/job-queue.ts` for full implementation + tests.
+
+## SOC 2 compliance helpers
+
+Wireline includes evidence-collection helpers for SOC 2 Trust Service Criteria:
+
+### CC6 — Logical Access Controls
+
+**Role-based access control (RBAC):**
+- `owner` (50) > `admin` (40) > `operator` (30) > `viewer` (20) > `auditor` (10)
+- `canGrantRole(granterRole, targetRole)` — enforces "can only grant roles strictly below your own level"
+- `hasPermission(role, permission)` — mapping: role → permissions set
+
+**Access review:** `GET /api/soc2/access-review`
+- Returns list of stale team members (inactive > 90 days) + unlogged revocations
+- Run quarterly per CC6.3 requirement
+
+### CC7 — System Operations
+
+**Incident response helpers:**
+```typescript
+buildIncidentRow({
+  severity: 'P1' | 'P2' | 'P3' | 'P4',
+  category: 'security' | 'availability' | 'data_breach' | 'performance',
+  description: '...',
+  // ...
+}) → { notification_deadline: ISO8601 }  // 72h for P1/P2 (GDPR Art.33)
+```
+
+### CC8 — Change Management
+
+**Change log:**
+```typescript
+buildChangeLogRow({
+  change_type: 'access_grant' | 'role_change' | 'config_update' | 'secret_rotation',
+  actor_user_id, target_email, old_value?, new_value?, justification
+}) → insert into wireline_change_log
+```
+
+**Encryption evidence:** `looksEncrypted(value)` — validates SHA-256 hex, bcrypt hash, or intake key prefix `ek_`.
+
+See `src/lib/soc2-controls.ts` for full implementation + tests.
+
 ## Environment
 
 ```bash
@@ -237,11 +443,19 @@ See `server.ts` for the full list — voice webhook (`/api/vapi-webhook`), email
 ## Build
 
 ```bash
-npm run lint     # tsc --noEmit
-npm run build    # vite build + esbuild server
-npm start        # node dist/server.js
+npm run lint        # tsc --noEmit
+npm run test:run    # vitest run (CI mode)
+npm run build       # vite build + esbuild server
+npm run verify      # lint + tests + build (one-command pre-deploy gate)
+npm start           # node dist/server.cjs
 ```
 
 ## License
 
-Internal — see your org's license terms.
+**Proprietary — all rights reserved.**
+
+Wireline is closed-source commercial software. No license is granted to copy,
+modify, distribute, sublicense, or use this code outside of an executed
+agreement with the copyright holder. Unauthorized use is prohibited.
+
+For licensing inquiries, contact the maintainers.

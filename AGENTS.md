@@ -51,6 +51,24 @@ break the deployment:
   subscription card, and "Manage subscription" button (Stripe
   Customer Portal). Falls back to a configuration-needed notice
   when STRIPE_SECRET_KEY is unset.
+- `src/lib/tcpa-consent.ts` — TCPA + state recording-consent compliance
+  gate. Powers `/api/tcpa/consent-check`, the consent ledger insert in
+  the Vapi webhook, and the pre-dial guard in `/api/outbound/dial`.
+  Do not remove — removing it disables consent enforcement.
+- `src/lib/tenant-quotas.ts` — per-tenant daily/monthly hard caps on
+  Claude tokens, voice minutes, concurrent dials, knowledge rows, and
+  intake RPM. Powers `/api/quotas/*` and the quota guard in the dial
+  endpoint. Plan defaults are in `PLAN_DEFAULTS`; per-tenant overrides
+  are stored in `wireline_quota_limits`.
+- `src/lib/job-queue.ts` — Postgres-backed async job queue. Replaces
+  inline blocking Claude calls with durable, retryable jobs. Worker runs
+  in long-lived processes; Vercel uses `POST /api/jobs/sweep` via cron.
+- `src/lib/soc2-controls.ts` — SOC 2 CC6/CC7/CC8 evidence helpers:
+  RBAC role hierarchy, access review, change log, incident response helpers.
+- `Dockerfile` — multi-stage production image (node:22-alpine, non-root
+  user, healthcheck). Required for single-tenant / self-hosted deploys.
+- `docker-compose.yml` — single-tenant compose stack (app + Valkey Redis
+  for rate-limit counters).
 
 ## Stripe — billing source of truth
 

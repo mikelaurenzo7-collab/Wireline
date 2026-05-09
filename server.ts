@@ -39,6 +39,9 @@ import { computeDashboardBenchmarks } from "./src/lib/dashboard-benchmarks";
 import { buildContactProfile, normalizePhoneTail } from "./src/lib/contact-profile";
 import { computeOutcomeBreakdown, computeCallStats, callIdsFromLeads } from "./src/lib/campaign-analytics";
 import { isPrivateIp, isPrivateIpv6, isSsrfUrl, validateWebhookUrl } from "./src/lib/webhook-validators";
+import { evaluateOutboundConsent, getConsentRuleForPhone, buildConsentLedgerRow, detectOptOut, CONSENT_RULE_VERSION } from "./src/lib/tcpa-consent";
+import { QuotaTracker, quotaRejectionHeaders, validateOverride, PLAN_DEFAULTS, type PlanTier } from "./src/lib/tenant-quotas";
+import { enqueue, startWorker, getQueueStats, type JobRow } from "./src/lib/job-queue";
 
 // On Vercel, VERCEL_URL is automatically set to the deployment hostname
 // (e.g. "myapp-abc123.vercel.app") with no protocol or trailing slash.
@@ -792,6 +795,86 @@ function getGoogleOAuthClient(req: express.Request) {
 const supabaseUrl = process.env.VITE_SUPABASE_URL || "https://placeholder-url.supabase.co";
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || "placeholder-key";
 const db = createClient(supabaseUrl, supabaseKey);
+
+// ────────────────────────────────────────────────────────────────────
+//  Per-tenant quota tracker — checks daily Claude-token + voice-minute
+//  caps before dispatching expensive operations. Plan defaults live in
+//  src/lib/tenant-quotas.ts; per-tenant overrides in wireline_quota_limits.
+// ────────────────────────────────────────────────────────────────────
+const quotaTracker = new QuotaTracker({
+  db,
+  getPlanForUser: async (userId: string): Promise<PlanTier> => {
+    try {
+      const { data } = await db
+        .from('wireline_settings')
+        .select('subscription_status')
+        .eq('user_id', userId)
+        .maybeSingle();
+      const status = (data as { subscription_status?: string } | null)?.subscription_status ?? 'free';
+      // Map Stripe plan names / subscription_status values → quota tier.
+      if (status === 'enterprise') return 'enterprise';
+      if (status === 'pro')        return 'pro';
+      if (status === 'starter' || status === 'active') return 'starter';
+      return 'free';
+    } catch {
+      return 'starter'; // Fail-open on DB errors.
+    }
+  },
+});
+
+// ────────────────────────────────────────────────────────────────────
+//  Job queue worker — drains wireline_jobs in the background.
+//  Post-call enrichment is enqueued from the Vapi webhook handler and
+//  processed here asynchronously so the webhook HTTP response is never
+//  blocked by a multi-second Claude call.
+// ────────────────────────────────────────────────────────────────────
+let stopWorker: (() => void) | null = null;
+
+async function handleJob(job: JobRow): Promise<void> {
+  if (job.type === 'post_call_enrichment') {
+    const p = job.payload as {
+      agentId: string; userId: string; callId: string;
+      agentName?: string; archetype?: string; role?: string;
+      customerNumber?: string; durationSeconds?: number;
+      summary?: string; transcript?: string;
+    };
+    if (!claudeBrain.isClaudeAvailable() || !p.transcript) return;
+    const result = await claudeBrain.postCallAnalysis({
+      agentName:       p.agentName || 'Wireline Agent',
+      archetype:       p.archetype || 'Receptionist',
+      role:            p.role,
+      customerNumber:  p.customerNumber,
+      durationSeconds: p.durationSeconds ?? 0,
+      summary:         p.summary || '',
+      transcript:      p.transcript,
+    });
+    await db.from('wireline_call_logs').update({
+      lead_score:    result.lead_score,
+      intent_label:  result.intent_label,
+      sentiment:     result.sentiment,
+      coaching_note: result.coaching_note,
+    }).eq('vapi_call_id', p.callId);
+    if (result.lesson?.trim()) {
+      await db.from('wireline_agent_lessons').upsert(
+        { agent_id: p.agentId, user_id: p.userId, lesson: result.lesson.trim() },
+        { onConflict: 'agent_id,lesson', ignoreDuplicates: true },
+      );
+    }
+    // Record token spend for quota accounting.
+    const tokenEstimate = Math.ceil(((p.transcript?.length ?? 0) + (p.summary?.length ?? 0)) / 4);
+    await quotaTracker.checkAndIncrement(p.userId, 'claude_tokens_daily', tokenEstimate).catch(() => {});
+  }
+  // Other job types (webhook_delivery, campaign_dial, etc.) extend here.
+}
+
+if (process.env.VERCEL !== '1') {
+  // Only run the background worker in long-lived server processes.
+  // On Vercel, POST /api/jobs/sweep triggers a single drain cycle per invocation.
+  stopWorker = startWorker(db, handleJob, {
+    pollIntervalMs: 10_000,
+    onError: (err) => log.error('job worker error', { error: err.message }),
+  });
+}
 
 // Initialize audit logger for server-side activity tracking.
 const auditLogger = new AuditLogger(db);
@@ -2900,6 +2983,44 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
              .not('status', 'in', PRESERVED_LEAD_STATUSES);
         }
 
+        // ── TCPA consent ledger ──────────────────────────────────────
+        // Detect explicit opt-out in the transcript and write an
+        // append-only consent ledger row.  Fire-and-forget so consent
+        // logging never blocks or delays the webhook response.
+        (async () => {
+          try {
+            const transcript = message.transcript || '';
+            const optOut = detectOptOut(transcript);
+            const consentInfo = getConsentRuleForPhone(call?.customer?.number);
+            const consentState: string | null = consentInfo.state;
+            const event: import('./src/lib/tcpa-consent').ConsentLedgerEvent =
+              optOut.found ? 'opt_out_requested' : 'recording_stopped';
+            const ledgerRow = buildConsentLedgerRow({
+              user_id:          agent?.user_id ?? 'unknown',
+              call_id:          call?.id        ?? 'unknown',
+              customer_number:  call?.customer?.number ?? '',
+              event,
+              rule_version:     CONSENT_RULE_VERSION,
+              rule:             consentInfo.rule,
+              state:            consentState,
+              metadata:         optOut.found ? { matched_pattern: optOut.matched_pattern } : {},
+            });
+            await db.from('wireline_consent_log').insert(ledgerRow);
+            if (optOut.found && agent?.user_id) {
+              // Also add to internal DNC so future campaigns respect the opt-out.
+              const sanitized = sanitizePhone(call?.customer?.number ?? '');
+              if (sanitized) {
+                await db.from('wireline_dnc').upsert(
+                  { user_id: agent.user_id, phone_number: sanitized, reason: 'opt_out_transcript' },
+                  { onConflict: 'user_id,phone_number', ignoreDuplicates: true },
+                );
+              }
+            }
+          } catch {
+            // Consent logging is non-blocking; swallow errors.
+          }
+        })();
+
         return res.json({ success: true });
     } catch(e: any) {
       log.error("Failed to save call log", { agentId: webhookAgentId, error: e?.message || String(e) });
@@ -4018,6 +4139,7 @@ app.post("/api/agents", authenticateUser, async (req: any, res: any) => {
     }
 
     const { id, voice_id, channel } = req.body;
+    if (!validation.data) throw new Error('Validation data missing after success check');
     const { name, role, personality } = validation.data;
     const agentRole = role || DEFAULT_AGENT_ROLE;
     const agentId = id || `agent-${Date.now()}`;
@@ -5785,6 +5907,25 @@ app.post("/api/outbound/dial", authenticateUser, dialRateLimiter, async (req: an
       return res.status(403).json({ error: "This number is on the Do Not Call list and cannot be dialed.", dncBlocked: true });
     }
 
+    // TCPA pre-call consent gate.
+    const tcpaDecision = evaluateOutboundConsent({
+      phone: customerNumber,
+      is_internal_dnc: false, // already checked above
+      is_marketing_call: true,
+      has_express_written_consent: false,
+    });
+    if (!tcpaDecision.allowed) {
+      log.warn("Outbound dial blocked by TCPA consent gate", { customerNumber, abort_reason: tcpaDecision.abort_reason });
+      return res.status(403).json({ error: tcpaDecision.disclosure_script || "Call blocked by TCPA consent rules.", tcpaBlocked: true, tcpa: tcpaDecision });
+    }
+
+    // Per-tenant voice-minute quota check.
+    const quotaDecision = await quotaTracker.checkAndIncrement(req.user.id, 'voice_minutes_daily', 0);
+    if (!quotaDecision.allowed) {
+      Object.entries(quotaRejectionHeaders(quotaDecision)).forEach(([k, v]) => res.setHeader(k, v));
+      return res.status(429).json({ error: "Daily voice-minute quota exceeded.", code: "QUOTA_VOICE", quota: quotaDecision });
+    }
+
     const result = await placeOutboundCall({
       userId: req.user.id,
       agentId,
@@ -7081,6 +7222,7 @@ app.post("/api/emails/draft", authenticateUser, emailRateLimiter, async (req: an
      if (!validation.success) {
        return res.status(400).json({ error: "Validation failed", errors: validation.errors });
      }
+     if (!validation.data) throw new Error('Validation data missing');
      const { subject, messages, context } = validation.data;
      const prompt = `You are a professional AI assistant drafting an email reply.
 Subject: ${subject}
@@ -10608,6 +10750,8 @@ async function startServer() {
   };
   process.on("SIGTERM", () => shutdown("SIGTERM"));
   process.on("SIGINT", () => shutdown("SIGINT"));
+  // Stop the job worker before closing.
+  if (stopWorker) stopWorker();
 }
 
 // ────────────────────────────────────────────────────────────────────
@@ -10640,9 +10784,138 @@ process.on("uncaughtException", (err: Error) => {
   }
 });
 
+// ──────────────────────────────────────────────────────────────────────────────
+// PER-TENANT QUOTA MANAGEMENT ENDPOINTS
+// ──────────────────────────────────────────────────────────────────────────────
+
+/** GET /api/quotas — current plan profile + live usage for the calling user. */
+app.get("/api/quotas", authenticateUser, async (req: any, res: any) => {
+  try {
+    const userId = req.user.id as string;
+    const { plan, profile } = await quotaTracker.getProfile(userId);
+    const dimensions = ["claude_tokens_daily", "voice_minutes_daily", "concurrent_dials", "knowledge_rows", "intake_rpm"] as const;
+    const usageArr = await Promise.all(dimensions.map(d => quotaTracker.getUsage(userId, d)));
+    const usage: Record<string, number> = {};
+    dimensions.forEach((d, i) => { usage[d] = usageArr[i]; });
+    res.json({ plan, limits: profile, usage });
+  } catch (err) {
+    log.error("GET /api/quotas failed", { error: getErrorMessage(err) });
+    res.status(500).json({ error: "Failed to fetch quota info" });
+  }
+});
+
+/** GET /api/quotas/plans — public plan comparison table. */
+app.get("/api/quotas/plans", (_req, res) => {
+  res.json({ plans: PLAN_DEFAULTS });
+});
+
+/** PUT /api/quotas/override — set a per-tenant override (admin/owner only). */
+app.put("/api/quotas/override", authenticateUser, async (req: any, res: any) => {
+  try {
+    const validation = validateOverride(req.body);
+    if (!validation.ok) {
+      return res.status(400).json({ error: (validation as { ok: false; error: string }).error });
+    }
+    const { dimension, value, enabled } = validation.value;
+    const { error } = await db.from("wireline_quota_limits").upsert(
+      { user_id: req.user.id, dimension, value, enabled, updated_at: new Date().toISOString() },
+      { onConflict: "user_id,dimension" },
+    );
+    if (error) throw error;
+    quotaTracker.invalidate(req.user.id);
+    res.json({ success: true, dimension, value, enabled });
+  } catch (err) {
+    log.error("PUT /api/quotas/override failed", { error: getErrorMessage(err) });
+    res.status(500).json({ error: "Failed to update quota override" });
+  }
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// JOB QUEUE ENDPOINTS
+// ──────────────────────────────────────────────────────────────────────────────
+
+/** GET /api/jobs/stats — queue depths by status. */
+app.get("/api/jobs/stats", authenticateUser, async (_req, res) => {
+  try {
+    const stats = await getQueueStats(db);
+    res.json(stats);
+  } catch (err) {
+    log.error("GET /api/jobs/stats failed", { error: getErrorMessage(err) });
+    res.status(500).json({ error: "Failed to fetch job stats" });
+  }
+});
+
+/**
+ * POST /api/jobs/sweep — triggers one poll cycle in serverless environments
+ * (Vercel) where the background worker timer doesn't persist across
+ * invocations. Call this from a Vercel Cron job every minute.
+ */
+app.post("/api/jobs/sweep", authenticateUser, async (_req, res) => {
+  try {
+    const { claimJob: claim, completeJob: complete, failJob: fail } = await import("./src/lib/job-queue");
+    let processed = 0;
+    for (let i = 0; i < 10; i++) {
+      const job = await claim(db);
+      if (!job) break;
+      try {
+        await handleJob(job);
+        await complete(db, job.id);
+        processed++;
+      } catch (sweepErr: unknown) {
+        await fail(db, job, getErrorMessage(sweepErr));
+      }
+    }
+    res.json({ processed });
+  } catch (err) {
+    log.error("POST /api/jobs/sweep failed", { error: getErrorMessage(err) });
+    res.status(500).json({ error: "Sweep failed" });
+  }
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// TCPA CONSENT CHECK ENDPOINT
+// ──────────────────────────────────────────────────────────────────────────────
+
+/**
+ * GET /api/tcpa/consent-check?phone=+14155551234&is_marketing=true
+ * Returns the TCPA consent gate decision before an outbound call is placed.
+ * Internally checks wireline_dnc for the calling user's DNC list.
+ */
+app.get("/api/tcpa/consent-check", authenticateUser, async (req: any, res: any) => {
+  try {
+    const phone = String(req.query.phone || "").trim();
+    if (!phone) return res.status(400).json({ error: "phone query param required" });
+
+    const isMarketing = req.query.is_marketing !== "false";
+
+    const [dncRow, settingsRow] = await Promise.all([
+      db.from("wireline_dnc").select("id").eq("user_id", req.user.id).eq("phone_number", phone).maybeSingle(),
+      db.from("wireline_settings").select("business_name").eq("user_id", req.user.id).maybeSingle(),
+    ]);
+
+    const { rule, state } = getConsentRuleForPhone(phone);
+    const decision = evaluateOutboundConsent({
+      phone,
+      is_internal_dnc: !!dncRow.data,
+      is_marketing_call: isMarketing,
+      has_express_written_consent: !isMarketing,
+      business_name: (settingsRow.data as { business_name?: string } | null)?.business_name ?? undefined,
+    });
+
+    res.json({
+      ...decision,
+      inferred_state: state,
+      rule,
+      consent_rule_version: CONSENT_RULE_VERSION,
+    });
+  } catch (err) {
+    log.error("GET /api/tcpa/consent-check failed", { error: getErrorMessage(err) });
+    res.status(500).json({ error: "Consent check failed" });
+  }
+});
+
 export { app };
 
-// Only start the HTTP server when running standalone (not on Vercel).
 // Vercel sets VERCEL=1 automatically in all serverless function environments.
 if (process.env.VERCEL !== '1') {
   startServer();
