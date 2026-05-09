@@ -11,9 +11,14 @@ import CsvExportButton from "./CsvExportButton";
 import PageShell, { Panel } from "./PageShell";
 import HubTabs, { CHANNELS_HUB } from "./HubTabs";
 import { useToast } from "../contexts/ToastContext";
+import ConfirmModal from "./ConfirmModal";
+
+type ConfirmState = { open: boolean; title: string; message: string; onConfirm: () => void; danger?: boolean };
+const CLOSED_CONFIRM: ConfirmState = { open: false, title: "", message: "", onConfirm: () => {} };
 
 export default function OutboundDialer() {
   const { success: toastSuccess, error: toastError, info: toastInfo } = useToast();
+  const [confirmState, setConfirmState] = useState<ConfirmState>(CLOSED_CONFIRM);
   const [isLoading, setIsLoading] = useState(true);
   const [agents, setAgents] = useState<any[]>([]);
   const [leads, setLeads] = useState<any[]>([]);
@@ -110,19 +115,25 @@ export default function OutboundDialer() {
     setIsLoadingMore(false);
   };
 
-  const deleteLead = async (id: number | string) => {
-    if (!confirm("Remove this lead from the queue?")) return;
-    setIsDeletingLead(id);
-    try {
-      const resp = await authFetch(`/api/outbound/${id}`, { method: "DELETE" });
-      if (resp.ok) {
-        setLeads(prev => prev.filter(l => l.id !== id));
-      }
-    } catch (e) {
-      console.error("Failed to delete lead:", e);
-      toastError("Delete failed", "Could not remove this lead. Please try again.");
-    }
-    setIsDeletingLead(null);
+  const deleteLead = (id: number | string) => {
+    setConfirmState({
+      open: true,
+      title: "Remove lead",
+      message: "Remove this lead from the queue? This cannot be undone.",
+      danger: true,
+      onConfirm: async () => {
+        setConfirmState(CLOSED_CONFIRM);
+        setIsDeletingLead(id);
+        try {
+          const resp = await authFetch(`/api/outbound/${id}`, { method: "DELETE" });
+          if (resp.ok) setLeads(prev => prev.filter(l => l.id !== id));
+        } catch (e) {
+          console.error("Failed to delete lead:", e);
+          toastError("Delete failed", "Could not remove this lead. Please try again.");
+        }
+        setIsDeletingLead(null);
+      },
+    });
   };
 
   const dispatchCall = async () => {
@@ -251,11 +262,19 @@ export default function OutboundDialer() {
     });
   };
 
-  const launchQueue = async () => {
+  const launchQueue = () => {
     const queued = leads.filter(l => l.status === "Queued");
     if (queued.length === 0) return;
-    if (!window.confirm(`Dispatch ${queued.length} queued call${queued.length === 1 ? '' : 's'} sequentially?`)) return;
+    setConfirmState({
+      open: true,
+      title: "Launch queue",
+      message: `Dispatch ${queued.length} queued call${queued.length === 1 ? '' : 's'} sequentially? This will place real outbound calls.`,
+      confirmLabel: "Launch",
+      onConfirm: () => { setConfirmState(CLOSED_CONFIRM); void runQueue(queued); },
+    } as any);
+  };
 
+  const runQueue = async (queued: any[]) => {
     setIsDialing(true);
     setUploadStats(`Dispatching ${queued.length} call${queued.length === 1 ? '' : 's'}…`);
     toastInfo("Queue launched", `Dispatching ${queued.length} calls sequentially…`);
@@ -334,13 +353,21 @@ export default function OutboundDialer() {
     } catch (e) { console.error("Failed to set campaign status:", e); toastError("Status update failed", "Could not change campaign status. Please try again."); }
   };
 
-  const deleteCampaign = async (id: string) => {
-    if (!confirm("Delete this campaign? Leads will be unlinked but not removed.")) return;
-    try {
-      await authFetch(`/api/campaigns/${id}`, { method: "DELETE" });
-      setCampaigns(prev => prev.filter(c => c.id !== id));
-      if (selectedCampaign?.id === id) setSelectedCampaign(null);
-    } catch (e) { console.error("Failed to delete campaign:", e); toastError("Delete failed", "Could not delete this campaign. Please try again."); }
+  const deleteCampaign = (id: string) => {
+    setConfirmState({
+      open: true,
+      title: "Delete campaign",
+      message: "Delete this campaign? Leads will be unlinked but not removed. This cannot be undone.",
+      danger: true,
+      onConfirm: async () => {
+        setConfirmState(CLOSED_CONFIRM);
+        try {
+          await authFetch(`/api/campaigns/${id}`, { method: "DELETE" });
+          setCampaigns(prev => prev.filter(c => c.id !== id));
+          if (selectedCampaign?.id === id) setSelectedCampaign(null);
+        } catch (e) { console.error("Failed to delete campaign:", e); toastError("Delete failed", "Could not delete this campaign. Please try again."); }
+      },
+    });
   };
 
   const handleSelectCampaign = (c: any) => {
@@ -665,6 +692,7 @@ export default function OutboundDialer() {
                           <button
                             onClick={() => deleteLead(lead.id)}
                             disabled={isDeletingLead === lead.id}
+                            aria-label="Remove lead"
                             title="Remove lead"
                             className="w-7 h-7 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30 disabled:opacity-40 transition-all"
                           >
@@ -864,6 +892,8 @@ export default function OutboundDialer() {
                   </button>
                 )}
                 <button onClick={() => deleteCampaign(selectedCampaign.id)}
+                  aria-label="Delete campaign"
+                  title="Delete campaign"
                   className="w-8 h-8 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30 transition-all">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -1099,6 +1129,15 @@ export default function OutboundDialer() {
           />
         )}
       </AnimatePresence>
+      <ConfirmModal
+        open={confirmState.open}
+        title={confirmState.title}
+        message={confirmState.message}
+        danger={(confirmState as any).danger}
+        confirmLabel={(confirmState as any).confirmLabel}
+        onConfirm={confirmState.onConfirm}
+        onCancel={() => setConfirmState(CLOSED_CONFIRM)}
+      />
     </>
   );
 }

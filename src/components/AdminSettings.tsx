@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ServerCog, KeyRound, Loader2, Phone, Plus, Link as LinkIcon, Save, ChevronRight, RotateCw, CheckCircle2, Trash2, AlertTriangle, Cpu, CreditCard, Activity, ShieldCheck, Zap, Bot, Wifi, History, TrendingUp, DollarSign, BarChart3, Clock } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import ConfirmModal from "./ConfirmModal";
 import { motion, AnimatePresence } from "motion/react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { cn } from "../lib/utils";
@@ -14,9 +15,13 @@ import PageShell, { Panel } from "./PageShell";
 import HubTabs, { SYSTEM_HUB } from "./HubTabs";
 import { useToast } from "../contexts/ToastContext";
 
+type ConfirmState = { open: boolean; title: string; message: string; onConfirm: () => void };
+const CLOSED_CONFIRM: ConfirmState = { open: false, title: "", message: "", onConfirm: () => {} };
+
 export default function AdminSettings() {
   const { success: toastSuccess, error: toastError } = useToast();
   const { signOut } = useAuth();
+  const [confirmState, setConfirmState] = useState<ConfirmState>(CLOSED_CONFIRM);
   const [settings, setSettings] = useState({
     vapi_phone_number_id: "",
     subscription_status: "active",
@@ -144,9 +149,14 @@ export default function AdminSettings() {
     }
   };
 
-  const deletePhoneNumber = async (id: number | string) => {
-    if (!confirm("Remove this carrier number?")) return;
-    setIsDeletingNumber(id);
+  const deletePhoneNumber = (id: number | string) => {
+    setConfirmState({
+      open: true,
+      title: "Remove number",
+      message: "Remove this carrier number from your fleet? The number will remain in Vapi but won't route calls to agents.",
+      onConfirm: async () => {
+        setConfirmState(CLOSED_CONFIRM);
+        setIsDeletingNumber(id);
     try {
       const resp = await authFetch(`/api/phone-numbers/${id}`, { method: "DELETE" });
       if (resp.ok) {
@@ -157,6 +167,8 @@ export default function AdminSettings() {
       toastError("Delete failed", "Could not remove this carrier number. Please try again.");
     }
     setIsDeletingNumber(null);
+      },
+    });
   };
 
   const deleteAccount = async () => {
@@ -761,6 +773,14 @@ export default function AdminSettings() {
       )}
     </PageShell>
     </div>
+    <ConfirmModal
+      open={confirmState.open}
+      title={confirmState.title}
+      message={confirmState.message}
+      danger
+      onConfirm={confirmState.onConfirm}
+      onCancel={() => setConfirmState(CLOSED_CONFIRM)}
+    />
     </div>
   );
 }
