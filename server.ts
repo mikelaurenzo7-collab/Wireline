@@ -1012,6 +1012,9 @@ async function attemptWebhookDelivery(deliveryId: number) {
     errMsg = err?.name === "AbortError" ? `Timed out after ${WEBHOOK_TIMEOUT_MS}ms` : (getErrorMessage(err));
   } finally {
     clearTimeout(timer);
+    // Close the per-delivery agent so its connection pool and timers don't
+    // accumulate across deliveries (each call creates a fresh agent).
+    dispatcher.close().catch(() => {});
   }
 
   const newAttempts = (row.attempts || 0) + 1;
