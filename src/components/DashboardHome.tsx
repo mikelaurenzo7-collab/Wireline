@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   Activity, PhoneCall, Mic, Square, Loader2, TrendingUp, DollarSign,
-  ArrowUpRight, BarChart3, Mail, ChevronRight, Bot, Signal, Target,
+  ArrowUpRight, BarChart3, Mail, ChevronRight, Signal, Target,
   Radio, Sparkles, Inbox, History as HistoryIcon, ShieldCheck, Zap, Users,
 } from "lucide-react";
 import { motion } from "motion/react";
@@ -17,6 +17,9 @@ import WidgetBoundary from "./WidgetBoundary";
 import { authFetch } from "../lib/api";
 import { formatDate } from "../lib/safe-date";
 import { useToast } from "../contexts/ToastContext";
+import type {
+  DashboardStats, SignalPresence, FleetTask, ActivityItem,
+} from "../types/api";
 
 // @vapi-ai/web is ~300KB minified and only matters when the operator
 // clicks "Start call". Loaded lazily on first call attempt so the
@@ -37,10 +40,10 @@ export default function DashboardHome() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [selectedDialAgentId, setSelectedDialAgentId] = useState<string>("");
-  const [stats, setStats] = useState<any>(null);
-  const [activeSignals, setActiveSignals] = useState<any[]>([]);
-  const [highPriorityTasks, setHighPriorityTasks] = useState<any[]>([]);
-  const [systemActivity, setSystemActivity] = useState<any[]>([]);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [activeSignals, setActiveSignals] = useState<SignalPresence[]>([]);
+  const [highPriorityTasks, setHighPriorityTasks] = useState<FleetTask[]>([]);
+  const [systemActivity, setSystemActivity] = useState<ActivityItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   // Lazily-instantiated Vapi instance. Stays null until the first
   // toggleCall click. Listeners attach inside ensureVapi the first
@@ -116,7 +119,7 @@ export default function DashboardHome() {
   const fetchActiveSignals = async () => {
     try {
       const res = await authFetch("/api/fleet/presence");
-      const data = await res.json();
+      const data: { signals: SignalPresence[] } = await res.json();
       setActiveSignals(data.signals || []);
     } catch (e) { console.error("Signal presence sync failed:", e); }
   };
@@ -124,7 +127,7 @@ export default function DashboardHome() {
   const fetchHighPriorityTasks = async () => {
     try {
       const res = await authFetch("/api/fleet/tasks?status=pending&priority=high");
-      const data = await res.json();
+      const data: { tasks: FleetTask[] } = await res.json();
       setHighPriorityTasks(data.tasks || []);
     } catch (e) { console.error("Failed to fetch high priority tasks:", e); }
   };
@@ -132,7 +135,7 @@ export default function DashboardHome() {
   const fetchSystemActivity = async () => {
     try {
       const res = await authFetch("/api/fleet/activity");
-      const data = await res.json();
+      const data: { activity: ActivityItem[] } = await res.json();
       setSystemActivity(data.activity || []);
     } catch (e) { console.error("Failed to fetch system activity:", e); }
   };
@@ -140,7 +143,7 @@ export default function DashboardHome() {
   const fetchStats = async () => {
     try {
       const res = await authFetch("/api/dashboard/stats");
-      const data = await res.json();
+      const data: DashboardStats = await res.json();
       setStats(data);
     } catch (e) {
       console.error(e);
@@ -165,7 +168,7 @@ export default function DashboardHome() {
       if (selectedDialAgentId) {
         targetAgentId = selectedDialAgentId;
       } else if (stats?.agents?.length > 0) {
-        const voiceAgent = stats.agents.find((a: any) => a.channel === 'voice' || a.channel === 'omnichannel' || !a.channel);
+        const voiceAgent = stats.agents.find(a => a.channel === "voice" || a.channel === "omnichannel" || !a.channel);
         if (voiceAgent) targetAgentId = voiceAgent.id;
       }
       const res = await authFetch(`/api/vapi-webhook?agentId=${targetAgentId}`, {
@@ -213,9 +216,9 @@ export default function DashboardHome() {
     { name: "SUN", signals: 8,  leads: 2 },
   ];
 
-  const recentLogs: any[] = stats?.recentLogs || [];
-  const hotLeads: any[]   = stats?.hotLeads || [];
-  const voiceAgents: any[] = (stats?.agents || []).filter((a: any) => a.channel === 'voice' || a.channel === 'omnichannel' || !a.channel);
+  const recentLogs = stats?.recentLogs || [];
+  const hotLeads   = stats?.hotLeads || [];
+  const voiceAgents = (stats?.agents || []).filter(a => a.channel === "voice" || a.channel === "omnichannel" || !a.channel);
 
   useEffect(() => {
     if (!selectedDialAgentId && voiceAgents.length > 0) {
@@ -307,7 +310,7 @@ export default function DashboardHome() {
               </div>
             ) : (
               <div className="divide-y divide-white/5">
-                {recentLogs.slice(0, 6).map((call: any, idx: number) => (
+                {recentLogs.slice(0, 6).map((call, idx) => (
                   <Link key={call.id || idx} to="/logs"
                     className="group flex items-center gap-3 py-3 px-1 -mx-1 hover:bg-white/3 rounded-lg transition-all"
                   >
@@ -402,8 +405,8 @@ export default function DashboardHome() {
               {(stats?.agents || []).length > 0 && (
                 <div className="space-y-1.5">
                   <p className="text-[8px] uppercase tracking-[0.4em] text-muted/60 px-0.5">Roster</p>
-                  {(stats?.agents || []).slice(0, 4).map((a: any, i: number) => {
-                    const busy = activeSignals.some((s: any) => s.agent_id === a.id);
+                  {(stats?.agents || []).slice(0, 4).map((a, i) => {
+                    const busy = activeSignals.some(s => s.agent_id === a.id);
                     return (
                       <div key={i} className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/3 border border-white/6">
                         <span className={cn(
@@ -471,7 +474,7 @@ export default function DashboardHome() {
                     {/* Styled agent selector — pill buttons instead of a native <select> */}
                     {voiceAgents.length <= 4 ? (
                       <div className="flex flex-wrap gap-1.5">
-                        {voiceAgents.map((a: any) => (
+                        {voiceAgents.map((a) => (
                           <button
                             key={a.id}
                             onClick={() => setSelectedDialAgentId(a.id)}
@@ -498,7 +501,7 @@ export default function DashboardHome() {
                         onChange={e => setSelectedDialAgentId(e.target.value)}
                         className="w-full h-8 px-2.5 rounded-lg glass border border-black/10 text-[11px] text-ink outline-none focus:border-brand/60"
                       >
-                        {voiceAgents.map((a: any) => (
+                        {voiceAgents.map((a) => (
                           <option key={a.id} value={a.id}>{a.name}</option>
                         ))}
                       </select>
@@ -650,7 +653,7 @@ export default function DashboardHome() {
         >
           {hotLeads.length > 0 ? (
             <ul className="divide-y divide-white/5">
-              {hotLeads.map((lead: any) => {
+              {hotLeads.map((lead) => {
                 const score = lead.score ?? 0;
                 const isHot = score >= HOT_LEAD_THRESHOLD;
                 const scoreColor = score >= HOT_LEAD_THRESHOLD ? "#10B981" : score >= WARM_LEAD_THRESHOLD ? "#0AC8D4" : "#9B59F5";
@@ -719,7 +722,7 @@ export default function DashboardHome() {
         <Panel title="Active Calls" hint="WebSocket" icon={Signal} scroll flush>
           {activeSignals.length > 0 ? (
             <ul className="divide-y divide-white/5">
-              {activeSignals.map((sig: any, idx: number) => (
+              {activeSignals.map((sig, idx) => (
                 <li key={idx} className="px-4 py-2.5 flex items-center justify-between">
                   <div className="min-w-0">
                     <div className="font-display italic text-sm text-ink truncate">{sig.customer_number}</div>
@@ -771,7 +774,7 @@ export default function DashboardHome() {
             </div>
           ) : (
             <ul className="divide-y divide-white/5">
-              {recentLogs.map((call: any, idx: number) => (
+              {recentLogs.map((call, idx) => (
                 <li key={call.id || idx}>
                   <Link to="/logs" className="group flex items-center justify-between gap-3 px-4 py-3 hover:bg-white/2 transition-all">
                     <div className="flex items-center gap-3 min-w-0">

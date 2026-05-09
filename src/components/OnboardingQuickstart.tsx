@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   Sparkles, Hammer, Globe, Phone, Mic, Check, ArrowRight,
-  Waves, Loader2, PlayCircle, PhoneCall, ExternalLink
+  Waves, PlayCircle, PhoneCall, BarChart3, Users, Zap,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
@@ -86,9 +86,12 @@ export default function OnboardingQuickstart() {
     call:      progress.calls > 0,
   };
   const completedCount = Object.values(completion).filter(Boolean).length;
-  // Fully onboarded — don't render.
-  if (completedCount === STEPS.length) return null;
   const completionPct = Math.round((completedCount / STEPS.length) * 100);
+
+  // When all 4 steps are complete, show a compact "you're all set" card.
+  if (completedCount === STEPS.length) {
+    return <AllSetCard />;
+  }
 
   // Find the first incomplete step so we can spotlight it.
   const activeStepId = STEPS.find(s => !completion[s.id as keyof typeof completion])?.id ?? null;
@@ -233,6 +236,73 @@ function CTAButton({ to, label, icon }: { to: string; label: string; icon?: Reac
       {label}
       <ArrowRight className="w-3.5 h-3.5" />
     </Link>
+  );
+}
+
+/* ──────────────  Completion card (shown when all 4 steps are done)  ──── */
+
+const POWER_LINKS = [
+  { to: "/triage",   icon: Zap,      label: "Triage Inbox",    hint: "Review hot leads" },
+  { to: "/insights", icon: BarChart3, label: "Insights",         hint: "Funnel + analytics" },
+  { to: "/agents",   icon: Users,    label: "Manage Agents",    hint: "Edit & train" },
+] as const;
+
+function AllSetCard() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.97 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      className="relative h-full flex flex-col"
+    >
+      {/* Aurora glow */}
+      <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full opacity-20 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }} />
+      <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full opacity-15 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #10B981, transparent)" }} />
+
+      {/* Hero row */}
+      <div className="relative z-10 flex flex-col items-center text-center gap-4 pt-6 pb-5">
+        {/* Animated checkmark ring */}
+        <div className="relative w-16 h-16">
+          <motion.div
+            className="absolute inset-0 rounded-full"
+            style={{ background: "conic-gradient(from 0deg, #0AC8D4, #9B59F5, #10B981, #0AC8D4)" }}
+            animate={{ rotate: 360 }}
+            transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
+          />
+          <div className="absolute inset-[2px] rounded-full glass flex items-center justify-center">
+            <Check className="w-7 h-7 text-emerald-400" strokeWidth={2.5} />
+          </div>
+        </div>
+
+        <div>
+          <p className="text-[9px] uppercase tracking-[0.45em] text-emerald-400 mb-1.5">Setup complete</p>
+          <h3 className="font-display italic text-3xl text-ink leading-tight">You're live on Wireline</h3>
+          <p className="text-[12px] text-ink/55 mt-1.5 leading-relaxed max-w-[220px] mx-auto">
+            Your agents are running. Here's what to do next.
+          </p>
+        </div>
+      </div>
+
+      {/* Quick links */}
+      <div className="relative z-10 flex flex-col gap-2 px-1 pb-4">
+        {POWER_LINKS.map(({ to, icon: Icon, label, hint }) => (
+          <Link
+            key={to}
+            to={to}
+            className="group flex items-center gap-3 h-11 rounded-xl glass border border-white/8 px-3.5 hover:border-white/20 hover:bg-white/4 transition-all"
+          >
+            <div className="w-7 h-7 rounded-lg bg-brand/12 border border-brand/20 flex items-center justify-center shrink-0 text-brand">
+              <Icon className="w-3.5 h-3.5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[11px] text-ink group-hover:text-brand transition-colors">{label}</div>
+              <div className="text-[8px] uppercase tracking-[0.24em] text-muted">{hint}</div>
+            </div>
+            <ArrowRight className="w-3.5 h-3.5 text-muted/40 group-hover:text-brand transition-colors shrink-0" />
+          </Link>
+        ))}
+      </div>
+    </motion.div>
   );
 }
 

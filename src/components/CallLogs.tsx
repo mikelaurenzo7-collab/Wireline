@@ -17,16 +17,17 @@ import HubTabs, { CHANNELS_HUB } from "./HubTabs";
 import { PanelSkeleton } from "./Skeleton";
 import EmptyState from "./EmptyState";
 import { useToast } from "../contexts/ToastContext";
+import type { CallLog } from "../types/api";
 
 export default function CallLogs() {
   const { error: toastError } = useToast();
-  const [calls, setCalls] = useState<any[]>([]);
+  const [calls, setCalls] = useState<CallLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [offset, setOffset] = useState(0);
   const LIMIT = 50;
-  const [selectedCall, setSelectedCall] = useState<any | null>(null);
+  const [selectedCall, setSelectedCall] = useState<CallLog | null>(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "inbound" | "outbound">("all");
 
@@ -34,7 +35,7 @@ export default function CallLogs() {
     if (!append) setLoading(true); else setLoadingMore(true);
     try {
       const res = await authFetch(`/api/calls?offset=${currentOffset}&limit=${LIMIT}`);
-      const data = await res.json();
+      const data: { calls: CallLog[]; hasMore: boolean; total?: number } = await res.json();
       if (append) setCalls(prev => [...prev, ...(data.calls || [])]);
       else setCalls(data.calls || []);
       setHasMore(data.hasMore);
