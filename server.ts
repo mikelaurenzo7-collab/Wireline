@@ -544,6 +544,48 @@ app.use(["/api/train/extract", "/api/agents/:id/optimize"], (req: any, res: any,
 const OAUTH_RATE_WINDOW_MS = 5 * 60_000;
 const OAUTH_RATE_MAX = 10;
 
+// ────────────────────────────────────────────────────────────────────
+//  OAuth CSRF state — stateless signed tokens (no session required).
+//  Format: `<nonce>.<ts_base36>.<hmac_base64url>`
+//  Expires after 15 minutes; verified in each callback handler.
+// ────────────────────────────────────────────────────────────────────
+const OAUTH_STATE_SECRET =
+  process.env.OAUTH_STATE_SECRET ||
+  process.env.STRIPE_WEBHOOK_SECRET ||
+  "wireline-dev-oauth-state-secret"; // overridden in production by env
+
+function generateOAuthState(): string {
+  const { createHmac } = require("node:crypto") as typeof import("node:crypto");
+  const nonce = randomUUID().replace(/-/g, "");
+  const ts = Date.now().toString(36);
+  const payload = `${nonce}.${ts}`;
+  const sig = createHmac("sha256", OAUTH_STATE_SECRET).update(payload).digest("base64url");
+  return `${payload}.${sig}`;
+}
+
+function verifyOAuthState(state: string | undefined): boolean {
+  if (!state) return false;
+  try {
+    const { createHmac } = require("node:crypto") as typeof import("node:crypto");
+    const lastDot = state.lastIndexOf(".");
+    if (lastDot <= 0) return false;
+    const payload = state.slice(0, lastDot);
+    const sig = state.slice(lastDot + 1);
+    const expected = createHmac("sha256", OAUTH_STATE_SECRET).update(payload).digest("base64url");
+    // Timing-safe comparison to prevent HMAC oracle attacks.
+    const sigBuf = Buffer.from(sig);
+    const expBuf = Buffer.from(expected);
+    if (sigBuf.length !== expBuf.length || !cryptoTimingSafeEqual(sigBuf, expBuf)) return false;
+    // Verify the timestamp portion (second segment) is within 15 minutes.
+    const tsPart = payload.split(".")[1];
+    if (!tsPart) return false;
+    const ageMs = Date.now() - parseInt(tsPart, 36);
+    return ageMs >= 0 && ageMs < 15 * 60_000;
+  } catch {
+    return false;
+  }
+}
+
 // Email operation rate limiting — prevents spam and API quota exhaustion
 const EMAIL_RATE_WINDOW_MS = 60_000; // 1 minute
 const EMAIL_RATE_MAX = 20; // 20 email operations per minute per user
@@ -5844,15 +5886,19 @@ app.get('/api/oauth/google/url', oauthRateLimiter, (req, res) => {
   const authUrl = oauth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: SCOPES,
-    prompt: 'consent' // Forces consent screen to always get a refresh token
+    prompt: 'consent', // Forces consent screen to always get a refresh token
+    state: generateOAuthState(),
   });
-  
+
   res.json({ url: authUrl });
 });
 
 app.get(['/api/oauth/google/callback', '/api/oauth/google/callback/'], oauthRateLimiter, async (req, res) => {
-  const { code } = req.query;
-  
+  const { code, state } = req.query;
+
+  if (!verifyOAuthState(state as string | undefined)) {
+    return res.status(400).send("Invalid or expired OAuth state. Please restart the sign-in flow.");
+  }
   if (!code || typeof code !== 'string') {
     return res.status(400).send("No code provided by Google.");
   }
@@ -6039,6 +6085,7 @@ app.get("/api/oauth/microsoft/url", oauthRateLimiter, (req: express.Request, res
       response_mode: "query",
       scope:         MS_SCOPES,
       prompt:        "consent",
+      state:         generateOAuthState(),
     });
     res.json({ url: `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${params}` });
   } catch (e: any) {
@@ -6051,10 +6098,13 @@ app.get(
   ["/api/oauth/microsoft/callback", "/api/oauth/microsoft/callback/"],
   oauthRateLimiter,
   async (req: express.Request, res: express.Response) => {
-    const { code, error: msError } = req.query as Record<string, string>;
+    const { code, state, error: msError } = req.query as Record<string, string>;
     if (msError) {
       log.warn("Microsoft OAuth error returned", { error: msError });
       return res.status(400).send("Microsoft sign-in was declined or failed. Please try again.");
+    }
+    if (!verifyOAuthState(state)) {
+      return res.status(400).send("Invalid or expired OAuth state. Please restart the sign-in flow.");
     }
     if (!code) return res.status(400).send("No authorization code provided.");
 
