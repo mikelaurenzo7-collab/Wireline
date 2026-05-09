@@ -565,6 +565,9 @@ const OAUTH_STATE_SECRET =
   process.env.OAUTH_STATE_SECRET ||
   process.env.STRIPE_WEBHOOK_SECRET ||
   "wireline-dev-oauth-state-secret"; // overridden in production by env
+if (IS_PROD && !process.env.OAUTH_STATE_SECRET) {
+  log.warn("OAUTH_STATE_SECRET not set — falling back to STRIPE_WEBHOOK_SECRET for OAuth CSRF tokens. Set OAUTH_STATE_SECRET to a dedicated random secret.");
+}
 
 function generateOAuthState(): string {
   const { createHmac } = require("node:crypto") as typeof import("node:crypto");
@@ -7230,7 +7233,8 @@ app.get("/api/agents/:id/lessons", authenticateUser, async (req: any, res: any) 
       const { data: lessons, error } = await db.from('wireline_agent_lessons').select('*')
          .eq('agent_id', req.params.id)
          .eq('user_id', req.user.id)
-         .order('created_at', { ascending: false });
+         .order('created_at', { ascending: false })
+         .limit(200);
       if (error) throw error;
       res.json({ lessons });
    } catch (e) {

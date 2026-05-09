@@ -147,6 +147,10 @@ export default function DashboardHome() {
 
   const toggleCall = async () => {
     if (isConnected) { vapiRef.current?.stop(); return; }
+    if (!import.meta.env.VITE_VAPI_PUBLIC_KEY) {
+      toastError("Voice not configured", "VITE_VAPI_PUBLIC_KEY is not set — add it in your Vercel environment variables and redeploy.");
+      return;
+    }
     setIsConnecting(true);
     try {
       // Load the SDK + instantiate listeners on first click. Subsequent

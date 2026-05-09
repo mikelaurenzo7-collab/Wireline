@@ -22,20 +22,22 @@ export default function Integrations() {
   const fetchAccounts = async () => {
     try {
       const res = await authFetch("/api/emails/accounts");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setAccounts(data.accounts || []);
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      toastError("Could not load connected accounts", e?.message || "Check your connection and refresh.");
     }
   };
 
   const fetchAgents = async () => {
     try {
       const res = await authFetch("/api/agents");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setAgents(data.agents || []);
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      toastError("Could not load agents", e?.message || "Check your connection and refresh.");
     }
   };
 

@@ -315,12 +315,17 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
   useEffect(() => { refresh(); }, []);
 
   const save = async () => {
+    const trimmed = recipient.trim();
+    if (trimmed && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      setFeedback({ kind: "err", text: "Enter a valid email address." });
+      return;
+    }
     setSaving(true); setFeedback(null);
     try {
       const r = await authFetch("/api/daily-brief/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enabled, send_at: sendAt, recipient: recipient || null }),
+        body: JSON.stringify({ enabled, send_at: sendAt, recipient: trimmed || null }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Save failed");
@@ -412,7 +417,8 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
               <input
                 type="email"
                 value={recipient}
-                onChange={(e) => setRecipient(e.target.value)}
+                onChange={(e) => setRecipient(e.target.value.trimStart())}
+                onBlur={(e) => setRecipient(e.target.value.trim())}
                 placeholder="you@example.com"
                 className="w-full h-11 px-4 rounded-xl bg-black/40 border border-white/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
               />
