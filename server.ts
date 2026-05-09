@@ -613,6 +613,25 @@ const KNOWLEDGE_RATE_MAX = 100; // 100 knowledge operations per minute per user
 const PHONE_NUMBER_RATE_WINDOW_MS = 60_000; // 1 minute
 const PHONE_NUMBER_RATE_MAX = 10; // 10 phone number operations per minute per user
 
+// Outbound dial rate limit — prevents runaway billing from a compromised
+// token or a bug in the batch-dispatch loop. 30 manual dials per minute is
+// well above any human rate; the campaign loop has its own 2 s sleep already.
+const DIAL_RATE_WINDOW_MS = 60_000;
+const DIAL_RATE_MAX = 30;
+
+async function dialRateLimiter(req: any, res: any, next: any) {
+  const userId = req.user?.id;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  const result = await rateLimit(userId, { bucket: "outbound_dial", windowMs: DIAL_RATE_WINDOW_MS, max: DIAL_RATE_MAX });
+  res.setHeader("X-RateLimit-Limit", String(DIAL_RATE_MAX));
+  res.setHeader("X-RateLimit-Remaining", String(result.remaining));
+  if (!result.allowed) {
+    void auditLogger.logSecurity('rate_limit_exceeded', { userId, resource: 'outbound_dial', ip: req.ip, metadata: { limit: DIAL_RATE_MAX } }).catch(() => {});
+    return res.status(429).json({ error: `Rate limit exceeded — ${DIAL_RATE_MAX} outbound dials per minute. Please slow down.`, code: "DIAL_RATE_LIMIT" });
+  }
+  next();
+}
+
 async function knowledgeRateLimiter(req: any, res: any, next: any) {
   const userId = req.user?.id;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -5752,7 +5771,7 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
   return { ok: true, callId: vapiData.id };
 }
 
-app.post("/api/outbound/dial", authenticateUser, async (req: any, res: any) => {
+app.post("/api/outbound/dial", authenticateUser, dialRateLimiter, async (req: any, res: any) => {
   try {
     const { agentId, customerName, customerNumber, context } = req.body;
     if (!agentId || !customerNumber) {
