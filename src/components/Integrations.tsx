@@ -4,6 +4,10 @@ import { motion, AnimatePresence } from "motion/react";
 import { authFetch } from "../lib/api";
 import PageShell, { Panel } from "./PageShell";
 import { useToast } from "../contexts/ToastContext";
+import ConfirmModal from "./ConfirmModal";
+
+type ConfirmState = { open: boolean; onConfirm: () => void };
+const CLOSED_CONFIRM: ConfirmState = { open: false, onConfirm: () => {} };
 
 // Provider badge metadata
 const PROVIDER_META: Record<string, { label: string; color: string }> = {
@@ -13,6 +17,7 @@ const PROVIDER_META: Record<string, { label: string; color: string }> = {
 
 export default function Integrations() {
   const { error: toastError, warning: toastWarning, success: toastSuccess } = useToast();
+  const [confirmState, setConfirmState] = useState<ConfirmState>(CLOSED_CONFIRM);
   const [accounts, setAccounts] = useState<any[]>([]);
   const [agents, setAgents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,20 +27,22 @@ export default function Integrations() {
   const fetchAccounts = async () => {
     try {
       const res = await authFetch("/api/emails/accounts");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setAccounts(data.accounts || []);
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      toastError("Could not load connected accounts", e?.message || "Check your connection and refresh.");
     }
   };
 
   const fetchAgents = async () => {
     try {
       const res = await authFetch("/api/agents");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setAgents(data.agents || []);
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      toastError("Could not load agents", e?.message || "Check your connection and refresh.");
     }
   };
 
@@ -85,14 +92,20 @@ export default function Integrations() {
     }
   };
 
-  const handleDisconnect = async (id: string) => {
-    if (!confirm('Disconnect this carrier?')) return;
-    try {
-      await authFetch(`/api/emails/accounts/${id}`, { method: 'DELETE' });
-      fetchAccounts();
-    } catch (e) {
-      console.error(e);
-    }
+  const handleDisconnect = (id: string) => {
+    setConfirmState({
+      open: true,
+      onConfirm: async () => {
+        setConfirmState(CLOSED_CONFIRM);
+        try {
+          await authFetch(`/api/emails/accounts/${id}`, { method: 'DELETE' });
+          fetchAccounts();
+        } catch (e) {
+          console.error(e);
+          toastError("Disconnect failed", "Could not disconnect this account. Please try again.");
+        }
+      },
+    });
   };
 
   const updateAccountAgent = async (accountId: string, agentId: string) => {
@@ -105,6 +118,7 @@ export default function Integrations() {
       fetchAccounts();
     } catch (e) {
       console.error(e);
+      toastError("Assignment failed", "Could not update the agent for this account.");
     }
   };
 
@@ -133,6 +147,7 @@ export default function Integrations() {
   );
 
   return (
+    <>
     <PageShell
       title="Carrier Bridge"
       eyebrow="Intelligence · Integrations"
@@ -323,5 +338,15 @@ export default function Integrations() {
         </div>
       </div>
     </PageShell>
+
+    <ConfirmModal
+      open={confirmState.open}
+      title="Disconnect carrier?"
+      message="This email account will be unlinked and its threads will no longer be processed by your agents."
+      danger
+      onConfirm={confirmState.onConfirm}
+      onCancel={() => setConfirmState(CLOSED_CONFIRM)}
+    />
+    </>
   );
 }

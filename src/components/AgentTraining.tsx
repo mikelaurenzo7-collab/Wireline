@@ -8,10 +8,12 @@ import SupervisedAgentTuner from "./SupervisedAgentTuner";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import { HelpTooltip } from "./HelpTooltip";
 import HubTabs, { TRAINING_HUB } from "./HubTabs";
+import { useToast } from "../contexts/ToastContext";
 
 type Message = { role: "user" | "assistant"; content: string };
 
 export default function AgentTraining() {
+  const { error: toastError } = useToast();
   const [activeTab, setActiveTab] = useState<'admin' | 'simulator' | 'database'>('admin');
   const [agents, setAgents] = useState<any[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState("default-agent");
@@ -116,6 +118,7 @@ export default function AgentTraining() {
         }
     } catch (e) {
         console.error(e);
+        toastError("Save failed", "Could not save this entry. Please try again.");
     }
     setIsSavingEntry(false);
   };
@@ -129,6 +132,7 @@ export default function AgentTraining() {
       setOptSuggestions(data);
     } catch (e) {
       console.error(e);
+      toastError("Optimization failed", "Could not generate optimization suggestions. Please try again.");
     }
     setIsOptimizing(false);
   };

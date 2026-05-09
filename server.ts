@@ -565,6 +565,9 @@ const OAUTH_STATE_SECRET =
   process.env.OAUTH_STATE_SECRET ||
   process.env.STRIPE_WEBHOOK_SECRET ||
   "wireline-dev-oauth-state-secret"; // overridden in production by env
+if (IS_PROD && !process.env.OAUTH_STATE_SECRET) {
+  log.warn("OAUTH_STATE_SECRET not set — falling back to STRIPE_WEBHOOK_SECRET for OAuth CSRF tokens. Set OAUTH_STATE_SECRET to a dedicated random secret.");
+}
 
 function generateOAuthState(): string {
   const { createHmac } = require("node:crypto") as typeof import("node:crypto");
@@ -609,6 +612,25 @@ const KNOWLEDGE_RATE_MAX = 100; // 100 knowledge operations per minute per user
 // Phone number provisioning rate limiting — Twilio/Vapi calls are expensive, limit bulk assignment
 const PHONE_NUMBER_RATE_WINDOW_MS = 60_000; // 1 minute
 const PHONE_NUMBER_RATE_MAX = 10; // 10 phone number operations per minute per user
+
+// Outbound dial rate limit — prevents runaway billing from a compromised
+// token or a bug in the batch-dispatch loop. 30 manual dials per minute is
+// well above any human rate; the campaign loop has its own 2 s sleep already.
+const DIAL_RATE_WINDOW_MS = 60_000;
+const DIAL_RATE_MAX = 30;
+
+async function dialRateLimiter(req: any, res: any, next: any) {
+  const userId = req.user?.id;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  const result = await rateLimit(userId, { bucket: "outbound_dial", windowMs: DIAL_RATE_WINDOW_MS, max: DIAL_RATE_MAX });
+  res.setHeader("X-RateLimit-Limit", String(DIAL_RATE_MAX));
+  res.setHeader("X-RateLimit-Remaining", String(result.remaining));
+  if (!result.allowed) {
+    void auditLogger.logSecurity('rate_limit_exceeded', { userId, resource: 'outbound_dial', ip: req.ip, metadata: { limit: DIAL_RATE_MAX } }).catch(() => {});
+    return res.status(429).json({ error: `Rate limit exceeded — ${DIAL_RATE_MAX} outbound dials per minute. Please slow down.`, code: "DIAL_RATE_LIMIT" });
+  }
+  next();
+}
 
 async function knowledgeRateLimiter(req: any, res: any, next: any) {
   const userId = req.user?.id;
@@ -798,41 +820,41 @@ const STRIPE_PLANS: StripePlan[] = [
   {
     id: "starter",
     name: "Starter",
-    price_usd_monthly: 49,
+    price_usd_monthly: 79,
     max_agents: 3,
     priceIdEnv: "STRIPE_STARTER_PRICE_ID",
     features: [
-      "3 voice + email agents",
+      "3 AI agents (voice + email)",
       "Unlimited inbound calls",
-      "100 outbound calls / month",
-      "Daily Brief + Triage",
+      "200 outbound calls / month",
+      "Daily Brief + Triage Inbox",
       "Webhooks · Intake API",
     ],
   },
   {
     id: "pro",
     name: "Pro",
-    price_usd_monthly: 199,
+    price_usd_monthly: 299,
     max_agents: 10,
     priceIdEnv: "STRIPE_PRO_PRICE_ID",
     features: [
-      "10 agents",
-      "Unlimited outbound",
-      "All Starter features",
-      "Insights + Knowledge Atlas",
-      "Auto-dial intake",
+      "10 AI agents (voice + email)",
+      "Unlimited outbound calls",
+      "Auto-dial new leads instantly",
+      "Knowledge Atlas + Insights",
+      "Everything in Starter",
       "Priority support",
     ],
   },
   {
     id: "enterprise",
     name: "Enterprise",
-    price_usd_monthly: 999,
+    price_usd_monthly: 1199,
     max_agents: 100,
     priceIdEnv: "STRIPE_ENTERPRISE_PRICE_ID",
     features: [
-      "100 agents",
-      "All Pro features",
+      "100 AI agents",
+      "Everything in Pro",
       "SSO + SAML",
       "Custom data retention",
       "Dedicated success manager",
@@ -1183,7 +1205,7 @@ async function getBudgetSnapshot(userId: string, force = false): Promise<BudgetC
   }
   const [{ data: budget }, { data: rows }] = await Promise.all([
     db.from("wireline_spend_budgets").select("monthly_limit_usd, hard_cap, warn_threshold_pct, enabled").eq("user_id", userId).maybeSingle(),
-    db.from("wireline_audit_log").select("cost_usd").eq("user_id", userId).gte("created_at", periodStartIso(period)),
+    db.from("wireline_audit_log").select("cost_usd").eq("user_id", userId).gte("created_at", periodStartIso(period)).limit(10000),
   ]);
   const mtdCost = (rows || []).reduce((s: number, r: any) => s + Number(r.cost_usd || 0), 0);
   const entry: BudgetCacheEntry = {
@@ -5313,6 +5335,77 @@ app.post("/api/settings", authenticateUser, async (req: any, res: any) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// GDPR / data-deletion: DELETE /api/user/account
+// Permanently erases all user-owned rows from every wireline_* table and then
+// deletes the Supabase auth record.  Requires the authenticated user to confirm
+// their intent by passing { confirm: "DELETE MY ACCOUNT" } in the body.
+// ─────────────────────────────────────────────────────────────────────────────
+app.delete("/api/user/account", authenticateUser, async (req: any, res: any) => {
+  const CONFIRMATION_PHRASE = "DELETE MY ACCOUNT";
+  if (req.body?.confirm !== CONFIRMATION_PHRASE) {
+    return res.status(400).json({
+      error: `Send { "confirm": "${CONFIRMATION_PHRASE}" } to confirm permanent deletion.`,
+    });
+  }
+  const uid = req.user.id;
+  try {
+    // Delete all user-owned rows across every wireline_* table.  Order matters
+    // for FKs: child tables first, then parents.
+    const tables = [
+      "wireline_audit_log",
+      "wireline_signal_presence",
+      "wireline_fleet_tasks",
+      "wireline_webhook_deliveries",
+      "wireline_webhooks",
+      "wireline_intake_keys",
+      "wireline_agent_lessons",
+      "wireline_directives",
+      "wireline_knowledge",
+      "wireline_personality",
+      "wireline_email_messages",
+      "wireline_email_threads",
+      "wireline_email_accounts",
+      "wireline_call_logs",
+      "wireline_outbound_leads",
+      "wireline_outbound_campaigns",
+      "wireline_appointments",
+      "wireline_dnc_list",
+      "wireline_phone_numbers",
+      "wireline_agents",
+      "wireline_spend_alerts",
+      "wireline_spend_budgets",
+      "wireline_stripe_events",
+      "wireline_subscriptions",
+      "wireline_onboarding_progress",
+      "wireline_user_preferences",
+      "wireline_settings",
+    ];
+    for (const table of tables) {
+      const { error } = await (db as any).from(table).delete().eq("user_id", uid);
+      if (error) log.warn(`account deletion: ${table} error`, { error: error.message });
+    }
+
+    // Delete the Supabase auth record last — once gone the user is fully
+    // unauthenticated and cannot make further requests.
+    const adminClient = createClient(
+      process.env.VITE_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    );
+    const { error: authErr } = await adminClient.auth.admin.deleteUser(uid);
+    if (authErr) {
+      log.error("account deletion: auth.admin.deleteUser failed", { uid, error: authErr.message });
+      return res.status(500).json({ error: "Data deleted but auth record removal failed — contact support." });
+    }
+
+    void auditLogger.logSecurity("suspicious_activity", { userId: uid, ip: req.ip, metadata: { reason: "account_self_deleted" } }).catch(() => {});
+    res.status(204).send();
+  } catch (err: any) {
+    log.error("account deletion failed", { uid, error: getErrorMessage(err) });
+    res.status(500).json({ error: "Account deletion failed. Please contact support." });
+  }
+});
+
 app.get("/api/outbound", authenticateUser, async (req: any, res: any) => {
   try {
     const limitRaw = parseInt(req.query.limit as string);
@@ -5448,6 +5541,12 @@ async function placeOutboundCall(opts: {
   const subscriptionStatus = userSettings?.subscription_status || 'active';
   if (subscriptionStatus !== 'active') {
     return { ok: false, status: 403, error: "Access Denied: Please upgrade your billing plan to access outbound dialing." };
+  }
+
+  // 0c. DNC compliance — checked on every code path (manual dial, campaign,
+  //     intake auto-dial, and scheduled callbacks) so no caller can bypass it.
+  if (customerNumber && await isDncBlocked(userId, customerNumber)) {
+    return { ok: false, status: 403, error: "DNC blocked: this number is on the Do Not Call list." };
   }
 
   // 1. Vapi config
@@ -5672,7 +5771,7 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
   return { ok: true, callId: vapiData.id };
 }
 
-app.post("/api/outbound/dial", authenticateUser, async (req: any, res: any) => {
+app.post("/api/outbound/dial", authenticateUser, dialRateLimiter, async (req: any, res: any) => {
   try {
     const { agentId, customerName, customerNumber, context } = req.body;
     if (!agentId || !customerNumber) {
@@ -7230,7 +7329,8 @@ app.get("/api/agents/:id/lessons", authenticateUser, async (req: any, res: any) 
       const { data: lessons, error } = await db.from('wireline_agent_lessons').select('*')
          .eq('agent_id', req.params.id)
          .eq('user_id', req.user.id)
-         .order('created_at', { ascending: false });
+         .order('created_at', { ascending: false })
+         .limit(200);
       if (error) throw error;
       res.json({ lessons });
    } catch (e) {
@@ -9150,12 +9250,16 @@ app.get("/api/billing/plans", (_req: any, res: any) => {
 // Operator-facing read of their current sub.
 app.get("/api/billing/status", authenticateUser, async (req: any, res: any) => {
   try {
-    const { data: sub } = await db.from("wireline_subscriptions")
-      .select("plan, status, current_period_end, cancel_at_period_end, stripe_customer_id, stripe_subscription_id, updated_at")
-      .eq("user_id", req.user.id).maybeSingle();
+    const [{ data: sub }, { count: agentCount }] = await Promise.all([
+      db.from("wireline_subscriptions")
+        .select("plan, status, current_period_end, cancel_at_period_end, stripe_customer_id, stripe_subscription_id, updated_at")
+        .eq("user_id", req.user.id).maybeSingle(),
+      db.from("wireline_agents").select("id", { count: "exact", head: true }).eq("user_id", req.user.id),
+    ]);
     const planMeta = sub?.plan ? planById(sub.plan) : null;
     res.json({
       stripe_configured: stripeAvailable(),
+      agent_count: agentCount ?? 0,
       subscription: sub ? {
         plan: sub.plan,
         plan_name: planMeta?.name || null,

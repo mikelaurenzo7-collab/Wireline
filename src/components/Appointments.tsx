@@ -5,6 +5,8 @@ import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import PageShell, { Panel } from "./PageShell";
 import HubTabs, { CHANNELS_HUB } from "./HubTabs";
+import { useToast } from "../contexts/ToastContext";
+import ConfirmModal from "./ConfirmModal";
 
 type Appointment = {
   id: string;
@@ -302,7 +304,12 @@ function CalendarGrid({ appointments, onSelect }: { appointments: Appointment[];
 }
 
 /* ─── Main component ─────────────────────────────────────────────── */
+type ConfirmState = { open: boolean; onConfirm: () => void };
+const CLOSED_CONFIRM: ConfirmState = { open: false, onConfirm: () => {} };
+
 export default function AppointmentsView() {
+  const { error: toastError } = useToast();
+  const [confirmState, setConfirmState] = useState<ConfirmState & { id?: string }>(CLOSED_CONFIRM);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [agents, setAgents] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -322,6 +329,7 @@ export default function AppointmentsView() {
       setAgents(agentRes.agents || []);
     } catch (e) {
       console.error("Failed to fetch appointments:", e);
+      toastError("Appointments unavailable", "Could not load appointments. Please refresh.");
     }
     setIsLoading(false);
   };
@@ -338,14 +346,20 @@ export default function AppointmentsView() {
     setEditTarget(null);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Cancel and remove this appointment?")) return;
-    setDeletingId(id);
-    try {
-      await authFetch(`/api/appointments/${id}`, { method: "DELETE" });
-      setAppointments(prev => prev.filter(a => a.id !== id));
-    } catch (e) { console.error("Delete failed:", e); }
-    setDeletingId(null);
+  const handleDelete = (id: string) => {
+    setConfirmState({
+      open: true,
+      id,
+      onConfirm: async () => {
+        setConfirmState(CLOSED_CONFIRM);
+        setDeletingId(id);
+        try {
+          await authFetch(`/api/appointments/${id}`, { method: "DELETE" });
+          setAppointments(prev => prev.filter(a => a.id !== id));
+        } catch (e) { console.error("Delete failed:", e); toastError("Delete failed", "Could not remove this appointment. Please try again."); }
+        setDeletingId(null);
+      },
+    });
   };
 
   const handleStatusChange = async (id: string, status: string) => {
@@ -359,7 +373,7 @@ export default function AppointmentsView() {
       if (data.appointment) {
         setAppointments(prev => prev.map(a => a.id === id ? data.appointment : a));
       }
-    } catch (e) { console.error("Status update failed:", e); }
+    } catch (e) { console.error("Status update failed:", e); toastError("Status update failed", "Could not update appointment status."); }
   };
 
   const scheduled = appointments.filter(a => !["Completed", "Cancelled"].includes(a.status));
@@ -498,6 +512,15 @@ export default function AppointmentsView() {
           />
         )}
       </AnimatePresence>
+
+      <ConfirmModal
+        open={confirmState.open}
+        title="Cancel appointment"
+        message="Cancel and remove this appointment? This cannot be undone."
+        danger
+        onConfirm={confirmState.onConfirm}
+        onCancel={() => setConfirmState(CLOSED_CONFIRM)}
+      />
     </>
   );
 }

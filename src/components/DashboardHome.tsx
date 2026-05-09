@@ -142,11 +142,18 @@ export default function DashboardHome() {
       const res = await authFetch("/api/dashboard/stats");
       const data = await res.json();
       setStats(data);
-    } catch (e) { console.error(e); } finally { setIsLoading(false); }
+    } catch (e) {
+      console.error(e);
+      toastError("Dashboard unavailable", "Could not load stats. Check your connection and refresh.");
+    } finally { setIsLoading(false); }
   };
 
   const toggleCall = async () => {
     if (isConnected) { vapiRef.current?.stop(); return; }
+    if (!import.meta.env.VITE_VAPI_PUBLIC_KEY) {
+      toastError("Voice not configured", "VITE_VAPI_PUBLIC_KEY is not set — add it in your Vercel environment variables and redeploy.");
+      return;
+    }
     setIsConnecting(true);
     try {
       // Load the SDK + instantiate listeners on first click. Subsequent
@@ -171,8 +178,22 @@ export default function DashboardHome() {
       if (!mountedRef.current) return;
       const data = await res.json();
       if (!mountedRef.current) return;
-      if (data.assistant) await vapi.start(data.assistant);
-      else throw new Error("No assistant configuration returned");
+      if (data.assistant) {
+        await vapi.start(data.assistant);
+        // Guard: if call-start hasn't fired within 20 s, clear the spinner
+        // so the button doesn't stay locked in "Connecting…" indefinitely.
+        const t = setTimeout(() => {
+          if (mountedRef.current && !vapiRef.current) return;
+          setIsConnecting(prev => {
+            if (!prev) return prev; // already resolved
+            toastError("Connection timed out", "Vapi did not start within 20 s. Check your network and Vapi configuration.");
+            return false;
+          });
+        }, 20_000);
+        callEndTimersRef.current.add(t);
+      } else {
+        throw new Error("No assistant configuration returned");
+      }
     } catch (e) {
       console.error("Failed to start call", e);
       if (mountedRef.current) {

@@ -44,6 +44,7 @@ const PLAN_ACCENTS: Record<string, string> = {
 export default function StripeBillingCard() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [sub, setSub] = useState<SubscriptionState | null>(null);
+  const [agentCount, setAgentCount] = useState<number>(0);
   const [stripeConfigured, setStripeConfigured] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null); // plan_id | "portal"
@@ -59,6 +60,7 @@ export default function StripeBillingCard() {
       ]);
       setStripeConfigured(!!statusRes.stripe_configured && !!plansRes.stripe_configured);
       setSub(statusRes.subscription || null);
+      setAgentCount(statusRes.agent_count ?? 0);
       setPlans(plansRes.plans || []);
     } catch (e: any) {
       setError(e?.message || "Load failed");
@@ -167,7 +169,7 @@ export default function StripeBillingCard() {
     <div className="space-y-8">
       {/* Active subscription card */}
       {sub?.has_subscription && (
-        <ActiveSubCard sub={sub} busy={busy === "portal"} onPortal={openPortal} />
+        <ActiveSubCard sub={sub} agentCount={agentCount} busy={busy === "portal"} onPortal={openPortal} />
       )}
 
       {error && (
@@ -181,11 +183,19 @@ export default function StripeBillingCard() {
       <div className="rounded-2xl glass border border-white/10 p-8 md:p-10 space-y-8">
         <div className="border-b border-white/8 pb-6">
           <h3 className="font-display italic lowercase text-3xl text-ink">
-            {hasActive ? "change plan" : "activate billing"}
+            {hasActive ? "change plan" : "choose a plan"}
           </h3>
-          <p className="text-[10px] uppercase tracking-[0.4em] text-muted/70 mt-2">
-            {hasActive ? "Manage from the Stripe portal above for upgrades, downgrades, and cancellation." : "Pick a tier to start. Cancel any time."}
-          </p>
+          {!hasActive && (
+            <p className="text-[12px] text-muted/70 mt-1.5 leading-relaxed max-w-lg">
+              Each agent replaces hours of human intake, follow-up, and triage work — for a fraction of the cost.
+              No setup fees. Cancel anytime.
+            </p>
+          )}
+          {hasActive && (
+            <p className="text-[10px] uppercase tracking-[0.4em] text-muted/70 mt-2">
+              Use the Stripe portal above to upgrade, downgrade, or cancel.
+            </p>
+          )}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           {plans.map(plan => {
@@ -208,6 +218,12 @@ export default function StripeBillingCard() {
                   <div className="absolute -top-3 right-4 px-3 py-1 rounded-full text-paper text-[9px] uppercase tracking-[0.3em]"
                     style={{ background: `linear-gradient(135deg, ${accent}, ${accent}99)` }}>
                     Current plan
+                  </div>
+                )}
+                {!isCurrent && plan.id === "pro" && (
+                  <div className="absolute -top-3 left-4 px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.3em]"
+                    style={{ background: "linear-gradient(135deg, #9B59F5, #6B3FCF)", color: "#fff" }}>
+                    Most popular
                   </div>
                 )}
                 <div className="flex items-center justify-between">
@@ -254,17 +270,24 @@ export default function StripeBillingCard() {
                       : <>{hasActive ? "Switch" : "Subscribe"} <ArrowRight className="w-3 h-3" /></>}
                 </button>
                 {!plan.configured && (
-                  <p className="text-[9px] font-mono text-amber-400/80 text-center">
-                    Price not configured ({plan.id} env var missing)
+                  <p className="text-[9px] font-mono text-amber-400/80 text-center leading-relaxed">
+                    Set <span className="text-brand">STRIPE_{plan.id.toUpperCase()}_PRICE_ID</span> in Vercel to activate
                   </p>
                 )}
               </motion.div>
             );
           })}
         </div>
-        <div className="text-[10px] uppercase tracking-[0.35em] text-muted/50 flex items-center gap-2 border-t border-white/6 pt-6">
-          <Shield className="w-3 h-3" />
-          Payments processed by Stripe · PCI DSS Level 1 · Cancel anytime
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/6 pt-6">
+          <div className="text-[10px] uppercase tracking-[0.35em] text-muted/50 flex items-center gap-2">
+            <Shield className="w-3 h-3" />
+            Stripe · PCI DSS Level 1 · Cancel anytime
+          </div>
+          <div className="flex items-center gap-3 text-[9px] text-muted/40 uppercase tracking-[0.2em]">
+            <a href="/privacy" className="hover:text-muted/70 transition-colors">Privacy</a>
+            <span>·</span>
+            <a href="/terms" className="hover:text-muted/70 transition-colors">Terms</a>
+          </div>
         </div>
       </div>
     </div>
@@ -272,8 +295,8 @@ export default function StripeBillingCard() {
 }
 
 function ActiveSubCard({
-  sub, busy, onPortal,
-}: { sub: SubscriptionState; busy: boolean; onPortal: () => void }) {
+  sub, agentCount, busy, onPortal,
+}: { sub: SubscriptionState; agentCount: number; busy: boolean; onPortal: () => void }) {
   const accent = PLAN_ACCENTS[sub.plan || ""] || "#0AC8D4";
   const Icon = PLAN_ICONS[sub.plan || ""] || CreditCard;
   const renews = safeDate(sub.current_period_end);
@@ -315,7 +338,11 @@ function ActiveSubCard({
               {sub.plan_name || sub.plan || "—"}
             </h3>
             <p className="text-[10px] uppercase tracking-[0.35em] text-muted/60">
-              {sub.max_agents ? `${sub.max_agents} agent nodes` : ""}
+              {sub.max_agents ? (
+                <span className={agentCount >= sub.max_agents ? "text-amber-400" : ""}>
+                  {agentCount} / {sub.max_agents} agents
+                </span>
+              ) : ""}
               {renews && (
                 <>
                   {sub.max_agents ? " · " : ""}

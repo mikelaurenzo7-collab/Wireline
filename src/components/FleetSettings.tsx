@@ -136,6 +136,7 @@ export default function FleetSettings() {
       }
     } catch (e) {
       console.error(e);
+      toastError("Agent fleet unavailable", "Could not load agents. Please refresh.");
     }
     setIsLoading(false);
   };
@@ -163,6 +164,7 @@ export default function FleetSettings() {
        setAgentConfig(data);
     } catch (e) {
       console.error(e);
+      if (selectedAgentIdRef.current === id) toastError("Config unavailable", "Could not load agent configuration.");
     } finally {
       if (selectedAgentIdRef.current === id) setIsConfigLoading(false);
     }
@@ -305,6 +307,7 @@ export default function FleetSettings() {
   };
 
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
+  const [seedConfirmOpen, setSeedConfirmOpen] = useState(false);
 
   const handleDeleteAgent = async (agentId: string) => {
     setIsDeletingAgent(agentId);
@@ -477,17 +480,7 @@ export default function FleetSettings() {
               <div className="flex items-center gap-1.5">
                 <ClaudeRecipeButton recipe="agent-forge" label="Forge" variant="ghost" />
                 <button
-                  onClick={async () => {
-                    if (confirm("Seed specialized agents into this fleet?")) {
-                      setIsCreating(true);
-                      try {
-                        const resp = await authFetch("/api/fleet/seed", { method: "POST" });
-                        if (resp.ok) await fetchAgents();
-                      } finally {
-                        setIsCreating(false);
-                      }
-                    }
-                  }}
+                  onClick={() => setSeedConfirmOpen(true)}
                   className="px-2.5 py-1 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-muted hover:text-ink hover:border-white/30 transition-all flex items-center gap-1.5"
                 >
                   <Sparkles className="w-3 h-3" /> Seed
@@ -1092,6 +1085,23 @@ export default function FleetSettings() {
     </div>
         )}
       </div>
+      <ConfirmModal
+        open={seedConfirmOpen}
+        title="Seed specialized agents?"
+        message="This will deploy a set of pre-configured role-based agents into your fleet. Existing agents will not be affected."
+        confirmLabel="Seed fleet"
+        onConfirm={async () => {
+          setSeedConfirmOpen(false);
+          setIsCreating(true);
+          try {
+            const resp = await authFetch("/api/fleet/seed", { method: "POST" });
+            if (resp.ok) await fetchAgents();
+          } finally {
+            setIsCreating(false);
+          }
+        }}
+        onCancel={() => setSeedConfirmOpen(false)}
+      />
       <ConfirmModal
         open={!!deleteConfirm}
         title="Delete agent?"
