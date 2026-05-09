@@ -4761,6 +4761,7 @@ app.post("/api/knowledge", authenticateUser, knowledgeRateLimiter, async (req: a
     if (!validation.success) {
       return res.status(400).json({ error: "Validation failed", errors: validation.errors });
     }
+    if (!validation.data) throw new Error('Validation data missing');
 
     const content = validation.data.content;
     const agent_id = (req.body?.agent_id || "").toString();
@@ -4797,6 +4798,7 @@ app.patch("/api/knowledge/:id", authenticateUser, knowledgeRateLimiter, async (r
     if (!validation.success) {
       return res.status(400).json({ error: "Validation failed", errors: validation.errors });
     }
+    if (!validation.data) throw new Error('Validation data missing');
 
     const content = validation.data.content;
     const { data, error } = await db.from("wireline_knowledge")
@@ -5448,7 +5450,7 @@ app.post("/api/settings", authenticateUser, async (req: any, res: any) => {
     // Audit log: settings update (sanitize sensitive fields)
     void auditLogger.logSettings('updated', {
       userId: req.user.id,
-      changes: sanitizeForAudit(req.body),
+      changes: sanitizeForAudit(req.body) as Record<string, any> | undefined,
       ip: req.ip
     }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
     
@@ -7030,7 +7032,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
                    calls = response.functionCalls();
                 }
                 finalReply = response.text() || finalReply;
-             } catch(e) {
+             } catch(e: any) {
                 log.error("Gemini email fallback also failed", { error: e?.message || String(e) });
              }
            }
@@ -7062,7 +7064,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
                      userId: 'me',
                      requestBody: { raw, threadId }
                   });
-               } catch (sendErr) {
+               } catch (sendErr: any) {
                   log.error("Auto-respond failed", { error: sendErr?.message || String(sendErr) });
                }
            }
@@ -7082,7 +7084,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
                     description: `Lead requested callback via email mailroom. Lead Contact: ${from}`,
                     status: 'pending'
                  });
-              } catch(handoffErr) {
+              } catch(handoffErr: any) {
                  log.error("Email-to-Phone handoff failed", { error: handoffErr?.message || String(handoffErr) });
               }
            }
@@ -7120,7 +7122,7 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
               await db.from('wireline_email_threads').update({
                  lead_score: score, intent_label: label,
               }).eq('id', existingThread!.id);
-           } catch(e) {
+           } catch(e: any) {
               log.error("Email scoring failed", { error: e?.message || String(e) });
            }
         }
@@ -7147,6 +7149,7 @@ app.post("/api/emails/threads/:id/reply", authenticateUser, emailRateLimiter, as
       if (!validation.success) {
         return res.status(400).json({ error: "Validation failed", errors: validation.errors });
       }
+      if (!validation.data) throw new Error('Validation data missing');
       const { body } = validation.data;
       const { data: thread } = await db.from('wireline_email_threads').select('*, wireline_email_accounts(*)').eq('id', req.params.id).eq('user_id', req.user.id).single();
 
@@ -7337,7 +7340,7 @@ app.get("/api/fleet/activity", authenticateUser, async (req: any, res: any) => {
       });
 
       res.json({ activity });
-   } catch(e) {
+   } catch(e: any) {
       log.error("Activity feed error", { error: e?.message || String(e) });
       res.status(500).json({ error: "Failed to fetch activity" });
    }
@@ -8013,6 +8016,7 @@ app.post("/api/claude/agent-review/apply-directive", authenticateUser, async (re
     if (!validation.success) {
       return res.status(400).json({ error: "Validation failed", errors: validation.errors });
     }
+    if (!validation.data) throw new Error('Validation data missing');
 
     const { agentId, priority } = req.body;
     const { content: directive } = validation.data;
