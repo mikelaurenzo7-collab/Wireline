@@ -105,15 +105,24 @@ async function fetchWithTimeout(
 //  secrets. Log warnings (not errors) in dev so local hacking still works.
 // ────────────────────────────────────────────────────────────────────
 function validateStartupEnv() {
-  const required = [
-    ["VITE_SUPABASE_URL", process.env.VITE_SUPABASE_URL],
+  // Hard required in all environments (app cannot function without these).
+  const alwaysRequired: [string, string | undefined][] = [
+    ["VITE_SUPABASE_URL",     process.env.VITE_SUPABASE_URL],
     ["VITE_SUPABASE_ANON_KEY", process.env.VITE_SUPABASE_ANON_KEY],
-  ] as const;
-  const missing = required.filter(([, v]) => !v).map(([k]) => k);
+  ];
+  // Required in production; warn in dev so local hacking still works.
+  const prodRequired: [string, string | undefined][] = [
+    ["ANTHROPIC_API_KEY",   process.env.ANTHROPIC_API_KEY],
+    ["VAPI_PRIVATE_KEY",    process.env.VAPI_PRIVATE_KEY],
+    ["VAPI_WEBHOOK_SECRET", process.env.VAPI_WEBHOOK_SECRET],
+  ];
+
+  const missingAlways = alwaysRequired.filter(([, v]) => !v).map(([k]) => k);
+  const missingProd   = prodRequired.filter(([, v]) => !v).map(([k]) => k);
+  const missing       = IS_PROD ? [...missingAlways, ...missingProd] : missingAlways;
+
   const recommended: string[] = [];
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) recommended.push("SUPABASE_SERVICE_ROLE_KEY");
-  if (!process.env.ANTHROPIC_API_KEY) recommended.push("ANTHROPIC_API_KEY");
-  if (!process.env.VAPI_WEBHOOK_SECRET) recommended.push("VAPI_WEBHOOK_SECRET");
   if (!process.env.APP_URL) recommended.push("APP_URL");
   // CORS_ORIGINS in prod: cross-origin browser requests will fail without it
   // (the cors middleware rejects unknown origins). APP_URL is auto-added to
@@ -121,6 +130,9 @@ function validateStartupEnv() {
   // API + frontend from different origins.
   if (IS_PROD && !process.env.CORS_ORIGINS && !process.env.APP_URL) {
     recommended.push("CORS_ORIGINS");
+  }
+  if (!IS_PROD && missingProd.length) {
+    log.warn("Prod-required env vars not set (dev mode — continuing)", { vars: missingProd });
   }
 
   if (missing.length) {
@@ -1286,6 +1298,60 @@ async function enforceSpendCap(req: any, res: any, next: any) {
   next();
 }
 
+// ────────────────────────────────────────────────────────────────────
+//  24-hour spend cap — lightweight protection against runaway spend
+//  within a single calendar day.  Reads CLAUDE_MONTHLY_BUDGET_USD (default
+//  $50) and blocks Claude endpoints when per-day spend exceeds 1 % of
+//  that value ($0.50 by default).  Complements the per-user monthly
+//  hard-cap in enforceSpendCap — this one is system-wide, fast, and
+//  requires no DB configuration from the operator.
+// ────────────────────────────────────────────────────────────────────
+const CLAUDE_MONTHLY_BUDGET_USD = Math.max(0, Number(process.env.CLAUDE_MONTHLY_BUDGET_USD ?? 50));
+const DAILY_SPEND_LIMIT_USD = CLAUDE_MONTHLY_BUDGET_USD * 0.01; // 1 % of monthly
+
+// Lightweight in-process accumulator — intentionally resets on cold start
+// (Vercel serverless).  For stronger guarantees use Upstash Redis as the
+// rate-limit store; the per-user monthly hard cap (enforceSpendCap) is the
+// authoritative DB-backed guard.
+let _dailySpendWindowStart = Date.now();
+let _dailySpendAccumUsd    = 0;
+
+/** Call this after every Claude API round trip to track cumulative 24h spend. */
+function recordDailySpend(usd: number) {
+  const now = Date.now();
+  if (now - _dailySpendWindowStart > 24 * 60 * 60_000) {
+    _dailySpendWindowStart = now;
+    _dailySpendAccumUsd    = 0;
+  }
+  _dailySpendAccumUsd += usd;
+  if (DAILY_SPEND_LIMIT_USD > 0 && _dailySpendAccumUsd >= DAILY_SPEND_LIMIT_USD) {
+    log.warn("Daily Claude spend cap reached", {
+      daily_limit_usd:    DAILY_SPEND_LIMIT_USD,
+      accumulated_usd:    Number(_dailySpendAccumUsd.toFixed(4)),
+      monthly_budget_usd: CLAUDE_MONTHLY_BUDGET_USD,
+    });
+  }
+}
+
+/** Pre-handler — block /api/claude/* when the 24h spend window is over budget. */
+function enforce24hSpendCap(req: any, res: any, next: any) {
+  if (DAILY_SPEND_LIMIT_USD <= 0) return next(); // disabled when budget is 0
+  const now = Date.now();
+  if (now - _dailySpendWindowStart > 24 * 60 * 60_000) {
+    _dailySpendWindowStart = now;
+    _dailySpendAccumUsd    = 0;
+  }
+  if (_dailySpendAccumUsd >= DAILY_SPEND_LIMIT_USD) {
+    return res.status(402).json({
+      error: `Daily Claude spend limit reached ($${DAILY_SPEND_LIMIT_USD.toFixed(2)}/day, 1 % of $${CLAUDE_MONTHLY_BUDGET_USD} monthly budget). Resets in ${Math.ceil((24 * 60 * 60_000 - (now - _dailySpendWindowStart)) / 60_000)} minutes.`,
+      code: "DAILY_SPEND_LIMIT_EXCEEDED",
+      daily_limit_usd: DAILY_SPEND_LIMIT_USD,
+      accumulated_usd: Number(_dailySpendAccumUsd.toFixed(4)),
+    });
+  }
+  next();
+}
+
 // ==========================================
 // AUTH MIDDLEWARE
 // ==========================================
@@ -1603,8 +1669,8 @@ app.post("/api/vapi-webhook", async (req, res) => {
       // 1. Assemble memory from Supabase (+ pre-load caller history and customer intel in the same round-trip)
       const [agentConfig, directivesData, knowledgeData, personalityData, lessonsData, callerHistoryData, capturedProfileData, callerLeadData] = await Promise.all([
         db.from('wireline_agents').select('*').eq('id', webhookAgentId).single(),
-        db.from('wireline_directives').select('content, priority').eq('agent_id', webhookAgentId).order('priority', { ascending: false }),
-        db.from('wireline_knowledge').select('content').eq('agent_id', webhookAgentId),
+        db.from('wireline_directives').select('content, priority').eq('agent_id', webhookAgentId).order('priority', { ascending: false }).limit(500),
+        db.from('wireline_knowledge').select('content').eq('agent_id', webhookAgentId).limit(500),
         db.from('wireline_personality').select('content').eq('agent_id', webhookAgentId).single(),
         db.from('wireline_agent_lessons').select('lesson').eq('agent_id', webhookAgentId).order('created_at', { ascending: false }).limit(MAX_RUNTIME_LESSONS),
         safeCallerPhone
@@ -2875,7 +2941,7 @@ app.get("/api/dashboard/stats", authenticateUser, async (req: any, res: any) => 
             .eq('user_id', req.user.id)
             .order('created_at', { ascending: false })
             .limit(200),
-          db.from('wireline_agents').select('id, name, channel, role').eq('user_id', req.user.id),
+          db.from('wireline_agents').select('id, name, channel, role').eq('user_id', req.user.id).limit(500),
           // Hot email threads — only the fields the client actually consumes
           db.from('wireline_email_threads')
             .select('id, customer_email, lead_score, intent_label, summary, created_at')
@@ -3741,7 +3807,7 @@ Never leave someone on hold for more than 3 minutes without offering to call bac
 
 app.get("/api/agents", authenticateUser, async (req: any, res: any) => {
   try {
-    const { data: agents, error } = await db.from('wireline_agents').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false });
+    const { data: agents, error } = await db.from('wireline_agents').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false }).limit(500);
     if (error) log.warn("Failed to fetch agents", { userId: req.user.id, error: getErrorMessage(error) });
     res.json({ agents: agents || [] });
   } catch (error) {
@@ -3807,8 +3873,8 @@ app.get("/api/agents/:id/export", authenticateUser, async (req: any, res: any) =
     const [agentRes, personalityRes, directivesRes, knowledgeRes] = await Promise.all([
       db.from('wireline_agents').select('*').eq('id', agentId).eq('user_id', userId).single(),
       db.from('wireline_personality').select('content').eq('agent_id', agentId).single(),
-      db.from('wireline_directives').select('content, priority').eq('agent_id', agentId).eq('user_id', userId),
-      db.from('wireline_knowledge').select('content').eq('agent_id', agentId).eq('user_id', userId),
+      db.from('wireline_directives').select('content, priority').eq('agent_id', agentId).eq('user_id', userId).limit(500),
+      db.from('wireline_knowledge').select('content').eq('agent_id', agentId).eq('user_id', userId).limit(500),
     ]);
 
     if (!agentRes.data) return res.status(404).json({ error: 'Agent not found' });
@@ -4224,10 +4290,10 @@ app.get("/api/agent-config/:id", authenticateUser, async (req: any, res: any) =>
   try {
     const agentId = req.params.id;
     const [directives, knowledge, personality, lessons] = await Promise.all([
-      db.from('wireline_directives').select('*').eq('agent_id', agentId).eq('user_id', req.user.id).order('priority', { ascending: false }),
-      db.from('wireline_knowledge').select('*').eq('agent_id', agentId).eq('user_id', req.user.id),
+      db.from('wireline_directives').select('*').eq('agent_id', agentId).eq('user_id', req.user.id).order('priority', { ascending: false }).limit(500),
+      db.from('wireline_knowledge').select('*').eq('agent_id', agentId).eq('user_id', req.user.id).limit(500),
       db.from('wireline_personality').select('content').eq('agent_id', agentId).eq('user_id', req.user.id).single(),
-      db.from('wireline_agent_lessons').select('*').eq('agent_id', agentId).eq('user_id', req.user.id).order('created_at', { ascending: false })
+      db.from('wireline_agent_lessons').select('*').eq('agent_id', agentId).eq('user_id', req.user.id).order('created_at', { ascending: false }).limit(200)
     ]);
     res.json({
       directives: directives.data || [],
@@ -5395,8 +5461,8 @@ async function placeOutboundCall(opts: {
   const safeOutboundPhone = sanitizePhone(customerNumber);
   const [agentConfig, directivesData, knowledgeData, personalityData, lessonsData, outboundCallerHistory, outboundCapturedProfile] = await Promise.all([
     db.from('wireline_agents').select('*').eq('id', agentId).single().then(r => r),
-    db.from('wireline_directives').select('content, priority').eq('agent_id', agentId).order('priority', { ascending: false }).then(r => r),
-    db.from('wireline_knowledge').select('content').eq('agent_id', agentId).then(r => r),
+    db.from('wireline_directives').select('content, priority').eq('agent_id', agentId).order('priority', { ascending: false }).limit(500).then(r => r),
+    db.from('wireline_knowledge').select('content').eq('agent_id', agentId).limit(500).then(r => r),
     db.from('wireline_personality').select('content').eq('agent_id', agentId).single().then(r => r),
     db.from('wireline_agent_lessons').select('lesson').eq('agent_id', agentId).order('created_at', { ascending: false }).limit(MAX_RUNTIME_LESSONS).then(r => r),
     safeOutboundPhone
@@ -7323,6 +7389,7 @@ function withAudit(actionPrefix: string) {
           // After the spend is persisted, evaluate against the budget and
           // fire spend.warning / spend.exceeded webhooks if a threshold
           // crossed. Also fire-and-forget — never block the response.
+          recordDailySpend(deltaUsd);
           evaluateSpend(req.user.id, deltaUsd).catch((err: any) =>
             log.error("evaluateSpend exception", { error: getErrorMessage(err) }),
           );
@@ -7341,7 +7408,9 @@ function withAudit(actionPrefix: string) {
 app.use("/api/claude", (req: any, res: any, next: any) => {
   if (req.path === "/status") return next();
   return authenticateUser(req, res, () =>
-    enforceSpendCap(req, res, () => withAudit("claude")(req, res, next)),
+    enforce24hSpendCap(req, res, () =>
+      enforceSpendCap(req, res, () => withAudit("claude")(req, res, next)),
+    ),
   );
 });
 app.use(["/api/insights/topics", "/api/insights/failure-modes", "/api/insights/daily-brief"],
@@ -7373,7 +7442,7 @@ app.post("/api/claude/brief", authenticateUser, async (req: any, res: any) => {
     if (agentId) {
       const [{ data: agent }, { data: knowledge }] = await Promise.all([
         db.from("wireline_agents").select("name, archetype, role").eq("id", agentId).eq("user_id", req.user.id).single(),
-        db.from("wireline_knowledge").select("content").eq("agent_id", agentId).eq("user_id", req.user.id),
+        db.from("wireline_knowledge").select("content").eq("agent_id", agentId).eq("user_id", req.user.id).limit(500),
       ]);
       if (agent) {
         agentName = agent.name;
@@ -7415,7 +7484,7 @@ app.post("/api/claude/qualify", authenticateUser, async (req: any, res: any) => 
     } else if (!actualTranscript && threadId) {
       const { data: thread } = await db.from("wireline_email_threads").select("agent_id").eq("id", threadId).eq("user_id", req.user.id).single();
       if (!resolvedAgentId && thread?.agent_id) resolvedAgentId = thread.agent_id;
-      const { data: msgs } = await db.from("wireline_email_messages").select("role, content").eq("thread_id", threadId).order("created_at", { ascending: true });
+      const { data: msgs } = await db.from("wireline_email_messages").select("role, content").eq("thread_id", threadId).eq("user_id", req.user.id).order("created_at", { ascending: true }).limit(100);
       actualTranscript = (msgs ?? []).map((m: any) => `${m.role.toUpperCase()}: ${m.content}`).join("\n\n");
     }
 
@@ -7514,7 +7583,7 @@ app.post("/api/claude/summarize-thread", authenticateUser, async (req: any, res:
     const { threadId } = req.body;
     const { data: thread } = await db.from("wireline_email_threads").select("subject").eq("id", threadId).eq("user_id", req.user.id).single();
     if (!thread) return res.status(404).json({ error: "Thread not found." });
-    const { data: msgs } = await db.from("wireline_email_messages").select("role, content").eq("thread_id", threadId).order("created_at", { ascending: true });
+    const { data: msgs } = await db.from("wireline_email_messages").select("role, content").eq("thread_id", threadId).eq("user_id", req.user.id).order("created_at", { ascending: true }).limit(100);
     const result = await claudeBrain.threadSummary({
       subject: thread.subject || "(no subject)",
       messages: (msgs ?? []) as any,
@@ -7553,8 +7622,8 @@ app.post("/api/claude/email-draft", authenticateUser, async (req: any, res: any)
     if (targetAgentId) {
       const [{ data: agent }, { data: knowledge }, { data: directiveRows }] = await Promise.all([
         db.from("wireline_agents").select("name, email_agent_tone, email_signature, role").eq("id", targetAgentId).eq("user_id", req.user.id).single(),
-        db.from("wireline_knowledge").select("content").eq("agent_id", targetAgentId).eq("user_id", req.user.id),
-        db.from("wireline_directives").select("content").eq("agent_id", targetAgentId).eq("user_id", req.user.id).order("priority", { ascending: false }),
+        db.from("wireline_knowledge").select("content").eq("agent_id", targetAgentId).eq("user_id", req.user.id).limit(500),
+        db.from("wireline_directives").select("content").eq("agent_id", targetAgentId).eq("user_id", req.user.id).order("priority", { ascending: false }).limit(500),
       ]);
       if (agent) {
         agentName = agent.name;
@@ -7566,7 +7635,7 @@ app.post("/api/claude/email-draft", authenticateUser, async (req: any, res: any)
       directives = (directiveRows ?? []).map((d: any) => d.content);
     }
 
-    const { data: msgs } = await db.from("wireline_email_messages").select("role, content").eq("thread_id", threadId).order("created_at", { ascending: true });
+    const { data: msgs } = await db.from("wireline_email_messages").select("role, content").eq("thread_id", threadId).eq("user_id", req.user.id).order("created_at", { ascending: true }).limit(100);
 
     const result = await claudeBrain.smartDraft({
       agentName, agentTone, agentRole, agentSignature,
@@ -7615,7 +7684,7 @@ app.post("/api/claude/email-quick-replies", authenticateUser, async (req: any, r
       knowledgeBase = (knowledge ?? []).map((k: any) => k.content);
     }
 
-    const { data: msgs } = await db.from("wireline_email_messages").select("role, content").eq("thread_id", threadId).order("created_at", { ascending: true }).limit(12);
+    const { data: msgs } = await db.from("wireline_email_messages").select("role, content").eq("thread_id", threadId).eq("user_id", req.user.id).order("created_at", { ascending: true }).limit(100);
 
     const result = await claudeBrain.quickReplies({
       agentName, agentTone, agentRole, agentSignature,
@@ -9442,7 +9511,7 @@ app.post("/api/claude/knowledge-dedupe", authenticateUser, async (req: any, res:
     }
     const [{ data: rows }, { data: agents }] = await Promise.all([
       db.from("wireline_knowledge").select("id, agent_id, content").eq("user_id", req.user.id).limit(KNOWLEDGE_DEDUPE_MAX_FACTS),
-      db.from("wireline_agents").select("id, name").eq("user_id", req.user.id),
+      db.from("wireline_agents").select("id, name").eq("user_id", req.user.id).limit(500),
     ]);
     if (!rows || rows.length < 2) {
       return res.json({ clusters: [], total_analyzed: rows?.length || 0, message: "Not enough facts to dedupe." });
@@ -9531,6 +9600,17 @@ function cachedInsight(key: string) {
 function setCachedInsight(key: string, data: any) {
   insightCache.set(key, { ts: Date.now(), data });
 }
+// Periodic eviction — prevents unbounded memory growth across long-lived
+// processes (not Vercel serverless, but local dev and Railway/Render).
+{
+  const evictId = setInterval(() => {
+    const cutoff = Date.now() - INSIGHT_TTL_MS;
+    for (const [k, v] of insightCache) {
+      if (v.ts < cutoff) insightCache.delete(k);
+    }
+  }, INSIGHT_TTL_MS);
+  (evictId as any).unref?.();
+}
 
 // Conversion funnel — calls → connected → qualified → booked → completed.
 app.get("/api/insights/funnel", authenticateUser, async (req: any, res: any) => {
@@ -9606,7 +9686,7 @@ app.get("/api/insights/leaderboard", authenticateUser, async (req: any, res: any
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
     const [{ data: agents }, { data: calls }, { data: appts }] = await Promise.all([
-      db.from("wireline_agents").select("id, name, archetype, channel, role").eq("user_id", req.user.id),
+      db.from("wireline_agents").select("id, name, archetype, channel, role").eq("user_id", req.user.id).limit(500),
       db.from("wireline_call_logs").select("agent_id, lead_score, intent_label, duration_seconds, cost").eq("user_id", req.user.id).gte("created_at", since),
       db.from("wireline_appointments").select("agent_id").eq("user_id", req.user.id).gte("created_at", since),
     ]);
