@@ -42,6 +42,7 @@ import { isPrivateIp, isPrivateIpv6, isSsrfUrl, validateWebhookUrl } from "./src
 import { evaluateOutboundConsent, getConsentRuleForPhone, buildConsentLedgerRow, detectOptOut, CONSENT_RULE_VERSION } from "./src/lib/tcpa-consent";
 import { QuotaTracker, quotaRejectionHeaders, validateOverride, PLAN_DEFAULTS, type PlanTier } from "./src/lib/tenant-quotas";
 import { enqueue, startWorker, getQueueStats, type JobRow } from "./src/lib/job-queue";
+import { quotaRateLimit, jobsRateLimit, tcpaRateLimit, soc2RateLimit } from "./src/middleware/api-rate-limits";
 
 // On Vercel, VERCEL_URL is automatically set to the deployment hostname
 // (e.g. "myapp-abc123.vercel.app") with no protocol or trailing slash.
@@ -10793,7 +10794,7 @@ process.on("uncaughtException", (err: Error) => {
 // ──────────────────────────────────────────────────────────────────────────────
 
 /** GET /api/quotas — current plan profile + live usage for the calling user. */
-app.get("/api/quotas", authenticateUser, async (req: any, res: any) => {
+app.get("/api/quotas", authenticateUser, quotaRateLimit, async (req: any, res: any) => {
   try {
     const userId = req.user.id as string;
     const { plan, profile } = await quotaTracker.getProfile(userId);
@@ -10809,12 +10810,12 @@ app.get("/api/quotas", authenticateUser, async (req: any, res: any) => {
 });
 
 /** GET /api/quotas/plans — public plan comparison table. */
-app.get("/api/quotas/plans", (_req, res) => {
+app.get("/api/quotas/plans", quotaRateLimit, (_req, res) => {
   res.json({ plans: PLAN_DEFAULTS });
 });
 
 /** PUT /api/quotas/override — set a per-tenant override (admin/owner only). */
-app.put("/api/quotas/override", authenticateUser, async (req: any, res: any) => {
+app.put("/api/quotas/override", authenticateUser, quotaRateLimit, async (req: any, res: any) => {
   try {
     const validation = validateOverride(req.body);
     if (!validation.ok) {
@@ -10839,7 +10840,7 @@ app.put("/api/quotas/override", authenticateUser, async (req: any, res: any) => 
 // ──────────────────────────────────────────────────────────────────────────────
 
 /** GET /api/jobs/stats — queue depths by status. */
-app.get("/api/jobs/stats", authenticateUser, async (_req, res) => {
+app.get("/api/jobs/stats", authenticateUser, jobsRateLimit, async (_req, res) => {
   try {
     const stats = await getQueueStats(db);
     res.json(stats);
@@ -10854,7 +10855,7 @@ app.get("/api/jobs/stats", authenticateUser, async (_req, res) => {
  * (Vercel) where the background worker timer doesn't persist across
  * invocations. Call this from a Vercel Cron job every minute.
  */
-app.post("/api/jobs/sweep", authenticateUser, async (_req, res) => {
+app.post("/api/jobs/sweep", authenticateUser, jobsRateLimit, async (_req, res) => {
   try {
     const { claimJob: claim, completeJob: complete, failJob: fail } = await import("./src/lib/job-queue");
     let processed = 0;
@@ -10885,7 +10886,7 @@ app.post("/api/jobs/sweep", authenticateUser, async (_req, res) => {
  * Returns the TCPA consent gate decision before an outbound call is placed.
  * Internally checks wireline_dnc for the calling user's DNC list.
  */
-app.get("/api/tcpa/consent-check", authenticateUser, async (req: any, res: any) => {
+app.get("/api/tcpa/consent-check", authenticateUser, tcpaRateLimit, async (req: any, res: any) => {
   try {
     const phone = String(req.query.phone || "").trim();
     if (!phone) return res.status(400).json({ error: "phone query param required" });
