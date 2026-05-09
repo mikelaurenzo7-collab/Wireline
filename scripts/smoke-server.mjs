@@ -32,6 +32,11 @@ const child = spawn(process.execPath, ['dist/server.cjs'], {
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder',
     VITE_SUPABASE_URL: process.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co',
     VITE_SUPABASE_ANON_KEY: process.env.VITE_SUPABASE_ANON_KEY || 'placeholder',
+    // Prod-required by validateStartupEnv — provide placeholders so the server
+    // starts during CI where real secrets are absent.
+    ANTHROPIC_API_KEY:   process.env.ANTHROPIC_API_KEY   || 'placeholder',
+    VAPI_PRIVATE_KEY:    process.env.VAPI_PRIVATE_KEY     || 'placeholder',
+    VAPI_WEBHOOK_SECRET: process.env.VAPI_WEBHOOK_SECRET  || 'placeholder',
   },
   stdio: ['ignore', 'pipe', 'pipe'],
 });
