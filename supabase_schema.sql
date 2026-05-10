@@ -853,11 +853,16 @@ CREATE INDEX IF NOT EXISTS wireline_webhook_deliveries_status_idx
     ON wireline_webhook_deliveries(status, created_at ASC)
     WHERE status IN ('pending', 'failed');
 
--- Audit log lookups by user and entity
-CREATE INDEX IF NOT EXISTS wireline_audit_log_user_id_idx
-    ON wireline_audit_log(user_id, timestamp DESC);
-CREATE INDEX IF NOT EXISTS wireline_audit_log_entity_idx
-    ON wireline_audit_log(entity_type, entity_id, timestamp DESC);
+-- Audit log lookups: the indexes that used to live here referenced
+-- `timestamp` and `entity_type`/`entity_id` — neither column ever
+-- existed on wireline_audit_log (real columns are `created_at` +
+-- `resource_type`/`resource_id`), so the CREATE INDEX statements
+-- silently failed on every install. Both replacements already exist
+-- above: `wireline_audit_log_user_created_idx` (user_id, created_at)
+-- right after the table definition, and `wireline_audit_log_resource_idx`
+-- (resource_type, resource_id, created_at) in the enhancement block.
+-- Nothing to add here — keeping the comment so future readers don't
+-- re-introduce the broken statements.
 
 -- Directive/Knowledge lookups during agent training
 CREATE INDEX IF NOT EXISTS wireline_directives_agent_id_idx

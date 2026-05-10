@@ -24,6 +24,7 @@ import Stripe from "stripe";
 import { randomUUID, timingSafeEqual as cryptoTimingSafeEqual } from "node:crypto";
 import * as claudeBrain from "./src/lib/claude-brain";
 import { AuditLogger } from "./src/lib/audit-logger";
+import { createAuditEventsHandler, createAuditStatsHandler, createAuditExportHandler } from "./src/lib/audit-routes";
 import { rateLimit, isRedisConfigured, startMemoryCleanup } from "./src/lib/rate-limit";
 import { SentryEvents } from "./src/lib/sentry-events";
 import { AgentFormSchema, DirectiveSchema, KnowledgeSchema, EmailReplySchema, EmailDraftSchema, CampaignCreateSchema, CampaignUpdateSchema, OutboundBulkSchema, AgentBusinessProfileSchema, parseFormData } from "./src/lib/form-validators";
@@ -9187,236 +9188,19 @@ app.get("/api/audit/recent", authenticateUser, async (req: any, res: any) => {
 });
 
 // GET /api/audit/events — fetch audit events with filtering
-app.get("/api/audit/events", authenticateUser, async (req: any, res: any) => {
-  const userId = req.user.id;
-  const {
-    event_type,
-    severity,
-    resource_type,
-    start_date,
-    end_date,
-    search,
-    days: daysParam = "7",
-    limit: limitParam = "100",
-    offset: offsetParam = "0"
-  } = req.query;
-
-  // Validate and constrain numeric parameters
-  const days = Math.min(Math.max(parseInt(daysParam as string), 1), 365);
-  const limit = Math.min(Math.max(parseInt(limitParam as string), 1), 500);
-  const offset = Math.max(parseInt(offsetParam as string), 0);
-
-  if (isNaN(days) || isNaN(limit) || isNaN(offset)) {
-    return res.status(400).json({ error: "Invalid numeric parameters" });
-  }
-
-  try {
-    let query = db
-      .from("wireline_audit_log")
-      .select("*", { count: "exact" })
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1);
-
-    // Apply filters
-    if (event_type) {
-      const types = Array.isArray(event_type) ? event_type : [event_type];
-      query = query.in("event_type", types);
-    }
-    if (severity) {
-      const severities = Array.isArray(severity) ? severity : [severity];
-      query = query.in("severity", severities);
-    }
-    if (resource_type) {
-      query = query.eq("resource_type", resource_type);
-    }
-    if (start_date) {
-      query = query.gte("created_at", start_date);
-    } else if (days) {
-      const since = new Date();
-      since.setDate(since.getDate() - days);
-      query = query.gte("created_at", since.toISOString());
-    }
-    if (end_date) {
-      query = query.lte("created_at", end_date);
-    }
-    if (search) {
-      // Escape special chars to prevent SQL injection
-      const sanitized = String(search).replace(/[%_]/g, '\\$&');
-      query = query.or(`action.ilike.%${sanitized}%,actor_email.ilike.%${sanitized}%,resource_id.ilike.%${sanitized}%`);
-    }
-
-    const { data, error, count } = await query;
-
-    if (error) throw error;
-
-    res.json({
-      events: data || [],
-      total: count || 0,
-      limit,
-      offset
-    });
-  } catch (e: any) {
-    log.error("Audit events error", {
-      userId,
-      error: String(e),
-      query: req.query,
-      ip: req.ip,
-      userAgent: req.headers['user-agent']
-    });
-    res.status(500).json({ error: "Failed to fetch audit events" });
-  }
-});
+// Handler bodies live in src/lib/audit-routes.ts so they can be unit-
+// tested against an in-memory Supabase stub. The factory pattern lets
+// us inject the live `db` / `auditLogger` / `log` singletons here.
+const auditRouteDeps = { db, auditLogger, log };
+app.get("/api/audit/events", authenticateUser, createAuditEventsHandler(auditRouteDeps));
 
 // GET /api/audit/stats — aggregate statistics
-app.get("/api/audit/stats", authenticateUser, async (req: any, res: any) => {
-  const userId = req.user.id;
-  const { days: daysParam = "30" } = req.query;
+app.get("/api/audit/stats", authenticateUser, createAuditStatsHandler(auditRouteDeps));
 
-  // Validate and constrain numeric parameters
-  const days = Math.min(Math.max(parseInt(daysParam as string), 1), 365);
-
-  if (isNaN(days)) {
-    return res.status(400).json({ error: "Invalid numeric parameters" });
-  }
-
-  try {
-    const since = new Date();
-    since.setDate(since.getDate() - days);
-
-    const { data, error } = await db
-      .from("wireline_audit_log")
-      .select("*")
-      .eq("user_id", userId)
-      .gte("created_at", since.toISOString());
-
-    if (error) throw error;
-
-    const events = data || [];
-    
-    // Aggregate statistics
-    const bySeverity: Record<string, number> = {};
-    const byType: Record<string, number> = {};
-    let totalCost = 0;
-    let apiCalls = 0;
-
-    events.forEach((event: any) => {
-      // Count by severity
-      const sev = event.severity || 'info';
-      bySeverity[sev] = (bySeverity[sev] || 0) + 1;
-      
-      // Count by type
-      const type = event.event_type || event.action || 'unknown';
-      byType[type] = (byType[type] || 0) + 1;
-      
-      // Sum costs
-      if (event.cost_usd) {
-        totalCost += parseFloat(event.cost_usd);
-      }
-      
-      // Count API calls
-      if (type.startsWith('api.')) {
-        apiCalls++;
-      }
-    });
-
-    res.json({
-      total_events: events.length,
-      by_severity: bySeverity,
-      by_type: byType,
-      total_cost_usd: totalCost,
-      total_api_calls: apiCalls,
-      period_days: days
-    });
-  } catch (e: any) {
-    log.error("Audit stats error", {
-      userId,
-      error: String(e),
-      query: req.query,
-      ip: req.ip,
-      userAgent: req.headers['user-agent']
-    });
-    res.status(500).json({ error: "Failed to fetch audit statistics" });
-  }
-});
-
-// GET /api/audit/export — export as CSV or JSON
-app.get("/api/audit/export", authenticateUser, async (req: any, res: any) => {
-  const userId = req.user.id;
-  const { format = "csv", days: daysParam = "30" } = req.query;
-
-  // Validate and constrain numeric parameters
-  const days = Math.min(Math.max(parseInt(daysParam as string), 1), 365);
-
-  if (isNaN(days)) {
-    return res.status(400).json({ error: "Invalid numeric parameters" });
-  }
-
-  try {
-    const since = new Date();
-    since.setDate(since.getDate() - days);
-
-    const { data, error } = await db
-      .from("wireline_audit_log")
-      .select("*")
-      .eq("user_id", userId)
-      .gte("created_at", since.toISOString())
-      .order("created_at", { ascending: false });
-
-    if (error) throw error;
-
-    // Log the export operation
-    void auditLogger.logDataOperation('export', {
-      userId,
-      resourceType: 'audit_log',
-      recordCount: data?.length || 0,
-      ip: req.ip
-    });
-
-    if (format === "json") {
-      res.setHeader("Content-Type", "application/json");
-      res.setHeader("Content-Disposition", `attachment; filename="audit-log-${Date.now()}.json"`);
-      res.json(data);
-    } else {
-      // CSV format with formula injection prevention
-      const events = data || [];
-      const headers = [
-        "created_at", "event_type", "severity", "action",
-        "actor_email", "resource_type", "resource_id",
-        "ip_address", "cost_usd", "latency_ms"
-      ];
-      
-      const sanitizeCSV = (val: any) => {
-        if (val === null || val === undefined) return "";
-        const str = String(val);
-        // Prevent formula injection - prefix dangerous characters with single quote
-        if (str.match(/^[=@+\-]/)) {
-          return `"'${str.replace(/"/g, '""')}"`;
-        }
-        return `"${str.replace(/"/g, '""')}"`;
-      };
-      
-      const csvRows = [headers.join(",")];
-      events.forEach((event: any) => {
-        const row = headers.map((h) => sanitizeCSV(event[h]));
-        csvRows.push(row.join(","));
-      });
-
-      res.setHeader("Content-Type", "text/csv");
-      res.setHeader("Content-Disposition", `attachment; filename="audit-log-${Date.now()}.csv"`);
-      res.send(csvRows.join("\n"));
-    }
-  } catch (e: any) {
-    log.error("Audit export error", {
-      userId,
-      error: String(e),
-      query: req.query,
-      ip: req.ip,
-      userAgent: req.headers['user-agent']
-    });
-    res.status(500).json({ error: "Failed to export audit log" });
-  }
-});
+// GET /api/audit/export — export as CSV or JSON, honoring the same
+// filter shape as /api/audit/events so a "filtered view → export"
+// flow in the UI produces a CSV that matches the on-screen rows.
+app.get("/api/audit/export", authenticateUser, createAuditExportHandler(auditRouteDeps));
 
 // ──────────────────────────────────────────────────────────
 //  SPEND BUDGET — monthly Claude limit, hard-cap toggle,

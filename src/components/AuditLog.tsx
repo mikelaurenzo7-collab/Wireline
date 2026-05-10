@@ -25,12 +25,19 @@ type TimeRange = 1 | 7 | 30 | 90;
 
 const SEVERITY_OPTIONS: AuditSeverity[] = ['info', 'warning', 'error', 'critical'];
 
+// Category chips map to event-type *prefixes*. The server's
+// /api/audit/events endpoint treats any value without a dot as a
+// prefix (`auth` → `event_type ilike 'auth.%'`), so the chips here
+// match every event in that namespace without having to enumerate
+// each concrete type. Keep this list in sync with AuditEventType in
+// ../types/audit.ts.
 const EVENT_CATEGORIES = {
   auth: 'Authentication',
   agent: 'Agent Operations',
   settings: 'Settings',
   billing: 'Billing',
-  api: 'API Usage',
+  ai: 'AI Usage',
+  api: 'API & Webhooks',
   security: 'Security',
   data: 'Data Operations',
 } as const;
