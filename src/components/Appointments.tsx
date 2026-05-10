@@ -96,7 +96,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
     setSaving(false);
   };
 
-  const inputCls = "w-full text-sm bg-black/30 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 transition-all";
+  const inputCls = "w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 transition-all";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

@@ -256,7 +256,7 @@ export default function FleetTaskBridge() {
                         <select
                           value={task.agent_id || ""}
                           onChange={(e) => updateAssignment(task.id, e.target.value)}
-                          className="w-full text-xs bg-black/30 border border-white/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
+                          className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
                         >
                           <option value="">Select agent</option>
                           {agents.map((a: any) => (
@@ -275,7 +275,7 @@ export default function FleetTaskBridge() {
                         type="date"
                         value={task.due_date ? task.due_date.split('T')[0] : ""}
                         onChange={(e) => updateDueDate(task.id, e.target.value)}
-                        className="w-full text-xs bg-black/30 border border-white/10 rounded-lg px-2.5 py-1.5 outline-none focus:border-brand/50 text-ink"
+                        className="w-full text-xs bg-black/5 border border-black/10 rounded-lg px-2.5 py-1.5 outline-none focus:border-brand/50 text-ink"
                       />
                     </div>
                   </div>
@@ -287,7 +287,7 @@ export default function FleetTaskBridge() {
                         placeholder="Resolution notes (optional)…"
                         value={resolutionNotes[task.id] || ''}
                         onChange={e => setResolutionNotes({ ...resolutionNotes, [task.id]: e.target.value })}
-                        className="w-full text-xs bg-black/30 border border-white/10 rounded-lg px-2.5 py-1.5 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 resize-none"
+                        className="w-full text-xs bg-black/5 border border-black/10 rounded-lg px-2.5 py-1.5 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 resize-none"
                       />
                       <button
                         onClick={() => updateStatus(task.id, 'completed')}

@@ -253,7 +253,7 @@ function TextInput({ value, onChange, placeholder }: any) {
   return (
     <input
       value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
-      className="w-full h-12 px-4 rounded-xl bg-black/30 border border-white/10 outline-none text-ink text-sm placeholder:text-muted/50 focus:border-brand/60 focus:bg-black/40 transition-all"
+      className="w-full h-12 px-4 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm placeholder:text-muted/50 focus:border-brand/60 focus:bg-black/10 transition-all"
     />
   );
 }
@@ -262,7 +262,7 @@ function TextArea({ value, onChange, placeholder, rows = 5 }: any) {
   return (
     <textarea
       value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} rows={rows}
-      className="w-full px-4 py-3 rounded-xl bg-black/30 border border-white/10 outline-none text-ink text-sm placeholder:text-muted/50 focus:border-brand/60 focus:bg-black/40 transition-all resize-none leading-relaxed font-sans"
+      className="w-full px-4 py-3 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm placeholder:text-muted/50 focus:border-brand/60 focus:bg-black/10 transition-all resize-none leading-relaxed font-sans"
     />
   );
 }
@@ -271,7 +271,7 @@ function Select({ value, onChange, options }: { value: string; onChange: (v: str
   return (
     <select
       value={value} onChange={(e) => onChange(e.target.value)}
-      className="w-full h-12 px-4 rounded-xl bg-black/30 border border-white/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
+      className="w-full h-12 px-4 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
     >
       {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
@@ -353,7 +353,7 @@ function CoachForm({ callId, initial, disabled }: { callId?: string; initial?: a
       )}
       {callId && <p className="text-[11px] uppercase tracking-[0.3em] text-muted">Coaching call <span className="text-brand font-mono">{callId.toString().slice(0, 8)}…</span></p>}
       <label className="flex items-center gap-3 cursor-pointer text-sm text-ink/80">
-        <input type="checkbox" checked={isLive} onChange={(e) => setIsLive(e.target.checked)} className="w-4 h-4 rounded border-white/20 bg-black/30 accent-brand" />
+        <input type="checkbox" checked={isLive} onChange={(e) => setIsLive(e.target.checked)} className="w-4 h-4 rounded border-black/20 bg-black/5 accent-brand" />
         Treat as in-progress (live) call
       </label>
       <RunButton onClick={run} loading={loading} disabled={disabled || (!transcript && !callId)} label="Coach Now" />
@@ -1169,7 +1169,7 @@ function PersonaCloneForm({ agents, agentId: initAgent, disabled }: { agents: Ag
       </Field>
       {agentId && (
         <label className="flex items-center gap-3 cursor-pointer text-sm text-ink/80">
-          <input type="checkbox" checked={apply} onChange={(e) => setApply(e.target.checked)} className="w-4 h-4 rounded border-white/20 bg-black/30 accent-brand" />
+          <input type="checkbox" checked={apply} onChange={(e) => setApply(e.target.checked)} className="w-4 h-4 rounded border-black/20 bg-black/5 accent-brand" />
           Save persona block to <span className="text-brand">{agents.find((a) => a.id === agentId)?.name}</span>
         </label>
       )}

@@ -380,7 +380,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
                 ? "bg-black/20 border-white/5 text-muted/50 cursor-not-allowed"
                 : enabled
                   ? "bg-brand-2/15 border-brand-2/40 text-brand-2"
-                  : "bg-black/30 border-white/10 text-ink/80 hover:border-white/20",
+                  : "bg-black/5 border-black/10 text-ink/80 hover:border-black/20",
             )}
           >
             <div className={cn(
@@ -406,7 +406,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
                 type="time"
                 value={sendAt}
                 onChange={(e) => setSendAt(e.target.value)}
-                className="w-full h-11 px-4 rounded-xl bg-black/40 border border-white/10 outline-none text-ink text-sm focus:border-brand/60 transition-all font-mono"
+                className="w-full h-11 px-4 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all font-mono"
               />
               <span className="text-[10px] text-ink/40 leading-snug">
                 13:00 UTC ≈ 9 AM ET / 6 AM PT. Convert your local time before saving.
@@ -420,7 +420,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
                 onChange={(e) => setRecipient(e.target.value.trimStart())}
                 onBlur={(e) => setRecipient(e.target.value.trim())}
                 placeholder="you@example.com"
-                className="w-full h-11 px-4 rounded-xl bg-black/40 border border-white/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
+                className="w-full h-11 px-4 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
               />
             </label>
           </div>

@@ -301,7 +301,7 @@ export default function KnowledgeBaseManager() {
                   <select
                     value={addAgent}
                     onChange={(e) => setAddAgent(e.target.value)}
-                    className="w-full h-11 px-3 rounded-xl bg-black/40 border border-white/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
+                    className="w-full h-11 px-3 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
                   >
                     <option value="">— Pick an agent —</option>
                     {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -314,7 +314,7 @@ export default function KnowledgeBaseManager() {
                     onChange={(e) => setAddContent(e.target.value)}
                     rows={3}
                     placeholder="One atomic fact the agent should know — e.g. &quot;We open at 9 AM Monday–Friday and 10 AM on weekends.&quot;"
-                    className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 outline-none text-ink text-sm focus:border-brand/60 transition-all resize-y"
+                    className="w-full px-4 py-3 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all resize-y"
                   />
                 </label>
                 <button
@@ -525,7 +525,7 @@ export default function KnowledgeBaseManager() {
                         onChange={(e) => setEditing({ id: editing!.id, draft: e.target.value })}
                         autoFocus
                         rows={Math.max(2, Math.ceil((editing!.draft.length || 0) / 80))}
-                        className="w-full px-4 py-3 rounded-xl bg-black/30 border border-brand/40 outline-none text-ink text-sm leading-relaxed focus:border-brand resize-y font-mono"
+                        className="w-full px-4 py-3 rounded-xl bg-black/5 border border-brand/40 outline-none text-ink text-sm leading-relaxed focus:border-brand resize-y font-mono"
                       />
                     ) : (
                       <p className="text-ink/80 text-sm leading-relaxed whitespace-pre-wrap
@@ -712,7 +712,7 @@ function DedupePanel({
                             ? "bg-black/10 border-white/5 opacity-50 cursor-not-allowed"
                             : isKeep
                               ? "bg-emerald-500/10 border-emerald-500/40"
-                              : "bg-black/30 border-white/10 hover:border-white/30",
+                              : "bg-black/5 border-black/10 hover:border-black/20",
                         )}
                       >
                         <div className={cn(
