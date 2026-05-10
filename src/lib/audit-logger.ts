@@ -202,4 +202,226 @@ export class AuditLogger {
       ip: params.ip
     });
   }
+
+  /**
+   * Log a billing-related event (Stripe webhook, checkout, portal open).
+   * Captures the Stripe subscription / customer ID and the plan tier
+   * for SOC 2 CC1.4 (system-of-record auth trail for paid features).
+   */
+  async logBilling(
+    action: 'subscription_created' | 'subscription_updated' | 'subscription_cancelled'
+          | 'payment_succeeded' | 'payment_failed'
+          | 'checkout_started' | 'portal_opened',
+    params: {
+      userId?: string;
+      subscriptionId?: string;
+      customerId?: string;
+      plan?: string;
+      amountCents?: number;
+      ip?: string;
+      metadata?: Record<string, any>;
+    }
+  ) {
+    const eventTypeMap: Record<typeof action, AuditEventType> = {
+      'subscription_created': 'billing.subscription_created',
+      'subscription_updated': 'billing.subscription_updated',
+      'subscription_cancelled': 'billing.subscription_cancelled',
+      'payment_succeeded': 'billing.payment_succeeded',
+      'payment_failed': 'billing.payment_failed',
+      'checkout_started': 'billing.checkout_started',
+      'portal_opened': 'billing.portal_opened'
+    };
+    return await this.log({
+      eventType: eventTypeMap[action],
+      userId: params.userId,
+      action,
+      severity: action === 'payment_failed' || action === 'subscription_cancelled' ? 'warning' : 'info',
+      resourceType: 'billing',
+      resourceId: params.subscriptionId,
+      metadata: {
+        customer_id: params.customerId,
+        plan: params.plan,
+        amount_cents: params.amountCents,
+        ...params.metadata,
+      },
+      ip: params.ip
+    });
+  }
+
+  /**
+   * Log intake-key lifecycle (the keys that authenticate inbound lead
+   * webhooks). These keys grant write access to /api/intake/lead so
+   * their creation/rotation/deletion is security-relevant.
+   */
+  async logIntakeKey(
+    action: 'created' | 'updated' | 'deleted',
+    params: {
+      userId: string;
+      keyId: string;
+      keyPrefix?: string;
+      keyName?: string;
+      ip?: string;
+    }
+  ) {
+    const eventTypeMap: Record<typeof action, AuditEventType> = {
+      'created': 'security.intake_key_created',
+      'updated': 'security.intake_key_updated',
+      'deleted': 'security.intake_key_deleted'
+    };
+    return await this.log({
+      eventType: eventTypeMap[action],
+      userId: params.userId,
+      action,
+      severity: action === 'deleted' ? 'warning' : 'info',
+      resourceType: 'intake_key',
+      resourceId: params.keyId,
+      metadata: { key_prefix: params.keyPrefix, key_name: params.keyName },
+      ip: params.ip
+    });
+  }
+
+  /**
+   * Log webhook CRUD. The signing secret is encrypted at rest (see
+   * src/lib/secret-vault.ts) and is NEVER logged here — only the
+   * webhook URL, event filter set, and active flag.
+   */
+  async logWebhook(
+    action: 'created' | 'updated' | 'deleted' | 'tested',
+    params: {
+      userId: string;
+      webhookId: string;
+      url?: string;
+      events?: string[];
+      active?: boolean;
+      ip?: string;
+    }
+  ) {
+    const eventTypeMap: Record<typeof action, AuditEventType> = {
+      'created': 'api.webhook_created',
+      'updated': 'api.webhook_updated',
+      'deleted': 'api.webhook_deleted',
+      'tested': 'api.webhook_tested'
+    };
+    return await this.log({
+      eventType: eventTypeMap[action],
+      userId: params.userId,
+      action,
+      severity: 'info',
+      resourceType: 'webhook',
+      resourceId: params.webhookId,
+      metadata: { url: params.url, events: params.events, active: params.active },
+      ip: params.ip
+    });
+  }
+
+  /**
+   * Log DNC (Do-Not-Call) list mutations — required for TCPA/DNC
+   * compliance evidence. Tracks how many numbers were added/removed
+   * and the source ("manual", "csv_import", "complaint", etc).
+   */
+  async logDnc(
+    action: 'added' | 'removed',
+    params: {
+      userId: string;
+      count: number;
+      source?: string;
+      ip?: string;
+      metadata?: Record<string, any>;
+    }
+  ) {
+    const eventTypeMap: Record<typeof action, AuditEventType> = {
+      'added': 'dnc.added',
+      'removed': 'dnc.removed'
+    };
+    return await this.log({
+      eventType: eventTypeMap[action],
+      userId: params.userId,
+      action,
+      severity: 'info',
+      resourceType: 'dnc_list',
+      metadata: { count: params.count, source: params.source, ...params.metadata },
+      ip: params.ip
+    });
+  }
+
+  /**
+   * Log quota-override administrative changes (Item 1) and refusals.
+   */
+  async logQuotaOverride(
+    action: 'set' | 'denied',
+    params: {
+      userId?: string;
+      targetUserId?: string;
+      changes?: Record<string, any>;
+      role?: string;
+      ip?: string;
+    }
+  ) {
+    const eventTypeMap: Record<typeof action, AuditEventType> = {
+      'set': 'quota.override_set',
+      'denied': 'quota.override_denied'
+    };
+    return await this.log({
+      eventType: eventTypeMap[action],
+      userId: params.userId,
+      action,
+      severity: action === 'denied' ? 'critical' : 'warning',
+      resourceType: 'quota',
+      resourceId: params.targetUserId,
+      metadata: { changes: params.changes, role: params.role },
+      ip: params.ip
+    });
+  }
+
+  /**
+   * Log job-queue sweep activity — both successful sweeps (with the
+   * count of jobs processed) and denials (for would-be tenants who
+   * lacked admin/owner role).
+   */
+  async logJobSweep(
+    action: 'started' | 'completed' | 'denied',
+    params: {
+      userId?: string;
+      mode?: 'cron' | 'manual';
+      processed?: number;
+      role?: string;
+      ip?: string;
+    }
+  ) {
+    const eventTypeMap: Record<typeof action, AuditEventType> = {
+      'started': 'jobs.sweep_started',
+      'completed': 'jobs.sweep_completed',
+      'denied': 'jobs.sweep_denied'
+    };
+    return await this.log({
+      eventType: eventTypeMap[action],
+      userId: params.userId,
+      action,
+      severity: action === 'denied' ? 'critical' : 'info',
+      resourceType: 'job_queue',
+      metadata: { mode: params.mode, processed: params.processed, role: params.role },
+      ip: params.ip
+    });
+  }
+
+  /**
+   * Log account self-deletion. This is irreversible so it carries
+   * critical severity and is emitted BEFORE the auth row is removed.
+   */
+  async logAccountDeletion(params: {
+    userId: string;
+    tablesTouched: string[];
+    ip?: string;
+  }) {
+    return await this.log({
+      eventType: 'data.account_deleted',
+      userId: params.userId,
+      action: 'account_deleted',
+      severity: 'critical',
+      resourceType: 'user_account',
+      resourceId: params.userId,
+      metadata: { tables_touched: params.tablesTouched.length, tables: params.tablesTouched },
+      ip: params.ip
+    });
+  }
 }

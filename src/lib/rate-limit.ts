@@ -107,3 +107,58 @@ export function startMemoryCleanup(intervalMs = 5 * 60_000) {
 export function isRedisConfigured(): boolean {
   return !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
 }
+
+/**
+ * Result of evaluating whether the in-memory fallback is acceptable
+ * for a given route.
+ *
+ * In production (`NODE_ENV=production` or `VERCEL=1`), spend-sensitive
+ * routes — Claude calls, outbound dials, etc. — must NOT silently fall
+ * back to the per-process in-memory limiter because every serverless
+ * invocation is a fresh process; an attacker can fan out across
+ * invocations and burn unlimited spend.
+ *
+ * The single escape hatch is `WIRELINE_ALLOW_INMEMORY_RATE_LIMIT=true`
+ * which is the explicit acknowledgement that the deployment is a
+ * SINGLE long-lived node (Docker / VM) where the in-memory limiter
+ * actually works.
+ */
+export interface DistributedLimiterStatus {
+  /** Whether the caller may safely proceed without Redis. */
+  ok: boolean;
+  /** Machine code for the 503 body when !ok. Undefined when ok=true. */
+  code?: "RATE_LIMITER_UNAVAILABLE";
+  /** Human-readable reason. Undefined when ok=true. */
+  reason?: string;
+}
+
+/**
+ * Resolve whether distributed rate limiting is available — or whether
+ * the caller has explicitly opted into the in-memory fallback. Use this
+ * before serving any spend-sensitive route.
+ *
+ *   const status = distributedLimiterStatus();
+ *   if (!status.ok) return res.status(503).json({ error: status.reason, code: status.code });
+ */
+export function distributedLimiterStatus(): DistributedLimiterStatus {
+  if (isRedisConfigured()) return { ok: true };
+
+  const allowInMemory = String(process.env.WIRELINE_ALLOW_INMEMORY_RATE_LIMIT || "")
+    .toLowerCase() === "true";
+  if (allowInMemory) return { ok: true };
+
+  const isProd = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
+  if (isProd) {
+    return {
+      ok: false,
+      code: "RATE_LIMITER_UNAVAILABLE",
+      reason:
+        "Distributed rate limiter (Upstash Redis) is not configured. " +
+        "Spend-sensitive endpoints are refused in production until either " +
+        "UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN are set, or " +
+        "WIRELINE_ALLOW_INMEMORY_RATE_LIMIT=true is set for single-node deployments.",
+    };
+  }
+  // Non-production: in-memory limiter is fine.
+  return { ok: true };
+}
