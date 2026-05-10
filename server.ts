@@ -200,22 +200,33 @@ app.use("/api/stripe-webhook", express.raw({ type: "application/json" }));
 
 // Body parser scoping.
 //
-// The 50 MB ceiling only exists for the knowledge-from-document recipe,
-// which accepts a base64-encoded PDF (up to ~32 MB raw / ~43 MB base64).
-// Applying that ceiling globally turns every other endpoint — including
-// unauthenticated ones like /api/intake/lead and the Vapi webhook — into
-// a DoS magnet (an attacker can force the server to allocate 50 MB per
+// The global default is a tight 1 MB ceiling, which comfortably covers
+// every typical API payload. Two endpoints legitimately need a larger
+// budget and are carved out explicitly; everything else falls through
+// to the 1 MB default. Applying a high ceiling globally would turn
+// every other endpoint — including unauthenticated ones like
+// /api/intake/lead and the Vapi webhook — into a DoS magnet (an
+// attacker can force the server to allocate the full ceiling per
 // request before any auth check runs).
 //
-// Mount the large-payload parser only on the single endpoint that
-// legitimately needs it; everything else defaults to a 1 MB ceiling
-// which comfortably covers normal API payloads and CSV/JSON imports.
-// NOTE: the 50 MB parser still runs before authentication on this single
-// path (Express body parsers can't read req.user). The residual risk is
-// scoped to one POST endpoint, gated by the global /api/claude/* rate
-// limiter (60 req/min/key) and the spend hard-cap; the previous global
-// 50 MB ceiling gave every API endpoint the same exposure.
+//   /api/claude/knowledge-from-document → 50 MB
+//     Accepts a base64-encoded PDF (up to ~32 MB raw / ~43 MB base64).
+//     Runs before authentication (Express body parsers can't read
+//     req.user) but is gated by the /api/claude/* rate limiter
+//     (60 req/min/key) and the spend hard-cap.
+//
+//   /api/outbound/bulk → 16 MB
+//     The schema cap is 5000 leads/request (form-validators.ts ::
+//     OutboundBulkSchema). Each lead's bounded fields alone (phone +
+//     name + email + 2 KB notes + status + passthrough custom CRM
+//     fields) can reach ~2 KB, so a max-sized batch is ~10–12 MB.
+//     The 16 MB ceiling matches the documented schema cap with
+//     headroom for JSON overhead. The endpoint is authenticated, so
+//     the residual DoS surface is bounded to authed callers.
+//     NOTE: this carve-out backfills a regression — PR #95 dropped
+//     the global ceiling from 50 MB → 1 MB without scoping bulk.
 app.use("/api/claude/knowledge-from-document", express.json({ limit: '50mb' }));
+app.use("/api/outbound/bulk", express.json({ limit: '16mb' }));
 app.use(express.json({ limit: '1mb' }));
 
 // ────────────────────────────────────────────────────────────────────
