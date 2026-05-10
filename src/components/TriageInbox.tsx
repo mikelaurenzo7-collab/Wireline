@@ -214,7 +214,7 @@ const KnowledgeGapRow: React.FC<{ gap: any; onPromoted: () => void }> = ({ gap, 
           {editing ? (
             <textarea
               value={content} onChange={(e) => setContent(e.target.value)} rows={2}
-              className="w-full px-2 py-1.5 rounded-lg bg-black/30 border border-brand/30 outline-none text-ink text-[12px] focus:border-brand/60 transition-all resize-none"
+              className="w-full px-2 py-1.5 rounded-lg bg-black/5 border border-brand/20 outline-none text-ink text-[12px] focus:border-brand/50 transition-all resize-none"
             />
           ) : (
             <p className="text-[12px] text-ink/90 leading-snug">{cleaned}</p>

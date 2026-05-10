@@ -63,7 +63,7 @@ export default function PageShell({
         initial={{ y: -10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="shrink-0 pb-3 sm:pb-5 mb-1"
+        className="shrink-0 pb-3 sm:pb-5 mb-3"
       >
         {/* eyebrow + actions row — stacks on mobile so action buttons
             don't get squeezed against the title or fall off-canvas. */}

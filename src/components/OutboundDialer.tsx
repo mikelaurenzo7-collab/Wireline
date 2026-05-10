@@ -916,7 +916,7 @@ export default function OutboundDialer() {
                       {selectedCampaign.dialed_count ?? 0} / {selectedCampaign.leads_count} dialed
                     </span>
                   </div>
-                  <div className="w-full h-1.5 rounded-full bg-white/5 overflow-hidden">
+                  <div className="w-full h-1.5 rounded-full bg-black/10 overflow-hidden">
                     <motion.div
                       animate={{ width: `${selectedCampaign.leads_count > 0 ? Math.round(((selectedCampaign.dialed_count ?? 0) / selectedCampaign.leads_count) * 100) : 0}%` }}
                       transition={{ duration: 0.6, ease: "easeOut" }}
@@ -983,7 +983,7 @@ export default function OutboundDialer() {
                                 return (
                                   <div key={o.status} className="flex items-center gap-2.5">
                                     <span className="text-[9px] text-muted w-28 shrink-0">{o.status}</span>
-                                    <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
+                                    <div className="flex-1 h-1.5 rounded-full bg-black/10 overflow-hidden">
                                       <motion.div
                                         initial={{ width: 0 }}
                                         animate={{ width: `${o.pct}%` }}

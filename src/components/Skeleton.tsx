@@ -30,7 +30,7 @@ export function Skeleton({ className, accent = "cyan" }: SkeletonProps) {
       aria-live="polite"
       aria-label="Loading…"
       className={cn(
-        "relative overflow-hidden rounded-lg bg-white/[0.04] border border-white/[0.04]",
+        "relative overflow-hidden rounded-lg bg-black/[0.07] border border-black/[0.05]",
         className
       )}
     >
@@ -48,7 +48,7 @@ export function Skeleton({ className, accent = "cyan" }: SkeletonProps) {
 
 export function StatTileSkeleton() {
   return (
-    <div className="relative rounded-xl glass border border-white/10 p-4 overflow-hidden">
+    <div className="relative rounded-xl glass border border-black/8 p-4 overflow-hidden">
       <div className="flex items-start justify-between mb-2.5">
         <Skeleton className="h-2 w-20" accent="cyan" />
         <Skeleton className="w-7 h-7 rounded-lg" accent="violet" />
@@ -104,7 +104,7 @@ export function CardGridSkeleton({ count = 4 }: { count?: number }) {
   return (
     <div className="grid grid-cols-2 gap-3 h-full">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="rounded-2xl glass border border-white/10 p-5 space-y-3 overflow-hidden">
+        <div key={i} className="rounded-2xl glass border border-black/8 p-5 space-y-3 overflow-hidden">
           <div className="flex items-center justify-between">
             <Skeleton className="h-2 w-16" accent={i % 2 === 0 ? "cyan" : "violet"} />
             <Skeleton className="w-5 h-5 rounded-full" accent="magenta" />
@@ -127,7 +127,7 @@ export function ChartSkeleton({ className }: { className?: string }) {
         <div
           key={i}
           className={cn(
-            "relative overflow-hidden flex-1 rounded-t-md bg-white/[0.04] border border-white/[0.04]"
+            "relative overflow-hidden flex-1 rounded-t-md bg-black/[0.07] border border-black/[0.05]"
           )}
           style={{ height: `${h}%` }}
         >
