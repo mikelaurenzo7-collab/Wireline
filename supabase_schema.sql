@@ -1274,7 +1274,7 @@ BEGIN
 
     -- Audit log (skip if < 90 d — compliance minimum)
     DELETE FROM wireline_audit_log
-    WHERE user_id = p_user_id AND timestamp < v_cutoff;
+    WHERE user_id = p_user_id AND created_at < v_cutoff;
     GET DIAGNOSTICS v_audit_deleted = ROW_COUNT;
 
     -- Call logs
@@ -1307,3 +1307,18 @@ BEGIN
     );
 END;
 $$;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- wireline_email_threads.read — 2026-05-10
+--
+-- The nav-counts endpoint (/api/nav-counts) filters by `.eq("read", false)` to
+-- count unread email threads for the inbox badge. This column was missing from
+-- the original CREATE TABLE, causing the badge to always return 0 (Postgres
+-- returns an error on the unknown column; the endpoint silently falls back to 0).
+-- ─────────────────────────────────────────────────────────────────────────────
+ALTER TABLE wireline_email_threads ADD COLUMN IF NOT EXISTS read BOOLEAN NOT NULL DEFAULT false;
+
+-- Covering index for the nav-counts query: SELECT id WHERE user_id=? AND read=false
+CREATE INDEX IF NOT EXISTS wireline_email_threads_user_read_idx
+    ON wireline_email_threads(user_id, read)
+    WHERE read = false;

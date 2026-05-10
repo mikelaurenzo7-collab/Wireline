@@ -263,7 +263,7 @@ function FloatingRail({ open, setOpen, onShowShortcuts }: { open: boolean; setOp
 
         {badge > 0 && (
           <span
-            aria-label={`${badge} item${badge === 1 ? "" : "s"} need attention`}
+            aria-label={`${badge} item${badge === 1 ? "" : "s"} need attention in ${item.label}`}
             className={cn(
               "relative z-10 shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full text-[9px] font-mono leading-none flex items-center justify-center",
               // In collapsed mode the badge becomes a small dot indicator

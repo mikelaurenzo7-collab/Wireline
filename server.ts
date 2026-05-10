@@ -3093,9 +3093,9 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
               // Also add to internal DNC so future campaigns respect the opt-out.
               const sanitized = sanitizePhone(call?.customer?.number ?? '');
               if (sanitized) {
-                await db.from('wireline_dnc').upsert(
-                  { user_id: agent.user_id, phone_number: sanitized, reason: 'opt_out_transcript' },
-                  { onConflict: 'user_id,phone_number', ignoreDuplicates: true },
+                await db.from('wireline_dnc_list').upsert(
+                  { user_id: agent.user_id, phone: normalizeDncPhone(sanitized), phone_raw: sanitized, reason: 'opt_out_transcript', source: 'opt-out' },
+                  { onConflict: 'user_id,phone', ignoreDuplicates: true },
                 );
               }
             }
@@ -10976,7 +10976,7 @@ app.get("/api/tcpa/consent-check", authenticateUser, tcpaRateLimit, async (req: 
     const isMarketing = req.query.is_marketing !== "false";
 
     const [dncRow, settingsRow] = await Promise.all([
-      db.from("wireline_dnc").select("id").eq("user_id", req.user.id).eq("phone_number", phone).maybeSingle(),
+      db.from("wireline_dnc_list").select("id").eq("user_id", req.user.id).eq("phone", normalizeDncPhone(phone)).maybeSingle(),
       db.from("wireline_settings").select("business_name").eq("user_id", req.user.id).maybeSingle(),
     ]);
 
