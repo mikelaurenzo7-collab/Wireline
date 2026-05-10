@@ -13,39 +13,57 @@ Wireline includes enterprise-grade audit logging and activity monitoring for com
 
 ## Event Types
 
+The canonical list of event types is the `AuditEventType` union in
+`src/types/audit.ts`. The schema column defaults to `ai.api_call` so
+legacy AI-spend rows (which only set `action`) still aggregate cleanly.
+
 ### Authentication
 - `auth.login` - Successful login
 - `auth.logout` - User logout
 - `auth.failed_login` - Failed login attempt
 - `auth.password_reset` - Password reset initiated
+- `auth.session_expired` - Session token expired / refresh failed
 
 ### Agent Management
 - `agent.created` - New agent created
 - `agent.updated` - Agent configuration changed
 - `agent.deleted` - Agent removed
 - `agent.training_updated` - Directives/knowledge/personality updated
+- `agent.deployed` - Agent published to Vapi (made live)
+- `agent.paused` - Agent paused / taken offline
 
 ### Settings & Configuration
-- `settings.updated` - Settings changed
-- `settings.api_key_rotated` - API key rotated
+- `settings.updated` - Generic settings change
+- `settings.fleet_updated` - Fleet-wide settings change
+- `settings.knowledge_base_updated` - Cross-agent knowledge edit
 
 ### Billing
-- `billing.subscription_changed` - Subscription plan changed
-- `billing.payment_method_updated` - Payment method updated
+- `billing.subscription_created` - New Stripe subscription
+- `billing.subscription_updated` - Plan / quantity change
+- `billing.subscription_cancelled` - Subscription cancelled
+- `billing.payment_succeeded` - Invoice paid
+- `billing.payment_failed` - Payment attempt failed
 
-### API Usage
-- `api.claude_call` - Anthropic Claude API call
-- `api.gemini_call` - Google Gemini API call
-- `api.vapi_call` - Vapi voice API call
+### AI / API Usage
+- `ai.api_call` - Anthropic Claude / Google Gemini / other LLM call
+  (records `provider`, `model`, token counts, `cost_usd`, `latency_ms`).
+  This is the default for legacy rows.
+- `api.webhook_sent` - Outbound webhook delivered
+- `api.webhook_failed` - Outbound webhook permanently failed
+- `api.intake_received` - Inbound lead via `POST /api/intake/lead`
 
 ### Security
-- `security.rate_limit_exceeded` - Rate limit violation
 - `security.unauthorized_access` - Unauthorized access attempt
+- `security.rate_limit_exceeded` - Rate limit violation
 - `security.suspicious_activity` - Suspicious behavior detected
+- `security.api_key_created` - API key created (intake / SSO)
+- `security.api_key_deleted` - API key deleted / revoked
+- `security.api_key_rotated` - API key rotated
 
 ### Data Operations
 - `data.export` - Data exported (CSV/JSON)
 - `data.import` - Data imported
+- `data.delete` - Single-record delete
 - `data.bulk_delete` - Bulk deletion performed
 
 ## Severity Levels
@@ -61,7 +79,10 @@ Wireline includes enterprise-grade audit logging and activity monitoring for com
 Fetch audit events with filtering.
 
 **Query parameters:**
-- `event_type` — Filter by event type (can be array)
+- `event_type` — Filter by event type. Can be repeated. Accepts either
+  a fully-qualified type (`agent.created`) or a category prefix
+  (`agent`, `auth`, `security`, …) — prefixes match every event whose
+  type starts with `<prefix>.`.
 - `severity` — Filter by severity (can be array)
 - `resource_type` — Filter by resource type
 - `start_date` — ISO timestamp for range start
@@ -112,7 +133,7 @@ Get aggregate statistics.
     "critical": 4
   },
   "by_type": {
-    "api.claude_call": 800,
+    "ai.api_call": 800,
     "agent.updated": 50,
     "auth.login": 100
   },
@@ -122,12 +143,21 @@ Get aggregate statistics.
 }
 ```
 
+`total_api_calls` aggregates every event whose `event_type` starts with
+`ai.` or `api.` (so legacy `ai.api_call` rows and the newer
+`api.webhook_*` / `api.intake_received` events both count as
+"API/AI usage").
+
 ### GET /api/audit/export
-Export audit events.
+Export audit events. Honors the same filters as `/api/audit/events`.
 
 **Query parameters:**
 - `format` — `csv` or `json` (default: csv)
 - `days` — Period to export (default: 30)
+- `event_type` — Same semantics as `/events` (concrete type or prefix,
+  repeatable)
+- `severity` — Repeatable
+- `resource_type`, `start_date`, `end_date`, `search` — Same as `/events`
 
 **Response:** File download with appropriate Content-Type
 
