@@ -81,7 +81,7 @@ export default function CallLogs() {
           type="text"
           aria-label="Search calls"
           placeholder="Search signals…"
-          className="h-9 w-44 lg:w-60 pl-8 pr-3 rounded-full glass border border-white/10 text-[11px] text-ink placeholder:text-muted/60 focus:border-brand/40 focus:outline-none transition-all"
+          className="h-9 w-44 lg:w-60 pl-8 pr-3 rounded-full glass border border-black/10 text-[11px] text-ink placeholder:text-muted/60 focus:border-brand/40 focus:outline-none transition-all"
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
@@ -90,7 +90,7 @@ export default function CallLogs() {
         <Filter className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
         <select
           aria-label="Filter by call direction"
-          className="h-9 pl-8 pr-7 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.22em] text-ink appearance-none focus:border-brand/40 focus:outline-none transition-all cursor-pointer"
+          className="h-9 pl-8 pr-7 rounded-full glass border border-black/10 text-[10px] uppercase tracking-[0.22em] text-ink appearance-none focus:border-brand/40 focus:outline-none transition-all cursor-pointer"
           value={filter}
           onChange={e => setFilter(e.target.value as any)}
         >
@@ -204,7 +204,7 @@ export default function CallLogs() {
                               ? "bg-rose-500/15 text-rose-400 border border-rose-500/25"
                               : (call.lead_score || 0) >= 50
                               ? "bg-brand/12 text-brand border border-brand/20"
-                              : "bg-white/5 text-muted/60"
+                              : "bg-black/[0.06] text-muted/60"
                           )}>
                             {call.lead_score || 0}
                           </span>
@@ -254,7 +254,7 @@ export default function CallLogs() {
           {selectedCall ? <CallDetail call={selectedCall} formatDuration={formatDuration} onBack={() => setSelectedCall(null)} /> : (
             <Panel title="Call Detail" hint="Select a call" icon={FileText}>
               <div className="h-full flex flex-col items-center justify-center gap-4 text-center">
-                <div className="w-16 h-16 rounded-2xl glass border border-white/10 flex items-center justify-center">
+                <div className="w-16 h-16 rounded-2xl glass border border-black/8 flex items-center justify-center">
                   <FileText className="w-8 h-8 text-muted/30" />
                 </div>
                 <div>
@@ -368,7 +368,7 @@ function CallDetail({ call, formatDuration, onBack }: { call: any; formatDuratio
     >
       <div className="h-full flex flex-col">
         {/* Sub-tabs */}
-        <div className="shrink-0 px-3 pt-2.5 pb-2 border-b border-white/5 flex items-center gap-1.5" role="tablist">
+        <div className="shrink-0 px-3 pt-2.5 pb-2 border-b border-black/8 flex items-center gap-1.5" role="tablist">
           {([
             { id: "summary",   label: "Summary",    icon: FileText },
             { id: "transcript",label: "Transcript", icon: MessageCircle },
@@ -384,7 +384,7 @@ function CallDetail({ call, formatDuration, onBack }: { call: any; formatDuratio
                 onClick={() => setTab(t.id)}
                 className={cn(
                   "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] uppercase tracking-[0.22em] transition-all",
-                  active ? "bg-white/8 border-brand/40 text-ink" : "border-white/8 text-muted hover:text-ink"
+                  active ? "bg-black/[0.06] border-brand/40 text-ink" : "border-black/8 text-muted hover:text-ink"
                 )}
               >
                 <t.icon className={cn("w-3 h-3", active ? "text-brand" : "")} />
@@ -407,7 +407,7 @@ function CallDetail({ call, formatDuration, onBack }: { call: any; formatDuratio
               <motion.div key="s" id="call-panel-summary" role="tabpanel" tabIndex={0} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.18 }}
                 className="h-full overflow-y-auto scrollbar-hide p-4 space-y-3">
-                <div className="rounded-xl glass border border-white/8 p-4">
+                <div className="rounded-xl glass border border-black/8 p-4">
                   <div className="text-[9px] uppercase tracking-[0.3em] text-brand mb-2 flex items-center gap-1.5">
                     <FileText className="w-3 h-3" /> Mission summary
                   </div>
@@ -439,7 +439,7 @@ function CallDetail({ call, formatDuration, onBack }: { call: any; formatDuratio
                 )}
                 {/* QA Scorecard */}
                 {qaScore !== null && qaBreakdown ? (
-                  <div className="rounded-xl glass border border-white/8 p-4">
+                  <div className="rounded-xl glass border border-black/8 p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div className="text-[9px] uppercase tracking-[0.3em] flex items-center gap-1.5" style={{ color: qaColor(qaScore) }}>
                         <Star className="w-3 h-3" /> QA Scorecard
@@ -454,7 +454,7 @@ function CallDetail({ call, formatDuration, onBack }: { call: any; formatDuratio
                         return (
                           <div key={key} className="flex items-center gap-2">
                             <span className="text-[9px] uppercase tracking-[0.22em] text-muted w-20 shrink-0">{label}</span>
-                            <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
+                            <div className="flex-1 h-1.5 rounded-full bg-black/10 overflow-hidden">
                               <motion.div
                                 initial={{ width: 0 }}
                                 animate={{ width: `${(val / 20) * 100}%` }}
@@ -469,7 +469,7 @@ function CallDetail({ call, formatDuration, onBack }: { call: any; formatDuratio
                       })}
                     </div>
                     {qaBreakdown.notes && (
-                      <p className="text-[11px] text-ink/65 leading-relaxed border-t border-white/8 pt-2 mt-2">
+                      <p className="text-[11px] text-ink/65 leading-relaxed border-t border-black/8 pt-2 mt-2">
                         <Sparkles className="w-3 h-3 inline mr-1 text-brand" />{qaBreakdown.notes}
                       </p>
                     )}
@@ -505,9 +505,9 @@ function CallDetail({ call, formatDuration, onBack }: { call: any; formatDuratio
                   return (
                     <div key={i} className={cn(
                       "p-3 rounded-xl border text-[12px] leading-snug max-w-[85%]",
-                      isAI   ? "bg-white/3 border-white/8 text-ink mr-auto" :
+                       isAI   ? "bg-black/[0.03] border-black/8 text-ink mr-auto" :
                       isUser ? "bg-brand/8 border-brand/20 text-ink ml-auto" :
-                               "bg-paper/40 border-white/8 text-muted text-center mx-auto"
+                               "bg-black/[0.05] border-black/8 text-muted text-center mx-auto"
                     )}>
                       <div className={cn(
                         "text-[8px] uppercase tracking-[0.32em] mb-1",
@@ -526,7 +526,7 @@ function CallDetail({ call, formatDuration, onBack }: { call: any; formatDuratio
                 transition={{ duration: 0.18 }}
                 className="h-full overflow-y-auto scrollbar-hide p-4 space-y-3">
                 {call.recording_url ? (
-                  <div className="rounded-xl glass border border-white/8 p-4 space-y-3">
+                  <div className="rounded-xl glass border border-black/8 p-4 space-y-3">
                     <div className="text-[9px] uppercase tracking-[0.3em] text-brand flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
                       Decrypted signal buffer
@@ -557,7 +557,7 @@ function CallDetail({ call, formatDuration, onBack }: { call: any; formatDuratio
 
 function Stat({ label, value, accent, icon: Icon }: { label: string; value: React.ReactNode; accent: string; icon?: React.ComponentType<{ className?: string }> }) {
   return (
-    <div className="rounded-lg glass border border-white/8 p-2.5">
+    <div className="rounded-lg glass border border-black/8 p-2.5">
       <div className="text-[8px] uppercase tracking-[0.28em] text-muted mb-1 flex items-center gap-1" style={{ color: accent }}>
         {Icon && <Icon className="w-3 h-3" />}
         {label}

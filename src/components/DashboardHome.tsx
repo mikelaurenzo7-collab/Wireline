@@ -348,15 +348,15 @@ export default function DashboardHome() {
                 "flex items-center gap-3 rounded-xl p-3.5 border transition-all",
                 activeSignals.length > 0
                   ? "bg-emerald-500/8 border-emerald-500/25"
-                  : "bg-white/3 border-white/8"
+                  : "bg-black/[0.03] border-black/8"
               )}>
                 <div className={cn(
                   "relative w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
-                  activeSignals.length > 0 ? "bg-emerald-500/20" : "bg-white/5"
+                  activeSignals.length > 0 ? "bg-emerald-500/20" : "bg-black/[0.05]"
                 )}>
                   <span className={cn(
                     "w-3 h-3 rounded-full",
-                    activeSignals.length > 0 ? "bg-emerald-500 indicator-glow" : "bg-white/20"
+                    activeSignals.length > 0 ? "bg-emerald-500 indicator-glow" : "bg-black/20"
                   )} />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -379,15 +379,15 @@ export default function DashboardHome() {
                 "flex items-center gap-3 rounded-xl p-3.5 border transition-all",
                 isConnected ? "bg-rose-500/8 border-rose-500/25" :
                 isConnecting ? "bg-amber-500/8 border-amber-500/25" :
-                "bg-white/3 border-white/8"
+                "bg-black/[0.03] border-black/8"
               )}>
                 <div className={cn(
                   "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
-                  isConnected ? "bg-rose-500/20" : isConnecting ? "bg-amber-500/20" : "bg-white/5"
+                  isConnected ? "bg-rose-500/20" : isConnecting ? "bg-amber-500/20" : "bg-black/[0.05]"
                 )}>
                   {isConnecting
                     ? <Loader2 className="w-4 h-4 text-amber-400 animate-spin" />
-                    : <Mic className={cn("w-4 h-4", isConnected ? "text-rose-400" : "text-white/30")} />
+                    : <Mic className={cn("w-4 h-4", isConnected ? "text-rose-400" : "text-ink/25")} />
                   }
                 </div>
                 <div className="min-w-0 flex-1">
@@ -405,7 +405,7 @@ export default function DashboardHome() {
                   {(stats?.agents || []).slice(0, 4).map((a: any, i: number) => {
                     const busy = activeSignals.some((s: any) => s.agent_id === a.id);
                     return (
-                      <div key={i} className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/3 border border-white/6">
+                      <div key={i} className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-black/[0.03] border border-black/6">
                         <span className={cn(
                           "w-2 h-2 rounded-full shrink-0",
                           busy ? "bg-rose-400" : "bg-emerald-400"
@@ -539,10 +539,10 @@ export default function DashboardHome() {
                 const Icon = action.icon;
                 return (
                   <Link key={action.to} to={action.to}
-                    className="group flex items-center gap-3 h-11 rounded-xl glass border border-white/8 px-3.5 hover:border-white/20 hover:bg-white/4 transition-all"
+                    className="group flex items-center gap-3 h-11 rounded-xl glass border border-black/8 px-3.5 hover:border-black/16 hover:bg-black/[0.03] transition-all"
                   >
                     <div
-                      className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border border-white/8"
+                      className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border border-black/8"
                       style={{ background: `${action.accent}15`, color: action.accent }}
                     >
                       <Icon className="w-3.5 h-3.5" />
@@ -586,7 +586,7 @@ export default function DashboardHome() {
                     ].map(({ label, pct, color }) => (
                       <div key={label} className="flex items-center gap-2">
                         <span className="text-[8px] uppercase tracking-[0.2em] text-muted w-6 shrink-0">{label}</span>
-                        <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
+                        <div className="flex-1 h-1.5 rounded-full bg-black/10 overflow-hidden">
                           <motion.div
                             initial={{ width: 0 }}
                             animate={{ width: `${pct}%` }}
@@ -689,7 +689,7 @@ export default function DashboardHome() {
                           </div>
                           <p className="text-[10px] text-muted truncate max-w-md leading-tight mb-1.5">{lead.summary}</p>
                           {/* Score bar */}
-                          <div className="w-full h-0.5 rounded-full bg-white/5 overflow-hidden">
+                          <div className="w-full h-0.5 rounded-full bg-black/10 overflow-hidden">
                             <motion.div
                               initial={{ width: 0 }}
                               animate={{ width: `${score}%` }}

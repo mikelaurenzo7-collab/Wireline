@@ -98,8 +98,8 @@
   }
 
   ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
   }
 
   ::-webkit-scrollbar-track {
@@ -115,6 +115,8 @@
 
   ::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(180deg, rgba(10, 200, 212, 0.60), rgba(224, 64, 192, 0.60));
+    border-radius: 999px;
+    border: 2px solid transparent;
     background-clip: padding-box;
   }
 

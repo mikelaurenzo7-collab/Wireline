@@ -929,7 +929,7 @@ function AuditActivityPanel() {
                     return (
                       <div key={m.model} className="flex items-center gap-3">
                         <span className="text-[9px] font-mono text-muted w-36 shrink-0 truncate">{m.model || "unknown"}</span>
-                        <div className="flex-1 h-2 rounded-full bg-white/5 overflow-hidden">
+                        <div className="flex-1 h-2 rounded-full bg-black/10 overflow-hidden">
                           <motion.div
                             initial={{ width: 0 }}
                             animate={{ width: `${pct}%` }}
@@ -961,7 +961,7 @@ function AuditActivityPanel() {
                   return (
                     <div key={a.action} className="flex items-center gap-3">
                       <span className="text-[9px] text-muted w-36 shrink-0 truncate capitalize">{formatActionName(a.action as string)}</span>
-                      <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
+                      <div className="flex-1 h-1.5 rounded-full bg-black/10 overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${pct}%` }}

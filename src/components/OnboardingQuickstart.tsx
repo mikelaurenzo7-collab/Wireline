@@ -118,7 +118,7 @@ export default function OnboardingQuickstart() {
             </div>
             <div className="flex items-center gap-3">
               <span className="text-[10px] uppercase tracking-[0.3em] text-muted">{completedCount} / {STEPS.length} done</span>
-              <div className="w-32 h-1.5 rounded-full bg-white/5 overflow-hidden">
+              <div className="w-32 h-1.5 rounded-full bg-black/10 overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${completionPct}%` }}

@@ -142,7 +142,7 @@ function FunnelView({ days }: { days: number }) {
                 <span className="font-display italic text-2xl text-ink">{s.name}</span>
                 <span className="font-display italic text-3xl text-aurora tabular-nums">{s.count.toLocaleString()}</span>
               </div>
-              <div className="relative h-3 rounded-full bg-white/5 overflow-hidden">
+              <div className="relative h-3 rounded-full bg-black/10 overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${pct}%` }}
@@ -214,8 +214,8 @@ function TopicsView() {
               transition={{ delay: i * 0.05 }}
               className="relative aurora-ring rounded-2xl"
             >
-              <div className="relative rounded-2xl glass border border-white/10 p-5 overflow-hidden">
-                <div className="absolute inset-x-0 bottom-0 h-1 bg-white/5" />
+              <div className="relative rounded-2xl glass border border-black/8 p-5 overflow-hidden">
+                <div className="absolute inset-x-0 bottom-0 h-1 bg-black/[0.05]" />
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${pct}%` }}
@@ -592,7 +592,7 @@ function AISpendView({ days }: { days: number }) {
                   className="flex items-center gap-3"
                 >
                   <span className="shrink-0 text-[10px] uppercase tracking-[0.25em] text-muted w-20 font-mono">{d.day.slice(5)}</span>
-                  <div className="flex-1 relative h-7 rounded-lg bg-white/5 overflow-hidden">
+                  <div className="flex-1 relative h-7 rounded-lg bg-black/10 overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${pct}%` }}
@@ -625,7 +625,7 @@ function AISpendView({ days }: { days: number }) {
                       <span className="text-sm text-ink/85 truncate">{a.action}</span>
                       <span className="font-display italic text-lg text-aurora tabular-nums shrink-0">${safeFixed(a.cost, 3)}</span>
                     </div>
-                    <div className="relative h-1.5 rounded-full bg-white/5 overflow-hidden">
+                    <div className="relative h-1.5 rounded-full bg-black/10 overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }} animate={{ width: `${pct}%` }}
                         transition={{ duration: 0.6, delay: i * 0.03 }}
@@ -790,9 +790,9 @@ function SpendBudgetCard() {
               </div>
               <div className="text-[10px] uppercase tracking-[0.3em] text-muted">{safeFixed(pct, 1)}% used</div>
             </div>
-            <div className="relative h-3 rounded-full bg-white/5 overflow-hidden">
+            <div className="relative h-3 rounded-full bg-black/10 overflow-hidden">
               {/* Warn-threshold tick */}
-              <div className="absolute inset-y-0 w-px bg-white/30" style={{ left: `${warnPct}%` }} title={`Warn threshold ${warnPct}%`} />
+              <div className="absolute inset-y-0 w-px bg-black/30" style={{ left: `${warnPct}%` }} title={`Warn threshold ${warnPct}%`} />
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${Math.min(100, pct)}%` }}
@@ -1078,7 +1078,7 @@ function QualityView({ days }: { days: number }) {
             {distribution.map((bucket: any) => (
               <div key={bucket.label} className="flex items-center gap-3">
                 <span className="text-[9px] text-muted w-28 shrink-0">{bucket.label}</span>
-                <div className="flex-1 h-2 rounded-full bg-white/5 overflow-hidden">
+                <div className="flex-1 h-2 rounded-full bg-black/10 overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${(bucket.count / maxDist) * 100}%` }}
@@ -1165,7 +1165,7 @@ function QualityView({ days }: { days: number }) {
                   <p className="text-[9px] text-muted/70 mt-0.5">{desc}</p>
                 </div>
                 <div className="w-28 flex items-center gap-2 shrink-0">
-                  <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
+                  <div className="flex-1 h-1.5 rounded-full bg-black/10 overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${pct}%` }}

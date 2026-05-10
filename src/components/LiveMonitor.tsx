@@ -218,7 +218,7 @@ export default function LiveMonitor() {
       subtitle="Active calls and recent fleet activity — refreshing every 10 seconds"
       actions={
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full glass border border-white/10 text-[9px] uppercase tracking-[0.3em] text-muted/70">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full glass border border-black/10 text-[9px] uppercase tracking-[0.3em] text-muted/70">
             <span className="relative flex h-1.5 w-1.5">
               <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
@@ -227,7 +227,7 @@ export default function LiveMonitor() {
           </div>
           <button
             onClick={() => { const c = new AbortController(); fetchData(c.signal); }}
-            className="h-9 px-3 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5"
+            className="h-9 px-3 rounded-full glass border border-black/10 text-[10px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5"
           >
             <RefreshCw className="w-3 h-3" />
             Refresh
@@ -327,7 +327,7 @@ export default function LiveMonitor() {
                             animation: "pulse 3s ease-in-out infinite",
                           }}
                         />
-                        <div className="w-full h-full rounded-2xl glass border border-white/10 flex items-center justify-center">
+                        <div className="w-full h-full rounded-2xl glass border border-black/8 flex items-center justify-center">
                           <PhoneOff className="w-7 h-7 text-muted/40" />
                         </div>
                       </div>
