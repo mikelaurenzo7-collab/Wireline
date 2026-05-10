@@ -298,7 +298,7 @@ function FloatingRail({ open, setOpen, onShowShortcuts }: { open: boolean; setOp
       <div aria-live="polite" aria-atomic="true" className="sr-only">
         {Object.entries(navBadges)
           .filter(([, n]) => n > 0)
-          .map(([path, n]) => `${n} item${n === 1 ? "" : "s"} need attention in ${path.replace("/", "")}`)
+          .map(([path, n]) => `${n} item${n === 1 ? "" : "s"} need attention in ${path.slice(1) || "dashboard"}`)
           .join("; ")}
       </div>
 

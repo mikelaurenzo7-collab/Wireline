@@ -1261,7 +1261,7 @@ SECURITY DEFINER
 AS $$
 DECLARE
     v_cutoff        TIMESTAMPTZ := NOW() - (p_retention_days || ' days')::INTERVAL;
-    v_consent_cutoff TIMESTAMPTZ := NOW() - GREATEST(p_retention_days, 365) * INTERVAL '1 day';
+    v_consent_cutoff TIMESTAMPTZ := NOW() - (GREATEST(p_retention_days, 365) || ' days')::INTERVAL;
     v_audit_deleted  BIGINT;
     v_calls_deleted  BIGINT;
     v_email_deleted  BIGINT;
