@@ -34,9 +34,9 @@ export default function CookieConsent() {
           role="dialog"
           aria-label="Cookie notice"
         >
-          <div className="rounded-2xl glass border border-white/12 bg-[#0e0e18]/90 backdrop-blur-xl shadow-2xl px-5 py-4 flex items-start gap-4">
+          <div className="rounded-2xl glass-strong border border-black/8 backdrop-blur-xl shadow-2xl px-5 py-4 flex items-start gap-4">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
-              style={{ background: "linear-gradient(135deg, rgba(10,200,212,0.2), rgba(155,89,245,0.2))", border: "1px solid rgba(10,200,212,0.25)" }}>
+              style={{ background: "linear-gradient(135deg, rgba(10,200,212,0.15), rgba(155,89,245,0.15))", border: "1px solid rgba(10,200,212,0.20)" }}>
               <Cookie className="w-4 h-4 text-brand" />
             </div>
 
@@ -58,7 +58,7 @@ export default function CookieConsent() {
             <button
               onClick={dismiss}
               aria-label="Dismiss cookie notice"
-              className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center hover:bg-white/8 transition-colors text-muted hover:text-ink mt-0.5"
+              className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center hover:bg-black/5 transition-colors text-muted hover:text-ink mt-0.5"
             >
               <X className="w-3.5 h-3.5" />
             </button>

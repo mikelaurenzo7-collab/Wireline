@@ -49,9 +49,7 @@ export default function AdminSettings() {
   const providerDocsUrl = {
     google: "https://ai.google.dev/gemini-api/docs/models",
     anthropic: "https://docs.anthropic.com/en/docs/about-claude/models/overview",
-    openai: "https://platform.openai.com/docs/models",
-    groq: "https://console.groq.com/docs/models",
-  }[settings.voice_llm_provider] ?? "https://platform.openai.com/docs/models";
+  }[settings.voice_llm_provider] ?? "https://ai.google.dev/gemini-api/docs/models";
 
   useEffect(() => { fetchData(); fetchClaudeStatus(); }, []);
 
@@ -295,8 +293,6 @@ export default function AdminSettings() {
                       {[
                         { v: "google", label: "Google", sub: "Gemini", desc: "Lowest latency, cheapest." },
                         { v: "anthropic", label: "Anthropic", sub: "Claude", desc: "Best reasoning, most steerable." },
-                        { v: "openai", label: "OpenAI", sub: "GPT", desc: "Optional — set the model below." },
-                        { v: "groq", label: "Groq", sub: "OSS via Groq", desc: "Optional — set the model below." },
                       ].map((p) => (
                         <button
                           key={p.v}
@@ -307,9 +303,7 @@ export default function AdminSettings() {
                             voice_llm_provider: p.v,
                             voice_llm_model:
                               p.v === "google" ? "gemini-1.5-flash" :
-                              p.v === "anthropic" ? "claude-3-5-sonnet-20241022" :
-                              p.v === "openai" ? "gpt-4o-mini" :
-                              "llama-3.3-70b-versatile",
+                              "claude-3-5-sonnet-20241022",
                           })}
                           className={cn(
                             "text-left rounded-xl p-3 transition-all border",

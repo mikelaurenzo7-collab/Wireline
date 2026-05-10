@@ -24,7 +24,8 @@ function createRateLimiter(opts: RateLimiterOptions): RateLimitMiddleware {
       const userId = (req as any).user?.id;
       if (!userId) {
         // Should never happen if authenticateUser ran first, but be defensive.
-        return res.status(401).json({ error: "Authentication required" });
+        res.status(401).json({ error: "Authentication required" });
+        return;
       }
 
       const result = await rateLimit(userId, opts);
@@ -32,11 +33,12 @@ function createRateLimiter(opts: RateLimiterOptions): RateLimitMiddleware {
       if (!result.allowed) {
         const retryAfterSeconds = Math.ceil(result.resetMs / 1000);
         res.set("Retry-After", String(retryAfterSeconds));
-        return res.status(429).json({
+        res.status(429).json({
           error: "Rate limit exceeded",
           bucket: opts.bucket,
           retryAfterSeconds,
         });
+        return;
       }
 
       // Include rate limit info in response headers.
