@@ -13,7 +13,25 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { AsyncLocalStorage } from "node:async_hooks";
 
-const DEFAULT_MODEL = "claude-opus-4-7";
+/**
+ * Canonical Claude model id used by every Claude-powered path in Wireline.
+ *
+ * Exported so callers (server.ts, /api/health, /api/claude/status, AdminSettings)
+ * can reference a single source of truth instead of hard-coding the string.
+ *
+ * Override with the ANTHROPIC_MODEL env var (e.g. for staging / A-B tests).
+ * Verified against `@anthropic-ai/sdk@^0.92`: `"claude-opus-4-7"` is the first
+ * entry in the published `Anthropic.Model` union, so this is the
+ * highest-capability current-generation default.
+ */
+export const CLAUDE_MODEL_DEFAULT: string =
+  process.env.ANTHROPIC_MODEL || "claude-opus-4-7";
+
+/**
+ * @deprecated Use CLAUDE_MODEL_DEFAULT. Kept as an internal alias so the
+ * existing in-module references continue to compile during the rollout.
+ */
+const DEFAULT_MODEL = CLAUDE_MODEL_DEFAULT;
 
 /* ────────────────────────────────────────────────────────────────────────
  *  Audit capture — every Claude API round trip pushes its meta into the
@@ -176,6 +194,11 @@ export async function runStructured<T = any>(opts: StructuredOptions): Promise<T
   };
 
   if (opts.deepThink) {
+    // Verified against @anthropic-ai/sdk@^0.92 typings:
+    //   - `ThinkingConfigAdaptive { type: 'adaptive' }` is a member of
+    //     `ThinkingConfigParam`.
+    //   - `OutputConfig.effort` accepts 'low'|'medium'|'high'|'xhigh'|'max'.
+    // See node_modules/@anthropic-ai/sdk/resources/messages/messages.d.ts.
     body.thinking = { type: "adaptive" };
     body.output_config = { effort: "high" };
   }
@@ -1750,13 +1773,13 @@ After crawling, extract every concrete fact a customer-service agent would need:
 
   let _t = Date.now();
   let response = await client.messages.create({
-    model: "claude-opus-4-7",
+    model: CLAUDE_MODEL_DEFAULT,
     max_tokens: maxTokens,
     system,
     tools,
     messages,
   });
-  recordUsage("claude-opus-4-7", response, Date.now() - _t);
+  recordUsage(CLAUDE_MODEL_DEFAULT, response, Date.now() - _t);
 
   // Server-side tool loop — `pause_turn` means Claude hit the per-request
   // server-side iteration cap (10 by default) and needs us to re-send the
@@ -1768,13 +1791,13 @@ After crawling, extract every concrete fact a customer-service agent would need:
     messages.push({ role: "assistant", content: response.content });
     _t = Date.now();
     response = await client.messages.create({
-      model: "claude-opus-4-7",
+      model: CLAUDE_MODEL_DEFAULT,
       max_tokens: maxTokens,
       system,
       tools,
       messages,
     });
-    recordUsage("claude-opus-4-7", response, Date.now() - _t);
+    recordUsage(CLAUDE_MODEL_DEFAULT, response, Date.now() - _t);
   }
 
   for (const block of response.content) {
@@ -1807,7 +1830,7 @@ export async function knowledgeFromDocument(input: KnowledgeFromDocumentInput) {
 
   const t0 = Date.now();
   const response = await client.messages.create({
-    model: "claude-opus-4-7",
+    model: CLAUDE_MODEL_DEFAULT,
     max_tokens: 8192,
     system,
     tools: [TOOLS.knowledgeFromUrl],
@@ -1834,7 +1857,7 @@ export async function knowledgeFromDocument(input: KnowledgeFromDocumentInput) {
     ],
   });
 
-  recordUsage("claude-opus-4-7", response, Date.now() - t0);
+  recordUsage(CLAUDE_MODEL_DEFAULT, response, Date.now() - t0);
   for (const block of response.content) {
     if (block.type === "tool_use" && block.name === "deliver_knowledge_entries") {
       return block.input as { page_summary: string; entries: Array<{ fact: string; category: string }> };
@@ -1946,7 +1969,7 @@ ${input.knowledgeBase.length ? input.knowledgeBase.map((k) => `- ${k}`).join("\n
 
   while (safety-- > 0) {
     const body: Anthropic.MessageCreateParams = {
-      model: "claude-opus-4-7",
+      model: CLAUDE_MODEL_DEFAULT,
       max_tokens: 4096,
       system: [
         { type: "text", text: system, cache_control: { type: "ephemeral" } },
@@ -1957,7 +1980,7 @@ ${input.knowledgeBase.length ? input.knowledgeBase.map((k) => `- ${k}`).join("\n
 
     const _t = Date.now();
     const response = await client.messages.create(body);
-    recordUsage("claude-opus-4-7", response, Date.now() - _t);
+    recordUsage(CLAUDE_MODEL_DEFAULT, response, Date.now() - _t);
 
     if (response.stop_reason === "tool_use") {
       messages.push({ role: "assistant", content: response.content });
@@ -2261,7 +2284,7 @@ Search the web, then call deliver_lead_enrichment.`;
     { role: "user", content: userPrompt },
   ];
 
-  const model = "claude-opus-4-7";
+  const model = CLAUDE_MODEL_DEFAULT;
   const maxTokens = 4096;
 
   let _t = Date.now();
@@ -2408,7 +2431,7 @@ Score each dimension 0–20 and provide a concise, actionable coaching note.`;
     tool: TOOLS.qaScore,
     deepThink: false,
     maxTokens: 512,
-    model: "claude-opus-4-7",
+    model: CLAUDE_MODEL_DEFAULT,
   });
 }
 

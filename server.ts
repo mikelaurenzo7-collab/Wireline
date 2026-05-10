@@ -119,6 +119,13 @@ function validateStartupEnv() {
     ["ANTHROPIC_API_KEY",   process.env.ANTHROPIC_API_KEY],
     ["VAPI_PRIVATE_KEY",    process.env.VAPI_PRIVATE_KEY],
     ["VAPI_WEBHOOK_SECRET", process.env.VAPI_WEBHOOK_SECRET],
+    // OAUTH_STATE_SECRET signs the CSRF state token used by every OAuth
+    // callback. Without a dedicated secret we silently fall back to
+    // STRIPE_WEBHOOK_SECRET, which (a) mixes secrets across security
+    // domains and (b) silently invalidates every in-flight OAuth state
+    // token whenever Stripe's webhook secret rotates. Require its own
+    // value in production; in dev we accept the fallback.
+    ["OAUTH_STATE_SECRET",  process.env.OAUTH_STATE_SECRET],
   ];
 
   const missingAlways = alwaysRequired.filter(([, v]) => !v).map(([k]) => k);
@@ -190,9 +197,26 @@ app.use(
 // register raw-body middleware on that exact path BEFORE the global
 // JSON parser. The handler reads `req.body` as a Buffer.
 app.use("/api/stripe-webhook", express.raw({ type: "application/json" }));
-// Bump body limit so base64-encoded PDF uploads (up to ~32MB raw / ~43MB
-// base64) fit comfortably for the knowledge-from-document recipe.
-app.use(express.json({ limit: '50mb' }));
+
+// Body parser scoping.
+//
+// The 50 MB ceiling only exists for the knowledge-from-document recipe,
+// which accepts a base64-encoded PDF (up to ~32 MB raw / ~43 MB base64).
+// Applying that ceiling globally turns every other endpoint — including
+// unauthenticated ones like /api/intake/lead and the Vapi webhook — into
+// a DoS magnet (an attacker can force the server to allocate 50 MB per
+// request before any auth check runs).
+//
+// Mount the large-payload parser only on the single endpoint that
+// legitimately needs it; everything else defaults to a 1 MB ceiling
+// which comfortably covers normal API payloads and CSV/JSON imports.
+// NOTE: the 50 MB parser still runs before authentication on this single
+// path (Express body parsers can't read req.user). The residual risk is
+// scoped to one POST endpoint, gated by the global /api/claude/* rate
+// limiter (60 req/min/key) and the spend hard-cap; the previous global
+// 50 MB ceiling gave every API endpoint the same exposure.
+app.use("/api/claude/knowledge-from-document", express.json({ limit: '50mb' }));
+app.use(express.json({ limit: '1mb' }));
 
 // ────────────────────────────────────────────────────────────────────
 //  Request correlation IDs — every request gets a stable id we attach
@@ -382,6 +406,10 @@ app.get("/api/health", healthRateLimiter, async (_req, res) => {
       google_oauth:    !!process.env.GOOGLE_CLIENT_ID,
       microsoft_oauth: !!process.env.MICROSOFT_CLIENT_ID,
     },
+    // Surface the active Claude model id so operators can verify at a
+    // glance which build is running and which model their fleet is using.
+    // Centralized in src/lib/claude-brain.ts; overridable via ANTHROPIC_MODEL.
+    claude_model: claudeBrain.CLAUDE_MODEL_DEFAULT,
     timestamp: new Date().toISOString(),
   });
 });
@@ -520,20 +548,52 @@ app.use("/api/phone-numbers", timeoutMiddleware(10_000)); // 10s for phone provi
 app.use("/api/campaigns", timeoutMiddleware(10_000)); // 10s for campaign operations
 app.use("/api", timeoutMiddleware(20_000)); // 20s default for other endpoints
 
-// Cache-Control headers for read operations — improves browser/CDN caching
-// Write operations (POST, PATCH, DELETE) should never be cached
+// Cache-Control headers for read operations.
+//
+// Earlier this middleware applied `private, max-age=60, must-revalidate`
+// to EVERY GET /api/* request. That caused user-visible "ghost data"
+// bugs: a mutation in one tab, followed by an immediate refetch in the
+// same tab, could be served from the disk cache and miss the new row.
+//
+// Now: only an explicit allowlist of safely-cacheable, low-mutation
+// read endpoints gets a short-lived cache. Everything else defaults to
+// `no-store, private` so dashboards/triage/insights/logs reflect the
+// latest DB state after every mutation. Write methods (POST/PATCH/PUT/
+// DELETE) are always no-store.
+//
+// Allowlist criteria: must be either (a) static catalog data that
+// changes at most once per deploy, or (b) liveness/capability probes
+// where a 60s staleness is harmless. New endpoints default to no-store
+// unless they explicitly satisfy these criteria.
+const CACHEABLE_GET_PREFIXES: readonly string[] = [
+  '/api/health',           // liveness probe — capability flags rarely change
+  '/api/billing/plans',    // plan catalog — changes at deploy time
+  '/api/agents/roles',     // static role enum — never changes at runtime
+  '/api/claude/status',    // model + availability probe
+];
+function isCacheableApiPath(pathname: string): boolean {
+  return CACHEABLE_GET_PREFIXES.some(prefix =>
+    pathname === prefix || pathname.startsWith(prefix + '/'),
+  );
+}
+
 app.use((req: any, res: any, next: any) => {
   if (req.method === 'GET') {
-    // Static assets: cache longer
+    // Static assets: cache aggressively (hashed filenames are immutable).
     if (req.path.match(/\.(js|css|png|jpg|svg|woff|woff2|ttf)$/i)) {
-      res.set('Cache-Control', 'public, max-age=31536000, immutable'); // 1 year for hashed assets
+      res.set('Cache-Control', 'public, max-age=31536000, immutable');
     }
-    // API read endpoints: short-lived cache with revalidation
+    // API: only cache allowlisted endpoints; everything else defaults
+    // to no-store to prevent stale-after-mutation bugs.
     else if (req.path.startsWith('/api/')) {
-      res.set('Cache-Control', 'private, max-age=60, must-revalidate'); // 1 min with revalidation
+      if (isCacheableApiPath(req.path)) {
+        res.set('Cache-Control', 'private, max-age=60, must-revalidate');
+      } else {
+        res.set('Cache-Control', 'no-store, private');
+      }
     }
   } else {
-    // Never cache write operations
+    // Never cache write operations.
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   }
   next();
@@ -568,9 +628,13 @@ const OAUTH_RATE_MAX = 10;
 const OAUTH_STATE_SECRET =
   process.env.OAUTH_STATE_SECRET ||
   process.env.STRIPE_WEBHOOK_SECRET ||
-  "wireline-dev-oauth-state-secret"; // overridden in production by env
-if (IS_PROD && !process.env.OAUTH_STATE_SECRET) {
-  log.warn("OAUTH_STATE_SECRET not set — falling back to STRIPE_WEBHOOK_SECRET for OAuth CSRF tokens. Set OAUTH_STATE_SECRET to a dedicated random secret.");
+  "wireline-dev-oauth-state-secret"; // dev-only fallback; prod is gated by validateStartupEnv
+if (!process.env.OAUTH_STATE_SECRET && process.env.STRIPE_WEBHOOK_SECRET) {
+  // In dev we accept the Stripe-secret fallback to keep `npm run dev`
+  // painless, but be loud about it: mixing secrets across domains is a
+  // smell and rotating the Stripe secret would silently invalidate
+  // every in-flight OAuth state token.
+  log.warn("OAUTH_STATE_SECRET unset — falling back to STRIPE_WEBHOOK_SECRET (dev only). Set OAUTH_STATE_SECRET to a dedicated random secret before deploying.");
 }
 
 function generateOAuthState(): string {
@@ -7668,7 +7732,7 @@ app.use(["/api/insights/topics", "/api/insights/failure-modes", "/api/insights/d
 app.get("/api/claude/status", authenticateUser, async (_req: any, res: any) => {
   res.json({
     available: claudeBrain.isClaudeAvailable(),
-    model: "claude-opus-4-7",
+    model: claudeBrain.CLAUDE_MODEL_DEFAULT,
     capabilities: [
       "brief", "qualify", "objection-drill", "cold-email",
       "persona-clone", "summarize-thread", "route-intent",

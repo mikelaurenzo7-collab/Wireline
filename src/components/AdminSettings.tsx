@@ -670,7 +670,7 @@ export default function AdminSettings() {
                           {claudeStatus?.available ? "Claude Online" : "Claude Offline"}
                         </div>
                         <div className="text-[10px] text-muted uppercase tracking-[0.25em] mt-0.5">
-                          {claudeStatus?.model || "claude-opus-4-7"}
+                          {claudeStatus?.model || "—"}
                         </div>
                       </div>
                       <div className="ml-auto">
