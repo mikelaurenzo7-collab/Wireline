@@ -41,6 +41,8 @@ export const ROLE_PERMISSIONS: Record<AccessRole, string[]> = {
     "knowledge.manage",
     "insights.read",
     "webhooks.manage",
+    "quotas.override",
+    "jobs.admin",
   ],
   admin: [
     "agents.manage",
@@ -54,6 +56,8 @@ export const ROLE_PERMISSIONS: Record<AccessRole, string[]> = {
     "knowledge.manage",
     "insights.read",
     "webhooks.manage",
+    "quotas.override",
+    "jobs.admin",
   ],
   operator: [
     "agents.read",

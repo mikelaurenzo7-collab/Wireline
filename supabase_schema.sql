@@ -206,26 +206,46 @@ ALTER TABLE wireline_outbound_leads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wireline_signal_presence ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wireline_agent_lessons ENABLE ROW LEVEL SECURITY;
 
--- Create policies (Owner only)
--- Example for wireline_agents
-CREATE POLICY "Users can manage their own agents" ON wireline_agents
-    FOR ALL USING (auth.uid() = user_id);
-
--- Apply similar policies to other tables
-CREATE POLICY "Users can manage their own settings" ON wireline_settings FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can manage their own directives" ON wireline_directives FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can manage their own knowledge" ON wireline_knowledge FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can manage their own personality" ON wireline_personality FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can manage their own appointments" ON wireline_appointments FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can manage their own call logs" ON wireline_call_logs FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can manage their own email accounts" ON wireline_email_accounts FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can manage their own email threads" ON wireline_email_threads FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can manage their own email messages" ON wireline_email_messages FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can manage their own fleet tasks" ON wireline_fleet_tasks FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can manage their own phone numbers" ON wireline_phone_numbers FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can manage their own leads" ON wireline_outbound_leads FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can manage their own presence signals" ON wireline_signal_presence FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can manage their own agent lessons" ON wireline_agent_lessons FOR ALL USING (auth.uid() = user_id);
+-- Create policies (Owner only). Each CREATE POLICY is wrapped in a
+-- pg_policies guard so this file is fully idempotent — re-running it on
+-- an existing install is a no-op rather than failing with
+-- "policy already exists". Postgres does NOT support
+-- `CREATE POLICY IF NOT EXISTS` (valid for TABLE/INDEX but not POLICY),
+-- so we use the DO/EXECUTE pattern here and everywhere below.
+DO $$
+DECLARE
+    p RECORD;
+BEGIN
+    FOR p IN
+        SELECT * FROM (VALUES
+            ('wireline_agents',           'Users can manage their own agents'),
+            ('wireline_settings',         'Users can manage their own settings'),
+            ('wireline_directives',       'Users can manage their own directives'),
+            ('wireline_knowledge',        'Users can manage their own knowledge'),
+            ('wireline_personality',      'Users can manage their own personality'),
+            ('wireline_appointments',     'Users can manage their own appointments'),
+            ('wireline_call_logs',        'Users can manage their own call logs'),
+            ('wireline_email_accounts',   'Users can manage their own email accounts'),
+            ('wireline_email_threads',    'Users can manage their own email threads'),
+            ('wireline_email_messages',   'Users can manage their own email messages'),
+            ('wireline_fleet_tasks',      'Users can manage their own fleet tasks'),
+            ('wireline_phone_numbers',    'Users can manage their own phone numbers'),
+            ('wireline_outbound_leads',   'Users can manage their own leads'),
+            ('wireline_signal_presence',  'Users can manage their own presence signals'),
+            ('wireline_agent_lessons',    'Users can manage their own agent lessons')
+        ) AS t(table_name, policy_name)
+    LOOP
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_policies
+             WHERE tablename = p.table_name AND policyname = p.policy_name
+        ) THEN
+            EXECUTE format(
+                'CREATE POLICY %I ON %I FOR ALL USING (auth.uid() = user_id)',
+                p.policy_name, p.table_name
+            );
+        END IF;
+    END LOOP;
+END $$;
 
 -- ────────────────────────────────────────────────────────────────────
 -- 11. IDEMPOTENT MIGRATIONS — safe to re-run on existing installs.
@@ -949,8 +969,13 @@ CREATE TABLE IF NOT EXISTS wireline_consent_log (
 
 -- RLS: a user may only read their own consent log; inserts happen via service role.
 ALTER TABLE wireline_consent_log ENABLE ROW LEVEL SECURITY;
-CREATE POLICY IF NOT EXISTS "wireline_consent_log_select" ON wireline_consent_log
-    FOR SELECT USING (auth.uid() = user_id);
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'wireline_consent_log' AND policyname = 'wireline_consent_log_select'
+    ) THEN
+        EXECUTE 'CREATE POLICY "wireline_consent_log_select" ON wireline_consent_log FOR SELECT USING (auth.uid() = user_id)';
+    END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS wireline_consent_log_user_call_idx
     ON wireline_consent_log(user_id, call_id, created_at DESC);
@@ -971,8 +996,13 @@ CREATE TABLE IF NOT EXISTS wireline_quota_limits (
 );
 
 ALTER TABLE wireline_quota_limits ENABLE ROW LEVEL SECURITY;
-CREATE POLICY IF NOT EXISTS "wireline_quota_limits_select" ON wireline_quota_limits
-    FOR SELECT USING (auth.uid() = user_id);
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'wireline_quota_limits' AND policyname = 'wireline_quota_limits_select'
+    ) THEN
+        EXECUTE 'CREATE POLICY "wireline_quota_limits_select" ON wireline_quota_limits FOR SELECT USING (auth.uid() = user_id)';
+    END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS wireline_quota_limits_user_idx
     ON wireline_quota_limits(user_id);
@@ -991,8 +1021,13 @@ CREATE TABLE IF NOT EXISTS wireline_quota_usage (
 );
 
 ALTER TABLE wireline_quota_usage ENABLE ROW LEVEL SECURITY;
-CREATE POLICY IF NOT EXISTS "wireline_quota_usage_select" ON wireline_quota_usage
-    FOR SELECT USING (auth.uid() = user_id);
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'wireline_quota_usage' AND policyname = 'wireline_quota_usage_select'
+    ) THEN
+        EXECUTE 'CREATE POLICY "wireline_quota_usage_select" ON wireline_quota_usage FOR SELECT USING (auth.uid() = user_id)';
+    END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS wireline_quota_usage_user_period_idx
     ON wireline_quota_usage(user_id, dimension, period_key DESC);
@@ -1040,8 +1075,13 @@ CREATE TABLE IF NOT EXISTS wireline_jobs (
 );
 
 ALTER TABLE wireline_jobs ENABLE ROW LEVEL SECURITY;
-CREATE POLICY IF NOT EXISTS "wireline_jobs_select" ON wireline_jobs
-    FOR SELECT USING (auth.uid() = user_id);
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'wireline_jobs' AND policyname = 'wireline_jobs_select'
+    ) THEN
+        EXECUTE 'CREATE POLICY "wireline_jobs_select" ON wireline_jobs FOR SELECT USING (auth.uid() = user_id)';
+    END IF;
+END $$;
 
 -- Polling index: claim next pending job ordered by run_at
 CREATE INDEX IF NOT EXISTS wireline_jobs_pending_idx
@@ -1102,11 +1142,13 @@ CREATE TABLE IF NOT EXISTS wireline_team_members (
 );
 
 ALTER TABLE wireline_team_members ENABLE ROW LEVEL SECURITY;
-CREATE POLICY IF NOT EXISTS "wireline_team_members_select" ON wireline_team_members
-    FOR SELECT USING (
-        auth.uid() = user_id OR
-        auth.uid() = tenant_id
-    );
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'wireline_team_members' AND policyname = 'wireline_team_members_select'
+    ) THEN
+        EXECUTE 'CREATE POLICY "wireline_team_members_select" ON wireline_team_members FOR SELECT USING (auth.uid() = user_id OR auth.uid() = tenant_id)';
+    END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS wireline_team_members_tenant_idx
     ON wireline_team_members(tenant_id, role, created_at DESC);
@@ -1131,8 +1173,13 @@ CREATE TABLE IF NOT EXISTS wireline_change_log (
 );
 
 ALTER TABLE wireline_change_log ENABLE ROW LEVEL SECURITY;
-CREATE POLICY IF NOT EXISTS "wireline_change_log_select" ON wireline_change_log
-    FOR SELECT USING (auth.uid() = tenant_id OR auth.uid() = actor_user_id);
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'wireline_change_log' AND policyname = 'wireline_change_log_select'
+    ) THEN
+        EXECUTE 'CREATE POLICY "wireline_change_log_select" ON wireline_change_log FOR SELECT USING (auth.uid() = tenant_id OR auth.uid() = actor_user_id)';
+    END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS wireline_change_log_tenant_idx
     ON wireline_change_log(tenant_id, created_at DESC);
@@ -1160,8 +1207,13 @@ CREATE TABLE IF NOT EXISTS wireline_incidents (
 );
 
 ALTER TABLE wireline_incidents ENABLE ROW LEVEL SECURITY;
-CREATE POLICY IF NOT EXISTS "wireline_incidents_select" ON wireline_incidents
-    FOR SELECT USING (auth.uid() = tenant_id OR tenant_id IS NULL);
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'wireline_incidents' AND policyname = 'wireline_incidents_select'
+    ) THEN
+        EXECUTE 'CREATE POLICY "wireline_incidents_select" ON wireline_incidents FOR SELECT USING (auth.uid() = tenant_id OR tenant_id IS NULL)';
+    END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS wireline_incidents_tenant_severity_idx
     ON wireline_incidents(tenant_id, severity, detected_at DESC);
@@ -1327,3 +1379,18 @@ ALTER TABLE wireline_email_threads ADD COLUMN IF NOT EXISTS read BOOLEAN NOT NUL
 CREATE INDEX IF NOT EXISTS wireline_email_threads_user_read_idx
     ON wireline_email_threads(user_id, read)
     WHERE read = false;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- wireline_webhooks.secret_encrypted — 2026-05-10
+--
+-- Webhook signing secrets are now encrypted at rest with AES-256-GCM
+-- (see src/lib/secret-vault.ts), keyed by WIRELINE_DATA_KEY. The old
+-- `secret` column remains for backfill compatibility — once every row
+-- has secret_encrypted populated and the application has migrated, the
+-- plaintext column can be dropped in a follow-up migration.
+--
+-- `secret_last_four` is the trailing 4 chars of the plaintext, safe to
+-- return in API responses for UI display ("•••• ab12").
+-- ─────────────────────────────────────────────────────────────────────────────
+ALTER TABLE wireline_webhooks ADD COLUMN IF NOT EXISTS secret_encrypted TEXT;
+ALTER TABLE wireline_webhooks ADD COLUMN IF NOT EXISTS secret_last_four TEXT;

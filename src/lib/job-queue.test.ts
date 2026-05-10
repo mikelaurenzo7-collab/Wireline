@@ -313,4 +313,41 @@ describe("job-queue · getQueueStats", () => {
     expect(stats.dead).toBe(0);
     expect(stats.done_last_hour).toBe(0);
   });
+
+  it("tenant-scopes the count when userId is supplied", async () => {
+    const eqCalls: Array<{ col: string; val: unknown }> = [];
+    const db: any = {
+      from() {
+        const c: any = {
+          select() { return c; },
+          eq(col: string, val: unknown) { eqCalls.push({ col, val }); return c; },
+          gte() { return c; },
+          count: 0,
+        };
+        return c;
+      },
+    };
+    await getQueueStats(db, "user-abc");
+    // Each of the 5 queries should include a user_id filter.
+    const userIdFilters = eqCalls.filter(c => c.col === "user_id" && c.val === "user-abc");
+    expect(userIdFilters.length).toBe(5);
+  });
+
+  it("does NOT add a user_id filter when userId is omitted (worker path)", async () => {
+    const eqCalls: Array<{ col: string; val: unknown }> = [];
+    const db: any = {
+      from() {
+        const c: any = {
+          select() { return c; },
+          eq(col: string, val: unknown) { eqCalls.push({ col, val }); return c; },
+          gte() { return c; },
+          count: 0,
+        };
+        return c;
+      },
+    };
+    await getQueueStats(db);
+    const userIdFilters = eqCalls.filter(c => c.col === "user_id");
+    expect(userIdFilters.length).toBe(0);
+  });
 });

@@ -286,15 +286,17 @@ export interface QueueStats {
   done_last_hour: number;
 }
 
-export async function getQueueStats(db: SupabaseClient): Promise<QueueStats> {
+export async function getQueueStats(db: SupabaseClient, userId?: string): Promise<QueueStats> {
   const anHourAgo = new Date(Date.now() - 3_600_000).toISOString();
+  const scoped = <T extends { eq: (col: string, val: string) => T }>(q: T): T =>
+    userId ? q.eq("user_id", userId) : q;
   const [pending, running, failed, dead, done] = await Promise.all([
-    db.from("wireline_jobs").select("id", { count: "exact", head: true }).eq("status", "pending"),
-    db.from("wireline_jobs").select("id", { count: "exact", head: true }).eq("status", "running"),
-    db.from("wireline_jobs").select("id", { count: "exact", head: true }).eq("status", "failed"),
-    db.from("wireline_jobs").select("id", { count: "exact", head: true }).eq("status", "dead"),
-    db.from("wireline_jobs").select("id", { count: "exact", head: true })
-      .eq("status", "done").gte("finished_at", anHourAgo),
+    scoped(db.from("wireline_jobs").select("id", { count: "exact", head: true }).eq("status", "pending") as any),
+    scoped(db.from("wireline_jobs").select("id", { count: "exact", head: true }).eq("status", "running") as any),
+    scoped(db.from("wireline_jobs").select("id", { count: "exact", head: true }).eq("status", "failed") as any),
+    scoped(db.from("wireline_jobs").select("id", { count: "exact", head: true }).eq("status", "dead") as any),
+    scoped(db.from("wireline_jobs").select("id", { count: "exact", head: true })
+      .eq("status", "done").gte("finished_at", anHourAgo) as any),
   ]);
   return {
     pending:       pending.count ?? 0,
