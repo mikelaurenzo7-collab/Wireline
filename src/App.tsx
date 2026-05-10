@@ -262,13 +262,15 @@ function FloatingRail({ open, setOpen, onShowShortcuts }: { open: boolean; setOp
         )}
 
         {badge > 0 && (
-          <span className={cn(
-            "relative z-10 shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full text-[9px] font-mono leading-none flex items-center justify-center",
-            // In collapsed mode the badge becomes a small dot indicator
-            // anchored to the icon corner — keeps the rail tidy.
-            !expanded && "absolute top-1.5 right-1.5 max-lg:relative max-lg:top-auto max-lg:right-auto min-w-[10px] h-[10px] p-0",
-            active ? "bg-white/25 text-paper" : "bg-rose-500/20 text-rose-400 border border-rose-500/30"
-          )}>
+          <span
+            aria-label={`${badge} item${badge === 1 ? "" : "s"} need attention in ${item.label}`}
+            className={cn(
+              "relative z-10 shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full text-[9px] font-mono leading-none flex items-center justify-center",
+              // In collapsed mode the badge becomes a small dot indicator
+              // anchored to the icon corner — keeps the rail tidy.
+              !expanded && "absolute top-1.5 right-1.5 max-lg:relative max-lg:top-auto max-lg:right-auto min-w-[10px] h-[10px] p-0",
+              active ? "bg-white/25 text-paper" : "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+            )}>
             {expanded ? badge : <span className="max-lg:inline hidden">{badge}</span>}
           </span>
         )}
@@ -290,6 +292,15 @@ function FloatingRail({ open, setOpen, onShowShortcuts }: { open: boolean; setOp
           />
         )}
       </AnimatePresence>
+
+      {/* Visually-hidden live region announces badge count changes to
+          screen readers without disrupting the current reading context. */}
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {Object.entries(navBadges)
+          .filter(([, n]) => n > 0)
+          .map(([path, n]) => `${n} item${n === 1 ? "" : "s"} need attention in ${path.slice(1) || "dashboard"}`)
+          .join("; ")}
+      </div>
 
       {/* The rail — fixed-floating on desktop with tasteful margin from the
           viewport edges. On mobile it slides in as a drawer. */}

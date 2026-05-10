@@ -50,7 +50,7 @@ export default function InsightsView() {
                 className={cn(
                   "h-7 px-3 rounded-full text-[10px] font-medium tracking-wide transition-all",
                   days === d
-                    ? "text-white"
+                    ? "text-paper"
                     : "text-muted hover:text-ink"
                 )}
                 style={days === d ? {
