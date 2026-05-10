@@ -17,6 +17,7 @@ const required = [
   ["VITE_SUPABASE_URL",         "Supabase project URL — frontend + backend"],
   ["VITE_SUPABASE_ANON_KEY",    "Supabase anon key — frontend client"],
   ["SUPABASE_SERVICE_ROLE_KEY", "Supabase service role — backend privileged ops"],
+  ["OAUTH_STATE_SECRET",        "HMAC secret for OAuth CSRF state tokens — required in prod; dev falls back to STRIPE_WEBHOOK_SECRET"],
 ];
 
 const recommended = [
@@ -31,7 +32,6 @@ const recommended = [
   ["STRIPE_STARTER_PRICE_ID",   "Stripe price ID for the Starter plan"],
   ["STRIPE_PRO_PRICE_ID",       "Stripe price ID for the Pro plan"],
   ["STRIPE_ENTERPRISE_PRICE_ID","Stripe price ID for the Enterprise plan"],
-  ["OAUTH_STATE_SECRET",        "HMAC secret for OAuth CSRF state tokens (falls back to STRIPE_WEBHOOK_SECRET)"],
 ];
 
 const optional = [
