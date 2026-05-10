@@ -1,0 +1,40 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // Item 8 — module-by-module TypeScript strictness hardening.
+    //
+    // Background: the base tsconfig.json sets `strict: false` (and
+    // `allowJs: true`, `skipLibCheck: true`) because flipping strict
+    // globally on a 500K-LOC server would surface thousands of errors
+    // that have to be triaged. Instead we pilot strict mode on a
+    // narrow allowlist of already-clean modules and grow the list as
+    // each module is hardened.
+    //
+    // To run: `npm run lint:strict`. CI fails if any included file
+    // breaks under strict mode, which means you cannot regress a
+    // hardened module without explicitly relaxing it here.
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "useUnknownInCatchVariables": true,
+    "alwaysStrict": true,
+    "exactOptionalPropertyTypes": false,
+    "noUncheckedIndexedAccess": false
+  },
+  "include": [
+    // ─── Hardened modules — DO NOT remove without justification. ───
+    // Each entry was inspected and confirmed to compile under strict.
+    // Add a new entry only after verifying `npm run lint:strict` is clean.
+    "src/lib/secret-vault.ts",
+    "src/middleware/require-role.ts",
+    "src/lib/tenant-quotas.ts",
+    "src/lib/soc2-controls.ts",
+    "src/lib/customer-intel.ts",
+    "src/lib/rate-limit.ts",
+    "src/types/audit.ts"
+  ]
+}

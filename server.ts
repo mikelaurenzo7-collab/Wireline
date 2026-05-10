@@ -469,13 +469,15 @@ async function claudeRateLimiter(req: any, res: any, next: any) {
   // explicitly opted into the single-node in-memory fallback.
   const status = distributedLimiterStatus();
   if (!status.ok) {
-    void auditLogger.logSecurity('suspicious_activity', {
-      userId: req.user?.id,
-      resource: 'claude_api',
+    // Operational misconfiguration, not a security event — log a warning
+    // instead of polluting the audit trail. The 503 response with the
+    // `RATE_LIMITER_UNAVAILABLE` code makes the failure mode explicit
+    // for both monitoring and the client.
+    log.warn("Refusing spend-sensitive route — distributed rate limiter unavailable", {
+      resource: "claude_api",
       ip: req.ip,
-      userAgent: req.get('user-agent'),
-      metadata: { reason: 'rate_limiter_unavailable' },
-    }).catch(() => {});
+      reason: status.reason,
+    });
     return res.status(503).json({ error: status.reason, code: status.code });
   }
   const token = req.headers.authorization?.split(" ")[1];
@@ -727,12 +729,12 @@ async function dialRateLimiter(req: any, res: any, next: any) {
   // Spend-sensitive: refuse if distributed limiter unavailable in prod.
   const status = distributedLimiterStatus();
   if (!status.ok) {
-    void auditLogger.logSecurity('suspicious_activity', {
+    log.warn("Refusing spend-sensitive route — distributed rate limiter unavailable", {
       userId,
-      resource: 'outbound_dial',
+      resource: "outbound_dial",
       ip: req.ip,
-      metadata: { reason: 'rate_limiter_unavailable' },
-    }).catch(() => {});
+      reason: status.reason,
+    });
     return res.status(503).json({ error: status.reason, code: status.code });
   }
   const result = await rateLimit(userId, { bucket: "outbound_dial", windowMs: DIAL_RATE_WINDOW_MS, max: DIAL_RATE_MAX });

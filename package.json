@@ -15,6 +15,7 @@
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "node --max-old-space-size=4096 ./node_modules/typescript/bin/tsc --noEmit",
+    "lint:strict": "node --max-old-space-size=4096 ./node_modules/typescript/bin/tsc --noEmit -p tsconfig.strict.json",
     "test": "vitest",
     "test:run": "vitest run",
     "verify": "npm run lint && npm run test:run && npm run build",
