@@ -12,7 +12,7 @@ function LegalLayout({ title, icon: Icon, children }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-ink">
+    <div className="min-h-screen bg-paper text-ink">
       <div className="max-w-3xl mx-auto px-6 py-16">
         <Link
           to="/"
@@ -26,17 +26,17 @@ function LegalLayout({ title, icon: Icon, children }: {
             className="w-10 h-10 rounded-xl flex items-center justify-center"
             style={{ background: "linear-gradient(135deg, #0AC8D4, #9B59F5)" }}
           >
-            <Icon className="w-5 h-5 text-white" />
+            <Icon className="w-5 h-5 text-paper" />
           </div>
           <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
         </div>
         <p className="text-[11px] text-muted mb-10">Last updated: {LAST_UPDATED}</p>
 
-        <div className="prose prose-invert prose-sm max-w-none space-y-8 text-ink/80 leading-relaxed">
+        <div className="prose prose-sm max-w-none space-y-8 text-ink/80 leading-relaxed">
           {children}
         </div>
 
-        <div className="mt-16 pt-8 border-t border-white/8 flex flex-wrap gap-4 text-[10px] text-muted/50">
+        <div className="mt-16 pt-8 border-t border-black/8 flex flex-wrap gap-4 text-[10px] text-muted/50">
           <Link to="/privacy" className="hover:text-muted transition-colors">Privacy Policy</Link>
           <span>·</span>
           <Link to="/terms" className="hover:text-muted transition-colors">Terms of Service</Link>
@@ -51,7 +51,7 @@ function LegalLayout({ title, icon: Icon, children }: {
 function Section({ id, title, children }: { id?: string; title: string; children: React.ReactNode }) {
   return (
     <section id={id}>
-      <h2 className="text-base font-semibold text-ink mb-3 border-b border-white/8 pb-2">{title}</h2>
+      <h2 className="text-base font-semibold text-ink mb-3 border-b border-black/8 pb-2">{title}</h2>
       <div className="space-y-3 text-sm">{children}</div>
     </section>
   );
@@ -72,9 +72,9 @@ export function PrivacyPolicy() {
 
       <Section title="1. Who We Are">
         <p>
-          <strong>[Your Company Name]</strong> ("we", "our", or "us") operates the Wireline platform — an
-          AI-powered omnichannel agent fleet for businesses. Our principal place of business is at{" "}
-          <strong>[Your Business Address]</strong>. This policy explains what data we collect, why, and your
+          <strong>Wireline</strong> ("we", "our", or "us") operates the Wireline platform — an
+          AI-powered omnichannel agent fleet for businesses. Questions about this policy can be sent to{" "}
+          <strong>legal@wireline.app</strong>. This policy explains what data we collect, why, and your
           rights over it.
         </p>
       </Section>
@@ -174,7 +174,7 @@ export function PrivacyPolicy() {
         </p>
         <p>
           To exercise your California privacy rights, contact us at{" "}
-          <strong>[your-privacy-email@example.com]</strong> or use the Delete Account option in Settings.
+          <strong>legal@wireline.app</strong> or use the Delete Account option in Settings.
           We will respond to verified requests within 45 days.
         </p>
       </Section>
@@ -205,9 +205,7 @@ export function PrivacyPolicy() {
 
       <Section title="11. Contact">
         <p>
-          Privacy questions or requests: <strong>[your-privacy-email@example.com]</strong>
-          <br />
-          Mailing address: <strong>[Your Company Name, Street Address, City, State, ZIP, Country]</strong>
+          Privacy questions or requests: <strong>legal@wireline.app</strong>
         </p>
       </Section>
     </LegalLayout>
@@ -229,7 +227,7 @@ export function TermsOfService() {
         <p>
           By accessing or using Wireline you agree to these Terms of Service ("Terms"). If you do not agree, do
           not use the service. These Terms constitute a binding agreement between you and{" "}
-          <strong>[Your Company Name]</strong>.
+          <strong>Wireline</strong>.
         </p>
       </Section>
 
@@ -290,7 +288,7 @@ export function TermsOfService() {
           license to process this data solely to provide the service.
         </p>
         <p>
-          All platform code, design, trademarks, and other IP belonging to <strong>[Your Company Name]</strong>{" "}
+          All platform code, design, trademarks, and other IP belonging to <strong>Wireline</strong>{" "}
           remain our exclusive property. You may not copy, modify, or distribute any part of the platform.
         </p>
       </Section>
@@ -305,7 +303,7 @@ export function TermsOfService() {
 
       <Section title="9. Limitation of Liability">
         <p>
-          To the maximum extent permitted by applicable law, <strong>[Your Company Name]</strong>'s total
+          To the maximum extent permitted by applicable law, <strong>Wireline</strong>'s total
           liability arising out of or related to these Terms or the service shall not exceed the amounts paid
           by you in the 12 months preceding the claim. We are not liable for any indirect, incidental, special,
           consequential, or punitive damages.
@@ -314,7 +312,7 @@ export function TermsOfService() {
 
       <Section title="10. Indemnification">
         <p>
-          You agree to indemnify and hold harmless <strong>[Your Company Name]</strong> from any claims,
+          You agree to indemnify and hold harmless <strong>Wireline</strong> from any claims,
           damages, or expenses (including reasonable attorneys' fees) arising from your use of the service,
           violation of these Terms, or violation of any applicable law or third-party right.
         </p>
@@ -322,9 +320,9 @@ export function TermsOfService() {
 
       <Section title="11. Governing Law">
         <p>
-          These Terms are governed by the laws of <strong>[Your State/Country]</strong>, without regard to
-          conflict-of-law principles. Any disputes shall be resolved exclusively in the courts located in{" "}
-          <strong>[Your City, State]</strong>.
+          These Terms are governed by the laws of <strong>Delaware, United States</strong>, without regard to
+          conflict-of-law principles. Any disputes shall be resolved exclusively in the courts of{" "}
+          <strong>Wilmington, Delaware</strong>.
         </p>
       </Section>
 
@@ -337,9 +335,7 @@ export function TermsOfService() {
 
       <Section title="13. Contact">
         <p>
-          Legal notices: <strong>[your-legal-email@example.com]</strong>
-          <br />
-          <strong>[Your Company Name, Street Address, City, State, ZIP, Country]</strong>
+          Legal notices: <strong>legal@wireline.app</strong>
         </p>
       </Section>
     </LegalLayout>

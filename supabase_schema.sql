@@ -1157,3 +1157,55 @@ CREATE POLICY IF NOT EXISTS "wireline_incidents_select" ON wireline_incidents
 
 CREATE INDEX IF NOT EXISTS wireline_incidents_tenant_severity_idx
     ON wireline_incidents(tenant_id, severity, detected_at DESC);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Agent Business Profile columns — 2026-05-10
+-- These fields are read from wireline_agents.* in the assistant-request
+-- webhook handler to inject business context into every agent system prompt.
+-- Without these columns the SELECT * query returns NULL for all of them,
+-- silently degrading every call regardless of what the operator configured
+-- in AgentBusinessProfile.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- IANA timezone string (e.g. "America/New_York"). Used to localise
+-- business-hours comparisons and the out-of-hours greeting.
+ALTER TABLE wireline_agents ADD COLUMN IF NOT EXISTS timezone TEXT;
+
+-- JSON object: { mon: {open:"09:00",close:"17:00"}, … }
+-- Populated by AgentBusinessProfile. Injected into the system prompt so the
+-- agent knows when to offer "we're closed" messaging vs live assistance.
+ALTER TABLE wireline_agents ADD COLUMN IF NOT EXISTS business_hours JSONB;
+
+-- One of: "revenue" | "appointments" | "retention" | "support_deflection" | "lead_qual" | "collections"
+-- Drives role-specific coaching in the post-call enrichment pipeline and
+-- contextualises the agent's KPI coaching notes.
+ALTER TABLE wireline_agents ADD COLUMN IF NOT EXISTS kpi_focus TEXT;
+
+-- "strict" | "standard" | "relaxed"
+-- Controls how aggressively the agent enforces disallowed_topics and
+-- whether it ends calls on policy violations.
+ALTER TABLE wireline_agents ADD COLUMN IF NOT EXISTS compliance_mode TEXT DEFAULT 'standard';
+
+-- JSON array of strings: topics the agent must refuse to discuss.
+-- e.g. ["competitor pricing", "pending litigation"]
+ALTER TABLE wireline_agents ADD COLUMN IF NOT EXISTS disallowed_topics JSONB;
+
+-- JSON array of strings: words/phrases that trigger an immediate escalation
+-- (e.g. ["lawyer", "lawsuit", "fraud"]).
+ALTER TABLE wireline_agents ADD COLUMN IF NOT EXISTS escalation_keywords JSONB;
+
+-- JSON object of custom key→value pairs interpolated into the system prompt.
+-- e.g. { "business_name": "Acme HVAC", "support_email": "help@acme.com" }
+ALTER TABLE wireline_agents ADD COLUMN IF NOT EXISTS business_variables JSONB;
+
+-- Message spoken / written when a caller contacts the agent outside
+-- business hours. If null the agent improvises from context.
+ALTER TABLE wireline_agents ADD COLUMN IF NOT EXISTS out_of_hours_message TEXT;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- wireline_settings.business_name — 2026-05-10
+-- Used by the TCPA consent-check endpoint (/api/tcpa/consent-check) to embed
+-- the operator's business name in the disclosure script. Without this column
+-- the query returns a Postgres "column does not exist" error.
+-- ─────────────────────────────────────────────────────────────────────────────
+ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS business_name TEXT;
