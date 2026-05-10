@@ -915,15 +915,20 @@ async function handleJob(job: JobRow): Promise<void> {
       summary?: string; transcript?: string;
     };
     if (!claudeBrain.isClaudeAvailable() || !p.transcript) return;
-    const result = await claudeBrain.postCallAnalysis({
-      agentName:       p.agentName || 'Wireline Agent',
-      archetype:       p.archetype || 'Receptionist',
-      role:            p.role,
-      customerNumber:  p.customerNumber,
-      durationSeconds: p.durationSeconds ?? 0,
-      summary:         p.summary || '',
-      transcript:      p.transcript,
-    });
+    // Wrap in withAuditCapture so we get the exact token counts from the
+    // Anthropic API response instead of the rough transcript.length / 4
+    // character estimate. Falls back to the estimate if the capture has no records.
+    const { result, records } = await claudeBrain.withAuditCapture(() =>
+      claudeBrain.postCallAnalysis({
+        agentName:       p.agentName || 'Wireline Agent',
+        archetype:       p.archetype || 'Receptionist',
+        role:            p.role,
+        customerNumber:  p.customerNumber,
+        durationSeconds: p.durationSeconds ?? 0,
+        summary:         p.summary || '',
+        transcript:      p.transcript!,
+      }),
+    );
     await db.from('wireline_call_logs').update({
       lead_score:    result.lead_score,
       intent_label:  result.intent_label,
@@ -936,9 +941,13 @@ async function handleJob(job: JobRow): Promise<void> {
         { onConflict: 'agent_id,lesson', ignoreDuplicates: true },
       );
     }
-    // Record token spend for quota accounting.
-    const tokenEstimate = Math.ceil(((p.transcript?.length ?? 0) + (p.summary?.length ?? 0)) / 4);
-    await quotaTracker.checkAndIncrement(p.userId, 'claude_tokens_daily', tokenEstimate).catch(() => {});
+    // Use actual token counts from the Anthropic response when available;
+    // fall back to the character-based estimate only if the capture is empty.
+    const actualTokens = records.reduce((sum, r) => sum + r.input_tokens + r.output_tokens, 0);
+    const tokenCount = actualTokens > 0
+      ? actualTokens
+      : Math.ceil(((p.transcript?.length ?? 0) + (p.summary?.length ?? 0)) / 4);
+    await quotaTracker.checkAndIncrement(p.userId, 'claude_tokens_daily', tokenCount).catch(() => {});
   }
   // Other job types (webhook_delivery, campaign_dial, etc.) extend here.
 }
@@ -1579,15 +1588,13 @@ async function authenticateUser(req: any, res: any, next: any) {
     email: user.email,
   });
 
-  // Log successful authentication (non-blocking).
-  void auditLogger.logAuth('login', {
-    userId: user.id,
-    email: user.email,
-    ip: req.ip || req.headers['x-forwarded-for'] as string,
-    userAgent: req.headers['user-agent']
-  }).catch((err) => {
-    log.warn("Failed to log auth event", { userId: user.id, error: String(err) });
-  });
+  // NOTE: We deliberately do NOT emit a logAuth('login') here.
+  // authenticateUser runs on every authenticated API request — logging
+  // every bearer-token validation as "auth.login" would flood the audit
+  // log with thousands of rows per day, all semantically wrong (a login
+  // is when a new session is *created*, not when an existing JWT is
+  // *verified*). Real sign-in events are emitted by Supabase's own auth
+  // system; the audit log captures failed attempts above.
 
   next();
 }

@@ -252,7 +252,10 @@ END $$;
 ALTER TABLE wireline_email_accounts ADD COLUMN IF NOT EXISTS email_address TEXT;
 ALTER TABLE wireline_email_accounts ADD COLUMN IF NOT EXISTS provider TEXT DEFAULT 'google';
 -- agent_id links an email account to a specific agent for routing.
-ALTER TABLE wireline_email_accounts ADD COLUMN IF NOT EXISTS agent_id UUID REFERENCES wireline_agents(id) ON DELETE SET NULL;
+-- NOTE: wireline_agents.id is TEXT (not UUID), so this column must be TEXT.
+-- The original migration declared it as UUID which causes a FK type mismatch.
+-- Corrective migration below fixes this idempotently.
+ALTER TABLE wireline_email_accounts ADD COLUMN IF NOT EXISTS agent_id TEXT REFERENCES wireline_agents(id) ON DELETE SET NULL;
 
 -- Voice LLM picker — operators can route the actual Vapi voice agent through
 -- Anthropic instead of Gemini. Persisted on the per-user settings row.
@@ -1209,3 +1212,98 @@ ALTER TABLE wireline_agents ADD COLUMN IF NOT EXISTS out_of_hours_message TEXT;
 -- the query returns a Postgres "column does not exist" error.
 -- ─────────────────────────────────────────────────────────────────────────────
 ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS business_name TEXT;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Corrective migration: wireline_email_accounts.agent_id type fix — 2026-05-10
+--
+-- The original migration declared agent_id as UUID but wireline_agents.id is
+-- TEXT, causing a FK type mismatch that Postgres rejects at migration time.
+-- On installs where the column was never created due to that error, the ADD
+-- COLUMN above (now corrected to TEXT) will add it properly. On installs
+-- where it was somehow inserted as UUID (e.g. via a partial migration run
+-- before the FK was validated), this block drops and recreates it as TEXT.
+-- ─────────────────────────────────────────────────────────────────────────────
+DO $$ BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'wireline_email_accounts'
+          AND column_name  = 'agent_id'
+          AND data_type    = 'uuid'
+    ) THEN
+        ALTER TABLE wireline_email_accounts DROP COLUMN agent_id;
+        ALTER TABLE wireline_email_accounts
+            ADD COLUMN agent_id TEXT REFERENCES wireline_agents(id) ON DELETE SET NULL;
+    END IF;
+END $$;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Data Retention — configurable per-tenant cleanup function — 2026-05-10
+--
+-- Purges old rows from high-volume tables beyond the operator's retention
+-- window. The default window is 365 days. Enterprise operators may configure
+-- a custom retention period. Call this via a scheduled Postgres cron job
+-- (pg_cron) or a Vercel cron that hits POST /api/admin/retention-purge.
+--
+-- Tables covered:
+--   wireline_audit_log     — compliance logs (default 365 d, Enterprise 90–730 d)
+--   wireline_call_logs     — call records (default 365 d)
+--   wireline_email_threads / wireline_email_messages  — email archive (365 d)
+--   wireline_quota_usage   — rolling counters (90 d is always sufficient)
+--   wireline_consent_log   — TCPA ledger (minimum 365 d, never shorter)
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE OR REPLACE FUNCTION wireline_purge_old_data(
+    p_user_id        UUID,
+    p_retention_days INTEGER DEFAULT 365
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_cutoff        TIMESTAMPTZ := NOW() - (p_retention_days || ' days')::INTERVAL;
+    v_consent_cutoff TIMESTAMPTZ := NOW() - GREATEST(p_retention_days, 365) * INTERVAL '1 day';
+    v_audit_deleted  BIGINT;
+    v_calls_deleted  BIGINT;
+    v_email_deleted  BIGINT;
+    v_quota_deleted  BIGINT;
+BEGIN
+    -- Validate retention_days: minimum 90 days to prevent accidental mass-delete.
+    IF p_retention_days < 90 THEN
+        RAISE EXCEPTION 'p_retention_days must be >= 90 (got %)', p_retention_days;
+    END IF;
+
+    -- Audit log (skip if < 90 d — compliance minimum)
+    DELETE FROM wireline_audit_log
+    WHERE user_id = p_user_id AND timestamp < v_cutoff;
+    GET DIAGNOSTICS v_audit_deleted = ROW_COUNT;
+
+    -- Call logs
+    DELETE FROM wireline_call_logs
+    WHERE user_id = p_user_id AND created_at < v_cutoff;
+    GET DIAGNOSTICS v_calls_deleted = ROW_COUNT;
+
+    -- Email threads + cascade deletes messages via FK
+    DELETE FROM wireline_email_threads
+    WHERE user_id = p_user_id AND created_at < v_cutoff;
+    GET DIAGNOSTICS v_email_deleted = ROW_COUNT;
+
+    -- Quota usage counters older than 90 days are never needed
+    DELETE FROM wireline_quota_usage
+    WHERE user_id = p_user_id
+      AND updated_at < NOW() - INTERVAL '90 days';
+    GET DIAGNOSTICS v_quota_deleted = ROW_COUNT;
+
+    -- Consent log: NEVER purge below 365 days regardless of p_retention_days
+    -- (TCPA recordkeeping requirement). Only delete rows older than the safer bound.
+    DELETE FROM wireline_consent_log
+    WHERE user_id = p_user_id AND created_at < v_consent_cutoff;
+
+    RETURN jsonb_build_object(
+        'cutoff',          v_cutoff,
+        'audit_deleted',   v_audit_deleted,
+        'calls_deleted',   v_calls_deleted,
+        'email_deleted',   v_email_deleted,
+        'quota_deleted',   v_quota_deleted
+    );
+END;
+$$;
