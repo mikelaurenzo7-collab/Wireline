@@ -275,7 +275,7 @@ export default function AdminSettings() {
                       type="text"
                       value={settings.vapi_phone_number_id}
                       onChange={e => setSettings({ ...settings, vapi_phone_number_id: e.target.value })}
-                      className="w-full text-sm bg-black/30 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 font-mono"
+                      className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 font-mono"
                       placeholder="e.g. 3c7a9f…"
                     />
                   </div>
@@ -328,7 +328,7 @@ export default function AdminSettings() {
                         value={settings.voice_llm_model}
                         onChange={(e) => setSettings({ ...settings, voice_llm_model: e.target.value })}
                         placeholder="e.g. claude-3-5-sonnet-20241022"
-                        className="w-full text-sm bg-black/30 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 font-mono"
+                        className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 font-mono"
                       />
                       <p className="text-[10px] text-muted/70 leading-relaxed">
                         Supported models may change over time. Check your
@@ -385,7 +385,7 @@ export default function AdminSettings() {
                                 aria-label={`Assign agent to ${pt.phone_number}`}
                                 value={pt.agent_id || ""}
                                 onChange={(e) => updateNumberAgent(pt.id, e.target.value)}
-                                className="text-xs bg-black/30 border border-white/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink min-w-[150px]"
+                                className="text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink min-w-[150px]"
                               >
                                 <option value="">Unassigned</option>
                                 {agents.filter(a => a.channel === 'voice' || a.channel === 'omnichannel' || !a.channel).map(a => (
@@ -459,14 +459,14 @@ export default function AdminSettings() {
                         value={newNumber}
                         onChange={e => setNewNumber(e.target.value)}
                         placeholder="+1 800 555 0100"
-                        className="w-full text-sm bg-black/30 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 tabular-nums"
+                        className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 tabular-nums"
                       />
                       <input
                         type="text"
                         value={newNumberVapiId}
                         onChange={e => setNewNumberVapiId(e.target.value)}
                         placeholder="Wireline number ID"
-                        className="w-full text-sm bg-black/30 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 font-mono"
+                        className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 font-mono"
                       />
                     </div>
                     <button
@@ -622,7 +622,7 @@ export default function AdminSettings() {
                         value={deleteConfirmText}
                         onChange={e => setDeleteConfirmText(e.target.value)}
                         placeholder="DELETE MY ACCOUNT"
-                        className="w-full h-9 px-3 rounded-lg bg-black/40 border border-rose-500/20 text-xs font-mono text-ink outline-none focus:border-rose-500/50 transition-all placeholder:text-muted/40"
+                        className="w-full h-9 px-3 rounded-lg bg-black/5 border border-rose-500/20 text-xs font-mono text-ink outline-none focus:border-rose-500/50 transition-all placeholder:text-muted/40"
                       />
                       <button
                         onClick={deleteAccount}

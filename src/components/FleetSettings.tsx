@@ -500,7 +500,7 @@ export default function FleetSettings() {
                      <select
                        value={newAgentRole}
                        onChange={e => setNewAgentRole(e.target.value as RoleValue)}
-                       className="w-full text-xs bg-black/30 border border-white/10 rounded-lg pl-3 pr-7 py-2 outline-none focus:border-brand/50 cursor-pointer appearance-none text-ink"
+                       className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-3 pr-7 py-2 outline-none focus:border-brand/50 cursor-pointer appearance-none text-ink"
                      >
                        {AGENT_ROLES.map(r => (
                          <option key={r.value} value={r.value}>{r.label}</option>
@@ -514,11 +514,11 @@ export default function FleetSettings() {
                 </div>
                 <div className="space-y-1.5">
                    <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">Designation ID</label>
-                   <input type="text" placeholder="node-xxx-yyy" value={newAgentId} onChange={e => setNewAgentId(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))} className="w-full text-sm bg-black/30 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 font-mono" />
+                   <input type="text" placeholder="node-xxx-yyy" value={newAgentId} onChange={e => setNewAgentId(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))} className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 font-mono" />
                 </div>
                 <div className="space-y-1.5">
                    <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">Tactical name</label>
-                   <input type="text" placeholder="e.g. Vanguard-1" value={newAgentName} onChange={e => setNewAgentName(e.target.value)} className="w-full text-sm bg-black/30 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50" />
+                   <input type="text" placeholder="e.g. Vanguard-1" value={newAgentName} onChange={e => setNewAgentName(e.target.value)} className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50" />
                 </div>
               </div>
 
@@ -611,7 +611,7 @@ export default function FleetSettings() {
                             <select
                               value={selectedAgent.role || 'customer_service'}
                               onChange={e => updateAgentMeta({ role: e.target.value })}
-                              className="w-full text-xs bg-black/30 border border-white/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-brand/50 cursor-pointer appearance-none text-ink"
+                              className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-brand/50 cursor-pointer appearance-none text-ink"
                             >
                               {AGENT_ROLES.map(r => (
                                 <option key={r.value} value={r.value}>{r.label}</option>
@@ -700,7 +700,7 @@ export default function FleetSettings() {
                        value={selectedAgent.website_url || ""}
                        onChange={e => updateAgentMeta({ website_url: e.target.value })}
                        placeholder="https://example.com"
-                       className="w-full text-sm bg-black/30 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50"
+                       className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50"
                      />
                    </div>
                    <div className="space-y-1.5">
@@ -712,7 +712,7 @@ export default function FleetSettings() {
                        value={selectedAgent.transfer_phone || ""}
                        onChange={e => updateAgentMeta({ transfer_phone: e.target.value })}
                        placeholder="+1 800 555 0100"
-                       className="w-full text-sm bg-black/30 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 tabular-nums"
+                       className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 tabular-nums"
                      />
                    </div>
                  </div>
@@ -739,7 +739,7 @@ export default function FleetSettings() {
                                           updateAgentMeta({ voice_id: val, voice_provider: voiceData?.provider || '11labs' });
                                       }
                                     }}
-                                    className="w-full text-xs bg-black/30 border border-white/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-brand/50 cursor-pointer appearance-none text-ink"
+                                    className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-brand/50 cursor-pointer appearance-none text-ink"
                                   >
                                     <optgroup label="Premium">
                                       {PREMIUM_VOICES.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
@@ -756,7 +756,7 @@ export default function FleetSettings() {
                                   <select
                                     value={selectedAgent.archetype || "Receptionist"}
                                     onChange={(e) => updateAgentMeta({ archetype: e.target.value })}
-                                    className="w-full text-xs bg-black/30 border border-white/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-brand/50 cursor-pointer appearance-none text-ink"
+                                    className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-brand/50 cursor-pointer appearance-none text-ink"
                                   >
                                     <option value="Receptionist">Receptionist</option>
                                     <option value="The Closer">The Closer</option>
@@ -775,7 +775,7 @@ export default function FleetSettings() {
                                  <select
                                    value={selectedAgent.ambient_noise || "off"}
                                    onChange={(e) => updateAgentMeta({ ambient_noise: e.target.value })}
-                                   className="w-full text-xs bg-black/30 border border-white/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-brand/50 cursor-pointer appearance-none text-ink"
+                                   className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-brand/50 cursor-pointer appearance-none text-ink"
                                  >
                                    <option value="off">Studio (silent)</option>
                                    <option value="office">Office (kinetic)</option>
@@ -795,7 +795,7 @@ export default function FleetSettings() {
                              type="text"
                              value={selectedAgent.first_message || ""}
                              onChange={e => updateAgentMeta({ first_message: e.target.value })}
-                             className="w-full text-base bg-black/30 border border-white/10 rounded-lg px-3 py-2.5 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 font-display italic"
+                             className="w-full text-base bg-black/5 border border-black/10 rounded-lg px-3 py-2.5 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 font-display italic"
                            />
                          </div>
                      </div>
@@ -837,7 +837,7 @@ export default function FleetSettings() {
                                   <select
                                     value={selectedAgent.email_agent_tone || "Professional"}
                                     onChange={e => updateAgentMeta({ email_agent_tone: e.target.value })}
-                                    className="w-full text-xs bg-black/30 border border-white/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-emerald-400/50 cursor-pointer appearance-none text-ink"
+                                    className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-emerald-400/50 cursor-pointer appearance-none text-ink"
                                   >
                                     <option value="Professional">Authoritative</option>
                                     <option value="Friendly">Diplomatic</option>
@@ -852,7 +852,7 @@ export default function FleetSettings() {
                                     value={selectedAgent.email_signature || ""}
                                     onChange={e => updateAgentMeta({ email_signature: e.target.value })}
                                     placeholder="— Best, Agent"
-                                    className="w-full text-sm bg-black/30 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-emerald-400/50 text-ink placeholder:text-muted/50"
+                                    className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-emerald-400/50 text-ink placeholder:text-muted/50"
                                   />
                                 </div>
                             </div>
@@ -894,7 +894,7 @@ export default function FleetSettings() {
                      <textarea
                        value={agentConfig.personality}
                        onChange={e => setAgentConfig({ ...agentConfig, personality: e.target.value })}
-                       className="relative z-10 w-full h-48 px-4 py-3 rounded-xl bg-black/40 border border-white/10 text-ink outline-none focus:border-brand/50 transition-all resize-none text-sm leading-relaxed placeholder:text-muted/50"
+                       className="relative z-10 w-full h-48 px-4 py-3 rounded-xl bg-black/5 border border-black/10 text-ink outline-none focus:border-brand/50 transition-all resize-none text-sm leading-relaxed placeholder:text-muted/50"
                        placeholder="Define the agent's identity, tone, and behavioral patterns…"
                      />
                    </section>
@@ -953,7 +953,7 @@ export default function FleetSettings() {
                                       <textarea
                                         value={editingDirective.content}
                                         onChange={e => setEditingDirective({ ...editingDirective, content: e.target.value })}
-                                        className="w-full text-sm bg-black/30 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-rose-400/50 text-ink min-h-[80px] resize-none"
+                                        className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-rose-400/50 text-ink min-h-[80px] resize-none"
                                       />
                                       <div className="flex justify-end gap-1.5">
                                          <button onClick={() => setEditingDirective(null)} className="px-2.5 py-1 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-muted hover:text-ink">Cancel</button>
@@ -988,7 +988,7 @@ export default function FleetSettings() {
                                onChange={e => setNewDirective(e.target.value)}
                                onKeyDown={e => e.key === 'Enter' && saveManualEntry('directive', newDirective)}
                                placeholder="e.g. Always verify date of birth…"
-                               className="flex-1 text-sm bg-black/30 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-rose-400/50 text-ink placeholder:text-muted/50"
+                               className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-rose-400/50 text-ink placeholder:text-muted/50"
                              />
                              <button
                                onClick={() => saveManualEntry('directive', newDirective)}
@@ -1027,7 +1027,7 @@ export default function FleetSettings() {
                                       <textarea
                                         value={editingKnowledge.content}
                                         onChange={e => setEditingKnowledge({ ...editingKnowledge, content: e.target.value })}
-                                        className="w-full text-sm bg-black/30 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-blue-400/50 text-ink min-h-[80px] resize-none"
+                                        className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-blue-400/50 text-ink min-h-[80px] resize-none"
                                       />
                                       <div className="flex justify-end gap-1.5">
                                          <button onClick={() => setEditingKnowledge(null)} className="px-2.5 py-1 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-muted hover:text-ink">Cancel</button>
@@ -1062,7 +1062,7 @@ export default function FleetSettings() {
                                onChange={e => setNewKnowledge(e.target.value)}
                                onKeyDown={e => e.key === 'Enter' && saveManualEntry('knowledge', newKnowledge)}
                                placeholder="e.g. Office closes at 5pm…"
-                               className="flex-1 text-sm bg-black/30 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-blue-400/50 text-ink placeholder:text-muted/50"
+                               className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-blue-400/50 text-ink placeholder:text-muted/50"
                              />
                              <button
                                onClick={() => saveManualEntry('knowledge', newKnowledge)}

@@ -246,7 +246,7 @@ export default function Integrations() {
                         <select
                           value={acc.agent_id || "none"}
                           onChange={(e) => updateAccountAgent(acc.id, e.target.value)}
-                          className="text-xs bg-black/30 border border-white/10 rounded-lg pl-3 pr-8 py-1.5 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
+                          className="text-xs bg-black/5 border border-black/10 rounded-lg pl-3 pr-8 py-1.5 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
                         >
                           <option value="none">Unassigned</option>
                           {agents.map(agent => (

@@ -138,14 +138,14 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
   };
 
   return (
-    <div className="rounded-xl bg-black/30 border border-white/10 p-5 space-y-4 mt-4">
+    <div className="rounded-xl bg-black/5 border border-black/10 p-5 space-y-4 mt-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <label className="text-[10px] uppercase tracking-[0.4em] text-muted">Name</label>
           <input
             value={name} onChange={(e) => setName(e.target.value)}
             placeholder="Slack #sales channel"
-            className="w-full h-11 px-3 rounded-lg bg-black/30 border border-white/10 text-ink text-sm outline-none focus:border-brand/60"
+            className="w-full h-11 px-3 rounded-lg bg-black/5 border border-black/10 text-ink text-sm outline-none focus:border-brand/60"
           />
         </div>
         <div className="space-y-1.5">
@@ -153,7 +153,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
           <input
             value={url} onChange={(e) => setUrl(e.target.value)}
             placeholder="https://hooks.slack.com/services/..."
-            className="w-full h-11 px-3 rounded-lg bg-black/30 border border-white/10 text-ink text-sm font-mono outline-none focus:border-brand/60"
+            className="w-full h-11 px-3 rounded-lg bg-black/5 border border-black/10 text-ink text-sm font-mono outline-none focus:border-brand/60"
           />
         </div>
       </div>
@@ -199,7 +199,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
         <input
           value={secret} onChange={(e) => setSecret(e.target.value)}
           placeholder="long-random-string-only-you-and-the-receiver-know"
-          className="w-full h-11 px-3 rounded-lg bg-black/30 border border-white/10 text-ink text-sm font-mono outline-none focus:border-brand/60"
+          className="w-full h-11 px-3 rounded-lg bg-black/5 border border-black/10 text-ink text-sm font-mono outline-none focus:border-brand/60"
         />
       </div>
 

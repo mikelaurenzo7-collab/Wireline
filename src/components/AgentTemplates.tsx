@@ -409,7 +409,7 @@ export default function AgentTemplates() {
             placeholder="Search templates…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm bg-black/30 border border-white/10 rounded-xl outline-none focus:border-brand/50 text-ink placeholder:text-muted/50"
+            className="w-full pl-9 pr-4 py-2 text-sm bg-black/5 border border-black/10 rounded-xl outline-none focus:border-brand/50 text-ink placeholder:text-muted/50"
           />
         </div>
 

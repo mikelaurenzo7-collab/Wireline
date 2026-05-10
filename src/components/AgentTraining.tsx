@@ -164,7 +164,7 @@ export default function AgentTraining() {
               <select
                 value={selectedAgentId}
                 onChange={e => setSelectedAgentId(e.target.value)}
-                className="w-full text-sm bg-black/30 border border-white/10 rounded-lg pl-3 pr-8 py-2 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
+                className="w-full text-sm bg-black/5 border border-black/10 rounded-lg pl-3 pr-8 py-2 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
               >
                 <option value="default-agent">Global fleet directives</option>
                 {agents.map(a => (
@@ -447,7 +447,7 @@ export default function AgentTraining() {
                     <textarea
                       value={personalityDraft}
                       onChange={e => setPersonalityDraft(e.target.value)}
-                      className="w-full min-h-[180px] p-3 rounded-xl bg-black/30 border border-white/10 text-sm text-ink outline-none focus:border-brand/50 resize-none leading-relaxed placeholder:text-muted/50"
+                      className="w-full min-h-[180px] p-3 rounded-xl bg-black/5 border border-black/10 text-sm text-ink outline-none focus:border-brand/50 resize-none leading-relaxed placeholder:text-muted/50"
                       placeholder="Define the core identity heuristics…"
                     />
                   ) : (
@@ -491,7 +491,7 @@ export default function AgentTraining() {
                               <textarea
                                 value={editingDirective.content}
                                 onChange={e => setEditingDirective({ ...editingDirective, content: e.target.value })}
-                                className="w-full text-sm bg-black/30 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-rose-400/50 text-ink min-h-[80px] resize-none"
+                                className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-rose-400/50 text-ink min-h-[80px] resize-none"
                               />
                               <div className="flex justify-end gap-1.5">
                                 <button onClick={() => setEditingDirective(null)} className="px-2.5 py-1 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-muted hover:text-ink">Cancel</button>
@@ -529,7 +529,7 @@ export default function AgentTraining() {
                         onChange={e => setNewDirective(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && saveManualEntry('directive', newDirective)}
                         placeholder="Inject new operational directive…"
-                        className="flex-1 text-sm bg-black/30 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-rose-400/50 text-ink placeholder:text-muted/50"
+                        className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-rose-400/50 text-ink placeholder:text-muted/50"
                       />
                       <button
                         onClick={() => saveManualEntry('directive', newDirective)}
@@ -568,7 +568,7 @@ export default function AgentTraining() {
                               <textarea
                                 value={editingKnowledge.content}
                                 onChange={e => setEditingKnowledge({ ...editingKnowledge, content: e.target.value })}
-                                className="w-full text-sm bg-black/30 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-blue-400/50 text-ink min-h-[80px] resize-none"
+                                className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-blue-400/50 text-ink min-h-[80px] resize-none"
                               />
                               <div className="flex justify-end gap-1.5">
                                 <button onClick={() => setEditingKnowledge(null)} className="px-2.5 py-1 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-muted hover:text-ink">Cancel</button>
@@ -603,7 +603,7 @@ export default function AgentTraining() {
                         onChange={e => setNewKnowledge(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && saveManualEntry('knowledge', newKnowledge)}
                         placeholder="Sync new intelligence data…"
-                        className="flex-1 text-sm bg-black/30 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-blue-400/50 text-ink placeholder:text-muted/50"
+                        className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-blue-400/50 text-ink placeholder:text-muted/50"
                       />
                       <button
                         onClick={() => saveManualEntry('knowledge', newKnowledge)}

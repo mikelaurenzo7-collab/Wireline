@@ -186,7 +186,7 @@ export default function IntakeKeysManager() {
               initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
               className="relative z-10 overflow-hidden"
             >
-              <div className="rounded-xl bg-black/30 border border-white/10 p-4 space-y-3">
+              <div className="rounded-xl bg-black/5 border border-black/10 p-4 space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <label className="space-y-1.5">
                     <span className="text-[10px] uppercase tracking-[0.3em] text-muted">Key name</span>
@@ -194,7 +194,7 @@ export default function IntakeKeysManager() {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="e.g. Webflow Demo Form"
-                      className="w-full h-11 px-4 rounded-xl bg-black/40 border border-white/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
+                      className="w-full h-11 px-4 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
                     />
                   </label>
                   <label className="space-y-1.5">
@@ -202,7 +202,7 @@ export default function IntakeKeysManager() {
                     <select
                       value={defaultAgentId}
                       onChange={(e) => { setDefaultAgentId(e.target.value); if (!e.target.value) setAutoDial(false); }}
-                      className="w-full h-11 px-3 rounded-xl bg-black/40 border border-white/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
+                      className="w-full h-11 px-3 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
                     >
                       <option value="">— None —</option>
                       {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -219,7 +219,7 @@ export default function IntakeKeysManager() {
                       ? "bg-black/20 border-white/5 text-muted/50 cursor-not-allowed"
                       : autoDial
                         ? "bg-brand-2/15 border-brand-2/40 text-brand-2"
-                        : "bg-black/30 border-white/10 text-ink/80 hover:border-white/20",
+                        : "bg-black/5 border-black/10 text-ink/80 hover:border-black/20",
                   )}
                 >
                   <div className={cn(

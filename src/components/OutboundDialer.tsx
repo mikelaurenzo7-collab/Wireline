@@ -423,7 +423,7 @@ export default function OutboundDialer() {
                     <select
                       value={selectedAgentId}
                       onChange={e => setSelectedAgentId(e.target.value)}
-                      className="w-full text-sm bg-black/30 border border-white/10 rounded-lg pl-3 pr-8 py-2 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
+                      className="w-full text-sm bg-black/5 border border-black/10 rounded-lg pl-3 pr-8 py-2 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
                     >
                       {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                     </select>
@@ -450,12 +450,12 @@ export default function OutboundDialer() {
                           onChange={e => setCustomerNumber(e.target.value)}
                           placeholder="+1 555 000 0000"
                           className={cn(
-                            "w-full text-sm bg-black/30 border rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 tabular-nums",
+                            "w-full text-sm bg-black/5 border rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 tabular-nums",
                             customerNumber.length > 0
                               ? /^\+?[\d\s\-\(\)]{7,15}$/.test(customerNumber)
                                 ? "border-emerald-500/50"
                                 : "border-rose-500/40"
-                              : "border-white/10"
+                              : "border-black/10"
                           )}
                         />
                         {customerNumber.length > 0 && !/^\+?[\d\s\-\(\)]{7,15}$/.test(customerNumber) && (
@@ -475,7 +475,7 @@ export default function OutboundDialer() {
                           value={customerName}
                           onChange={e => setCustomerName(e.target.value)}
                           placeholder="Optional"
-                          className="w-full text-sm bg-black/30 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50"
+                          className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50"
                         />
                       </div>
 
@@ -486,7 +486,7 @@ export default function OutboundDialer() {
                           onChange={e => setContext(e.target.value)}
                           rows={4}
                           placeholder="What should the agent say?"
-                          className="w-full text-sm bg-black/30 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 resize-none leading-relaxed"
+                          className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 resize-none leading-relaxed"
                         />
                       </div>
 
@@ -531,7 +531,7 @@ export default function OutboundDialer() {
                             <select
                               value={bulkCampaignId}
                               onChange={e => setBulkCampaignId(e.target.value)}
-                              className="w-full text-sm bg-black/30 border border-white/10 rounded-lg pl-3 pr-8 py-2 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
+                              className="w-full text-sm bg-black/5 border border-black/10 rounded-lg pl-3 pr-8 py-2 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
                             >
                               <option value="">No campaign</option>
                               {campaigns.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -1254,7 +1254,7 @@ function CreateCampaignModal({ agents, onClose, onCreated }: { agents: any[]; on
   const [err, setErr] = useState("");
 
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
-  const inputCls = "w-full text-sm bg-black/30 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 transition-all";
+  const inputCls = "w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 transition-all";
 
   const save = async () => {
     if (!form.name.trim()) { setErr("Campaign name is required."); return; }
