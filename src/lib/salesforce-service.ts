@@ -5,13 +5,14 @@ import { getErrorMessage } from "./server-utils";
  * Salesforce CRM Service — bi-directional contact / opportunity sync.
  *
  * Follows the same graceful-fallback pattern as apollo-service.ts:
- * when SALESFORCE_CLIENT_ID, SALESFORCE_CLIENT_SECRET, or
- * SALESFORCE_INSTANCE_URL are unset, every export returns a no-op result.
+ * when SALESFORCE_INSTANCE_URL or SALESFORCE_ACCESS_TOKEN are unset,
+ * every export returns a no-op result.
  *
  * Full OAuth Web Server flow (authorization_code → refresh_token) will
  * be implemented when operators begin onboarding Salesforce accounts.
- * Until then, these stubs let the Action Engine and Claude tool schemas
- * reference real typed functions without breaking when creds are absent.
+ * Until then, these stubs use a direct bearer token so the Action Engine
+ * and post-call sync can reference real typed functions without breaking
+ * when creds are absent.
  */
 
 export interface SalesforceContact {
@@ -34,9 +35,8 @@ export interface SalesforceCallLog {
 
 function sfConfigured(): boolean {
   return !!(
-    process.env.SALESFORCE_CLIENT_ID &&
-    process.env.SALESFORCE_CLIENT_SECRET &&
-    process.env.SALESFORCE_INSTANCE_URL
+    process.env.SALESFORCE_INSTANCE_URL &&
+    process.env.SALESFORCE_ACCESS_TOKEN
   );
 }
 
@@ -48,7 +48,10 @@ export async function searchContacts(query: string): Promise<SalesforceContact[]
 
   try {
     const instanceUrl = process.env.SALESFORCE_INSTANCE_URL!;
-    const soql = `SELECT Id, FirstName, LastName, Email, Phone, Account.Name, Title FROM Contact WHERE Name LIKE '%${query.replace(/'/g, "\\'")}%' LIMIT 10`;
+    const safeQuery = query.replace(/'/g, "\\'");
+    const soql =
+      `SELECT Id, FirstName, LastName, Email, Phone, Account.Name, Title ` +
+      `FROM Contact WHERE Name LIKE '%${safeQuery}%' OR Phone LIKE '%${safeQuery}%' LIMIT 10`;
     const res = await fetch(`${instanceUrl}/services/data/v59.0/query?q=${encodeURIComponent(soql)}`, {
       headers: { Authorization: `Bearer ${await getAccessToken()}` },
     });

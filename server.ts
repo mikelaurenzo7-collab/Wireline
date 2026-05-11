@@ -4133,36 +4133,54 @@ async function resolveIntakeKey(provided: string | undefined): Promise<any | nul
   return data;
 }
 
-// Per-key in-memory rate limit. Public endpoint, so a single noisy
+// Per-key distributed rate limit. Public endpoint, so a single noisy
 // caller can't drain the operator's Vapi spend or hammer Supabase.
 // Rolling window: ≤ 60 requests per 60s per intake key.
 const INTAKE_RATE_WINDOW_MS = 60_000;
 const INTAKE_RATE_MAX = 60;
-const intakeRateBuckets = new Map<string, number[]>();
 
-function checkIntakeRate(keyId: string): { ok: boolean; retry_after_s?: number } {
-  const now = Date.now();
-  const cutoff = now - INTAKE_RATE_WINDOW_MS;
-  const hits = (intakeRateBuckets.get(keyId) || []).filter(t => t > cutoff);
-  if (hits.length >= INTAKE_RATE_MAX) {
-    const retryAfter = Math.max(1, Math.ceil((hits[0] + INTAKE_RATE_WINDOW_MS - now) / 1000));
-    intakeRateBuckets.set(keyId, hits);
-    return { ok: false, retry_after_s: retryAfter };
+type IntakeRateCheck =
+  | { ok: true }
+  | { ok: false; status: 429; retry_after_s: number; code: "INTAKE_RATE_LIMIT"; error: string }
+  | { ok: false; status: 503; code: "RATE_LIMITER_UNAVAILABLE"; error: string };
+
+async function checkIntakeRate(keyId: string): Promise<IntakeRateCheck> {
+  const limiter = distributedLimiterStatus();
+  if (!limiter.ok) {
+    return {
+      ok: false,
+      status: 503,
+      code: "RATE_LIMITER_UNAVAILABLE",
+      error: limiter.reason || "Distributed rate limiter is unavailable.",
+    };
   }
-  hits.push(now);
-  intakeRateBuckets.set(keyId, hits);
-  return { ok: true };
+
+  try {
+    const result = await rateLimit(keyId, {
+      bucket: "public_intake",
+      windowMs: INTAKE_RATE_WINDOW_MS,
+      max: INTAKE_RATE_MAX,
+      failClosedOnError: true,
+    });
+    if (result.allowed) return { ok: true };
+    const retryAfter = Math.max(1, Math.ceil(result.resetMs / 1000));
+    return {
+      ok: false,
+      status: 429,
+      retry_after_s: retryAfter,
+      code: "INTAKE_RATE_LIMIT",
+      error: `Rate limit exceeded for this intake key (${INTAKE_RATE_MAX}/min). Retry in ${retryAfter}s.`,
+    };
+  } catch (err) {
+    log.error("Intake rate limiter failed", { keyId, error: getErrorMessage(err) });
+    return {
+      ok: false,
+      status: 503,
+      code: "RATE_LIMITER_UNAVAILABLE",
+      error: "Distributed rate limiter is unavailable for intake traffic. Configure Upstash Redis or enable WIRELINE_ALLOW_INMEMORY_RATE_LIMIT for single-node deployments.",
+    };
+  }
 }
-
-// Purge stale buckets every 5 min (matches the Claude rate-limit pattern).
-setInterval(() => {
-  const cutoff = Date.now() - INTAKE_RATE_WINDOW_MS * 2;
-  for (const [k, hits] of intakeRateBuckets) {
-    const fresh = hits.filter(t => t > cutoff);
-    if (fresh.length === 0) intakeRateBuckets.delete(k);
-    else intakeRateBuckets.set(k, fresh);
-  }
-}, 5 * 60 * 1000).unref?.();
 
 // Public — no Supabase JWT. Authenticated by X-Wireline-Key header.
 //
@@ -4352,13 +4370,13 @@ app.post("/api/intake/lead", async (req: any, res: any) => {
     const key = await resolveIntakeKey(provided);
     if (!key) return res.status(401).json({ error: "Invalid or missing X-Wireline-Key." });
 
-    const rate = checkIntakeRate(key.id);
+    const rate = await checkIntakeRate(key.id);
     if (!rate.ok) {
-      res.set("Retry-After", String(rate.retry_after_s));
-      return res.status(429).json({
-        error: `Rate limit exceeded for this intake key (${INTAKE_RATE_MAX}/min). Retry in ${rate.retry_after_s}s.`,
-        code: "INTAKE_RATE_LIMIT",
-        retry_after_s: rate.retry_after_s,
+      if (rate.status === 429) res.set("Retry-After", String(rate.retry_after_s));
+      return res.status(rate.status).json({
+        error: rate.error,
+        code: rate.code,
+        ...(rate.status === 429 ? { retry_after_s: rate.retry_after_s } : {}),
       });
     }
 
@@ -4415,15 +4433,18 @@ app.post("/api/intake/leads", async (req: any, res: any) => {
     // Reserve N slots in the rate bucket up front; reject the whole
     // batch if any slot would overflow so the caller can chunk.
     for (let i = 0; i < leads.length; i++) {
-      const r = checkIntakeRate(key.id);
+      const r = await checkIntakeRate(key.id);
       if (!r.ok) {
-        res.set("Retry-After", String(r.retry_after_s));
-        return res.status(429).json({
-          error: `Rate limit would be exceeded by this batch (${INTAKE_RATE_MAX}/min). Retry in ${r.retry_after_s}s.`,
-          code: "INTAKE_RATE_LIMIT",
-          retry_after_s: r.retry_after_s,
-          accepted_so_far: i,
-        });
+        if (r.status === 429) {
+          res.set("Retry-After", String(r.retry_after_s));
+          return res.status(429).json({
+            error: `Rate limit would be exceeded by this batch (${INTAKE_RATE_MAX}/min). Retry in ${r.retry_after_s}s.`,
+            code: r.code,
+            retry_after_s: r.retry_after_s,
+            accepted_so_far: i,
+          });
+        }
+        return res.status(r.status).json({ error: r.error, code: r.code });
       }
     }
 

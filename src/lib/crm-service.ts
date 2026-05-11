@@ -3,6 +3,18 @@ import { getErrorMessage } from "./server-utils";
 import * as salesforce from "./salesforce-service";
 import * as hubspot from "./hubspot-service";
 
+function salesforceRuntimeConfigured(): boolean {
+  return !!(process.env.SALESFORCE_INSTANCE_URL && process.env.SALESFORCE_ACCESS_TOKEN);
+}
+
+function hubspotRuntimeConfigured(): boolean {
+  return !!process.env.HUBSPOT_ACCESS_TOKEN;
+}
+
+function normalizePhone(value: string | null | undefined): string {
+  return (value || "").replace(/\D/g, "");
+}
+
 /**
  * Service for interacting with external CRMs.
  * Delegates to the typed service modules (salesforce-service / hubspot-service)
@@ -32,10 +44,10 @@ export class CRMService {
   }
 
   async searchContacts(query: string, crmType: "salesforce" | "hubspot" | "auto" = "auto") {
-    if (crmType === "salesforce" || (crmType === "auto" && process.env.SALESFORCE_CLIENT_ID)) {
+    if (crmType === "salesforce" || (crmType === "auto" && salesforceRuntimeConfigured())) {
       return { crm: "salesforce" as const, contacts: await salesforce.searchContacts(query) };
     }
-    if (crmType === "hubspot" || (crmType === "auto" && process.env.HUBSPOT_ACCESS_TOKEN)) {
+    if (crmType === "hubspot" || (crmType === "auto" && hubspotRuntimeConfigured())) {
       return { crm: "hubspot" as const, contacts: await hubspot.searchContacts(query) };
     }
     return { crm: null, contacts: [] };
@@ -51,14 +63,15 @@ export class CRMService {
     outcome?: string;
   }): Promise<string | null> {
     const crm = params.crmType === "auto"
-      ? (process.env.SALESFORCE_CLIENT_ID ? "salesforce" : process.env.HUBSPOT_ACCESS_TOKEN ? "hubspot" : null)
+      ? (salesforceRuntimeConfigured() ? "salesforce" : hubspotRuntimeConfigured() ? "hubspot" : null)
       : params.crmType;
+    const contactId = params.contact_id || await this.resolveContactId(crm, params.to_number);
 
     if (crm === "salesforce") {
       return salesforce.logCall({
         subject: params.subject,
         description: params.description,
-        contact_id: params.contact_id,
+        contact_id: contactId,
         duration_minutes: params.duration_minutes,
         outcome: params.outcome,
       });
@@ -67,7 +80,7 @@ export class CRMService {
       return hubspot.logCall({
         to_number: params.to_number,
         body: params.description,
-        contact_id: params.contact_id,
+        contact_id: contactId,
         duration_ms: (params.duration_minutes || 0) * 60_000,
         outcome: params.outcome,
       });
@@ -83,7 +96,7 @@ export class CRMService {
     amount?: number;
   }): Promise<string | null> {
     const crm = params.crmType === "auto"
-      ? (process.env.SALESFORCE_CLIENT_ID ? "salesforce" : process.env.HUBSPOT_ACCESS_TOKEN ? "hubspot" : null)
+      ? (salesforceRuntimeConfigured() ? "salesforce" : hubspotRuntimeConfigured() ? "hubspot" : null)
       : params.crmType;
 
     if (crm === "salesforce") {
@@ -134,5 +147,23 @@ export class CRMService {
       outcome: params.status,
     });
     return id !== null;
+  }
+
+  private async resolveContactId(
+    crmType: "salesforce" | "hubspot" | null,
+    toNumber: string,
+  ): Promise<string | undefined> {
+    if (!crmType || !toNumber) return undefined;
+
+    const target = normalizePhone(toNumber);
+    if (crmType === "salesforce") {
+      const results = await salesforce.searchContacts(toNumber);
+      const best = results.find((contact) => normalizePhone(contact.phone) === target) || results[0];
+      return best?.sf_id;
+    }
+
+    const results = await hubspot.searchContacts(toNumber);
+    const best = results.find((contact) => normalizePhone(contact.phone) === target) || results[0];
+    return best?.hs_id;
   }
 }

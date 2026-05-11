@@ -7,6 +7,81 @@ import { executeAction } from "./action-engine";
 import { ActionItemSchema } from "./action-types";
 import { persistClaudeAuditRecords } from "../middleware/audit-middleware";
 import { buildCallCompletedOutcome, dispatchWebhook } from "./webhook-helpers";
+import { CRMService } from "./crm-service";
+
+type SupportedCrmType = "salesforce" | "hubspot";
+
+function truncateForCrm(text: string | undefined, max = 1_500): string {
+  if (!text) return "";
+  return text.length <= max ? text : `${text.slice(0, max - 3)}...`;
+}
+
+function buildCrmCallDescription(input: {
+  agentName?: string;
+  direction: "inbound" | "outbound";
+  customerNumber?: string | null;
+  durationSeconds?: number;
+  summary?: string;
+  leadScore?: number;
+  intentLabel?: string;
+  sentiment?: string;
+}): string {
+  const lines = [
+    input.agentName ? `Agent: ${input.agentName}` : null,
+    `Direction: ${input.direction}`,
+    input.customerNumber ? `Customer number: ${input.customerNumber}` : null,
+    typeof input.durationSeconds === "number" ? `Duration: ${input.durationSeconds}s` : null,
+    input.intentLabel ? `Intent: ${input.intentLabel}` : null,
+    input.sentiment ? `Sentiment: ${input.sentiment}` : null,
+    typeof input.leadScore === "number" ? `Lead score: ${input.leadScore}` : null,
+    input.summary ? `Summary: ${truncateForCrm(input.summary)}` : null,
+  ].filter(Boolean);
+  return lines.join("\n");
+}
+
+async function syncCallActivityToCrm(input: {
+  userId: string;
+  crmType?: string | null;
+  agentName?: string;
+  callId: string;
+  direction: "inbound" | "outbound";
+  customerNumber?: string | null;
+  durationSeconds?: number;
+  summary?: string;
+  leadScore?: number;
+  intentLabel?: string;
+  sentiment?: string;
+}) {
+  if (!input.crmType || (input.crmType !== "salesforce" && input.crmType !== "hubspot")) return;
+  if (!input.customerNumber) return;
+
+  const crm = new CRMService(input.userId);
+  const subjectSuffix = input.intentLabel ? ` - ${truncateForCrm(input.intentLabel, 80)}` : "";
+  const activityId = await crm.logCall({
+    crmType: input.crmType as SupportedCrmType,
+    subject: `Wireline ${input.direction} call${subjectSuffix}`,
+    description: buildCrmCallDescription(input),
+    to_number: input.customerNumber,
+    duration_minutes: input.durationSeconds ? Math.max(1, Math.round(input.durationSeconds / 60)) : 0,
+    outcome: input.intentLabel || "completed",
+  });
+
+  if (activityId) {
+    log.info("Post-call CRM sync succeeded", {
+      userId: input.userId,
+      crmType: input.crmType,
+      callId: input.callId,
+      activityId,
+    });
+    return;
+  }
+
+  log.warn("Post-call CRM sync skipped or failed", {
+    userId: input.userId,
+    crmType: input.crmType,
+    callId: input.callId,
+  });
+}
 
 /**
  * Global job handler.
@@ -23,7 +98,7 @@ export async function handleJob(job: JobRow): Promise<void> {
     };
     
     // Check user tier for model selection
-    const { data: settings } = await db.from('wireline_settings').select('ai_tier').eq('user_id', p.userId).single();
+    const { data: settings } = await db.from('wireline_settings').select('ai_tier, crm_type').eq('user_id', p.userId).single();
     const useFlash = p.useFlash || settings?.ai_tier === 'starter';
 
     let result;
@@ -107,6 +182,23 @@ export async function handleJob(job: JobRow): Promise<void> {
       enrichment_source: "async_post_call_job",
       enrichment,
     });
+    await syncCallActivityToCrm({
+      userId: p.userId,
+      crmType: settings?.crm_type,
+      agentName: p.agentName,
+      callId: p.callId,
+      direction,
+      customerNumber: payload.customer_number,
+      durationSeconds: p.durationSeconds,
+      summary: p.summary,
+      leadScore: result.lead_score,
+      intentLabel: result.intent_label,
+      sentiment: result.sentiment,
+    }).catch((e: unknown) => log.warn("post_call CRM sync failed", {
+      userId: p.userId,
+      callId: p.callId,
+      error: getErrorMessage(e),
+    }));
     void dispatchWebhook(p.userId, "call.completed", payload);
     if (typeof result.lead_score === "number" && result.lead_score >= 70) {
       void dispatchWebhook(p.userId, "lead.hot", {

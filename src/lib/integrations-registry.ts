@@ -65,7 +65,7 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
     description: "Postgres database, RLS, and auth.",
     group: "core",
     required: true,
-    envVars: ["VITE_SUPABASE_URL", "VITE_SUPABASE_ANON_KEY"],
+    envVars: ["VITE_SUPABASE_URL", "VITE_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"],
     docsUrl: "https://supabase.com/docs",
   },
 
@@ -162,9 +162,9 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
     description: "Bi-directional contact + opportunity sync for voice and email agents.",
     group: "actions",
     required: false,
-    envVars: ["SALESFORCE_CLIENT_ID", "SALESFORCE_CLIENT_SECRET", "SALESFORCE_INSTANCE_URL"],
+    envVars: ["SALESFORCE_INSTANCE_URL", "SALESFORCE_ACCESS_TOKEN"],
     fallback:
-      "Without credentials, CRM actions (log_call, sync_contact, create_opportunity) return no-op. Agents still function without CRM.",
+      "Current server-side sync needs SALESFORCE_INSTANCE_URL + SALESFORCE_ACCESS_TOKEN. Connected App client credentials stay documented for the future OAuth refresh-token flow.",
     docsUrl: "https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/",
   },
   {
@@ -258,6 +258,14 @@ function evaluateStatus(d: IntegrationDescriptor): IntegrationStatus {
       const haveAccount = envIsPresent("DOCUSIGN_ACCOUNT_ID");
       const haveToken = envIsPresent("DOCUSIGN_JWT_TOKEN") || envIsPresent("DOCUSIGN_ACCESS_TOKEN");
       return haveAccount && haveToken ? "configured" : "missing";
+    }
+    case "salesforce": {
+      const haveInstance = envIsPresent("SALESFORCE_INSTANCE_URL");
+      const haveToken = envIsPresent("SALESFORCE_ACCESS_TOKEN");
+      const haveConnectedApp = envIsPresent("SALESFORCE_CLIENT_ID") && envIsPresent("SALESFORCE_CLIENT_SECRET");
+      if (haveInstance && haveToken) return "configured";
+      if (haveInstance || haveToken || haveConnectedApp) return "fallback";
+      return "missing";
     }
     case "sentry": {
       const be = envIsPresent("SENTRY_DSN");

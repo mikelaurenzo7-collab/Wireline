@@ -12,8 +12,12 @@ export function validateStartupEnv() {
     ["VITE_SUPABASE_ANON_KEY", process.env.VITE_SUPABASE_ANON_KEY],
   ];
   // Required in production; warn in dev so local hacking still works.
+  // The server must boot with the service-role key in production so
+  // privileged DB paths never silently fall back to the anon key.
   const prodRequired: [string, string | undefined][] = [
+    ["SUPABASE_SERVICE_ROLE_KEY", process.env.SUPABASE_SERVICE_ROLE_KEY],
     ["ANTHROPIC_API_KEY",   process.env.ANTHROPIC_API_KEY],
+    ["GEMINI_API_KEY",      process.env.GEMINI_API_KEY],
     ["VAPI_PRIVATE_KEY",    process.env.VAPI_PRIVATE_KEY],
     ["VAPI_WEBHOOK_SECRET", process.env.VAPI_WEBHOOK_SECRET],
     ["OAUTH_STATE_SECRET",  process.env.OAUTH_STATE_SECRET],
@@ -24,7 +28,6 @@ export function validateStartupEnv() {
   const missing       = IS_PROD ? [...missingAlways, ...missingProd] : missingAlways;
 
   const recommended: string[] = [];
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) recommended.push("SUPABASE_SERVICE_ROLE_KEY");
   if (!process.env.APP_URL) recommended.push("APP_URL");
   
   if (IS_PROD && !process.env.CORS_ORIGINS && !process.env.APP_URL) {
