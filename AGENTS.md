@@ -90,21 +90,86 @@ swap cleanly.
 - `@vapi-ai/web` — voice integration.
 - `@supabase/supabase-js` — database / auth.
 
+### Optional integrations (do not strip even if unconfigured)
+
+The following services are wired through the Action Engine and run as
+no-ops when their env vars are unset — they MUST stay wired so operators
+can opt in at any time without a code change:
+
+- **Apollo.io** — autonomous lead prospecting. Powers the
+  `prospect_leads` action type via `src/lib/apollo-service.ts`. Gated
+  by `APOLLO_API_KEY`; absent key → `searchLeads()` returns `[]`.
+- **DocuSign** — e-signature for the `send_contract` action type via
+  `src/lib/docusign-service.ts`. Gated by `DOCUSIGN_ACCOUNT_ID` plus
+  one of `DOCUSIGN_JWT_TOKEN` (preferred) or `DOCUSIGN_ACCESS_TOKEN`
+  (fallback). Absent creds → `sendContract()` logs a warning and
+  returns `null`; the operator-approval draft path in
+  `action-engine.ts` still runs.
+
 ## Env vars that MUST stay documented in `.env.example`
 
+These appear in the canonical group order used everywhere in the app
+(Core → AI → Voice → OAuth → Billing → Action Engine → Infrastructure →
+Security). See `src/lib/integrations-registry.ts` for the runtime mirror.
+
+**Core**
+- `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` — db + auth.
+- `SUPABASE_SERVICE_ROLE_KEY` — backend service role for privileged DB ops.
+
+**AI**
 - `ANTHROPIC_API_KEY` — unlocks every `/api/claude/*` endpoint and the
   Daily Brief + Insights Claude paths. Do not remove.
 - `GEMINI_API_KEY` — fallback for legacy paths.
+
+**Voice**
 - `VAPI_PRIVATE_KEY` / `VITE_VAPI_PUBLIC_KEY` — voice.
-- `VAPI_WEBHOOK_SECRET` — webhook signature verification.
-- `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` — db + auth.
+- `VAPI_WEBHOOK_SECRET` — webhook signature verification (required in prod).
+
+**OAuth**
 - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — Gmail OAuth.
+- `MICROSOFT_CLIENT_ID` / `MICROSOFT_CLIENT_SECRET` — Outlook OAuth.
+
+**Billing**
+- `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` — billing + webhook sig.
+- `STRIPE_STARTER_PRICE_ID` / `STRIPE_PRO_PRICE_ID` / `STRIPE_ENTERPRISE_PRICE_ID` — per-plan price IDs.
+
+**Action Engine (optional)**
+- `APOLLO_API_KEY` — optional. Required for the `prospect_leads` Action
+  Engine path (autonomous Apollo.io prospecting).
+- `DOCUSIGN_BASE_URI` / `DOCUSIGN_ACCOUNT_ID` / `DOCUSIGN_JWT_TOKEN` /
+  `DOCUSIGN_ACCESS_TOKEN` — optional. Required for the `send_contract`
+  Action Engine path (DocuSign e-signature).
+
+**Infrastructure**
+- `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` — distributed rate
+  limits + spend cap counters. Strongly recommended in production.
+- `SENTRY_DSN` / `VITE_SENTRY_DSN` — backend + frontend error tracking.
+
+**Security**
+- `OAUTH_STATE_SECRET` — HMAC for OAuth state tokens (CSRF protection).
+- `WIRELINE_DATA_KEY` — AES-256-GCM key for the Secret Vault (webhook secrets).
+- `CRON_SECRET` — bearer token for `POST /api/jobs/sweep` from cron.
 
 ## Database schema
 
 `supabase_schema.sql` is **idempotent** — the bottom contains
 `ALTER TABLE … ADD COLUMN IF NOT EXISTS` migrations safe to re-run.
 Do not delete those — existing installs depend on them to upgrade.
+
+## Integration registry
+
+`src/lib/integrations-registry.ts` is the single source of truth for
+every external service this deployment talks to. The order of entries
+in `INTEGRATIONS` is the canonical order surfaced in:
+
+- `.env.example` section headers
+- `README.md` integration table
+- `GET /api/health/integrations` API response
+- AdminSettings → System → Platform Health panel
+
+When you add a new external service, append it there in the matching
+group (core / ai / voice / oauth / billing / actions / infra / security)
+and mirror the env var into `.env.example` in the same section.
 
 ## Build verification
 

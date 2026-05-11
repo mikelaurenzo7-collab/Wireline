@@ -452,16 +452,16 @@ export default function OutboundDialer() {
                           className={cn(
                             "w-full text-sm bg-black/5 border rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 tabular-nums",
                             customerNumber.length > 0
-                              ? /^\+?[\d\s\-\(\)]{7,15}$/.test(customerNumber)
+                              ? /^\+?[\d\s\-()]{7,15}$/.test(customerNumber)
                                 ? "border-emerald-500/50"
                                 : "border-rose-500/40"
                               : "border-black/10"
                           )}
                         />
-                        {customerNumber.length > 0 && !/^\+?[\d\s\-\(\)]{7,15}$/.test(customerNumber) && (
+                        {customerNumber.length > 0 && !/^\+?[\d\s\-()]{7,15}$/.test(customerNumber) && (
                           <p className="text-[10px] text-rose-400 mt-0.5">Use format: +1 (555) 000-0000</p>
                         )}
-                        {customerNumber.length > 0 && /^\+?[\d\s\-\(\)]{7,15}$/.test(customerNumber) && (
+                        {customerNumber.length > 0 && /^\+?[\d\s\-()]{7,15}$/.test(customerNumber) && (
                           <p className="text-[10px] text-emerald-400 mt-0.5 flex items-center gap-1">
                             <CheckCircle2 className="w-3 h-3" /> Valid number
                           </p>

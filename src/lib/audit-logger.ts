@@ -210,6 +210,32 @@ export class AuditLogger {
   }
 
   /**
+   * Log a knowledge / settings modification event. Used by surfaces that
+   * mutate cross-agent knowledge (Google Drive ingest, manual KB edits)
+   * which the legacy code reaches via the convenience name
+   * `logDataModification`.
+   */
+  async logDataModification(
+    eventType: AuditEventType,
+    params: {
+      userId?: string;
+      resource?: string;
+      metadata?: Record<string, any>;
+      ip?: string;
+    }
+  ) {
+    return await this.log({
+      eventType,
+      userId: params.userId,
+      action: eventType,
+      severity: 'info',
+      resourceType: params.resource,
+      metadata: params.metadata,
+      ip: params.ip,
+    });
+  }
+
+  /**
    * Log a billing-related event (Stripe webhook, checkout, portal open).
    * Captures the Stripe subscription / customer ID and the plan tier
    * for SOC 2 CC1.4 (system-of-record auth trail for paid features).

@@ -263,7 +263,7 @@ function sanitizeCSV(val: any): string {
   const str = String(val);
   // Prevent CSV formula injection — prefix dangerous leading
   // characters with a single quote so spreadsheets render them as text.
-  if (str.match(/^[=@+\-]/)) {
+  if (str.match(/^[=@+-]/)) {
     return `"'${str.replace(/"/g, '""')}"`;
   }
   return `"${str.replace(/"/g, '""')}"`;

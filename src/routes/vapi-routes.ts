@@ -1,25 +1,21 @@
 import express from "express";
 import * as claudeBrain from "../lib/claude-brain";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { 
-  db, 
-  log, 
-  IS_PROD, 
-  fetchWithTimeout,
-  auditLogger
+import {
+  db,
+  log,
+  IS_PROD,
 } from "../lib/server-context";
-import { 
-  timingSafeEq, 
-  VAPI_WEBHOOK_SECRET, 
-  sanitizePhone, 
-  MAX_RUNTIME_LESSONS, 
-  KNOWLEDGE_GAP_PREFIX, 
-  buildCallerProfileBlock, 
-  OUTBOUND_ARCHETYPE_BY_ROLE, 
-  getArchetypeConfig, 
-  ROLE_SPECIFIC_PROTOCOLS, 
+import {
+  timingSafeEq,
+  VAPI_WEBHOOK_SECRET,
+  sanitizePhone,
+  KNOWLEDGE_GAP_PREFIX,
+  MAX_RUNTIME_LESSONS,
+  ROLE_SPECIFIC_PROTOCOLS,
+  buildCallerProfileBlock,
+  OUTBOUND_ARCHETYPE_BY_ROLE,
+  getArchetypeConfig,
   buildRoleToolDefs,
-  MAX_CONTEXT_PREVIEW_LENGTH,
   PRESERVED_LEAD_STATUSES,
   SENTIMENT_ANGRY_SIGNALS,
   SENTIMENT_POSITIVE_SIGNALS
@@ -27,23 +23,24 @@ import {
 import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "../lib/agent-runtime";
 import { buildCustomerIntelBlock } from "../lib/customer-intel";
 import { SentryEvents } from "../lib/sentry-events";
-import { GeminiLeadScoreSchema, GeminiLessonSchema, GeminiFollowupTaskSchema } from "../lib/form-validators";
-import { getConsentRuleForPhone, buildConsentLedgerRow, detectOptOut, CONSENT_RULE_VERSION } from "../lib/tcpa-consent";
 import { getErrorMessage } from "../lib/server-utils";
-import { dispatchWebhook } from "../lib/webhook-helpers";
 import { analyzeLiveSentiment } from "../lib/gemini-brain";
 import { IntegrationService } from "../lib/integrations";
 import { NotificationService } from "../lib/notifications";
 
+// TODO: the imports below were carried over from server.ts when this router
+// was extracted. The handlers that consume them — Gemini post-call lesson
+// extraction (GeminiLeadScoreSchema / GeminiLessonSchema / GeminiFollowupTaskSchema,
+// genAI), the TCPA consent ledger writer (getConsentRuleForPhone /
+// buildConsentLedgerRow / detectOptOut / CONSENT_RULE_VERSION), the webhook
+// dispatch on call.completed (dispatchWebhook), auditLogger, and the
+// fetchWithTimeout helper — still live in server.ts under app.post/app.get
+// callbacks that the vapi-routes.ts extraction has not yet absorbed. When
+// those handlers move here, re-add the imports.
+
 const router = express.Router();
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 let _warnedAboutVapiSecret = false;
 const DEFAULT_AGENT_ROLE = "customer_service";
-
-// Helper for TCPA normalization
-function normalizeDncPhone(p: string) {
-  return p.replace(/^\+1/, '');
-}
 
 router.post("/api/vapi-webhook", async (req, res) => {
   const provided =

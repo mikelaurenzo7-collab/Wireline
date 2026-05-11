@@ -57,7 +57,7 @@ export default function AgentTraining() {
       setPersonality(data.personality || "");
       setPersonalityDraft(data.personality || "");
       setLessons(data.lessons || []);
-    } catch(e) {}
+    } catch (_e) { /* training fetch failures are non-fatal — UI shows empty state */ }
   };
 
   const handleSend = async () => {
@@ -94,7 +94,7 @@ export default function AgentTraining() {
      try {
        await authFetch(`/api/agent-config/${selectedAgentId}/${type}/${id}`, { method: 'DELETE' });
        fetchKnowledge();
-     } catch(e) {}
+     } catch (_e) { /* swallow — UI will reflect server state on next fetch */ }
   };
 
   const saveManualEntry = async (type: 'directive' | 'knowledge' | 'personality', content: string, overrideId?: string) => {

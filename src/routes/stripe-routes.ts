@@ -116,7 +116,9 @@ router.post("/api/stripe-webhook", async (req: any, res: any) => {
   } catch (err: any) {
     log.error("Stripe webhook handler error", { error: getErrorMessage(err) });
     if (claimed) {
-      await db.from("wireline_stripe_events").delete().eq("event_id", idempotencyKey).catch(() => {});
+      try {
+        await db.from("wireline_stripe_events").delete().eq("event_id", idempotencyKey);
+      } catch { /* best-effort rollback */ }
     }
     res.status(500).json({ error: "Webhook handler failed" });
   }

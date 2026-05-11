@@ -33,7 +33,7 @@ import { getErrorMessage, sanitizeForAudit } from "./src/lib/server-utils";
 import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "./src/lib/agent-runtime";
 import { computeScorecard } from "./src/lib/agent-scorecard";
 import { computeDashboardStats } from "./src/lib/dashboard-stats";
-import { DEFAULT_AGENT_ROLE, ROLE_PERSONALITY_TEMPLATES } from "./src/lib/agent-constants";
+import { DEFAULT_AGENT_ROLE } from "./src/lib/agent-constants";
 import { extractCapturedProfileIntel, buildCustomerIntelBlock } from "./src/lib/customer-intel";
 import { compileActivityFeed } from "./src/lib/fleet-activity";
 import { computeAgentPerformance, emptyAgentPerformance } from "./src/lib/agent-performance";
@@ -46,7 +46,7 @@ import { evaluateOutboundConsent, getConsentRuleForPhone, buildConsentLedgerRow,
 import { QuotaTracker, quotaRejectionHeaders, validateOverride, PLAN_DEFAULTS, type PlanTier } from "./src/lib/tenant-quotas";
 import { enqueue, startWorker, getQueueStats, type JobRow } from "./src/lib/job-queue";
 import { claudeRateLimiter, quotaRateLimit, jobsRateLimit, tcpaRateLimit, soc2RateLimit, webhooksRateLimit } from "./src/middleware/api-rate-limits";
-import { enforceSpendCap, enforce24hSpendCap, recordDailySpend, DAILY_SPEND_LIMIT_USD, evaluateSpend } from "./src/lib/spend-guards";
+import { enforceSpendCap, enforce24hSpendCap, recordDailySpend, DAILY_SPEND_LIMIT_USD, evaluateSpend, getBudgetSnapshot, clearBudgetCache } from "./src/lib/spend-guards";
 import { withAudit } from "./src/middleware/audit-middleware";
 import { claudeErr } from "./src/lib/claude-response-helpers";
 import { cachedInsight, setCachedInsight } from "./src/lib/insights-cache";
@@ -58,8 +58,8 @@ import { syncGoogleDriveToKnowledge } from "./src/services/google-drive-sync";
 import { db, IS_PROD, log, fetchWithTimeout, auditLogger, requirePermission, requireRole, quotaTracker } from "./src/lib/server-context";
 import { stripe, stripeAvailable, syncSubscriptionFromStripe } from "./src/lib/stripe-helpers";
 import { SCOPES, MS_SCOPES, getGoogleOAuthClient, getMicrosoftRedirectUri, refreshMicrosoftToken, getMicrosoftAccessToken, generateOAuthState, verifyOAuthState, sendEmailViaMicrosoft } from "./src/lib/oauth-helpers";
-import { VAPI_WEBHOOK_SECRET, timingSafeEq, sanitizePhone, KNOWLEDGE_GAP_PREFIX, MAX_RUNTIME_LESSONS, MAX_CONTEXT_PREVIEW_LENGTH, buildCallerProfileBlock, OUTBOUND_ARCHETYPE_BY_ROLE, getArchetypeConfig, ROLE_SPECIFIC_PROTOCOLS, buildRoleToolDefs, PRESERVED_LEAD_STATUSES, SENTIMENT_ANGRY_SIGNALS, SENTIMENT_POSITIVE_SIGNALS } from "./src/lib/vapi-helpers";
-import { attemptWebhookDelivery, dispatchWebhook, processWebhookRetries, type WebhookEvent } from "./src/lib/webhook-helpers";
+import { VAPI_WEBHOOK_SECRET, timingSafeEq, sanitizePhone, MAX_CONTEXT_PREVIEW_LENGTH, buildCallerProfileBlock, OUTBOUND_ARCHETYPE_BY_ROLE, getArchetypeConfig, buildRoleToolDefs, PRESERVED_LEAD_STATUSES, SENTIMENT_ANGRY_SIGNALS, SENTIMENT_POSITIVE_SIGNALS } from "./src/lib/vapi-helpers";
+import { attemptWebhookDelivery, dispatchWebhook, processWebhookRetries, WEBHOOK_EVENTS, type WebhookEvent } from "./src/lib/webhook-helpers";
 import { isDncBlocked } from "./src/lib/compliance";
 import { placeOutboundCall } from "./src/lib/vapi-client";
 import { computeDailyBrief } from "./src/lib/daily-brief";
@@ -262,7 +262,6 @@ app.use((req: any, res: any, next: any) => {
 //  Light IP-based rate limit (30 req/min) prevents health-endpoint DDoS
 //  from saturating Supabase with probe queries.
 // ────────────────────────────────────────────────────────────────────
-import healthRouter from "./src/routes/health-routes";
 app.use("/api/health", healthRouter);
 
 // ────────────────────────────────────────────────────────────────────
@@ -540,7 +539,6 @@ async function dialRateLimiter(req: any, res: any, next: any) {
   next();
 }
 
-import * as rateLimiters from "./src/middleware/rate-limit-middleware";
 app.use("/api/emails", rateLimiters.emailRateLimiter);
 app.use("/api/knowledge", rateLimiters.knowledgeRateLimiter);
 app.use("/api/phone-numbers", rateLimiters.phoneNumberRateLimiter);
@@ -584,7 +582,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 // Google OAuth client moved to src/lib/oauth-helpers.ts
 
 // handleJob and background worker moved to src/lib/job-worker.ts
-stopWorker = initJobWorker();
+let stopWorker: (() => void) | undefined = initJobWorker();
 
 // ────────────────────────────────────────────────────────────────────
 //  Stripe — billing source of truth.
@@ -804,11 +802,6 @@ app.use(vapiRouter);
 // OAuth routes moved to src/routes/oauth-routes.ts
 app.use(oauthRouter);
 
-// Vapi Webhook moved to src/routes/vapi-routes.ts
-// (All logic from assistant-request to end-of-call-report is now in vapiRouter)
-app.post("/api/vapi-webhook", (req, res) => {
-  res.status(503).json({ error: "Vapi router not mounted." });
-});
 // 1.5 CALL LOG RETRIEVAL ENDPOINT
 // ==========================================
 app.get("/api/calls", authenticateUser, async (req: any, res: any) => {
@@ -1457,7 +1450,7 @@ app.get("/api/phone-numbers", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-app.post("/api/phone-numbers", authenticateUser, phoneNumberRateLimiter, async (req: any, res: any) => {
+app.post("/api/phone-numbers", authenticateUser, rateLimiters.phoneNumberRateLimiter, async (req: any, res: any) => {
   try {
     const { phone_number, vapi_number_id } = req.body;
     await db.from('wireline_phone_numbers').insert({ phone_number, vapi_number_id, user_id: req.user.id });
@@ -1467,7 +1460,7 @@ app.post("/api/phone-numbers", authenticateUser, phoneNumberRateLimiter, async (
   }
 });
 
-app.patch("/api/phone-numbers/:id", authenticateUser, phoneNumberRateLimiter, async (req: any, res: any) => {
+app.patch("/api/phone-numbers/:id", authenticateUser, rateLimiters.phoneNumberRateLimiter, async (req: any, res: any) => {
   try {
     const { agent_id } = req.body;
 
@@ -1493,7 +1486,7 @@ app.patch("/api/phone-numbers/:id", authenticateUser, phoneNumberRateLimiter, as
   }
 });
 
-app.delete("/api/phone-numbers/:id", authenticateUser, phoneNumberRateLimiter, async (req: any, res: any) => {
+app.delete("/api/phone-numbers/:id", authenticateUser, rateLimiters.phoneNumberRateLimiter, async (req: any, res: any) => {
   try {
     const { error } = await db.from('wireline_phone_numbers')
       .delete()
@@ -1650,7 +1643,7 @@ app.get("/api/knowledge", authenticateUser, async (req: any, res: any) => {
   } catch (e: any) { log.error("Failed to load knowledge", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load knowledge" }); }
 });
 
-app.post("/api/knowledge", authenticateUser, knowledgeRateLimiter, async (req: any, res: any) => {
+app.post("/api/knowledge", authenticateUser, rateLimiters.knowledgeRateLimiter, async (req: any, res: any) => {
   try {
     // Validate input using Zod schema
     const validation = parseFormData(KnowledgeSchema, {
@@ -1687,7 +1680,7 @@ app.post("/api/knowledge", authenticateUser, knowledgeRateLimiter, async (req: a
   } catch (e: any) { log.error("Failed to create", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to create" }); }
 });
 
-app.patch("/api/knowledge/:id", authenticateUser, knowledgeRateLimiter, async (req: any, res: any) => {
+app.patch("/api/knowledge/:id", authenticateUser, rateLimiters.knowledgeRateLimiter, async (req: any, res: any) => {
   try {
     // Validate input using Zod schema
     const validation = parseFormData(KnowledgeSchema, {
@@ -2637,7 +2630,7 @@ app.post("/api/drive/ingest", authenticateUser, claudeRateLimiter, async (req: a
     if (agentErr || !agent) return res.status(404).json({ error: "Agent not found." });
 
     const result = await syncGoogleDriveToKnowledge(userId, agentId);
-    void auditLogger.logDataModification('knowledge_updated', { userId, resource: 'google_drive_ingest', metadata: result });
+    void auditLogger.logDataModification('settings.knowledge_base_updated', { userId, resource: 'google_drive_ingest', metadata: result });
     res.json(result);
   } catch (e: any) {
     log.error("Google Drive ingest failed", { userId, agentId, error: getErrorMessage(e) });
@@ -5038,7 +5031,7 @@ app.put("/api/spend/budget", authenticateUser, async (req: any, res: any) => {
       .select().single();
     if (error) throw error;
     // Force a cache refresh so the new limit takes effect on the next request.
-    budgetCache.delete(req.user.id);
+    clearBudgetCache(req.user.id);
     res.json({ budget: data });
   } catch (e: any) { log.error("Failed to save budget", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to save budget" }); }
 });
@@ -5546,17 +5539,7 @@ app.post("/api/claude/forge", authenticateUser, async (req: any, res: any) => {
 
 // cachedInsight and setCachedInsight imported from ./src/lib/insights-cache
 export { cachedInsight, setCachedInsight };
-// Periodic eviction — prevents unbounded memory growth across long-lived
-// processes (not Vercel serverless, but local dev and Railway/Render).
-{
-  const evictId = setInterval(() => {
-    const cutoff = Date.now() - INSIGHT_TTL_MS;
-    for (const [k, v] of insightCache) {
-      if (v.ts < cutoff) insightCache.delete(k);
-    }
-  }, INSIGHT_TTL_MS);
-  (evictId as any).unref?.();
-}
+// Periodic eviction is already wired inside insights-cache.ts (self-contained).
 
 // Conversion funnel — calls → connected → qualified → booked → completed.
 

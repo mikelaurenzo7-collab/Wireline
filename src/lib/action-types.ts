@@ -14,7 +14,7 @@ export type ActionType = z.infer<typeof ActionTypeSchema>;
 export const ActionItemSchema = z.object({
   type: ActionTypeSchema,
   priority: z.enum(["low", "medium", "high"]),
-  payload: z.record(z.any()),
+  payload: z.record(z.string(), z.any()),
   reasoning: z.string().optional(),
 });
 

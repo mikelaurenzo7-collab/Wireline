@@ -276,5 +276,5 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
     return { ok: false, status: 502, error: `Vapi API Error: ${errBody}` };
   }
   const vapiData = await vapiResponse.json();
-  return { ok: true, callId: vapiData.id };
+  return { ok: true, status: 200, callId: vapiData.id };
 }

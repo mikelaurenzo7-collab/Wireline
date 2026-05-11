@@ -46,10 +46,14 @@ function periodStartIso(period: string): string {
   return `${period}-01T00:00:00.000Z`;
 }
 
-export async function getBudgetSnapshot(userId: string): Promise<BudgetSnapshot> {
+export function clearBudgetCache(userId: string) {
+  budgetCache.delete(userId);
+}
+
+export async function getBudgetSnapshot(userId: string, bypassCache: boolean = false): Promise<BudgetSnapshot> {
   const period = currentPeriod();
   const cached = budgetCache.get(userId);
-  if (cached && cached.period === period && Date.now() - cached.fetchedAt < BUDGET_CACHE_TTL_MS) {
+  if (!bypassCache && cached && cached.period === period && Date.now() - cached.fetchedAt < BUDGET_CACHE_TTL_MS) {
     return cached;
   }
 

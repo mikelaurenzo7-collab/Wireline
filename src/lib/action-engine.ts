@@ -27,14 +27,15 @@ export async function executeAction(
     if (autonomy === "auto") {
       const service = new IntegrationService(userId);
       switch (action.type) {
-        case "send_email":
+        case "send_email": {
           const emailOk = await service.sendEmail({
             to: action.payload.to,
             subject: action.payload.subject,
             body: action.payload.body
           });
           return { success: emailOk };
-        case "schedule_calendar":
+        }
+        case "schedule_calendar": {
           // Simple parsing for the payload
           const startTime = new Date(`${action.payload.date} ${action.payload.time}`).toISOString();
           const endTime = new Date(new Date(startTime).getTime() + 60 * 60 * 1000).toISOString();
@@ -45,6 +46,7 @@ export async function executeAction(
             endTime
           });
           return { success: calOk };
+        }
         case "update_crm_lead":
           return await handleUpdateCRM(userId, action, context);
         case "create_internal_task":
@@ -56,7 +58,11 @@ export async function executeAction(
       }
     }
 
-    // Default: draft/manual handling
+    // Default: draft/manual handling — mirror the send_email/schedule_calendar
+    // pattern. We queue every action type into `wireline_fleet_tasks` (or
+    // `wireline_outbound_leads` for prospect runs) for operator approval
+    // instead of touching DocuSign / Apollo directly. Operators flip
+    // autonomy_level to "auto" to bypass this gate.
     switch (action.type) {
       case "send_email":
         return await handleSendEmail(userId, action, context);
@@ -67,9 +73,9 @@ export async function executeAction(
       case "create_internal_task":
         return await handleCreateInternalTask(userId, action, context);
       case "send_contract":
-        return await handleSendContract(userId, action, context);
+        return await handleDraftSendContract(userId, action, context);
       case "prospect_leads":
-        return await handleProspectLeads(userId, action, context);
+        return await handleDraftProspectLeads(userId, action, context);
       default:
         return { success: false, error: `Unsupported action type: ${action.type}` };
     }
@@ -243,4 +249,64 @@ async function handleProspectLeads(userId: string, action: ActionItem, context: 
 
   log.info("Apollo leads imported", { userId, count: leads.length });
   return { success: true };
+}
+
+// ────────────────────────────────────────────────────────────────────
+//  Draft-queue handlers (autonomy_level !== "auto")
+//
+//  The two integration-backed actions (DocuSign send, Apollo prospect)
+//  are *destructive in the world outside Wireline* — they email a real
+//  contract for signature, or burn Apollo credits and seed your CRM
+//  with possibly-noisy leads. We therefore mirror the existing
+//  send_email / schedule_calendar pattern and queue the work as a
+//  pending fleet task that the operator approves in the UI before it
+//  actually executes. Operators who flip autonomy_level to "auto"
+//  bypass this gate (see the `if (autonomy === "auto")` branch above).
+// ────────────────────────────────────────────────────────────────────
+
+async function handleDraftSendContract(userId: string, action: ActionItem, context: { sourceId: string }) {
+  const { data, error } = await db.from("wireline_fleet_tasks").insert({
+    user_id: userId,
+    task_type: "contract_draft",
+    description: `[AI Draft] Send contract to ${action.payload.recipient_name || action.payload.recipient_email || "recipient"}`,
+    payload: {
+      recipient_name: action.payload.recipient_name,
+      recipient_email: action.payload.recipient_email,
+      template_id: action.payload.template_id,
+      subject: action.payload.subject,
+      message: action.payload.message,
+      prefill_fields: action.payload.prefill_fields,
+      reasoning: action.reasoning,
+    },
+    priority: action.priority,
+    status: "pending",
+    source_type: "phone_call",
+    source_id: context.sourceId,
+  }).select("id").single();
+
+  if (error) throw error;
+  return { success: true, actionId: data.id };
+}
+
+async function handleDraftProspectLeads(userId: string, action: ActionItem, context: { sourceId: string }) {
+  const { data, error } = await db.from("wireline_fleet_tasks").insert({
+    user_id: userId,
+    task_type: "prospect_draft",
+    description: `[AI Draft] Prospect Apollo for ${(action.payload.titles || []).join(", ") || "lead criteria"}`,
+    payload: {
+      titles: action.payload.titles,
+      industries: action.payload.industries,
+      states: action.payload.states,
+      employee_ranges: action.payload.employee_ranges,
+      limit: action.payload.limit || 25,
+      reasoning: action.reasoning,
+    },
+    priority: action.priority,
+    status: "pending",
+    source_type: "phone_call",
+    source_id: context.sourceId,
+  }).select("id").single();
+
+  if (error) throw error;
+  return { success: true, actionId: data.id };
 }

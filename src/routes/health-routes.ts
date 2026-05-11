@@ -2,6 +2,8 @@ import express from "express";
 import { db } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import * as claudeBrain from "../lib/claude-brain";
+import { getHealthCapabilities, getIntegrationsStatus } from "../lib/integrations-registry";
+import { authenticateUser } from "../middleware/auth";
 
 const router = express.Router();
 
@@ -45,15 +47,23 @@ router.get("/", healthRateLimiter, async (_req, res) => {
     status,
     uptime_s: Math.round(process.uptime()),
     db: dbStatus,
-    capabilities: {
-      claude:    !!process.env.ANTHROPIC_API_KEY,
-      gemini:    !!process.env.GEMINI_API_KEY,
-      vapi:      !!process.env.VAPI_PRIVATE_KEY,
-      supabase:  !!process.env.VITE_SUPABASE_URL,
-      google_oauth:    !!process.env.GOOGLE_CLIENT_ID,
-      microsoft_oauth: !!process.env.MICROSOFT_CLIENT_ID,
-    },
+    // Capability flags are derived from the canonical integrations registry
+    // (src/lib/integrations-registry.ts). Keys here are stable — external
+    // monitors may depend on them.
+    capabilities: getHealthCapabilities(),
     claude_model: claudeBrain.CLAUDE_MODEL_DEFAULT,
+    timestamp: new Date().toISOString(),
+  });
+});
+
+/**
+ * Authenticated, structured integrations report. Used by the AdminSettings
+ * Platform Health panel. Returns one row per registered integration with
+ * status, required-ness, env-var presence map, and fallback notes.
+ */
+router.get("/integrations", healthRateLimiter, authenticateUser, (_req, res) => {
+  res.json({
+    integrations: getIntegrationsStatus(),
     timestamp: new Date().toISOString(),
   });
 });
