@@ -8,7 +8,7 @@ import { getErrorMessage } from "./server-utils";
 import { SentryEvents } from "./sentry-events";
 import { createHmac } from "node:crypto";
 
-export type WebhookEvent = 'call.completed' | 'lead.hot' | 'call.escalated' | 'compliance.flagged' | 'knowledge_updated' | 'spend.exceeded' | 'spend.warning' | 'task.created' | 'lead.received' | 'slo.jobs.critical' | 'slo.webhooks.degraded' | 'slo.enrichment.dead';
+export type WebhookEvent = 'call.completed' | 'lead.hot' | 'call.escalated' | 'compliance.flagged' | 'knowledge_updated' | 'spend.exceeded' | 'spend.warning' | 'task.created' | 'lead.received' | 'subscription.changed' | 'email.received' | 'appointment.booked' | 'slo.jobs.critical' | 'slo.webhooks.degraded' | 'slo.enrichment.dead';
 
 /** All webhook event identifiers that can be subscribed to. Keep in sync with WebhookEvent. */
 export const WEBHOOK_EVENTS: WebhookEvent[] = [
@@ -21,6 +21,9 @@ export const WEBHOOK_EVENTS: WebhookEvent[] = [
   'spend.warning',
   'task.created',
   'lead.received',
+  'subscription.changed',
+  'email.received',
+  'appointment.booked',
   'slo.jobs.critical',
   'slo.webhooks.degraded',
   'slo.enrichment.dead',

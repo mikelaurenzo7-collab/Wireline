@@ -699,15 +699,8 @@ setInterval(processWebhookRetries, 30_000).unref?.();
 // evaluateSpend moved to ./src/lib/spend-guards
 
 
-/**
- * Pre-handler for /api/claude/* — block the request with HTTP 402 if the
- * user has a hard cap on and is at/over their monthly limit. Uses the
- * cached snapshot so this stays fast on the hot path.
 // enforceSpendCap is imported from ./src/lib/spend-guards
-
 // enforce24hSpendCap and recordDailySpend imported from ./src/lib/spend-guards
-// DAILY_SPEND_LIMIT_USD re-exported for any remaining server.ts internal uses.
-
 // authenticateUser moved to ./src/middleware/auth.ts
 
 // ==========================================
