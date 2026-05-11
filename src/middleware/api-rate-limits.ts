@@ -100,3 +100,15 @@ export const soc2RateLimit = createRateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100,
 });
+
+/**
+ * Webhook CRUD rate limiter (create/update/delete/test).
+ * 60 mutations per 15 minutes per user — webhook CRUD is low volume by
+ * nature; the limit primarily exists to throttle credential-stuffing
+ * style attacks against the secret-rotation path.
+ */
+export const webhooksRateLimit = createRateLimiter({
+  bucket: "api:webhooks",
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+});

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Webhook, Plus, Loader2, Check, X, Trash2, Send, AlertTriangle,
-  CircleAlert, CheckCircle2, Sparkles, Eye, EyeOff, History,
+  CircleAlert, CheckCircle2, Sparkles, History,
   ChevronDown, RotateCcw, Skull
 } from "lucide-react";
 import { authFetch } from "../lib/api";
@@ -15,7 +15,8 @@ interface WebhookRow {
   name: string;
   url: string;
   events: string[];
-  secret: string | null;
+  /** Trailing 4 chars of the signing secret; full secret is never returned by the API. */
+  secret_last_four: string | null;
   active: boolean;
   last_triggered_at: string | null;
   last_status: number | null;
@@ -236,7 +237,6 @@ interface DeliveryRow {
 const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, onChanged }) => {
   const [busy, setBusy] = useState<"test" | "delete" | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [revealed, setRevealed] = useState(false);
   const [showDeliveries, setShowDeliveries] = useState(false);
   const [deliveries, setDeliveries] = useState<DeliveryRow[] | null>(null);
   const [loadingDeliveries, setLoadingDeliveries] = useState(false);
@@ -339,13 +339,11 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
               {hook.last_error && <span className="text-rose-500">· {hook.last_error}</span>}
             </div>
           )}
-          {hook.secret && (
+          {hook.secret_last_four && (
             <div className="flex items-center gap-2 mt-2 text-[10px] text-muted">
               <span className="uppercase tracking-[0.3em]">Secret</span>
-              <code className="font-mono text-ink/70">{revealed ? hook.secret : "•".repeat(Math.min(hook.secret.length, 16))}</code>
-              <button onClick={() => setRevealed(!revealed)} className="text-muted hover:text-ink transition-colors">
-                {revealed ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-              </button>
+              <code className="font-mono text-ink/70">{"•".repeat(12)}{hook.secret_last_four}</code>
+              <span className="uppercase tracking-[0.3em] text-muted/60">· last 4</span>
             </div>
           )}
         </div>

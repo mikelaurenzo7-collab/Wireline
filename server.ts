@@ -25,7 +25,7 @@ import { randomUUID, timingSafeEqual as cryptoTimingSafeEqual } from "node:crypt
 import * as claudeBrain from "./src/lib/claude-brain";
 import { AuditLogger } from "./src/lib/audit-logger";
 import { createAuditEventsHandler, createAuditStatsHandler, createAuditExportHandler } from "./src/lib/audit-routes";
-import { rateLimit, isRedisConfigured, startMemoryCleanup } from "./src/lib/rate-limit";
+import { rateLimit, isRedisConfigured, startMemoryCleanup, distributedLimiterStatus } from "./src/lib/rate-limit";
 import { SentryEvents } from "./src/lib/sentry-events";
 import { AgentFormSchema, DirectiveSchema, KnowledgeSchema, EmailReplySchema, EmailDraftSchema, CampaignCreateSchema, CampaignUpdateSchema, OutboundBulkSchema, AgentBusinessProfileSchema, parseFormData } from "./src/lib/form-validators";
 import { getErrorMessage, sanitizeForAudit } from "./src/lib/server-utils";
@@ -43,7 +43,9 @@ import { isPrivateIp, isPrivateIpv6, isSsrfUrl, validateWebhookUrl } from "./src
 import { evaluateOutboundConsent, getConsentRuleForPhone, buildConsentLedgerRow, detectOptOut, CONSENT_RULE_VERSION } from "./src/lib/tcpa-consent";
 import { QuotaTracker, quotaRejectionHeaders, validateOverride, PLAN_DEFAULTS, type PlanTier } from "./src/lib/tenant-quotas";
 import { enqueue, startWorker, getQueueStats, type JobRow } from "./src/lib/job-queue";
-import { quotaRateLimit, jobsRateLimit, tcpaRateLimit, soc2RateLimit } from "./src/middleware/api-rate-limits";
+import { quotaRateLimit, jobsRateLimit, tcpaRateLimit, soc2RateLimit, webhooksRateLimit } from "./src/middleware/api-rate-limits";
+import { encryptSecret, decryptSecret, lastFour, isVaultConfigured } from "./src/lib/secret-vault";
+import { createRbacMiddleware, getCallerRole } from "./src/middleware/require-role";
 
 // On Vercel, VERCEL_URL is automatically set to the deployment hostname
 // (e.g. "myapp-abc123.vercel.app") with no protocol or trailing slash.
@@ -443,7 +445,13 @@ const CLAUDE_RATE_MAX = 60;
 if (isRedisConfigured()) {
   log.info("Rate limiter: Upstash Redis (distributed)");
 } else if (IS_PROD) {
-  log.warn("Rate limiter: in-memory only — set UPSTASH_REDIS_REST_URL for distributed limits in production");
+  const allowInMemory = String(process.env.WIRELINE_ALLOW_INMEMORY_RATE_LIMIT || "")
+    .toLowerCase() === "true";
+  if (allowInMemory) {
+    log.warn("Rate limiter: in-memory only (WIRELINE_ALLOW_INMEMORY_RATE_LIMIT=true) — single-node deployments only");
+  } else {
+    log.warn("Rate limiter: in-memory only — SPEND-SENSITIVE ROUTES WILL FAIL CLOSED. Set UPSTASH_REDIS_REST_URL or WIRELINE_ALLOW_INMEMORY_RATE_LIMIT=true.");
+  }
 } else {
   log.info("Rate limiter: in-memory (dev mode)");
 }
@@ -456,6 +464,22 @@ startMemoryCleanup();
 // Keys by Bearer token (available before authenticateUser runs); falls
 // back to IP so unauthenticated edge cases are still covered.
 async function claudeRateLimiter(req: any, res: any, next: any) {
+  // Spend-sensitive route: refuse to serve in production when the
+  // distributed limiter is unavailable AND the operator hasn't
+  // explicitly opted into the single-node in-memory fallback.
+  const status = distributedLimiterStatus();
+  if (!status.ok) {
+    // Operational misconfiguration, not a security event — log a warning
+    // instead of polluting the audit trail. The 503 response with the
+    // `RATE_LIMITER_UNAVAILABLE` code makes the failure mode explicit
+    // for both monitoring and the client.
+    log.warn("Refusing spend-sensitive route — distributed rate limiter unavailable", {
+      resource: "claude_api",
+      ip: req.ip,
+      reason: status.reason,
+    });
+    return res.status(503).json({ error: status.reason, code: status.code });
+  }
   const token = req.headers.authorization?.split(" ")[1];
   const key = token || req.ip || "anon";
   const result = await rateLimit(key, {
@@ -702,6 +726,17 @@ const DIAL_RATE_MAX = 30;
 async function dialRateLimiter(req: any, res: any, next: any) {
   const userId = req.user?.id;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  // Spend-sensitive: refuse if distributed limiter unavailable in prod.
+  const status = distributedLimiterStatus();
+  if (!status.ok) {
+    log.warn("Refusing spend-sensitive route — distributed rate limiter unavailable", {
+      userId,
+      resource: "outbound_dial",
+      ip: req.ip,
+      reason: status.reason,
+    });
+    return res.status(503).json({ error: status.reason, code: status.code });
+  }
   const result = await rateLimit(userId, { bucket: "outbound_dial", windowMs: DIAL_RATE_WINDOW_MS, max: DIAL_RATE_MAX });
   res.setHeader("X-RateLimit-Limit", String(DIAL_RATE_MAX));
   res.setHeader("X-RateLimit-Remaining", String(result.remaining));
@@ -965,6 +1000,10 @@ if (process.env.VERCEL !== '1') {
 // Initialize audit logger for server-side activity tracking.
 const auditLogger = new AuditLogger(db);
 
+// RBAC middleware factory — bound to the live db + auditLogger so route
+// handlers can just call `requirePermission("…")` without threading deps.
+const { requirePermission, requireRole } = createRbacMiddleware({ db, auditLogger });
+
 // ────────────────────────────────────────────────────────────────────
 //  Stripe — billing source of truth.
 //
@@ -1100,7 +1139,7 @@ async function attemptWebhookDelivery(deliveryId: number) {
   // disabled / deleted hook short-circuits cleanly.
   const { data: row } = await db
     .from("wireline_webhook_deliveries")
-    .select("id, user_id, webhook_id, event, payload, attempts, max_attempts, status, wireline_webhooks(id, url, secret, active, delivery_count)")
+    .select("id, user_id, webhook_id, event, payload, attempts, max_attempts, status, wireline_webhooks(id, url, secret, secret_encrypted, active, delivery_count)")
     .eq("id", deliveryId)
     .maybeSingle();
   if (!row || row.status !== "pending") return;
@@ -1179,9 +1218,29 @@ async function attemptWebhookDelivery(deliveryId: number) {
     "X-Wireline-Delivery": `whk_${row.id}`,
     "X-Wireline-Attempt": String((row.attempts || 0) + 1),
   };
-  if (hook.secret) {
-    const sig = crypto.createHmac("sha256", hook.secret).update(payloadStr).digest("hex");
-    headers["X-Wireline-Signature"] = `sha256=${sig}`;
+  if (hook.secret_encrypted || hook.secret) {
+    // Prefer the encrypted column; the plaintext column is a legacy
+    // backfill path that older rows may still hold. Decryption errors
+    // are logged but we keep delivering (without a signature) so a
+    // misconfigured WIRELINE_DATA_KEY doesn't halt the queue.
+    let signingKey: string | null = null;
+    if (hook.secret_encrypted) {
+      try {
+        signingKey = decryptSecret(String(hook.secret_encrypted));
+      } catch (decryptErr: unknown) {
+        log.error("webhook secret decrypt failed", {
+          webhook_id: hook.id,
+          error: getErrorMessage(decryptErr),
+        });
+      }
+    } else if (hook.secret) {
+      // Legacy plaintext fallback — only used until backfill completes.
+      signingKey = String(hook.secret);
+    }
+    if (signingKey) {
+      const sig = crypto.createHmac("sha256", signingKey).update(payloadStr).digest("hex");
+      headers["X-Wireline-Signature"] = `sha256=${sig}`;
+    }
   }
 
   // Use undici so we can attach a dispatcher that pins the TCP connection to
@@ -1661,6 +1720,23 @@ async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
       ? new Date(sub.current_period_end * 1000).toISOString() : null,
     at: new Date().toISOString(),
   }).catch(() => {});
+
+  // Audit the billing state change. We pick the action based on
+  // Stripe's lifecycle status so the audit log faithfully reflects
+  // whether this was a new sub, a status flip, or a cancellation.
+  const billingAction: 'subscription_created' | 'subscription_updated' | 'subscription_cancelled' =
+    stripeStatus === "canceled" || stripeStatus === "incomplete_expired"
+      ? 'subscription_cancelled'
+      : (sub as any)._auditCreate
+        ? 'subscription_created'
+        : 'subscription_updated';
+  void auditLogger.logBilling(billingAction, {
+    userId,
+    subscriptionId: sub.id,
+    customerId,
+    plan: plan?.id || undefined,
+    metadata: { stripe_status: stripeStatus, legacy_status: localStatus, cancel_at_period_end: !!sub.cancel_at_period_end },
+  }).catch(() => {});
 }
 
 app.post("/api/stripe-webhook", async (req: any, res: any) => {
@@ -1724,7 +1800,11 @@ app.post("/api/stripe-webhook", async (req: any, res: any) => {
       case "customer.subscription.created":
       case "customer.subscription.updated":
       case "customer.subscription.deleted": {
-        await syncSubscriptionFromStripe(event.data.object as Stripe.Subscription);
+        const sub = event.data.object as Stripe.Subscription;
+        // Tag for the audit log inside syncSubscriptionFromStripe so it
+        // can pick the right billing action without re-querying Stripe.
+        if (event.type === "customer.subscription.created") (sub as any)._auditCreate = true;
+        await syncSubscriptionFromStripe(sub);
         break;
       }
       case "invoice.payment_failed": {
@@ -1732,6 +1812,41 @@ app.post("/api/stripe-webhook", async (req: any, res: any) => {
         // we don't need a separate sync here.
         const inv = event.data.object as Stripe.Invoice;
         log.warn("Stripe invoice payment failed", { customerId: inv.customer });
+        // Resolve the user behind this customer so we can audit.
+        try {
+          const customerId = typeof inv.customer === "string" ? inv.customer : inv.customer?.id;
+          if (customerId) {
+            const { data: row } = await db.from("wireline_subscriptions")
+              .select("user_id").eq("stripe_customer_id", customerId).maybeSingle();
+            if (row?.user_id) {
+              void auditLogger.logBilling('payment_failed', {
+                userId: row.user_id,
+                customerId,
+                amountCents: typeof inv.amount_due === "number" ? inv.amount_due : undefined,
+                metadata: { invoice_id: inv.id, attempt_count: inv.attempt_count },
+              }).catch(() => {});
+            }
+          }
+        } catch { /* never let audit failure mask the webhook ack */ }
+        break;
+      }
+      case "invoice.payment_succeeded": {
+        const inv = event.data.object as Stripe.Invoice;
+        try {
+          const customerId = typeof inv.customer === "string" ? inv.customer : inv.customer?.id;
+          if (customerId) {
+            const { data: row } = await db.from("wireline_subscriptions")
+              .select("user_id").eq("stripe_customer_id", customerId).maybeSingle();
+            if (row?.user_id) {
+              void auditLogger.logBilling('payment_succeeded', {
+                userId: row.user_id,
+                customerId,
+                amountCents: typeof inv.amount_paid === "number" ? inv.amount_paid : undefined,
+                metadata: { invoice_id: inv.id },
+              }).catch(() => {});
+            }
+          }
+        } catch { /* never let audit failure mask the webhook ack */ }
         break;
       }
       default:
@@ -5607,7 +5722,7 @@ app.delete("/api/user/account", authenticateUser, async (req: any, res: any) => 
       return res.status(500).json({ error: "Data deleted but auth record removal failed — contact support." });
     }
 
-    void auditLogger.logSecurity("suspicious_activity", { userId: uid, ip: req.ip, metadata: { reason: "account_self_deleted" } }).catch(() => {});
+    void auditLogger.logAccountDeletion({ userId: uid, tablesTouched: tables, ip: req.ip }).catch(() => {});
     res.status(204).send();
   } catch (err: any) {
     log.error("account deletion failed", { uid, error: getErrorMessage(err) });
@@ -8142,16 +8257,22 @@ app.post("/api/claude/agent-review/apply-directive", authenticateUser, async (re
 // ──────────────────────────────────────────────────────────
 
 
+// Column projection used by every webhook list/read endpoint. Notably
+// EXCLUDES `secret` and `secret_encrypted` — those must never leave the
+// server. `secret_last_four` is safe for UI display.
+const WEBHOOK_PUBLIC_COLUMNS =
+  "id, user_id, name, url, events, active, last_triggered_at, last_status, last_error, delivery_count, created_at, secret_last_four";
+
 app.get("/api/webhooks", authenticateUser, async (req: any, res: any) => {
   try {
     const { data, error } = await db.from("wireline_webhooks")
-      .select("*").eq("user_id", req.user.id).order("created_at", { ascending: false });
+      .select(WEBHOOK_PUBLIC_COLUMNS).eq("user_id", req.user.id).order("created_at", { ascending: false });
     if (error) throw error;
     res.json({ webhooks: data || [], available_events: WEBHOOK_EVENTS });
   } catch (e: any) { log.error("Failed to load webhooks", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load webhooks" }); }
 });
 
-app.post("/api/webhooks", authenticateUser, async (req: any, res: any) => {
+app.post("/api/webhooks", authenticateUser, requirePermission("webhooks.manage"), webhooksRateLimit, async (req: any, res: any) => {
   try {
     const { name, url, events, secret, active } = req.body;
     if (!name || !url || !Array.isArray(events) || events.length === 0) {
@@ -8161,54 +8282,110 @@ app.post("/api/webhooks", authenticateUser, async (req: any, res: any) => {
     if (urlErr) return res.status(400).json({ error: urlErr });
     const bad = events.filter((e: string) => !WEBHOOK_EVENTS.includes(e as WebhookEvent));
     if (bad.length) return res.status(400).json({ error: `Unknown events: ${bad.join(", ")}` });
-    if (secret !== undefined && secret !== null && secret !== "" && String(secret).length < 16) {
-      return res.status(400).json({ error: "Webhook secret must be at least 16 characters." });
+    let plaintextSecret: string | null = null;
+    if (secret !== undefined && secret !== null && secret !== "") {
+      if (String(secret).length < 16) {
+        return res.status(400).json({ error: "Webhook secret must be at least 16 characters." });
+      }
+      plaintextSecret = String(secret);
+    }
+    // Fail-closed when the vault is misconfigured — we will NOT silently
+    // fall back to plaintext storage even if the column would accept it.
+    if (plaintextSecret && !isVaultConfigured()) {
+      return res.status(503).json({
+        error: "Webhook secret storage is unavailable: WIRELINE_DATA_KEY is not configured on the server.",
+        code: "VAULT_UNCONFIGURED",
+      });
+    }
+    const row: Record<string, unknown> = {
+      user_id: req.user.id,
+      name,
+      url,
+      events,
+      active: active ?? true,
+    };
+    if (plaintextSecret) {
+      row.secret_encrypted = encryptSecret(plaintextSecret);
+      row.secret_last_four = lastFour(plaintextSecret);
+      // Defense-in-depth: also clear any legacy plaintext column on
+      // create. The column still exists for backfill compatibility.
+      row.secret = null;
     }
 
-    const { data, error } = await db.from("wireline_webhooks").insert({
-      user_id: req.user.id, name, url, events, secret: secret || null, active: active ?? true,
-    }).select().single();
+    const { data, error } = await db.from("wireline_webhooks").insert(row)
+      .select(WEBHOOK_PUBLIC_COLUMNS).single();
     if (error) throw error;
+    void auditLogger.logWebhook('created', {
+      userId: req.user.id, webhookId: data.id, url: data.url, events: data.events, active: data.active, ip: req.ip,
+    }).catch(() => {});
     res.json({ webhook: data });
   } catch (e: any) { log.error("Failed to create webhook", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to create webhook" }); }
 });
 
-app.patch("/api/webhooks/:id", authenticateUser, async (req: any, res: any) => {
+app.patch("/api/webhooks/:id", authenticateUser, requirePermission("webhooks.manage"), webhooksRateLimit, async (req: any, res: any) => {
   try {
-    const patch: any = {};
-    for (const k of ["name", "url", "events", "secret", "active"]) {
+    const patch: Record<string, unknown> = {};
+    for (const k of ["name", "url", "events", "active"]) {
       if (req.body[k] !== undefined) patch[k] = req.body[k];
     }
-    if (patch.url) { const urlErr = await validateWebhookUrl(patch.url); if (urlErr) return res.status(400).json({ error: urlErr }); }
-    if (patch.secret !== undefined && patch.secret !== null && patch.secret !== "" && String(patch.secret).length < 16) {
-      return res.status(400).json({ error: "Webhook secret must be at least 16 characters." });
+    if (patch.url) { const urlErr = await validateWebhookUrl(patch.url as string); if (urlErr) return res.status(400).json({ error: urlErr }); }
+    // Secret rotation goes through the encrypted column ONLY.
+    if (req.body.secret !== undefined) {
+      const s = req.body.secret;
+      if (s === null || s === "") {
+        patch.secret_encrypted = null;
+        patch.secret_last_four = null;
+        patch.secret = null;
+      } else {
+        if (String(s).length < 16) {
+          return res.status(400).json({ error: "Webhook secret must be at least 16 characters." });
+        }
+        if (!isVaultConfigured()) {
+          return res.status(503).json({
+            error: "Webhook secret storage is unavailable: WIRELINE_DATA_KEY is not configured on the server.",
+            code: "VAULT_UNCONFIGURED",
+          });
+        }
+        patch.secret_encrypted = encryptSecret(String(s));
+        patch.secret_last_four = lastFour(String(s));
+        patch.secret = null;
+      }
     }
     if (patch.events) {
-      if (!Array.isArray(patch.events) || patch.events.some((e: string) => !WEBHOOK_EVENTS.includes(e as WebhookEvent))) {
+      if (!Array.isArray(patch.events) || (patch.events as string[]).some((e: string) => !WEBHOOK_EVENTS.includes(e as WebhookEvent))) {
         return res.status(400).json({ error: "Invalid events." });
       }
     }
     const { data, error } = await db.from("wireline_webhooks").update(patch)
-      .eq("id", req.params.id).eq("user_id", req.user.id).select().single();
+      .eq("id", req.params.id).eq("user_id", req.user.id).select(WEBHOOK_PUBLIC_COLUMNS).single();
     if (error) throw error;
+    void auditLogger.logWebhook('updated', {
+      userId: req.user.id, webhookId: data.id, url: data.url, events: data.events, active: data.active, ip: req.ip,
+    }).catch(() => {});
     res.json({ webhook: data });
   } catch (e: any) { log.error("Failed to update", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to update" }); }
 });
 
-app.delete("/api/webhooks/:id", authenticateUser, async (req: any, res: any) => {
+app.delete("/api/webhooks/:id", authenticateUser, requirePermission("webhooks.manage"), webhooksRateLimit, async (req: any, res: any) => {
   try {
     await db.from("wireline_webhooks").delete().eq("id", req.params.id).eq("user_id", req.user.id);
+    void auditLogger.logWebhook('deleted', {
+      userId: req.user.id, webhookId: req.params.id, ip: req.ip,
+    }).catch(() => {});
     res.json({ success: true });
   } catch (e: any) { log.error("Failed to delete", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to delete" }); }
 });
 
-app.post("/api/webhooks/:id/test", authenticateUser, async (req: any, res: any) => {
+app.post("/api/webhooks/:id/test", authenticateUser, requirePermission("webhooks.manage"), webhooksRateLimit, async (req: any, res: any) => {
   try {
-    const { data: hook } = await db.from("wireline_webhooks").select("*").eq("id", req.params.id).eq("user_id", req.user.id).single();
+    const { data: hook } = await db.from("wireline_webhooks").select("id").eq("id", req.params.id).eq("user_id", req.user.id).single();
     if (!hook) return res.status(404).json({ error: "Webhook not found." });
     await dispatchWebhook(req.user.id, "task.created", {
       test: true, message: "This is a test ping from Wireline.", at: new Date().toISOString(),
     });
+    void auditLogger.logWebhook('tested', {
+      userId: req.user.id, webhookId: req.params.id, ip: req.ip,
+    }).catch(() => {});
     res.json({ success: true, message: "Test dispatched. Check the URL." });
   } catch (e: any) { log.error("Test failed", { error: getErrorMessage(e) }); res.status(500).json({ error: "Test failed" }); }
 });
@@ -8675,6 +8852,9 @@ app.post("/api/intake/keys", authenticateUser, async (req: any, res: any) => {
       active: true,
     }).select("id, name, key_prefix, default_agent_id, auto_dial, active, created_at").single();
     if (error) throw error;
+    void auditLogger.logIntakeKey('created', {
+      userId: req.user.id, keyId: data.id, keyPrefix: data.key_prefix, keyName: data.name, ip: req.ip,
+    }).catch(() => {});
     // Plaintext is returned ONCE — we never store or expose it again.
     res.json({ key: data, plaintext });
   } catch (e: any) { log.error("Failed to create key", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to create key" }); }
@@ -8691,6 +8871,9 @@ app.patch("/api/intake/keys/:id", authenticateUser, async (req: any, res: any) =
       .eq("id", req.params.id).eq("user_id", req.user.id)
       .select("id, name, key_prefix, default_agent_id, auto_dial, active, last_used_at, use_count, created_at").single();
     if (error) throw error;
+    void auditLogger.logIntakeKey('updated', {
+      userId: req.user.id, keyId: data.id, keyPrefix: data.key_prefix, keyName: data.name, ip: req.ip,
+    }).catch(() => {});
     res.json({ key: data });
   } catch (e: any) { log.error("Failed to update key", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to update key" }); }
 });
@@ -8698,6 +8881,9 @@ app.patch("/api/intake/keys/:id", authenticateUser, async (req: any, res: any) =
 app.delete("/api/intake/keys/:id", authenticateUser, async (req: any, res: any) => {
   try {
     await db.from("wireline_intake_keys").delete().eq("id", req.params.id).eq("user_id", req.user.id);
+    void auditLogger.logIntakeKey('deleted', {
+      userId: req.user.id, keyId: req.params.id, ip: req.ip,
+    }).catch(() => {});
     res.json({ success: true });
   } catch (e: any) { log.error("Failed to delete key", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to delete key" }); }
 });
@@ -9384,6 +9570,9 @@ app.post("/api/billing/checkout", authenticateUser, async (req: any, res: any) =
       },
     });
     res.json({ url: session.url });
+    void auditLogger.logBilling('checkout_started', {
+      userId: req.user.id, plan: plan.id, customerId, ip: req.ip,
+    }).catch(() => {});
   } catch (e: any) {
     log.error("Checkout creation failed", { error: e?.message || String(e) });
     res.status(500).json({ error: "Checkout failed" });
@@ -9406,6 +9595,9 @@ app.post("/api/billing/portal", authenticateUser, async (req: any, res: any) => 
       return_url: `${base}/admin`,
     });
     res.json({ url: portal.url });
+    void auditLogger.logBilling('portal_opened', {
+      userId: req.user.id, customerId: sub.stripe_customer_id, ip: req.ip,
+    }).catch(() => {});
   } catch (e: any) {
     log.error("Portal session failed", { error: e?.message || String(e) });
     res.status(500).json({ error: "Portal failed" });
@@ -9470,6 +9662,12 @@ app.get("/api/export/:type.csv", authenticateUser, async (req: any, res: any) =>
     const filename = `wireline-${req.params.type}-${new Date().toISOString().slice(0, 10)}.csv`;
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    void auditLogger.logDataOperation('export', {
+      userId: req.user.id,
+      resourceType: req.params.type,
+      recordCount: (data || []).length,
+      ip: req.ip,
+    }).catch(() => {});
     res.send(rowsToCsv(data || [], def.columns));
   } catch (e: any) {
     res.status(500).json({ error: "Export failed" });
@@ -10272,7 +10470,17 @@ app.post("/api/dnc", authenticateUser, async (req: any, res: any) => {
       .upsert(rows, { onConflict: "user_id,phone", ignoreDuplicates: true })
       .select("id");
     if (error) throw error;
-    res.json({ success: true, added: data?.length ?? 0 });
+    const added = data?.length ?? 0;
+    if (added > 0) {
+      void auditLogger.logDnc('added', {
+        userId: req.user.id,
+        count: added,
+        source: entries[0]?.source || 'manual',
+        ip: req.ip,
+        metadata: { requested: rows.length },
+      }).catch(() => {});
+    }
+    res.json({ success: true, added });
   } catch (e: any) {
     log.error("DNC add failed", { error: e?.message });
     res.status(500).json({ error: "Failed to add to DNC list." });
@@ -10288,6 +10496,9 @@ app.delete("/api/dnc/:id", authenticateUser, async (req: any, res: any) => {
       .eq("id", req.params.id)
       .eq("user_id", req.user.id);
     if (error) throw error;
+    void auditLogger.logDnc('removed', {
+      userId: req.user.id, count: 1, ip: req.ip, metadata: { dnc_id: req.params.id },
+    }).catch(() => {});
     res.json({ success: true });
   } catch (e: any) {
     log.error("DNC delete failed", { error: e?.message });
@@ -10680,8 +10891,16 @@ app.get("/api/quotas/plans", quotaRateLimit, (_req, res) => {
   res.json({ plans: PLAN_DEFAULTS });
 });
 
-/** PUT /api/quotas/override — set a per-tenant override (admin/owner only). */
-app.put("/api/quotas/override", authenticateUser, quotaRateLimit, async (req: any, res: any) => {
+/**
+ * PUT /api/quotas/override — set a per-tenant override.
+ *
+ * Authorization: requires `quotas.override` permission (owner or admin
+ * roles). A regular operator/viewer/auditor cannot raise their own
+ * caps. The accept/deny audit trail lives in `wireline_audit_log` via
+ * `auditLogger.logSecurity` (deny path) and a dedicated `quota.override_set`
+ * event on the accept path.
+ */
+app.put("/api/quotas/override", authenticateUser, requirePermission("quotas.override"), quotaRateLimit, async (req: any, res: any) => {
   try {
     const validation = validateOverride(req.body);
     if (!validation.ok) {
@@ -10694,6 +10913,15 @@ app.put("/api/quotas/override", authenticateUser, quotaRateLimit, async (req: an
     );
     if (error) throw error;
     quotaTracker.invalidate(req.user.id);
+    // Audit the accepted override — SOC 2 CC8.1 change-management evidence.
+    void auditLogger
+      .logQuotaOverride("set", {
+        userId: req.user.id,
+        targetUserId: req.user.id,
+        changes: { dimension, value, enabled },
+        ip: req.ip,
+      })
+      .catch(() => {});
     res.json({ success: true, dimension, value, enabled });
   } catch (err) {
     log.error("PUT /api/quotas/override failed", { error: getErrorMessage(err) });
@@ -10705,10 +10933,14 @@ app.put("/api/quotas/override", authenticateUser, quotaRateLimit, async (req: an
 // JOB QUEUE ENDPOINTS
 // ──────────────────────────────────────────────────────────────────────────────
 
-/** GET /api/jobs/stats — queue depths by status. */
-app.get("/api/jobs/stats", authenticateUser, jobsRateLimit, async (_req, res) => {
+/**
+ * GET /api/jobs/stats — queue depths by status. Tenant-scoped: returns
+ * the calling user's job counts only. Fleet-wide counters are not
+ * exposed via the public API (only the in-process worker uses them).
+ */
+app.get("/api/jobs/stats", authenticateUser, jobsRateLimit, async (req: any, res: any) => {
   try {
-    const stats = await getQueueStats(db);
+    const stats = await getQueueStats(db, req.user.id);
     res.json(stats);
   } catch (err) {
     log.error("GET /api/jobs/stats failed", { error: getErrorMessage(err) });
@@ -10720,8 +10952,61 @@ app.get("/api/jobs/stats", authenticateUser, jobsRateLimit, async (_req, res) =>
  * POST /api/jobs/sweep — triggers one poll cycle in serverless environments
  * (Vercel) where the background worker timer doesn't persist across
  * invocations. Call this from a Vercel Cron job every minute.
+ *
+ * Authentication: EITHER a cron call carrying `Authorization: Bearer
+ * ${CRON_SECRET}` (preferred — drains the global queue), OR an
+ * authenticated admin/owner (manual operator trigger). Any other
+ * caller — including a signed-in operator/viewer — gets 403. This
+ * prevents tenants from amplifying load by hammering /sweep and from
+ * draining other tenants' jobs.
+ *
+ * CRON_SECRET is required to be at least 16 characters; shorter values
+ * are rejected at this layer (any caller-provided bearer is also held
+ * to that length via the constant-time equality check).
  */
-app.post("/api/jobs/sweep", authenticateUser, jobsRateLimit, async (_req, res) => {
+const cronOrAdminAuth = (req: any, res: any, next: any) => {
+  const expectedCronSecret = process.env.CRON_SECRET || "";
+  const authz = String(req.headers["authorization"] || "");
+  const providedCronSecret = authz.startsWith("Bearer ") ? authz.slice(7) : "";
+  const isCron =
+    expectedCronSecret.length >= 16 &&
+    providedCronSecret.length === expectedCronSecret.length &&
+    cryptoTimingSafeEqual(
+      Buffer.from(providedCronSecret, "utf8"),
+      Buffer.from(expectedCronSecret, "utf8"),
+    );
+  if (isCron) {
+    req._sweepMode = "cron";
+    return next();
+  }
+  // Fall through to the standard auth + admin/owner role gate. We
+  // simply chain authenticateUser followed by an inline role check so
+  // each middleware owns its own response in the normal Express way.
+  authenticateUser(req, res, async (authErr?: unknown) => {
+    if (authErr) return next(authErr);
+    if (res.headersSent) return; // authenticateUser already replied
+    try {
+      const role = await getCallerRole(db, req.user.id);
+      if (role !== "owner" && role !== "admin") {
+        void auditLogger
+          .logJobSweep("denied", {
+            userId: req.user.id,
+            role,
+            ip: req.ip,
+          })
+          .catch(() => {});
+        return res.status(403).json({ error: "Forbidden: requires admin or owner role", code: "FORBIDDEN" });
+      }
+      req._sweepMode = "manual";
+      next();
+    } catch (e) {
+      log.error("sweep auth failed", { error: getErrorMessage(e) });
+      return res.status(403).json({ error: "Authorization check failed", code: "FORBIDDEN" });
+    }
+  });
+};
+
+app.post("/api/jobs/sweep", jobsRateLimit, cronOrAdminAuth, async (req: any, res: any) => {
   try {
     const { claimJob: claim, completeJob: complete, failJob: fail } = await import("./src/lib/job-queue");
     let processed = 0;
@@ -10736,7 +11021,20 @@ app.post("/api/jobs/sweep", authenticateUser, jobsRateLimit, async (_req, res) =
         await fail(db, job, getErrorMessage(sweepErr));
       }
     }
-    res.json({ processed });
+    const mode = req._sweepMode || "cron";
+    res.json({ processed, mode });
+    // Only emit the completed event when there was real work — the cron
+    // call fires every minute and we don't need a no-op audit per tick.
+    if (processed > 0) {
+      void auditLogger
+        .logJobSweep("completed", {
+          userId: req.user?.id,
+          mode: mode as "cron" | "manual",
+          processed,
+          ip: req.ip,
+        })
+        .catch(() => {});
+    }
   } catch (err) {
     log.error("POST /api/jobs/sweep failed", { error: getErrorMessage(err) });
     res.status(500).json({ error: "Sweep failed" });

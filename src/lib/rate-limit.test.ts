@@ -179,3 +179,71 @@ describe("rate-limit (Redis path)", () => {
     expect(key).toMatch(/^wireline:rl:test:user-1:/);
   });
 });
+
+describe("distributedLimiterStatus", () => {
+  const ENV = process.env;
+  beforeEach(() => {
+    process.env = { ...ENV };
+    delete process.env.UPSTASH_REDIS_REST_URL;
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
+    delete process.env.WIRELINE_ALLOW_INMEMORY_RATE_LIMIT;
+    delete process.env.NODE_ENV;
+    delete process.env.VERCEL;
+    vi.resetModules();
+  });
+  afterEach(() => {
+    process.env = ENV;
+  });
+
+  it("ok when Upstash is configured", async () => {
+    process.env.UPSTASH_REDIS_REST_URL = "https://example.upstash.io";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "tok";
+    process.env.NODE_ENV = "production";
+    const { distributedLimiterStatus } = await import("./rate-limit");
+    expect(distributedLimiterStatus()).toEqual({ ok: true });
+  });
+
+  it("ok in non-production even without Upstash", async () => {
+    process.env.NODE_ENV = "development";
+    const { distributedLimiterStatus } = await import("./rate-limit");
+    expect(distributedLimiterStatus()).toEqual({ ok: true });
+  });
+
+  it("FAILS CLOSED in production without Upstash and without opt-in", async () => {
+    process.env.NODE_ENV = "production";
+    const { distributedLimiterStatus } = await import("./rate-limit");
+    const s = distributedLimiterStatus();
+    expect(s.ok).toBe(false);
+    expect(s.code).toBe("RATE_LIMITER_UNAVAILABLE");
+    expect(s.reason).toMatch(/Upstash|in-memory|WIRELINE_ALLOW/i);
+  });
+
+  it("FAILS CLOSED on Vercel without Upstash even when NODE_ENV is unset", async () => {
+    process.env.VERCEL = "1";
+    const { distributedLimiterStatus } = await import("./rate-limit");
+    const s = distributedLimiterStatus();
+    expect(s.ok).toBe(false);
+  });
+
+  it("ok in production when WIRELINE_ALLOW_INMEMORY_RATE_LIMIT=true (single-node opt-in)", async () => {
+    process.env.NODE_ENV = "production";
+    process.env.WIRELINE_ALLOW_INMEMORY_RATE_LIMIT = "true";
+    const { distributedLimiterStatus } = await import("./rate-limit");
+    expect(distributedLimiterStatus()).toEqual({ ok: true });
+  });
+
+  it("opt-in is case-insensitive", async () => {
+    process.env.NODE_ENV = "production";
+    process.env.WIRELINE_ALLOW_INMEMORY_RATE_LIMIT = "TRUE";
+    const { distributedLimiterStatus } = await import("./rate-limit");
+    expect(distributedLimiterStatus()).toEqual({ ok: true });
+  });
+
+  it("does NOT accept any value other than 'true'", async () => {
+    process.env.NODE_ENV = "production";
+    process.env.WIRELINE_ALLOW_INMEMORY_RATE_LIMIT = "1";
+    const { distributedLimiterStatus } = await import("./rate-limit");
+    const s = distributedLimiterStatus();
+    expect(s.ok).toBe(false);
+  });
+});

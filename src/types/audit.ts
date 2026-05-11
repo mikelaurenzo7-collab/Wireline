@@ -30,12 +30,36 @@ export type AuditEventType =
   | 'billing.subscription_cancelled'
   | 'billing.payment_succeeded'
   | 'billing.payment_failed'
+  | 'billing.checkout_started'
+  | 'billing.portal_opened'
   
   // API usage events
   | 'ai.api_call'
   | 'api.webhook_sent'
   | 'api.webhook_failed'
   | 'api.intake_received'
+  | 'api.webhook_created'
+  | 'api.webhook_updated'
+  | 'api.webhook_deleted'
+  | 'api.webhook_tested'
+  
+  // Intake key lifecycle
+  | 'security.intake_key_created'
+  | 'security.intake_key_updated'
+  | 'security.intake_key_deleted'
+  
+  // DNC list lifecycle
+  | 'dnc.added'
+  | 'dnc.removed'
+  
+  // Quota enforcement
+  | 'quota.override_set'
+  | 'quota.override_denied'
+  
+  // Job queue operations
+  | 'jobs.sweep_started'
+  | 'jobs.sweep_completed'
+  | 'jobs.sweep_denied'
   
   // Security events
   | 'security.unauthorized_access'
@@ -49,7 +73,8 @@ export type AuditEventType =
   | 'data.export'
   | 'data.delete'
   | 'data.bulk_delete'
-  | 'data.import';
+  | 'data.import'
+  | 'data.account_deleted';
 
 /**
  * Severity levels for audit events.
