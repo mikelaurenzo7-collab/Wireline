@@ -541,10 +541,10 @@ async function dialRateLimiter(req: any, res: any, next: any) {
   next();
 }
 
-app.use("/api/emails", rateLimiters.emailRateLimiter);
-app.use("/api/knowledge", rateLimiters.knowledgeRateLimiter);
-app.use("/api/phone-numbers", rateLimiters.phoneNumberRateLimiter);
-app.use("/api/outbound/dial", rateLimiters.dialRateLimiter);
+app.use("/api/emails", authenticateUser, rateLimiters.emailRateLimiter);
+app.use("/api/knowledge", authenticateUser, rateLimiters.knowledgeRateLimiter);
+app.use("/api/phone-numbers", authenticateUser, rateLimiters.phoneNumberRateLimiter);
+app.use("/api/outbound/dial", authenticateUser, rateLimiters.dialRateLimiter);
 
 app.use("/api/claude", (req: any, res: any, next: any) => {
   if (req.path === "/status") return next();
@@ -1769,7 +1769,7 @@ app.get("/api/user-preferences", authenticateUser, async (req: any, res: any) =>
       .eq('user_id', req.user.id)
       .single();
 
-    if (error && error.code !== 'PGRST116') throw error; // PGRST116 = not found
+    if (error && error.code !== 'PGRST116' && error.code !== 'PGRST205') throw error; // PGRST116 = not found, PGRST205 = table not in schema cache
 
     res.json(data || {
       user_id: req.user.id,

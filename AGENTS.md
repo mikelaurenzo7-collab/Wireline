@@ -202,3 +202,48 @@ You probably shouldn't. Ask the operator first by leaving a PR comment
 or a TODO. **Never delete a file just because grep says it has no
 local references — server.ts and Vite's lazy-loaded routes resolve
 imports dynamically.**
+
+## Cursor Cloud specific instructions
+
+### ESM + dotenv module loading order
+
+`server.ts` calls `dotenv.config()` at the top level, but in ESM mode
+all `import` statements are resolved and their module code executes
+**before** `dotenv.config()` runs. This means modules imported by
+`server.ts` (e.g. `src/lib/server-context.ts`, `src/lib/stripe-helpers.ts`)
+read `process.env` before the `.env` file is loaded.
+
+**Workaround:** When starting the dev server, export critical env vars
+in the shell so they are present at process startup:
+
+```bash
+export STRIPE_SECRET_KEY=sk_test_placeholder
+export VITE_SUPABASE_URL="https://YOUR_PROJECT.supabase.co"
+export VITE_SUPABASE_ANON_KEY="..."
+export SUPABASE_SERVICE_ROLE_KEY="..."
+npm run dev
+```
+
+Without this, the server-side Supabase client connects to the
+placeholder URL and all authenticated API calls return 401.
+
+### Running the dev server
+
+```bash
+npm run dev          # tsx server.ts — starts Express + Vite dev middleware
+npm run lint         # tsc --noEmit
+npm run test:run     # vitest run (CI mode)
+npm run build        # vite build + esbuild server bundle
+```
+
+### Database
+
+The Supabase schema must be applied via `supabase_schema.sql` in the
+Supabase SQL editor. Direct Postgres connections from Cloud Agent VMs
+may fail because the DB hostname resolves to IPv6 only. Use the
+Supabase Dashboard SQL editor or the connection pooler instead.
+
+### Pre-existing issues in the repo
+
+- `src/lib/soc2-rbac.test.ts` has 1 failing test (`canGrantRole("operator", "viewer")` expected false but got true).
+- `server.ts` and `src/lib/operator-slos.ts` have 2 pre-existing TypeScript errors that do not block the build.
