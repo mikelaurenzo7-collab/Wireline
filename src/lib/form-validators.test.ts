@@ -18,6 +18,12 @@ import {
   AppointmentSchema,
   AgentBusinessProfileSchema,
   BusinessHoursSchema,
+  GeminiLeadScoreSchema,
+  GeminiLessonSchema,
+  GeminiFollowupTaskSchema,
+  GeminiEmailScoreSchema,
+  GeminiAgentExtractionSchema,
+  FleetTaskCreateSchema,
   BusinessVariablesSchema,
   parseFormData,
 } from "./form-validators";
@@ -534,5 +540,183 @@ describe("AgentBusinessProfileSchema", () => {
 
   it("allows out_of_hours_message to be explicitly null (clearing the value)", () => {
     expect(AgentBusinessProfileSchema.safeParse({ out_of_hours_message: null }).success).toBe(true);
+  });
+});
+
+// ─── LLM Response Schemas ────────────────────────────────────────────────────
+
+describe("GeminiLeadScoreSchema", () => {
+  it("accepts a valid score and label", () => {
+    const r = GeminiLeadScoreSchema.safeParse({ score: 75, label: "high" });
+    expect(r.success).toBe(true);
+    if (r.success) { expect(r.data.score).toBe(75); expect(r.data.label).toBe("high"); }
+  });
+
+  it("clamps missing fields to defaults (score=0, label='none')", () => {
+    const r = GeminiLeadScoreSchema.safeParse({});
+    expect(r.success).toBe(true);
+    if (r.success) { expect(r.data.score).toBe(0); expect(r.data.label).toBe("none"); }
+  });
+
+  it("rejects score above 100", () => {
+    expect(GeminiLeadScoreSchema.safeParse({ score: 150 }).success).toBe(false);
+  });
+
+  it("rejects score below 0", () => {
+    expect(GeminiLeadScoreSchema.safeParse({ score: -1 }).success).toBe(false);
+  });
+
+  it("rejects non-numeric score", () => {
+    expect(GeminiLeadScoreSchema.safeParse({ score: "high", label: "high" }).success).toBe(false);
+  });
+
+  it("rejects label exceeding 100 chars", () => {
+    expect(GeminiLeadScoreSchema.safeParse({ score: 50, label: "x".repeat(101) }).success).toBe(false);
+  });
+});
+
+describe("GeminiLessonSchema", () => {
+  it("accepts a valid lesson string", () => {
+    const r = GeminiLessonSchema.safeParse({ lesson: "Always confirm the customer's name." });
+    expect(r.success).toBe(true);
+  });
+
+  it("rejects missing lesson", () => {
+    expect(GeminiLessonSchema.safeParse({}).success).toBe(false);
+  });
+
+  it("rejects lesson exceeding 2000 chars", () => {
+    expect(GeminiLessonSchema.safeParse({ lesson: "x".repeat(2001) }).success).toBe(false);
+  });
+});
+
+describe("GeminiFollowupTaskSchema", () => {
+  it("accepts a valid follow-up task", () => {
+    const r = GeminiFollowupTaskSchema.safeParse({
+      has_task: true,
+      task_description: "Send price quote via email",
+      priority: "high",
+      target_channel: "email",
+    });
+    expect(r.success).toBe(true);
+    if (r.success) { expect(r.data.has_task).toBe(true); }
+  });
+
+  it("defaults priority to 'medium' when missing", () => {
+    const r = GeminiFollowupTaskSchema.safeParse({ has_task: false, task_description: "n/a" });
+    expect(r.success).toBe(true);
+    if (r.success) { expect(r.data.priority).toBe("medium"); }
+  });
+
+  it("defaults target_channel to 'manual' when missing", () => {
+    const r = GeminiFollowupTaskSchema.safeParse({ has_task: false, task_description: "n/a" });
+    expect(r.success).toBe(true);
+    if (r.success) { expect(r.data.target_channel).toBe("manual"); }
+  });
+
+  it("rejects invalid priority value", () => {
+    expect(GeminiFollowupTaskSchema.safeParse({ has_task: false, task_description: "x", priority: "urgent" }).success).toBe(false);
+  });
+
+  it("rejects invalid target_channel value", () => {
+    expect(GeminiFollowupTaskSchema.safeParse({ has_task: false, task_description: "x", target_channel: "fax" }).success).toBe(false);
+  });
+
+  it("rejects task_description exceeding 2000 chars", () => {
+    expect(GeminiFollowupTaskSchema.safeParse({ has_task: true, task_description: "x".repeat(2001) }).success).toBe(false);
+  });
+});
+
+describe("GeminiAgentExtractionSchema", () => {
+  it("accepts a full valid extraction response", () => {
+    const r = GeminiAgentExtractionSchema.safeParse({
+      directives: [{ content: "Always greet the customer", priority: 5 }],
+      knowledge: [{ content: "Office hours: 9am-5pm" }],
+      personality: "Professional and friendly",
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("defaults all arrays and string when fields are missing", () => {
+    const r = GeminiAgentExtractionSchema.safeParse({});
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.directives).toEqual([]);
+      expect(r.data.knowledge).toEqual([]);
+      expect(r.data.personality).toBe("");
+    }
+  });
+
+  it("rejects directive content exceeding 2000 chars", () => {
+    expect(GeminiAgentExtractionSchema.safeParse({ directives: [{ content: "x".repeat(2001) }] }).success).toBe(false);
+  });
+
+  it("rejects knowledge content exceeding 4000 chars", () => {
+    expect(GeminiAgentExtractionSchema.safeParse({ knowledge: [{ content: "x".repeat(4001) }] }).success).toBe(false);
+  });
+});
+
+describe("GeminiEmailScoreSchema (alias of GeminiLeadScoreSchema)", () => {
+  it("accepts valid email score shape", () => {
+    const r = GeminiEmailScoreSchema.safeParse({ score: 42, label: "medium" });
+    expect(r.success).toBe(true);
+  });
+
+  it("defaults missing fields", () => {
+    const r = GeminiEmailScoreSchema.safeParse({});
+    expect(r.success).toBe(true);
+    if (r.success) { expect(r.data.score).toBe(0); expect(r.data.label).toBe("none"); }
+  });
+});
+
+// ─── FleetTaskCreateSchema ────────────────────────────────────────────────────
+
+describe("FleetTaskCreateSchema", () => {
+  it("accepts a minimal valid task", () => {
+    const r = FleetTaskCreateSchema.safeParse({ description: "Follow up with customer" });
+    expect(r.success).toBe(true);
+    if (r.success) { expect(r.data.priority).toBe("medium"); }
+  });
+
+  it("accepts a full valid task", () => {
+    const r = FleetTaskCreateSchema.safeParse({
+      description: "Send price quote",
+      task_type: "action_required",
+      priority: "high",
+      target_channel: "email",
+      agent_id: "12345678-1234-4234-a234-123456789012",
+      source_type: "phone_call",
+      source_id: "call-123",
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("rejects missing description", () => {
+    expect(FleetTaskCreateSchema.safeParse({}).success).toBe(false);
+  });
+
+  it("rejects empty description", () => {
+    expect(FleetTaskCreateSchema.safeParse({ description: "" }).success).toBe(false);
+  });
+
+  it("rejects description exceeding 2000 chars", () => {
+    expect(FleetTaskCreateSchema.safeParse({ description: "x".repeat(2001) }).success).toBe(false);
+  });
+
+  it("rejects invalid priority", () => {
+    expect(FleetTaskCreateSchema.safeParse({ description: "task", priority: "critical" }).success).toBe(false);
+  });
+
+  it("rejects invalid target_channel", () => {
+    expect(FleetTaskCreateSchema.safeParse({ description: "task", target_channel: "fax" }).success).toBe(false);
+  });
+
+  it("rejects malformed agent_id UUID", () => {
+    expect(FleetTaskCreateSchema.safeParse({ description: "task", agent_id: "not-a-uuid" }).success).toBe(false);
+  });
+
+  it("allows nullable optional fields", () => {
+    const r = FleetTaskCreateSchema.safeParse({ description: "task", agent_id: null, source_id: null });
+    expect(r.success).toBe(true);
   });
 });

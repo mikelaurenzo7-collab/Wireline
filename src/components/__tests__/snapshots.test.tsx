@@ -5,7 +5,7 @@
 // and must be explicitly reviewed/approved when changed.
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render } from "@testing-library/react";
+import { render, act } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { ToastProvider } from "../../contexts/ToastContext";
 
@@ -64,25 +64,37 @@ describe("Component snapshots", () => {
 
   it("LiveMonitor snapshot", async () => {
     const { default: LiveMonitor } = await import("../LiveMonitor");
-    const { container } = harness(<LiveMonitor />);
+    let container!: HTMLElement;
+    await act(async () => {
+      ({ container } = harness(<LiveMonitor />));
+    });
     expect(container.innerHTML).toMatchSnapshot();
   });
 
   it("SupervisedAgentTuner snapshot", async () => {
     const { default: SupervisedAgentTuner } = await import("../SupervisedAgentTuner");
-    const { container } = harness(<SupervisedAgentTuner agentId="test-agent-1" />);
+    let container!: HTMLElement;
+    await act(async () => {
+      ({ container } = harness(<SupervisedAgentTuner agentId="test-agent-1" />));
+    });
     expect(container.innerHTML).toMatchSnapshot();
   });
 
   it("OutboundDialer snapshot", async () => {
     const { default: OutboundDialer } = await import("../OutboundDialer");
-    const { container } = harness(<OutboundDialer />);
+    let container!: HTMLElement;
+    await act(async () => {
+      ({ container } = harness(<OutboundDialer />));
+    });
     expect(container.innerHTML).toMatchSnapshot();
   });
 
   it("PersonaWizard snapshot", async () => {
     const { default: PersonaWizard } = await import("../PersonaWizard");
-    const { container } = harness(<PersonaWizard />);
+    let container!: HTMLElement;
+    await act(async () => {
+      ({ container } = harness(<PersonaWizard />));
+    });
     expect(container.innerHTML).toMatchSnapshot();
   });
 });

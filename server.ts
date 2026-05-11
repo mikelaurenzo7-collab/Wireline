@@ -25,9 +25,10 @@ import { randomUUID, timingSafeEqual as cryptoTimingSafeEqual } from "node:crypt
 import * as claudeBrain from "./src/lib/claude-brain";
 import { AuditLogger } from "./src/lib/audit-logger";
 import { createAuditEventsHandler, createAuditStatsHandler, createAuditExportHandler } from "./src/lib/audit-routes";
+import { buildCSP, buildConnectSrcs, buildSupabaseOrigin, generateCspNonce } from "./src/lib/csp";
 import { rateLimit, isRedisConfigured, startMemoryCleanup, distributedLimiterStatus } from "./src/lib/rate-limit";
 import { SentryEvents } from "./src/lib/sentry-events";
-import { AgentFormSchema, DirectiveSchema, KnowledgeSchema, EmailReplySchema, EmailDraftSchema, CampaignCreateSchema, CampaignUpdateSchema, OutboundBulkSchema, AgentBusinessProfileSchema, parseFormData } from "./src/lib/form-validators";
+import { AgentFormSchema, DirectiveSchema, KnowledgeSchema, EmailReplySchema, EmailDraftSchema, CampaignCreateSchema, CampaignUpdateSchema, OutboundBulkSchema, AgentBusinessProfileSchema, parseFormData, GeminiLeadScoreSchema, GeminiLessonSchema, GeminiFollowupTaskSchema, GeminiEmailScoreSchema, GeminiAgentExtractionSchema, FleetTaskCreateSchema } from "./src/lib/form-validators";
 import { getErrorMessage, sanitizeForAudit } from "./src/lib/server-utils";
 import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "./src/lib/agent-runtime";
 import { computeScorecard } from "./src/lib/agent-scorecard";
@@ -45,7 +46,7 @@ import { QuotaTracker, quotaRejectionHeaders, validateOverride, PLAN_DEFAULTS, t
 import { enqueue, startWorker, getQueueStats, type JobRow } from "./src/lib/job-queue";
 import { quotaRateLimit, jobsRateLimit, tcpaRateLimit, soc2RateLimit, webhooksRateLimit } from "./src/middleware/api-rate-limits";
 import { encryptSecret, decryptSecret, lastFour, isVaultConfigured } from "./src/lib/secret-vault";
-import { createRbacMiddleware, getCallerRole } from "./src/middleware/require-role";
+import { createRbacMiddleware, getCallerRole, invalidateRoleCache } from "./src/middleware/require-role";
 
 // On Vercel, VERCEL_URL is automatically set to the deployment hostname
 // (e.g. "myapp-abc123.vercel.app") with no protocol or trailing slash.
@@ -249,57 +250,20 @@ app.use((req: any, res: any, next: any) => {
 //  Security headers — hand-rolled (no helmet dep) so we control the
 //  exact set of headers and CSP directives. Applied to every response.
 //
-//  CSP allows 'unsafe-inline' on script-src because:
-//    • The OAuth callback page writes a JSON-encoded postMessage script
-//      at runtime. When that page moves to a static asset, replace
-//      'unsafe-inline' with a nonce.
-//    • Vite HMR in dev also injects inline scripts.
+//  In production, script-src uses 'self' only (no 'unsafe-inline').
+//  OAuth callback pages that need an inline postMessage script are the
+//  only server-rendered HTML in this app; they receive a per-request
+//  nonce via buildCSP(false, nonce) so 'unsafe-inline' is never needed
+//  in the global policy.  Vite dev mode keeps 'unsafe-inline' +
+//  'unsafe-eval' for HMR.
 //
 //  connect-src permits Supabase, Anthropic, Vapi, and Google APIs so
 //  the browser's fetch() is allowed to reach those origins.
 // ────────────────────────────────────────────────────────────────────
-const supabaseOrigin = (() => {
-  try {
-    const u = new URL(process.env.VITE_SUPABASE_URL || "https://placeholder.supabase.co");
-    return u.origin;
-  } catch { return "https://*.supabase.co"; }
-})();
+const supabaseOrigin = buildSupabaseOrigin();
 
 // Build CSP connect-src from known external APIs.
-const CSP_CONNECT_SRCS = [
-  "'self'",
-  supabaseOrigin,
-  "https://*.supabase.co",
-  "wss://*.supabase.co",
-  "https://api.anthropic.com",
-  "https://api.vapi.ai",
-  "wss://api.vapi.ai",
-  "https://accounts.google.com",
-  "https://oauth2.googleapis.com",
-  "https://www.googleapis.com",
-  "https://login.microsoftonline.com",
-  "https://graph.microsoft.com",
-  "https://api.stripe.com",
-].join(" ");
-
-function buildCSP(isDev: boolean): string {
-  const scriptSrc = isDev
-    ? "'self' 'unsafe-inline' 'unsafe-eval'"
-    : "'self' 'unsafe-inline'";
-  return [
-    `default-src 'self'`,
-    `script-src ${scriptSrc}`,
-    `style-src 'self' 'unsafe-inline'`,
-    `img-src 'self' data: blob: https:`,
-    `font-src 'self' data:`,
-    `connect-src ${CSP_CONNECT_SRCS}`,
-    `media-src 'self' blob:`,
-    `worker-src 'self' blob:`,
-    `frame-ancestors 'none'`,
-    `base-uri 'self'`,
-    `form-action 'self'`,
-  ].join("; ");
-}
+const CSP_CONNECT_SRCS = buildConnectSrcs(supabaseOrigin);
 
 app.use((req: any, res: any, next: any) => {
   // Attach request metadata to Sentry for context in error traces
@@ -322,7 +286,7 @@ app.use((req: any, res: any, next: any) => {
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader("Permissions-Policy", "geolocation=(), camera=(), microphone=(self)");
-  res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD));
+  res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, undefined, CSP_CONNECT_SRCS));
   if (IS_PROD) {
     // 6 months HSTS preload-eligible — only in prod so dev over http stays usable.
     res.setHeader("Strict-Transport-Security", "max-age=15552000; includeSubDomains");
@@ -643,7 +607,14 @@ app.use("/api/claude", (req: any, res: any, next: any) => {
 
 // Extend Claude rate limiting to non-/api/claude/* endpoints that also
 // make Claude calls so they share the same per-user budget.
-app.use(["/api/train/extract", "/api/agents/:id/optimize"], (req: any, res: any, next: any) => {
+app.use([
+  "/api/train/extract",
+  "/api/agents/:id/optimize",
+  "/api/insights/topics",
+  "/api/insights/failure-modes",
+  "/api/insights/daily-brief",
+  "/api/qa/score",
+], (req: any, res: any, next: any) => {
   claudeRateLimiter(req, res, next).catch(next);
 });
 
@@ -983,7 +954,9 @@ async function handleJob(job: JobRow): Promise<void> {
     const tokenCount = actualTokens > 0
       ? actualTokens
       : Math.ceil(((p.transcript?.length ?? 0) + (p.summary?.length ?? 0)) / 4);
-    await quotaTracker.checkAndIncrement(p.userId, 'claude_tokens_daily', tokenCount).catch(() => {});
+    await quotaTracker.checkAndIncrement(p.userId, 'claude_tokens_daily', tokenCount).catch((e: unknown) => {
+      log.warn("quota token increment failed — usage may be under-counted", { user_id: p.userId, error: getErrorMessage(e) });
+    });
   }
   // Other job types (webhook_delivery, campaign_dial, etc.) extend here.
 }
@@ -1719,7 +1692,7 @@ async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
     current_period_end: sub.current_period_end
       ? new Date(sub.current_period_end * 1000).toISOString() : null,
     at: new Date().toISOString(),
-  }).catch(() => {});
+  }).catch((e: unknown) => { log.warn("subscription.changed webhook dispatch failed", { user_id: userId, error: getErrorMessage(e) }); });
 
   // Audit the billing state change. We pick the action based on
   // Stripe's lifecycle status so the audit log faithfully reflects
@@ -3116,10 +3089,15 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
                generationConfig: { responseMimeType: "application/json" }
              });
              const scoreRes = await model.generateContent(scoringPrompt);
-             const scoreObj = JSON.parse(scoreRes.response.text() || "{}");
+             const scoreRaw = JSON.parse(scoreRes.response.text() || "{}");
+             const scoreParsed = GeminiLeadScoreSchema.safeParse(scoreRaw);
+             const scoreObj = scoreParsed.success ? scoreParsed.data : { score: 0, label: 'none' };
+             if (!scoreParsed.success) {
+               log.warn("Gemini lead score response did not match expected schema", { agentId: webhookAgentId, issues: scoreParsed.error.issues });
+             }
              await db.from('wireline_call_logs').update({
-               lead_score: scoreObj.score || 0,
-               intent_label: scoreObj.label || 'none'
+               lead_score: scoreObj.score,
+               intent_label: scoreObj.label
              }).eq('vapi_call_id', call?.id);
 
              await db.from('wireline_outbound_leads').update({
@@ -3135,14 +3113,17 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
                    generationConfig: { responseMimeType: "application/json" }
                 });
                 const lessonRes = await lessonModel.generateContent(lessonPrompt);
-                const lessonObj = JSON.parse(lessonRes.response.text() || "{}");
-                if (lessonObj.lesson) {
+                const lessonRaw = JSON.parse(lessonRes.response.text() || "{}");
+                const lessonParsed = GeminiLessonSchema.safeParse(lessonRaw);
+                if (lessonParsed.success && lessonParsed.data.lesson) {
                    await db.from('wireline_agent_lessons').upsert(
-                     { agent_id: webhookAgentId, user_id: agent?.user_id, lesson: String(lessonObj.lesson).trim() },
+                     { agent_id: webhookAgentId, user_id: agent?.user_id, lesson: lessonParsed.data.lesson.trim() },
                      { onConflict: 'agent_id,lesson', ignoreDuplicates: true }
                    );
+                } else if (!lessonParsed.success) {
+                  log.warn("Gemini lesson response did not match expected schema", { agentId: webhookAgentId, issues: lessonParsed.error.issues });
                 }
-             } catch(e) {}
+             } catch(e) { log.warn("Gemini lesson extraction failed", { agentId: webhookAgentId, error: String(e) }); }
 
              try {
                 const taskPrompt = `Based on the transcript, did the agent promise any follow-up (like sending an email, checking a quote), or did the human ask for something out-of-scope?
@@ -3153,21 +3134,24 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
                    generationConfig: { responseMimeType: "application/json" }
                 });
                 const taskRes = await taskModel.generateContent(taskPrompt);
-                const taskObj = JSON.parse(taskRes.response.text() || "{}");
-                if (taskObj.has_task && taskObj.task_description) {
+                const taskRaw = JSON.parse(taskRes.response.text() || "{}");
+                const taskParsed = GeminiFollowupTaskSchema.safeParse(taskRaw);
+                if (taskParsed.success && taskParsed.data.has_task && taskParsed.data.task_description) {
                    await db.from('wireline_fleet_tasks').insert({
                       user_id: agent?.user_id,
                       agent_id: webhookAgentId,
                       task_type: 'action_required',
-                      description: `FOLLOW-UP FOR ${call?.customer?.number || 'Caller'}: ${taskObj.task_description}`,
+                      description: `FOLLOW-UP FOR ${call?.customer?.number || 'Caller'}: ${taskParsed.data.task_description}`,
                       source_type: 'phone_call',
                       source_id: call?.id,
-                      target_channel: taskObj.target_channel || 'manual',
-                      priority: taskObj.priority || 'medium',
+                      target_channel: taskParsed.data.target_channel,
+                      priority: taskParsed.data.priority,
                       status: 'pending'
                    });
+                } else if (!taskParsed.success) {
+                  log.warn("Gemini followup task response did not match expected schema", { agentId: webhookAgentId, issues: taskParsed.error.issues });
                 }
-             } catch(e) {}
+             } catch(e) { log.warn("Gemini task extraction failed", { agentId: webhookAgentId, error: String(e) }); }
           } catch(scoringErr: any) {
              log.error("Gemini call scoring failed", { agentId: webhookAgentId, error: scoringErr?.message || String(scoringErr) });
           }
@@ -4803,10 +4787,13 @@ const FLEET_TASK_PRIORITIES = ['low', 'medium', 'high'] as const;
 
 app.post("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => {
   try {
-    const { source_type, source_id, target_channel, customer_info, task_type, description, agent_id, priority, due_date } = req.body;
-    const safePriority = FLEET_TASK_PRIORITIES.includes(priority) ? priority : 'medium';
+    const validation = parseFormData(FleetTaskCreateSchema, req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Validation failed", errors: validation.errors });
+    }
+    const { description, task_type, priority, source_type, source_id, target_channel, customer_info, agent_id, due_date } = validation.data!;
     await db.from('wireline_fleet_tasks').insert({
-       source_type, source_id, target_channel, customer_info, task_type, description, agent_id, status: 'pending', user_id: req.user.id, priority: safePriority, due_date
+       source_type, source_id, target_channel, customer_info, task_type, description, agent_id, status: 'pending', user_id: req.user.id, priority, due_date
     });
     res.json({ success: true });
   } catch (error) {
@@ -6308,12 +6295,18 @@ Respond ONLY in strict, valid JSON format (no markdown):
         generationConfig: { responseMimeType: "application/json" }
       });
       const geminiRes = await model.generateContent(prompt);
-      const geminiParsed = JSON.parse(geminiRes.response.text() || "{}");
-      parsed = {
-        directives: geminiParsed.directives || [],
-        knowledge: geminiParsed.knowledge || [],
-        personality: geminiParsed.personality || "",
-      };
+      const geminiRaw = JSON.parse(geminiRes.response.text() || "{}");
+      const geminiResult = GeminiAgentExtractionSchema.safeParse(geminiRaw);
+      if (geminiResult.success) {
+        parsed = geminiResult.data;
+      } else {
+        log.warn("Gemini agent extraction response did not match expected schema", { issues: geminiResult.error.issues });
+        parsed = {
+          directives: [],
+          knowledge: [],
+          personality: "",
+        };
+      }
     } catch (err) {
       log.error("Gemini extraction fallback failed", { error: getErrorMessage(err) });
     }
@@ -6461,10 +6454,13 @@ app.get(['/api/oauth/google/callback', '/api/oauth/google/callback/'], oauthRate
     // JSON-encode values to neutralize any HTML/JS injection via the email field.
     const safeEmail = JSON.stringify(emailAddress);
     const safeOrigin = JSON.stringify(targetOrigin);
+    // Per-request nonce removes 'unsafe-inline' from script-src for this response.
+    const cspNonce = generateCspNonce();
+    res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, cspNonce, CSP_CONNECT_SRCS));
     res.send(`
       <html>
         <body>
-          <script>
+          <script nonce="${cspNonce}">
             if (window.opener) {
               window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS', email: ${safeEmail} }, ${safeOrigin});
               window.close();
@@ -6679,8 +6675,11 @@ app.get(
         || `${req.protocol}://${req.get("host")}`;
       const safeEmail  = JSON.stringify(emailAddress);
       const safeOrigin = JSON.stringify(targetOrigin);
+      // Per-request nonce removes 'unsafe-inline' from script-src for this response.
+      const cspNonce = generateCspNonce();
+      res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, cspNonce, CSP_CONNECT_SRCS));
       res.send(`
-        <html><body><script>
+        <html><body><script nonce="${cspNonce}">
           if (window.opener) {
             window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS', email: ${safeEmail} }, ${safeOrigin});
             window.close();
@@ -7315,8 +7314,14 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
                  `;
                  const sModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash", generationConfig: { responseMimeType: "application/json" } });
                  const sRes = await sModel.generateContent(emailScoringPrompt);
-                 const sObj = JSON.parse(sRes.response.text() || "{}");
-                 score = sObj.score || 0; label = sObj.label || 'none';
+                 const sRaw = JSON.parse(sRes.response.text() || "{}");
+                 const sParsed = GeminiEmailScoreSchema.safeParse(sRaw);
+                 if (sParsed.success) {
+                   score = sParsed.data.score;
+                   label = sParsed.data.label;
+                 } else {
+                   log.warn("Gemini email score response did not match expected schema", { issues: sParsed.error.issues });
+                 }
               }
               await db.from('wireline_email_threads').update({
                  lead_score: score, intent_label: label,
@@ -10082,7 +10087,7 @@ app.get("/api/insights/leaderboard", authenticateUser, async (req: any, res: any
 });
 
 // Topic clusters (Claude-powered, cached 1h per user).
-app.get("/api/insights/topics", authenticateUser, async (req: any, res: any) => {
+app.get("/api/insights/topics", authenticateUser, enforce24hSpendCap, enforceSpendCap, async (req: any, res: any) => {
   try {
     const force = req.query.refresh === "1";
     const cacheKey = `topics:${req.user.id}`;
@@ -10112,7 +10117,7 @@ app.get("/api/insights/topics", authenticateUser, async (req: any, res: any) => 
 });
 
 // Failure modes (Claude-powered, cached 1h per user).
-app.get("/api/insights/failure-modes", authenticateUser, async (req: any, res: any) => {
+app.get("/api/insights/failure-modes", authenticateUser, enforce24hSpendCap, enforceSpendCap, async (req: any, res: any) => {
   try {
     const force = req.query.refresh === "1";
     const cacheKey = `failures:${req.user.id}`;
@@ -10218,7 +10223,7 @@ async function computeDailyBrief(userId: string, opts?: { force?: boolean }) {
   return { payload, cached: false };
 }
 
-app.get("/api/insights/daily-brief", authenticateUser, async (req: any, res: any) => {
+app.get("/api/insights/daily-brief", authenticateUser, enforce24hSpendCap, enforceSpendCap, async (req: any, res: any) => {
   try {
     const { payload, cached } = await computeDailyBrief(req.user.id, { force: req.query.refresh === "1" });
     res.json({ ...payload, cached });

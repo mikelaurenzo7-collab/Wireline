@@ -220,3 +220,63 @@ export function parseFormData<T>(schema: z.ZodSchema<T>, data: unknown): FormPar
     return { success: false, errors: { form: 'An unexpected error occurred' } };
   }
 }
+
+// ─── LLM Response Schemas ────────────────────────────────────────────────────
+// Zod schemas for structured JSON returned by Gemini / Claude calls.
+// Use safeParse() on raw LLM output — the model may return an unexpected shape
+// and we must not operate on arbitrary data or crash silently.
+
+/** Gemini post-call lead scoring: { score, label } */
+export const GeminiLeadScoreSchema = z.object({
+  score: z.number().min(0).max(100).default(0),
+  label: z.string().max(100).default('none'),
+});
+export type GeminiLeadScore = z.infer<typeof GeminiLeadScoreSchema>;
+
+/** Gemini post-call lesson extraction: { lesson } */
+export const GeminiLessonSchema = z.object({
+  lesson: z.string().max(2000),
+});
+export type GeminiLesson = z.infer<typeof GeminiLessonSchema>;
+
+/** Gemini post-call follow-up task detection: { has_task, task_description, priority, target_channel } */
+export const GeminiFollowupTaskSchema = z.object({
+  has_task: z.boolean(),
+  task_description: z.string().max(2000),
+  priority: z.enum(['high', 'medium', 'low']).default('medium'),
+  target_channel: z.enum(['email', 'manual']).default('manual'),
+});
+export type GeminiFollowupTask = z.infer<typeof GeminiFollowupTaskSchema>;
+
+/** Gemini email lead scoring: { score, label } — same shape as lead scoring */
+export const GeminiEmailScoreSchema = GeminiLeadScoreSchema;
+export type GeminiEmailScore = GeminiLeadScore;
+
+/** Gemini agent extraction (from training text): { directives, knowledge, personality } */
+export const GeminiAgentExtractionSchema = z.object({
+  directives: z
+    .array(z.object({ content: z.string().max(2000), priority: z.number().min(0).max(10).optional() }))
+    .default([]),
+  knowledge: z.array(z.object({ content: z.string().max(4000) })).default([]),
+  personality: z.string().max(2000).default(''),
+});
+export type GeminiAgentExtraction = z.infer<typeof GeminiAgentExtractionSchema>;
+
+// ─── Fleet Task Schema ───────────────────────────────────────────────────────
+
+const FLEET_TASK_PRIORITIES_VALUES = ['low', 'medium', 'high'] as const;
+const FLEET_TASK_TARGET_CHANNELS = ['email', 'manual', 'phone', 'sms'] as const;
+
+/** POST /api/fleet/tasks — validated body for creating a fleet task. */
+export const FleetTaskCreateSchema = z.object({
+  description: z.string().min(1, 'description is required').max(2000, 'description must be 2000 characters or less'),
+  task_type: z.string().max(80).optional().nullable(),
+  priority: z.enum(FLEET_TASK_PRIORITIES_VALUES).default('medium'),
+  source_type: z.string().max(80).optional().nullable(),
+  source_id: z.string().max(200).optional().nullable(),
+  target_channel: z.enum(FLEET_TASK_TARGET_CHANNELS).optional().nullable(),
+  customer_info: z.string().max(500).optional().nullable(),
+  agent_id: z.string().uuid('Invalid agent ID').optional().nullable(),
+  due_date: z.string().max(40).optional().nullable(),
+});
+export type FleetTaskCreate = z.infer<typeof FleetTaskCreateSchema>;
