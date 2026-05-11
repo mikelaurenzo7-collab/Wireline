@@ -243,7 +243,13 @@ Supabase SQL editor. Direct Postgres connections from Cloud Agent VMs
 may fail because the DB hostname resolves to IPv6 only. Use the
 Supabase Dashboard SQL editor or the connection pooler instead.
 
-### Pre-existing issues in the repo
+### Stripe SDK crash on startup
 
-- `src/lib/soc2-rbac.test.ts` has 1 failing test (`canGrantRole("operator", "viewer")` expected false but got true).
-- `server.ts` and `src/lib/operator-slos.ts` have 2 pre-existing TypeScript errors that do not block the build.
+The Stripe SDK (`stripe` v17+) throws if `apiKey` is falsy at import
+time. Because of the ESM loading order issue above, the `.env` value
+is not yet available when `src/lib/stripe-helpers.ts` runs
+`new Stripe(process.env.STRIPE_SECRET_KEY || "")`. Pass a placeholder
+via the shell: `STRIPE_SECRET_KEY=sk_test_placeholder npm run dev`.
+The Supabase secrets (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`,
+`SUPABASE_SERVICE_ROLE_KEY`) are injected as environment variables
+by the Cloud Agent VM and don't need to be set manually.
