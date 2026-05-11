@@ -6,6 +6,16 @@
   "framework": null,
   "cleanUrls": true,
   "trailingSlash": false,
+  "crons": [
+    {
+      "path": "/api/jobs/sweep",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/insights/daily-brief/schedule",
+      "schedule": "0 8 * * *"
+    }
+  ],
   "functions": {
     "api/index.ts": {
       "maxDuration": 60
