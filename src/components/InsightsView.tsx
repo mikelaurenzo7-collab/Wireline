@@ -114,7 +114,7 @@ function FunnelView({ days }: { days: number }) {
           <div>
             <h3 className="font-display italic text-3xl text-ink mb-2">No calls yet</h3>
             <p className="text-sm text-ink/55 max-w-sm leading-relaxed">
-              Your conversion funnel will populate once agents start handling calls. Run a test relay from the Command Atlas to see data here.
+              Your conversion funnel will populate once agents start handling calls. Run a test call from the Dashboard to see data here.
             </p>
           </div>
         </div>

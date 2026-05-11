@@ -279,20 +279,25 @@ export default function DashboardHome() {
       {/* ── SLO health banner (only when degraded/critical) ──── */}
       {sloBanner && (
         <div className={cn(
-          "shrink-0 rounded-2xl border px-5 py-3 flex items-start gap-3",
+          "shrink-0 rounded-2xl border px-5 py-3.5 flex items-start gap-3",
           sloBanner.status === "critical" ? "border-rose-500/30 bg-rose-500/8" : "border-amber-500/30 bg-amber-500/8",
         )}>
-          <AlertTriangle className={cn("w-4 h-4 shrink-0 mt-0.5", sloBanner.status === "critical" ? "text-rose-400" : "text-amber-400")} />
+          <div className={cn(
+            "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border",
+            sloBanner.status === "critical" ? "bg-rose-500/15 border-rose-500/30" : "bg-amber-500/15 border-amber-500/30",
+          )}>
+            <AlertTriangle className={cn("w-3.5 h-3.5", sloBanner.status === "critical" ? "text-rose-500" : "text-amber-500")} />
+          </div>
           <div className="flex-1 min-w-0">
-            <p className={cn("text-[11px] font-semibold uppercase tracking-[0.15em]", sloBanner.status === "critical" ? "text-rose-400" : "text-amber-400")}>
+            <p className={cn("text-[11px] font-medium uppercase tracking-[0.18em] leading-none mb-1", sloBanner.status === "critical" ? "text-rose-500" : "text-amber-600")}>
               {sloBanner.status === "critical" ? "System health critical" : "System health degraded"}
             </p>
             {sloBanner.events.slice(0, 3).map((e, i) => (
-              <p key={i} className="text-[10px] text-ink/60 leading-snug mt-0.5">{e.summary}</p>
+              <p key={i} className="text-[10px] text-muted leading-relaxed">{e.summary}</p>
             ))}
           </div>
-          <Link to="/admin" className="shrink-0 text-[9px] uppercase tracking-[0.3em] text-muted hover:text-brand transition-colors">
-            Details
+          <Link to="/admin" className="shrink-0 text-[9px] uppercase tracking-[0.3em] text-muted hover:text-brand transition-colors mt-1">
+            Details →
           </Link>
         </div>
       )}
@@ -689,7 +694,7 @@ export default function DashboardHome() {
                     <Link to={lead.type === 'call' ? "/logs" : "/inbox"}
                       className={cn(
                         "group flex items-center justify-between gap-3 px-4 py-3 transition-all",
-                        isHot ? "hover:bg-emerald-500/5" : "hover:bg-white/2"
+                        isHot ? "hover:bg-emerald-500/5" : "hover:bg-white/3"
                       )}>
                       <div className="flex items-center gap-3 min-w-0">
                         <div className={cn(
@@ -803,7 +808,7 @@ export default function DashboardHome() {
             <ul className="divide-y divide-white/5">
               {recentLogs.map((call: any, idx: number) => (
                 <li key={call.id || idx}>
-                  <Link to="/logs" className="group flex items-center justify-between gap-3 px-4 py-3 hover:bg-white/2 transition-all">
+                  <Link to="/logs" className="group flex items-center justify-between gap-3 px-4 py-3 hover:bg-white/3 transition-all">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className={cn(
                         "w-9 h-9 rounded-xl glass border flex items-center justify-center transition-all shrink-0",

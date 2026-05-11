@@ -145,7 +145,7 @@ export function PrivacyPolicy() {
           If you are located in the European Economic Area, United Kingdom, or Canada, you have the right to:
           access a copy of your personal data; correct inaccurate data; request erasure; object to or restrict
           processing; and receive your data in a portable format. To exercise these rights, use the{" "}
-          <strong>Delete Account</strong> option in Command Atlas → Settings, or contact us at the address below.
+          <strong>Delete Account</strong> option in Settings, or contact us at the address below.
         </p>
         <p>
           Where we rely on legitimate interests as the legal basis for processing, you have the right to object.
@@ -264,7 +264,7 @@ export function TermsOfService() {
       <Section title="5. Billing and Subscriptions">
         <p>
           Paid features are billed monthly via Stripe. Subscriptions renew automatically unless cancelled before
-          the renewal date. You may cancel at any time via the Billing section in Command Atlas; cancellation
+          the renewal date. You may cancel at any time via the Billing section in Settings; cancellation
           takes effect at the end of the current billing period. No refunds are issued for partial periods.
         </p>
         <p>

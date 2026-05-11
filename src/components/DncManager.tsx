@@ -285,7 +285,7 @@ export default function DncManager() {
                     key={entry.id}
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="group flex items-center justify-between py-3 px-2 gap-3 hover:bg-white/2 transition-all rounded-lg"
+                    className="group flex items-center justify-between py-3 px-2 gap-3 hover:bg-white/3 transition-all rounded-lg"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"

@@ -108,9 +108,9 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
       >
         <header className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
           <div>
-            <p className="text-[9px] uppercase tracking-[0.4em] text-brand mb-0.5">Constellation</p>
-            <h2 className="font-display italic lowercase text-2xl text-ink">
-              {isEdit ? "edit commitment" : "book commitment"}
+            <p className="text-[9px] uppercase tracking-[0.4em] text-brand mb-0.5">Appointments</p>
+            <h2 className="font-display italic text-2xl text-ink">
+              {isEdit ? "Edit Appointment" : "New Appointment"}
             </h2>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-ink transition-colors">
@@ -166,9 +166,9 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
           </div>
 
           {err && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-rose-500/10 border border-rose-500/30">
+            <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30">
               <AlertOctagon className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-              <p className="text-[11px] text-rose-400">{err}</p>
+              <p className="text-[11px] text-rose-600 leading-snug">{err}</p>
             </div>
           )}
         </div>

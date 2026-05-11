@@ -253,10 +253,19 @@ function CTAButton({ to, label, icon }: { to: string; label: string; icon?: Reac
 
 function PowerUpCard({ icon: Icon, label, desc, to, accent }: { icon: any; label: string; desc: string; to: string; accent: string }) {
   return (
-    <Link to={to} className="rounded-xl glass border border-white/10 p-4 hover:border-white/20 transition-all group">
-      <Icon className="w-4 h-4 mb-2" style={{ color: accent }} />
-      <p className="text-sm font-medium text-ink leading-tight group-hover:text-brand transition-colors">{label}</p>
-      <p className="text-[11px] text-ink/50 mt-1 leading-snug">{desc}</p>
+    <Link to={to} className="rounded-xl glass border border-black/8 p-4 card-interactive group overflow-hidden relative">
+      <div
+        className="absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-15 blur-2xl pointer-events-none"
+        style={{ background: accent }}
+      />
+      <div
+        className="w-7 h-7 rounded-lg flex items-center justify-center mb-2.5 border border-black/8 shrink-0"
+        style={{ background: `linear-gradient(135deg, ${accent}18, ${accent}06)`, color: accent }}
+      >
+        <Icon className="w-3.5 h-3.5" />
+      </div>
+      <p className="text-[11px] font-medium text-ink leading-tight group-hover:text-brand transition-colors">{label}</p>
+      <p className="text-[10px] text-muted mt-1 leading-relaxed">{desc}</p>
     </Link>
   );
 }

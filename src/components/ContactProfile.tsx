@@ -204,7 +204,7 @@ const TimelineRow: React.FC<{ event: ContactData["timeline"][number] }> = ({ eve
   return (
     <Link
       to={isCall ? "/logs" : "/appointments"}
-      className="group relative px-7 py-5 flex items-start gap-5 hover:bg-white/2 transition-all overflow-hidden"
+      className="group relative px-7 py-5 flex items-start gap-5 hover:bg-white/3 transition-all overflow-hidden"
     >
       <div className="absolute left-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-brand/0 to-transparent group-hover:via-brand/60 transition-all" />
       <div className={cn(

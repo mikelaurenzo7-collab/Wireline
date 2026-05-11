@@ -1,6 +1,6 @@
 /**
- * Aurora Obsidian Skeleton System
- * Animated placeholder components that match the dark-glass design language.
+ * Aurora Cream Skeleton System
+ * Animated placeholder components that match the frosted-glass design language.
  * Use these instead of spinners for any data-loading state.
  */
 

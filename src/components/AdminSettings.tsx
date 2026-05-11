@@ -863,16 +863,21 @@ export default function AdminSettings() {
                       <>
                         {banner && banner !== "ok" && (
                           <div className={cn(
-                            "rounded-xl border px-4 py-3 flex items-start gap-3",
+                            "rounded-xl border px-4 py-3.5 flex items-start gap-3",
                             banner === "critical" ? "border-rose-500/30 bg-rose-500/8" : "border-amber-500/30 bg-amber-500/8",
                           )}>
-                            <AlertTriangle className={cn("w-4 h-4 shrink-0 mt-0.5", banner === "critical" ? "text-rose-400" : "text-amber-400")} />
+                            <div className={cn(
+                              "w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border",
+                              banner === "critical" ? "bg-rose-500/15 border-rose-500/30" : "bg-amber-500/15 border-amber-500/30",
+                            )}>
+                              <AlertTriangle className={cn("w-3.5 h-3.5", banner === "critical" ? "text-rose-500" : "text-amber-500")} />
+                            </div>
                             <div className="space-y-1">
-                              <p className={cn("text-[11px] font-semibold uppercase tracking-[0.15em]", banner === "critical" ? "text-rose-400" : "text-amber-400")}>
+                              <p className={cn("text-[11px] font-medium uppercase tracking-[0.18em] leading-none", banner === "critical" ? "text-rose-500" : "text-amber-600")}>
                                 {banner === "critical" ? "System health critical" : "System health degraded"}
                               </p>
                               {firedEvents.map((fe, i) => (
-                                <p key={i} className="text-[10px] text-ink/70 leading-snug">{fe.summary}</p>
+                                <p key={i} className="text-[10px] text-muted leading-relaxed">{fe.summary}</p>
                               ))}
                             </div>
                           </div>
