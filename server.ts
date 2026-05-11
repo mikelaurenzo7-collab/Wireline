@@ -5647,16 +5647,119 @@ app.post("/api/settings", authenticateUser, async (req: any, res: any) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// GDPR / data-export: POST /api/account/export
+// Exports all user-owned data from every wireline_* table as a JSON file.
+// Returns a download URL or the JSON directly depending on implementation.
+// ─────────────────────────────────────────────────────────────────────────────
+app.post("/api/account/export", authenticateUser, async (req: any, res: any) => {
+  const uid = req.user.id;
+  try {
+    log.info("account export requested", { uid });
+
+    // List of all tables to export (same order as delete for consistency)
+    const tables = [
+      "wireline_settings",
+      "wireline_agents",
+      "wireline_directives",
+      "wireline_knowledge",
+      "wireline_personality",
+      "wireline_agent_lessons",
+      "wireline_appointments",
+      "wireline_call_logs",
+      "wireline_email_accounts",
+      "wireline_email_threads",
+      "wireline_email_messages",
+      "wireline_fleet_tasks",
+      "wireline_phone_numbers",
+      "wireline_outbound_leads",
+      "wireline_outbound_campaigns",
+      "wireline_signal_presence",
+      "wireline_audit_log",
+      "wireline_webhooks",
+      "wireline_webhook_deliveries",
+      "wireline_spend_budgets",
+      "wireline_spend_alerts",
+      "wireline_intake_keys",
+      "wireline_subscriptions",
+      "wireline_stripe_events",
+      "wireline_dnc_list",
+      "wireline_user_preferences",
+      "wireline_onboarding_progress",
+      "wireline_consent_log",
+      "wireline_quota_limits",
+      "wireline_quota_usage",
+    ];
+
+    const exportData: Record<string, any[]> = {};
+    let totalRows = 0;
+
+    // Collect all user data from each table
+    for (const table of tables) {
+      const { data, error } = await (db as any)
+        .from(table)
+        .select("*")
+        .eq("user_id", uid);
+
+      if (error) {
+        log.warn(`account export: ${table} query failed`, { error: error.message });
+        exportData[table] = [];
+      } else {
+        exportData[table] = data || [];
+        totalRows += (data || []).length;
+      }
+    }
+
+    // Add metadata
+    const exportPackage = {
+      metadata: {
+        user_id: uid,
+        email: req.user.email || "unknown",
+        exported_at: new Date().toISOString(),
+        total_rows: totalRows,
+        wireline_version: "1.0.0",
+      },
+      tables: exportData,
+    };
+
+    log.info("account export completed", { uid, totalRows });
+
+    // Return as JSON download
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="wireline-account-export-${uid.substring(0, 8)}-${Date.now()}.json"`
+    );
+    res.status(200).json(exportPackage);
+  } catch (err: any) {
+    log.error("account export failed", { uid, error: getErrorMessage(err) });
+    res.status(500).json({ error: "Account export failed. Please contact support." });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // GDPR / data-deletion: DELETE /api/user/account
 // Permanently erases all user-owned rows from every wireline_* table and then
 // deletes the Supabase auth record.  Requires the authenticated user to confirm
 // their intent by passing { confirm: "DELETE MY ACCOUNT" } in the body.
+//
+// ⚠️  WARNING: This is an IMMEDIATE hard delete with NO grace period.
+// ⚠️  Operators MUST call POST /api/account/export FIRST to back up user data.
+// ⚠️  Recovery after deletion requires restoring from Supabase PITR backup.
+//
+// TODO (Phase 1.5): Implement 30-day soft-delete grace period:
+//   1. Add wireline_deletion_queue table (user_id, requested_at, execute_at)
+//   2. On DELETE, insert row with execute_at = now() + 30 days
+//   3. Mark auth user as "pending_deletion" (custom claim or separate table)
+//   4. Add cron job to purge users after execute_at passes
+//   5. Add POST /api/account/cancel-deletion to abort within grace period
 // ─────────────────────────────────────────────────────────────────────────────
 app.delete("/api/user/account", authenticateUser, async (req: any, res: any) => {
   const CONFIRMATION_PHRASE = "DELETE MY ACCOUNT";
   if (req.body?.confirm !== CONFIRMATION_PHRASE) {
     return res.status(400).json({
       error: `Send { "confirm": "${CONFIRMATION_PHRASE}" } to confirm permanent deletion.`,
+      warning: "This is an immediate hard delete. Export your data first via POST /api/account/export.",
     });
   }
   const uid = req.user.id;
