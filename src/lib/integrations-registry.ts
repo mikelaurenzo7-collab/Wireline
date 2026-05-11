@@ -3,9 +3,9 @@
  * service this app talks to (Anthropic, Gemini, Vapi, Supabase, Stripe, …).
  *
  * Used by:
- *   - GET /api/health                — `capabilities` block (public probe)
- *   - GET /api/integrations/status   — authenticated full structured list
- *   - AdminSettings → System tab     — Platform Health panel
+ *   - GET /api/health                   — `capabilities` block (public probe)
+ *   - GET /api/health/integrations      — authenticated, full structured list
+ *   - AdminSettings → System tab        — Platform Health panel
  *
  * NOTE: distinct from `./integrations.ts`, which is the runtime client for
  * per-user Calendar / Mail OAuth accounts. This file is *server configuration*

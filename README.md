@@ -326,26 +326,35 @@ See `src/lib/soc2-controls.ts` for full implementation + tests.
 
 ## Environment
 
-```bash
-# Supabase
-VITE_SUPABASE_URL=
-VITE_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=        # backend service role (optional)
+Wireline talks to twelve external services. The canonical configuration order
+— mirrored in `.env.example`, in `src/lib/integrations-registry.ts`, and in
+the AdminSettings → System → Platform Health panel — is:
 
-# AI
-ANTHROPIC_API_KEY=                # unlocks every /api/claude/* path
-GEMINI_API_KEY=                   # legacy + fallback paths
+| # | Integration | Group | Required? | Env vars | Fallback when unset |
+|---|-------------|-------|-----------|----------|---------------------|
+| 1 | **Supabase**            | Core    | ✅ | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | App cannot start. |
+| 2 | **Anthropic Claude**    | AI      | ✅ | `ANTHROPIC_API_KEY` (`ANTHROPIC_MODEL` optional) | `/api/claude/*` returns 503; Gemini handles legacy paths. |
+| 3 | **Google Gemini**       | AI      | ✅ | `GEMINI_API_KEY` | Legacy fallback paths and the Vapi voice model are disabled. |
+| 4 | **Vapi**                | Voice   | ✅ | `VAPI_PRIVATE_KEY`, `VITE_VAPI_PUBLIC_KEY`, `VAPI_WEBHOOK_SECRET` | Voice in/out unavailable. Webhook rejects all requests when secret unset in prod. |
+| 5 | **Google OAuth / Gmail**| OAuth   | ⬜ | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Gmail mailboxes and the scheduled Daily Brief email are disabled. |
+| 6 | **Microsoft OAuth / Outlook** | OAuth | ⬜ | `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET` | Only Gmail accounts can be linked to email agents. |
+| 7 | **Stripe**              | Billing | ⬜ | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_STARTER_PRICE_ID`, `STRIPE_PRO_PRICE_ID`, `STRIPE_ENTERPRISE_PRICE_ID` | `/api/billing/*` returns 503; legacy `subscription_status` simulator gates plans. |
+| 8 | **Apollo.io**           | Action Engine | ⬜ | `APOLLO_API_KEY` | `prospect_leads` action is a no-op (returns empty). |
+| 9 | **DocuSign**            | Action Engine | ⬜ | `DOCUSIGN_ACCOUNT_ID` + (`DOCUSIGN_JWT_TOKEN` or `DOCUSIGN_ACCESS_TOKEN`); `DOCUSIGN_BASE_URI` defaults to sandbox | `send_contract` falls back to an operator-approval task. |
+| 10 | **Upstash Redis**      | Infrastructure | ⚠ recommended | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Rate limits fall back to per-process memory; near-zero protection on serverless. Set `WIRELINE_ALLOW_INMEMORY_RATE_LIMIT=true` for single-process Docker. |
+| 11 | **Sentry**             | Infrastructure | ⚠ recommended | `SENTRY_DSN`, `VITE_SENTRY_DSN` (+ optional auth/org/project for source maps) | Errors only surface in runtime logs — no alerting, no aggregation. |
+| 12 | **Secret Vault**       | Security | ⚠ for webhooks | `WIRELINE_DATA_KEY` | Webhooks with a signing secret return 503 `VAULT_UNCONFIGURED`. |
 
-# Voice
-VAPI_PRIVATE_KEY=
-VITE_VAPI_PUBLIC_KEY=
+Plus the operational vars: `APP_URL`, `CORS_ORIGINS`, `OAUTH_STATE_SECRET`,
+`CRON_SECRET`, `CLAUDE_MONTHLY_BUDGET_USD`, and the bootstrap creds.
 
-# Gmail (email agent)
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
+See [`.env.example`](.env.example) for the full annotated list. The runtime
+status of each integration is exposed at:
 
-APP_URL=http://localhost:3000     # used for OAuth callback
-```
+- `GET /api/health` — public, returns the `capabilities` flag map.
+- `GET /api/health/integrations` — authenticated, returns the full structured
+  list with per-env-var presence and fallback notes. Powers the AdminSettings
+  → System → Platform Health panel.
 
 ## Database
 

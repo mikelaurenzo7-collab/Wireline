@@ -61,7 +61,7 @@ router.get("/", healthRateLimiter, async (_req, res) => {
  * Platform Health panel. Returns one row per registered integration with
  * status, required-ness, env-var presence map, and fallback notes.
  */
-router.get("/integrations", authenticateUser, (_req, res) => {
+router.get("/integrations", healthRateLimiter, authenticateUser, (_req, res) => {
   res.json({
     integrations: getIntegrationsStatus(),
     timestamp: new Date().toISOString(),
