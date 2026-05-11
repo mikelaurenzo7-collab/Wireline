@@ -1550,3 +1550,10 @@ END `;
 -- ─────────────────────────────────────────────────────────────────────────────
 CREATE INDEX IF NOT EXISTS wireline_webhook_deliveries_user_created_idx
     ON wireline_webhook_deliveries(user_id, created_at DESC);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- wireline_settings.crm_type — 2026-05-11
+-- Stores which CRM the operator has connected ('salesforce' | 'hubspot' | null).
+-- Used by the Action Engine to route update_crm_lead jobs.
+-- ─────────────────────────────────────────────────────────────────────────────
+ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS crm_type TEXT;

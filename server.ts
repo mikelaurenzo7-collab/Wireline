@@ -1671,6 +1671,9 @@ app.post("/api/knowledge", authenticateUser, rateLimiters.knowledgeRateLimiter, 
       .select("id, agent_id, content, created_at")
       .single();
     if (error) throw error;
+    dispatchWebhook(req.user.id, "knowledge_updated", {
+      action: "created", id: data.id, agent_id, preview: content.slice(0, 200),
+    }).catch(() => {});
     res.json({
       knowledge: {
         ...data,
@@ -1701,6 +1704,9 @@ app.patch("/api/knowledge/:id", authenticateUser, rateLimiters.knowledgeRateLimi
       .select("id, agent_id, content, created_at")
       .single();
     if (error) throw error;
+    dispatchWebhook(req.user.id, "knowledge_updated", {
+      action: "updated", id: data.id, agent_id: data.agent_id, preview: content.slice(0, 200),
+    }).catch(() => {});
     res.json({ knowledge: data });
   } catch (e: any) { log.error("Failed to update", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to update" }); }
 });
@@ -1712,6 +1718,9 @@ app.delete("/api/knowledge/:id", authenticateUser, async (req: any, res: any) =>
       .eq("id", req.params.id)
       .eq("user_id", req.user.id);
     if (error) throw error;
+    dispatchWebhook(req.user.id, "knowledge_updated", {
+      action: "deleted", id: req.params.id,
+    }).catch(() => {});
     res.json({ success: true });
   } catch (e: any) { log.error("Failed to delete", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to delete" }); }
 });
@@ -1898,7 +1907,7 @@ app.post("/api/settings", authenticateUser, async (req: any, res: any) => {
     // the request body, letting any authenticated user grant themselves
     // 'active' status (bypassing billing) and unlimited agents (bypassing
     // quota). They are now ignored if present and silently dropped.
-    const { vapi_phone_number_id, voice_llm_provider, voice_llm_model, retention_days } = req.body;
+    const { vapi_phone_number_id, voice_llm_provider, voice_llm_model, retention_days, crm_type } = req.body;
 
     // Build patch with only the fields the caller is allowed to set.
     const patch: Record<string, any> = { updated_at: new Date().toISOString() };
@@ -1911,6 +1920,13 @@ app.post("/api/settings", authenticateUser, async (req: any, res: any) => {
         return res.status(400).json({ error: "retention_days must be an integer >= 90" });
       }
       patch.retention_days = days;
+    }
+    if (crm_type !== undefined) {
+      const allowed = ["salesforce", "hubspot", "none", ""];
+      if (!allowed.includes(crm_type)) {
+        return res.status(400).json({ error: `crm_type must be one of: ${allowed.join(", ")}` });
+      }
+      patch.crm_type = crm_type || null;
     }
 
     // Audit attempts to modify privileged fields so we can spot abuse.
@@ -5439,6 +5455,9 @@ app.post("/api/claude/knowledge-from-url/apply", authenticateUser, async (req: a
       }));
     if (rows.length === 0) return res.status(400).json({ error: "No valid entries to insert." });
     await db.from("wireline_knowledge").insert(rows);
+    dispatchWebhook(req.user.id, "knowledge_updated", {
+      action: "bulk_created", agent_id: agentId, count: rows.length,
+    }).catch(() => {});
     res.json({ inserted: rows.length });
   } catch (e) {
     claudeErr(res, e);

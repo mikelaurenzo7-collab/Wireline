@@ -34,6 +34,7 @@ const EVENT_DESCRIPTIONS: Record<string, string> = {
   "appointment.booked": "Every appointment insert",
   "task.created":       "Every fleet task created",
   "compliance.flagged": "Every compliance_review task created",
+  "knowledge_updated":  "Knowledge base entry created, updated, or deleted",
   "spend.warning":      "Month-to-date AI spend crossed your warn threshold",
   "spend.exceeded":     "Month-to-date AI spend hit 100% of monthly limit",
   "subscription.changed": "Stripe subscription status, plan, or renewal date changed",
