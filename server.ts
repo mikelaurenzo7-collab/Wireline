@@ -309,15 +309,17 @@ function buildCSP(isDev: boolean, nonce?: string): string {
   ].join("; ");
 }
 
-/** Generate a cryptographically random base64 nonce for CSP script tags.
- * Output contains only base64 characters (A-Z, a-z, 0-9, +, /, =) which are
- * safe to embed in HTML attributes without additional escaping.
+/** Generate a cryptographically random URL-safe base64 nonce for CSP script tags.
+ * Uses base64url encoding (RFC 4648 §5) which replaces + → - and / → _ so the
+ * nonce contains only alphanumeric, -, and _ characters — safe for HTML
+ * attributes, URLs, and HTTP headers without additional escaping.
  */
 function generateCspNonce(): string {
-  const nonce = cryptoRandomBytes(16).toString("base64");
-  // Defensive: base64 output must not contain characters that break HTML attributes.
-  // This invariant always holds for standard base64 but we verify it explicitly.
-  if (!/^[A-Za-z0-9+/=]+$/.test(nonce)) {
+  const nonce = cryptoRandomBytes(16).toString("base64url");
+  // Defensive: base64url output must only contain URL-safe characters.
+  // This invariant always holds but we verify it explicitly to detect
+  // any future encoding change at the callsite.
+  if (!/^[A-Za-z0-9_-]+$/.test(nonce)) {
     throw new Error("generateCspNonce: unexpected character in nonce — this is a bug");
   }
   return nonce;

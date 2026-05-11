@@ -19,7 +19,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import express, { type Request, type Response, type NextFunction } from "express";
 import http from "node:http";
-import { rateLimit } from "./rate-limit";
 
 // ──────────────────────────────────────────────────────────
 //  Minimal middleware stubs that mirror server.ts behaviour
@@ -337,14 +336,14 @@ describe("CSP nonce-based script-src (P0 audit fix)", () => {
   });
 
   it("production CSP with nonce uses nonce directive instead of 'unsafe-inline' on script-src", () => {
-    const csp = buildCSP(false, "abc123==");
+    const csp = buildCSP(false, "abc123-_");
     // The nonce should appear in the CSP
-    expect(csp).toContain("'nonce-abc123=='");
+    expect(csp).toContain("'nonce-abc123-_'");
     // script-src must not have 'unsafe-inline' — only the nonce
     const scriptSrcDir = csp.split("; ").find((d) => d.startsWith("script-src"));
     expect(scriptSrcDir).toBeDefined();
     expect(scriptSrcDir).not.toContain("'unsafe-inline'");
-    expect(scriptSrcDir).toContain("'nonce-abc123=='");
+    expect(scriptSrcDir).toContain("'nonce-abc123-_'");
   });
 
   it("dev CSP keeps 'unsafe-inline' and 'unsafe-eval' for Vite HMR", () => {
