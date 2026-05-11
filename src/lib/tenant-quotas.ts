@@ -180,7 +180,6 @@ interface OverrideCacheEntry {
 }
 
 const OVERRIDE_CACHE_TTL_MS = 30_000;
-const overrideCache = new Map<string, OverrideCacheEntry>();
 
 function nextDailyResetIso(now: Date = new Date()): string {
   const t = new Date(now);

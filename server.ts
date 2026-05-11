@@ -21,7 +21,7 @@ import { SchemaType } from "@google/generative-ai";
 import { createClient } from "@supabase/supabase-js";
 import { google } from "googleapis";
 import Stripe from "stripe";
-import { randomUUID, timingSafeEqual as cryptoTimingSafeEqual } from "node:crypto";
+import { randomUUID, timingSafeEqual as cryptoTimingSafeEqual, createHmac } from "node:crypto";
 import * as claudeBrain from "./src/lib/claude-brain";
 import { AuditLogger } from "./src/lib/audit-logger";
 import { createAuditEventsHandler, createAuditStatsHandler, createAuditExportHandler } from "./src/lib/audit-routes";
@@ -47,6 +47,9 @@ import { enqueue, startWorker, getQueueStats, type JobRow } from "./src/lib/job-
 import { quotaRateLimit, jobsRateLimit, tcpaRateLimit, soc2RateLimit, webhooksRateLimit } from "./src/middleware/api-rate-limits";
 import { encryptSecret, decryptSecret, lastFour, isVaultConfigured } from "./src/lib/secret-vault";
 import { createRbacMiddleware, getCallerRole, invalidateRoleCache } from "./src/middleware/require-role";
+import { syncGoogleCalendar } from "./src/services/google-calendar-sync";
+import { syncOutlookCalendar } from "./src/services/outlook-calendar-sync";
+import { syncGoogleDriveToKnowledge } from "./src/services/google-drive-sync";
 
 // On Vercel, VERCEL_URL is automatically set to the deployment hostname
 // (e.g. "myapp-abc123.vercel.app") with no protocol or trailing slash.
@@ -446,11 +449,17 @@ async function claudeRateLimiter(req: any, res: any, next: any) {
   }
   const token = req.headers.authorization?.split(" ")[1];
   const key = token || req.ip || "anon";
-  const result = await rateLimit(key, {
-    bucket: "claude",
-    windowMs: CLAUDE_RATE_WINDOW_MS,
-    max: CLAUDE_RATE_MAX,
-  });
+  let result;
+  try {
+    result = await rateLimit(key, {
+      bucket: "claude",
+      windowMs: CLAUDE_RATE_WINDOW_MS,
+      max: CLAUDE_RATE_MAX,
+      failClosedOnError: true,
+    });
+  } catch (err) {
+    return res.status(503).json({ error: "Rate limiter temporarily unavailable.", code: "RATE_LIMITER_ERROR" });
+  }
   res.setHeader("X-RateLimit-Limit", String(CLAUDE_RATE_MAX));
   res.setHeader("X-RateLimit-Remaining", String(result.remaining));
   if (!result.allowed) {
@@ -641,11 +650,14 @@ if (!process.env.OAUTH_STATE_SECRET && process.env.STRIPE_WEBHOOK_SECRET) {
   // painless, but be loud about it: mixing secrets across domains is a
   // smell and rotating the Stripe secret would silently invalidate
   // every in-flight OAuth state token.
-  log.warn("OAUTH_STATE_SECRET unset — falling back to STRIPE_WEBHOOK_SECRET (dev only). Set OAUTH_STATE_SECRET to a dedicated random secret before deploying.");
+  const msg = "OAUTH_STATE_SECRET unset — falling back to STRIPE_WEBHOOK_SECRET. Set OAUTH_STATE_SECRET to a dedicated random secret before deploying.";
+  log.warn(msg);
+  if (process.env.SENTRY_DSN) {
+    Sentry.captureMessage(msg, "fatal");
+  }
 }
 
 function generateOAuthState(): string {
-  const { createHmac } = require("node:crypto") as typeof import("node:crypto");
   const nonce = randomUUID().replace(/-/g, "");
   const ts = Date.now().toString(36);
   const payload = `${nonce}.${ts}`;
@@ -656,7 +668,6 @@ function generateOAuthState(): string {
 function verifyOAuthState(state: string | undefined): boolean {
   if (!state) return false;
   try {
-    const { createHmac } = require("node:crypto") as typeof import("node:crypto");
     const lastDot = state.lastIndexOf(".");
     if (lastDot <= 0) return false;
     const payload = state.slice(0, lastDot);
@@ -665,7 +676,10 @@ function verifyOAuthState(state: string | undefined): boolean {
     // Timing-safe comparison to prevent HMAC oracle attacks.
     const sigBuf = Buffer.from(sig);
     const expBuf = Buffer.from(expected);
-    if (sigBuf.length !== expBuf.length || !cryptoTimingSafeEqual(sigBuf, expBuf)) return false;
+    const maxLen = Math.max(sigBuf.length, expBuf.length);
+    const paddedSigBuf = Buffer.concat([sigBuf, Buffer.alloc(maxLen - sigBuf.length)]);
+    const paddedExpBuf = Buffer.concat([expBuf, Buffer.alloc(maxLen - expBuf.length)]);
+    if (sigBuf.length !== expBuf.length || !cryptoTimingSafeEqual(paddedSigBuf, paddedExpBuf)) return false;
     // Verify the timestamp portion (second segment) is within 15 minutes.
     const tsPart = payload.split(".")[1];
     if (!tsPart) return false;
@@ -708,7 +722,12 @@ async function dialRateLimiter(req: any, res: any, next: any) {
     });
     return res.status(503).json({ error: status.reason, code: status.code });
   }
-  const result = await rateLimit(userId, { bucket: "outbound_dial", windowMs: DIAL_RATE_WINDOW_MS, max: DIAL_RATE_MAX });
+  let result;
+  try {
+    result = await rateLimit(userId, { bucket: "outbound_dial", windowMs: DIAL_RATE_WINDOW_MS, max: DIAL_RATE_MAX, failClosedOnError: true });
+  } catch (err) {
+    return res.status(503).json({ error: "Rate limiter temporarily unavailable.", code: "RATE_LIMITER_ERROR" });
+  }
   res.setHeader("X-RateLimit-Limit", String(DIAL_RATE_MAX));
   res.setHeader("X-RateLimit-Remaining", String(result.remaining));
   if (!result.allowed) {
@@ -840,7 +859,9 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 const SCOPES = [
   'https://www.googleapis.com/auth/gmail.send',
   'https://www.googleapis.com/auth/userinfo.email',
-  'https://www.googleapis.com/auth/userinfo.profile'
+  'https://www.googleapis.com/auth/userinfo.profile',
+  'https://www.googleapis.com/auth/calendar.readonly',
+  'https://www.googleapis.com/auth/drive.readonly',
 ];
 
 function getGoogleOAuthClient(req: express.Request) {
@@ -6862,7 +6883,101 @@ app.get(
   },
 );
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  Calendar & Drive Integration Routes
+//  Google Calendar sync, Outlook Calendar sync, Google Drive → Knowledge ingestion
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** POST /api/calendar/sync
+ *  Triggers a sync of all connected Google + Outlook calendars for the
+ *  authenticated user into wireline_calendar_events. Safe to call repeatedly —
+ *  events are upserted on (account_id, external_event_id). */
+app.post("/api/calendar/sync", authenticateUser, async (req: any, res: any) => {
+  const userId: string = req.user.id;
+  try {
+    const [googleResult, outlookResult] = await Promise.allSettled([
+      syncGoogleCalendar(userId),
+      syncOutlookCalendar(userId),
+    ]);
+    res.json({
+      google:  googleResult.status === 'fulfilled'  ? googleResult.value  : { status: 'error', error: (googleResult.reason as Error)?.message },
+      outlook: outlookResult.status === 'fulfilled' ? outlookResult.value : { status: 'error', error: (outlookResult.reason as Error)?.message },
+    });
+  } catch (e: any) {
+    log.error("Calendar sync failed", { userId, error: getErrorMessage(e) });
+    res.status(500).json({ error: "Calendar sync failed." });
+  }
+});
+
+/** GET /api/calendar/events
+ *  Returns upcoming calendar events for the authenticated user (next 30 days). */
+app.get("/api/calendar/events", authenticateUser, async (req: any, res: any) => {
+  const userId: string = req.user.id;
+  try {
+    const { data, error } = await db
+      .from("wireline_calendar_events")
+      .select("id, title, start_time, end_time, status, account_id")
+      .eq("user_id", userId)
+      .gte("end_time", new Date().toISOString())
+      .order("start_time", { ascending: true })
+      .limit(100);
+    if (error) throw error;
+    res.json({ events: data || [] });
+  } catch (e: any) {
+    log.error("Calendar events fetch failed", { userId, error: getErrorMessage(e) });
+    res.status(500).json({ error: "Failed to fetch calendar events." });
+  }
+});
+
+/** GET /api/calendar/accounts
+ *  Returns connected calendar accounts for the authenticated user. */
+app.get("/api/calendar/accounts", authenticateUser, async (req: any, res: any) => {
+  const userId: string = req.user.id;
+  try {
+    const { data, error } = await db
+      .from("wireline_calendar_accounts")
+      .select("id, email_address, provider, created_at, updated_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    res.json({ accounts: data || [] });
+  } catch (e: any) {
+    log.error("Calendar accounts fetch failed", { userId, error: getErrorMessage(e) });
+    res.status(500).json({ error: "Failed to fetch calendar accounts." });
+  }
+});
+
+/** POST /api/drive/ingest
+ *  Fetches recent Google Drive documents, extracts knowledge chunks via
+ *  Gemini 2.5 Flash, and upserts them into wireline_agent_lessons for the
+ *  specified agent. */
+app.post("/api/drive/ingest", authenticateUser, claudeRateLimiter, async (req: any, res: any) => {
+  const userId: string = req.user.id;
+  const { agentId } = req.body;
+  if (!agentId || typeof agentId !== 'string') {
+    return res.status(400).json({ error: "agentId is required." });
+  }
+  try {
+    // Verify agent belongs to user
+    const { data: agent, error: agentErr } = await db
+      .from("wireline_agents")
+      .select("id")
+      .eq("id", agentId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (agentErr || !agent) return res.status(404).json({ error: "Agent not found." });
+
+    const result = await syncGoogleDriveToKnowledge(userId, agentId);
+    void auditLogger.logDataModification('knowledge_updated', { userId, resource: 'google_drive_ingest', metadata: result });
+    res.json(result);
+  } catch (e: any) {
+    log.error("Google Drive ingest failed", { userId, agentId, error: getErrorMessage(e) });
+    res.status(500).json({ error: "Drive knowledge ingest failed." });
+  }
+});
+
 // Get connected accounts
+
 app.get("/api/emails/accounts", authenticateUser, async (req: any, res: any) => {
   try {
     const { data: accounts, error } = await db.from('wireline_email_accounts')

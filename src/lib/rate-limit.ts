@@ -39,6 +39,8 @@ export interface RateLimiterOptions {
   windowMs: number;
   /** Maximum requests allowed in the window. */
   max: number;
+  /** Whether to throw an error on Redis failure instead of falling back to memory. */
+  failClosedOnError?: boolean;
 }
 
 /** Check + record a hit. Returns whether the caller should be allowed. */
@@ -61,6 +63,11 @@ export async function rateLimit(
       const resetMs = (window + 1) * opts.windowMs - now;
       return { allowed: count <= opts.max, remaining, resetMs };
     } catch (err) {
+      if (opts.failClosedOnError) {
+        // eslint-disable-next-line no-console
+        console.error(`[rate-limit] redis error on spend-sensitive bucket ${opts.bucket}, failing closed:`, (err as Error).message);
+        throw err;
+      }
       // Fail-OPEN on Redis error — better to serve traffic than to lock
       // out everyone when the Redis quota or network is degraded.
       // eslint-disable-next-line no-console

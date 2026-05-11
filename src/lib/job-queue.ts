@@ -33,7 +33,9 @@ export type JobType =
   | "daily_brief"            // Pre-compute operator daily brief
   | "campaign_dial"          // One outbound dial within a campaign
   | "consent_check"          // Pre-call TCPA gateway check
-  | "purge_old_data";        // GDPR data-retention TTL purge (nightly, per-tenant)
+  | "purge_old_data"          // GDPR data-retention TTL purge (nightly, per-tenant)
+  | "google_drive_ingest"    // Sync documents via Gemini
+  | "calendar_sync";         // Sync Google/Outlook calendars
 
 export interface JobPayload extends Record<string, unknown> {}
 

@@ -2512,3 +2512,32 @@ Make every script line immediately usable. Deliver the playbook now.`;
     maxTokens: 6144,
   });
 }
+/** Shape of a pre-fetched calendar event row (from wireline_calendar_events). */
+export interface CalendarEventRow {
+  title: string | null;
+  start_time: string;
+  end_time: string;
+  status: string | null;
+}
+
+/**
+ * Formats pre-fetched calendar events into a prompt context block.
+ * The caller (server.ts) fetches the rows from the DB and injects them here;
+ * claude-brain.ts itself makes no database calls (pure function).
+ */
+export function buildCalendarContext(events: CalendarEventRow[]): string {
+  if (!events || events.length === 0) return "";
+
+  const lines = [
+    "## CALENDAR AVAILABILITY",
+    "You have access to the user's upcoming calendar events. Use this to avoid double-booking and suggest available times.",
+  ];
+
+  for (const ev of events) {
+    const start = new Date(ev.start_time).toLocaleString('en-US', { timeZoneName: 'short' });
+    const end = new Date(ev.end_time).toLocaleString('en-US', { timeZoneName: 'short' });
+    lines.push(`- [${ev.status ?? 'confirmed'}] ${ev.title ?? 'Busy'}: ${start} to ${end}`);
+  }
+
+  return lines.join("\n");
+}
