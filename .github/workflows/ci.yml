@@ -58,7 +58,7 @@ jobs:
           PRODUCTION_CHECK: "1"
         run: node scripts/check-prod-env.mjs
 
-      - name: Audit (high severity, non-blocking)
-        # `audit` exits non-zero on findings; we surface the report but
-        # don't fail CI on transitive vulns we can't immediately fix.
-        run: npm audit --audit-level=high || true
+      - name: Audit (high severity, blocking with exemptions)
+        # Fails on unexempted high/critical vulns. Exemptions must be
+        # documented in .audit-exemptions with reasoning. Review quarterly.
+        run: node scripts/check-audit-exemptions.mjs

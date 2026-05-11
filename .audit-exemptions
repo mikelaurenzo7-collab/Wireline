@@ -1,0 +1,14 @@
+# NPM Audit Exemptions
+#
+# Format: GHSA-XXXX-XXXX-XXXX (one per line)
+# Include reasoning inline for each exemption.
+#
+# Review quarterly (or when a new exemption is added) and prune
+# entries that have been fixed upstream.
+#
+# This file is read by scripts/check-audit-exemptions.mjs — add the
+# GHSA ID here to suppress it in CI, but NEVER suppress critical
+# vulnerabilities without explicit approval and documented mitigation.
+
+# Example (remove when no real exemptions exist):
+# GHSA-1234-5678-9abc  # transitive vuln in dev-only tool, no runtime impact
