@@ -33,6 +33,7 @@ import { getErrorMessage } from "../lib/server-utils";
 import { dispatchWebhook } from "../lib/webhook-helpers";
 import { analyzeLiveSentiment } from "../lib/gemini-brain";
 import { IntegrationService } from "../lib/integrations";
+import { NotificationService } from "../lib/notifications";
 
 const router = express.Router();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
@@ -375,7 +376,15 @@ Today is ${currentDateTime}.
                urgency: result.urgency 
              }).eq('id', callId);
              
-             // TODO: Trigger push notification / Omnichannel alert here.
+             // Circuit Breaker Notification
+             const notifier = new NotificationService(agent.user_id);
+             await notifier.sendUrgentAlert({
+               title: "High Escalation Risk Detected",
+               message: `Live monitoring detected a high-stress situation: ${result.reason}`,
+               callId: callId,
+               metadata: { urgency: result.urgency }
+             });
+             
              log.warn("Circuit Breaker Tripped", { callId, reason: result.reason, urgency: result.urgency });
           }
         }).catch(e => log.error("Circuit breaker analysis failed", { error: e.message }));

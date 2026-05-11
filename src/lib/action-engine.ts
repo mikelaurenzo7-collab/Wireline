@@ -2,6 +2,7 @@ import { db, log } from "./server-context";
 import { type ActionItem, type ActionResult } from "./action-types";
 import { getErrorMessage } from "./server-utils";
 import { IntegrationService } from "./integrations";
+import { CRMService } from "./crm-service";
 
 /**
  * The Action Engine is responsible for executing tasks extracted by the AI
@@ -109,8 +110,8 @@ async function handleScheduleCalendar(userId: string, action: ActionItem, contex
 }
 
 async function handleUpdateCRM(userId: string, action: ActionItem, context: { sourceId: string }) {
-  // Update the outbound lead status directly if we have a match.
-  const { error } = await db.from("wireline_outbound_leads")
+  // 1. Update internal Wireline leads table
+  const { error: internalError } = await db.from("wireline_outbound_leads")
     .update({ 
       status: action.payload.status,
       last_contact_summary: action.payload.notes || "Updated by AI Action Engine"
@@ -118,9 +119,24 @@ async function handleUpdateCRM(userId: string, action: ActionItem, context: { so
     .eq("user_id", userId)
     .eq("customer_number", action.payload.customer_number);
 
-  if (error) {
-    log.warn("CRM update failed, falling back to task", { error: error.message });
-    return await handleCreateInternalTask(userId, action, context);
+  if (internalError) {
+    log.warn("Internal CRM update failed", { error: internalError.message });
+  }
+
+  // 2. Sync with external CRM if configured
+  const { data: settings } = await db.from("wireline_settings")
+    .select("crm_type")
+    .eq("user_id", userId)
+    .single();
+
+  if (settings?.crm_type && (settings.crm_type === "salesforce" || settings.crm_type === "hubspot")) {
+    const crm = new CRMService(userId);
+    await crm.updateLead({
+      crmType: settings.crm_type,
+      customerNumber: action.payload.customer_number,
+      status: action.payload.status,
+      notes: action.payload.notes
+    });
   }
   
   return { success: true };
