@@ -90,6 +90,22 @@ swap cleanly.
 - `@vapi-ai/web` — voice integration.
 - `@supabase/supabase-js` — database / auth.
 
+### Optional integrations (do not strip even if unconfigured)
+
+The following services are wired through the Action Engine and run as
+no-ops when their env vars are unset — they MUST stay wired so operators
+can opt in at any time without a code change:
+
+- **Apollo.io** — autonomous lead prospecting. Powers the
+  `prospect_leads` action type via `src/lib/apollo-service.ts`. Gated
+  by `APOLLO_API_KEY`; absent key → `searchLeads()` returns `[]`.
+- **DocuSign** — e-signature for the `send_contract` action type via
+  `src/lib/docusign-service.ts`. Gated by `DOCUSIGN_ACCOUNT_ID` plus
+  one of `DOCUSIGN_JWT_TOKEN` (preferred) or `DOCUSIGN_ACCESS_TOKEN`
+  (fallback). Absent creds → `sendContract()` logs a warning and
+  returns `null`; the operator-approval draft path in
+  `action-engine.ts` still runs.
+
 ## Env vars that MUST stay documented in `.env.example`
 
 - `ANTHROPIC_API_KEY` — unlocks every `/api/claude/*` endpoint and the
@@ -99,6 +115,11 @@ swap cleanly.
 - `VAPI_WEBHOOK_SECRET` — webhook signature verification.
 - `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` — db + auth.
 - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — Gmail OAuth.
+- `APOLLO_API_KEY` — optional. Required for the `prospect_leads` Action
+  Engine path (autonomous Apollo.io prospecting).
+- `DOCUSIGN_BASE_URI` / `DOCUSIGN_ACCOUNT_ID` / `DOCUSIGN_JWT_TOKEN` /
+  `DOCUSIGN_ACCESS_TOKEN` — optional. Required for the `send_contract`
+  Action Engine path (DocuSign e-signature).
 
 ## Database schema
 
