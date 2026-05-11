@@ -10,6 +10,19 @@ export function stripeAvailable(): boolean {
   return !!process.env.STRIPE_SECRET_KEY;
 }
 
+/** 
+ * Typed helper to extract current_period_end from a Stripe subscription.
+ * In stripe@22, we read this from the first item to ensure accuracy.
+ */
+export function getSubscriptionCurrentPeriodEnd(sub: Stripe.Subscription): number | null {
+  // Try the first item first (new source of truth in @22)
+  const itemPeriodEnd = sub.items?.data?.[0]?.current_period_end;
+  if (typeof itemPeriodEnd === 'number') return itemPeriodEnd;
+  
+  // Fallback to top-level for backwards compatibility during migration
+  return (sub as any).current_period_end || null;
+}
+
 /** Sync a Stripe subscription object into the local wireline_subscriptions table.
  *  Maintains the mirror state used by the rest of the app to check plan tiers. */
 export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
@@ -33,7 +46,10 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
     status: sub.status,
     plan_id: sub.items.data[0]?.price.id,
     cancel_at_period_end: sub.cancel_at_period_end,
-    current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+    current_period_end: (() => {
+      const end = getSubscriptionCurrentPeriodEnd(sub);
+      return end ? new Date(end * 1000).toISOString() : null;
+    })(),
   }, { onConflict: "user_id" });
 
   if (error) {

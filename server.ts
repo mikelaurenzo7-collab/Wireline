@@ -57,7 +57,7 @@ import { syncGoogleCalendar } from "./src/services/google-calendar-sync";
 import { syncOutlookCalendar } from "./src/services/outlook-calendar-sync";
 import { syncGoogleDriveToKnowledge } from "./src/services/google-drive-sync";
 import { db, IS_PROD, log, fetchWithTimeout, auditLogger, requirePermission, requireRole, quotaTracker } from "./src/lib/server-context";
-import { stripe, stripeAvailable } from "./src/lib/stripe-helpers";
+import { stripe, stripeAvailable, getSubscriptionCurrentPeriodEnd } from "./src/lib/stripe-helpers";
 import { SCOPES, MS_SCOPES, getGoogleOAuthClient, getMicrosoftRedirectUri, refreshMicrosoftToken, getMicrosoftAccessToken, generateOAuthState, verifyOAuthState, sendEmailViaMicrosoft } from "./src/lib/oauth-helpers";
 import { VAPI_WEBHOOK_SECRET, timingSafeEq, sanitizePhone, MAX_CONTEXT_PREVIEW_LENGTH, buildCallerProfileBlock, OUTBOUND_ARCHETYPE_BY_ROLE, getArchetypeConfig, buildRoleToolDefs, PRESERVED_LEAD_STATUSES, SENTIMENT_ANGRY_SIGNALS, SENTIMENT_POSITIVE_SIGNALS } from "./src/lib/vapi-helpers";
 import { attemptWebhookDelivery, dispatchWebhook, processWebhookRetries, WEBHOOK_EVENTS, type WebhookEvent } from "./src/lib/webhook-helpers";
@@ -743,7 +743,10 @@ async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
     stripe_subscription_id: sub.id,
     plan: plan?.id || null,
     status: stripeStatus,
-    current_period_end: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null,
+    current_period_end: (() => {
+      const end = getSubscriptionCurrentPeriodEnd(sub);
+      return end ? new Date(end * 1000).toISOString() : null;
+    })(),
     cancel_at_period_end: !!sub.cancel_at_period_end,
     updated_at: new Date().toISOString(),
   }, { onConflict: "user_id" });
@@ -761,8 +764,10 @@ async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
     status: stripeStatus,
     legacy_status: localStatus,
     cancel_at_period_end: !!sub.cancel_at_period_end,
-    current_period_end: sub.current_period_end
-      ? new Date(sub.current_period_end * 1000).toISOString() : null,
+    current_period_end: (() => {
+      const end = getSubscriptionCurrentPeriodEnd(sub);
+      return end ? new Date(end * 1000).toISOString() : null;
+    })(),
     at: new Date().toISOString(),
   }).catch((e: unknown) => { log.warn("subscription.changed webhook dispatch failed", { user_id: userId, error: getErrorMessage(e) }); });
 
