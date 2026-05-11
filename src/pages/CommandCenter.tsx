@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { LayoutGrid, RefreshCw, ShieldCheck } from 'lucide-react';
+import { clsx } from 'clsx';
 import { LiveMonitor } from '../components/CommandCenter/LiveMonitor';
 import { ActionFeed } from '../components/CommandCenter/ActionFeed';
-import { PageTransition } from '../components/layout/PageTransition';
+import PageTransition from '../components/layout/PageTransition';
 
 export default function CommandCenter() {
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -85,9 +86,4 @@ export default function CommandCenter() {
       </div>
     </PageTransition>
   );
-}
-
-// Helper for conditional classes (since I can't import it easily here without a build step check)
-function clsx(...args: any[]) {
-  return args.filter(Boolean).join(' ');
 }
