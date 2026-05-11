@@ -19,6 +19,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import express, { type Request, type Response, type NextFunction } from "express";
 import http from "node:http";
+import { buildCSP } from "./csp";
 
 // ──────────────────────────────────────────────────────────
 //  Minimal middleware stubs that mirror server.ts behaviour
@@ -312,21 +313,6 @@ describe("Spend-cap middleware on Claude-backed routes (P0 audit fix)", () => {
 // ──────────────────────────────────────────────────────────
 
 describe("CSP nonce-based script-src (P0 audit fix)", () => {
-  // Replicate the updated buildCSP logic from server.ts so we can assert
-  // on it without importing server.ts.
-  function buildCSP(isDev: boolean, nonce?: string): string {
-    const scriptSrc = isDev
-      ? "'self' 'unsafe-inline' 'unsafe-eval'"
-      : nonce
-        ? `'self' 'nonce-${nonce}'`
-        : "'self'";
-    return [
-      `default-src 'self'`,
-      `script-src ${scriptSrc}`,
-      `style-src 'self' 'unsafe-inline'`,
-    ].join("; ");
-  }
-
   it("production CSP without nonce has no 'unsafe-inline' on script-src", () => {
     const csp = buildCSP(false);
     const scriptSrcDir = csp.split("; ").find((d) => d.startsWith("script-src"));
@@ -354,7 +340,7 @@ describe("CSP nonce-based script-src (P0 audit fix)", () => {
 
   it("dev CSP with nonce still keeps 'unsafe-inline' and 'unsafe-eval'", () => {
     // In dev, the nonce is ignored — Vite always needs unsafe-inline.
-    const csp = buildCSP(true, "abc123==");
+    const csp = buildCSP(true, "abc123-_");
     expect(csp).toContain("'unsafe-inline'");
     expect(csp).toContain("'unsafe-eval'");
   });

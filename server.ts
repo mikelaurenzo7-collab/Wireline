@@ -21,10 +21,11 @@ import { SchemaType } from "@google/generative-ai";
 import { createClient } from "@supabase/supabase-js";
 import { google } from "googleapis";
 import Stripe from "stripe";
-import { randomUUID, randomBytes as cryptoRandomBytes, timingSafeEqual as cryptoTimingSafeEqual } from "node:crypto";
+import { randomUUID, timingSafeEqual as cryptoTimingSafeEqual } from "node:crypto";
 import * as claudeBrain from "./src/lib/claude-brain";
 import { AuditLogger } from "./src/lib/audit-logger";
 import { createAuditEventsHandler, createAuditStatsHandler, createAuditExportHandler } from "./src/lib/audit-routes";
+import { buildCSP, buildConnectSrcs, buildSupabaseOrigin, generateCspNonce } from "./src/lib/csp";
 import { rateLimit, isRedisConfigured, startMemoryCleanup, distributedLimiterStatus } from "./src/lib/rate-limit";
 import { SentryEvents } from "./src/lib/sentry-events";
 import { AgentFormSchema, DirectiveSchema, KnowledgeSchema, EmailReplySchema, EmailDraftSchema, CampaignCreateSchema, CampaignUpdateSchema, OutboundBulkSchema, AgentBusinessProfileSchema, parseFormData, GeminiLeadScoreSchema, GeminiLessonSchema, GeminiFollowupTaskSchema, GeminiEmailScoreSchema, GeminiAgentExtractionSchema, FleetTaskCreateSchema } from "./src/lib/form-validators";
@@ -259,71 +260,10 @@ app.use((req: any, res: any, next: any) => {
 //  connect-src permits Supabase, Anthropic, Vapi, and Google APIs so
 //  the browser's fetch() is allowed to reach those origins.
 // ────────────────────────────────────────────────────────────────────
-const supabaseOrigin = (() => {
-  try {
-    const u = new URL(process.env.VITE_SUPABASE_URL || "https://placeholder.supabase.co");
-    return u.origin;
-  } catch { return "https://*.supabase.co"; }
-})();
+const supabaseOrigin = buildSupabaseOrigin();
 
 // Build CSP connect-src from known external APIs.
-const CSP_CONNECT_SRCS = [
-  "'self'",
-  supabaseOrigin,
-  "https://*.supabase.co",
-  "wss://*.supabase.co",
-  "https://api.anthropic.com",
-  "https://api.vapi.ai",
-  "wss://api.vapi.ai",
-  "https://accounts.google.com",
-  "https://oauth2.googleapis.com",
-  "https://www.googleapis.com",
-  "https://login.microsoftonline.com",
-  "https://graph.microsoft.com",
-  "https://api.stripe.com",
-].join(" ");
-
-function buildCSP(isDev: boolean, nonce?: string): string {
-  // In dev, keep 'unsafe-inline' + 'unsafe-eval' for Vite HMR.
-  // In prod, remove 'unsafe-inline' from script-src entirely.  OAuth callback
-  // pages that need an inline postMessage script get a per-request nonce
-  // injected via buildCSP(false, nonce) — the caller also sets nonce="${nonce}"
-  // on the <script> tag so only that one specific script is allowed.
-  const scriptSrc = isDev
-    ? "'self' 'unsafe-inline' 'unsafe-eval'"
-    : nonce
-      ? `'self' 'nonce-${nonce}'`
-      : "'self'";
-  return [
-    `default-src 'self'`,
-    `script-src ${scriptSrc}`,
-    `style-src 'self' 'unsafe-inline'`,
-    `img-src 'self' data: blob: https:`,
-    `font-src 'self' data:`,
-    `connect-src ${CSP_CONNECT_SRCS}`,
-    `media-src 'self' blob:`,
-    `worker-src 'self' blob:`,
-    `frame-ancestors 'none'`,
-    `base-uri 'self'`,
-    `form-action 'self'`,
-  ].join("; ");
-}
-
-/** Generate a cryptographically random URL-safe base64 nonce for CSP script tags.
- * Uses base64url encoding (RFC 4648 §5) which replaces + → - and / → _ so the
- * nonce contains only alphanumeric, -, and _ characters — safe for HTML
- * attributes, URLs, and HTTP headers without additional escaping.
- */
-function generateCspNonce(): string {
-  const nonce = cryptoRandomBytes(16).toString("base64url");
-  // Defensive: base64url output must only contain URL-safe characters.
-  // This invariant always holds but we verify it explicitly to detect
-  // any future encoding change at the callsite.
-  if (!/^[A-Za-z0-9_-]+$/.test(nonce)) {
-    throw new Error("generateCspNonce: unexpected character in nonce — this is a bug");
-  }
-  return nonce;
-}
+const CSP_CONNECT_SRCS = buildConnectSrcs(supabaseOrigin);
 
 app.use((req: any, res: any, next: any) => {
   // Attach request metadata to Sentry for context in error traces
@@ -346,7 +286,7 @@ app.use((req: any, res: any, next: any) => {
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader("Permissions-Policy", "geolocation=(), camera=(), microphone=(self)");
-  res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD));
+  res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, undefined, CSP_CONNECT_SRCS));
   if (IS_PROD) {
     // 6 months HSTS preload-eligible — only in prod so dev over http stays usable.
     res.setHeader("Strict-Transport-Security", "max-age=15552000; includeSubDomains");
@@ -6516,7 +6456,7 @@ app.get(['/api/oauth/google/callback', '/api/oauth/google/callback/'], oauthRate
     const safeOrigin = JSON.stringify(targetOrigin);
     // Per-request nonce removes 'unsafe-inline' from script-src for this response.
     const cspNonce = generateCspNonce();
-    res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, cspNonce));
+    res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, cspNonce, CSP_CONNECT_SRCS));
     res.send(`
       <html>
         <body>
@@ -6737,7 +6677,7 @@ app.get(
       const safeOrigin = JSON.stringify(targetOrigin);
       // Per-request nonce removes 'unsafe-inline' from script-src for this response.
       const cspNonce = generateCspNonce();
-      res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, cspNonce));
+      res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, cspNonce, CSP_CONNECT_SRCS));
       res.send(`
         <html><body><script nonce="${cspNonce}">
           if (window.opener) {
