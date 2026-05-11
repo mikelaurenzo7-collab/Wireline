@@ -1543,3 +1543,10 @@ BEGIN
         EXECUTE 'CREATE POLICY "Users can manage their own calendar events" ON wireline_calendar_events FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id)';
     END IF;
 END `;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- wireline_webhook_deliveries user_id + created_at — 2026-05-11
+-- Speeds up operator SLO queries (per-tenant webhook success window).
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE INDEX IF NOT EXISTS wireline_webhook_deliveries_user_created_idx
+    ON wireline_webhook_deliveries(user_id, created_at DESC);

@@ -4,6 +4,7 @@ import { getErrorMessage } from "../lib/server-utils";
 import * as claudeBrain from "../lib/claude-brain";
 import { getHealthCapabilities, getIntegrationsStatus } from "../lib/integrations-registry";
 import { authenticateUser } from "../middleware/auth";
+import { getOperatorSloSnapshot } from "../lib/operator-slos";
 
 const router = express.Router();
 
@@ -66,6 +67,18 @@ router.get("/integrations", healthRateLimiter, authenticateUser, (_req, res) => 
     integrations: getIntegrationsStatus(),
     timestamp: new Date().toISOString(),
   });
+});
+
+/** Authenticated SLO snapshot for the signed-in tenant (Admin → System). */
+router.get("/slos", healthRateLimiter, authenticateUser, async (req: any, res) => {
+  try {
+    const n = Number(req.query.window_hours);
+    const hours = Number.isFinite(n) ? Math.min(Math.max(n, 1), 168) : 24;
+    const snapshot = await getOperatorSloSnapshot(db, req.user.id, hours);
+    res.json(snapshot);
+  } catch (err: any) {
+    res.status(500).json({ error: getErrorMessage(err) });
+  }
 });
 
 export default router;

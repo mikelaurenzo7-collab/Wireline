@@ -5,6 +5,8 @@ import { getErrorMessage } from "./server-utils";
 import { startWorker, type JobRow, enqueue } from "./job-queue";
 import { executeAction } from "./action-engine";
 import { ActionItemSchema } from "./action-types";
+import { persistClaudeAuditRecords } from "../middleware/audit-middleware";
+import { buildCallCompletedOutcome, dispatchWebhook } from "./webhook-helpers";
 
 /**
  * Global job handler.
@@ -64,16 +66,63 @@ export async function handleJob(job: JobRow): Promise<void> {
       );
     }
     
-    // Use actual token counts from the Anthropic response when available;
-    // fall back to the character-based estimate only if the capture is empty.
-    const actualTokens = records.reduce((sum, r) => sum + r.input_tokens + r.output_tokens, 0);
-    const tokenCount = actualTokens > 0
-      ? actualTokens
-      : Math.ceil(((p.transcript?.length ?? 0) + (p.summary?.length ?? 0)) / 4);
-      
-    await quotaTracker.checkAndIncrement(p.userId, 'claude_tokens_daily', tokenCount).catch((e: unknown) => {
-      log.warn("quota token increment failed — usage may be under-counted", { user_id: p.userId, error: getErrorMessage(e) });
+    if (useFlash) {
+      const tokenCount = Math.ceil(((p.transcript?.length ?? 0) + (p.summary?.length ?? 0)) / 4);
+      await quotaTracker.checkAndIncrement(p.userId, 'claude_tokens_daily', Math.max(1, tokenCount)).catch((e: unknown) => {
+        log.warn("quota token increment failed — usage may be under-counted", { user_id: p.userId, error: getErrorMessage(e) });
+      });
+    } else if (records.length) {
+      await persistClaudeAuditRecords({
+        userId: p.userId,
+        action: "jobs.post_call_enrichment",
+        records,
+        requestMeta: { vapi_call_id: p.callId, agent_id: p.agentId },
+      }).catch((e: unknown) => log.warn("post_call audit persist failed", { error: getErrorMessage(e) }));
+    } else {
+      const tokenCount = Math.ceil(((p.transcript?.length ?? 0) + (p.summary?.length ?? 0)) / 4);
+      await quotaTracker.checkAndIncrement(p.userId, 'claude_tokens_daily', Math.max(1, tokenCount)).catch((e: unknown) => {
+        log.warn("quota token increment failed — usage may be under-counted", { user_id: p.userId, error: getErrorMessage(e) });
+      });
+    }
+
+    const { data: logRow } = await db
+      .from("wireline_call_logs")
+      .select("direction, customer_number")
+      .eq("vapi_call_id", p.callId)
+      .maybeSingle();
+    const direction = logRow?.direction === "outbound" ? "outbound" as const : "inbound" as const;
+    const enrichment = {
+      lead_score: result.lead_score,
+      intent_label: result.intent_label,
+      sentiment: result.sentiment,
+      coaching_note: result.coaching_note,
+      lesson_extracted: !!(result.lesson && result.lesson.trim()),
+    };
+    const payload = buildCallCompletedOutcome({
+      vapi_call_id: p.callId,
+      agent_id: p.agentId,
+      customer_number: logRow?.customer_number || p.customerNumber || null,
+      direction,
+      duration_seconds: p.durationSeconds,
+      enrichment_source: "async_post_call_job",
+      enrichment,
     });
+    void dispatchWebhook(p.userId, "call.completed", payload);
+    if (typeof result.lead_score === "number" && result.lead_score >= 70) {
+      void dispatchWebhook(p.userId, "lead.hot", {
+        vapi_call_id: p.callId,
+        lead_score: result.lead_score,
+        customer_number: payload.customer_number,
+      });
+    }
+    const intent = (result.intent_label || "").toLowerCase();
+    if (intent === "escalation" || intent === "escalate") {
+      void dispatchWebhook(p.userId, "call.escalated", {
+        vapi_call_id: p.callId,
+        intent_label: result.intent_label,
+        customer_number: payload.customer_number,
+      });
+    }
 
     // Automatically enqueue action extraction after enrichment
     await enqueue(db, {

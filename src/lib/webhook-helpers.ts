@@ -23,6 +23,33 @@ export const WEBHOOK_EVENTS: WebhookEvent[] = [
   'lead.received',
 ];
 
+/** Semantic version for CRM consumers parsing `call.completed.data`. Bump when shape changes. */
+export const WIREFLINE_CALL_OUTCOME_SCHEMA_VERSION = "2026-05-01";
+
+export interface WirelineCallCompletedOutcome {
+  outcome_schema_version: typeof WIREFLINE_CALL_OUTCOME_SCHEMA_VERSION;
+  vapi_call_id: string;
+  agent_id?: string | null;
+  customer_number?: string | null;
+  direction: "inbound" | "outbound";
+  duration_seconds?: number;
+  enrichment_source: "sync_vapi_webhook" | "async_post_call_job";
+  enrichment?: {
+    lead_score?: number | null;
+    intent_label?: string | null;
+    sentiment?: string | null;
+    coaching_note?: string | null;
+    lesson_extracted?: boolean;
+  } | null;
+}
+
+export function buildCallCompletedOutcome(opts: Omit<WirelineCallCompletedOutcome, "outcome_schema_version">): WirelineCallCompletedOutcome {
+  return {
+    outcome_schema_version: WIREFLINE_CALL_OUTCOME_SCHEMA_VERSION,
+    ...opts,
+  };
+}
+
 export async function attemptWebhookDelivery(deliveryId: string | number) {
   const { data: delivery, error: fetchErr } = await db
     .from("wireline_webhook_deliveries")

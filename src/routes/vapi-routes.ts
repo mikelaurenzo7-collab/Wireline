@@ -24,6 +24,8 @@ import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "../lib/agent
 import { buildCustomerIntelBlock } from "../lib/customer-intel";
 import { SentryEvents } from "../lib/sentry-events";
 import { getErrorMessage } from "../lib/server-utils";
+import { persistClaudeAuditRecords } from "../middleware/audit-middleware";
+import { buildCallCompletedOutcome, dispatchWebhook, type WirelineCallCompletedOutcome } from "../lib/webhook-helpers";
 import { analyzeLiveSentiment } from "../lib/gemini-brain";
 import { IntegrationService } from "../lib/integrations";
 import { NotificationService } from "../lib/notifications";
@@ -445,19 +447,25 @@ Today is ${currentDateTime}.
           direction: call?.type === "outboundPhoneCall" ? "outbound" : "inbound",
         });
 
-        let claudeAnalysisDone = false;
-        if (claudeBrain.isClaudeAvailable() && message.transcript) {
+        const userId = agent?.user_id as string | undefined;
+        const direction = call?.type === "outboundPhoneCall" ? "outbound" as const : "inbound" as const;
+        let enrichment: WirelineCallCompletedOutcome["enrichment"] = null;
+
+        if (userId && claudeBrain.isClaudeAvailable() && message.transcript) {
           try {
             const { data: agentDetail } = await db.from('wireline_agents').select('name, archetype, role').eq('id', webhookAgentId).single();
-            const result = await claudeBrain.postCallAnalysis({
-              agentName: agentDetail?.name || 'Wireline Agent',
-              archetype: agentDetail?.archetype || 'Receptionist',
-              role: agentDetail?.role || undefined,
-              customerNumber: call?.customer?.number,
-              durationSeconds: duration,
-              summary: analysis?.summary || '',
-              transcript: message.transcript || '',
-            });
+            const cap = await claudeBrain.withAuditCapture(() =>
+              claudeBrain.postCallAnalysis({
+                agentName: agentDetail?.name || 'Wireline Agent',
+                archetype: agentDetail?.archetype || 'Receptionist',
+                role: agentDetail?.role || undefined,
+                customerNumber: call?.customer?.number,
+                durationSeconds: duration,
+                summary: analysis?.summary || '',
+                transcript: message.transcript || '',
+              }),
+            );
+            const result = cap.result;
 
             await db.from('wireline_call_logs').update({
               lead_score: result.lead_score,
@@ -466,9 +474,47 @@ Today is ${currentDateTime}.
               coaching_note: result.coaching_note,
             }).eq('vapi_call_id', call?.id);
 
-            claudeAnalysisDone = true;
+            await persistClaudeAuditRecords({
+              userId,
+              action: "vapi.post_call_analysis",
+              records: cap.records,
+              requestMeta: {
+                vapi_call_id: call?.id,
+                agent_id: webhookAgentId,
+              },
+            }).catch((e: unknown) => log.warn("Vapi Claude audit persist failed", { error: getErrorMessage(e) }));
+
+            enrichment = {
+              lead_score: result.lead_score,
+              intent_label: result.intent_label,
+              sentiment: result.sentiment,
+              coaching_note: result.coaching_note,
+              lesson_extracted: !!(result.lesson && result.lesson.trim()),
+            };
+
           } catch (err: any) {
             log.warn("Claude post-call analysis failed", { error: getErrorMessage(err) });
+          }
+        }
+
+        if (userId) {
+          const base = buildCallCompletedOutcome({
+            vapi_call_id: call?.id || "unknown",
+            agent_id: webhookAgentId,
+            customer_number: call?.customer?.number || null,
+            direction,
+            duration_seconds: duration,
+            enrichment_source: "sync_vapi_webhook",
+            enrichment,
+          });
+          void dispatchWebhook(userId, "call.completed", base);
+          const score = enrichment?.lead_score;
+          if (typeof score === "number" && score >= 70) {
+            void dispatchWebhook(userId, "lead.hot", { vapi_call_id: call?.id, lead_score: score, customer_number: base.customer_number });
+          }
+          const intent = (enrichment?.intent_label || "").toLowerCase();
+          if (intent === "escalation" || intent === "escalate") {
+            void dispatchWebhook(userId, "call.escalated", { vapi_call_id: call?.id, intent_label: enrichment?.intent_label, customer_number: base.customer_number });
           }
         }
 

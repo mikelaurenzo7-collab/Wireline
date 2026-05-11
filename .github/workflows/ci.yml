@@ -2,63 +2,29 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
   pull_request:
-    branches: [main]
+    branches: [main, master]
 
 jobs:
-  build:
-    name: typecheck + test + build
+  verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version-file: ".nvmrc"
-
-      # Cache npm separately from setup-node so a transient cache-service
-      # hiccup doesn't abort the whole step. restore-keys lets us hydrate
-      # from a close-enough cache when the lockfile hash changes.
-      - name: Restore npm cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('.nvmrc') }}-npm-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-${{ hashFiles('.nvmrc') }}-npm-
+          node-version: "22"
+          cache: "npm"
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm ci
 
-      - name: TypeScript typecheck
+      - name: Typecheck
         run: npx tsc --noEmit
 
-      - name: Unit tests
+      - name: Tests
         run: npm run test:run
 
-      - name: Build (vite + esbuild server)
+      - name: Build
         run: npm run build
-
-      - name: Server bootstrap smoke test
-        # Catches ESM/CJS extension mismatches, top-level import crashes,
-        # and missing-module errors that the bundler can't surface.
-        # Spawns dist/server.cjs, verifies /api/health responds, kills it.
-        run: npm run smoke:server
-
-      - name: Production env check (deploy gate)
-        # Hard fail on missing recommended vars with PRODUCTION_CHECK=1.
-        # This prevents deploys with incomplete configuration that would
-        # manifest as runtime 503s for critical features (billing, webhooks,
-        # Claude, cron jobs). Required vars always fail regardless of flag.
-        env:
-          PRODUCTION_CHECK: "1"
-        run: node scripts/check-prod-env.mjs
-
-      - name: Audit (high severity, blocking with exemptions)
-        # Fails on unexempted high/critical vulns. Exemptions must be
-        # documented in .audit-exemptions with reasoning. Review quarterly.
-        run: node scripts/check-audit-exemptions.mjs

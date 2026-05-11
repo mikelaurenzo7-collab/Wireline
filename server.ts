@@ -45,9 +45,10 @@ import { isPrivateIp, isPrivateIpv6, isSsrfUrl, validateWebhookUrl } from "./src
 import { evaluateOutboundConsent, getConsentRuleForPhone, buildConsentLedgerRow, detectOptOut, CONSENT_RULE_VERSION } from "./src/lib/tcpa-consent";
 import { QuotaTracker, quotaRejectionHeaders, validateOverride, PLAN_DEFAULTS, type PlanTier } from "./src/lib/tenant-quotas";
 import { enqueue, startWorker, getQueueStats, type JobRow } from "./src/lib/job-queue";
-import { claudeRateLimiter, quotaRateLimit, jobsRateLimit, tcpaRateLimit, soc2RateLimit, webhooksRateLimit } from "./src/middleware/api-rate-limits";
+import { claudeRateLimiter, quotaRateLimit, jobsRateLimit, tcpaRateLimit, webhooksRateLimit } from "./src/middleware/api-rate-limits";
 import { enforceSpendCap, enforce24hSpendCap, recordDailySpend, DAILY_SPEND_LIMIT_USD, evaluateSpend, getBudgetSnapshot, clearBudgetCache } from "./src/lib/spend-guards";
 import { withAudit } from "./src/middleware/audit-middleware";
+import { enforceClaudeDailyTokenQuota } from "./src/middleware/claude-quota-middleware";
 import { claudeErr } from "./src/lib/claude-response-helpers";
 import { cachedInsight, setCachedInsight } from "./src/lib/insights-cache";
 import { encryptSecret, decryptSecret, lastFour, isVaultConfigured } from "./src/lib/secret-vault";
@@ -76,6 +77,7 @@ import complianceRouter from "./src/routes/compliance-routes";
 import qaRouter from "./src/routes/qa-routes";
 import quotaRouter from "./src/routes/quota-routes";
 import jobRouter from "./src/routes/job-routes";
+import soc2Router from "./src/routes/soc2-routes";
 import { authenticateUser } from "./src/middleware/auth";
 import { initJobWorker } from "./src/lib/job-worker";
 import { validateStartupEnv } from "./src/lib/startup";
@@ -794,6 +796,12 @@ app.use(agentRouter);
 app.use(campaignRouter);
 app.use(fleetRouter);
 app.use(auditRouter);
+// Claude-backed insight reads — audit context MUST mount before insightsRouter so
+// AsyncLocalStorage wraps the handlers (insights routes declare full `/api/...` paths).
+app.use(
+  ["/api/insights/topics", "/api/insights/failure-modes", "/api/insights/daily-brief"],
+  withAudit("insights"),
+);
 app.use(insightsRouter);
 
 // Vapi webhook moved to src/routes/vapi-routes.ts
@@ -3459,13 +3467,12 @@ app.use("/api/claude", (req: any, res: any, next: any) => {
   if (req.path === "/status") return next();
   return authenticateUser(req, res, () =>
     enforce24hSpendCap(req, res, () =>
-      enforceSpendCap(req, res, () => withAudit("claude")(req, res, next)),
+      enforceSpendCap(req, res, () =>
+        enforceClaudeDailyTokenQuota(req, res, () => withAudit("claude")(req, res, next)),
+      ),
     ),
   );
 });
-app.use(["/api/insights/topics", "/api/insights/failure-modes", "/api/insights/daily-brief"],
-  withAudit("insights"),
-);
 
 // Status / health
 app.get("/api/claude/status", authenticateUser, async (_req: any, res: any) => {
@@ -5903,6 +5910,7 @@ app.use("/api/quotas", quotaRouter);
 // ──────────────────────────────────────────────────────────────────────────────
 // Job routes moved to ./src/routes/job-routes.ts
 app.use("/api/jobs", jobRouter);
+app.use(soc2Router);
 
 // TCPA consent check moved to ./src/routes/compliance-routes.ts
 app.use("/api", complianceRouter);

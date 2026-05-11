@@ -26,7 +26,7 @@ interface WebhookRow {
 }
 
 const EVENT_DESCRIPTIONS: Record<string, string> = {
-  "call.completed":     "Every voice call after post-call enrichment",
+  "call.completed":     "After each voice call — includes outcome_schema_version, scores, webhook-friendly CRM payload",
   "call.escalated":     "Calls flagged as angry / requiring escalation",
   "lead.received":      "New lead pushed via the inbound intake API",
   "lead.hot":           "When a call's lead score crosses 70",

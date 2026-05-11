@@ -47,6 +47,7 @@ export default function AdminSettings() {
     docsUrl?: string;
   };
   const [integrations, setIntegrations] = useState<IntegrationRow[] | null>(null);
+  const [operationalSlos, setOperationalSlos] = useState<Record<string, unknown> | null>(null);
 
   const [newNumber, setNewNumber] = useState("");
   const [newNumberVapiId, setNewNumberVapiId] = useState("");
@@ -63,7 +64,7 @@ export default function AdminSettings() {
     anthropic: "https://docs.anthropic.com/en/docs/about-claude/models/overview",
   }[settings.voice_llm_provider] ?? "https://ai.google.dev/gemini-api/docs/models";
 
-  useEffect(() => { fetchData(); fetchClaudeStatus(); fetchIntegrations(); }, []);
+  useEffect(() => { fetchData(); fetchClaudeStatus(); fetchIntegrations(); fetchOperationalSlos(); }, []);
 
   const fetchClaudeStatus = async () => {
     try {
@@ -80,6 +81,37 @@ export default function AdminSettings() {
         setIntegrations(d.integrations || []);
       }
     } catch (_) { /* non-critical */ }
+  };
+
+  const fetchOperationalSlos = async () => {
+    try {
+      const r = await authFetch("/api/health/slos");
+      if (r.ok) setOperationalSlos(await r.json());
+      else setOperationalSlos(null);
+    } catch (_) {
+      setOperationalSlos(null);
+    }
+  };
+
+  const downloadEvidencePack = async () => {
+    try {
+      const r = await authFetch("/api/soc2/evidence-pack");
+      if (!r.ok) {
+        toastError("Export unavailable", "Requires audit.read permission — owner, admin, or auditor roles.");
+        return;
+      }
+      const data = await r.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `wireline-soc2-evidence-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toastSuccess("Evidence pack exported", "JSON downloaded for your SOC2 workbook.");
+    } catch (e: any) {
+      toastError("Export failed", e?.message || "Unknown error.");
+    }
   };
 
   const fetchData = async () => {
@@ -675,8 +707,9 @@ export default function AdminSettings() {
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="h-full grid grid-cols-1 lg:grid-cols-2 gap-3 min-h-0"
+              className="h-full flex flex-col gap-3 min-h-0 overflow-y-auto scrollbar-hide pb-4"
             >
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 shrink-0">
               <Panel title="AI Engine" hint="Claude · Anthropic" icon={Bot} scroll>
                 <div className="space-y-4">
                   <div className="rounded-xl glass border border-white/8 p-4 space-y-3">
@@ -793,6 +826,77 @@ export default function AdminSettings() {
                       </div>
                     ));
                   })()}
+                </div>
+              </Panel>
+              </div>
+
+              <Panel title="Operational reliability" hint="SLO snapshot · rolling 24h" icon={BarChart3} scroll>
+                <div className="space-y-3 text-[11px]">
+                  {!operationalSlos && (
+                    <div className="text-muted flex items-center gap-2">
+                      <Loader2 className="w-3 h-3 animate-spin" /> Loading health metrics…
+                    </div>
+                  )}
+                  {operationalSlos && (() => {
+                    const dims = operationalSlos.dimensions as Record<string, string> | undefined;
+                    const jobs = operationalSlos.jobs as Record<string, unknown> | undefined;
+                    const queue = jobs?.queue as Record<string, number> | undefined;
+                    const enrichment = jobs?.enrichment as Record<string, number> | undefined;
+                    const wh = operationalSlos.webhooks as Record<string, unknown> | undefined;
+                    const ai = operationalSlos.ai_reliability as Record<string, number> | undefined;
+                    const sloChip = (k: string, label: string) => {
+                      const s = dims?.[k] || "ok";
+                      const cls =
+                        s === "critical" ? "border-rose-500/35 text-rose-400 bg-rose-500/10" :
+                        s === "warn" ? "border-amber-500/35 text-amber-400 bg-amber-500/10" :
+                        "border-emerald-500/30 text-emerald-400 bg-emerald-500/10";
+                      return (
+                        <div key={k} className={cn("rounded-lg border px-2 py-1.5 flex flex-col gap-0.5", cls)}>
+                          <span className="text-[9px] uppercase tracking-[0.22em] opacity-90">{label}</span>
+                          <span className="text-[10px] font-semibold uppercase tracking-[0.15em]">{s}</span>
+                        </div>
+                      );
+                    };
+                    return (
+                      <>
+                        <div className="flex flex-wrap gap-2">
+                          {sloChip("jobs_queue", "Job backlog")}
+                          {sloChip("enrichment_failures", "Enrichment")}
+                          {sloChip("webhooks", "Webhooks")}
+                          {sloChip("ai_errors", "Audit errors")}
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 rounded-xl glass border border-white/10 p-3 font-mono text-[10px]">
+                          <div><span className="text-muted">Pending jobs</span><div className="text-ink tabular-nums">{queue?.pending ?? "—"}</div></div>
+                          <div><span className="text-muted">Dead enrichment</span><div className="text-ink tabular-nums">{enrichment?.dead ?? "—"}</div></div>
+                          <div><span className="text-muted">Webhook OK %</span><div className="text-ink tabular-nums">{typeof wh?.success_rate === "number" ? `${Math.round((wh.success_rate as number) * 100)}%` : "—"}</div></div>
+                          <div><span className="text-muted">Claude calls</span><div className="text-ink tabular-nums">{ai?.claude_calls_in_window ?? "—"}</div></div>
+                        </div>
+                        <p className="text-[10px] text-muted leading-snug">
+                          Data from <span className="font-mono">GET /api/health/slos</span>. On serverless, schedule <span className="font-mono">POST /api/jobs/sweep</span> via cron so background jobs drain.
+                        </p>
+                      </>
+                    );
+                  })()}
+                </div>
+              </Panel>
+
+              <Panel title="Compliance evidence" hint="SOC2 helpers · JSON export" icon={History}>
+                <div className="space-y-3 text-[11px] text-muted leading-relaxed">
+                  <p>
+                    Download an evidence bundle with RBAC narratives, quarterly access-review snapshot, incident template, and links to audit exports.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={downloadEvidencePack}
+                    className="brutal-btn w-full md:w-auto !py-2 !px-4 !text-[10px] !tracking-[0.25em] flex items-center justify-center gap-2"
+                  >
+                    <TrendingUp className="w-3.5 h-3.5" />
+                    Export SOC2 evidence JSON
+                  </button>
+                  <p className="text-[10px]">
+                    APIs: <span className="font-mono">GET /api/soc2/access-review</span>,{" "}
+                    <span className="font-mono">GET /api/soc2/evidence-pack</span> (requires audit.read).
+                  </p>
                 </div>
               </Panel>
             </motion.div>
