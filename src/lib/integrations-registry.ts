@@ -84,7 +84,7 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
   {
     id: "gemini",
     label: "Google Gemini",
-    description: "Legacy fallback for non-Claude paths and the Vapi voice model.",
+    description: "Legacy fallback for non-Claude paths and the live voice model.",
     group: "ai",
     required: true,
     envVars: ["GEMINI_API_KEY"],
@@ -94,12 +94,11 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
   // ─── voice ──────────────────────────────────────────────────────────────
   {
     id: "vapi",
-    label: "Vapi",
-    description: "Inbound + outbound voice. Webhook signature verified via VAPI_WEBHOOK_SECRET.",
+    label: "Wireline Voice Network",
+    description: "Inbound and outbound phone calls on your Wireline numbers.",
     group: "voice",
     required: true,
     envVars: ["VAPI_PRIVATE_KEY", "VITE_VAPI_PUBLIC_KEY"],
-    docsUrl: "https://docs.vapi.ai/",
   },
 
   // ─── oauth ──────────────────────────────────────────────────────────────
@@ -180,14 +179,13 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
   },
   {
     id: "twilio",
-    label: "Twilio Messaging + Lookup",
-    description: "SMS, WhatsApp, phone intelligence, and manager alerting for agent workflows.",
+    label: "Wireline Messaging Network",
+    description: "Texting, number intelligence, and manager alerts for agent workflows.",
     group: "actions",
     required: false,
     envVars: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
     fallback:
-      "Without Twilio credentials, SMS / WhatsApp tools, phone lookups, and manager SMS alerts stay disabled while voice agents continue to run through Vapi.",
-    docsUrl: "https://console.twilio.com/",
+      "Without messaging credentials, Wireline texting, phone lookups, and manager alerts stay disabled while voice agents continue to run.",
   },
 
   // ─── infra ──────────────────────────────────────────────────────────────

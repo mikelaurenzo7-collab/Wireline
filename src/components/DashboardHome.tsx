@@ -161,7 +161,7 @@ export default function DashboardHome() {
   const toggleCall = async () => {
     if (isConnected) { vapiRef.current?.stop(); return; }
     if (!import.meta.env.VITE_VAPI_PUBLIC_KEY) {
-      toastError("Voice not configured", "VITE_VAPI_PUBLIC_KEY is not set — add it in your Vercel environment variables and redeploy.");
+      toastError("Voice not configured", "The Wireline voice network key is not set — add the voice environment variables and redeploy.");
       return;
     }
     setIsConnecting(true);
@@ -196,7 +196,7 @@ export default function DashboardHome() {
           if (mountedRef.current && !vapiRef.current) return;
           setIsConnecting(prev => {
             if (!prev) return prev; // already resolved
-            toastError("Connection timed out", "Vapi did not start within 20 s. Check your network and Vapi configuration.");
+            toastError("Connection timed out", "The Wireline voice session did not start within 20 s. Check your network and voice configuration.");
             return false;
           });
         }, 20_000);

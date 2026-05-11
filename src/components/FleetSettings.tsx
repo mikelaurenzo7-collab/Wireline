@@ -924,10 +924,18 @@ export default function FleetSettings() {
                         </span>
                       </div>
 
+                      <p className="text-[10px] text-muted/70 leading-relaxed">
+                        Voice calls stay on your Wireline phone number. Text follow-ups and number checks run through your Wireline messaging network.
+                      </p>
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                         {AGENT_TOOL_CATALOG.map((tool) => {
                           const enabled = selectedToolNames.includes(tool.name);
                           const roleDefault = roleDefaultTools.includes(tool.name);
+                          const badgeLabel =
+                            tool.name === "send_text_message" ? "Texting" :
+                            tool.name === "lookup_phone_number" ? "Number intel" :
+                            null;
                           return (
                             <button
                               key={tool.name}
@@ -953,9 +961,9 @@ export default function FleetSettings() {
                                 <div className="min-w-0 flex-1">
                                   <div className="flex flex-wrap items-center gap-1.5">
                                     <span className="text-sm text-ink">{tool.label}</span>
-                                    {tool.integration === "twilio" && (
+                                    {badgeLabel && (
                                       <span className="text-[8px] uppercase tracking-[0.22em] px-1.5 py-0.5 rounded-full border border-violet-500/30 bg-violet-500/10 text-violet-600">
-                                        Twilio
+                                        {badgeLabel}
                                       </span>
                                     )}
                                     {roleDefault && (

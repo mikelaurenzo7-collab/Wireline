@@ -163,7 +163,7 @@ export default function AdminSettings() {
       setCarrierNumbers(data.numbers || []);
     } catch (e) {
       console.error(e);
-      toastError("Sync failed", "Could not fetch carrier numbers from Vapi.");
+      toastError("Sync failed", "Could not fetch available Wireline phone numbers.");
     }
     setIsSyncing(false);
   };
@@ -219,7 +219,7 @@ export default function AdminSettings() {
     setConfirmState({
       open: true,
       title: "Remove number",
-      message: "Remove this carrier number from your fleet? The number will remain in Vapi but won't route calls to agents.",
+      message: "Remove this phone number from your fleet? The number stays in your Wireline voice network, but it will stop routing calls to agents.",
       onConfirm: async () => {
         setConfirmState(CLOSED_CONFIRM);
         setIsDeletingNumber(id);
@@ -306,15 +306,15 @@ export default function AdminSettings() {
               className="h-full grid grid-cols-1 xl:grid-cols-2 gap-3 min-h-0"
             >
               {/* Carrier authentication */}
-              <Panel title="Wireline Credentials" hint="VOICE" icon={Cpu} scroll>
+              <Panel title="Wireline Voice Network" hint="CALLS" icon={Cpu} scroll>
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <div className="rounded-xl glass border border-brand/30 p-3 space-y-1.5">
                       <div className="flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
-                        <p className="text-[9px] uppercase tracking-[0.3em] text-ink/80">Secret key</p>
+                        <p className="text-[9px] uppercase tracking-[0.3em] text-ink/80">Voice network key</p>
                       </div>
-                      <p className="text-[9px] uppercase tracking-[0.3em] text-brand">Managed via secure vault</p>
+                      <p className="text-[9px] uppercase tracking-[0.3em] text-brand">Managed by Wireline</p>
                     </div>
                     <div className={cn(
                       "rounded-xl border p-3 space-y-1.5",
@@ -326,18 +326,18 @@ export default function AdminSettings() {
                         <span className={cn("w-1.5 h-1.5 rounded-full animate-pulse",
                           import.meta.env.VITE_VAPI_PUBLIC_KEY ? "bg-emerald-500" : "bg-rose-500"
                         )} />
-                        <p className="text-[9px] uppercase tracking-[0.3em] text-ink/80">Public key</p>
+                        <p className="text-[9px] uppercase tracking-[0.3em] text-ink/80">Browser voice key</p>
                       </div>
                       <p className={cn("text-[9px] uppercase tracking-[0.3em]",
                         import.meta.env.VITE_VAPI_PUBLIC_KEY ? "text-emerald-500" : "text-rose-500"
                       )}>
-                        {import.meta.env.VITE_VAPI_PUBLIC_KEY ? "Detected" : "Missing"}
+                        {import.meta.env.VITE_VAPI_PUBLIC_KEY ? "Connected" : "Missing"}
                       </p>
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label htmlFor="vapi-phone-number-id" className="text-[9px] uppercase tracking-[0.3em] text-muted/70">Fallback Wireline number ID</label>
+                    <label htmlFor="vapi-phone-number-id" className="text-[9px] uppercase tracking-[0.3em] text-muted/70">Default Wireline phone number ID</label>
                     <input
                       id="vapi-phone-number-id"
                       type="text"
@@ -408,10 +408,10 @@ export default function AdminSettings() {
 
                   <div className="rounded-2xl glass border border-white/10 p-4 space-y-3">
                     <div>
-                      <div className="text-[10px] uppercase tracking-[0.4em] text-brand">Twilio Relay</div>
-                      <h4 className="font-display italic lowercase text-xl text-ink leading-tight mt-0.5">sms, whatsapp, lookup, alerts</h4>
+                      <div className="text-[10px] uppercase tracking-[0.4em] text-brand">Wireline Messaging Network</div>
+                      <h4 className="font-display italic lowercase text-xl text-ink leading-tight mt-0.5">texts, whatsapp, lookup, alerts</h4>
                       <p className="text-[10px] text-muted/80 mt-1 leading-relaxed">
-                        Turn on Twilio-backed tools for agent texting, phone intelligence, and manager SMS escalation alerts.
+                        Use your Wireline texting layer for SMS, WhatsApp, number intelligence, and live escalation alerts.
                       </p>
                     </div>
 
@@ -419,18 +419,18 @@ export default function AdminSettings() {
                       {[
                         {
                           key: "twilio_messaging_enabled" as const,
-                          label: "Messaging",
-                          desc: "Allow agents and workflows to send SMS / WhatsApp follow-ups.",
+                          label: "Texting",
+                          desc: "Allow agents and workflows to send SMS / WhatsApp follow-ups from your Wireline number.",
                         },
                         {
                           key: "twilio_lookup_enabled" as const,
-                          label: "Phone lookup",
+                          label: "Number intelligence",
                           desc: "Validate numbers and reveal line type before texting.",
                         },
                         {
                           key: "twilio_manager_alerts_enabled" as const,
-                          label: "Manager alerts",
-                          desc: "Send urgent live-call escalation alerts to a manager phone.",
+                          label: "Live escalation alerts",
+                          desc: "Send urgent live-call alerts to a manager phone.",
                         },
                       ].map((item) => (
                         <button
@@ -462,7 +462,7 @@ export default function AdminSettings() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       <div className="space-y-1.5">
-                        <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">Messaging Service SID</label>
+                        <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">Texting service ID</label>
                         <input
                           type="text"
                           value={settings.twilio_messaging_service_sid}
@@ -472,7 +472,7 @@ export default function AdminSettings() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">Manager alert number</label>
+                        <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">Alert destination number</label>
                         <input
                           type="tel"
                           value={settings.twilio_manager_alert_number}
@@ -482,7 +482,7 @@ export default function AdminSettings() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">SMS from number</label>
+                        <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">Primary texting number</label>
                         <input
                           type="tel"
                           value={settings.twilio_sms_from_number}
@@ -492,7 +492,7 @@ export default function AdminSettings() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">WhatsApp sender</label>
+                        <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">WhatsApp number</label>
                         <input
                           type="tel"
                           value={settings.twilio_whatsapp_from_number}
@@ -522,7 +522,7 @@ export default function AdminSettings() {
               </Panel>
 
               {/* Hub & routing */}
-              <Panel title="Phone Numbers" hint="CARRIER NUMBERS" icon={Phone} scroll>
+              <Panel title="Wireline Phone Numbers" hint="VOICE ROUTING" icon={Phone} scroll>
                 <div className="space-y-3">
                   {phoneNumbers.length === 0 ? (
                     <div className="rounded-xl glass border border-white/10 border-dashed py-8 text-center">
@@ -581,7 +581,7 @@ export default function AdminSettings() {
                   <div className="rounded-xl glass border border-white/8 p-3 space-y-3">
                     <div className="flex items-center justify-between">
                       <h4 className="text-[10px] uppercase tracking-[0.3em] text-ink inline-flex items-center gap-1.5">
-                        <Plus className="w-3 h-3 text-brand" /> Add carrier number
+                        <Plus className="w-3 h-3 text-brand" /> Add Wireline number
                       </h4>
                       <button
                         onClick={syncCarrierNumbers}
@@ -589,7 +589,7 @@ export default function AdminSettings() {
                         className="inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.3em] text-muted/70 hover:text-brand transition-colors"
                       >
                         {isSyncing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCw className="w-3 h-3" />}
-                        Discover
+                        Sync numbers
                       </button>
                     </div>
 
@@ -631,7 +631,7 @@ export default function AdminSettings() {
                         type="text"
                         value={newNumberVapiId}
                         onChange={e => setNewNumberVapiId(e.target.value)}
-                        placeholder="Wireline number ID"
+                        placeholder="Wireline voice number ID"
                         className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 font-mono"
                       />
                     </div>
