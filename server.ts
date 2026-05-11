@@ -47,6 +47,8 @@ import { enqueue, startWorker, getQueueStats, type JobRow } from "./src/lib/job-
 import { quotaRateLimit, jobsRateLimit, tcpaRateLimit, soc2RateLimit, webhooksRateLimit } from "./src/middleware/api-rate-limits";
 import { encryptSecret, decryptSecret, lastFour, isVaultConfigured } from "./src/lib/secret-vault";
 import { createRbacMiddleware, getCallerRole, invalidateRoleCache } from "./src/middleware/require-role";
+import { buildAccountExport, hardDeleteAccount, deletionDeadline, DEFAULT_GRACE_PERIOD_DAYS } from "./src/lib/account-deletion";
+import { runRetentionPurge } from "./src/lib/retention";
 
 // On Vercel, VERCEL_URL is automatically set to the deployment hostname
 // (e.g. "myapp-abc123.vercel.app") with no protocol or trailing slash.
@@ -11056,6 +11058,224 @@ app.post("/api/jobs/sweep", jobsRateLimit, cronOrAdminAuth, async (req: any, res
     res.status(500).json({ error: "Sweep failed" });
   }
 });
+
+// ──────────────────────────────────────────────────────────────────────────────
+// DATA RETENTION — daily purge of call logs and emails older than each
+// tenant's configured TTL. Triggered by a Vercel cron at 03:17 UTC daily
+// (see vercel.json `crons`); also reachable manually by admin/owner.
+// Uses the same cron-or-admin auth gate as /api/jobs/sweep.
+// ──────────────────────────────────────────────────────────────────────────────
+
+app.post("/api/jobs/retention-purge", jobsRateLimit, cronOrAdminAuth, async (req: any, res: any) => {
+  try {
+    const summary = await runRetentionPurge(db);
+    res.json(summary);
+    if (summary.tenants_purged > 0) {
+      log.info("retention purge completed", {
+        requestId: res.locals?.requestId,
+        ...summary,
+      });
+    }
+    if (summary.errors.length > 0) {
+      log.warn("retention purge errors", {
+        requestId: res.locals?.requestId,
+        errors: summary.errors,
+      });
+    }
+    // Also process any pending account deletions whose grace period elapsed.
+    await processPendingAccountDeletions().catch((err) => {
+      log.warn("pending-account-deletion sweep failed", { error: getErrorMessage(err) });
+    });
+  } catch (err) {
+    log.error("POST /api/jobs/retention-purge failed", { error: getErrorMessage(err) });
+    res.status(500).json({ error: "Retention purge failed" });
+  }
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// ACCOUNT EXPORT (GDPR Art. 15 — right of access / data portability)
+// Returns a JSON archive of every row this user owns across wireline_*
+// tables. The download is rate-limited to one per 5 minutes per user
+// because it can be many MB and is expensive to assemble.
+// ──────────────────────────────────────────────────────────────────────────────
+
+const accountExportLimiter = new Map<string, number>();
+const ACCOUNT_EXPORT_COOLDOWN_MS = 5 * 60 * 1000;
+
+app.post("/api/account/export", authenticateUser, async (req: any, res: any) => {
+  const userId = req.user.id as string;
+  const last = accountExportLimiter.get(userId) || 0;
+  const now = Date.now();
+  if (now - last < ACCOUNT_EXPORT_COOLDOWN_MS) {
+    res.setHeader("Retry-After", String(Math.ceil((ACCOUNT_EXPORT_COOLDOWN_MS - (now - last)) / 1000)));
+    return res.status(429).json({
+      error: "Export rate limit: one per 5 minutes per account.",
+      code: "EXPORT_RATE_LIMIT",
+    });
+  }
+  accountExportLimiter.set(userId, now);
+
+  try {
+    const archive = await buildAccountExport(db, userId);
+    void auditLogger
+      .logEvent({
+        eventType: "account.exported",
+        userId,
+        userEmail: req.user.email,
+        severity: "info",
+        action: "Exported all user data via GDPR export endpoint",
+        metadata: {
+          requestId: res.locals?.requestId,
+          truncated: archive.truncated,
+          row_counts: Object.fromEntries(
+            Object.entries(archive.tables).map(([k, v]) => [k, (v as unknown[]).length]),
+          ),
+        },
+      })
+      .catch(() => {});
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="wireline-export-${userId}-${archive.exported_at.slice(0, 10)}.json"`,
+    );
+    res.send(JSON.stringify(archive, null, 2));
+  } catch (err) {
+    log.error("POST /api/account/export failed", {
+      requestId: res.locals?.requestId,
+      userId,
+      error: getErrorMessage(err),
+    });
+    res.status(500).json({ error: "Export failed" });
+  }
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// ACCOUNT DELETION (GDPR Art. 17 — right to erasure)
+// Two-step: request → grace period → actual deletion via the daily cron.
+// Operators can cancel during the grace period.
+// ──────────────────────────────────────────────────────────────────────────────
+
+app.post("/api/account/delete-request", authenticateUser, async (req: any, res: any) => {
+  const userId = req.user.id as string;
+  const requestedAt = new Date();
+  const { data: settings } = await db
+    .from("wireline_settings")
+    .select("deletion_grace_days")
+    .eq("user_id", userId)
+    .maybeSingle();
+  const graceDays = Number(settings?.deletion_grace_days) || DEFAULT_GRACE_PERIOD_DAYS;
+  const deadline = deletionDeadline(requestedAt, graceDays);
+
+  const { error } = await db
+    .from("wireline_settings")
+    .upsert(
+      { id: userId, user_id: userId, deletion_pending_at: requestedAt.toISOString(), deletion_deadline_at: deadline },
+      { onConflict: "user_id" },
+    );
+  if (error) {
+    log.error("delete-request upsert failed", {
+      requestId: res.locals?.requestId,
+      userId,
+      error: error.message,
+    });
+    return res.status(500).json({ error: "Could not register deletion request." });
+  }
+
+  void auditLogger
+    .logEvent({
+      eventType: "account.deletion_requested",
+      userId,
+      userEmail: req.user.email,
+      severity: "warning",
+      action: "Registered account deletion request",
+      metadata: {
+        requestId: res.locals?.requestId,
+        deadline,
+        grace_days: graceDays,
+      },
+    })
+    .catch(() => {});
+
+  res.json({
+    status: "scheduled",
+    deletion_deadline: deadline,
+    grace_days: graceDays,
+    cancel_url: "/api/account/cancel-deletion",
+  });
+});
+
+app.post("/api/account/cancel-deletion", authenticateUser, async (req: any, res: any) => {
+  const userId = req.user.id as string;
+  const { error } = await db
+    .from("wireline_settings")
+    .update({ deletion_pending_at: null, deletion_deadline_at: null })
+    .eq("user_id", userId);
+  if (error) {
+    return res.status(500).json({ error: "Could not cancel deletion." });
+  }
+  void auditLogger
+    .logEvent({
+      eventType: "account.deletion_cancelled",
+      userId,
+      userEmail: req.user.email,
+      severity: "info",
+      action: "Cancelled pending account deletion",
+      metadata: { requestId: res.locals?.requestId },
+    })
+    .catch(() => {});
+  res.json({ status: "cancelled" });
+});
+
+/**
+ * Drained by the daily retention cron. Hard-deletes any tenant whose
+ * `deletion_deadline_at` has elapsed. Pages over `wireline_settings`
+ * rather than the more expensive scan over every wireline_* table.
+ */
+async function processPendingAccountDeletions(): Promise<void> {
+  const nowIso = new Date().toISOString();
+  const PAGE = 50;
+  let from = 0;
+
+  for (;;) {
+    const { data, error } = await db
+      .from("wireline_settings")
+      .select("user_id")
+      .not("deletion_deadline_at", "is", null)
+      .lte("deletion_deadline_at", nowIso)
+      .range(from, from + PAGE - 1);
+
+    if (error) {
+      log.warn("pending-deletion scan failed", { error: error.message });
+      return;
+    }
+    if (!data || data.length === 0) return;
+
+    for (const row of data as Array<{ user_id: string }>) {
+      const result = await hardDeleteAccount(db, row.user_id);
+      log.info("account hard-deleted", {
+        userId: row.user_id,
+        rows_deleted: result.rows_deleted,
+        errors: result.errors,
+      });
+      void auditLogger
+        .logEvent({
+          eventType: "account.deleted",
+          userId: null, // user no longer exists
+          severity: "warning",
+          action: `Hard-deleted account ${row.user_id} after grace period`,
+          metadata: {
+            target_user_id: row.user_id,
+            rows_deleted: result.rows_deleted,
+            errors: result.errors,
+          },
+        })
+        .catch(() => {});
+    }
+
+    if (data.length < PAGE) return;
+    from += PAGE;
+  }
+}
 
 // ──────────────────────────────────────────────────────────────────────────────
 // TCPA CONSENT CHECK ENDPOINT

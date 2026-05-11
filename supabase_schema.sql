@@ -1394,3 +1394,26 @@ CREATE INDEX IF NOT EXISTS wireline_email_threads_user_read_idx
 -- ─────────────────────────────────────────────────────────────────────────────
 ALTER TABLE wireline_webhooks ADD COLUMN IF NOT EXISTS secret_encrypted TEXT;
 ALTER TABLE wireline_webhooks ADD COLUMN IF NOT EXISTS secret_last_four TEXT;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Data retention TTLs + GDPR account deletion grace period — 2026-05-11
+--
+-- retention_days_call_logs / retention_days_emails: optional per-tenant TTLs
+-- consumed by POST /api/jobs/retention-purge (daily cron). NULL or 0 means
+-- "retain forever" (the legacy default — no surprise deletions).
+--
+-- deletion_pending_at / deletion_deadline_at / deletion_grace_days back the
+-- two-step GDPR Art. 17 (right to erasure) endpoints. A user requests deletion;
+-- after deletion_grace_days the daily cron hard-deletes their data via
+-- src/lib/account-deletion.ts.
+-- ─────────────────────────────────────────────────────────────────────────────
+ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS retention_days_call_logs INTEGER;
+ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS retention_days_emails INTEGER;
+ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS deletion_pending_at TIMESTAMPTZ;
+ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS deletion_deadline_at TIMESTAMPTZ;
+ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS deletion_grace_days INTEGER;
+
+-- Lookup index for the daily pending-deletion sweep.
+CREATE INDEX IF NOT EXISTS wireline_settings_deletion_deadline_idx
+    ON wireline_settings(deletion_deadline_at)
+    WHERE deletion_deadline_at IS NOT NULL;

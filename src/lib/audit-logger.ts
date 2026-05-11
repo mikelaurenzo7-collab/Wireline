@@ -68,6 +68,33 @@ export class AuditLogger {
     return { failureCount: this.failureCount };
   }
 
+  /**
+   * Generic event logger for cross-cutting concerns (account lifecycle,
+   * retention purges, etc.) where a dedicated `logXxx` helper would be
+   * boilerplate. Marshals into the same `wireline_audit_log` insert as
+   * the typed helpers and shares the same field names.
+   */
+  async logEvent(params: {
+    eventType: AuditEventType;
+    action: string;
+    userId?: string | null;
+    userEmail?: string;
+    severity?: AuditSeverity;
+    metadata?: Record<string, unknown>;
+    ip?: string;
+  }) {
+    return await this.log({
+      eventType: params.eventType,
+      action: params.action,
+      // log() expects `userId?: string` — coerce null to undefined.
+      userId: params.userId ?? undefined,
+      severity: params.severity,
+      actorEmail: params.userEmail,
+      metadata: params.metadata as Record<string, any> | undefined,
+      ip: params.ip,
+    });
+  }
+
   async logAuth(
     action: 'login' | 'logout' | 'failed_login' | 'password_reset',
     params: {

@@ -74,7 +74,16 @@ export type AuditEventType =
   | 'data.delete'
   | 'data.bulk_delete'
   | 'data.import'
-  | 'data.account_deleted';
+  | 'data.account_deleted'
+
+  // GDPR / account lifecycle
+  | 'account.exported'
+  | 'account.deletion_requested'
+  | 'account.deletion_cancelled'
+  | 'account.deleted'
+
+  // Data retention
+  | 'retention.purge_completed';
 
 /**
  * Severity levels for audit events.
