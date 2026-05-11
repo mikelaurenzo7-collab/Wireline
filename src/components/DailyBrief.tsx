@@ -364,7 +364,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
       ) : (
         <>
           {!gmailConnected && (
-            <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2 text-amber-400 text-xs flex items-center gap-2">
+            <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2 text-amber-600 text-xs flex items-center gap-2">
               <AlertTriangle className="w-3.5 h-3.5" />
               Connect a Gmail account in <Link to="/integrations" className="underline">Carrier Bridge</Link> first — emails are sent through your own Gmail OAuth.
             </div>
@@ -431,7 +431,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
             </div>
           )}
           {lastError && (
-            <div className="text-[10px] text-rose-400 flex items-start gap-1.5">
+            <div className="text-[10px] text-rose-500 flex items-start gap-1.5">
               <AlertTriangle className="w-3 h-3 shrink-0 mt-0.5" />
               <span className="font-mono">Last error: {lastError}</span>
             </div>
@@ -448,7 +448,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
             </button>
             <div className="flex items-center gap-3">
               {feedback && (
-                <span className={cn("text-[11px]", feedback.kind === "ok" ? "text-emerald-500" : "text-rose-400")}>
+                <span className={cn("text-[11px]", feedback.kind === "ok" ? "text-emerald-500" : "text-rose-500")}>
                   {feedback.text}
                 </span>
               )}

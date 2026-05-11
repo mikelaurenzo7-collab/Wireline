@@ -36,8 +36,8 @@ function reasonLabel(r: string | null) {
 }
 
 function sourceColor(source: string) {
-  if (source === "csv")      return "text-violet-400 border-violet-500/25 bg-violet-500/10";
-  if (source === "opt-out")  return "text-rose-400 border-rose-500/25 bg-rose-500/10";
+  if (source === "csv")      return "text-violet-600 border-violet-500/25 bg-violet-500/10";
+  if (source === "opt-out")  return "text-rose-500 border-rose-500/25 bg-rose-500/10";
   return "text-brand border-brand/25 bg-brand/10";
 }
 
@@ -201,7 +201,7 @@ export default function DncManager() {
           </button>
           <button
             onClick={() => setShowAdd(true)}
-            className="h-9 px-4 rounded-full flex items-center gap-2 text-[10px] uppercase tracking-[0.28em] transition-all bg-rose-500/15 border border-rose-500/40 text-rose-400 hover:bg-rose-500/25"
+            className="h-9 px-4 rounded-full flex items-center gap-2 text-[10px] uppercase tracking-[0.28em] transition-all bg-rose-500/15 border border-rose-500/40 text-rose-500 hover:bg-rose-500/25"
           >
             <Plus className="w-3.5 h-3.5" />
             Add Number
@@ -257,7 +257,7 @@ export default function DncManager() {
             ) : filtered.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center gap-4 text-center">
                 <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg,rgba(255,107,217,0.15),rgba(10,200,212,0.15))" }}>
-                  <Shield className="w-7 h-7 text-rose-400" />
+                  <Shield className="w-7 h-7 text-rose-500" />
                 </div>
                 <div>
                   <p className="font-display italic text-2xl text-ink mb-1">
@@ -272,7 +272,7 @@ export default function DncManager() {
                 {entries.length === 0 && (
                   <button
                     onClick={() => setShowAdd(true)}
-                    className="h-9 px-5 rounded-full flex items-center gap-2 text-[10px] uppercase tracking-[0.28em] bg-rose-500/15 border border-rose-500/40 text-rose-400 hover:bg-rose-500/25 transition-all"
+                    className="h-9 px-5 rounded-full flex items-center gap-2 text-[10px] uppercase tracking-[0.28em] bg-rose-500/15 border border-rose-500/40 text-rose-500 hover:bg-rose-500/25 transition-all"
                   >
                     <Plus className="w-3.5 h-3.5" /> Add First Number
                   </button>
@@ -290,7 +290,7 @@ export default function DncManager() {
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                         style={{ background: "rgba(255,107,217,0.10)", border: "1px solid rgba(255,107,217,0.20)" }}>
-                        <Phone className="w-3.5 h-3.5 text-rose-400" />
+                        <Phone className="w-3.5 h-3.5 text-rose-500" />
                       </div>
                       <div className="min-w-0">
                         <p className="font-mono text-sm text-ink truncate">{entry.phone_raw || entry.phone}</p>
@@ -312,11 +312,11 @@ export default function DncManager() {
                       </span>
                       {confirmId === entry.id ? (
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[9px] text-rose-400">Remove?</span>
+                          <span className="text-[9px] text-rose-500">Remove?</span>
                           <button
                             onClick={() => handleDelete(entry.id)}
                             disabled={deletingId === entry.id}
-                            className="h-7 px-2.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-400 text-[9px] uppercase tracking-[0.22em] hover:bg-rose-500/30 transition-all flex items-center gap-1"
+                            className="h-7 px-2.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-500 text-[9px] uppercase tracking-[0.22em] hover:bg-rose-500/30 transition-all flex items-center gap-1"
                           >
                             {deletingId === entry.id ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <CheckCircle2 className="w-2.5 h-2.5" />}
                             Confirm
@@ -331,7 +331,7 @@ export default function DncManager() {
                       ) : (
                         <button
                           onClick={() => setConfirmId(entry.id)}
-                          className="h-7 w-7 rounded-full glass border border-white/10 text-muted hover:text-rose-400 hover:border-rose-500/30 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100"
+                          className="h-7 w-7 rounded-full glass border border-white/10 text-muted hover:text-rose-500 hover:border-rose-500/30 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100"
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>
@@ -364,7 +364,7 @@ export default function DncManager() {
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl glass border border-rose-500/30 flex items-center justify-center">
-                    <Shield className="w-4.5 h-4.5 text-rose-400" />
+                    <Shield className="w-4.5 h-4.5 text-rose-500" />
                   </div>
                   <div>
                     <h2 className="font-display italic text-xl text-ink leading-none">Add to DNC</h2>
@@ -406,8 +406,8 @@ export default function DncManager() {
                 </div>
 
                 <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-500/8 border border-amber-500/20">
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <p className="text-[10px] text-amber-400/80 leading-snug">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <p className="text-[10px] text-amber-600/80 leading-snug">
                     This number will immediately be blocked from all outbound calls and campaigns.
                   </p>
                 </div>
@@ -423,7 +423,7 @@ export default function DncManager() {
                 <button
                   onClick={handleAdd}
                   disabled={adding || !addPhone.trim()}
-                  className="flex-1 h-10 rounded-xl flex items-center justify-center gap-2 text-[11px] uppercase tracking-[0.28em] bg-rose-500/20 border border-rose-500/40 text-rose-400 hover:bg-rose-500/30 transition-all disabled:opacity-50"
+                  className="flex-1 h-10 rounded-xl flex items-center justify-center gap-2 text-[11px] uppercase tracking-[0.28em] bg-rose-500/20 border border-rose-500/40 text-rose-500 hover:bg-rose-500/30 transition-all disabled:opacity-50"
                 >
                   {adding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Shield className="w-3.5 h-3.5" />}
                   Block Number

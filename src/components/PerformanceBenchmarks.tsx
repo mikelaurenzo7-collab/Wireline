@@ -36,9 +36,9 @@ function getStatus(item: BenchmarkItem): Status {
 }
 
 const statusConfig: Record<Status, { icon: string; color: string; bgColor: string; borderColor: string }> = {
-  green: { icon: "✓", color: "text-emerald-400", bgColor: "bg-emerald-500/10", borderColor: "border-emerald-500/30" },
-  yellow: { icon: "~", color: "text-amber-400", bgColor: "bg-amber-500/10", borderColor: "border-amber-500/30" },
-  red: { icon: "↑", color: "text-rose-400", bgColor: "bg-rose-500/10", borderColor: "border-rose-500/30" },
+  green: { icon: "✓", color: "text-emerald-600", bgColor: "bg-emerald-500/10", borderColor: "border-emerald-500/30" },
+  yellow: { icon: "~", color: "text-amber-600", bgColor: "bg-amber-500/10", borderColor: "border-amber-500/30" },
+  red: { icon: "↑", color: "text-rose-500", bgColor: "bg-rose-500/10", borderColor: "border-rose-500/30" },
 };
 
 function BenchmarkRow({ item }: { item: BenchmarkItem }) {
@@ -183,7 +183,7 @@ export default function PerformanceBenchmarks() {
   if (error || !data) {
     return (
       <div className="h-full flex items-center justify-center">
-        <p className="text-[9px] uppercase tracking-[0.5em] text-rose-400/60">{error || "No data"}</p>
+        <p className="text-[9px] uppercase tracking-[0.5em] text-rose-500/60">{error || "No data"}</p>
       </div>
     );
   }

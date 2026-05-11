@@ -241,7 +241,7 @@ export default function AuthPortal() {
           className="mt-auto flex items-center gap-6"
         >
           <div className="flex items-center gap-2 text-muted/60">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
             <span className="text-[9px] uppercase tracking-[0.38em]">TLS Encrypted</span>
           </div>
           <div className="h-3 w-px bg-white/10" />
@@ -437,7 +437,7 @@ export default function AuthPortal() {
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="flex items-start gap-3 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs"
+                      className="flex items-start gap-3 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs"
                     >
                       <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                       <span className="leading-relaxed">{error}</span>
@@ -449,7 +449,7 @@ export default function AuthPortal() {
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="flex items-start gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs"
+                      className="flex items-start gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 text-xs"
                     >
                       <Check className="w-4 h-4 shrink-0 mt-0.5" />
                       <span className="leading-relaxed">{message}</span>

@@ -23,10 +23,10 @@ type Appointment = {
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string; border: string; dot: string }> = {
   Scheduled:  { label: "Scheduled",  color: "text-brand",         bg: "bg-brand/10",         border: "border-brand/30",         dot: "bg-brand" },
-  Confirmed:  { label: "Confirmed",  color: "text-emerald-400",   bg: "bg-emerald-500/10",   border: "border-emerald-500/30",   dot: "bg-emerald-400" },
-  Completed:  { label: "Completed",  color: "text-violet-400",    bg: "bg-violet-500/10",    border: "border-violet-500/30",    dot: "bg-violet-400" },
-  Cancelled:  { label: "Cancelled",  color: "text-rose-400",      bg: "bg-rose-500/10",      border: "border-rose-500/30",      dot: "bg-rose-400" },
-  Rescheduled:{ label: "Rescheduled",color: "text-amber-400",     bg: "bg-amber-500/10",     border: "border-amber-500/30",     dot: "bg-amber-400" },
+  Confirmed:  { label: "Confirmed",  color: "text-emerald-600",   bg: "bg-emerald-500/10",   border: "border-emerald-500/30",   dot: "bg-emerald-500" },
+  Completed:  { label: "Completed",  color: "text-violet-600",    bg: "bg-violet-500/10",    border: "border-violet-500/30",    dot: "bg-violet-500" },
+  Cancelled:  { label: "Cancelled",  color: "text-rose-500",      bg: "bg-rose-500/10",      border: "border-rose-500/30",      dot: "bg-rose-500" },
+  Rescheduled:{ label: "Rescheduled",color: "text-amber-600",     bg: "bg-amber-500/10",     border: "border-amber-500/30",     dot: "bg-amber-500" },
 };
 
 function StatusBadge({ status }: { status: string }) {

@@ -421,8 +421,8 @@ export default function DashboardHome() {
                   isConnected ? "bg-rose-500/20" : isConnecting ? "bg-amber-500/20" : "bg-black/[0.05]"
                 )}>
                   {isConnecting
-                    ? <Loader2 className="w-4 h-4 text-amber-400 animate-spin" />
-                    : <Mic className={cn("w-4 h-4", isConnected ? "text-rose-400" : "text-ink/25")} />
+                    ? <Loader2 className="w-4 h-4 text-amber-500 animate-spin" />
+                    : <Mic className={cn("w-4 h-4", isConnected ? "text-rose-500" : "text-ink/25")} />
                   }
                 </div>
                 <div className="min-w-0 flex-1">
@@ -450,7 +450,7 @@ export default function DashboardHome() {
                         <span className="text-[11px] text-ink truncate flex-1">{a.name}</span>
                         <span className={cn(
                           "text-[8px] uppercase tracking-[0.22em]",
-                          busy ? "text-rose-400" : "text-emerald-400/80"
+                          busy ? "text-rose-500" : "text-emerald-600/80"
                         )}>
                           {busy ? "Active" : "Ready"}
                         </span>
@@ -544,7 +544,7 @@ export default function DashboardHome() {
                       className={cn(
                         "w-full h-10 rounded-xl font-medium text-[11px] uppercase tracking-[0.22em] flex items-center justify-center gap-2 transition-all",
                         isConnected
-                          ? "bg-rose-500/15 border border-rose-500/40 text-rose-400 hover:bg-rose-500/25"
+                          ? "bg-rose-500/15 border border-rose-500/40 text-rose-500 hover:bg-rose-500/25"
                           : "brutal-btn !py-0 !px-3 !text-[11px] !tracking-[0.22em]"
                       )}
                     >
@@ -587,7 +587,7 @@ export default function DashboardHome() {
                       <div className="text-[8px] uppercase tracking-[0.24em] text-muted">{action.sub}</div>
                     </div>
                     {action.badge ? (
-                      <span className="px-1.5 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-[8px] text-rose-400 font-mono shrink-0">
+                      <span className="px-1.5 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-[8px] text-rose-500 font-mono shrink-0">
                         {action.badge}
                       </span>
                     ) : (
@@ -700,7 +700,7 @@ export default function DashboardHome() {
                         <div className={cn(
                           "w-9 h-9 rounded-xl glass border flex items-center justify-center shrink-0 transition-all",
                           isHot
-                            ? "border-emerald-500/40 text-emerald-400"
+                            ? "border-emerald-500/40 text-emerald-600"
                             : "border-white/10 text-brand"
                         )}>
                           {isHot && (

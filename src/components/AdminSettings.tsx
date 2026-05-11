@@ -658,9 +658,9 @@ export default function AdminSettings() {
                 <div className="space-y-5">
                   <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-4 space-y-3">
                     <div className="flex items-start gap-3">
-                      <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                      <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
                       <div className="space-y-1">
-                        <p className="text-[11px] font-medium text-rose-400 uppercase tracking-[0.2em]">Delete account</p>
+                        <p className="text-[11px] font-medium text-rose-500 uppercase tracking-[0.2em]">Delete account</p>
                         <p className="text-xs text-muted/80">
                           Permanently deletes your account and all associated data — agents, call logs, knowledge base,
                           email threads, campaigns, and billing records. This action cannot be undone.
@@ -669,7 +669,7 @@ export default function AdminSettings() {
                     </div>
                     <div className="space-y-2">
                       <p className="text-[10px] text-muted">
-                        Type <span className="font-mono text-rose-400">DELETE MY ACCOUNT</span> to confirm:
+                        Type <span className="font-mono text-rose-500">DELETE MY ACCOUNT</span> to confirm:
                       </p>
                       <input
                         type="text"
@@ -681,7 +681,7 @@ export default function AdminSettings() {
                       <button
                         onClick={deleteAccount}
                         disabled={deletingAccount || deleteConfirmText !== "DELETE MY ACCOUNT"}
-                        className="w-full h-9 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-400 text-[11px] uppercase tracking-[0.2em] hover:bg-rose-500/20 transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
+                        className="w-full h-9 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-500 text-[11px] uppercase tracking-[0.2em] hover:bg-rose-500/20 transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
                       >
                         {deletingAccount ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                         {deletingAccount ? "Deleting…" : "Delete my account"}
@@ -718,7 +718,7 @@ export default function AdminSettings() {
                         "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
                         claudeStatus?.available ? "bg-emerald-500/15 border border-emerald-500/30" : "bg-rose-500/15 border border-rose-500/30"
                       )}>
-                        <Zap className={cn("w-4 h-4", claudeStatus?.available ? "text-emerald-400" : "text-rose-400")} />
+                        <Zap className={cn("w-4 h-4", claudeStatus?.available ? "text-emerald-600" : "text-rose-500")} />
                       </div>
                       <div>
                         <div className="text-sm font-semibold text-ink">
@@ -730,8 +730,8 @@ export default function AdminSettings() {
                       </div>
                       <div className="ml-auto">
                         {claudeStatus?.available
-                          ? <span className="px-2 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[9px] uppercase tracking-[0.25em]">Active</span>
-                          : <span className="px-2 py-1 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-400 text-[9px] uppercase tracking-[0.25em]">Offline</span>}
+                          ? <span className="px-2 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 text-[9px] uppercase tracking-[0.25em]">Active</span>
+                          : <span className="px-2 py-1 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-500 text-[9px] uppercase tracking-[0.25em]">Offline</span>}
                       </div>
                     </div>
                     <div className="text-[11px] text-muted leading-relaxed border-t border-white/5 pt-3">
@@ -746,7 +746,7 @@ export default function AdminSettings() {
                       "smart-draft", "agent-review"
                     ]).map((cap: string) => (
                       <div key={cap} className="flex items-center gap-2 text-[11px] text-ink/80">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
                         <span className="capitalize">{cap.replace(/-/g, ' ')}</span>
                       </div>
                     ))}
@@ -792,9 +792,9 @@ export default function AdminSettings() {
                             colour === "rose"    ? "bg-rose-500/15 border-rose-500/30"       :
                                                    "bg-white/5 border-white/10";
                           const text =
-                            colour === "emerald" ? "text-emerald-400" :
-                            colour === "amber"   ? "text-amber-400"   :
-                            colour === "rose"    ? "text-rose-400"    : "text-muted";
+                            colour === "emerald" ? "text-emerald-600" :
+                            colour === "amber"   ? "text-amber-600"   :
+                            colour === "rose"    ? "text-rose-500"    : "text-muted";
                           const badge =
                             item.status === "configured" ? "OK" :
                             item.status === "fallback"   ? "Fallback" :
@@ -847,9 +847,9 @@ export default function AdminSettings() {
                     const sloChip = (k: string, label: string) => {
                       const s = dims?.[k] || "ok";
                       const cls =
-                        s === "critical" ? "border-rose-500/35 text-rose-400 bg-rose-500/10" :
-                        s === "warn" ? "border-amber-500/35 text-amber-400 bg-amber-500/10" :
-                        "border-emerald-500/30 text-emerald-400 bg-emerald-500/10";
+                        s === "critical" ? "border-rose-500/35 text-rose-500 bg-rose-500/10" :
+                        s === "warn" ? "border-amber-500/35 text-amber-600 bg-amber-500/10" :
+                        "border-emerald-500/30 text-emerald-600 bg-emerald-500/10";
                       return (
                         <div key={k} className={cn("rounded-lg border px-2 py-1.5 flex flex-col gap-0.5", cls)}>
                           <span className="text-[9px] uppercase tracking-[0.22em] opacity-90">{label}</span>

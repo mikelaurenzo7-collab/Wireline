@@ -252,7 +252,7 @@ function TemplateCard({
               className={cn(
                 "px-1.5 py-0.5 rounded-full border text-[9px] uppercase tracking-[0.22em] leading-none",
                 template.channel === "email"
-                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600"
                   : "bg-brand/10 border-brand/30 text-brand"
               )}
             >

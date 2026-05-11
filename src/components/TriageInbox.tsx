@@ -300,7 +300,7 @@ function Escalations({ items }: { items: any[] }) {
               {formatDateTime(c.created_at)}
             </div>
             {c.coaching_note && (
-              <p className="text-[10px] text-rose-400/80 mt-0.5 line-clamp-1 pr-2">{c.coaching_note}</p>
+              <p className="text-[10px] text-rose-500/80 mt-0.5 line-clamp-1 pr-2">{c.coaching_note}</p>
             )}
           </div>
           <ClaudeRecipeButton recipe="coach" callId={c.id} label="Coach" variant="compact" />

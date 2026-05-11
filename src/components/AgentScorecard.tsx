@@ -162,7 +162,7 @@ function DeltaPill({ pct }: { pct: number }) {
   return (
     <span className={cn(
       "inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.2em]",
-      up ? "text-emerald-400" : "text-rose-400",
+      up ? "text-emerald-600" : "text-rose-500",
     )}>
       {up ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
       {Math.abs(pct)}%

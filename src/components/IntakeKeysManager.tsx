@@ -147,10 +147,10 @@ export default function IntakeKeysManager() {
               className="relative z-10 rounded-xl bg-emerald-500/10 border border-emerald-500/40 p-4 space-y-3"
             >
               <div className="flex items-center justify-between gap-3 flex-wrap">
-                <div className="text-[10px] uppercase tracking-[0.3em] text-emerald-400 flex items-center gap-2">
+                <div className="text-[10px] uppercase tracking-[0.3em] text-emerald-600 flex items-center gap-2">
                   <Check className="w-3.5 h-3.5" /> Save this key now — it will not be shown again
                 </div>
-                <button onClick={() => setJustCreated(null)} className="text-emerald-300/70 hover:text-emerald-300">
+                <button onClick={() => setJustCreated(null)} className="text-emerald-600/70 hover:text-emerald-600">
                   <X className="w-4 h-4" />
                 </button>
               </div>
@@ -163,13 +163,13 @@ export default function IntakeKeysManager() {
                 <button
                   onClick={() => setRevealed(r => !r)}
                   title={revealed ? "Hide" : "Show"}
-                  className="h-10 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-300"
+                  className="h-10 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-600"
                 >
                   {revealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
                 <button
                   onClick={copyKey}
-                  className="h-10 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-300 flex items-center gap-2 text-xs font-medium"
+                  className="h-10 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-600 flex items-center gap-2 text-xs font-medium"
                 >
                   {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                   {copied ? "Copied" : "Copy"}
@@ -239,7 +239,7 @@ export default function IntakeKeysManager() {
                     </div>
                   </div>
                 </button>
-                {createError && <div className="text-xs text-rose-400">{createError}</div>}
+                {createError && <div className="text-xs text-rose-600">{createError}</div>}
                 <div className="flex justify-end">
                   <button
                     onClick={create}
@@ -264,13 +264,13 @@ export default function IntakeKeysManager() {
           {keys.map((k) => {
             const agent = agents.find(a => a.id === k.default_agent_id);
             return (
-              <div key={k.id} className={cn("rounded-xl border p-4 flex items-center justify-between gap-4 flex-wrap", k.active ? "bg-black/20 border-white/10" : "bg-black/10 border-white/5 opacity-60")}>
+              <div key={k.id} className={cn("rounded-xl border p-4 flex items-center justify-between gap-4 flex-wrap", k.active ? "glass border-black/8" : "bg-black/3 border-black/5 opacity-60")}>
                 <div className="flex-1 min-w-0 space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <div className="text-sm text-ink font-medium">{k.name}</div>
                     <span className={cn(
                       "text-[9px] uppercase tracking-[0.3em] px-2 py-0.5 rounded-full border",
-                      k.active ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-400" : "bg-white/5 border-white/10 text-muted",
+                      k.active ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-600" : "bg-black/5 border-black/8 text-muted",
                     )}>
                       {k.active ? "Active" : "Paused"}
                     </span>
@@ -280,7 +280,7 @@ export default function IntakeKeysManager() {
                       </span>
                     )}
                     {k.auto_dial && k.default_agent_id && (
-                      <span className="text-[9px] uppercase tracking-[0.3em] px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/40 text-amber-400 flex items-center gap-1">
+                      <span className="text-[9px] uppercase tracking-[0.3em] px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/40 text-amber-600 flex items-center gap-1">
                         <Zap className="w-2.5 h-2.5" /> Auto-dial
                       </span>
                     )}
@@ -299,10 +299,10 @@ export default function IntakeKeysManager() {
                     className={cn(
                       "h-9 px-3 rounded-lg text-[10px] uppercase tracking-[0.25em] flex items-center gap-1.5 transition-all",
                       !k.default_agent_id
-                        ? "glass border border-white/5 text-muted/40 cursor-not-allowed"
+                        ? "glass border border-black/5 text-muted/40 cursor-not-allowed"
                         : k.auto_dial
-                          ? "bg-amber-500/15 border border-amber-500/40 text-amber-300 hover:bg-amber-500/25"
-                          : "glass border border-white/10 text-ink/70 hover:text-amber-300 hover:border-amber-500/40",
+                          ? "bg-amber-500/15 border border-amber-500/40 text-amber-600 hover:bg-amber-500/25"
+                          : "glass border border-black/8 text-ink/70 hover:text-amber-600 hover:border-amber-500/40",
                     )}
                   >
                     <PhoneOutgoing className="w-3 h-3" />
@@ -310,23 +310,23 @@ export default function IntakeKeysManager() {
                   </button>
                   <button
                     onClick={() => toggleActive(k)}
-                    className="h-9 px-3 rounded-lg glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-ink/70 hover:text-ink hover:border-white/30"
+                    className="h-9 px-3 rounded-lg glass border border-black/8 text-[10px] uppercase tracking-[0.25em] text-ink/70 hover:text-ink hover:border-black/15"
                   >
                     {k.active ? "Pause" : "Resume"}
                   </button>
                   {confirmDelete === k.id ? (
                     <>
-                      <button onClick={() => remove(k.id)} className="h-9 px-3 rounded-lg bg-rose-500/15 border border-rose-500/40 text-rose-300 text-[10px] uppercase tracking-[0.25em] flex items-center gap-1">
+                      <button onClick={() => remove(k.id)} className="h-9 px-3 rounded-lg bg-rose-500/15 border border-rose-500/40 text-rose-600 text-[10px] uppercase tracking-[0.25em] flex items-center gap-1">
                         <Trash2 className="w-3.5 h-3.5" /> Confirm
                       </button>
-                      <button onClick={() => setConfirmDelete(null)} className="h-9 px-3 rounded-lg glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-ink/70">
+                      <button onClick={() => setConfirmDelete(null)} className="h-9 px-3 rounded-lg glass border border-black/8 text-[10px] uppercase tracking-[0.25em] text-ink/70">
                         Cancel
                       </button>
                     </>
                   ) : (
                     <button
                       onClick={() => setConfirmDelete(k.id)}
-                      className="h-9 px-3 rounded-lg glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-ink/70 hover:text-rose-300 hover:border-rose-500/40 flex items-center gap-1"
+                      className="h-9 px-3 rounded-lg glass border border-black/8 text-[10px] uppercase tracking-[0.25em] text-ink/70 hover:text-rose-600 hover:border-rose-500/40 flex items-center gap-1"
                     >
                       <Trash2 className="w-3.5 h-3.5" /> Delete
                     </button>

@@ -44,10 +44,10 @@ const EVENT_CATEGORIES = {
 
 function SeverityIcon({ severity }: { severity: AuditSeverity }) {
   const config = {
-    info: { Icon: Info, color: 'text-blue-400', bg: 'bg-blue-500/10' },
-    warning: { Icon: AlertTriangle, color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
-    error: { Icon: AlertCircle, color: 'text-orange-400', bg: 'bg-orange-500/10' },
-    critical: { Icon: XCircle, color: 'text-rose-400', bg: 'bg-rose-500/10' },
+    info: { Icon: Info, color: 'text-blue-600', bg: 'bg-blue-500/10' },
+    warning: { Icon: AlertTriangle, color: 'text-yellow-600', bg: 'bg-yellow-500/10' },
+    error: { Icon: AlertCircle, color: 'text-orange-600', bg: 'bg-orange-500/10' },
+    critical: { Icon: XCircle, color: 'text-rose-500', bg: 'bg-rose-500/10' },
   };
   const { Icon, color, bg } = config[severity];
   return (

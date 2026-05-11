@@ -147,7 +147,7 @@ export default function StripeBillingCard() {
       <div className="rounded-2xl glass border border-amber-500/30 bg-amber-500/5 p-8 md:p-10 space-y-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0">
-            <AlertTriangle className="w-5 h-5 text-amber-400" />
+            <AlertTriangle className="w-5 h-5 text-amber-500" />
           </div>
           <h3 className="font-display italic lowercase text-2xl text-ink">stripe not configured</h3>
         </div>
@@ -174,8 +174,8 @@ export default function StripeBillingCard() {
 
       {error && (
         <div className="rounded-2xl bg-rose-500/8 border border-rose-500/30 p-4 flex items-center gap-3">
-          <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-          <p className="text-[11px] text-rose-400">{error}</p>
+          <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
+          <p className="text-[11px] text-rose-500">{error}</p>
         </div>
       )}
 
@@ -270,7 +270,7 @@ export default function StripeBillingCard() {
                       : <>{hasActive ? "Switch" : "Subscribe"} <ArrowRight className="w-3 h-3" /></>}
                 </button>
                 {!plan.configured && (
-                  <p className="text-[9px] font-mono text-amber-400/80 text-center leading-relaxed">
+                  <p className="text-[9px] font-mono text-amber-600/80 text-center leading-relaxed">
                     Set <span className="text-brand">STRIPE_{plan.id.toUpperCase()}_PRICE_ID</span> in Vercel to activate
                   </p>
                 )}
@@ -303,10 +303,10 @@ function ActiveSubCard({
   const daysLeft = renews ? Math.max(0, Math.ceil((renews.getTime() - Date.now()) / 86_400_000)) : null;
 
   const statusBadge =
-    sub.status === "active"   ? { label: "Active",    cls: "bg-emerald-500/15 border-emerald-500/30 text-emerald-400" } :
-    sub.status === "trialing" ? { label: "Trial",     cls: "bg-cyan-500/15 border-cyan-500/30 text-cyan-400" } :
-    sub.status === "past_due" ? { label: "Past Due",  cls: "bg-amber-500/15 border-amber-500/30 text-amber-400" } :
-    sub.status === "canceled" ? { label: "Canceled",  cls: "bg-rose-500/15 border-rose-500/30 text-rose-400" } :
+    sub.status === "active"   ? { label: "Active",    cls: "bg-emerald-500/15 border-emerald-500/30 text-emerald-600" } :
+    sub.status === "trialing" ? { label: "Trial",     cls: "bg-cyan-500/15 border-cyan-500/30 text-cyan-600" } :
+    sub.status === "past_due" ? { label: "Past Due",  cls: "bg-amber-500/15 border-amber-500/30 text-amber-600" } :
+    sub.status === "canceled" ? { label: "Canceled",  cls: "bg-rose-500/15 border-rose-500/30 text-rose-500" } :
     { label: (sub.status || "Unknown").toLowerCase(), cls: "bg-white/10 border-white/20 text-muted" };
 
   return (
@@ -329,7 +329,7 @@ function ActiveSubCard({
                 {statusBadge.label}
               </span>
               {sub.cancel_at_period_end && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.25em] border bg-rose-500/15 border-rose-500/30 text-rose-400">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.25em] border bg-rose-500/15 border-rose-500/30 text-rose-500">
                   Cancels at period end
                 </span>
               )}
@@ -339,7 +339,7 @@ function ActiveSubCard({
             </h3>
             <p className="text-[10px] uppercase tracking-[0.35em] text-muted/60">
               {sub.max_agents ? (
-                <span className={agentCount >= sub.max_agents ? "text-amber-400" : ""}>
+                <span className={agentCount >= sub.max_agents ? "text-amber-600" : ""}>
                   {agentCount} / {sub.max_agents} agents
                 </span>
               ) : ""}

@@ -63,7 +63,7 @@ function Section({ id, title, children }: { id?: string; title: string; children
 export function PrivacyPolicy() {
   return (
     <LegalLayout title="Privacy Policy" icon={Shield}>
-      <div className="text-xs border border-amber-500/20 rounded-lg px-4 py-3 bg-amber-500/5 text-amber-400/80 leading-relaxed">
+      <div className="text-xs border border-amber-500/20 rounded-lg px-4 py-3 bg-amber-500/5 text-amber-600/80 leading-relaxed">
         <strong>Operator note:</strong> Replace this page with your own attorney-reviewed privacy policy before
         accepting paying customers. The text below is a good-faith placeholder covering Wireline's actual data
         flows, but it has not been reviewed by an attorney. Fill in your business name and contact details where
@@ -218,7 +218,7 @@ export function PrivacyPolicy() {
 export function TermsOfService() {
   return (
     <LegalLayout title="Terms of Service" icon={FileText}>
-      <div className="text-xs border border-amber-500/20 rounded-lg px-4 py-3 bg-amber-500/5 text-amber-400/80 leading-relaxed">
+      <div className="text-xs border border-amber-500/20 rounded-lg px-4 py-3 bg-amber-500/5 text-amber-600/80 leading-relaxed">
         <strong>Operator note:</strong> Replace this page with your own attorney-reviewed Terms of Service before
         accepting paying customers. Fill in your company name, jurisdiction, and contact details where indicated.
       </div>

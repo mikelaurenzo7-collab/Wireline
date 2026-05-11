@@ -772,12 +772,12 @@ function SpendBudgetCard() {
             </div>
           </div>
           {status?.hard_capped_now && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs">
               <Lock className="w-3.5 h-3.5" /> Hard cap active — AI calls are blocked
             </div>
           )}
           {!status?.hard_capped_now && isWarn && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-600 text-xs">
               <AlertTriangle className="w-3.5 h-3.5" /> Spend has crossed your warn threshold
             </div>
           )}
@@ -840,7 +840,7 @@ function SpendBudgetCard() {
               className={cn(
                 "h-11 px-4 rounded-xl border flex items-center gap-2 text-xs uppercase tracking-[0.25em] transition-all",
                 draft.hard_cap
-                  ? "bg-rose-500/15 border-rose-500/40 text-rose-300"
+                  ? "bg-rose-500/15 border-rose-500/40 text-rose-600"
                   : "glass border-white/10 text-ink/70 hover:border-white/30",
               )}
               title="When on, AI calls return HTTP 402 once you've reached the monthly limit."
@@ -863,9 +863,9 @@ function SpendBudgetCard() {
             {saving ? "Saving" : "Save budget"}
           </button>
         </div>
-        {error && <div className="text-xs text-rose-400">{error}</div>}
+        {error && <div className="text-xs text-rose-500">{error}</div>}
         {savedAt && !error && Date.now() - savedAt < 4000 && (
-          <div className="text-xs text-emerald-400">Saved.</div>
+          <div className="text-xs text-emerald-600">Saved.</div>
         )}
       </div>
     </div>

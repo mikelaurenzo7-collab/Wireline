@@ -12,7 +12,7 @@ const CLOSED_CONFIRM: ConfirmState = { open: false, onConfirm: () => {} };
 // Provider badge metadata
 const PROVIDER_META: Record<string, { label: string; color: string }> = {
   google:    { label: "Google Workspace", color: "text-brand" },
-  microsoft: { label: "Microsoft / Outlook", color: "text-blue-400" },
+  microsoft: { label: "Microsoft / Outlook", color: "text-blue-600" },
 };
 
 export default function Integrations() {
@@ -308,10 +308,10 @@ export default function Integrations() {
                   {/* Microsoft */}
                   <div className="space-y-2 pt-2 border-t border-white/8">
                     <div className="flex items-center gap-2">
-                      <Webhook className="w-3.5 h-3.5 text-blue-400" />
+                      <Webhook className="w-3.5 h-3.5 text-blue-600" />
                       <h4 className="font-display italic lowercase text-sm text-ink">microsoft oauth redirect uri</h4>
                     </div>
-                    <code className="block w-full px-3 py-2 rounded-lg bg-black/40 border border-white/8 font-mono text-[11px] text-blue-400 select-all break-all">
+                    <code className="block w-full px-3 py-2 rounded-lg bg-black/40 border border-black/10 font-mono text-[11px] text-blue-600 select-all break-all">
                       {window.location.origin}/api/oauth/microsoft/callback
                     </code>
                     <p className="text-[10px] text-muted/80 leading-relaxed">

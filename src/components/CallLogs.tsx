@@ -201,7 +201,7 @@ export default function CallLogs() {
                           <span className={cn(
                             "shrink-0 px-1.5 py-0 rounded-full text-[8px] font-mono leading-tight",
                             (call.lead_score || 0) >= 80
-                              ? "bg-rose-500/15 text-rose-400 border border-rose-500/25"
+                              ? "bg-rose-500/15 text-rose-500 border border-rose-500/25"
                               : (call.lead_score || 0) >= 50
                               ? "bg-brand/12 text-brand border border-brand/20"
                               : "bg-black/[0.06] text-muted/60"
@@ -213,10 +213,10 @@ export default function CallLogs() {
                             <span className={cn(
                               "shrink-0 px-1.5 py-0 rounded-full text-[8px] font-mono leading-tight border",
                               call.qa_score >= 75
-                                ? "bg-emerald-500/8 text-emerald-400 border-emerald-500/20"
+                                ? "bg-emerald-500/8 text-emerald-600 border-emerald-500/20"
                                 : call.qa_score >= 50
-                                ? "bg-amber-500/8 text-amber-400 border-amber-500/20"
-                                : "bg-rose-500/8 text-rose-400 border-rose-500/20"
+                                ? "bg-amber-500/8 text-amber-600 border-amber-500/20"
+                                : "bg-rose-500/8 text-rose-500 border-rose-500/20"
                             )}>
                               ★{call.qa_score}
                             </span>
@@ -422,8 +422,8 @@ function CallDetail({ call, formatDuration, onBack }: { call: any; formatDuratio
                   <Stat label="Sentiment"  value={
                     <span className={cn(
                       "capitalize text-base",
-                      (call.sentiment || 'neutral') === 'positive' ? "text-emerald-400" :
-                      (call.sentiment || 'neutral') === 'negative' ? "text-rose-400" : "text-muted/70"
+                      (call.sentiment || 'neutral') === 'positive' ? "text-emerald-600" :
+                      (call.sentiment || 'neutral') === 'negative' ? "text-rose-500" : "text-muted/70"
                     )}>
                       {call.sentiment || "neutral"}
                     </span>

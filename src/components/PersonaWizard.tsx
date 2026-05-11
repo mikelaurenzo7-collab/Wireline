@@ -417,8 +417,8 @@ export default function PersonaWizard() {
                       <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium mb-4"
                         style={{ background: "linear-gradient(135deg, rgba(10,200,212,0.15), rgba(197,139,255,0.15))", border: "1px solid rgba(10,200,212,0.3)" }}
                       >
-                        <Sparkles className="w-3.5 h-3.5 text-cyan-300" />
-                        <span className="text-cyan-300">Personalized for {PERSONA_LABELS[persona]}</span>
+                        <Sparkles className="w-3.5 h-3.5 text-cyan-600" />
+                        <span className="text-cyan-600">Personalized for {PERSONA_LABELS[persona]}</span>
                       </div>
                       <h2 className="text-2xl font-bold text-ink mb-3">Your recommended path</h2>
                     </div>

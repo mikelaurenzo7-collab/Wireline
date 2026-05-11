@@ -122,7 +122,7 @@ export default function AgentExportImport({ agentId, agentName }: Props) {
             initial={{ opacity: 0, x: -6 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0 }}
-            className="flex items-center gap-1.5 text-emerald-400 text-[9px] uppercase tracking-[0.25em]"
+            className="flex items-center gap-1.5 text-emerald-600 text-[9px] uppercase tracking-[0.25em]"
           >
             <CheckCircle2 className="w-3 h-3" />
             Merged

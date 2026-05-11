@@ -84,40 +84,40 @@ function SentimentBadge({ label, status }: { label?: string; status?: string }) 
   const text = label || status || "Live";
   if (text.includes("Frustrated")) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] uppercase tracking-[0.25em] bg-rose-500/15 border border-rose-500/30 text-rose-400">
-        <span className="w-1 h-1 rounded-full bg-rose-400 animate-pulse" />
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] uppercase tracking-[0.25em] bg-rose-500/15 border border-rose-500/30 text-rose-500">
+        <span className="w-1 h-1 rounded-full bg-rose-500 animate-pulse" />
         {text}
       </span>
     );
   }
   if (text.includes("Tense")) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] uppercase tracking-[0.25em] bg-amber-500/15 border border-amber-500/30 text-amber-400">
-        <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] uppercase tracking-[0.25em] bg-amber-500/15 border border-amber-500/30 text-amber-600">
+        <span className="w-1 h-1 rounded-full bg-amber-500 animate-pulse" />
         {text}
       </span>
     );
   }
   if (text.includes("Closing")) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] uppercase tracking-[0.25em] bg-violet-500/15 border border-violet-500/30 text-violet-400">
-        <span className="w-1 h-1 rounded-full bg-violet-400 animate-pulse" />
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] uppercase tracking-[0.25em] bg-violet-500/15 border border-violet-500/30 text-violet-600">
+        <span className="w-1 h-1 rounded-full bg-violet-500 animate-pulse" />
         {text}
       </span>
     );
   }
   if (text.includes("Positive")) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] uppercase tracking-[0.25em] bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
-        <span className="w-1 h-1 rounded-full bg-emerald-400" />
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] uppercase tracking-[0.25em] bg-emerald-500/15 border border-emerald-500/30 text-emerald-600">
+        <span className="w-1 h-1 rounded-full bg-emerald-500" />
         {text}
       </span>
     );
   }
   if (text.includes("Engaged")) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] uppercase tracking-[0.25em] bg-cyan-500/15 border border-cyan-500/30 text-cyan-400">
-        <span className="w-1 h-1 rounded-full bg-cyan-400" />
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] uppercase tracking-[0.25em] bg-cyan-500/15 border border-cyan-500/30 text-cyan-600">
+        <span className="w-1 h-1 rounded-full bg-cyan-500" />
         {text}
       </span>
     );
@@ -147,7 +147,7 @@ function PulseRing({ size = 40 }: { size?: number }) {  return (
       />
       {/* Core icon */}
       <div
-        className="w-full h-full rounded-xl glass border border-emerald-500/40 flex items-center justify-center text-emerald-400"
+        className="w-full h-full rounded-xl glass border border-emerald-500/40 flex items-center justify-center text-emerald-600"
       >
         <Phone className="w-4 h-4" />
       </div>
@@ -272,14 +272,14 @@ export default function LiveMonitor() {
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500" />
                 </span>
                 <div className="flex-1 min-w-0">
-                  <span className="text-[10px] font-medium text-rose-400 uppercase tracking-[0.28em]">
+                  <span className="text-[10px] font-medium text-rose-500 uppercase tracking-[0.28em]">
                     Distress signal{distressedCalls.length > 1 ? `s (${distressedCalls.length})` : ""} detected
                   </span>
-                  <span className="text-[9px] text-rose-400/70 ml-2">
+                  <span className="text-[9px] text-rose-500/70 ml-2">
                     {distressedCalls.map(s => agentName(s.agent_id)).join(", ")} — consider escalating to human
                   </span>
                 </div>
-                <span className="text-[8px] uppercase tracking-[0.3em] text-rose-400/60 shrink-0">
+                <span className="text-[8px] uppercase tracking-[0.3em] text-rose-500/60 shrink-0">
                   De-escalate → Acknowledge → Escalate
                 </span>
               </motion.div>
@@ -305,8 +305,8 @@ export default function LiveMonitor() {
                 scroll flush
                 actions={
                   activeCount > 0 ? (
-                    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[8px] uppercase tracking-[0.3em]">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 text-[8px] uppercase tracking-[0.3em]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                       {activeCount} active
                     </span>
                   ) : undefined
@@ -371,7 +371,7 @@ export default function LiveMonitor() {
                               </div>
                             </div>
                             <div className="shrink-0 text-right">
-                              <div className="text-[11px] text-emerald-400 flex items-center gap-1.5 font-mono tabular-nums">
+                              <div className="text-[11px] text-emerald-600 flex items-center gap-1.5 font-mono tabular-nums">
                                 <Clock className="w-3 h-3" />
                                 <ElapsedTimer startedAt={sig.started_at} />
                               </div>
@@ -441,7 +441,7 @@ export default function LiveMonitor() {
                         <p className="text-[11px] text-ink font-medium leading-none mb-0.5">{agent.name}</p>
                         <p className={cn(
                           "text-[9px] uppercase tracking-[0.28em]",
-                          isActive ? "text-emerald-400" : "text-muted/50"
+                          isActive ? "text-emerald-600" : "text-muted/50"
                         )}>
                           {isActive ? "on call" : "idle"}
                         </p>

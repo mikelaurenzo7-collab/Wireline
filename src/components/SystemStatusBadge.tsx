@@ -114,7 +114,7 @@ export default function SystemStatusBadge() {
 
       {open && error && (
         <div className="absolute bottom-full left-0 mb-2 w-56 rounded-2xl glass-strong border border-white/10 p-4 space-y-2 z-50">
-          <div className="flex items-center gap-2 text-rose-400">
+          <div className="flex items-center gap-2 text-rose-500">
             <WifiOff className="w-4 h-4" />
             <span className="text-xs">Server unreachable</span>
           </div>
@@ -129,8 +129,8 @@ function StatusRow({ label, ok, detail }: { label: string; ok: boolean; detail: 
     <div className="flex items-center justify-between gap-3">
       <div className="flex items-center gap-2">
         {ok
-          ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-          : <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+          ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+          : <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
         }
         <span className="text-[11px] text-ink/80">{label}</span>
       </div>

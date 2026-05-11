@@ -769,7 +769,7 @@ function BriefForm({ agents, agentId: initAgent, initial, disabled }: { agents: 
           <ResultCard title="Closing Strategy"><p>{brief.closing_strategy}</p></ResultCard>
           {brief.risk_flags?.length > 0 && (
             <ResultCard title="Risk Flags">
-              <ul className="list-disc list-inside text-rose-400 space-y-1">{brief.risk_flags.map((f: string, i: number) => <li key={i}>{f}</li>)}</ul>
+              <ul className="list-disc list-inside text-rose-500 space-y-1">{brief.risk_flags.map((f: string, i: number) => <li key={i}>{f}</li>)}</ul>
             </ResultCard>
           )}
         </div>
@@ -868,7 +868,7 @@ function EnrichLeadForm({ initial, disabled }: { initial?: any; disabled: boolea
 
           {enrichment.likely_objections?.length > 0 && (
             <ResultCard title="Likely Objections">
-              <ul className="space-y-1.5 text-rose-400/90">
+              <ul className="space-y-1.5 text-rose-500/90">
                 {enrichment.likely_objections.map((s: string, i: number) => <li key={i}>"{s}"</li>)}
               </ul>
             </ResultCard>
@@ -949,7 +949,7 @@ function QualifyForm({ callId, initial, disabled }: { callId?: string; initial?:
                 q.qualification_label === "warm" && "bg-brand/15 border border-brand/40 text-brand",
                 q.qualification_label === "cool" && "bg-zinc-500/15 border border-zinc-500/40 text-zinc-300",
                 q.qualification_label === "cold" && "bg-zinc-700/15 border border-zinc-700/40 text-zinc-400",
-                q.qualification_label === "disqualified" && "bg-rose-700/15 border border-rose-700/40 text-rose-400",
+                q.qualification_label === "disqualified" && "bg-rose-700/15 border border-rose-700/40 text-rose-500",
               )}>
                 <Sparkles className="w-3 h-3" />
                 {q.qualification_label}

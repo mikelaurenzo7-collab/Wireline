@@ -316,7 +316,7 @@ export function StatTile({
           {trend && (
             <span className={cn(
               "shrink-0 text-[9px] font-mono font-medium",
-              trendPositive ? "text-emerald-400" : "text-rose-400"
+              trendPositive ? "text-emerald-600" : "text-rose-500"
             )}>
               {trendPositive ? "↑" : "↓"} {Math.abs(trend.value)}%
             </span>

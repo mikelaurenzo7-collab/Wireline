@@ -459,10 +459,10 @@ export default function OutboundDialer() {
                           )}
                         />
                         {customerNumber.length > 0 && !/^\+?[\d\s\-()]{7,15}$/.test(customerNumber) && (
-                          <p className="text-[10px] text-rose-400 mt-0.5">Use format: +1 (555) 000-0000</p>
+                          <p className="text-[10px] text-rose-500 mt-0.5">Use format: +1 (555) 000-0000</p>
                         )}
                         {customerNumber.length > 0 && /^\+?[\d\s\-()]{7,15}$/.test(customerNumber) && (
-                          <p className="text-[10px] text-emerald-400 mt-0.5 flex items-center gap-1">
+                          <p className="text-[10px] text-emerald-600 mt-0.5 flex items-center gap-1">
                             <CheckCircle2 className="w-3 h-3" /> Valid number
                           </p>
                         )}
@@ -859,7 +859,7 @@ export default function OutboundDialer() {
                   <button
                     onClick={() => stopCampaign(selectedCampaign.id)}
                     disabled={stoppingCampaignId === selectedCampaign.id}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500/15 border border-rose-500/40 text-rose-400 text-[10px] uppercase tracking-[0.25em] hover:bg-rose-500/25 transition-colors disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500/15 border border-rose-500/40 text-rose-500 text-[10px] uppercase tracking-[0.25em] hover:bg-rose-500/25 transition-colors disabled:opacity-50"
                   >
                     {stoppingCampaignId === selectedCampaign.id
                       ? <Loader2 className="w-3 h-3 animate-spin" />
@@ -869,13 +869,13 @@ export default function OutboundDialer() {
                 )}
                 {selectedCampaign.status === "draft" && (
                   <button onClick={() => setCampaignStatus(selectedCampaign.id, "active")}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 text-[10px] uppercase tracking-[0.25em] hover:bg-emerald-500/25 transition-colors">
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-600 text-[10px] uppercase tracking-[0.25em] hover:bg-emerald-500/25 transition-colors">
                     <Play className="w-3 h-3" /> Activate
                   </button>
                 )}
                 {selectedCampaign.status === "active" && (
                   <button onClick={() => setCampaignStatus(selectedCampaign.id, "paused")}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-400 text-[10px] uppercase tracking-[0.25em] hover:bg-amber-500/25 transition-colors">
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-600 text-[10px] uppercase tracking-[0.25em] hover:bg-amber-500/25 transition-colors">
                     <Pause className="w-3 h-3" /> Pause
                   </button>
                 )}
@@ -887,7 +887,7 @@ export default function OutboundDialer() {
                 )}
                 {["active", "paused"].includes(selectedCampaign.status) && (
                   <button onClick={() => setCampaignStatus(selectedCampaign.id, "completed")}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-violet-500/15 border border-violet-500/40 text-violet-400 text-[10px] uppercase tracking-[0.25em] hover:bg-violet-500/25 transition-colors">
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-violet-500/15 border border-violet-500/40 text-violet-600 text-[10px] uppercase tracking-[0.25em] hover:bg-violet-500/25 transition-colors">
                     <CheckCircle2 className="w-3 h-3" /> Complete
                   </button>
                 )}
@@ -1037,15 +1037,15 @@ export default function OutboundDialer() {
                 {/* Retry failed banner */}
                 {campaignLeads.some(l => l.status === 'Failed') && (
                   <div className="mx-4 mt-3 rounded-xl bg-rose-500/10 border border-rose-500/30 p-3 flex items-center gap-3">
-                    <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                    <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] text-rose-400 uppercase tracking-[0.25em]">
+                      <p className="text-[10px] text-rose-500 uppercase tracking-[0.25em]">
                         {campaignLeads.filter(l => l.status === 'Failed').length} failed lead{campaignLeads.filter(l => l.status === 'Failed').length > 1 ? 's' : ''}
                       </p>
                     </div>
                     <button
                       onClick={() => retryFailedLeads(selectedCampaign.id)}
-                      className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-400 text-[9px] uppercase tracking-[0.25em] hover:bg-rose-500/30 transition-colors"
+                      className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-500 text-[9px] uppercase tracking-[0.25em] hover:bg-rose-500/30 transition-colors"
                     >
                       <Activity className="w-3 h-3" /> Retry Failed
                     </button>
@@ -1143,10 +1143,10 @@ export default function OutboundDialer() {
 }
 
 const CAMPAIGN_STATUS: Record<string, { text: string; bg: string; border: string; iconBorder: string }> = {
-  draft:     { text: "text-muted",        bg: "bg-white/5",           border: "border-white/15",         iconBorder: "border-white/10" },
-  active:    { text: "text-emerald-400",  bg: "bg-emerald-500/10",    border: "border-emerald-500/30",   iconBorder: "border-emerald-500/30" },
-  paused:    { text: "text-amber-400",    bg: "bg-amber-500/10",      border: "border-amber-500/30",     iconBorder: "border-amber-500/30" },
-  completed: { text: "text-violet-400",   bg: "bg-violet-500/10",     border: "border-violet-500/30",    iconBorder: "border-violet-500/30" },
+  draft:     { text: "text-muted",        bg: "bg-black/5",           border: "border-black/10",         iconBorder: "border-black/8" },
+  active:    { text: "text-emerald-600",  bg: "bg-emerald-500/10",    border: "border-emerald-500/30",   iconBorder: "border-emerald-500/30" },
+  paused:    { text: "text-amber-600",    bg: "bg-amber-500/10",      border: "border-amber-500/30",     iconBorder: "border-amber-500/30" },
+  completed: { text: "text-violet-600",   bg: "bg-violet-500/10",     border: "border-violet-500/30",    iconBorder: "border-violet-500/30" },
 };
 
 /* ─── Callbacks List ─────────────────────────────────────────────── */
@@ -1221,7 +1221,7 @@ function CallbacksList({ callbacks, loading, onRefresh }: { callbacks: any[]; lo
                   </span>
                   <span className={cn(
                     "text-[9px] uppercase tracking-[0.3em] flex-shrink-0",
-                    isPast ? "text-amber-400" : "text-brand"
+                    isPast ? "text-amber-600" : "text-brand"
                   )}>
                     {relativeLabel}
                   </span>
@@ -1330,7 +1330,7 @@ function CreateCampaignModal({ agents, onClose, onCreated }: { agents: any[]; on
           {err && (
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-rose-500/10 border border-rose-500/30">
               <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-              <p className="text-[11px] text-rose-400">{err}</p>
+              <p className="text-[11px] text-rose-500">{err}</p>
             </div>
           )}
         </div>

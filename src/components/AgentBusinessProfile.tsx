@@ -253,8 +253,8 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                   className={cn(
                     "h-7 px-2.5 rounded-full text-[9px] uppercase tracking-[0.25em] transition-colors border",
                     closed
-                      ? "border-rose-500/30 text-rose-400 bg-rose-500/8"
-                      : "border-emerald-500/30 text-emerald-400 bg-emerald-500/8"
+                      ? "border-rose-500/30 text-rose-500 bg-rose-500/8"
+                      : "border-emerald-500/30 text-emerald-600 bg-emerald-500/8"
                   )}
                 >
                   {closed ? 'Closed' : 'Open'}
@@ -442,7 +442,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                 type="button"
                 onClick={() => removeVariable(k)}
                 aria-label={`Remove ${k}`}
-                className="w-9 h-9 rounded-lg flex items-center justify-center text-muted/60 hover:text-rose-400 hover:bg-rose-500/8 transition-colors shrink-0"
+                className="w-9 h-9 rounded-lg flex items-center justify-center text-muted/60 hover:text-rose-500 hover:bg-rose-500/8 transition-colors shrink-0"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -474,7 +474,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
             type="button"
             onClick={commitDraftVar}
             disabled={!draftVarKey.trim() || !/^[a-zA-Z_][a-zA-Z0-9_]{0,40}$/.test(draftVarKey)}
-            className="h-9 px-3 rounded-lg bg-emerald-500/15 border border-emerald-500/35 text-emerald-400 text-[10px] uppercase tracking-[0.25em] hover:bg-emerald-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+            className="h-9 px-3 rounded-lg bg-emerald-500/15 border border-emerald-500/35 text-emerald-600 text-[10px] uppercase tracking-[0.25em] hover:bg-emerald-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
           >
             <Plus className="w-3 h-3" /> Add
           </button>
@@ -543,7 +543,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 
 function CharCount({ value, max }: { value: string; max: number }) {
   const len = value.length;
-  const tone = len > max * 0.9 ? 'text-amber-400' : 'text-muted/50';
+  const tone = len > max * 0.9 ? 'text-amber-600' : 'text-muted/50';
   return <p className={cn("text-[9px] tabular-nums text-right", tone)}>{len}/{max}</p>;
 }
 
@@ -555,8 +555,8 @@ function ChipList({
   }
   const toneClass =
     tone === 'rose'
-      ? 'bg-rose-500/8 border-rose-500/25 text-rose-300'
-      : 'bg-amber-500/8 border-amber-500/30 text-amber-300';
+      ? 'bg-rose-500/8 border-rose-500/25 text-rose-600'
+      : 'bg-amber-500/8 border-amber-500/30 text-amber-600';
   return (
     <ul className="flex flex-wrap gap-1.5 mb-2">
       {chips.map((c, i) => (

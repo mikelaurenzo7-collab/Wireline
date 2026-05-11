@@ -403,7 +403,7 @@ export default function KnowledgeBaseManager() {
             initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
             className="rounded-2xl bg-amber-500/10 border border-amber-500/30 px-5 py-3 flex items-center justify-between flex-wrap gap-3"
           >
-            <div className="text-xs text-amber-400 flex items-center gap-2">
+            <div className="text-xs text-amber-600 flex items-center gap-2">
               <Check className="w-3.5 h-3.5" /> {selected.size} selected
             </div>
             <div className="flex items-center gap-2">
@@ -416,7 +416,7 @@ export default function KnowledgeBaseManager() {
               <button
                 onClick={removeBulk}
                 disabled={bulkBusy}
-                className="px-3 h-9 rounded-lg bg-rose-500/15 border border-rose-500/40 text-rose-300 hover:bg-rose-500/25 text-[10px] uppercase tracking-[0.25em] flex items-center gap-1.5 disabled:opacity-50"
+                className="px-3 h-9 rounded-lg bg-rose-500/15 border border-rose-500/40 text-rose-600 hover:bg-rose-500/25 text-[10px] uppercase tracking-[0.25em] flex items-center gap-1.5 disabled:opacity-50"
               >
                 {bulkBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                 Delete {selected.size}
@@ -428,7 +428,7 @@ export default function KnowledgeBaseManager() {
 
       {/* Error */}
       {error && (
-        <div className="rounded-2xl bg-rose-500/10 border border-rose-500/30 p-4 text-rose-400 text-sm flex items-center gap-3">
+        <div className="rounded-2xl bg-rose-500/10 border border-rose-500/30 p-4 text-rose-500 text-sm flex items-center gap-3">
           <AlertOctagon className="w-4 h-4" />
           <span>{error}</span>
         </div>
@@ -567,7 +567,7 @@ export default function KnowledgeBaseManager() {
                             <button
                               onClick={() => removeOne(row.id)}
                               disabled={savingId === row.id}
-                              className="h-8 px-3 rounded-lg bg-rose-500/15 border border-rose-500/35 text-rose-400 text-[9px] uppercase tracking-[0.25em] flex items-center gap-1.5 disabled:opacity-50"
+                              className="h-8 px-3 rounded-lg bg-rose-500/15 border border-rose-500/35 text-rose-500 text-[9px] uppercase tracking-[0.25em] flex items-center gap-1.5 disabled:opacity-50"
                             >
                               {savingId === row.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
                               Confirm
@@ -582,7 +582,7 @@ export default function KnowledgeBaseManager() {
                         ) : (
                           <button
                             onClick={() => setConfirmDelete(row.id)}
-                            className="h-8 w-8 rounded-lg glass border border-white/10 text-ink/40 hover:text-rose-400 hover:border-rose-500/30 flex items-center justify-center"
+                            className="h-8 w-8 rounded-lg glass border border-white/10 text-ink/40 hover:text-rose-500 hover:border-rose-500/30 flex items-center justify-center"
                             title="Delete"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -626,8 +626,8 @@ function DedupePanel({
   if (clusters.length === 0) {
     return (
       <div className="rounded-3xl bg-emerald-500/10 border border-emerald-500/30 p-8 text-center space-y-3">
-        <Sparkles className="w-8 h-8 mx-auto text-emerald-400" />
-        <p className="text-emerald-400 text-sm">Knowledge base looks clean — no near-duplicates or contradictions found.</p>
+        <Sparkles className="w-8 h-8 mx-auto text-emerald-600" />
+        <p className="text-emerald-600 text-sm">Knowledge base looks clean — no near-duplicates or contradictions found.</p>
         <button onClick={onClose} className="px-5 h-10 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.3em] text-ink/70">
           Dismiss
         </button>
@@ -729,7 +729,7 @@ function DedupePanel({
                               </span>
                             )}
                             {isRecommended && (
-                              <span className="px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center gap-1">
+                              <span className="px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] bg-amber-500/10 border border-amber-500/30 text-amber-600 flex items-center gap-1">
                                 <Sparkles className="w-2.5 h-2.5" /> AI pick
                               </span>
                             )}
@@ -744,7 +744,7 @@ function DedupePanel({
 
                 {c.suggested_canonical_content && keepId && (
                   <div className="rounded-lg bg-amber-500/5 border border-amber-500/20 p-3 text-xs text-ink/75 leading-relaxed">
-                    <div className="text-[9px] uppercase tracking-[0.3em] text-amber-400 mb-1.5 flex items-center gap-1">
+                    <div className="text-[9px] uppercase tracking-[0.3em] text-amber-600 mb-1.5 flex items-center gap-1">
                       <Sparkles className="w-2.5 h-2.5" /> Suggested merge
                     </div>
                     {c.suggested_canonical_content}
@@ -758,7 +758,7 @@ function DedupePanel({
         <div className="flex items-center justify-between gap-3 pt-2 border-t border-white/10">
           <div className="text-[11px] text-ink/60">
             {totalToDelete > 0
-              ? <>Will delete <span className="text-rose-400 font-medium">{totalToDelete}</span> {totalToDelete === 1 ? "fact" : "facts"}, keep one per active cluster.</>
+              ? <>Will delete <span className="text-rose-500 font-medium">{totalToDelete}</span> {totalToDelete === 1 ? "fact" : "facts"}, keep one per active cluster.</>
               : "Pick which fact to keep in each cluster, or skip the cluster."}
           </div>
           <div className="flex items-center gap-2">

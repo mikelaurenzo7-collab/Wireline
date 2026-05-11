@@ -549,7 +549,7 @@ export default function AgentTraining() {
                       <h3 className="font-display italic lowercase text-lg text-ink leading-none">fact archive</h3>
                       <p className="text-[10px] uppercase tracking-[0.3em] text-muted/70 mt-0.5">Knowledge base</p>
                     </div>
-                    <span className="px-1.5 py-0.5 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-400 text-[9px] uppercase tracking-[0.25em] leading-none">Factual</span>
+                    <span className="px-1.5 py-0.5 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-600 text-[9px] uppercase tracking-[0.25em] leading-none">Factual</span>
                   </header>
                   <div className="space-y-2 mb-3">
                     <AnimatePresence mode="popLayout">
@@ -586,7 +586,7 @@ export default function AgentTraining() {
                               <div className="flex-1 text-sm text-ink/90 leading-relaxed">{k.content}</div>
                               <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 shrink-0">
                                 <button onClick={() => setEditingKnowledge({ id: k.id, content: k.content })} className="w-6 h-6 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-ink hover:border-white/30"><Pencil className="w-3 h-3" /></button>
-                                <button onClick={() => deleteItem(k.id, 'knowledge')} className="w-6 h-6 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-blue-400 hover:border-blue-500/30"><Trash2 className="w-3 h-3" /></button>
+                                <button onClick={() => deleteItem(k.id, 'knowledge')} className="w-6 h-6 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-blue-600 hover:border-blue-500/30"><Trash2 className="w-3 h-3" /></button>
                               </div>
                             </div>
                           )}
@@ -608,7 +608,7 @@ export default function AgentTraining() {
                       <button
                         onClick={() => saveManualEntry('knowledge', newKnowledge)}
                         disabled={!newKnowledge || isSavingEntry}
-                        className="w-9 h-9 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-400 flex items-center justify-center hover:bg-blue-500/25 disabled:opacity-50 transition-all"
+                        className="w-9 h-9 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-600 flex items-center justify-center hover:bg-blue-500/25 disabled:opacity-50 transition-all"
                       >
                         <Plus className="w-3.5 h-3.5" />
                       </button>

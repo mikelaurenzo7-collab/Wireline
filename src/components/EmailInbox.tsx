@@ -256,9 +256,9 @@ export default function EmailInbox() {
                   const score = thread.lead_score || 0;
                   const active = selectedThread?.id === thread.id;
                   const scoreTone =
-                    score >= 80 ? "bg-rose-500/12 text-rose-400 border-rose-500/25" :
+                    score >= 80 ? "bg-rose-500/12 text-rose-500 border-rose-500/25" :
                     score >= 50 ? "bg-brand/12 text-brand border-brand/25" :
-                    "bg-white/4 text-muted/60 border-white/8";
+                    "bg-black/4 text-muted/60 border-black/8";
                   return (
                     <motion.button
                       layout

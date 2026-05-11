@@ -51,14 +51,14 @@ const PREMIUM_VOICES = [
 // Role metadata — mirrors ROLE_PERSONALITY_TEMPLATES on the server.
 // color is a Tailwind color stem (without bg-/text- prefix).
 export const AGENT_ROLES = [
-  { value: "sales",             label: "Sales",             description: "Closes deals and drives revenue",           color: "amber",   tw: { bg: "bg-amber-500/10",   text: "text-amber-400",   border: "border-amber-500/25",   dot: "bg-amber-400"   } },
-  { value: "customer_service",  label: "Customer Service",  description: "Handles inbound issues and support",         color: "emerald", tw: { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/25", dot: "bg-emerald-400" } },
-  { value: "scheduler",         label: "Scheduler",         description: "Books appointments and manages calendars",   color: "violet",  tw: { bg: "bg-violet-500/10",  text: "text-violet-400",  border: "border-violet-500/25",  dot: "bg-violet-400"  } },
-  { value: "collections",       label: "Collections",       description: "Handles payment follow-ups and recovery",    color: "rose",    tw: { bg: "bg-rose-500/10",    text: "text-rose-400",    border: "border-rose-500/25",    dot: "bg-rose-400"    } },
-  { value: "technical_support", label: "Technical Support", description: "Diagnoses and resolves technical issues",    color: "blue",    tw: { bg: "bg-blue-500/10",    text: "text-blue-400",    border: "border-blue-500/25",    dot: "bg-blue-400"    } },
-  { value: "lead_qualifier",    label: "Lead Qualifier",    description: "Screens and scores inbound prospects",       color: "orange",  tw: { bg: "bg-orange-500/10",  text: "text-orange-400",  border: "border-orange-500/25",  dot: "bg-orange-400"  } },
-  { value: "receptionist",      label: "Receptionist",      description: "Routes calls and creates first impressions", color: "cyan",    tw: { bg: "bg-cyan-500/10",    text: "text-cyan-400",    border: "border-cyan-500/25",    dot: "bg-cyan-400"    } },
-  { value: "marketing",         label: "Marketing",         description: "Nurtures prospects and runs campaigns",      color: "purple",  tw: { bg: "bg-purple-500/10",  text: "text-purple-400",  border: "border-purple-500/25",  dot: "bg-purple-400"  } },
+  { value: "sales",             label: "Sales",             description: "Closes deals and drives revenue",           color: "amber",   tw: { bg: "bg-amber-500/10",   text: "text-amber-600",   border: "border-amber-500/25",   dot: "bg-amber-500"   } },
+  { value: "customer_service",  label: "Customer Service",  description: "Handles inbound issues and support",         color: "emerald", tw: { bg: "bg-emerald-500/10", text: "text-emerald-600", border: "border-emerald-500/25", dot: "bg-emerald-500" } },
+  { value: "scheduler",         label: "Scheduler",         description: "Books appointments and manages calendars",   color: "violet",  tw: { bg: "bg-violet-500/10",  text: "text-violet-600",  border: "border-violet-500/25",  dot: "bg-violet-500"  } },
+  { value: "collections",       label: "Collections",       description: "Handles payment follow-ups and recovery",    color: "rose",    tw: { bg: "bg-rose-500/10",    text: "text-rose-600",    border: "border-rose-500/25",    dot: "bg-rose-500"    } },
+  { value: "technical_support", label: "Technical Support", description: "Diagnoses and resolves technical issues",    color: "blue",    tw: { bg: "bg-blue-500/10",    text: "text-blue-600",    border: "border-blue-500/25",    dot: "bg-blue-500"    } },
+  { value: "lead_qualifier",    label: "Lead Qualifier",    description: "Screens and scores inbound prospects",       color: "orange",  tw: { bg: "bg-orange-500/10",  text: "text-orange-600",  border: "border-orange-500/25",  dot: "bg-orange-500"  } },
+  { value: "receptionist",      label: "Receptionist",      description: "Routes calls and creates first impressions", color: "cyan",    tw: { bg: "bg-cyan-500/10",    text: "text-cyan-600",    border: "border-cyan-500/25",    dot: "bg-cyan-500"    } },
+  { value: "marketing",         label: "Marketing",         description: "Nurtures prospects and runs campaigns",      color: "purple",  tw: { bg: "bg-purple-500/10",  text: "text-purple-600",  border: "border-purple-500/25",  dot: "bg-purple-500"  } },
 ] as const;
 
 type RoleValue = typeof AGENT_ROLES[number]["value"];
@@ -463,7 +463,7 @@ export default function FleetSettings() {
                     disabled={isDeletingAgent === agent.id}
                     title="Delete agent"
                     aria-label={`Delete agent ${agent.name}`}
-                    className="mr-2 shrink-0 w-7 h-7 rounded-lg glass border border-white/8 flex items-center justify-center text-muted/40 hover:text-rose-400 hover:border-rose-500/30 hover:bg-rose-500/8 disabled:opacity-40 transition-all"
+                    className="mr-2 shrink-0 w-7 h-7 rounded-lg glass border border-white/8 flex items-center justify-center text-muted/40 hover:text-rose-500 hover:border-rose-500/30 hover:bg-rose-500/8 disabled:opacity-40 transition-all"
                   >
                     {isDeletingAgent === agent.id
                       ? <Loader2 className="w-3 h-3 animate-spin" />
@@ -1008,7 +1008,7 @@ export default function FleetSettings() {
                             <h3 className="font-display italic lowercase text-lg text-ink leading-none">neural grounding</h3>
                             <p className="text-[10px] uppercase tracking-[0.3em] text-muted/70 mt-0.5">Knowledge base</p>
                           </div>
-                          <span className="px-1.5 py-0.5 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-400 text-[9px] uppercase tracking-[0.25em] leading-none">Factual</span>
+                          <span className="px-1.5 py-0.5 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-600 text-[9px] uppercase tracking-[0.25em] leading-none">Factual</span>
                        </header>
                        <div className="flex-1 overflow-y-auto space-y-2 pr-1 scrollbar-hide">
                          <AnimatePresence mode="popLayout">

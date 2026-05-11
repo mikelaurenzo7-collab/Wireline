@@ -97,7 +97,7 @@ export default function ConfirmModal({
                   "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
                   danger ? "bg-rose-500/15 border border-rose-500/30" : "bg-amber-500/15 border border-amber-500/30"
                 )}>
-                  <AlertTriangle className={cn("w-5 h-5", danger ? "text-rose-400" : "text-amber-400")} aria-hidden="true" />
+                  <AlertTriangle className={cn("w-5 h-5", danger ? "text-rose-500" : "text-amber-500")} aria-hidden="true" />
                 </div>
                 <div>
                   <h3 id="confirm-modal-title" className="font-display italic text-xl text-ink mb-1">{title}</h3>
@@ -127,7 +127,7 @@ export default function ConfirmModal({
                   className={cn(
                     "flex-1 h-11 rounded-xl text-[11px] uppercase tracking-[0.25em] flex items-center justify-center gap-1.5 transition-all active:scale-95",
                     danger
-                      ? "bg-rose-500/20 border border-rose-500/40 text-rose-400 hover:bg-rose-500/30"
+                      ? "bg-rose-500/20 border border-rose-500/40 text-rose-500 hover:bg-rose-500/30"
                       : "brutal-btn !py-0 !h-11"
                   )}
                 >
