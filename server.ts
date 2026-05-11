@@ -21,7 +21,7 @@ import { SchemaType } from "@google/generative-ai";
 import { createClient } from "@supabase/supabase-js";
 import { google } from "googleapis";
 import Stripe from "stripe";
-import { randomUUID, timingSafeEqual as cryptoTimingSafeEqual } from "node:crypto";
+import { randomUUID, randomBytes as cryptoRandomBytes, timingSafeEqual as cryptoTimingSafeEqual } from "node:crypto";
 import * as claudeBrain from "./src/lib/claude-brain";
 import { AuditLogger } from "./src/lib/audit-logger";
 import { createAuditEventsHandler, createAuditStatsHandler, createAuditExportHandler } from "./src/lib/audit-routes";
@@ -309,10 +309,18 @@ function buildCSP(isDev: boolean, nonce?: string): string {
   ].join("; ");
 }
 
-/** Generate a cryptographically random base64 nonce for CSP script tags. */
+/** Generate a cryptographically random base64 nonce for CSP script tags.
+ * Output contains only base64 characters (A-Z, a-z, 0-9, +, /, =) which are
+ * safe to embed in HTML attributes without additional escaping.
+ */
 function generateCspNonce(): string {
-  const { randomBytes } = require("node:crypto") as typeof import("node:crypto");
-  return randomBytes(16).toString("base64");
+  const nonce = cryptoRandomBytes(16).toString("base64");
+  // Defensive: base64 output must not contain characters that break HTML attributes.
+  // This invariant always holds for standard base64 but we verify it explicitly.
+  if (!/^[A-Za-z0-9+/=]+$/.test(nonce)) {
+    throw new Error("generateCspNonce: unexpected character in nonce — this is a bug");
+  }
+  return nonce;
 }
 
 app.use((req: any, res: any, next: any) => {
@@ -657,7 +665,14 @@ app.use("/api/claude", (req: any, res: any, next: any) => {
 
 // Extend Claude rate limiting to non-/api/claude/* endpoints that also
 // make Claude calls so they share the same per-user budget.
-app.use(["/api/train/extract", "/api/agents/:id/optimize"], (req: any, res: any, next: any) => {
+app.use([
+  "/api/train/extract",
+  "/api/agents/:id/optimize",
+  "/api/insights/topics",
+  "/api/insights/failure-modes",
+  "/api/insights/daily-brief",
+  "/api/qa/score",
+], (req: any, res: any, next: any) => {
   claudeRateLimiter(req, res, next).catch(next);
 });
 
@@ -10104,7 +10119,7 @@ app.get("/api/insights/leaderboard", authenticateUser, async (req: any, res: any
 });
 
 // Topic clusters (Claude-powered, cached 1h per user).
-app.get("/api/insights/topics", authenticateUser, claudeRateLimiter, enforce24hSpendCap, enforceSpendCap, async (req: any, res: any) => {
+app.get("/api/insights/topics", authenticateUser, enforce24hSpendCap, enforceSpendCap, async (req: any, res: any) => {
   try {
     const force = req.query.refresh === "1";
     const cacheKey = `topics:${req.user.id}`;
@@ -10134,7 +10149,7 @@ app.get("/api/insights/topics", authenticateUser, claudeRateLimiter, enforce24hS
 });
 
 // Failure modes (Claude-powered, cached 1h per user).
-app.get("/api/insights/failure-modes", authenticateUser, claudeRateLimiter, enforce24hSpendCap, enforceSpendCap, async (req: any, res: any) => {
+app.get("/api/insights/failure-modes", authenticateUser, enforce24hSpendCap, enforceSpendCap, async (req: any, res: any) => {
   try {
     const force = req.query.refresh === "1";
     const cacheKey = `failures:${req.user.id}`;
@@ -10240,7 +10255,7 @@ async function computeDailyBrief(userId: string, opts?: { force?: boolean }) {
   return { payload, cached: false };
 }
 
-app.get("/api/insights/daily-brief", authenticateUser, claudeRateLimiter, enforce24hSpendCap, enforceSpendCap, async (req: any, res: any) => {
+app.get("/api/insights/daily-brief", authenticateUser, enforce24hSpendCap, enforceSpendCap, async (req: any, res: any) => {
   try {
     const { payload, cached } = await computeDailyBrief(req.user.id, { force: req.query.refresh === "1" });
     res.json({ ...payload, cached });
@@ -10532,7 +10547,7 @@ app.delete("/api/dnc/:id", authenticateUser, async (req: any, res: any) => {
 // QA SCORING — Claude-powered call quality
 // ==========================================
 // Score a call against a 5-dimension QA rubric (20 pts each = 100 total).
-app.post("/api/qa/score/:callId", authenticateUser, claudeRateLimiter, withAudit("qa"), async (req: any, res: any) => {
+app.post("/api/qa/score/:callId", authenticateUser, withAudit("qa"), async (req: any, res: any) => {
   try {
     const { callId } = req.params;
     const { data: call, error: callErr } = await db
