@@ -15,6 +15,10 @@ import { normalizeEnabledTools } from "../lib/agent-capabilities";
 const router = Router();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
+const isMissingRoleColumnError = (error: any) =>
+  typeof error?.message === "string" &&
+  error.message.includes("Could not find the 'role' column of 'wireline_agents'");
+
 
 router.get("/api/agents", authenticateUser, async (req: any, res: any) => {
   try {
@@ -217,7 +221,7 @@ router.post("/api/agents", authenticateUser, async (req: any, res: any) => {
     const { name, role, personality } = validation.data;
     const agentRole = role || DEFAULT_AGENT_ROLE;
     const agentId = id || `agent-${Date.now()}`;
-    await db.from('wireline_agents').insert({
+    let agentInsert = await db.from('wireline_agents').insert({
       id: agentId,
       user_id: req.user.id,
       name,
@@ -225,6 +229,28 @@ router.post("/api/agents", authenticateUser, async (req: any, res: any) => {
       channel: channel || 'voice',
       role: agentRole
     });
+    let usedLegacyRoleFallback = false;
+
+    if (agentInsert.error && isMissingRoleColumnError(agentInsert.error)) {
+      usedLegacyRoleFallback = true;
+      log.warn("wireline_agents.role missing; retrying legacy insert", { userId: req.user.id, agentId });
+      agentInsert = await db.from('wireline_agents').insert({
+        id: agentId,
+        user_id: req.user.id,
+        name,
+        voice_id: voice_id || 'bIHbv24MWmeRgasZH58o',
+        channel: channel || 'voice',
+      });
+    }
+
+    if (agentInsert.error) {
+      log.error("Agent row insert failed", {
+        userId: req.user.id,
+        agentId,
+        error: getErrorMessage(agentInsert.error),
+      });
+      return res.status(500).json({ error: "Failed to create agent" });
+    }
 
     // Use provided personality or fall back to role-appropriate template
     const personalityContent = personality
@@ -233,11 +259,21 @@ router.post("/api/agents", authenticateUser, async (req: any, res: any) => {
         ? "You are a professional email agent specialized in clear, efficient communication."
         : "You are a helpful assistant serving as a phone agent.");
 
-    await db.from('wireline_personality').insert({
+    const personalityInsert = await db.from('wireline_personality').insert({
        agent_id: agentId,
        user_id: req.user.id,
        content: personalityContent
     });
+
+    if (personalityInsert.error) {
+      log.error("Agent personality insert failed", {
+        userId: req.user.id,
+        agentId,
+        error: getErrorMessage(personalityInsert.error),
+      });
+      await db.from('wireline_agents').delete().eq('id', agentId).eq('user_id', req.user.id);
+      return res.status(500).json({ error: "Failed to create agent" });
+    }
     
     // Audit log: agent creation
     void auditLogger.logAgentOperation('created', {

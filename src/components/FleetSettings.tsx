@@ -193,14 +193,24 @@ export default function FleetSettings() {
       });
       const data = await safeJson(resp);
       
-      if (resp.status === 403) {
-        toastWarning("Access denied", data.error || "Upgrade your plan.");
-      } else {
-        setNewAgentName("");
-        setNewAgentId("");
-        toastSuccess("Agent deployed", newAgentName);
-        await fetchAgents();
+      if (!resp.ok) {
+        const message = typeof data === "object" && data && "error" in data && typeof data.error === "string"
+          ? data.error
+          : "Please try again.";
+        if (resp.status === 403) {
+          toastWarning("Access denied", message || "Upgrade your plan.");
+        } else if (resp.status === 401) {
+          toastError("Session expired", message || "Please sign in again.");
+        } else {
+          toastError("Deployment failed", message);
+        }
+        return;
       }
+
+      setNewAgentName("");
+      setNewAgentId("");
+      toastSuccess("Agent deployed", newAgentName);
+      await fetchAgents();
     } catch (e: any) {
       toastError("Deployment failed", "Could not reach the server. Please try again.");
     }
