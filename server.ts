@@ -57,7 +57,7 @@ import { syncGoogleCalendar } from "./src/services/google-calendar-sync";
 import { syncOutlookCalendar } from "./src/services/outlook-calendar-sync";
 import { syncGoogleDriveToKnowledge } from "./src/services/google-drive-sync";
 import { db, IS_PROD, log, fetchWithTimeout, auditLogger, requirePermission, requireRole, quotaTracker } from "./src/lib/server-context";
-import { stripe, stripeAvailable, syncSubscriptionFromStripe } from "./src/lib/stripe-helpers";
+import { stripe, stripeAvailable } from "./src/lib/stripe-helpers";
 import { SCOPES, MS_SCOPES, getGoogleOAuthClient, getMicrosoftRedirectUri, refreshMicrosoftToken, getMicrosoftAccessToken, generateOAuthState, verifyOAuthState, sendEmailViaMicrosoft } from "./src/lib/oauth-helpers";
 import { VAPI_WEBHOOK_SECRET, timingSafeEq, sanitizePhone, MAX_CONTEXT_PREVIEW_LENGTH, buildCallerProfileBlock, OUTBOUND_ARCHETYPE_BY_ROLE, getArchetypeConfig, buildRoleToolDefs, PRESERVED_LEAD_STATUSES, SENTIMENT_ANGRY_SIGNALS, SENTIMENT_POSITIVE_SIGNALS } from "./src/lib/vapi-helpers";
 import { attemptWebhookDelivery, dispatchWebhook, processWebhookRetries, WEBHOOK_EVENTS, type WebhookEvent } from "./src/lib/webhook-helpers";

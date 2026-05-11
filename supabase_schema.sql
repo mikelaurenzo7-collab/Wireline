@@ -1400,98 +1400,6 @@ CREATE INDEX IF NOT EXISTS wireline_email_threads_user_read_idx
 ALTER TABLE wireline_webhooks ADD COLUMN IF NOT EXISTS secret_encrypted TEXT;
 ALTER TABLE wireline_webhooks ADD COLUMN IF NOT EXISTS secret_last_four TEXT;
 
- - -    % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
- - -   C a l e n d a r   I n t e g r a t i o n s 
- - -    % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
- 
- C R E A T E   T A B L E   I F   N O T   E X I S T S   w i r e l i n e _ c a l e n d a r _ a c c o u n t s   ( 
-         i d   U U I D   P R I M A R Y   K E Y   D E F A U L T   u u i d _ g e n e r a t e _ v 4 ( ) , 
-         u s e r _ i d   U U I D   R E F E R E N C E S   a u t h . u s e r s ( i d )   O N   D E L E T E   C A S C A D E , 
-         e m a i l _ a d d r e s s   T E X T   N O T   N U L L , 
-         p r o v i d e r   T E X T   N O T   N U L L   C H E C K   ( p r o v i d e r   I N   ( ' g o o g l e ' ,   ' m i c r o s o f t ' ) ) , 
-         a c c e s s _ t o k e n   T E X T , 
-         r e f r e s h _ t o k e n   T E X T , 
-         e x p i r e s _ a t   B I G I N T , 
-         s y n c _ t o k e n   T E X T , 
-         c r e a t e d _ a t   T I M E S T A M P T Z   D E F A U L T   N O W ( ) , 
-         u p d a t e d _ a t   T I M E S T A M P T Z   D E F A U L T   N O W ( ) , 
-         U N I Q U E ( u s e r _ i d ,   e m a i l _ a d d r e s s ) 
- ) ; 
- A L T E R   T A B L E   w i r e l i n e _ c a l e n d a r _ a c c o u n t s   E N A B L E   R O W   L E V E L   S E C U R I T Y ; 
- C R E A T E   P O L I C Y   \  
- U s e r s  
- c a n  
- v i e w  
- t h e i r  
- o w n  
- c a l e n d a r  
- a c c o u n t s \   O N   w i r e l i n e _ c a l e n d a r _ a c c o u n t s   F O R   S E L E C T   U S I N G   ( a u t h . u i d ( )   =   u s e r _ i d ) ; 
- C R E A T E   P O L I C Y   \ U s e r s  
- c a n  
- m a n a g e  
- t h e i r  
- o w n  
- c a l e n d a r  
- a c c o u n t s \   O N   w i r e l i n e _ c a l e n d a r _ a c c o u n t s   F O R   I N S E R T   W I T H   C H E C K   ( a u t h . u i d ( )   =   u s e r _ i d ) ; 
- C R E A T E   P O L I C Y   \ U s e r s  
- c a n  
- u p d a t e  
- t h e i r  
- o w n  
- c a l e n d a r  
- a c c o u n t s \   O N   w i r e l i n e _ c a l e n d a r _ a c c o u n t s   F O R   U P D A T E   U S I N G   ( a u t h . u i d ( )   =   u s e r _ i d )   W I T H   C H E C K   ( a u t h . u i d ( )   =   u s e r _ i d ) ; 
- C R E A T E   P O L I C Y   \ U s e r s  
- c a n  
- d e l e t e  
- t h e i r  
- o w n  
- c a l e n d a r  
- a c c o u n t s \   O N   w i r e l i n e _ c a l e n d a r _ a c c o u n t s   F O R   D E L E T E   U S I N G   ( a u t h . u i d ( )   =   u s e r _ i d ) ; 
- 
- C R E A T E   T A B L E   I F   N O T   E X I S T S   w i r e l i n e _ c a l e n d a r _ e v e n t s   ( 
-         i d   U U I D   P R I M A R Y   K E Y   D E F A U L T   u u i d _ g e n e r a t e _ v 4 ( ) , 
-         u s e r _ i d   U U I D   R E F E R E N C E S   a u t h . u s e r s ( i d )   O N   D E L E T E   C A S C A D E , 
-         a c c o u n t _ i d   U U I D   R E F E R E N C E S   w i r e l i n e _ c a l e n d a r _ a c c o u n t s ( i d )   O N   D E L E T E   C A S C A D E , 
-         e x t e r n a l _ e v e n t _ i d   T E X T   N O T   N U L L , 
-         t i t l e   T E X T , 
-         s t a r t _ t i m e   T I M E S T A M P T Z   N O T   N U L L , 
-         e n d _ t i m e   T I M E S T A M P T Z   N O T   N U L L , 
-         s t a t u s   T E X T   D E F A U L T   ' c o n f i r m e d ' , 
-         c r e a t e d _ a t   T I M E S T A M P T Z   D E F A U L T   N O W ( ) , 
-         u p d a t e d _ a t   T I M E S T A M P T Z   D E F A U L T   N O W ( ) , 
-         U N I Q U E ( a c c o u n t _ i d ,   e x t e r n a l _ e v e n t _ i d ) 
- ) ; 
- A L T E R   T A B L E   w i r e l i n e _ c a l e n d a r _ e v e n t s   E N A B L E   R O W   L E V E L   S E C U R I T Y ; 
- C R E A T E   P O L I C Y   \ U s e r s  
- c a n  
- v i e w  
- t h e i r  
- o w n  
- c a l e n d a r  
- e v e n t s \   O N   w i r e l i n e _ c a l e n d a r _ e v e n t s   F O R   S E L E C T   U S I N G   ( a u t h . u i d ( )   =   u s e r _ i d ) ; 
- C R E A T E   P O L I C Y   \ U s e r s  
- c a n  
- m a n a g e  
- t h e i r  
- o w n  
- c a l e n d a r  
- e v e n t s \   O N   w i r e l i n e _ c a l e n d a r _ e v e n t s   F O R   I N S E R T   W I T H   C H E C K   ( a u t h . u i d ( )   =   u s e r _ i d ) ; 
- C R E A T E   P O L I C Y   \ U s e r s  
- c a n  
- u p d a t e  
- t h e i r  
- o w n  
- c a l e n d a r  
- e v e n t s \   O N   w i r e l i n e _ c a l e n d a r _ e v e n t s   F O R   U P D A T E   U S I N G   ( a u t h . u i d ( )   =   u s e r _ i d )   W I T H   C H E C K   ( a u t h . u i d ( )   =   u s e r _ i d ) ; 
- C R E A T E   P O L I C Y   \ U s e r s  
- c a n  
- d e l e t e  
- t h e i r  
- o w n  
- c a l e n d a r  
- e v e n t s \   O N   w i r e l i n e _ c a l e n d a r _ e v e n t s   F O R   D E L E T E   U S I N G   ( a u t h . u i d ( )   =   u s e r _ i d ) ; 
-  
- 
 -- -----------------------------------------------------------------------------
 -- Calendar Integrations (Google + Microsoft Outlook)
 -- -----------------------------------------------------------------------------
@@ -1510,15 +1418,14 @@ CREATE TABLE IF NOT EXISTS wireline_calendar_accounts (
     UNIQUE(user_id, email_address)
 );
 ALTER TABLE wireline_calendar_accounts ENABLE ROW LEVEL SECURITY;
-DO ` LANGUAGE plpgsql
-BEGIN
+DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'wireline_calendar_accounts' AND policyname = 'Users can view their own calendar accounts') THEN
         EXECUTE 'CREATE POLICY "Users can view their own calendar accounts" ON wireline_calendar_accounts FOR SELECT USING (auth.uid() = user_id)';
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'wireline_calendar_accounts' AND policyname = 'Users can manage their own calendar accounts') THEN
         EXECUTE 'CREATE POLICY "Users can manage their own calendar accounts" ON wireline_calendar_accounts FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id)';
     END IF;
-END `;
+END $$;
 
 CREATE TABLE IF NOT EXISTS wireline_calendar_events (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -1534,15 +1441,14 @@ CREATE TABLE IF NOT EXISTS wireline_calendar_events (
     UNIQUE(account_id, external_event_id)
 );
 ALTER TABLE wireline_calendar_events ENABLE ROW LEVEL SECURITY;
-DO ` LANGUAGE plpgsql
-BEGIN
+DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'wireline_calendar_events' AND policyname = 'Users can view their own calendar events') THEN
         EXECUTE 'CREATE POLICY "Users can view their own calendar events" ON wireline_calendar_events FOR SELECT USING (auth.uid() = user_id)';
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'wireline_calendar_events' AND policyname = 'Users can manage their own calendar events') THEN
         EXECUTE 'CREATE POLICY "Users can manage their own calendar events" ON wireline_calendar_events FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id)';
     END IF;
-END `;
+END $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- wireline_webhook_deliveries user_id + created_at — 2026-05-11
