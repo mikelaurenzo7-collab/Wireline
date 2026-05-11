@@ -32,6 +32,8 @@ const recommended = [
   ["STRIPE_STARTER_PRICE_ID",   "Stripe price ID for the Starter plan"],
   ["STRIPE_PRO_PRICE_ID",       "Stripe price ID for the Pro plan"],
   ["STRIPE_ENTERPRISE_PRICE_ID","Stripe price ID for the Enterprise plan"],
+  ["WIRELINE_DATA_KEY",         "AES-256-GCM key for webhook secret vault — POST/PATCH /api/webhooks with a signing secret returns 503 when unset"],
+  ["CRON_SECRET",               "Bearer token for /api/jobs/sweep cron — required (≥16 chars) when invoking sweep from a scheduler"],
 ];
 
 const optional = [

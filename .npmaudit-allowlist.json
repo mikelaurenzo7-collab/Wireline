@@ -1,0 +1,4 @@
+{
+  "$schema": "Documentation only — see scripts/audit-blocking.mjs for the format",
+  "allowlist": []
+}

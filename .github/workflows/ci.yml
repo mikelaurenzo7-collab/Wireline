@@ -52,11 +52,14 @@ jobs:
       - name: Production env check (informational)
         # Surfaces missing env vars in CI logs without blocking the build.
         # CI doesn't have prod secrets — the script exits 0 here so this
-        # step is purely informational. Set PRODUCTION_CHECK=1 in deploy
-        # workflows to make missing recommended vars a hard fail.
+        # step is purely informational. The strict gate runs on release
+        # tags via .github/workflows/prod-deploy-gate.yml using the
+        # `production` GitHub environment, which DOES have prod secrets.
         run: node scripts/check-prod-env.mjs || true
 
-      - name: Audit (high severity, non-blocking)
-        # `audit` exits non-zero on findings; we surface the report but
-        # don't fail CI on transitive vulns we can't immediately fix.
-        run: npm audit --audit-level=high || true
+      - name: Audit (high severity, blocking)
+        # Hard fail on high-severity vulnerabilities so we don't ship
+        # known-vulnerable dependencies. To temporarily allow a known
+        # transitive vuln (with documented justification), add it to
+        # `.npmaudit-allowlist.json` (see the file for format).
+        run: node scripts/audit-blocking.mjs

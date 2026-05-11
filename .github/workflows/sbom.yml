@@ -1,0 +1,68 @@
+name: SBOM (CycloneDX)
+
+# Generates a CycloneDX 1.5 SBOM for every release tag and attaches it
+# to the GitHub Release. Procurement teams routinely ask for an SBOM
+# before signing enterprise contracts.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  sbom:
+    name: Generate and attach SBOM
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Generate CycloneDX SBOM
+        # @cyclonedx/cyclonedx-npm is the maintainer-recommended generator
+        # (replaces @cyclonedx/bom).  --output-format JSON, spec 1.5.
+        run: |
+          npx --yes @cyclonedx/cyclonedx-npm@latest \
+            --output-format JSON \
+            --spec-version 1.5 \
+            --output-file wireline-sbom.cdx.json
+
+      - name: Generate CycloneDX SBOM (XML)
+        run: |
+          npx --yes @cyclonedx/cyclonedx-npm@latest \
+            --output-format XML \
+            --spec-version 1.5 \
+            --output-file wireline-sbom.cdx.xml
+
+      - name: Attach SBOMs to release
+        if: github.event_name == 'release'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          gh release upload "$TAG" \
+            wireline-sbom.cdx.json \
+            wireline-sbom.cdx.xml \
+            --clobber
+
+      - name: Upload SBOM artifact (workflow_dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: wireline-sbom
+          path: |
+            wireline-sbom.cdx.json
+            wireline-sbom.cdx.xml
+          retention-days: 90

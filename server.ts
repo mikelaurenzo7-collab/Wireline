@@ -286,6 +286,17 @@ app.use((req: any, res: any, next: any) => {
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader("Permissions-Policy", "geolocation=(), camera=(), microphone=(self)");
+  // Cross-origin isolation hardening — defense in depth against
+  // Spectre-class side-channel leaks and reduces the blast radius of any
+  // sub-resource compromise. COOP=same-origin breaks any window.opener
+  // postMessage from a different origin (we don't rely on cross-origin
+  // popups for OAuth — those use redirect flows). CORP=same-site keeps
+  // our static + API resources from being embedded by foreign origins.
+  // Origin-Agent-Cluster is a hint that requests this origin run in
+  // their own agent cluster (process isolation in modern browsers).
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+  res.setHeader("Cross-Origin-Resource-Policy", "same-site");
+  res.setHeader("Origin-Agent-Cluster", "?1");
   res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, undefined, CSP_CONNECT_SRCS));
   if (IS_PROD) {
     // 6 months HSTS preload-eligible — only in prod so dev over http stays usable.

@@ -1,0 +1,32 @@
+# Gitleaks configuration for Wireline.
+#
+# Inherits the default ruleset (which already covers AWS, GCP, Stripe,
+# Anthropic, OpenAI, Slack, GitHub, Supabase, etc. tokens) and adds
+# repo-specific allowlist entries for known-safe placeholder strings.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Files and patterns safe to ignore"
+paths = [
+    '''(.*?)\.lock$''',
+    '''(.*?)package-lock\.json$''',
+    '''node_modules/.*''',
+    '''dist/.*''',
+    '''coverage/.*''',
+    '''docs/.*''',
+    # Test fixtures intentionally contain dummy secrets shaped like real ones.
+    '''.*\.test\.(ts|tsx|js|mjs)$''',
+    # The example env file uses placeholder values.
+    '''.env\.example''',
+]
+
+# Specific values that look like secrets but aren't.
+regexes = [
+    '''placeholder-key''',
+    '''MY_GEMINI_API_KEY''',
+    '''sk-ant-xxx''',
+    '''sk_test_[A-Za-z0-9]{8,}''',
+    '''wlk_[A-Za-z0-9]{8,}_(?:test|example)''',
+]

@@ -1,0 +1,58 @@
+name: Production deploy gate
+
+# Runs when a release tag is pushed (e.g. v1.2.3). Validates that
+# every required and recommended environment variable is set in the
+# `production` GitHub environment BEFORE we let the release publish.
+# If you don't deploy from tags, also wire this on push to `main` —
+# but bias is to gate the release event so a hotfix push to main can
+# still land without secrets being present in the workflow context.
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch: {}
+
+jobs:
+  env-check:
+    name: Strict production env check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+
+      - name: Strict env check (PRODUCTION_CHECK=1)
+        env:
+          PRODUCTION_CHECK: "1"
+          # Map every secret from the `production` GitHub environment to
+          # the env var name the script checks. Add new secrets here
+          # whenever scripts/check-prod-env.mjs gains a new key.
+          VITE_SUPABASE_URL:           ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY:      ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY:   ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          OAUTH_STATE_SECRET:          ${{ secrets.OAUTH_STATE_SECRET }}
+          ANTHROPIC_API_KEY:           ${{ secrets.ANTHROPIC_API_KEY }}
+          VITE_VAPI_PUBLIC_KEY:        ${{ secrets.VITE_VAPI_PUBLIC_KEY }}
+          VAPI_PRIVATE_KEY:            ${{ secrets.VAPI_PRIVATE_KEY }}
+          VAPI_WEBHOOK_SECRET:         ${{ secrets.VAPI_WEBHOOK_SECRET }}
+          APP_URL:                     ${{ secrets.APP_URL }}
+          CORS_ORIGINS:                ${{ secrets.CORS_ORIGINS }}
+          STRIPE_SECRET_KEY:           ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET:       ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          STRIPE_STARTER_PRICE_ID:     ${{ secrets.STRIPE_STARTER_PRICE_ID }}
+          STRIPE_PRO_PRICE_ID:         ${{ secrets.STRIPE_PRO_PRICE_ID }}
+          STRIPE_ENTERPRISE_PRICE_ID:  ${{ secrets.STRIPE_ENTERPRISE_PRICE_ID }}
+          WIRELINE_DATA_KEY:           ${{ secrets.WIRELINE_DATA_KEY }}
+          CRON_SECRET:                 ${{ secrets.CRON_SECRET }}
+        # Hard fail (exit 1 on missing required, exit 2 on missing
+        # recommended-with-PRODUCTION_CHECK=1). The deploy must not
+        # proceed past this check.
+        run: node scripts/check-prod-env.mjs

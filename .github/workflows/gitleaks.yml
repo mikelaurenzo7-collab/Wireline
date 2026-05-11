@@ -1,0 +1,35 @@
+name: Gitleaks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Daily scan over full history catches anything sneaked in via
+    # force-push or branch deletion that might have evaded PR review.
+    - cron: "47 6 * * *"
+
+jobs:
+  scan:
+    name: Scan for leaked secrets
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: Checkout (full history for thorough scan)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Use the repo-local config if present so we can allowlist
+          # known-safe patterns (e.g. test fixture tokens). Falls back
+          # to the bundled defaults when missing.
+          GITLEAKS_CONFIG: .gitleaks.toml
