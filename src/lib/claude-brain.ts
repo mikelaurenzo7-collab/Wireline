@@ -602,7 +602,7 @@ export const TOOLS = {
               priority: { type: "string", enum: ["high", "medium", "low"] },
               target_channel: {
                 type: "string",
-                enum: ["email", "phone", "manual"],
+                enum: ["email", "phone", "manual", "sms"],
               },
             },
             required: ["description", "priority", "target_channel"],
@@ -646,7 +646,7 @@ export const TOOLS = {
   /** V2A Extraction — extracts deep business actions for autonomous execution. */
   businessActions: {
     name: "extract_business_actions",
-    description: "Extract deep, structured business actions from a call transcript for autonomous execution (emails, calendar, CRM).",
+    description: "Extract deep, structured business actions from a call transcript for autonomous execution (email, SMS, calendar, CRM, and internal follow-up).",
     input_schema: {
       type: "object",
       properties: {
@@ -655,12 +655,12 @@ export const TOOLS = {
           items: {
             type: "object",
             properties: {
-              type: { type: "string", enum: ["send_email", "schedule_calendar", "update_crm_lead", "create_internal_task"] },
+              type: { type: "string", enum: ["send_email", "send_text_message", "schedule_calendar", "update_crm_lead", "create_internal_task"] },
               priority: { type: "string", enum: ["high", "medium", "low"] },
               reasoning: { type: "string", description: "Why this action is necessary based on the transcript." },
               payload: {
                 type: "object",
-                description: "Structured data for the action. For send_email: {to, subject, body}. For schedule_calendar: {event_name, date, time, attendees}. For update_crm_lead: {customer_number, status, notes}.",
+                description: "Structured data for the action. For send_email: {to, subject, body}. For send_text_message: {to, body, channel}. For schedule_calendar: {event_name, date, time, attendees}. For update_crm_lead: {customer_number, status, notes}.",
               }
             },
             required: ["type", "priority", "payload", "reasoning"],

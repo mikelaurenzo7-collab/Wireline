@@ -499,6 +499,7 @@ ALTER TABLE wireline_knowledge ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ D
 -- Values: sales | customer_service | scheduler | collections |
 --         technical_support | lead_qualifier | receptionist | marketing
 ALTER TABLE wireline_agents ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'customer_service';
+ALTER TABLE wireline_agents ADD COLUMN IF NOT EXISTS enabled_tools JSONB;
 
 -- Post-call Claude enrichment columns — sentiment + coaching note stored alongside
 -- lead_score and intent_label. Added as migrations so existing installs upgrade safely.
@@ -1470,3 +1471,17 @@ CREATE INDEX IF NOT EXISTS wireline_webhook_deliveries_user_created_idx
 -- Used by the Action Engine to route update_crm_lead jobs.
 -- ─────────────────────────────────────────────────────────────────────────────
 ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS crm_type TEXT;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Twilio operator controls — 2026-05-11
+-- Twilio credentials live in process.env; these per-tenant settings decide
+-- whether agents may use Twilio messaging / lookup tools and which senders
+-- should be used for SMS, WhatsApp, and manager escalation alerts.
+-- ─────────────────────────────────────────────────────────────────────────────
+ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS twilio_messaging_enabled BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS twilio_lookup_enabled BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS twilio_manager_alerts_enabled BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS twilio_messaging_service_sid TEXT;
+ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS twilio_sms_from_number TEXT;
+ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS twilio_whatsapp_from_number TEXT;
+ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS twilio_manager_alert_number TEXT;

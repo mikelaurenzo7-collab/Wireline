@@ -244,7 +244,7 @@ export const GeminiFollowupTaskSchema = z.object({
   has_task: z.boolean(),
   task_description: z.string().max(2000),
   priority: z.enum(['high', 'medium', 'low']).default('medium'),
-  target_channel: z.enum(['email', 'manual']).default('manual'),
+  target_channel: z.enum(['email', 'manual', 'sms']).default('manual'),
 });
 export type GeminiFollowupTask = z.infer<typeof GeminiFollowupTaskSchema>;
 

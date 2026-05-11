@@ -13,6 +13,8 @@ describe("integrations registry", () => {
     delete process.env.SALESFORCE_ACCESS_TOKEN;
     delete process.env.SALESFORCE_CLIENT_ID;
     delete process.env.SALESFORCE_CLIENT_SECRET;
+    delete process.env.TWILIO_ACCOUNT_SID;
+    delete process.env.TWILIO_AUTH_TOKEN;
     vi.resetModules();
   });
 
@@ -49,5 +51,19 @@ describe("integrations registry", () => {
     const supabase = getIntegrationsStatus().find((entry) => entry.id === "supabase");
 
     expect(supabase?.envVars.map((entry) => entry.name)).toContain("SUPABASE_SERVICE_ROLE_KEY");
+  });
+
+  it("marks Twilio configured when SID and auth token are present", async () => {
+    process.env.TWILIO_ACCOUNT_SID = "AC123";
+    process.env.TWILIO_AUTH_TOKEN = "twilio-token";
+
+    const { getIntegrationsStatus } = await import("./integrations-registry");
+    const twilio = getIntegrationsStatus().find((entry) => entry.id === "twilio");
+
+    expect(twilio?.status).toBe("configured");
+    expect(twilio?.envVars).toEqual([
+      { name: "TWILIO_ACCOUNT_SID", present: true },
+      { name: "TWILIO_AUTH_TOKEN", present: true },
+    ]);
   });
 });

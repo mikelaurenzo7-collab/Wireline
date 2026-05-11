@@ -178,6 +178,17 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
       "Without an access token, CRM actions (log_call, sync_contact, create_deal) return no-op. Agents still function without CRM.",
     docsUrl: "https://developers.hubspot.com/docs/api/overview",
   },
+  {
+    id: "twilio",
+    label: "Twilio Messaging + Lookup",
+    description: "SMS, WhatsApp, phone intelligence, and manager alerting for agent workflows.",
+    group: "actions",
+    required: false,
+    envVars: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
+    fallback:
+      "Without Twilio credentials, SMS / WhatsApp tools, phone lookups, and manager SMS alerts stay disabled while voice agents continue to run through Vapi.",
+    docsUrl: "https://console.twilio.com/",
+  },
 
   // ─── infra ──────────────────────────────────────────────────────────────
   {
@@ -318,6 +329,7 @@ export function getHealthCapabilities() {
     apollo:          envIsPresent("APOLLO_API_KEY"),
     docusign:        envIsPresent("DOCUSIGN_ACCOUNT_ID") &&
                        (envIsPresent("DOCUSIGN_JWT_TOKEN") || envIsPresent("DOCUSIGN_ACCESS_TOKEN")),
+    twilio:          envIsPresent("TWILIO_ACCOUNT_SID") && envIsPresent("TWILIO_AUTH_TOKEN"),
     upstash:         envIsPresent("UPSTASH_REDIS_REST_URL") && envIsPresent("UPSTASH_REDIS_REST_TOKEN"),
     sentry:          envIsPresent("SENTRY_DSN") || envIsPresent("VITE_SENTRY_DSN"),
     secret_vault:    envIsPresent("WIRELINE_DATA_KEY"),

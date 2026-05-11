@@ -10,6 +10,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { computeAgentPerformance, emptyAgentPerformance } from "../lib/agent-performance";
 import { computeScorecard } from "../lib/agent-scorecard";
 import { SentryEvents } from "../lib/sentry-events";
+import { normalizeEnabledTools } from "../lib/agent-capabilities";
 
 const router = Router();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
@@ -91,6 +92,7 @@ router.get("/api/agents/:id/export", authenticateUser, async (req: any, res: any
         name: agentRes.data.name,
         channel: agentRes.data.channel,
         role: agentRes.data.role,
+        enabled_tools: agentRes.data.enabled_tools ?? null,
         personality: personalityRes.data?.content ?? '',
         directives: (directivesRes.data ?? []).map((d: any) => ({ content: d.content, priority: d.priority })),
         knowledge: (knowledgeRes.data ?? []).map((k: any) => k.content),
@@ -132,7 +134,7 @@ router.post("/api/agents/:id/import", authenticateUser, async (req: any, res: an
       .maybeSingle();
     if (!ownedAgent) return res.status(404).json({ error: 'Agent not found' });
 
-    const { personality, directives, knowledge } = payload.agent;
+    const { personality, directives, knowledge, role, channel, enabled_tools } = payload.agent;
 
     // Replace personality
     if (personality) {
@@ -154,6 +156,18 @@ router.post("/api/agents/:id/import", authenticateUser, async (req: any, res: an
       await db.from('wireline_knowledge').insert(
         knowledge.map((k: string) => ({ agent_id: agentId, user_id: userId, content: k }))
       );
+    }
+
+    const toolConfig = enabled_tools === null ? null : normalizeEnabledTools(enabled_tools);
+    const importedAgentPatch: Record<string, unknown> = {};
+    if (typeof role === 'string') importedAgentPatch.role = role;
+    if (typeof channel === 'string') importedAgentPatch.channel = channel;
+    if (enabled_tools !== undefined) importedAgentPatch.enabled_tools = toolConfig;
+    if (Object.keys(importedAgentPatch).length > 0) {
+      await db.from('wireline_agents')
+        .update(importedAgentPatch)
+        .eq('id', agentId)
+        .eq('user_id', userId);
     }
 
     const imported = {
@@ -276,6 +290,12 @@ router.put("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
       return res.status(400).json({ error: "Validation failed", errors: profileValidation.errors });
     }
 
+    const enabledToolsRaw = req.body.enabled_tools;
+    const enabledTools = enabledToolsRaw === null ? null : normalizeEnabledTools(enabledToolsRaw);
+    if (enabledToolsRaw !== undefined && enabledToolsRaw !== null && enabledTools === null) {
+      return res.status(400).json({ error: "enabled_tools must be an array of supported tool names" });
+    }
+
     const { name, role, personality } = validation.data!;
     const { voice_id, voice_id_inbound, voice_id_outbound, voice_provider, first_message, archetype, ambient_noise, website_url, transfer_phone, email_auto_respond, email_agent_tone, email_signature, channel } = req.body;
 
@@ -306,6 +326,9 @@ router.put("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
           (update as any)[k] = (profileValidation.data as any)[k];
         }
       }
+    }
+    if (enabledToolsRaw !== undefined) {
+      update.enabled_tools = enabledTools;
     }
     // personality is not stored on the agent row — it lives in
     // wireline_personality. The caller passes it in for the AgentForm

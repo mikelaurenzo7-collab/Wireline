@@ -116,6 +116,12 @@ can opt in at any time without a code change:
   `src/lib/hubspot-service.ts`. Gated by `HUBSPOT_ACCESS_TOKEN`;
   absent token → `searchContacts()` returns `[]`, `logCall()` and
   `createDeal()` return `null`.
+- **Twilio** — agent-triggered SMS / WhatsApp follow-ups, Lookup-based
+  phone intelligence, and manager escalation alerts via
+  `src/lib/twilio-service.ts`. Gated by `TWILIO_ACCOUNT_SID` +
+  `TWILIO_AUTH_TOKEN`; absent creds → Twilio-backed agent tools and
+  the `send_text_message` action type fall back to disabled / draft
+  behavior without affecting the Vapi voice runtime.
 
 ## Env vars that MUST stay documented in `.env.example`
 
@@ -155,6 +161,9 @@ Security). See `src/lib/integrations-registry.ts` for the runtime mirror.
   (contact search, call logging, opportunity creation).
 - `HUBSPOT_ACCESS_TOKEN` — optional. Required for HubSpot CRM sync
   actions (contact search, call logging, deal creation).
+- `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` — optional. Required for
+  Twilio-backed SMS / WhatsApp follow-ups, phone lookups, and manager
+  alert SMS from the live voice tool layer and Action Engine.
 
 **Infrastructure**
 - `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` — distributed rate

@@ -1912,7 +1912,20 @@ app.post("/api/settings", authenticateUser, async (req: any, res: any) => {
     // the request body, letting any authenticated user grant themselves
     // 'active' status (bypassing billing) and unlimited agents (bypassing
     // quota). They are now ignored if present and silently dropped.
-    const { vapi_phone_number_id, voice_llm_provider, voice_llm_model, retention_days, crm_type } = req.body;
+    const {
+      vapi_phone_number_id,
+      voice_llm_provider,
+      voice_llm_model,
+      retention_days,
+      crm_type,
+      twilio_messaging_enabled,
+      twilio_lookup_enabled,
+      twilio_manager_alerts_enabled,
+      twilio_messaging_service_sid,
+      twilio_sms_from_number,
+      twilio_whatsapp_from_number,
+      twilio_manager_alert_number,
+    } = req.body;
 
     // Build patch with only the fields the caller is allowed to set.
     const patch: Record<string, any> = { updated_at: new Date().toISOString() };
@@ -1932,6 +1945,33 @@ app.post("/api/settings", authenticateUser, async (req: any, res: any) => {
         return res.status(400).json({ error: `crm_type must be one of: ${allowed.join(", ")}` });
       }
       patch.crm_type = crm_type || null;
+    }
+    if (twilio_messaging_enabled !== undefined) patch.twilio_messaging_enabled = !!twilio_messaging_enabled;
+    if (twilio_lookup_enabled !== undefined) patch.twilio_lookup_enabled = !!twilio_lookup_enabled;
+    if (twilio_manager_alerts_enabled !== undefined) patch.twilio_manager_alerts_enabled = !!twilio_manager_alerts_enabled;
+
+    const normalizeOptionalText = (value: unknown, field: string, max: number) => {
+      if (value === undefined) return { present: false, value: undefined as string | null | undefined };
+      if (value === null || value === "") return { present: true, value: null };
+      if (typeof value !== "string") return { present: true, error: `${field} must be a string` };
+      const trimmed = value.trim();
+      if (trimmed.length > max) return { present: true, error: `${field} must be ${max} characters or less` };
+      return { present: true, value: trimmed || null };
+    };
+
+    for (const [field, value, max] of [
+      ["twilio_messaging_service_sid", twilio_messaging_service_sid, 64],
+      ["twilio_sms_from_number", twilio_sms_from_number, 40],
+      ["twilio_whatsapp_from_number", twilio_whatsapp_from_number, 60],
+      ["twilio_manager_alert_number", twilio_manager_alert_number, 40],
+    ] as const) {
+      const normalized = normalizeOptionalText(value, field, max);
+      if (normalized.error) {
+        return res.status(400).json({ error: normalized.error });
+      }
+      if (normalized.present) {
+        patch[field] = normalized.value;
+      }
     }
 
     // Audit attempts to modify privileged fields so we can spot abuse.

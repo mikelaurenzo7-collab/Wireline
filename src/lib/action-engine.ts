@@ -5,6 +5,7 @@ import { IntegrationService } from "./integrations";
 import { CRMService } from "./crm-service";
 import { sendContract } from "./docusign-service";
 import { searchLeads, enrichLead } from "./apollo-service";
+import { sendTenantMessage } from "./twilio-service";
 
 /**
  * The Action Engine is responsible for executing tasks extracted by the AI
@@ -35,6 +36,8 @@ export async function executeAction(
           });
           return { success: emailOk };
         }
+        case "send_text_message":
+          return await handleSendTextMessage(userId, action, context);
         case "schedule_calendar": {
           // Simple parsing for the payload
           const startTime = new Date(`${action.payload.date} ${action.payload.time}`).toISOString();
@@ -66,6 +69,8 @@ export async function executeAction(
     switch (action.type) {
       case "send_email":
         return await handleSendEmail(userId, action, context);
+      case "send_text_message":
+        return await handleDraftSendTextMessage(userId, action, context);
       case "schedule_calendar":
         return await handleScheduleCalendar(userId, action, context);
       case "update_crm_lead":
@@ -123,6 +128,20 @@ async function handleScheduleCalendar(userId: string, action: ActionItem, contex
 
   if (error) throw error;
   return { success: true, actionId: data.id };
+}
+
+async function handleSendTextMessage(userId: string, action: ActionItem, context: { sourceId: string }) {
+  const outcome = await sendTenantMessage(userId, {
+    to: action.payload.to,
+    body: action.payload.body,
+    channel: action.payload.channel === "whatsapp" ? "whatsapp" : "sms",
+  });
+
+  if (!outcome.ok) {
+    return await handleDraftSendTextMessage(userId, action, context, outcome.reason);
+  }
+
+  return { success: true, actionId: outcome.sid };
 }
 
 async function handleUpdateCRM(userId: string, action: ActionItem, context: { sourceId: string }) {
@@ -282,6 +301,36 @@ async function handleDraftSendContract(userId: string, action: ActionItem, conte
     status: "pending",
     source_type: "phone_call",
     source_id: context.sourceId,
+  }).select("id").single();
+
+  if (error) throw error;
+  return { success: true, actionId: data.id };
+}
+
+async function handleDraftSendTextMessage(
+  userId: string,
+  action: ActionItem,
+  context: { sourceId: string },
+  failureReason?: string,
+) {
+  const channel = action.payload.channel === "whatsapp" ? "whatsapp" : "sms";
+  const description = `[AI Draft] ${channel.toUpperCase()} ${action.payload.to || "recipient"}${failureReason ? ` (${failureReason})` : ""}`;
+  const { data, error } = await db.from("wireline_fleet_tasks").insert({
+    user_id: userId,
+    task_type: "text_message_draft",
+    description,
+    payload: {
+      to: action.payload.to,
+      body: action.payload.body,
+      channel,
+      reasoning: action.reasoning,
+      failure_reason: failureReason,
+    },
+    priority: action.priority,
+    status: "pending",
+    source_type: "phone_call",
+    source_id: context.sourceId,
+    target_channel: "sms",
   }).select("id").single();
 
   if (error) throw error;

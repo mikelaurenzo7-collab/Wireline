@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { IS_PROD } from "./server-context";
+import { resolveAgentTools } from "./agent-capabilities";
 
 export const VAPI_WEBHOOK_SECRET = process.env.VAPI_WEBHOOK_SECRET || (IS_PROD ? "" : "wireline-secret-key");
 
@@ -140,6 +141,61 @@ export const VAPI_TOOL_DEFS = {
         body: { type: "string", description: "Email body content." },
       },
       required: ["to_email", "subject", "body"],
+    },
+  },
+  send_text_message: {
+    name: "send_text_message",
+    description: "Sends an SMS or WhatsApp follow-up. Only use this when the customer explicitly asked for a text or has already consented to that channel. Good for links, confirmations, appointment details, or next steps.",
+    parameters: {
+      type: "object",
+      properties: {
+        to_number: {
+          type: "string",
+          description: "Destination phone number. Leave blank to use the current caller's number.",
+        },
+        channel: {
+          type: "string",
+          enum: ["sms", "whatsapp"],
+          description: "Which Twilio messaging channel to use.",
+        },
+        message_body: {
+          type: "string",
+          description: "Plain-text message content to send.",
+        },
+      },
+      required: ["channel", "message_body"],
+    },
+  },
+  lookup_phone_number: {
+    name: "lookup_phone_number",
+    description: "Runs phone-number intelligence before messaging or updating records. Use it to validate a number and learn if it is mobile, landline, or VoIP.",
+    parameters: {
+      type: "object",
+      properties: {
+        phone_number: {
+          type: "string",
+          description: "Phone number to validate. Leave blank to inspect the current caller's number.",
+        },
+      },
+      required: [],
+    },
+  },
+  add_to_dnc: {
+    name: "add_to_dnc",
+    description: "Adds a phone number to the Do Not Call list immediately. Use this whenever the caller opts out of future calls or messages.",
+    parameters: {
+      type: "object",
+      properties: {
+        phone_number: {
+          type: "string",
+          description: "Phone number to suppress. Leave blank to use the current caller's number.",
+        },
+        reason: {
+          type: "string",
+          description: "Brief reason for the suppression, like 'caller opt-out' or 'requested no more texts'.",
+        },
+      },
+      required: [],
     },
   },
   check_calendar_availability: {
@@ -292,26 +348,15 @@ export const VAPI_TOOL_DEFS = {
 
 export type VapiToolName = keyof typeof VAPI_TOOL_DEFS;
 
-export const ROLE_TOOL_SETS: Record<string, VapiToolName[]> = {
-  sales:             ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
-  customer_service:  ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "check_calendar_availability", "book_appointment", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
-  scheduler:         ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "check_calendar_availability", "book_appointment", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
-  collections:       ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "log_payment_promise", "update_lead_status", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
-  technical_support: ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "create_support_ticket", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
-  lead_qualifier:    ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
-  receptionist:      ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "check_calendar_availability", "book_appointment", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
-  marketing:         ["view_recent_interactions", "escalate_to_human", "create_fleet_task", "send_email", "search_leads", "update_lead_status", "leave_voicemail", "schedule_callback", "capture_customer_profile"],
-};
-
 export const ROLE_SPECIFIC_PROTOCOLS: Record<string, string> = {
   sales:             "Always assume the sale. If the caller is interested, book a follow-up demo or meeting immediately using book_appointment. Use capture_customer_profile to record budget and timeline before the call ends.",
-  customer_service:  "Be helpful and empathetic. Use view_recent_interactions to see if they've called about this issue before. If the issue is complex, create_fleet_task for the back-office team.",
-  collections:       "Remain professional and firm but compliant. You MUST verify the caller's identity before discussing debt details. Use log_payment_promise to record all commitments — this is a legal requirement.",
+  customer_service:  "Be helpful and empathetic. Use view_recent_interactions to see if they've called about this issue before. If the issue is complex, create_fleet_task for the back-office team. Only use send_text_message after the caller explicitly asks for a text or confirms that channel is okay.",
+  collections:       "Remain professional and firm but compliant. You MUST verify the caller's identity before discussing debt details. Use log_payment_promise to record all commitments — this is a legal requirement. If the customer opts out of future contact, use add_to_dnc immediately.",
   technical_support: "Be methodical. Use search_leads to find their product version or history. If you cannot solve it, use create_support_ticket to escalate to engineering.",
-  scheduler:         "Your goal is a confirmed appointment. ALWAYS check_calendar_availability before suggesting a time. Use send_email to send the calendar invite immediately after booking.",
+  scheduler:         "Your goal is a confirmed appointment. ALWAYS check_calendar_availability before suggesting a time. Use send_email to send the calendar invite immediately after booking, and use send_text_message only if the customer asked for a text confirmation.",
 };
 
-export function buildRoleToolDefs(role: string): object[] {
-  const toolNames = ROLE_TOOL_SETS[role] ?? ROLE_TOOL_SETS["customer_service"];
-  return toolNames.map(name => VAPI_TOOL_DEFS[name]);
+export function buildRoleToolDefs(role: string, enabledTools?: unknown): object[] {
+  const toolNames = resolveAgentTools(role, enabledTools) as VapiToolName[];
+  return toolNames.map(name => VAPI_TOOL_DEFS[name]).filter(Boolean);
 }

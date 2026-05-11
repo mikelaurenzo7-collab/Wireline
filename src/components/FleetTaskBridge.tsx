@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Phone, Mail, CheckCircle2, Clock, Loader2, Bot, ChevronRight, Calendar, ChevronDown, AlertTriangle, RotateCw } from "lucide-react";
+import { Phone, Mail, MessageSquare, CheckCircle2, Clock, Loader2, Bot, ChevronRight, Calendar, ChevronDown, AlertTriangle, RotateCw } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
@@ -193,19 +193,29 @@ export default function FleetTaskBridge() {
               <div className="flex flex-col lg:flex-row gap-3">
                 {/* Source → target channel diagram */}
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <div className={cn(
-                    "w-8 h-8 rounded-lg glass border flex items-center justify-center shrink-0",
-                    task.source_type === 'phone_call' ? "border-brand/40 text-brand" : "border-white/10 text-ink/70"
-                  )}>
-                    {task.source_type === 'phone_call' ? <Phone className="w-3.5 h-3.5" /> : <Mail className="w-3.5 h-3.5" />}
-                  </div>
-                  <ChevronRight className="w-3 h-3 text-muted/50" />
-                  <div className={cn(
-                    "w-8 h-8 rounded-lg glass border flex items-center justify-center shrink-0",
-                    task.target_channel === 'email' ? "border-white/10 text-ink/70" : "border-brand/40 text-brand"
-                  )}>
-                    {task.target_channel === 'email' ? <Mail className="w-3.5 h-3.5" /> : <Phone className="w-3.5 h-3.5" />}
-                  </div>
+                  {(() => {
+                    const targetIsEmail = task.target_channel === 'email';
+                    const targetIsSms = task.target_channel === 'sms';
+                    return (
+                      <>
+                        <div className={cn(
+                          "w-8 h-8 rounded-lg glass border flex items-center justify-center shrink-0",
+                          task.source_type === 'phone_call' ? "border-brand/40 text-brand" : "border-white/10 text-ink/70"
+                        )}>
+                          {task.source_type === 'phone_call' ? <Phone className="w-3.5 h-3.5" /> : <Mail className="w-3.5 h-3.5" />}
+                        </div>
+                        <ChevronRight className="w-3 h-3 text-muted/50" />
+                        <div className={cn(
+                          "w-8 h-8 rounded-lg glass border flex items-center justify-center shrink-0",
+                          targetIsEmail ? "border-white/10 text-ink/70" :
+                          targetIsSms ? "border-violet-500/35 text-violet-600" :
+                          "border-brand/40 text-brand"
+                        )}>
+                          {targetIsEmail ? <Mail className="w-3.5 h-3.5" /> : targetIsSms ? <MessageSquare className="w-3.5 h-3.5" /> : <Phone className="w-3.5 h-3.5" />}
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
 
                 <div className="flex-1 min-w-0 space-y-2">

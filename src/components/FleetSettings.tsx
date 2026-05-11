@@ -10,6 +10,7 @@ import AgentTemplates from "./AgentTemplates";
 import AgentExportImport from "./AgentExportImport";
 import AgentBusinessProfile from "./AgentBusinessProfile";
 import AgentScorecard from "./AgentScorecard";
+import { AGENT_TOOL_CATALOG, getRoleToolSet, resolveAgentTools, type AgentToolName } from "../lib/agent-capabilities";
 
 /** Tiny SVG sparkline — renders a 7-value array as a smooth path. */
 function Sparkline({ data, width = 64, height = 24 }: { data: number[]; width?: number; height?: number }) {
@@ -237,6 +238,20 @@ export default function FleetSettings() {
     });
     setSelectedAgent(body);
     setAgents(agents.map(a => a.id === selectedAgent.id ? body : a));
+  };
+
+  const toggleAgentTool = async (toolName: AgentToolName) => {
+    if (!selectedAgent) return;
+    const currentTools = resolveAgentTools(selectedAgent.role, selectedAgent.enabled_tools);
+    const nextTools = currentTools.includes(toolName)
+      ? currentTools.filter(name => name !== toolName)
+      : [...currentTools, toolName];
+    await updateAgentMeta({ enabled_tools: nextTools });
+  };
+
+  const resetAgentToolsToRoleDefaults = async () => {
+    if (!selectedAgent) return;
+    await updateAgentMeta({ enabled_tools: null });
   };
 
   const updatePersonality = async (val: string) => {
@@ -575,6 +590,11 @@ export default function FleetSettings() {
               animate={{ opacity: 1, y: 0 }}
               className="max-w-[1200px] mx-auto space-y-3"
             >
+              {(() => {
+                const selectedToolNames = resolveAgentTools(selectedAgent.role, selectedAgent.enabled_tools);
+                const roleDefaultTools = getRoleToolSet(selectedAgent.role);
+                const usingRoleDefaults = !Array.isArray(selectedAgent.enabled_tools);
+                return (
               <header className="rounded-2xl glass border border-white/10 p-4 relative overflow-hidden">
                  <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #9B59F5, transparent)" }} />
 
@@ -859,8 +879,95 @@ export default function FleetSettings() {
                          </div>
                      </div>
                     )}
+
+                    <div className="rounded-xl glass border border-white/8 p-3 space-y-3">
+                      <div className="flex items-center justify-between gap-3 pb-2 border-b border-white/8">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-3.5 h-3.5 text-brand" />
+                          <div>
+                            <h3 className="font-display italic lowercase text-base text-ink">agent capabilities</h3>
+                            <p className="text-[10px] text-muted/70 leading-relaxed">
+                              Decide exactly which actions this agent can take live on calls.
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={resetAgentToolsToRoleDefaults}
+                          disabled={usingRoleDefaults}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-ink/80 hover:border-brand/40 hover:text-brand transition-colors disabled:opacity-40"
+                        >
+                          <RefreshCw className="w-2.5 h-2.5" />
+                          Role defaults
+                        </button>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 text-[10px]">
+                        <span className={cn(
+                          "px-2 py-1 rounded-full border uppercase tracking-[0.22em]",
+                          usingRoleDefaults ? "bg-brand/10 border-brand/30 text-brand" : "bg-white/5 border-white/10 text-muted/80"
+                        )}>
+                          {usingRoleDefaults ? "Using role defaults" : "Custom override"}
+                        </span>
+                        <span className="px-2 py-1 rounded-full border border-white/10 bg-white/5 text-muted/80 uppercase tracking-[0.22em]">
+                          {selectedToolNames.length} tools enabled
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {AGENT_TOOL_CATALOG.map((tool) => {
+                          const enabled = selectedToolNames.includes(tool.name);
+                          const roleDefault = roleDefaultTools.includes(tool.name);
+                          return (
+                            <button
+                              key={tool.name}
+                              type="button"
+                              onClick={() => toggleAgentTool(tool.name)}
+                              className={cn(
+                                "text-left rounded-xl border p-3 transition-all",
+                                enabled
+                                  ? "bg-brand/10 border-brand/35"
+                                  : "bg-black/10 border-white/8 hover:border-white/20"
+                              )}
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className={cn(
+                                  "mt-0.5 w-9 h-5 rounded-full border flex items-center px-0.5 transition-colors",
+                                  enabled ? "bg-brand/25 border-brand/40" : "bg-white/5 border-white/12"
+                                )}>
+                                  <motion.div
+                                    animate={{ x: enabled ? 16 : 0 }}
+                                    className={cn("w-4 h-4 rounded-full", enabled ? "bg-brand" : "bg-muted/60")}
+                                  />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex flex-wrap items-center gap-1.5">
+                                    <span className="text-sm text-ink">{tool.label}</span>
+                                    {tool.integration === "twilio" && (
+                                      <span className="text-[8px] uppercase tracking-[0.22em] px-1.5 py-0.5 rounded-full border border-violet-500/30 bg-violet-500/10 text-violet-600">
+                                        Twilio
+                                      </span>
+                                    )}
+                                    {roleDefault && (
+                                      <span className="text-[8px] uppercase tracking-[0.22em] px-1.5 py-0.5 rounded-full border border-white/10 bg-white/5 text-muted/80">
+                                        Default
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-[10px] text-muted/75 leading-relaxed mt-1">
+                                    {tool.description}
+                                  </p>
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                  </div>
               </header>
+                );
+              })()}
 
               {isConfigLoading ? (
                  <div role="status" aria-live="polite" className="flex flex-col items-center justify-center gap-3 py-20">

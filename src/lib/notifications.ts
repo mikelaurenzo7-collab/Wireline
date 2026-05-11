@@ -1,5 +1,6 @@
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
+import { sendManagerAlert } from "./twilio-service";
 
 /**
  * Unified notification service for manager alerts.
@@ -57,8 +58,17 @@ export class NotificationService {
   }
 
   private async sendViaSMS(params: any): Promise<void> {
-    // For now, we log it or use a placeholder for Twilio/Vapi SMS.
-    // Logic: In a real environment, we'd use process.env.TWILIO_AUTH_TOKEN
-    log.info("[SMS] Notification queued", { to: "Manager", body: params.message });
+    const result = await sendManagerAlert(this.userId, {
+      title: params.title,
+      message: params.message,
+      callId: params.callId,
+    });
+
+    if (!result.ok) {
+      log.info("[SMS] Notification skipped", { reason: result.reason });
+      return;
+    }
+
+    log.info("[SMS] Notification sent", { to: result.to, sid: result.sid });
   }
 }

@@ -4,6 +4,7 @@ import {
   db,
   log,
   IS_PROD,
+  auditLogger,
 } from "../lib/server-context";
 import {
   timingSafeEq,
@@ -29,6 +30,9 @@ import { buildCallCompletedOutcome, dispatchWebhook, type WirelineCallCompletedO
 import { analyzeLiveSentiment } from "../lib/gemini-brain";
 import { IntegrationService } from "../lib/integrations";
 import { NotificationService } from "../lib/notifications";
+import { normalizeDncPhone } from "../lib/compliance";
+import { lookupTenantPhoneNumber, sendTenantMessage } from "../lib/twilio-service";
+import { resolveAgentTools } from "../lib/agent-capabilities";
 
 // TODO: the imports below were carried over from server.ts when this router
 // was extracted. The handlers that consume them — Gemini post-call lesson
@@ -73,7 +77,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
   if (!agent) return res.status(404).json({ error: "Agent not found" });
 
   const { data: userSettings } = await db.from('wireline_settings')
-    .select('subscription_status, voice_llm_provider, voice_llm_model')
+    .select('subscription_status, voice_llm_provider, voice_llm_model, twilio_messaging_enabled, twilio_lookup_enabled')
     .eq('user_id', agent.user_id).single();
     
   const subscriptionStatus = userSettings?.subscription_status || 'active';
@@ -159,6 +163,9 @@ router.post("/api/vapi-webhook", async (req, res) => {
       }
 
       const agentRole = agentConfig?.data?.role || DEFAULT_AGENT_ROLE;
+      const enabledToolNames = resolveAgentTools(agentRole, agentConfig?.data?.enabled_tools)
+        .filter((toolName) => toolName !== "send_text_message" || !!userSettings?.twilio_messaging_enabled)
+        .filter((toolName) => toolName !== "lookup_phone_number" || !!userSettings?.twilio_lookup_enabled);
       const archetype = isOutbound
         ? (OUTBOUND_ARCHETYPE_BY_ROLE[agentRole] || 'The Closer')
         : (agentConfig?.data?.archetype || 'Receptionist');
@@ -210,7 +217,7 @@ Today is ${currentDateTime}.
             provider: "11labs",
             voiceId: "bIHbv24MWmeRgasZH58o" 
           },
-          functions: buildRoleToolDefs(agentRole)
+          functions: buildRoleToolDefs(agentRole, enabledToolNames)
         }
       });
     } catch (e: any) {
@@ -295,6 +302,87 @@ Today is ${currentDateTime}.
           results.push({ toolCallId: toolCall.id, result: success ? "Email sent." : "Failed to send email." });
         } catch (e: any) {
           results.push({ toolCallId: toolCall.id, result: "Email error." });
+        }
+      }
+
+      if (toolCall.function.name === "send_text_message") {
+        try {
+          const { to_number, channel, message_body } = toolCall.function.arguments;
+          const fallbackNumber = payload.call?.customer?.number || message.call?.customer?.number;
+          const targetNumber = sanitizePhone(to_number || fallbackNumber);
+
+          if (!targetNumber) {
+            results.push({ toolCallId: toolCall.id, result: "No destination number was available for that message." });
+          } else {
+            const outcome = await sendTenantMessage(agent?.user_id, {
+              to: targetNumber,
+              body: message_body,
+              channel: channel === "whatsapp" ? "whatsapp" : "sms",
+            });
+            results.push({
+              toolCallId: toolCall.id,
+              result: outcome.ok
+                ? `${outcome.channel === "whatsapp" ? "WhatsApp" : "SMS"} sent to ${targetNumber}.`
+                : (outcome.reason || "Message send failed."),
+            });
+          }
+        } catch (e: any) {
+          results.push({ toolCallId: toolCall.id, result: "Text message error." });
+        }
+      }
+
+      if (toolCall.function.name === "lookup_phone_number") {
+        try {
+          const fallbackNumber = payload.call?.customer?.number || message.call?.customer?.number;
+          const targetNumber = sanitizePhone(toolCall.function.arguments?.phone_number || fallbackNumber);
+
+          if (!targetNumber) {
+            results.push({ toolCallId: toolCall.id, result: "No phone number was available to validate." });
+          } else {
+            const lookup = await lookupTenantPhoneNumber(agent?.user_id, targetNumber);
+            results.push({
+              toolCallId: toolCall.id,
+              result: lookup.ok
+                ? `Lookup for ${lookup.phoneNumber || targetNumber}: valid=${lookup.valid ? "yes" : "no"}, line_type=${lookup.lineType || "unknown"}, carrier=${lookup.carrierName || "unknown"}.`
+                : (lookup.reason || "Phone lookup failed."),
+            });
+          }
+        } catch (e: any) {
+          results.push({ toolCallId: toolCall.id, result: "Phone lookup error." });
+        }
+      }
+
+      if (toolCall.function.name === "add_to_dnc") {
+        try {
+          const fallbackNumber = payload.call?.customer?.number || message.call?.customer?.number;
+          const rawPhone = String(toolCall.function.arguments?.phone_number || fallbackNumber || "");
+          const normalizedPhone = normalizeDncPhone(rawPhone);
+
+          if (!normalizedPhone) {
+            results.push({ toolCallId: toolCall.id, result: "No valid phone number was available to suppress." });
+          } else {
+            await db.from("wireline_dnc_list").upsert({
+              user_id: agent?.user_id,
+              phone: normalizedPhone,
+              phone_raw: rawPhone,
+              reason: toolCall.function.arguments?.reason || "agent opt-out",
+              source: "agent_tool",
+            }, { onConflict: "user_id,phone", ignoreDuplicates: true });
+
+            void auditLogger.logDnc("added", {
+              userId: agent?.user_id,
+              count: 1,
+              metadata: {
+                phone: rawPhone,
+                source: "agent_tool",
+                reason: toolCall.function.arguments?.reason || null,
+              },
+            }).catch(() => {});
+
+            results.push({ toolCallId: toolCall.id, result: `${rawPhone || normalizedPhone} is now on the Do Not Call list.` });
+          }
+        } catch (e: any) {
+          results.push({ toolCallId: toolCall.id, result: "DNC update failed." });
         }
       }
 

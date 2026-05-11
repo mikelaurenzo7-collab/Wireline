@@ -28,6 +28,13 @@ export default function AdminSettings() {
     max_agents: 3,
     voice_llm_provider: "google",
     voice_llm_model: "gemini-1.5-flash",
+    twilio_messaging_enabled: false,
+    twilio_lookup_enabled: false,
+    twilio_manager_alerts_enabled: false,
+    twilio_messaging_service_sid: "",
+    twilio_sms_from_number: "",
+    twilio_whatsapp_from_number: "",
+    twilio_manager_alert_number: "",
   });
   const [agents, setAgents] = useState<any[]>([]);
   const [phoneNumbers, setPhoneNumbers] = useState<any[]>([]);
@@ -130,6 +137,13 @@ export default function AdminSettings() {
           max_agents: settingsRes.max_agents || 3,
           voice_llm_provider: settingsRes.voice_llm_provider || "google",
           voice_llm_model: settingsRes.voice_llm_model || "gemini-1.5-flash",
+          twilio_messaging_enabled: !!settingsRes.twilio_messaging_enabled,
+          twilio_lookup_enabled: !!settingsRes.twilio_lookup_enabled,
+          twilio_manager_alerts_enabled: !!settingsRes.twilio_manager_alerts_enabled,
+          twilio_messaging_service_sid: settingsRes.twilio_messaging_service_sid || "",
+          twilio_sms_from_number: settingsRes.twilio_sms_from_number || "",
+          twilio_whatsapp_from_number: settingsRes.twilio_whatsapp_from_number || "",
+          twilio_manager_alert_number: settingsRes.twilio_manager_alert_number || "",
         });
       }
       setAgents(agentsRes.agents || []);
@@ -389,6 +403,104 @@ export default function AdminSettings() {
                         <a href={providerDocsUrl} target="_blank" rel="noopener noreferrer" className="text-brand mx-1 underline">provider documentation</a>
                         for the current list.
                       </p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl glass border border-white/10 p-4 space-y-3">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-[0.4em] text-brand">Twilio Relay</div>
+                      <h4 className="font-display italic lowercase text-xl text-ink leading-tight mt-0.5">sms, whatsapp, lookup, alerts</h4>
+                      <p className="text-[10px] text-muted/80 mt-1 leading-relaxed">
+                        Turn on Twilio-backed tools for agent texting, phone intelligence, and manager SMS escalation alerts.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                      {[
+                        {
+                          key: "twilio_messaging_enabled" as const,
+                          label: "Messaging",
+                          desc: "Allow agents and workflows to send SMS / WhatsApp follow-ups.",
+                        },
+                        {
+                          key: "twilio_lookup_enabled" as const,
+                          label: "Phone lookup",
+                          desc: "Validate numbers and reveal line type before texting.",
+                        },
+                        {
+                          key: "twilio_manager_alerts_enabled" as const,
+                          label: "Manager alerts",
+                          desc: "Send urgent live-call escalation alerts to a manager phone.",
+                        },
+                      ].map((item) => (
+                        <button
+                          key={item.key}
+                          type="button"
+                          onClick={() => setSettings({ ...settings, [item.key]: !settings[item.key] })}
+                          className={cn(
+                            "text-left rounded-xl p-3 transition-all border",
+                            settings[item.key]
+                              ? "bg-brand/10 border-brand/40"
+                              : "bg-black/20 border-white/8 hover:border-white/30"
+                          )}
+                        >
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <span className="text-sm text-ink">{item.label}</span>
+                            <span className={cn(
+                              "text-[8px] uppercase tracking-[0.25em] px-1.5 py-0.5 rounded-full border",
+                              settings[item.key]
+                                ? "bg-brand/10 border-brand/30 text-brand"
+                                : "bg-white/5 border-white/10 text-muted"
+                            )}>
+                              {settings[item.key] ? "On" : "Off"}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-muted/80 leading-snug">{item.desc}</p>
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">Messaging Service SID</label>
+                        <input
+                          type="text"
+                          value={settings.twilio_messaging_service_sid}
+                          onChange={(e) => setSettings({ ...settings, twilio_messaging_service_sid: e.target.value })}
+                          placeholder="MGXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+                          className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 font-mono"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">Manager alert number</label>
+                        <input
+                          type="tel"
+                          value={settings.twilio_manager_alert_number}
+                          onChange={(e) => setSettings({ ...settings, twilio_manager_alert_number: e.target.value })}
+                          placeholder="+1 800 555 0100"
+                          className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 tabular-nums"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">SMS from number</label>
+                        <input
+                          type="tel"
+                          value={settings.twilio_sms_from_number}
+                          onChange={(e) => setSettings({ ...settings, twilio_sms_from_number: e.target.value })}
+                          placeholder="+1 800 555 0100"
+                          className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 tabular-nums"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">WhatsApp sender</label>
+                        <input
+                          type="tel"
+                          value={settings.twilio_whatsapp_from_number}
+                          onChange={(e) => setSettings({ ...settings, twilio_whatsapp_from_number: e.target.value })}
+                          placeholder="+1 800 555 0100"
+                          className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 tabular-nums"
+                        />
+                      </div>
                     </div>
                   </div>
 
