@@ -1,5 +1,6 @@
 import { db, log, quotaTracker } from "./server-context";
 import * as claudeBrain from "./claude-brain";
+import * as geminiBrain from "./gemini-brain";
 import { getErrorMessage } from "./server-utils";
 import { startWorker, type JobRow, enqueue } from "./job-queue";
 import { executeAction } from "./action-engine";
@@ -16,22 +17,39 @@ export async function handleJob(job: JobRow): Promise<void> {
       agentName?: string; archetype?: string; role?: string;
       customerNumber?: string; durationSeconds?: number;
       summary?: string; transcript?: string;
+      useFlash?: boolean;
     };
-    if (!claudeBrain.isClaudeAvailable() || !p.transcript) return;
-    // Wrap in withAuditCapture so we get the exact token counts from the
-    // Anthropic API response instead of the rough transcript.length / 4
-    // character estimate. Falls back to the estimate if the capture has no records.
-    const { result, records } = await claudeBrain.withAuditCapture(() =>
-      claudeBrain.postCallAnalysis({
-        agentName:       p.agentName || 'Wireline Agent',
-        archetype:       p.archetype || 'Receptionist',
-        role:            p.role,
-        customerNumber:  p.customerNumber,
-        durationSeconds: p.durationSeconds ?? 0,
-        summary:         p.summary || '',
-        transcript:      p.transcript!,
-      }),
-    );
+    
+    // Check user tier for model selection
+    const { data: settings } = await db.from('wireline_settings').select('ai_tier').eq('user_id', p.userId).single();
+    const useFlash = p.useFlash || settings?.ai_tier === 'starter';
+
+    let result;
+    let records: any[] = [];
+
+    if (useFlash) {
+      log.info("Using Gemini Flash for post-call enrichment", { userId: p.userId, callId: p.callId });
+      result = await geminiBrain.postCallAnalysis({
+        transcript: p.transcript!,
+        summary: p.summary || ''
+      });
+    } else {
+      if (!claudeBrain.isClaudeAvailable() || !p.transcript) return;
+      const capture = await claudeBrain.withAuditCapture(() =>
+        claudeBrain.postCallAnalysis({
+          agentName:       p.agentName || 'Wireline Agent',
+          archetype:       p.archetype || 'Receptionist',
+          role:            p.role,
+          customerNumber:  p.customerNumber,
+          durationSeconds: p.durationSeconds ?? 0,
+          summary:         p.summary || '',
+          transcript:      p.transcript!,
+        }),
+      );
+      result = capture.result;
+      records = capture.records;
+    }
+
     await db.from('wireline_call_logs').update({
       lead_score:    result.lead_score,
       intent_label:  result.intent_label,

@@ -22,6 +22,7 @@ const KnowledgeBaseManager = lazy(() => import("../components/KnowledgeBaseManag
 const LiveMonitor     = lazy(() => import("../components/LiveMonitor"));
 const DncManager      = lazy(() => import("../components/DncManager"));
 const AuditLog        = lazy(() => import("../components/AuditLog"));
+const CommandCenter   = lazy(() => import("../pages/CommandCenter"));
 
 export default function AppRoutes() {
   return (
@@ -44,6 +45,7 @@ export default function AppRoutes() {
           <Route path="/admin" element={<PageTransition><ErrorBoundary><AdminSettings /></ErrorBoundary></PageTransition>} />
           <Route path="/dnc" element={<PageTransition><ErrorBoundary><DncManager /></ErrorBoundary></PageTransition>} />
           <Route path="/audit" element={<PageTransition><ErrorBoundary><AuditLog /></ErrorBoundary></PageTransition>} />
+          <Route path="/command" element={<PageTransition><ErrorBoundary><CommandCenter /></ErrorBoundary></PageTransition>} />
           <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
         </Routes>
       </Suspense>

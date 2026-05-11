@@ -78,6 +78,9 @@ import quotaRouter from "./src/routes/quota-routes";
 import jobRouter from "./src/routes/job-routes";
 import { authenticateUser } from "./src/middleware/auth";
 import { initJobWorker } from "./src/lib/job-worker";
+import { validateStartupEnv } from "./src/lib/startup";
+import healthRouter from "./src/routes/health-routes";
+import * as rateLimiters from "./src/middleware/rate-limit-middleware";
 
 // On Vercel, VERCEL_URL is automatically set to the deployment hostname
 // (e.g. "myapp-abc123.vercel.app") with no protocol or trailing slash.
@@ -97,58 +100,6 @@ if (!process.env.APP_URL && process.env.VERCEL_URL) {
 //  silently booting with placeholder Supabase URLs / missing webhook
 //  secrets. Log warnings (not errors) in dev so local hacking still works.
 // ────────────────────────────────────────────────────────────────────
-function validateStartupEnv() {
-  // Hard required in all environments (app cannot function without these).
-  const alwaysRequired: [string, string | undefined][] = [
-    ["VITE_SUPABASE_URL",     process.env.VITE_SUPABASE_URL],
-    ["VITE_SUPABASE_ANON_KEY", process.env.VITE_SUPABASE_ANON_KEY],
-  ];
-  // Required in production; warn in dev so local hacking still works.
-  const prodRequired: [string, string | undefined][] = [
-    ["ANTHROPIC_API_KEY",   process.env.ANTHROPIC_API_KEY],
-    ["VAPI_PRIVATE_KEY",    process.env.VAPI_PRIVATE_KEY],
-    ["VAPI_WEBHOOK_SECRET", process.env.VAPI_WEBHOOK_SECRET],
-    // OAUTH_STATE_SECRET signs the CSRF state token used by every OAuth
-    // callback. Without a dedicated secret we silently fall back to
-    // STRIPE_WEBHOOK_SECRET, which (a) mixes secrets across security
-    // domains and (b) silently invalidates every in-flight OAuth state
-    // token whenever Stripe's webhook secret rotates. Require its own
-    // value in production; in dev we accept the fallback.
-    ["OAUTH_STATE_SECRET",  process.env.OAUTH_STATE_SECRET],
-  ];
-
-  const missingAlways = alwaysRequired.filter(([, v]) => !v).map(([k]) => k);
-  const missingProd   = prodRequired.filter(([, v]) => !v).map(([k]) => k);
-  const missing       = IS_PROD ? [...missingAlways, ...missingProd] : missingAlways;
-
-  const recommended: string[] = [];
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) recommended.push("SUPABASE_SERVICE_ROLE_KEY");
-  if (!process.env.APP_URL) recommended.push("APP_URL");
-  // CORS_ORIGINS in prod: cross-origin browser requests will fail without it
-  // (the cors middleware rejects unknown origins). APP_URL is auto-added to
-  // the allowlist if set, so this is only a hard requirement when serving
-  // API + frontend from different origins.
-  if (IS_PROD && !process.env.CORS_ORIGINS && !process.env.APP_URL) {
-    recommended.push("CORS_ORIGINS");
-  }
-  if (!IS_PROD && missingProd.length) {
-    log.warn("Prod-required env vars not set (dev mode — continuing)", { vars: missingProd });
-  }
-
-  if (missing.length) {
-    if (IS_PROD) {
-      log.error("Refusing to start: required env vars are missing", { missing });
-      // Exit synchronously so the platform restart loop kicks in instead of
-      // accepting traffic in a broken state.
-      process.exit(1);
-    } else {
-      log.warn("Required env vars missing (dev mode — continuing with placeholders)", { missing });
-    }
-  }
-  if (recommended.length) {
-    log.warn("Recommended env vars not set", { recommended });
-  }
-}
 validateStartupEnv();
 
 const app = express();
@@ -311,71 +262,8 @@ app.use((req: any, res: any, next: any) => {
 //  Light IP-based rate limit (30 req/min) prevents health-endpoint DDoS
 //  from saturating Supabase with probe queries.
 // ────────────────────────────────────────────────────────────────────
-async function probeDatabase(timeoutMs = 1500): Promise<{ ok: boolean; latency_ms: number; error?: string }> {
-  const t0 = Date.now();
-  try {
-    const probe = db.from("wireline_settings").select("user_id", { head: true, count: "exact" }).limit(1);
-    const result = await Promise.race([
-      probe,
-      new Promise((_resolve, reject) => setTimeout(() => reject(new Error("db probe timed out")), timeoutMs)),
-    ]) as { error?: { message: string } | null };
-    if (result?.error) return { ok: false, latency_ms: Date.now() - t0, error: result.error.message };
-    return { ok: true, latency_ms: Date.now() - t0 };
-  } catch (err: any) {
-    return { ok: false, latency_ms: Date.now() - t0, error: getErrorMessage(err) };
-  }
-}
-
-const healthRateLimit = new Map<string, number[]>();
-const HEALTH_RATE_WINDOW_MS = 60_000;
-const HEALTH_RATE_MAX = 30;
-function healthRateLimiter(req: any, res: any, next: any) {
-  // Use x-forwarded-for (first hop) when behind a trusted reverse proxy,
-  // falling back to req.ip. Consistent with the OAuth and Claude rate
-  // limiters in this file which also key on the request IP.
-  const xff = req.headers["x-forwarded-for"];
-  const key = (typeof xff === "string" ? xff.split(",")[0].trim() : null) || req.ip || "anon";
-  const now = Date.now();
-  const hits = (healthRateLimit.get(key) || []).filter((t: number) => now - t < HEALTH_RATE_WINDOW_MS);
-  if (hits.length >= HEALTH_RATE_MAX) {
-    res.setHeader("Retry-After", "60");
-    return res.status(429).json({ error: "Too many health-check requests." });
-  }
-  hits.push(now);
-  healthRateLimit.set(key, hits);
-  next();
-}
-setInterval(() => {
-  const cutoff = Date.now() - HEALTH_RATE_WINDOW_MS * 2;
-  for (const [k, hits] of healthRateLimit) {
-    const fresh = hits.filter((t: number) => t > cutoff);
-    if (fresh.length === 0) healthRateLimit.delete(k);
-    else healthRateLimit.set(k, fresh);
-  }
-}, 5 * 60 * 1000).unref?.();
-
-app.get("/api/health", healthRateLimiter, async (_req, res) => {
-  const dbStatus = await probeDatabase();
-  const status = dbStatus.ok ? "ok" : "degraded";
-  res.status(dbStatus.ok ? 200 : 503).json({
-    status,
-    uptime_s: Math.round(process.uptime()),
-    db: dbStatus,
-    capabilities: {
-      claude:    !!process.env.ANTHROPIC_API_KEY,
-      gemini:    !!process.env.GEMINI_API_KEY,
-      vapi:      !!process.env.VAPI_PRIVATE_KEY,
-      supabase:  !!process.env.VITE_SUPABASE_URL,
-      google_oauth:    !!process.env.GOOGLE_CLIENT_ID,
-      microsoft_oauth: !!process.env.MICROSOFT_CLIENT_ID,
-    },
-    // Surface the active Claude model id so operators can verify at a
-    // glance which build is running and which model their fleet is using.
-    // Centralized in src/lib/claude-brain.ts; overridable via ANTHROPIC_MODEL.
-    claude_model: claudeBrain.CLAUDE_MODEL_DEFAULT,
-    timestamp: new Date().toISOString(),
-  });
-});
+import healthRouter from "./src/routes/health-routes";
+app.use("/api/health", healthRouter);
 
 // ────────────────────────────────────────────────────────────────────
 //  Per-user rate limit for /api/claude/* — cost protection.
@@ -652,93 +540,16 @@ async function dialRateLimiter(req: any, res: any, next: any) {
   next();
 }
 
-async function knowledgeRateLimiter(req: any, res: any, next: any) {
-  const userId = req.user?.id;
-  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+import * as rateLimiters from "./src/middleware/rate-limit-middleware";
+app.use("/api/emails", rateLimiters.emailRateLimiter);
+app.use("/api/knowledge", rateLimiters.knowledgeRateLimiter);
+app.use("/api/phone-numbers", rateLimiters.phoneNumberRateLimiter);
+app.use("/api/outbound/dial", rateLimiters.dialRateLimiter);
 
-  const result = await rateLimit(userId, {
-    bucket: "knowledge",
-    windowMs: KNOWLEDGE_RATE_WINDOW_MS,
-    max: KNOWLEDGE_RATE_MAX,
-  });
-
-  res.setHeader("X-RateLimit-Limit", String(KNOWLEDGE_RATE_MAX));
-  res.setHeader("X-RateLimit-Remaining", String(result.remaining));
-
-  if (!result.allowed) {
-    void auditLogger.logSecurity('rate_limit_exceeded', {
-      userId,
-      resource: 'knowledge_api',
-      ip: req.ip,
-      metadata: { limit: KNOWLEDGE_RATE_MAX }
-    }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
-
-    SentryEvents.rateLimited({
-      endpoint: '/api/knowledge',
-      user_id: userId,
-    });
-
-    res.setHeader("Retry-After", String(Math.ceil(result.resetMs / 1000)));
-    return res.status(429).json({
-      error: `Rate limit exceeded — ${KNOWLEDGE_RATE_MAX} knowledge operations per minute. Please slow down.`,
-      code: "KNOWLEDGE_RATE_LIMIT",
-    });
-  }
-  next();
-}
-
-async function phoneNumberRateLimiter(req: any, res: any, next: any) {
-  const userId = req.user?.id;
-  if (!userId) return res.status(401).json({ error: "Unauthorized" });
-
-  const result = await rateLimit(userId, {
-    bucket: "phone_numbers",
-    windowMs: PHONE_NUMBER_RATE_WINDOW_MS,
-    max: PHONE_NUMBER_RATE_MAX,
-  });
-
-  res.setHeader("X-RateLimit-Limit", String(PHONE_NUMBER_RATE_MAX));
-  res.setHeader("X-RateLimit-Remaining", String(result.remaining));
-
-  if (!result.allowed) {
-    void auditLogger.logSecurity('rate_limit_exceeded', {
-      userId,
-      resource: 'phone_numbers_api',
-      ip: req.ip,
-      metadata: { limit: PHONE_NUMBER_RATE_MAX }
-    }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
-
-    SentryEvents.rateLimited({
-      endpoint: '/api/phone-numbers',
-      user_id: userId,
-    });
-
-    res.setHeader("Retry-After", String(Math.ceil(result.resetMs / 1000)));
-    return res.status(429).json({
-      error: `Rate limit exceeded — ${PHONE_NUMBER_RATE_MAX} phone number operations per minute. Please slow down.`,
-      code: "PHONE_NUMBER_RATE_LIMIT",
-    });
-  }
-  next();
-}
-
-function oauthRateLimiter(req: any, res: any, next: any) {
-  const key = req.ip || "anon";
-  rateLimit(key, {
-    bucket: "oauth",
-    windowMs: OAUTH_RATE_WINDOW_MS,
-    max: OAUTH_RATE_MAX,
-  }).then((result) => {
-    if (!result.allowed) {
-      res.setHeader("Retry-After", String(Math.ceil(result.resetMs / 1000)));
-      return res.status(429).json({
-        error: "Too many OAuth requests. Please wait before trying again.",
-        code: "OAUTH_RATE_LIMIT",
-      });
-    }
-    next();
-  }).catch(next);
-}
+app.use("/api/claude", (req: any, res: any, next: any) => {
+  if (req.path === "/status") return next();
+  claudeRateLimiter(req, res, next).catch(next);
+});
 
 // Performance monitoring middleware — track slow operations on critical paths
 function performanceMonitoring(slowThresholdMs: number = 2000) {

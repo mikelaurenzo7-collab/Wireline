@@ -1,4 +1,4 @@
-import { Users, Activity, MessageSquare, ServerCog, PlugZap, Radio, Inbox, BarChart3 } from "lucide-react";
+import { Users, Activity, MessageSquare, ServerCog, PlugZap, Radio, Inbox, BarChart3, LayoutGrid } from "lucide-react";
 
 export type NavItem = {
   label: string;
@@ -13,6 +13,7 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: "Workspace",
     items: [
+      { label: "Command Center", path: "/command", icon: LayoutGrid },
       { label: "Dashboard", path: "/",        icon: Activity,   dataTour: "dashboard", matches: ["/live"] },
       { label: "Triage",    path: "/triage",  icon: Inbox },
       { label: "Insights",  path: "/insights",icon: BarChart3,  dataTour: "insights" },
@@ -43,6 +44,7 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
 ];
 
 export const PAGE_TITLES: Record<string, string> = {
+  "/command":      "Command Center",
   "/":             "Dashboard",
   "/triage":        "Triage",
   "/appointments":  "Appointments",
