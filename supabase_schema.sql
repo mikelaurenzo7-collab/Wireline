@@ -829,6 +829,10 @@ BEGIN
 END;
 $$;
 
+-- Restrict SECURITY DEFINER functions to service_role only.
+-- Prevents direct invocation via the Data API by anon/authenticated users.
+REVOKE EXECUTE ON FUNCTION increment_lead_attempts(TEXT, TEXT) FROM anon, authenticated;
+
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Agent Lesson Deduplication — 2026-05-06
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -1369,6 +1373,9 @@ BEGIN
     );
 END;
 $$;
+
+-- Restrict SECURITY DEFINER functions to service_role only.
+REVOKE EXECUTE ON FUNCTION wireline_purge_old_data(UUID, INTEGER) FROM anon, authenticated;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- wireline_email_threads.read — 2026-05-10
