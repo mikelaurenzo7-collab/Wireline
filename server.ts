@@ -82,12 +82,34 @@ function emitLog(level: LogLevel, msg: string, fields?: Record<string, unknown>)
     );
   }
 }
-const log = {
-  debug: (msg: string, fields?: Record<string, unknown>) => emitLog("debug", msg, fields),
-  info:  (msg: string, fields?: Record<string, unknown>) => emitLog("info", msg, fields),
-  warn:  (msg: string, fields?: Record<string, unknown>) => emitLog("warn", msg, fields),
-  error: (msg: string, fields?: Record<string, unknown>) => emitLog("error", msg, fields),
-};
+
+/**
+ * Logger interface. The same shape is returned from `log` (module-level)
+ * and `log.child({...})` (request-scoped or job-scoped). Bind fields
+ * once at the request boundary and they appear on every subsequent line
+ * automatically — required for end-to-end request-id correlation.
+ */
+export interface Logger {
+  debug: (msg: string, fields?: Record<string, unknown>) => void;
+  info:  (msg: string, fields?: Record<string, unknown>) => void;
+  warn:  (msg: string, fields?: Record<string, unknown>) => void;
+  error: (msg: string, fields?: Record<string, unknown>) => void;
+  child: (boundFields: Record<string, unknown>) => Logger;
+}
+
+function makeLogger(boundFields: Record<string, unknown> = {}): Logger {
+  const merge = (fields?: Record<string, unknown>) =>
+    Object.keys(boundFields).length === 0 ? fields : { ...boundFields, ...(fields || {}) };
+  return {
+    debug: (msg, fields) => emitLog("debug", msg, merge(fields)),
+    info:  (msg, fields) => emitLog("info",  msg, merge(fields)),
+    warn:  (msg, fields) => emitLog("warn",  msg, merge(fields)),
+    error: (msg, fields) => emitLog("error", msg, merge(fields)),
+    child: (additional) => makeLogger({ ...boundFields, ...additional }),
+  };
+}
+
+const log: Logger = makeLogger();
 
 // ────────────────────────────────────────────────────────────────────
 //  fetchWithTimeout — every outbound HTTP call (Vapi, Gmail, generic)
@@ -245,6 +267,17 @@ app.use((req: any, res: any, next: any) => {
   const requestId = incoming && /^[A-Za-z0-9._-]+$/.test(incoming) ? incoming : randomUUID();
   res.locals.requestId = requestId;
   res.setHeader("X-Request-Id", requestId);
+  // Attach a request-scoped logger that automatically includes the
+  // request id (and method/path) on every line. Handlers that want
+  // request-correlated logs should use `req.log.info(...)` instead of
+  // the module-level `log.info(...)`. The module-level logger remains
+  // for startup, background workers, and other contexts without a
+  // request boundary.
+  req.log = log.child({
+    requestId,
+    method: req.method,
+    path: req.path,
+  });
   next();
 });
 
