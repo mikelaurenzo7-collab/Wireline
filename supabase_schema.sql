@@ -1394,3 +1394,26 @@ CREATE INDEX IF NOT EXISTS wireline_email_threads_user_read_idx
 -- ─────────────────────────────────────────────────────────────────────────────
 ALTER TABLE wireline_webhooks ADD COLUMN IF NOT EXISTS secret_encrypted TEXT;
 ALTER TABLE wireline_webhooks ADD COLUMN IF NOT EXISTS secret_last_four TEXT;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- wireline_audit_log.request_id — 2026-05-11
+--
+-- Stores the X-Request-Id header value (or a server-generated UUID) so that
+-- every audit event can be correlated back to the originating HTTP request.
+-- Essential for incident response: a single request_id ties together the
+-- auth event, the data operation, and the Claude/Vapi call in one query.
+-- ─────────────────────────────────────────────────────────────────────────────
+ALTER TABLE wireline_audit_log ADD COLUMN IF NOT EXISTS request_id TEXT;
+CREATE INDEX IF NOT EXISTS wireline_audit_log_request_id_idx
+    ON wireline_audit_log(request_id)
+    WHERE request_id IS NOT NULL;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- wireline_settings.retention_days — 2026-05-11
+--
+-- Per-tenant data retention policy in days. Used by the nightly purge job to
+-- call wireline_purge_old_data(user_id, retention_days). Default 365 days
+-- satisfies most jurisdictions; operators can lower to 90 (minimum enforced
+-- in the SQL function) for GDPR-sensitive deployments.
+-- ─────────────────────────────────────────────────────────────────────────────
+ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS retention_days INTEGER DEFAULT 365;

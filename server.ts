@@ -524,7 +524,7 @@ function timeoutMiddleware(timeoutMs: number) {
     const timer = setTimeout(() => {
       if (!res.headersSent) {
         const endpoint = req.originalUrl || req.path;
-        log.warn("Request timeout", { endpoint, timeoutMs, method: req.method });
+        log.warn("Request timeout", { requestId: res.locals?.requestId, endpoint, timeoutMs, method: req.method });
         SentryEvents.slowOperation({
           operation: `${req.method} ${endpoint}`,
           duration_ms: timeoutMs,
@@ -959,6 +959,24 @@ async function handleJob(job: JobRow): Promise<void> {
     });
   }
   // Other job types (webhook_delivery, campaign_dial, etc.) extend here.
+
+  if (job.type === 'purge_old_data') {
+    const p = job.payload as { user_id: string; retention_days?: number };
+    if (!p.user_id) {
+      log.warn('purge_old_data job missing user_id', { jobId: job.id });
+      return;
+    }
+    const retentionDays = typeof p.retention_days === 'number' ? p.retention_days : 365;
+    const { data, error } = await db.rpc('wireline_purge_old_data', {
+      p_user_id: p.user_id,
+      p_retention_days: retentionDays,
+    });
+    if (error) {
+      log.error('purge_old_data job failed', { jobId: job.id, user_id: p.user_id, error: error.message });
+      throw new Error(error.message);
+    }
+    log.info('purge_old_data job completed', { jobId: job.id, user_id: p.user_id, retention_days: retentionDays, result: data });
+  }
 }
 
 if (process.env.VERCEL !== '1') {
@@ -1592,7 +1610,8 @@ async function authenticateUser(req: any, res: any, next: any) {
        email: req.body?.email,
        ip: req.ip,
        userAgent: req.get('user-agent'),
-       reason: 'missing_token'
+       reason: 'missing_token',
+       requestId: res.locals?.requestId,
      }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
      
      return res.status(401).json({ error: "No authorization header provided" });
@@ -1607,7 +1626,8 @@ async function authenticateUser(req: any, res: any, next: any) {
        email: req.body?.email,
        ip: req.ip,
        userAgent: req.get('user-agent'),
-       reason: !token ? 'missing_token' : 'invalid_token'
+       reason: !token ? 'missing_token' : 'invalid_token',
+       requestId: res.locals?.requestId,
      }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
      
      return res.status(401).json({ error: "Invalid or expired session" });
@@ -5601,13 +5621,20 @@ app.post("/api/settings", authenticateUser, async (req: any, res: any) => {
     // the request body, letting any authenticated user grant themselves
     // 'active' status (bypassing billing) and unlimited agents (bypassing
     // quota). They are now ignored if present and silently dropped.
-    const { vapi_phone_number_id, voice_llm_provider, voice_llm_model } = req.body;
+    const { vapi_phone_number_id, voice_llm_provider, voice_llm_model, retention_days } = req.body;
 
     // Build patch with only the fields the caller is allowed to set.
     const patch: Record<string, any> = { updated_at: new Date().toISOString() };
     if (vapi_phone_number_id !== undefined) patch.vapi_phone_number_id = vapi_phone_number_id;
     if (voice_llm_provider !== undefined) patch.voice_llm_provider = voice_llm_provider;
     if (voice_llm_model !== undefined) patch.voice_llm_model = voice_llm_model;
+    if (retention_days !== undefined) {
+      const days = Number(retention_days);
+      if (!Number.isInteger(days) || days < 90) {
+        return res.status(400).json({ error: "retention_days must be an integer >= 90" });
+      }
+      patch.retention_days = days;
+    }
 
     // Audit attempts to modify privileged fields so we can spot abuse.
     if (req.body?.subscription_status !== undefined || req.body?.max_agents !== undefined) {
@@ -5745,6 +5772,45 @@ app.post("/api/account/export", authenticateUser, async (req: any, res: any) => 
 //
 // ⚠️  WARNING: This is an IMMEDIATE hard delete with NO grace period.
 // ⚠️  Operators MUST call POST /api/account/export FIRST to back up user data.
+// ─────────────────────────────────────────────────────────────────────────────
+// Data Retention: POST /api/account/purge-old-data
+// Enqueues an on-demand data-retention purge job for the authenticated tenant.
+// Useful for GDPR "right to erasure" requests where the user wants old data
+// purged immediately rather than waiting for the nightly scheduler.
+//
+// The actual deletion runs asynchronously in the job worker via the Postgres
+// function wireline_purge_old_data(). Minimum retention is 90 days.
+// ─────────────────────────────────────────────────────────────────────────────
+app.post("/api/account/purge-old-data", authenticateUser, async (req: any, res: any) => {
+  const uid = req.user.id;
+  try {
+    const { data: settings } = await db
+      .from("wireline_settings")
+      .select("retention_days")
+      .eq("user_id", uid)
+      .maybeSingle();
+    const retentionDays =
+      typeof (settings as any)?.retention_days === "number"
+        ? (settings as any).retention_days
+        : 365;
+    const result = await enqueue(db, {
+      userId: uid,
+      type: "purge_old_data",
+      payload: { user_id: uid, retention_days: retentionDays },
+      maxAttempts: 3,
+    });
+    if (!result.ok) {
+      log.error("Failed to enqueue purge_old_data job", { user_id: uid, error: result.error });
+      return res.status(500).json({ error: "Failed to schedule purge job" });
+    }
+    log.info("purge_old_data job enqueued on demand", { user_id: uid, retention_days: retentionDays, jobId: result.jobId });
+    res.json({ success: true, retention_days: retentionDays, job_id: result.jobId });
+  } catch (err: any) {
+    log.error("POST /api/account/purge-old-data failed", { error: getErrorMessage(err), user_id: uid });
+    res.status(500).json({ error: "Failed to schedule purge job" });
+  }
+});
+
 // ⚠️  Recovery after deletion requires restoring from Supabase PITR backup.
 //
 // TODO (Phase 1.5): Implement 30-day soft-delete grace period:
@@ -9380,6 +9446,67 @@ async function purgeStalePresence(): Promise<void> {
   }
 }
 setInterval(purgeStalePresence, PRESENCE_PURGE_INTERVAL_MS).unref?.();
+
+// ────────────────────────────────────────────────────────────────────
+//  Nightly data-retention TTL purge scheduler
+//
+//  Once per day (at ~02:00 UTC) this scheduler:
+//    1. Queries wireline_settings for all tenants that have a non-null
+//       retention_days value (default 365 days applies when NULL).
+//    2. Enqueues one `purge_old_data` job per tenant, staggered by
+//       60 s to avoid a thundering-herd of concurrent DB deletes.
+//
+//  The actual deletion runs inside handleJob() via the Postgres function
+//  wireline_purge_old_data(p_user_id, p_retention_days). The function
+//  enforces a minimum of 90 days to prevent accidental mass-deletes.
+//
+//  On Vercel, the /api/jobs/sweep cron (every 5 min) drains the queue
+//  so the jobs will execute even in serverless environments.
+// ────────────────────────────────────────────────────────────────────
+const DATA_RETENTION_CHECK_INTERVAL_MS = 60 * 60 * 1000; // check every hour
+let lastPurgeScheduleDate = "";  // YYYY-MM-DD, prevents double-scheduling in the same day
+
+async function scheduleNightlyPurgeJobs(): Promise<void> {
+  const now = new Date();
+  // Only schedule once per calendar day, during the 02:xx UTC hour window.
+  const dateKey = now.toISOString().slice(0, 10); // YYYY-MM-DD
+  if (now.getUTCHours() !== 2) return;
+  if (lastPurgeScheduleDate === dateKey) return;
+
+  try {
+    // Fetch all tenants (no user_id filter — this is an admin-level sweep)
+    const { data: tenants, error } = await db
+      .from("wireline_settings")
+      .select("user_id, retention_days");
+    if (error) {
+      log.warn("Data retention scheduler: failed to fetch tenants", { error: error.message });
+      return;
+    }
+    if (!tenants || tenants.length === 0) return;
+
+    lastPurgeScheduleDate = dateKey;
+    let enqueuedCount = 0;
+    for (let i = 0; i < tenants.length; i++) {
+      const tenant = tenants[i] as { user_id: string; retention_days: number | null };
+      if (!tenant.user_id) continue;
+      const retentionDays = typeof tenant.retention_days === 'number' ? tenant.retention_days : 365;
+      // Stagger jobs 60 s apart so they don't all hit the DB simultaneously.
+      const runAt = new Date(now.getTime() + i * 60_000);
+      const result = await enqueue(db, {
+        userId: tenant.user_id,
+        type: 'purge_old_data',
+        payload: { user_id: tenant.user_id, retention_days: retentionDays },
+        runAt,
+        maxAttempts: 3,
+      });
+      if (result.ok) enqueuedCount++;
+    }
+    log.info("Data retention purge jobs scheduled", { date: dateKey, tenants: tenants.length, enqueued: enqueuedCount });
+  } catch (err: any) {
+    log.warn("Data retention scheduler error", { error: getErrorMessage(err) });
+  }
+}
+setInterval(scheduleNightlyPurgeJobs, DATA_RETENTION_CHECK_INTERVAL_MS).unref?.();
 
 // Settings: GET / PUT for the daily-brief schedule. Defaults are
 // reasonable: 13:00 UTC (~9am ET / 6am PT), recipient = user's email,

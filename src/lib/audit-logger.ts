@@ -22,6 +22,7 @@ export class AuditLogger {
     model?: string;
     costUsd?: number;
     latencyMs?: number;
+    requestId?: string;
   }): Promise<{ success: boolean; error?: string }> {
     // Validate required fields
     if (!data.action || !data.eventType) {
@@ -46,7 +47,8 @@ export class AuditLogger {
       provider: data.provider,
       model: data.model,
       cost_usd: data.costUsd,
-      latency_ms: data.latencyMs
+      latency_ms: data.latencyMs,
+      request_id: data.requestId,
     };
 
     const { error } = await this.supabase.from('wireline_audit_log').insert(record);
@@ -76,6 +78,7 @@ export class AuditLogger {
       ip?: string;
       userAgent?: string;
       reason?: string;
+      requestId?: string;
     }
   ) {
     const eventTypeMap: Record<typeof action, AuditEventType> = {
@@ -93,7 +96,8 @@ export class AuditLogger {
       actorEmail: params.email,
       ip: params.ip,
       userAgent: params.userAgent,
-      metadata: params.reason ? { reason: params.reason } : undefined
+      metadata: params.reason ? { reason: params.reason } : undefined,
+      requestId: params.requestId,
     });
   }
 
@@ -134,6 +138,7 @@ export class AuditLogger {
       ip?: string;
       userAgent?: string;
       metadata?: Record<string, any>;
+      requestId?: string;
     }
   ) {
     const eventTypeMap: Record<typeof action, AuditEventType> = {
@@ -149,7 +154,8 @@ export class AuditLogger {
       severity: 'critical',
       metadata: { resource: params.resource, ...params.metadata },
       ip: params.ip,
-      userAgent: params.userAgent
+      userAgent: params.userAgent,
+      requestId: params.requestId,
     });
   }
 

@@ -32,7 +32,8 @@ export type JobType =
   | "webhook_delivery"       // Re-use / extend existing webhook retry mechanism
   | "daily_brief"            // Pre-compute operator daily brief
   | "campaign_dial"          // One outbound dial within a campaign
-  | "consent_check";         // Pre-call TCPA gateway check
+  | "consent_check"          // Pre-call TCPA gateway check
+  | "purge_old_data";        // GDPR data-retention TTL purge (nightly, per-tenant)
 
 export interface JobPayload extends Record<string, unknown> {}
 

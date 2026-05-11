@@ -1,0 +1,6 @@
+dist/
+node_modules/
+public/
+supabase/
+*.cjs
+package-lock.json
