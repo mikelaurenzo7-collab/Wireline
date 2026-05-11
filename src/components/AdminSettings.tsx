@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ServerCog, KeyRound, Loader2, Phone, Plus, Link as LinkIcon, Save, ChevronRight, RotateCw, CheckCircle2, Trash2, AlertTriangle, Cpu, CreditCard, Activity, ShieldCheck, Zap, Bot, Wifi, History, TrendingUp, DollarSign, BarChart3, Clock } from "lucide-react";
+import { ServerCog, KeyRound, Loader2, Phone, Plus, Link as LinkIcon, Save, ChevronRight, RotateCw, CheckCircle2, Trash2, AlertTriangle, Cpu, CreditCard, Activity, ShieldCheck, Zap, Bot, History, TrendingUp, DollarSign, BarChart3, Clock } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import ConfirmModal from "./ConfirmModal";
 import { motion, AnimatePresence } from "motion/react";
@@ -35,6 +35,18 @@ export default function AdminSettings() {
   const [isSaving, setIsSaving] = useState(false);
   const [isDeletingNumber, setIsDeletingNumber] = useState<number | string | null>(null);
   const [claudeStatus, setClaudeStatus] = useState<{ available: boolean; model: string; capabilities?: string[] } | null>(null);
+  type IntegrationRow = {
+    id: string;
+    label: string;
+    description: string;
+    group: string;
+    required: boolean;
+    status: "configured" | "missing" | "fallback";
+    envVars: Array<{ name: string; present: boolean }>;
+    fallback?: string;
+    docsUrl?: string;
+  };
+  const [integrations, setIntegrations] = useState<IntegrationRow[] | null>(null);
 
   const [newNumber, setNewNumber] = useState("");
   const [newNumberVapiId, setNewNumberVapiId] = useState("");
@@ -51,12 +63,22 @@ export default function AdminSettings() {
     anthropic: "https://docs.anthropic.com/en/docs/about-claude/models/overview",
   }[settings.voice_llm_provider] ?? "https://ai.google.dev/gemini-api/docs/models";
 
-  useEffect(() => { fetchData(); fetchClaudeStatus(); }, []);
+  useEffect(() => { fetchData(); fetchClaudeStatus(); fetchIntegrations(); }, []);
 
   const fetchClaudeStatus = async () => {
     try {
       const r = await authFetch("/api/claude/status");
       if (r.ok) setClaudeStatus(await r.json());
+    } catch (_) { /* non-critical */ }
+  };
+
+  const fetchIntegrations = async () => {
+    try {
+      const r = await authFetch("/api/health/integrations");
+      if (r.ok) {
+        const d = await r.json();
+        setIntegrations(d.integrations || []);
+      }
     } catch (_) { /* non-critical */ }
   };
 
@@ -698,53 +720,79 @@ export default function AdminSettings() {
                   </div>
                 </div>
               </Panel>
-              <Panel title="Platform Health" hint="Wireline Core" icon={ShieldCheck} scroll>
+              <Panel title="Platform Health" hint="Integrations status" icon={ShieldCheck} scroll>
                 <div className="space-y-3">
-                  {[
-                    {
-                      label: "AI Engine",
-                      desc: "Powers all Wireline AI features",
-                      ok: !!claudeStatus?.available,
-                      icon: Bot,
-                    },
-                    {
-                      label: "Voice SDK",
-                      desc: "Voice browser SDK",
-                      ok: !!import.meta.env.VITE_VAPI_PUBLIC_KEY,
-                      icon: Wifi,
-                    },
-                    {
-                      label: "VITE_SUPABASE_URL",
-                      desc: "Database connection",
-                      ok: !!import.meta.env.VITE_SUPABASE_URL,
-                      icon: Activity,
-                    },
-                    {
-                      label: "Agents",
-                      desc: `${agents.length} of ${settings.max_agents} deployed`,
-                      ok: agents.length > 0,
-                      icon: Bot,
-                    },
-                  ].map(item => (
-                    <div key={item.label} className="rounded-xl glass border border-white/8 p-3 flex items-center gap-3">
-                      <div className={cn(
-                        "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
-                        item.ok ? "bg-emerald-500/15" : "bg-rose-500/15"
-                      )}>
-                        <item.icon className={cn("w-3.5 h-3.5", item.ok ? "text-emerald-400" : "text-rose-400")} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[10px] font-mono text-ink truncate">{item.label}</div>
-                        <div className="text-[10px] text-muted">{item.desc}</div>
-                      </div>
-                      <span className={cn(
-                        "text-[8px] uppercase tracking-[0.25em] shrink-0",
-                        item.ok ? "text-emerald-400" : "text-rose-400"
-                      )}>
-                        {item.ok ? "OK" : "Missing"}
-                      </span>
+                  {!integrations && (
+                    <div className="text-[11px] text-muted flex items-center gap-2">
+                      <Loader2 className="w-3 h-3 animate-spin" /> Loading integrations…
                     </div>
-                  ))}
+                  )}
+                  {integrations && (() => {
+                    const GROUP_LABELS: Record<string, string> = {
+                      core: "Core",
+                      ai: "AI",
+                      voice: "Voice",
+                      oauth: "OAuth",
+                      billing: "Billing",
+                      actions: "Action Engine",
+                      infra: "Infrastructure",
+                      security: "Security",
+                    };
+                    const grouped: Record<string, IntegrationRow[]> = {};
+                    for (const row of integrations) {
+                      (grouped[row.group] ||= []).push(row);
+                    }
+                    const groupOrder = ["core", "ai", "voice", "oauth", "billing", "actions", "infra", "security"];
+                    return groupOrder.filter(g => grouped[g]?.length).map(g => (
+                      <div key={g} className="space-y-2">
+                        <div className="text-[9px] uppercase tracking-[0.3em] text-brand/70 pt-1">
+                          {GROUP_LABELS[g] || g}
+                        </div>
+                        {grouped[g].map(item => {
+                          const colour =
+                            item.status === "configured" ? "emerald" :
+                            item.status === "fallback"   ? "amber"   :
+                            item.required                ? "rose"    : "muted";
+                          const dot =
+                            colour === "emerald" ? "bg-emerald-500/15 border-emerald-500/30" :
+                            colour === "amber"   ? "bg-amber-500/15 border-amber-500/30"     :
+                            colour === "rose"    ? "bg-rose-500/15 border-rose-500/30"       :
+                                                   "bg-white/5 border-white/10";
+                          const text =
+                            colour === "emerald" ? "text-emerald-400" :
+                            colour === "amber"   ? "text-amber-400"   :
+                            colour === "rose"    ? "text-rose-400"    : "text-muted";
+                          const badge =
+                            item.status === "configured" ? "OK" :
+                            item.status === "fallback"   ? "Fallback" :
+                            item.required                ? "Missing" : "Not set";
+                          return (
+                            <div key={item.id} className={cn("rounded-xl glass border p-3 flex items-start gap-3", dot)}>
+                              <div className={cn("w-2 h-2 rounded-full mt-1.5 shrink-0", text.replace("text-", "bg-"))} />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <div className="text-[11px] font-semibold text-ink truncate">{item.label}</div>
+                                  {item.required && (
+                                    <span className="text-[8px] uppercase tracking-[0.25em] text-muted">Required</span>
+                                  )}
+                                </div>
+                                <div className="text-[10px] text-muted leading-snug mt-0.5">{item.description}</div>
+                                {item.status !== "configured" && item.envVars.some(v => !v.present) && (
+                                  <div className="text-[9px] font-mono text-muted/80 mt-1 truncate">
+                                    Missing: {item.envVars.filter(v => !v.present).map(v => v.name).join(", ")}
+                                  </div>
+                                )}
+                                {item.status !== "configured" && item.fallback && (
+                                  <div className="text-[9px] text-muted/70 italic mt-1 leading-snug">{item.fallback}</div>
+                                )}
+                              </div>
+                              <span className={cn("text-[8px] uppercase tracking-[0.25em] shrink-0", text)}>{badge}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ));
+                  })()}
                 </div>
               </Panel>
             </motion.div>
