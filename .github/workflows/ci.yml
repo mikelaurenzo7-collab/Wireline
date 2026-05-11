@@ -49,14 +49,16 @@ jobs:
         # Spawns dist/server.cjs, verifies /api/health responds, kills it.
         run: npm run smoke:server
 
-      - name: Production env check (informational)
-        # Surfaces missing env vars in CI logs without blocking the build.
-        # CI doesn't have prod secrets — the script exits 0 here so this
-        # step is purely informational. Set PRODUCTION_CHECK=1 in deploy
-        # workflows to make missing recommended vars a hard fail.
-        run: node scripts/check-prod-env.mjs || true
+      - name: Production env check (deploy gate)
+        # Hard fail on missing recommended vars with PRODUCTION_CHECK=1.
+        # This prevents deploys with incomplete configuration that would
+        # manifest as runtime 503s for critical features (billing, webhooks,
+        # Claude, cron jobs). Required vars always fail regardless of flag.
+        env:
+          PRODUCTION_CHECK: "1"
+        run: node scripts/check-prod-env.mjs
 
-      - name: Audit (high severity, non-blocking)
-        # `audit` exits non-zero on findings; we surface the report but
-        # don't fail CI on transitive vulns we can't immediately fix.
-        run: npm audit --audit-level=high || true
+      - name: Audit (high severity, blocking with exemptions)
+        # Fails on unexempted high/critical vulns. Exemptions must be
+        # documented in .audit-exemptions with reasoning. Review quarterly.
+        run: node scripts/check-audit-exemptions.mjs
