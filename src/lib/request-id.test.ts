@@ -130,17 +130,17 @@ describe("X-Request-Id — malformed client values are rejected", () => {
     expect(res.headers["x-request-id"]).toMatch(/^[0-9a-f-]{36}$/);
   });
 
-  it("truncates and rejects an overlong value (> 64 chars) — falls back to server UUID", async () => {
-    // The middleware slices to 64 chars then validates — a 65-char valid token
-    // will be sliced to 64 and still pass the regex. An overlong value that
-    // becomes invalid after slicing should fall back.
-    // We use a 70-char string that's all-valid chars: the slice is still valid,
-    // so the header echoes it truncated to 64 chars (slice(0,64)).
+  it("truncates an overlong value (> 64 chars) to at most 64 characters", async () => {
+    // The middleware slices client-supplied values to 64 chars before
+    // validating. A 70-char all-valid string is sliced to 64 chars and
+    // still passes the regex — so the echoed value is the first 64 chars,
+    // NOT a server-generated UUID.
     const longId = "a".repeat(70);
     const res = await request(baseUrl)
       .get("/echo")
       .set("X-Request-Id", longId);
-    // After .slice(0, 64) the value is still valid; verify it's truncated
-    expect(res.headers["x-request-id"]?.length).toBeLessThanOrEqual(64);
+    // After .slice(0, 64) the value is valid (all 'a'); verify truncation occurred.
+    expect(res.headers["x-request-id"]).toBe("a".repeat(64));
+    expect(res.headers["x-request-id"]?.length).toBe(64);
   });
 });

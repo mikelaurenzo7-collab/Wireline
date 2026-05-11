@@ -105,7 +105,7 @@ function makeQueryBuilder(table: string) {
     }
     const count = filtered.length;
     if (_isSingle) {
-      if (filtered.length === 0) return { data: null, error: { code: "PGRST116" } } as any;
+      if (filtered.length === 0) return { data: null, error: { code: "PGRST116" } } as unknown as ReturnType<typeof resolve>;
       return { data: filtered[0], error: null };
     }
     if (_isMaybeSingle) {

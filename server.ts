@@ -5781,7 +5781,7 @@ app.post("/api/account/export", authenticateUser, async (req: any, res: any) => 
 // The actual deletion runs asynchronously in the job worker via the Postgres
 // function wireline_purge_old_data(). Minimum retention is 90 days.
 // ─────────────────────────────────────────────────────────────────────────────
-app.post("/api/account/purge-old-data", authenticateUser, async (req: any, res: any) => {
+app.post("/api/account/purge-old-data", authenticateUser, jobsRateLimit, async (req: any, res: any) => {
   const uid = req.user.id;
   try {
     const { data: settings } = await db
@@ -5790,8 +5790,8 @@ app.post("/api/account/purge-old-data", authenticateUser, async (req: any, res: 
       .eq("user_id", uid)
       .maybeSingle();
     const retentionDays =
-      typeof (settings as any)?.retention_days === "number"
-        ? (settings as any).retention_days
+      typeof (settings as { retention_days?: number } | null)?.retention_days === "number"
+        ? (settings as { retention_days: number }).retention_days
         : 365;
     const result = await enqueue(db, {
       userId: uid,
