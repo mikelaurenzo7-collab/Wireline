@@ -6,7 +6,50 @@
 // Returns 429 with Retry-After header on quota exceeded.
 
 import { Request, Response, NextFunction } from "express";
-import { rateLimit, RateLimiterOptions } from "../lib/rate-limit.js";
+import { rateLimit, RateLimiterOptions, distributedLimiterStatus } from "../lib/rate-limit.js";
+
+// ──────────────────────────────────────────────────────────────────────
+//  Claude rate limiter — shared by server.ts and extracted route files.
+//  Keys by Bearer token first; falls back to IP for unauthenticated edge
+//  cases. Fails CLOSED when the distributed limiter is unavailable.
+// ──────────────────────────────────────────────────────────────────────
+const CLAUDE_RATE_WINDOW_MS = 60_000;
+const CLAUDE_RATE_MAX = 60;
+
+/**
+ * Middleware that enforces per-user Claude API rate limits.
+ * Accepts optional hooks for audit logging and Sentry tracking so callers
+ * can wire their own singletons without creating circular imports.
+ */
+export async function claudeRateLimiter(req: any, res: any, next: any) {
+  const status = distributedLimiterStatus();
+  if (!status.ok) {
+    return res.status(503).json({ error: status.reason, code: status.code });
+  }
+  const token = req.headers.authorization?.split(" ")[1];
+  const key = token || req.ip || "anon";
+  let result;
+  try {
+    result = await rateLimit(key, {
+      bucket: "claude",
+      windowMs: CLAUDE_RATE_WINDOW_MS,
+      max: CLAUDE_RATE_MAX,
+      failClosedOnError: true,
+    });
+  } catch {
+    return res.status(503).json({ error: "Rate limiter temporarily unavailable.", code: "RATE_LIMITER_ERROR" });
+  }
+  res.setHeader("X-RateLimit-Limit", String(CLAUDE_RATE_MAX));
+  res.setHeader("X-RateLimit-Remaining", String(result.remaining));
+  if (!result.allowed) {
+    res.setHeader("Retry-After", String(Math.ceil(result.resetMs / 1000)));
+    return res.status(429).json({
+      error: `Rate limit exceeded — ${CLAUDE_RATE_MAX} requests per minute. Slow down.`,
+      code: "CLAUDE_RATE_LIMIT",
+    });
+  }
+  next();
+}
 
 function getErrorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);

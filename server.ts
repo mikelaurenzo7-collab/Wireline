@@ -33,6 +33,7 @@ import { getErrorMessage, sanitizeForAudit } from "./src/lib/server-utils";
 import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "./src/lib/agent-runtime";
 import { computeScorecard } from "./src/lib/agent-scorecard";
 import { computeDashboardStats } from "./src/lib/dashboard-stats";
+import { DEFAULT_AGENT_ROLE, ROLE_PERSONALITY_TEMPLATES } from "./src/lib/agent-constants";
 import { extractCapturedProfileIntel, buildCustomerIntelBlock } from "./src/lib/customer-intel";
 import { compileActivityFeed } from "./src/lib/fleet-activity";
 import { computeAgentPerformance, emptyAgentPerformance } from "./src/lib/agent-performance";
@@ -44,7 +45,11 @@ import { isPrivateIp, isPrivateIpv6, isSsrfUrl, validateWebhookUrl } from "./src
 import { evaluateOutboundConsent, getConsentRuleForPhone, buildConsentLedgerRow, detectOptOut, CONSENT_RULE_VERSION } from "./src/lib/tcpa-consent";
 import { QuotaTracker, quotaRejectionHeaders, validateOverride, PLAN_DEFAULTS, type PlanTier } from "./src/lib/tenant-quotas";
 import { enqueue, startWorker, getQueueStats, type JobRow } from "./src/lib/job-queue";
-import { quotaRateLimit, jobsRateLimit, tcpaRateLimit, soc2RateLimit, webhooksRateLimit } from "./src/middleware/api-rate-limits";
+import { claudeRateLimiter, quotaRateLimit, jobsRateLimit, tcpaRateLimit, soc2RateLimit, webhooksRateLimit } from "./src/middleware/api-rate-limits";
+import { enforceSpendCap, enforce24hSpendCap, recordDailySpend, DAILY_SPEND_LIMIT_USD, evaluateSpend } from "./src/lib/spend-guards";
+import { withAudit } from "./src/middleware/audit-middleware";
+import { claudeErr } from "./src/lib/claude-response-helpers";
+import { cachedInsight, setCachedInsight } from "./src/lib/insights-cache";
 import { encryptSecret, decryptSecret, lastFour, isVaultConfigured } from "./src/lib/secret-vault";
 import { createRbacMiddleware, getCallerRole, invalidateRoleCache } from "./src/middleware/require-role";
 import { syncGoogleCalendar } from "./src/services/google-calendar-sync";
@@ -59,6 +64,11 @@ import { attemptWebhookDelivery, dispatchWebhook, processWebhookRetries, type We
 import oauthRouter from "./src/routes/oauth-routes";
 import vapiRouter from "./src/routes/vapi-routes";
 import stripeRouter from "./src/routes/stripe-routes";
+import agentRouter from "./src/routes/agent-routes";
+import campaignRouter from "./src/routes/campaign-routes";
+import fleetRouter from "./src/routes/fleet-routes";
+import auditRouter from "./src/routes/audit-routes";
+import insightsRouter from "./src/routes/insights-routes";
 
 // On Vercel, VERCEL_URL is automatically set to the deployment hostname
 // (e.g. "myapp-abc123.vercel.app") with no protocol or trailing slash.
@@ -71,8 +81,7 @@ if (!process.env.APP_URL && process.env.VERCEL_URL) {
   process.env.APP_URL = `https://${hostname}`;
 }
 
-const DEFAULT_AGENT_ROLE = "customer_service";
-
+// DEFAULT_AGENT_ROLE is imported from ./src/lib/agent-constants
 
 // ────────────────────────────────────────────────────────────────────
 //  Startup env validation — fail fast in production rather than
@@ -391,64 +400,27 @@ if (isRedisConfigured()) {
 // memory in long-lived deployments.
 startMemoryCleanup();
 
-// Reusable per-user rate-limiter for any endpoint that calls Claude.
-// Keys by Bearer token (available before authenticateUser runs); falls
-// back to IP so unauthenticated edge cases are still covered.
-async function claudeRateLimiter(req: any, res: any, next: any) {
-  // Spend-sensitive route: refuse to serve in production when the
-  // distributed limiter is unavailable AND the operator hasn't
-  // explicitly opted into the single-node in-memory fallback.
-  const status = distributedLimiterStatus();
-  if (!status.ok) {
-    // Operational misconfiguration, not a security event — log a warning
-    // instead of polluting the audit trail. The 503 response with the
-    // `RATE_LIMITER_UNAVAILABLE` code makes the failure mode explicit
-    // for both monitoring and the client.
-    log.warn("Refusing spend-sensitive route — distributed rate limiter unavailable", {
-      resource: "claude_api",
-      ip: req.ip,
-      reason: status.reason,
-    });
-    return res.status(503).json({ error: status.reason, code: status.code });
-  }
-  const token = req.headers.authorization?.split(" ")[1];
-  const key = token || req.ip || "anon";
-  let result;
-  try {
-    result = await rateLimit(key, {
-      bucket: "claude",
-      windowMs: CLAUDE_RATE_WINDOW_MS,
-      max: CLAUDE_RATE_MAX,
-      failClosedOnError: true,
-    });
-  } catch (err) {
-    return res.status(503).json({ error: "Rate limiter temporarily unavailable.", code: "RATE_LIMITER_ERROR" });
-  }
-  res.setHeader("X-RateLimit-Limit", String(CLAUDE_RATE_MAX));
-  res.setHeader("X-RateLimit-Remaining", String(result.remaining));
-  if (!result.allowed) {
-    // Audit log: rate limit exceeded (non-blocking).
-    void auditLogger.logSecurity('rate_limit_exceeded', {
-      userId: undefined,
-      resource: 'claude_api',
-      ip: req.ip,
-      userAgent: req.get('user-agent'),
-      metadata: { limit: CLAUDE_RATE_MAX, hasToken: !!token }
-    }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
-
-    // Track rate limiting in Sentry
-    SentryEvents.rateLimited({
-      endpoint: '/api/claude',
-      user_id: req.user?.id,
-    });
-
-    res.setHeader("Retry-After", String(Math.ceil(result.resetMs / 1000)));
-    return res.status(429).json({
-      error: `Rate limit exceeded — ${CLAUDE_RATE_MAX} requests per minute. Slow down.`,
-      code: "CLAUDE_RATE_LIMIT",
-    });
-  }
-  next();
+// Thin wrapper around the shared claudeRateLimiter (imported from
+// ./src/middleware/api-rate-limits) that adds server-level audit +
+// Sentry instrumentation. Used only within server.ts; route files
+// import claudeRateLimiter directly from the middleware.
+async function _claudeRateLimiterWithHooks(req: any, res: any, next: any) {
+  const origJson = res.json.bind(res);
+  res.json = function (body: any) {
+    if (res.statusCode === 429 && body?.code === "CLAUDE_RATE_LIMIT") {
+      const token = req.headers.authorization?.split(" ")[1];
+      void auditLogger.logSecurity('rate_limit_exceeded', {
+        userId: undefined,
+        resource: 'claude_api',
+        ip: req.ip,
+        userAgent: req.get('user-agent'),
+        metadata: { hasToken: !!token }
+      }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
+      SentryEvents.rateLimited({ endpoint: '/api/claude', user_id: req.user?.id });
+    }
+    return origJson(body);
+  };
+  return claudeRateLimiter(req, res, next);
 }
 
 async function emailRateLimiter(req: any, res: any, next: any) {
@@ -791,7 +763,6 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 // Google Workspace OAuth Setup
 // Google OAuth client moved to src/lib/oauth-helpers.ts
 
-
 // ────────────────────────────────────────────────────────────────────
 //  Job queue worker — drains wireline_jobs in the background.
 //  Post-call enrichment is enqueued from the Vapi webhook handler and
@@ -874,8 +845,6 @@ if (process.env.VERCEL !== '1') {
     onError: (err) => log.error('job worker error', { error: err.message }),
   });
 }
-
-
 
 // ────────────────────────────────────────────────────────────────────
 //  Stripe — billing source of truth.
@@ -974,8 +943,6 @@ function plansForClient() {
 // Webhook helpers moved to src/lib/webhook-helpers.ts
 setInterval(processWebhookRetries, 30_000).unref?.();
 
-
-
 // ────────────────────────────────────────────────────────────────────
 //  SPEND BUDGETS — enforce monthly Claude limits and fire spend.*
 //  webhook events when thresholds are crossed. Composed with the
@@ -987,200 +954,19 @@ setInterval(processWebhookRetries, 30_000).unref?.();
 //  when the user is both over budget and has hard_cap = true.
 // ────────────────────────────────────────────────────────────────────
 
-type BudgetCacheEntry = {
-  fetchedAt: number;
-  budget: { monthly_limit_usd: number; hard_cap: boolean; warn_threshold_pct: number; enabled: boolean } | null;
-  mtdCost: number;
-  period: string;
-};
-const BUDGET_CACHE_TTL_MS = 60_000;
-const budgetCache = new Map<string, BudgetCacheEntry>();
+// evaluateSpend and budget caching moved to ./src/lib/spend-guards
 
-function currentPeriod(now = new Date()): string {
-  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
-}
+// evaluateSpend moved to ./src/lib/spend-guards
 
-function periodStartIso(period = currentPeriod()): string {
-  // 'YYYY-MM' → UTC midnight of the 1st
-  return new Date(`${period}-01T00:00:00.000Z`).toISOString();
-}
-
-async function getBudgetSnapshot(userId: string, force = false): Promise<BudgetCacheEntry> {
-  const cached = budgetCache.get(userId);
-  const period = currentPeriod();
-  if (!force && cached && cached.period === period && Date.now() - cached.fetchedAt < BUDGET_CACHE_TTL_MS) {
-    return cached;
-  }
-  const [{ data: budget }, { data: rows }] = await Promise.all([
-    db.from("wireline_spend_budgets").select("monthly_limit_usd, hard_cap, warn_threshold_pct, enabled").eq("user_id", userId).maybeSingle(),
-    db.from("wireline_audit_log").select("cost_usd").eq("user_id", userId).gte("created_at", periodStartIso(period)).limit(10000),
-  ]);
-  const mtdCost = (rows || []).reduce((s: number, r: any) => s + Number(r.cost_usd || 0), 0);
-  const entry: BudgetCacheEntry = {
-    fetchedAt: Date.now(),
-    budget: budget
-      ? {
-          monthly_limit_usd: Number(budget.monthly_limit_usd || 0),
-          hard_cap: !!budget.hard_cap,
-          warn_threshold_pct: Number(budget.warn_threshold_pct || 80),
-          enabled: budget.enabled !== false,
-        }
-      : null,
-    mtdCost,
-    period,
-  };
-  budgetCache.set(userId, entry);
-  return entry;
-}
-
-function bumpBudgetCache(userId: string, deltaUsd: number) {
-  const cached = budgetCache.get(userId);
-  if (!cached) return;
-  const period = currentPeriod();
-  if (cached.period !== period) return;
-  cached.mtdCost += deltaUsd;
-}
-
-/**
- * Fire spend.warning / spend.exceeded webhooks when thresholds cross.
- * Debounced via wireline_spend_alerts(unique user_id+period+threshold) —
- * each threshold fires at most once per period.
- */
-async function evaluateSpend(userId: string, deltaUsd: number) {
-  try {
-    bumpBudgetCache(userId, deltaUsd);
-    const snap = await getBudgetSnapshot(userId);
-    if (!snap.budget || !snap.budget.enabled) return;
-    const limit = snap.budget.monthly_limit_usd;
-    if (!(limit > 0)) return;
-
-    const pct = (snap.mtdCost / limit) * 100;
-    const warnPct = Math.max(1, Math.min(99, snap.budget.warn_threshold_pct));
-    const thresholdsToFire: { pct: number; event: WebhookEvent }[] = [];
-    if (pct >= 100) thresholdsToFire.push({ pct: 100, event: "spend.exceeded" });
-    if (pct >= warnPct) thresholdsToFire.push({ pct: warnPct, event: "spend.warning" });
-
-    for (const t of thresholdsToFire) {
-      // Debounce: insert (user, period, threshold) — duplicate row => already fired.
-      const { error } = await db
-        .from("wireline_spend_alerts")
-        .insert({ user_id: userId, period: snap.period, threshold_pct: t.pct });
-      if (error) continue; // unique-violation or insert error → skip silently
-      await dispatchWebhook(userId, t.event, {
-        period: snap.period,
-        month_to_date_usd: Number(snap.mtdCost.toFixed(4)),
-        monthly_limit_usd: limit,
-        threshold_pct: t.pct,
-        percent_used: Number(pct.toFixed(1)),
-        hard_cap: snap.budget.hard_cap,
-        at: new Date().toISOString(),
-      });
-
-      // Track budget thresholds in Sentry
-      if (t.event === "spend.exceeded") {
-        SentryEvents.budgetExceeded({
-          user_id: userId,
-          spent: Number(snap.mtdCost.toFixed(4)),
-          budget: limit,
-        });
-      } else if (t.event === "spend.warning") {
-        SentryEvents.budgetWarning({
-          user_id: userId,
-          spent: Number(snap.mtdCost.toFixed(4)),
-          budget: limit,
-        });
-      }
-    }
-  } catch (err: any) {
-    log.error("evaluateSpend failed", { error: getErrorMessage(err) });
-  }
-}
 
 /**
  * Pre-handler for /api/claude/* — block the request with HTTP 402 if the
  * user has a hard cap on and is at/over their monthly limit. Uses the
  * cached snapshot so this stays fast on the hot path.
- */
-async function enforceSpendCap(req: any, res: any, next: any) {
-  if (!req?.user?.id) return next();
-  try {
-    const snap = await getBudgetSnapshot(req.user.id);
-    const b = snap.budget;
-    if (b && b.enabled && b.hard_cap && b.monthly_limit_usd > 0 && snap.mtdCost >= b.monthly_limit_usd) {
-      return res.status(402).json({
-        error: `Monthly Claude budget reached ($${b.monthly_limit_usd.toFixed(2)}). Disable hard cap or raise the limit in Insights → AI Spend.`,
-        code: "SPEND_LIMIT_EXCEEDED",
-        period: snap.period,
-        month_to_date_usd: Number(snap.mtdCost.toFixed(4)),
-        monthly_limit_usd: b.monthly_limit_usd,
-      });
-    }
-  } catch (err) {
-    // Fail-OPEN on transient DB errors: blocking everyone when Supabase
-    // blips would be worse than briefly missing a hard cap. We log a
-    // structured warning so operators can see when this fires.
-    log.warn("enforceSpendCap check failed — allowing request through", {
-      user_id: req?.user?.id,
-      requestId: res.locals?.requestId,
-      error: (err as any)?.message || String(err),
-    });
-  }
-  next();
-}
+// enforceSpendCap is imported from ./src/lib/spend-guards
 
-// ────────────────────────────────────────────────────────────────────
-//  24-hour spend cap — lightweight protection against runaway spend
-//  within a single calendar day.  Reads CLAUDE_MONTHLY_BUDGET_USD (default
-//  $50) and blocks Claude endpoints when per-day spend exceeds 1 % of
-//  that value ($0.50 by default).  Complements the per-user monthly
-//  hard-cap in enforceSpendCap — this one is system-wide, fast, and
-//  requires no DB configuration from the operator.
-// ────────────────────────────────────────────────────────────────────
-const CLAUDE_MONTHLY_BUDGET_USD = Math.max(0, Number(process.env.CLAUDE_MONTHLY_BUDGET_USD ?? 50));
-const DAILY_SPEND_LIMIT_USD = CLAUDE_MONTHLY_BUDGET_USD * 0.01; // 1 % of monthly
-
-// Lightweight in-process accumulator — intentionally resets on cold start
-// (Vercel serverless).  For stronger guarantees use Upstash Redis as the
-// rate-limit store; the per-user monthly hard cap (enforceSpendCap) is the
-// authoritative DB-backed guard.
-let _dailySpendWindowStart = Date.now();
-let _dailySpendAccumUsd    = 0;
-
-/** Call this after every Claude API round trip to track cumulative 24h spend. */
-function recordDailySpend(usd: number) {
-  const now = Date.now();
-  if (now - _dailySpendWindowStart > 24 * 60 * 60_000) {
-    _dailySpendWindowStart = now;
-    _dailySpendAccumUsd    = 0;
-  }
-  _dailySpendAccumUsd += usd;
-  if (DAILY_SPEND_LIMIT_USD > 0 && _dailySpendAccumUsd >= DAILY_SPEND_LIMIT_USD) {
-    log.warn("Daily Claude spend cap reached", {
-      daily_limit_usd:    DAILY_SPEND_LIMIT_USD,
-      accumulated_usd:    Number(_dailySpendAccumUsd.toFixed(4)),
-      monthly_budget_usd: CLAUDE_MONTHLY_BUDGET_USD,
-    });
-  }
-}
-
-/** Pre-handler — block /api/claude/* when the 24h spend window is over budget. */
-function enforce24hSpendCap(req: any, res: any, next: any) {
-  if (DAILY_SPEND_LIMIT_USD <= 0) return next(); // disabled when budget is 0
-  const now = Date.now();
-  if (now - _dailySpendWindowStart > 24 * 60 * 60_000) {
-    _dailySpendWindowStart = now;
-    _dailySpendAccumUsd    = 0;
-  }
-  if (_dailySpendAccumUsd >= DAILY_SPEND_LIMIT_USD) {
-    return res.status(402).json({
-      error: `Daily Claude spend limit reached ($${DAILY_SPEND_LIMIT_USD.toFixed(2)}/day, 1 % of $${CLAUDE_MONTHLY_BUDGET_USD} monthly budget). Resets in ${Math.ceil((24 * 60 * 60_000 - (now - _dailySpendWindowStart)) / 60_000)} minutes.`,
-      code: "DAILY_SPEND_LIMIT_EXCEEDED",
-      daily_limit_usd: DAILY_SPEND_LIMIT_USD,
-      accumulated_usd: Number(_dailySpendAccumUsd.toFixed(4)),
-    });
-  }
-  next();
-}
+// enforce24hSpendCap and recordDailySpend imported from ./src/lib/spend-guards
+// DAILY_SPEND_LIMIT_USD re-exported for any remaining server.ts internal uses.
 
 // ==========================================
 // AUTH MIDDLEWARE
@@ -1322,6 +1108,11 @@ async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
 
 // Stripe webhook moved to src/routes/stripe-routes.ts
 app.use(stripeRouter);
+app.use(agentRouter);
+app.use(campaignRouter);
+app.use(fleetRouter);
+app.use(auditRouter);
+app.use(insightsRouter);
 
 // Vapi webhook moved to src/routes/vapi-routes.ts
 app.use(vapiRouter);
@@ -1921,408 +1712,17 @@ Return every 45 seconds: "Thank you for holding — I'm still checking on that f
 Never leave someone on hold for more than 3 minutes without offering to call back.`,
 };
 
-
-app.get("/api/agents", authenticateUser, async (req: any, res: any) => {
-  try {
-    const { data: agents, error } = await db.from('wireline_agents').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false }).limit(500);
-    if (error) log.warn("Failed to fetch agents", { userId: req.user.id, error: getErrorMessage(error) });
-    res.json({ agents: agents || [] });
-  } catch (error) {
-    res.json({ agents: [] }); 
-  }
-});
-
 // Returns role metadata (label, description, color, and personality template)
 // so the UI can render role selectors and apply templates without client-side hardcoding.
-app.get("/api/agents/roles", (_req, res) => {
-  res.json({
-    roles: [
-      { value: "sales",            label: "Sales",              description: "Closes deals and drives revenue",           color: "amber" },
-      { value: "customer_service", label: "Customer Service",   description: "Handles inbound issues and support",        color: "emerald" },
-      { value: "scheduler",        label: "Scheduler",          description: "Books appointments and manages calendars",  color: "violet" },
-      { value: "collections",      label: "Collections",        description: "Handles payment follow-ups and recovery",   color: "rose" },
-      { value: "technical_support",label: "Technical Support",  description: "Diagnoses and resolves technical issues",   color: "blue" },
-      { value: "lead_qualifier",   label: "Lead Qualifier",     description: "Screens and scores inbound prospects",      color: "orange" },
-      { value: "receptionist",     label: "Receptionist",       description: "Routes calls and creates first impressions",color: "cyan" },
-      { value: "marketing",        label: "Marketing",          description: "Nurtures prospects and runs campaigns",     color: "purple" },
-    ],
-    templates: ROLE_PERSONALITY_TEMPLATES
-  });
-});
 
 // Apply a role template directly to an agent's personality record.
 // Called from the Fleet Settings "Apply Role Template" button.
-app.post("/api/agents/:id/apply-role", authenticateUser, async (req: any, res: any) => {
-  try {
-    const { role } = req.body;
-    const template = ROLE_PERSONALITY_TEMPLATES[role as keyof typeof ROLE_PERSONALITY_TEMPLATES];
-    if (!template) return res.status(400).json({ error: "Unknown role" });
-
-    // SECURITY: verify the agent belongs to the caller before upserting.
-    // We use the service-role client (bypasses RLS) so without this check
-    // a user could overwrite another user's agent's personality by
-    // guessing the agent_id (and the upsert's onConflict: 'agent_id'
-    // would even reassign ownership via the user_id field).
-    const { data: agent } = await db
-      .from('wireline_agents')
-      .select('id')
-      .eq('id', req.params.id)
-      .eq('user_id', req.user.id)
-      .maybeSingle();
-    if (!agent) return res.status(404).json({ error: "Agent not found" });
-
-    await db.from('wireline_personality')
-      .upsert({ agent_id: req.params.id, user_id: req.user.id, content: template }, { onConflict: 'agent_id' });
-
-    res.json({ success: true, content: template });
-  } catch (error) {
-    log.error("Failed to apply role template", { error: getErrorMessage(error) });
-    res.status(500).json({ error: "Failed to apply role template" });
-  }
-});
 
 // Export agent config as JSON
-app.get("/api/agents/:id/export", authenticateUser, async (req: any, res: any) => {
-  try {
-    const agentId = req.params.id;
-    const userId = req.user.id;
-
-    const [agentRes, personalityRes, directivesRes, knowledgeRes] = await Promise.all([
-      db.from('wireline_agents').select('*').eq('id', agentId).eq('user_id', userId).single(),
-      db.from('wireline_personality').select('content').eq('agent_id', agentId).single(),
-      db.from('wireline_directives').select('content, priority').eq('agent_id', agentId).eq('user_id', userId).limit(500),
-      db.from('wireline_knowledge').select('content').eq('agent_id', agentId).eq('user_id', userId).limit(500),
-    ]);
-
-    if (!agentRes.data) return res.status(404).json({ error: 'Agent not found' });
-
-    const exportData = {
-      wireline_export_version: 1,
-      exported_at: new Date().toISOString(),
-      agent: {
-        name: agentRes.data.name,
-        channel: agentRes.data.channel,
-        role: agentRes.data.role,
-        personality: personalityRes.data?.content ?? '',
-        directives: (directivesRes.data ?? []).map((d: any) => ({ content: d.content, priority: d.priority })),
-        knowledge: (knowledgeRes.data ?? []).map((k: any) => k.content),
-      },
-    };
-
-    const safeName = agentRes.data.name
-      .replace(/[^\w\s-]/g, '')   // strip non-word chars (quotes, newlines, path chars)
-      .replace(/\s+/g, '_')
-      .slice(0, 64)
-      || 'agent';
-    res.setHeader('Content-Disposition', `attachment; filename="${safeName}_config.json"`);
-    res.setHeader('Content-Type', 'application/json');
-    res.json(exportData);
-  } catch (err) {
-    res.status(500).json({ error: 'Export failed' });
-  }
-});
 
 // Import agent config from JSON
-app.post("/api/agents/:id/import", authenticateUser, async (req: any, res: any) => {
-  try {
-    const agentId = req.params.id;
-    const userId = req.user.id;
-    const payload = req.body;
-
-    // Validate structure
-    if (!payload?.wireline_export_version || !payload?.agent) {
-      return res.status(400).json({ error: 'Invalid export file format' });
-    }
-
-    // SECURITY: verify the target agent belongs to the caller. Without
-    // this, the personality upsert (onConflict: 'agent_id') would let
-    // any authenticated user overwrite another user's agent.
-    const { data: ownedAgent } = await db
-      .from('wireline_agents')
-      .select('id')
-      .eq('id', agentId)
-      .eq('user_id', userId)
-      .maybeSingle();
-    if (!ownedAgent) return res.status(404).json({ error: 'Agent not found' });
-
-    const { personality, directives, knowledge } = payload.agent;
-
-    // Replace personality
-    if (personality) {
-      await db.from('wireline_personality').upsert(
-        { agent_id: agentId, user_id: userId, content: personality },
-        { onConflict: 'agent_id' }
-      );
-    }
-
-    // Merge directives (append new ones)
-    if (Array.isArray(directives) && directives.length > 0) {
-      await db.from('wireline_directives').insert(
-        directives.map((d: any) => ({ agent_id: agentId, user_id: userId, content: d.content, priority: d.priority ?? 5 }))
-      );
-    }
-
-    // Merge knowledge (append new ones)
-    if (Array.isArray(knowledge) && knowledge.length > 0) {
-      await db.from('wireline_knowledge').insert(
-        knowledge.map((k: string) => ({ agent_id: agentId, user_id: userId, content: k }))
-      );
-    }
-
-    const imported = {
-      personality: !!personality,
-      directives: directives?.length ?? 0,
-      knowledge: knowledge?.length ?? 0,
-    };
-
-    res.json({ success: true, imported });
-  } catch (err) {
-    res.status(500).json({ error: 'Import failed' });
-  }
-});
-
-app.post("/api/agents", authenticateUser, async (req: any, res: any) => {
-  try {
-    // Validate input using Zod schema
-    const validation = parseFormData(AgentFormSchema, {
-      name: req.body.name,
-      role: req.body.role,
-      personality: req.body.personality
-    });
-
-    if (!validation.success) {
-      return res.status(400).json({ error: "Validation failed", errors: validation.errors });
-    }
-
-    // SECURITY ENFORCEMENT: Check Subscription Status for this specific user
-    const { data: userSettings } = await db.from('wireline_settings').select('subscription_status, max_agents').eq('user_id', req.user.id).single();
-
-    // Gating mechanism: Prevent agent creation if the account is unpaid
-    const subscriptionStatus = userSettings?.subscription_status || 'active';
-    if (subscriptionStatus !== 'active') {
-       return res.status(403).json({ error: "Access Denied: Please upgrade your billing plan." });
-    }
-
-    // Agent Limit Check
-    const maxAgents = userSettings?.max_agents || 3;
-    const { count: agentCount } = await db.from('wireline_agents').select('*', { count: 'exact', head: true }).eq('user_id', req.user.id);
-
-    if (agentCount !== null && agentCount >= maxAgents) {
-      return res.status(403).json({ error: `Quota Exceeded: Your plan only allows ${maxAgents} agents.` });
-    }
-
-    const { id, voice_id, channel } = req.body;
-    if (!validation.data) throw new Error('Validation data missing after success check');
-    const { name, role, personality } = validation.data;
-    const agentRole = role || DEFAULT_AGENT_ROLE;
-    const agentId = id || `agent-${Date.now()}`;
-    await db.from('wireline_agents').insert({
-      id: agentId,
-      user_id: req.user.id,
-      name,
-      voice_id: voice_id || 'bIHbv24MWmeRgasZH58o',
-      channel: channel || 'voice',
-      role: agentRole
-    });
-
-    // Use provided personality or fall back to role-appropriate template
-    const personalityContent = personality
-      || ROLE_PERSONALITY_TEMPLATES[agentRole as keyof typeof ROLE_PERSONALITY_TEMPLATES]
-      || (channel === 'email'
-        ? "You are a professional email agent specialized in clear, efficient communication."
-        : "You are a helpful assistant serving as a phone agent.");
-
-    await db.from('wireline_personality').insert({
-       agent_id: agentId,
-       user_id: req.user.id,
-       content: personalityContent
-    });
-    
-    // Audit log: agent creation
-    void auditLogger.logAgentOperation('created', {
-      userId: req.user.id,
-      agentId,
-      agentName: name,
-      metadata: { channel: channel || 'voice', archetype: agentRole },
-      ip: req.ip
-    }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
-
-    res.json({ success: true, id: agentId });
-  } catch (error) {
-    log.error("Agent creation failed", { error: getErrorMessage(error) });
-    res.status(500).json({ error: "Failed to create agent" });
-  }
-});
-
-app.post("/api/fleet/seed", authenticateUser, async (req: any, res: any) => {
-  const userId = req.user.id;
-  const specializedAgents = [
-    {
-      id: `billing-spec-${Date.now()}`,
-      name: "Billing Specialist",
-      channel: "voice",
-      role: "collections",
-      archetype: "The Collector",
-      first_message: "Hello, this is the billing department. I'm calling regarding your recent account inquiry. How can I assist you with your statement today?",
-      personality: ROLE_PERSONALITY_TEMPLATES.collections
-    },
-    {
-      id: `prospector-${Date.now()}`,
-      name: "Outbound Prospector",
-      channel: "voice",
-      role: "sales",
-      archetype: "The Closer",
-      first_message: "Hi there! I'm calling from the growth team. We saw you were interested in our services and I wanted to see if we could set up a quick strategy session?",
-      personality: ROLE_PERSONALITY_TEMPLATES.sales
-    },
-    {
-      id: `growth-email-${Date.now()}`,
-      name: "Growth Coordinator",
-      channel: "email",
-      role: "marketing",
-      archetype: "Receptionist",
-      email_agent_tone: "Friendly",
-      email_signature: "The Growth Team",
-      personality: ROLE_PERSONALITY_TEMPLATES.marketing
-    },
-    {
-      id: `tech-support-${Date.now()}`,
-      name: "Tier 2 Technical Lead",
-      channel: "voice",
-      role: "technical_support",
-      archetype: "Support Tech",
-      first_message: "Wireline Technical Support, this is the Tier 2 lead speaking. I understand you're having a complex issue. Let's get this resolved. What symptoms are you seeing?",
-      personality: ROLE_PERSONALITY_TEMPLATES.technical_support
-    }
-  ] as Array<{
-    id: string; name: string; channel: string; role: string; archetype?: string;
-    first_message?: string; email_agent_tone?: string; email_signature?: string;
-    personality: string;
-  }>;
-
-  try {
-    for (const agent of specializedAgents) {
-      await db.from('wireline_agents').insert({
-        id: agent.id,
-        user_id: userId,
-        name: agent.name,
-        channel: agent.channel,
-        role: agent.role,
-        archetype: agent.archetype,
-        first_message: agent.first_message,
-        email_agent_tone: agent.email_agent_tone,
-        email_signature: agent.email_signature
-      });
-
-      await db.from('wireline_personality').insert({
-        agent_id: agent.id,
-        user_id: userId,
-        content: agent.personality
-      });
-      
-      // Add a default directive for each
-      await db.from('wireline_directives').insert({
-        agent_id: agent.id,
-        user_id: userId,
-        content: "Always verify the customer's identity before discussing account details.",
-        priority: 10
-      });
-    }
-    res.json({ success: true, count: specializedAgents.length });
-  } catch (error) {
-    log.error("Fleet seeding failed", { error: getErrorMessage(error) });
-    res.status(500).json({ error: "Failed to seed fleet" });
-  }
-});
 
 // Update agent settings
-app.put("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
-  try {
-    // Validate core fields using Zod schema
-    const validation = parseFormData(AgentFormSchema, {
-      name: req.body.name,
-      role: req.body.role,
-      personality: req.body.personality
-    });
-
-    if (!validation.success) {
-      return res.status(400).json({ error: "Validation failed", errors: validation.errors });
-    }
-
-    // Validate the optional business-profile block. Each field is
-    // optional so partial updates work; unknown fields are rejected
-    // (strict mode) so callers can't sneak in arbitrary columns.
-    const profileFields = [
-      'business_hours',
-      'timezone',
-      'compliance_mode',
-      'disallowed_topics',
-      'escalation_keywords',
-      'business_variables',
-      'out_of_hours_message',
-      'kpi_focus',
-    ] as const;
-    const profileInput: Record<string, unknown> = {};
-    for (const k of profileFields) {
-      if (req.body[k] !== undefined) profileInput[k] = req.body[k];
-    }
-    const profileValidation = parseFormData(AgentBusinessProfileSchema, profileInput);
-    if (!profileValidation.success) {
-      return res.status(400).json({ error: "Validation failed", errors: profileValidation.errors });
-    }
-
-    const { name, role, personality } = validation.data!;
-    const { voice_id, voice_id_inbound, voice_id_outbound, voice_provider, first_message, archetype, ambient_noise, website_url, transfer_phone, email_auto_respond, email_agent_tone, email_signature, channel } = req.body;
-
-    // Build the update payload — start with core fields, then merge
-    // any business-profile fields the caller actually sent (so a
-    // partial PATCH-style update doesn't clobber existing hours / mode
-    // / variables when the caller is only changing the agent's name).
-    const update: Record<string, unknown> = {
-      name,
-      voice_id,
-      voice_id_inbound,
-      voice_id_outbound,
-      voice_provider,
-      first_message,
-      archetype,
-      ambient_noise,
-      website_url,
-      transfer_phone,
-      email_auto_respond,
-      email_agent_tone,
-      email_signature,
-      channel,
-      role,
-    };
-    if (profileValidation.data) {
-      for (const k of profileFields) {
-        if ((profileValidation.data as any)[k] !== undefined) {
-          (update as any)[k] = (profileValidation.data as any)[k];
-        }
-      }
-    }
-    // personality is not stored on the agent row — it lives in
-    // wireline_personality. The caller passes it in for the AgentForm
-    // contract, but we only care that it validated.
-    void personality;
-
-    await db.from('wireline_agents').update(update).eq('id', req.params.id).eq('user_id', req.user.id);
-
-    // Audit log: agent update (sanitize sensitive fields)
-    void auditLogger.logAgentOperation('updated', {
-      userId: req.user.id,
-      agentId: req.params.id,
-      metadata: { changes: sanitizeForAudit(req.body) },
-      ip: req.ip
-    }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
-
-    res.json({ success: true });
-  } catch (error) {
-    log.error("Failed to update agent", { error: getErrorMessage(error) });
-    res.status(500).json({ error: "Failed to update agent" });
-  }
-});
 
 // ──────────────────────────────────────────────────────────────────────────
 //  DELETE /api/agents/:id
@@ -2339,70 +1739,6 @@ app.put("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
 //
 //  wireline_intake_keys.default_agent_id is already ON DELETE SET NULL.
 // ──────────────────────────────────────────────────────────────────────────
-app.delete("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
-  try {
-    const agentId = req.params.id;
-    const userId = req.user.id;
-
-    // Confirm the agent belongs to this user before touching anything.
-    const { data: agent, error: lookupErr } = await db
-      .from("wireline_agents")
-      .select("id")
-      .eq("id", agentId)
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    if (lookupErr) throw lookupErr;
-    if (!agent) return res.status(404).json({ error: "Agent not found." });
-
-    // Null-out agent_id on tables that would otherwise block the delete.
-    const nullTables = [
-      { table: "wireline_call_logs",      label: "call_logs" },
-      { table: "wireline_appointments",   label: "appointments" },
-      { table: "wireline_outbound_leads", label: "outbound_leads" },
-      { table: "wireline_fleet_tasks",    label: "fleet_tasks" },
-      { table: "wireline_phone_numbers",  label: "phone_numbers" },
-      { table: "wireline_signal_presence",label: "signal_presence" },
-    ] as const;
-
-    const nullResults = await Promise.allSettled(
-      nullTables.map(({ table }) =>
-        db.from(table as any).update({ agent_id: null }).eq("agent_id", agentId).eq("user_id", userId)
-      )
-    );
-
-    nullResults.forEach((r, i) => {
-      if (r.status === "rejected" || (r.status === "fulfilled" && (r.value as any)?.error)) {
-        const reason = r.status === "rejected" ? getErrorMessage(r.reason) : (r.value as any)?.error?.message;
-        log.warn(`agent delete: failed to null agent_id on ${nullTables[i].label}`, { agentId, reason });
-      }
-    });
-
-    // Delete the agent row — CASCADE handles directives, knowledge,
-    // personality, and lessons automatically.
-    const { error: deleteErr } = await db
-      .from("wireline_agents")
-      .delete()
-      .eq("id", agentId)
-      .eq("user_id", userId);
-
-    if (deleteErr) throw deleteErr;
-
-    log.info("agent deleted", { agentId, userId });
-    
-    // Audit log: agent deletion
-    void auditLogger.logAgentOperation('deleted', {
-      userId: req.user.id,
-      agentId: agentId,
-      ip: req.ip
-    }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
-    
-    res.json({ success: true });
-  } catch (error: any) {
-    log.error("Failed to delete agent", { error: getErrorMessage(error) });
-    res.status(500).json({ error: "Failed to delete agent." });
-  }
-});
 
 app.get("/api/agent-config/:id", authenticateUser, async (req: any, res: any) => {
   try {
@@ -2517,106 +1853,9 @@ app.get("/api/carrier/numbers", authenticateUser, async (req: any, res: any) => 
 // ==========================================
 // FLEET MANAGEMENT ENDPOINTS
 // ==========================================
-app.get("/api/fleet/presence", authenticateUser, async (req: any, res: any) => {
-  try {
-    const { data, error } = await db.from('wireline_signal_presence')
-      .select('*')
-      .eq('user_id', req.user.id);
-    
-    if (error) throw error;
-    res.json({ signals: data || [] });
-  } catch (error) {
-    log.error("Presence fetch failed", { error: getErrorMessage(error) });
-    res.json({ signals: [] });
-  }
-});
-
-app.get("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => {
-  try {
-    // Optional server-side filters — callers can pass ?status=pending&priority=high
-    // to avoid fetching the full task history when only a subset is needed (e.g.
-    // the DashboardHome high-priority widget).
-    const VALID_STATUSES   = new Set(["pending", "in_progress", "completed", "cancelled"]);
-    const VALID_PRIORITIES = new Set(["high", "medium", "low"]);
-    const statusFilter   = typeof req.query.status   === "string" && VALID_STATUSES.has(req.query.status)   ? req.query.status   : null;
-    const priorityFilter = typeof req.query.priority === "string" && VALID_PRIORITIES.has(req.query.priority) ? req.query.priority : null;
-
-    let query = db.from('wireline_fleet_tasks')
-                  .select('*, wireline_agents(name)')
-                  .eq('user_id', req.user.id);
-
-    if (statusFilter)   query = query.eq('status',   statusFilter);
-    if (priorityFilter) query = query.eq('priority', priorityFilter);
-
-    // Hard cap on returned rows — protects against unfiltered loads
-    // ballooning into multi-thousand-row responses on busy fleets.
-    const { data, error } = await query.limit(1000);
-    
-    if (error) throw error;
-
-    const sortedTasks = (data || []).sort((a: any, b: any) => {
-      if (a.status === 'completed' && b.status !== 'completed') return 1;
-      if (a.status !== 'completed' && b.status === 'completed') return -1;
-      const priorityWeight: Record<string, number> = { 'high': 3, 'medium': 2, 'low': 1 };
-      const weightA = priorityWeight[a.priority?.toLowerCase()] || 0;
-      const weightB = priorityWeight[b.priority?.toLowerCase()] || 0;
-      if (weightA !== weightB) return weightB - weightA;
-      if (a.due_date && b.due_date) return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    });
-
-    res.json({ tasks: sortedTasks });
-  } catch (error) {
-    log.error("Fetch tasks failed", { error: getErrorMessage(error) });
-    res.json({ tasks: [] });
-  }
-});
 
 const FLEET_TASK_STATUSES = ['pending', 'open', 'in_progress', 'completed', 'cancelled'] as const;
 const FLEET_TASK_PRIORITIES = ['low', 'medium', 'high'] as const;
-
-app.post("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => {
-  try {
-    const validation = parseFormData(FleetTaskCreateSchema, req.body);
-    if (!validation.success) {
-      return res.status(400).json({ error: "Validation failed", errors: validation.errors });
-    }
-    const { description, task_type, priority, source_type, source_id, target_channel, customer_info, agent_id, due_date } = validation.data!;
-    await db.from('wireline_fleet_tasks').insert({
-       source_type, source_id, target_channel, customer_info, task_type, description, agent_id, status: 'pending', user_id: req.user.id, priority, due_date
-    });
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to create fleet task" });
-  }
-});
-
-app.patch("/api/fleet/tasks/:id", authenticateUser, async (req: any, res: any) => {
-  try {
-    const { status, priority, due_date, agent_id, resolution_notes } = req.body;
-    const updateData: any = {};
-    if (status !== undefined) {
-      if (!FLEET_TASK_STATUSES.includes(status)) {
-        return res.status(400).json({ error: `status must be one of: ${FLEET_TASK_STATUSES.join(', ')}` });
-      }
-      updateData.status = status;
-    }
-    if (priority !== undefined) {
-      if (!FLEET_TASK_PRIORITIES.includes(priority)) {
-        return res.status(400).json({ error: `priority must be one of: ${FLEET_TASK_PRIORITIES.join(', ')}` });
-      }
-      updateData.priority = priority;
-    }
-    if (due_date !== undefined) updateData.due_date = due_date;
-    if (agent_id !== undefined) updateData.agent_id = agent_id;
-    if (resolution_notes !== undefined) updateData.resolution_notes = resolution_notes;
-    
-    await db.from('wireline_fleet_tasks').update(updateData).eq('id', req.params.id).eq('user_id', req.user.id);
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to update fleet task" });
-  }
-});
 
 app.post("/api/agent-config/:id/manual", authenticateUser, async (req: any, res: any) => {
   try {
@@ -2803,427 +2042,17 @@ app.delete("/api/knowledge/:id", authenticateUser, async (req: any, res: any) =>
 // 1.8 CAMPAIGN MANAGER
 // ==========================================
 
-app.get("/api/campaigns", authenticateUser, async (req: any, res: any) => {
-  try {
-    const { data, error } = await db
-      .from('wireline_outbound_campaigns')
-      .select('*')
-      .eq('user_id', req.user.id)
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-
-    // Pull lead counts via a single GROUP BY aggregation, then merge.
-    const campaignIds = (data || []).map((c: any) => c.id);
-    let leadStats: Record<string, { total: number; dialed: number; connected: number }> = {};
-    if (campaignIds.length > 0) {
-      const { data: allLeads } = await db
-        .from('wireline_outbound_leads')
-        .select('campaign_id, status')
-        .in('campaign_id', campaignIds);
-
-      for (const row of allLeads ?? []) {
-        const s = leadStats[row.campaign_id] ?? { total: 0, dialed: 0, connected: 0 };
-        s.total++;
-        if (row.status !== 'Pending' && row.status !== 'Queued') s.dialed++;
-        if (row.status === 'Completed') s.connected++;
-        leadStats[row.campaign_id] = s;
-      }
-    }
-
-    const enriched = (data || []).map((c: any) => {
-      const s = leadStats[c.id] ?? { total: 0, dialed: 0, connected: 0 };
-      return { ...c, leads_count: s.total, dialed_count: s.dialed, connected_count: s.connected };
-    });
-
-    res.json({ campaigns: enriched });
-  } catch (error: any) {
-    log.error("Failed to fetch campaigns", { error: getErrorMessage(error) });
-    res.json({ campaigns: [] });
-  }
-});
-
-app.post("/api/campaigns", authenticateUser, async (req: any, res: any) => {
-  try {
-    const validation = parseFormData(CampaignCreateSchema, {
-      name: req.body.name,
-      goal: req.body.goal,
-      agent_id: req.body.agent_id,
-      call_window_start: req.body.call_window_start,
-      call_window_end: req.body.call_window_end,
-      max_attempts: req.body.max_attempts,
-    });
-    if (!validation.success) {
-      return res.status(400).json({ error: "Validation failed", errors: validation.errors });
-    }
-    const { name, goal, agent_id, call_window_start, call_window_end, max_attempts } = validation.data!;
-
-    // SECURITY: same ownership check as the PATCH path — without it the
-    // attacker could create a campaign that dials leads through another
-    // user's agent (and bills against that user).
-    if (agent_id) {
-      const { data: agent } = await db
-        .from('wireline_agents')
-        .select('id')
-        .eq('id', agent_id)
-        .eq('user_id', req.user.id)
-        .maybeSingle();
-      if (!agent) return res.status(404).json({ error: "Agent not found" });
-    }
-
-    const { data, error } = await db.from('wireline_outbound_campaigns').insert({
-      user_id: req.user.id,
-      name: name.trim(),
-      goal: goal?.trim() || null,
-      agent_id: agent_id || null,
-      call_window_start: call_window_start || '09:00',
-      call_window_end: call_window_end || '17:00',
-      max_attempts: Number(max_attempts) || 3,
-      status: 'draft',
-    }).select().single();
-    if (error) throw error;
-    res.json({ campaign: data });
-  } catch (error: any) {
-    log.error("Failed to create campaign", { error: getErrorMessage(error) });
-    res.status(500).json({ error: "Failed to create campaign" });
-  }
-});
-
-app.patch("/api/campaigns/:id", authenticateUser, async (req: any, res: any) => {
-  try {
-    const validation = parseFormData(CampaignUpdateSchema, {
-      name: req.body.name,
-      goal: req.body.goal,
-      agent_id: req.body.agent_id,
-      status: req.body.status,
-      call_window_start: req.body.call_window_start,
-      call_window_end: req.body.call_window_end,
-      max_attempts: req.body.max_attempts,
-    });
-    if (!validation.success) {
-      return res.status(400).json({ error: "Validation failed", errors: validation.errors });
-    }
-
-    // SECURITY: if reassigning the campaign to an agent, verify the
-    // caller owns that agent — otherwise the campaign would dial leads
-    // through (and bill against) another user's agent.
-    if (validation.data?.agent_id) {
-      const { data: agent } = await db
-        .from('wireline_agents')
-        .select('id')
-        .eq('id', validation.data.agent_id)
-        .eq('user_id', req.user.id)
-        .maybeSingle();
-      if (!agent) return res.status(404).json({ error: "Agent not found" });
-    }
-
-    const allowed = ['name', 'goal', 'agent_id', 'status', 'call_window_start', 'call_window_end', 'max_attempts'];
-    const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
-    for (const k of allowed) if (validation.data?.[k as keyof typeof validation.data] !== undefined) updates[k] = validation.data[k as keyof typeof validation.data];
-    const { data, error } = await db.from('wireline_outbound_campaigns')
-      .update(updates)
-      .eq('id', req.params.id)
-      .eq('user_id', req.user.id)
-      .select().single();
-    if (error) throw error;
-    res.json({ campaign: data });
-  } catch (error: any) {
-    log.error("Failed to update campaign", { error: getErrorMessage(error) });
-    res.status(500).json({ error: "Failed to update campaign" });
-  }
-});
-
-app.delete("/api/campaigns/:id", authenticateUser, async (req: any, res: any) => {
-  try {
-    const { error } = await db.from('wireline_outbound_campaigns')
-      .delete()
-      .eq('id', req.params.id)
-      .eq('user_id', req.user.id);
-    if (error) throw error;
-    res.json({ success: true });
-  } catch (error: any) {
-    log.error("Failed to delete campaign", { error: getErrorMessage(error) });
-    res.status(500).json({ error: "Failed to delete campaign" });
-  }
-});
-
-app.get("/api/campaigns/:id/leads", authenticateUser, async (req: any, res: any) => {
-  try {
-    // Bounded fetch: bulk endpoint accepts up to 5000 leads, so a campaign
-    // can have many. Stream them in chunks instead of loading everything.
-    const limitRaw = parseInt(req.query.limit as string);
-    const offsetRaw = parseInt(req.query.offset as string);
-    const limit = Math.min(Math.max(1, isNaN(limitRaw) ? 200 : limitRaw), 1000);
-    const offset = isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw);
-
-    const { data, error, count } = await db.from('wireline_outbound_leads')
-      .select('*', { count: 'exact' })
-      .eq('campaign_id', req.params.id)
-      .eq('user_id', req.user.id)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
-    if (error) throw error;
-    res.json({
-      leads: data || [],
-      total: count || 0,
-      hasMore: count ? (offset + limit) < count : false,
-    });
-  } catch (error: any) {
-    log.error("Failed to fetch campaign leads", { error: getErrorMessage(error) });
-    res.json({ leads: [] });
-  }
-});
-
 // Campaign analytics — outcome breakdown, avg duration, cost summary.
-app.get("/api/campaigns/:id/analytics", authenticateUser, async (req: any, res: any) => {
-  try {
-    const campaignId = req.params.id;
-    const userId = req.user.id;
-
-    // Verify campaign ownership
-    const { data: campaign } = await db
-      .from('wireline_outbound_campaigns')
-      .select('id, name, status, created_at')
-      .eq('id', campaignId)
-      .eq('user_id', userId)
-      .single();
-    if (!campaign) return res.status(404).json({ error: "Campaign not found" });
-
-    // Lead outcome breakdown
-    const { data: leads } = await db
-      .from('wireline_outbound_leads')
-      .select('status, call_id')
-      .eq('campaign_id', campaignId)
-      .eq('user_id', userId);
-
-    const leadRows = leads ?? [];
-    const { total, outcomes } = computeOutcomeBreakdown(leadRows);
-
-    // Pull call-level stats (duration, cost, lead_score) for enrichment.
-    const callIds = callIdsFromLeads(leadRows);
-    let call_stats = computeCallStats([]);
-    if (callIds.length > 0) {
-      const { data: callRows } = await db
-        .from('wireline_call_logs')
-        .select('duration_seconds, cost_usd, lead_score')
-        .in('id', callIds)
-        .eq('user_id', userId);
-      call_stats = computeCallStats(callRows ?? []);
-    }
-
-    res.json({ campaign, total, outcomes, call_stats });
-  } catch (e: any) {
-    log.error("Campaign analytics failed", { error: e?.message });
-    res.status(500).json({ error: "Failed to load analytics" });
-  }
-});
 
 // Launch a campaign — dial all queued leads sequentially (fire-and-forget
 // per lead; we respond immediately with a count and let calls resolve async).
 const CAMPAIGN_DIAL_SPACING_MS = 3_000; // 3-second gap to avoid Vapi rate limits
 const MAX_BATCH_SCORE_LIMIT = 50;       // absolute ceiling for a single score-batch request
 
-app.post("/api/campaigns/:id/launch", authenticateUser, async (req: any, res: any) => {
-  try {
-    const campaignId = req.params.id;
-
-    // Verify campaign belongs to user and is not already running.
-    const { data: campaign, error: campErr } = await db
-      .from('wireline_outbound_campaigns')
-      .select('id, name, agent_id, status, call_window_start, call_window_end, max_attempts')
-      .eq('id', campaignId)
-      .eq('user_id', req.user.id)
-      .single();
-    if (campErr || !campaign) return res.status(404).json({ error: "Campaign not found." });
-    if (campaign.status === 'running') return res.status(409).json({ error: "Campaign is already running." });
-
-    // Fetch queued leads for this campaign.
-    const { data: queued } = await db
-      .from('wireline_outbound_leads')
-      .select('id, customer_name, customer_number, context, agent_id, attempts')
-      .eq('campaign_id', campaignId)
-      .eq('user_id', req.user.id)
-      .eq('status', 'Queued');
-
-    if (!queued || queued.length === 0) {
-      return res.status(400).json({ error: "No queued leads in this campaign." });
-    }
-
-    // Mark campaign as running.
-    await db.from('wireline_outbound_campaigns')
-      .update({ status: 'running', updated_at: new Date().toISOString() })
-      .eq('id', campaignId)
-      .eq('user_id', req.user.id);
-
-    res.json({ success: true, dispatching: queued.length });
-
-    // Fire-and-forget: dial sequentially with a configurable gap between calls
-    // so the Vapi rate limiter is not hit. The entire async body is wrapped in
-    // try/catch so a thrown error always marks the campaign completed/failed.
-    const windowStart = campaign.call_window_start || '09:00';
-    const windowEnd   = campaign.call_window_end   || '21:00';
-
-    /** Returns true when the current UTC hour:minute falls within the operator's
-     *  configured calling window. Both the window strings and the comparison use
-     *  UTC HH:MM so behaviour is consistent regardless of server timezone.
-     *  NOTE: campaigns are memory-volatile — if the server restarts while a loop
-     *  is paused outside the window, the in-flight campaign will not auto-resume.
-     *  Operators can re-launch the campaign from the UI; leads already marked
-     *  'Dialing' will not be double-dialed (status guard prevents re-queue). */
-    function isWithinCallWindow(): boolean {
-      const now = new Date();
-      const hhmm = now.toISOString().slice(11, 16); // "HH:MM" in UTC
-      return hhmm >= windowStart && hhmm <= windowEnd;
-    }
-
-    (async () => {
-      try {
-        for (const lead of queued) {
-          // Honor stop requests between leads — operator may have hit the Stop
-          // button via POST /api/campaigns/:id/stop while the loop was running.
-          const { data: campaignCheck } = await db.from('wireline_outbound_campaigns')
-            .select('status').eq('id', campaignId).single();
-          if (!campaignCheck || campaignCheck.status !== 'running') {
-            log.info("Campaign stopped by operator between leads", { campaignId });
-            return;
-          }
-
-          // Respect the operator's call window — pause until we're within it.
-          // Check every 30s rather than calculating exact wait to keep the loop simple.
-          while (!isWithinCallWindow()) {
-            log.info("Campaign paused — outside call window", { campaignId, window: `${windowStart}-${windowEnd}` });
-            await new Promise(resolve => setTimeout(resolve, CALL_WINDOW_CHECK_INTERVAL_MS));
-            // Re-check campaign status in case it was cancelled during the wait
-            const { data: campaignStatus } = await db.from('wireline_outbound_campaigns')
-              .select('status').eq('id', campaignId).single();
-            if (!campaignStatus || campaignStatus.status !== 'running') {
-              log.info("Campaign stopped during window wait", { campaignId });
-              return;
-            }
-          }
-
-          try {
-            // DNC compliance — skip leads whose number is on the Do Not Call list.
-            if (lead.customer_number && await isDncBlocked(req.user.id, lead.customer_number)) {
-              log.warn("Campaign: lead skipped — DNC match", { leadId: lead.id });
-              await db.from('wireline_outbound_leads')
-                .update({ status: 'Blocked-DNC' })
-                .eq('id', lead.id);
-              await new Promise(resolve => setTimeout(resolve, CAMPAIGN_DIAL_SPACING_MS));
-              continue;
-            }
-
-            // Enforce max_attempts per lead
-            const maxAttempts = campaign.max_attempts || 3;
-            if ((lead.attempts || 0) >= maxAttempts) {
-              log.info("Campaign: lead max_attempts reached — skipping", { leadId: lead.id, attempts: lead.attempts });
-              await db.from('wireline_outbound_leads')
-                .update({ status: 'Max-Attempts' })
-                .eq('id', lead.id);
-              await new Promise(resolve => setTimeout(resolve, CAMPAIGN_DIAL_SPACING_MS));
-              continue;
-            }
-
-            const result = await placeOutboundCall({
-              userId: req.user.id,
-              agentId: lead.agent_id || campaign.agent_id,
-              customerName: lead.customer_name,
-              customerNumber: lead.customer_number,
-              context: lead.context,
-            });
-            const newStatus = result.ok ? 'Dialing' : 'Failed';
-            await db.from('wireline_outbound_leads')
-              .update({ status: newStatus, last_called_at: new Date().toISOString(), attempts: (lead.attempts || 0) + 1 })
-              .eq('id', lead.id);
-          } catch (e) {
-            log.error("Campaign launch: lead dial failed", { leadId: lead.id, error: (e as any)?.message });
-            await db.from('wireline_outbound_leads')
-              .update({ status: 'Failed', last_called_at: new Date().toISOString() })
-              .eq('id', lead.id);
-          }
-          await new Promise(resolve => setTimeout(resolve, CAMPAIGN_DIAL_SPACING_MS));
-        }
-        // Mark campaign complete when all leads have been attempted.
-        await db.from('wireline_outbound_campaigns')
-          .update({ status: 'completed', updated_at: new Date().toISOString() })
-          .eq('id', campaignId)
-          .eq('user_id', req.user.id);
-      } catch (e: any) {
-        log.error("Campaign launch loop failed", { campaignId, error: e?.message });
-        // Ensure campaign doesn't remain stuck in 'running'.
-        await db.from('wireline_outbound_campaigns')
-          .update({ status: 'completed', updated_at: new Date().toISOString() })
-          .eq('id', campaignId)
-          .eq('user_id', req.user.id);
-      }
-    })();
-  } catch (error: any) {
-    log.error("Campaign launch failed", { error: getErrorMessage(error) });
-    res.status(500).json({ error: "Failed to launch campaign." });
-  }
-});
-
 // Retry all failed leads in a campaign.
-app.post("/api/campaigns/:id/retry-failed", authenticateUser, async (req: any, res: any) => {
-  try {
-    const campaignId = req.params.id;
-    const { data: campaign } = await db
-      .from('wireline_outbound_campaigns')
-      .select('id, agent_id, status')
-      .eq('id', campaignId)
-      .eq('user_id', req.user.id)
-      .single();
-    if (!campaign) return res.status(404).json({ error: "Campaign not found." });
-
-    const { data: failed } = await db
-      .from('wireline_outbound_leads')
-      .select('id, customer_name, customer_number, context, agent_id')
-      .eq('campaign_id', campaignId)
-      .eq('user_id', req.user.id)
-      .eq('status', 'Failed');
-
-    if (!failed || failed.length === 0) {
-      return res.status(400).json({ error: "No failed leads to retry." });
-    }
-
-    // Reset them to Queued so the launch endpoint can pick them up.
-    await db.from('wireline_outbound_leads')
-      .update({ status: 'Queued', updated_at: new Date().toISOString() })
-      .in('id', failed.map((l: any) => l.id))
-      .eq('user_id', req.user.id);
-
-    res.json({ success: true, reset: failed.length });
-  } catch (error: any) {
-    log.error("Retry failed leads error", { error: getErrorMessage(error) });
-    res.status(500).json({ error: "Failed to retry leads." });
-  }
-});
 
 // Stop a running campaign — sets status back to 'paused' so the async
 // loop's inter-lead status check will halt it cleanly within one dial cycle.
-app.post("/api/campaigns/:id/stop", authenticateUser, claudeRateLimiter, async (req: any, res: any) => {
-  try {
-    const campaignId = req.params.id;
-    const { data: campaign, error: campErr } = await db
-      .from('wireline_outbound_campaigns')
-      .select('id, status')
-      .eq('id', campaignId)
-      .eq('user_id', req.user.id)
-      .single();
-    if (campErr || !campaign) return res.status(404).json({ error: "Campaign not found." });
-    if (campaign.status !== 'running') {
-      return res.status(409).json({ error: "Campaign is not currently running." });
-    }
-    const { error } = await db.from('wireline_outbound_campaigns')
-      .update({ status: 'paused', updated_at: new Date().toISOString() })
-      .eq('id', campaignId)
-      .eq('user_id', req.user.id);
-    if (error) throw error;
-    res.json({ success: true });
-  } catch (error: any) {
-    log.error("Campaign stop failed", { error: getErrorMessage(error) });
-    res.status(500).json({ error: "Failed to stop campaign." });
-  }
-});
 
 // ==========================================
 // 1.9 SETTINGS & OUTBOUND DIALER ENDPOINTS
@@ -3762,7 +2591,7 @@ function buildOutboundFirstMessage(role: string, agentName: string, customerName
   }
 }
 
-async function placeOutboundCall(opts: {
+export async function placeOutboundCall(opts: {
   userId: string;
   agentId: string;
   customerName?: string | null;
@@ -4333,7 +3162,6 @@ app.post("/api/train/save", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-
 // ==========================================
 // Google Workspace OAuth Endpoints
 // ==========================================
@@ -4480,7 +3308,6 @@ app.delete("/api/emails/accounts/:id", authenticateUser, async (req: any, res: a
     res.status(500).json({ error: "Failed to disconnect account" });
   }
 });
-
 
 // ==========================================
 // 2.3 EMAIL THREAD & SYNC ENDPOINTS
@@ -5198,120 +4025,16 @@ Draft only the plain text email body. Do not include a subject line. Be professi
 });
 
 // OPTIMIZE AGENT PROTOCOLS
-app.post("/api/agents/:id/optimize", authenticateUser, async (req: any, res: any) => {
-   try {
-      const { id } = req.params;
-      const { data: logs } = await db.from('wireline_call_logs')
-         .select('summary, transcript, lead_score, intent_label')
-         .eq('agent_id', id).eq('user_id', req.user.id)
-         .order('created_at', { ascending: false }).limit(10);
-
-      if (!logs || logs.length === 0) {
-         return res.json({ suggestions: [], reason: "Insufficient data: Need at least 1 completed mission log." });
-      }
-
-      // Claude path — uses the same agent-review tool as /api/claude/agent-review,
-      // but flattens the response to {suggestions, analysis} for legacy callers.
-      if (claudeBrain.isClaudeAvailable()) {
-         try {
-            const { data: agent } = await db.from('wireline_agents')
-               .select('name, archetype, role').eq('id', id).eq('user_id', req.user.id).single();
-            const review = await claudeBrain.agentReview({
-               agentName: agent?.name || 'Wireline Agent',
-               archetype: agent?.archetype || 'Receptionist',
-               role: agent?.role || DEFAULT_AGENT_ROLE,
-               callLogs: logs as any,
-            });
-            return res.json({
-               suggestions: (review.suggested_directives || []).slice(0, 3).map((d: any) => d.directive),
-               analysis: review.executive_summary,
-               full_review: review,
-            });
-         } catch (err) {
-            log.error("Claude optimize failed; falling back to Gemini", { error: getErrorMessage(err) });
-         }
-      }
-
-      // Legacy Gemini fallback
-      const prompt = `
-        AGENT ID: ${id}
-        MISSION LOGS (LAST 10):
-        ${logs.map((l, i) => `Log ${i+1}: Summary: ${l.summary}. Transcript: ${l.transcript}`).join('\n\n')}
-
-        TASK: Analyze performance and suggest exactly 3 new tactical directives to improve the agent.
-        FORMAT: JSON { "suggestions": string[], "analysis": string }
-      `;
-
-      const model = genAI.getGenerativeModel({
-         model: "gemini-1.5-pro",
-         generationConfig: { responseMimeType: "application/json" }
-      });
-
-      const result = await model.generateContent(prompt);
-      const aiText = result.response.text();
-      let parsed: any = {};
-      try { parsed = JSON.parse(aiText || "{}"); } catch {
-        return res.status(502).json({ error: "Optimizer returned malformed JSON." });
-      }
-      res.json(parsed);
-   } catch (e) {
-      res.status(500).json({ error: "Optimization protocol failed" });
-   }
-});
 
 // ==========================================
 // 1.9 CONSOLIDATED ACTIVITY FEED (TRIGGER LOG)
 // ==========================================
-app.get("/api/fleet/activity", authenticateUser, async (req: any, res: any) => {
-   try {
-      const [logs, tasks, lessons, emails] = await Promise.all([
-          db.from('wireline_call_logs').select('id, customer_number, lead_score, intent_label, summary, created_at').eq('user_id', req.user.id).order('created_at', { ascending: false }).limit(5),
-          db.from('wireline_fleet_tasks').select('id, description, status, priority, created_at').eq('user_id', req.user.id).order('created_at', { ascending: false }).limit(5),
-          db.from('wireline_agent_lessons').select('id, lesson, created_at').eq('user_id', req.user.id).order('created_at', { ascending: false }).limit(5),
-          db.from('wireline_email_threads').select('id, customer_email, lead_score, intent_label, created_at').eq('user_id', req.user.id).order('created_at', { ascending: false }).limit(5)
-      ]);
-
-      // Surface backend failures explicitly instead of returning a
-      // misleading 200 with an empty feed.
-      const queryError = logs.error || tasks.error || lessons.error || emails.error;
-      if (queryError) throw queryError;
-
-      const activity = compileActivityFeed({
-         logs:    logs.data    || [],
-         tasks:   tasks.data   || [],
-         lessons: lessons.data || [],
-         emails:  emails.data  || [],
-      });
-
-      res.json({ activity });
-   } catch(e: any) {
-      log.error("Activity feed error", { error: e?.message || String(e) });
-      res.status(500).json({ error: "Failed to fetch activity" });
-   }
-});
 
 // ==========================================
 // 1.10 SUPERVISED AGENT TUNING
 // ==========================================
 
 // Per-agent performance stats — call count, avg score, total minutes, sentiment breakdown.
-app.get("/api/agents/:id/performance", authenticateUser, async (req: any, res: any) => {
-  try {
-    const agentId = req.params.id;
-    const { data: logs } = await db
-      .from('wireline_call_logs')
-      .select('id, lead_score, duration_seconds, sentiment, created_at')
-      .eq('agent_id', agentId)
-      .eq('user_id', req.user.id)
-      .order('created_at', { ascending: false })
-      .limit(500);
-
-    res.json(computeAgentPerformance({ rows: logs || [] }));
-  } catch (e: any) {
-    log.error("Agent performance error", { error: e?.message });
-    res.json(emptyAgentPerformance());
-  }
-});
 
 // ──────────────────────────────────────────────────────────────────────────
 //  GET /api/agents/:id/scorecard?days=30
@@ -5337,258 +4060,17 @@ app.get("/api/agents/:id/performance", authenticateUser, async (req: any, res: a
 //      sample_size                // total calls considered
 //    }
 // ──────────────────────────────────────────────────────────────────────────
-app.get("/api/agents/:id/scorecard", authenticateUser, async (req: any, res: any) => {
-  try {
-    const agentId = req.params.id;
-    const userId = req.user.id;
-
-    // Bound the window to a sensible range. Default 30; cap at 365 so a
-    // single dashboard page can't trigger a year-over-year scan by accident.
-    const daysRaw = parseInt(req.query.days as string);
-    const days = Math.min(Math.max(Number.isFinite(daysRaw) ? daysRaw : 30, 1), 365);
-
-    // Verify ownership AND read kpi_focus in one shot.
-    const { data: agent } = await db
-      .from('wireline_agents')
-      .select('id, kpi_focus')
-      .eq('id', agentId)
-      .eq('user_id', userId)
-      .maybeSingle();
-    if (!agent) return res.status(404).json({ error: 'Agent not found' });
-
-    const focus: string = agent.kpi_focus || 'general';
-
-    const now = Date.now();
-    const windowMs = days * 24 * 60 * 60 * 1000;
-    const periodStart = new Date(now - windowMs).toISOString();
-    const priorStart  = new Date(now - 2 * windowMs).toISOString();
-
-    // Two periods: current and prior, of equal length, so we can show
-    // a delta_pct without inventing a baseline.
-    const [currentLogs, priorLogs, appts, openTasks] = await Promise.all([
-      db.from('wireline_call_logs')
-        .select('id, lead_score, duration_seconds, sentiment, intent_label, created_at, customer_number')
-        .eq('agent_id', agentId).eq('user_id', userId)
-        .gte('created_at', periodStart)
-        .order('created_at', { ascending: false })
-        .limit(2000),
-      db.from('wireline_call_logs')
-        .select('id, lead_score, duration_seconds, sentiment, intent_label, created_at')
-        .eq('agent_id', agentId).eq('user_id', userId)
-        .gte('created_at', priorStart).lt('created_at', periodStart)
-        .limit(2000),
-      // Booked appointments attributed to this agent in the current window
-      // — used as the conversion numerator.
-      db.from('wireline_appointments')
-        .select('id, created_at')
-        .eq('agent_id', agentId).eq('user_id', userId)
-        .gte('created_at', periodStart)
-        .limit(2000),
-      // Open follow-up fleet tasks linked to calls in the current window
-      // — proxy for "calls that needed a human after the agent". Used in
-      // the resolution-rate computation.
-      db.from('wireline_fleet_tasks')
-        .select('id, source_id, source_type, created_at')
-        .eq('agent_id', agentId).eq('user_id', userId)
-        .gte('created_at', periodStart)
-        .eq('source_type', 'phone_call')
-        .limit(2000),
-    ]);
-
-    // Hand the rows to the pure scorecard math (src/lib/agent-scorecard.ts)
-    // so the per-focus metric definitions are unit-tested in isolation.
-    const result = computeScorecard({
-      focus,
-      windowDays: days,
-      now,
-      currentLogs: currentLogs.data || [],
-      priorLogs:   priorLogs.data || [],
-      appointments: appts.data || [],
-      openFollowUps: openTasks.data || [],
-    });
-
-    res.json(result);
-  } catch (e: any) {
-    log.error("Agent scorecard error", { error: getErrorMessage(e) });
-    res.status(500).json({ error: 'Failed to compute scorecard' });
-  }
-});
-
-app.get("/api/agents/:id/lessons", authenticateUser, async (req: any, res: any) => {
-   try {
-      const { data: lessons, error } = await db.from('wireline_agent_lessons').select('*')
-         .eq('agent_id', req.params.id)
-         .eq('user_id', req.user.id)
-         .order('created_at', { ascending: false })
-         .limit(200);
-      if (error) throw error;
-      res.json({ lessons });
-   } catch (e) {
-      res.status(500).json({ error: "Failed to fetch lessons" });
-   }
-});
-
-app.post("/api/agents/:id/promote", authenticateUser, async (req: any, res: any) => {
-   try {
-      const { lessonId, content } = req.body;
-      const agentId = req.params.id;
-
-      // SECURITY: verify the caller owns the target agent before inserting
-      // a directive against it. Without this, an attacker could promote a
-      // lesson into another user's agent's directives.
-      const { data: ownedAgent } = await db
-        .from('wireline_agents')
-        .select('id')
-        .eq('id', agentId)
-        .eq('user_id', req.user.id)
-        .maybeSingle();
-      if (!ownedAgent) return res.status(404).json({ error: "Agent not found" });
-
-      // Validate content shape — keeps the directive within table limits.
-      if (typeof content !== 'string' || content.trim().length === 0) {
-        return res.status(400).json({ error: "content is required" });
-      }
-      if (content.length > 1000) {
-        return res.status(400).json({ error: "content must be 1000 characters or less" });
-      }
-
-      // Insert into wireline_directives (the table that agent-config reads from).
-      // Priority 5 = medium on the 1-10 scale used throughout the app.
-      const { error: promoError } = await db.from('wireline_directives').insert({
-         agent_id: agentId,
-         content: content.trim(),
-         priority: 5,
-         user_id: req.user.id
-      });
-      if (promoError) throw promoError;
-
-      // Delete the lesson after promotion — verify ownership first
-      await db.from('wireline_agent_lessons').delete()
-         .eq('id', lessonId)
-         .eq('user_id', req.user.id);
-
-      // Track agent optimization when lessons are promoted to directives
-      SentryEvents.agentOptimized({
-        agent_id: agentId,
-        metric_improved: 'instruction_baseline',
-      });
-
-      res.json({ success: true });
-   } catch (e) {
-      res.status(500).json({ error: "Promotion failed" });
-   }
-});
-
-app.delete("/api/agents/:id/lessons/:lessonId", authenticateUser, async (req: any, res: any) => {
-   try {
-      await db.from('wireline_agent_lessons').delete()
-         .eq('id', req.params.lessonId)
-         .eq('user_id', req.user.id);
-      res.json({ success: true });
-   } catch (e) {
-      res.status(500).json({ error: "Delete failed" });
-   }
-});
 
 // ==========================================
 //  CLAUDE BRAIN — advanced agent capabilities
 // ==========================================
 
-function claudeErr(res: any, e: any, endpoint: string = '/api/claude') {
-  if (e instanceof claudeBrain.ClaudeUnavailableError) {
-    SentryEvents.aiApiFailure({
-      endpoint,
-      error_message: e.message,
-      model: 'claude',
-    });
-    return res.status(503).json({
-      error: e.message,
-      code: "CLAUDE_OFFLINE",
-    });
-  }
+// claudeErr is imported from ./src/lib/claude-response-helpers
+// (kept as re-export for backward compat with any remaining server.ts callers)
+export { claudeErr };
 
-  const errorMsg = getErrorMessage(e);
-  log.error("Claude endpoint error", { error: errorMsg, endpoint });
-  // Track AI API errors with detailed context for debugging
-  SentryEvents.aiApiFailure({
-    endpoint,
-    error_message: errorMsg,
-    model: 'claude',
-  });
+// withAudit moved to ./src/middleware/audit-middleware
 
-  // Surface known Anthropic SDK error shapes (rate limit, validation,
-  // overload) — these are useful to the client. Otherwise return a
-  // generic message so internal stack traces / file paths don't leak.
-  const isKnownApiError =
-    e?.status >= 400 && e?.status < 600 &&
-    typeof e?.message === 'string' &&
-    e.message.length < 500;
-
-  return res.status(500).json({
-    error: isKnownApiError ? e.message : "Claude request failed",
-  });
-}
-
-/**
- * Audit middleware — sets up an AsyncLocalStorage context BEFORE the
- * route handler runs. Every Claude API round trip inside the handler
- * records itself into the context. On `res.finish`, fire-and-forget
- * insert into wireline_audit_log so the user's flow is never blocked.
- *
- * Keyed by req.path so /api/claude/brief becomes action='claude.brief'.
- * Apply to /api/claude/* and the Claude-backed insights paths.
- */
-function withAudit(actionPrefix: string) {
-  return (req: any, res: any, next: any) => {
-    const ctx = claudeBrain.createAuditContext();
-    res.on("finish", () => {
-      if (ctx.records.length === 0) return;
-      if (!req?.user?.id) return;        // not authed → don't write
-      if (res.statusCode >= 500) return;  // don't bill failed Claude calls
-      const subpath = req.path.replace(/\//g, ".").replace(/^\.+/, "");
-      const action = `${actionPrefix}${subpath ? "." + subpath : ""}`;
-      const rows = ctx.records.map(r => ({
-        user_id: req.user.id,
-        action,
-        provider: r.provider,
-        model: r.model,
-        input_tokens: r.input_tokens,
-        output_tokens: r.output_tokens,
-        cache_read_tokens: r.cache_read_tokens,
-        cache_create_tokens: r.cache_create_tokens,
-        cost_usd: claudeBrain.estimateCost(
-          {
-            input_tokens: r.input_tokens,
-            output_tokens: r.output_tokens,
-            cache_read_input_tokens: r.cache_read_tokens,
-            cache_creation_input_tokens: r.cache_create_tokens,
-          },
-          r.model,
-        ),
-        latency_ms: r.latency_ms,
-        metadata: { method: req.method, path: req.path },
-      }));
-      const deltaUsd = rows.reduce((s: number, r: any) => s + Number(r.cost_usd || 0), 0);
-      // Fire-and-forget; we don't want the user's flow to wait on this.
-      Promise.resolve(db.from("wireline_audit_log").insert(rows))
-        .then(({ error }: any) => {
-          if (error) {
-            log.error("Audit insert failed", { error: getErrorMessage(error) });
-            return;
-          }
-          // After the spend is persisted, evaluate against the budget and
-          // fire spend.warning / spend.exceeded webhooks if a threshold
-          // crossed. Also fire-and-forget — never block the response.
-          recordDailySpend(deltaUsd);
-          evaluateSpend(req.user.id, deltaUsd).catch((err: any) =>
-            log.error("evaluateSpend exception", { error: getErrorMessage(err) }),
-          );
-        })
-        .catch((err: any) => log.error("Audit insert exception", { error: getErrorMessage(err) }));
-    });
-    claudeBrain.runInAuditContext(ctx, () => next());
-  };
-}
 
 // Auto-instrument every Claude path + the Claude-backed insights paths.
 // /status is unauthenticated and doesn't make Claude calls — let it through.
@@ -6000,7 +4482,6 @@ app.post("/api/claude/agent-review/apply-directive", authenticateUser, async (re
 //      X-Wireline-Delivery: <random uuid>
 //    Body: { event, timestamp, data }
 // ──────────────────────────────────────────────────────────
-
 
 // Column projection used by every webhook list/read endpoint. Notably
 // EXCLUDES `secret` and `secret_encrypted` — those must never leave the
@@ -7142,80 +5623,14 @@ app.post("/api/daily-brief/send-now", authenticateUser, async (req: any, res: an
 // ──────────────────────────────────────────────────────────
 
 // Aggregate spend summary — powers the AI-Spend dashboard tab.
-app.get("/api/audit/summary", authenticateUser, async (req: any, res: any) => {
-  try {
-    const days = Math.min(parseInt((req.query.days as string) || "30"), 365);
-    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
-
-    const { data: rows, error } = await db
-      .from("wireline_audit_log")
-      .select("action, provider, model, input_tokens, output_tokens, cache_read_tokens, cache_create_tokens, cost_usd, latency_ms, created_at")
-      .eq("user_id", req.user.id)
-      .gte("created_at", since)
-      .order("created_at", { ascending: false })
-      .limit(5000);
-    if (error) throw error;
-
-    res.json(computeAuditSummary({ rows: rows || [], windowDays: days }));
-  } catch (e: any) {
-    res.status(500).json({ error: "Audit summary failed" });
-  }
-});
 
 // Recent audit entries — for debugging + compliance trail.
-app.get("/api/audit/recent", authenticateUser, async (req: any, res: any) => {
-  try {
-    const limit = Math.min(parseInt((req.query.limit as string) || "100"), 500);
-    const { data, error } = await db
-      .from("wireline_audit_log")
-      .select("*")
-      .eq("user_id", req.user.id)
-      .order("created_at", { ascending: false })
-      .limit(limit);
-    if (error) throw error;
-    res.json({ entries: data || [] });
-  } catch (e: any) {
-    res.status(500).json({ error: "Audit fetch failed" });
-  }
-});
 
 // GET /api/audit/events — fetch audit events with filtering
 // Handler bodies live in src/lib/audit-routes.ts so they can be unit-
 // tested against an in-memory Supabase stub. The factory pattern lets
 // us inject the live `db` / `auditLogger` / `log` singletons here.
 const auditRouteDeps = { db, auditLogger, log };
-app.get("/api/audit/events", authenticateUser, createAuditEventsHandler(auditRouteDeps));
-
-// GET /api/audit/stats — aggregate statistics
-app.get("/api/audit/stats", authenticateUser, createAuditStatsHandler(auditRouteDeps));
-
-// GET /api/audit/export — export as CSV or JSON, honoring the same
-// filter shape as /api/audit/events so a "filtered view → export"
-// flow in the UI produces a CSV that matches the on-screen rows.
-app.get("/api/audit/export", authenticateUser, createAuditExportHandler(auditRouteDeps));
-
-// ──────────────────────────────────────────────────────────
-//  SPEND BUDGET — monthly Claude limit, hard-cap toggle,
-//  warn-threshold %. Composed with the audit log + outbound webhooks
-//  to give operators a real safety net for LLM bills.
-// ──────────────────────────────────────────────────────────
-
-app.get("/api/spend/budget", authenticateUser, async (req: any, res: any) => {
-  try {
-    const { data } = await db.from("wireline_spend_budgets")
-      .select("monthly_limit_usd, hard_cap, warn_threshold_pct, enabled, updated_at")
-      .eq("user_id", req.user.id).maybeSingle();
-    res.json({
-      budget: data || {
-        monthly_limit_usd: 0,
-        hard_cap: false,
-        warn_threshold_pct: 80,
-        enabled: true,
-        updated_at: null,
-      },
-    });
-  } catch (e: any) { log.error("Failed to load budget", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load budget" }); }
-});
 
 app.put("/api/spend/budget", authenticateUser, async (req: any, res: any) => {
   try {
@@ -7744,18 +6159,8 @@ app.post("/api/claude/forge", authenticateUser, async (req: any, res: any) => {
 //  INSIGHTS — business intelligence the operator actually needs
 // ──────────────────────────────────────────────────────────
 
-// Tiny in-memory cache for the Claude-powered insights. Keyed by
-// (user_id, endpoint). 1-hour TTL is plenty — the underlying data
-// only changes when calls land, which is sub-daily for most SMBs.
-const insightCache = new Map<string, { ts: number; data: any }>();
-const INSIGHT_TTL_MS = 60 * 60 * 1000;
-function cachedInsight(key: string) {
-  const entry = insightCache.get(key);
-  return entry && Date.now() - entry.ts < INSIGHT_TTL_MS ? entry.data : null;
-}
-function setCachedInsight(key: string, data: any) {
-  insightCache.set(key, { ts: Date.now(), data });
-}
+// cachedInsight and setCachedInsight imported from ./src/lib/insights-cache
+export { cachedInsight, setCachedInsight };
 // Periodic eviction — prevents unbounded memory growth across long-lived
 // processes (not Vercel serverless, but local dev and Railway/Render).
 {
@@ -7769,187 +6174,20 @@ function setCachedInsight(key: string, data: any) {
 }
 
 // Conversion funnel — calls → connected → qualified → booked → completed.
-app.get("/api/insights/funnel", authenticateUser, async (req: any, res: any) => {
-  try {
-    const days = Math.min(parseInt((req.query.days as string) || "30"), 365);
-    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
-
-    const [{ data: calls }, { data: appts }, { data: leads }] = await Promise.all([
-      db.from("wireline_call_logs").select("lead_score, intent_label, duration_seconds").eq("user_id", req.user.id).gte("created_at", since),
-      db.from("wireline_appointments").select("status").eq("user_id", req.user.id).gte("created_at", since),
-      db.from("wireline_outbound_leads").select("status").eq("user_id", req.user.id).gte("created_at", since),
-    ]);
-
-    const totalCalls = calls?.length || 0;
-    const connected = (calls || []).filter((c: any) => (c.duration_seconds || 0) > 10).length;
-    const qualified = (calls || []).filter((c: any) => (c.lead_score || 0) >= 50).length;
-    const highIntent = (calls || []).filter((c: any) => c.intent_label === "high").length;
-    const bookings = (appts || []).length;
-    const completed = (appts || []).filter((a: any) => a.status === "Completed").length;
-    const queuedLeads = (leads || []).filter((l: any) => l.status === "Pending" || l.status === "Queued").length;
-
-    res.json({
-      window_days: days,
-      stages: [
-        { name: "Queued",     count: queuedLeads },
-        { name: "Calls",      count: totalCalls },
-        { name: "Connected",  count: connected },
-        { name: "Qualified",  count: qualified },
-        { name: "High intent", count: highIntent },
-        { name: "Booked",     count: bookings },
-        { name: "Completed",  count: completed },
-      ],
-    });
-  } catch (e) { claudeErr(res, e); }
-});
 
 // Hour-of-day × day-of-week heatmap of call volume + lead score.
-app.get("/api/insights/heatmap", authenticateUser, async (req: any, res: any) => {
-  try {
-    const days = Math.min(parseInt((req.query.days as string) || "30"), 365);
-    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
-    const { data: calls } = await db
-      .from("wireline_call_logs")
-      .select("created_at, lead_score")
-      .eq("user_id", req.user.id)
-      .gte("created_at", since);
-
-    // 7×24 grid: counts and avg lead score
-    const grid: { hour: number; weekday: number; count: number; avg_score: number }[] = [];
-    const buckets: Record<string, { c: number; s: number }> = {};
-    for (const c of calls || []) {
-      const d = new Date(c.created_at);
-      const key = `${d.getDay()}-${d.getHours()}`;
-      const b = buckets[key] || { c: 0, s: 0 };
-      b.c++;
-      b.s += c.lead_score || 0;
-      buckets[key] = b;
-    }
-    for (let w = 0; w < 7; w++) {
-      for (let h = 0; h < 24; h++) {
-        const b = buckets[`${w}-${h}`] || { c: 0, s: 0 };
-        grid.push({ weekday: w, hour: h, count: b.c, avg_score: b.c ? Math.round(b.s / b.c) : 0 });
-      }
-    }
-    res.json({ window_days: days, grid });
-  } catch (e) { claudeErr(res, e); }
-});
 
 // Per-agent leaderboard.
-app.get("/api/insights/leaderboard", authenticateUser, async (req: any, res: any) => {
-  try {
-    const days = Math.min(parseInt((req.query.days as string) || "30"), 365);
-    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
-
-    const [{ data: agents }, { data: calls }, { data: appts }] = await Promise.all([
-      db.from("wireline_agents").select("id, name, archetype, channel, role").eq("user_id", req.user.id).limit(500),
-      db.from("wireline_call_logs").select("agent_id, lead_score, intent_label, duration_seconds, cost").eq("user_id", req.user.id).gte("created_at", since),
-      db.from("wireline_appointments").select("agent_id").eq("user_id", req.user.id).gte("created_at", since),
-    ]);
-
-    const callsByAgent: Record<string, any[]> = {};
-    for (const c of calls || []) {
-      const id = c.agent_id || "unknown";
-      (callsByAgent[id] ||= []).push(c);
-    }
-    const apptsByAgent: Record<string, number> = {};
-    for (const a of appts || []) apptsByAgent[a.agent_id || "unknown"] = (apptsByAgent[a.agent_id || "unknown"] || 0) + 1;
-
-    const rows = (agents || []).map((a: any) => {
-      const calls = callsByAgent[a.id] || [];
-      const total = calls.length;
-      const qualified = calls.filter((c) => (c.lead_score || 0) >= 50).length;
-      const highIntent = calls.filter((c) => c.intent_label === "high").length;
-      const minutes = Math.round(calls.reduce((s, c) => s + (c.duration_seconds || 0), 0) / 60);
-      const cost = Number(calls.reduce((s, c) => s + Number(c.cost || 0), 0).toFixed(2));
-      const avgScore = total ? Math.round(calls.reduce((s, c) => s + (c.lead_score || 0), 0) / total) : 0;
-      const bookings = apptsByAgent[a.id] || 0;
-      const costPerQualified = qualified ? Number((cost / qualified).toFixed(2)) : 0;
-      return {
-        agent_id: a.id,
-        agent_name: a.name,
-        archetype: a.archetype,
-        role: a.role || DEFAULT_AGENT_ROLE,
-        channel: a.channel,
-        total_calls: total,
-        qualified,
-        high_intent: highIntent,
-        bookings,
-        avg_lead_score: avgScore,
-        minutes,
-        cost,
-        cost_per_qualified: costPerQualified,
-        conversion_rate: total ? Math.round((qualified / total) * 100) : 0,
-      };
-    }).sort((a: any, b: any) => b.qualified - a.qualified);
-
-    res.json({ window_days: days, agents: rows });
-  } catch (e) { claudeErr(res, e); }
-});
 
 // Topic clusters (Claude-powered, cached 1h per user).
-app.get("/api/insights/topics", authenticateUser, enforce24hSpendCap, enforceSpendCap, async (req: any, res: any) => {
-  try {
-    const force = req.query.refresh === "1";
-    const cacheKey = `topics:${req.user.id}`;
-    if (!force) {
-      const cached = cachedInsight(cacheKey);
-      if (cached) return res.json({ ...cached, cached: true });
-    }
-    if (!claudeBrain.isClaudeAvailable()) {
-      return res.status(503).json({ error: "Claude required for topic clustering.", code: "CLAUDE_OFFLINE" });
-    }
-    const { data: rows } = await db
-      .from("wireline_call_logs")
-      .select("summary, intent_label")
-      .eq("user_id", req.user.id)
-      .order("created_at", { ascending: false })
-      .limit(120);
-    if (!rows || rows.length < 3) {
-      return res.json({ topics: [], total_analyzed: rows?.length || 0, message: "Not enough data yet — run more calls." });
-    }
-    const result = await claudeBrain.clusterTopics({
-      summaries: rows.map((r: any) => ({ summary: r.summary || "", intent_label: r.intent_label })),
-      windowDays: 14,
-    });
-    setCachedInsight(cacheKey, result);
-    res.json({ ...result, cached: false });
-  } catch (e) { claudeErr(res, e); }
-});
 
 // Failure modes (Claude-powered, cached 1h per user).
-app.get("/api/insights/failure-modes", authenticateUser, enforce24hSpendCap, enforceSpendCap, async (req: any, res: any) => {
-  try {
-    const force = req.query.refresh === "1";
-    const cacheKey = `failures:${req.user.id}`;
-    if (!force) {
-      const cached = cachedInsight(cacheKey);
-      if (cached) return res.json({ ...cached, cached: true });
-    }
-    if (!claudeBrain.isClaudeAvailable()) {
-      return res.status(503).json({ error: "Claude required for failure analysis.", code: "CLAUDE_OFFLINE" });
-    }
-    const { data: rows } = await db
-      .from("wireline_call_logs")
-      .select("summary, transcript, lead_score, intent_label")
-      .eq("user_id", req.user.id)
-      .or("lead_score.lt.30,intent_label.eq.low,intent_label.eq.none")
-      .order("created_at", { ascending: false })
-      .limit(20);
-    if (!rows || rows.length < 2) {
-      return res.json({ modes: [], message: "Not enough failed calls yet — system is performing well." });
-    }
-    const result = await claudeBrain.clusterFailureModes({ failedCalls: rows as any });
-    setCachedInsight(cacheKey, result);
-    res.json({ ...result, cached: false });
-  } catch (e) { claudeErr(res, e); }
-});
 
 // Daily brief (Claude-powered, cached per-day).
 // Shared between the HTTP endpoint and the scheduled email sender.
 // Honors the same per-day cache so a manual /api/insights/daily-brief
 // fetch and the morning email don't both pay Claude.
-async function computeDailyBrief(userId: string, opts?: { force?: boolean }) {
+export async function computeDailyBrief(userId: string, opts?: { force?: boolean }) {
   const today = new Date().toISOString().slice(0, 10);
   const cacheKey = `brief:${userId}:${today}`;
   if (!opts?.force) {
@@ -8023,16 +6261,6 @@ async function computeDailyBrief(userId: string, opts?: { force?: boolean }) {
   setCachedInsight(cacheKey, payload);
   return { payload, cached: false };
 }
-
-app.get("/api/insights/daily-brief", authenticateUser, enforce24hSpendCap, enforceSpendCap, async (req: any, res: any) => {
-  try {
-    const { payload, cached } = await computeDailyBrief(req.user.id, { force: req.query.refresh === "1" });
-    res.json({ ...payload, cached });
-  } catch (e: any) {
-    if (e?.code === "CLAUDE_OFFLINE") return res.status(503).json({ error: e.message, code: e.code });
-    claudeErr(res, e);
-  }
-});
 
 // ──────────────────────────────────────────────────────────
 //  TRIAGE INBOX — "what needs my attention right now"
@@ -8223,7 +6451,7 @@ function normalizeDncPhone(raw: string): string {
 
 // Check whether a phone number is on the DNC list for a given user.
 // Returns true if the call should be blocked.
-async function isDncBlocked(userId: string, phone: string): Promise<boolean> {
+export async function isDncBlocked(userId: string, phone: string): Promise<boolean> {
   const normalized = normalizeDncPhone(phone);
   if (!normalized) return false;
   const { data } = await db
