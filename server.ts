@@ -1002,6 +1002,10 @@ app.post("/api/appointments", authenticateUser, async (req: any, res: any) => {
       status: APPOINTMENT_STATUSES.includes(status) ? status : 'Scheduled',
     }).select().single();
     if (error) throw error;
+    dispatchWebhook(req.user.id, "appointment.booked", {
+      id: data.id, customer_name: customer_name.trim(), date: date.trim(), time: time.trim(),
+      service_type: typeof service_type === 'string' ? service_type.trim() || 'General' : 'General',
+    }).catch(() => {});
     res.json({ appointment: data });
   } catch (error: any) {
     log.error("Failed to create appointment", { error: getErrorMessage(error) });
@@ -2885,6 +2889,9 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
               role:             'customer',
               content:          snippet,
             });
+            dispatchWebhook(userId, "email.received", {
+              thread_id: existingThread!.id, provider: "microsoft", from: snippet.slice(0, 100),
+            }).catch(() => {});
 
             // Mark as read in Outlook
             await fetchWithTimeout(
@@ -2920,6 +2927,10 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
                   customer_name: args.customer_name, service_type: args.service_type, status: "Scheduled",
                 }).select('id').single();
                 if (error) throw error;
+                dispatchWebhook(userId, "appointment.booked", {
+                  id: data.id, customer_name: args.customer_name, date: args.date, time: args.time,
+                  service_type: args.service_type, source: "email_ai",
+                }).catch(() => {});
                 return { success: true, reference_id: String(data.id).split('-')[0] };
               } catch (e: any) { return { success: false, error: e?.message || "Booking failed." }; }
             };
@@ -3065,6 +3076,9 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
               role: 'customer',
               content: snippet
            });
+           dispatchWebhook(userId, "email.received", {
+             thread_id: existingThread!.id, provider: "google", from: snippet.slice(0, 100),
+           }).catch(() => {});
 
            // mark as read in Gmail (optional, but good for sync)
            await gmail.users.messages.modify({
@@ -3103,6 +3117,10 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
                  status: "Scheduled",
                }).select('id').single();
                if (error) throw error;
+               dispatchWebhook(userId, "appointment.booked", {
+                 id: data.id, customer_name: args.customer_name, date: args.date, time: args.time,
+                 service_type: args.service_type, source: "email_ai",
+               }).catch(() => {});
                return { success: true, reference_id: String(data.id).split('-')[0] };
              } catch (e: any) {
                return { success: false, error: e?.message || "Booking failed." };
