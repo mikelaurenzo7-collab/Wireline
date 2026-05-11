@@ -27,14 +27,15 @@ export async function executeAction(
     if (autonomy === "auto") {
       const service = new IntegrationService(userId);
       switch (action.type) {
-        case "send_email":
+        case "send_email": {
           const emailOk = await service.sendEmail({
             to: action.payload.to,
             subject: action.payload.subject,
             body: action.payload.body
           });
           return { success: emailOk };
-        case "schedule_calendar":
+        }
+        case "schedule_calendar": {
           // Simple parsing for the payload
           const startTime = new Date(`${action.payload.date} ${action.payload.time}`).toISOString();
           const endTime = new Date(new Date(startTime).getTime() + 60 * 60 * 1000).toISOString();
@@ -45,6 +46,7 @@ export async function executeAction(
             endTime
           });
           return { success: calOk };
+        }
         case "update_crm_lead":
           return await handleUpdateCRM(userId, action, context);
         case "create_internal_task":

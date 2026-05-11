@@ -3,10 +3,10 @@ import { google } from "googleapis";
 import { 
   db, 
   log, 
-  IS_PROD, 
-  encryptSecret, 
-  oauthRateLimiter 
+  IS_PROD
 } from "../lib/server-context";
+import { encryptSecret } from "../lib/secret-vault";
+import { oauthRateLimiter } from "../middleware/rate-limit-middleware";
 import { 
   SCOPES, 
   MS_SCOPES, 

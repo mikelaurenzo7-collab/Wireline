@@ -36,7 +36,7 @@ export default function FloatingRail({
   const togglePin = () => {
     setPinned(p => {
       const next = !p;
-      try { window.localStorage.setItem(RAIL_PINNED_KEY, next ? "1" : "0"); } catch {}
+      try { window.localStorage.setItem(RAIL_PINNED_KEY, next ? "1" : "0"); } catch { /* localStorage disabled (private mode) — pin state stays in-memory */ }
       return next;
     });
   };

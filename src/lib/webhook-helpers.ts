@@ -8,7 +8,20 @@ import { getErrorMessage } from "./server-utils";
 import { SentryEvents } from "./sentry-events";
 import { createHmac } from "node:crypto";
 
-export type WebhookEvent = 'call.completed' | 'lead.hot' | 'call.escalated' | 'compliance.flagged' | 'knowledge_updated';
+export type WebhookEvent = 'call.completed' | 'lead.hot' | 'call.escalated' | 'compliance.flagged' | 'knowledge_updated' | 'spend.exceeded' | 'spend.warning' | 'task.created' | 'lead.received';
+
+/** All webhook event identifiers that can be subscribed to. Keep in sync with WebhookEvent. */
+export const WEBHOOK_EVENTS: WebhookEvent[] = [
+  'call.completed',
+  'lead.hot',
+  'call.escalated',
+  'compliance.flagged',
+  'knowledge_updated',
+  'spend.exceeded',
+  'spend.warning',
+  'task.created',
+  'lead.received',
+];
 
 export async function attemptWebhookDelivery(deliveryId: string | number) {
   const { data: delivery, error: fetchErr } = await db

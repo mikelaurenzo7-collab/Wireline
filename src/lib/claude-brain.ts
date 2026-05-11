@@ -2598,7 +2598,7 @@ export async function synthesizeLesson(params: {
 }): Promise<string> {
   const { text } = await runCompletion({
     system: "You are the Wireline Agent Coach. Synthesize ONE tactical lesson for the agent based on their failure. =30 words.",
-    user: \Score: \\nBreakdown: \\nTranscript: \\,
+    user: `Score: ${params.score}\nBreakdown: ${JSON.stringify(params.breakdown)}\nTranscript: ${params.transcript}`,
     cacheSystem: true,
   });
   return text.trim();

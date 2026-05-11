@@ -60,20 +60,16 @@ export async function computeDailyBrief(userId: string, opts?: { force?: boolean
       cost: yCost,
       appointments_booked: appts?.length || 0,
       pending_tasks: tasks?.length || 0,
-      open_leads: leads?.length || 0,
+      new_leads: leads?.length || 0,
     },
-    weeklyStats: {
-      avg_calls_per_day: Math.round(wAvgPerDay),
-      avg_lead_score: Math.round(wAvgScore),
-      avg_cost_per_day: Number(wAvgCostPerDay.toFixed(2)),
+    weekDelta: {
+      calls_pct: Math.round(callsPct),
+      score_pct: Math.round(scorePct),
+      cost_pct: Math.round(costPct),
     },
-    percentChanges: {
-      calls: Math.round(callsPct),
-      score: Math.round(scorePct),
-      cost: Math.round(costPct),
-    },
-    topWins: (wins || []).map(w => ({ phone: w.customer_number || "Contact", score: w.lead_score || 0, summary: w.summary || "" })),
-    failureModes: (losses || []).map(l => ({ phone: l.customer_number || "Contact", score: l.lead_score || 0, summary: l.summary || "" })),
+    recentWinSamples: (wins || []).map(w => ({ customer: w.customer_number || "Contact", score: w.lead_score || 0, summary: w.summary || "" })),
+    recentLossSamples: (losses || []).map(l => ({ customer: l.customer_number || "Contact", score: l.lead_score || 0, summary: l.summary || "" })),
+    openTasks: (tasks || []).map((t: any) => ({ priority: t.priority || "medium", description: t.description || "" })),
   });
 
   setCachedInsight(cacheKey, result);

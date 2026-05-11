@@ -161,14 +161,6 @@ function discoverRoutes(src: string): Route[] {
 // Adding entries here is a deliberate exception — the comment beside
 // each path explains why.
 const TENANCY_ALLOWLIST = new Set<string>([
-  // Stripe webhook — authenticated by the `stripe-signature` header
-  // and looks up the user via `stripe_customer_id`.
-  "POST /api/stripe-webhook",
-  // Vapi webhook — authenticated by `x-vapi-secret` (or signature-style
-  // `x-vapi-signature`) shared-secret echo. Resolves the user via the
-  // agent → user_id relation, then writes are stamped with that
-  // user_id (see "RLS user_id stamping" memory).
-  "POST /api/vapi-webhook",
   // Inbound lead intake — authenticated by an API key hash lookup
   // (`wireline_intake_keys.key_hash`). The matching row carries the
   // user_id which is then used to stamp every downstream insert.
@@ -176,11 +168,13 @@ const TENANCY_ALLOWLIST = new Set<string>([
   "POST /api/intake/leads",
   // Public plan catalog — no tenant data.
   "GET /api/billing/plans",
-  // Public health probe.
-  "GET /api/health",
-  // Job sweep — authenticated as cron OR admin/owner role. The
-  // service intentionally drains the global queue (Item 2 audit).
-  "POST /api/jobs/sweep",
+  // NOTE: /api/stripe-webhook, /api/health, /api/jobs/sweep, and
+  // /api/vapi-webhook used to live as `app.<verb>(...)` calls in
+  // server.ts and were allowlisted here. They have since moved to
+  // dedicated router files (src/routes/{stripe,health,job,vapi}-routes.ts)
+  // and are therefore invisible to the regex-based route discovery
+  // below. Their cross-tenant nature is unchanged; they simply don't
+  // need entries in this set anymore.
 ]);
 
 // Helper: do these strings appear in the body?

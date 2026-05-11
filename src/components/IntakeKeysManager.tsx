@@ -111,7 +111,7 @@ export default function IntakeKeysManager() {
       await navigator.clipboard.writeText(justCreated.plaintext);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-    } catch {}
+    } catch { /* clipboard API may be unavailable; user can copy manually */ }
   };
 
   return (

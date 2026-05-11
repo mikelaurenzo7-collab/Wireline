@@ -35,6 +35,9 @@ export type JobType =
   | "consent_check"          // Pre-call TCPA gateway check
   | "purge_old_data"          // GDPR data-retention TTL purge (nightly, per-tenant)
   | "google_drive_ingest"    // Sync documents via Gemini
+  | "adaptive_optimization"  // Auto-tune agent from low-scoring calls
+  | "v2a_action_extraction"  // Voice-to-Action: extract action items from a call transcript
+  | "execute_action"         // Execute an extracted action via the Action Engine
   | "calendar_sync";         // Sync Google/Outlook calendars
 
 export interface JobPayload extends Record<string, unknown> {}
