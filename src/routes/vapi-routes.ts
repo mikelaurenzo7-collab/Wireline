@@ -31,6 +31,8 @@ import { GeminiLeadScoreSchema, GeminiLessonSchema, GeminiFollowupTaskSchema } f
 import { getConsentRuleForPhone, buildConsentLedgerRow, detectOptOut, CONSENT_RULE_VERSION } from "../lib/tcpa-consent";
 import { getErrorMessage } from "../lib/server-utils";
 import { dispatchWebhook } from "../lib/webhook-helpers";
+import { analyzeLiveSentiment } from "../lib/gemini-brain";
+import { IntegrationService } from "../lib/integrations";
 
 const router = express.Router();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
@@ -285,7 +287,48 @@ Today is ${currentDateTime}.
         }
       }
       
-      // ... Add other tools as needed ...
+      if (toolCall.function.name === "send_email") {
+        try {
+          const { to_email, subject, body } = toolCall.function.arguments;
+          const service = new IntegrationService(agent?.user_id);
+          const success = await service.sendEmail({ to: to_email, subject, body });
+          results.push({ toolCallId: toolCall.id, result: success ? "Email sent." : "Failed to send email." });
+        } catch (e: any) {
+          results.push({ toolCallId: toolCall.id, result: "Email error." });
+        }
+      }
+
+      if (toolCall.function.name === "check_calendar_availability") {
+        try {
+          const { date } = toolCall.function.arguments;
+          const service = new IntegrationService(agent?.user_id);
+          const result = await service.checkAvailability(date);
+          results.push({ toolCallId: toolCall.id, result });
+        } catch (e: any) {
+          results.push({ toolCallId: toolCall.id, result: "Calendar check failed." });
+        }
+      }
+
+      if (toolCall.function.name === "book_appointment") {
+        try {
+          const { date, time, customer_name, service_type } = toolCall.function.arguments;
+          const service = new IntegrationService(agent?.user_id);
+          
+          // Simple date/time parsing for now.
+          const startTime = new Date(`${date} ${time}`).toISOString();
+          const endTime = new Date(new Date(startTime).getTime() + 60 * 60 * 1000).toISOString();
+          
+          const success = await service.bookAppointment({
+            title: `${service_type} for ${customer_name}`,
+            description: `Booked via Wireline AI Agent`,
+            startTime,
+            endTime
+          });
+          results.push({ toolCallId: toolCall.id, result: success ? "Appointment booked." : "Booking failed." });
+        } catch (e: any) {
+          results.push({ toolCallId: toolCall.id, result: "Booking error." });
+        }
+      }
     }
     return res.json({ results });
   }
@@ -322,6 +365,21 @@ Today is ${currentDateTime}.
       let liveSentimentLabel = "Live · Active";
       if (negativeHits >= 2) liveSentimentLabel = "⚠ Frustrated";
       else if (positiveHits >= 2) liveSentimentLabel = "✓ Positive";
+
+      // Circuit Breaker: Deep analysis if frustration is detected.
+      if (negativeHits >= 1) {
+        analyzeLiveSentiment(combined).then(async (result) => {
+          if (result.escalate) {
+             await db.from('wireline_signal_presence').update({ 
+               label: `🚨 Escalation Risk: ${result.reason}`,
+               urgency: result.urgency 
+             }).eq('id', callId);
+             
+             // TODO: Trigger push notification / Omnichannel alert here.
+             log.warn("Circuit Breaker Tripped", { callId, reason: result.reason, urgency: result.urgency });
+          }
+        }).catch(e => log.error("Circuit breaker analysis failed", { error: e.message }));
+      }
 
       await db.from('wireline_signal_presence').update({ label: liveSentimentLabel }).eq('id', callId);
     }

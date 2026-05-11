@@ -643,6 +643,36 @@ export const TOOLS = {
     },
   } as ToolSchema,
 
+  /** V2A Extraction — extracts deep business actions for autonomous execution. */
+  businessActions: {
+    name: "extract_business_actions",
+    description: "Extract deep, structured business actions from a call transcript for autonomous execution (emails, calendar, CRM).",
+    input_schema: {
+      type: "object",
+      properties: {
+        actions: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              type: { type: "string", enum: ["send_email", "schedule_calendar", "update_crm_lead", "create_internal_task"] },
+              priority: { type: "string", enum: ["high", "medium", "low"] },
+              reasoning: { type: "string", description: "Why this action is necessary based on the transcript." },
+              payload: {
+                type: "object",
+                description: "Structured data for the action. For send_email: {to, subject, body}. For schedule_calendar: {event_name, date, time, attendees}. For update_crm_lead: {customer_number, status, notes}.",
+              }
+            },
+            required: ["type", "priority", "payload", "reasoning"],
+            additionalProperties: false
+          }
+        }
+      },
+      required: ["actions"],
+      additionalProperties: false
+    }
+  } as ToolSchema,
+
   /** Live in-call coach — looks at a partial/full transcript and tells the operator what to do next. */
   coach: {
     name: "deliver_live_coaching",
@@ -2540,4 +2570,36 @@ export function buildCalendarContext(events: CalendarEventRow[]): string {
   }
 
   return lines.join("\n");
+}
+/**
+ * Extract business actions for the V2A pipeline.
+ */
+export async function extractActions(params: {
+  transcript: string;
+  summary: string;
+  customerNumber?: string;
+}): Promise<any[]> {
+  const result = await runStructured({
+    system: "You are the Wireline Action Engine. Extract follow-up actions promised or implied in the call.",
+    user: `Transcript: ${params.transcript}\nSummary: ${params.summary}\nCustomer: ${params.customerNumber || "Unknown"}`,
+    tool: TOOLS.businessActions,
+    cacheSystem: true,
+  });
+  return result.actions;
+}
+
+/**
+ * Synthesize a tactical lesson from a low-scoring call.
+ */
+export async function synthesizeLesson(params: {
+  transcript: string;
+  score: number;
+  breakdown: any;
+}): Promise<string> {
+  const { text } = await runCompletion({
+    system: "You are the Wireline Agent Coach. Synthesize ONE tactical lesson for the agent based on their failure. =30 words.",
+    user: \Score: \\nBreakdown: \\nTranscript: \\,
+    cacheSystem: true,
+  });
+  return text.trim();
 }

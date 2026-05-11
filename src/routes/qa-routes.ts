@@ -3,6 +3,7 @@ import { db, log } from "../lib/server-context";
 import { authenticateUser } from "../middleware/auth";
 import { withAudit } from "../middleware/audit-middleware";
 import { claudeRateLimiter } from "../middleware/api-rate-limits";
+import { enqueue } from "../lib/job-queue";
 import * as claudeBrain from "../lib/claude-brain";
 import { getErrorMessage } from "../lib/server-utils";
 import { MAX_BATCH_SCORE_LIMIT } from "../lib/qa-constants";
@@ -57,6 +58,20 @@ router.post("/score/:callId", authenticateUser, withAudit("qa"), async (req: any
       .update(updatePayload)
       .eq("id", callId)
       .eq("user_id", req.user.id);
+
+    // Adaptive Flywheel: Trigger optimization if score is low (< 60)
+    if (score < 60) {
+      await enqueue(db, {
+        userId: req.user.id,
+        type: 'adaptive_optimization',
+        payload: {
+          agentId: (call as any).agent_id,
+          callId,
+          score,
+          breakdown
+        }
+      }).catch(e => log.error("Failed to enqueue adaptive optimization", { error: e.message }));
+    }
 
     res.json({ success: true, score, breakdown });
   } catch (e: any) {
