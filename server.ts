@@ -4144,6 +4144,10 @@ type IntakeRateCheck =
   | { ok: false; status: 429; retry_after_s: number; code: "INTAKE_RATE_LIMIT"; error: string }
   | { ok: false; status: 503; code: "RATE_LIMITER_UNAVAILABLE"; error: string };
 
+function isIntakeRateFailure(result: IntakeRateCheck): result is Exclude<IntakeRateCheck, { ok: true }> {
+  return !result.ok;
+}
+
 async function checkIntakeRate(keyId: string): Promise<IntakeRateCheck> {
   const limiter = distributedLimiterStatus();
   if (!limiter.ok) {
@@ -4371,7 +4375,7 @@ app.post("/api/intake/lead", async (req: any, res: any) => {
     if (!key) return res.status(401).json({ error: "Invalid or missing X-Wireline-Key." });
 
     const rate = await checkIntakeRate(key.id);
-    if (!rate.ok) {
+    if (isIntakeRateFailure(rate)) {
       if (rate.status === 429) res.set("Retry-After", String(rate.retry_after_s));
       return res.status(rate.status).json({
         error: rate.error,
@@ -4434,7 +4438,7 @@ app.post("/api/intake/leads", async (req: any, res: any) => {
     // batch if any slot would overflow so the caller can chunk.
     for (let i = 0; i < leads.length; i++) {
       const r = await checkIntakeRate(key.id);
-      if (!r.ok) {
+      if (isIntakeRateFailure(r)) {
         if (r.status === 429) {
           res.set("Retry-After", String(r.retry_after_s));
           return res.status(429).json({
