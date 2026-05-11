@@ -50,6 +50,7 @@ import { createRbacMiddleware, getCallerRole, invalidateRoleCache } from "./src/
 import { syncGoogleCalendar } from "./src/services/google-calendar-sync";
 import { syncOutlookCalendar } from "./src/services/outlook-calendar-sync";
 import { syncGoogleDriveToKnowledge } from "./src/services/google-drive-sync";
+import { db, IS_PROD, log, fetchWithTimeout, auditLogger, requirePermission, requireRole, quotaTracker } from "./src/lib/server-context";
 
 // On Vercel, VERCEL_URL is automatically set to the deployment hostname
 // (e.g. "myapp-abc123.vercel.app") with no protocol or trailing slash.
@@ -63,52 +64,7 @@ if (!process.env.APP_URL && process.env.VERCEL_URL) {
 }
 
 const DEFAULT_AGENT_ROLE = "customer_service";
-const IS_PROD = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
 
-// ────────────────────────────────────────────────────────────────────
-//  Structured logger — single-line JSON in production, pretty in dev.
-//  Centralizing console.* calls so we can ship to Datadog/Logtail later
-//  without rewriting every call site. Levels: debug | info | warn | error.
-// ────────────────────────────────────────────────────────────────────
-type LogLevel = "debug" | "info" | "warn" | "error";
-function emitLog(level: LogLevel, msg: string, fields?: Record<string, unknown>) {
-  const entry = { ts: new Date().toISOString(), level, msg, ...(fields || {}) };
-  if (IS_PROD) {
-    // eslint-disable-next-line no-console
-    (level === "error" ? console.error : level === "warn" ? console.warn : console.log)(JSON.stringify(entry));
-  } else {
-    // eslint-disable-next-line no-console
-    (level === "error" ? console.error : level === "warn" ? console.warn : console.log)(
-      `[${level}]`, msg, fields ?? ""
-    );
-  }
-}
-const log = {
-  debug: (msg: string, fields?: Record<string, unknown>) => emitLog("debug", msg, fields),
-  info:  (msg: string, fields?: Record<string, unknown>) => emitLog("info", msg, fields),
-  warn:  (msg: string, fields?: Record<string, unknown>) => emitLog("warn", msg, fields),
-  error: (msg: string, fields?: Record<string, unknown>) => emitLog("error", msg, fields),
-};
-
-// ────────────────────────────────────────────────────────────────────
-//  fetchWithTimeout — every outbound HTTP call (Vapi, Gmail, generic)
-//  must have a deadline. node-fetch has no default; a stalled
-//  connection will hang the request handler indefinitely. 15s is
-//  long enough for legitimate slow APIs, short enough to fail fast.
-// ────────────────────────────────────────────────────────────────────
-async function fetchWithTimeout(
-  url: string,
-  init: RequestInit = {},
-  timeoutMs = 15_000,
-): Promise<Response> {
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-  try {
-    return await fetch(url, { ...init, signal: ctrl.signal });
-  } finally {
-    clearTimeout(timer);
-  }
-}
 
 // ────────────────────────────────────────────────────────────────────
 //  Startup env validation — fail fast in production rather than
@@ -892,39 +848,6 @@ function getGoogleOAuthClient(req: express.Request) {
    );
 }
 
-// Note: Backend uses Service Role for secure modifications across the DB if needed.
-// In dev we still allow a placeholder so `npm run dev` doesn't crash before
-// the operator fills in .env; in prod validateStartupEnv() above already
-// process.exit(1)s when these are missing.
-const supabaseUrl = process.env.VITE_SUPABASE_URL || "https://placeholder-url.supabase.co";
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || "placeholder-key";
-const db = createClient(supabaseUrl, supabaseKey);
-
-// ────────────────────────────────────────────────────────────────────
-//  Per-tenant quota tracker — checks daily Claude-token + voice-minute
-//  caps before dispatching expensive operations. Plan defaults live in
-//  src/lib/tenant-quotas.ts; per-tenant overrides in wireline_quota_limits.
-// ────────────────────────────────────────────────────────────────────
-const quotaTracker = new QuotaTracker({
-  db,
-  getPlanForUser: async (userId: string): Promise<PlanTier> => {
-    try {
-      const { data } = await db
-        .from('wireline_settings')
-        .select('subscription_status')
-        .eq('user_id', userId)
-        .maybeSingle();
-      const status = (data as { subscription_status?: string } | null)?.subscription_status ?? 'free';
-      // Map Stripe plan names / subscription_status values → quota tier.
-      if (status === 'enterprise') return 'enterprise';
-      if (status === 'pro')        return 'pro';
-      if (status === 'starter' || status === 'active') return 'starter';
-      return 'free';
-    } catch {
-      return 'starter'; // Fail-open on DB errors.
-    }
-  },
-});
 
 // ────────────────────────────────────────────────────────────────────
 //  Job queue worker — drains wireline_jobs in the background.
@@ -1009,12 +932,7 @@ if (process.env.VERCEL !== '1') {
   });
 }
 
-// Initialize audit logger for server-side activity tracking.
-const auditLogger = new AuditLogger(db);
 
-// RBAC middleware factory — bound to the live db + auditLogger so route
-// handlers can just call `requirePermission("…")` without threading deps.
-const { requirePermission, requireRole } = createRbacMiddleware({ db, auditLogger });
 
 // ────────────────────────────────────────────────────────────────────
 //  Stripe — billing source of truth.

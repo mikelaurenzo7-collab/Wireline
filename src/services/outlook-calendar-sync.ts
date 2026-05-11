@@ -1,10 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
 import { encryptSecret, decryptSecret } from "../lib/secret-vault";
-
-// Initialize Supabase client with service role key for backend tasks
-const supabaseUrl = process.env.VITE_SUPABASE_URL || "";
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const db = createClient(supabaseUrl, supabaseServiceKey);
+import { db } from "../lib/server-context";
 
 export async function syncOutlookCalendar(userId: string) {
   if (!process.env.MICROSOFT_CLIENT_ID || !process.env.MICROSOFT_CLIENT_SECRET) {
