@@ -27,7 +27,7 @@ import { AuditLogger } from "./src/lib/audit-logger";
 import { createAuditEventsHandler, createAuditStatsHandler, createAuditExportHandler } from "./src/lib/audit-routes";
 import { rateLimit, isRedisConfigured, startMemoryCleanup, distributedLimiterStatus } from "./src/lib/rate-limit";
 import { SentryEvents } from "./src/lib/sentry-events";
-import { AgentFormSchema, DirectiveSchema, KnowledgeSchema, EmailReplySchema, EmailDraftSchema, CampaignCreateSchema, CampaignUpdateSchema, OutboundBulkSchema, AgentBusinessProfileSchema, parseFormData } from "./src/lib/form-validators";
+import { AgentFormSchema, DirectiveSchema, KnowledgeSchema, EmailReplySchema, EmailDraftSchema, CampaignCreateSchema, CampaignUpdateSchema, OutboundBulkSchema, AgentBusinessProfileSchema, parseFormData, GeminiLeadScoreSchema, GeminiLessonSchema, GeminiFollowupTaskSchema, GeminiEmailScoreSchema, GeminiAgentExtractionSchema, FleetTaskCreateSchema } from "./src/lib/form-validators";
 import { getErrorMessage, sanitizeForAudit } from "./src/lib/server-utils";
 import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "./src/lib/agent-runtime";
 import { computeScorecard } from "./src/lib/agent-scorecard";
@@ -45,7 +45,7 @@ import { QuotaTracker, quotaRejectionHeaders, validateOverride, PLAN_DEFAULTS, t
 import { enqueue, startWorker, getQueueStats, type JobRow } from "./src/lib/job-queue";
 import { quotaRateLimit, jobsRateLimit, tcpaRateLimit, soc2RateLimit, webhooksRateLimit } from "./src/middleware/api-rate-limits";
 import { encryptSecret, decryptSecret, lastFour, isVaultConfigured } from "./src/lib/secret-vault";
-import { createRbacMiddleware, getCallerRole } from "./src/middleware/require-role";
+import { createRbacMiddleware, getCallerRole, invalidateRoleCache } from "./src/middleware/require-role";
 
 // On Vercel, VERCEL_URL is automatically set to the deployment hostname
 // (e.g. "myapp-abc123.vercel.app") with no protocol or trailing slash.
@@ -3149,10 +3149,15 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
                generationConfig: { responseMimeType: "application/json" }
              });
              const scoreRes = await model.generateContent(scoringPrompt);
-             const scoreObj = JSON.parse(scoreRes.response.text() || "{}");
+             const scoreRaw = JSON.parse(scoreRes.response.text() || "{}");
+             const scoreParsed = GeminiLeadScoreSchema.safeParse(scoreRaw);
+             const scoreObj = scoreParsed.success ? scoreParsed.data : { score: 0, label: 'none' };
+             if (!scoreParsed.success) {
+               log.warn("Gemini lead score response did not match expected schema", { agentId: webhookAgentId, issues: scoreParsed.error.issues });
+             }
              await db.from('wireline_call_logs').update({
-               lead_score: scoreObj.score || 0,
-               intent_label: scoreObj.label || 'none'
+               lead_score: scoreObj.score,
+               intent_label: scoreObj.label
              }).eq('vapi_call_id', call?.id);
 
              await db.from('wireline_outbound_leads').update({
@@ -3168,14 +3173,17 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
                    generationConfig: { responseMimeType: "application/json" }
                 });
                 const lessonRes = await lessonModel.generateContent(lessonPrompt);
-                const lessonObj = JSON.parse(lessonRes.response.text() || "{}");
-                if (lessonObj.lesson) {
+                const lessonRaw = JSON.parse(lessonRes.response.text() || "{}");
+                const lessonParsed = GeminiLessonSchema.safeParse(lessonRaw);
+                if (lessonParsed.success && lessonParsed.data.lesson) {
                    await db.from('wireline_agent_lessons').upsert(
-                     { agent_id: webhookAgentId, user_id: agent?.user_id, lesson: String(lessonObj.lesson).trim() },
+                     { agent_id: webhookAgentId, user_id: agent?.user_id, lesson: lessonParsed.data.lesson.trim() },
                      { onConflict: 'agent_id,lesson', ignoreDuplicates: true }
                    );
+                } else if (!lessonParsed.success) {
+                  log.warn("Gemini lesson response did not match expected schema", { agentId: webhookAgentId, issues: lessonParsed.error.issues });
                 }
-             } catch(e) {}
+             } catch(e) { log.warn("Gemini lesson extraction failed", { agentId: webhookAgentId, error: String(e) }); }
 
              try {
                 const taskPrompt = `Based on the transcript, did the agent promise any follow-up (like sending an email, checking a quote), or did the human ask for something out-of-scope?
@@ -3186,21 +3194,24 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
                    generationConfig: { responseMimeType: "application/json" }
                 });
                 const taskRes = await taskModel.generateContent(taskPrompt);
-                const taskObj = JSON.parse(taskRes.response.text() || "{}");
-                if (taskObj.has_task && taskObj.task_description) {
+                const taskRaw = JSON.parse(taskRes.response.text() || "{}");
+                const taskParsed = GeminiFollowupTaskSchema.safeParse(taskRaw);
+                if (taskParsed.success && taskParsed.data.has_task && taskParsed.data.task_description) {
                    await db.from('wireline_fleet_tasks').insert({
                       user_id: agent?.user_id,
                       agent_id: webhookAgentId,
                       task_type: 'action_required',
-                      description: `FOLLOW-UP FOR ${call?.customer?.number || 'Caller'}: ${taskObj.task_description}`,
+                      description: `FOLLOW-UP FOR ${call?.customer?.number || 'Caller'}: ${taskParsed.data.task_description}`,
                       source_type: 'phone_call',
                       source_id: call?.id,
-                      target_channel: taskObj.target_channel || 'manual',
-                      priority: taskObj.priority || 'medium',
+                      target_channel: taskParsed.data.target_channel,
+                      priority: taskParsed.data.priority,
                       status: 'pending'
                    });
+                } else if (!taskParsed.success) {
+                  log.warn("Gemini followup task response did not match expected schema", { agentId: webhookAgentId, issues: taskParsed.error.issues });
                 }
-             } catch(e) {}
+             } catch(e) { log.warn("Gemini task extraction failed", { agentId: webhookAgentId, error: String(e) }); }
           } catch(scoringErr: any) {
              log.error("Gemini call scoring failed", { agentId: webhookAgentId, error: scoringErr?.message || String(scoringErr) });
           }
@@ -4836,10 +4847,13 @@ const FLEET_TASK_PRIORITIES = ['low', 'medium', 'high'] as const;
 
 app.post("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => {
   try {
-    const { source_type, source_id, target_channel, customer_info, task_type, description, agent_id, priority, due_date } = req.body;
-    const safePriority = FLEET_TASK_PRIORITIES.includes(priority) ? priority : 'medium';
+    const validation = parseFormData(FleetTaskCreateSchema, req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Validation failed", errors: validation.errors });
+    }
+    const { description, task_type, priority, source_type, source_id, target_channel, customer_info, agent_id, due_date } = validation.data!;
     await db.from('wireline_fleet_tasks').insert({
-       source_type, source_id, target_channel, customer_info, task_type, description, agent_id, status: 'pending', user_id: req.user.id, priority: safePriority, due_date
+       source_type, source_id, target_channel, customer_info, task_type, description, agent_id, status: 'pending', user_id: req.user.id, priority, due_date
     });
     res.json({ success: true });
   } catch (error) {
@@ -6341,12 +6355,18 @@ Respond ONLY in strict, valid JSON format (no markdown):
         generationConfig: { responseMimeType: "application/json" }
       });
       const geminiRes = await model.generateContent(prompt);
-      const geminiParsed = JSON.parse(geminiRes.response.text() || "{}");
-      parsed = {
-        directives: geminiParsed.directives || [],
-        knowledge: geminiParsed.knowledge || [],
-        personality: geminiParsed.personality || "",
-      };
+      const geminiRaw = JSON.parse(geminiRes.response.text() || "{}");
+      const geminiResult = GeminiAgentExtractionSchema.safeParse(geminiRaw);
+      if (geminiResult.success) {
+        parsed = geminiResult.data;
+      } else {
+        log.warn("Gemini agent extraction response did not match expected schema", { issues: geminiResult.error.issues });
+        parsed = {
+          directives: [],
+          knowledge: [],
+          personality: "",
+        };
+      }
     } catch (err) {
       log.error("Gemini extraction fallback failed", { error: getErrorMessage(err) });
     }
@@ -7354,8 +7374,14 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
                  `;
                  const sModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash", generationConfig: { responseMimeType: "application/json" } });
                  const sRes = await sModel.generateContent(emailScoringPrompt);
-                 const sObj = JSON.parse(sRes.response.text() || "{}");
-                 score = sObj.score || 0; label = sObj.label || 'none';
+                 const sRaw = JSON.parse(sRes.response.text() || "{}");
+                 const sParsed = GeminiEmailScoreSchema.safeParse(sRaw);
+                 if (sParsed.success) {
+                   score = sParsed.data.score;
+                   label = sParsed.data.label;
+                 } else {
+                   log.warn("Gemini email score response did not match expected schema", { issues: sParsed.error.issues });
+                 }
               }
               await db.from('wireline_email_threads').update({
                  lead_score: score, intent_label: label,
