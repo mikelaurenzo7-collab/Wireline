@@ -13,25 +13,8 @@ const router = Router();
 const CALL_WINDOW_CHECK_INTERVAL_MS = 30000;
 const CAMPAIGN_DIAL_SPACING_MS = 2000;
 
-// isDncBlocked and placeOutboundCall are imported lazily to avoid a circular
-// module dependency. They are resolved at call time via dynamic require-style
-// indirection — server.ts exports them and is the definitive implementation.
-// We re-declare the signatures here for type safety.
-type PlaceCallResult = { ok: boolean; status?: number; error?: string; callId?: string };
-
-async function isDncBlocked(userId: string, phone: string): Promise<boolean> {
-  // Lazy import — avoids circular dep with server.ts at module-load time.
-  const srv = await import("../../server") as any;
-  return srv.isDncBlocked(userId, phone);
-}
-
-async function placeOutboundCall(opts: {
-  userId: string; agentId: string;
-  customerName?: string | null; customerNumber: string; context?: string | null;
-}): Promise<PlaceCallResult> {
-  const srv = await import("../../server") as any;
-  return srv.placeOutboundCall(opts);
-}
+import { isDncBlocked } from "../lib/compliance";
+import { placeOutboundCall } from "../lib/vapi-client";
 
 router.get("/api/campaigns", authenticateUser, async (req: any, res: any) => {
   try {

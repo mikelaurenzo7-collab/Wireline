@@ -13,12 +13,7 @@ const router = Router();
 
 const DEFAULT_AGENT_ROLE = "customer_service";
 
-// computeDailyBrief lives in server.ts (requires Vapi + DB context).
-// Import lazily to avoid circular module loading at startup.
-async function computeDailyBrief(userId: string, opts?: { force?: boolean }) {
-  const srv = await import("../../server") as any;
-  return srv.computeDailyBrief(userId, opts);
-}
+import { computeDailyBrief } from "../lib/daily-brief";
 
 router.get("/api/insights/funnel", authenticateUser, async (req: any, res: any) => {
   try {
