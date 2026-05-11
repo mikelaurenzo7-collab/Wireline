@@ -86,11 +86,19 @@ router.get("/api/insights/leaderboard", authenticateUser, async (req: any, res: 
     const days = Math.min(parseInt((req.query.days as string) || "30"), 365);
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-    const [{ data: agents }, { data: calls }, { data: appts }] = await Promise.all([
+    const [{ data: agents }, { data: calls }, { data: appts }, { data: auditCosts }] = await Promise.all([
       db.from("wireline_agents").select("id, name, archetype, channel, role").eq("user_id", req.user.id).limit(500),
       db.from("wireline_call_logs").select("agent_id, lead_score, intent_label, duration_seconds, cost").eq("user_id", req.user.id).gte("created_at", since),
       db.from("wireline_appointments").select("agent_id").eq("user_id", req.user.id).gte("created_at", since),
+      db.from("wireline_audit_log").select("metadata->agent_id, metadata->cost_usd").eq("user_id", req.user.id).eq("event_type", "ai.api_call").eq("provider", "anthropic").gte("created_at", since),
     ]);
+
+    const aiCostByAgent: Record<string, number> = {};
+    for (const row of auditCosts || []) {
+      const id = (row as any).agent_id || "unknown";
+      const c = Number((row as any).cost_usd) || 0;
+      aiCostByAgent[id] = (aiCostByAgent[id] || 0) + c;
+    }
 
     const callsByAgent: Record<string, any[]> = {};
     for (const c of calls || []) {
@@ -110,6 +118,10 @@ router.get("/api/insights/leaderboard", authenticateUser, async (req: any, res: 
       const avgScore = total ? Math.round(calls.reduce((s, c) => s + (c.lead_score || 0), 0) / total) : 0;
       const bookings = apptsByAgent[a.id] || 0;
       const costPerQualified = qualified ? Number((cost / qualified).toFixed(2)) : 0;
+      const outcomes = qualified + bookings;
+      const costPerOutcome = outcomes ? Number((cost / outcomes).toFixed(2)) : 0;
+      const aiCost = Number((aiCostByAgent[a.id] || 0).toFixed(4));
+      const totalCost = Number((cost + aiCost).toFixed(4));
       return {
         agent_id: a.id,
         agent_name: a.name,
@@ -123,7 +135,10 @@ router.get("/api/insights/leaderboard", authenticateUser, async (req: any, res: 
         avg_lead_score: avgScore,
         minutes,
         cost,
+        ai_cost: aiCost,
+        total_cost: totalCost,
         cost_per_qualified: costPerQualified,
+        cost_per_outcome: costPerOutcome,
         conversion_rate: total ? Math.round((qualified / total) * 100) : 0,
       };
     }).sort((a: any, b: any) => b.qualified - a.qualified);

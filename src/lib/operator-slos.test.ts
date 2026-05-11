@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { evaluateOperatorSloHealth } from "./operator-slos";
+import { evaluateOperatorSloHealth, getSloWebhookEvents } from "./operator-slos";
 
 describe("operator-slos · evaluateOperatorSloHealth", () => {
   it("returns ok when all signals are quiet", () => {
@@ -71,5 +71,77 @@ describe("operator-slos · evaluateOperatorSloHealth", () => {
         auditErrorsWindow: 0,
       }).webhooks,
     ).toBe("warn");
+  });
+});
+
+describe("operator-slos · getSloWebhookEvents", () => {
+  const ts = "2026-05-11T12:00:00.000Z";
+
+  it("returns empty array when all dimensions are ok", () => {
+    const events = getSloWebhookEvents(
+      { jobs_queue: "ok", enrichment_failures: "ok", webhooks: "ok", ai_errors: "ok" },
+      24, ts,
+    );
+    expect(events).toHaveLength(0);
+  });
+
+  it("fires slo.jobs.critical only at critical (not warn)", () => {
+    const warn = getSloWebhookEvents(
+      { jobs_queue: "warn", enrichment_failures: "ok", webhooks: "ok", ai_errors: "ok" },
+      24, ts,
+    );
+    expect(warn).toHaveLength(0);
+
+    const critical = getSloWebhookEvents(
+      { jobs_queue: "critical", enrichment_failures: "ok", webhooks: "ok", ai_errors: "ok" },
+      24, ts,
+    );
+    expect(critical).toHaveLength(1);
+    expect(critical[0].event).toBe("slo.jobs.critical");
+    expect(critical[0].health).toBe("critical");
+  });
+
+  it("fires slo.webhooks.degraded at both warn and critical", () => {
+    const warn = getSloWebhookEvents(
+      { jobs_queue: "ok", enrichment_failures: "ok", webhooks: "warn", ai_errors: "ok" },
+      24, ts,
+    );
+    expect(warn).toHaveLength(1);
+    expect(warn[0].event).toBe("slo.webhooks.degraded");
+    expect(warn[0].health).toBe("warn");
+
+    const critical = getSloWebhookEvents(
+      { jobs_queue: "ok", enrichment_failures: "ok", webhooks: "critical", ai_errors: "ok" },
+      24, ts,
+    );
+    expect(critical).toHaveLength(1);
+    expect(critical[0].health).toBe("critical");
+  });
+
+  it("fires slo.enrichment.dead only at critical", () => {
+    const warn = getSloWebhookEvents(
+      { jobs_queue: "ok", enrichment_failures: "warn", webhooks: "ok", ai_errors: "ok" },
+      24, ts,
+    );
+    expect(warn).toHaveLength(0);
+
+    const critical = getSloWebhookEvents(
+      { jobs_queue: "ok", enrichment_failures: "critical", webhooks: "ok", ai_errors: "ok" },
+      24, ts,
+    );
+    expect(critical).toHaveLength(1);
+    expect(critical[0].event).toBe("slo.enrichment.dead");
+  });
+
+  it("fires multiple events when several dimensions are degraded", () => {
+    const events = getSloWebhookEvents(
+      { jobs_queue: "critical", enrichment_failures: "critical", webhooks: "warn", ai_errors: "ok" },
+      12, ts,
+    );
+    expect(events).toHaveLength(3);
+    const names = events.map(e => e.event).sort();
+    expect(names).toEqual(["slo.enrichment.dead", "slo.jobs.critical", "slo.webhooks.degraded"]);
+    expect(events.every(e => e.window_hours === 12)).toBe(true);
+    expect(events.every(e => e.evaluated_at === ts)).toBe(true);
   });
 });

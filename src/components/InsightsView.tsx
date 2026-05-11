@@ -433,13 +433,15 @@ function LeaderboardView({ days }: { days: number }) {
                 <h4 className="font-display italic text-2xl text-ink leading-tight">{a.agent_name}</h4>
                 <RolePill role={a.role} />
               </div>
-              <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+              <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
                 <Stat label="Calls"     value={a.total_calls} />
                 <Stat label="Qualified" value={a.qualified}    accent="#0AC8D4" />
                 <Stat label="Avg Score" value={a.avg_lead_score} />
                 <Stat label="Bookings"  value={a.bookings} />
                 <Stat label="Minutes"   value={a.minutes} />
                 <Stat label="$/Qual"    value={a.cost_per_qualified ? `$${a.cost_per_qualified}` : "—"} accent="#E040C0" />
+                <Stat label="$/Outcome" value={a.cost_per_outcome ? `$${a.cost_per_outcome}` : "—"} accent="#9B59F5" />
+                <Stat label="Total $"   value={a.total_cost ? `$${a.total_cost}` : "—"} />
               </div>
             </div>
           </motion.div>

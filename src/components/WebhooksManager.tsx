@@ -37,6 +37,9 @@ const EVENT_DESCRIPTIONS: Record<string, string> = {
   "spend.warning":      "Month-to-date AI spend crossed your warn threshold",
   "spend.exceeded":     "Month-to-date AI spend hit 100% of monthly limit",
   "subscription.changed": "Stripe subscription status, plan, or renewal date changed",
+  "slo.jobs.critical":    "Job queue backlog exceeded critical threshold (>200 pending)",
+  "slo.webhooks.degraded": "Webhook delivery success rate dropped below target",
+  "slo.enrichment.dead":  "Post-call enrichment jobs reached dead-letter status",
 };
 
 export default function WebhooksManager() {

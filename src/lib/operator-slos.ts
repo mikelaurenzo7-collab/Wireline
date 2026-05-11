@@ -6,6 +6,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getQueueStats, type QueueStats } from "./job-queue";
+import type { WebhookEvent } from "./webhook-helpers";
 
 export type SloHealth = "ok" | "warn" | "critical";
 
@@ -38,6 +39,8 @@ export interface OperatorSloSnapshot {
   };
   /** Per-dimension health derived from thresholds (documented below). */
   dimensions: Record<string, SloHealth>;
+  /** SLO webhook events that should fire based on current dimension health. */
+  fired_events: SloWebhookPayload[];
   notes: string[];
 }
 
@@ -87,6 +90,66 @@ export function evaluateOperatorSloHealth(input: {
     ai_errors,
     notes,
   };
+}
+
+export interface SloWebhookPayload {
+  event: WebhookEvent;
+  dimension: string;
+  health: SloHealth;
+  summary: string;
+  window_hours: number;
+  evaluated_at: string;
+}
+
+/**
+ * Derives which SLO webhook events (if any) should fire based on the
+ * evaluated dimension health. Only "critical" / degraded states trigger.
+ * Pure function — no side effects.
+ */
+export function getSloWebhookEvents(
+  dimensions: Record<string, SloHealth>,
+  windowHours: number,
+  evaluatedAt: string,
+): SloWebhookPayload[] {
+  const payloads: SloWebhookPayload[] = [];
+
+  if (dimensions.jobs_queue === "critical") {
+    payloads.push({
+      event: "slo.jobs.critical",
+      dimension: "jobs_queue",
+      health: "critical",
+      summary: "Job queue backlog has exceeded the critical threshold (>200 pending).",
+      window_hours: windowHours,
+      evaluated_at: evaluatedAt,
+    });
+  }
+
+  if (dimensions.webhooks === "critical" || dimensions.webhooks === "warn") {
+    payloads.push({
+      event: "slo.webhooks.degraded",
+      dimension: "webhooks",
+      health: dimensions.webhooks,
+      summary:
+        dimensions.webhooks === "critical"
+          ? "Webhook success rate has dropped below 85%."
+          : "Webhook success rate has dropped below 95%.",
+      window_hours: windowHours,
+      evaluated_at: evaluatedAt,
+    });
+  }
+
+  if (dimensions.enrichment_failures === "critical") {
+    payloads.push({
+      event: "slo.enrichment.dead",
+      dimension: "enrichment_failures",
+      health: "critical",
+      summary: "More than 5 post-call enrichment jobs reached dead-letter status in the current window.",
+      window_hours: windowHours,
+      evaluated_at: evaluatedAt,
+    });
+  }
+
+  return payloads;
 }
 
 export async function getOperatorSloSnapshot(
@@ -243,6 +306,16 @@ export async function getOperatorSloSnapshot(
       webhooks: health.webhooks,
       ai_errors: health.ai_errors,
     },
+    fired_events: getSloWebhookEvents(
+      {
+        jobs_queue: health.jobs_queue,
+        enrichment_failures: health.enrichment_failures,
+        webhooks: health.webhooks,
+        ai_errors: health.ai_errors,
+      },
+      windowHours,
+      evaluated_at,
+    ),
     notes: [
       ...health.notes,
       `Quota / daily token reset (UTC): ${nextUtcMidnightIso()}`,

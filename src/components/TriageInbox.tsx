@@ -131,7 +131,13 @@ function HotLeads({ items }: { items: any[] }) {
               >
                 {c.intent_label} intent
               </span>
+              {c.sentiment && (
+                <span className="px-1 py-px rounded bg-white/10 text-[7px] tracking-normal">{c.sentiment}</span>
+              )}
             </div>
+            {c.coaching_note && (
+              <p className="text-[10px] text-muted/60 mt-0.5 line-clamp-1 pr-2">{c.coaching_note}</p>
+            )}
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
@@ -293,6 +299,9 @@ function Escalations({ items }: { items: any[] }) {
             <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-0.5">
               {formatDateTime(c.created_at)}
             </div>
+            {c.coaching_note && (
+              <p className="text-[10px] text-rose-400/80 mt-0.5 line-clamp-1 pr-2">{c.coaching_note}</p>
+            )}
           </div>
           <ClaudeRecipeButton recipe="coach" callId={c.id} label="Coach" variant="compact" />
         </li>

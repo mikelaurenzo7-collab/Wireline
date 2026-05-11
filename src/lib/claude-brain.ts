@@ -1311,6 +1311,63 @@ export const TOOLS = {
       additionalProperties: false,
     },
   } as ToolSchema,
+
+  /** CRM: search contacts in the operator's connected CRM (Salesforce or HubSpot). */
+  crmSearchContacts: {
+    name: "crm_search_contacts",
+    description:
+      "Search the operator's connected CRM for contacts matching a name, phone number, or email. Returns up to 10 results with CRM IDs for follow-up actions. No-ops gracefully when no CRM is configured.",
+    input_schema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Name, phone, or email fragment to search." },
+        crm: { type: "string", enum: ["salesforce", "hubspot", "auto"], description: "Which CRM to search. 'auto' tries whichever is configured." },
+      },
+      required: ["query"],
+      additionalProperties: false,
+    },
+  } as ToolSchema,
+
+  /** CRM: log a completed call to the operator's CRM. */
+  crmLogCall: {
+    name: "crm_log_call",
+    description:
+      "Log a completed voice call to the operator's CRM (Salesforce Task or HubSpot Call object). Attaches summary, duration, outcome, and optionally links to an existing contact. No-ops when no CRM is configured.",
+    input_schema: {
+      type: "object",
+      properties: {
+        subject: { type: "string", description: "Call subject / title (≤80 chars)." },
+        description: { type: "string", description: "Call summary or notes." },
+        contact_id: { type: "string", description: "CRM contact ID to associate (optional)." },
+        to_number: { type: "string", description: "Customer phone number." },
+        duration_minutes: { type: "number", description: "Call duration in minutes." },
+        outcome: { type: "string", enum: ["connected", "voicemail", "no_answer", "busy", "wrong_number"], description: "Call disposition." },
+        crm: { type: "string", enum: ["salesforce", "hubspot", "auto"] },
+      },
+      required: ["subject", "description", "to_number"],
+      additionalProperties: false,
+    },
+  } as ToolSchema,
+
+  /** CRM: create an opportunity or deal from a qualified call. */
+  crmCreateOpportunity: {
+    name: "crm_create_opportunity",
+    description:
+      "Create a new Salesforce Opportunity or HubSpot Deal from a qualified lead. Use after a high-intent call to push the outcome into the operator's pipeline. No-ops when no CRM is configured.",
+    input_schema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Opportunity / deal name." },
+        contact_id: { type: "string", description: "CRM contact ID to associate (optional)." },
+        stage: { type: "string", description: "Pipeline stage (e.g. 'Prospecting', 'appointmentscheduled')." },
+        amount: { type: "number", description: "Estimated deal value in USD (optional)." },
+        close_date: { type: "string", description: "Expected close date (YYYY-MM-DD). Defaults to 30 days out." },
+        crm: { type: "string", enum: ["salesforce", "hubspot", "auto"] },
+      },
+      required: ["name"],
+      additionalProperties: false,
+    },
+  } as ToolSchema,
 } as const;
 
 /* ────────────────────────────────────────────────────────────────────────

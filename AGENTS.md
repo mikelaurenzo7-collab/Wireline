@@ -105,6 +105,17 @@ can opt in at any time without a code change:
   (fallback). Absent creds → `sendContract()` logs a warning and
   returns `null`; the operator-approval draft path in
   `action-engine.ts` still runs.
+- **Salesforce CRM** — bi-directional contact + opportunity sync via
+  `src/lib/salesforce-service.ts`. Gated by `SALESFORCE_CLIENT_ID` +
+  `SALESFORCE_CLIENT_SECRET` + `SALESFORCE_INSTANCE_URL`; absent creds
+  → `searchContacts()` returns `[]`, `logCall()` and
+  `createOpportunity()` return `null`. Claude tool schemas
+  (`crm_search_contacts`, `crm_log_call`, `crm_create_opportunity`)
+  reference these functions.
+- **HubSpot CRM** — bi-directional contact + deal sync via
+  `src/lib/hubspot-service.ts`. Gated by `HUBSPOT_ACCESS_TOKEN`;
+  absent token → `searchContacts()` returns `[]`, `logCall()` and
+  `createDeal()` return `null`.
 
 ## Env vars that MUST stay documented in `.env.example`
 
@@ -139,6 +150,11 @@ Security). See `src/lib/integrations-registry.ts` for the runtime mirror.
 - `DOCUSIGN_BASE_URI` / `DOCUSIGN_ACCOUNT_ID` / `DOCUSIGN_JWT_TOKEN` /
   `DOCUSIGN_ACCESS_TOKEN` — optional. Required for the `send_contract`
   Action Engine path (DocuSign e-signature).
+- `SALESFORCE_CLIENT_ID` / `SALESFORCE_CLIENT_SECRET` /
+  `SALESFORCE_INSTANCE_URL` — optional. Required for CRM sync actions
+  (contact search, call logging, opportunity creation).
+- `HUBSPOT_ACCESS_TOKEN` — optional. Required for HubSpot CRM sync
+  actions (contact search, call logging, deal creation).
 
 **Infrastructure**
 - `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` — distributed rate

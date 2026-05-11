@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import {
   Sparkles, Hammer, Globe, Phone, Mic, Check, ArrowRight,
-  Waves, Loader2, PlayCircle, PhoneCall, ExternalLink
+  Waves, Loader2, PlayCircle, PhoneCall, ExternalLink,
+  Mail, Link2, BarChart3,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
@@ -166,6 +167,20 @@ export default function OnboardingQuickstart() {
             </div>
           </div>
         )}
+
+        {/* Power Up: integration connect cards — shown once at least 2 core steps are done */}
+        {completedCount >= 2 && (
+          <div className="relative z-10 px-7 md:px-10 pb-7 pt-0">
+            <div className="text-[10px] uppercase tracking-[0.4em] text-muted mb-3 flex items-center gap-2">
+              <Link2 className="w-3 h-3" /> Power up your fleet
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <PowerUpCard icon={Mail} label="Connect Email" desc="Link Gmail or Outlook for email agents." to="/admin" accent="#9B59F5" />
+              <PowerUpCard icon={BarChart3} label="Connect CRM" desc="Salesforce or HubSpot — sync calls and deals." to="/admin" accent="#E040C0" />
+              <PowerUpCard icon={Waves} label="Webhooks & SLOs" desc="Push events to Slack, CRM, or Zapier." to="/admin" accent="#0AC8D4" />
+            </div>
+          </div>
+        )}
       </div>
     </motion.div>
   );
@@ -232,6 +247,16 @@ function CTAButton({ to, label, icon }: { to: string; label: string; icon?: Reac
       {icon ?? <Sparkles className="w-3.5 h-3.5" />}
       {label}
       <ArrowRight className="w-3.5 h-3.5" />
+    </Link>
+  );
+}
+
+function PowerUpCard({ icon: Icon, label, desc, to, accent }: { icon: any; label: string; desc: string; to: string; accent: string }) {
+  return (
+    <Link to={to} className="rounded-xl glass border border-white/10 p-4 hover:border-white/20 transition-all group">
+      <Icon className="w-4 h-4 mb-2" style={{ color: accent }} />
+      <p className="text-sm font-medium text-ink leading-tight group-hover:text-brand transition-colors">{label}</p>
+      <p className="text-[11px] text-ink/50 mt-1 leading-snug">{desc}</p>
     </Link>
   );
 }

@@ -459,6 +459,29 @@ npm run verify      # lint + tests + build (one-command pre-deploy gate)
 npm start           # node dist/server.cjs
 ```
 
+## Getting to Production
+
+Minimum-viable launch checklist for a confident go-live.
+
+| # | What | How | Status |
+|---|------|-----|--------|
+| 1 | **Core env vars** | Set `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | Required |
+| 2 | **AI keys** | Set `ANTHROPIC_API_KEY` (primary) and `GEMINI_API_KEY` (fallback) | Required |
+| 3 | **Voice** | Set `VAPI_PRIVATE_KEY`, `VITE_VAPI_PUBLIC_KEY`, and `VAPI_WEBHOOK_SECRET` | Required |
+| 4 | **Run the schema** | Execute `supabase_schema.sql` against your Supabase project — it is idempotent | Required |
+| 5 | **Connect a mailbox** | Configure `GOOGLE_CLIENT_ID`/`SECRET` or `MICROSOFT_CLIENT_ID`/`SECRET` for email agents | Recommended |
+| 6 | **Billing** | Set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and the three plan price IDs | Recommended |
+| 7 | **Rate limits** | Set `UPSTASH_REDIS_REST_URL`/`TOKEN` — without these, serverless rate limits are per-process only | Recommended |
+| 8 | **Error monitoring** | Set `SENTRY_DSN` and `VITE_SENTRY_DSN` for full-stack error tracking | Recommended |
+| 9 | **Security** | Set `OAUTH_STATE_SECRET`, `WIRELINE_DATA_KEY`, `CRON_SECRET` | Recommended |
+| 10 | **CRM (optional)** | Set Salesforce (`SALESFORCE_CLIENT_ID`/`SECRET`/`INSTANCE_URL`) or HubSpot (`HUBSPOT_ACCESS_TOKEN`) for CRM sync | Optional |
+| 11 | **Outbound webhooks** | Configure at least one webhook in Admin → Webhooks. Subscribe to `call.completed` + `slo.*` events | Recommended |
+| 12 | **SLO monitoring** | Check `GET /api/health/slos` — all dimensions should read "ok" before go-live | Recommended |
+| 13 | **Build verification** | `npm run verify` must pass clean (tsc + tests + build) | Required |
+| 14 | **SOC 2 evidence** | Download the evidence pack from Admin → System → SOC 2 Evidence Pack before your first audit | Optional |
+
+After deploy, the onboarding quickstart at `/` guides new operators through agent creation, knowledge ingest, number connect, and first test call in under 10 minutes.
+
 ## License
 
 **Proprietary — all rights reserved.**

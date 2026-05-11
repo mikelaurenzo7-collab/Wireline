@@ -75,7 +75,23 @@ router.get("/slos", healthRateLimiter, authenticateUser, async (req: any, res) =
     const n = Number(req.query.window_hours);
     const hours = Number.isFinite(n) ? Math.min(Math.max(n, 1), 168) : 24;
     const snapshot = await getOperatorSloSnapshot(db, req.user.id, hours);
-    res.json(snapshot);
+
+    const dimValues = Object.values(snapshot.dimensions) as string[];
+    const banner_status = dimValues.includes("critical")
+      ? "critical"
+      : dimValues.includes("warn")
+        ? "warn"
+        : "ok";
+
+    res.json({
+      ...snapshot,
+      banner_status,
+      subscribable_events: [
+        "slo.jobs.critical",
+        "slo.webhooks.degraded",
+        "slo.enrichment.dead",
+      ],
+    });
   } catch (err: any) {
     res.status(500).json({ error: getErrorMessage(err) });
   }

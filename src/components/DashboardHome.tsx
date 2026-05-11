@@ -4,6 +4,7 @@ import {
   Activity, PhoneCall, Mic, Square, Loader2, TrendingUp, DollarSign,
   ArrowUpRight, BarChart3, Mail, ChevronRight, Bot, Signal, Target,
   Radio, Sparkles, Inbox, History as HistoryIcon, ShieldCheck, Zap, Users,
+  AlertTriangle,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { cn } from "../lib/utils";
@@ -41,6 +42,7 @@ export default function DashboardHome() {
   const [activeSignals, setActiveSignals] = useState<any[]>([]);
   const [highPriorityTasks, setHighPriorityTasks] = useState<any[]>([]);
   const [systemActivity, setSystemActivity] = useState<any[]>([]);
+  const [sloBanner, setSloBanner] = useState<{ status: string; events: Array<{ summary: string }> } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   // Lazily-instantiated Vapi instance. Stays null until the first
   // toggleCall click. Listeners attach inside ensureVapi the first
@@ -60,6 +62,14 @@ export default function DashboardHome() {
     fetchActiveSignals();
     fetchHighPriorityTasks();
     fetchSystemActivity();
+    authFetch("/api/health/slos").then(async (r) => {
+      if (r.ok) {
+        const d = await r.json();
+        if (mountedRef.current && d.banner_status && d.banner_status !== "ok") {
+          setSloBanner({ status: d.banner_status, events: d.fired_events || [] });
+        }
+      }
+    }).catch(() => {});
 
     const signalPulse = setInterval(() => {
       fetchActiveSignals();
@@ -266,6 +276,26 @@ export default function DashboardHome() {
 
   const Pulse = (
     <div className="h-full flex flex-col gap-3 overflow-hidden">
+      {/* ── SLO health banner (only when degraded/critical) ──── */}
+      {sloBanner && (
+        <div className={cn(
+          "shrink-0 rounded-2xl border px-5 py-3 flex items-start gap-3",
+          sloBanner.status === "critical" ? "border-rose-500/30 bg-rose-500/8" : "border-amber-500/30 bg-amber-500/8",
+        )}>
+          <AlertTriangle className={cn("w-4 h-4 shrink-0 mt-0.5", sloBanner.status === "critical" ? "text-rose-400" : "text-amber-400")} />
+          <div className="flex-1 min-w-0">
+            <p className={cn("text-[11px] font-semibold uppercase tracking-[0.15em]", sloBanner.status === "critical" ? "text-rose-400" : "text-amber-400")}>
+              {sloBanner.status === "critical" ? "System health critical" : "System health degraded"}
+            </p>
+            {sloBanner.events.slice(0, 3).map((e, i) => (
+              <p key={i} className="text-[10px] text-ink/60 leading-snug mt-0.5">{e.summary}</p>
+            ))}
+          </div>
+          <Link to="/admin" className="shrink-0 text-[9px] uppercase tracking-[0.3em] text-muted hover:text-brand transition-colors">
+            Details
+          </Link>
+        </div>
+      )}
       {/* ── Hero stat row ─────────────────────────────────────── */}
       <div className="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatTile label="Total Calls"      value={stats?.totalCalls ?? 0}              sub="All time"           icon={PhoneCall}  accent="#0AC8D4"

@@ -156,6 +156,28 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
     fallback:
       "Without ACCOUNT_ID + (JWT_TOKEN or ACCESS_TOKEN), sendContract() logs a warning and the operator-approval draft path still runs.",
   },
+  {
+    id: "salesforce",
+    label: "Salesforce CRM",
+    description: "Bi-directional contact + opportunity sync for voice and email agents.",
+    group: "actions",
+    required: false,
+    envVars: ["SALESFORCE_CLIENT_ID", "SALESFORCE_CLIENT_SECRET", "SALESFORCE_INSTANCE_URL"],
+    fallback:
+      "Without credentials, CRM actions (log_call, sync_contact, create_opportunity) return no-op. Agents still function without CRM.",
+    docsUrl: "https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/",
+  },
+  {
+    id: "hubspot",
+    label: "HubSpot CRM",
+    description: "Bi-directional contact + deal sync for voice and email agents.",
+    group: "actions",
+    required: false,
+    envVars: ["HUBSPOT_ACCESS_TOKEN"],
+    fallback:
+      "Without an access token, CRM actions (log_call, sync_contact, create_deal) return no-op. Agents still function without CRM.",
+    docsUrl: "https://developers.hubspot.com/docs/api/overview",
+  },
 
   // ─── infra ──────────────────────────────────────────────────────────────
   {

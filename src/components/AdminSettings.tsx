@@ -857,8 +857,26 @@ export default function AdminSettings() {
                         </div>
                       );
                     };
+                    const banner = operationalSlos.banner_status as string | undefined;
+                    const firedEvents = (operationalSlos.fired_events as Array<{ event: string; summary: string }>) || [];
                     return (
                       <>
+                        {banner && banner !== "ok" && (
+                          <div className={cn(
+                            "rounded-xl border px-4 py-3 flex items-start gap-3",
+                            banner === "critical" ? "border-rose-500/30 bg-rose-500/8" : "border-amber-500/30 bg-amber-500/8",
+                          )}>
+                            <AlertTriangle className={cn("w-4 h-4 shrink-0 mt-0.5", banner === "critical" ? "text-rose-400" : "text-amber-400")} />
+                            <div className="space-y-1">
+                              <p className={cn("text-[11px] font-semibold uppercase tracking-[0.15em]", banner === "critical" ? "text-rose-400" : "text-amber-400")}>
+                                {banner === "critical" ? "System health critical" : "System health degraded"}
+                              </p>
+                              {firedEvents.map((fe, i) => (
+                                <p key={i} className="text-[10px] text-ink/70 leading-snug">{fe.summary}</p>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                         <div className="flex flex-wrap gap-2">
                           {sloChip("jobs_queue", "Job backlog")}
                           {sloChip("enrichment_failures", "Enrichment")}
@@ -873,6 +891,7 @@ export default function AdminSettings() {
                         </div>
                         <p className="text-[10px] text-muted leading-snug">
                           Data from <span className="font-mono">GET /api/health/slos</span>. On serverless, schedule <span className="font-mono">POST /api/jobs/sweep</span> via cron so background jobs drain.
+                          {" "}Subscribe to <span className="font-mono">slo.*</span> webhook events in Webhooks to get proactive alerts.
                         </p>
                       </>
                     );

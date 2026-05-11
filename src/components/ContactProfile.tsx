@@ -25,7 +25,7 @@ interface ContactData {
     outbound_leads: number;
     appointments: number;
   };
-  timeline: Array<{
+    timeline: Array<{
     type: "call_in" | "call_out" | "appointment";
     id: string;
     ts: string;
@@ -37,6 +37,9 @@ interface ContactData {
     recording_url?: string;
     status?: string;
     agent_id?: string;
+    sentiment?: string;
+    coaching_note?: string;
+    lesson_extracted?: boolean;
   }>;
   leads: any[];
   appointments: any[];
@@ -237,7 +240,14 @@ const TimelineRow: React.FC<{ event: ContactData["timeline"][number] }> = ({ eve
               <><span>·</span><span>${safeFixed(event.cost, 3)}</span></>
             )}
             {event.intent_label && <><span>·</span><span>{event.intent_label} intent</span></>}
+            {event.sentiment && <><span>·</span><span>{event.sentiment}</span></>}
           </div>
+          {isCall && event.coaching_note && (
+            <p className="text-[11px] text-muted/70 mt-1 line-clamp-1">{event.coaching_note}</p>
+          )}
+          {isCall && event.lesson_extracted && (
+            <span className="inline-block mt-1 text-[8px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Lesson captured</span>
+          )}
         )}
       </div>
       <ArrowUpRight className="w-4 h-4 text-muted shrink-0 group-hover:text-brand group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
