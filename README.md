@@ -326,7 +326,7 @@ See `src/lib/soc2-controls.ts` for full implementation + tests.
 
 ## Environment
 
-Wireline talks to twelve external services. The canonical configuration order
+Wireline integrates with the external services below. The canonical configuration order
 — mirrored in `.env.example`, in `src/lib/integrations-registry.ts`, and in
 the AdminSettings → System → Platform Health panel — is:
 
@@ -343,9 +343,10 @@ the AdminSettings → System → Platform Health panel — is:
 | 9 | **DocuSign**            | Action Engine | ⬜ | `DOCUSIGN_ACCOUNT_ID` + (`DOCUSIGN_JWT_TOKEN` or `DOCUSIGN_ACCESS_TOKEN`); `DOCUSIGN_BASE_URI` defaults to sandbox | `send_contract` falls back to an operator-approval task. |
 | 10 | **Upstash Redis**      | Infrastructure | ⚠ recommended | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Rate limits fall back to per-process memory; near-zero protection on serverless. Set `WIRELINE_ALLOW_INMEMORY_RATE_LIMIT=true` for single-process Docker. |
 | 11 | **Sentry**             | Infrastructure | ⚠ recommended | `SENTRY_DSN`, `VITE_SENTRY_DSN` (+ optional auth/org/project for source maps) | Errors only surface in runtime logs — no alerting, no aggregation. |
-| 12 | **Secret Vault**       | Security | ⚠ for webhooks | `WIRELINE_DATA_KEY` | Webhooks with a signing secret return 503 `VAULT_UNCONFIGURED`. |
+| 12 | **Slack (mgmt alerts)** | Infrastructure | ⬜ | `SLACK_MANAGEMENT_WEBHOOK` | Urgent NotificationService alerts are logged only — no Slack post. |
+| 13 | **Secret Vault**       | Security | ⚠ for webhooks | `WIRELINE_DATA_KEY` | Webhooks with a signing secret return 503 `VAULT_UNCONFIGURED`. |
 
-Plus the operational vars: `APP_URL`, `CORS_ORIGINS`, `OAUTH_STATE_SECRET`,
+Plus the operational vars: `APP_URL`, `SLACK_MANAGEMENT_WEBHOOK`, `CORS_ORIGINS`, `OAUTH_STATE_SECRET`,
 `CRON_SECRET`, `CLAUDE_MONTHLY_BUDGET_USD`, and the bootstrap creds.
 
 See [`.env.example`](.env.example) for the full annotated list. The runtime
@@ -364,6 +365,7 @@ Run `supabase_schema.sql` in the Supabase SQL editor. It declares every table wi
 
 ### Operations
 - `GET  /api/health` — liveness + capability flags
+- `GET  /api/docs/openapi.json` — public OpenAPI 3 spec for inbound lead intake (`POST /api/intake/lead`, bulk, idempotency); import into Zapier / Make / n8n / Postman
 - `GET  /api/dashboard/stats`
 - `GET  /api/triage`
 - `GET  /api/contacts/:number` — unified per-customer history

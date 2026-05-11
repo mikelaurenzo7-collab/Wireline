@@ -160,6 +160,8 @@ Security). See `src/lib/integrations-registry.ts` for the runtime mirror.
 - `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` — distributed rate
   limits + spend cap counters. Strongly recommended in production.
 - `SENTRY_DSN` / `VITE_SENTRY_DSN` — backend + frontend error tracking.
+- `SLACK_MANAGEMENT_WEBHOOK` — optional Slack Incoming Webhook for
+  `NotificationService` urgent alerts (`src/lib/notifications.ts`).
 
 **Security**
 - `OAUTH_STATE_SECRET` — HMAC for OAuth state tokens (CSRF protection).

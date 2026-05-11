@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   KeyRound, Plus, Loader2, X, Trash2, Copy, Check, Eye, EyeOff, Inbox,
-  PhoneOutgoing, Zap,
+  PhoneOutgoing, Zap, FileJson,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
@@ -127,7 +127,19 @@ export default function IntakeKeysManager() {
             <div>
               <div className="text-[10px] uppercase tracking-[0.4em] text-brand-2">Inbound Intake API</div>
               <h4 className="font-display italic text-2xl text-ink leading-tight mt-1">Capture leads from anywhere</h4>
-              <p className="text-[11px] text-ink/55 mt-1">Issue an API key, point your form / CRM / Zapier at <span className="font-mono text-ink/80">POST /api/intake/lead</span>, and leads land straight in Outbound + Triage. Fires <span className="font-mono text-ink/80">lead.received</span> webhook events.</p>
+              <p className="text-[11px] text-ink/55 mt-1">
+                Issue an API key, point your form / CRM / Zapier at <span className="font-mono text-ink/80">POST /api/intake/lead</span>, and leads land straight in Outbound + Triage. Fires <span className="font-mono text-ink/80">lead.received</span> webhook events.{" "}
+                <a
+                  href="/api/docs/openapi.json"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-brand hover:underline font-medium"
+                >
+                  <FileJson className="w-3 h-3 shrink-0" aria-hidden />
+                  OpenAPI spec
+                </a>{" "}
+                (Zapier, Make, n8n, Postman).
+              </p>
             </div>
           </div>
           <button

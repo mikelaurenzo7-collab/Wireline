@@ -201,6 +201,18 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
     fallback: "Without it, exceptions only surface in runtime logs — no alerting, no aggregation.",
     docsUrl: "https://sentry.io/",
   },
+  {
+    id: "slack-management",
+    label: "Slack (management alerts)",
+    description:
+      "Incoming webhook URL for urgent manager alerts from NotificationService (e.g. escalations). Distinct from per-operator outbound webhooks in Admin.",
+    group: "infra",
+    required: false,
+    envVars: ["SLACK_MANAGEMENT_WEBHOOK"],
+    fallback:
+      "Without it, urgent alerts are logged only — no Slack post (see src/lib/notifications.ts).",
+    docsUrl: "https://api.slack.com/messaging/webhooks",
+  },
 
   // ─── security ───────────────────────────────────────────────────────────
   {
@@ -312,6 +324,7 @@ export function getHealthCapabilities() {
                        (envIsPresent("DOCUSIGN_JWT_TOKEN") || envIsPresent("DOCUSIGN_ACCESS_TOKEN")),
     upstash:         envIsPresent("UPSTASH_REDIS_REST_URL") && envIsPresent("UPSTASH_REDIS_REST_TOKEN"),
     sentry:          envIsPresent("SENTRY_DSN") || envIsPresent("VITE_SENTRY_DSN"),
+    slack_management: envIsPresent("SLACK_MANAGEMENT_WEBHOOK"),
     secret_vault:    envIsPresent("WIRELINE_DATA_KEY"),
   };
 }

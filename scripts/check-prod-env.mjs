@@ -46,6 +46,7 @@ const optional = [
   ["VITE_SENTRY_DSN",          "Frontend error monitoring"],
   ["UPSTASH_REDIS_REST_URL",   "Distributed rate-limit store (in-memory fallback otherwise)"],
   ["UPSTASH_REDIS_REST_TOKEN", "Upstash Redis token"],
+  ["SLACK_MANAGEMENT_WEBHOOK", "Slack incoming webhook for NotificationService urgent alerts"],
   ["CLAUDE_MONTHLY_BUDGET_USD","Monthly Claude spend cap in USD (default $50; 1 % daily safety valve)"],
 ];
 

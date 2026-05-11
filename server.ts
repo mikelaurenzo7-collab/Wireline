@@ -64,6 +64,7 @@ import { attemptWebhookDelivery, dispatchWebhook, processWebhookRetries, WEBHOOK
 import { isDncBlocked } from "./src/lib/compliance";
 import { placeOutboundCall } from "./src/lib/vapi-client";
 import { computeDailyBrief } from "./src/lib/daily-brief";
+import { getWirelineIntakeOpenApi } from "./src/lib/openapi-intake-spec";
 
 import oauthRouter from "./src/routes/oauth-routes";
 import vapiRouter from "./src/routes/vapi-routes";
@@ -265,6 +266,13 @@ app.use((req: any, res: any, next: any) => {
 //  from saturating Supabase with probe queries.
 // ────────────────────────────────────────────────────────────────────
 app.use("/api/health", healthRouter);
+
+// Public OpenAPI 3 spec for inbound lead intake — import into Zapier / n8n / Postman.
+app.get("/api/docs/openapi.json", (_req: any, res: any) => {
+  res.type("application/json");
+  res.set("Cache-Control", "public, max-age=300");
+  res.json(getWirelineIntakeOpenApi());
+});
 
 // ────────────────────────────────────────────────────────────────────
 //  Per-user rate limit for /api/claude/* — cost protection.
