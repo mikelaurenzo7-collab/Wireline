@@ -249,11 +249,12 @@ app.use((req: any, res: any, next: any) => {
 //  Security headers — hand-rolled (no helmet dep) so we control the
 //  exact set of headers and CSP directives. Applied to every response.
 //
-//  CSP allows 'unsafe-inline' on script-src because:
-//    • The OAuth callback page writes a JSON-encoded postMessage script
-//      at runtime. When that page moves to a static asset, replace
-//      'unsafe-inline' with a nonce.
-//    • Vite HMR in dev also injects inline scripts.
+//  In production, script-src uses 'self' only (no 'unsafe-inline').
+//  OAuth callback pages that need an inline postMessage script are the
+//  only server-rendered HTML in this app; they receive a per-request
+//  nonce via buildCSP(false, nonce) so 'unsafe-inline' is never needed
+//  in the global policy.  Vite dev mode keeps 'unsafe-inline' +
+//  'unsafe-eval' for HMR.
 //
 //  connect-src permits Supabase, Anthropic, Vapi, and Google APIs so
 //  the browser's fetch() is allowed to reach those origins.
@@ -282,10 +283,17 @@ const CSP_CONNECT_SRCS = [
   "https://api.stripe.com",
 ].join(" ");
 
-function buildCSP(isDev: boolean): string {
+function buildCSP(isDev: boolean, nonce?: string): string {
+  // In dev, keep 'unsafe-inline' + 'unsafe-eval' for Vite HMR.
+  // In prod, remove 'unsafe-inline' from script-src entirely.  OAuth callback
+  // pages that need an inline postMessage script get a per-request nonce
+  // injected via buildCSP(false, nonce) — the caller also sets nonce="${nonce}"
+  // on the <script> tag so only that one specific script is allowed.
   const scriptSrc = isDev
     ? "'self' 'unsafe-inline' 'unsafe-eval'"
-    : "'self' 'unsafe-inline'";
+    : nonce
+      ? `'self' 'nonce-${nonce}'`
+      : "'self'";
   return [
     `default-src 'self'`,
     `script-src ${scriptSrc}`,
@@ -299,6 +307,12 @@ function buildCSP(isDev: boolean): string {
     `base-uri 'self'`,
     `form-action 'self'`,
   ].join("; ");
+}
+
+/** Generate a cryptographically random base64 nonce for CSP script tags. */
+function generateCspNonce(): string {
+  const { randomBytes } = require("node:crypto") as typeof import("node:crypto");
+  return randomBytes(16).toString("base64");
 }
 
 app.use((req: any, res: any, next: any) => {
@@ -983,7 +997,9 @@ async function handleJob(job: JobRow): Promise<void> {
     const tokenCount = actualTokens > 0
       ? actualTokens
       : Math.ceil(((p.transcript?.length ?? 0) + (p.summary?.length ?? 0)) / 4);
-    await quotaTracker.checkAndIncrement(p.userId, 'claude_tokens_daily', tokenCount).catch(() => {});
+    await quotaTracker.checkAndIncrement(p.userId, 'claude_tokens_daily', tokenCount).catch((e: unknown) => {
+      log.warn("quota token increment failed — usage may be under-counted", { user_id: p.userId, error: getErrorMessage(e) });
+    });
   }
   // Other job types (webhook_delivery, campaign_dial, etc.) extend here.
 }
@@ -1719,7 +1735,7 @@ async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
     current_period_end: sub.current_period_end
       ? new Date(sub.current_period_end * 1000).toISOString() : null,
     at: new Date().toISOString(),
-  }).catch(() => {});
+  }).catch((e: unknown) => { log.warn("subscription.changed webhook dispatch failed", { user_id: userId, error: getErrorMessage(e) }); });
 
   // Audit the billing state change. We pick the action based on
   // Stripe's lifecycle status so the audit log faithfully reflects
@@ -6461,10 +6477,13 @@ app.get(['/api/oauth/google/callback', '/api/oauth/google/callback/'], oauthRate
     // JSON-encode values to neutralize any HTML/JS injection via the email field.
     const safeEmail = JSON.stringify(emailAddress);
     const safeOrigin = JSON.stringify(targetOrigin);
+    // Per-request nonce removes 'unsafe-inline' from script-src for this response.
+    const cspNonce = generateCspNonce();
+    res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, cspNonce));
     res.send(`
       <html>
         <body>
-          <script>
+          <script nonce="${cspNonce}">
             if (window.opener) {
               window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS', email: ${safeEmail} }, ${safeOrigin});
               window.close();
@@ -6679,8 +6698,11 @@ app.get(
         || `${req.protocol}://${req.get("host")}`;
       const safeEmail  = JSON.stringify(emailAddress);
       const safeOrigin = JSON.stringify(targetOrigin);
+      // Per-request nonce removes 'unsafe-inline' from script-src for this response.
+      const cspNonce = generateCspNonce();
+      res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, cspNonce));
       res.send(`
-        <html><body><script>
+        <html><body><script nonce="${cspNonce}">
           if (window.opener) {
             window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS', email: ${safeEmail} }, ${safeOrigin});
             window.close();
@@ -10082,7 +10104,7 @@ app.get("/api/insights/leaderboard", authenticateUser, async (req: any, res: any
 });
 
 // Topic clusters (Claude-powered, cached 1h per user).
-app.get("/api/insights/topics", authenticateUser, async (req: any, res: any) => {
+app.get("/api/insights/topics", authenticateUser, claudeRateLimiter, enforce24hSpendCap, enforceSpendCap, async (req: any, res: any) => {
   try {
     const force = req.query.refresh === "1";
     const cacheKey = `topics:${req.user.id}`;
@@ -10112,7 +10134,7 @@ app.get("/api/insights/topics", authenticateUser, async (req: any, res: any) => 
 });
 
 // Failure modes (Claude-powered, cached 1h per user).
-app.get("/api/insights/failure-modes", authenticateUser, async (req: any, res: any) => {
+app.get("/api/insights/failure-modes", authenticateUser, claudeRateLimiter, enforce24hSpendCap, enforceSpendCap, async (req: any, res: any) => {
   try {
     const force = req.query.refresh === "1";
     const cacheKey = `failures:${req.user.id}`;
@@ -10218,7 +10240,7 @@ async function computeDailyBrief(userId: string, opts?: { force?: boolean }) {
   return { payload, cached: false };
 }
 
-app.get("/api/insights/daily-brief", authenticateUser, async (req: any, res: any) => {
+app.get("/api/insights/daily-brief", authenticateUser, claudeRateLimiter, enforce24hSpendCap, enforceSpendCap, async (req: any, res: any) => {
   try {
     const { payload, cached } = await computeDailyBrief(req.user.id, { force: req.query.refresh === "1" });
     res.json({ ...payload, cached });
@@ -10510,7 +10532,7 @@ app.delete("/api/dnc/:id", authenticateUser, async (req: any, res: any) => {
 // QA SCORING — Claude-powered call quality
 // ==========================================
 // Score a call against a 5-dimension QA rubric (20 pts each = 100 total).
-app.post("/api/qa/score/:callId", authenticateUser, withAudit("qa"), async (req: any, res: any) => {
+app.post("/api/qa/score/:callId", authenticateUser, claudeRateLimiter, withAudit("qa"), async (req: any, res: any) => {
   try {
     const { callId } = req.params;
     const { data: call, error: callErr } = await db

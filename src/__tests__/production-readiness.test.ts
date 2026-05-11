@@ -16,7 +16,7 @@ import { timingSafeEqual } from "node:crypto";
 /** Mirrors validateStartupEnv logic from server.ts */
 function checkStartupEnv(env: Record<string, string | undefined>, isProd: boolean) {
   const alwaysRequired = ["VITE_SUPABASE_URL", "VITE_SUPABASE_ANON_KEY"];
-  const prodRequired   = ["ANTHROPIC_API_KEY", "VAPI_PRIVATE_KEY", "VAPI_WEBHOOK_SECRET"];
+  const prodRequired   = ["ANTHROPIC_API_KEY", "VAPI_PRIVATE_KEY", "VAPI_WEBHOOK_SECRET", "OAUTH_STATE_SECRET"];
 
   const missingAlways = alwaysRequired.filter((k) => !env[k]);
   const missingProd   = prodRequired.filter((k) => !env[k]);
@@ -31,6 +31,7 @@ const BASE_ENV: Record<string, string> = {
   ANTHROPIC_API_KEY:      "sk-ant-xxx",
   VAPI_PRIVATE_KEY:       "vapi-priv",
   VAPI_WEBHOOK_SECRET:    "vapi-secret",
+  OAUTH_STATE_SECRET:     "oauth-state-secret-32-chars-long!",
 };
 
 describe("startup validation", () => {
@@ -72,6 +73,13 @@ describe("startup validation", () => {
     const env = { ...BASE_ENV, VAPI_WEBHOOK_SECRET: undefined };
     const { missing, wouldExit } = checkStartupEnv(env, true);
     expect(missing).toContain("VAPI_WEBHOOK_SECRET");
+    expect(wouldExit).toBe(true);
+  });
+
+  it("exits in prod when OAUTH_STATE_SECRET is missing (prevents secret cross-coupling)", () => {
+    const env = { ...BASE_ENV, OAUTH_STATE_SECRET: undefined };
+    const { missing, wouldExit } = checkStartupEnv(env, true);
+    expect(missing).toContain("OAUTH_STATE_SECRET");
     expect(wouldExit).toBe(true);
   });
 
