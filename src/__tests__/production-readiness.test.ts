@@ -16,7 +16,14 @@ import { timingSafeEqual } from "node:crypto";
 /** Mirrors validateStartupEnv logic from server.ts */
 function checkStartupEnv(env: Record<string, string | undefined>, isProd: boolean) {
   const alwaysRequired = ["VITE_SUPABASE_URL", "VITE_SUPABASE_ANON_KEY"];
-  const prodRequired   = ["ANTHROPIC_API_KEY", "VAPI_PRIVATE_KEY", "VAPI_WEBHOOK_SECRET", "OAUTH_STATE_SECRET"];
+  const prodRequired   = [
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "ANTHROPIC_API_KEY",
+    "GEMINI_API_KEY",
+    "VAPI_PRIVATE_KEY",
+    "VAPI_WEBHOOK_SECRET",
+    "OAUTH_STATE_SECRET",
+  ];
 
   const missingAlways = alwaysRequired.filter((k) => !env[k]);
   const missingProd   = prodRequired.filter((k) => !env[k]);
@@ -28,7 +35,9 @@ function checkStartupEnv(env: Record<string, string | undefined>, isProd: boolea
 const BASE_ENV: Record<string, string> = {
   VITE_SUPABASE_URL:      "https://example.supabase.co",
   VITE_SUPABASE_ANON_KEY: "anon-key",
+  SUPABASE_SERVICE_ROLE_KEY: "service-role-key",
   ANTHROPIC_API_KEY:      "sk-ant-xxx",
+  GEMINI_API_KEY:         "gemini-key",
   VAPI_PRIVATE_KEY:       "vapi-priv",
   VAPI_WEBHOOK_SECRET:    "vapi-secret",
   OAUTH_STATE_SECRET:     "oauth-state-secret-32-chars-long!",
@@ -59,6 +68,20 @@ describe("startup validation", () => {
     const env = { ...BASE_ENV, ANTHROPIC_API_KEY: undefined };
     const { missing, wouldExit } = checkStartupEnv(env, true);
     expect(missing).toContain("ANTHROPIC_API_KEY");
+    expect(wouldExit).toBe(true);
+  });
+
+  it("exits in prod when SUPABASE_SERVICE_ROLE_KEY is missing", () => {
+    const env = { ...BASE_ENV, SUPABASE_SERVICE_ROLE_KEY: undefined };
+    const { missing, wouldExit } = checkStartupEnv(env, true);
+    expect(missing).toContain("SUPABASE_SERVICE_ROLE_KEY");
+    expect(wouldExit).toBe(true);
+  });
+
+  it("exits in prod when GEMINI_API_KEY is missing", () => {
+    const env = { ...BASE_ENV, GEMINI_API_KEY: undefined };
+    const { missing, wouldExit } = checkStartupEnv(env, true);
+    expect(missing).toContain("GEMINI_API_KEY");
     expect(wouldExit).toBe(true);
   });
 
