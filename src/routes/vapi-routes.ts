@@ -330,6 +330,32 @@ Today is ${currentDateTime}.
           results.push({ toolCallId: toolCall.id, result: "Booking error." });
         }
       }
+
+      if (toolCall.function.name === "send_contract") {
+        try {
+          const { recipient_name, recipient_email, template_id } = toolCall.function.arguments;
+          const { sendContract } = await import("../lib/docusign-service");
+          const result = await sendContract({ recipientName: recipient_name, recipientEmail: recipient_email, templateId: template_id });
+          results.push({ toolCallId: toolCall.id, result: result ? `Contract sent. Envelope ID: ${result.envelopeId}` : "DocuSign not configured." });
+        } catch (e: any) {
+          results.push({ toolCallId: toolCall.id, result: "Contract sending error." });
+        }
+      }
+
+      if (toolCall.function.name === "enrich_lead") {
+        try {
+          const { phone_number } = toolCall.function.arguments;
+          const { enrichLead } = await import("../lib/apollo-service");
+          const profile = await enrichLead(phone_number);
+          if (profile) {
+            results.push({ toolCallId: toolCall.id, result: `Lead found: ${profile.first_name} ${profile.last_name}, ${profile.title} at ${profile.company}` });
+          } else {
+            results.push({ toolCallId: toolCall.id, result: "No matching lead profile found." });
+          }
+        } catch (e: any) {
+          results.push({ toolCallId: toolCall.id, result: "Lead enrichment error." });
+        }
+      }
     }
     return res.json({ results });
   }

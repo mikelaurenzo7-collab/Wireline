@@ -4,7 +4,9 @@ export const ActionTypeSchema = z.enum([
   "send_email",
   "schedule_calendar",
   "update_crm_lead",
-  "create_internal_task"
+  "create_internal_task",
+  "send_contract",      // DocuSign e-signature
+  "prospect_leads",    // Apollo.io lead generation
 ]);
 
 export type ActionType = z.infer<typeof ActionTypeSchema>;

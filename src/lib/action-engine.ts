@@ -3,6 +3,8 @@ import { type ActionItem, type ActionResult } from "./action-types";
 import { getErrorMessage } from "./server-utils";
 import { IntegrationService } from "./integrations";
 import { CRMService } from "./crm-service";
+import { sendContract } from "./docusign-service";
+import { searchLeads, enrichLead } from "./apollo-service";
 
 /**
  * The Action Engine is responsible for executing tasks extracted by the AI
@@ -47,6 +49,10 @@ export async function executeAction(
           return await handleUpdateCRM(userId, action, context);
         case "create_internal_task":
           return await handleCreateInternalTask(userId, action, context);
+        case "send_contract":
+          return await handleSendContract(userId, action, context);
+        case "prospect_leads":
+          return await handleProspectLeads(userId, action, context);
       }
     }
 
@@ -60,6 +66,10 @@ export async function executeAction(
         return await handleUpdateCRM(userId, action, context);
       case "create_internal_task":
         return await handleCreateInternalTask(userId, action, context);
+      case "send_contract":
+        return await handleSendContract(userId, action, context);
+      case "prospect_leads":
+        return await handleProspectLeads(userId, action, context);
       default:
         return { success: false, error: `Unsupported action type: ${action.type}` };
     }
@@ -156,4 +166,81 @@ async function handleCreateInternalTask(userId: string, action: ActionItem, cont
 
   if (error) throw error;
   return { success: true, actionId: data.id };
+}
+
+async function handleSendContract(userId: string, action: ActionItem, context: { sourceId: string }) {
+  const result = await sendContract({
+    recipientName: action.payload.recipient_name,
+    recipientEmail: action.payload.recipient_email,
+    templateId: action.payload.template_id,
+    subject: action.payload.subject,
+    message: action.payload.message,
+    prefillFields: action.payload.prefill_fields,
+  });
+
+  if (!result) {
+    // Fallback: save as a task for human to send manually
+    return await handleCreateInternalTask(userId, {
+      ...action,
+      type: "create_internal_task",
+      payload: { ...action.payload, description: `[DocuSign Pending] Send contract to ${action.payload.recipient_email}` }
+    }, context);
+  }
+
+  // Log the envelope to the database for tracking
+  await db.from("wireline_fleet_tasks").insert({
+    user_id: userId,
+    task_type: "contract_sent",
+    description: `Contract sent to ${action.payload.recipient_name}`,
+    payload: { envelope_id: result.envelopeId, status: result.status, ...action.payload },
+    priority: action.priority,
+    status: "completed",
+    source_type: "phone_call",
+    source_id: context.sourceId,
+  });
+
+  log.info("Contract sent via DocuSign", { userId, envelopeId: result.envelopeId });
+  return { success: true, actionId: result.envelopeId };
+}
+
+async function handleProspectLeads(userId: string, action: ActionItem, context: { sourceId: string }) {
+  const leads = await searchLeads({
+    titles: action.payload.titles,
+    industries: action.payload.industries,
+    states: action.payload.states,
+    employee_ranges: action.payload.employee_ranges,
+    limit: action.payload.limit || 25,
+  });
+
+  if (leads.length === 0) {
+    log.info("Apollo prospect search returned 0 results", { userId });
+    return { success: true };
+  }
+
+  // Insert discovered leads into the outbound leads table
+  const rows = leads.map(lead => ({
+    user_id: userId,
+    customer_number: lead.phone,
+    customer_name: `${lead.first_name} ${lead.last_name}`.trim(),
+    customer_email: lead.email,
+    company: lead.company,
+    title: lead.title,
+    linkedin_url: lead.linkedin_url || null,
+    status: "new",
+    source: "apollo_ai",
+    notes: `Auto-prospected: ${lead.title} at ${lead.company}`,
+  }));
+
+  const { error } = await db.from("wireline_outbound_leads").upsert(rows, {
+    onConflict: "user_id,customer_number",
+    ignoreDuplicates: true,
+  });
+
+  if (error) {
+    log.error("Failed to insert Apollo leads", { error: error.message });
+    return { success: false, error: error.message };
+  }
+
+  log.info("Apollo leads imported", { userId, count: leads.length });
+  return { success: true };
 }
