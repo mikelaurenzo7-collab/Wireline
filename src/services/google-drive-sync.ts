@@ -1,6 +1,7 @@
 import { google } from "googleapis";
 import { createClient } from "@supabase/supabase-js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { encryptSecret, decryptSecret } from "../lib/secret-vault";
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || "";
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -35,15 +36,16 @@ export async function syncGoogleDriveToKnowledge(userId: string, agentId: string
   );
 
   oauth2Client.setCredentials({
-    access_token: account.access_token,
-    refresh_token: account.refresh_token,
+    access_token: decryptSecret(account.access_token),
+    refresh_token: account.refresh_token ? decryptSecret(account.refresh_token) : null,
     expiry_date: account.expires_at,
   });
 
   // Persist refreshed tokens automatically
   oauth2Client.on("tokens", async (tokens) => {
-    const update: Record<string, unknown> = { access_token: tokens.access_token, expires_at: tokens.expiry_date };
-    if (tokens.refresh_token) update.refresh_token = tokens.refresh_token;
+    if (!tokens.access_token) return;
+    const update: Record<string, unknown> = { access_token: encryptSecret(tokens.access_token), expires_at: tokens.expiry_date };
+    if (tokens.refresh_token) update.refresh_token = encryptSecret(tokens.refresh_token);
     await db.from("wireline_email_accounts").update(update).eq("id", account.id);
   });
 

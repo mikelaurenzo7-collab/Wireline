@@ -1,5 +1,6 @@
 import { google } from "googleapis";
 import { createClient } from "@supabase/supabase-js";
+import { encryptSecret, decryptSecret } from "../lib/secret-vault";
 
 // Initialize Supabase client with service role key for backend tasks
 const supabaseUrl = process.env.VITE_SUPABASE_URL || "";
@@ -36,25 +37,26 @@ export async function syncGoogleCalendar(userId: string) {
       );
 
       oauth2Client.setCredentials({
-        access_token: account.access_token,
-        refresh_token: account.refresh_token,
+        access_token: decryptSecret(account.access_token),
+        refresh_token: account.refresh_token ? decryptSecret(account.refresh_token) : null,
         expiry_date: account.expires_at,
       });
 
       // Handle token refresh automatically if expired
       oauth2Client.on('tokens', async (tokens) => {
+        if (!tokens.access_token) return;
         if (tokens.refresh_token) {
            await db.from("wireline_calendar_accounts")
              .update({ 
-               access_token: tokens.access_token, 
-               refresh_token: tokens.refresh_token,
+               access_token: encryptSecret(tokens.access_token), 
+               refresh_token: encryptSecret(tokens.refresh_token),
                expires_at: tokens.expiry_date 
              })
              .eq("id", account.id);
         } else {
            await db.from("wireline_calendar_accounts")
              .update({ 
-               access_token: tokens.access_token,
+               access_token: encryptSecret(tokens.access_token),
                expires_at: tokens.expiry_date 
              })
              .eq("id", account.id);

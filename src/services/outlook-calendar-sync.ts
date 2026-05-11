@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { encryptSecret, decryptSecret } from "../lib/secret-vault";
 
 // Initialize Supabase client with service role key for backend tasks
 const supabaseUrl = process.env.VITE_SUPABASE_URL || "";
@@ -29,7 +30,7 @@ export async function syncOutlookCalendar(userId: string) {
 
   for (const account of accounts) {
     try {
-      let accessToken = account.access_token;
+      let accessToken = decryptSecret(account.access_token);
       
       // Check if token needs refresh
       if (account.expires_at && Date.now() > account.expires_at - 60_000) {
@@ -37,7 +38,7 @@ export async function syncOutlookCalendar(userId: string) {
           client_id:     process.env.MICROSOFT_CLIENT_ID,
           client_secret: process.env.MICROSOFT_CLIENT_SECRET,
           grant_type:    "refresh_token",
-          refresh_token: account.refresh_token,
+          refresh_token: account.refresh_token ? decryptSecret(account.refresh_token) : "",
         });
         
         const r = await fetch("https://login.microsoftonline.com/common/oauth2/v2.0/token", { 
@@ -54,8 +55,8 @@ export async function syncOutlookCalendar(userId: string) {
         
         accessToken = d.access_token;
         await db.from("wireline_calendar_accounts")
-          .update({ 
-             access_token: accessToken, 
+           .update({ 
+             access_token: encryptSecret(accessToken), 
              expires_at: Date.now() + (d.expires_in || 3600) * 1000 
           })
           .eq("id", account.id);

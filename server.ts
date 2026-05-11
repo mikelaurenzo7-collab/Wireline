@@ -2517,8 +2517,8 @@ ${(knowledgeData?.data || []).map((k: any) => `- ${k.content}`).join('\n') || "N
              // ── Gmail path ───────────────────────────────────────────────────
              const oauth2Client = getGoogleOAuthClient(req);
              oauth2Client.setCredentials({
-               access_token: account.access_token,
-               refresh_token: account.refresh_token,
+               access_token: decryptSecret(account.access_token),
+               refresh_token: account.refresh_token ? decryptSecret(account.refresh_token) : null,
                expiry_date: account.expires_at
              });
              const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
@@ -6627,12 +6627,12 @@ app.get(['/api/oauth/google/callback', '/api/oauth/google/callback/'], oauthRate
 
     if (!emailAddress) throw new Error("Could not fetch user email.");
 
-    // Store in Supabase
+    // Store in Supabase, encrypting the tokens at rest
     await db.from('wireline_email_accounts').insert({
       email_address: emailAddress,
       provider: 'google',
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
+      access_token: encryptSecret(tokens.access_token),
+      refresh_token: tokens.refresh_token ? encryptSecret(tokens.refresh_token) : null,
       expires_at: tokens.expiry_date
     });
 
@@ -6716,7 +6716,7 @@ async function refreshMicrosoftToken(account: {
     client_id:     process.env.MICROSOFT_CLIENT_ID!,
     client_secret: process.env.MICROSOFT_CLIENT_SECRET!,
     grant_type:    "refresh_token",
-    refresh_token: account.refresh_token,
+    refresh_token: decryptSecret(account.refresh_token),
     scope:         MS_SCOPES,
   });
   const r = await fetchWithTimeout(
@@ -6742,12 +6742,12 @@ async function getMicrosoftAccessToken(account: {
   // Refresh 60 s early to prevent edge-of-expiry failures.
   // If expires_at is missing/zero, always refresh to be safe.
   if (account.expires_at && Date.now() < account.expires_at - 60_000) {
-    return account.access_token;
+    return decryptSecret(account.access_token);
   }
   const updated = await refreshMicrosoftToken(account);
   // Persist the new token so subsequent requests don't need to refresh again.
   await db.from("wireline_email_accounts")
-    .update({ access_token: updated.access_token, expires_at: updated.expires_at })
+    .update({ access_token: encryptSecret(updated.access_token), expires_at: updated.expires_at })
     .eq("id", account.id);
   return updated.access_token;
 }
@@ -6856,8 +6856,8 @@ app.get(
       await db.from("wireline_email_accounts").upsert({
         email_address: emailAddress,
         provider:      "microsoft",
-        access_token:  tokens.access_token,
-        refresh_token: tokens.refresh_token || "",
+        access_token:  encryptSecret(tokens.access_token),
+        refresh_token: tokens.refresh_token ? encryptSecret(tokens.refresh_token) : "",
         expires_at:    Date.now() + (tokens.expires_in || 3600) * 1000,
       }, { onConflict: "email_address" });
 
@@ -7290,8 +7290,8 @@ app.post("/api/emails/sync", authenticateUser, async (req: any, res: any) => {
         // ── Gmail path ───────────────────────────────────────────────────────
         const oauth2Client = getGoogleOAuthClient(req);
         oauth2Client.setCredentials({
-           access_token: account.access_token,
-           refresh_token: account.refresh_token,
+           access_token: decryptSecret(account.access_token),
+           refresh_token: account.refresh_token ? decryptSecret(account.refresh_token) : null,
            expiry_date: account.expires_at
         });
 
@@ -7657,8 +7657,8 @@ app.post("/api/emails/threads/:id/reply", authenticateUser, emailRateLimiter, as
         // ── Gmail reply ────────────────────────────────────────────────────
         const oauth2Client = getGoogleOAuthClient(req);
         oauth2Client.setCredentials({
-           access_token: account.access_token,
-           refresh_token: account.refresh_token,
+           access_token: decryptSecret(account.access_token),
+           refresh_token: account.refresh_token ? decryptSecret(account.refresh_token) : null,
            expiry_date: account.expires_at
         });
         const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
@@ -9326,8 +9326,8 @@ async function sendDailyBriefEmail(userId: string, opts?: { force?: boolean }) {
 
   const oauth2Client = buildOAuthClient();
   oauth2Client.setCredentials({
-    access_token: account.access_token,
-    refresh_token: account.refresh_token,
+    access_token: decryptSecret(account.access_token),
+    refresh_token: account.refresh_token ? decryptSecret(account.refresh_token) : null,
     expiry_date: account.expires_at,
   });
   const gmail = google.gmail({ version: "v1", auth: oauth2Client });
@@ -11358,7 +11358,22 @@ const cronOrAdminAuth = (req: any, res: any, next: any) => {
 
 app.post("/api/jobs/sweep", jobsRateLimit, cronOrAdminAuth, async (req: any, res: any) => {
   try {
-    const { claimJob: claim, completeJob: complete, failJob: fail } = await import("./src/lib/job-queue");
+    const { claimJob: claim, completeJob: complete, failJob: fail, enqueue } = await import("./src/lib/job-queue");
+
+    // Trigger nightly GDPR purge (2:00 AM UTC)
+    const now = new Date();
+    if (now.getUTCHours() === 2 && now.getUTCMinutes() === 0 && (req._sweepMode === "cron" || !req._sweepMode)) {
+       const { data: tenants } = await db.from("wireline_settings").select("user_id, retention_days");
+       if (tenants) {
+          for (const t of tenants) {
+             await enqueue(db, {
+                userId: t.user_id,
+                type: "purge_old_data",
+                payload: { user_id: t.user_id, retention_days: t.retention_days }
+             });
+          }
+       }
+    }
     let processed = 0;
     for (let i = 0; i < 10; i++) {
       const job = await claim(db);
