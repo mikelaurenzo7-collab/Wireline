@@ -399,6 +399,21 @@ Every dispatch persists a `wireline_webhook_deliveries` row. Failed attempts ret
 
 Each request includes `X-Wireline-Attempt: <n>` so receivers can implement their own idempotency.
 
+### Public OpenAPI 3.1 spec
+
+A machine-readable OpenAPI 3.1 description of the public API surface is served at:
+
+- `GET /api/openapi.json` — public, no auth, rate-limited.
+
+Use it to:
+
+- Auto-generate client SDKs (`openapi-generator`, `oazapfts`, etc).
+- Expose Wireline as a tool to AI-agent frameworks (Claude Desktop / Cursor / ChatGPT custom GPTs / LangChain) — every framework that consumes OpenAPI gets the intake API, agent / call reads, and webhook event catalog for free.
+- Drive contract tests in partner integrations.
+- View interactively by pasting the spec URL into [editor-next.swagger.io](https://editor-next.swagger.io/) or any other OpenAPI viewer.
+
+The spec is hand-curated in `src/lib/openapi-spec.ts` and covers the contract-stable, partner-facing subset: health + integrations, intake API, agents, calls, settings, triage / insights, webhooks (subscriptions + the catalog of outbound events with payload shapes), and billing. Internal-only endpoints are intentionally omitted. A coverage test (`src/lib/openapi-spec.test.ts`) fails the build if a documented route is renamed or removed in `server.ts`/`src/routes/*` without updating the spec.
+
 ### Inbound lead intake API
 - `POST /api/intake/lead` — public, authenticated by `X-Wireline-Key: wlk_…`. Body `{ customer_name?, customer_number, context?, metadata?, agent_id? }`. Inserts into the leads table with `source='inbound'` so the dialer + Triage surfaces pick it up automatically, then fires a `lead.received` webhook event.
 - `POST /api/intake/leads` — bulk variant (up to 100 leads per request). Body `{ leads: [...] }`. Each lead can carry its own `idempotency_key`. Returns `{ count, success_count, failure_count, results: [...] }` so partial failures don't roll back the rest. Each lead counts as one rate-limit hit.

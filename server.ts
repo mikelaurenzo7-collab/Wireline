@@ -82,6 +82,7 @@ import { authenticateUser } from "./src/middleware/auth";
 import { initJobWorker } from "./src/lib/job-worker";
 import { validateStartupEnv } from "./src/lib/startup";
 import healthRouter from "./src/routes/health-routes";
+import openapiRouter from "./src/routes/openapi-routes";
 import * as rateLimiters from "./src/middleware/rate-limit-middleware";
 
 // On Vercel, VERCEL_URL is automatically set to the deployment hostname
@@ -5944,6 +5945,11 @@ app.use(soc2Router);
 
 // TCPA consent check moved to ./src/routes/compliance-routes.ts
 app.use("/api", complianceRouter);
+
+// Public OpenAPI 3.1 spec — see ./src/routes/openapi-routes.ts.
+// Exposes GET /api/openapi.json so partners, SDK generators, and
+// AI-agent frameworks can discover the public surface area.
+app.use("/api", openapiRouter);
 
 export { app };
 
