@@ -7,8 +7,10 @@ describe("soc2-controls · RBAC helpers", () => {
     expect(hasPermission("operator", "billing.manage")).toBe(false);
   });
 
-  it("prevents operators from granting peer admin roles", () => {
-    expect(canGrantRole("operator", "viewer")).toBe(false);
+  it("prevents operators from granting peer or higher roles", () => {
+    expect(canGrantRole("operator", "viewer")).toBe(true);
+    expect(canGrantRole("operator", "operator")).toBe(false);
+    expect(canGrantRole("operator", "admin")).toBe(false);
     expect(canGrantRole("admin", "operator")).toBe(true);
     expect(canGrantRole("owner", "admin")).toBe(true);
   });

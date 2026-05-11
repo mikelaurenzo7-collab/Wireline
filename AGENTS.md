@@ -202,3 +202,53 @@ You probably shouldn't. Ask the operator first by leaving a PR comment
 or a TODO. **Never delete a file just because grep says it has no
 local references — server.ts and Vite's lazy-loaded routes resolve
 imports dynamically.**
+
+## Cursor Cloud specific instructions
+
+### ESM + dotenv module loading order
+
+`server.ts` calls `dotenv.config()` at the top level, but in ESM mode
+all `import` statements are resolved and their module code executes
+**before** `dotenv.config()` runs. This means modules imported by
+`server.ts` (e.g. `src/lib/server-context.ts`, `src/lib/stripe-helpers.ts`)
+read `process.env` before the `.env` file is loaded.
+
+**Workaround:** When starting the dev server, export critical env vars
+in the shell so they are present at process startup:
+
+```bash
+STRIPE_SECRET_KEY=any_nonempty_string npm run dev
+```
+
+The Supabase secrets (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`,
+`SUPABASE_SERVICE_ROLE_KEY`) are injected by the Cloud Agent VM.
+
+Without this, the server-side Supabase client connects to the
+placeholder URL and all authenticated API calls return 401.
+
+### Running the dev server
+
+```bash
+npm run dev          # tsx server.ts — starts Express + Vite dev middleware
+npm run lint         # tsc --noEmit
+npm run test:run     # vitest run (CI mode)
+npm run build        # vite build + esbuild server bundle
+```
+
+### Database
+
+The Supabase schema must be applied via `supabase_schema.sql` in the
+Supabase SQL editor. Direct Postgres connections from Cloud Agent VMs
+may fail because the DB hostname resolves to IPv6 only. Use the
+Supabase Dashboard SQL editor or the connection pooler instead.
+
+### Stripe SDK crash on startup
+
+The Stripe SDK (`stripe` v17+) throws if `apiKey` is falsy at import
+time. Because of the ESM loading order issue above, the `.env` value
+is not yet available when `src/lib/stripe-helpers.ts` runs
+`new Stripe(process.env.STRIPE_SECRET_KEY || "")`. Pass any non-empty value
+via the shell: `STRIPE_SECRET_KEY=placeholder npm run dev`.
+The Supabase secrets (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`,
+`SUPABASE_SERVICE_ROLE_KEY`) are injected as environment variables
+by the Cloud Agent VM and don't need to be set manually.

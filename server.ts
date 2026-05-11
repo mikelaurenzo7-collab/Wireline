@@ -57,7 +57,7 @@ import { syncGoogleCalendar } from "./src/services/google-calendar-sync";
 import { syncOutlookCalendar } from "./src/services/outlook-calendar-sync";
 import { syncGoogleDriveToKnowledge } from "./src/services/google-drive-sync";
 import { db, IS_PROD, log, fetchWithTimeout, auditLogger, requirePermission, requireRole, quotaTracker } from "./src/lib/server-context";
-import { stripe, stripeAvailable, syncSubscriptionFromStripe } from "./src/lib/stripe-helpers";
+import { stripe, stripeAvailable } from "./src/lib/stripe-helpers";
 import { SCOPES, MS_SCOPES, getGoogleOAuthClient, getMicrosoftRedirectUri, refreshMicrosoftToken, getMicrosoftAccessToken, generateOAuthState, verifyOAuthState, sendEmailViaMicrosoft } from "./src/lib/oauth-helpers";
 import { VAPI_WEBHOOK_SECRET, timingSafeEq, sanitizePhone, MAX_CONTEXT_PREVIEW_LENGTH, buildCallerProfileBlock, OUTBOUND_ARCHETYPE_BY_ROLE, getArchetypeConfig, buildRoleToolDefs, PRESERVED_LEAD_STATUSES, SENTIMENT_ANGRY_SIGNALS, SENTIMENT_POSITIVE_SIGNALS } from "./src/lib/vapi-helpers";
 import { attemptWebhookDelivery, dispatchWebhook, processWebhookRetries, WEBHOOK_EVENTS, type WebhookEvent } from "./src/lib/webhook-helpers";
@@ -541,10 +541,10 @@ async function dialRateLimiter(req: any, res: any, next: any) {
   next();
 }
 
-app.use("/api/emails", rateLimiters.emailRateLimiter);
-app.use("/api/knowledge", rateLimiters.knowledgeRateLimiter);
-app.use("/api/phone-numbers", rateLimiters.phoneNumberRateLimiter);
-app.use("/api/outbound/dial", rateLimiters.dialRateLimiter);
+app.use("/api/emails", authenticateUser, rateLimiters.emailRateLimiter);
+app.use("/api/knowledge", authenticateUser, rateLimiters.knowledgeRateLimiter);
+app.use("/api/phone-numbers", authenticateUser, rateLimiters.phoneNumberRateLimiter);
+app.use("/api/outbound/dial", authenticateUser, rateLimiters.dialRateLimiter);
 
 app.use("/api/claude", (req: any, res: any, next: any) => {
   if (req.path === "/status") return next();
@@ -1769,7 +1769,7 @@ app.get("/api/user-preferences", authenticateUser, async (req: any, res: any) =>
       .eq('user_id', req.user.id)
       .single();
 
-    if (error && error.code !== 'PGRST116') throw error; // PGRST116 = not found
+    if (error && error.code !== 'PGRST116' && error.code !== 'PGRST205') throw error; // PGRST116 = not found, PGRST205 = table not in schema cache
 
     res.json(data || {
       user_id: req.user.id,

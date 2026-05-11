@@ -232,22 +232,24 @@ const TimelineRow: React.FC<{ event: ContactData["timeline"][number] }> = ({ eve
         </div>
         <p className="text-sm text-ink/85 mt-2 line-clamp-2">{event.summary}</p>
         {isCall && (
-          <div className="flex items-center gap-3 mt-2 text-[10px] uppercase tracking-[0.3em] text-muted">
-            {event.duration_seconds !== undefined && (
-              <span>{Math.floor((event.duration_seconds || 0) / 60)}m {(event.duration_seconds || 0) % 60}s</span>
+          <>
+            <div className="flex items-center gap-3 mt-2 text-[10px] uppercase tracking-[0.3em] text-muted">
+              {event.duration_seconds !== undefined && (
+                <span>{Math.floor((event.duration_seconds || 0) / 60)}m {(event.duration_seconds || 0) % 60}s</span>
+              )}
+              {event.cost !== undefined && event.cost > 0 && (
+                <><span>·</span><span>${safeFixed(event.cost, 3)}</span></>
+              )}
+              {event.intent_label && <><span>·</span><span>{event.intent_label} intent</span></>}
+              {event.sentiment && <><span>·</span><span>{event.sentiment}</span></>}
+            </div>
+            {event.coaching_note && (
+              <p className="text-[11px] text-muted/70 mt-1 line-clamp-1">{event.coaching_note}</p>
             )}
-            {event.cost !== undefined && event.cost > 0 && (
-              <><span>·</span><span>${safeFixed(event.cost, 3)}</span></>
+            {event.lesson_extracted && (
+              <span className="inline-block mt-1 text-[8px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">Lesson captured</span>
             )}
-            {event.intent_label && <><span>·</span><span>{event.intent_label} intent</span></>}
-            {event.sentiment && <><span>·</span><span>{event.sentiment}</span></>}
-          </div>
-          {isCall && event.coaching_note && (
-            <p className="text-[11px] text-muted/70 mt-1 line-clamp-1">{event.coaching_note}</p>
-          )}
-          {isCall && event.lesson_extracted && (
-            <span className="inline-block mt-1 text-[8px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">Lesson captured</span>
-          )}
+          </>
         )}
       </div>
       <ArrowUpRight className="w-4 h-4 text-muted shrink-0 group-hover:text-brand group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />

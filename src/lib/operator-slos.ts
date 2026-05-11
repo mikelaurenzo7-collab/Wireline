@@ -59,7 +59,7 @@ export function evaluateOperatorSloHealth(input: {
   webhookAttemptsWindow: number;
   webhookSuccessRate: number | null;
   auditErrorsWindow: number;
-}): Record<string, SloHealth> & { notes: string[] } {
+}): { jobs_queue: SloHealth; enrichment_failures: SloHealth; webhooks: SloHealth; ai_errors: SloHealth; notes: string[] } {
   const notes: string[] = [];
   const jobs_queue: SloHealth =
     input.pendingJobs > 200 ? "critical" : input.pendingJobs > 50 ? "warn" : "ok";
