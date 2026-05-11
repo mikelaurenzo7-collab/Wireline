@@ -217,12 +217,11 @@ read `process.env` before the `.env` file is loaded.
 in the shell so they are present at process startup:
 
 ```bash
-export STRIPE_SECRET_KEY=sk_test_placeholder
-export VITE_SUPABASE_URL="https://YOUR_PROJECT.supabase.co"
-export VITE_SUPABASE_ANON_KEY="..."
-export SUPABASE_SERVICE_ROLE_KEY="..."
-npm run dev
+STRIPE_SECRET_KEY=any_nonempty_string npm run dev
 ```
+
+The Supabase secrets (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`,
+`SUPABASE_SERVICE_ROLE_KEY`) are injected by the Cloud Agent VM.
 
 Without this, the server-side Supabase client connects to the
 placeholder URL and all authenticated API calls return 401.
@@ -248,8 +247,8 @@ Supabase Dashboard SQL editor or the connection pooler instead.
 The Stripe SDK (`stripe` v17+) throws if `apiKey` is falsy at import
 time. Because of the ESM loading order issue above, the `.env` value
 is not yet available when `src/lib/stripe-helpers.ts` runs
-`new Stripe(process.env.STRIPE_SECRET_KEY || "")`. Pass a placeholder
-via the shell: `STRIPE_SECRET_KEY=sk_test_placeholder npm run dev`.
+`new Stripe(process.env.STRIPE_SECRET_KEY || "")`. Pass any non-empty value
+via the shell: `STRIPE_SECRET_KEY=placeholder npm run dev`.
 The Supabase secrets (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`,
 `SUPABASE_SERVICE_ROLE_KEY`) are injected as environment variables
 by the Cloud Agent VM and don't need to be set manually.
