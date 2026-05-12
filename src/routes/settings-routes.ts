@@ -175,6 +175,13 @@ router.post('/api/account/export', authenticateUser, async (req: any, res: any) 
       'wireline_consent_log',
       'wireline_quota_limits',
       'wireline_quota_usage',
+      'wireline_calendar_accounts',
+      'wireline_calendar_events',
+      'wireline_crm_connections',
+      'wireline_team_members',
+      'wireline_change_log',
+      'wireline_incidents',
+      'wireline_jobs',
     ];
 
     const exportData: Record<string, any[]> = {};
@@ -182,7 +189,12 @@ router.post('/api/account/export', authenticateUser, async (req: any, res: any) 
 
     // Collect all user data from each table
     for (const table of tables) {
-      const { data, error } = await (db as any).from(table).select('*').eq('user_id', uid);
+      // Some SOC2/Admin tables use tenant_id instead of user_id for account ownership
+      const userCol = ['wireline_team_members', 'wireline_change_log', 'wireline_incidents'].includes(table)
+        ? 'tenant_id'
+        : 'user_id';
+
+      const { data, error } = await (db as any).from(table).select('*').eq(userCol, uid);
 
       if (error) {
         log.warn(`account export: ${table} query failed`, { error: error.message });
@@ -318,10 +330,20 @@ router.delete('/api/user/account', authenticateUser, async (req: any, res: any) 
       'wireline_subscriptions',
       'wireline_onboarding_progress',
       'wireline_user_preferences',
+      'wireline_calendar_events',
+      'wireline_calendar_accounts',
+      'wireline_crm_connections',
+      'wireline_team_members',
+      'wireline_change_log',
+      'wireline_incidents',
+      'wireline_jobs',
       'wireline_settings',
     ];
     for (const table of tables) {
-      const { error } = await (db as any).from(table).delete().eq('user_id', uid);
+      const userCol = ['wireline_team_members', 'wireline_change_log', 'wireline_incidents'].includes(table)
+        ? 'tenant_id'
+        : 'user_id';
+      const { error } = await (db as any).from(table).delete().eq(userCol, uid);
       if (error) log.warn(`account deletion: ${table} error`, { error: error.message });
     }
 

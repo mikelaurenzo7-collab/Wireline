@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS wireline_settings (
     max_agents INTEGER DEFAULT 3,
     vapi_private_key TEXT,
     vapi_phone_number_id TEXT,
+    retention_days INTEGER DEFAULT 365,
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(user_id)
 );
@@ -1545,3 +1546,7 @@ ALTER TABLE wireline_calendar_accounts ADD COLUMN IF NOT EXISTS oauth_granted_sc
 -- Vapi inbound routing — Default inbound Wireline agent (optional)
 -- ─────────────────────────────────────────────────────────────────────────────
 ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS vapi_phone_inbound_agent_id TEXT REFERENCES wireline_agents(id) ON DELETE SET NULL;
+-- ─────────────────────────────────────────────────────────────────────────────
+-- GDPR Data Retention — 2026-05-12
+-- ─────────────────────────────────────────────────────────────────────────────
+ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS retention_days INTEGER DEFAULT 365;

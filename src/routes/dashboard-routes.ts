@@ -343,12 +343,12 @@ const EXPORT_DEFS: Record<string, { table: string; columns: string[]; order: str
   },
   leads: {
     table: "wireline_outbound_leads",
-    columns: ["created_at", "phone_number", "first_name", "last_name", "status", "last_dialed_at"],
+    columns: ["created_at", "customer_number", "customer_name", "status", "last_called_at"],
     order: "created_at",
   },
   triage: {
     table: "wireline_fleet_tasks",
-    columns: ["created_at", "type", "status", "priority", "content"],
+    columns: ["created_at", "task_type", "status", "priority", "description"],
     order: "created_at",
   },
   appointments: {
