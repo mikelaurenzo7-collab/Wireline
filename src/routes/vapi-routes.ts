@@ -73,10 +73,13 @@ router.post("/api/vapi-webhook", async (req, res) => {
   const payload = req.body as Record<string, unknown>;
   const queryAgentId = typeof req.query.agentId === "string" ? req.query.agentId : undefined;
   const routed = await resolveVapiWebhookAgent({ payload, queryAgentId });
-  if (!routed.ok) return res.status(routed.status).json(routed.body);
+  if (!routed.ok) {
+    return res.status((routed as { status: number }).status)
+      .json((routed as { body: Record<string, unknown> }).body);
+  }
 
   const webhookAgentId = routed.webhookAgentId;
-  const agent = { user_id: routed.agentUserId };
+  const agent = { id: webhookAgentId, user_id: routed.agentUserId };
   const message = payload.message as Record<string, any> | undefined;
 
   const { data: userSettings } = await db.from('wireline_settings')
@@ -248,7 +251,7 @@ Today is ${currentDateTime}.
                priority: priority || 'medium',
                status: 'pending',
                source_type: 'phone_call',
-               source_id: message.call?.id || payload.call?.id || "in-call",
+               source_id: (message.call as { id?: string } | undefined)?.id || (payload.call as { id?: string } | undefined)?.id || "in-call",
                target_channel: 'manual',
             }).select('id').single();
             if (taskError) throw taskError;
@@ -282,7 +285,7 @@ Today is ${currentDateTime}.
       if (toolCall.function.name === "update_lead_status") {
         try {
           const { status, notes } = toolCall.function.arguments;
-          const customerPhone = payload.call?.customer?.number || message.call?.customer?.number;
+          const customerPhone = (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number || (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
           if (customerPhone) {
             const safePhone = sanitizePhone(customerPhone);
             await db.from('wireline_outbound_leads')
@@ -311,7 +314,7 @@ Today is ${currentDateTime}.
       if (toolCall.function.name === "send_text_message") {
         try {
           const { to_number, channel, message_body } = toolCall.function.arguments;
-          const fallbackNumber = payload.call?.customer?.number || message.call?.customer?.number;
+          const fallbackNumber = (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number || (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
           const targetNumber = sanitizePhone(to_number || fallbackNumber);
 
           if (!targetNumber) {
@@ -336,7 +339,7 @@ Today is ${currentDateTime}.
 
       if (toolCall.function.name === "lookup_phone_number") {
         try {
-          const fallbackNumber = payload.call?.customer?.number || message.call?.customer?.number;
+          const fallbackNumber = (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number || (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
           const targetNumber = sanitizePhone(toolCall.function.arguments?.phone_number || fallbackNumber);
 
           if (!targetNumber) {
@@ -357,7 +360,7 @@ Today is ${currentDateTime}.
 
       if (toolCall.function.name === "add_to_dnc") {
         try {
-          const fallbackNumber = payload.call?.customer?.number || message.call?.customer?.number;
+          const fallbackNumber = (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number || (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
           const rawPhone = String(toolCall.function.arguments?.phone_number || fallbackNumber || "");
           const normalizedPhone = normalizeDncPhone(rawPhone);
 
@@ -471,15 +474,15 @@ Today is ${currentDateTime}.
   }
 
   if (message && message.type === "status-update") {
-     const callId = payload.call?.id;
-     const status = message.status || payload.call?.status;
+     const callId = (payload.call as { id?: string } | undefined)?.id;
+     const status = (message as { status?: string }).status || (payload.call as { status?: string } | undefined)?.status;
      if (callId) {
         if (['in-progress', 'ringing', 'queued'].includes(status)) {
            await db.from('wireline_signal_presence').upsert({
               id: callId,
               user_id: agent?.user_id,
               agent_id: webhookAgentId,
-              customer_number: payload.call?.customer?.number || "Unknown",
+              customer_number: (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number || "Unknown",
               status: status,
               started_at: new Date().toISOString()
            });
@@ -490,7 +493,7 @@ Today is ${currentDateTime}.
   }
 
   if (message && message.type === "conversation-update") {
-    const callId = payload.call?.id || message.call?.id;
+    const callId = (payload.call as { id?: string } | undefined)?.id || (message.call as { id?: string } | undefined)?.id;
     if (callId) {
       const turns: any[] = message.conversation || message.messages || [];
       const userTurns = turns.filter((t: any) => t.role === "user").slice(-2);

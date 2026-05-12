@@ -35,7 +35,7 @@ import { WEBHOOK_EVENTS } from "./webhook-helpers";
 // stable and the spec self-contained.
 
 type JsonSchema = {
-  type?: "string" | "number" | "integer" | "boolean" | "object" | "array" | "null";
+  type?: "string" | "number" | "integer" | "boolean" | "object" | "array" | "null" | readonly ("string" | "number" | "integer" | "boolean" | "object" | "array" | "null")[];
   format?: string;
   description?: string;
   enum?: readonly (string | number | boolean | null)[];
@@ -347,6 +347,7 @@ const BillingStatus: JsonSchema = {
   additionalProperties: true,
 };
 
+const SloSnapshot: JsonSchema = {
   type: "object",
   description: "SLO health snapshot. `banner_status` is the worst-case across dimensions.",
   properties: {
