@@ -80,7 +80,7 @@ export default function AdminSettings() {
       const r = await authFetch("/api/oauth/integration-health");
       if (r.ok) setIntegrationHealth(await r.json());
       else setIntegrationHealth(null);
-    } catch (_) {
+    } catch {
       setIntegrationHealth(null);
     }
   };
@@ -91,7 +91,7 @@ export default function AdminSettings() {
     try {
       const r = await authFetch("/api/claude/status");
       if (r.ok) setClaudeStatus(await r.json());
-    } catch (_) { /* non-critical */ }
+    } catch { /* non-critical */ }
   };
 
   const fetchIntegrations = async () => {
@@ -101,7 +101,7 @@ export default function AdminSettings() {
         const d = await r.json();
         setIntegrations(d.integrations || []);
       }
-    } catch (_) { /* non-critical */ }
+    } catch { /* non-critical */ }
   };
 
   const fetchOperationalSlos = async () => {
@@ -109,7 +109,7 @@ export default function AdminSettings() {
       const r = await authFetch("/api/health/slos");
       if (r.ok) setOperationalSlos(await r.json());
       else setOperationalSlos(null);
-    } catch (_) {
+    } catch {
       setOperationalSlos(null);
     }
   };

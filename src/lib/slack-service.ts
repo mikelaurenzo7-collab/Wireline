@@ -1,5 +1,5 @@
 import { db, log, fetchWithTimeout } from "./server-context";
-import { encryptSecret, decryptSecret } from "./secret-vault";
+import { decryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
 
 /**

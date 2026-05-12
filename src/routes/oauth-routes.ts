@@ -577,7 +577,7 @@ router.post("/api/oauth/slack/disconnect", authenticateUser, async (req: express
   try {
     await disconnectSlack(userId);
     res.json({ ok: true });
-  } catch (e: any) {
+  } catch {
     res.status(500).json({ error: "Failed to disconnect Slack" });
   }
 });
@@ -588,7 +588,7 @@ router.get("/api/oauth/slack/channels", authenticateUser, async (req: express.Re
   try {
     const channels = await listSlackChannels(userId);
     res.json({ channels });
-  } catch (e: any) {
+  } catch {
     res.status(500).json({ error: "Failed to list Slack channels" });
   }
 });
@@ -601,7 +601,7 @@ router.post("/api/oauth/slack/default-channel", authenticateUser, async (req: ex
   try {
     await setSlackDefaultChannel(userId, channel_id);
     res.json({ ok: true });
-  } catch (e: any) {
+  } catch {
     res.status(500).json({ error: "Failed to set default channel" });
   }
 });
@@ -681,7 +681,7 @@ router.post("/api/oauth/zoom/disconnect", authenticateUser, async (req: express.
   try {
     await disconnectZoom(userId);
     res.json({ ok: true });
-  } catch (e: any) {
+  } catch {
     res.status(500).json({ error: "Failed to disconnect Zoom" });
   }
 });

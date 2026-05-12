@@ -1,8 +1,5 @@
-import { log, auditLogger, quotaTracker } from "../lib/server-context";
+import { auditLogger } from "../lib/server-context";
 import { rateLimit, distributedLimiterStatus } from "../lib/rate-limit";
-import { SentryEvents } from "../lib/sentry-events";
-import { getErrorMessage } from "../lib/server-utils";
-import { claudeRateLimiter } from "./api-rate-limits";
 
 const OAUTH_RATE_WINDOW_MS = 5 * 60_000;
 const OAUTH_RATE_MAX = 10;

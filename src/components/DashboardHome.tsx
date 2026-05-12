@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   Activity, PhoneCall, Mic, Square, Loader2, TrendingUp, DollarSign,
-  ArrowUpRight, BarChart3, Mail, ChevronRight, Signal, Target,
+  ArrowUpRight, Mail, ChevronRight, Signal, Target,
   Radio, Sparkles, Inbox, History as HistoryIcon, ShieldCheck, Zap, Users,
   AlertTriangle,
 } from "lucide-react";
@@ -216,7 +216,7 @@ export default function DashboardHome() {
     }
   };
 
-  const chartData = stats?.chartData || [
+  const _chartData = stats?.chartData || [
     { name: "MON", signals: 12, leads: 5 },
     { name: "TUE", signals: 18, leads: 8 },
     { name: "WED", signals: 15, leads: 12 },

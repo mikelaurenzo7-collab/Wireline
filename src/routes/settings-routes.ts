@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db, log, auditLogger } from '../lib/server-context';
 import { authenticateUser } from '../middleware/auth';
-import { getErrorMessage, sanitizeForAudit } from '../lib/server-utils';
+import { getErrorMessage } from '../lib/server-utils';
 import { enqueue } from '../lib/job-queue';
 import { createClient } from '@supabase/supabase-js';
 import { jobsRateLimit } from '../middleware/api-rate-limits';
@@ -17,7 +17,7 @@ router.get('/api/settings', authenticateUser, async (req: any, res: any) => {
       .single();
     if (error) throw error;
     res.json({ settings: data || {} });
-  } catch (error) {
+  } catch {
     res.json({ settings: {} });
   }
 });
@@ -127,7 +127,7 @@ router.get('/api/onboarding/progress', authenticateUser, async (req: any, res: a
       has_voice: !!settings?.vapi_private_key,
       completed: !!prefs?.onboarding_completed,
     });
-  } catch (e) {
+  } catch {
     res.status(500).json({ error: 'Failed to fetch progress' });
   }
 });

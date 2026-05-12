@@ -18,7 +18,7 @@ const KeyboardShortcuts  = lazy(() => import("../KeyboardShortcuts"));
 export default function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
-  const { user, loading, signOut } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 

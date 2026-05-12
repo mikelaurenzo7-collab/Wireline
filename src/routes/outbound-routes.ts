@@ -31,7 +31,7 @@ router.get('/api/outbound', authenticateUser, async (req: any, res: any) => {
       total: count || 0,
       hasMore: count ? offset + limit < count : false,
     });
-  } catch (_error) {
+  } catch {
     res.json({ leads: [], total: 0, hasMore: false });
   }
 });
@@ -223,7 +223,7 @@ router.post('/api/outbound/bulk', authenticateUser, async (req: any, res: any) =
     }
 
     res.json({ success: true, inserted: data.length });
-  } catch (error: unknown) {
+  } catch {
     res.status(500).json({ error: 'Failed to queue leads' });
   }
 });

@@ -2,8 +2,8 @@ import React, { useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
 import {
   BarChart3, TrendingUp, Layers, Calendar, Trophy, AlertOctagon, Loader2,
-  RefreshCw, Sparkles, ChevronRight, Users, DollarSign, Brain, Zap,
-  Receipt, Clock, Database, Shield, AlertTriangle, Lock, Save, CheckCircle2 as CheckCircle2Icon,
+  RefreshCw, Sparkles, DollarSign, Brain,
+  Receipt, Database, Shield, AlertTriangle, Lock, Save, CheckCircle2 as CheckCircle2Icon,
   Star, Play,
 } from "lucide-react";
 import {
@@ -19,7 +19,7 @@ import PageShell from "./PageShell";
 import WidgetBoundary from "./WidgetBoundary";
 import { useToast } from "../contexts/ToastContext";
 
-type View = "funnel" | "topics" | "heatmap" | "leaderboard" | "failures" | "spend" | "quality";
+type _View = "funnel" | "topics" | "heatmap" | "leaderboard" | "failures" | "spend" | "quality";
 
 export default function InsightsView() {
   const [days, setDays] = useState(30);
@@ -679,7 +679,7 @@ function AISpendView({ days }: { days: number }) {
 
 function SpendBudgetCard() {
   const [status, setStatus] = useState<any>(null);
-  const [budget, setBudget] = useState<any>(null);
+  const [_budget, setBudget] = useState<any>(null);
   const [draft, setDraft] = useState<{ monthly_limit_usd: string; warn_threshold_pct: number; hard_cap: boolean; enabled: boolean }>({
     monthly_limit_usd: "",
     warn_threshold_pct: 80,

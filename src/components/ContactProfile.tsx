@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "motion/react";
 import {
-  Phone, PhoneIncoming, PhoneOutgoing, Calendar, Mic, Clock, DollarSign,
+  Phone, PhoneIncoming, PhoneOutgoing, Calendar, Clock, DollarSign,
   Activity, ChevronLeft, Loader2, ArrowUpRight, Sparkles, User, Target,
-  TrendingUp, AlertOctagon
+  AlertOctagon
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";

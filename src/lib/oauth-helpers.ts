@@ -1,7 +1,7 @@
 import express from "express";
 import { google } from "googleapis";
 import { randomUUID, createHmac, timingSafeEqual } from "node:crypto";
-import { db, log, fetchWithTimeout } from "./server-context";
+import { db, fetchWithTimeout } from "./server-context";
 import { encryptSecret, decryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
 

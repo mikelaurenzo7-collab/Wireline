@@ -2,7 +2,6 @@ import { Router } from "express";
 import { db, log } from "../lib/server-context";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage } from "../lib/server-utils";
-import * as rateLimiters from "../middleware/api-rate-limits";
 
 const router = Router();
 
@@ -14,7 +13,7 @@ router.get("/api/emails/accounts", authenticateUser, async (req: any, res: any) 
                                                .order('created_at', { ascending: false });
     if (error) throw error;
     res.json({ accounts: accounts || [] });
-  } catch(e) {
+  } catch {
     res.status(500).json({ error: "Failed to fetch accounts" });
   }
 });
@@ -78,7 +77,7 @@ router.delete("/api/emails/accounts/:id", authenticateUser, async (req: any, res
   try {
     await db.from('wireline_email_accounts').delete().eq('id', req.params.id).eq('user_id', req.user.id);
     res.json({ success: true });
-  } catch(e) {
+  } catch {
     res.status(500).json({ error: "Failed to disconnect account" });
   }
 });

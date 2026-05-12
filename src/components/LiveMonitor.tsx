@@ -160,7 +160,7 @@ export default function LiveMonitor() {
   const [activity, setActivity] = useState<ActivityEntry[]>([]);
   const [agents, setAgents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [lastRefresh, setLastRefresh] = useState(new Date());
+  const [, setLastRefresh] = useState(new Date());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // mountedRef tracks whether the LiveMonitor is still alive; both the

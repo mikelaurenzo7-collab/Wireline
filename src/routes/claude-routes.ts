@@ -1,11 +1,10 @@
 import express from "express";
-import { db, log } from "../lib/server-context";
+import { db } from "../lib/server-context";
 import { authenticateUser } from "../middleware/auth";
 import * as claudeBrain from "../lib/claude-brain";
 import { claudeErr } from "../lib/claude-response-helpers";
 import { parseFormData, DirectiveSchema } from "../lib/form-validators";
 import { DEFAULT_AGENT_ROLE } from "../lib/agent-constants";
-import { buildContactProfile, normalizePhoneTail } from "../lib/contact-profile";
 import { dispatchWebhook } from "../lib/webhook-helpers";
 import { isSsrfUrl } from "../lib/webhook-validators";
 

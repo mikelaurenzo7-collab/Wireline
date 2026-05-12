@@ -14,7 +14,7 @@ router.get("/api/phone-numbers", authenticateUser, async (req: any, res: any) =>
     const { data, error } = await db.from('wireline_phone_numbers').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false });
     if (error) throw error;
     res.json({ numbers: data || [] });
-  } catch (error) {
+  } catch {
     res.json({ numbers: [] });
   }
 });
@@ -24,7 +24,7 @@ router.post("/api/phone-numbers", authenticateUser, rateLimiters.phoneNumberRate
     const { phone_number, vapi_number_id } = req.body;
     await db.from('wireline_phone_numbers').insert({ phone_number, vapi_number_id, user_id: req.user.id });
     res.json({ success: true });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to add phone number" });
   }
 });

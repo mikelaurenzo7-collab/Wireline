@@ -236,7 +236,7 @@ describe("OpenAPI spec — auth consistency", () => {
     for (const op of bearerOps) {
       // The route declaration must include authenticateUser middleware somewhere
       // We check if the path string appears near authenticateUser in the source
-      const pathStr = op.path.replace(/\{[^}]+\}/g, ":"); // normalize OpenAPI params
+      const _pathStr = op.path.replace(/\{[^}]+\}/g, ":"); // normalize OpenAPI params
       const hasAuth = allSrc.includes(`"${op.path}"`) || allSrc.includes(`'${op.path}'`);
       // This is a soft check — we just ensure the path exists (covered by path coverage test above)
       expect(hasAuth || true).toBe(true);

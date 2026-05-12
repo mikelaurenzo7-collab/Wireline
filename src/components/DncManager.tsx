@@ -8,7 +8,6 @@ import Papa from "papaparse";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { formatDate } from "../lib/safe-date";
-import CsvExportButton from "./CsvExportButton";
 import PageShell, { Panel } from "./PageShell";
 import HubTabs, { SYSTEM_HUB } from "./HubTabs";
 import { useToast } from "../contexts/ToastContext";
@@ -65,7 +64,7 @@ export default function DncManager() {
       const r = await authFetch("/api/dnc");
       const d = await r.json();
       setEntries(d.entries || []);
-    } catch (e) {
+    } catch {
       toastError("Failed to load DNC list", "Please try again.");
     } finally {
       setLoading(false);

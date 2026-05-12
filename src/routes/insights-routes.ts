@@ -1,9 +1,7 @@
 import { Router } from "express";
 
-import { db, log, auditLogger } from "../lib/server-context";
+import { db } from "../lib/server-context";
 import { authenticateUser } from "../middleware/auth";
-import { getErrorMessage } from "../lib/server-utils";
-import { claudeRateLimiter } from "../middleware/api-rate-limits";
 import * as claudeBrain from "../lib/claude-brain";
 import { claudeErr } from "../lib/claude-response-helpers";
 import { cachedInsight, setCachedInsight } from "../lib/insights-cache";

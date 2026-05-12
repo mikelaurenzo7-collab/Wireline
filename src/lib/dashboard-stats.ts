@@ -103,7 +103,7 @@ export function buildSevenDayChart(
   const days = 7;
   const todayUTC = new Date(now);
   // Anchor at UTC midnight of "today" so bucket math is timezone-stable.
-  const todayKey = todayUTC.toISOString().slice(0, 10);
+  const _todayKey = todayUTC.toISOString().slice(0, 10);
   const last7Days: string[] = [];
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date(now - i * 24 * 60 * 60 * 1000);

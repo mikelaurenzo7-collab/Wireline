@@ -26,7 +26,7 @@ router.get("/api/agents", authenticateUser, async (req: any, res: any) => {
     const { data: agents, error } = await db.from('wireline_agents').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false }).limit(500);
     if (error) log.warn("Failed to fetch agents", { userId: req.user.id, error: getErrorMessage(error) });
     res.json({ agents: agents || [] });
-  } catch (error) {
+  } catch {
     res.json({ agents: [] }); 
   }
 });
@@ -112,7 +112,7 @@ router.get("/api/agents/:id/export", authenticateUser, async (req: any, res: any
     res.setHeader('Content-Disposition', `attachment; filename="${safeName}_config.json"`);
     res.setHeader('Content-Type', 'application/json');
     res.json(exportData);
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: 'Export failed' });
   }
 });
@@ -182,7 +182,7 @@ router.post("/api/agents/:id/import", authenticateUser, async (req: any, res: an
     };
 
     res.json({ success: true, imported });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: 'Import failed' });
   }
 });
@@ -258,7 +258,7 @@ router.delete("/api/agent-config/:id/:type/:rowId", authenticateUser, async (req
       if (type === 'directive') await db.from('wireline_directives').delete().eq('id', rowId).eq('user_id', userId);
       if (type === 'knowledge') await db.from('wireline_knowledge').delete().eq('id', rowId).eq('user_id', userId);
       res.json({ success: true });
-    } catch(e) {
+    } catch {
       res.status(500).json({ error: "Failed to delete" });
     }
  });
@@ -493,10 +493,7 @@ router.post("/api/agents", authenticateUser, async (req: any, res: any) => {
       channel: channel || 'voice',
       role: agentRole
     });
-    let usedLegacyRoleFallback = false;
-
     if (agentInsert.error && isMissingRoleColumnError(agentInsert.error)) {
-      usedLegacyRoleFallback = true;
       log.warn("wireline_agents.role missing; retrying legacy insert", { userId: req.user.id, agentId });
       agentInsert = await db.from('wireline_agents').insert({
         id: agentId,
@@ -791,7 +788,7 @@ router.post("/api/agents/:id/optimize", authenticateUser, async (req: any, res: 
         return res.status(502).json({ error: "Optimizer returned malformed JSON." });
       }
       res.json(parsed);
-   } catch (e) {
+   } catch {
       res.status(500).json({ error: "Optimization protocol failed" });
    }
 });
@@ -900,7 +897,7 @@ router.get("/api/agents/:id/lessons", authenticateUser, async (req: any, res: an
          .limit(200);
       if (error) throw error;
       res.json({ lessons });
-   } catch (e) {
+   } catch {
       res.status(500).json({ error: "Failed to fetch lessons" });
    }
 });
@@ -951,7 +948,7 @@ router.post("/api/agents/:id/promote", authenticateUser, async (req: any, res: a
       });
 
       res.json({ success: true });
-   } catch (e) {
+   } catch {
       res.status(500).json({ error: "Promotion failed" });
    }
 });
@@ -962,7 +959,7 @@ router.delete("/api/agents/:id/lessons/:lessonId", authenticateUser, async (req:
          .eq('id', req.params.lessonId)
          .eq('user_id', req.user.id);
       res.json({ success: true });
-   } catch (e) {
+   } catch {
       res.status(500).json({ error: "Delete failed" });
    }
 });

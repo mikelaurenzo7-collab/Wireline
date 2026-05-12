@@ -4,7 +4,7 @@ import { getErrorMessage } from "./server-utils";
 import { IntegrationService } from "./integrations";
 import { CRMService } from "./crm-service";
 import { sendContract } from "./docusign-service";
-import { searchLeads, enrichLead } from "./apollo-service";
+import { searchLeads } from "./apollo-service";
 import { sendTenantMessage } from "./twilio-service";
 import { postMessage as slackPostMessage, getDefaultChannel } from "./slack-service";
 
@@ -161,7 +161,7 @@ async function handleSendTextMessage(userId: string, action: ActionItem, context
   return { success: true, actionId: outcome.sid };
 }
 
-async function handleUpdateCRM(userId: string, action: ActionItem, context: { sourceId: string }) {
+async function handleUpdateCRM(userId: string, action: ActionItem, _context: { sourceId: string }) {
   // 1. Update internal Wireline leads table
   const { error: internalError } = await db.from("wireline_outbound_leads")
     .update({ 
@@ -245,7 +245,7 @@ async function handleSendContract(userId: string, action: ActionItem, context: {
   return { success: true, actionId: result.envelopeId };
 }
 
-async function handleProspectLeads(userId: string, action: ActionItem, context: { sourceId: string }) {
+async function handleProspectLeads(userId: string, action: ActionItem, _context: { sourceId: string }) {
   const leads = await searchLeads({
     titles: action.payload.titles,
     industries: action.payload.industries,

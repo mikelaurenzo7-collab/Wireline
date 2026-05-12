@@ -7,7 +7,7 @@ import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
 import { formatDateTime } from "../lib/safe-date";
-import type { AuditEvent, AuditSeverity, AuditEventType } from "../types/audit";
+import type { AuditEvent, AuditSeverity } from "../types/audit";
 
 interface AuditStats {
   total: number;
