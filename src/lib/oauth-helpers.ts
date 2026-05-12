@@ -30,6 +30,17 @@ export function getGoogleOAuthClient(req: express.Request) {
   );
 }
 
+export function buildOAuthClient() {
+  return new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    // The redirect URI is only used for the initial code-to-token swap;
+    // refreshes and direct API calls don't need it but the library
+    // requires a placeholder or valid string.
+    "http://localhost:3000/api/oauth/google/callback"
+  );
+}
+
 // ────────────────────────────────────────────────────────────────────
 //  Microsoft OAuth Constants & Helpers
 // ────────────────────────────────────────────────────────────────────

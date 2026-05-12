@@ -6,6 +6,7 @@ import { getErrorMessage } from "../lib/server-utils";
 import { parseFormData, FleetTaskCreateSchema } from "../lib/form-validators";
 import { compileActivityFeed } from "../lib/fleet-activity";
 import { ROLE_PERSONALITY_TEMPLATES } from "../lib/agent-constants";
+import { claudeErr } from "../lib/claude-response-helpers";
 
 const router = Router();
 
@@ -228,6 +229,68 @@ router.get("/api/fleet/activity", authenticateUser, async (req: any, res: any) =
       log.error("Activity feed error", { error: e?.message || String(e) });
       res.status(500).json({ error: "Failed to fetch activity" });
    }
+});
+
+//  TRIAGE INBOX — "what needs my attention right now"
+// ──────────────────────────────────────────────────────────
+
+router.get("/api/triage", authenticateUser, async (req: any, res: any) => {
+  try {
+    const [{ data: hotLeads }, { data: complianceTasks }, { data: pendingTasks }, { data: knowledgeGaps }, { data: escalations }] = await Promise.all([
+      // Calls with high lead score from the last 7 days that don't have a follow-up logged.
+      db.from("wireline_call_logs")
+        .select("id, agent_id, customer_number, lead_score, intent_label, summary, created_at")
+        .eq("user_id", req.user.id)
+        .gte("lead_score", 70)
+        .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+        .order("lead_score", { ascending: false })
+        .limit(30),
+      db.from("wireline_fleet_tasks")
+        .select("*")
+        .eq("user_id", req.user.id)
+        .eq("task_type", "compliance_review")
+        .eq("status", "pending")
+        .order("created_at", { ascending: false })
+        .limit(20),
+      db.from("wireline_fleet_tasks")
+        .select("*")
+        .eq("user_id", req.user.id)
+        .eq("status", "pending")
+        .neq("task_type", "compliance_review")
+        .order("created_at", { ascending: false })
+        .limit(30),
+      db.from("wireline_agent_lessons")
+        .select("id, agent_id, lesson, created_at")
+        .eq("user_id", req.user.id)
+        .like("lesson", "[KNOWLEDGE GAP]%")
+        .order("created_at", { ascending: false })
+        .limit(30),
+      db.from("wireline_call_logs")
+        .select("id, agent_id, customer_number, lead_score, summary, created_at")
+        .eq("user_id", req.user.id)
+        .or("intent_label.eq.escalation")
+        .order("created_at", { ascending: false })
+        .limit(20),
+    ]);
+
+    res.json({
+      hot_leads: hotLeads || [],
+      compliance: complianceTasks || [],
+      pending_tasks: pendingTasks || [],
+      knowledge_gaps: knowledgeGaps || [],
+      escalations: escalations || [],
+      counts: {
+        hot_leads: hotLeads?.length || 0,
+        compliance: complianceTasks?.length || 0,
+        pending_tasks: pendingTasks?.length || 0,
+        knowledge_gaps: knowledgeGaps?.length || 0,
+        escalations: escalations?.length || 0,
+      },
+    });
+  } catch (e) {
+    log.error("Triage fetch failed", { error: e instanceof Error ? e.message : String(e) });
+    claudeErr(res, e);
+  }
 });
 
 export default router;

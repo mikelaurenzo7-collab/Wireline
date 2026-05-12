@@ -3,7 +3,7 @@ import { Router } from "express";
 import { db, log, auditLogger } from "../lib/server-context";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage, sanitizeForAudit } from "../lib/server-utils";
-import { parseFormData, AgentFormSchema, AgentBusinessProfileSchema } from "../lib/form-validators";
+import { parseFormData, AgentFormSchema, AgentBusinessProfileSchema, GeminiAgentExtractionSchema } from "../lib/form-validators";
 import { ROLE_PERSONALITY_TEMPLATES, DEFAULT_AGENT_ROLE } from "../lib/agent-constants";
 import * as claudeBrain from "../lib/claude-brain";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -11,6 +11,7 @@ import { computeAgentPerformance, emptyAgentPerformance } from "../lib/agent-per
 import { computeScorecard } from "../lib/agent-scorecard";
 import { SentryEvents } from "../lib/sentry-events";
 import { normalizeEnabledTools } from "../lib/agent-capabilities";
+import { claudeErr } from "../lib/claude-response-helpers";
 
 const router = Router();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
@@ -183,6 +184,269 @@ router.post("/api/agents/:id/import", authenticateUser, async (req: any, res: an
     res.json({ success: true, imported });
   } catch (err) {
     res.status(500).json({ error: 'Import failed' });
+  }
+});
+
+router.get("/api/agent-config/:id", authenticateUser, async (req: any, res: any) => {
+  try {
+    const agentId = req.params.id;
+    const userId = req.user.id;
+
+    // Fetch in parallel — personality (one row), directives (many), knowledge (many).
+    // Directives use priority 1-10; 10 is higher up the instruction chain.
+    const [personalityRes, directivesRes, knowledgeRes] = await Promise.all([
+      db.from('wireline_personality').select('content').eq('agent_id', agentId).maybeSingle(),
+      db.from('wireline_directives').select('id, content, priority').eq('agent_id', agentId).eq('user_id', userId).order('priority', { ascending: false }),
+      db.from('wireline_knowledge').select('id, content').eq('agent_id', agentId).eq('user_id', userId).order('created_at', { ascending: false }),
+    ]);
+
+    res.json({
+      personality: personalityRes.data?.content || '',
+      directives: directivesRes.data || [],
+      knowledge: knowledgeRes.data || []
+    });
+  } catch (error) {
+    log.error("Config fetch error", { error: getErrorMessage(error) });
+    res.status(500).json({ error: "Failed to load agent configuration" });
+  }
+});
+
+router.post("/api/agent-config/:id/manual", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { type, content, overrideId } = req.body;
+    const agentId = req.params.id;
+    const userId = req.user.id;
+
+    if (!content) return res.status(400).json({ error: "Content is required" });
+
+    // Validate the target agent belongs to this user.
+    const { data: agent } = await db.from('wireline_agents').select('id').eq('id', agentId).eq('user_id', userId).maybeSingle();
+    if (!agent) return res.status(404).json({ error: "Agent not found" });
+
+    if (type === 'personality') {
+       await db.from('wireline_personality').upsert(
+         { agent_id: agentId, content, user_id: userId },
+         { onConflict: 'agent_id' }
+       );
+    } else if (type === 'directive') {
+       if (overrideId) {
+          await db.from('wireline_directives').update({ content }).eq('id', overrideId).eq('user_id', userId);
+       } else {
+          await db.from('wireline_directives').insert({ agent_id: agentId, content, priority: 5, user_id: userId });
+       }
+    } else if (type === 'knowledge') {
+       if (overrideId) {
+          await db.from('wireline_knowledge').update({ content }).eq('id', overrideId).eq('user_id', userId);
+       } else {
+          await db.from('wireline_knowledge').insert({ agent_id: agentId, content, user_id: userId });
+       }
+    } else {
+       return res.status(400).json({ error: "Invalid type — must be personality, directive, or knowledge" });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    log.error("Manual config error", { error: getErrorMessage(error) });
+    res.status(500).json({ error: "Failed to update" });
+  }
+});
+
+router.delete("/api/agent-config/:id/:type/:rowId", authenticateUser, async (req: any, res: any) => {
+    try {
+      const { type, rowId } = req.params;
+      const userId = req.user.id;
+      if (type === 'directive') await db.from('wireline_directives').delete().eq('id', rowId).eq('user_id', userId);
+      if (type === 'knowledge') await db.from('wireline_knowledge').delete().eq('id', rowId).eq('user_id', userId);
+      res.json({ success: true });
+    } catch(e) {
+      res.status(500).json({ error: "Failed to delete" });
+    }
+ });
+
+// /api/train/extract — Claude-first (Gemini fallback) extraction of
+// directives, knowledge, and personality from a free-text operator message.
+// Saves the extracted data immediately, then returns a formatted confirmation
+// so the client can update the chat UI without a second round-trip.
+router.post("/api/train/extract", authenticateUser, async (req: any, res: any) => {
+  const { message, agentId = "default-agent" } = req.body;
+  const userId = req.user.id;
+  if (!message?.trim()) return res.status(400).json({ error: "message is required" });
+
+  let parsed: { directives: any[]; knowledge: any[]; personality: string } = {
+    directives: [], knowledge: [], personality: ""
+  };
+
+  // ── Claude path ───────────────────────────────────────────────────
+  if (claudeBrain.isClaudeAvailable()) {
+    try {
+      const extractionTool = {
+        name: "extract_training_data",
+        description: "Extract operational directives, knowledge facts, and personality updates from operator input.",
+        input_schema: {
+          type: "object",
+          properties: {
+            directives: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  content: { type: "string", description: "A hard rule the agent must follow." },
+                  priority: { type: "integer", minimum: 1, maximum: 10, description: "1=low, 10=critical." }
+                },
+                required: ["content", "priority"],
+                additionalProperties: false
+              },
+              description: "Rules the agent must always obey. Only include if the input contains explicit behavioral rules."
+            },
+            knowledge: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  content: { type: "string", description: "A factual statement about the business." }
+                },
+                required: ["content"],
+                additionalProperties: false
+              },
+              description: "Facts about the business (hours, pricing, services, policies). Only include if the input contains concrete facts."
+            },
+            personality: {
+              type: "string",
+              description: "Updated personality / tone instruction. Only include if the operator is explicitly requesting a tone or style change; otherwise use an empty string."
+            }
+          },
+          required: ["directives", "knowledge", "personality"],
+          additionalProperties: false
+        }
+      } as any;
+
+      parsed = await claudeBrain.runStructured({
+        system: `You are the Wireline Configuration Engine. A business operator is training an AI agent (ID: ${agentId}). Extract structured configuration from their message. Be conservative — only extract information that is clearly intended as a directive, a knowledge fact, or a personality change. If the input is conversational or ambiguous, return empty arrays and an empty personality string.`,
+        user: message,
+        tool: extractionTool,
+        maxTokens: 1024,
+      });
+    } catch (err) {
+      log.error("Claude extraction failed; falling back to Gemini", { error: getErrorMessage(err) });
+    }
+  }
+
+  // ── Gemini fallback ───────────────────────────────────────────────
+  const noDataExtracted = !parsed.directives.length && !parsed.knowledge.length && !parsed.personality;
+  if (noDataExtracted) {
+    try {
+      const prompt = `
+You are the Wireline Configuration Engine. A business owner is training their AI fleet.
+Current Training Target: ${agentId}
+User Message: "${message}"
+
+Extract any new instructions, rules, or knowledge from the message.
+Categorize them as:
+- DIRECTIVE: A hard rule the agent must follow (e.g. "Never give out personal cell numbers").
+- KNOWLEDGE: A fact about the business (e.g. "We are closed on Sundays").
+- PERSONALITY: A request regarding tone or style (e.g. "Be more enthusiastic and upbeat").
+
+Respond ONLY in strict, valid JSON format (no markdown):
+{"directives":[{"content":"...","priority":5}],"knowledge":[{"content":"..."}],"personality":""}`;
+
+      const model = genAI.getGenerativeModel({
+        model: "gemini-1.5-flash",
+        generationConfig: { responseMimeType: "application/json" }
+      });
+      const geminiRes = await model.generateContent(prompt);
+      const geminiRaw = JSON.parse(geminiRes.response.text() || "{}");
+      const geminiResult = GeminiAgentExtractionSchema.safeParse(geminiRaw);
+      if (geminiResult.success) {
+        parsed = geminiResult.data;
+      } else {
+        log.warn("Gemini agent extraction response did not match expected schema", { issues: geminiResult.error.issues });
+        parsed = {
+          directives: [],
+          knowledge: [],
+          personality: "",
+        };
+      }
+    } catch (err) {
+      log.error("Gemini extraction fallback failed", { error: getErrorMessage(err) });
+    }
+  }
+
+  // ── Persist ───────────────────────────────────────────────────────
+  try {
+    if (parsed.directives.length) {
+      await db.from('wireline_directives').insert(
+        parsed.directives.map((d: any) => ({ content: d.content, priority: d.priority ?? 5, agent_id: agentId, user_id: userId }))
+      );
+    }
+    if (parsed.knowledge.length) {
+      await db.from('wireline_knowledge').insert(
+        parsed.knowledge.map((k: any) => ({ content: k.content, agent_id: agentId, user_id: userId }))
+      );
+    }
+    if (parsed.personality) {
+      await db.from('wireline_personality').upsert({
+        agent_id: agentId,
+        user_id: userId,
+        content: parsed.personality,
+      });
+    }
+  } catch (err) {
+    log.error("Training persistence failed", { error: getErrorMessage(err) });
+    return res.status(500).json({ error: "Failed to save training data" });
+  }
+
+  // ── Format confirmation message ───────────────────────────────────
+  let responseContent = "MODIFICATIONS SYNCED TO MISSION CONTROL.\n\n";
+  if (parsed.directives.length) {
+    responseContent += `ADDED ${parsed.directives.length} OPERATIONAL DIRECTIVE(S):\n`;
+    responseContent += parsed.directives.map((d: any) => `> [PRIORITY ${d.priority ?? 5}] ${d.content}`).join("\n") + "\n\n";
+  }
+  if (parsed.knowledge.length) {
+    responseContent += `SYNCED ${parsed.knowledge.length} INTELLIGENCE FACT(S):\n`;
+    responseContent += parsed.knowledge.map((k: any) => `> ${k.content}`).join("\n") + "\n\n";
+  }
+  if (parsed.personality) {
+    responseContent += `UPDATED NEURAL PERSONALITY:\n> ${parsed.personality}`;
+  }
+  if (!parsed.directives.length && !parsed.knowledge.length && !parsed.personality) {
+    responseContent = "INPUT ANALYZED. NO NEW DIRECTIVES DETECTED. PLEASE SPECIFY CONCRETE OPERATIONAL RULES OR KNOWLEDGE ENTRY.";
+  }
+
+  res.json({ success: true, responseContent, directives: parsed.directives, knowledge: parsed.knowledge, personality: parsed.personality });
+});
+
+router.post("/api/train/save", authenticateUser, async (req: any, res: any) => {
+  const { extracted, agentId = "default-agent" } = req.body;
+  const userId = req.user.id;
+  
+  try {
+    const parsed = extracted || {};
+
+    // Atomic update to Supabase with user_id enforcement
+    if (parsed.directives && parsed.directives.length) {
+      await db.from('wireline_directives').insert(
+        parsed.directives.map((d: any) => ({ ...d, agent_id: agentId, user_id: userId }))
+      );
+    }
+    if (parsed.knowledge && parsed.knowledge.length) {
+      await db.from('wireline_knowledge').insert(
+        parsed.knowledge.map((k: any) => ({ ...k, agent_id: agentId, user_id: userId }))
+      );
+    }
+    if (parsed.personality) {
+      // Upsert personality with user_id enforcement
+      await db.from('wireline_personality').upsert({ 
+        agent_id: agentId, 
+        user_id: userId,
+        content: parsed.personality,
+        updated_at: new Date().toISOString()
+      });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    log.error("Training save error", { error: getErrorMessage(error) });
+    res.status(500).json({ error: "Failed to save intelligence patterns" });
   }
 });
 
@@ -701,6 +965,87 @@ router.delete("/api/agents/:id/lessons/:lessonId", authenticateUser, async (req:
    } catch (e) {
       res.status(500).json({ error: "Delete failed" });
    }
+});
+
+// Promote a [KNOWLEDGE GAP] lesson into the agent's knowledge base.
+router.post("/api/knowledge-gaps/:lessonId/promote", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { customContent } = req.body;
+    const { data: lesson } = await db
+      .from("wireline_agent_lessons")
+      .select("id, agent_id, lesson, user_id")
+      .eq("id", req.params.lessonId)
+      .eq("user_id", req.user.id)
+      .single();
+    if (!lesson) return res.status(404).json({ error: "Lesson not found." });
+
+    const content =
+      customContent?.trim() ||
+      lesson.lesson.replace(/^\[KNOWLEDGE GAP\]\s*/, "").trim();
+
+    if (!content) return res.status(400).json({ error: "Content is empty." });
+    // Match the limit enforced by POST/PATCH /api/knowledge so promoted entries
+    // can't exceed what a normal knowledge insert would allow.
+    if (content.length > 2000) {
+      return res.status(400).json({ error: "Content must be 2000 characters or less." });
+    }
+
+    await db.from("wireline_knowledge").insert({
+      agent_id: lesson.agent_id,
+      user_id: req.user.id,
+      content,
+    });
+    await db.from("wireline_agent_lessons").delete().eq("id", lesson.id);
+    res.json({ success: true });
+  } catch (e) { claudeErr(res, e); }
+});
+
+// Agent Forge — create the actual agent + seed personality, directives, knowledge.
+router.post("/api/claude/forge/create", authenticateUser, async (req: any, res: any) => {
+  try {
+    const { design, websiteUrl } = req.body;
+    if (!design || !design.name) return res.status(400).json({ error: "design with name required." });
+
+    const agentId = `agent-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+
+    const { error: agentErr } = await db.from("wireline_agents").insert({
+      id: agentId,
+      user_id: req.user.id,
+      name: design.name,
+      archetype: design.archetype || "Receptionist",
+      first_message: design.first_message || `Hi, this is ${design.name}. How can I help?`,
+      website_url: websiteUrl || null,
+      channel: "voice",
+    });
+    if (agentErr) throw agentErr;
+
+    if (design.personality_block) {
+      await db.from("wireline_personality").upsert({
+        agent_id: agentId,
+        user_id: req.user.id,
+        content: design.personality_block,
+      });
+    }
+
+    const directiveRows = (design.directives || []).map((d: any) => ({
+      agent_id: agentId,
+      user_id: req.user.id,
+      content: d.content,
+      priority: d.priority ?? 5,
+    }));
+    if (directiveRows.length) await db.from("wireline_directives").insert(directiveRows);
+
+    const knowledgeRows = (design.seed_knowledge || []).map((k: string) => ({
+      agent_id: agentId,
+      user_id: req.user.id,
+      content: k,
+    }));
+    if (knowledgeRows.length) await db.from("wireline_knowledge").insert(knowledgeRows);
+
+    res.json({ success: true, agentId });
+  } catch (e) {
+    claudeErr(res, e);
+  }
 });
 
 export default router;

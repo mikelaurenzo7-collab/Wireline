@@ -26,6 +26,9 @@ jobs:
       - name: Guard — user_id in service-role inserts
         run: node scripts/check-user-id-inserts.mjs
 
+      - name: Lint
+        run: npm run lint:eslint
+
       - name: Tests
         run: npm run test:run
 
