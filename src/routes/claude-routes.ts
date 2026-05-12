@@ -466,7 +466,7 @@ router.post("/knowledge-from-document", authenticateUser, async (req: any, res: 
       return res.status(413).json({ error: "PDF exceeds 30MB limit. Split it into smaller documents." });
     }
     let head = "";
-    try { head = Buffer.from(pdfBase64.slice(0, 16), "base64").toString("utf8", 0, 5); } catch {}
+    try { head = Buffer.from(pdfBase64.slice(0, 16), "base64").toString("utf8", 0, 5); } catch { /* malformed base64 — falls through to the %PDF magic-number check below */ }
     if (!head.startsWith("%PDF")) {
       return res.status(400).json({ error: "File does not look like a valid PDF." });
     }
