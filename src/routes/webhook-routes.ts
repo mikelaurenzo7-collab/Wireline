@@ -64,6 +64,7 @@ router.post("/", authenticateUser, requirePermission("webhooks.manage"), webhook
       row.secret = null;
     }
 
+    // no-user-id-ok — user_id is stamped in the row object constructed above
     const { data, error } = await db.from("wireline_webhooks").insert(row)
       .select(WEBHOOK_PUBLIC_COLUMNS).single();
     if (error) throw error;

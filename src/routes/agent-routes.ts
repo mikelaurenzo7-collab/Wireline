@@ -1040,6 +1040,7 @@ router.post("/api/claude/forge/create", authenticateUser, async (req: any, res: 
       user_id: req.user.id,
       content: k,
     }));
+    // no-user-id-ok — user_id is stamped in knowledgeRows map above
     if (knowledgeRows.length) await db.from("wireline_knowledge").insert(knowledgeRows);
 
     res.json({ success: true, agentId });

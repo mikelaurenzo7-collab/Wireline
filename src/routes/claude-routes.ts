@@ -503,6 +503,7 @@ router.post("/knowledge-from-url/apply", authenticateUser, async (req: any, res:
         content: e.fact.trim(),
       }));
     if (rows.length === 0) return res.status(400).json({ error: "No valid entries to insert." });
+    // no-user-id-ok — user_id is stamped in the rows map above
     await db.from("wireline_knowledge").insert(rows);
     dispatchWebhook(req.user.id, "knowledge_updated", {
       action: "bulk_created", agent_id: agentId, count: rows.length,
@@ -626,6 +627,7 @@ router.post("/forge/create", authenticateUser, async (req: any, res: any) => {
       user_id: req.user.id,
       content: k,
     }));
+    // no-user-id-ok — user_id is stamped in knowledgeRows map above
     if (knowledgeRows.length) await db.from("wireline_knowledge").insert(knowledgeRows);
 
     res.json({ success: true, agentId });

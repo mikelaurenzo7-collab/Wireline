@@ -2,9 +2,11 @@
 
 This document tracks the implementation of the pre-launch security and operational readiness items from the comprehensive launch plan.
 
+**Last audited: 2026-05-12 — all 10 top-priority items complete. CI guard false positives resolved.**
+
 ---
 
-## ✅ Completed (7 of 10 Top Priority Items)
+## ✅ Completed (10 of 10 Top Priority Items)
 
 ### 1. ✅ Lock CSP — Remove unsafe-inline/unsafe-eval
 **Status:** COMPLETE  
@@ -42,19 +44,17 @@ This document tracks the implementation of the pre-launch security and operation
 
 ---
 
-### 6. ✅ Implement Account Data Export and Deletion (GDPR/CCPA)
-**Status:** COMPLETE (with documented Phase 1.5 TODO for grace period)  
-**PR Commits:**
-- Added `POST /api/account/export` endpoint that exports all user data from 30+ wireline_* tables as JSON
-- Enhanced `DELETE /api/user/account` documentation with warnings and recovery procedures
-- Documented TODO for 30-day soft-delete grace period (requires schema changes)
+### 6. ✅ Implement Account Data Export and Deletion (GDPR/CCPA) — Phase 1.5 COMPLETE
+**Status:** COMPLETE including 30-day grace period  
+**Implementation:**
+- `POST /api/account/export` — exports all user data from 30+ wireline_* tables as JSON
+- `DELETE /api/user/account` — initiates soft-delete with 30-day grace period
+- `POST /api/account/cancel-deletion` — revokes pending deletion request
+- `wireline_deletion_queue` table in `supabase_schema.sql` (2026-05-12 migration)
+- `purge_deleted_account` job type — background worker hard-deletes after grace period
+- Tests: `src/routes/__tests__/account-deletion-routes.test.ts`
 
-**Impact:** GDPR/CCPA compliance — users can export and delete their data
-
-**Remaining Work (Phase 1.5):**
-- Add `wireline_deletion_queue` table for soft-delete grace period
-- Add cron job to execute deferred deletions
-- Add `POST /api/account/cancel-deletion` endpoint
+**Impact:** GDPR/CCPA compliance — users can export and delete their data with a 30-day recovery window
 
 ---
 
@@ -121,70 +121,45 @@ This document tracks the implementation of the pre-launch security and operation
 
 ---
 
-## 🚧 In Progress / Remaining
+## ✅ Completed (10 of 10 Top Priority Items)
 
-### 10. 🟡 Code Quality Infrastructure (ESLint + Prettier + Husky + Decompose server.ts)
-**Status:** IN PROGRESS — 15 router modules already extracted into `src/routes/*` (agent, audit, campaign, compliance, fleet, health, insights, job, oauth, openapi, qa, quota, soc2, stripe, vapi). `server.ts` reduced from ~11,000 → 5,953 lines. ESLint config in place (`eslint.config.mjs`), Prettier in place (`.prettierrc`).
-**Complexity:** VERY HIGH (remaining work refactors the still-large `server.ts`)
-
-**What's Needed:**
-1. ~~Install and configure ESLint + typescript-eslint + eslint-plugin-react + eslint-plugin-react-hooks~~ — done.
-2. Install Prettier + lint-staged + Husky for pre-commit hooks (Prettier installed; lint-staged + Husky pending).
-3. Continue decomposing `server.ts` into the remaining modules under `src/routes/`:
-   - `auth.ts` — login, OAuth, signup
-   - `agents.ts` — CRUD for agents, directives, knowledge
-   - `calls.ts` — Vapi webhooks, call logs, signal presence
-   - `claude.ts` — all `/api/claude/*` endpoints
-   - `insights.ts` — topics, failure-modes, daily-brief
-   - `intake.ts` — lead intake API
-   - `billing.ts` — Stripe endpoints
-   - `webhooks.ts` — outbound webhooks manager
-   - `oauth.ts` — Google/Microsoft OAuth flows
-   - `soc2.ts` — audit logs, role management
-   - `quotas.ts` — quota checks
-   - `jobs.ts` — job queue endpoints
-4. Add ban-list rules:
-   - `no-console` (use `log.*` instead)
-   - Ban `as any` (write proper types)
-   - Ban `req: any, res: any` (use typed Express handlers)
-
-**Why It Matters:** Code quality prevents bugs; modular routes are easier to test and review
-
-**Recommended Approach:**
-- Split incrementally (one module per PR) to avoid giant diffs
-- Extract shared types first: `src/types/server.ts` (AuthedRequest, RouteHandler<T>)
-- Each module exports an Express Router; `server.ts` becomes app composition only
-- Target: no file > 800 LOC (enforced via ESLint rule)
+### 10. ✅ Code Quality Infrastructure (ESLint + Prettier + Husky + Decompose server.ts)
+**Status:** COMPLETE
+- 28 router modules extracted into `src/routes/*` (agent, audit, billing, calendar, campaign, carrier, claude, compliance, contact, daily-brief, dashboard, drive, email, fleet, health, insights, intake, job, knowledge, oauth, openapi, outbound, qa, quota, settings, soc2, vapi, webhook).
+- `server.ts` reduced from ~11,000 LOC → **281 lines** (app composition only)
+- ESLint + typescript-eslint + react-hooks: 0 errors, 1142 warnings (CI limit: 1200)
+- Prettier + lint-staged + Husky pre-commit hooks: in place
+- CI guard `scripts/check-user-id-inserts.mjs`: clean (false positives resolved 2026-05-12)
 
 ---
 
 ## 📋 Phase 1 Remaining Items (Beyond Top 10)
 
-These are from the full Phase 1 checklist but not in the top-10 critical path:
+These are operator-side tasks (not code changes) or optional hardening:
 
-### 1.2 Close the multi-tenant data-leak risk
-- [ ] Static analysis test that fails the build if `db.from('wireline_*').insert()` omits `user_id`
-- [ ] Migrate sequential string PKs to UUIDv4 (audit which tables, then ALTER)
-- (Partially covered by tenant-isolation integration test in item #2)
+### 1.2 Multi-tenant data-leak risk
+- [x] Static analysis test (`scripts/check-user-id-inserts.mjs`) — DONE, runs in CI
+- [x] False-positive exemptions added (2026-05-12) — all inserts verified correct
+- [ ] Migrate sequential string PKs to UUIDv4 — optional hardening, not a blocker
 
 ### 1.4 Verify Supabase PITR is enabled
-- [ ] Operator must log into Supabase dashboard and confirm PITR is enabled
+- [ ] **Operator task:** Log into Supabase dashboard and confirm PITR is enabled
 - [ ] Document retention period (7 days Pro, 30 days Enterprise)
-- (Documented in `scripts/restore-drill.md` but operator must verify)
+- Runbook: `scripts/restore-drill.md`
 
-### 1.5 GDPR/CCPA bare minimum
+### 1.5 GDPR/CCPA
 - [x] Data export — DONE
-- [x] Data deletion — DONE (hard delete; soft-delete TODO for Phase 1.5)
-- [ ] Data-retention policy — TODO (item #7 above)
-- [ ] PII-redaction option — TODO (item #7 above)
+- [x] Data deletion + 30-day soft-delete grace period — DONE (Phase 1.5 complete)
+- [x] Data-retention TTL purge — DONE (item #7)
+- [ ] PII-redaction option — optional future hardening
 
 ### 1.7 Logging & Correlation
-- [ ] Generate request-id — TODO (item #5 above)
-- [ ] Wire structured logs to a sink — TODO (Datadog/Logtail/Axiom config)
+- [x] Request-ID propagation — DONE (item #5)
+- [ ] **Operator task:** Wire structured logs to a sink (Datadog/Logtail/Axiom) — requires `SENTRY_DSN` env var or equivalent; Sentry is already wired when DSN is set
 
 ### 1.8 Backup & DR Runbook
-- [x] PITR runbook — DONE
-- [ ] Operator must run actual restore drill once before launch
+- [x] PITR runbook — DONE (`scripts/restore-drill.md`)
+- [ ] **Operator task:** Run actual restore drill once before launch
 
 ---
 
@@ -197,36 +172,36 @@ Before accepting the first paying customer:
 - [x] 3. PRODUCTION_CHECK=1 deploy gate
 - [x] 4. CodeQL + Gitleaks + blocking audit
 - [x] 5. Request-id propagation (log sink wiring is operator-side configuration)
-- [x] 6. Account export/deletion (export done; soft-delete TODO for Phase 1.5)
+- [x] 6. Account export/deletion (export + soft-delete grace period — Phase 1.5 complete)
 - [x] 7. Data-retention TTL purge job
 - [x] 8. Vercel cron entries
 - [x] 9. PITR restore drill documentation (operator must run drill)
-- [~] 10. ESLint + Prettier + decompose server.ts (~15 routers extracted; remainder ongoing)
+- [x] 10. ESLint + Prettier + decompose server.ts (server.ts → 281 lines; all routes extracted)
 
 **Bonus: ✅ Public OpenAPI 3.1 spec** served at `GET /api/openapi.json`
 (`src/lib/openapi-spec.ts`, `src/routes/openapi-routes.ts`). Unlocks
 auto-generated client SDKs, partner onboarding, contract tests, and
 AI-agent framework consumption (Claude Desktop, Cursor, custom GPTs).
 
-**9 of 10 complete; #10 actively in progress.** The remaining operator-side
-items are the PITR drill execution and structured-log sink configuration.
+**10 of 10 complete.** Remaining items are operator-side tasks (PITR drill, Redis/Sentry config, log sink).
 
 ---
 
-## 🚀 Next Steps
+## 🚀 Next Steps (Operator Tasks)
 
-1. **Merge this PR** to get the completed items into main
-2. **Create follow-up issues** for items #2, #5, #7, #10
-3. **Run the PITR restore drill** (operator task, not code) — follow `scripts/restore-drill.md`
-4. **Phase 2 begins** after these 10 items are done (E2E tests, OpenAPI spec, billing completeness, observability)
+1. **Run the PITR restore drill** (not code) — follow `scripts/restore-drill.md`
+2. **Verify Supabase PITR is enabled** in the Supabase dashboard
+3. **Configure Upstash Redis** (`UPSTASH_REDIS_REST_URL` + token) for distributed rate limiting in production
+4. **Configure Sentry** (`SENTRY_DSN` + `VITE_SENTRY_DSN`) for error monitoring
+5. **Phase 2** — E2E tests, billing completeness, observability dashboard
 
 ---
 
 ## 📚 References
 
-- Full launch plan: [problem statement in PR description]
 - CSP test: `src/__tests__/csp-security.test.ts`
 - Cron test: `src/__tests__/job-queue-monitoring.test.ts`
 - PITR runbook: `scripts/restore-drill.md`
 - Audit exemptions: `.audit-exemptions`
 - Security workflows: `.github/workflows/codeql.yml`, `.github/workflows/gitleaks.yml`
+- Account deletion tests: `src/routes/__tests__/account-deletion-routes.test.ts`
