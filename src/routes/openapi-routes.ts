@@ -17,6 +17,20 @@ const router = express.Router();
 const specRateLimit = new Map<string, number[]>();
 const SPEC_RATE_WINDOW_MS = 60_000;
 const SPEC_RATE_MAX = 60;
+// Purge stale entries every 10 minutes to prevent unbounded Map growth
+// in long-running (Docker) deployments. Skip when the Map is small.
+setInterval(
+  () => {
+    if (specRateLimit.size < 100) return;
+    const now = Date.now();
+    for (const [key, hits] of specRateLimit) {
+      if (hits.every((t) => now - t >= SPEC_RATE_WINDOW_MS)) {
+        specRateLimit.delete(key);
+      }
+    }
+  },
+  10 * 60 * 1000,
+).unref();
 
 function specRateLimiter(req: any, res: any, next: any) {
   const xff = req.headers["x-forwarded-for"];
@@ -41,7 +55,8 @@ function resolveServerUrl(req: express.Request): string | undefined {
   const vercel = process.env.VERCEL_URL?.trim();
   if (vercel) return vercel.startsWith("http") ? vercel : `https://${vercel}`;
   const host = (req.headers["x-forwarded-host"] as string | undefined) || req.headers.host;
-  const proto = (req.headers["x-forwarded-proto"] as string | undefined) || (req.secure ? "https" : "http");
+  const proto =
+    (req.headers["x-forwarded-proto"] as string | undefined) || (req.secure ? "https" : "http");
   if (!host) return undefined;
   return `${proto}://${host}`;
 }

@@ -223,8 +223,14 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
-    app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
+    // Read index.html once into memory so the SPA catch-all never triggers a
+    // synchronous filesystem read per request. This avoids CodeQL's
+    // js/missing-rate-limiting pattern and is faster under load.
+    const { readFileSync } = await import("node:fs");
+    const indexHtml = readFileSync(path.join(distPath, "index.html"));
+    app.get("*", (_req, res) => {
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.send(indexHtml);
     });
   }
 
