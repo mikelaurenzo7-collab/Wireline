@@ -1,4 +1,4 @@
-import { db, log, quotaTracker } from "./server-context";
+import { db, log, quotaTracker, auditLogger } from "./server-context";
 import * as claudeBrain from "./claude-brain";
 import * as geminiBrain from "./gemini-brain";
 import { getErrorMessage } from "./server-utils";
@@ -8,6 +8,7 @@ import { ActionItemSchema } from "./action-types";
 import { persistClaudeAuditRecords } from "../middleware/audit-middleware";
 import { buildCallCompletedOutcome, dispatchWebhook } from "./webhook-helpers";
 import { CRMService } from "./crm-service";
+import { purgeAccount } from "./account-deletion";
 
 type SupportedCrmType = "salesforce" | "hubspot";
 
@@ -318,6 +319,73 @@ export async function handleJob(job: JobRow): Promise<void> {
       throw new Error(error.message);
     }
     log.info('purge_old_data job completed', { jobId: job.id, user_id: p.user_id, retention_days: retentionDays, result: data });
+  }
+
+  if (job.type === 'purge_deleted_account') {
+    const p = job.payload as { user_id: string; queue_id?: string };
+    if (!p.user_id) {
+      log.warn('purge_deleted_account job missing user_id', { jobId: job.id });
+      return;
+    }
+
+    // Guard: the queue row must still be 'pending' AND past its
+    // scheduled_purge_at. If the user cancelled in the grace window, skip.
+    let queueRow: { id: string; status: string; scheduled_purge_at: string; ip: string | null } | null = null;
+    if (p.queue_id) {
+      const { data } = await db
+        .from('wireline_deletion_queue')
+        .select('id, status, scheduled_purge_at, ip')
+        .eq('id', p.queue_id)
+        .maybeSingle();
+      queueRow = (data as any) ?? null;
+    } else {
+      const { data } = await db
+        .from('wireline_deletion_queue')
+        .select('id, status, scheduled_purge_at, ip')
+        .eq('user_id', p.user_id)
+        .eq('status', 'pending')
+        .maybeSingle();
+      queueRow = (data as any) ?? null;
+    }
+
+    if (!queueRow || queueRow.status !== 'pending') {
+      log.info('purge_deleted_account skipped — no pending queue row', { jobId: job.id, user_id: p.user_id });
+      return;
+    }
+    if (new Date(queueRow.scheduled_purge_at).getTime() > Date.now()) {
+      log.info('purge_deleted_account skipped — still within grace window', {
+        jobId: job.id,
+        user_id: p.user_id,
+        scheduled_purge_at: queueRow.scheduled_purge_at,
+      });
+      return;
+    }
+
+    const result = await purgeAccount(p.user_id, { db, log });
+    if (!result.ok) {
+      log.error('purge_deleted_account failed', { jobId: job.id, user_id: p.user_id, error: result.error });
+      throw new Error(result.error ?? 'account purge failed');
+    }
+
+    // Audit BEFORE marking the queue row purged so the audit row is still
+    // owned by a (now-deleted) user — historical record of the action.
+    void auditLogger
+      .logAccountDeletion({ userId: p.user_id, tablesTouched: result.tablesTouched, ip: queueRow.ip ?? undefined })
+      .catch(() => {});
+
+    // Mark the queue row purged. The FK ON DELETE CASCADE from auth.users
+    // would have already removed it when the auth row was deleted, so this
+    // update may affect zero rows — that's fine.
+    await db
+      .from('wireline_deletion_queue')
+      .update({ status: 'purged', purged_at: new Date().toISOString() })
+      .eq('id', queueRow.id);
+
+    log.info('purge_deleted_account completed', {
+      jobId: job.id,
+      user_id: p.user_id,
+      tables_touched: result.tablesTouched.length,
+    });
   }
 }
 

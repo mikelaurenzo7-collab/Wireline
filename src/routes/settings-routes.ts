@@ -1,10 +1,13 @@
 import { Router } from 'express';
 import { db, log, auditLogger } from '../lib/server-context';
 import { authenticateUser } from '../middleware/auth';
-import { getErrorMessage, sanitizeForAudit } from '../lib/server-utils';
+import { getErrorMessage } from '../lib/server-utils';
 import { enqueue } from '../lib/job-queue';
-import { createClient } from '@supabase/supabase-js';
 import { jobsRateLimit } from '../middleware/api-rate-limits';
+import {
+  ACCOUNT_DELETION_GRACE_DAYS,
+  computeScheduledPurgeAt,
+} from '../lib/account-deletion';
 
 const router = Router();
 
@@ -283,91 +286,125 @@ router.post(
 );
 
 // GDPR / data-deletion: DELETE /api/user/account
-// Permanently erases all user-owned rows from every wireline_* table and then
-// deletes the Supabase auth record.  Requires the authenticated user to confirm
-// their intent by passing { confirm: "DELETE MY ACCOUNT" } in the body.
+// Enqueues a soft-delete request. The actual hard-delete cascade runs in the
+// background worker (`purge_deleted_account` job type) only after a 30-day
+// grace period elapses, during which the user can call
+// POST /api/account/cancel-deletion to revoke the request.
 //
-// ⚠️  WARNING: This is an IMMEDIATE hard delete with NO grace period.
-// ⚠️  Operators MUST call POST /api/account/export FIRST to back up user data.
+// Requires the authenticated user to confirm intent by passing
+// { confirm: "DELETE MY ACCOUNT" } in the body.
 // ─────────────────────────────────────────────────────────────────────────────
 router.delete('/api/user/account', authenticateUser, async (req: any, res: any) => {
   const CONFIRMATION_PHRASE = 'DELETE MY ACCOUNT';
   if (req.body?.confirm !== CONFIRMATION_PHRASE) {
     return res.status(400).json({
-      error: `Send { "confirm": "${CONFIRMATION_PHRASE}" } to confirm permanent deletion.`,
-      warning:
-        'This is an immediate hard delete. Export your data first via POST /api/account/export.',
+      error: `Send { "confirm": "${CONFIRMATION_PHRASE}" } to confirm deletion.`,
+      grace_days: ACCOUNT_DELETION_GRACE_DAYS,
+      info:
+        `Account deletion is reversible for ${ACCOUNT_DELETION_GRACE_DAYS} days via POST /api/account/cancel-deletion.`,
     });
   }
   const uid = req.user.id;
   try {
-    // Delete all user-owned rows across every wireline_* table.  Order matters
-    // for FKs: child tables first, then parents.
-    const tables = [
-      'wireline_audit_log',
-      'wireline_signal_presence',
-      'wireline_fleet_tasks',
-      'wireline_webhook_deliveries',
-      'wireline_webhooks',
-      'wireline_intake_keys',
-      'wireline_agent_lessons',
-      'wireline_directives',
-      'wireline_knowledge',
-      'wireline_personality',
-      'wireline_email_messages',
-      'wireline_email_threads',
-      'wireline_email_accounts',
-      'wireline_call_logs',
-      'wireline_outbound_leads',
-      'wireline_outbound_campaigns',
-      'wireline_appointments',
-      'wireline_dnc_list',
-      'wireline_phone_numbers',
-      'wireline_agents',
-      'wireline_spend_alerts',
-      'wireline_spend_budgets',
-      'wireline_stripe_events',
-      'wireline_subscriptions',
-      'wireline_onboarding_progress',
-      'wireline_user_preferences',
-      'wireline_calendar_events',
-      'wireline_calendar_accounts',
-      'wireline_crm_connections',
-      'wireline_team_members',
-      'wireline_change_log',
-      'wireline_incidents',
-      'wireline_jobs',
-      'wireline_settings',
-    ];
-    for (const table of tables) {
-      const userCol = ['wireline_team_members', 'wireline_change_log', 'wireline_incidents'].includes(table)
-        ? 'tenant_id'
-        : 'user_id';
-      const { error } = await (db as any).from(table).delete().eq(userCol, uid);
-      if (error) log.warn(`account deletion: ${table} error`, { error: error.message });
-    }
+    const requestedAt = new Date();
+    const scheduledPurgeAt = computeScheduledPurgeAt(requestedAt);
 
-    // Delete the Supabase auth record last — once gone the user is fully
-    // unauthenticated and cannot make further requests.
-    const adminClient = createClient(
-      process.env.VITE_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    );
-    const { error: authErr } = await adminClient.auth.admin.deleteUser(uid);
-    if (authErr) {
-      log.error('account deletion: auth.admin.deleteUser failed', { uid, error: authErr.message });
-      return res
-        .status(500)
-        .json({ error: 'Data deleted but auth record removal failed — contact support.' });
+    // Insert a pending row. The partial unique index
+    // (idx_deletion_queue_one_pending_per_user) ensures we cannot create a
+    // second pending request for the same user.
+    const { data: existing } = await db
+      .from('wireline_deletion_queue')
+      .select('id, scheduled_purge_at, status')
+      .eq('user_id', uid)
+      .eq('status', 'pending')
+      .maybeSingle();
+
+    let queueRow: { id: string; scheduled_purge_at: string };
+    if (existing) {
+      queueRow = existing as { id: string; scheduled_purge_at: string };
+    } else {
+      const { data: inserted, error: insertErr } = await db
+        .from('wireline_deletion_queue')
+        .insert({
+          user_id: uid,
+          requested_at: requestedAt.toISOString(),
+          scheduled_purge_at: scheduledPurgeAt.toISOString(),
+          status: 'pending',
+          ip: req.ip ?? null,
+          user_agent: req.headers?.['user-agent'] ?? null,
+        })
+        .select('id, scheduled_purge_at')
+        .single();
+      if (insertErr || !inserted) {
+        log.error('account deletion: enqueue failed', { uid, error: insertErr?.message });
+        return res.status(500).json({ error: 'Failed to schedule account deletion.' });
+      }
+      queueRow = inserted as { id: string; scheduled_purge_at: string };
     }
 
     void auditLogger
-      .logAccountDeletion({ userId: uid, tablesTouched: tables, ip: req.ip })
+      .logAccountDeletionRequested({
+        userId: uid,
+        scheduledPurgeAt: queueRow.scheduled_purge_at,
+        ip: req.ip,
+      })
       .catch(() => {});
-    res.status(204).send();
+
+    return res.status(202).json({
+      status: 'pending',
+      scheduled_purge_at: queueRow.scheduled_purge_at,
+      grace_days: ACCOUNT_DELETION_GRACE_DAYS,
+      cancel_endpoint: '/api/account/cancel-deletion',
+    });
   } catch (err: any) {
-    log.error('account deletion failed', { uid, error: getErrorMessage(err) });
-    res.status(500).json({ error: 'Account deletion failed. Please contact support.' });
+    log.error('account deletion enqueue failed', { uid, error: getErrorMessage(err) });
+    res.status(500).json({ error: 'Failed to schedule account deletion.' });
+  }
+});
+
+// GDPR / data-deletion: POST /api/account/cancel-deletion
+// Cancels a pending deletion request, provided the grace window has not yet
+// elapsed. Idempotent: if no pending row exists, returns 404.
+// ─────────────────────────────────────────────────────────────────────────────
+router.post('/api/account/cancel-deletion', authenticateUser, async (req: any, res: any) => {
+  const uid = req.user.id;
+  try {
+    const { data: existing } = await db
+      .from('wireline_deletion_queue')
+      .select('id, scheduled_purge_at, status')
+      .eq('user_id', uid)
+      .eq('status', 'pending')
+      .maybeSingle();
+
+    if (!existing) {
+      return res.status(404).json({ error: 'No pending deletion request found.' });
+    }
+
+    const row = existing as { id: string; scheduled_purge_at: string; status: string };
+    if (new Date(row.scheduled_purge_at).getTime() <= Date.now()) {
+      return res.status(410).json({
+        error: 'Grace period has expired. Deletion can no longer be cancelled.',
+        scheduled_purge_at: row.scheduled_purge_at,
+      });
+    }
+
+    const { error: updErr } = await db
+      .from('wireline_deletion_queue')
+      .update({ status: 'cancelled', cancelled_at: new Date().toISOString() })
+      .eq('id', row.id);
+    if (updErr) {
+      log.error('cancel-deletion: update failed', { uid, error: updErr.message });
+      return res.status(500).json({ error: 'Failed to cancel deletion.' });
+    }
+
+    void auditLogger
+      .logAccountDeletionCancelled({ userId: uid, ip: req.ip })
+      .catch(() => {});
+
+    return res.json({ status: 'cancelled' });
+  } catch (err: any) {
+    log.error('cancel-deletion failed', { uid, error: getErrorMessage(err) });
+    res.status(500).json({ error: 'Failed to cancel deletion.' });
   }
 });
 

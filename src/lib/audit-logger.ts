@@ -456,4 +456,43 @@ export class AuditLogger {
       ip: params.ip
     });
   }
+
+  /**
+   * Log a GDPR account-deletion REQUEST (soft-delete; reversible during the
+   * 30-day grace period via /api/account/cancel-deletion).
+   */
+  async logAccountDeletionRequested(params: {
+    userId: string;
+    scheduledPurgeAt: string;
+    ip?: string;
+  }) {
+    return await this.log({
+      eventType: 'data.account_deletion_requested',
+      userId: params.userId,
+      action: 'account_deletion_requested',
+      severity: 'warning',
+      resourceType: 'user_account',
+      resourceId: params.userId,
+      metadata: { scheduled_purge_at: params.scheduledPurgeAt },
+      ip: params.ip
+    });
+  }
+
+  /**
+   * Log a GDPR account-deletion cancellation (within the grace period).
+   */
+  async logAccountDeletionCancelled(params: {
+    userId: string;
+    ip?: string;
+  }) {
+    return await this.log({
+      eventType: 'data.account_deletion_cancelled',
+      userId: params.userId,
+      action: 'account_deletion_cancelled',
+      severity: 'info',
+      resourceType: 'user_account',
+      resourceId: params.userId,
+      ip: params.ip
+    });
+  }
 }

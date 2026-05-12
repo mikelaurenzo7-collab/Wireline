@@ -106,6 +106,30 @@ router.post("/sweep", cronOrAdminAuth, jobsSweepRateLimit, async (req: any, res:
         }
       }
     }
+
+    // GDPR Phase 1.5 — enqueue purge_deleted_account jobs for any deletion-queue
+    // row whose grace window has expired. Runs on every sweep cycle (cheap query
+    // backed by idx_deletion_queue_pending_due).
+    if (req._sweepMode === "cron" || !req._sweepMode) {
+      const { data: dueDeletions, error: dueErr } = await db
+        .from("wireline_deletion_queue")
+        .select("id, user_id")
+        .eq("status", "pending")
+        .lte("scheduled_purge_at", new Date().toISOString())
+        .limit(50);
+      if (dueErr) {
+        log.warn("deletion-queue sweep query failed", { error: dueErr.message });
+      } else if (dueDeletions) {
+        for (const row of dueDeletions as Array<{ id: string; user_id: string }>) {
+          await enqueue(db, {
+            userId: row.user_id,
+            type: "purge_deleted_account",
+            payload: { user_id: row.user_id, queue_id: row.id },
+            maxAttempts: 3,
+          });
+        }
+      }
+    }
     let processed = 0;
     for (let i = 0; i < 10; i++) {
       const job = await claim(db);

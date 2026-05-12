@@ -74,6 +74,8 @@ export type AuditEventType =
   | 'data.delete'
   | 'data.bulk_delete'
   | 'data.import'
+  | 'data.account_deletion_requested'
+  | 'data.account_deletion_cancelled'
   | 'data.account_deleted';
 
 /**

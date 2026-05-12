@@ -1550,3 +1550,36 @@ ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS vapi_phone_inbound_agent_
 -- GDPR Data Retention — 2026-05-12
 -- ─────────────────────────────────────────────────────────────────────────────
 ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS retention_days INTEGER DEFAULT 365;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- wireline_deletion_queue — GDPR Phase 1.5 soft-delete grace period (2026-05-12)
+-- When a user requests account deletion, a row is inserted here with a
+-- scheduled_purge_at = requested_at + 30 days. Until that timestamp passes,
+-- the user can call POST /api/account/cancel-deletion to revoke the request.
+-- The nightly job sweep enqueues purge_deleted_account jobs for any row whose
+-- status='pending' AND scheduled_purge_at <= now().
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS wireline_deletion_queue (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    requested_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    scheduled_purge_at TIMESTAMPTZ NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'cancelled', 'purged')),
+    cancelled_at TIMESTAMPTZ,
+    purged_at TIMESTAMPTZ,
+    ip TEXT,
+    user_agent TEXT
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_deletion_queue_one_pending_per_user
+    ON wireline_deletion_queue (user_id)
+    WHERE status = 'pending';
+
+CREATE INDEX IF NOT EXISTS idx_deletion_queue_pending_due
+    ON wireline_deletion_queue (scheduled_purge_at)
+    WHERE status = 'pending';
+
+ALTER TABLE wireline_deletion_queue ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY IF NOT EXISTS "deletion_queue_owner" ON wireline_deletion_queue
+    FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
