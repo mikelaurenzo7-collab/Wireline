@@ -18,7 +18,7 @@ import React, { useState, useEffect, ReactNode } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Sparkles, Brain, Target, Mail, Wand2, AlertTriangle, Loader2,
-  ArrowRight, ShieldAlert, Compass, BarChart3, ChevronRight, Check,
+  ArrowRight, ShieldAlert, Compass, BarChart3, Check,
   Plus, X, Copy, ScrollText, Globe, Headphones, Hammer, Zap, FileUp,
   FileText, Trash2, Search, ExternalLink, Building2,
 } from "lucide-react";

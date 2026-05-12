@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Send, Bot, User, CheckCircle2, Loader2, Users, Database, PlayCircle, MessageSquare, Trash2, Mail, Phone, Search, Activity, Plus, Pencil, Save, X, Sparkles, Terminal, ChevronRight, ChevronDown, Zap, Target, Clock } from "lucide-react";
+import { Send, Bot, User, Loader2, Users, Database, PlayCircle, MessageSquare, Trash2, Mail, Phone, Activity, Plus, Pencil, Sparkles, Terminal, ChevronDown, Zap, Target, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
@@ -57,7 +57,7 @@ export default function AgentTraining() {
       setPersonality(data.personality || "");
       setPersonalityDraft(data.personality || "");
       setLessons(data.lessons || []);
-    } catch (_e) { /* training fetch failures are non-fatal — UI shows empty state */ }
+    } catch { /* training fetch failures are non-fatal — UI shows empty state */ }
   };
 
   const handleSend = async () => {
@@ -83,7 +83,7 @@ export default function AgentTraining() {
       } else {
         setMessages(prev => [...prev, { role: "assistant", content: data.error || "ERROR: PARSING FAILURE. RELAY INTERRUPTED." }]);
       }
-    } catch(err) {
+    } catch {
       setMessages(prev => [...prev, { role: "assistant", content: "CRITICAL ERROR: NEURAL LINK TIMEOUT." }]);
     } finally {
       setIsLoading(false);
@@ -94,7 +94,7 @@ export default function AgentTraining() {
      try {
        await authFetch(`/api/agent-config/${selectedAgentId}/${type}/${id}`, { method: 'DELETE' });
        fetchKnowledge();
-     } catch (_e) { /* swallow — UI will reflect server state on next fetch */ }
+     } catch { /* swallow — UI will reflect server state on next fetch */ }
   };
 
   const saveManualEntry = async (type: 'directive' | 'knowledge' | 'personality', content: string, overrideId?: string) => {

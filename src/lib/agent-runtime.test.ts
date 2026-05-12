@@ -74,7 +74,7 @@ describe('isWithinBusinessHours', () => {
 
   it('handles overnight windows (close < open) correctly', () => {
     // 22:00 → 06:00 (e.g. an after-hours line)
-    const fri10pm = new Date('2026-01-16T03:00:00Z'); // Thu 22:00 EST? Wait
+    const _fri10pm = new Date('2026-01-16T03:00:00Z'); // Thu 22:00 EST? Wait
     // 2026-01-16 03:00 UTC = 2026-01-15 22:00 EST → Thu evening
     const thu10pm = new Date('2026-01-16T03:00:00Z');
     const fri3am  = new Date('2026-01-16T08:00:00Z'); // Fri 03:00 EST

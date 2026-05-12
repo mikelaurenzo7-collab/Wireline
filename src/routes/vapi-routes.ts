@@ -108,7 +108,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
       const customerNumber = message.call?.customer?.number;
       const safeCallerPhone = sanitizePhone(customerNumber);
 
-      const [agentConfig, directivesData, knowledgeData, personalityData, lessonsData, callerHistoryData, capturedProfileData, callerLeadData] = await Promise.all([
+      const [agentConfig, _directivesData, _knowledgeData, _personalityData, lessonsData, callerHistoryData, capturedProfileData, callerLeadData] = await Promise.all([
         db.from('wireline_agents').select('*').eq('id', webhookAgentId).single(),
         db.from('wireline_directives').select('content, priority').eq('agent_id', webhookAgentId).order('priority', { ascending: false }).limit(500),
         db.from('wireline_knowledge').select('content').eq('agent_id', webhookAgentId).limit(500),
@@ -144,7 +144,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
           : Promise.resolve({ data: null }),
       ]);
 
-      const lessons = (lessonsData?.data || [])
+      const _lessons = (lessonsData?.data || [])
         .filter((l: any) => l.lesson && typeof l.lesson === 'string' && !l.lesson.startsWith(KNOWLEDGE_GAP_PREFIX))
         .map((l: any) => l.lesson)
         .join('\n');
@@ -256,7 +256,7 @@ Today is ${currentDateTime}.
             }).select('id').single();
             if (taskError) throw taskError;
             results.push({ toolCallId: toolCall.id, result: `Task ${task.id.split('-')[0]} created.` });
-        } catch (e: any) {
+        } catch {
             results.push({ toolCallId: toolCall.id, result: "Failed to create task." });
         }
       }
@@ -277,7 +277,7 @@ Today is ${currentDateTime}.
             } else {
                results.push({ toolCallId: toolCall.id, result: "No matching records found." });
             }
-        } catch (e) {
+        } catch {
             results.push({ toolCallId: toolCall.id, result: "Search failed." });
         }
       }
@@ -295,7 +295,7 @@ Today is ${currentDateTime}.
               .not('status', 'in', PRESERVED_LEAD_STATUSES);
           }
           results.push({ toolCallId: toolCall.id, result: `Lead status updated to '${status}'.` });
-        } catch (e: any) {
+        } catch {
           results.push({ toolCallId: toolCall.id, result: "Update failed." });
         }
       }
@@ -306,7 +306,7 @@ Today is ${currentDateTime}.
           const service = new IntegrationService(agent?.user_id);
           const success = await service.sendEmail({ to: to_email, subject, body });
           results.push({ toolCallId: toolCall.id, result: success ? "Email sent." : "Failed to send email." });
-        } catch (e: any) {
+        } catch {
           results.push({ toolCallId: toolCall.id, result: "Email error." });
         }
       }
@@ -332,7 +332,7 @@ Today is ${currentDateTime}.
                 : (outcome.reason || "Message send failed."),
             });
           }
-        } catch (e: any) {
+        } catch {
           results.push({ toolCallId: toolCall.id, result: "Text message error." });
         }
       }
@@ -353,7 +353,7 @@ Today is ${currentDateTime}.
                 : (lookup.reason || "Phone lookup failed."),
             });
           }
-        } catch (e: any) {
+        } catch {
           results.push({ toolCallId: toolCall.id, result: "Phone lookup error." });
         }
       }
@@ -387,7 +387,7 @@ Today is ${currentDateTime}.
 
             results.push({ toolCallId: toolCall.id, result: `${rawPhone || normalizedPhone} is now on the Do Not Call list.` });
           }
-        } catch (e: any) {
+        } catch {
           results.push({ toolCallId: toolCall.id, result: "DNC update failed." });
         }
       }
@@ -398,7 +398,7 @@ Today is ${currentDateTime}.
           const service = new IntegrationService(agent?.user_id);
           const result = await service.checkAvailability(date);
           results.push({ toolCallId: toolCall.id, result });
-        } catch (e: any) {
+        } catch {
           results.push({ toolCallId: toolCall.id, result: "Calendar check failed." });
         }
       }
@@ -439,7 +439,7 @@ Today is ${currentDateTime}.
             }
           }
           results.push({ toolCallId: toolCall.id, result: success ? "Appointment booked." : "Booking failed." });
-        } catch (e: any) {
+        } catch {
           results.push({ toolCallId: toolCall.id, result: "Booking error." });
         }
       }
@@ -450,7 +450,7 @@ Today is ${currentDateTime}.
           const { sendContract } = await import("../lib/docusign-service");
           const result = await sendContract({ recipientName: recipient_name, recipientEmail: recipient_email, templateId: template_id });
           results.push({ toolCallId: toolCall.id, result: result ? `Contract sent. Envelope ID: ${result.envelopeId}` : "DocuSign not configured." });
-        } catch (e: any) {
+        } catch {
           results.push({ toolCallId: toolCall.id, result: "Contract sending error." });
         }
       }
@@ -465,7 +465,7 @@ Today is ${currentDateTime}.
           } else {
             results.push({ toolCallId: toolCall.id, result: "No matching lead profile found." });
           }
-        } catch (e: any) {
+        } catch {
           results.push({ toolCallId: toolCall.id, result: "Lead enrichment error." });
         }
       }

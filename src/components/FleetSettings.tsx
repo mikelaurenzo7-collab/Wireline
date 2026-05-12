@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Users, Plus, Phone, Bot, Save, Loader2, Link as LinkIcon, Copy, Trash2, Megaphone, Mail, Pencil, Sparkles, Terminal, ChevronRight, ChevronLeft, Zap, Target, Radio, Settings2, Shield, Briefcase, RefreshCw, LayoutGrid, Clock } from "lucide-react";
+import { Plus, Phone, Bot, Save, Loader2, Link as LinkIcon, Trash2, Mail, Pencil, Sparkles, ChevronRight, ChevronLeft, Zap, Target, Radio, Settings2, Shield, Briefcase, RefreshCw, LayoutGrid, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch, safeJson } from "../lib/api";
@@ -211,7 +211,7 @@ export default function FleetSettings() {
       setNewAgentId("");
       toastSuccess("Agent deployed", newAgentName);
       await fetchAgents();
-    } catch (e: any) {
+    } catch {
       toastError("Deployment failed", "Could not reach the server. Please try again.");
     }
     setIsCreating(false);
@@ -328,7 +328,7 @@ export default function FleetSettings() {
         const data = await r.json();
         setAgentStats(prev => ({ ...prev, [id]: data }));
       }
-    } catch (_) { /* non-critical */ }
+    } catch { /* non-critical */ }
   };
 
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
@@ -349,7 +349,7 @@ export default function FleetSettings() {
         const data = await resp.json().catch(() => ({}));
         toastError("Failed to decommission", data.error || "Please try again.");
       }
-    } catch (e: any) {
+    } catch {
       toastError("Network error", "Failed to decommission agent.");
     }
     setIsDeletingAgent(null);

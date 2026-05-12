@@ -1,7 +1,6 @@
 // src/lib/audit-logger.test.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AuditLogger } from './audit-logger';
-import type { AuditEventType } from '../types/audit';
 
 describe('AuditLogger', () => {
   let mockSupabase: any;

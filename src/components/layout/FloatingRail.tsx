@@ -53,8 +53,8 @@ export default function FloatingRail({
           const d = await r.json();
           setNavBadges(d as Record<string, number>);
         }
-      } catch (e) {
-        console.debug("[nav-badges] fetch failed:", e);
+      } catch {
+        // non-critical badge fetch failure
       }
     };
     fetchCounts();

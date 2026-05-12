@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import {
   Sparkles, Hammer, Globe, Phone, Mic, Check, ArrowRight,
-  Waves, Loader2, PlayCircle, PhoneCall, ExternalLink,
+  Waves, PlayCircle, PhoneCall,
   Mail, Link2, BarChart3, Users, Zap,
 } from "lucide-react";
 import { authFetch } from "../lib/api";

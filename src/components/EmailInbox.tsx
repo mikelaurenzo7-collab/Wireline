@@ -119,7 +119,7 @@ export default function EmailInbox() {
         if (data.draft) { setReplyText(data.draft); toastSuccess("Draft ready", "Review and send when ready."); return; }
       } else if (claudeRes.status !== 503) {
         const err = await claudeRes.json().catch(() => ({}));
-        console.warn("Claude draft failed; falling back to Gemini:", err);
+        console.warn("Claude draft failed; falling back to Gemini:", err); // eslint-disable-line no-console
       }
       const res = await authFetch(`/api/emails/draft`, {
         method: "POST",

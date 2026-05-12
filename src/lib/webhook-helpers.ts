@@ -2,7 +2,6 @@ import {
   db, 
   log, 
   fetchWithTimeout, 
-  IS_PROD 
 } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import { SentryEvents } from "./sentry-events";

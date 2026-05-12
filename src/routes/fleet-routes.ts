@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { db, log, auditLogger } from "../lib/server-context";
+import { db, log } from "../lib/server-context";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage } from "../lib/server-utils";
 import { parseFormData, FleetTaskCreateSchema } from "../lib/form-validators";
@@ -171,7 +171,7 @@ router.post("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => 
        source_type, source_id, target_channel, customer_info, task_type, description, agent_id, status: 'pending', user_id: req.user.id, priority, due_date
     });
     res.json({ success: true });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to create fleet task" });
   }
 });
@@ -198,7 +198,7 @@ router.patch("/api/fleet/tasks/:id", authenticateUser, async (req: any, res: any
     
     await db.from('wireline_fleet_tasks').update(updateData).eq('id', req.params.id).eq('user_id', req.user.id);
     res.json({ success: true });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to update fleet task" });
   }
 });

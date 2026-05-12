@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { LayoutGrid, RefreshCw, ShieldCheck } from 'lucide-react';
 import { clsx } from 'clsx';
 import { LiveMonitor } from '../components/CommandCenter/LiveMonitor';
@@ -9,12 +9,12 @@ export default function CommandCenter() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   
   // Mock data for demonstration - in production this would come from a real-time subscription (Supabase)
-  const [calls, setCalls] = useState([
+  const [calls, _setCalls] = useState([
     { id: '1', customer_number: '+1 (555) 012-3456', sentiment_label: 'Live · Active', urgency: 3, status: 'active' as const },
     { id: '2', customer_number: '+1 (555) 987-6543', sentiment_label: '🚨 Escalation Risk: Anger detected', urgency: 9, status: 'escalated' as const },
   ]);
 
-  const [actions, setActions] = useState([
+  const [actions, _setActions] = useState([
     { id: 'a1', type: 'send_email' as const, priority: 'high' as const, status: 'completed' as const, description: 'Follow-up proposal to +1 (555) 012-3456', created_at: new Date().toISOString() },
     { id: 'a2', type: 'schedule_calendar' as const, priority: 'medium' as const, status: 'pending' as const, description: 'Discovery call with Michael L.', created_at: new Date().toISOString() },
     { id: 'a3', type: 'update_crm_lead' as const, priority: 'low' as const, status: 'completed' as const, description: 'Sync lead status to Salesforce', created_at: new Date().toISOString() },

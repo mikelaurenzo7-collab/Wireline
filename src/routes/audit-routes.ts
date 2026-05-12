@@ -26,7 +26,7 @@ router.get("/api/audit/summary", authenticateUser, async (req: any, res: any) =>
     if (error) throw error;
 
     res.json(computeAuditSummary({ rows: rows || [], windowDays: days }));
-  } catch (e: any) {
+  } catch {
     res.status(500).json({ error: "Audit summary failed" });
   }
 });
@@ -42,7 +42,7 @@ router.get("/api/audit/recent", authenticateUser, async (req: any, res: any) => 
       .limit(limit);
     if (error) throw error;
     res.json({ entries: data || [] });
-  } catch (e: any) {
+  } catch {
     res.status(500).json({ error: "Audit fetch failed" });
   }
 });

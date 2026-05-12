@@ -380,7 +380,7 @@ router.get("/api/export/:type.csv", authenticateUser, async (req: any, res: any)
       ip: req.ip,
     }).catch(() => {});
     res.send(rowsToCsv(data || [], def.columns));
-  } catch (e: any) {
+  } catch {
     res.status(500).json({ error: "Export failed" });
   }
 });

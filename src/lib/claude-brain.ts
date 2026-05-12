@@ -1405,7 +1405,7 @@ export async function brief(input: BriefInput) {
   let roleGuidance = "";
   if (input.role) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.role] ?? "";
-    if (!roleGuidance) console.warn(`[claude-brain] brief: unknown role "${input.role}" — no role lens applied.`);
+    if (!roleGuidance) console.warn(`[claude-brain] brief: unknown role "${input.role}" — no role lens applied.`); // eslint-disable-line no-console
   }
   const system = `You are a senior tactical sales coach drafting a pre-call brief for an autonomous voice agent on the Wireline relay.
 
@@ -1442,7 +1442,7 @@ export async function qualify(input: QualifyInput) {
   let roleGuidance = "";
   if (input.role) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.role] ?? "";
-    if (!roleGuidance) console.warn(`[claude-brain] qualify: unknown role "${input.role}" — no role lens applied.`);
+    if (!roleGuidance) console.warn(`[claude-brain] qualify: unknown role "${input.role}" — no role lens applied.`); // eslint-disable-line no-console
   }
   const system = `You are a senior B2B sales qualification analyst. Score leads against BANT (Budget / Authority / Need / Timeline). Be evidence-driven — every score must reference a specific phrase or signal in the transcript. Be honest: if there's no evidence, score low. Aggregate score is the weighted average (Need 35%, Timeline 25%, Authority 20%, Budget 20%).${roleGuidance ? `\n\nRole-specific qualification lens — ${roleGuidance}` : ""}`;
 
@@ -1476,7 +1476,7 @@ export async function objectionDrill(input: ObjectionDrillInput) {
   let roleGuidance = "";
   if (input.role) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.role] ?? "";
-    if (!roleGuidance) console.warn(`[claude-brain] objectionDrill: unknown role "${input.role}" — no role lens applied.`);
+    if (!roleGuidance) console.warn(`[claude-brain] objectionDrill: unknown role "${input.role}" — no role lens applied.`); // eslint-disable-line no-console
   }
   const system = `You are a sales-coaching AI generating objection-handling drills for the autonomous agent "${input.agentName}" (archetype: ${input.archetype}${input.role ? `, role: ${input.role}` : ""}). Make drills realistic, varied in difficulty, and tied to a recommended response that respects the archetype's tone. Coaching notes should explain *why* the response works.${roleGuidance ? `\n\nRole-specific drill lens — ${roleGuidance} Drills should reflect the objections, edge cases, and compliance pitfalls this role actually encounters.` : ""}`;
 
@@ -1507,7 +1507,7 @@ export async function coldEmail(input: ColdEmailInput) {
   let roleGuidance = "";
   if (input.agentRole) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.agentRole] ?? "";
-    if (!roleGuidance) console.warn(`[claude-brain] coldEmail: unknown role "${input.agentRole}" — no role lens applied.`);
+    if (!roleGuidance) console.warn(`[claude-brain] coldEmail: unknown role "${input.agentRole}" — no role lens applied.`); // eslint-disable-line no-console
   }
   const system = `You are an elite cold-outreach copywriter. Write emails that get replies. Rules:
 - Subject line: 4–7 words, no clickbait, hint at value.
@@ -1603,7 +1603,7 @@ export async function agentReview(input: AgentReviewInput) {
   let roleGuidance = "";
   if (input.role) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.role] ?? "";
-    if (!roleGuidance) console.warn(`[claude-brain] agentReview: unknown role "${input.role}" — no role lens applied.`);
+    if (!roleGuidance) console.warn(`[claude-brain] agentReview: unknown role "${input.role}" — no role lens applied.`); // eslint-disable-line no-console
   }
   const system = `You are a senior fleet operator reviewing the performance of an autonomous voice agent. Use evidence from the call logs. Be specific, tactical, and willing to be critical. Recommended directives should be concrete instructions the agent can immediately follow — not vague advice. Knowledge entries should be facts/policies that prevent recurring failures.${roleGuidance ? `\n\nRole-specific review lens — ${roleGuidance}` : ""}`;
 
@@ -1647,7 +1647,7 @@ export async function smartDraft(input: SmartDraftInput) {
   let roleGuidance = "";
   if (input.agentRole) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.agentRole] ?? "";
-    if (!roleGuidance) console.warn(`[claude-brain] smartDraft: unknown role "${input.agentRole}" — no role lens applied.`);
+    if (!roleGuidance) console.warn(`[claude-brain] smartDraft: unknown role "${input.agentRole}" — no role lens applied.`); // eslint-disable-line no-console
   }
   // Stable cacheable prefix: persona + knowledge + directives.
   // Volatile suffix: thread + user instructions.
@@ -1727,7 +1727,7 @@ export async function postCallAnalysis(input: PostCallInput) {
   let roleGuidance = "";
   if (input.role) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.role] ?? "";
-    if (!roleGuidance) console.warn(`[claude-brain] postCallAnalysis: unknown role "${input.role}" — no scoring lens applied.`);
+    if (!roleGuidance) console.warn(`[claude-brain] postCallAnalysis: unknown role "${input.role}" — no scoring lens applied.`); // eslint-disable-line no-console
   }
   const system = `You are a senior call analyst delivering post-call enrichment for an autonomous agent on the Wireline relay. Be evidence-driven and concise:
 - score lead intent honestly (0–100); if there's no signal, score low.
@@ -1773,7 +1773,7 @@ export async function coach(input: CoachInput) {
   let roleGuidance = "";
   if (input.role) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.role] ?? "";
-    if (!roleGuidance) console.warn(`[claude-brain] coach: unknown role "${input.role}" — no role context applied.`);
+    if (!roleGuidance) console.warn(`[claude-brain] coach: unknown role "${input.role}" — no role context applied.`); // eslint-disable-line no-console
   }
   const system = `You are a real-time call coach watching ${input.isLive ? "an in-progress" : "a completed"} call. Identify what is working, what is at risk, and exactly what the agent should say next. Suggested-next-words must be ≤30 words and ready to read aloud verbatim. Be tactical and concise.${roleGuidance ? `\n\nRole context — ${roleGuidance}` : ""}`;
   const user = `Agent: ${input.agentName} (${input.archetype}${input.role ? `, ${input.role}` : ""})
@@ -2041,7 +2041,7 @@ export async function smartEmailReply(input: SmartEmailReplyInput): Promise<{
   let roleGuidance = "";
   if (input.agentRole) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.agentRole] ?? "";
-    if (!roleGuidance) console.warn(`[claude-brain] smartEmailReply: unknown role "${input.agentRole}" — no role lens applied.`);
+    if (!roleGuidance) console.warn(`[claude-brain] smartEmailReply: unknown role "${input.agentRole}" — no role lens applied.`); // eslint-disable-line no-console
   }
   const system = `## IDENTITY
 You are ${input.agentName}, an autonomous email agent.

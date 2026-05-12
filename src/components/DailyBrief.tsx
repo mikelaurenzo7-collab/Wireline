@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Sparkles, Loader2, RefreshCw, AlertTriangle, Sun, Brain,
-  TrendingUp, TrendingDown, Activity, ChevronRight, Zap, Mail,
+  TrendingUp, TrendingDown, ChevronRight, Zap, Mail,
   Send, Check, X as XIcon, Clock,
 } from "lucide-react";
 import { authFetch } from "../lib/api";

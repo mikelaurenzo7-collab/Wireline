@@ -20,7 +20,7 @@
 // This is the replacement for the old placeholder audit-e2e.test.ts
 // that only asserted `true === true`.
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import express from 'express';
 import http from 'node:http';
 import {
