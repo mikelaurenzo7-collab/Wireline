@@ -10,8 +10,6 @@ import {
   timingSafeEq,
   VAPI_WEBHOOK_SECRET,
   sanitizePhone,
-  KNOWLEDGE_GAP_PREFIX,
-  MAX_RUNTIME_LESSONS,
   ROLE_SPECIFIC_PROTOCOLS,
   buildCallerProfileBlock,
   OUTBOUND_ARCHETYPE_BY_ROLE,
@@ -108,12 +106,8 @@ router.post("/api/vapi-webhook", async (req, res) => {
       const customerNumber = message.call?.customer?.number;
       const safeCallerPhone = sanitizePhone(customerNumber);
 
-      const [agentConfig, _directivesData, _knowledgeData, _personalityData, lessonsData, callerHistoryData, capturedProfileData, callerLeadData] = await Promise.all([
+      const [agentConfig, callerHistoryData, capturedProfileData, callerLeadData] = await Promise.all([
         db.from('wireline_agents').select('*').eq('id', webhookAgentId).single(),
-        db.from('wireline_directives').select('content, priority').eq('agent_id', webhookAgentId).order('priority', { ascending: false }).limit(500),
-        db.from('wireline_knowledge').select('content').eq('agent_id', webhookAgentId).limit(500),
-        db.from('wireline_personality').select('content').eq('agent_id', webhookAgentId).single(),
-        db.from('wireline_agent_lessons').select('lesson').eq('agent_id', webhookAgentId).order('created_at', { ascending: false }).limit(MAX_RUNTIME_LESSONS),
         safeCallerPhone
           ? db.from('wireline_call_logs')
               .select('summary, intent_label, sentiment, created_at, direction')
@@ -143,11 +137,6 @@ router.post("/api/vapi-webhook", async (req, res) => {
               .maybeSingle()
           : Promise.resolve({ data: null }),
       ]);
-
-      const _lessons = (lessonsData?.data || [])
-        .filter((l: any) => l.lesson && typeof l.lesson === 'string' && !l.lesson.startsWith(KNOWLEDGE_GAP_PREFIX))
-        .map((l: any) => l.lesson)
-        .join('\n');
 
       const pastCallHistory: any[] = (callerHistoryData as any)?.data || [];
       const callerProfile = buildCallerProfileBlock(pastCallHistory, false);

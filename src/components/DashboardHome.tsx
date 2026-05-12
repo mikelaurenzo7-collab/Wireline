@@ -216,15 +216,6 @@ export default function DashboardHome() {
     }
   };
 
-  const _chartData = stats?.chartData || [
-    { name: "MON", signals: 12, leads: 5 },
-    { name: "TUE", signals: 18, leads: 8 },
-    { name: "WED", signals: 15, leads: 12 },
-    { name: "THU", signals: 25, leads: 15 },
-    { name: "FRI", signals: 22, leads: 10 },
-    { name: "SAT", signals: 10, leads: 4 },
-    { name: "SUN", signals: 8,  leads: 2 },
-  ];
 
   const recentLogs = stats?.recentLogs || [];
   const hotLeads   = stats?.hotLeads || [];

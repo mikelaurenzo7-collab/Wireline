@@ -19,7 +19,6 @@ import PageShell from "./PageShell";
 import WidgetBoundary from "./WidgetBoundary";
 import { useToast } from "../contexts/ToastContext";
 
-type _View = "funnel" | "topics" | "heatmap" | "leaderboard" | "failures" | "spend" | "quality";
 
 export default function InsightsView() {
   const [days, setDays] = useState(30);
