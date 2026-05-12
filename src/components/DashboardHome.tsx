@@ -1,9 +1,25 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
-  Activity, PhoneCall, Mic, Square, Loader2, TrendingUp, DollarSign,
-  ArrowUpRight, Mail, ChevronRight, Signal, Target,
-  Radio, Sparkles, Inbox, History as HistoryIcon, ShieldCheck, Zap, Users,
+  Activity,
+  PhoneCall,
+  Mic,
+  Square,
+  Loader2,
+  TrendingUp,
+  DollarSign,
+  ArrowUpRight,
+  Mail,
+  ChevronRight,
+  Signal,
+  Target,
+  Radio,
+  Sparkles,
+  Inbox,
+  History as HistoryIcon,
+  ShieldCheck,
+  Zap,
+  Users,
   AlertTriangle,
 } from "lucide-react";
 import { motion } from "motion/react";
@@ -18,9 +34,7 @@ import WidgetBoundary from "./WidgetBoundary";
 import { authFetch } from "../lib/api";
 import { formatDate } from "../lib/safe-date";
 import { useToast } from "../contexts/ToastContext";
-import type {
-  DashboardStats, SignalPresence, FleetTask, ActivityItem,
-} from "../types/api";
+import type { DashboardStats, SignalPresence, FleetTask, ActivityItem } from "../types/api";
 
 // @vapi-ai/web is ~300KB minified and only matters when the operator
 // clicks "Start call". Loaded lazily on first call attempt so the
@@ -45,7 +59,10 @@ export default function DashboardHome() {
   const [activeSignals, setActiveSignals] = useState<SignalPresence[]>([]);
   const [highPriorityTasks, setHighPriorityTasks] = useState<FleetTask[]>([]);
   const [systemActivity, setSystemActivity] = useState<ActivityItem[]>([]);
-  const [sloBanner, setSloBanner] = useState<{ status: string; events: Array<{ summary: string }> } | null>(null);
+  const [sloBanner, setSloBanner] = useState<{
+    status: string;
+    events: Array<{ summary: string }>;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   // Lazily-instantiated Vapi instance. Stays null until the first
   // toggleCall click. Listeners attach inside ensureVapi the first
@@ -65,14 +82,16 @@ export default function DashboardHome() {
     fetchActiveSignals();
     fetchHighPriorityTasks();
     fetchSystemActivity();
-    authFetch("/api/health/slos").then(async (r) => {
-      if (r.ok) {
-        const d = await r.json();
-        if (mountedRef.current && d.banner_status && d.banner_status !== "ok") {
-          setSloBanner({ status: d.banner_status, events: d.fired_events || [] });
+    authFetch("/api/health/slos")
+      .then(async (r) => {
+        if (r.ok) {
+          const d = await r.json();
+          if (mountedRef.current && d.banner_status && d.banner_status !== "ok") {
+            setSloBanner({ status: d.banner_status, events: d.fired_events || [] });
+          }
         }
-      }
-    }).catch(() => {});
+      })
+      .catch(() => {});
 
     const signalPulse = setInterval(() => {
       fetchActiveSignals();
@@ -89,11 +108,19 @@ export default function DashboardHome() {
       if (vapiRef.current) {
         vapiRef.current.removeAllListeners("call-start");
         vapiRef.current.removeAllListeners("call-end");
-        try { vapiRef.current.stop(); } catch { /* not in a call, fine */ }
+        try {
+          vapiRef.current.stop();
+        } catch {
+          /* not in a call, fine */
+        }
       }
-      callEndTimersRef.current.forEach(clearTimeout);
-      callEndTimersRef.current.clear();
+      // Capture the ref value in the closure so the cleanup always runs
+      // against the same Set instance (ref.current may be reassigned later).
+      const timerSet = callEndTimersRef.current;
+      timerSet.forEach(clearTimeout);
+      timerSet.clear();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional mount-only effect; fetchStats et al are stable per-render closures
   }, []);
 
   // Lazy-load + memoize the Vapi instance. The dynamic import keeps
@@ -111,11 +138,13 @@ export default function DashboardHome() {
     // them attached because the cleanup effect already detaches them.
     v.on("call-start", () => {
       if (!mountedRef.current) return;
-      setIsConnecting(false); setIsConnected(true);
+      setIsConnecting(false);
+      setIsConnected(true);
     });
     v.on("call-end", () => {
       if (!mountedRef.current) return;
-      setIsConnecting(false); setIsConnected(false);
+      setIsConnecting(false);
+      setIsConnected(false);
       const t = setTimeout(() => {
         callEndTimersRef.current.delete(t);
         if (mountedRef.current) fetchStats();
@@ -131,7 +160,9 @@ export default function DashboardHome() {
       const res = await authFetch("/api/fleet/presence");
       const data: { signals: SignalPresence[] } = await res.json();
       setActiveSignals(data.signals || []);
-    } catch (e) { console.error("Signal presence sync failed:", e); }
+    } catch (e) {
+      console.error("Signal presence sync failed:", e);
+    }
   };
 
   const fetchHighPriorityTasks = async () => {
@@ -139,7 +170,9 @@ export default function DashboardHome() {
       const res = await authFetch("/api/fleet/tasks?status=pending&priority=high");
       const data: { tasks: FleetTask[] } = await res.json();
       setHighPriorityTasks(data.tasks || []);
-    } catch (e) { console.error("Failed to fetch high priority tasks:", e); }
+    } catch (e) {
+      console.error("Failed to fetch high priority tasks:", e);
+    }
   };
 
   const fetchSystemActivity = async () => {
@@ -147,7 +180,9 @@ export default function DashboardHome() {
       const res = await authFetch("/api/fleet/activity");
       const data: { activity: ActivityItem[] } = await res.json();
       setSystemActivity(data.activity || []);
-    } catch (e) { console.error("Failed to fetch system activity:", e); }
+    } catch (e) {
+      console.error("Failed to fetch system activity:", e);
+    }
   };
 
   const fetchStats = async () => {
@@ -157,14 +192,25 @@ export default function DashboardHome() {
       setStats(data);
     } catch (e) {
       console.error(e);
-      toastError("Dashboard unavailable", "Could not load stats. Check your connection and refresh.");
-    } finally { setIsLoading(false); }
+      toastError(
+        "Dashboard unavailable",
+        "Could not load stats. Check your connection and refresh.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const toggleCall = async () => {
-    if (isConnected) { vapiRef.current?.stop(); return; }
+    if (isConnected) {
+      vapiRef.current?.stop();
+      return;
+    }
     if (!import.meta.env.VITE_VAPI_PUBLIC_KEY) {
-      toastError("Voice not configured", "The Wireline voice network key is not set — add the voice environment variables and redeploy.");
+      toastError(
+        "Voice not configured",
+        "The Wireline voice network key is not set — add the voice environment variables and redeploy.",
+      );
       return;
     }
     setIsConnecting(true);
@@ -178,13 +224,15 @@ export default function DashboardHome() {
       if (selectedDialAgentId) {
         targetAgentId = selectedDialAgentId;
       } else if (stats?.agents?.length > 0) {
-        const voiceAgent = stats.agents.find(a => a.channel === "voice" || a.channel === "omnichannel" || !a.channel);
+        const voiceAgent = stats.agents.find(
+          (a) => a.channel === "voice" || a.channel === "omnichannel" || !a.channel,
+        );
         if (voiceAgent) targetAgentId = voiceAgent.id;
       }
       const res = await authFetch(`/api/vapi-webhook?agentId=${targetAgentId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: { type: "assistant-request" } })
+        body: JSON.stringify({ message: { type: "assistant-request" } }),
       });
       // The webhook fetch can outlast the dashboard too — bail before
       // committing to a real call from a dead component.
@@ -197,9 +245,12 @@ export default function DashboardHome() {
         // so the button doesn't stay locked in "Connecting…" indefinitely.
         const t = setTimeout(() => {
           if (mountedRef.current && !vapiRef.current) return;
-          setIsConnecting(prev => {
+          setIsConnecting((prev) => {
             if (!prev) return prev; // already resolved
-            toastError("Connection timed out", "The Wireline voice session did not start within 20 s. Check your network and voice configuration.");
+            toastError(
+              "Connection timed out",
+              "The Wireline voice session did not start within 20 s. Check your network and voice configuration.",
+            );
             return false;
           });
         }, 20_000);
@@ -211,15 +262,19 @@ export default function DashboardHome() {
       console.error("Failed to start call", e);
       if (mountedRef.current) {
         setIsConnecting(false);
-        toastError("Carrier connection failed", "Ensure at least one agent is configured and try again.");
+        toastError(
+          "Carrier connection failed",
+          "Ensure at least one agent is configured and try again.",
+        );
       }
     }
   };
 
-
   const recentLogs = stats?.recentLogs || [];
-  const hotLeads   = stats?.hotLeads || [];
-  const voiceAgents = (stats?.agents || []).filter(a => a.channel === "voice" || a.channel === "omnichannel" || !a.channel);
+  const hotLeads = stats?.hotLeads || [];
+  const voiceAgents = (stats?.agents || []).filter(
+    (a) => a.channel === "voice" || a.channel === "omnichannel" || !a.channel,
+  );
 
   useEffect(() => {
     if (!selectedDialAgentId && voiceAgents.length > 0) {
@@ -235,12 +290,22 @@ export default function DashboardHome() {
         "h-9 px-4 rounded-full flex items-center justify-center gap-2 text-[10px] uppercase tracking-[0.28em] transition-all",
         isConnected
           ? "bg-rose-500/15 border border-rose-500/40 text-rose-500 hover:bg-rose-500/25"
-          : "brutal-btn !py-0 !px-4 !h-9"
+          : "brutal-btn !py-0 !px-4 !h-9",
       )}
     >
-      {isConnecting ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Connecting</>
-        : isConnected ? <><Square className="w-3 h-3 fill-current" /> End Call</>
-        : <><Mic className="w-3.5 h-3.5" /> Test Call</>}
+      {isConnecting ? (
+        <>
+          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Connecting
+        </>
+      ) : isConnected ? (
+        <>
+          <Square className="w-3 h-3 fill-current" /> End Call
+        </>
+      ) : (
+        <>
+          <Mic className="w-3.5 h-3.5" /> Test Call
+        </>
+      )}
     </button>
   );
 
@@ -249,10 +314,15 @@ export default function DashboardHome() {
       <PageShell title="Dashboard" eyebrow="Today" actions={voiceButton}>
         <div className="h-full w-full flex flex-col items-center justify-center gap-4">
           <div className="relative w-20 h-20">
-            <div className="absolute inset-0 rounded-full" style={{
-              background: "conic-gradient(from 0deg, #0AC8D4, #9B59F5, #E040C0, #10B981, #0AC8D4)",
-              filter: "blur(2px)", animation: "spin 8s linear infinite"
-            }} />
+            <div
+              className="absolute inset-0 rounded-full"
+              style={{
+                background:
+                  "conic-gradient(from 0deg, #0AC8D4, #9B59F5, #E040C0, #10B981, #0AC8D4)",
+                filter: "blur(2px)",
+                animation: "spin 8s linear infinite",
+              }}
+            />
             <div className="absolute inset-1.5 rounded-full bg-paper" />
             <div className="absolute inset-3 rounded-full glass flex items-center justify-center">
               <Target className="w-7 h-7 text-aurora" strokeWidth={1.5} />
@@ -272,38 +342,93 @@ export default function DashboardHome() {
     <div className="h-full flex flex-col gap-3 overflow-hidden">
       {/* ── SLO health banner (only when degraded/critical) ──── */}
       {sloBanner && (
-        <div className={cn(
-          "shrink-0 rounded-2xl border px-5 py-3.5 flex items-start gap-3",
-          sloBanner.status === "critical" ? "border-rose-500/30 bg-rose-500/8" : "border-amber-500/30 bg-amber-500/8",
-        )}>
-          <div className={cn(
-            "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border",
-            sloBanner.status === "critical" ? "bg-rose-500/15 border-rose-500/30" : "bg-amber-500/15 border-amber-500/30",
-          )}>
-            <AlertTriangle className={cn("w-3.5 h-3.5", sloBanner.status === "critical" ? "text-rose-500" : "text-amber-500")} />
+        <div
+          className={cn(
+            "shrink-0 rounded-2xl border px-5 py-3.5 flex items-start gap-3",
+            sloBanner.status === "critical"
+              ? "border-rose-500/30 bg-rose-500/8"
+              : "border-amber-500/30 bg-amber-500/8",
+          )}
+        >
+          <div
+            className={cn(
+              "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border",
+              sloBanner.status === "critical"
+                ? "bg-rose-500/15 border-rose-500/30"
+                : "bg-amber-500/15 border-amber-500/30",
+            )}
+          >
+            <AlertTriangle
+              className={cn(
+                "w-3.5 h-3.5",
+                sloBanner.status === "critical" ? "text-rose-500" : "text-amber-500",
+              )}
+            />
           </div>
           <div className="flex-1 min-w-0">
-            <p className={cn("text-[11px] font-medium uppercase tracking-[0.18em] leading-none mb-1", sloBanner.status === "critical" ? "text-rose-500" : "text-amber-600")}>
-              {sloBanner.status === "critical" ? "System health critical" : "System health degraded"}
+            <p
+              className={cn(
+                "text-[11px] font-medium uppercase tracking-[0.18em] leading-none mb-1",
+                sloBanner.status === "critical" ? "text-rose-500" : "text-amber-600",
+              )}
+            >
+              {sloBanner.status === "critical"
+                ? "System health critical"
+                : "System health degraded"}
             </p>
             {sloBanner.events.slice(0, 3).map((e, i) => (
-              <p key={i} className="text-[10px] text-muted leading-relaxed">{e.summary}</p>
+              <p key={i} className="text-[10px] text-muted leading-relaxed">
+                {e.summary}
+              </p>
             ))}
           </div>
-          <Link to="/admin" className="shrink-0 text-[9px] uppercase tracking-[0.3em] text-muted hover:text-brand transition-colors mt-1">
+          <Link
+            to="/admin"
+            className="shrink-0 text-[9px] uppercase tracking-[0.3em] text-muted hover:text-brand transition-colors mt-1"
+          >
             Details →
           </Link>
         </div>
       )}
       {/* ── Hero stat row ─────────────────────────────────────── */}
       <div className="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatTile label="Total Calls"      value={stats?.totalCalls ?? 0}              sub="All time"           icon={PhoneCall}  accent="#0AC8D4"
-          trend={delta.calls_pct != null ? { value: delta.calls_pct, label: "vs last 7d" } : undefined} />
-        <StatTile label="Avg Lead Score"   value={stats?.avgLeadScore ? `${stats.avgLeadScore}/100` : "—"}  sub="BANT quality"       icon={TrendingUp} accent="#9B59F5"
-          trend={delta.score_pct != null ? { value: delta.score_pct, label: "vs last 7d" } : undefined} />
-        <StatTile label="Conversion Rate"  value={`${stats?.conversionRate ?? 0}%`}    sub="Appointments / calls" icon={Target}    accent="#E040C0" />
-        <StatTile label="AI Spend"         value={`$${stats?.totalCost ?? "0.00"}`}    sub="Current period"     icon={DollarSign} accent="#10B981"
-          trend={delta.cost_pct != null ? { value: -(delta.cost_pct), label: "vs last 7d" } : undefined} />
+        <StatTile
+          label="Total Calls"
+          value={stats?.totalCalls ?? 0}
+          sub="All time"
+          icon={PhoneCall}
+          accent="#0AC8D4"
+          trend={
+            delta.calls_pct != null ? { value: delta.calls_pct, label: "vs last 7d" } : undefined
+          }
+        />
+        <StatTile
+          label="Avg Lead Score"
+          value={stats?.avgLeadScore ? `${stats.avgLeadScore}/100` : "—"}
+          sub="BANT quality"
+          icon={TrendingUp}
+          accent="#9B59F5"
+          trend={
+            delta.score_pct != null ? { value: delta.score_pct, label: "vs last 7d" } : undefined
+          }
+        />
+        <StatTile
+          label="Conversion Rate"
+          value={`${stats?.conversionRate ?? 0}%`}
+          sub="Appointments / calls"
+          icon={Target}
+          accent="#E040C0"
+        />
+        <StatTile
+          label="AI Spend"
+          value={`$${stats?.totalCost ?? "0.00"}`}
+          sub="Current period"
+          icon={DollarSign}
+          accent="#10B981"
+          trend={
+            delta.cost_pct != null ? { value: -delta.cost_pct, label: "vs last 7d" } : undefined
+          }
+        />
       </div>
 
       {/* ── Main grid ────────────────────────────────────────── */}
@@ -317,7 +442,10 @@ export default function DashboardHome() {
             accent="#0AC8D4"
             scroll
             actions={
-              <Link to="/logs" className="text-[9px] uppercase tracking-[0.3em] text-muted hover:text-brand transition-colors flex items-center gap-1">
+              <Link
+                to="/logs"
+                className="text-[9px] uppercase tracking-[0.3em] text-muted hover:text-brand transition-colors flex items-center gap-1"
+              >
                 All <ArrowUpRight className="w-3 h-3" />
               </Link>
             }
@@ -337,16 +465,25 @@ export default function DashboardHome() {
             ) : (
               <div className="divide-y divide-white/5">
                 {recentLogs.slice(0, 6).map((call, idx) => (
-                  <Link key={call.id || idx} to="/logs"
+                  <Link
+                    key={call.id || idx}
+                    to="/logs"
                     className="group flex items-center gap-3 py-3 px-1 -mx-1 hover:bg-white/3 rounded-lg transition-all"
                   >
-                    <div className={cn(
-                      "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border",
-                      call.direction === "inbound"
-                        ? "bg-brand/10 border-brand/25 text-brand"
-                        : "bg-brand-2/10 border-brand-2/25 text-brand-2"
-                    )}>
-                      <PhoneCall className={cn("w-3.5 h-3.5", call.direction === "outbound" ? "-rotate-90" : "")} />
+                    <div
+                      className={cn(
+                        "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border",
+                        call.direction === "inbound"
+                          ? "bg-brand/10 border-brand/25 text-brand"
+                          : "bg-brand-2/10 border-brand-2/25 text-brand-2",
+                      )}
+                    >
+                      <PhoneCall
+                        className={cn(
+                          "w-3.5 h-3.5",
+                          call.direction === "outbound" ? "-rotate-90" : "",
+                        )}
+                      />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-1 mb-0.5">
@@ -373,20 +510,26 @@ export default function DashboardHome() {
           <Panel title="Agent Status" hint="fleet · live" icon={Signal} accent="#9B59F5">
             <div className="space-y-3 h-full">
               {/* Live call indicator */}
-              <div className={cn(
-                "flex items-center gap-3 rounded-xl p-3.5 border transition-all",
-                activeSignals.length > 0
-                  ? "bg-emerald-500/8 border-emerald-500/25"
-                  : "bg-black/[0.03] border-black/8"
-              )}>
-                <div className={cn(
-                  "relative w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
-                  activeSignals.length > 0 ? "bg-emerald-500/20" : "bg-black/[0.05]"
-                )}>
-                  <span className={cn(
-                    "w-3 h-3 rounded-full",
-                    activeSignals.length > 0 ? "bg-emerald-500 indicator-glow" : "bg-black/20"
-                  )} />
+              <div
+                className={cn(
+                  "flex items-center gap-3 rounded-xl p-3.5 border transition-all",
+                  activeSignals.length > 0
+                    ? "bg-emerald-500/8 border-emerald-500/25"
+                    : "bg-black/[0.03] border-black/8",
+                )}
+              >
+                <div
+                  className={cn(
+                    "relative w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
+                    activeSignals.length > 0 ? "bg-emerald-500/20" : "bg-black/[0.05]",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "w-3 h-3 rounded-full",
+                      activeSignals.length > 0 ? "bg-emerald-500 indicator-glow" : "bg-black/20",
+                    )}
+                  />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="text-[12px] font-medium text-ink">
@@ -398,54 +541,86 @@ export default function DashboardHome() {
                     {stats?.inboundCount ?? 0} in · {stats?.outboundCount ?? 0} out total
                   </div>
                 </div>
-                <Link to="/live" className="shrink-0 text-[8px] uppercase tracking-[0.3em] text-muted hover:text-brand transition-colors">
+                <Link
+                  to="/live"
+                  className="shrink-0 text-[8px] uppercase tracking-[0.3em] text-muted hover:text-brand transition-colors"
+                >
                   Monitor
                 </Link>
               </div>
 
               {/* Browser call status */}
-              <div className={cn(
-                "flex items-center gap-3 rounded-xl p-3.5 border transition-all",
-                isConnected ? "bg-rose-500/8 border-rose-500/25" :
-                isConnecting ? "bg-amber-500/8 border-amber-500/25" :
-                "bg-black/[0.03] border-black/8"
-              )}>
-                <div className={cn(
-                  "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
-                  isConnected ? "bg-rose-500/20" : isConnecting ? "bg-amber-500/20" : "bg-black/[0.05]"
-                )}>
-                  {isConnecting
-                    ? <Loader2 className="w-4 h-4 text-amber-500 animate-spin" />
-                    : <Mic className={cn("w-4 h-4", isConnected ? "text-rose-500" : "text-ink/25")} />
-                  }
+              <div
+                className={cn(
+                  "flex items-center gap-3 rounded-xl p-3.5 border transition-all",
+                  isConnected
+                    ? "bg-rose-500/8 border-rose-500/25"
+                    : isConnecting
+                      ? "bg-amber-500/8 border-amber-500/25"
+                      : "bg-black/[0.03] border-black/8",
+                )}
+              >
+                <div
+                  className={cn(
+                    "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
+                    isConnected
+                      ? "bg-rose-500/20"
+                      : isConnecting
+                        ? "bg-amber-500/20"
+                        : "bg-black/[0.05]",
+                  )}
+                >
+                  {isConnecting ? (
+                    <Loader2 className="w-4 h-4 text-amber-500 animate-spin" />
+                  ) : (
+                    <Mic className={cn("w-4 h-4", isConnected ? "text-rose-500" : "text-ink/25")} />
+                  )}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="text-[12px] font-medium text-ink">
-                    {isConnected ? "Browser call active" : isConnecting ? "Connecting…" : "Test call idle"}
+                    {isConnected
+                      ? "Browser call active"
+                      : isConnecting
+                        ? "Connecting…"
+                        : "Test call idle"}
                   </div>
-                  <div className="text-[9px] uppercase tracking-[0.24em] text-muted mt-0.5">Browser → Agent</div>
+                  <div className="text-[9px] uppercase tracking-[0.24em] text-muted mt-0.5">
+                    Browser → Agent
+                  </div>
                 </div>
               </div>
 
               {/* Per-agent roster */}
               {(stats?.agents || []).length > 0 && (
                 <div className="space-y-1.5">
-                  <p className="text-[8px] uppercase tracking-[0.4em] text-muted/60 px-0.5">Roster</p>
+                  <p className="text-[8px] uppercase tracking-[0.4em] text-muted/60 px-0.5">
+                    Roster
+                  </p>
                   {(stats?.agents || []).slice(0, 4).map((a, i) => {
-                    const busy = activeSignals.some(s => s.agent_id === a.id);
+                    const busy = activeSignals.some((s) => s.agent_id === a.id);
                     return (
-                      <div key={i} className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-black/[0.03] border border-black/6">
-                        <span className={cn(
-                          "w-2 h-2 rounded-full shrink-0",
-                          busy ? "bg-rose-400" : "bg-emerald-400"
-                        )}
-                          style={{ boxShadow: busy ? "0 0 6px rgba(248,113,113,0.8)" : "0 0 6px rgba(52,211,153,0.8)" }}
+                      <div
+                        key={i}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-black/[0.03] border border-black/6"
+                      >
+                        <span
+                          className={cn(
+                            "w-2 h-2 rounded-full shrink-0",
+                            busy ? "bg-rose-400" : "bg-emerald-400",
+                          )}
+                          style={{
+                            boxShadow: busy
+                              ? "0 0 6px rgba(248,113,113,0.8)"
+                              : "0 0 6px rgba(52,211,153,0.8)",
+                          }}
                         />
                         <span className="text-[11px] text-ink truncate flex-1">{a.name}</span>
-                        <span className={cn(
-                          "text-[8px] uppercase tracking-[0.22em]",
-                          busy ? "text-rose-500" : "text-emerald-600/80"
-                        )}>
+                        <span
+                          className={cn(
+                            "text-[8px] uppercase tracking-[0.22em]",
+                            busy ? "text-rose-500" : "text-emerald-600/80",
+                          )}
+                        >
                           {busy ? "Active" : "Ready"}
                         </span>
                       </div>
@@ -458,25 +633,40 @@ export default function DashboardHome() {
               {stats && (
                 <div className="mt-auto pt-2 flex items-center justify-between gap-2 border-t border-black/5">
                   <div className="text-center flex-1">
-                    <div className="font-mono text-sm font-medium text-ink leading-none">{stats.inboundCount ?? 0}</div>
-                    <div className="text-[8px] uppercase tracking-[0.3em] text-muted mt-0.5">Inbound</div>
+                    <div className="font-mono text-sm font-medium text-ink leading-none">
+                      {stats.inboundCount ?? 0}
+                    </div>
+                    <div className="text-[8px] uppercase tracking-[0.3em] text-muted mt-0.5">
+                      Inbound
+                    </div>
                   </div>
                   <div className="h-6 w-px bg-black/8" />
                   <div className="text-center flex-1">
-                    <div className="font-mono text-sm font-medium text-ink leading-none">{stats.outboundCount ?? 0}</div>
-                    <div className="text-[8px] uppercase tracking-[0.3em] text-muted mt-0.5">Outbound</div>
+                    <div className="font-mono text-sm font-medium text-ink leading-none">
+                      {stats.outboundCount ?? 0}
+                    </div>
+                    <div className="text-[8px] uppercase tracking-[0.3em] text-muted mt-0.5">
+                      Outbound
+                    </div>
                   </div>
                   <div className="h-6 w-px bg-black/8" />
                   <div className="text-center flex-1">
-                    <div className="font-mono text-sm font-medium text-ink leading-none">{stats.totalMinutes ?? 0}</div>
-                    <div className="text-[8px] uppercase tracking-[0.3em] text-muted mt-0.5">Minutes</div>
+                    <div className="font-mono text-sm font-medium text-ink leading-none">
+                      {stats.totalMinutes ?? 0}
+                    </div>
+                    <div className="text-[8px] uppercase tracking-[0.3em] text-muted mt-0.5">
+                      Minutes
+                    </div>
                   </div>
                 </div>
               )}
 
-              {!(stats?.agents?.length) && (
+              {!stats?.agents?.length && (
                 <div className="flex items-center justify-center py-4">
-                  <Link to="/agents" className="text-[10px] text-brand/70 hover:text-brand transition-colors uppercase tracking-[0.28em]">
+                  <Link
+                    to="/agents"
+                    className="text-[10px] text-brand/70 hover:text-brand transition-colors uppercase tracking-[0.28em]"
+                  >
                     + Add your first agent
                   </Link>
                 </div>
@@ -508,12 +698,16 @@ export default function DashboardHome() {
                               "px-2.5 h-7 rounded-full text-[10px] font-medium transition-all border truncate max-w-[140px]",
                               selectedDialAgentId === a.id
                                 ? "text-white border-transparent"
-                                : "text-muted border-black/10 hover:text-ink hover:border-black/20 glass"
+                                : "text-muted border-black/10 hover:text-ink hover:border-black/20 glass",
                             )}
-                            style={selectedDialAgentId === a.id ? {
-                              background: "linear-gradient(135deg, #0AC8D4 0%, #9B59F5 100%)",
-                              boxShadow: "0 2px 8px -4px rgba(10,200,212,0.50)"
-                            } : undefined}
+                            style={
+                              selectedDialAgentId === a.id
+                                ? {
+                                    background: "linear-gradient(135deg, #0AC8D4 0%, #9B59F5 100%)",
+                                    boxShadow: "0 2px 8px -4px rgba(10,200,212,0.50)",
+                                  }
+                                : undefined
+                            }
                             title={a.name}
                           >
                             {a.name}
@@ -524,11 +718,13 @@ export default function DashboardHome() {
                       <select
                         aria-label="Select agent to dial"
                         value={selectedDialAgentId}
-                        onChange={e => setSelectedDialAgentId(e.target.value)}
+                        onChange={(e) => setSelectedDialAgentId(e.target.value)}
                         className="w-full h-8 px-2.5 rounded-lg glass border border-black/10 text-[11px] text-ink outline-none focus:border-brand/60"
                       >
                         {voiceAgents.map((a) => (
-                          <option key={a.id} value={a.id}>{a.name}</option>
+                          <option key={a.id} value={a.id}>
+                            {a.name}
+                          </option>
                         ))}
                       </select>
                     )}
@@ -539,18 +735,29 @@ export default function DashboardHome() {
                         "w-full h-10 rounded-xl font-medium text-[11px] uppercase tracking-[0.22em] flex items-center justify-center gap-2 transition-all",
                         isConnected
                           ? "bg-rose-500/15 border border-rose-500/40 text-rose-500 hover:bg-rose-500/25"
-                          : "brutal-btn !py-0 !px-3 !text-[11px] !tracking-[0.22em]"
+                          : "brutal-btn !py-0 !px-3 !text-[11px] !tracking-[0.22em]",
                       )}
                     >
-                      {isConnecting
-                        ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Connecting…</>
-                        : isConnected
-                        ? <><Square className="w-3.5 h-3.5 fill-current" /> End Call</>
-                        : <><Mic className="w-3.5 h-3.5" /> Start Call</>}
+                      {isConnecting ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Connecting…
+                        </>
+                      ) : isConnected ? (
+                        <>
+                          <Square className="w-3.5 h-3.5 fill-current" /> End Call
+                        </>
+                      ) : (
+                        <>
+                          <Mic className="w-3.5 h-3.5" /> Start Call
+                        </>
+                      )}
                     </button>
                   </div>
                 ) : (
-                  <Link to="/agents" className="flex items-center justify-center gap-1.5 h-9 rounded-xl border border-brand/30 text-brand text-[10px] uppercase tracking-[0.26em] hover:bg-brand/10 transition-all">
+                  <Link
+                    to="/agents"
+                    className="flex items-center justify-center gap-1.5 h-9 rounded-xl border border-brand/30 text-brand text-[10px] uppercase tracking-[0.26em] hover:bg-brand/10 transition-all"
+                  >
                     <Users className="w-3.5 h-3.5" /> Add an Agent First
                   </Link>
                 )}
@@ -558,16 +765,37 @@ export default function DashboardHome() {
 
               {/* Action links */}
               {[
-                { to: "/outbound", icon: PhoneCall, label: "Outbound Campaign", sub: "Upload & auto-dial", accent: "#9B59F5" },
-                { to: "/inbox",    icon: Mail,      label: "Email Inbox",        sub: "Review queued emails", accent: "#E040C0" },
-                { to: "/triage",   icon: Inbox,     label: "Triage Inbox",
-                  sub: hotLeads.length > 0 ? `${hotLeads.length} hot lead${hotLeads.length > 1 ? "s" : ""} waiting` : "Review hot leads",
-                  accent: "#0AC8D4", badge: hotLeads.length || undefined,
+                {
+                  to: "/outbound",
+                  icon: PhoneCall,
+                  label: "Outbound Campaign",
+                  sub: "Upload & auto-dial",
+                  accent: "#9B59F5",
                 },
-              ].map(action => {
+                {
+                  to: "/inbox",
+                  icon: Mail,
+                  label: "Email Inbox",
+                  sub: "Review queued emails",
+                  accent: "#E040C0",
+                },
+                {
+                  to: "/triage",
+                  icon: Inbox,
+                  label: "Triage Inbox",
+                  sub:
+                    hotLeads.length > 0
+                      ? `${hotLeads.length} hot lead${hotLeads.length > 1 ? "s" : ""} waiting`
+                      : "Review hot leads",
+                  accent: "#0AC8D4",
+                  badge: hotLeads.length || undefined,
+                },
+              ].map((action) => {
                 const Icon = action.icon;
                 return (
-                  <Link key={action.to} to={action.to}
+                  <Link
+                    key={action.to}
+                    to={action.to}
                     className="group flex items-center gap-3 h-11 rounded-xl glass border border-black/8 px-3.5 hover:border-black/16 hover:bg-black/[0.03] transition-all"
                   >
                     <div
@@ -577,8 +805,12 @@ export default function DashboardHome() {
                       <Icon className="w-3.5 h-3.5" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[11px] text-ink group-hover:text-brand transition-colors truncate">{action.label}</div>
-                      <div className="text-[8px] uppercase tracking-[0.24em] text-muted">{action.sub}</div>
+                      <div className="text-[11px] text-ink group-hover:text-brand transition-colors truncate">
+                        {action.label}
+                      </div>
+                      <div className="text-[8px] uppercase tracking-[0.24em] text-muted">
+                        {action.sub}
+                      </div>
                     </div>
                     {action.badge ? (
                       <span className="px-1.5 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-[8px] text-rose-500 font-mono shrink-0">
@@ -597,24 +829,31 @@ export default function DashboardHome() {
           <Panel title="Sentiment" hint="call health" icon={ShieldCheck} accent="#10B981">
             {(() => {
               const s = stats?.sentimentBreakdown || { positive: 0, neutral: 0, negative: 0 };
-              const total = (s.positive + s.neutral + s.negative) || 1;
+              const total = s.positive + s.neutral + s.negative || 1;
               const positivePct = Math.round((s.positive / total) * 100);
-              const neutralPct  = Math.round((s.neutral  / total) * 100);
+              const neutralPct = Math.round((s.neutral / total) * 100);
               const negativePct = 100 - positivePct - neutralPct;
               return (
                 <div className="flex items-center gap-4 h-full">
                   <div className="text-center shrink-0">
-                    <div className="font-display italic text-4xl text-ink leading-none">{positivePct}<span className="text-xl">%</span></div>
-                    <div className="text-[8px] uppercase tracking-[0.4em] text-brand mt-1">Positive</div>
+                    <div className="font-display italic text-4xl text-ink leading-none">
+                      {positivePct}
+                      <span className="text-xl">%</span>
+                    </div>
+                    <div className="text-[8px] uppercase tracking-[0.4em] text-brand mt-1">
+                      Positive
+                    </div>
                   </div>
                   <div className="flex-1 space-y-2">
                     {[
                       { label: "Pos", pct: positivePct, color: "#0AC8D4" },
-                      { label: "Neu", pct: neutralPct,  color: "#9B59F5" },
+                      { label: "Neu", pct: neutralPct, color: "#9B59F5" },
                       { label: "Neg", pct: negativePct, color: "#E040C0" },
                     ].map(({ label, pct, color }) => (
                       <div key={label} className="flex items-center gap-2">
-                        <span className="text-[8px] uppercase tracking-[0.2em] text-muted w-6 shrink-0">{label}</span>
+                        <span className="text-[8px] uppercase tracking-[0.2em] text-muted w-6 shrink-0">
+                          {label}
+                        </span>
                         <div className="flex-1 h-1.5 rounded-full bg-black/10 overflow-hidden">
                           <motion.div
                             initial={{ width: 0 }}
@@ -624,7 +863,9 @@ export default function DashboardHome() {
                             style={{ background: color }}
                           />
                         </div>
-                        <span className="font-mono text-[9px] text-muted/70 w-7 text-right shrink-0">{pct}%</span>
+                        <span className="font-mono text-[9px] text-muted/70 w-7 text-right shrink-0">
+                          {pct}%
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -672,7 +913,10 @@ export default function DashboardHome() {
           scroll
           flush
           actions={
-            <Link to="/triage" className="text-[9px] uppercase tracking-[0.3em] text-muted hover:text-ink transition-colors flex items-center gap-1">
+            <Link
+              to="/triage"
+              className="text-[9px] uppercase tracking-[0.3em] text-muted hover:text-ink transition-colors flex items-center gap-1"
+            >
               Triage <ChevronRight className="w-3 h-3" />
             </Link>
           }
@@ -682,29 +926,44 @@ export default function DashboardHome() {
               {hotLeads.map((lead) => {
                 const score = lead.score ?? 0;
                 const isHot = score >= HOT_LEAD_THRESHOLD;
-                const scoreColor = score >= HOT_LEAD_THRESHOLD ? "#10B981" : score >= WARM_LEAD_THRESHOLD ? "#0AC8D4" : "#9B59F5";
+                const scoreColor =
+                  score >= HOT_LEAD_THRESHOLD
+                    ? "#10B981"
+                    : score >= WARM_LEAD_THRESHOLD
+                      ? "#0AC8D4"
+                      : "#9B59F5";
                 return (
                   <li key={lead.id}>
-                    <Link to={lead.type === 'call' ? "/logs" : "/inbox"}
+                    <Link
+                      to={lead.type === "call" ? "/logs" : "/inbox"}
                       className={cn(
                         "group flex items-center justify-between gap-3 px-4 py-3 transition-all",
-                        isHot ? "hover:bg-emerald-500/5" : "hover:bg-white/3"
-                      )}>
+                        isHot ? "hover:bg-emerald-500/5" : "hover:bg-white/3",
+                      )}
+                    >
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className={cn(
-                          "w-9 h-9 rounded-xl glass border flex items-center justify-center shrink-0 transition-all",
-                          isHot
-                            ? "border-emerald-500/40 text-emerald-600"
-                            : "border-white/10 text-brand"
-                        )}>
+                        <div
+                          className={cn(
+                            "w-9 h-9 rounded-xl glass border flex items-center justify-center shrink-0 transition-all",
+                            isHot
+                              ? "border-emerald-500/40 text-emerald-600"
+                              : "border-white/10 text-brand",
+                          )}
+                        >
                           {isHot && (
                             <span className="absolute w-9 h-9 rounded-xl border border-emerald-500/30 animate-ping opacity-30" />
                           )}
-                          {lead.type === 'call' ? <PhoneCall className="w-4 h-4" /> : <Mail className="w-4 h-4" />}
+                          {lead.type === "call" ? (
+                            <PhoneCall className="w-4 h-4" />
+                          ) : (
+                            <Mail className="w-4 h-4" />
+                          )}
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="font-display italic text-base text-ink truncate">{lead.contact}</span>
+                            <span className="font-display italic text-base text-ink truncate">
+                              {lead.contact}
+                            </span>
                             <span
                               className="px-1.5 py-0.5 rounded-full text-[8px] uppercase tracking-[0.22em] border shrink-0"
                               style={{
@@ -716,7 +975,9 @@ export default function DashboardHome() {
                               {score}%
                             </span>
                           </div>
-                          <p className="text-[10px] text-muted truncate max-w-md leading-tight mb-1.5">{lead.summary}</p>
+                          <p className="text-[10px] text-muted truncate max-w-md leading-tight mb-1.5">
+                            {lead.summary}
+                          </p>
                           {/* Score bar */}
                           <div className="w-full h-0.5 rounded-full bg-black/10 overflow-hidden">
                             <motion.div
@@ -751,15 +1012,23 @@ export default function DashboardHome() {
               {activeSignals.map((sig, idx) => (
                 <li key={idx} className="px-4 py-2.5 flex items-center justify-between">
                   <div className="min-w-0">
-                    <div className="font-display italic text-sm text-ink truncate">{sig.customer_number}</div>
+                    <div className="font-display italic text-sm text-ink truncate">
+                      {sig.customer_number}
+                    </div>
                     <div className="flex items-center gap-1.5">
                       <div className="w-1 h-1 rounded-full bg-emerald-500 indicator-glow" />
-                      <span className="text-[8px] uppercase tracking-[0.28em] text-muted">{sig.status}</span>
+                      <span className="text-[8px] uppercase tracking-[0.28em] text-muted">
+                        {sig.status}
+                      </span>
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <div className="text-[8px] uppercase tracking-[0.28em] text-rose-500">Deployed</div>
-                    <div className="text-[8px] font-mono text-muted/60">{sig.agent_id?.substring(0,8)}</div>
+                    <div className="text-[8px] uppercase tracking-[0.28em] text-rose-500">
+                      Deployed
+                    </div>
+                    <div className="text-[8px] font-mono text-muted/60">
+                      {sig.agent_id?.substring(0, 8)}
+                    </div>
                   </div>
                 </li>
               ))}
@@ -789,7 +1058,10 @@ export default function DashboardHome() {
           scroll
           flush
           actions={
-            <Link to="/logs" className="text-[9px] uppercase tracking-[0.3em] text-muted hover:text-ink transition-colors flex items-center gap-1">
+            <Link
+              to="/logs"
+              className="text-[9px] uppercase tracking-[0.3em] text-muted hover:text-ink transition-colors flex items-center gap-1"
+            >
               Archives <ArrowUpRight className="w-3 h-3" />
             </Link>
           }
@@ -802,22 +1074,43 @@ export default function DashboardHome() {
             <ul className="divide-y divide-white/5">
               {recentLogs.map((call, idx) => (
                 <li key={call.id || idx}>
-                  <Link to="/logs" className="group flex items-center justify-between gap-3 px-4 py-3 hover:bg-white/3 transition-all">
+                  <Link
+                    to="/logs"
+                    className="group flex items-center justify-between gap-3 px-4 py-3 hover:bg-white/3 transition-all"
+                  >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className={cn(
-                        "w-9 h-9 rounded-xl glass border flex items-center justify-center transition-all shrink-0",
-                        call.direction === 'inbound' ? "border-brand/30 text-brand" : "border-brand-2/30 text-brand-2"
-                      )}>
-                        <PhoneCall className={cn("w-4 h-4", call.direction === 'inbound' ? "" : "-rotate-90")} />
+                      <div
+                        className={cn(
+                          "w-9 h-9 rounded-xl glass border flex items-center justify-center transition-all shrink-0",
+                          call.direction === "inbound"
+                            ? "border-brand/30 text-brand"
+                            : "border-brand-2/30 text-brand-2",
+                        )}
+                      >
+                        <PhoneCall
+                          className={cn(
+                            "w-4 h-4",
+                            call.direction === "inbound" ? "" : "-rotate-90",
+                          )}
+                        />
                       </div>
                       <div className="min-w-0">
-                        <div className="font-display italic text-base text-ink truncate">{call.customer_number || "Simulator"}</div>
-                        <div className="text-[10px] text-muted truncate max-w-md">{call.summary}</div>
+                        <div className="font-display italic text-base text-ink truncate">
+                          {call.customer_number || "Simulator"}
+                        </div>
+                        <div className="text-[10px] text-muted truncate max-w-md">
+                          {call.summary}
+                        </div>
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <div className="font-mono text-[11px] text-ink/90">{Math.ceil((call.duration_seconds || 0) / 60)}m {(call.duration_seconds || 0) % 60}s</div>
-                      <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-0.5">{formatDate(call.created_at)}</div>
+                      <div className="font-mono text-[11px] text-ink/90">
+                        {Math.ceil((call.duration_seconds || 0) / 60)}m{" "}
+                        {(call.duration_seconds || 0) % 60}s
+                      </div>
+                      <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-0.5">
+                        {formatDate(call.created_at)}
+                      </div>
                     </div>
                   </Link>
                 </li>
@@ -838,28 +1131,39 @@ export default function DashboardHome() {
 
   return (
     <PageShell
-      eyebrow={`Today · ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}`}
+      eyebrow={`Today · ${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}`}
       title="Dashboard"
       subtitle="Live overview of your agents and activity"
       actions={
         <>
           {highPriorityTasks.length > 0 && (
-            <Link to="/triage" className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/15 transition-all">
+            <Link
+              to="/triage"
+              className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/15 transition-all"
+            >
               <span className="relative flex h-1.5 w-1.5">
                 <span className="absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75 animate-ping" />
                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-rose-500" />
               </span>
-              <span className="text-[9px] uppercase tracking-[0.28em] text-rose-500">{highPriorityTasks.length} critical</span>
+              <span className="text-[9px] uppercase tracking-[0.28em] text-rose-500">
+                {highPriorityTasks.length} critical
+              </span>
             </Link>
           )}
           {voiceButton}
         </>
       }
       tabs={[
-        { id: "pulse",   label: "Pulse",     icon: Activity,   content: Pulse },
-        { id: "brief",   label: "Brief",     icon: Sparkles,   content: Brief },
-        { id: "fleet",   label: "Fleet",     icon: Target,     badge: hotLeads.length || undefined, content: Fleet },
-        { id: "history", label: "History",   icon: HistoryIcon, content: HistoryView },
+        { id: "pulse", label: "Pulse", icon: Activity, content: Pulse },
+        { id: "brief", label: "Brief", icon: Sparkles, content: Brief },
+        {
+          id: "fleet",
+          label: "Fleet",
+          icon: Target,
+          badge: hotLeads.length || undefined,
+          content: Fleet,
+        },
+        { id: "history", label: "History", icon: HistoryIcon, content: HistoryView },
       ]}
     />
   );

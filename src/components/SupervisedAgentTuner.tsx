@@ -9,7 +9,7 @@ type Lesson = {
   id: string;
   lesson: string;
   created_at: string;
-}
+};
 
 export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
   const { success: toastSuccess, error: toastError } = useToast();
@@ -28,7 +28,9 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
     const controller = new AbortController();
     (async () => {
       try {
-        const res = await authFetch(`/api/agents/${agentId}/lessons`, { signal: controller.signal });
+        const res = await authFetch(`/api/agents/${agentId}/lessons`, {
+          signal: controller.signal,
+        });
         const data = await res.json();
         if (!cancelled) setLessons(data.lessons || []);
       } catch (e: any) {
@@ -38,19 +40,23 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
         if (!cancelled) setIsLoading(false);
       }
     })();
-    return () => { cancelled = true; controller.abort(); };
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- toastError is a stable context value; agentId is the real reactive dep
   }, [agentId]);
 
   const promoteToDirective = async (lesson: Lesson) => {
     setIsPromoting(lesson.id);
     try {
       const resp = await authFetch(`/api/agents/${agentId}/promote`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lessonId: lesson.id, content: lesson.lesson })
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lessonId: lesson.id, content: lesson.lesson }),
       });
       if (resp.ok) {
-        setLessons(prev => prev.filter(l => l.id !== lesson.id));
+        setLessons((prev) => prev.filter((l) => l.id !== lesson.id));
         toastSuccess("Promoted to directive", "Observation is now a hard constraint.");
       } else {
         toastError("Promotion failed", "Could not promote this observation.");
@@ -65,9 +71,9 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
   const deleteLesson = async (id: string) => {
     setIsDeleting(id);
     try {
-      const resp = await authFetch(`/api/agents/${agentId}/lessons/${id}`, { method: 'DELETE' });
+      const resp = await authFetch(`/api/agents/${agentId}/lessons/${id}`, { method: "DELETE" });
       if (resp.ok) {
-        setLessons(prev => prev.filter(l => l.id !== id));
+        setLessons((prev) => prev.filter((l) => l.id !== id));
       } else {
         toastError("Delete failed", "Could not discard this observation.");
       }
@@ -82,8 +88,14 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
     return (
       <div className="p-12 flex flex-col items-center justify-center gap-4">
         <div className="relative w-10 h-10">
-          <div className="absolute inset-0 rounded-full opacity-40"
-            style={{ background: "conic-gradient(from 0deg, #0AC8D4, #9B59F5, #0AC8D4)", filter: "blur(1px)", animation: "spin 2s linear infinite" }} />
+          <div
+            className="absolute inset-0 rounded-full opacity-40"
+            style={{
+              background: "conic-gradient(from 0deg, #0AC8D4, #9B59F5, #0AC8D4)",
+              filter: "blur(1px)",
+              animation: "spin 2s linear infinite",
+            }}
+          />
           <div className="absolute inset-1 rounded-full bg-paper" />
           <div className="absolute inset-2 rounded-full glass flex items-center justify-center">
             <Brain className="w-3 h-3 text-brand" />
@@ -104,8 +116,12 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
               <Brain className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-[11px] font-medium text-ink uppercase tracking-[0.28em]">Training Buffer</h3>
-              <p className="text-[9px] text-muted/70 uppercase tracking-[0.3em]">Promote observations to directives</p>
+              <h3 className="text-[11px] font-medium text-ink uppercase tracking-[0.28em]">
+                Training Buffer
+              </h3>
+              <p className="text-[9px] text-muted/70 uppercase tracking-[0.3em]">
+                Promote observations to directives
+              </p>
             </div>
           </div>
           {lessons.length > 0 && (
@@ -128,7 +144,9 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
                 <div className="w-12 h-12 rounded-2xl glass border border-emerald-500/30 flex items-center justify-center text-emerald-500">
                   <CheckCircle2 className="w-5 h-5" />
                 </div>
-                <p className="text-[9px] uppercase tracking-[0.5em] text-emerald-500/70">Fully synchronized</p>
+                <p className="text-[9px] uppercase tracking-[0.5em] text-emerald-500/70">
+                  Fully synchronized
+                </p>
               </motion.div>
             ) : (
               lessons.map((lesson) => (
@@ -157,9 +175,11 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
                             title="Promote to directive"
                             className="h-7 px-2.5 rounded-lg glass border border-brand/25 text-brand hover:bg-brand/15 transition-all text-[9px] uppercase tracking-[0.25em] flex items-center gap-1.5 disabled:opacity-50"
                           >
-                            {isPromoting === lesson.id
-                              ? <Loader2 className="w-3 h-3 animate-spin" />
-                              : <ArrowUpCircle className="w-3 h-3" />}
+                            {isPromoting === lesson.id ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <ArrowUpCircle className="w-3 h-3" />
+                            )}
                             Promote
                           </button>
                           <button
@@ -168,9 +188,11 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
                             title="Discard"
                             className="h-7 w-7 rounded-lg glass border border-white/10 text-muted/60 hover:text-rose-500 hover:border-rose-500/30 transition-all flex items-center justify-center disabled:opacity-50"
                           >
-                            {isDeleting === lesson.id
-                              ? <Loader2 className="w-3 h-3 animate-spin" />
-                              : <Trash2 className="w-3 h-3" />}
+                            {isDeleting === lesson.id ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-3 h-3" />
+                            )}
                           </button>
                         </div>
                       </div>
@@ -180,7 +202,13 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
                       </p>
 
                       <p className="text-[8px] uppercase tracking-[0.3em] text-muted/50">
-                        Captured {formatDateTime(lesson.created_at, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        Captured{" "}
+                        {formatDateTime(lesson.created_at, {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </p>
                     </div>
                   </div>

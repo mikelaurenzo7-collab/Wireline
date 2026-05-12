@@ -24,8 +24,7 @@ import { AsyncLocalStorage } from "node:async_hooks";
  * entry in the published `Anthropic.Model` union, so this is the
  * highest-capability current-generation default.
  */
-export const CLAUDE_MODEL_DEFAULT: string =
-  process.env.ANTHROPIC_MODEL || "claude-opus-4-7";
+export const CLAUDE_MODEL_DEFAULT: string = process.env.ANTHROPIC_MODEL || "claude-opus-4-7";
 
 /**
  * @deprecated Use CLAUDE_MODEL_DEFAULT. Kept as an internal alias so the
@@ -50,7 +49,9 @@ export interface ClaudeCallMeta {
   latency_ms: number;
 }
 
-export interface AuditContext { records: ClaudeCallMeta[]; }
+export interface AuditContext {
+  records: ClaudeCallMeta[];
+}
 const auditCtx = new AsyncLocalStorage<AuditContext>();
 
 /** Capture all Claude usage performed inside `fn`, then return it. */
@@ -73,26 +74,31 @@ export async function withAuditCapture<T>(
 /** Lower-level helpers for express middleware use. The middleware
  *  creates a context BEFORE the route handler runs and flushes the
  *  records on `res.on('finish')`. */
-export function createAuditContext(): AuditContext { return { records: [] }; }
+export function createAuditContext(): AuditContext {
+  return { records: [] };
+}
 export function runInAuditContext<T>(ctx: AuditContext, fn: () => T): T {
   return auditCtx.run(ctx, fn);
 }
 
 /** Estimate cost in USD from Anthropic usage. Defaults to Opus 4.7 pricing.
  *  Sonnet 4.6 / Haiku 4.5 have different rates; pass the model to scale. */
-export function estimateCost(usage: {
-  input_tokens?: number;
-  output_tokens?: number;
-  cache_read_input_tokens?: number;
-  cache_creation_input_tokens?: number;
-}, model: string = DEFAULT_MODEL): number {
+export function estimateCost(
+  usage: {
+    input_tokens?: number;
+    output_tokens?: number;
+    cache_read_input_tokens?: number;
+    cache_creation_input_tokens?: number;
+  },
+  model: string = DEFAULT_MODEL,
+): number {
   const rates = (() => {
     if (model.includes("haiku")) return { in: 1, out: 5 };
     if (model.includes("sonnet")) return { in: 3, out: 15 };
     return { in: 5, out: 25 }; // Opus 4.x
   })();
-  const cacheRead = rates.in * 0.10;   // ~10% of input
-  const cacheWrite = rates.in * 1.25;  // 1.25x of input (5-min TTL)
+  const cacheRead = rates.in * 0.1; // ~10% of input
+  const cacheWrite = rates.in * 1.25; // 1.25x of input (5-min TTL)
   const total =
     (usage.input_tokens || 0) * rates.in +
     (usage.output_tokens || 0) * rates.out +
@@ -137,9 +143,7 @@ function getClient(): Anthropic {
 export class ClaudeUnavailableError extends Error {
   status = 503;
   constructor() {
-    super(
-      "Claude Brain is offline — set ANTHROPIC_API_KEY to enable advanced features.",
-    );
+    super("Claude Brain is offline — set ANTHROPIC_API_KEY to enable advanced features.");
     this.name = "ClaudeUnavailableError";
   }
 }
@@ -272,8 +276,7 @@ export const TOOLS = {
   /** Pre-call briefing — what to lead with, what to anticipate, how to close. */
   brief: {
     name: "deliver_brief",
-    description:
-      "Deliver a tactical pre-call briefing for an outbound carrier signal.",
+    description: "Deliver a tactical pre-call briefing for an outbound carrier signal.",
     input_schema: {
       type: "object",
       properties: {
@@ -484,13 +487,7 @@ export const TOOLS = {
           items: { type: "string" },
         },
       },
-      required: [
-        "persona_block",
-        "tone_summary",
-        "signature_phrases",
-        "do_rules",
-        "dont_rules",
-      ],
+      required: ["persona_block", "tone_summary", "signature_phrases", "do_rules", "dont_rules"],
       additionalProperties: false,
     },
   } as ToolSchema,
@@ -625,8 +622,7 @@ export const TOOLS = {
         },
         coaching_note: {
           type: "string",
-          description:
-            "One-sentence note for a human reviewer summarising performance.",
+          description: "One-sentence note for a human reviewer summarising performance.",
         },
       },
       required: [
@@ -646,7 +642,8 @@ export const TOOLS = {
   /** V2A Extraction — extracts deep business actions for autonomous execution. */
   businessActions: {
     name: "extract_business_actions",
-    description: "Extract deep, structured business actions from a call transcript for autonomous execution (email, SMS, calendar, CRM, and internal follow-up).",
+    description:
+      "Extract deep, structured business actions from a call transcript for autonomous execution (email, SMS, calendar, CRM, and internal follow-up).",
     input_schema: {
       type: "object",
       properties: {
@@ -655,22 +652,35 @@ export const TOOLS = {
           items: {
             type: "object",
             properties: {
-              type: { type: "string", enum: ["send_email", "send_text_message", "schedule_calendar", "update_crm_lead", "create_internal_task"] },
+              type: {
+                type: "string",
+                enum: [
+                  "send_email",
+                  "send_text_message",
+                  "schedule_calendar",
+                  "update_crm_lead",
+                  "create_internal_task",
+                ],
+              },
               priority: { type: "string", enum: ["high", "medium", "low"] },
-              reasoning: { type: "string", description: "Why this action is necessary based on the transcript." },
+              reasoning: {
+                type: "string",
+                description: "Why this action is necessary based on the transcript.",
+              },
               payload: {
                 type: "object",
-                description: "Structured data for the action. For send_email: {to, subject, body}. For send_text_message: {to, body, channel}. For schedule_calendar: {event_name, date, time, attendees}. For update_crm_lead: {customer_number, status, notes}.",
-              }
+                description:
+                  "Structured data for the action. For send_email: {to, subject, body}. For send_text_message: {to, body, channel}. For schedule_calendar: {event_name, date, time, attendees}. For update_crm_lead: {customer_number, status, notes}.",
+              },
             },
             required: ["type", "priority", "payload", "reasoning"],
-            additionalProperties: false
-          }
-        }
+            additionalProperties: false,
+          },
+        },
       },
       required: ["actions"],
-      additionalProperties: false
-    }
+      additionalProperties: false,
+    },
   } as ToolSchema,
 
   /** Live in-call coach — looks at a partial/full transcript and tells the operator what to do next. */
@@ -698,8 +708,7 @@ export const TOOLS = {
         missed_opportunities: { type: "array", items: { type: "string" } },
         suggested_next_words: {
           type: "string",
-          description:
-            "What the agent should say next, written verbatim. ≤30 words.",
+          description: "What the agent should say next, written verbatim. ≤30 words.",
         },
         compliance_alerts: { type: "array", items: { type: "string" } },
       },
@@ -735,8 +744,7 @@ export const TOOLS = {
         },
         personality_block: {
           type: "string",
-          description:
-            "A self-contained personality block to drop into the agent's system prompt.",
+          description: "A self-contained personality block to drop into the agent's system prompt.",
         },
         suggested_voice_tone: { type: "string" },
         directives: {
@@ -787,7 +795,10 @@ export const TOOLS = {
       properties: {
         headline: { type: "string", description: "≤14 words. The day's story in one line." },
         mood: { type: "string", enum: ["green", "yellow", "red"] },
-        key_metrics_takeaway: { type: "string", description: "1–2 sentences interpreting the headline numbers." },
+        key_metrics_takeaway: {
+          type: "string",
+          description: "1–2 sentences interpreting the headline numbers.",
+        },
         highlights: {
           type: "array",
           items: { type: "string" },
@@ -841,15 +852,7 @@ export const TOOLS = {
               count: { type: "integer", minimum: 1 },
               category: {
                 type: "string",
-                enum: [
-                  "sales",
-                  "support",
-                  "complaint",
-                  "info",
-                  "billing",
-                  "appointment",
-                  "other",
-                ],
+                enum: ["sales", "support", "complaint", "info", "billing", "appointment", "other"],
               },
               example_quote: { type: "string" },
               trend: {
@@ -991,11 +994,13 @@ export const TOOLS = {
         research_confidence: {
           type: "string",
           enum: ["high", "medium", "low"],
-          description: "high = found specific person + employer on a reputable source. medium = likely match. low = couldn't pin down.",
+          description:
+            "high = found specific person + employer on a reputable source. medium = likely match. low = couldn't pin down.",
         },
         identity_summary: {
           type: "string",
-          description: "1-2 sentence working hypothesis for who this is. If confidence is low, say so.",
+          description:
+            "1-2 sentence working hypothesis for who this is. If confidence is low, say so.",
         },
         company_name: { type: "string" },
         role: { type: "string", description: "Job title or function." },
@@ -1007,23 +1012,27 @@ export const TOOLS = {
         recent_signals: {
           type: "array",
           items: { type: "string" },
-          description: "Notable recent activity — funding, press, hiring, product launches, layoffs. Empty array if none found.",
+          description:
+            "Notable recent activity — funding, press, hiring, product launches, layoffs. Empty array if none found.",
         },
         conversation_hooks: {
           type: "array",
           minItems: 1,
           items: { type: "string" },
-          description: "3-5 specific things to mention to build rapport or relevance. Always at least one.",
+          description:
+            "3-5 specific things to mention to build rapport or relevance. Always at least one.",
         },
         likely_objections: {
           type: "array",
           items: { type: "string" },
-          description: "2-3 objections this person might raise based on role/industry. Empty array if confidence is too low to guess.",
+          description:
+            "2-3 objections this person might raise based on role/industry. Empty array if confidence is too low to guess.",
         },
         sources: {
           type: "array",
           items: { type: "string" },
-          description: "Up to 6 source URLs that informed this enrichment. Empty if no sources used.",
+          description:
+            "Up to 6 source URLs that informed this enrichment. Empty if no sources used.",
         },
       },
       required: [
@@ -1041,8 +1050,7 @@ export const TOOLS = {
   /** Used by the URL-based knowledge ingestion path. */
   knowledgeFromUrl: {
     name: "deliver_knowledge_entries",
-    description:
-      "After fetching the page, deliver atomic knowledge entries the agent can use.",
+    description: "After fetching the page, deliver atomic knowledge entries the agent can use.",
     input_schema: {
       type: "object",
       properties: {
@@ -1055,15 +1063,7 @@ export const TOOLS = {
               fact: { type: "string" },
               category: {
                 type: "string",
-                enum: [
-                  "service",
-                  "pricing",
-                  "hours",
-                  "contact",
-                  "policy",
-                  "faq",
-                  "general",
-                ],
+                enum: ["service", "pricing", "hours", "contact", "policy", "faq", "general"],
               },
             },
             required: ["fact", "category"],
@@ -1137,7 +1137,8 @@ export const TOOLS = {
   /** Quick email reply suggestions — 3 short, ready-to-send reply options. */
   quickReplies: {
     name: "deliver_quick_replies",
-    description: "Deliver 3 short, distinct, ready-to-send email reply options for the latest customer message.",
+    description:
+      "Deliver 3 short, distinct, ready-to-send email reply options for the latest customer message.",
     input_schema: {
       type: "object",
       properties: {
@@ -1147,8 +1148,15 @@ export const TOOLS = {
           items: {
             type: "object",
             properties: {
-              label: { type: "string", description: "Short 2-4 word action label shown as a chip (e.g. 'Confirm & proceed')." },
-              body: { type: "string", description: "Complete email body, ≤60 words, plain text, no placeholders." },
+              label: {
+                type: "string",
+                description:
+                  "Short 2-4 word action label shown as a chip (e.g. 'Confirm & proceed').",
+              },
+              body: {
+                type: "string",
+                description: "Complete email body, ≤60 words, plain text, no placeholders.",
+              },
             },
             required: ["label", "body"],
             additionalProperties: false,
@@ -1174,35 +1182,41 @@ export const TOOLS = {
           type: "integer",
           minimum: 0,
           maximum: 20,
-          description: "Opening & Greeting — professional, warm, identified company and purpose clearly.",
+          description:
+            "Opening & Greeting — professional, warm, identified company and purpose clearly.",
         },
         discovery: {
           type: "integer",
           minimum: 0,
           maximum: 20,
-          description: "Problem Discovery — asked thoughtful open-ended questions, understood the customer's actual situation.",
+          description:
+            "Problem Discovery — asked thoughtful open-ended questions, understood the customer's actual situation.",
         },
         solution: {
           type: "integer",
           minimum: 0,
           maximum: 20,
-          description: "Solution Presentation — clear, relevant, directly addressed the customer's stated needs.",
+          description:
+            "Solution Presentation — clear, relevant, directly addressed the customer's stated needs.",
         },
         objection: {
           type: "integer",
           minimum: 0,
           maximum: 20,
-          description: "Objection Handling — handled pushback calmly, didn't oversell, addressed concerns with evidence.",
+          description:
+            "Objection Handling — handled pushback calmly, didn't oversell, addressed concerns with evidence.",
         },
         closing: {
           type: "integer",
           minimum: 0,
           maximum: 20,
-          description: "Closing & Next Steps — strong close, set clear next steps or outcome, no ambiguity.",
+          description:
+            "Closing & Next Steps — strong close, set clear next steps or outcome, no ambiguity.",
         },
         coaching_note: {
           type: "string",
-          description: "One sentence the operator should act on — the single highest-leverage improvement for this agent.",
+          description:
+            "One sentence the operator should act on — the single highest-leverage improvement for this agent.",
         },
         strengths: {
           type: "array",
@@ -1230,7 +1244,8 @@ export const TOOLS = {
       properties: {
         opening_hook: {
           type: "string",
-          description: "The exact words the agent should say when the call connects (≤25 words). Warm, specific, and professional.",
+          description:
+            "The exact words the agent should say when the call connects (≤25 words). Warm, specific, and professional.",
         },
         purpose_statement: {
           type: "string",
@@ -1243,8 +1258,14 @@ export const TOOLS = {
             type: "object",
             properties: {
               question: { type: "string", description: "The exact question to ask." },
-              intent: { type: "string", description: "What this question is designed to uncover (≤10 words)." },
-              follow_up: { type: "string", description: "A natural follow-up if the answer is vague (≤15 words)." },
+              intent: {
+                type: "string",
+                description: "What this question is designed to uncover (≤10 words).",
+              },
+              follow_up: {
+                type: "string",
+                description: "A natural follow-up if the answer is vague (≤15 words).",
+              },
             },
             required: ["question", "intent"],
             additionalProperties: false,
@@ -1252,7 +1273,8 @@ export const TOOLS = {
         },
         value_prop_script: {
           type: "string",
-          description: "The core value proposition delivered in 2–3 sentences. Outcome-first, proof point included.",
+          description:
+            "The core value proposition delivered in 2–3 sentences. Outcome-first, proof point included.",
         },
         objection_handlers: {
           type: "array",
@@ -1260,11 +1282,23 @@ export const TOOLS = {
           items: {
             type: "object",
             properties: {
-              objection: { type: "string", description: "Exact words or paraphrase of the objection." },
-              response: { type: "string", description: "Complete scripted response (2–4 sentences)." },
+              objection: {
+                type: "string",
+                description: "Exact words or paraphrase of the objection.",
+              },
+              response: {
+                type: "string",
+                description: "Complete scripted response (2–4 sentences).",
+              },
               technique: {
                 type: "string",
-                enum: ["acknowledge_redirect", "reframe_roi", "social_proof", "feel_felt_found", "clarifying_question"],
+                enum: [
+                  "acknowledge_redirect",
+                  "reframe_roi",
+                  "social_proof",
+                  "feel_felt_found",
+                  "clarifying_question",
+                ],
               },
             },
             required: ["objection", "response", "technique"],
@@ -1291,7 +1325,8 @@ export const TOOLS = {
         },
         voicemail_script: {
           type: "string",
-          description: "A 15–20 second voicemail script (spoken aloud) for when nobody answers. Includes name, company, reason, callback number placeholder.",
+          description:
+            "A 15–20 second voicemail script (spoken aloud) for when nobody answers. Includes name, company, reason, callback number placeholder.",
         },
         success_criteria: {
           type: "string",
@@ -1321,7 +1356,11 @@ export const TOOLS = {
       type: "object",
       properties: {
         query: { type: "string", description: "Name, phone, or email fragment to search." },
-        crm: { type: "string", enum: ["salesforce", "hubspot", "auto"], description: "Which CRM to search. 'auto' tries whichever is configured." },
+        crm: {
+          type: "string",
+          enum: ["salesforce", "hubspot", "auto"],
+          description: "Which CRM to search. 'auto' tries whichever is configured.",
+        },
       },
       required: ["query"],
       additionalProperties: false,
@@ -1341,7 +1380,11 @@ export const TOOLS = {
         contact_id: { type: "string", description: "CRM contact ID to associate (optional)." },
         to_number: { type: "string", description: "Customer phone number." },
         duration_minutes: { type: "number", description: "Call duration in minutes." },
-        outcome: { type: "string", enum: ["connected", "voicemail", "no_answer", "busy", "wrong_number"], description: "Call disposition." },
+        outcome: {
+          type: "string",
+          enum: ["connected", "voicemail", "no_answer", "busy", "wrong_number"],
+          description: "Call disposition.",
+        },
         crm: { type: "string", enum: ["salesforce", "hubspot", "auto"] },
       },
       required: ["subject", "description", "to_number"],
@@ -1359,9 +1402,15 @@ export const TOOLS = {
       properties: {
         name: { type: "string", description: "Opportunity / deal name." },
         contact_id: { type: "string", description: "CRM contact ID to associate (optional)." },
-        stage: { type: "string", description: "Pipeline stage (e.g. 'Prospecting', 'appointmentscheduled')." },
+        stage: {
+          type: "string",
+          description: "Pipeline stage (e.g. 'Prospecting', 'appointmentscheduled').",
+        },
         amount: { type: "number", description: "Estimated deal value in USD (optional)." },
-        close_date: { type: "string", description: "Expected close date (YYYY-MM-DD). Defaults to 30 days out." },
+        close_date: {
+          type: "string",
+          description: "Expected close date (YYYY-MM-DD). Defaults to 30 days out.",
+        },
         crm: { type: "string", enum: ["salesforce", "hubspot", "auto"] },
       },
       required: ["name"],
@@ -1378,7 +1427,11 @@ export const TOOLS = {
       type: "object",
       properties: {
         message: { type: "string", description: "The notification message to post to Slack." },
-        channel: { type: "string", description: "Optional Slack channel ID to post to. Defaults to the operator's configured default channel." },
+        channel: {
+          type: "string",
+          description:
+            "Optional Slack channel ID to post to. Defaults to the operator's configured default channel.",
+        },
       },
       required: ["message"],
       additionalProperties: false,
@@ -1405,7 +1458,8 @@ export async function brief(input: BriefInput) {
   let roleGuidance = "";
   if (input.role) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.role] ?? "";
-    if (!roleGuidance) console.warn(`[claude-brain] brief: unknown role "${input.role}" — no role lens applied.`);
+    if (!roleGuidance)
+      console.warn(`[claude-brain] brief: unknown role "${input.role}" — no role lens applied.`); // eslint-disable-line no-console
   }
   const system = `You are a senior tactical sales coach drafting a pre-call brief for an autonomous voice agent on the Wireline relay.
 
@@ -1442,7 +1496,8 @@ export async function qualify(input: QualifyInput) {
   let roleGuidance = "";
   if (input.role) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.role] ?? "";
-    if (!roleGuidance) console.warn(`[claude-brain] qualify: unknown role "${input.role}" — no role lens applied.`);
+    if (!roleGuidance)
+      console.warn(`[claude-brain] qualify: unknown role "${input.role}" — no role lens applied.`); // eslint-disable-line no-console
   }
   const system = `You are a senior B2B sales qualification analyst. Score leads against BANT (Budget / Authority / Need / Timeline). Be evidence-driven — every score must reference a specific phrase or signal in the transcript. Be honest: if there's no evidence, score low. Aggregate score is the weighted average (Need 35%, Timeline 25%, Authority 20%, Budget 20%).${roleGuidance ? `\n\nRole-specific qualification lens — ${roleGuidance}` : ""}`;
 
@@ -1476,7 +1531,11 @@ export async function objectionDrill(input: ObjectionDrillInput) {
   let roleGuidance = "";
   if (input.role) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.role] ?? "";
-    if (!roleGuidance) console.warn(`[claude-brain] objectionDrill: unknown role "${input.role}" — no role lens applied.`);
+    if (!roleGuidance)
+      // eslint-disable-next-line no-console -- role validation diagnostic
+      console.warn(
+        `[claude-brain] objectionDrill: unknown role "${input.role}" — no role lens applied.`,
+      );
   }
   const system = `You are a sales-coaching AI generating objection-handling drills for the autonomous agent "${input.agentName}" (archetype: ${input.archetype}${input.role ? `, role: ${input.role}` : ""}). Make drills realistic, varied in difficulty, and tied to a recommended response that respects the archetype's tone. Coaching notes should explain *why* the response works.${roleGuidance ? `\n\nRole-specific drill lens — ${roleGuidance} Drills should reflect the objections, edge cases, and compliance pitfalls this role actually encounters.` : ""}`;
 
@@ -1507,7 +1566,11 @@ export async function coldEmail(input: ColdEmailInput) {
   let roleGuidance = "";
   if (input.agentRole) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.agentRole] ?? "";
-    if (!roleGuidance) console.warn(`[claude-brain] coldEmail: unknown role "${input.agentRole}" — no role lens applied.`);
+    if (!roleGuidance)
+      // eslint-disable-next-line no-console -- role validation diagnostic
+      console.warn(
+        `[claude-brain] coldEmail: unknown role "${input.agentRole}" — no role lens applied.`,
+      );
   }
   const system = `You are an elite cold-outreach copywriter. Write emails that get replies. Rules:
 - Subject line: 4–7 words, no clickbait, hint at value.
@@ -1565,9 +1628,7 @@ export async function threadSummary(input: ThreadSummaryInput) {
 
   const user = `Subject: ${input.subject}
 
-${input.messages
-  .map((m, i) => `[${i + 1}] ${m.role.toUpperCase()}\n${m.content}`)
-  .join("\n\n")}
+${input.messages.map((m, i) => `[${i + 1}] ${m.role.toUpperCase()}\n${m.content}`).join("\n\n")}
 
 Summarize now.`;
 
@@ -1596,14 +1657,23 @@ export interface AgentReviewInput {
   agentName: string;
   archetype: string;
   role?: string;
-  callLogs: Array<{ summary: string; transcript?: string; lead_score?: number; intent_label?: string }>;
+  callLogs: Array<{
+    summary: string;
+    transcript?: string;
+    lead_score?: number;
+    intent_label?: string;
+  }>;
 }
 
 export async function agentReview(input: AgentReviewInput) {
   let roleGuidance = "";
   if (input.role) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.role] ?? "";
-    if (!roleGuidance) console.warn(`[claude-brain] agentReview: unknown role "${input.role}" — no role lens applied.`);
+    if (!roleGuidance)
+      // eslint-disable-next-line no-console -- role validation diagnostic
+      console.warn(
+        `[claude-brain] agentReview: unknown role "${input.role}" — no role lens applied.`,
+      );
   }
   const system = `You are a senior fleet operator reviewing the performance of an autonomous voice agent. Use evidence from the call logs. Be specific, tactical, and willing to be critical. Recommended directives should be concrete instructions the agent can immediately follow — not vague advice. Knowledge entries should be facts/policies that prevent recurring failures.${roleGuidance ? `\n\nRole-specific review lens — ${roleGuidance}` : ""}`;
 
@@ -1614,7 +1684,9 @@ ${input.callLogs
   .map(
     (l, i) =>
       `Call ${i + 1}${l.lead_score !== undefined ? ` [score ${l.lead_score}, ${l.intent_label ?? "?"}]` : ""}\nSummary: ${l.summary}${
-        l.transcript ? `\nTranscript: ${l.transcript.slice(0, 1500)}${l.transcript.length > 1500 ? "…" : ""}` : ""
+        l.transcript
+          ? `\nTranscript: ${l.transcript.slice(0, 1500)}${l.transcript.length > 1500 ? "…" : ""}`
+          : ""
       }`,
   )
   .join("\n\n")}
@@ -1647,7 +1719,11 @@ export async function smartDraft(input: SmartDraftInput) {
   let roleGuidance = "";
   if (input.agentRole) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.agentRole] ?? "";
-    if (!roleGuidance) console.warn(`[claude-brain] smartDraft: unknown role "${input.agentRole}" — no role lens applied.`);
+    if (!roleGuidance)
+      // eslint-disable-next-line no-console -- role validation diagnostic
+      console.warn(
+        `[claude-brain] smartDraft: unknown role "${input.agentRole}" — no role lens applied.`,
+      );
   }
   // Stable cacheable prefix: persona + knowledge + directives.
   // Volatile suffix: thread + user instructions.
@@ -1703,14 +1779,22 @@ Output the email body only — no subject, no signature.`;
 
 // Role-specific scoring lenses applied on top of the generic analysis prompt.
 const ROLE_ANALYSIS_GUIDANCE: Record<string, string> = {
-  lead_qualifier:    "This agent qualifies leads (BANT). Score higher when Budget, Authority, Need, and Timeline were all established. Score low if any pillar is missing. Note which BANT pillars were confirmed or absent.",
-  scheduler:         "This agent books appointments. Score higher when a booking was confirmed with a date, time, and confirmation ID. Note if the appointment was successfully booked, rescheduled, or failed.",
-  collections:       "This agent collects payments. Score higher when a payment commitment, arrangement, or promise-to-pay was obtained. Note amount and timeline if discussed.",
-  sales:             "This agent closes deals. Score higher when genuine interest, objection-handling, and a clear next step (demo, proposal, close) occurred.",
-  technical_support: "This agent resolves technical issues. Score higher when the customer's problem was fully resolved or a concrete resolution path was set. Note resolution status.",
-  marketing:         "This agent runs outreach campaigns. Score higher when the prospect expressed interest, booked a demo, registered for an event, or agreed to a follow-up.",
-  receptionist:      "This agent routes calls and takes messages. Score higher when the caller was properly routed or a complete, accurate message was captured.",
-  customer_service:  "This agent handles support. Score higher when the customer's issue was resolved and satisfaction expressed. Note any unresolved items.",
+  lead_qualifier:
+    "This agent qualifies leads (BANT). Score higher when Budget, Authority, Need, and Timeline were all established. Score low if any pillar is missing. Note which BANT pillars were confirmed or absent.",
+  scheduler:
+    "This agent books appointments. Score higher when a booking was confirmed with a date, time, and confirmation ID. Note if the appointment was successfully booked, rescheduled, or failed.",
+  collections:
+    "This agent collects payments. Score higher when a payment commitment, arrangement, or promise-to-pay was obtained. Note amount and timeline if discussed.",
+  sales:
+    "This agent closes deals. Score higher when genuine interest, objection-handling, and a clear next step (demo, proposal, close) occurred.",
+  technical_support:
+    "This agent resolves technical issues. Score higher when the customer's problem was fully resolved or a concrete resolution path was set. Note resolution status.",
+  marketing:
+    "This agent runs outreach campaigns. Score higher when the prospect expressed interest, booked a demo, registered for an event, or agreed to a follow-up.",
+  receptionist:
+    "This agent routes calls and takes messages. Score higher when the caller was properly routed or a complete, accurate message was captured.",
+  customer_service:
+    "This agent handles support. Score higher when the customer's issue was resolved and satisfaction expressed. Note any unresolved items.",
 };
 
 export interface PostCallInput {
@@ -1727,7 +1811,11 @@ export async function postCallAnalysis(input: PostCallInput) {
   let roleGuidance = "";
   if (input.role) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.role] ?? "";
-    if (!roleGuidance) console.warn(`[claude-brain] postCallAnalysis: unknown role "${input.role}" — no scoring lens applied.`);
+    if (!roleGuidance)
+      // eslint-disable-next-line no-console -- role validation diagnostic
+      console.warn(
+        `[claude-brain] postCallAnalysis: unknown role "${input.role}" — no scoring lens applied.`,
+      );
   }
   const system = `You are a senior call analyst delivering post-call enrichment for an autonomous agent on the Wireline relay. Be evidence-driven and concise:
 - score lead intent honestly (0–100); if there's no signal, score low.
@@ -1773,7 +1861,8 @@ export async function coach(input: CoachInput) {
   let roleGuidance = "";
   if (input.role) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.role] ?? "";
-    if (!roleGuidance) console.warn(`[claude-brain] coach: unknown role "${input.role}" — no role context applied.`);
+    if (!roleGuidance)
+      console.warn(`[claude-brain] coach: unknown role "${input.role}" — no role context applied.`); // eslint-disable-line no-console
   }
   const system = `You are a real-time call coach watching ${input.isLive ? "an in-progress" : "a completed"} call. Identify what is working, what is at risk, and exactly what the agent should say next. Suggested-next-words must be ≤30 words and ready to read aloud verbatim. Be tactical and concise.${roleGuidance ? `\n\nRole context — ${roleGuidance}` : ""}`;
   const user = `Agent: ${input.agentName} (${input.archetype}${input.role ? `, ${input.role}` : ""})
@@ -1870,9 +1959,7 @@ After crawling, extract every concrete fact a customer-service agent would need:
     TOOLS.knowledgeFromUrl,
   ];
 
-  const messages: Anthropic.MessageParam[] = [
-    { role: "user", content: userPrompt },
-  ];
+  const messages: Anthropic.MessageParam[] = [{ role: "user", content: userPrompt }];
 
   let _t = Date.now();
   let response = await client.messages.create({
@@ -1905,7 +1992,10 @@ After crawling, extract every concrete fact a customer-service agent would need:
 
   for (const block of response.content) {
     if (block.type === "tool_use" && block.name === "deliver_knowledge_entries") {
-      return block.input as { page_summary: string; entries: Array<{ fact: string; category: string }> };
+      return block.input as {
+        page_summary: string;
+        entries: Array<{ fact: string; category: string }>;
+      };
     }
   }
   throw new Error(
@@ -1963,7 +2053,10 @@ export async function knowledgeFromDocument(input: KnowledgeFromDocumentInput) {
   recordUsage(CLAUDE_MODEL_DEFAULT, response, Date.now() - t0);
   for (const block of response.content) {
     if (block.type === "tool_use" && block.name === "deliver_knowledge_entries") {
-      return block.input as { page_summary: string; entries: Array<{ fact: string; category: string }> };
+      return block.input as {
+        page_summary: string;
+        entries: Array<{ fact: string; category: string }>;
+      };
     }
   }
   throw new Error(
@@ -2041,7 +2134,11 @@ export async function smartEmailReply(input: SmartEmailReplyInput): Promise<{
   let roleGuidance = "";
   if (input.agentRole) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.agentRole] ?? "";
-    if (!roleGuidance) console.warn(`[claude-brain] smartEmailReply: unknown role "${input.agentRole}" — no role lens applied.`);
+    if (!roleGuidance)
+      // eslint-disable-next-line no-console -- role validation diagnostic
+      console.warn(
+        `[claude-brain] smartEmailReply: unknown role "${input.agentRole}" — no role lens applied.`,
+      );
   }
   const system = `## IDENTITY
 You are ${input.agentName}, an autonomous email agent.
@@ -2074,9 +2171,7 @@ ${input.knowledgeBase.length ? input.knowledgeBase.map((k) => `- ${k}`).join("\n
     const body: Anthropic.MessageCreateParams = {
       model: CLAUDE_MODEL_DEFAULT,
       max_tokens: 4096,
-      system: [
-        { type: "text", text: system, cache_control: { type: "ephemeral" } },
-      ],
+      system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
       messages,
     };
     if (tools.length) body.tools = tools;
@@ -2261,7 +2356,9 @@ ${input.failedCalls
   .map(
     (c, i) =>
       `[${i + 1}] score=${c.lead_score ?? "?"} intent=${c.intent_label ?? "?"}\nSummary: ${c.summary}${
-        c.transcript ? `\nTranscript: ${c.transcript.slice(0, 1200)}${c.transcript.length > 1200 ? "…" : ""}` : ""
+        c.transcript
+          ? `\nTranscript: ${c.transcript.slice(0, 1200)}${c.transcript.length > 1200 ? "…" : ""}`
+          : ""
       }`,
   )
   .join("\n\n")}`;
@@ -2304,7 +2401,7 @@ Rules:
 - Be conservative: when in doubt, do NOT cluster. False positives waste operator time.`;
   const user = `${input.facts.length} facts across the operator's fleet:
 
-${input.facts.map(f => `[id=${f.id}${f.agent_name ? ` · ${f.agent_name}` : ""}] ${f.content}`).join("\n")}`;
+${input.facts.map((f) => `[id=${f.id}${f.agent_name ? ` · ${f.agent_name}` : ""}] ${f.content}`).join("\n")}`;
 
   return runStructured<{
     clusters: Array<{
@@ -2383,9 +2480,7 @@ Search the web, then call deliver_lead_enrichment.`;
     TOOLS.enrichLead,
   ];
 
-  const messages: Anthropic.MessageParam[] = [
-    { role: "user", content: userPrompt },
-  ];
+  const messages: Anthropic.MessageParam[] = [{ role: "user", content: userPrompt }];
 
   const model = CLAUDE_MODEL_DEFAULT;
   const maxTokens = 4096;
@@ -2448,7 +2543,7 @@ export interface QuickRepliesResult {
 
 export async function quickReplies(input: QuickRepliesInput): Promise<QuickRepliesResult> {
   const system = `You are ${input.agentName}, an email agent${input.agentRole ? ` (${input.agentRole.replace(/_/g, " ")})` : ""}. Tone: ${input.agentTone}.
-${input.knowledgeBase.length ? `Knowledge base:\n${input.knowledgeBase.map(k => `- ${k}`).join("\n")}` : ""}
+${input.knowledgeBase.length ? `Knowledge base:\n${input.knowledgeBase.map((k) => `- ${k}`).join("\n")}` : ""}
 
 Generate exactly 3 distinct quick-reply options for the latest customer message.
 Each reply must be complete, ready-to-send as-is (≤60 words), with no placeholders or brackets.
@@ -2502,14 +2597,22 @@ export async function qaScore(input: QaScoreInput): Promise<QaScoreResult> {
   let roleGuidance = "";
   if (input.agentRole) {
     const guidance: Record<string, string> = {
-      sales:             "Sales context: weight discovery and closing heavily. A perfect call has 3+ discovery questions, a compelling pitch tied to the customer's stated pain, and an explicit next step. A failed close (no commitment) is a hard cap on the closing score.",
-      lead_qualifier:    "Lead qualifier context: discovery is the whole job. Score discovery and closing against BANT coverage (Budget, Authority, Need, Timeline). 'Closing' means a clear qualified/disqualified decision + handoff package.",
-      collections:       "Collections context: compliance is paramount. Any FDCPA/TCPA violation (no mini-Miranda, no identity verification, abusive language) → greeting score ≤ 5. Objection handling and payment resolution drive the rest.",
-      scheduler:         "Scheduler context: booking accuracy is the primary metric. A confirmed appointment with date/time/reference ID is a strong close. Failing to check availability before confirming is a critical error.",
-      technical_support: "Support context: diagnostic rigor is paramount. Award discovery points for structured troubleshooting (one question at a time, systematic elimination). Closing is verified resolution — not just 'let me know if it happens again'.",
-      customer_service:  "Customer service context: emotional acknowledgment and resolution completeness matter most. Award discovery points for understanding the root issue (not just the surface complaint). Closing = customer confirmed satisfaction.",
-      receptionist:      "Receptionist context: routing accuracy and message completeness are everything. Score closing on whether the caller's need was fully addressed — message taken or correct transfer made.",
-      marketing:         "Marketing context: engagement and next-step conversion are the metrics. Score closing based on whether the prospect agreed to any concrete next step (demo, trial, callback). Disengaged exit with no next step = low closing score.",
+      sales:
+        "Sales context: weight discovery and closing heavily. A perfect call has 3+ discovery questions, a compelling pitch tied to the customer's stated pain, and an explicit next step. A failed close (no commitment) is a hard cap on the closing score.",
+      lead_qualifier:
+        "Lead qualifier context: discovery is the whole job. Score discovery and closing against BANT coverage (Budget, Authority, Need, Timeline). 'Closing' means a clear qualified/disqualified decision + handoff package.",
+      collections:
+        "Collections context: compliance is paramount. Any FDCPA/TCPA violation (no mini-Miranda, no identity verification, abusive language) → greeting score ≤ 5. Objection handling and payment resolution drive the rest.",
+      scheduler:
+        "Scheduler context: booking accuracy is the primary metric. A confirmed appointment with date/time/reference ID is a strong close. Failing to check availability before confirming is a critical error.",
+      technical_support:
+        "Support context: diagnostic rigor is paramount. Award discovery points for structured troubleshooting (one question at a time, systematic elimination). Closing is verified resolution — not just 'let me know if it happens again'.",
+      customer_service:
+        "Customer service context: emotional acknowledgment and resolution completeness matter most. Award discovery points for understanding the root issue (not just the surface complaint). Closing = customer confirmed satisfaction.",
+      receptionist:
+        "Receptionist context: routing accuracy and message completeness are everything. Score closing on whether the caller's need was fully addressed — message taken or correct transfer made.",
+      marketing:
+        "Marketing context: engagement and next-step conversion are the metrics. Score closing based on whether the prospect agreed to any concrete next step (demo, trial, callback). Disengaged exit with no next step = low closing score.",
     };
     roleGuidance = guidance[input.agentRole] ?? "";
   }
@@ -2579,23 +2682,45 @@ export interface CallPlaybookResult {
 
 export async function buildCallPlaybook(input: CallPlaybookInput): Promise<CallPlaybookResult> {
   const roleGuidance: Record<string, string> = {
-    sales:             "This is a revenue-generating call. The playbook must drive toward a demo, proposal, or purchase commitment. Every question should move the prospect closer to a buying decision.",
-    lead_qualifier:    "This is a qualification call. The playbook must systematically uncover BANT (Budget, Authority, Need, Timeline) without feeling like an interrogation. The 'close' is a qualified handoff, not a purchase.",
-    collections:       "This is a collections call. The playbook MUST include the FDCPA mini-Miranda in the opening. Every script line must be compliant. The goal is a payment commitment or arrangement.",
-    scheduler:         "This is a scheduling call. Every script line assumes the goal is booking a confirmed appointment. Include explicit calendar-check prompts before any time commitment.",
-    technical_support: "This is a support call. The playbook follows a diagnostic hierarchy: environment → restart → configuration → escalation. Discovery questions are diagnostic, not sales-oriented.",
-    customer_service:  "This is a service call. The opening must lead with empathy before solutions. Discovery uncovers the root issue. The close confirms full resolution and customer satisfaction.",
-    receptionist:      "This is a routing call. The opening is the company's first impression. Discovery determines exactly where to route the caller. The close is an accurate transfer or complete message.",
-    marketing:         "This is an outreach/engagement call. The opening must hook with a specific, personalized reference. The goal is booking a demo, event, or next conversation — not a hard sale.",
+    sales:
+      "This is a revenue-generating call. The playbook must drive toward a demo, proposal, or purchase commitment. Every question should move the prospect closer to a buying decision.",
+    lead_qualifier:
+      "This is a qualification call. The playbook must systematically uncover BANT (Budget, Authority, Need, Timeline) without feeling like an interrogation. The 'close' is a qualified handoff, not a purchase.",
+    collections:
+      "This is a collections call. The playbook MUST include the FDCPA mini-Miranda in the opening. Every script line must be compliant. The goal is a payment commitment or arrangement.",
+    scheduler:
+      "This is a scheduling call. Every script line assumes the goal is booking a confirmed appointment. Include explicit calendar-check prompts before any time commitment.",
+    technical_support:
+      "This is a support call. The playbook follows a diagnostic hierarchy: environment → restart → configuration → escalation. Discovery questions are diagnostic, not sales-oriented.",
+    customer_service:
+      "This is a service call. The opening must lead with empathy before solutions. Discovery uncovers the root issue. The close confirms full resolution and customer satisfaction.",
+    receptionist:
+      "This is a routing call. The opening is the company's first impression. Discovery determines exactly where to route the caller. The close is an accurate transfer or complete message.",
+    marketing:
+      "This is an outreach/engagement call. The opening must hook with a specific, personalized reference. The goal is booking a demo, event, or next conversation — not a hard sale.",
   };
 
   const system = `You are a master conversation designer building call playbooks for autonomous voice agents. Every line must be immediately speakable verbatim — no placeholders, no brackets, no curly braces, no angle brackets, no "[INSERT NAME]", no "{{variable}}", no "<your company>", no "COMPANY NAME HERE." Write as if you know the company and scenario perfectly. Be concrete, specific, and tactical.
 
 ${roleGuidance[input.agentRole] ?? "Build a professional, effective call playbook."}
 
-${input.knowledgeBase?.length ? `Knowledge base facts to ground the scripts:\n${input.knowledgeBase.slice(0, 20).map(k => `• ${k}`).join("\n")}` : ""}
+${
+  input.knowledgeBase?.length
+    ? `Knowledge base facts to ground the scripts:\n${input.knowledgeBase
+        .slice(0, 20)
+        .map((k) => `• ${k}`)
+        .join("\n")}`
+    : ""
+}
 
-${input.directives?.length ? `Agent directives to respect:\n${input.directives.slice(0, 10).map(d => `• ${d}`).join("\n")}` : ""}`;
+${
+  input.directives?.length
+    ? `Agent directives to respect:\n${input.directives
+        .slice(0, 10)
+        .map((d) => `• ${d}`)
+        .join("\n")}`
+    : ""
+}`;
 
   const user = `Build a complete call playbook for:
 - Agent: ${input.agentName}
@@ -2637,9 +2762,9 @@ export function buildCalendarContext(events: CalendarEventRow[]): string {
   ];
 
   for (const ev of events) {
-    const start = new Date(ev.start_time).toLocaleString('en-US', { timeZoneName: 'short' });
-    const end = new Date(ev.end_time).toLocaleString('en-US', { timeZoneName: 'short' });
-    lines.push(`- [${ev.status ?? 'confirmed'}] ${ev.title ?? 'Busy'}: ${start} to ${end}`);
+    const start = new Date(ev.start_time).toLocaleString("en-US", { timeZoneName: "short" });
+    const end = new Date(ev.end_time).toLocaleString("en-US", { timeZoneName: "short" });
+    lines.push(`- [${ev.status ?? "confirmed"}] ${ev.title ?? "Busy"}: ${start} to ${end}`);
   }
 
   return lines.join("\n");
@@ -2653,7 +2778,8 @@ export async function extractActions(params: {
   customerNumber?: string;
 }): Promise<any[]> {
   const result = await runStructured({
-    system: "You are the Wireline Action Engine. Extract follow-up actions promised or implied in the call.",
+    system:
+      "You are the Wireline Action Engine. Extract follow-up actions promised or implied in the call.",
     user: `Transcript: ${params.transcript}\nSummary: ${params.summary}\nCustomer: ${params.customerNumber || "Unknown"}`,
     tool: TOOLS.businessActions,
     cacheSystem: true,
@@ -2670,7 +2796,8 @@ export async function synthesizeLesson(params: {
   breakdown: any;
 }): Promise<string> {
   const { text } = await runCompletion({
-    system: "You are the Wireline Agent Coach. Synthesize ONE tactical lesson for the agent based on their failure. =30 words.",
+    system:
+      "You are the Wireline Agent Coach. Synthesize ONE tactical lesson for the agent based on their failure. =30 words.",
     user: `Score: ${params.score}\nBreakdown: ${JSON.stringify(params.breakdown)}\nTranscript: ${params.transcript}`,
     cacheSystem: true,
   });
