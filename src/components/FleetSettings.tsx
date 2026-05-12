@@ -928,13 +928,78 @@ export default function FleetSettings() {
                         Voice calls stay on your Wireline phone number. Text follow-ups and number checks run through your Wireline messaging network.
                       </p>
 
+                      {/* ── Channel & Autonomy Controls ── */}
+                      <div className="rounded-lg border border-white/8 bg-white/3 p-3 space-y-3">
+                        <div className="text-[9px] uppercase tracking-[0.3em] text-brand/70">Channels</div>
+                        <div className="flex flex-wrap gap-2">
+                          {(["voice", "email", "sms"] as const).map((ch) => {
+                            const channels: string[] = selectedAgent.channels || ["voice"];
+                            const active = channels.includes(ch);
+                            return (
+                              <button
+                                key={ch}
+                                type="button"
+                                onClick={() => {
+                                  const next = active
+                                    ? channels.filter(c => c !== ch)
+                                    : [...channels, ch];
+                                  if (next.length === 0) return;
+                                  updateAgentMeta({ channels: next });
+                                }}
+                                className={cn(
+                                  "px-3 py-1.5 rounded-full text-[10px] font-medium border transition-all capitalize",
+                                  active
+                                    ? "bg-brand/15 border-brand/40 text-brand"
+                                    : "bg-white/5 border-white/10 text-muted hover:border-white/20"
+                                )}
+                              >
+                                {ch}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        <div className="text-[9px] uppercase tracking-[0.3em] text-brand/70 pt-2">Autonomy Level</div>
+                        <div className="flex flex-wrap gap-2">
+                          {([
+                            { val: "inherit", label: "Inherit" },
+                            { val: "auto", label: "Full Auto" },
+                            { val: "supervised", label: "Supervised" },
+                            { val: "draft", label: "Draft Only" },
+                          ] as const).map(({ val, label }) => {
+                            const current = selectedAgent.autonomy_level || "inherit";
+                            return (
+                              <button
+                                key={val}
+                                type="button"
+                                onClick={() => updateAgentMeta({ autonomy_level: val })}
+                                className={cn(
+                                  "px-3 py-1.5 rounded-full text-[10px] font-medium border transition-all",
+                                  current === val
+                                    ? "bg-brand/15 border-brand/40 text-brand"
+                                    : "bg-white/5 border-white/10 text-muted hover:border-white/20"
+                                )}
+                              >
+                                {label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <p className="text-[9px] text-muted/60 leading-relaxed">
+                          Inherit uses the tenant-wide setting. Full Auto executes actions immediately. Supervised queues for approval on high-risk actions. Draft Only always requires operator sign-off.
+                        </p>
+                      </div>
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                         {AGENT_TOOL_CATALOG.map((tool) => {
                           const enabled = selectedToolNames.includes(tool.name);
                           const roleDefault = roleDefaultTools.includes(tool.name);
                           const badgeLabel =
-                            tool.name === "send_text_message" ? "Texting" :
-                            tool.name === "lookup_phone_number" ? "Number intel" :
+                            tool.integration === "twilio" ? "Messaging" :
+                            tool.integration === "calendar" ? "Calendar" :
+                            tool.integration === "crm" ? "CRM" :
+                            tool.integration === "slack" ? "Slack" :
+                            tool.integration === "zoom" ? "Zoom" :
                             null;
                           return (
                             <button

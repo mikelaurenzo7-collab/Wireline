@@ -9,10 +9,10 @@ describe("integrations registry", () => {
 
   beforeEach(() => {
     process.env = { ...ENV };
-    delete process.env.SALESFORCE_INSTANCE_URL;
-    delete process.env.SALESFORCE_ACCESS_TOKEN;
     delete process.env.SALESFORCE_CLIENT_ID;
     delete process.env.SALESFORCE_CLIENT_SECRET;
+    delete process.env.HUBSPOT_CLIENT_ID;
+    delete process.env.HUBSPOT_CLIENT_SECRET;
     delete process.env.TWILIO_ACCOUNT_SID;
     delete process.env.TWILIO_AUTH_TOKEN;
     vi.resetModules();
@@ -22,28 +22,39 @@ describe("integrations registry", () => {
     process.env = ENV;
   });
 
-  it("marks Salesforce configured when the runtime sync env vars are present", async () => {
-    process.env.SALESFORCE_INSTANCE_URL = "https://example.my.salesforce.com";
-    process.env.SALESFORCE_ACCESS_TOKEN = "sf-token";
-
-    const { getIntegrationsStatus } = await import("./integrations-registry");
-    const salesforce = getIntegrationsStatus().find((entry) => entry.id === "salesforce");
-
-    expect(salesforce?.status).toBe("configured");
-    expect(salesforce?.envVars).toEqual([
-      { name: "SALESFORCE_INSTANCE_URL", present: true },
-      { name: "SALESFORCE_ACCESS_TOKEN", present: true },
-    ]);
-  });
-
-  it("marks Salesforce fallback when only Connected App credentials are present", async () => {
+  it("marks Salesforce configured when OAuth credentials are present", async () => {
     process.env.SALESFORCE_CLIENT_ID = "client-id";
     process.env.SALESFORCE_CLIENT_SECRET = "client-secret";
 
     const { getIntegrationsStatus } = await import("./integrations-registry");
     const salesforce = getIntegrationsStatus().find((entry) => entry.id === "salesforce");
 
-    expect(salesforce?.status).toBe("fallback");
+    expect(salesforce?.status).toBe("configured");
+    expect(salesforce?.envVars).toEqual([
+      { name: "SALESFORCE_CLIENT_ID", present: true },
+      { name: "SALESFORCE_CLIENT_SECRET", present: true },
+    ]);
+  });
+
+  it("marks HubSpot configured when OAuth credentials are present", async () => {
+    process.env.HUBSPOT_CLIENT_ID = "hs-client-id";
+    process.env.HUBSPOT_CLIENT_SECRET = "hs-client-secret";
+
+    const { getIntegrationsStatus } = await import("./integrations-registry");
+    const hubspot = getIntegrationsStatus().find((entry) => entry.id === "hubspot");
+
+    expect(hubspot?.status).toBe("configured");
+    expect(hubspot?.envVars).toEqual([
+      { name: "HUBSPOT_CLIENT_ID", present: true },
+      { name: "HUBSPOT_CLIENT_SECRET", present: true },
+    ]);
+  });
+
+  it("marks Salesforce missing when OAuth credentials absent", async () => {
+    const { getIntegrationsStatus } = await import("./integrations-registry");
+    const salesforce = getIntegrationsStatus().find((entry) => entry.id === "salesforce");
+
+    expect(salesforce?.status).toBe("missing");
   });
 
   it("surfaces the service-role key in Supabase integration health", async () => {

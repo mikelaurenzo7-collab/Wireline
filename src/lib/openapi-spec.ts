@@ -35,7 +35,7 @@ import { WEBHOOK_EVENTS } from "./webhook-helpers";
 // stable and the spec self-contained.
 
 type JsonSchema = {
-  type?: "string" | "number" | "integer" | "boolean" | "object" | "array" | "null";
+  type?: "string" | "number" | "integer" | "boolean" | "object" | "array" | "null" | readonly ("string" | "number" | "integer" | "boolean" | "object" | "array" | "null")[];
   format?: string;
   description?: string;
   enum?: readonly (string | number | boolean | null)[];
@@ -317,13 +317,32 @@ const QuotaUsage: JsonSchema = {
 
 const BillingStatus: JsonSchema = {
   type: "object",
-  description: "Stripe-mirrored subscription status for the calling tenant.",
+  description:
+    "Stripe-mirrored subscription status for the calling tenant. `subscription` mirrors the row; voice number slots mirror `subscription.max_agents` (one provisioned line per seat on the tier).",
   properties: {
-    plan: { type: "string", description: "Plan identifier (free, starter, pro, enterprise)." },
-    subscription_status: { type: "string", description: "Stripe status (active, past_due, canceled, ...)." },
-    current_period_end: { type: "string", format: "date-time" },
-    cancel_at_period_end: { type: "boolean" },
-    max_agents: { type: "integer" },
+    stripe_configured: { type: "boolean" },
+    agent_count: { type: "integer" },
+    phone_lines_used: { type: "integer", description: "Rows in wireline_phone_numbers for this tenant." },
+    phone_lines_included: {
+      type: "integer",
+      description: "Max provisioned voice numbers while active — equals the subscribed plan agent cap (one number slot per purchased agent seat).",
+    },
+    subscription: {
+      type: ["object", "null"],
+      description: "Mirrored Stripe subscription summary.",
+      properties: {
+        plan: { type: ["string", "null"] },
+        plan_name: { type: ["string", "null"] },
+        max_agents: { type: ["integer", "null"], description: "Agent seat cap — also the voice-number slot cap." },
+        status: { type: ["string", "null"] },
+        current_period_end: { type: ["string", "null"], format: "date-time" },
+        cancel_at_period_end: { type: "boolean" },
+        has_customer: { type: "boolean" },
+        has_subscription: { type: "boolean" },
+        updated_at: { type: ["string", "null"], format: "date-time" },
+      },
+      additionalProperties: true,
+    },
   },
   additionalProperties: true,
 };

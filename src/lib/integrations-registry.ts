@@ -95,10 +95,13 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
   {
     id: "vapi",
     label: "Wireline Voice Network",
-    description: "Inbound and outbound phone calls on your Wireline numbers.",
+    description:
+      "Inbound and outbound phone calls on your Wireline numbers. Uses VAPI_PRIVATE_KEY (Bearer) plus public key for embedding.",
     group: "voice",
     required: true,
-    envVars: ["VAPI_PRIVATE_KEY", "VITE_VAPI_PUBLIC_KEY"],
+    envVars: ["VAPI_PRIVATE_KEY", "VITE_VAPI_PUBLIC_KEY", "VAPI_WEBHOOK_SECRET"],
+    fallback:
+      "When VAPI_WEBHOOK_SECRET is unset in dev, webhook auth is skipped. Production rejects webhooks until it matches Vapi dashboard header + assistant serverUrlSecret.",
   },
 
   // ─── oauth ──────────────────────────────────────────────────────────────
@@ -158,23 +161,23 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
   {
     id: "salesforce",
     label: "Salesforce CRM",
-    description: "Bi-directional contact + opportunity sync for voice and email agents.",
+    description: "Bi-directional contact + opportunity sync via OAuth 2.0 Web Server flow.",
     group: "actions",
     required: false,
-    envVars: ["SALESFORCE_INSTANCE_URL", "SALESFORCE_ACCESS_TOKEN"],
+    envVars: ["SALESFORCE_CLIENT_ID", "SALESFORCE_CLIENT_SECRET"],
     fallback:
-      "Current server-side sync needs SALESFORCE_INSTANCE_URL + SALESFORCE_ACCESS_TOKEN. Connected App client credentials stay documented for the future OAuth refresh-token flow.",
+      "Operators connect via Admin → Integrations → Salesforce. Without CLIENT_ID/SECRET the 'Connect Salesforce' button is hidden.",
     docsUrl: "https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/",
   },
   {
     id: "hubspot",
     label: "HubSpot CRM",
-    description: "Bi-directional contact + deal sync for voice and email agents.",
+    description: "Bi-directional contact + deal sync via OAuth 2.0 authorization_code flow.",
     group: "actions",
     required: false,
-    envVars: ["HUBSPOT_ACCESS_TOKEN"],
+    envVars: ["HUBSPOT_CLIENT_ID", "HUBSPOT_CLIENT_SECRET"],
     fallback:
-      "Without an access token, CRM actions (log_call, sync_contact, create_deal) return no-op. Agents still function without CRM.",
+      "Operators connect via Admin → Integrations → HubSpot. Without CLIENT_ID/SECRET the 'Connect HubSpot' button is hidden.",
     docsUrl: "https://developers.hubspot.com/docs/api/overview",
   },
   {
@@ -186,6 +189,28 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
     envVars: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
     fallback:
       "Without messaging credentials, Wireline texting, phone lookups, and manager alerts stay disabled while voice agents continue to run.",
+  },
+  {
+    id: "slack",
+    label: "Slack",
+    description: "Real-time team notifications — agent books a meeting, closes a deal, or escalates.",
+    group: "actions",
+    required: false,
+    envVars: ["SLACK_CLIENT_ID", "SLACK_CLIENT_SECRET"],
+    fallback:
+      "Operators connect via Admin → Integrations → Slack. Without CLIENT_ID/SECRET the 'Connect Slack' button is hidden.",
+    docsUrl: "https://api.slack.com/apps",
+  },
+  {
+    id: "zoom",
+    label: "Zoom",
+    description: "Auto-generates meeting links when agents book calendar appointments.",
+    group: "actions",
+    required: false,
+    envVars: ["ZOOM_CLIENT_ID", "ZOOM_CLIENT_SECRET"],
+    fallback:
+      "Operators connect via Admin → Integrations → Zoom. Without CLIENT_ID/SECRET the 'Connect Zoom' button is hidden.",
+    docsUrl: "https://marketplace.zoom.us/develop/create",
   },
 
   // ─── infra ──────────────────────────────────────────────────────────────
@@ -269,12 +294,12 @@ function evaluateStatus(d: IntegrationDescriptor): IntegrationStatus {
       return haveAccount && haveToken ? "configured" : "missing";
     }
     case "salesforce": {
-      const haveInstance = envIsPresent("SALESFORCE_INSTANCE_URL");
-      const haveToken = envIsPresent("SALESFORCE_ACCESS_TOKEN");
-      const haveConnectedApp = envIsPresent("SALESFORCE_CLIENT_ID") && envIsPresent("SALESFORCE_CLIENT_SECRET");
-      if (haveInstance && haveToken) return "configured";
-      if (haveInstance || haveToken || haveConnectedApp) return "fallback";
-      return "missing";
+      const haveOAuth = envIsPresent("SALESFORCE_CLIENT_ID") && envIsPresent("SALESFORCE_CLIENT_SECRET");
+      return haveOAuth ? "configured" : "missing";
+    }
+    case "hubspot": {
+      const haveOAuth = envIsPresent("HUBSPOT_CLIENT_ID") && envIsPresent("HUBSPOT_CLIENT_SECRET");
+      return haveOAuth ? "configured" : "missing";
     }
     case "sentry": {
       const be = envIsPresent("SENTRY_DSN");
@@ -327,6 +352,8 @@ export function getHealthCapabilities() {
     apollo:          envIsPresent("APOLLO_API_KEY"),
     docusign:        envIsPresent("DOCUSIGN_ACCOUNT_ID") &&
                        (envIsPresent("DOCUSIGN_JWT_TOKEN") || envIsPresent("DOCUSIGN_ACCESS_TOKEN")),
+    salesforce:      envIsPresent("SALESFORCE_CLIENT_ID") && envIsPresent("SALESFORCE_CLIENT_SECRET"),
+    hubspot:         envIsPresent("HUBSPOT_CLIENT_ID") && envIsPresent("HUBSPOT_CLIENT_SECRET"),
     twilio:          envIsPresent("TWILIO_ACCOUNT_SID") && envIsPresent("TWILIO_AUTH_TOKEN"),
     upstash:         envIsPresent("UPSTASH_REDIS_REST_URL") && envIsPresent("UPSTASH_REDIS_REST_TOKEN"),
     sentry:          envIsPresent("SENTRY_DSN") || envIsPresent("VITE_SENTRY_DSN"),

@@ -344,6 +344,71 @@ export const VAPI_TOOL_DEFS = {
       required: ["pain_points", "decision_authority"],
     },
   },
+  send_slack_notification: {
+    name: "send_slack_notification",
+    description: "Notify the team via Slack about an important call outcome — hot lead, booked meeting, escalation, or deal milestone. Only use when something noteworthy happened that the team should see immediately.",
+    parameters: {
+      type: "object",
+      properties: {
+        message: {
+          type: "string",
+          description: "A concise notification message for the team Slack channel.",
+        },
+      },
+      required: ["message"],
+    },
+  },
+  generate_zoom_link: {
+    name: "generate_zoom_link",
+    description: "Generate a Zoom meeting link for a scheduled appointment. Typically used alongside book_appointment when the operator has Zoom connected.",
+    parameters: {
+      type: "object",
+      properties: {
+        topic: { type: "string", description: "Meeting topic/title." },
+        start_time: { type: "string", description: "ISO 8601 start time for the meeting." },
+        duration: { type: "number", description: "Duration in minutes. Defaults to 60." },
+      },
+      required: ["topic", "start_time"],
+    },
+  },
+  crm_search_contacts: {
+    name: "crm_search_contacts",
+    description: "Search the connected CRM (Salesforce or HubSpot) for existing contact records matching the caller's info.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Search query — name, email, phone, or company." },
+      },
+      required: ["query"],
+    },
+  },
+  crm_log_call: {
+    name: "crm_log_call",
+    description: "Log this call's outcome and notes to the connected CRM contact record.",
+    parameters: {
+      type: "object",
+      properties: {
+        contact_id: { type: "string", description: "CRM contact ID to log against." },
+        subject: { type: "string", description: "Brief subject line for the activity." },
+        notes: { type: "string", description: "Call notes / outcome summary." },
+      },
+      required: ["contact_id", "subject"],
+    },
+  },
+  crm_create_opportunity: {
+    name: "crm_create_opportunity",
+    description: "Create a new opportunity/deal in the connected CRM from a qualified call.",
+    parameters: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Opportunity / deal name." },
+        contact_id: { type: "string", description: "CRM contact ID to associate." },
+        stage: { type: "string", description: "Pipeline stage." },
+        amount: { type: "number", description: "Estimated deal value." },
+      },
+      required: ["name"],
+    },
+  },
 } as const;
 
 export type VapiToolName = keyof typeof VAPI_TOOL_DEFS;

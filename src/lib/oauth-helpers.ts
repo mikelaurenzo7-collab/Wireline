@@ -14,6 +14,7 @@ export const SCOPES = [
   'https://www.googleapis.com/auth/userinfo.profile',
   'https://www.googleapis.com/auth/gmail.send',
   'https://www.googleapis.com/auth/gmail.readonly',
+  'https://www.googleapis.com/auth/calendar.events',
   'https://www.googleapis.com/auth/calendar.readonly',
   'https://www.googleapis.com/auth/drive.readonly'
 ];
@@ -38,7 +39,7 @@ export const MS_SCOPES = [
   "User.Read",
   "Mail.Send",
   "Mail.Read",
-  "Calendars.Read",
+  "Calendars.ReadWrite",
   "Files.Read.All",
 ].join(" ");
 
@@ -130,37 +131,82 @@ export async function sendEmailViaMicrosoft(opts: {
 
 const OAUTH_STATE_SECRET = process.env.OAUTH_STATE_SECRET || process.env.STRIPE_WEBHOOK_SECRET || "wireline-placeholder-secret";
 
-export function generateOAuthState(): string {
+/** Signed OAuth state may embed `userId` so browser callbacks can resolve the tenant without relying on cookies. */
+export interface VerifiedOAuthState {
+  ok: boolean;
+  userId?: string;
+}
+
+export function generateOAuthState(opts?: { userId?: string }): string {
   const nonce = randomUUID().replace(/-/g, "");
   const ts = Date.now().toString(36);
-  const payload = `${nonce}.${ts}`;
+  const uidPart = opts?.userId
+    ? Buffer.from(opts.userId, "utf8").toString("base64url")
+    : "";
+  const payload = uidPart ? `${nonce}.${ts}.${uidPart}` : `${nonce}.${ts}`;
   const sig = createHmac("sha256", OAUTH_STATE_SECRET).update(payload).digest("base64url");
   return `${payload}.${sig}`;
 }
 
-export function verifyOAuthState(state: string | undefined): boolean {
-  if (!state) return false;
+export function verifyOAuthState(state: string | undefined): VerifiedOAuthState {
+  if (!state) return { ok: false };
   try {
     const lastDot = state.lastIndexOf(".");
-    if (lastDot <= 0) return false;
+    if (lastDot <= 0) return { ok: false };
     const payload = state.slice(0, lastDot);
     const sig = state.slice(lastDot + 1);
     const expected = createHmac("sha256", OAUTH_STATE_SECRET).update(payload).digest("base64url");
-    
+
     const sigBuf = Buffer.from(sig);
     const expBuf = Buffer.from(expected);
-    if (sigBuf.length !== expBuf.length) return false;
-    if (!timingSafeEqual(sigBuf, expBuf)) return false;
+    if (sigBuf.length !== expBuf.length) return { ok: false };
+    if (!timingSafeEqual(sigBuf, expBuf)) return { ok: false };
 
-    // Optional: expiry check (20 mins)
     const parts = payload.split(".");
-    if (parts.length < 2) return false;
+    if (parts.length < 2) return { ok: false };
     const ts = parseInt(parts[1], 36);
-    if (isNaN(ts)) return false;
-    if (Date.now() - ts > 20 * 60 * 1000) return false;
+    if (isNaN(ts)) return { ok: false };
+    if (Date.now() - ts > 20 * 60 * 1000) return { ok: false };
 
-    return true;
-  } catch (e) {
-    return false;
+    let userId: string | undefined;
+    if (parts.length >= 3 && parts[2]) {
+      try {
+        userId = Buffer.from(parts[2], "base64url").toString("utf8");
+      } catch {
+        return { ok: false };
+      }
+    }
+
+    return { ok: true, userId };
+  } catch {
+    return { ok: false };
   }
+}
+
+/** When signed state has no embedded user id, resolve tenant via Supabase JWT (Authorization header or session cookie). */
+export async function resolveUserIdFromOAuthSession(req: express.Request): Promise<string | null> {
+  const authHeader = req.headers.authorization;
+  const cookieToken = (req as express.Request & { cookies?: Record<string, string> }).cookies?.["sb-access-token"];
+  const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : cookieToken;
+  if (!bearerToken) return null;
+  const { data: { user } } = await db.auth.getUser(bearerToken);
+  return user?.id ?? null;
+}
+
+/** Space-delimited Microsoft Graph scope line passed at token time — must include write access for booking. */
+export const MICROSOFT_CALENDAR_WRITE_SCOPE = "Calendars.ReadWrite";
+
+/**
+ * Returns whether a previously granted Google OAuth scope string includes calendar event creation.
+ * Used when stored `scopes` are persisted for an account; if scopes are unknown, operator should re-connect after scope upgrades.
+ */
+export function googleGrantedScopesAllowCalendarWrite(scopeStr: string | null | undefined): boolean {
+  if (!scopeStr?.trim()) return false;
+  return scopeStr.includes("calendar.events");
+}
+
+/** Microsoft delegated scopes string must contain Calendars.ReadWrite for POST /me/events. */
+export function microsoftGrantedScopesAllowCalendarWrite(scopeStr: string | null | undefined): boolean {
+  if (!scopeStr?.trim()) return false;
+  return scopeStr.includes(MICROSOFT_CALENDAR_WRITE_SCOPE);
 }

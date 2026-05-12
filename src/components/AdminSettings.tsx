@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ServerCog, KeyRound, Loader2, Phone, Plus, Link as LinkIcon, Save, ChevronRight, RotateCw, CheckCircle2, Trash2, AlertTriangle, Cpu, CreditCard, Activity, ShieldCheck, Zap, Bot, History, TrendingUp, DollarSign, BarChart3, Clock } from "lucide-react";
+import { ServerCog, KeyRound, Loader2, Phone, Plus, Link as LinkIcon, Link2, Save, ChevronRight, RotateCw, CheckCircle2, Trash2, AlertTriangle, Cpu, CreditCard, Activity, ShieldCheck, Zap, Bot, History, TrendingUp, DollarSign, BarChart3, Clock } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import ConfirmModal from "./ConfirmModal";
 import { motion, AnimatePresence } from "motion/react";
@@ -11,6 +11,8 @@ import { formatDateTime } from "../lib/safe-date";
 import WebhooksManager from "./WebhooksManager";
 import IntakeKeysManager from "./IntakeKeysManager";
 import StripeBillingCard from "./StripeBillingCard";
+import CrmConnectionCard from "./CrmConnectionCard";
+import IntegrationHealthBanner, { type IntegrationHealthPayload } from "./IntegrationHealthBanner";
 import PageShell, { Panel } from "./PageShell";
 import HubTabs, { SYSTEM_HUB } from "./HubTabs";
 import { useToast } from "../contexts/ToastContext";
@@ -24,6 +26,7 @@ export default function AdminSettings() {
   const [confirmState, setConfirmState] = useState<ConfirmState>(CLOSED_CONFIRM);
   const [settings, setSettings] = useState({
     vapi_phone_number_id: "",
+    vapi_phone_inbound_agent_id: "",
     subscription_status: "active",
     max_agents: 3,
     voice_llm_provider: "google",
@@ -55,6 +58,7 @@ export default function AdminSettings() {
   };
   const [integrations, setIntegrations] = useState<IntegrationRow[] | null>(null);
   const [operationalSlos, setOperationalSlos] = useState<Record<string, unknown> | null>(null);
+  const [integrationHealth, setIntegrationHealth] = useState<IntegrationHealthPayload | null>(null);
 
   const [newNumber, setNewNumber] = useState("");
   const [newNumberVapiId, setNewNumberVapiId] = useState("");
@@ -71,7 +75,17 @@ export default function AdminSettings() {
     anthropic: "https://docs.anthropic.com/en/docs/about-claude/models/overview",
   }[settings.voice_llm_provider] ?? "https://ai.google.dev/gemini-api/docs/models";
 
-  useEffect(() => { fetchData(); fetchClaudeStatus(); fetchIntegrations(); fetchOperationalSlos(); }, []);
+  const fetchIntegrationHealth = async () => {
+    try {
+      const r = await authFetch("/api/oauth/integration-health");
+      if (r.ok) setIntegrationHealth(await r.json());
+      else setIntegrationHealth(null);
+    } catch (_) {
+      setIntegrationHealth(null);
+    }
+  };
+
+  useEffect(() => { fetchData(); fetchClaudeStatus(); fetchIntegrations(); fetchOperationalSlos(); fetchIntegrationHealth(); }, []);
 
   const fetchClaudeStatus = async () => {
     try {
@@ -133,6 +147,7 @@ export default function AdminSettings() {
       if (settingsRes) {
         setSettings({
           vapi_phone_number_id: settingsRes.vapi_phone_number_id || "",
+          vapi_phone_inbound_agent_id: settingsRes.vapi_phone_inbound_agent_id || "",
           subscription_status: settingsRes.subscription_status || "active",
           max_agents: settingsRes.max_agents || 3,
           voice_llm_provider: settingsRes.voice_llm_provider || "google",
@@ -287,6 +302,10 @@ export default function AdminSettings() {
       subtitle="API credentials, phone numbers, and platform configuration."
       actions={tabSwitcher}
     >
+      <IntegrationHealthBanner
+        health={integrationHealth}
+        onOpenIntegrations={() => setActiveTab("system")}
+      />
       {isLoading ? (
         <div role="status" aria-live="polite" className="h-full flex flex-col items-center justify-center gap-3">
           <Loader2 className="w-5 h-5 animate-spin text-brand" aria-hidden="true" />
@@ -346,6 +365,35 @@ export default function AdminSettings() {
                       className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 font-mono"
                       placeholder="e.g. 3c7a9f…"
                     />
+                    <p className="text-[9px] text-muted/70 leading-relaxed">
+                      Must match your Vapi number id for outbound dialing. Inbound webhooks infer the tenant when Vapi sends <span className="font-mono">call.phoneNumberId</span>; register each line below and assign an agent, or set default inbound routing here.
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label htmlFor="vapi-inbound-agent-id" className="text-[9px] uppercase tracking-[0.3em] text-muted/70">Default inbound voice agent</label>
+                    <div className="relative">
+                      <select
+                        id="vapi-inbound-agent-id"
+                        aria-label="Default inbound Wireline agent for unmatched Vapi phone rows"
+                        value={settings.vapi_phone_inbound_agent_id}
+                        onChange={e =>
+                          setSettings({ ...settings, vapi_phone_inbound_agent_id: e.target.value })
+                        }
+                        className="w-full text-sm bg-black/5 border border-black/10 rounded-lg pl-3 pr-8 py-2 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
+                      >
+                        <option value="">Oldest voice agent (fallback)</option>
+                        {agents
+                          .filter(a => a.channel === "voice" || a.channel === "omnichannel" || !a.channel)
+                          .map(a => (
+                            <option key={a.id} value={a.id}>{a.name}</option>
+                          ))}
+                      </select>
+                      <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none rotate-90" />
+                    </div>
+                    <p className="text-[9px] text-muted/70 leading-relaxed">
+                      Used when a line&apos;s Agent is unset in Phone Numbers below, or Vapi sends only Default Wireline ID. Set Riley (or another agent) here for consistent inbound greetings.
+                    </p>
                   </div>
 
                   {/* Voice LLM picker */}
@@ -941,6 +989,10 @@ export default function AdminSettings() {
                 </div>
               </Panel>
               </div>
+
+              <Panel title="CRM Connections" hint="OAuth · real-time sync" icon={Link2} scroll>
+                <CrmConnectionCard />
+              </Panel>
 
               <Panel title="Operational reliability" hint="SLO snapshot · rolling 24h" icon={BarChart3} scroll>
                 <div className="space-y-3 text-[11px]">

@@ -20,7 +20,6 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { SchemaType } from "@google/generative-ai";
 import { createClient } from "@supabase/supabase-js";
 import { google } from "googleapis";
-import Stripe from "stripe";
 import { randomUUID, timingSafeEqual as cryptoTimingSafeEqual, createHmac } from "node:crypto";
 import * as claudeBrain from "./src/lib/claude-brain";
 import { AuditLogger } from "./src/lib/audit-logger";
@@ -41,29 +40,30 @@ import { computeAuditSummary } from "./src/lib/audit-summary";
 import { computeDashboardBenchmarks } from "./src/lib/dashboard-benchmarks";
 import { buildContactProfile, normalizePhoneTail } from "./src/lib/contact-profile";
 import { computeOutcomeBreakdown, computeCallStats, callIdsFromLeads } from "./src/lib/campaign-analytics";
-import { isPrivateIp, isPrivateIpv6, isSsrfUrl, validateWebhookUrl } from "./src/lib/webhook-validators";
+import { isPrivateIp, isPrivateIpv6, isSsrfUrl } from "./src/lib/webhook-validators";
 import { evaluateOutboundConsent, getConsentRuleForPhone, buildConsentLedgerRow, detectOptOut, CONSENT_RULE_VERSION } from "./src/lib/tcpa-consent";
 import { QuotaTracker, quotaRejectionHeaders, validateOverride, PLAN_DEFAULTS, type PlanTier } from "./src/lib/tenant-quotas";
 import { enqueue, startWorker, getQueueStats, type JobRow } from "./src/lib/job-queue";
-import { claudeRateLimiter, quotaRateLimit, jobsRateLimit, tcpaRateLimit, webhooksRateLimit } from "./src/middleware/api-rate-limits";
+import { claudeRateLimiter, quotaRateLimit, jobsRateLimit, tcpaRateLimit } from "./src/middleware/api-rate-limits";
 import { enforceSpendCap, enforce24hSpendCap, recordDailySpend, DAILY_SPEND_LIMIT_USD, evaluateSpend, getBudgetSnapshot, clearBudgetCache } from "./src/lib/spend-guards";
 import { withAudit } from "./src/middleware/audit-middleware";
 import { enforceClaudeDailyTokenQuota } from "./src/middleware/claude-quota-middleware";
 import { claudeErr } from "./src/lib/claude-response-helpers";
 import { cachedInsight, setCachedInsight } from "./src/lib/insights-cache";
-import { encryptSecret, decryptSecret, lastFour, isVaultConfigured } from "./src/lib/secret-vault";
+import { decryptSecret } from "./src/lib/secret-vault";
 import { createRbacMiddleware, getCallerRole, invalidateRoleCache } from "./src/middleware/require-role";
 import { syncGoogleCalendar } from "./src/services/google-calendar-sync";
 import { syncOutlookCalendar } from "./src/services/outlook-calendar-sync";
 import { syncGoogleDriveToKnowledge } from "./src/services/google-drive-sync";
 import { db, IS_PROD, log, fetchWithTimeout, auditLogger, requirePermission, requireRole, quotaTracker } from "./src/lib/server-context";
-import { stripe, stripeAvailable, getSubscriptionCurrentPeriodEnd } from "./src/lib/stripe-helpers";
-import { SCOPES, MS_SCOPES, getGoogleOAuthClient, getMicrosoftRedirectUri, refreshMicrosoftToken, getMicrosoftAccessToken, generateOAuthState, verifyOAuthState, sendEmailViaMicrosoft } from "./src/lib/oauth-helpers";
+import { stripe, stripeAvailable } from "./src/lib/stripe-helpers";
+import { SCOPES, MS_SCOPES, getGoogleOAuthClient, getMicrosoftRedirectUri, refreshMicrosoftToken, getMicrosoftAccessToken, generateOAuthState, sendEmailViaMicrosoft } from "./src/lib/oauth-helpers";
 import { VAPI_WEBHOOK_SECRET, timingSafeEq, sanitizePhone, MAX_CONTEXT_PREVIEW_LENGTH, buildCallerProfileBlock, OUTBOUND_ARCHETYPE_BY_ROLE, getArchetypeConfig, buildRoleToolDefs, PRESERVED_LEAD_STATUSES, SENTIMENT_ANGRY_SIGNALS, SENTIMENT_POSITIVE_SIGNALS } from "./src/lib/vapi-helpers";
-import { attemptWebhookDelivery, dispatchWebhook, processWebhookRetries, WEBHOOK_EVENTS, type WebhookEvent } from "./src/lib/webhook-helpers";
+import { dispatchWebhook, processWebhookRetries } from "./src/lib/webhook-helpers";
 import { isDncBlocked } from "./src/lib/compliance";
 import { placeOutboundCall } from "./src/lib/vapi-client";
 import { computeDailyBrief } from "./src/lib/daily-brief";
+import { getIncludedPhoneLineSlots } from "./src/lib/phone-line-entitlements";
 
 import oauthRouter from "./src/routes/oauth-routes";
 import vapiRouter from "./src/routes/vapi-routes";
@@ -82,7 +82,11 @@ import { authenticateUser } from "./src/middleware/auth";
 import { initJobWorker } from "./src/lib/job-worker";
 import { validateStartupEnv } from "./src/lib/startup";
 import healthRouter from "./src/routes/health-routes";
+import intakeRouter from "./src/routes/intake-routes";
 import openapiRouter from "./src/routes/openapi-routes";
+import claudeRouter from "./src/routes/claude-routes";
+import billingRouter from "./src/routes/billing-routes";
+import webhookRouter from "./src/routes/webhook-routes";
 import * as rateLimiters from "./src/middleware/rate-limit-middleware";
 
 // On Vercel, VERCEL_URL is automatically set to the deployment hostname
@@ -588,92 +592,10 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 let stopWorker: (() => void) | undefined = initJobWorker();
 
 // ────────────────────────────────────────────────────────────────────
-//  Stripe — billing source of truth.
-//
-//  Plan catalog is defined in code (so it's easy to read), but the
-//  actual price ids come from env vars so test-mode and live-mode
-//  prices can swap without code changes. When STRIPE_SECRET_KEY is
-//  unset, the SDK is constructed with a placeholder so the server
-//  still boots in dev — every billing endpoint defensively returns
-//  503 if `stripeAvailable()` is false.
+//  Stripe — plan catalog lives in ./src/lib/plan-catalog.ts. Subscription
+//  mirroring runs in ./src/lib/stripe-helpers.syncSubscriptionFromStripe (see
+//  src/routes/stripe-routes.ts). Dedicated phone-line quotas use the same tiers.
 // ────────────────────────────────────────────────────────────────────
-
-export type StripePlan = {
-  id: "starter" | "pro" | "enterprise";
-  name: string;
-  price_usd_monthly: number;
-  max_agents: number;
-  features: string[];
-  // Resolved at request time so env changes don't require a restart.
-  priceIdEnv: string;
-};
-
-const STRIPE_PLANS: StripePlan[] = [
-  {
-    id: "starter",
-    name: "Starter",
-    price_usd_monthly: 79,
-    max_agents: 3,
-    priceIdEnv: "STRIPE_STARTER_PRICE_ID",
-    features: [
-      "3 AI agents (voice + email)",
-      "Unlimited inbound calls",
-      "200 outbound calls / month",
-      "Daily Brief + Triage Inbox",
-      "Webhooks · Intake API",
-    ],
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    price_usd_monthly: 299,
-    max_agents: 10,
-    priceIdEnv: "STRIPE_PRO_PRICE_ID",
-    features: [
-      "10 AI agents (voice + email)",
-      "Unlimited outbound calls",
-      "Auto-dial new leads instantly",
-      "Knowledge Atlas + Insights",
-      "Everything in Starter",
-      "Priority support",
-    ],
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise",
-    price_usd_monthly: 1199,
-    max_agents: 100,
-    priceIdEnv: "STRIPE_ENTERPRISE_PRICE_ID",
-    features: [
-      "100 AI agents",
-      "Everything in Pro",
-      "SSO + SAML",
-      "Custom data retention",
-      "Dedicated success manager",
-      "99.95% uptime SLA",
-    ],
-  },
-];
-
-// Stripe client and helpers moved to src/lib/stripe-helpers.ts
-function planByPriceId(priceId: string | null | undefined): StripePlan | null {
-  if (!priceId) return null;
-  return STRIPE_PLANS.find(p => process.env[p.priceIdEnv] === priceId) || null;
-}
-function planById(id: string): StripePlan | null {
-  return STRIPE_PLANS.find(p => p.id === id) || null;
-}
-function plansForClient() {
-  return STRIPE_PLANS.map(p => ({
-    id: p.id,
-    name: p.name,
-    price_usd_monthly: p.price_usd_monthly,
-    max_agents: p.max_agents,
-    features: p.features,
-    // Don't expose env var names; just whether the price is configured.
-    configured: !!process.env[p.priceIdEnv],
-  }));
-}
 
 // ────────────────────────────────────────────────────────────────────
 //  Outbound webhooks dispatcher — module-scope so the vapi webhook
@@ -704,92 +626,7 @@ setInterval(processWebhookRetries, 30_000).unref?.();
 // enforce24hSpendCap and recordDailySpend imported from ./src/lib/spend-guards
 // authenticateUser moved to ./src/middleware/auth.ts
 
-// ==========================================
-// STRIPE WEBHOOK + sync helper
-// ==========================================
-//
-// Mirrors the Stripe subscription into wireline_subscriptions AND keeps
-// wireline_settings.subscription_status / max_agents in sync so every
-// existing gate in the app keeps working. The Stripe row is the source
-// of truth; this is a cache.
-//
-// Maps Stripe statuses to the legacy two-value gate Wireline already uses:
-//   active | trialing      → subscription_status='active'
-//   past_due | unpaid      → subscription_status='past_due'
-//   canceled | incomplete* → subscription_status='canceled'
-async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
-  // Resolve the user via stripe_customer_id (set during checkout).
-  const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
-  const { data: existing } = await db.from("wireline_subscriptions")
-    .select("user_id").eq("stripe_customer_id", customerId).maybeSingle();
-  if (!existing?.user_id) {
-    log.warn("Stripe webhook: no subscription row for customer, skipping sync", { customerId });
-    return;
-  }
-  const userId = existing.user_id;
-  const item = sub.items?.data?.[0];
-  const priceId = item?.price?.id || null;
-  const plan = planByPriceId(priceId);
-  const stripeStatus = sub.status;
-  const localStatus =
-    stripeStatus === "active" || stripeStatus === "trialing" ? "active" :
-    stripeStatus === "past_due" || stripeStatus === "unpaid" ? "past_due" :
-    "canceled";
 
-  // Mirror to wireline_subscriptions.
-  await db.from("wireline_subscriptions").upsert({
-    user_id: userId,
-    stripe_customer_id: customerId,
-    stripe_subscription_id: sub.id,
-    plan: plan?.id || null,
-    status: stripeStatus,
-    current_period_end: (() => {
-      const end = getSubscriptionCurrentPeriodEnd(sub);
-      return end ? new Date(end * 1000).toISOString() : null;
-    })(),
-    cancel_at_period_end: !!sub.cancel_at_period_end,
-    updated_at: new Date().toISOString(),
-  }, { onConflict: "user_id" });
-
-  // Sync the legacy gate so /api/outbound/dial, vapi-webhook, etc.
-  // continue to work without touching them.
-  const settingsPatch: any = { user_id: userId, subscription_status: localStatus };
-  if (plan?.max_agents) settingsPatch.max_agents = plan.max_agents;
-  await db.from("wireline_settings").upsert(settingsPatch, { onConflict: "user_id" });
-
-  // Fan out to operator webhooks so external systems can react
-  // (e.g. notify Slack on downgrade / cancellation).
-  dispatchWebhook(userId, "subscription.changed", {
-    plan: plan?.id || null,
-    status: stripeStatus,
-    legacy_status: localStatus,
-    cancel_at_period_end: !!sub.cancel_at_period_end,
-    current_period_end: (() => {
-      const end = getSubscriptionCurrentPeriodEnd(sub);
-      return end ? new Date(end * 1000).toISOString() : null;
-    })(),
-    at: new Date().toISOString(),
-  }).catch((e: unknown) => { log.warn("subscription.changed webhook dispatch failed", { user_id: userId, error: getErrorMessage(e) }); });
-
-  // Audit the billing state change. We pick the action based on
-  // Stripe's lifecycle status so the audit log faithfully reflects
-  // whether this was a new sub, a status flip, or a cancellation.
-  const billingAction: 'subscription_created' | 'subscription_updated' | 'subscription_cancelled' =
-    stripeStatus === "canceled" || stripeStatus === "incomplete_expired"
-      ? 'subscription_cancelled'
-      : (sub as any)._auditCreate
-        ? 'subscription_created'
-        : 'subscription_updated';
-  void auditLogger.logBilling(billingAction, {
-    userId,
-    subscriptionId: sub.id,
-    customerId,
-    plan: plan?.id || undefined,
-    metadata: { stripe_status: stripeStatus, legacy_status: localStatus, cancel_at_period_end: !!sub.cancel_at_period_end },
-  }).catch(() => {});
-}
-
-// Stripe webhook moved to src/routes/stripe-routes.ts
 app.use(stripeRouter);
 app.use(agentRouter);
 app.use(campaignRouter);
@@ -808,6 +645,12 @@ app.use(vapiRouter);
 
 // OAuth routes moved to src/routes/oauth-routes.ts
 app.use(oauthRouter);
+
+// Claude AI routes (brief, qualify, forge, post-call, knowledge extraction, etc.)
+app.use("/api/claude", claudeRouter);
+
+// Billing + spend budget routes
+app.use("/api", billingRouter);
 
 // 1.5 CALL LOG RETRIEVAL ENDPOINT
 // ==========================================
@@ -1453,17 +1296,39 @@ app.get("/api/agent-config/:id", authenticateUser, async (req: any, res: any) =>
 // ==========================================
 app.get("/api/phone-numbers", authenticateUser, async (req: any, res: any) => {
   try {
-    const { data, error } = await db.from('wireline_phone_numbers').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false });
-    if (error) throw error;
-    res.json({ numbers: data || [] });
+    const [listRes, entitlement] = await Promise.all([
+      db.from('wireline_phone_numbers').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false }),
+      getIncludedPhoneLineSlots(req.user.id),
+    ]);
+    if (listRes.error) throw listRes.error;
+    res.json({
+      numbers: listRes.data || [],
+      phone_lines_included: entitlement,
+      phone_lines_used: (listRes.data || []).length,
+    });
   } catch (error) {
-    res.json({ numbers: [] });
+    res.json({ numbers: [], phone_lines_included: 0, phone_lines_used: 0 });
   }
 });
 
 app.post("/api/phone-numbers", authenticateUser, rateLimiters.phoneNumberRateLimiter, async (req: any, res: any) => {
   try {
     const { phone_number, vapi_number_id } = req.body;
+    const allowance = await getIncludedPhoneLineSlots(req.user.id);
+    const { count: existing } = await db
+      .from("wireline_phone_numbers")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", req.user.id);
+    if ((existing ?? 0) >= allowance) {
+      return res.status(403).json({
+        code: "PHONE_LINES_QUOTA",
+        error:
+          `Voice number limit reached for your plan (${allowance} numbers — matching your subscribed agent tier). ` +
+          "Upgrade your plan for a higher agent cap (each seat includes one permanent number slot), or remove a saved line in Admin.",
+        included: allowance,
+        used: existing ?? 0,
+      });
+    }
     await db.from('wireline_phone_numbers').insert({ phone_number, vapi_number_id, user_id: req.user.id });
     res.json({ success: true });
   } catch (error) {
@@ -1919,6 +1784,7 @@ app.post("/api/settings", authenticateUser, async (req: any, res: any) => {
     // quota). They are now ignored if present and silently dropped.
     const {
       vapi_phone_number_id,
+      vapi_phone_inbound_agent_id,
       voice_llm_provider,
       voice_llm_model,
       retention_days,
@@ -1935,6 +1801,25 @@ app.post("/api/settings", authenticateUser, async (req: any, res: any) => {
     // Build patch with only the fields the caller is allowed to set.
     const patch: Record<string, any> = { updated_at: new Date().toISOString() };
     if (vapi_phone_number_id !== undefined) patch.vapi_phone_number_id = vapi_phone_number_id;
+    if (vapi_phone_inbound_agent_id !== undefined) {
+      if (vapi_phone_inbound_agent_id === null || vapi_phone_inbound_agent_id === "") {
+        patch.vapi_phone_inbound_agent_id = null;
+      } else if (typeof vapi_phone_inbound_agent_id !== "string") {
+        return res.status(400).json({ error: "vapi_phone_inbound_agent_id must be a string or null" });
+      } else {
+        const aid = vapi_phone_inbound_agent_id.trim();
+        const { data: inboundAgent } = await db
+          .from("wireline_agents")
+          .select("id")
+          .eq("id", aid)
+          .eq("user_id", req.user.id)
+          .maybeSingle();
+        if (!inboundAgent) {
+          return res.status(404).json({ error: "Default inbound agent not found in your fleet." });
+        }
+        patch.vapi_phone_inbound_agent_id = aid;
+      }
+    }
     if (voice_llm_provider !== undefined) patch.voice_llm_provider = voice_llm_provider;
     if (voice_llm_model !== undefined) patch.voice_llm_model = voice_llm_model;
     if (retention_days !== undefined) {
@@ -3547,18 +3432,8 @@ app.use("/api/claude", (req: any, res: any, next: any) => {
   );
 });
 
-// Status / health
-app.get("/api/claude/status", authenticateUser, async (_req: any, res: any) => {
-  res.json({
-    available: claudeBrain.isClaudeAvailable(),
-    model: claudeBrain.CLAUDE_MODEL_DEFAULT,
-    capabilities: [
-      "brief", "qualify", "objection-drill", "cold-email",
-      "persona-clone", "summarize-thread", "route-intent",
-      "smart-draft", "agent-review",
-    ],
-  });
-});
+// Claude recipe handlers extracted to src/routes/claude-routes.ts
+// The inline definitions below are shadowed by the router mount above.
 
 // Pre-call briefing — given a lead, deliver a tactical brief.
 app.post("/api/claude/brief", authenticateUser, async (req: any, res: any) => {
@@ -3919,683 +3794,10 @@ app.post("/api/claude/agent-review/apply-directive", authenticateUser, async (re
   }
 });
 
-// ──────────────────────────────────────────────────────────
-//  OUTBOUND WEBHOOKS — push events to Slack / CRM / Zapier / n8n / etc.
-//
-//  Subscribed events:
-//    call.completed       — every voice call after post-call enrichment
-//    call.escalated       — any call where intent_label === 'escalation'
-//    lead.hot             — when lead_score >= 70
-//    email.received       — every successfully-synced inbound email
-//    appointment.booked   — every booking insert
-//    task.created         — every fleet_task insert
-//    compliance.flagged   — every compliance_review task created
-//
-//  Each delivery includes:
-//    POST <url>
-//    Headers:
-//      Content-Type: application/json
-//      X-Wireline-Event: <event>
-//      X-Wireline-Signature: sha256=<hex hmac of body using webhook.secret>
-//      X-Wireline-Delivery: <random uuid>
-//    Body: { event, timestamp, data }
-// ──────────────────────────────────────────────────────────
+app.use("/api/webhooks", webhookRouter);
 
-// Column projection used by every webhook list/read endpoint. Notably
-// EXCLUDES `secret` and `secret_encrypted` — those must never leave the
-// server. `secret_last_four` is safe for UI display.
-const WEBHOOK_PUBLIC_COLUMNS =
-  "id, user_id, name, url, events, active, last_triggered_at, last_status, last_error, delivery_count, created_at, secret_last_four";
-
-app.get("/api/webhooks", authenticateUser, async (req: any, res: any) => {
-  try {
-    const { data, error } = await db.from("wireline_webhooks")
-      .select(WEBHOOK_PUBLIC_COLUMNS).eq("user_id", req.user.id).order("created_at", { ascending: false });
-    if (error) throw error;
-    res.json({ webhooks: data || [], available_events: WEBHOOK_EVENTS });
-  } catch (e: any) { log.error("Failed to load webhooks", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load webhooks" }); }
-});
-
-app.post("/api/webhooks", authenticateUser, requirePermission("webhooks.manage"), webhooksRateLimit, async (req: any, res: any) => {
-  try {
-    const { name, url, events, secret, active } = req.body;
-    if (!name || !url || !Array.isArray(events) || events.length === 0) {
-      return res.status(400).json({ error: "name, url, and events[] required." });
-    }
-    const urlErr = await validateWebhookUrl(url);
-    if (urlErr) return res.status(400).json({ error: urlErr });
-    const bad = events.filter((e: string) => !WEBHOOK_EVENTS.includes(e as WebhookEvent));
-    if (bad.length) return res.status(400).json({ error: `Unknown events: ${bad.join(", ")}` });
-    let plaintextSecret: string | null = null;
-    if (secret !== undefined && secret !== null && secret !== "") {
-      if (String(secret).length < 16) {
-        return res.status(400).json({ error: "Webhook secret must be at least 16 characters." });
-      }
-      plaintextSecret = String(secret);
-    }
-    // Fail-closed when the vault is misconfigured — we will NOT silently
-    // fall back to plaintext storage even if the column would accept it.
-    if (plaintextSecret && !isVaultConfigured()) {
-      return res.status(503).json({
-        error: "Webhook secret storage is unavailable: WIRELINE_DATA_KEY is not configured on the server.",
-        code: "VAULT_UNCONFIGURED",
-      });
-    }
-    const row: Record<string, unknown> = {
-      user_id: req.user.id,
-      name,
-      url,
-      events,
-      active: active ?? true,
-    };
-    if (plaintextSecret) {
-      row.secret_encrypted = encryptSecret(plaintextSecret);
-      row.secret_last_four = lastFour(plaintextSecret);
-      // Defense-in-depth: also clear any legacy plaintext column on
-      // create. The column still exists for backfill compatibility.
-      row.secret = null;
-    }
-
-    const { data, error } = await db.from("wireline_webhooks").insert(row)
-      .select(WEBHOOK_PUBLIC_COLUMNS).single();
-    if (error) throw error;
-    void auditLogger.logWebhook('created', {
-      userId: req.user.id, webhookId: data.id, url: data.url, events: data.events, active: data.active, ip: req.ip,
-    }).catch(() => {});
-    res.json({ webhook: data });
-  } catch (e: any) { log.error("Failed to create webhook", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to create webhook" }); }
-});
-
-app.patch("/api/webhooks/:id", authenticateUser, requirePermission("webhooks.manage"), webhooksRateLimit, async (req: any, res: any) => {
-  try {
-    const patch: Record<string, unknown> = {};
-    for (const k of ["name", "url", "events", "active"]) {
-      if (req.body[k] !== undefined) patch[k] = req.body[k];
-    }
-    if (patch.url) { const urlErr = await validateWebhookUrl(patch.url as string); if (urlErr) return res.status(400).json({ error: urlErr }); }
-    // Secret rotation goes through the encrypted column ONLY.
-    if (req.body.secret !== undefined) {
-      const s = req.body.secret;
-      if (s === null || s === "") {
-        patch.secret_encrypted = null;
-        patch.secret_last_four = null;
-        patch.secret = null;
-      } else {
-        if (String(s).length < 16) {
-          return res.status(400).json({ error: "Webhook secret must be at least 16 characters." });
-        }
-        if (!isVaultConfigured()) {
-          return res.status(503).json({
-            error: "Webhook secret storage is unavailable: WIRELINE_DATA_KEY is not configured on the server.",
-            code: "VAULT_UNCONFIGURED",
-          });
-        }
-        patch.secret_encrypted = encryptSecret(String(s));
-        patch.secret_last_four = lastFour(String(s));
-        patch.secret = null;
-      }
-    }
-    if (patch.events) {
-      if (!Array.isArray(patch.events) || (patch.events as string[]).some((e: string) => !WEBHOOK_EVENTS.includes(e as WebhookEvent))) {
-        return res.status(400).json({ error: "Invalid events." });
-      }
-    }
-    const { data, error } = await db.from("wireline_webhooks").update(patch)
-      .eq("id", req.params.id).eq("user_id", req.user.id).select(WEBHOOK_PUBLIC_COLUMNS).single();
-    if (error) throw error;
-    void auditLogger.logWebhook('updated', {
-      userId: req.user.id, webhookId: data.id, url: data.url, events: data.events, active: data.active, ip: req.ip,
-    }).catch(() => {});
-    res.json({ webhook: data });
-  } catch (e: any) { log.error("Failed to update", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to update" }); }
-});
-
-app.delete("/api/webhooks/:id", authenticateUser, requirePermission("webhooks.manage"), webhooksRateLimit, async (req: any, res: any) => {
-  try {
-    await db.from("wireline_webhooks").delete().eq("id", req.params.id).eq("user_id", req.user.id);
-    void auditLogger.logWebhook('deleted', {
-      userId: req.user.id, webhookId: req.params.id, ip: req.ip,
-    }).catch(() => {});
-    res.json({ success: true });
-  } catch (e: any) { log.error("Failed to delete", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to delete" }); }
-});
-
-app.post("/api/webhooks/:id/test", authenticateUser, requirePermission("webhooks.manage"), webhooksRateLimit, async (req: any, res: any) => {
-  try {
-    const { data: hook } = await db.from("wireline_webhooks").select("id").eq("id", req.params.id).eq("user_id", req.user.id).single();
-    if (!hook) return res.status(404).json({ error: "Webhook not found." });
-    await dispatchWebhook(req.user.id, "task.created", {
-      test: true, message: "This is a test ping from Wireline.", at: new Date().toISOString(),
-    });
-    void auditLogger.logWebhook('tested', {
-      userId: req.user.id, webhookId: req.params.id, ip: req.ip,
-    }).catch(() => {});
-    res.json({ success: true, message: "Test dispatched. Check the URL." });
-  } catch (e: any) { log.error("Test failed", { error: getErrorMessage(e) }); res.status(500).json({ error: "Test failed" }); }
-});
-
-// Per-hook delivery history — newest first. Operators use this to
-// audit deliveries, see why an integration is silent, and manually
-// retry failed/dead deliveries.
-app.get("/api/webhooks/:id/deliveries", authenticateUser, async (req: any, res: any) => {
-  try {
-    const limit = Math.min(parseInt((req.query.limit as string) || "50"), 200);
-    // Verify ownership before reading deliveries (RLS guards too, but
-    // returning a clean 404 is friendlier than an empty list).
-    const { data: hook } = await db.from("wireline_webhooks")
-      .select("id").eq("id", req.params.id).eq("user_id", req.user.id).maybeSingle();
-    if (!hook) return res.status(404).json({ error: "Webhook not found." });
-    const { data, error } = await db.from("wireline_webhook_deliveries")
-      .select("id, event, attempts, max_attempts, status, last_status_code, last_error, next_attempt_at, delivered_at, created_at")
-      .eq("webhook_id", req.params.id)
-      .order("created_at", { ascending: false })
-      .limit(limit);
-    if (error) throw error;
-    res.json({ deliveries: data || [] });
-  } catch (e: any) { log.error("Failed to load deliveries", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load deliveries" }); }
-});
-
-// Manually requeue a delivery — clears terminal state and runs an
-// attempt right away. Useful after a downstream outage is fixed.
-app.post("/api/webhooks/deliveries/:id/retry", authenticateUser, async (req: any, res: any) => {
-  try {
-    const id = parseInt(req.params.id);
-    if (!Number.isFinite(id)) return res.status(400).json({ error: "Invalid delivery id." });
-    const { data: row } = await db.from("wireline_webhook_deliveries")
-      .select("id, user_id, status").eq("id", id).maybeSingle();
-    if (!row || row.user_id !== req.user.id) return res.status(404).json({ error: "Delivery not found." });
-    await db.from("wireline_webhook_deliveries").update({
-      status: "pending",
-      next_attempt_at: new Date().toISOString(),
-      last_error: null,
-      last_status_code: null,
-    }).eq("id", id);
-    // Fire-and-forget — the inline attempt happens in the background.
-    attemptWebhookDelivery(id).catch((err) =>
-      log.warn("webhook delivery attempt failed", { delivery_id: id, error: (err as any)?.message || String(err) })
-    );
-    res.json({ success: true });
-  } catch (e: any) { log.error("Retry failed", { error: getErrorMessage(e) }); res.status(500).json({ error: "Retry failed" }); }
-});
-
-app.delete("/api/webhooks/deliveries/:id", authenticateUser, async (req: any, res: any) => {
-  try {
-    const id = parseInt(req.params.id);
-    if (!Number.isFinite(id)) return res.status(400).json({ error: "Invalid delivery id." });
-    await db.from("wireline_webhook_deliveries")
-      .delete().eq("id", id).eq("user_id", req.user.id);
-    res.json({ success: true });
-  } catch (e: any) { log.error("Discard failed", { error: getErrorMessage(e) }); res.status(500).json({ error: "Discard failed" }); }
-});
-
-// ──────────────────────────────────────────────────────────
-//  INBOUND LEAD INTAKE — public POST endpoint authenticated by a
-//  per-user API key (X-Wireline-Key: wlk_…). Lets external systems
-//  (Webflow forms, CRMs, Zapier, custom intake) push leads into
-//  Wireline. Inserts into wireline_outbound_leads with
-//  source='inbound' so the existing dialer + triage surfaces pick
-//  them up for free, then fires a lead.received webhook event.
-//
-//    POST /api/intake/lead
-//    Headers:
-//      Content-Type: application/json
-//      X-Wireline-Key: wlk_<24+ chars>
-//    Body:
-//      {
-//        "customer_name": "Jane Doe",          // optional
-//        "customer_number": "+15551234567",    // required (or "phone")
-//        "context": "Filled out demo form",    // optional
-//        "metadata": { "utm_source": "..." }   // optional, free-form
-//      }
-//    Returns: { ok: true, lead_id: <bigint> }
-// ──────────────────────────────────────────────────────────
-
-const INTAKE_KEY_PREFIX = "wlk_";
-
-async function sha256Hex(value: string): Promise<string> {
-  const crypto = await import("node:crypto");
-  return crypto.createHash("sha256").update(value).digest("hex");
-}
-
-async function generateIntakeKey(): Promise<{ plaintext: string; prefix: string; hash: string }> {
-  const crypto = await import("node:crypto");
-  // 32 bytes → 43-char base64url-ish; strip non-alphanumeric for cleanliness.
-  const raw = crypto.randomBytes(32).toString("base64").replace(/[^A-Za-z0-9]/g, "").slice(0, 36);
-  const plaintext = `${INTAKE_KEY_PREFIX}${raw}`;
-  const prefix = plaintext.slice(0, 12);
-  const hash = await sha256Hex(plaintext);
-  return { plaintext, prefix, hash };
-}
-
-// Lookup an intake key, return the row (with user_id) or null.
-async function resolveIntakeKey(provided: string | undefined): Promise<any | null> {
-  if (!provided || typeof provided !== "string" || !provided.startsWith(INTAKE_KEY_PREFIX)) return null;
-  const hash = await sha256Hex(provided.trim());
-  const { data } = await db.from("wireline_intake_keys")
-    .select("id, user_id, name, default_agent_id, active, use_count, auto_dial")
-    .eq("key_hash", hash)
-    .maybeSingle();
-  if (!data || !data.active) return null;
-  return data;
-}
-
-// Per-key distributed rate limit. Public endpoint, so a single noisy
-// caller can't drain the operator's Vapi spend or hammer Supabase.
-// Rolling window: ≤ 60 requests per 60s per intake key.
-const INTAKE_RATE_WINDOW_MS = 60_000;
-const INTAKE_RATE_MAX = 60;
-
-type IntakeRateCheck =
-  | { ok: true }
-  | { ok: false; status: 429; retry_after_s: number; code: "INTAKE_RATE_LIMIT"; error: string }
-  | { ok: false; status: 503; code: "RATE_LIMITER_UNAVAILABLE"; error: string };
-
-function isIntakeRateFailure(result: IntakeRateCheck): result is Exclude<IntakeRateCheck, { ok: true }> {
-  return !result.ok;
-}
-
-async function checkIntakeRate(keyId: string): Promise<IntakeRateCheck> {
-  const limiter = distributedLimiterStatus();
-  if (!limiter.ok) {
-    return {
-      ok: false,
-      status: 503,
-      code: "RATE_LIMITER_UNAVAILABLE",
-      error: limiter.reason || "Distributed rate limiter is unavailable.",
-    };
-  }
-
-  try {
-    const result = await rateLimit(keyId, {
-      bucket: "public_intake",
-      windowMs: INTAKE_RATE_WINDOW_MS,
-      max: INTAKE_RATE_MAX,
-      failClosedOnError: true,
-    });
-    if (result.allowed) return { ok: true };
-    const retryAfter = Math.max(1, Math.ceil(result.resetMs / 1000));
-    return {
-      ok: false,
-      status: 429,
-      retry_after_s: retryAfter,
-      code: "INTAKE_RATE_LIMIT",
-      error: `Rate limit exceeded for this intake key (${INTAKE_RATE_MAX}/min). Retry in ${retryAfter}s.`,
-    };
-  } catch (err) {
-    log.error("Intake rate limiter failed", { keyId, error: getErrorMessage(err) });
-    return {
-      ok: false,
-      status: 503,
-      code: "RATE_LIMITER_UNAVAILABLE",
-      error: "Distributed rate limiter is unavailable for intake traffic. Configure Upstash Redis or enable WIRELINE_ALLOW_INMEMORY_RATE_LIMIT for single-node deployments.",
-    };
-  }
-}
-
-// Public — no Supabase JWT. Authenticated by X-Wireline-Key header.
-//
-// Optional Idempotency-Key header — same key + same operator returns
-// the original lead_id with idempotent_replay: true. Unique partial
-// index on (user_id, idempotency_key) enforces this in Postgres.
-//
-// auto_dial — when set on the intake key AND a default_agent_id is
-// available (or one was provided in the body), we kick off an outbound
-// Vapi call right after the lead is recorded. Fire-and-forget so the
-// HTTP response stays fast.
-// Single-lead processor — shared between /api/intake/lead and the
-// bulk variant. Returns a structured result so the bulk endpoint can
-// aggregate per-lead success / failure without partial-failure
-// rolling back the rest of the batch.
-type IntakeLeadInput = {
-  customer_number?: string;
-  phone?: string;
-  phone_number?: string;
-  customer_name?: string;
-  name?: string;
-  context?: string;
-  message?: string;
-  metadata?: any;
-  agent_id?: string;
-  idempotency_key?: string;
-};
-
-type IntakeLeadResult = {
-  ok: boolean;
-  lead_id?: number;
-  status?: string;
-  call_id?: string | null;
-  idempotent_replay?: boolean;
-  auto_dial_initiated?: boolean;
-  error?: string;
-  code?: string;
-};
-
-async function processIntakeLead(key: any, input: IntakeLeadInput, idemHeaderOverride?: string | null): Promise<IntakeLeadResult> {
-  const customer_number = (input.customer_number || input.phone || input.phone_number || "").toString().trim();
-  if (!customer_number) {
-    return { ok: false, error: "customer_number (or phone) is required.", code: "MISSING_NUMBER" };
-  }
-
-  // Lenient E.164 validation: strip common separators then check for 7–20 digits
-  // with an optional leading +. Intentionally not enforcing strict E.164 length
-  // to accommodate pre-normalised numbers from operators; rejects non-phone strings
-  // (SQL injection attempts, etc.).
-  const PHONE_RE = /^\+?[0-9]{7,20}$/;
-  const phoneClean = customer_number.replace(/[\s\-().]/g, "");
-  if (!PHONE_RE.test(phoneClean)) {
-    return { ok: false, error: "customer_number must be a valid phone number (7–20 digits, optional leading +).", code: "INVALID_NUMBER" };
-  }
-
-  const customer_name = (input.customer_name || input.name || "").toString().slice(0, 200);
-  const context = (input.context || input.message || "").toString().slice(0, 4000);
-  // Sanitise metadata: only plain objects, max 50 keys, values coerced to strings
-  // if needed to prevent oversized blobs from reaching Supabase.
-  let metadata: Record<string, unknown> | null = null;
-  if (input.metadata && typeof input.metadata === "object" && !Array.isArray(input.metadata)) {
-    const entries = Object.entries(input.metadata as Record<string, unknown>).slice(0, 50);
-    metadata = Object.fromEntries(entries.map(([k, v]) => [String(k).slice(0, 100), v]));
-  }
-  const agent_id = input.agent_id || key.default_agent_id || null;
-  const idemKey = (idemHeaderOverride !== undefined ? idemHeaderOverride : (input.idempotency_key || null));
-  const idemKeyTrimmed = idemKey ? String(idemKey).trim().slice(0, 255) : null;
-
-  if (idemKeyTrimmed) {
-    const { data: existing } = await db.from("wireline_outbound_leads")
-      .select("id, call_id, status")
-      .eq("user_id", key.user_id)
-      .eq("idempotency_key", idemKeyTrimmed)
-      .maybeSingle();
-    if (existing) {
-      return {
-        ok: true,
-        lead_id: existing.id,
-        idempotent_replay: true,
-        status: existing.status,
-        call_id: existing.call_id,
-        auto_dial_initiated: false,
-      };
-    }
-  }
-
-  const nowIso = new Date().toISOString();
-  const { data: inserted, error } = await db.from("wireline_outbound_leads").insert({
-    user_id: key.user_id,
-    agent_id,
-    customer_name: customer_name || null,
-    customer_number,
-    phone_number: customer_number,
-    context: context || null,
-    status: "Pending",
-    source: "inbound",
-    metadata,
-    received_at: nowIso,
-    idempotency_key: idemKeyTrimmed,
-  }).select("id").single();
-
-  if (error) {
-    if (idemKeyTrimmed && (error.code === "23505" || /duplicate key/i.test(error.message || ""))) {
-      const { data: replay } = await db.from("wireline_outbound_leads")
-        .select("id, call_id, status")
-        .eq("user_id", key.user_id)
-        .eq("idempotency_key", idemKeyTrimmed)
-        .maybeSingle();
-      if (replay) {
-        return {
-          ok: true,
-          lead_id: replay.id,
-          idempotent_replay: true,
-          status: replay.status,
-          call_id: replay.call_id,
-          auto_dial_initiated: false,
-        };
-      }
-    }
-    return { ok: false, error: error.message || "DB insert failed", code: "INSERT_FAILED" };
-  }
-
-  // Fan out to operator's outbound webhooks.
-  dispatchWebhook(key.user_id, "lead.received", {
-    lead_id: inserted?.id,
-    customer_name: customer_name || null,
-    customer_number,
-    context: context || null,
-    metadata,
-    agent_id,
-    intake_key: { id: key.id, name: key.name },
-    auto_dial: !!key.auto_dial && !!agent_id,
-    at: nowIso,
-  }).catch((err) =>
-    log.warn("lead.received webhook dispatch failed", {
-      user_id: key.user_id,
-      error: (err as any)?.message || String(err),
-    })
-  );
-
-  let auto_dial_initiated = false;
-  if (key.auto_dial && agent_id && inserted?.id) {
-    auto_dial_initiated = true;
-    (async () => {
-      try {
-        const result = await placeOutboundCall({
-          userId: key.user_id,
-          agentId: agent_id,
-          customerName: customer_name || null,
-          customerNumber: customer_number,
-          context: context || `Inbound lead via ${key.name}`,
-        });
-        if (result.ok) {
-          await db.from("wireline_outbound_leads").update({
-            call_id: result.callId,
-            status: "Dialing",
-            last_called_at: new Date().toISOString(),
-          }).eq("id", inserted.id);
-        } else {
-          await db.from("wireline_outbound_leads").update({
-            status: "AutoDialFailed",
-            metadata: { ...(metadata || {}), auto_dial_error: result.error, auto_dial_status: result.status },
-          }).eq("id", inserted.id);
-          log.warn("Auto-dial failed for lead", { leadId: inserted.id, status: result.status, error: result.error });
-        }
-      } catch (err: any) {
-        await db.from("wireline_outbound_leads").update({
-          status: "AutoDialFailed",
-          metadata: { ...(metadata || {}), auto_dial_error: getErrorMessage(err) },
-        }).eq("id", inserted.id);
-        log.warn("Auto-dial threw for lead", { leadId: inserted.id, error: getErrorMessage(err) });
-      }
-    })();
-  }
-
-  return {
-    ok: true,
-    lead_id: inserted?.id,
-    idempotent_replay: false,
-    auto_dial_initiated,
-  };
-}
-
-app.post("/api/intake/lead", async (req: any, res: any) => {
-  try {
-    const provided = req.headers["x-wireline-key"] as string | undefined;
-    const key = await resolveIntakeKey(provided);
-    if (!key) return res.status(401).json({ error: "Invalid or missing X-Wireline-Key." });
-
-    const rate = await checkIntakeRate(key.id);
-    if (isIntakeRateFailure(rate)) {
-      if (rate.status === 429) res.set("Retry-After", String(rate.retry_after_s));
-      return res.status(rate.status).json({
-        error: rate.error,
-        code: rate.code,
-        ...(rate.status === 429 ? { retry_after_s: rate.retry_after_s } : {}),
-      });
-    }
-
-    const idemHeader = (req.headers["idempotency-key"] as string | undefined)?.toString().trim() || null;
-    const result = await processIntakeLead(key, req.body || {}, idemHeader);
-
-    if (result.ok) {
-      // Bump usage stats fire-and-forget — only on real (not replayed) inserts.
-      if (!result.idempotent_replay) {
-        const nowIso = new Date().toISOString();
-        db.from("wireline_intake_keys").update({
-          last_used_at: nowIso,
-          use_count: (key.use_count || 0) + 1,
-        }).eq("id", key.id).then(() => {}, () => {});
-      }
-      return res.json(result);
-    }
-    const status = result.code === "MISSING_NUMBER" ? 400 : 500;
-    return res.status(status).json({ error: result.error, code: result.code });
-  } catch (e: any) {
-    log.error("Intake lead failed", { error: e?.message || String(e) });
-    res.status(500).json({ error: "Intake failed" });
-  }
-});
-
-// Bulk intake — accept up to BULK_MAX leads per request. Each lead
-// counts as one rate-limit hit; if the batch would exceed the
-// per-key bucket, the whole request is rejected with 429 (so the
-// caller can split it sensibly rather than getting partial success).
-//
-// Per-lead idempotency_key in the body is supported (the request-level
-// Idempotency-Key header is intentionally ignored here — wouldn't make
-// sense to apply one key to a batch of distinct leads).
-const INTAKE_BULK_MAX = 100;
-
-app.post("/api/intake/leads", async (req: any, res: any) => {
-  try {
-    const provided = req.headers["x-wireline-key"] as string | undefined;
-    const key = await resolveIntakeKey(provided);
-    if (!key) return res.status(401).json({ error: "Invalid or missing X-Wireline-Key." });
-
-    const leads = Array.isArray(req.body?.leads) ? req.body.leads : null;
-    if (!leads || leads.length === 0) {
-      return res.status(400).json({ error: "leads must be a non-empty array.", code: "EMPTY_BATCH" });
-    }
-    if (leads.length > INTAKE_BULK_MAX) {
-      return res.status(400).json({
-        error: `Batch too large. Max ${INTAKE_BULK_MAX} leads per request.`,
-        code: "BATCH_TOO_LARGE",
-        max: INTAKE_BULK_MAX,
-      });
-    }
-
-    // Reserve N slots in the rate bucket up front; reject the whole
-    // batch if any slot would overflow so the caller can chunk.
-    for (let i = 0; i < leads.length; i++) {
-      const r = await checkIntakeRate(key.id);
-      if (isIntakeRateFailure(r)) {
-        if (r.status === 429) {
-          res.set("Retry-After", String(r.retry_after_s));
-          return res.status(429).json({
-            error: `Rate limit would be exceeded by this batch (${INTAKE_RATE_MAX}/min). Retry in ${r.retry_after_s}s.`,
-            code: r.code,
-            retry_after_s: r.retry_after_s,
-            accepted_so_far: i,
-          });
-        }
-        return res.status(r.status).json({ error: r.error, code: r.code });
-      }
-    }
-
-    // Process leads concurrently. Per-lead errors are captured into
-    // the results array so a single bad row doesn't fail the rest.
-    const results = await Promise.all(
-      (leads as IntakeLeadInput[]).map((lead) => processIntakeLead(key, lead).catch((err: any) => ({
-        ok: false,
-        error: getErrorMessage(err),
-        code: "PROCESS_FAILED",
-      } as IntakeLeadResult))),
-    );
-
-    const successes = results.filter(r => r.ok).length;
-    if (successes > 0) {
-      const nowIso = new Date().toISOString();
-      db.from("wireline_intake_keys").update({
-        last_used_at: nowIso,
-        use_count: (key.use_count || 0) + successes,
-      }).eq("id", key.id).then(() => {}, () => {});
-    }
-
-    res.json({
-      ok: true,
-      count: leads.length,
-      success_count: successes,
-      failure_count: leads.length - successes,
-      results,
-    });
-  } catch (e: any) {
-    log.error("Bulk intake failed", { error: e?.message || String(e) });
-    res.status(500).json({ error: "Bulk intake failed" });
-  }
-});
-
-// Per-user CRUD on intake keys. Plaintext is returned ONLY at create
-// time; subsequent reads expose the prefix only.
-app.get("/api/intake/keys", authenticateUser, async (req: any, res: any) => {
-  try {
-    const { data, error } = await db.from("wireline_intake_keys")
-      .select("id, name, key_prefix, default_agent_id, auto_dial, active, last_used_at, use_count, created_at")
-      .eq("user_id", req.user.id)
-      .order("created_at", { ascending: false });
-    if (error) throw error;
-    res.json({ keys: data || [] });
-  } catch (e: any) { log.error("Failed to load keys", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load keys" }); }
-});
-
-app.post("/api/intake/keys", authenticateUser, async (req: any, res: any) => {
-  try {
-    const name = (req.body?.name || "").toString().trim();
-    if (!name) return res.status(400).json({ error: "name is required" });
-    const default_agent_id = req.body?.default_agent_id || null;
-    const auto_dial = !!req.body?.auto_dial;
-
-    const { plaintext, prefix, hash } = await generateIntakeKey();
-    const { data, error } = await db.from("wireline_intake_keys").insert({
-      user_id: req.user.id,
-      name: name.slice(0, 80),
-      key_prefix: prefix,
-      key_hash: hash,
-      default_agent_id,
-      auto_dial,
-      active: true,
-    }).select("id, name, key_prefix, default_agent_id, auto_dial, active, created_at").single();
-    if (error) throw error;
-    void auditLogger.logIntakeKey('created', {
-      userId: req.user.id, keyId: data.id, keyPrefix: data.key_prefix, keyName: data.name, ip: req.ip,
-    }).catch(() => {});
-    // Plaintext is returned ONCE — we never store or expose it again.
-    res.json({ key: data, plaintext });
-  } catch (e: any) { log.error("Failed to create key", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to create key" }); }
-});
-
-app.patch("/api/intake/keys/:id", authenticateUser, async (req: any, res: any) => {
-  try {
-    const patch: any = {};
-    if (req.body?.name !== undefined) patch.name = String(req.body.name).slice(0, 80);
-    if (req.body?.active !== undefined) patch.active = !!req.body.active;
-    if (req.body?.default_agent_id !== undefined) patch.default_agent_id = req.body.default_agent_id || null;
-    if (req.body?.auto_dial !== undefined) patch.auto_dial = !!req.body.auto_dial;
-    const { data, error } = await db.from("wireline_intake_keys").update(patch)
-      .eq("id", req.params.id).eq("user_id", req.user.id)
-      .select("id, name, key_prefix, default_agent_id, auto_dial, active, last_used_at, use_count, created_at").single();
-    if (error) throw error;
-    void auditLogger.logIntakeKey('updated', {
-      userId: req.user.id, keyId: data.id, keyPrefix: data.key_prefix, keyName: data.name, ip: req.ip,
-    }).catch(() => {});
-    res.json({ key: data });
-  } catch (e: any) { log.error("Failed to update key", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to update key" }); }
-});
-
-app.delete("/api/intake/keys/:id", authenticateUser, async (req: any, res: any) => {
-  try {
-    await db.from("wireline_intake_keys").delete().eq("id", req.params.id).eq("user_id", req.user.id);
-    void auditLogger.logIntakeKey('deleted', {
-      userId: req.user.id, keyId: req.params.id, ip: req.ip,
-    }).catch(() => {});
-    res.json({ success: true });
-  } catch (e: any) { log.error("Failed to delete key", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to delete key" }); }
-});
+// Intake routes moved to ./src/routes/intake-routes.ts
+// (mounted at /api/intake via intakeRouter)
 
 // ──────────────────────────────────────────────────────────
 //  SCHEDULED DAILY BRIEF — emails Claude's morning brief to the
@@ -5164,149 +4366,10 @@ app.get("/api/spend/status", authenticateUser, async (req: any, res: any) => {
   } catch (e: any) { log.error("Failed to load spend status", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load spend status" }); }
 });
 
-// ──────────────────────────────────────────────────────────
-//  STRIPE BILLING — checkout, portal, status. Webhook handler
-//  lives at module scope (above) so it can use raw-body parsing.
-// ──────────────────────────────────────────────────────────
 
-function billingBaseUrl(req: any): string {
-  // Honor APP_URL when set (production). Otherwise fall back to the
-  // Origin header so dev sandboxes work without env config.
-  return (process.env.APP_URL || req.get("origin") || "http://localhost:3000").replace(/\/+$/, "");
-}
 
-// Public — anyone can read the catalog (renders pre-auth on the
-// pricing surface in the future). No secrets are exposed.
-app.get("/api/billing/plans", (_req: any, res: any) => {
-  res.json({ plans: plansForClient(), stripe_configured: stripeAvailable() });
-});
 
-// Operator-facing read of their current sub.
-app.get("/api/billing/status", authenticateUser, async (req: any, res: any) => {
-  try {
-    const [{ data: sub }, { count: agentCount }] = await Promise.all([
-      db.from("wireline_subscriptions")
-        .select("plan, status, current_period_end, cancel_at_period_end, stripe_customer_id, stripe_subscription_id, updated_at")
-        .eq("user_id", req.user.id).maybeSingle(),
-      db.from("wireline_agents").select("id", { count: "exact", head: true }).eq("user_id", req.user.id),
-    ]);
-    const planMeta = sub?.plan ? planById(sub.plan) : null;
-    res.json({
-      stripe_configured: stripeAvailable(),
-      agent_count: agentCount ?? 0,
-      subscription: sub ? {
-        plan: sub.plan,
-        plan_name: planMeta?.name || null,
-        max_agents: planMeta?.max_agents || null,
-        status: sub.status,
-        current_period_end: sub.current_period_end,
-        cancel_at_period_end: !!sub.cancel_at_period_end,
-        has_customer: !!sub.stripe_customer_id,
-        has_subscription: !!sub.stripe_subscription_id,
-        updated_at: sub.updated_at,
-      } : null,
-    });
-  } catch (e: any) { log.error("Failed to load status", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load status" }); }
-});
 
-// Start a Stripe Checkout session for a plan. Idempotent on
-// stripe_customer_id — we re-use the customer across upgrades so
-// invoices and payment methods carry forward.
-app.post("/api/billing/checkout", authenticateUser, async (req: any, res: any) => {
-  try {
-    if (!stripeAvailable()) return res.status(503).json({ error: "Stripe not configured." });
-    const planId = String(req.body?.plan_id || "").trim();
-    const plan = planById(planId);
-    if (!plan) return res.status(400).json({ error: "Unknown plan_id." });
-    const priceId = process.env[plan.priceIdEnv];
-    if (!priceId) return res.status(503).json({ error: `Price for plan '${plan.id}' not configured (${plan.priceIdEnv}).` });
-
-    // Find the existing Stripe row first — we need to gate against
-    // double-subscribing AND we'll re-use the customer if present.
-    const { data: existing } = await db.from("wireline_subscriptions")
-      .select("stripe_customer_id, stripe_subscription_id, status, plan")
-      .eq("user_id", req.user.id).maybeSingle();
-
-    // Block creating a second concurrent subscription. Stripe permits
-    // multiple subs per customer unless we explicitly prevent it; our
-    // wireline_subscriptions row only tracks ONE stripe_subscription_id
-    // so a second checkout would silently double-charge the operator
-    // and leave the second sub orphaned in Stripe. Plan changes go
-    // through the Customer Portal (clean proration, single sub) — the
-    // UI redirects there when an active sub already exists.
-    const liveStatuses = new Set(["active", "trialing", "past_due", "incomplete", "unpaid"]);
-    if (existing?.stripe_subscription_id && liveStatuses.has(existing.status || "")) {
-      return res.status(409).json({
-        error:
-          "You already have an active subscription. Use the Customer Portal to change plans " +
-          "(this avoids creating a second concurrent subscription).",
-        code: "ALREADY_SUBSCRIBED",
-        current_plan: existing.plan,
-        current_status: existing.status,
-      });
-    }
-
-    // Find or create the Stripe Customer for this user.
-    let customerId = existing?.stripe_customer_id || null;
-    if (!customerId) {
-      const customer = await stripe.customers.create({
-        email: req.user.email,
-        metadata: { wireline_user_id: req.user.id },
-      });
-      customerId = customer.id;
-      await db.from("wireline_subscriptions").upsert({
-        user_id: req.user.id,
-        stripe_customer_id: customerId,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: "user_id" });
-    }
-
-    const base = billingBaseUrl(req);
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      customer: customerId,
-      line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${base}/admin?billing=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${base}/admin?billing=canceled`,
-      allow_promotion_codes: true,
-      subscription_data: {
-        metadata: { wireline_user_id: req.user.id, wireline_plan: plan.id },
-      },
-    });
-    res.json({ url: session.url });
-    void auditLogger.logBilling('checkout_started', {
-      userId: req.user.id, plan: plan.id, customerId, ip: req.ip,
-    }).catch(() => {});
-  } catch (e: any) {
-    log.error("Checkout creation failed", { error: e?.message || String(e) });
-    res.status(500).json({ error: "Checkout failed" });
-  }
-});
-
-// Open the Stripe Customer Portal for the operator to manage their
-// subscription, payment method, invoice history, and cancellation.
-app.post("/api/billing/portal", authenticateUser, async (req: any, res: any) => {
-  try {
-    if (!stripeAvailable()) return res.status(503).json({ error: "Stripe not configured." });
-    const { data: sub } = await db.from("wireline_subscriptions")
-      .select("stripe_customer_id").eq("user_id", req.user.id).maybeSingle();
-    if (!sub?.stripe_customer_id) {
-      return res.status(404).json({ error: "No Stripe customer for this user yet — run checkout first." });
-    }
-    const base = billingBaseUrl(req);
-    const portal = await stripe.billingPortal.sessions.create({
-      customer: sub.stripe_customer_id,
-      return_url: `${base}/admin`,
-    });
-    res.json({ url: portal.url });
-    void auditLogger.logBilling('portal_opened', {
-      userId: req.user.id, customerId: sub.stripe_customer_id, ip: req.ip,
-    }).catch(() => {});
-  } catch (e: any) {
-    log.error("Portal session failed", { error: e?.message || String(e) });
-    res.status(500).json({ error: "Portal failed" });
-  }
-});
 
 // ──────────────────────────────────────────────────────────
 //  CSV EXPORT — operators get their data out for compliance, analysis,
@@ -6012,6 +5075,9 @@ app.use("/api/quotas", quotaRouter);
 // Job routes moved to ./src/routes/job-routes.ts
 app.use("/api/jobs", jobRouter);
 app.use(soc2Router);
+
+// Intake routes moved to ./src/routes/intake-routes.ts
+app.use("/api/intake", intakeRouter);
 
 // TCPA consent check moved to ./src/routes/compliance-routes.ts
 app.use("/api", complianceRouter);

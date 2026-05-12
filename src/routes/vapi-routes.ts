@@ -30,9 +30,11 @@ import { buildCallCompletedOutcome, dispatchWebhook, type WirelineCallCompletedO
 import { analyzeLiveSentiment } from "../lib/gemini-brain";
 import { IntegrationService } from "../lib/integrations";
 import { NotificationService } from "../lib/notifications";
+import { postMessage as slackPostMessage, getDefaultChannel } from "../lib/slack-service";
 import { normalizeDncPhone } from "../lib/compliance";
 import { lookupTenantPhoneNumber, sendTenantMessage } from "../lib/twilio-service";
 import { resolveAgentTools } from "../lib/agent-capabilities";
+import { resolveVapiWebhookAgent } from "../lib/vapi-webhook-agent";
 
 // TODO: the imports below were carried over from server.ts when this router
 // was extracted. The handlers that consume them — Gemini post-call lesson
@@ -68,13 +70,17 @@ router.post("/api/vapi-webhook", async (req, res) => {
     return res.status(401).json({ error: "Invalid webhook signature." });
   }
 
-  const payload = req.body;
-  const { message } = payload;
+  const payload = req.body as Record<string, unknown>;
+  const queryAgentId = typeof req.query.agentId === "string" ? req.query.agentId : undefined;
+  const routed = await resolveVapiWebhookAgent({ payload, queryAgentId });
+  if (!routed.ok) {
+    return res.status((routed as { status: number }).status)
+      .json((routed as { body: Record<string, unknown> }).body);
+  }
 
-  const webhookAgentId = req.query.agentId as string || "default-agent";
-  
-  const { data: agent } = await db.from('wireline_agents').select('user_id').eq('id', webhookAgentId).single();
-  if (!agent) return res.status(404).json({ error: "Agent not found" });
+  const webhookAgentId = routed.webhookAgentId;
+  const agent = { id: webhookAgentId, user_id: routed.agentUserId };
+  const message = payload.message as Record<string, any> | undefined;
 
   const { data: userSettings } = await db.from('wireline_settings')
     .select('subscription_status, voice_llm_provider, voice_llm_model, twilio_messaging_enabled, twilio_lookup_enabled')
@@ -245,7 +251,7 @@ Today is ${currentDateTime}.
                priority: priority || 'medium',
                status: 'pending',
                source_type: 'phone_call',
-               source_id: message.call?.id || payload.call?.id || "in-call",
+               source_id: (message.call as { id?: string } | undefined)?.id || (payload.call as { id?: string } | undefined)?.id || "in-call",
                target_channel: 'manual',
             }).select('id').single();
             if (taskError) throw taskError;
@@ -279,7 +285,7 @@ Today is ${currentDateTime}.
       if (toolCall.function.name === "update_lead_status") {
         try {
           const { status, notes } = toolCall.function.arguments;
-          const customerPhone = payload.call?.customer?.number || message.call?.customer?.number;
+          const customerPhone = (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number || (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
           if (customerPhone) {
             const safePhone = sanitizePhone(customerPhone);
             await db.from('wireline_outbound_leads')
@@ -308,7 +314,7 @@ Today is ${currentDateTime}.
       if (toolCall.function.name === "send_text_message") {
         try {
           const { to_number, channel, message_body } = toolCall.function.arguments;
-          const fallbackNumber = payload.call?.customer?.number || message.call?.customer?.number;
+          const fallbackNumber = (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number || (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
           const targetNumber = sanitizePhone(to_number || fallbackNumber);
 
           if (!targetNumber) {
@@ -333,7 +339,7 @@ Today is ${currentDateTime}.
 
       if (toolCall.function.name === "lookup_phone_number") {
         try {
-          const fallbackNumber = payload.call?.customer?.number || message.call?.customer?.number;
+          const fallbackNumber = (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number || (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
           const targetNumber = sanitizePhone(toolCall.function.arguments?.phone_number || fallbackNumber);
 
           if (!targetNumber) {
@@ -354,7 +360,7 @@ Today is ${currentDateTime}.
 
       if (toolCall.function.name === "add_to_dnc") {
         try {
-          const fallbackNumber = payload.call?.customer?.number || message.call?.customer?.number;
+          const fallbackNumber = (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number || (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
           const rawPhone = String(toolCall.function.arguments?.phone_number || fallbackNumber || "");
           const normalizedPhone = normalizeDncPhone(rawPhone);
 
@@ -405,13 +411,33 @@ Today is ${currentDateTime}.
           // Simple date/time parsing for now.
           const startTime = new Date(`${date} ${time}`).toISOString();
           const endTime = new Date(new Date(startTime).getTime() + 60 * 60 * 1000).toISOString();
+          const title = `${service_type} for ${customer_name}`;
           
           const success = await service.bookAppointment({
-            title: `${service_type} for ${customer_name}`,
+            title,
             description: `Booked via Wireline AI Agent`,
             startTime,
-            endTime
+            endTime,
+            agentId: agent?.id,
           });
+          if (success && agent?.user_id) {
+            void dispatchWebhook(agent.user_id, "appointment.booked", {
+              agent_id: agent.id,
+              title,
+              start_time: startTime,
+              end_time: endTime,
+              customer_name,
+              service_type,
+            });
+            const slackCh = await getDefaultChannel(agent.user_id);
+            if (slackCh) {
+              void slackPostMessage(
+                agent.user_id,
+                slackCh,
+                `📅 *Appointment booked*\n${title}\n${new Date(startTime).toLocaleString()} → ${new Date(endTime).toLocaleString()}`,
+              );
+            }
+          }
           results.push({ toolCallId: toolCall.id, result: success ? "Appointment booked." : "Booking failed." });
         } catch (e: any) {
           results.push({ toolCallId: toolCall.id, result: "Booking error." });
@@ -448,15 +474,15 @@ Today is ${currentDateTime}.
   }
 
   if (message && message.type === "status-update") {
-     const callId = payload.call?.id;
-     const status = message.status || payload.call?.status;
+     const callId = (payload.call as { id?: string } | undefined)?.id;
+     const status = (message as { status?: string }).status || (payload.call as { status?: string } | undefined)?.status;
      if (callId) {
         if (['in-progress', 'ringing', 'queued'].includes(status)) {
            await db.from('wireline_signal_presence').upsert({
               id: callId,
               user_id: agent?.user_id,
               agent_id: webhookAgentId,
-              customer_number: payload.call?.customer?.number || "Unknown",
+              customer_number: (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number || "Unknown",
               status: status,
               started_at: new Date().toISOString()
            });
@@ -467,7 +493,7 @@ Today is ${currentDateTime}.
   }
 
   if (message && message.type === "conversation-update") {
-    const callId = payload.call?.id || message.call?.id;
+    const callId = (payload.call as { id?: string } | undefined)?.id || (message.call as { id?: string } | undefined)?.id;
     if (callId) {
       const turns: any[] = message.conversation || message.messages || [];
       const userTurns = turns.filter((t: any) => t.role === "user").slice(-2);
@@ -603,6 +629,16 @@ Today is ${currentDateTime}.
           const intent = (enrichment?.intent_label || "").toLowerCase();
           if (intent === "escalation" || intent === "escalate") {
             void dispatchWebhook(userId, "call.escalated", { vapi_call_id: call?.id, intent_label: enrichment?.intent_label, customer_number: base.customer_number });
+            void (async () => {
+              const ch = await getDefaultChannel(userId);
+              if (ch) {
+                await slackPostMessage(
+                  userId,
+                  ch,
+                  `🚨 *Call escalation*\nCaller: ${base.customer_number || "unknown"}\nIntent: ${enrichment?.intent_label || "escalation"}\nCall: ${call?.id || ""}`,
+                );
+              }
+            })();
           }
         }
 

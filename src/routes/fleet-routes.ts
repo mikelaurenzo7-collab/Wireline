@@ -17,6 +17,16 @@ router.post("/api/fleet/seed", authenticateUser, async (req: any, res: any) => {
   const userId = req.user.id;
   const specializedAgents = [
     {
+      id: `riley-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      name: "Riley",
+      channel: "voice",
+      role: "receptionist",
+      archetype: "Receptionist",
+      first_message:
+        "Hi — this is Riley at Wireline. Thanks for reaching us today. What can I help you with?",
+      personality: ROLE_PERSONALITY_TEMPLATES.receptionist,
+    },
+    {
       id: `billing-spec-${Date.now()}`,
       name: "Billing Specialist",
       channel: "voice",
