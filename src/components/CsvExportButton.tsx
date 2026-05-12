@@ -25,7 +25,8 @@ export default function CsvExportButton({
   const [done, setDone] = useState(false);
 
   const onClick = async () => {
-    setBusy(true); setDone(false);
+    setBusy(true);
+    setDone(false);
     try {
       const r = await authFetch(`/api/export/${type}.csv`);
       if (!r.ok) throw new Error(`Export failed (${r.status})`);
@@ -42,20 +43,32 @@ export default function CsvExportButton({
       setTimeout(() => setDone(false), 2000);
     } catch (err) {
       console.error("CSV export failed:", err);
-      toastError("Export failed", "Check the console for details.");
-    } finally { setBusy(false); }
+      toastError("Export failed", "Could not generate the CSV. Please try again.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const styles = {
-    default: "px-4 py-2.5 rounded-full glass border border-white/10 text-[11px] uppercase tracking-[0.3em] text-ink/80 hover:text-brand hover:border-brand/40 transition-all flex items-center gap-2",
-    ghost:   "px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand transition-colors flex items-center gap-1.5",
+    default:
+      "px-4 py-2.5 rounded-full glass border border-white/10 text-[11px] uppercase tracking-[0.3em] text-ink/80 hover:text-brand hover:border-brand/40 transition-all flex items-center gap-2",
+    ghost:
+      "px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand transition-colors flex items-center gap-1.5",
   };
 
   return (
-    <button onClick={onClick} disabled={busy} className={cn(styles[variant], "disabled:opacity-50")}>
-      {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> :
-       done ? <Check className="w-3.5 h-3.5 text-emerald-500" /> :
-              <Download className="w-3.5 h-3.5" />}
+    <button
+      onClick={onClick}
+      disabled={busy}
+      className={cn(styles[variant], "disabled:opacity-50")}
+    >
+      {busy ? (
+        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+      ) : done ? (
+        <Check className="w-3.5 h-3.5 text-emerald-500" />
+      ) : (
+        <Download className="w-3.5 h-3.5" />
+      )}
       {label ?? "Export CSV"}
     </button>
   );
