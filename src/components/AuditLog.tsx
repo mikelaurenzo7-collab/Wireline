@@ -295,7 +295,7 @@ export default function AuditLog() {
         console.error("Failed to load audit log:", err);
         toastError(
           "Failed to load audit log",
-          "Could not fetch audit events. Please refresh and try again.",
+          "Could not fetch audit events. Check your network connection and try refreshing.",
         );
       } finally {
         setLoading(false);

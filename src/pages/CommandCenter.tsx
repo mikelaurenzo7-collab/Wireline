@@ -82,7 +82,7 @@ const SENTIMENT_COLORS = {
   negative: "#E040C0",
 };
 
-const POLL_MS = 10_000; // live-call panel refreshes every 10 s
+const PRESENCE_POLL_MS = 10_000; // live-call panel refreshes every 10 s
 
 export default function CommandCenter() {
   const mountedRef = useRef(true);
@@ -125,7 +125,7 @@ export default function CommandCenter() {
   useEffect(() => {
     mountedRef.current = true;
     fetchAll();
-    const fastTimer = setInterval(fetchPresence, POLL_MS);
+    const fastTimer = setInterval(fetchPresence, PRESENCE_POLL_MS);
     const slowTimer = setInterval(fetchAll, 60_000);
     return () => {
       mountedRef.current = false;
