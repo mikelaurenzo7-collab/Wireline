@@ -8,15 +8,23 @@ import { getOperatorSloSnapshot } from "../lib/operator-slos";
 
 const router = express.Router();
 
-async function probeDatabase(timeoutMs = 1500): Promise<{ ok: boolean; latency_ms: number; error?: string }> {
+async function probeDatabase(
+  timeoutMs = 1500,
+): Promise<{ ok: boolean; latency_ms: number; error?: string }> {
   const t0 = Date.now();
   try {
-    const probe = db.from("wireline_settings").select("user_id", { head: true, count: "exact" }).limit(1);
-    const result = await Promise.race([
+    const probe = db
+      .from("wireline_settings")
+      .select("user_id", { head: true, count: "exact" })
+      .limit(1);
+    const result = (await Promise.race([
       probe,
-      new Promise((_resolve, reject) => setTimeout(() => reject(new Error("db probe timed out")), timeoutMs)),
-    ]) as { error?: { message: string } | null };
-    if (result?.error) return { ok: false, latency_ms: Date.now() - t0, error: result.error.message };
+      new Promise((_resolve, reject) =>
+        setTimeout(() => reject(new Error("db probe timed out")), timeoutMs),
+      ),
+    ])) as { error?: { message: string } | null };
+    if (result?.error)
+      return { ok: false, latency_ms: Date.now() - t0, error: result.error.message };
     return { ok: true, latency_ms: Date.now() - t0 };
   } catch (err: any) {
     return { ok: false, latency_ms: Date.now() - t0, error: getErrorMessage(err) };
@@ -26,12 +34,29 @@ async function probeDatabase(timeoutMs = 1500): Promise<{ ok: boolean; latency_m
 const healthRateLimit = new Map<string, number[]>();
 const HEALTH_RATE_WINDOW_MS = 60_000;
 const HEALTH_RATE_MAX = 30;
+// Purge stale IP entries every 10 minutes to prevent unbounded Map growth
+// in long-running (Docker) deployments. Skip when the Map is small to avoid
+// unnecessary iteration overhead.
+setInterval(
+  () => {
+    if (healthRateLimit.size < 100) return;
+    const now = Date.now();
+    for (const [key, hits] of healthRateLimit) {
+      if (hits.every((t) => now - t >= HEALTH_RATE_WINDOW_MS)) {
+        healthRateLimit.delete(key);
+      }
+    }
+  },
+  10 * 60 * 1000,
+).unref();
 
 function healthRateLimiter(req: any, res: any, next: any) {
   const xff = req.headers["x-forwarded-for"];
   const key = (typeof xff === "string" ? xff.split(",")[0].trim() : null) || req.ip || "anon";
   const now = Date.now();
-  const hits = (healthRateLimit.get(key) || []).filter((t: number) => now - t < HEALTH_RATE_WINDOW_MS);
+  const hits = (healthRateLimit.get(key) || []).filter(
+    (t: number) => now - t < HEALTH_RATE_WINDOW_MS,
+  );
   if (hits.length >= HEALTH_RATE_MAX) {
     res.setHeader("Retry-After", "60");
     return res.status(429).json({ error: "Too many health-check requests." });
@@ -86,11 +111,7 @@ router.get("/slos", healthRateLimiter, authenticateUser, async (req: any, res) =
     res.json({
       ...snapshot,
       banner_status,
-      subscribable_events: [
-        "slo.jobs.critical",
-        "slo.webhooks.degraded",
-        "slo.enrichment.dead",
-      ],
+      subscribable_events: ["slo.jobs.critical", "slo.webhooks.degraded", "slo.enrichment.dead"],
     });
   } catch (err: any) {
     res.status(500).json({ error: getErrorMessage(err) });

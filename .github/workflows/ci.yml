@@ -37,3 +37,14 @@ jobs:
 
       - name: Smoke test (bundled server boots)
         run: npm run smoke:server
+
+      - name: Production env check
+        # Without PRODUCTION_CHECK=1 the script exits 0 when only *recommended*
+        # vars are missing (which is expected in CI where real secrets are absent).
+        # It exits 1 on missing *required* vars — that failure is real and blocks.
+        run: node scripts/check-prod-env.mjs
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'placeholder' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'placeholder' }}
+          OAUTH_STATE_SECRET: ${{ secrets.OAUTH_STATE_SECRET || 'placeholder' }}

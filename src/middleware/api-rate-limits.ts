@@ -87,8 +87,9 @@ function createRateLimiter(opts: RateLimiterOptions): RateLimitMiddleware {
       }
 
       // Include rate limit info in response headers.
+      // X-RateLimit-Reset is epoch seconds (standard), not milliseconds.
       res.set("X-RateLimit-Remaining", String(result.remaining));
-      res.set("X-RateLimit-Reset", String(Date.now() + result.resetMs));
+      res.set("X-RateLimit-Reset", String(Math.ceil((Date.now() + result.resetMs) / 1000)));
 
       next();
     } catch (err) {
@@ -155,7 +156,8 @@ export const jobsSweepRateLimit: RateLimitMiddleware = async (req, res, next) =>
       return;
     }
     res.set("X-RateLimit-Remaining", String(result.remaining));
-    res.set("X-RateLimit-Reset", String(Date.now() + result.resetMs));
+    // X-RateLimit-Reset is epoch seconds (standard), not milliseconds.
+    res.set("X-RateLimit-Reset", String(Math.ceil((Date.now() + result.resetMs) / 1000)));
     next();
   } catch (err) {
     console.error(
