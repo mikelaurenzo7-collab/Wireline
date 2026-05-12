@@ -2,11 +2,11 @@ import { AlertTriangle } from "lucide-react";
 import { cn } from "../lib/utils";
 
 export type IntegrationHealthPayload = {
-  reconnect_google_calendar: boolean;
-  reconnect_microsoft_calendar: boolean;
-  calendar_scope_unknown_google: boolean;
-  calendar_scope_unknown_microsoft: boolean;
-  reasons: string[];
+  reconnect_google_calendar?: boolean;
+  reconnect_microsoft_calendar?: boolean;
+  calendar_scope_unknown_google?: boolean;
+  calendar_scope_unknown_microsoft?: boolean;
+  reasons?: string[] | null;
 };
 
 type Props = {
@@ -17,10 +17,14 @@ type Props = {
 export default function IntegrationHealthBanner({ health, onOpenIntegrations }: Props) {
   if (!health) return null;
 
+  // Defensively coerce — the payload comes from an external API endpoint
+  // (`/api/integrations/health`), so fields may legitimately be missing
+  // on older deployments or partial responses.
+  const reasons = Array.isArray(health.reasons) ? health.reasons : [];
   const needsAttention =
-    health.reconnect_google_calendar ||
-    health.reconnect_microsoft_calendar ||
-    health.reasons.length > 0;
+    Boolean(health.reconnect_google_calendar) ||
+    Boolean(health.reconnect_microsoft_calendar) ||
+    reasons.length > 0;
   if (!needsAttention) return null;
 
   return (
@@ -50,7 +54,7 @@ export default function IntegrationHealthBanner({ health, onOpenIntegrations }: 
           )}
         </div>
         <ul className="list-disc pl-4 space-y-1 text-[10px] text-muted leading-relaxed">
-          {health.reasons.map((r, i) => (
+          {reasons.map((r, i) => (
             <li key={i}>{r}</li>
           ))}
         </ul>
