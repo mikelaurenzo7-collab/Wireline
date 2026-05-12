@@ -333,7 +333,21 @@ router.put("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
     }
 
     const { name, role, personality } = validation.data!;
-    const { voice_id, voice_id_inbound, voice_id_outbound, voice_provider, first_message, archetype, ambient_noise, website_url, transfer_phone, email_auto_respond, email_agent_tone, email_signature, channel } = req.body;
+    const { voice_id, voice_id_inbound, voice_id_outbound, voice_provider, first_message, archetype, ambient_noise, website_url, transfer_phone, email_auto_respond, email_agent_tone, email_signature, channel, autonomy_level, channels, slack_channel_id, auto_zoom_link } = req.body;
+
+    // Validate autonomy_level if provided
+    const VALID_AUTONOMY = ["inherit", "auto", "draft", "supervised"];
+    if (autonomy_level !== undefined && !VALID_AUTONOMY.includes(autonomy_level)) {
+      return res.status(400).json({ error: `autonomy_level must be one of: ${VALID_AUTONOMY.join(", ")}` });
+    }
+
+    // Validate channels if provided
+    const VALID_CHANNELS = ["voice", "email", "sms"];
+    if (channels !== undefined) {
+      if (!Array.isArray(channels) || !channels.every((c: string) => VALID_CHANNELS.includes(c))) {
+        return res.status(400).json({ error: `channels must be an array containing: ${VALID_CHANNELS.join(", ")}` });
+      }
+    }
 
     // Build the update payload — start with core fields, then merge
     // any business-profile fields the caller actually sent (so a
@@ -356,6 +370,10 @@ router.put("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
       channel,
       role,
     };
+    if (autonomy_level !== undefined) update.autonomy_level = autonomy_level;
+    if (channels !== undefined) update.channels = channels;
+    if (slack_channel_id !== undefined) update.slack_channel_id = slack_channel_id;
+    if (auto_zoom_link !== undefined) update.auto_zoom_link = auto_zoom_link;
     if (profileValidation.data) {
       for (const k of profileFields) {
         if ((profileValidation.data as any)[k] !== undefined) {

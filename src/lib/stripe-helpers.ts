@@ -1,5 +1,8 @@
 import Stripe from "stripe";
 import { db, log, auditLogger } from "./server-context";
+import { getErrorMessage } from "./server-utils";
+import { planByPriceId } from "./plan-catalog";
+import { dispatchWebhook } from "./webhook-helpers";
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2026-01-28.clover" as any,
@@ -10,56 +13,95 @@ export function stripeAvailable(): boolean {
   return !!process.env.STRIPE_SECRET_KEY;
 }
 
-/** Sync a Stripe subscription object into the local wireline_subscriptions table.
- *  Maintains the mirror state used by the rest of the app to check plan tiers. */
+/** Sync a Stripe subscription into wireline_subscriptions + wireline_settings (plan, max_agents, status gates). */
 export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
   const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
-  
-  // Find the user by stripe_customer_id
-  const { data: current } = await db.from("wireline_subscriptions")
+
+  const { data: existing } = await db
+    .from("wireline_subscriptions")
     .select("user_id, status")
     .eq("stripe_customer_id", customerId)
     .maybeSingle();
 
-  if (!current?.user_id) {
-    log.warn("Stripe sync: No local user found for customer", { customerId });
+  if (!existing?.user_id) {
+    log.warn("Stripe sync: no subscription row for customer — skipping mirror", { customerId });
     return;
   }
 
-  const { error } = await db.from("wireline_subscriptions").upsert({
-    user_id: current.user_id,
+  const userId = existing.user_id;
+  const priceId = sub.items?.data?.[0]?.price?.id || null;
+  const plan = planByPriceId(priceId);
+  const stripeStatus = sub.status;
+
+  const localStatus =
+    stripeStatus === "active" || stripeStatus === "trialing"
+      ? "active"
+      : stripeStatus === "past_due" || stripeStatus === "unpaid"
+        ? "past_due"
+        : "canceled";
+
+  const currentPeriodEndIso = sub.current_period_end
+    ? new Date(sub.current_period_end * 1000).toISOString()
+    : null;
+
+  const upsertPatch: Record<string, unknown> = {
+    user_id: userId,
     stripe_customer_id: customerId,
     stripe_subscription_id: sub.id,
-    status: sub.status,
-    plan_id: sub.items.data[0]?.price.id,
-    cancel_at_period_end: sub.cancel_at_period_end,
-    current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
-  }, { onConflict: "user_id" });
+    plan: plan?.id ?? null,
+    status: stripeStatus,
+    current_period_end: currentPeriodEndIso,
+    cancel_at_period_end: !!sub.cancel_at_period_end,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { error } = await db.from("wireline_subscriptions").upsert(upsertPatch, { onConflict: "user_id" });
 
   if (error) {
-    log.error("Stripe sync failed", { userId: current.user_id, error: error.message });
+    log.error("Stripe mirror upsert failed", { userId, error: error.message });
     throw error;
   }
 
-  // Also sync the simplified status to wireline_settings for legacy reasons.
-  // 'active', 'trialing' -> 'active'
-  // 'past_due', 'unpaid', 'canceled', 'incomplete', 'incomplete_expired' -> 'inactive'
-  const simplifiedStatus = ["active", "trialing"].includes(sub.status) ? "active" : "inactive";
-  await db.from("wireline_settings")
-    .update({ subscription_status: simplifiedStatus })
-    .eq("user_id", current.user_id);
+  const settingsUpsert: Record<string, unknown> = {
+    user_id: userId,
+    subscription_status: localStatus,
+    max_agents: plan?.max_agents ?? 3,
+    updated_at: new Date().toISOString(),
+  };
 
-  if ((sub as any)._auditCreate) {
-    void auditLogger.logBilling('subscription_created', {
-      userId: current.user_id,
+  await db.from("wireline_settings").upsert(settingsUpsert, { onConflict: "user_id" });
+
+  dispatchWebhook(userId, "subscription.changed", {
+    plan: plan?.id ?? null,
+    /** Same as tier max_agents: one provisioned voice number per purchased agent seat. */
+    voice_number_slots_cap: plan?.max_agents ?? null,
+    status: stripeStatus,
+    legacy_status: localStatus,
+    cancel_at_period_end: !!sub.cancel_at_period_end,
+    current_period_end: currentPeriodEndIso,
+    at: new Date().toISOString(),
+  }).catch((e: unknown) =>
+    log.warn("subscription.changed webhook dispatch failed", { userId, error: getErrorMessage(e) }),
+  );
+
+  const billingAction: "subscription_created" | "subscription_updated" | "subscription_cancelled" =
+    stripeStatus === "canceled" || stripeStatus === "incomplete_expired"
+      ? "subscription_cancelled"
+      : (sub as any)._auditCreate
+        ? "subscription_created"
+        : "subscription_updated";
+
+  void auditLogger
+    .logBilling(billingAction, {
+      userId,
+      subscriptionId: sub.id,
       customerId,
-      metadata: { subscription_id: sub.id, plan_id: sub.items.data[0]?.price.id },
-    }).catch(() => {});
-  } else if (current.status !== sub.status) {
-    void auditLogger.logBilling('subscription_updated', {
-      userId: current.user_id,
-      customerId,
-      metadata: { old_status: current.status, new_status: sub.status, subscription_id: sub.id },
-    }).catch(() => {});
-  }
+      plan: plan?.id || undefined,
+      metadata: {
+        stripe_status: stripeStatus,
+        legacy_status: localStatus,
+        cancel_at_period_end: !!sub.cancel_at_period_end,
+      },
+    })
+    .catch(() => {});
 }

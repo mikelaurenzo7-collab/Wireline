@@ -898,6 +898,8 @@ CREATE INDEX IF NOT EXISTS wireline_knowledge_agent_id_idx
 -- Phone number lookups during provisioning
 CREATE INDEX IF NOT EXISTS wireline_phone_numbers_user_id_idx
     ON wireline_phone_numbers(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS wireline_phone_numbers_vapi_number_id_idx
+    ON wireline_phone_numbers(vapi_number_id);
 
 -- Spend tracking lookups
 CREATE INDEX IF NOT EXISTS wireline_spend_budgets_user_id_idx
@@ -1485,3 +1487,61 @@ ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS twilio_messaging_service_
 ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS twilio_sms_from_number TEXT;
 ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS twilio_whatsapp_from_number TEXT;
 ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS twilio_manager_alert_number TEXT;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- wireline_crm_connections — 2026-05-11
+-- Stores per-tenant CRM OAuth tokens (Salesforce and HubSpot).
+-- Tokens are AES-256-GCM encrypted at rest via the secret vault.
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS wireline_crm_connections (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    provider TEXT NOT NULL CHECK (provider IN ('salesforce', 'hubspot', 'slack', 'zoom')),
+    instance_url TEXT,
+    access_token TEXT NOT NULL,
+    refresh_token TEXT NOT NULL,
+    expires_at BIGINT NOT NULL DEFAULT 0,
+    scopes TEXT,
+    connected_email TEXT,
+    metadata JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE(user_id, provider)
+);
+
+ALTER TABLE wireline_crm_connections ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY IF NOT EXISTS "crm_connections_owner" ON wireline_crm_connections
+    FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- wireline_crm_connections provider expansion — 2026-05-11
+-- Allow Slack + Zoom in addition to Salesforce / HubSpot.
+-- Safe to re-run: DROP + CREATE replaces the constraint.
+-- ─────────────────────────────────────────────────────────────────────────────
+DO $$ BEGIN
+  ALTER TABLE wireline_crm_connections DROP CONSTRAINT IF EXISTS wireline_crm_connections_provider_check;
+  ALTER TABLE wireline_crm_connections ADD CONSTRAINT wireline_crm_connections_provider_check
+    CHECK (provider IN ('salesforce', 'hubspot', 'slack', 'zoom'));
+EXCEPTION WHEN others THEN NULL;
+END $$;
+
+ALTER TABLE wireline_crm_connections ADD COLUMN IF NOT EXISTS metadata JSONB;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Agent customization columns — 2026-05-11
+-- Per-agent autonomy and multi-channel support.
+-- ─────────────────────────────────────────────────────────────────────────────
+ALTER TABLE wireline_agents ADD COLUMN IF NOT EXISTS autonomy_level TEXT DEFAULT 'inherit';
+ALTER TABLE wireline_agents ADD COLUMN IF NOT EXISTS channels JSONB DEFAULT '["voice"]';
+ALTER TABLE wireline_agents ADD COLUMN IF NOT EXISTS slack_channel_id TEXT;
+ALTER TABLE wireline_agents ADD COLUMN IF NOT EXISTS auto_zoom_link BOOLEAN DEFAULT FALSE;
+
+-- OAuth granted scopes (space-delimited) for reconnect / integration-health checks — 2026-05-11
+ALTER TABLE wireline_email_accounts ADD COLUMN IF NOT EXISTS oauth_granted_scopes TEXT;
+ALTER TABLE wireline_calendar_accounts ADD COLUMN IF NOT EXISTS oauth_granted_scopes TEXT;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Vapi inbound routing — Default inbound Wireline agent (optional)
+-- ─────────────────────────────────────────────────────────────────────────────
+ALTER TABLE wireline_settings ADD COLUMN IF NOT EXISTS vapi_phone_inbound_agent_id TEXT REFERENCES wireline_agents(id) ON DELETE SET NULL;

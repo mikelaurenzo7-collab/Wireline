@@ -2,6 +2,7 @@ import { google } from "googleapis";
 import { db, log } from "./server-context";
 import { decryptSecret, encryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
+import { createMeeting as createZoomMeeting } from "./zoom-service";
 
 /**
  * Unified interface for Calendar and Mail integrations.
@@ -50,17 +51,46 @@ export class IntegrationService {
     startTime: string;
     endTime: string;
     attendees?: string[];
+    agentId?: string;
   }): Promise<boolean> {
     try {
       const accounts = await this.getAccounts("calendar");
       if (accounts.length === 0) return false;
 
+      // Check if the agent has auto_zoom_link enabled
+      let zoomUrl: string | undefined;
+      if (params.agentId) {
+        const { data: agent } = await db.from("wireline_agents")
+          .select("auto_zoom_link")
+          .eq("id", params.agentId)
+          .eq("user_id", this.userId)
+          .single();
+        if (agent?.auto_zoom_link) {
+          const meeting = await createZoomMeeting(this.userId, {
+            topic: params.title,
+            startTime: params.startTime,
+            duration: Math.round((new Date(params.endTime).getTime() - new Date(params.startTime).getTime()) / 60_000),
+          });
+          if (meeting) {
+            zoomUrl = meeting.join_url;
+          }
+        }
+      }
+
+      const bookingParams = {
+        ...params,
+        description: zoomUrl
+          ? `${params.description}\n\nZoom Meeting: ${zoomUrl}`
+          : params.description,
+        location: zoomUrl || undefined,
+      };
+
       // Pick the first account as the primary for booking.
       const account = accounts[0];
       if (account.provider === "google") {
-        return await this.createGoogleEvent(account, params);
+        return await this.createGoogleEvent(account, bookingParams);
       } else if (account.provider === "microsoft") {
-        return await this.createMicrosoftEvent(account, params);
+        return await this.createMicrosoftEvent(account, bookingParams);
       }
       return false;
     } catch (err) {
@@ -100,7 +130,7 @@ export class IntegrationService {
   // --- Private Helpers ---
 
   private async getAccounts(type: "calendar" | "mail") {
-    const table = type === "calendar" ? "wireline_calendar_accounts" : "wireline_mail_accounts";
+    const table = type === "calendar" ? "wireline_calendar_accounts" : "wireline_email_accounts";
     const { data } = await db.from(table).select("*").eq("user_id", this.userId);
     return data || [];
   }

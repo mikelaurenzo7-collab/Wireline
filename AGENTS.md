@@ -106,22 +106,37 @@ can opt in at any time without a code change:
   returns `null`; the operator-approval draft path in
   `action-engine.ts` still runs.
 - **Salesforce CRM** — bi-directional contact + opportunity sync via
-  `src/lib/salesforce-service.ts`. Gated by `SALESFORCE_CLIENT_ID` +
-  `SALESFORCE_CLIENT_SECRET` + `SALESFORCE_INSTANCE_URL`; absent creds
-  → `searchContacts()` returns `[]`, `logCall()` and
-  `createOpportunity()` return `null`. Claude tool schemas
-  (`crm_search_contacts`, `crm_log_call`, `crm_create_opportunity`)
-  reference these functions.
+  `src/lib/salesforce-service.ts`. Uses real OAuth 2.0 Web Server flow.
+  Gated by `SALESFORCE_CLIENT_ID` + `SALESFORCE_CLIENT_SECRET`; operator
+  connects via popup from Admin → Integrations. Tokens stored encrypted
+  in `wireline_crm_connections` and auto-refreshed. Absent connection →
+  `searchContacts()` returns `[]`, `logCall()` and `createOpportunity()`
+  return `null`.
 - **HubSpot CRM** — bi-directional contact + deal sync via
-  `src/lib/hubspot-service.ts`. Gated by `HUBSPOT_ACCESS_TOKEN`;
-  absent token → `searchContacts()` returns `[]`, `logCall()` and
-  `createDeal()` return `null`.
+  `src/lib/hubspot-service.ts`. Uses real OAuth 2.0 authorization_code
+  flow. Gated by `HUBSPOT_CLIENT_ID` + `HUBSPOT_CLIENT_SECRET`; operator
+  connects via popup from Admin → Integrations. Tokens stored encrypted
+  in `wireline_crm_connections` and auto-refreshed. Absent connection →
+  `searchContacts()` returns `[]`, `logCall()` and `createDeal()` return
+  `null`.
 - **Twilio** — agent-triggered SMS / WhatsApp follow-ups, Lookup-based
   phone intelligence, and manager escalation alerts via
   `src/lib/twilio-service.ts`. Gated by `TWILIO_ACCOUNT_SID` +
   `TWILIO_AUTH_TOKEN`; absent creds → Twilio-backed agent tools and
   the `send_text_message` action type fall back to disabled / draft
   behavior without affecting the Vapi voice runtime.
+- **Slack** — team notifications via `src/lib/slack-service.ts`. Operator
+  connects workspace via OAuth popup in Admin → Integrations. Gated by
+  `SLACK_CLIENT_ID` + `SLACK_CLIENT_SECRET`; absent config → the
+  `notify_slack` action type is a no-op and the Connect button is hidden.
+  Bot posts to operator-chosen default channel. Token stored encrypted
+  in `wireline_crm_connections` (provider='slack').
+- **Zoom** — auto-generated meeting links via `src/lib/zoom-service.ts`.
+  Operator connects via OAuth popup in Admin → Integrations. Gated by
+  `ZOOM_CLIENT_ID` + `ZOOM_CLIENT_SECRET`; absent config → calendar
+  events are created without Zoom links. When connected and an agent has
+  `auto_zoom_link = true`, `bookAppointment()` creates a Zoom meeting
+  and appends the join URL to the calendar event description + location.
 
 ## Env vars that MUST stay documented in `.env.example`
 
@@ -156,14 +171,20 @@ Security). See `src/lib/integrations-registry.ts` for the runtime mirror.
 - `DOCUSIGN_BASE_URI` / `DOCUSIGN_ACCOUNT_ID` / `DOCUSIGN_JWT_TOKEN` /
   `DOCUSIGN_ACCESS_TOKEN` — optional. Required for the `send_contract`
   Action Engine path (DocuSign e-signature).
-- `SALESFORCE_CLIENT_ID` / `SALESFORCE_CLIENT_SECRET` /
-  `SALESFORCE_INSTANCE_URL` — optional. Required for CRM sync actions
-  (contact search, call logging, opportunity creation).
-- `HUBSPOT_ACCESS_TOKEN` — optional. Required for HubSpot CRM sync
-  actions (contact search, call logging, deal creation).
+- `SALESFORCE_CLIENT_ID` / `SALESFORCE_CLIENT_SECRET` — optional.
+  Required for the Salesforce OAuth popup. Operator connects via
+  Admin → Integrations; tokens auto-refresh from `wireline_crm_connections`.
+- `HUBSPOT_CLIENT_ID` / `HUBSPOT_CLIENT_SECRET` — optional.
+  Required for the HubSpot OAuth popup. Operator connects via
+  Admin → Integrations; tokens auto-refresh from `wireline_crm_connections`.
 - `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` — optional. Required for
   Twilio-backed SMS / WhatsApp follow-ups, phone lookups, and manager
   alert SMS from the live voice tool layer and Action Engine.
+- `SLACK_CLIENT_ID` / `SLACK_CLIENT_SECRET` — optional. Required for
+  the Slack team notification OAuth flow. Absent → Connect Slack
+  button hidden.
+- `ZOOM_CLIENT_ID` / `ZOOM_CLIENT_SECRET` — optional. Required for
+  the Zoom meeting-link OAuth flow. Absent → Connect Zoom button hidden.
 
 **Infrastructure**
 - `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` — distributed rate

@@ -23,8 +23,17 @@
     "test:run": "vitest run",
     "verify": "npm run lint && npm run test:run && npm run build",
     "smoke:server": "node scripts/smoke-server.mjs",
+    "e2e:golden": "node scripts/e2e-golden-paths.mjs",
     "assets": "node scripts/render-image-assets.mjs",
-    "check-prod-env": "node scripts/check-prod-env.mjs"
+    "check-prod-env": "node scripts/check-prod-env.mjs",
+    "oauth:redirects": "node scripts/print-oauth-redirects.mjs",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "prettier --write",
+      "eslint --max-warnings 0 --fix"
+    ]
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.92.0",
@@ -86,6 +95,8 @@
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.1",
     "vitest": "^4.1.5"
   }
 }

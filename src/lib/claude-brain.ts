@@ -1368,6 +1368,22 @@ export const TOOLS = {
       additionalProperties: false,
     },
   } as ToolSchema,
+
+  /** Slack: post a notification to the operator's team channel. */
+  notifySlack: {
+    name: "notify_slack",
+    description:
+      "Post a notification to the operator's connected Slack workspace. Use to alert the team about important outcomes: hot leads, booked meetings, escalations, or key deal milestones. No-ops when Slack is not connected.",
+    input_schema: {
+      type: "object",
+      properties: {
+        message: { type: "string", description: "The notification message to post to Slack." },
+        channel: { type: "string", description: "Optional Slack channel ID to post to. Defaults to the operator's configured default channel." },
+      },
+      required: ["message"],
+      additionalProperties: false,
+    },
+  } as ToolSchema,
 } as const;
 
 /* ────────────────────────────────────────────────────────────────────────

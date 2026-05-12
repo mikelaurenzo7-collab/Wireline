@@ -1,24 +1,30 @@
-import { log } from "./server-context";
+import { db, log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import * as salesforce from "./salesforce-service";
 import * as hubspot from "./hubspot-service";
-
-function salesforceRuntimeConfigured(): boolean {
-  return !!(process.env.SALESFORCE_INSTANCE_URL && process.env.SALESFORCE_ACCESS_TOKEN);
-}
-
-function hubspotRuntimeConfigured(): boolean {
-  return !!process.env.HUBSPOT_ACCESS_TOKEN;
-}
+import { postMessage as slackPostMessage, getDefaultChannel } from "./slack-service";
 
 function normalizePhone(value: string | null | undefined): string {
   return (value || "").replace(/\D/g, "");
 }
 
+async function getActiveCrm(userId: string): Promise<"salesforce" | "hubspot" | null> {
+  const { data } = await db
+    .from("wireline_crm_connections")
+    .select("provider")
+    .eq("user_id", userId)
+    .in("provider", ["salesforce", "hubspot"])
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const p = data?.provider;
+  return p === "salesforce" || p === "hubspot" ? p : null;
+}
+
 /**
  * Service for interacting with external CRMs.
  * Delegates to the typed service modules (salesforce-service / hubspot-service)
- * which themselves gracefully no-op when env vars are absent.
+ * which use OAuth tokens from wireline_crm_connections.
  */
 export class CRMService {
   constructor(private userId: string) {}
@@ -44,11 +50,13 @@ export class CRMService {
   }
 
   async searchContacts(query: string, crmType: "salesforce" | "hubspot" | "auto" = "auto") {
-    if (crmType === "salesforce" || (crmType === "auto" && salesforceRuntimeConfigured())) {
-      return { crm: "salesforce" as const, contacts: await salesforce.searchContacts(query) };
+    const resolved = crmType === "auto" ? await getActiveCrm(this.userId) : crmType;
+
+    if (resolved === "salesforce") {
+      return { crm: "salesforce" as const, contacts: await salesforce.searchContacts(query, this.userId) };
     }
-    if (crmType === "hubspot" || (crmType === "auto" && hubspotRuntimeConfigured())) {
-      return { crm: "hubspot" as const, contacts: await hubspot.searchContacts(query) };
+    if (resolved === "hubspot") {
+      return { crm: "hubspot" as const, contacts: await hubspot.searchContacts(query, this.userId) };
     }
     return { crm: null, contacts: [] };
   }
@@ -63,7 +71,7 @@ export class CRMService {
     outcome?: string;
   }): Promise<string | null> {
     const crm = params.crmType === "auto"
-      ? (salesforceRuntimeConfigured() ? "salesforce" : hubspotRuntimeConfigured() ? "hubspot" : null)
+      ? await getActiveCrm(this.userId)
       : params.crmType;
     const contactId = params.contact_id || await this.resolveContactId(crm, params.to_number);
 
@@ -74,7 +82,7 @@ export class CRMService {
         contact_id: contactId,
         duration_minutes: params.duration_minutes,
         outcome: params.outcome,
-      });
+      }, this.userId);
     }
     if (crm === "hubspot") {
       return hubspot.logCall({
@@ -83,7 +91,7 @@ export class CRMService {
         contact_id: contactId,
         duration_ms: (params.duration_minutes || 0) * 60_000,
         outcome: params.outcome,
-      });
+      }, this.userId);
     }
     return null;
   }
@@ -96,26 +104,37 @@ export class CRMService {
     amount?: number;
   }): Promise<string | null> {
     const crm = params.crmType === "auto"
-      ? (salesforceRuntimeConfigured() ? "salesforce" : hubspotRuntimeConfigured() ? "hubspot" : null)
+      ? await getActiveCrm(this.userId)
       : params.crmType;
 
+    let createdId: string | null = null;
     if (crm === "salesforce") {
-      return salesforce.createOpportunity({
+      createdId = await salesforce.createOpportunity({
         name: params.name,
         contact_id: params.contact_id,
         stage: params.stage,
         amount: params.amount,
-      });
-    }
-    if (crm === "hubspot") {
-      return hubspot.createDeal({
+      }, this.userId);
+    } else if (crm === "hubspot") {
+      createdId = await hubspot.createDeal({
         name: params.name,
         contact_id: params.contact_id,
         stage: params.stage,
         amount: params.amount,
-      });
+      }, this.userId);
     }
-    return null;
+    if (createdId) {
+      const ch = await getDefaultChannel(this.userId);
+      if (ch) {
+        const amt = params.amount != null ? ` — $${params.amount}` : "";
+        void slackPostMessage(
+          this.userId,
+          ch,
+          `🎯 *Deal / opportunity created*\n${params.name}${amt}`,
+        );
+      }
+    }
+    return createdId;
   }
 
   private async updateSalesforce(params: {
@@ -123,13 +142,13 @@ export class CRMService {
     status: string;
     notes?: string;
   }): Promise<boolean> {
-    const results = await salesforce.searchContacts(params.customerNumber);
+    const results = await salesforce.searchContacts(params.customerNumber, this.userId);
     if (results.length === 0) return false;
     const id = await salesforce.logCall({
       subject: `Status update: ${params.status}`,
       description: params.notes || `Lead status changed to ${params.status}`,
       contact_id: results[0].sf_id,
-    });
+    }, this.userId);
     return id !== null;
   }
 
@@ -138,14 +157,14 @@ export class CRMService {
     status: string;
     notes?: string;
   }): Promise<boolean> {
-    const results = await hubspot.searchContacts(params.customerNumber);
+    const results = await hubspot.searchContacts(params.customerNumber, this.userId);
     if (results.length === 0) return false;
     const id = await hubspot.logCall({
       to_number: params.customerNumber,
       body: params.notes || `Lead status changed to ${params.status}`,
       contact_id: results[0].hs_id,
       outcome: params.status,
-    });
+    }, this.userId);
     return id !== null;
   }
 
@@ -157,12 +176,12 @@ export class CRMService {
 
     const target = normalizePhone(toNumber);
     if (crmType === "salesforce") {
-      const results = await salesforce.searchContacts(toNumber);
+      const results = await salesforce.searchContacts(toNumber, this.userId);
       const best = results.find((contact) => normalizePhone(contact.phone) === target) || results[0];
       return best?.sf_id;
     }
 
-    const results = await hubspot.searchContacts(toNumber);
+    const results = await hubspot.searchContacts(toNumber, this.userId);
     const best = results.find((contact) => normalizePhone(contact.phone) === target) || results[0];
     return best?.hs_id;
   }

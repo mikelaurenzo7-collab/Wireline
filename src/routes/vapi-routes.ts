@@ -30,9 +30,11 @@ import { buildCallCompletedOutcome, dispatchWebhook, type WirelineCallCompletedO
 import { analyzeLiveSentiment } from "../lib/gemini-brain";
 import { IntegrationService } from "../lib/integrations";
 import { NotificationService } from "../lib/notifications";
+import { postMessage as slackPostMessage, getDefaultChannel } from "../lib/slack-service";
 import { normalizeDncPhone } from "../lib/compliance";
 import { lookupTenantPhoneNumber, sendTenantMessage } from "../lib/twilio-service";
 import { resolveAgentTools } from "../lib/agent-capabilities";
+import { resolveVapiWebhookAgent } from "../lib/vapi-webhook-agent";
 
 // TODO: the imports below were carried over from server.ts when this router
 // was extracted. The handlers that consume them — Gemini post-call lesson
@@ -68,13 +70,14 @@ router.post("/api/vapi-webhook", async (req, res) => {
     return res.status(401).json({ error: "Invalid webhook signature." });
   }
 
-  const payload = req.body;
-  const { message } = payload;
+  const payload = req.body as Record<string, unknown>;
+  const queryAgentId = typeof req.query.agentId === "string" ? req.query.agentId : undefined;
+  const routed = await resolveVapiWebhookAgent({ payload, queryAgentId });
+  if (!routed.ok) return res.status(routed.status).json(routed.body);
 
-  const webhookAgentId = req.query.agentId as string || "default-agent";
-  
-  const { data: agent } = await db.from('wireline_agents').select('user_id').eq('id', webhookAgentId).single();
-  if (!agent) return res.status(404).json({ error: "Agent not found" });
+  const webhookAgentId = routed.webhookAgentId;
+  const agent = { user_id: routed.agentUserId };
+  const message = payload.message as Record<string, any> | undefined;
 
   const { data: userSettings } = await db.from('wireline_settings')
     .select('subscription_status, voice_llm_provider, voice_llm_model, twilio_messaging_enabled, twilio_lookup_enabled')
@@ -405,13 +408,33 @@ Today is ${currentDateTime}.
           // Simple date/time parsing for now.
           const startTime = new Date(`${date} ${time}`).toISOString();
           const endTime = new Date(new Date(startTime).getTime() + 60 * 60 * 1000).toISOString();
+          const title = `${service_type} for ${customer_name}`;
           
           const success = await service.bookAppointment({
-            title: `${service_type} for ${customer_name}`,
+            title,
             description: `Booked via Wireline AI Agent`,
             startTime,
-            endTime
+            endTime,
+            agentId: agent?.id,
           });
+          if (success && agent?.user_id) {
+            void dispatchWebhook(agent.user_id, "appointment.booked", {
+              agent_id: agent.id,
+              title,
+              start_time: startTime,
+              end_time: endTime,
+              customer_name,
+              service_type,
+            });
+            const slackCh = await getDefaultChannel(agent.user_id);
+            if (slackCh) {
+              void slackPostMessage(
+                agent.user_id,
+                slackCh,
+                `📅 *Appointment booked*\n${title}\n${new Date(startTime).toLocaleString()} → ${new Date(endTime).toLocaleString()}`,
+              );
+            }
+          }
           results.push({ toolCallId: toolCall.id, result: success ? "Appointment booked." : "Booking failed." });
         } catch (e: any) {
           results.push({ toolCallId: toolCall.id, result: "Booking error." });
@@ -603,6 +626,16 @@ Today is ${currentDateTime}.
           const intent = (enrichment?.intent_label || "").toLowerCase();
           if (intent === "escalation" || intent === "escalate") {
             void dispatchWebhook(userId, "call.escalated", { vapi_call_id: call?.id, intent_label: enrichment?.intent_label, customer_number: base.customer_number });
+            void (async () => {
+              const ch = await getDefaultChannel(userId);
+              if (ch) {
+                await slackPostMessage(
+                  userId,
+                  ch,
+                  `🚨 *Call escalation*\nCaller: ${base.customer_number || "unknown"}\nIntent: ${enrichment?.intent_label || "escalation"}\nCall: ${call?.id || ""}`,
+                );
+              }
+            })();
           }
         }
 

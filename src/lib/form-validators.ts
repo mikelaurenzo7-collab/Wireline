@@ -90,6 +90,18 @@ export const AgentBusinessProfileSchema = z.object({
 
 export type AgentBusinessProfile = z.infer<typeof AgentBusinessProfileSchema>;
 
+const AgentChannelEnum = z.enum(["voice", "email", "sms"]);
+
+/** Optional PATCH fields for per-agent capability overrides (mirrors agent-routes validation). */
+export const AgentCapabilityFieldsSchema = z.object({
+  autonomy_level: z.enum(["inherit", "auto", "draft", "supervised"]).optional(),
+  channels: z.array(AgentChannelEnum).min(1).max(3).optional(),
+  slack_channel_id: z.string().max(128).optional().nullable(),
+  auto_zoom_link: z.boolean().optional(),
+}).strict();
+
+export type AgentCapabilityFields = z.infer<typeof AgentCapabilityFieldsSchema>;
+
 // Directive input validation
 export const DirectiveSchema = z.object({
   id: z.string().optional(),

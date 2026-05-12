@@ -6,6 +6,7 @@ import { CRMService } from "./crm-service";
 import { sendContract } from "./docusign-service";
 import { searchLeads, enrichLead } from "./apollo-service";
 import { sendTenantMessage } from "./twilio-service";
+import { postMessage as slackPostMessage, getDefaultChannel } from "./slack-service";
 
 /**
  * The Action Engine is responsible for executing tasks extracted by the AI
@@ -21,8 +22,19 @@ export async function executeAction(
       .select("autonomy_level")
       .eq("user_id", userId)
       .single();
-    
-    const autonomy = settings?.autonomy_level || "draft";
+
+    // Per-agent autonomy overrides tenant setting when not "inherit"
+    let autonomy = settings?.autonomy_level || "draft";
+    if (action.agentId) {
+      const { data: agent } = await db.from("wireline_agents")
+        .select("autonomy_level")
+        .eq("id", action.agentId)
+        .eq("user_id", userId)
+        .single();
+      if (agent?.autonomy_level && agent.autonomy_level !== "inherit") {
+        autonomy = agent.autonomy_level;
+      }
+    }
     log.info("Executing autonomous action", { userId, type: action.type, priority: action.priority, autonomy });
 
     if (autonomy === "auto") {
@@ -46,7 +58,8 @@ export async function executeAction(
             title: action.payload.event_name || "Meeting",
             description: action.reasoning || "Scheduled via AI Agent",
             startTime,
-            endTime
+            endTime,
+            agentId: action.agentId,
           });
           return { success: calOk };
         }
@@ -58,6 +71,8 @@ export async function executeAction(
           return await handleSendContract(userId, action, context);
         case "prospect_leads":
           return await handleProspectLeads(userId, action, context);
+        case "notify_slack":
+          return await handleNotifySlack(userId, action);
       }
     }
 
@@ -81,6 +96,8 @@ export async function executeAction(
         return await handleDraftSendContract(userId, action, context);
       case "prospect_leads":
         return await handleDraftProspectLeads(userId, action, context);
+      case "notify_slack":
+        return await handleNotifySlack(userId, action);
       default:
         return { success: false, error: `Unsupported action type: ${action.type}` };
     }
@@ -358,4 +375,14 @@ async function handleDraftProspectLeads(userId: string, action: ActionItem, cont
 
   if (error) throw error;
   return { success: true, actionId: data.id };
+}
+
+async function handleNotifySlack(userId: string, action: ActionItem): Promise<ActionResult> {
+  const channel = action.payload.channel || await getDefaultChannel(userId);
+  if (!channel) {
+    return { success: false, error: "No Slack channel configured" };
+  }
+  const text = action.payload.message || action.reasoning || "Notification from your Wireline agent";
+  const ok = await slackPostMessage(userId, channel, text);
+  return { success: ok, error: ok ? undefined : "Slack message delivery failed" };
 }
