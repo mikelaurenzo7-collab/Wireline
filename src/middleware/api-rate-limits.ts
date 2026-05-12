@@ -5,8 +5,8 @@
 //
 // Returns 429 with Retry-After header on quota exceeded.
 
-import { Request, Response, NextFunction } from "express";
-import { rateLimit, RateLimiterOptions, distributedLimiterStatus } from "../lib/rate-limit.js";
+import { Request, Response, NextFunction } from 'express';
+import { rateLimit, RateLimiterOptions, distributedLimiterStatus } from '../lib/rate-limit.js';
 
 // ──────────────────────────────────────────────────────────────────────
 //  Claude rate limiter — shared by server.ts and extracted route files.
@@ -21,31 +21,33 @@ const CLAUDE_RATE_MAX = 60;
  * Accepts optional hooks for audit logging and Sentry tracking so callers
  * can wire their own singletons without creating circular imports.
  */
-export async function claudeRateLimiter(req: any, res: any, next: any) {
+export async function claudeRateLimiter(req: Request, res: Response, next: NextFunction) {
   const status = distributedLimiterStatus();
   if (!status.ok) {
     return res.status(503).json({ error: status.reason, code: status.code });
   }
-  const token = req.headers.authorization?.split(" ")[1];
-  const key = token || req.ip || "anon";
+  const token = req.headers.authorization?.split(' ')[1];
+  const key = token || req.ip || 'anon';
   let result;
   try {
     result = await rateLimit(key, {
-      bucket: "claude",
+      bucket: 'claude',
       windowMs: CLAUDE_RATE_WINDOW_MS,
       max: CLAUDE_RATE_MAX,
       failClosedOnError: true,
     });
   } catch {
-    return res.status(503).json({ error: "Rate limiter temporarily unavailable.", code: "RATE_LIMITER_ERROR" });
+    return res
+      .status(503)
+      .json({ error: 'Rate limiter temporarily unavailable.', code: 'RATE_LIMITER_ERROR' });
   }
-  res.setHeader("X-RateLimit-Limit", String(CLAUDE_RATE_MAX));
-  res.setHeader("X-RateLimit-Remaining", String(result.remaining));
+  res.setHeader('X-RateLimit-Limit', String(CLAUDE_RATE_MAX));
+  res.setHeader('X-RateLimit-Remaining', String(result.remaining));
   if (!result.allowed) {
-    res.setHeader("Retry-After", String(Math.ceil(result.resetMs / 1000)));
+    res.setHeader('Retry-After', String(Math.ceil(result.resetMs / 1000)));
     return res.status(429).json({
       error: `Rate limit exceeded — ${CLAUDE_RATE_MAX} requests per minute. Slow down.`,
-      code: "CLAUDE_RATE_LIMIT",
+      code: 'CLAUDE_RATE_LIMIT',
     });
   }
   next();
@@ -64,10 +66,10 @@ function createRateLimiter(opts: RateLimiterOptions): RateLimitMiddleware {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       // Extract user ID from authenticated session.
-      const userId = (req as any).user?.id;
+      const userId = (req as Request & { user?: { id?: string } }).user?.id;
       if (!userId) {
         // Should never happen if authenticateUser ran first, but be defensive.
-        res.status(401).json({ error: "Authentication required" });
+        res.status(401).json({ error: 'Authentication required' });
         return;
       }
 
@@ -75,9 +77,9 @@ function createRateLimiter(opts: RateLimiterOptions): RateLimitMiddleware {
 
       if (!result.allowed) {
         const retryAfterSeconds = Math.ceil(result.resetMs / 1000);
-        res.set("Retry-After", String(retryAfterSeconds));
+        res.set('Retry-After', String(retryAfterSeconds));
         res.status(429).json({
-          error: "Rate limit exceeded",
+          error: 'Rate limit exceeded',
           bucket: opts.bucket,
           retryAfterSeconds,
         });
@@ -85,14 +87,14 @@ function createRateLimiter(opts: RateLimiterOptions): RateLimitMiddleware {
       }
 
       // Include rate limit info in response headers.
-      res.set("X-RateLimit-Remaining", String(result.remaining));
-      res.set("X-RateLimit-Reset", String(Date.now() + result.resetMs));
+      res.set('X-RateLimit-Remaining', String(result.remaining));
+      res.set('X-RateLimit-Reset', String(Date.now() + result.resetMs));
 
       next();
     } catch (err) {
       // Fail-OPEN on unexpected error — better to serve traffic than to
       // lock out everyone on rate limiter bugs.
-      // eslint-disable-next-line no-console
+       
       console.error(
         `[api-rate-limits] error in ${opts.bucket} limiter, fail-open:`,
         getErrorMessage(err),
@@ -107,7 +109,7 @@ function createRateLimiter(opts: RateLimiterOptions): RateLimitMiddleware {
  * 200 requests per 15 minutes per user.
  */
 export const quotaRateLimit = createRateLimiter({
-  bucket: "api:quotas",
+  bucket: 'api:quotas',
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 200,
 });
@@ -118,7 +120,7 @@ export const quotaRateLimit = createRateLimiter({
  * Low limit because sweep/retry operations are expensive.
  */
 export const jobsRateLimit = createRateLimiter({
-  bucket: "api:jobs",
+  bucket: 'api:jobs',
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 20,
 });
@@ -129,7 +131,7 @@ export const jobsRateLimit = createRateLimiter({
  * Moderate limit to prevent phone scraping abuse.
  */
 export const tcpaRateLimit = createRateLimiter({
-  bucket: "api:tcpa",
+  bucket: 'api:tcpa',
   windowMs: 60 * 1000, // 1 minute
   max: 60,
 });
@@ -139,7 +141,7 @@ export const tcpaRateLimit = createRateLimiter({
  * 100 requests per 15 minutes per user.
  */
 export const soc2RateLimit = createRateLimiter({
-  bucket: "api:soc2",
+  bucket: 'api:soc2',
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100,
 });
@@ -151,7 +153,38 @@ export const soc2RateLimit = createRateLimiter({
  * style attacks against the secret-rotation path.
  */
 export const webhooksRateLimit = createRateLimiter({
-  bucket: "api:webhooks",
+  bucket: 'api:webhooks',
   windowMs: 15 * 60 * 1000,
+  max: 60,
+});
+
+/**
+ * Phone number provisioning rate limiter.
+ * 30 requests per 15 minutes per user.
+ * Low limit as phone number operations are expensive.
+ */
+export const phoneNumberRateLimiter = createRateLimiter({
+  bucket: 'api:phone-numbers',
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+});
+
+/**
+ * Knowledge base operations rate limiter.
+ * 100 requests per 15 minutes per user.
+ */
+export const knowledgeRateLimiter = createRateLimiter({
+  bucket: 'api:knowledge',
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+});
+
+/**
+ * Outbound dial rate limiter.
+ * 60 dial requests per minute per user.
+ */
+export const dialRateLimiter = createRateLimiter({
+  bucket: 'api:dial',
+  windowMs: 60 * 1000,
   max: 60,
 });
