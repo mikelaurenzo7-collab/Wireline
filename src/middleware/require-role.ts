@@ -60,10 +60,7 @@ export interface RbacDeps {
  *
  * Result is cached per user-id for 30s to avoid hammering the DB.
  */
-export async function getCallerRole(
-  db: SupabaseClient,
-  userId: string,
-): Promise<AccessRole> {
+export async function getCallerRole(db: SupabaseClient, userId: string): Promise<AccessRole> {
   const cached = roleCache.get(userId);
   if (cached && Date.now() - cached.cached_at < ROLE_CACHE_TTL_MS) {
     return cached.role;
@@ -135,18 +132,12 @@ export function createRbacMiddleware(deps: RbacDeps) {
               })
               .catch(() => {});
           }
-          deny(
-            res,
-            403,
-            `Forbidden: role "${role}" lacks permission "${permission}"`,
-            "FORBIDDEN",
-          );
+          deny(res, 403, `Forbidden: role "${role}" lacks permission "${permission}"`, "FORBIDDEN");
           return;
         }
         next();
       } catch (err) {
         // Fail-CLOSED on role lookup errors.
-        // eslint-disable-next-line no-console
         console.error("[require-role] role lookup failed:", (err as Error).message);
         deny(res, 403, "Authorization check failed", "FORBIDDEN");
         return;
@@ -170,17 +161,11 @@ export function createRbacMiddleware(deps: RbacDeps) {
         const role = await getCallerRole(deps.db, userId);
         (req as any).role = role;
         if (ROLE_HIERARCHY[role] < threshold) {
-          deny(
-            res,
-            403,
-            `Forbidden: requires role "${minRole}" or higher`,
-            "FORBIDDEN",
-          );
+          deny(res, 403, `Forbidden: requires role "${minRole}" or higher`, "FORBIDDEN");
           return;
         }
         next();
       } catch (err) {
-        // eslint-disable-next-line no-console
         console.error("[require-role] role lookup failed:", (err as Error).message);
         deny(res, 403, "Authorization check failed", "FORBIDDEN");
         return;
@@ -193,4 +178,3 @@ export function createRbacMiddleware(deps: RbacDeps) {
 
 // Re-export ROLE_PERMISSIONS so server.ts has one import surface.
 export { ROLE_PERMISSIONS };
-

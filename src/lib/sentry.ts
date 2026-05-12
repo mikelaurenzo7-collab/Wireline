@@ -46,7 +46,6 @@ export async function initSentry() {
   try {
     Sentry = await import("@sentry/react");
   } catch (loadErr) {
-    // eslint-disable-next-line no-console
     console.error("[wireline] Sentry SDK failed to load:", loadErr);
     state = "noop";
     flushPendingToConsole();
@@ -74,7 +73,6 @@ export async function initSentry() {
     // Same shape as the import-load failure: SDK is loaded but init blew
     // up (bad DSN format, conflicting global state, etc.). Don't trap
     // future errors in the pending queue.
-    // eslint-disable-next-line no-console
     console.error("[wireline] Sentry init failed:", initErr);
     sentryRef = null;
     state = "noop";
@@ -93,7 +91,6 @@ export async function initSentry() {
 function flushPendingToConsole() {
   while (pending.length) {
     const item = pending.shift()!;
-    // eslint-disable-next-line no-console
     console.error("[wireline]", item.error, item.context);
   }
 }
@@ -110,7 +107,6 @@ export function captureException(error: unknown, context?: Record<string, unknow
     return;
   }
   if (state === "noop") {
-    // eslint-disable-next-line no-console
     console.error("[wireline]", error, context);
     return;
   }

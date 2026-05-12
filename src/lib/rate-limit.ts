@@ -44,10 +44,7 @@ export interface RateLimiterOptions {
 }
 
 /** Check + record a hit. Returns whether the caller should be allowed. */
-export async function rateLimit(
-  key: string,
-  opts: RateLimiterOptions,
-): Promise<RateLimitResult> {
+export async function rateLimit(key: string, opts: RateLimiterOptions): Promise<RateLimitResult> {
   const now = Date.now();
   const window = Math.floor(now / opts.windowMs);
   const composite = `wireline:rl:${opts.bucket}:${key}:${window}`;
@@ -64,8 +61,10 @@ export async function rateLimit(
       return { allowed: count <= opts.max, remaining, resetMs };
     } catch (err) {
       if (opts.failClosedOnError) {
-        // eslint-disable-next-line no-console
-        console.error(`[rate-limit] redis error on spend-sensitive bucket ${opts.bucket}, failing closed:`, (err as Error).message);
+        console.error(
+          `[rate-limit] redis error on spend-sensitive bucket ${opts.bucket}, failing closed:`,
+          (err as Error).message,
+        );
         throw err;
       }
       // Fail-OPEN on Redis error — better to serve traffic than to lock
@@ -79,7 +78,7 @@ export async function rateLimit(
       // eslint-disable-next-line no-console
       console.warn(
         "[rate-limit] UPSTASH_REDIS_REST_URL not set — rate limits are per-invocation only " +
-          "and provide no real protection in serverless. Configure Upstash Redis for production."
+          "and provide no real protection in serverless. Configure Upstash Redis for production.",
       );
     }
   }
@@ -150,8 +149,8 @@ export interface DistributedLimiterStatus {
 export function distributedLimiterStatus(): DistributedLimiterStatus {
   if (isRedisConfigured()) return { ok: true };
 
-  const allowInMemory = String(process.env.WIRELINE_ALLOW_INMEMORY_RATE_LIMIT || "")
-    .toLowerCase() === "true";
+  const allowInMemory =
+    String(process.env.WIRELINE_ALLOW_INMEMORY_RATE_LIMIT || "").toLowerCase() === "true";
   if (allowInMemory) return { ok: true };
 
   const isProd = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";

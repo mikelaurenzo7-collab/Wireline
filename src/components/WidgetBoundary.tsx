@@ -33,7 +33,6 @@ export default class WidgetBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, info: ErrorInfo) {
     // Send to Sentry with the widget label so we can group failures
     // by surface in the dashboard.
-    // eslint-disable-next-line no-console
     console.error("WidgetBoundary caught:", this.props.label ?? "(unlabeled)", error, info);
     captureException(error, {
       widget: this.props.label ?? "(unlabeled)",
