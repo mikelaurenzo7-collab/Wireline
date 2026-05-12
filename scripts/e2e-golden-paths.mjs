@@ -10,6 +10,8 @@
  *   E2E_BASE_URL     — server base URL (default: http://localhost:5173)
  *   E2E_USER_EMAIL   — test user email
  *   E2E_USER_PASSWORD — test user password
+ *   VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY — required for sign-in (same project as deployment)
+ *   CRON_SECRET      — optional; if set and length >= 16, POST /api/jobs/sweep is tested with Bearer auth
  *
  * Usage:
  *   node scripts/e2e-golden-paths.mjs
@@ -28,7 +30,8 @@ let failed = 0;
 async function req(method, path, body, opts = {}) {
   const url = `${BASE_URL}${path}`;
   const headers = { "Content-Type": "application/json", ...opts.headers };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+  // Allow opts.headers.Authorization (e.g. CRON_SECRET) without clobbering from session JWT.
+  if (token && !headers.Authorization) headers["Authorization"] = `Bearer ${token}`;
 
   const init = { method, headers };
   if (body) init.body = JSON.stringify(body);
@@ -139,6 +142,24 @@ async function testAuthenticated() {
   const { status: claudeStatus, json: claude } = await req("GET", "/api/claude/status");
   assert("GET /api/claude/status returns 200", claudeStatus === 200, `got ${claudeStatus}`);
   assert("Claude status has available field", claude && typeof claude.available === "boolean");
+
+  // Platform Health API (authenticated integrations registry)
+  const { status: integStatus, json: integ } = await req("GET", "/api/health/integrations");
+  assert("GET /api/health/integrations returns 200", integStatus === 200, `got ${integStatus}`);
+  assert(
+    "Health integrations payload has integrations array",
+    integ && Array.isArray(integ.integrations),
+    integ ? "missing integrations[]" : "no json",
+  );
+
+  // Job queue stats (tenant-scoped)
+  const { status: jobStatsStatus, json: jobStats } = await req("GET", "/api/jobs/stats");
+  assert("GET /api/jobs/stats returns 200", jobStatsStatus === 200, `got ${jobStatsStatus}`);
+  assert(
+    "Job stats is an object",
+    jobStats && typeof jobStats === "object" && !Array.isArray(jobStats),
+    typeof jobStats,
+  );
 }
 
 // ─── 5. Intake API (key-authenticated) ────────────────────────────────────
@@ -151,6 +172,30 @@ async function testIntake() {
     customer_name: "E2E Test Lead",
   }, { headers: {} });
   assert("POST /api/intake/lead without key returns 401", status === 401, `got ${status}`);
+}
+
+// ─── 6. Cron sweep (optional; uses CRON_SECRET, not user JWT) ─────────────
+async function testCronSweep() {
+  const secret = process.env.CRON_SECRET || "";
+  if (secret.length < 16) {
+    console.log("\n[6] Cron sweep — SKIPPED (CRON_SECRET unset or shorter than 16 chars)");
+    return;
+  }
+
+  console.log("\n[6] Cron sweep (Bearer CRON_SECRET)");
+  const saved = token;
+  token = null;
+  const { status, json } = await req("POST", "/api/jobs/sweep", undefined, {
+    headers: { Authorization: `Bearer ${secret}` },
+  });
+  token = saved;
+
+  assert("POST /api/jobs/sweep returns 200", status === 200, `got ${status}`);
+  assert(
+    "Sweep response is JSON object with processed field",
+    json && typeof json === "object" && typeof json.processed === "number",
+    json ? JSON.stringify(json).slice(0, 120) : "no body",
+  );
 }
 
 // ─── Main ──────────────────────────────────────────────────────────────────
@@ -185,6 +230,7 @@ async function main() {
   await testAuthGates();
   await testAuthenticated();
   await testIntake();
+  await testCronSweep();
 
   console.log(`\n${"─".repeat(50)}`);
   console.log(`Results: ${passed} passed, ${failed} failed`);

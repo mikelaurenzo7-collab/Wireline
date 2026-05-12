@@ -2,7 +2,7 @@ import { Router } from "express";
 import { timingSafeEqual as cryptoTimingSafeEqual } from "node:crypto";
 import { db, log, auditLogger } from "../lib/server-context";
 import { authenticateUser } from "../middleware/auth";
-import { jobsRateLimit } from "../middleware/api-rate-limits";
+import { jobsRateLimit, jobsSweepRateLimit } from "../middleware/api-rate-limits";
 import { getErrorMessage } from "../lib/server-utils";
 import { getCallerRole } from "../middleware/require-role";
 import { getQueueStats } from "../lib/job-queue";
@@ -47,10 +47,10 @@ const cronOrAdminAuth = (req: any, res: any, next: any) => {
     req._sweepMode = "cron";
     return next();
   }
-  
+
   authenticateUser(req, res, async (authErr?: unknown) => {
     if (authErr) return next(authErr);
-    if (res.headersSent) return; 
+    if (res.headersSent) return;
     try {
       const role = await getCallerRole(db, req.user.id);
       if (role !== "owner" && role !== "admin") {
@@ -61,7 +61,9 @@ const cronOrAdminAuth = (req: any, res: any, next: any) => {
             ip: req.ip,
           })
           .catch(() => {});
-        return res.status(403).json({ error: "Forbidden: requires admin or owner role", code: "FORBIDDEN" });
+        return res
+          .status(403)
+          .json({ error: "Forbidden: requires admin or owner role", code: "FORBIDDEN" });
       }
       req._sweepMode = "manual";
       next();
@@ -75,23 +77,34 @@ const cronOrAdminAuth = (req: any, res: any, next: any) => {
 /**
  * POST /api/jobs/sweep — triggers one poll cycle in serverless environments.
  */
-router.post("/sweep", jobsRateLimit, cronOrAdminAuth, async (req: any, res: any) => {
+router.post("/sweep", cronOrAdminAuth, jobsSweepRateLimit, async (req: any, res: any) => {
   try {
-    const { claimJob: claim, completeJob: complete, failJob: fail, enqueue } = await import("../lib/job-queue");
+    const {
+      claimJob: claim,
+      completeJob: complete,
+      failJob: fail,
+      enqueue,
+    } = await import("../lib/job-queue");
 
     // Trigger nightly GDPR purge (2:00 AM UTC)
     const now = new Date();
-    if (now.getUTCHours() === 2 && now.getUTCMinutes() === 0 && (req._sweepMode === "cron" || !req._sweepMode)) {
-       const { data: tenants } = await db.from("wireline_settings").select("user_id, retention_days");
-       if (tenants) {
-          for (const t of tenants) {
-             await enqueue(db, {
-                userId: t.user_id,
-                type: "purge_old_data",
-                payload: { user_id: t.user_id, retention_days: t.retention_days }
-             });
-          }
-       }
+    if (
+      now.getUTCHours() === 2 &&
+      now.getUTCMinutes() === 0 &&
+      (req._sweepMode === "cron" || !req._sweepMode)
+    ) {
+      const { data: tenants } = await db
+        .from("wireline_settings")
+        .select("user_id, retention_days");
+      if (tenants) {
+        for (const t of tenants) {
+          await enqueue(db, {
+            userId: t.user_id,
+            type: "purge_old_data",
+            payload: { user_id: t.user_id, retention_days: t.retention_days },
+          });
+        }
+      }
     }
     let processed = 0;
     for (let i = 0; i < 10; i++) {
