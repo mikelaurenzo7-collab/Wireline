@@ -63,8 +63,12 @@ for (const file of files) {
       // Check same line
       if (EXEMPT_COMMENTS.test(line)) continue;
 
-      // Look ahead up to 15 lines for `user_id` in the insert payload
-      const window = lines.slice(i, Math.min(i + 15, lines.length)).join("\n");
+      // Look back up to 20 lines AND ahead up to 15 lines for `user_id`.
+      // Row objects are often constructed before the .insert() call, so
+      // a forward-only scan produces false positives.
+      const before = lines.slice(Math.max(0, i - 20), i).join("\n");
+      const after = lines.slice(i, Math.min(i + 15, lines.length)).join("\n");
+      const window = before + "\n" + after;
       if (!window.includes("user_id")) {
         const rel = relative(ROOT, file);
         console.error(
