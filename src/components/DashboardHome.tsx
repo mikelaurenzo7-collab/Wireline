@@ -279,6 +279,32 @@ export default function DashboardHome() {
 
   const Pulse = (
     <div className="h-full flex flex-col gap-3 overflow-hidden">
+      {/* ── First-run hero: shown when the owner has no agents yet ── */}
+      {!(stats?.agents?.length) && !isLoading && (
+        <div className="shrink-0 relative aurora-ring rounded-2xl">
+          <div className="relative rounded-2xl glass-strong overflow-hidden px-6 py-5 flex flex-col md:flex-row md:items-center gap-4">
+            <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full opacity-25 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }} />
+            <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full opacity-20 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #E040C0, transparent)" }} />
+            <div className="relative flex items-center gap-4 flex-1 min-w-0">
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #0AC8D4, #9B59F5, #E040C0)" }}>
+                <Sparkles className="w-6 h-6 text-paper" strokeWidth={2.5} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] uppercase tracking-[0.4em] text-brand mb-1">Welcome to Wireline</div>
+                <h2 className="font-display italic text-2xl md:text-3xl text-ink leading-tight">Let&rsquo;s create your first agent</h2>
+                <p className="text-[12px] text-muted/90 mt-1.5 leading-relaxed">An AI agent will answer your phone, book appointments, and follow up by email — all on autopilot.</p>
+              </div>
+            </div>
+            <Link
+              to="/agents"
+              className="relative shrink-0 brutal-btn !py-3 !px-5 !text-[11px] !tracking-[0.3em] inline-flex items-center gap-2"
+            >
+              Create your first agent
+              <ArrowUpRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+      )}
       {/* ── SLO health banner (only when degraded/critical) ──── */}
       {sloBanner && (
         <div className={cn(
@@ -401,7 +427,7 @@ export default function DashboardHome() {
                   <div className="text-[12px] font-medium text-ink">
                     {activeSignals.length > 0
                       ? `${activeSignals.length} live call${activeSignals.length > 1 ? "s" : ""}`
-                      : "All agents idle"}
+                      : "Your agents are ready"}
                   </div>
                   <div className="text-[9px] uppercase tracking-[0.24em] text-muted mt-0.5">
                     {stats?.inboundCount ?? 0} in · {stats?.outboundCount ?? 0} out total
@@ -455,7 +481,7 @@ export default function DashboardHome() {
                           "text-[8px] uppercase tracking-[0.22em]",
                           busy ? "text-rose-500" : "text-emerald-600/80"
                         )}>
-                          {busy ? "Active" : "Ready"}
+                          {busy ? "On call" : "Ready"}
                         </span>
                       </div>
                     );
@@ -485,8 +511,11 @@ export default function DashboardHome() {
 
               {!(stats?.agents?.length) && (
                 <div className="flex items-center justify-center py-4">
-                  <Link to="/agents" className="text-[10px] text-brand/70 hover:text-brand transition-colors uppercase tracking-[0.28em]">
-                    + Add your first agent
+                  <Link
+                    to="/agents"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-brand/40 hover:bg-brand/10 hover:border-brand/60 transition-all text-[10px] uppercase tracking-[0.3em] text-brand"
+                  >
+                    <Sparkles className="w-3 h-3" /> Create your first agent
                   </Link>
                 </div>
               )}

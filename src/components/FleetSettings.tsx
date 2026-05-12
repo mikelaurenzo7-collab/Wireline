@@ -428,9 +428,10 @@ export default function FleetSettings() {
                 <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">Loading fleet</span>
               </div>
             ) : agents.length === 0 ? (
-              <div className="rounded-xl glass border border-white/10 border-dashed py-10 text-center">
-                <Bot className="w-8 h-8 text-muted/50 mx-auto mb-2" />
-                <p className="text-[10px] uppercase tracking-[0.4em] text-muted/70">No agents deployed</p>
+              <div className="rounded-xl glass border border-white/10 border-dashed py-10 text-center px-4">
+                <Bot className="w-8 h-8 text-brand/70 mx-auto mb-3" />
+                <p className="font-display italic lowercase text-xl text-ink leading-tight">no agents yet</p>
+                <p className="text-[11px] text-muted/80 mt-2 leading-relaxed">Create your first AI agent below — it will answer calls, book appointments, and follow up for you.</p>
               </div>
             ) : (
               agents.map(agent => (
@@ -501,7 +502,7 @@ export default function FleetSettings() {
 
           <motion.div layout className="pt-4 mt-4 border-t border-white/8 border-dashed space-y-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <h3 className="text-[10px] uppercase tracking-[0.3em] text-ink">Deploy new agent</h3>
+              <h3 className="text-[10px] uppercase tracking-[0.3em] text-ink">Create a new agent</h3>
               <div className="flex items-center gap-1.5">
                 <ClaudeRecipeButton recipe="agent-forge" label="Forge" variant="ghost" />
                 <button
@@ -538,12 +539,12 @@ export default function FleetSettings() {
                    </p>
                 </div>
                 <div className="space-y-1.5">
-                   <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">Designation ID</label>
-                   <input type="text" placeholder="node-xxx-yyy" value={newAgentId} onChange={e => setNewAgentId(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))} className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 font-mono" />
+                   <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">Agent ID <span className="text-muted/50 normal-case tracking-normal">(lowercase, no spaces)</span></label>
+                   <input type="text" placeholder="e.g. sales-bot-1" value={newAgentId} onChange={e => setNewAgentId(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))} className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 font-mono" />
                 </div>
                 <div className="space-y-1.5">
-                   <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">Tactical name</label>
-                   <input type="text" placeholder="e.g. Vanguard-1" value={newAgentName} onChange={e => setNewAgentName(e.target.value)} className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50" />
+                   <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">Agent name <span className="text-muted/50 normal-case tracking-normal">(what callers will hear)</span></label>
+                   <input type="text" placeholder="e.g. Sophie" value={newAgentName} onChange={e => setNewAgentName(e.target.value)} className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50" />
                 </div>
               </div>
 
@@ -553,7 +554,7 @@ export default function FleetSettings() {
                 className="brutal-btn w-full !py-2.5 !text-[11px] !tracking-[0.3em] disabled:opacity-50"
               >
                 {isCreating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-                Deploy agent
+                Create agent
               </button>
             </motion.div>
         </div>
@@ -587,9 +588,9 @@ export default function FleetSettings() {
                 <Target className="w-7 h-7" />
               </div>
               <div className="space-y-1.5">
-                <h3 className="font-display italic lowercase text-2xl text-ink">select an agent</h3>
-                <p className="text-[10px] uppercase tracking-[0.4em] text-muted/70 max-w-sm">
-                  Reconfigure parameters and heuristics for individual agents.
+                <h3 className="font-display italic lowercase text-2xl text-ink">pick an agent</h3>
+                <p className="text-[11px] text-muted/80 max-w-sm leading-relaxed">
+                  Choose an agent on the left to view its calls, edit its personality, or update what it knows.
                 </p>
               </div>
             </motion.div>

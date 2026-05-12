@@ -166,7 +166,7 @@ export default function AgentTraining() {
                 onChange={e => setSelectedAgentId(e.target.value)}
                 className="w-full text-sm bg-black/5 border border-black/10 rounded-lg pl-3 pr-8 py-2 outline-none focus:border-brand/50 appearance-none cursor-pointer text-ink"
               >
-                <option value="default-agent">Global fleet directives</option>
+                <option value="default-agent">Training for: all agents (shared)</option>
                 {agents.map(a => (
                   <option key={a.id} value={a.id}>{a.name}</option>
                 ))}
