@@ -4,7 +4,7 @@ import { getErrorMessage } from './server-utils';
 import { planByPriceId } from './plan-catalog';
 import { dispatchWebhook } from './webhook-helpers';
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder', {
   apiVersion: '2026-01-28.clover' as Stripe.LatestApiVersion,
   typescript: true,
 });
