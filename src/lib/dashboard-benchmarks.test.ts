@@ -5,7 +5,6 @@ import {
   CONTACTED_STATUSES,
   BENCHMARK_TARGETS,
   type CallLogRow,
-  type OutboundLeadRow,
 } from "./dashboard-benchmarks";
 
 const call = (p: Partial<CallLogRow>): CallLogRow => ({

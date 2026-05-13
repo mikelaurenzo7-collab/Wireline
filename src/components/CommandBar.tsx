@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, KeyboardEvent as ReactKeyboardEvent } from "react";
-import { Search, Bot, PhoneCall, Mail, Zap, Terminal, X, ChevronRight, Hash, Inbox, BarChart3, Calendar, MessageSquare, PhoneOutgoing, History, ServerCog, PlugZap, Sparkles, Activity, Database } from "lucide-react";
+import { Search, Bot, PhoneCall, Mail, Zap, Terminal, ChevronRight, Inbox, BarChart3, Calendar, MessageSquare, PhoneOutgoing, History, ServerCog, PlugZap, Sparkles, Activity, Database } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";

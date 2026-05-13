@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   BookOpen, Search, Loader2, Filter, Save, Trash2, X, Check, Pencil,
   Database, Users, AlertOctagon, RefreshCw, FileText, Sparkles,
-  Plus, Brain, Copy, AlertTriangle, GitMerge, ChevronDown,
+  Plus, Brain, Copy, AlertTriangle, GitMerge,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import HubTabs, { TRAINING_HUB } from "./HubTabs";

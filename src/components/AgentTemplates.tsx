@@ -384,7 +384,7 @@ export default function AgentTemplates() {
         toastSuccess("Agent deployed!", template.name);
         navigate("/agents");
       }
-    } catch (e: any) {
+    } catch {
       toastError("Deployment failed", "Could not reach the server. Please try again.");
     }
     setDeploying(null);

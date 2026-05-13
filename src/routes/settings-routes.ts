@@ -20,7 +20,7 @@ router.get('/api/settings', authenticateUser, async (req: any, res: any) => {
       .single();
     if (error) throw error;
     res.json({ settings: data || {} });
-  } catch (error) {
+  } catch {
     res.json({ settings: {} });
   }
 });
@@ -130,7 +130,7 @@ router.get('/api/onboarding/progress', authenticateUser, async (req: any, res: a
       has_voice: !!settings?.vapi_private_key,
       completed: !!prefs?.onboarding_completed,
     });
-  } catch (e) {
+  } catch {
     res.status(500).json({ error: 'Failed to fetch progress' });
   }
 });

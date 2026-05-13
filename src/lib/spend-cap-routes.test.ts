@@ -16,7 +16,7 @@
 // allow us to assert on real HTTP semantics (status codes, headers, body
 // shape) against the middleware functions exported from src/lib/.
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import express, { type Request, type Response, type NextFunction } from "express";
 import http from "node:http";
 import { buildCSP } from "./csp";

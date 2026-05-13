@@ -5,7 +5,7 @@
  * Extracted from server.ts to avoid circular dependencies.
  */
 
-import { db, log, fetchWithTimeout } from "./server-context";
+import { db, fetchWithTimeout } from "./server-context";
 import { isDncBlocked } from "./compliance";
 import { sanitizePhone, KNOWLEDGE_GAP_PREFIX, MAX_RUNTIME_LESSONS, buildCallerProfileBlock, OUTBOUND_ARCHETYPE_BY_ROLE, getArchetypeConfig, ROLE_SPECIFIC_PROTOCOLS, buildRoleToolDefs } from "./vapi-helpers";
 import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "./agent-runtime";

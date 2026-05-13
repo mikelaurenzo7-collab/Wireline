@@ -1,11 +1,10 @@
 import { Router } from "express";
 
-import { db, log, auditLogger } from "../lib/server-context";
+import { db, log } from "../lib/server-context";
 import { authenticateUser } from "../middleware/auth";
-import { getErrorMessage, sanitizeForAudit } from "../lib/server-utils";
+import { getErrorMessage } from "../lib/server-utils";
 import { parseFormData, CampaignCreateSchema, CampaignUpdateSchema } from "../lib/form-validators";
 import { computeOutcomeBreakdown, computeCallStats, callIdsFromLeads } from "../lib/campaign-analytics";
-import { SentryEvents } from "../lib/sentry-events";
 import { claudeRateLimiter } from "../middleware/api-rate-limits";
 
 const router = Router();

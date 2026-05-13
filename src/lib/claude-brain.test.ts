@@ -1,7 +1,7 @@
 // Cost estimation + audit context tests. The estimateCost function gates
 // budget alerts and bills users; an off-by-one here is a real-money bug.
 
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
 import {
   estimateCost,
   isClaudeAvailable,

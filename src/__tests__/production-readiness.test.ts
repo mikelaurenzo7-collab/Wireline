@@ -6,7 +6,7 @@
  * connections at import time, which would break the test environment).
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { timingSafeEqual } from "node:crypto";
 
 // ──────────────────────────────────────────────────────────────────────────

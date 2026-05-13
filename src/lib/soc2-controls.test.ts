@@ -9,7 +9,6 @@ import {
   buildIncidentRow,
   notificationDeadlineIso,
   looksEncrypted,
-  type AccessRole,
 } from "./soc2-controls";
 
 describe("soc2-controls · role hierarchy", () => {

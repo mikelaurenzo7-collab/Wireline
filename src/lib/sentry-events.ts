@@ -87,7 +87,7 @@ export const SentryEvents = {
     });
   },
 
-  leadConnected: (params: { agent_id: string }) => {
+  leadConnected: (_params: { agent_id: string }) => {
     Sentry.captureMessage('Lead successfully connected', {
       level: 'info',
       tags: {
@@ -210,7 +210,7 @@ export const SentryEvents = {
     });
   },
 
-  budgetExceeded: (params: { user_id: string; spent: number; budget: number }) => {
+  budgetExceeded: (_params: { user_id: string; spent: number; budget: number }) => {
     Sentry.captureMessage('Budget exceeded', {
       level: 'error',
       tags: {
