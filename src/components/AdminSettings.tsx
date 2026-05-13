@@ -296,7 +296,7 @@ export default function AdminSettings() {
             activeTab === t ? "bg-brand/20 text-brand" : "text-muted hover:text-ink"
           )}
         >
-          {t === "carrier" ? "Carrier" : t === "subscription" ? "Billing" : t === "flywheel" ? "Flywheel" : t === "system" ? "System" : "Activity"}
+          {t === "carrier" ? "Carrier" : t === "subscription" ? "Billing" : t === "flywheel" ? "Growth" : t === "system" ? "System" : "Activity"}
         </button>
       ))}
     </div>
@@ -1124,7 +1124,7 @@ export default function AdminSettings() {
               exit={{ opacity: 0 }}
               className="h-full flex flex-col gap-3 min-h-0 overflow-y-auto scrollbar-hide pb-4"
             >
-              <FlywheelPanel settings={settings} setSettings={setSettings} onSave={saveSettings} isSaving={isSaving} />
+              <GrowthPanel settings={settings} setSettings={setSettings} onSave={saveSettings} isSaving={isSaving} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -1143,9 +1143,9 @@ export default function AdminSettings() {
   );
 }
 
-/* ──────────────────────────  AI Flywheel Configuration Panel  ───────────────── */
+/* ──────────────────────────  AI Growth Configuration Panel  ───────────────── */
 
-function FlywheelPanel({ settings, setSettings, onSave, isSaving }: { settings: any; setSettings: any; onSave: () => void; isSaving: boolean }) {
+function GrowthPanel({ settings, setSettings, onSave, isSaving }: { settings: any; setSettings: any; onSave: () => void; isSaving: boolean }) {
   const [newTitle, setNewTitle] = useState("");
   const [newIndustry, setNewIndustry] = useState("");
   const [newState, setNewState] = useState("");
@@ -1165,7 +1165,7 @@ function FlywheelPanel({ settings, setSettings, onSave, isSaving }: { settings: 
 
   return (
     <div className="space-y-4">
-      <Panel title="Autonomous Growth Flywheel" hint="GROWTH ENGINE" icon={Zap} scroll>
+      <Panel title="Autonomous Growth Engine" hint="GROWTH ENGINE" icon={Zap} scroll>
         <div className="space-y-6">
           <div className="flex items-center justify-between p-4 rounded-2xl bg-brand/5 border border-brand/20">
             <div className="space-y-1">
@@ -1308,7 +1308,7 @@ function FlywheelPanel({ settings, setSettings, onSave, isSaving }: { settings: 
               className="brutal-btn w-full md:w-auto !px-8 !py-3 !text-xs !tracking-[0.4em] flex items-center justify-center gap-2"
             >
               {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Save Flywheel Configuration
+              Save Growth Configuration
             </button>
           </div>
         </div>

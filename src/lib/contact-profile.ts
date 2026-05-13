@@ -51,7 +51,17 @@ export interface AppointmentRow {
   created_at: string;
 }
 
-export type TimelineEntryType = "call_in" | "call_out" | "appointment";
+export interface EmailThreadRow {
+  id: string;
+  user_id: string;
+  customer_email?: string | null;
+  subject?: string | null;
+  summary?: string | null;
+  last_message_at: string;
+  agent_id?: string | null;
+}
+
+export type TimelineEntryType = "call_in" | "call_out" | "appointment" | "email";
 
 export interface TimelineEntry {
   type: TimelineEntryType;
@@ -87,6 +97,7 @@ export interface ContactProfile {
   timeline: TimelineEntry[];
   leads: OutboundLeadRow[];
   appointments: AppointmentRow[];
+  emails: EmailThreadRow[];
 }
 
 // Normalize a phone number to its last-10-digit form for matching.
@@ -144,13 +155,25 @@ function appointmentToTimeline(a: AppointmentRow): TimelineEntry {
   };
 }
 
+function emailToTimeline(e: EmailThreadRow): TimelineEntry {
+  return {
+    type: "email",
+    id: e.id,
+    ts: e.last_message_at,
+    summary: `${e.subject ?? "Email"} — ${e.summary ?? ""}`.trim(),
+    agent_id: e.agent_id ?? null,
+  };
+}
+
 export function buildContactTimeline(input: {
   calls: CallLogRow[];
   appts: AppointmentRow[];
+  emails: EmailThreadRow[];
   customerName: string | null;
 }): TimelineEntry[] {
   const entries: TimelineEntry[] = [];
   for (const c of input.calls) entries.push(callLogToTimeline(c));
+  for (const e of input.emails) entries.push(emailToTimeline(e));
   for (const a of input.appts) {
     // Only include appointments tied to the same customer name —
     // appointments aren't keyed by phone number in our schema, so we
@@ -167,9 +190,10 @@ export function computeContactStats(input: {
   calls: CallLogRow[];
   leads: OutboundLeadRow[];
   appts: AppointmentRow[];
+  emails: EmailThreadRow[];
   customerName: string | null;
 }): ContactStats {
-  const { calls, leads, appts, customerName } = input;
+  const { calls, leads, appts, emails, customerName } = input;
   const totalCalls = calls.length;
   const totalMinutes = Math.round(
     calls.reduce((s, c) => s + (c.duration_seconds ?? 0), 0) / 60,
@@ -180,7 +204,7 @@ export function computeContactStats(input: {
   const avgScore = totalCalls > 0
     ? Math.round(calls.reduce((s, c) => s + (c.lead_score ?? 0), 0) / totalCalls)
     : 0;
-  const lastTouch = calls[0]?.created_at ?? leads[0]?.created_at ?? null;
+  const lastTouch = calls[0]?.created_at ?? emails[0]?.last_message_at ?? leads[0]?.created_at ?? null;
   const matchingAppts = appts.filter(a => nameMatches(a.customer_name, customerName)).length;
 
   return {
@@ -203,11 +227,12 @@ export function buildContactProfile(input: {
   calls: CallLogRow[];
   leads: OutboundLeadRow[];
   appts: AppointmentRow[];
+  emails: EmailThreadRow[];
 }): ContactProfile {
-  const { number, normalized, calls, leads, appts } = input;
+  const { number, normalized, calls, leads, appts, emails } = input;
   const customerName = leads[0]?.customer_name ?? appts[0]?.customer_name ?? null;
-  const timeline = buildContactTimeline({ calls, appts, customerName });
-  const stats = computeContactStats({ calls, leads, appts, customerName });
+  const timeline = buildContactTimeline({ calls, appts, emails, customerName });
+  const stats = computeContactStats({ calls, leads, appts, emails, customerName });
   const matchingAppts = appts.filter(a => nameMatches(a.customer_name, customerName));
 
   return {
@@ -218,5 +243,6 @@ export function buildContactProfile(input: {
     timeline,
     leads,
     appointments: matchingAppts,
+    emails,
   };
 }

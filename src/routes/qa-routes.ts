@@ -77,7 +77,7 @@ router.post("/score/:callId", authenticateUser, withAudit("qa"), async (req: Aut
       .eq("id", callId)
       .eq("user_id", req.user.id);
 
-    // Adaptive Flywheel: Trigger optimization if score is low (< 60)
+    // Adaptive Optimization: Trigger refinement if score is low (< 60)
     if (score < 60) {
       await enqueue(db, {
         userId: req.user.id,

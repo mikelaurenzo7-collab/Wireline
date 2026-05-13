@@ -224,15 +224,15 @@ export default function CommandCenter() {
               onClick={async () => {
                 try {
                   const res = await authFetch("/api/jobs/prospect", { method: 'POST' });
-                  if (res.ok) alert("Autonomous Flywheel Launched! Sourcing new leads...");
+                  if (res.ok) alert("Autonomous Growth Engine Activated! Sourcing new leads...");
                 } catch (e) {
-                  alert("Failed to launch flywheel. Check network.");
+                  alert("Failed to activate growth engine. Check network.");
                 }
               }}
               className="flex items-center gap-2 px-6 py-3 bg-brand text-white rounded-2xl hover:bg-brand-2 transition-all shadow-xl shadow-brand/20 active:scale-95"
             >
               <Zap className="w-4 h-4 fill-current" />
-              <span className="text-xs font-black uppercase tracking-widest">Launch Flywheel</span>
+              <span className="text-xs font-black uppercase tracking-widest">Activate Growth</span>
             </button>
 
             <div className="hidden xl:flex items-center gap-6 px-6 py-3 bg-black/[0.02] border border-black/5 rounded-2xl">

@@ -17,8 +17,17 @@ router.get("/api/contacts/:number", authenticateUser, async (req: AuthenticatedR
     const norm = normalizePhoneTail(number);
     if (!norm) return res.status(400).json({ error: "Invalid phone number." });
 
-    // Match: exact, or anything ending in the same last-10-digits.
-    const [callsRes, leadsRes, apptsRes] = await Promise.all([
+    // 1. Get lead dossier to find email address
+    const { data: dossier } = await db.from('wireline_lead_dossiers')
+      .select('customer_email')
+      .eq('user_id', req.user.id)
+      .ilike('customer_number', `%${norm}`)
+      .maybeSingle();
+
+    const customerEmail = dossier?.customer_email;
+
+    // 2. Fetch all omnichannel activity
+    const [callsRes, leadsRes, apptsRes, emailsRes] = await Promise.all([
       db.from("wireline_call_logs")
         .select("id, agent_id, direction, customer_number, duration_seconds, cost, summary, transcript, recording_url, lead_score, intent_label, created_at")
         .eq("user_id", req.user.id)
@@ -33,6 +42,11 @@ router.get("/api/contacts/:number", authenticateUser, async (req: AuthenticatedR
         .select("id, agent_id, customer_name, service_type, date, time, status, created_at")
         .eq("user_id", req.user.id)
         .order("created_at", { ascending: false }),
+      customerEmail ? db.from("wireline_email_threads")
+        .select("*")
+        .eq("user_id", req.user.id)
+        .eq("customer_email", customerEmail)
+        .order("last_message_at", { ascending: false }) : Promise.resolve({ data: [] }),
     ]);
 
     res.json(buildContactProfile({
@@ -41,6 +55,7 @@ router.get("/api/contacts/:number", authenticateUser, async (req: AuthenticatedR
       calls:  callsRes.data  || [],
       leads:  leadsRes.data  || [],
       appts:  apptsRes.data  || [],
+      emails: emailsRes.data || [],
     }));
   } catch (e) {
     log.error("Contact profile fetch failed", { error: e instanceof Error ? e.message : String(e) });
