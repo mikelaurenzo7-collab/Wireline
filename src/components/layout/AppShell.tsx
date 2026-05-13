@@ -9,6 +9,7 @@ import RouteAccentStrip from "./RouteAccentStrip";
 import TrialBanner from "./TrialBanner";
 import AppRoutes from "../../routes/AppRoutes";
 import { PAGE_TITLES } from "../../constants/navigation";
+import { useBranding } from "../../contexts/BrandingContext";
 
 const CommandBar         = lazy(() => import("../CommandBar"));
 const PersonaWizard      = lazy(() => import("../PersonaWizard"));
@@ -19,6 +20,7 @@ export default function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const { user, loading } = useAuth();
+  const { branding } = useBranding();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -72,8 +74,8 @@ export default function AppShell() {
     const label =
       PAGE_TITLES[location.pathname] ??
       (location.pathname.startsWith("/contact/") ? "Contact Profile" : null);
-    document.title = label ? `${label} — Wireline` : "Wireline";
-  }, [location.pathname]);
+    document.title = label ? `${label} — ${branding.brand_name}` : branding.brand_name;
+  }, [location.pathname, branding.brand_name]);
 
   if (loading) {
     return (
@@ -96,9 +98,9 @@ export default function AppShell() {
 
         <div className="space-y-4 relative z-10">
           <h1 className="brand-wordmark text-5xl md:text-7xl leading-[0.85]">
-            WIRELINE
+            {branding.brand_name.toUpperCase()}
           </h1>
-          <p className="text-[10px] uppercase tracking-[0.6em] text-muted">Initializing</p>
+          <p className="text-[10px] uppercase tracking-[0.6em] text-muted">Growth Engine Initializing</p>
           <div className="flex items-center justify-center gap-1.5 pt-4">
             {[0, 1, 2].map(i => (
               <span
@@ -146,11 +148,11 @@ export default function AppShell() {
                <Menu className="w-5 h-5 text-ink" />
              </button>
              <Link to="/" className="flex items-center gap-2.5 min-w-0">
-               <div className="w-8 h-8 rounded-xl flex items-center justify-center shadow-sm shrink-0" style={{ background: "linear-gradient(135deg, #0AC8D4, #9B59F5, #E040C0)" }}>
-                 <Waves className="w-4 h-4 text-white" strokeWidth={2.5} />
-               </div>
-               <span className="brand-wordmark text-lg leading-none truncate">WIRELINE</span>
-             </Link>
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center shadow-sm shrink-0" style={{ background: `linear-gradient(135deg, ${branding.primary_color}, #9B59F5, #E040C0)` }}>
+                  <Waves className="w-4 h-4 text-white" strokeWidth={2.5} />
+                </div>
+                <span className="brand-wordmark text-lg leading-none truncate">{branding.brand_name.toUpperCase()}</span>
+              </Link>
              <button
                onClick={() => navigate('/admin')}
                className="w-11 h-11 rounded-xl flex items-center justify-center hover:bg-white/5 active:scale-95 transition-all"

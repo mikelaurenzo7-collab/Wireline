@@ -56,6 +56,7 @@ import driveRouter from "./src/routes/drive-routes";
 import emailRouter from "./src/routes/email-routes";
 import calendarRouter from "./src/routes/calendar-routes";
 import settingsRouter from "./src/routes/settings-routes";
+import teamRouter from "./src/routes/team-routes";
 
 // Startup env validation
 validateStartupEnv();
@@ -191,6 +192,7 @@ app.use(insightsRouter);
 app.use("/api/webhooks", webhookRouter);
 app.use(soc2Router);
 app.use(oauthRouter);
+app.use(teamRouter);
 
 // 404 API catch-all (Must be mounted after all valid API routes and before global error handler)
 app.use("/api", (req: express.Request, res: express.Response) => {

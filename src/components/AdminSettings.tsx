@@ -16,6 +16,7 @@ import IntegrationHealthBanner, { type IntegrationHealthPayload } from "./Integr
 import PageShell, { Panel } from "./PageShell";
 import HubTabs, { SYSTEM_HUB } from "./HubTabs";
 import { useToast } from "../contexts/ToastContext";
+import { useBranding } from "../contexts/BrandingContext";
 
 type ConfirmState = { open: boolean; title: string; message: string; onConfirm: () => void };
 const CLOSED_CONFIRM: ConfirmState = { open: false, title: "", message: "", onConfirm: () => {} };
@@ -23,6 +24,7 @@ const CLOSED_CONFIRM: ConfirmState = { open: false, title: "", message: "", onCo
 export default function AdminSettings() {
   const { success: toastSuccess, error: toastError } = useToast();
   const { signOut } = useAuth();
+  const { updateBranding } = useBranding();
   const [confirmState, setConfirmState] = useState<ConfirmState>(CLOSED_CONFIRM);
   const [settings, setSettings] = useState({
     vapi_phone_number_id: "",
@@ -38,12 +40,12 @@ export default function AdminSettings() {
     twilio_sms_from_number: "",
     twilio_whatsapp_from_number: "",
     twilio_manager_alert_number: "",
-    prospecting_enabled: false,
-    target_titles: [] as string[],
-    target_industries: [] as string[],
-    target_states: [] as string[],
     target_employee_ranges: ["1,10", "11,50"] as string[],
+    brand_name: "",
+    brand_logo_url: "",
+    primary_color: "#0AC8D4",
   });
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [agents, setAgents] = useState<any[]>([]);
   const [phoneNumbers, setPhoneNumbers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -68,7 +70,7 @@ export default function AdminSettings() {
   const [newNumber, setNewNumber] = useState("");
   const [newNumberVapiId, setNewNumberVapiId] = useState("");
 
-  const [activeTab, setActiveTab] = useState<"carrier" | "subscription" | "flywheel" | "system" | "activity">("carrier");
+  const [activeTab, setActiveTab] = useState<"carrier" | "subscription" | "team" | "flywheel" | "system" | "activity">("carrier");
 
   const [carrierNumbers, setCarrierNumbers] = useState<any[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -90,7 +92,17 @@ export default function AdminSettings() {
     }
   };
 
-  useEffect(() => { fetchData(); fetchClaudeStatus(); fetchIntegrations(); fetchOperationalSlos(); fetchIntegrationHealth(); }, []);
+  useEffect(() => { fetchData(); fetchClaudeStatus(); fetchIntegrations(); fetchOperationalSlos(); fetchIntegrationHealth(); fetchTeam(); }, []);
+
+  const fetchTeam = async () => {
+    try {
+      const r = await authFetch("/api/team");
+      if (r.ok) {
+        const d = await r.json();
+        setTeamMembers(d.members || []);
+      }
+    } catch { /* non-critical */ }
+  };
 
   const fetchClaudeStatus = async () => {
     try {
@@ -202,6 +214,13 @@ export default function AdminSettings() {
         body: JSON.stringify(settings)
       });
       if (!res.ok) throw new Error("Save failed");
+      
+      updateBranding({
+        brand_name: settings.brand_name,
+        brand_logo_url: settings.brand_logo_url,
+        primary_color: settings.primary_color,
+      });
+
       toastSuccess("Settings saved", "Platform configuration updated.");
     } catch (e: any) {
       toastError("Save failed", e.message);
@@ -296,7 +315,7 @@ export default function AdminSettings() {
             activeTab === t ? "bg-brand/20 text-brand" : "text-muted hover:text-ink"
           )}
         >
-          {t === "carrier" ? "Carrier" : t === "subscription" ? "Billing" : t === "flywheel" ? "Growth" : t === "system" ? "System" : "Activity"}
+          {t === "carrier" ? "Carrier" : t === "subscription" ? "Billing" : t === "team" ? "Team" : t === "flywheel" ? "Growth" : t === "system" ? "System" : "Activity"}
         </button>
       ))}
     </div>
@@ -1078,6 +1097,13 @@ export default function AdminSettings() {
                 </div>
               </Panel>
 
+              <Panel title="Platform Branding" hint="White-label · Custom Identity" icon={Bot}>
+                <BrandingPanel 
+                  settings={settings} 
+                  onUpdate={(s) => setSettings(s)} 
+                />
+              </Panel>
+
               <Panel title="Compliance evidence" hint="SOC2 helpers · JSON export" icon={History}>
                 <div className="space-y-3 text-[11px] text-muted leading-relaxed">
                   <p>
@@ -1111,6 +1137,37 @@ export default function AdminSettings() {
               className="h-full"
             >
               <AuditActivityPanel />
+            </motion.div>
+          )}
+            <motion.div
+              key="team"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="h-full flex flex-col gap-3 min-h-0 overflow-y-auto scrollbar-hide pb-4"
+            >
+              <TeamPanel 
+                members={teamMembers} 
+                onInvite={async (email, role) => {
+                  const r = await authFetch("/api/team/invite", {
+                    method: 'POST',
+                    body: JSON.stringify({ email, role })
+                  });
+                  if (r.ok) {
+                    toastSuccess("Invitation sent!");
+                    fetchTeam();
+                  } else {
+                    toastError("Failed to send invitation.");
+                  }
+                }}
+                onRemove={async (id) => {
+                  const r = await authFetch(`/api/team/${id}`, { method: 'DELETE' });
+                  if (r.ok) {
+                    toastSuccess("Member removed.");
+                    fetchTeam();
+                  }
+                }}
+              />
             </motion.div>
           )}
           {activeTab === "flywheel" && (
@@ -1559,3 +1616,195 @@ function AuditActivityPanel() {
     </div>
   );
 }
+
+function TeamPanel({ members, onInvite, onRemove }: { 
+  members: any[]; 
+  onInvite: (email: string, role: string) => void;
+  onRemove: (id: string) => void;
+}) {
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("member");
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="p-6 rounded-2xl glass border border-white/10">
+        <h3 className="text-[9px] uppercase tracking-[0.4em] text-muted mb-6 flex items-center gap-2">
+          <KeyRound className="w-3.5 h-3.5" /> Organization Access
+        </h3>
+        
+        <div className="flex flex-col md:flex-row gap-3 mb-8">
+          <input 
+            type="email" 
+            placeholder="colleague@business.com" 
+            className="flex-1 input-field"
+            value={inviteEmail}
+            onChange={e => setInviteEmail(e.target.value)}
+          />
+          <select 
+            className="md:w-36 input-field"
+            value={inviteRole}
+            onChange={e => setInviteRole(e.target.value)}
+          >
+            <option value="member">Member</option>
+            <option value="admin">Admin</option>
+            <option value="owner">Owner</option>
+          </select>
+          <button 
+            className="brutal-btn"
+            onClick={() => {
+              if (inviteEmail) {
+                onInvite(inviteEmail, inviteRole);
+                setInviteEmail("");
+              }
+            }}
+          >
+            Invite
+          </button>
+        </div>
+
+        <div className="space-y-1">
+          <p className="text-[9px] uppercase tracking-[0.4em] text-muted mb-2 px-1">Active Members</p>
+          {members.length === 0 ? (
+            <div className="p-12 text-center border border-dashed border-black/10 rounded-xl">
+              <p className="text-xs text-muted">No team members invited yet.</p>
+            </div>
+          ) : (
+            members.map(m => (
+              <div key={m.id} className="group flex items-center gap-4 p-3 hover:bg-black/5 rounded-xl transition-all">
+                <div className="w-8 h-8 rounded-full bg-brand/10 flex items-center justify-center text-[10px] font-bold text-brand uppercase">
+                  {m.email.charAt(0)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-ink truncate">{m.email}</p>
+                  <p className="text-[9px] uppercase tracking-wider text-muted">{m.role}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={cn(
+                    "text-[8px] uppercase tracking-widest font-bold",
+                    m.user_id ? "text-emerald-500" : "text-amber-500"
+                  )}>
+                    {m.user_id ? "Active" : "Invited"}
+                  </span>
+                  <button 
+                    onClick={() => onRemove(m.id)}
+                    className="p-2 text-muted hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      <div className="p-6 rounded-2xl glass border border-white/10">
+        <h3 className="text-[9px] uppercase tracking-[0.4em] text-muted mb-4">Organizational Permissions</h3>
+        <div className="space-y-4">
+          {[
+            { label: "Admin Access", desc: "Can manage billing, carriers, and agents." },
+            { label: "Member Access", desc: "Can view dashboards and manage their own agents." },
+            { label: "Audit Only", desc: "Read-only access to call logs and insights." },
+          ].map(p => (
+            <div key={p.label} className="flex gap-4">
+              <ShieldCheck className="w-4 h-4 text-brand shrink-0" />
+              <div>
+                <p className="text-[11px] font-bold text-ink">{p.label}</p>
+                <p className="text-[10px] text-muted">{p.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BrandingPanel({ settings, onUpdate }: { settings: any, onUpdate: (s: any) => void }) {
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="p-6 rounded-2xl glass border border-white/10">
+        <h3 className="text-[9px] uppercase tracking-[0.4em] text-muted mb-6 flex items-center gap-2">
+          <Bot className="w-3.5 h-3.5" /> Brand Identity
+        </h3>
+        
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-[9px] uppercase tracking-[0.2em] text-muted mb-1.5 ml-1">Platform Name</label>
+              <input 
+                type="text" 
+                placeholder="Wireline OS"
+                className="input-field"
+                value={settings.brand_name || ""}
+                onChange={e => onUpdate({ ...settings, brand_name: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-[9px] uppercase tracking-[0.2em] text-muted mb-1.5 ml-1">Brand Logo URL</label>
+              <input 
+                type="text" 
+                placeholder="https://assets.yoursite.com/logo.png"
+                className="input-field"
+                value={settings.brand_logo_url || ""}
+                onChange={e => onUpdate({ ...settings, brand_logo_url: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-[9px] uppercase tracking-[0.2em] text-muted mb-1.5 ml-1">Primary Color</label>
+              <div className="flex gap-3">
+                <input 
+                  type="color" 
+                  className="w-12 h-12 rounded-xl bg-transparent border-none cursor-pointer"
+                  value={settings.primary_color || "#0AC8D4"}
+                  onChange={e => onUpdate({ ...settings, primary_color: e.target.value })}
+                />
+                <input 
+                  type="text" 
+                  className="flex-1 input-field font-mono"
+                  value={settings.primary_color || "#0AC8D4"}
+                  onChange={e => onUpdate({ ...settings, primary_color: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-center justify-center p-6 border border-white/5 bg-white/5 rounded-2xl">
+            <p className="text-[9px] uppercase tracking-[0.32em] text-muted/60 mb-6">Preview</p>
+            <div className="w-full p-6 rounded-3xl brutal-border bg-paper relative overflow-hidden group">
+              <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ background: `radial-gradient(circle at top right, ${settings.primary_color}, transparent)` }} />
+              <div className="flex items-center gap-3 mb-4">
+                {settings.brand_logo_url ? (
+                  <img src={settings.brand_logo_url} className="w-6 h-6 object-contain" alt="Logo" />
+                ) : (
+                  <Zap className="w-6 h-6" style={{ color: settings.primary_color }} />
+                )}
+                <span className="font-display uppercase tracking-widest text-sm" style={{ color: settings.primary_color }}>
+                  {settings.brand_name || "WIRELINE"}
+                </span>
+              </div>
+              <div className="space-y-2">
+                <div className="h-2 w-full rounded-full bg-ink/5" />
+                <div className="h-2 w-2/3 rounded-full bg-ink/5" />
+              </div>
+              <div className="mt-6 flex justify-end">
+                <div className="px-4 py-2 rounded-full text-[8px] uppercase tracking-widest font-bold text-white" style={{ backgroundColor: settings.primary_color }}>
+                  Action
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-6 rounded-2xl glass border border-white/10">
+        <h3 className="text-[9px] uppercase tracking-[0.4em] text-muted mb-4">White-Label Status</h3>
+        <div className="flex items-center gap-3 p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
+          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+          <p className="text-xs text-ink/80">Enterprise white-labeling is active for this organization.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+

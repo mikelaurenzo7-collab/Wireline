@@ -8,6 +8,8 @@ import ToastStack from "./components/Toast";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import AppShell from "./components/layout/AppShell";
+import CommandPalette from "./components/CommandPalette";
+import { BrandingProvider } from "./contexts/BrandingContext";
 
 function AppContent() {
   const { user } = useAuth();
@@ -21,7 +23,12 @@ function AppContent() {
     return <AuthPortal />;
   }
 
-  return <AppShell />;
+  return (
+    <>
+      <AppShell />
+      <CommandPalette />
+    </>
+  );
 }
 
 export default function App() {
@@ -29,11 +36,13 @@ export default function App() {
     <MotionConfig reducedMotion="user">
       <BrowserRouter>
         <AuthProvider>
-          <ToastProvider>
-            <AppContent />
-            <ToastStack />
-            <CookieConsent />
-          </ToastProvider>
+          <BrandingProvider>
+            <ToastProvider>
+              <AppContent />
+              <ToastStack />
+              <CookieConsent />
+            </ToastProvider>
+          </BrandingProvider>
         </AuthProvider>
       </BrowserRouter>
     </MotionConfig>

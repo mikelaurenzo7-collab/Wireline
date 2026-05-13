@@ -13,7 +13,7 @@ import { log } from "../lib/server-context";
 import { authFetch } from "../lib/api";
 import { LiveMonitor } from "../components/CommandCenter/LiveMonitor";
 import { ActionFeed } from "../components/CommandCenter/ActionFeed";
-import { PageTransition } from "../components/layout/PageTransition";
+import PageTransition from "../components/layout/PageTransition";
 import { clsx } from "clsx";
 
 // ─── Types ───────────────────────────────────────────────────────────────────

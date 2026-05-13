@@ -7,6 +7,7 @@ import { authFetch } from "../../lib/api";
 import { cn } from "../../lib/utils";
 import SystemStatusBadge from "../SystemStatusBadge";
 import { NAV_GROUPS, type NavItem } from "../../constants/navigation";
+import { useBranding } from "../../contexts/BrandingContext";
 
 const RAIL_PINNED_KEY = "wireline.rail.pinned";
 
@@ -21,6 +22,7 @@ export default function FloatingRail({
 }) {
   const location = useLocation();
   const { user, signOut } = useAuth();
+  const { branding } = useBranding();
 
   const isActive = (item: NavItem) => {
     if (location.pathname === item.path) return true;
@@ -215,8 +217,12 @@ export default function FloatingRail({
                 expanded ? "flex flex-col gap-1" : "hidden",
                 "max-lg:flex max-lg:flex-col max-lg:gap-1"
               )}>
-                <span className="brand-wordmark text-[17px] leading-none">WIRELINE</span>
-                <span className="text-[8px] tracking-[0.38em] uppercase text-muted/70 leading-none">Carrier OS</span>
+                <span className="brand-wordmark text-[17px] leading-none">
+                  {branding.brand_name.toUpperCase()}
+                </span>
+                <span className="text-[8px] tracking-[0.38em] uppercase text-muted/70 leading-none">
+                  Growth Engine
+                </span>
               </div>
             </Link>
 
