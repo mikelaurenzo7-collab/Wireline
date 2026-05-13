@@ -256,12 +256,12 @@ export function startWorker(
         try {
           await handler(job);
           await completeJob(db, job.id);
-        } catch (err: unknown) {
+        } catch (err: any) {
           const msg = err instanceof Error ? err.message : String(err);
           await failJob(db, job, msg);
         }
       }
-    } catch (err: unknown) {
+    } catch (err: any) {
       opts.onError?.(err instanceof Error ? err : new Error(String(err)));
     }
     if (!stopped) {

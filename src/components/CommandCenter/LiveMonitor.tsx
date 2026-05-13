@@ -1,5 +1,6 @@
 import React from 'react';
-import { Activity, ShieldAlert, Zap, Phone } from 'lucide-react';
+import { Activity, ShieldAlert, Zap, Phone, Sparkles, MessageSquareText } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { clsx } from 'clsx';
 
 interface LiveCall {
@@ -8,80 +9,135 @@ interface LiveCall {
   sentiment_label: string;
   urgency: number; // 0-10
   status: 'active' | 'escalated';
+  thought?: string; // Optional: what the AI is currently "thinking"
 }
 
 export function LiveMonitor({ calls }: { calls: LiveCall[] }) {
   return (
-    <div className="flex flex-col space-y-4">
-      <h3 className="text-lg font-semibold flex items-center gap-2">
-        <Activity className="w-5 h-5 text-emerald-400" />
-        Live Monitor
-      </h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {calls.length === 0 ? (
-          <div className="col-span-full py-12 flex flex-col items-center justify-center border border-dashed border-zinc-800 rounded-2xl bg-zinc-900/20">
-            <Zap className="w-8 h-8 text-zinc-700 mb-2" />
-            <p className="text-zinc-600 text-sm">No active calls right now.</p>
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-[10px] uppercase tracking-[0.4em] font-medium text-muted flex items-center gap-2">
+          <Activity className="w-3.5 h-3.5 text-brand" />
+          Live Network Monitor
+        </h3>
+        {calls.length > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span className="text-[9px] font-mono text-emerald-600/80 uppercase tracking-wider">Operational</span>
           </div>
-        ) : (
-          calls.map((call) => (
-            <div 
-              key={call.id}
-              className={clsx(
-                "relative overflow-hidden p-5 rounded-2xl border transition-all duration-500",
-                call.status === 'escalated' 
-                  ? "bg-red-500/5 border-red-500/30 shadow-[0_0_20px_rgba(239,68,68,0.1)]" 
-                  : "bg-zinc-900/50 border-zinc-800"
-              )}
-            >
-              {/* Pulse effect for escalated calls */}
-              {call.status === 'escalated' && (
-                <div className="absolute top-0 right-0 p-2">
-                  <ShieldAlert className="w-5 h-5 text-red-500 animate-bounce" />
-                </div>
-              )}
-
-              <div className="flex items-center gap-4">
-                <div className={clsx(
-                  "w-10 h-10 rounded-full flex items-center justify-center",
-                  call.status === 'escalated' ? "bg-red-500/20" : "bg-emerald-500/20"
-                )}>
-                  <Phone className={clsx("w-5 h-5", call.status === 'escalated' ? "text-red-400" : "text-emerald-400")} />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-zinc-100">{call.customer_number}</p>
-                  <p className={clsx(
-                    "text-xs font-medium",
-                    call.status === 'escalated' ? "text-red-400" : "text-zinc-500"
-                  )}>
-                    {call.sentiment_label}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-4">
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-[10px] uppercase text-zinc-500 font-bold">Stress Level</span>
-                  <span className={clsx(
-                    "text-xs font-bold",
-                    call.urgency > 7 ? "text-red-400" : "text-zinc-400"
-                  )}>
-                    {call.urgency}/10
-                  </span>
-                </div>
-                <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
-                  <div 
-                    className={clsx(
-                      "h-full transition-all duration-1000",
-                      call.urgency > 7 ? "bg-red-500" : "bg-emerald-500"
-                    )}
-                    style={{ width: `${call.urgency * 10}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-          ))
         )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <AnimatePresence mode="popLayout">
+          {calls.length === 0 ? (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="col-span-full py-16 flex flex-col items-center justify-center border border-dashed border-black/8 rounded-3xl bg-black/[0.01]"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-black/5 flex items-center justify-center mb-4">
+                <Zap className="w-6 h-6 text-muted/20" />
+              </div>
+              <p className="text-muted/50 text-[10px] uppercase tracking-[0.3em]">Carrier network idle</p>
+            </motion.div>
+          ) : (
+            calls.map((call) => (
+              <motion.div 
+                layout
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                key={call.id}
+                className={clsx(
+                  "relative group overflow-hidden p-6 rounded-3xl border transition-all duration-500",
+                  call.status === 'escalated' 
+                    ? "bg-rose-500/[0.03] border-rose-500/30 shadow-[0_0_40px_rgba(244,63,94,0.08)]" 
+                    : "glass border-black/8 hover:border-brand/30"
+                )}
+              >
+                {/* Visual pulse for activity */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-brand/5 blur-3xl rounded-full -mr-16 -mt-16 pointer-events-none group-hover:bg-brand/10 transition-colors" />
+
+                <div className="relative flex items-center gap-4 mb-5">
+                  <div className={clsx(
+                    "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border transition-all",
+                    call.status === 'escalated' 
+                      ? "bg-rose-500/10 border-rose-500/20 text-rose-500" 
+                      : "bg-brand/10 border-brand/20 text-brand"
+                  )}>
+                    <Phone className={clsx("w-5 h-5", call.status === 'escalated' && "animate-pulse")} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-ink tracking-tight">{call.customer_number}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className={clsx(
+                        "text-[9px] font-medium uppercase tracking-wider",
+                        call.status === 'escalated' ? "text-rose-600" : "text-brand"
+                      )}>
+                        {call.sentiment_label}
+                      </span>
+                      <span className="w-1 h-1 rounded-full bg-black/10" />
+                      <span className="text-[9px] text-muted/60 font-mono">ID: {call.id.substring(0, 8)}</span>
+                    </div>
+                  </div>
+                  {call.status === 'escalated' && (
+                    <div className="ml-auto w-8 h-8 rounded-full bg-rose-500/10 flex items-center justify-center">
+                      <ShieldAlert className="w-4 h-4 text-rose-500" />
+                    </div>
+                  )}
+                </div>
+
+                {/* AI Thought / Live Stream Placeholder */}
+                <div className="relative mb-5 p-3.5 rounded-2xl bg-black/[0.03] border border-black/5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Sparkles className="w-3 h-3 text-brand" />
+                    <span className="text-[8px] uppercase tracking-[0.2em] text-muted font-bold">Autonomous Reasoning</span>
+                  </div>
+                  <p className="text-[11px] text-ink/70 leading-relaxed italic">
+                    {call.thought || "AI is synthesizing intent and identifying high-leverage follow-up actions..."}
+                  </p>
+                  <div className="absolute bottom-2 right-2 flex gap-1">
+                    <span className="w-1 h-1 rounded-full bg-brand/40 animate-bounce [animation-delay:-0.3s]" />
+                    <span className="w-1 h-1 rounded-full bg-brand/40 animate-bounce [animation-delay:-0.15s]" />
+                    <span className="w-1 h-1 rounded-full bg-brand/40 animate-bounce" />
+                  </div>
+                </div>
+
+                <div className="relative">
+                  <div className="flex justify-between items-center mb-2">
+                    <div className="flex items-center gap-2">
+                      <MessageSquareText className="w-3 h-3 text-muted/40" />
+                      <span className="text-[9px] uppercase tracking-[0.2em] text-muted font-bold">Sentiment Score</span>
+                    </div>
+                    <span className={clsx(
+                      "text-[10px] font-mono font-bold",
+                      call.urgency > 7 ? "text-rose-500" : "text-brand"
+                    )}>
+                      {call.urgency * 10}%
+                    </span>
+                  </div>
+                  <div className="h-1.5 w-full bg-black/5 rounded-full overflow-hidden p-[1px]">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${call.urgency * 10}%` }}
+                      transition={{ duration: 1.5, ease: "easeOut" }}
+                      className={clsx(
+                        "h-full rounded-full transition-colors duration-500",
+                        call.urgency > 7 ? "bg-rose-500" : "bg-gradient-to-r from-brand to-brand-2"
+                      )}
+                      style={{ boxShadow: call.urgency > 7 ? '0 0 10px rgba(244,63,94,0.4)' : '0 0 10px rgba(10,200,212,0.3)' }}
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            ))
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

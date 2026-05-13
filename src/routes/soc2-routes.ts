@@ -28,7 +28,7 @@ router.get(
       const tenantId = req.user.id as string;
       const review = await runAccessReview(db, tenantId);
       res.json(review);
-    } catch (e: unknown) {
+    } catch (e: any) {
       log.error("GET /api/soc2/access-review failed", { error: getErrorMessage(e) });
       res.status(500).json({ error: "Failed to run access review." });
     }
@@ -94,7 +94,7 @@ router.get(
           operational_slos: "GET /api/health/slos",
         },
       });
-    } catch (e: unknown) {
+    } catch (e: any) {
       log.error("GET /api/soc2/evidence-pack failed", { error: getErrorMessage(e) });
       res.status(500).json({ error: "Failed to build evidence pack." });
     }

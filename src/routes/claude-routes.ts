@@ -496,8 +496,8 @@ router.post("/knowledge-from-url/apply", authenticateUser, async (req: Authentic
     if (!agent) return res.status(404).json({ error: "Agent not found." });
 
     const rows = entries
-      .filter((e: unknown) => typeof e?.fact === "string" && e.fact.trim())
-      .map((e: unknown) => ({
+      .filter((e: any) => typeof e?.fact === "string" && e.fact.trim())
+      .map((e: any) => ({
         agent_id: agentId,
         user_id: req.user.id,
         content: e.fact.trim(),
@@ -538,12 +538,12 @@ router.post("/knowledge-dedupe", authenticateUser, async (req: AuthenticatedRequ
     const safe = (result.clusters || [])
       .map((c: any) => ({
         ...c,
-        members: (c.members || []).filter((m: { role: string; content: string }) => validIds.has(m.id)),
+        members: (c.members || []).filter((m: any) => validIds.has(m.id)),
       }))
       .filter((c: any) =>
         c.members.length >= 2 &&
         validIds.has(c.recommended_keep_id) &&
-        c.members.some((m: { role: string; content: string }) => m.id === c.recommended_keep_id),
+        c.members.some((m: any) => m.id === c.recommended_keep_id),
       );
     res.json({
       clusters: safe,

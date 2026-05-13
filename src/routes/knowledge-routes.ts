@@ -58,7 +58,7 @@ router.get("/api/knowledge", authenticateUser, async (req: AuthenticatedRequest,
       agents: (agents || []).map((a: AgentRef) => ({ id: a.id, name: a.name, archetype: a.archetype })),
       total: knowledge.length,
     });
-  } catch (e: unknown) { 
+  } catch (e: any) { 
     log.error("Failed to load knowledge", { error: getErrorMessage(e) }); 
     res.status(500).json({ error: "Failed to load knowledge" }); 
   }
@@ -97,7 +97,7 @@ router.post("/api/knowledge", authenticateUser, rateLimiters.knowledgeRateLimite
 
     if (error) throw error;
     res.json({ success: true, knowledge: data });
-  } catch (e: unknown) { 
+  } catch (e: any) { 
     log.error("Failed to add knowledge", { error: getErrorMessage(e) }); 
     res.status(500).json({ error: "Failed to add knowledge" }); 
   }
@@ -116,7 +116,7 @@ router.patch("/api/knowledge/:id", authenticateUser, async (req: AuthenticatedRe
       .select().single();
     if (error) throw error;
     res.json({ success: true, knowledge: data });
-  } catch (e: unknown) { 
+  } catch (e: any) { 
     log.error("Failed to update knowledge", { error: getErrorMessage(e) }); 
     res.status(500).json({ error: "Failed to update knowledge" }); 
   }
@@ -130,7 +130,7 @@ router.delete("/api/knowledge/:id", authenticateUser, async (req: AuthenticatedR
       .eq("user_id", req.user.id);
     if (error) throw error;
     res.json({ success: true });
-  } catch (e: unknown) { 
+  } catch (e: any) { 
     log.error("Failed to delete knowledge", { error: getErrorMessage(e) }); 
     res.status(500).json({ error: "Failed to delete knowledge" }); 
   }

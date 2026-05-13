@@ -56,7 +56,7 @@ router.patch("/api/phone-numbers/:id", authenticateUser, rateLimiters.phoneNumbe
 
     await db.from('wireline_phone_numbers').update({ agent_id }).eq('id', req.params.id).eq('user_id', req.user.id);
     res.json({ success: true });
-  } catch (error: unknown) {
+  } catch (error: any) {
     log.error("Failed to update phone number assignment", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to update phone number assignment" });
   }
@@ -70,7 +70,7 @@ router.delete("/api/phone-numbers/:id", authenticateUser, rateLimiters.phoneNumb
       .eq('user_id', req.user.id);
     if (error) throw error;
     res.json({ success: true });
-  } catch (error: unknown) {
+  } catch (error: any) {
     log.error("Failed to delete phone number", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to delete phone number." });
   }
@@ -97,7 +97,7 @@ router.get("/api/carrier/numbers", authenticateUser, async (req: AuthenticatedRe
     }));
 
     res.json({ numbers: formatted });
-  } catch (error: unknown) {
+  } catch (error: any) {
     log.error("Vapi sync error", { error: getErrorMessage(error) });
     res.json({ numbers: [] });
   }

@@ -27,7 +27,7 @@ async function probeDatabase(
     if (result?.error)
       return { ok: false, latency_ms: Date.now() - t0, error: result.error.message };
     return { ok: true, latency_ms: Date.now() - t0 };
-  } catch (err: unknown) {
+  } catch (err: any) {
     return { ok: false, latency_ms: Date.now() - t0, error: getErrorMessage(err) };
   }
 }
@@ -111,7 +111,7 @@ router.get("/slos", healthRateLimiter, authenticateUser, async (req: Authenticat
       banner_status,
       subscribable_events: ["slo.jobs.critical", "slo.webhooks.degraded", "slo.enrichment.dead"],
     });
-  } catch (err: unknown) {
+  } catch (err: any) {
     res.status(500).json({ error: getErrorMessage(err) });
   }
 });

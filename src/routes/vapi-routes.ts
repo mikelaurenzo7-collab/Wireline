@@ -36,6 +36,7 @@ import { normalizeDncPhone } from "../lib/compliance";
 import { lookupTenantPhoneNumber, sendTenantMessage } from "../lib/twilio-service";
 import { resolveAgentTools } from "../lib/agent-capabilities";
 import { resolveVapiWebhookAgent } from "../lib/vapi-webhook-agent";
+import { enqueue } from "../lib/job-queue";
 
 // TODO: the imports below were carried over from server.ts when this router
 // was extracted. The handlers that consume them — Gemini post-call lesson
@@ -227,7 +228,7 @@ Today is ${currentDateTime}.
           functions: buildRoleToolDefs(agentRole, enabledToolNames)
         }
       });
-    } catch (e: unknown) {
+    } catch (e: any) {
       log.error("Vapi webhook config error", { agentId: webhookAgentId, error: e?.message });
       return res.json({
           assistant: {
@@ -487,6 +488,15 @@ Today is ${currentDateTime}.
               status: status,
               started_at: new Date().toISOString()
            });
+
+           const customerNumber = (payload.call as any)?.customer?.number;
+           if (customerNumber && agent?.user_id) {
+              await enqueue(db, {
+                 userId: agent.user_id,
+                 type: 'proactive_lead_enrichment',
+                 payload: { userId: agent.user_id, customerNumber }
+              }).catch(e => log.warn("Enrichment queue failed", { error: getErrorMessage(e) }));
+           }
         } else if (status === 'ended' || status === 'completed') {
            await db.from('wireline_signal_presence').delete().eq('id', callId);
         }
@@ -607,7 +617,7 @@ Today is ${currentDateTime}.
               lesson_extracted: !!(result.lesson && result.lesson.trim()),
             };
 
-          } catch (err: unknown) {
+          } catch (err: any) {
             log.warn("Claude post-call analysis failed", { error: getErrorMessage(err) });
           }
         }
@@ -646,7 +656,7 @@ Today is ${currentDateTime}.
         // ... Legacy Gemini fallback and TCPA logging ...
         
         return res.json({ success: true });
-    } catch(e: unknown) {
+    } catch(e: any) {
       log.error("Failed to process call completion", { error: getErrorMessage(e) });
       return res.json({ success: false });
     }

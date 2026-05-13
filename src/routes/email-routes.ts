@@ -38,7 +38,7 @@ router.patch("/api/emails/accounts/:id", authenticateUser, async (req: Authentic
 
     await db.from('wireline_email_accounts').update({ agent_id }).eq('id', req.params.id).eq('user_id', req.user.id);
     res.json({ success: true });
-  } catch (error: unknown) {
+  } catch (error: any) {
     log.error("Failed to update email account assignment", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to update email account assignment" });
   }
@@ -53,7 +53,7 @@ router.get("/api/emails/threads", authenticateUser, async (req: AuthenticatedReq
       .limit(100);
     if (error) throw error;
     res.json({ threads: data || [] });
-  } catch (e: unknown) { 
+  } catch (e: any) { 
     log.error("Failed to load email threads", { error: getErrorMessage(e) }); 
     res.status(500).json({ error: "Failed to load email threads" }); 
   }
@@ -65,10 +65,10 @@ router.get("/api/emails/threads/:id/messages", authenticateUser, async (req: Aut
       .select("*")
       .eq("thread_id", req.params.id)
       .eq("user_id", req.user.id)
-      .order("received_at", { ascending: true });
+      .order("created_at", { ascending: true });
     if (error) throw error;
     res.json({ messages: data || [] });
-  } catch (e: unknown) { 
+  } catch (e: any) { 
     log.error("Failed to load email messages", { error: getErrorMessage(e) }); 
     res.status(500).json({ error: "Failed to load email messages" }); 
   }

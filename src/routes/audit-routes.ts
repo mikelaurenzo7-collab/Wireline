@@ -78,7 +78,7 @@ router.get("/api/spend/budget", authenticateUser, async (req: AuthenticatedReque
         updated_at: null,
       },
     });
-  } catch (e: unknown) { log.error("Failed to load budget", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load budget" }); }
+  } catch (e: any) { log.error("Failed to load budget", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load budget" }); }
 });
 
 export default router;

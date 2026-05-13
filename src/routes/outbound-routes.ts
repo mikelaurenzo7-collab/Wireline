@@ -62,7 +62,7 @@ router.get('/api/callbacks', claudeRateLimiter, authenticateUser, async (req: Au
       .limit(50);
     if (error) throw error;
     res.json({ callbacks: data || [] });
-  } catch (e: unknown) {
+  } catch (e: any) {
     log.error('GET /api/callbacks failed', { error: getErrorMessage(e) });
     res.status(500).json({ error: 'Failed to load callbacks.' });
   }
@@ -77,7 +77,7 @@ router.delete('/api/outbound/:id', authenticateUser, async (req: AuthenticatedRe
       .eq('user_id', req.user.id);
     if (error) throw error;
     res.json({ success: true });
-  } catch (error: unknown) {
+  } catch (error: any) {
     log.error('Failed to delete lead', { error: getErrorMessage(error) });
     res.status(500).json({ error: 'Failed to delete lead.' });
   }
@@ -164,7 +164,7 @@ router.post('/api/outbound/dial', authenticateUser, dialRateLimiter, async (req:
     });
 
     res.json({ success: true, callId: result.callId });
-  } catch (error: unknown) {
+  } catch (error: any) {
     log.error('Outbound call failed', { error: getErrorMessage(error) });
     // Don't leak the raw error message; log full server-side, return safe message to client.
     res.status(500).json({ error: 'Failed to dispatch call.' });

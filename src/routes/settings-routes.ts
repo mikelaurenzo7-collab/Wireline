@@ -230,7 +230,7 @@ router.post('/api/account/export', authenticateUser, async (req: AuthenticatedRe
       `attachment; filename="wireline-account-export-${uid.substring(0, 8)}-${Date.now()}.json"`,
     );
     res.status(200).json(exportPackage);
-  } catch (err: unknown) {
+  } catch (err: any) {
     log.error('account export failed', { uid, error: getErrorMessage(err) });
     res.status(500).json({ error: 'Account export failed. Please contact support.' });
   }
@@ -276,7 +276,7 @@ router.post(
         jobId: result.jobId,
       });
       res.json({ success: true, retention_days: retentionDays, job_id: result.jobId });
-    } catch (err: unknown) {
+    } catch (err: any) {
       log.error('POST /api/account/purge-old-data failed', {
         error: getErrorMessage(err),
         user_id: uid,
@@ -357,7 +357,7 @@ router.delete('/api/user/account', authenticateUser, async (req: AuthenticatedRe
       grace_days: ACCOUNT_DELETION_GRACE_DAYS,
       cancel_endpoint: '/api/account/cancel-deletion',
     });
-  } catch (err: unknown) {
+  } catch (err: any) {
     log.error('account deletion enqueue failed', { uid, error: getErrorMessage(err) });
     res.status(500).json({ error: 'Failed to schedule account deletion.' });
   }
@@ -403,7 +403,7 @@ router.post('/api/account/cancel-deletion', authenticateUser, async (req: Authen
       .catch(() => {});
 
     return res.json({ status: 'cancelled' });
-  } catch (err: unknown) {
+  } catch (err: any) {
     log.error('cancel-deletion failed', { uid, error: getErrorMessage(err) });
     res.status(500).json({ error: 'Failed to cancel deletion.' });
   }

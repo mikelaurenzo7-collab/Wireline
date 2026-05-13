@@ -49,7 +49,7 @@ router.get("/api/campaigns", authenticateUser, async (req: AuthenticatedRequest,
     });
 
     res.json({ campaigns: enriched });
-  } catch (error: unknown) {
+  } catch (error: any) {
     log.error("Failed to fetch campaigns", { error: getErrorMessage(error) });
     res.json({ campaigns: [] });
   }
@@ -95,7 +95,7 @@ router.post("/api/campaigns", authenticateUser, async (req: AuthenticatedRequest
     }).select().single();
     if (error) throw error;
     res.json({ campaign: data });
-  } catch (error: unknown) {
+  } catch (error: any) {
     log.error("Failed to create campaign", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to create campaign" });
   }
@@ -139,7 +139,7 @@ router.patch("/api/campaigns/:id", authenticateUser, async (req: AuthenticatedRe
       .select().single();
     if (error) throw error;
     res.json({ campaign: data });
-  } catch (error: unknown) {
+  } catch (error: any) {
     log.error("Failed to update campaign", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to update campaign" });
   }
@@ -153,7 +153,7 @@ router.delete("/api/campaigns/:id", authenticateUser, async (req: AuthenticatedR
       .eq('user_id', req.user.id);
     if (error) throw error;
     res.json({ success: true });
-  } catch (error: unknown) {
+  } catch (error: any) {
     log.error("Failed to delete campaign", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to delete campaign" });
   }
@@ -180,7 +180,7 @@ router.get("/api/campaigns/:id/leads", authenticateUser, async (req: Authenticat
       total: count || 0,
       hasMore: count ? (offset + limit) < count : false,
     });
-  } catch (error: unknown) {
+  } catch (error: any) {
     log.error("Failed to fetch campaign leads", { error: getErrorMessage(error) });
     res.json({ leads: [] });
   }
@@ -216,14 +216,14 @@ router.get("/api/campaigns/:id/analytics", authenticateUser, async (req: Authent
     if (callIds.length > 0) {
       const { data: callRows } = await db
         .from('wireline_call_logs')
-        .select('duration_seconds, cost_usd, lead_score')
+        .select('duration_seconds, cost_usd:cost, lead_score')
         .in('id', callIds)
         .eq('user_id', userId);
       call_stats = computeCallStats(callRows ?? []);
     }
 
     res.json({ campaign, total, outcomes, call_stats });
-  } catch (e: unknown) {
+  } catch (e: any) {
     log.error("Campaign analytics failed", { error: e?.message });
     res.status(500).json({ error: "Failed to load analytics" });
   }
@@ -354,7 +354,7 @@ router.post("/api/campaigns/:id/launch", authenticateUser, async (req: Authentic
           .update({ status: 'completed', updated_at: new Date().toISOString() })
           .eq('id', campaignId)
           .eq('user_id', req.user.id);
-      } catch (e: unknown) {
+      } catch (e: any) {
         log.error("Campaign launch loop failed", { campaignId, error: e?.message });
         // Ensure campaign doesn't remain stuck in 'running'.
         await db.from('wireline_outbound_campaigns')
@@ -363,7 +363,7 @@ router.post("/api/campaigns/:id/launch", authenticateUser, async (req: Authentic
           .eq('user_id', req.user.id);
       }
     })();
-  } catch (error: unknown) {
+  } catch (error: any) {
     log.error("Campaign launch failed", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to launch campaign." });
   }
@@ -398,7 +398,7 @@ router.post("/api/campaigns/:id/retry-failed", authenticateUser, async (req: Aut
       .eq('user_id', req.user.id);
 
     res.json({ success: true, reset: failed.length });
-  } catch (error: unknown) {
+  } catch (error: any) {
     log.error("Retry failed leads error", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to retry leads." });
   }
@@ -423,7 +423,7 @@ router.post("/api/campaigns/:id/stop", authenticateUser, claudeRateLimiter, asyn
       .eq('user_id', req.user.id);
     if (error) throw error;
     res.json({ success: true });
-  } catch (error: unknown) {
+  } catch (error: any) {
     log.error("Campaign stop failed", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to stop campaign." });
   }

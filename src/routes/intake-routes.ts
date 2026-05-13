@@ -1,4 +1,5 @@
-import express from "express";
+import express, { Request, Response } from "express";
+import type { AuthenticatedRequest } from "../types/auth";
 import { db, log, auditLogger } from "../lib/server-context";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage } from "../lib/server-utils";
@@ -245,7 +246,7 @@ async function processIntakeLead(key: IntakeKey, input: IntakeLeadInput, idemHea
           }).eq("id", inserted.id);
           log.warn("Auto-dial failed for lead", { leadId: inserted.id, status: result.status, error: result.error });
         }
-      } catch (err: unknown) {
+      } catch (err: any) {
         await db.from("wireline_outbound_leads").update({
           status: "AutoDialFailed",
           metadata: { ...(metadata || {}), auto_dial_error: getErrorMessage(err) },
@@ -295,7 +296,7 @@ router.post("/lead", async (req: Request, res: Response) => {
     }
     const status = result.code === "MISSING_NUMBER" ? 400 : 500;
     return res.status(status).json({ error: result.error, code: result.code });
-  } catch (e: unknown) {
+  } catch (e: any) {
     log.error("Intake lead failed", { error: e?.message || String(e) });
     res.status(500).json({ error: "Intake failed" });
   }
@@ -362,7 +363,7 @@ router.post("/leads", async (req: Request, res: Response) => {
       failure_count: leads.length - successes,
       results,
     });
-  } catch (e: unknown) {
+  } catch (e: any) {
     log.error("Bulk intake failed", { error: e?.message || String(e) });
     res.status(500).json({ error: "Bulk intake failed" });
   }
@@ -377,7 +378,7 @@ router.get("/keys", authenticateUser, async (req: AuthenticatedRequest, res: Res
       .order("created_at", { ascending: false });
     if (error) throw error;
     res.json({ keys: data || [] });
-  } catch (e: unknown) { log.error("Failed to load keys", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load keys" }); }
+  } catch (e: any) { log.error("Failed to load keys", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load keys" }); }
 });
 
 // POST /keys — create a new intake key
@@ -403,7 +404,7 @@ router.post("/keys", authenticateUser, async (req: AuthenticatedRequest, res: Re
       userId: req.user.id, keyId: data.id, keyPrefix: data.key_prefix, keyName: data.name, ip: req.ip,
     }).catch(() => {});
     res.json({ key: data, plaintext });
-  } catch (e: unknown) { log.error("Failed to create key", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to create key" }); }
+  } catch (e: any) { log.error("Failed to create key", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to create key" }); }
 });
 
 // PATCH /keys/:id — update an intake key
@@ -422,7 +423,7 @@ router.patch("/keys/:id", authenticateUser, async (req: AuthenticatedRequest, re
       userId: req.user.id, keyId: data.id, keyPrefix: data.key_prefix, keyName: data.name, ip: req.ip,
     }).catch(() => {});
     res.json({ key: data });
-  } catch (e: unknown) { log.error("Failed to update key", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to update key" }); }
+  } catch (e: any) { log.error("Failed to update key", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to update key" }); }
 });
 
 // DELETE /keys/:id — delete an intake key
@@ -433,7 +434,7 @@ router.delete("/keys/:id", authenticateUser, async (req: AuthenticatedRequest, r
       userId: req.user.id, keyId: req.params.id, ip: req.ip,
     }).catch(() => {});
     res.json({ success: true });
-  } catch (e: unknown) { log.error("Failed to delete key", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to delete key" }); }
+  } catch (e: any) { log.error("Failed to delete key", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to delete key" }); }
 });
 
 export default router;

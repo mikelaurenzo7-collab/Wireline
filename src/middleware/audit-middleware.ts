@@ -66,7 +66,7 @@ export async function persistClaudeAuditRecords(opts: {
           used: decision.used,
         });
       }
-    } catch (err: unknown) {
+    } catch (err: any) {
       log.warn("Claude token quota increment failed", { user_id: opts.userId, error: getErrorMessage(err) });
     }
   }

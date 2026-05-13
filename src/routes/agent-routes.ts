@@ -17,7 +17,7 @@ import { claudeErr } from "../lib/claude-response-helpers";
 const router = Router();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "placeholder_gemini_key");
 
-const isMissingRoleColumnError = (error: unknown) =>
+const isMissingRoleColumnError = (error: any) =>
   typeof error?.message === "string" &&
   error.message.includes("Could not find the 'role' column of 'wireline_agents'");
 
@@ -730,7 +730,7 @@ router.delete("/api/agents/:id", authenticateUser, async (req: AuthenticatedRequ
     }).catch((err: unknown) => log.warn('audit log failed', { error: getErrorMessage(err) }));
     
     res.json({ success: true });
-  } catch (error: unknown) {
+  } catch (error: any) {
     log.error("Failed to delete agent", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to delete agent." });
   }
@@ -809,7 +809,7 @@ router.get("/api/agents/:id/performance", authenticateUser, async (req: Authenti
       .limit(500);
 
     res.json(computeAgentPerformance({ rows: logs || [] }));
-  } catch (e: unknown) {
+  } catch (e: any) {
     log.error("Agent performance error", { error: e?.message });
     res.json(emptyAgentPerformance());
   }
@@ -886,7 +886,7 @@ router.get("/api/agents/:id/scorecard", authenticateUser, async (req: Authentica
     });
 
     res.json(result);
-  } catch (e: unknown) {
+  } catch (e: any) {
     log.error("Agent scorecard error", { error: getErrorMessage(e) });
     res.status(500).json({ error: 'Failed to compute scorecard' });
   }

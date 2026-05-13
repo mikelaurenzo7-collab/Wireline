@@ -29,7 +29,8 @@ export default function AppRoutes() {
     <AnimatePresence>
       <Suspense fallback={<RouteFallback />}>
         <Routes>
-          <Route path="/" element={<PageTransition><ErrorBoundary><DashboardHome /></ErrorBoundary></PageTransition>} />
+          <Route path="/" element={<PageTransition><ErrorBoundary><CommandCenter /></ErrorBoundary></PageTransition>} />
+          <Route path="/dashboard" element={<PageTransition><ErrorBoundary><DashboardHome /></ErrorBoundary></PageTransition>} />
           <Route path="/live" element={<PageTransition><ErrorBoundary><LiveMonitor /></ErrorBoundary></PageTransition>} />
           <Route path="/triage" element={<PageTransition><ErrorBoundary><TriageInbox /></ErrorBoundary></PageTransition>} />
           <Route path="/insights" element={<PageTransition><ErrorBoundary><InsightsView /></ErrorBoundary></PageTransition>} />

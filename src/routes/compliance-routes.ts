@@ -41,7 +41,7 @@ router.get("/dnc", authenticateUser, async (req: AuthenticatedRequest, res: Resp
       .order("created_at", { ascending: false });
     if (error) throw error;
     res.json({ entries: data || [] });
-  } catch (e: unknown) {
+  } catch (e: any) {
     log.error("DNC list fetch failed", { error: getErrorMessage(e) });
     res.status(500).json({ error: "Failed to fetch DNC list." });
   }
@@ -83,7 +83,7 @@ router.post("/dnc", authenticateUser, async (req: AuthenticatedRequest, res: Res
       }).catch(() => {});
     }
     res.json({ success: true, added });
-  } catch (e: unknown) {
+  } catch (e: any) {
     log.error("DNC add failed", { error: getErrorMessage(e) });
     res.status(500).json({ error: "Failed to add to DNC list." });
   }
@@ -102,7 +102,7 @@ router.delete("/dnc/:id", authenticateUser, async (req: AuthenticatedRequest, re
       userId: req.user.id, count: 1, ip: req.ip, metadata: { dnc_id: req.params.id },
     }).catch(() => {});
     res.json({ success: true });
-  } catch (e: unknown) {
+  } catch (e: any) {
     log.error("DNC delete failed", { error: getErrorMessage(e) });
     res.status(500).json({ error: "Failed to remove DNC entry." });
   }
@@ -144,7 +144,7 @@ router.get("/tcpa/consent-check", authenticateUser, tcpaRateLimit, async (req: A
       rule,
       consent_rule_version: CONSENT_RULE_VERSION,
     });
-  } catch (err) {
+  } catch (err: any) {
     log.error("GET /api/tcpa/consent-check failed", { error: err instanceof Error ? err.message : String(err) });
     res.status(500).json({ error: "Consent check failed" });
   }

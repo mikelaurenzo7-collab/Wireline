@@ -83,7 +83,7 @@ router.get("/api/calls", authenticateUser, async (req: AuthenticatedRequest, res
        hasMore: count ? (offset + limit) < count : false,
        total: count || 0
     });
-  } catch (error: unknown) {
+  } catch (error: any) {
     log.error("Failed to fetch calls", { error: getErrorMessage(error) });
     res.json({ calls: [], hasMore: false, total: 0 }); // Fail gracefully if table not created
   }
@@ -151,7 +151,7 @@ router.get("/api/dashboard/stats", authenticateUser, async (req: AuthenticatedRe
          agents: agentsRes.data || [],
          recentLogs: (logsRes.data || []).slice(0, 100),
       });
-   } catch(e: unknown) {
+   } catch(e: any) {
       log.error("Dashboard stats error", { error: e?.message || String(e) });
       res.status(500).json({ error: "Failed to fetch stats" });
    }
@@ -216,7 +216,7 @@ router.get("/api/appointments", authenticateUser, async (req: AuthenticatedReque
       total: count || 0,
       hasMore: count ? (offset + limit) < count : false,
     });
-  } catch (error: unknown) {
+  } catch (error: any) {
     log.error("Failed to fetch appointments", { error: getErrorMessage(error) });
     res.json({ appointments: [], total: 0, hasMore: false });
   }
@@ -258,7 +258,7 @@ router.post("/api/appointments", authenticateUser, async (req: AuthenticatedRequ
     }).select().single();
     if (error) throw error;
     res.json({ appointment: data });
-  } catch (error: unknown) {
+  } catch (error: any) {
     log.error("Failed to create appointment", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to create appointment" });
   }
@@ -298,7 +298,7 @@ router.patch("/api/appointments/:id", authenticateUser, async (req: Authenticate
       .select().single();
     if (error) throw error;
     res.json({ appointment: data });
-  } catch (error: unknown) {
+  } catch (error: any) {
     log.error("Failed to update appointment", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to update appointment" });
   }
@@ -312,7 +312,7 @@ router.delete("/api/appointments/:id", authenticateUser, async (req: Authenticat
       .eq('user_id', req.user.id);
     if (error) throw error;
     res.json({ success: true });
-  } catch (error: unknown) {
+  } catch (error: any) {
     log.error("Failed to delete appointment", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to delete appointment" });
   }
@@ -380,7 +380,7 @@ router.get("/api/export/:type.csv", authenticateUser, async (req: AuthenticatedR
       recordCount: (data || []).length,
       ip: req.ip,
     }).catch(() => {});
-    res.send(rowsToCsv(data || [], def.columns));
+    res.send(rowsToCsv((data as Record<string, unknown>[]) || [], def.columns));
   } catch {
     res.status(500).json({ error: "Export failed" });
   }

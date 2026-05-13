@@ -42,7 +42,7 @@ router.get("/api/insights/funnel", authenticateUser, async (req: AuthenticatedRe
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
     const [{ data: calls }, { data: appts }, { data: leads }] = await Promise.all([
-      db.from("wireline_call_logs").select("lead_score, intent_label, duration_seconds").eq("user_id", req.user.id).gte("created_at", since),
+      db.from("wireline_call_logs").select("lead_score, intent_label, duration_seconds, created_at").eq("user_id", req.user.id).gte("created_at", since),
       db.from("wireline_appointments").select("status").eq("user_id", req.user.id).gte("created_at", since),
       db.from("wireline_outbound_leads").select("status").eq("user_id", req.user.id).gte("created_at", since),
     ]);
@@ -107,7 +107,7 @@ router.get("/api/insights/leaderboard", authenticateUser, async (req: Authentica
 
     const [{ data: agents }, { data: calls }, { data: appts }, { data: auditCosts }] = await Promise.all([
       db.from("wireline_agents").select("id, name, archetype, channel, role").eq("user_id", req.user.id).limit(500),
-      db.from("wireline_call_logs").select("agent_id, lead_score, intent_label, duration_seconds, cost").eq("user_id", req.user.id).gte("created_at", since),
+      db.from("wireline_call_logs").select("agent_id, lead_score, intent_label, duration_seconds, cost, created_at").eq("user_id", req.user.id).gte("created_at", since),
       db.from("wireline_appointments").select("agent_id").eq("user_id", req.user.id).gte("created_at", since),
       db.from("wireline_audit_log").select("metadata->agent_id, metadata->cost_usd").eq("user_id", req.user.id).eq("event_type", "ai.api_call").eq("provider", "anthropic").gte("created_at", since),
     ]);
@@ -215,7 +215,7 @@ router.get("/api/insights/daily-brief", authenticateUser, enforce24hSpendCap, en
   try {
     const { payload, cached } = await computeDailyBrief(req.user.id, { force: req.query.refresh === "1" });
     res.json({ ...payload, cached });
-  } catch (e: unknown) {
+  } catch (e: any) {
     const err = e as { code?: string; message?: string };
     if (err?.code === "CLAUDE_OFFLINE") return res.status(503).json({ error: err.message, code: err.code });
     claudeErr(res, e);

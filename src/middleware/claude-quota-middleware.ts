@@ -37,7 +37,7 @@ export async function enforceClaudeDailyTokenQuota(req: any, res: any, next: any
       });
     }
     next();
-  } catch (e: unknown) {
+  } catch (e: any) {
     const msg = e instanceof Error ? e.message : String(e);
     return res.status(500).json({ error: "Quota check failed.", code: "QUOTA_CHECK_FAILED", detail: msg });
   }

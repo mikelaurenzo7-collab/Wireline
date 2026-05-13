@@ -27,7 +27,7 @@ router.post('/stripe-webhook', async (req: Request, res: Response) => {
   try {
     // express.raw populated req.body as a Buffer
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
-  } catch (err: unknown) {
+  } catch (err: any) {
     log.warn('Stripe webhook signature verification failed', { error: getErrorMessage(err) });
     return res.status(400).json({ error: 'Webhook signature verification failed.' });
   }
@@ -47,7 +47,7 @@ router.post('/stripe-webhook', async (req: Request, res: Response) => {
       return res.json({ received: true, duplicate: true });
     }
     claimed = true;
-  } catch (err: unknown) {
+  } catch (err: any) {
     log.warn('Stripe idempotency claim failed — proceeding without idempotency guard', {
       error: getErrorMessage(err),
     });
@@ -71,7 +71,7 @@ router.post('/stripe-webhook', async (req: Request, res: Response) => {
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted': {
         const sub = event.data.object as Stripe.Subscription;
-        if (event.type === 'customer.subscription.created') (sub as Record<string, unknown>)._auditCreate = true;
+        if (event.type === 'customer.subscription.created') (sub as unknown as Record<string, unknown>)._auditCreate = true;
         await syncSubscriptionFromStripe(sub);
         break;
       }
@@ -132,7 +132,7 @@ router.post('/stripe-webhook', async (req: Request, res: Response) => {
         break;
     }
     res.json({ received: true });
-  } catch (err: unknown) {
+  } catch (err: any) {
     log.error('Stripe webhook handler error', { error: getErrorMessage(err) });
     if (claimed) {
       try {
@@ -169,7 +169,7 @@ router.put("/spend/budget", authenticateUser, async (req: AuthenticatedRequest, 
     if (error) throw error;
     clearBudgetCache(req.user.id);
     res.json({ budget: data });
-  } catch (e: unknown) { log.error("Failed to save budget", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to save budget" }); }
+  } catch (e: any) { log.error("Failed to save budget", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to save budget" }); }
 });
 
 router.get("/spend/status", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
@@ -192,7 +192,7 @@ router.get("/spend/status", authenticateUser, async (req: AuthenticatedRequest, 
       hard_capped_now: !!(snap.budget?.hard_cap && limit > 0 && snap.mtdCost >= limit),
       alerts_fired: alerts || [],
     });
-  } catch (e: unknown) { log.error("Failed to load spend status", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load spend status" }); }
+  } catch (e: any) { log.error("Failed to load spend status", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load spend status" }); }
 });
 
 // ─── Billing plans / checkout / portal ─────────────────────────────────────
@@ -232,7 +232,7 @@ router.get("/billing/status", authenticateUser, async (req: AuthenticatedRequest
           }
         : null,
     });
-  } catch (e: unknown) {
+  } catch (e: any) {
     log.error("Failed to load status", { error: getErrorMessage(e) });
     res.status(500).json({ error: "Failed to load status" });
   }
@@ -293,7 +293,7 @@ router.post("/billing/checkout", authenticateUser, async (req: AuthenticatedRequ
     void auditLogger.logBilling('checkout_started', {
       userId: req.user.id, plan: plan.id, customerId, ip: req.ip,
     }).catch(() => {});
-  } catch (e: unknown) {
+  } catch (e: any) {
     log.error("Checkout creation failed", { error: getErrorMessage(e) });
     res.status(500).json({ error: "Checkout failed" });
   }
@@ -316,7 +316,7 @@ router.post("/billing/portal", authenticateUser, async (req: AuthenticatedReques
     void auditLogger.logBilling('portal_opened', {
       userId: req.user.id, customerId: sub.stripe_customer_id, ip: req.ip,
     }).catch(() => {});
-  } catch (e: unknown) {
+  } catch (e: any) {
     log.error("Portal session failed", { error: getErrorMessage(e) });
     res.status(500).json({ error: "Portal failed" });
   }

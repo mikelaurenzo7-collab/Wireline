@@ -15,24 +15,29 @@ import { postMessage as slackPostMessage, getDefaultChannel } from "./slack-serv
 export async function executeAction(
   userId: string, 
   action: ActionItem,
-  context: { sourceId: string; sourceType: string }
+  context: { sourceId: string; sourceType: string },
+  autonomyOverride?: "auto" | "draft"
 ): Promise<ActionResult> {
   try {
-    const { data: settings } = await db.from("wireline_settings")
-      .select("autonomy_level")
-      .eq("user_id", userId)
-      .single();
+    let autonomy: string = autonomyOverride || "draft";
 
-    // Per-agent autonomy overrides tenant setting when not "inherit"
-    let autonomy = settings?.autonomy_level || "draft";
-    if (action.agentId) {
-      const { data: agent } = await db.from("wireline_agents")
+    if (!autonomyOverride) {
+      const { data: settings } = await db.from("wireline_settings")
         .select("autonomy_level")
-        .eq("id", action.agentId)
         .eq("user_id", userId)
         .single();
-      if (agent?.autonomy_level && agent.autonomy_level !== "inherit") {
-        autonomy = agent.autonomy_level;
+
+      // Per-agent autonomy overrides tenant setting when not "inherit"
+      autonomy = settings?.autonomy_level || "draft";
+      if (action.agentId) {
+        const { data: agent } = await db.from("wireline_agents")
+          .select("autonomy_level")
+          .eq("id", action.agentId)
+          .eq("user_id", userId)
+          .single();
+        if (agent?.autonomy_level && agent.autonomy_level !== "inherit") {
+          autonomy = agent.autonomy_level;
+        }
       }
     }
     log.info("Executing autonomous action", { userId, type: action.type, priority: action.priority, autonomy });

@@ -141,7 +141,7 @@ router.get(['/api/oauth/google/callback', '/api/oauth/google/callback/'], oauthR
         } else { window.location.href = '/'; }
       </script><p>Authentication successful. You can close this window.</p></body></html>
     `);
-  } catch (error: unknown) {
+  } catch (error: any) {
     log.error("Google OAuth callback failed", { error: error.message });
     res.status(500).send("Authentication failed.");
   }
@@ -249,7 +249,7 @@ router.get("/api/oauth/microsoft/callback", oauthRateLimiter, async (req: expres
           } else { window.location.href = '/'; }
         </script><p>Authentication successful. You can close this window.</p></body></html>
       `);
-    } catch (e: unknown) {
+    } catch (e: any) {
       log.error("Microsoft OAuth callback failed", { error: e?.message || String(e) });
       res.status(500).send("Microsoft authentication failed.");
     }
@@ -335,7 +335,7 @@ router.get("/api/oauth/salesforce/callback", oauthRateLimiter, async (req: expre
         } else { window.location.href = '/'; }
       </script><p>Salesforce connected successfully. You can close this window.</p></body></html>
     `);
-  } catch (e: unknown) {
+  } catch (e: any) {
     log.error("Salesforce OAuth callback failed", { error: e?.message || String(e) });
     res.status(500).send("Salesforce authentication failed. Please try again.");
   }
@@ -348,7 +348,7 @@ router.post("/api/oauth/salesforce/disconnect", authenticateUser, async (req: ex
   try {
     await disconnectSalesforce(userId);
     res.json({ ok: true });
-  } catch (e: unknown) {
+  } catch (e: any) {
     log.error("Salesforce disconnect failed", { error: e?.message });
     res.status(500).json({ error: "Failed to disconnect Salesforce" });
   }
@@ -432,7 +432,7 @@ router.get("/api/oauth/hubspot/callback", oauthRateLimiter, async (req: express.
         } else { window.location.href = '/'; }
       </script><p>HubSpot connected successfully. You can close this window.</p></body></html>
     `);
-  } catch (e: unknown) {
+  } catch (e: any) {
     log.error("HubSpot OAuth callback failed", { error: e?.message || String(e) });
     res.status(500).send("HubSpot authentication failed. Please try again.");
   }
@@ -445,7 +445,7 @@ router.post("/api/oauth/hubspot/disconnect", authenticateUser, async (req: expre
   try {
     await disconnectHubSpot(userId);
     res.json({ ok: true });
-  } catch (e: unknown) {
+  } catch (e: any) {
     log.error("HubSpot disconnect failed", { error: e?.message });
     res.status(500).json({ error: "Failed to disconnect HubSpot" });
   }
@@ -496,7 +496,7 @@ router.get("/api/oauth/crm/status", authenticateUser, async (req: express.Reques
         connected_at: zoomConn.created_at,
       } : { connected: false, configured: zoomOAuthConfigured() },
     });
-  } catch (e: unknown) {
+  } catch (e: any) {
     log.error("CRM status check failed", { error: e?.message });
     res.status(500).json({ error: "Failed to check CRM status" });
   }
@@ -566,7 +566,7 @@ router.get("/api/oauth/slack/callback", oauthRateLimiter, async (req: express.Re
         } else { window.location.href = '/'; }
       </script><p>Slack connected successfully. You can close this window.</p></body></html>
     `);
-  } catch (e: unknown) {
+  } catch (e: any) {
     log.error("Slack OAuth callback failed", { error: e?.message || String(e) });
     res.status(500).send("Slack authentication failed. Please try again.");
   }
@@ -670,7 +670,7 @@ router.get("/api/oauth/zoom/callback", oauthRateLimiter, async (req: express.Req
         } else { window.location.href = '/'; }
       </script><p>Zoom connected successfully. You can close this window.</p></body></html>
     `);
-  } catch (e: unknown) {
+  } catch (e: any) {
     log.error("Zoom OAuth callback failed", { error: e?.message || String(e) });
     res.status(500).send("Zoom authentication failed. Please try again.");
   }
@@ -697,7 +697,7 @@ router.get("/api/oauth/integration-health", authenticateUser, async (req: expres
   try {
     const health = await computeIntegrationHealth(userId);
     res.json(health);
-  } catch (e: unknown) {
+  } catch (e: any) {
     log.error("integration-health failed", { error: e?.message });
     res.status(500).json({ error: "Failed to load integration health." });
   }

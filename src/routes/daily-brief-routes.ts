@@ -26,7 +26,7 @@ router.get("/api/daily-brief/settings", authenticateUser, async (req: Authentica
       gmail_connected: !!accounts?.[0]?.email_address,
       gmail_address: accounts?.[0]?.email_address || null,
     });
-  } catch (e: unknown) {
+  } catch (e: any) {
     log.error("Failed to load settings", { error: getErrorMessage(e) });
     res.status(500).json({ error: "Failed to load settings" });
   }
@@ -50,7 +50,7 @@ router.put("/api/daily-brief/settings", authenticateUser, async (req: Authentica
     }, { onConflict: "user_id" });
 
     res.json({ success: true });
-  } catch (e: unknown) {
+  } catch (e: any) {
     log.error("Failed to save settings", { error: getErrorMessage(e) });
     res.status(500).json({ error: "Failed to save settings" });
   }
@@ -61,7 +61,7 @@ router.post("/api/daily-brief/send-now", authenticateUser, async (req: Authentic
   try {
     const result = await sendDailyBriefEmail(req.user.id, { force: true });
     res.json({ success: true, ...result });
-  } catch (e: unknown) {
+  } catch (e: any) {
     const err = e as { code?: string; message?: string };
     if (err?.code === "CLAUDE_OFFLINE") return res.status(503).json({ error: err.message, code: err.code });
     res.status(500).json({ error: "Send failed" });

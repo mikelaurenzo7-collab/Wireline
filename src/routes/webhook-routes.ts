@@ -19,7 +19,7 @@ router.get("/", authenticateUser, async (req: AuthenticatedRequest, res: Respons
       .select(WEBHOOK_PUBLIC_COLUMNS).eq("user_id", req.user.id).order("created_at", { ascending: false });
     if (error) throw error;
     res.json({ webhooks: data || [], available_events: WEBHOOK_EVENTS });
-  } catch (e: unknown) { log.error("Failed to load webhooks", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load webhooks" }); }
+  } catch (e: any) { log.error("Failed to load webhooks", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load webhooks" }); }
 });
 
 router.post("/", authenticateUser, requirePermission("webhooks.manage"), webhooksRateLimit, async (req: AuthenticatedRequest, res: Response) => {
@@ -61,7 +61,7 @@ router.post("/", authenticateUser, requirePermission("webhooks.manage"), webhook
       userId: req.user.id, webhookId: data.id, url: data.url, events: data.events, active: data.active, ip: req.ip,
     }).catch(() => {});
     res.json({ webhook: data });
-  } catch (e: unknown) { log.error("Failed to create webhook", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to create webhook" }); }
+  } catch (e: any) { log.error("Failed to create webhook", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to create webhook" }); }
 });
 
 router.patch("/:id", authenticateUser, requirePermission("webhooks.manage"), webhooksRateLimit, async (req: AuthenticatedRequest, res: Response) => {
@@ -104,7 +104,7 @@ router.patch("/:id", authenticateUser, requirePermission("webhooks.manage"), web
       userId: req.user.id, webhookId: data.id, url: data.url, events: data.events, active: data.active, ip: req.ip,
     }).catch(() => {});
     res.json({ webhook: data });
-  } catch (e: unknown) { log.error("Failed to update", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to update" }); }
+  } catch (e: any) { log.error("Failed to update", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to update" }); }
 });
 
 router.delete("/:id", authenticateUser, requirePermission("webhooks.manage"), webhooksRateLimit, async (req: AuthenticatedRequest, res: Response) => {
@@ -114,7 +114,7 @@ router.delete("/:id", authenticateUser, requirePermission("webhooks.manage"), we
       userId: req.user.id, webhookId: req.params.id, ip: req.ip,
     }).catch(() => {});
     res.json({ success: true });
-  } catch (e: unknown) { log.error("Failed to delete", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to delete" }); }
+  } catch (e: any) { log.error("Failed to delete", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to delete" }); }
 });
 
 router.post("/:id/test", authenticateUser, requirePermission("webhooks.manage"), webhooksRateLimit, async (req: AuthenticatedRequest, res: Response) => {
@@ -128,7 +128,7 @@ router.post("/:id/test", authenticateUser, requirePermission("webhooks.manage"),
       userId: req.user.id, webhookId: req.params.id, ip: req.ip,
     }).catch(() => {});
     res.json({ success: true, message: "Test dispatched. Check the URL." });
-  } catch (e: unknown) { log.error("Test failed", { error: getErrorMessage(e) }); res.status(500).json({ error: "Test failed" }); }
+  } catch (e: any) { log.error("Test failed", { error: getErrorMessage(e) }); res.status(500).json({ error: "Test failed" }); }
 });
 
 router.get("/:id/deliveries", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
@@ -144,7 +144,7 @@ router.get("/:id/deliveries", authenticateUser, async (req: AuthenticatedRequest
       .limit(limit);
     if (error) throw error;
     res.json({ deliveries: data || [] });
-  } catch (e: unknown) { log.error("Failed to load deliveries", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load deliveries" }); }
+  } catch (e: any) { log.error("Failed to load deliveries", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load deliveries" }); }
 });
 
 router.post("/deliveries/:id/retry", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
@@ -164,7 +164,7 @@ router.post("/deliveries/:id/retry", authenticateUser, async (req: Authenticated
       log.warn("webhook delivery attempt failed", { delivery_id: id, error: err instanceof Error ? err.message : String(err) })
     );
     res.json({ success: true });
-  } catch (e: unknown) { log.error("Retry failed", { error: getErrorMessage(e) }); res.status(500).json({ error: "Retry failed" }); }
+  } catch (e: any) { log.error("Retry failed", { error: getErrorMessage(e) }); res.status(500).json({ error: "Retry failed" }); }
 });
 
 router.delete("/deliveries/:id", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
@@ -174,7 +174,7 @@ router.delete("/deliveries/:id", authenticateUser, async (req: AuthenticatedRequ
     await db.from("wireline_webhook_deliveries")
       .delete().eq("id", id).eq("user_id", req.user.id);
     res.json({ success: true });
-  } catch (e: unknown) { log.error("Discard failed", { error: getErrorMessage(e) }); res.status(500).json({ error: "Discard failed" }); }
+  } catch (e: any) { log.error("Discard failed", { error: getErrorMessage(e) }); res.status(500).json({ error: "Discard failed" }); }
 });
 
 export default router;

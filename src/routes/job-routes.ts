@@ -129,7 +129,7 @@ router.post("/sweep", cronOrAdminAuth, jobsSweepRateLimit, async (req: SweepRequ
         await handleJob(job);
         await complete(db, job.id);
         processed++;
-      } catch (sweepErr: unknown) {
+      } catch (sweepErr: any) {
         await fail(db, job, getErrorMessage(sweepErr));
       }
     }

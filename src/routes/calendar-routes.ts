@@ -18,7 +18,7 @@ router.get("/api/calendar/accounts", authenticateUser, async (req: Authenticated
       .order("created_at", { ascending: false });
     if (error) throw error;
     res.json({ accounts: data || [] });
-  } catch (e: unknown) { 
+  } catch (e: any) { 
     log.error("Calendar accounts fetch failed", { userId, error: getErrorMessage(e) }); 
     res.status(500).json({ error: "Failed to fetch calendar accounts." }); 
   }
@@ -35,7 +35,7 @@ router.post("/api/calendar/sync", authenticateUser, async (req: AuthenticatedReq
       google:  googleResult.status === 'fulfilled'  ? googleResult.value  : { status: 'error', error: (googleResult.reason as Error)?.message },
       outlook: outlookResult.status === 'fulfilled' ? outlookResult.value : { status: 'error', error: (outlookResult.reason as Error)?.message },
     });
-  } catch (e: unknown) {
+  } catch (e: any) {
     log.error("Calendar sync failed", { userId, error: getErrorMessage(e) });
     res.status(500).json({ error: "Calendar sync failed." });
   }
@@ -53,7 +53,7 @@ router.get("/api/calendar/events", authenticateUser, async (req: AuthenticatedRe
       .limit(100);
     if (error) throw error;
     res.json({ events: data || [] });
-  } catch (e: unknown) {
+  } catch (e: any) {
     log.error("Calendar events fetch failed", { userId, error: getErrorMessage(e) });
     res.status(500).json({ error: "Failed to fetch calendar events." });
   }

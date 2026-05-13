@@ -8,6 +8,7 @@ import { ActionItemSchema } from "./action-types";
 import { persistClaudeAuditRecords } from "../middleware/audit-middleware";
 import { buildCallCompletedOutcome, dispatchWebhook } from "./webhook-helpers";
 import { CRMService } from "./crm-service";
+import { enrichLead as apolloEnrich } from "./apollo-service";
 import { purgeAccount } from "./account-deletion";
 
 type SupportedCrmType = "salesforce" | "hubspot";
@@ -386,6 +387,33 @@ export async function handleJob(job: JobRow): Promise<void> {
       user_id: p.user_id,
       tables_touched: result.tablesTouched.length,
     });
+  }
+
+  if (job.type === 'proactive_lead_enrichment') {
+    const p = job.payload as { userId: string; customerNumber: string };
+    
+    log.info("Starting proactive lead enrichment", { userId: p.userId, customerNumber: p.customerNumber });
+
+    try {
+      const enrichment = await apolloEnrich(p.customerNumber);
+      if (enrichment) {
+        await db.from('wireline_lead_dossiers').upsert({
+          user_id: p.userId,
+          customer_number: p.customerNumber,
+          full_name: enrichment.first_name && enrichment.last_name ? `${enrichment.first_name} ${enrichment.last_name}` : undefined,
+          job_title: enrichment.title,
+          company: enrichment.company,
+          linked_in_url: enrichment.linkedin_url,
+          dossier_data: enrichment
+        }, { onConflict: 'user_id,customer_number' });
+        
+        log.info("Lead enrichment successful", { userId: p.userId, customerNumber: p.customerNumber, company: enrichment.company });
+      } else {
+        log.info("No enrichment data found for lead", { customerNumber: p.customerNumber });
+      }
+    } catch (error) {
+      log.error("Proactive lead enrichment failed", { error: getErrorMessage(error) });
+    }
   }
 }
 

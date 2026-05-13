@@ -65,10 +65,10 @@ router.post("/score/:callId", authenticateUser, withAudit("qa"), async (req: Aut
     const QA_DIMENSIONS = ["greeting", "discovery", "solution", "objection", "closing"] as const;
     const score = Math.min(
       100,
-      Math.max(0, QA_DIMENSIONS.reduce((sum, dim) => sum + (Number(breakdown[dim]) || 0), 0))
+      Math.max(0, QA_DIMENSIONS.reduce((sum, dim) => sum + (Number((breakdown as any)[dim]) || 0), 0))
     );
 
-    const updatePayload: QaUpdatePayload = { qa_score: score, qa_breakdown: breakdown };
+    const updatePayload: QaUpdatePayload = { qa_score: score, qa_breakdown: breakdown as unknown as Record<string, unknown> };
     if (breakdown.coaching_note) updatePayload.coaching_note = breakdown.coaching_note;
 
     await db
@@ -92,7 +92,7 @@ router.post("/score/:callId", authenticateUser, withAudit("qa"), async (req: Aut
     }
 
     res.json({ success: true, score, breakdown });
-  } catch (e: unknown) {
+  } catch (e: any) {
     log.error("QA scoring failed", { error: getErrorMessage(e) });
     res.status(500).json({ error: "QA scoring failed." });
   }
@@ -146,16 +146,16 @@ router.post("/score-batch", authenticateUser, claudeRateLimiter, withAudit("qa")
           });
           const score = Math.min(
             100,
-            Math.max(0, QA_DIMENSIONS.reduce((s, d) => s + (Number(breakdown[d]) || 0), 0))
+            Math.max(0, QA_DIMENSIONS.reduce((s, d) => s + (Number((breakdown as any)[d]) || 0), 0))
           );
-          const updatePayload: QaUpdatePayload = { qa_score: score, qa_breakdown: breakdown };
+          const updatePayload: QaUpdatePayload = { qa_score: score, qa_breakdown: breakdown as unknown as Record<string, unknown> };
           if (breakdown.coaching_note) updatePayload.coaching_note = breakdown.coaching_note;
           await db.from("wireline_call_logs")
             .update(updatePayload)
             .eq("id", typedCall.id)
             .eq("user_id", req.user.id);
           scored++;
-        } catch (err: unknown) {
+        } catch (err: any) {
           log.warn("Batch QA: single call scoring failed", { callId: typedCall.id, error: getErrorMessage(err) });
           failed++;
         }
@@ -164,7 +164,7 @@ router.post("/score-batch", authenticateUser, claudeRateLimiter, withAudit("qa")
 
     await Promise.all(tasks);
     res.json({ scored, skipped, failed, total: calls.length });
-  } catch (e: unknown) {
+  } catch (e: any) {
     log.error("Batch QA scoring failed", { error: getErrorMessage(e) });
     res.status(500).json({ error: "Batch QA scoring failed." });
   }
@@ -249,7 +249,7 @@ router.get("/stats", authenticateUser, async (req: AuthenticatedRequest, res: Re
       .map(([day, scores]) => ({ day, avg: Math.round(scores.reduce((s, n) => s + n, 0) / scores.length) }));
 
     res.json({ count: typedCalls.length, avgScore, distribution, dimensions, trend });
-  } catch (e: unknown) {
+  } catch (e: any) {
     log.error("QA stats failed", { error: getErrorMessage(e) });
     res.status(500).json({ error: "Failed to fetch QA stats." });
   }

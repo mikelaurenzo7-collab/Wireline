@@ -6,7 +6,8 @@ import { getErrorMessage } from "../lib/server-utils";
 import { parseFormData, FleetTaskCreateSchema } from "../lib/form-validators";
 import { compileActivityFeed } from "../lib/fleet-activity";
 import { ROLE_PERSONALITY_TEMPLATES } from "../lib/agent-constants";
-import { claudeErr } from "../lib/claude-response-helpers";
+import { executeAction } from "../lib/action-engine";
+import type { ActionItem } from "../lib/action-types";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
@@ -113,7 +114,7 @@ router.post("/api/fleet/seed", authenticateUser, async (req: AuthenticatedReques
       });
     }
     res.json({ success: true, count: specializedAgents.length });
-  } catch (error) {
+  } catch (error: any) {
     log.error("Fleet seeding failed", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to seed fleet" });
   }
@@ -127,7 +128,7 @@ router.get("/api/fleet/presence", authenticateUser, async (req: AuthenticatedReq
     
     if (error) throw error;
     res.json({ signals: data || [] });
-  } catch (error) {
+  } catch (error: any) {
     log.error("Presence fetch failed", { error: getErrorMessage(error) });
     res.json({ signals: [] });
   }
@@ -163,7 +164,7 @@ router.get("/api/fleet/tasks", authenticateUser, async (req: AuthenticatedReques
     });
 
     res.json({ tasks: sortedTasks });
-  } catch (error) {
+  } catch (error: any) {
     log.error("Fetch tasks failed", { error: getErrorMessage(error) });
     res.json({ tasks: [] });
   }
@@ -212,6 +213,51 @@ router.patch("/api/fleet/tasks/:id", authenticateUser, async (req: Authenticated
   }
 });
 
+router.post("/api/fleet/tasks/:id/approve", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const taskId = req.params.id;
+    const userId = req.user.id;
+
+    const { data: task, error: fetchError } = await db.from('wireline_fleet_tasks')
+      .select('*')
+      .eq('id', taskId)
+      .eq('user_id', userId)
+      .single();
+
+    if (fetchError || !task) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+
+    if (task.status === 'completed') {
+      return res.status(400).json({ error: "Task is already completed" });
+    }
+
+    const actionItem: ActionItem = {
+      type: task.task_type as any,
+      priority: task.priority as any,
+      payload: task.payload || {},
+      agentId: task.agent_id
+    };
+
+    const result = await executeAction(userId, actionItem, {
+      sourceId: task.source_id || taskId,
+      sourceType: task.source_type || 'manual_approval'
+    }, "auto");
+
+    if (result.success) {
+      await db.from('wireline_fleet_tasks')
+        .update({ status: 'completed', resolution_notes: 'Approved and executed by operator' })
+        .eq('id', taskId);
+      res.json({ success: true });
+    } else {
+      res.status(500).json({ error: result.error || "Action execution failed" });
+    }
+  } catch (error: any) {
+    log.error("Task approval failed", { error: getErrorMessage(error) });
+    res.status(500).json({ error: "Failed to approve task" });
+  }
+});
+
 router.get("/api/fleet/activity", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
    try {
       const [logs, tasks, lessons, emails] = await Promise.all([
@@ -232,7 +278,7 @@ router.get("/api/fleet/activity", authenticateUser, async (req: AuthenticatedReq
       });
 
       res.json({ activity });
-   } catch(e: unknown) {
+   } catch(e: any) {
       log.error("Activity feed error", { error: getErrorMessage(e) });
       res.status(500).json({ error: "Failed to fetch activity" });
    }
@@ -293,7 +339,7 @@ router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, re
         escalations: escalations?.length || 0,
       },
     });
-  } catch (e) {
+  } catch (e: any) {
     log.error("Triage fetch failed", { error: e instanceof Error ? e.message : String(e) });
     claudeErr(res, e);
   }

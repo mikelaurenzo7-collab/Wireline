@@ -1,5 +1,6 @@
 import * as Sentry from "@sentry/node";
 import type { Request, Response, NextFunction } from "express";
+import type { User } from "@supabase/supabase-js";
 import { db, log, auditLogger } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 
@@ -13,7 +14,7 @@ import { getErrorMessage } from "../lib/server-utils";
  * middleware ↔ lib/soc2-controls.
  */
 interface AuthedReq extends Request {
-  user?: { id: string; email?: string; [key: string]: unknown };
+  user?: User;
 }
 
 /**
