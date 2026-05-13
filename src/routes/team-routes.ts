@@ -39,8 +39,33 @@ router.post("/api/team/invite", authenticateUser, async (req: AuthenticatedReque
 
     if (error) throw error;
     
-    // In a real app, we would send an invitation email here.
-    log.info("Team invitation sent", { email, invitedBy: req.user.id });
+    // Attempt to send invitation email autonomously via user's connected integrations
+    try {
+      const { IntegrationService } = await import("../lib/integrations");
+      const service = new IntegrationService(req.user.id);
+      const appUrl = process.env.APP_URL || "https://wireline.ai";
+      const invitedBy = req.user.email || "A colleague";
+      
+      const sent = await service.sendEmail({
+        to: email,
+        subject: `Invitation to join ${invitedBy} on Wireline`,
+        body: `
+          <h1>You've been invited!</h1>
+          <p>${invitedBy} has invited you to join their team on Wireline Business OS.</p>
+          <p>Wireline is the autonomous operating system for modern enterprises.</p>
+          <p><a href="${appUrl}/signup?invite=${data.id}" style="padding: 10px 20px; background: #000; color: #fff; text-decoration: none; border-radius: 5px;">Accept Invitation</a></p>
+          <p>If you don't have an account, you'll be prompted to create one.</p>
+        `
+      });
+
+      if (sent) {
+        log.info("Team invitation email sent via integration", { email, invitedBy: req.user.id });
+      } else {
+        log.warn("Team invitation logged but email not sent (no connected integration)", { email, userId: req.user.id });
+      }
+    } catch (mailErr) {
+      log.error("Failed to send invitation email", { error: getErrorMessage(mailErr) });
+    }
     
     res.json({ success: true, invitation: data });
   } catch (error: any) {

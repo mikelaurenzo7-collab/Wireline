@@ -22,6 +22,8 @@
     "test": "vitest",
     "test:run": "vitest run",
     "verify": "npm run lint && npm run test:run && npm run build",
+    "kimi:audit": "node scripts/kimi-qa.mjs",
+    "kimi:qa": "npm run kimi:audit && npm run test:run",
     "smoke:server": "node scripts/smoke-server.mjs",
     "e2e:golden": "node scripts/e2e-golden-paths.mjs",
     "assets": "node scripts/render-image-assets.mjs",

@@ -80,11 +80,22 @@ export function ActionFeed({ actions, onRefresh }: { actions: ActionItem[], onRe
 
       <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-3 custom-scrollbar">
         {actions.length === 0 ? (
-          <div className="h-48 flex flex-col items-center justify-center gap-3 text-center border border-dashed border-black/8 rounded-2xl bg-black/[0.01]">
-            <div className="w-10 h-10 rounded-xl bg-black/5 flex items-center justify-center">
-              <ListTodo className="w-5 h-5 text-muted/30" />
+          <div className="h-64 flex flex-col items-center justify-center gap-4 text-center border border-dashed border-black/8 rounded-[2rem] bg-black/[0.01] relative overflow-hidden">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(10,200,212,0.03),transparent)]" />
+            <div className="w-12 h-12 rounded-2xl bg-white brutal-border flex items-center justify-center relative">
+               <Sparkles className="w-5 h-5 text-brand" />
+               <motion.div 
+                 animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
+                 transition={{ duration: 3, repeat: Infinity }}
+                 className="absolute inset-0 bg-brand/20 rounded-2xl -z-10"
+               />
             </div>
-            <p className="text-[10px] text-muted uppercase tracking-[0.2em]">All actions cleared</p>
+            <div className="space-y-1">
+              <p className="text-[10px] text-ink font-bold uppercase tracking-[0.3em]">Fleet synchronized</p>
+              <p className="text-[9px] text-muted max-w-[180px] leading-relaxed">
+                Autonomous agents are monitoring signals. No manual intervention required.
+              </p>
+            </div>
           </div>
         ) : (
           actions.map((action) => {

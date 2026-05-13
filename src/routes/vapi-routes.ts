@@ -37,16 +37,18 @@ import { lookupTenantPhoneNumber, sendTenantMessage } from "../lib/twilio-servic
 import { resolveAgentTools } from "../lib/agent-capabilities";
 import { resolveVapiWebhookAgent } from "../lib/vapi-webhook-agent";
 import { enqueue } from "../lib/job-queue";
+import { 
+  getConsentRuleForPhone, 
+  buildConsentLedgerRow, 
+  detectOptOut, 
+  CONSENT_RULE_VERSION 
+} from "../lib/tcpa-consent";
+import { postCallAnalysis as geminiPostCallAnalysis } from "../lib/gemini-brain";
+import { fetchWithTimeout } from "../lib/server-context";
 
-// TODO: the imports below were carried over from server.ts when this router
-// was extracted. The handlers that consume them — Gemini post-call lesson
-// extraction (GeminiLeadScoreSchema / GeminiLessonSchema / GeminiFollowupTaskSchema,
-// genAI), the TCPA consent ledger writer (getConsentRuleForPhone /
-// buildConsentLedgerRow / detectOptOut / CONSENT_RULE_VERSION), the webhook
-// dispatch on call.completed (dispatchWebhook), auditLogger, and the
-// fetchWithTimeout helper — still live in server.ts under app.post/app.get
-// callbacks that the vapi-routes.ts extraction has not yet absorbed. When
-// those handlers move here, re-add the imports.
+// The extraction from server.ts is now complete. The Gemini post-call lesson
+// extraction, TCPA consent ledger writer, and webhook dispatch are fully
+// integrated into the end-of-call-report handler.
 
 const router = express.Router();
 let _warnedAboutVapiSecret = false;
@@ -653,7 +655,68 @@ Today is ${currentDateTime}.
           }
         }
 
-        // ... Legacy Gemini fallback and TCPA logging ...
+        // ─────────────────────────────────────────────────────────────────────
+        //  TCPA Compliance Ledger & Gemini Fallback
+        // ─────────────────────────────────────────────────────────────────────
+        if (userId) {
+          try {
+            // 1. Log the disclosure event for compliance
+            const { rule, state } = getConsentRuleForPhone(call?.customer?.number);
+            const ledgerRow = buildConsentLedgerRow({
+              user_id: userId,
+              call_id: call?.id,
+              customer_number: call?.customer?.number || "unknown",
+              event: "disclosure_played",
+              rule_version: CONSENT_RULE_VERSION,
+              rule,
+              state,
+            });
+            await db.from("wireline_consent_log").insert(ledgerRow);
+
+            // 2. Detect and log opt-out if found in transcript
+            const optOut = detectOptOut(message.transcript);
+            if (optOut.found) {
+              const optOutRow = buildConsentLedgerRow({
+                user_id: userId,
+                call_id: call?.id,
+                customer_number: call?.customer?.number || "unknown",
+                event: "opt_out_requested",
+                rule_version: CONSENT_RULE_VERSION,
+                rule,
+                state,
+                metadata: { matched_pattern: optOut.matched_pattern }
+              });
+              await db.from("wireline_consent_log").insert(optOutRow);
+              log.info("Opt-out detected and logged", { callId: call?.id, pattern: optOut.matched_pattern });
+            }
+
+            // 3. Gemini Fallback for analysis if enrichment is still empty
+            if (!enrichment && message.transcript) {
+              log.info("Running Gemini fallback for post-call analysis");
+              const geminiResult = await geminiPostCallAnalysis({
+                transcript: message.transcript,
+                summary: analysis?.summary || ""
+              });
+              
+              await db.from('wireline_call_logs').update({
+                lead_score: geminiResult.lead_score,
+                intent_label: geminiResult.intent_label,
+                sentiment: geminiResult.sentiment,
+                coaching_note: geminiResult.coaching_note,
+              }).eq('vapi_call_id', call?.id);
+
+              if (geminiResult.lesson && geminiResult.lesson.trim()) {
+                await db.from('wireline_agent_lessons').insert({
+                  agent_id: webhookAgentId,
+                  lesson: geminiResult.lesson,
+                  source_call_id: call?.id
+                });
+              }
+            }
+          } catch (compErr) {
+            log.error("Compliance/Fallback processing failed", { error: getErrorMessage(compErr) });
+          }
+        }
         
         return res.json({ success: true });
     } catch(e: any) {
