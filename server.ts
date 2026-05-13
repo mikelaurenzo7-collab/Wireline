@@ -8,7 +8,7 @@ if (process.env.SENTRY_DSN) {
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     environment: process.env.NODE_ENV || "development",
-    tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE ?? 0.1),
+    tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE ?? 1.0),
     release: process.env.VERCEL_GIT_COMMIT_SHA || undefined,
   });
 }
@@ -191,6 +191,11 @@ app.use(insightsRouter);
 app.use("/api/webhooks", webhookRouter);
 app.use(soc2Router);
 app.use(oauthRouter);
+
+// 404 API catch-all (Must be mounted after all valid API routes and before global error handler)
+app.use("/api", (req: express.Request, res: express.Response) => {
+  res.status(404).json({ error: "API Route Not Found", path: req.path, requestId: res.locals?.requestId });
+});
 
 // Global error handler
 app.use((err: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {

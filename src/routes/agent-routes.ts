@@ -15,7 +15,7 @@ import { normalizeEnabledTools } from "../lib/agent-capabilities";
 import { claudeErr } from "../lib/claude-response-helpers";
 
 const router = Router();
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "placeholder_gemini_key");
 
 const isMissingRoleColumnError = (error: unknown) =>
   typeof error?.message === "string" &&

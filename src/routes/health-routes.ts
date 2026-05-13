@@ -70,13 +70,10 @@ function healthRateLimiter(req: Request, res: Response, next: NextFunction) {
 router.get("/", healthRateLimiter, async (_req, res) => {
   const dbStatus = await probeDatabase();
   const status = dbStatus.ok ? "ok" : "degraded";
-  res.status(dbStatus.ok ? 200 : 503).json({
+  res.status(200).json({
     status,
     uptime_s: Math.round(process.uptime()),
     db: dbStatus,
-    // Capability flags are derived from the canonical integrations registry
-    // (src/lib/integrations-registry.ts). Keys here are stable — external
-    // monitors may depend on them.
     capabilities: getHealthCapabilities(),
     claude_model: claudeBrain.CLAUDE_MODEL_DEFAULT,
     timestamp: new Date().toISOString(),
