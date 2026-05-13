@@ -395,7 +395,16 @@ export async function handleJob(job: JobRow): Promise<void> {
     log.info("Starting proactive lead enrichment", { userId: p.userId, customerNumber: p.customerNumber });
 
     try {
-      const enrichment = await apolloEnrich(p.customerNumber);
+      const [enrichment, { data: calls }, { data: emails }] = await Promise.all([
+        apolloEnrich(p.customerNumber),
+        db.from('wireline_call_logs').select('summary, created_at').eq('customer_number', p.customerNumber).order('created_at', { ascending: false }).limit(3),
+        db.from('wireline_email_threads').select('summary, last_message_at').eq('customer_number', p.customerNumber).order('last_message_at', { ascending: false }).limit(3),
+      ]);
+
+      let summaryText = "";
+      if (calls?.length) summaryText += "Recent Calls: " + calls.map(c => c.summary || "No summary").join("; ") + ". ";
+      if (emails?.length) summaryText += "Recent Emails: " + emails.map(e => e.summary || "No summary").join("; ") + ". ";
+
       if (enrichment) {
         await db.from('wireline_lead_dossiers').upsert({
           user_id: p.userId,
@@ -404,7 +413,8 @@ export async function handleJob(job: JobRow): Promise<void> {
           job_title: enrichment.title,
           company: enrichment.company,
           linked_in_url: enrichment.linkedin_url,
-          dossier_data: enrichment
+          dossier_data: enrichment,
+          interaction_summary: summaryText || "No prior interactions found."
         }, { onConflict: 'user_id,customer_number' });
         
         log.info("Lead enrichment successful", { userId: p.userId, customerNumber: p.customerNumber, company: enrichment.company });
