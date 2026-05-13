@@ -1583,3 +1583,12 @@ ALTER TABLE wireline_deletion_queue ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY IF NOT EXISTS "deletion_queue_owner" ON wireline_deletion_queue
     FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+
+-- Realtime publications for Command Center
+begin;
+  -- Add tables to the supabase_realtime publication if not already present
+  -- This is required for the WebSocket subscriptions to work on the frontend.
+  alter publication supabase_realtime add table wireline_signal_presence;
+  alter publication supabase_realtime add table wireline_fleet_tasks;
+commit;

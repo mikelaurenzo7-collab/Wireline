@@ -16,6 +16,8 @@ import { LiveMonitor } from "../components/CommandCenter/LiveMonitor";
 import { ActionFeed } from "../components/CommandCenter/ActionFeed";
 import PageTransition from "../components/layout/PageTransition";
 import { authFetch } from "../lib/api";
+import { useAuth } from "../contexts/AuthContext";
+import { supabase } from "../lib/supabase";
 import type { SignalPresence, FleetTask, DashboardStats } from "../types/api";
 
 // ── Type conversions ──────────────────────────────────────────────────────────
@@ -85,6 +87,7 @@ const SENTIMENT_COLORS = {
 const PRESENCE_POLL_MS = 10_000; // live-call panel refreshes every 10 s
 
 export default function CommandCenter() {
+  const { user } = useAuth();
   const mountedRef = useRef(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -125,14 +128,30 @@ export default function CommandCenter() {
   useEffect(() => {
     mountedRef.current = true;
     fetchAll();
-    const fastTimer = setInterval(fetchPresence, PRESENCE_POLL_MS);
+    
+    if (!user) return;
+
+    const channel = supabase.channel('command-center-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'wireline_signal_presence', filter: `user_id=eq.${user.id}` },
+        () => { fetchPresence(); }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'wireline_fleet_tasks', filter: `user_id=eq.${user.id}` },
+        () => { fetchAll(); } // Re-fetch tasks (and stats) when tasks change
+      )
+      .subscribe();
+
     const slowTimer = setInterval(fetchAll, 60_000);
+    
     return () => {
       mountedRef.current = false;
-      clearInterval(fastTimer);
+      supabase.removeChannel(channel);
       clearInterval(slowTimer);
     };
-  }, [fetchAll, fetchPresence]);
+  }, [fetchAll, fetchPresence, user]);
 
   const refresh = async () => {
     setIsRefreshing(true);

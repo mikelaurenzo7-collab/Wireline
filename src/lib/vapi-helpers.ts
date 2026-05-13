@@ -409,6 +409,30 @@ export const VAPI_TOOL_DEFS = {
       required: ["name"],
     },
   },
+  send_contract: {
+    name: "send_contract",
+    description: "Sends a DocuSign contract to the customer. Use this when the customer is ready to sign. Confirm their email address and name before sending.",
+    parameters: {
+      type: "object",
+      properties: {
+        recipient_name: { type: "string", description: "Customer's full name" },
+        recipient_email: { type: "string", description: "Customer's email address" },
+        template_id: { type: "string", description: "The template ID to use (if known) or leave blank for default." },
+      },
+      required: ["recipient_name", "recipient_email"],
+    },
+  },
+  enrich_lead: {
+    name: "enrich_lead",
+    description: "Enriches a phone number to discover the caller's professional identity (name, title, company) via Apollo.io. Use this at the start of a call if you only have a phone number.",
+    parameters: {
+      type: "object",
+      properties: {
+        phone_number: { type: "string", description: "The phone number to enrich. Leave blank to use the current caller's number." },
+      },
+      required: [],
+    },
+  },
 } as const;
 
 export type VapiToolName = keyof typeof VAPI_TOOL_DEFS;

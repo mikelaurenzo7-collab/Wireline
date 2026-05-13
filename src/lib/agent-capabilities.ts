@@ -20,11 +20,13 @@ export const AGENT_TOOL_NAME_VALUES = [
   "crm_search_contacts",
   "crm_log_call",
   "crm_create_opportunity",
+  "send_contract",
+  "enrich_lead",
 ] as const;
 
 export type AgentToolName = typeof AGENT_TOOL_NAME_VALUES[number];
 
-export type ToolIntegration = "twilio" | "calendar" | "crm" | "slack" | "zoom";
+export type ToolIntegration = "twilio" | "calendar" | "crm" | "slack" | "zoom" | "docusign" | "apollo";
 
 export interface AgentToolCatalogEntry {
   name: AgentToolName;
@@ -62,6 +64,9 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
   { name: "send_slack_notification", label: "Notify team via Slack", description: "Posts a message to the configured Slack channel when something important happens.", group: "team", integration: "slack" },
   // Meetings
   { name: "generate_zoom_link", label: "Generate Zoom link", description: "Creates a Zoom meeting and attaches the join URL to calendar events.", group: "meetings", integration: "zoom" },
+  // Action Engine
+  { name: "send_contract", label: "Send contract via DocuSign", description: "Dispatches a DocuSign template to the caller's email immediately.", group: "core", integration: "docusign" },
+  { name: "enrich_lead", label: "Enrich lead", description: "Pulls LinkedIn/Apollo profile data for a phone number.", group: "core", integration: "apollo" },
 ] as const;
 
 export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
@@ -85,6 +90,8 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "crm_create_opportunity",
     "send_slack_notification",
     "generate_zoom_link",
+    "send_contract",
+    "enrich_lead",
   ],
   customer_service: [
     "view_recent_interactions",
