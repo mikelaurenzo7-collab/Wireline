@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
-import { Loader2, DollarSign, Activity, BarChart3, Clock } from "lucide-react";
+import { Loader2, DollarSign, Activity, BarChart3, Clock, Cpu } from "lucide-react";
+import { motion } from "motion/react";
 import { cn } from "../../lib/utils";
 import { authFetch } from "../../lib/api";
 import { formatDateTime } from "../../lib/safe-date";
@@ -210,6 +211,3 @@ export function AuditActivityPanel() {
   );
 }
 
-// Re-using some components from lucide-react that might not be in the top import but are used in the JSX
-import { Cpu } from "lucide-react";
-import { motion } from "motion/react";

@@ -23,6 +23,7 @@ import { BrandingPanel } from "./admin/BrandingPanel";
 import { TeamPanel } from "./admin/TeamPanel";
 import { GrowthPanel } from "./admin/GrowthPanel";
 import { AuditActivityPanel } from "./admin/AuditActivityPanel";
+import { KimiQualityPanel } from "./admin/KimiQualityPanel";
 
 type ConfirmState = { open: boolean; title: string; message: string; onConfirm: () => void };
 const CLOSED_CONFIRM: ConfirmState = { open: false, title: "", message: "", onConfirm: () => {} };
@@ -76,7 +77,7 @@ export default function AdminSettings() {
   const [newNumber, setNewNumber] = useState("");
   const [newNumberVapiId, setNewNumberVapiId] = useState("");
 
-  const [activeTab, setActiveTab] = useState<"carrier" | "subscription" | "team" | "flywheel" | "system" | "activity">("carrier");
+  const [activeTab, setActiveTab] = useState<"carrier" | "subscription" | "team" | "flywheel" | "system" | "activity" | "quality">("carrier");
 
   const [carrierNumbers, setCarrierNumbers] = useState<any[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -345,7 +346,7 @@ export default function AdminSettings() {
 
   const tabSwitcher = (
     <div className="flex p-1 rounded-full glass border border-white/10" role="tablist">
-      {(["carrier", "subscription", "team", "flywheel", "system", "activity"] as const).map(t => (
+      {(["carrier", "subscription", "team", "flywheel", "system", "quality", "activity"] as const).map(t => (
         <button
           key={t}
           role="tab"
@@ -357,7 +358,7 @@ export default function AdminSettings() {
             activeTab === t ? "bg-brand/20 text-brand" : "text-muted hover:text-ink"
           )}
         >
-          {t === "carrier" ? "Carrier" : t === "subscription" ? "Billing" : t === "team" ? "Team" : t === "flywheel" ? "Growth" : t === "system" ? "System" : "Activity"}
+          {t === "carrier" ? "Carrier" : t === "subscription" ? "Billing" : t === "team" ? "Team" : t === "flywheel" ? "Growth" : t === "system" ? "System" : t === "quality" ? "Quality" : "Activity"}
         </button>
       ))}
     </div>
@@ -384,7 +385,7 @@ export default function AdminSettings() {
         </div>
       ) : (
         <AnimatePresence mode="wait">
-          {activeTab === "carrier" ? (
+          {activeTab === "carrier" && (
             <motion.div
               key="carrier"
               id="admin-panel-carrier"
@@ -765,7 +766,9 @@ export default function AdminSettings() {
                 </div>
               </Panel>
             </motion.div>
-          ) : (
+          )}
+
+          {activeTab === "subscription" && (
             <motion.div
               key="subscription"
               id="admin-panel-subscription"
@@ -984,110 +987,58 @@ export default function AdminSettings() {
                   </div>
                 </div>
               </Panel>
+            </div>
+          </motion.div>
+        )}
+
+        {activeTab === "team" && (
+            <motion.div
+              key="team"
+              id="admin-panel-team"
+              role="tabpanel"
+              tabIndex={0}
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               className="h-full flex flex-col gap-3 min-h-0 overflow-y-auto scrollbar-hide pb-4"
             >
-              <BrandingPanel 
-                settings={settings} 
-                onUpdate={setSettings} 
-                onSave={saveSettings}
-                isSaving={isSaving}
+              <TeamPanel 
+                members={teamMembers} 
+                onInvite={inviteTeamMember} 
+                onRemove={removeTeamMember} 
               />
-              
-              <Panel title="Platform Health" hint="Integrations status" icon={ShieldCheck} scroll>
-                <div className="space-y-3">
-                  {!integrations && (
-                    <div className="text-[11px] text-muted flex items-center gap-2">
-                      <Loader2 className="w-3 h-3 animate-spin" /> Loading integrations…
-                    </div>
-                  )}
-                  {integrations && (() => {
-                    const GROUP_LABELS: Record<string, string> = {
-                      core: "Core Infrastructure",
-                      ai: "Intelligence Models",
-                      voice: "Voice Services",
-                      oauth: "Identity & Connectors",
-                      billing: "Billing",
-                      actions: "Action Engine",
-                      infra: "Infrastructure",
-                      security: "Security",
-                    };
-                    const grouped: Record<string, IntegrationRow[]> = {};
-                    for (const row of integrations) {
-                      (grouped[row.group] ||= []).push(row);
-                    }
-                    const groupOrder = ["core", "ai", "voice", "oauth", "billing", "actions", "infra", "security"];
-                    return groupOrder.filter(g => grouped[g]?.length).map(g => (
-                      <div key={g} className="space-y-2">
-                        <div className="text-[9px] uppercase tracking-[0.3em] text-brand/70 pt-1">
-                          {GROUP_LABELS[g] || g}
-                        </div>
-                        {grouped[g].map(item => {
-                          const colour =
-                            item.status === "configured" ? "emerald" :
-                            item.status === "fallback"   ? "amber"   :
-                            item.required                ? "rose"    : "muted";
-                          const dot =
-                            colour === "emerald" ? "bg-emerald-500/15 border-emerald-500/30" :
-                            colour === "amber"   ? "bg-amber-500/15 border-amber-500/30"     :
-                            colour === "rose"    ? "bg-rose-500/15 border-rose-500/30"       :
-                                                   "bg-white/5 border-white/10";
-                          const text =
-                            colour === "emerald" ? "text-emerald-600" :
-                            colour === "amber"   ? "text-amber-600"   :
-                            colour === "rose"    ? "text-rose-500"    : "text-muted";
-                          const badge =
-                            item.status === "configured" ? "OK" :
-                            item.status === "fallback"   ? "Fallback" :
-                            item.required                ? "Missing" : "Not set";
-                          return (
-                            <div key={item.id} className={cn("rounded-xl glass border p-3 flex items-start gap-3", dot)}>
-                              <div className={cn("w-2 h-2 rounded-full mt-1.5 shrink-0", text.replace("text-", "bg-"))} />
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <div className="text-[11px] font-semibold text-ink truncate">{item.label}</div>
-                                  {item.required && (
-                                    <span className="text-[8px] uppercase tracking-[0.25em] text-muted">Required</span>
-                                  )}
-                                </div>
-                                <div className="text-[10px] text-muted leading-snug mt-0.5">{item.description}</div>
-                              </div>
-                              <span className={cn("text-[8px] uppercase tracking-[0.25em] shrink-0", text)}>{badge}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ));
-                  })()}
-                </div>
-              </Panel>
+            </motion.div>
+          )}
 
-              <Panel title="Operational reliability" hint="SLO snapshot" icon={BarChart3}>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 rounded-xl glass border border-white/10 p-3 font-mono text-[10px]">
-                  <div><span className="text-muted">Pending jobs</span><div className="text-ink tabular-nums">{operationalSlos?.queue?.pending ?? "0"}</div></div>
-                  <div><span className="text-muted">Enrichment OK</span><div className="text-ink tabular-nums">98%</div></div>
-                  <div><span className="text-muted">Webhook latency</span><div className="text-ink tabular-nums">42ms</div></div>
-                  <div><span className="text-muted">Claude health</span><div className="text-ink tabular-nums">100%</div></div>
-                </div>
-              </Panel>
+          {activeTab === "flywheel" && (
+            <motion.div
+              key="flywheel"
+              id="admin-panel-flywheel"
+              role="tabpanel"
+              tabIndex={0}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="h-full flex flex-col gap-3 min-h-0 overflow-y-auto scrollbar-hide pb-4"
+            >
+              <GrowthPanel 
+                settings={settings} 
+                setSettings={setSettings} 
+                onSave={saveSettings} 
+                isSaving={isSaving} 
+              />
+            </motion.div>
+          )}
 
-              <Panel title="Compliance & Audit" hint="SOC2 helpers · JSON export" icon={History}>
-                <div className="space-y-3 text-[11px] text-muted leading-relaxed">
-                  <p>
-                    Download an evidence bundle with RBAC narratives, quarterly access-review snapshot, incident template, and links to audit exports.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={downloadEvidencePack}
-                    className="brutal-btn w-full md:w-auto !py-2 !px-4 !text-[10px] !tracking-[0.25em] flex items-center justify-center gap-2"
-                  >
-                    <TrendingUp className="w-3.5 h-3.5" />
-                    Export SOC2 evidence JSON
-                  </button>
-                </div>
-              </Panel>
+          {activeTab === "quality" && (
+            <motion.div
+              key="quality"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="h-full"
+            >
+              <KimiQualityPanel />
             </motion.div>
           )}
 
@@ -1102,12 +1053,18 @@ export default function AdminSettings() {
               <AuditActivityPanel />
             </motion.div>
           )}
+        </AnimatePresence>
+      )}
+    </PageShell>
+    <ConfirmModal
+      open={confirmState.open}
       title={confirmState.title}
       message={confirmState.message}
       danger
       onConfirm={confirmState.onConfirm}
       onCancel={() => setConfirmState(CLOSED_CONFIRM)}
     />
+    </div>
     </div>
   );
 }

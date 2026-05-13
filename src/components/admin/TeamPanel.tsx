@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { KeyRound, Trash2, Clock } from "lucide-react";
 import { cn } from "../../lib/utils";
-import { formatDateTime } from "../../lib/utils";
+import { formatDateTime } from "../../lib/safe-date";
 
 interface TeamMember {
   id: string;
