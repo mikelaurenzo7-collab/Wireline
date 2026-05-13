@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { timingSafeEqual as cryptoTimingSafeEqual } from "node:crypto";
 import { db, log, auditLogger } from "../lib/server-context";
 import { authenticateUser } from "../middleware/auth";
@@ -7,6 +7,12 @@ import { getErrorMessage } from "../lib/server-utils";
 import { getCallerRole } from "../middleware/require-role";
 import { getQueueStats } from "../lib/job-queue";
 import { handleJob } from "../lib/job-worker";
+import type { AuthenticatedRequest } from "../types/auth";
+
+/** Extended request type for sweep endpoint — carries auth mode. */
+interface SweepRequest extends AuthenticatedRequest {
+  _sweepMode?: "cron" | "manual";
+}
 
 const router = Router();
 
@@ -14,12 +20,7 @@ const router = Router();
 // JOB QUEUE ENDPOINTS
 // ──────────────────────────────────────────────────────────────────────────────
 
-/**
- * GET /api/jobs/stats — queue depths by status. Tenant-scoped: returns
- * the calling user's job counts only. Fleet-wide counters are not
- * exposed via the public API (only the in-process worker uses them).
- */
-router.get("/stats", authenticateUser, jobsRateLimit, async (req: any, res: any) => {
+router.get("/stats", authenticateUser, jobsRateLimit, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const stats = await getQueueStats(db, req.user.id);
     res.json(stats);
@@ -29,10 +30,7 @@ router.get("/stats", authenticateUser, jobsRateLimit, async (req: any, res: any)
   }
 });
 
-/**
- * Auth middleware for sweep — handles CRON_SECRET or Admin/Owner roles.
- */
-const cronOrAdminAuth = (req: any, res: any, next: any) => {
+const cronOrAdminAuth = (req: SweepRequest, res: Response, next: NextFunction) => {
   const expectedCronSecret = process.env.CRON_SECRET || "";
   const authz = String(req.headers["authorization"] || "");
   const providedCronSecret = authz.startsWith("Bearer ") ? authz.slice(7) : "";
@@ -74,10 +72,7 @@ const cronOrAdminAuth = (req: any, res: any, next: any) => {
   });
 };
 
-/**
- * POST /api/jobs/sweep — triggers one poll cycle in serverless environments.
- */
-router.post("/sweep", cronOrAdminAuth, jobsSweepRateLimit, async (req: any, res: any) => {
+router.post("/sweep", cronOrAdminAuth, jobsSweepRateLimit, async (req: SweepRequest, res: Response) => {
   try {
     const {
       claimJob: claim,
@@ -86,7 +81,6 @@ router.post("/sweep", cronOrAdminAuth, jobsSweepRateLimit, async (req: any, res:
       enqueue,
     } = await import("../lib/job-queue");
 
-    // Trigger nightly GDPR purge (2:00 AM UTC)
     const now = new Date();
     if (
       now.getUTCHours() === 2 &&
@@ -107,9 +101,6 @@ router.post("/sweep", cronOrAdminAuth, jobsSweepRateLimit, async (req: any, res:
       }
     }
 
-    // GDPR Phase 1.5 — enqueue purge_deleted_account jobs for any deletion-queue
-    // row whose grace window has expired. Runs on every sweep cycle (cheap query
-    // backed by idx_deletion_queue_pending_due).
     if (req._sweepMode === "cron" || !req._sweepMode) {
       const { data: dueDeletions, error: dueErr } = await db
         .from("wireline_deletion_queue")

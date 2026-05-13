@@ -1,4 +1,5 @@
-import { Router } from "express";
+import { Router, Response } from "express";
+import type { AuthenticatedRequest } from "../types/auth";
 import { db, log, auditLogger } from "../lib/server-context";
 import { authenticateUser } from "../middleware/auth";
 import { computeDashboardStats } from "../lib/dashboard-stats";
@@ -12,7 +13,7 @@ const router = Router();
 //  Returns a map of route path → integer count so the sidebar can render
 //  attention badges without a full data load. Uses COUNT(*) queries only.
 // ────────────────────────────────────────────────────────────────────
-router.get("/api/nav-counts", authenticateUser, async (req: any, res: any) => {
+router.get("/api/nav-counts", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user.id;
 
@@ -45,7 +46,7 @@ router.get("/api/nav-counts", authenticateUser, async (req: any, res: any) => {
 
     // Count signals whose label starts with the distress prefix (⚠).
     const distressedCount = (liveSignals ?? []).filter(
-      (s: any) => typeof s.label === "string" && s.label.startsWith("⚠")
+      (s: { label?: string }) => typeof s.label === "string" && s.label.startsWith("⚠")
     ).length;
 
     res.json({
@@ -62,7 +63,7 @@ router.get("/api/nav-counts", authenticateUser, async (req: any, res: any) => {
 });
 
 // 1.5 CALL LOG RETRIEVAL ENDPOINT
-router.get("/api/calls", authenticateUser, async (req: any, res: any) => {
+router.get("/api/calls", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const limitRaw = parseInt(req.query.limit as string);
     const offsetRaw = parseInt(req.query.offset as string);
@@ -82,7 +83,7 @@ router.get("/api/calls", authenticateUser, async (req: any, res: any) => {
        hasMore: count ? (offset + limit) < count : false,
        total: count || 0
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     log.error("Failed to fetch calls", { error: getErrorMessage(error) });
     res.json({ calls: [], hasMore: false, total: 0 }); // Fail gracefully if table not created
   }
@@ -91,7 +92,7 @@ router.get("/api/calls", authenticateUser, async (req: any, res: any) => {
 // ==========================================
 // 1.8 DASHBOARD STATS ENDPOINT
 // ==========================================
-router.get("/api/dashboard/stats", authenticateUser, async (req: any, res: any) => {
+router.get("/api/dashboard/stats", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
    try {
       // Compute time windows once so all sub-queries share the same boundaries.
       const now = Date.now();
@@ -150,14 +151,14 @@ router.get("/api/dashboard/stats", authenticateUser, async (req: any, res: any) 
          agents: agentsRes.data || [],
          recentLogs: (logsRes.data || []).slice(0, 100),
       });
-   } catch(e: any) {
+   } catch(e: unknown) {
       log.error("Dashboard stats error", { error: e?.message || String(e) });
       res.status(500).json({ error: "Failed to fetch stats" });
    }
 });
 
 // Performance benchmarks — compare user's stats against industry averages
-router.get("/api/dashboard/benchmarks", authenticateUser, async (req: any, res: any) => {
+router.get("/api/dashboard/benchmarks", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user.id;
 
@@ -193,7 +194,7 @@ router.get("/api/dashboard/benchmarks", authenticateUser, async (req: any, res: 
 // ==========================================
 // 1.6 APPOINTMENTS RETRIEVAL ENDPOINT
 // ==========================================
-router.get("/api/appointments", authenticateUser, async (req: any, res: any) => {
+router.get("/api/appointments", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     // Hard cap to prevent 'load all my historical appointments' from
     // shipping a multi-MB response. Default 200, max 1000.
@@ -215,7 +216,7 @@ router.get("/api/appointments", authenticateUser, async (req: any, res: any) => 
       total: count || 0,
       hasMore: count ? (offset + limit) < count : false,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     log.error("Failed to fetch appointments", { error: getErrorMessage(error) });
     res.json({ appointments: [], total: 0, hasMore: false });
   }
@@ -223,7 +224,7 @@ router.get("/api/appointments", authenticateUser, async (req: any, res: any) => 
 
 const APPOINTMENT_STATUSES = ['Scheduled', 'Confirmed', 'Completed', 'Cancelled', 'Rescheduled'] as const;
 
-router.post("/api/appointments", authenticateUser, async (req: any, res: any) => {
+router.post("/api/appointments", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { customer_name, service_type, date, time, phone_number, notes, agent_id, status } = req.body;
     if (!customer_name?.trim() || !date?.trim() || !time?.trim()) {
@@ -257,13 +258,13 @@ router.post("/api/appointments", authenticateUser, async (req: any, res: any) =>
     }).select().single();
     if (error) throw error;
     res.json({ appointment: data });
-  } catch (error: any) {
+  } catch (error: unknown) {
     log.error("Failed to create appointment", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to create appointment" });
   }
 });
 
-router.patch("/api/appointments/:id", authenticateUser, async (req: any, res: any) => {
+router.patch("/api/appointments/:id", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const allowed = ['status', 'date', 'time', 'customer_name', 'service_type', 'notes', 'phone_number', 'agent_id'];
     const updates: Record<string, unknown> = {};
@@ -276,7 +277,7 @@ router.patch("/api/appointments/:id", authenticateUser, async (req: any, res: an
     if (typeof updates.notes === 'string' && updates.notes.length > 2000) {
       return res.status(400).json({ error: "notes must be 2000 characters or less" });
     }
-    if (updates.status !== undefined && !APPOINTMENT_STATUSES.includes(updates.status as any)) {
+    if (updates.status !== undefined && !APPOINTMENT_STATUSES.includes(updates.status as typeof APPOINTMENT_STATUSES[number])) {
       return res.status(400).json({ error: `status must be one of: ${APPOINTMENT_STATUSES.join(', ')}` });
     }
 
@@ -297,13 +298,13 @@ router.patch("/api/appointments/:id", authenticateUser, async (req: any, res: an
       .select().single();
     if (error) throw error;
     res.json({ appointment: data });
-  } catch (error: any) {
+  } catch (error: unknown) {
     log.error("Failed to update appointment", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to update appointment" });
   }
 });
 
-router.delete("/api/appointments/:id", authenticateUser, async (req: any, res: any) => {
+router.delete("/api/appointments/:id", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { error } = await db.from('wireline_appointments')
       .delete()
@@ -311,13 +312,13 @@ router.delete("/api/appointments/:id", authenticateUser, async (req: any, res: a
       .eq('user_id', req.user.id);
     if (error) throw error;
     res.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     log.error("Failed to delete appointment", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to delete appointment" });
   }
 });
 
-function rowsToCsv(rows: any[], columns: string[]): string {
+function rowsToCsv(rows: Record<string, unknown>[], columns: string[]): string {
   if (rows.length === 0) return columns.join(",");
   const header = columns.join(",");
   const body = rows
@@ -358,7 +359,7 @@ const EXPORT_DEFS: Record<string, { table: string; columns: string[]; order: str
   },
 };
 
-router.get("/api/export/:type.csv", authenticateUser, async (req: any, res: any) => {
+router.get("/api/export/:type.csv", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const def = EXPORT_DEFS[req.params.type];
     if (!def) return res.status(404).json({ error: `Unknown export type. Use: ${Object.keys(EXPORT_DEFS).join(", ")}.` });

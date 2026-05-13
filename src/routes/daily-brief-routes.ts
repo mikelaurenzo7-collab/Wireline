@@ -1,13 +1,14 @@
-import { Router } from "express";
+import { Router, Response } from "express";
 import { db, log } from "../lib/server-context";
 import { authenticateUser } from "../middleware/auth";
 import { sendDailyBriefEmail } from "../lib/daily-brief";
 import { getErrorMessage } from "../lib/server-utils";
+import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
 
 // Settings: GET / PUT for the daily-brief schedule.
-router.get("/api/daily-brief/settings", authenticateUser, async (req: any, res: any) => {
+router.get("/api/daily-brief/settings", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { data } = await db.from("wireline_settings")
       .select("daily_brief_enabled, daily_brief_send_at, daily_brief_recipient, daily_brief_last_sent_at, daily_brief_last_error")
@@ -25,13 +26,13 @@ router.get("/api/daily-brief/settings", authenticateUser, async (req: any, res: 
       gmail_connected: !!accounts?.[0]?.email_address,
       gmail_address: accounts?.[0]?.email_address || null,
     });
-  } catch (e: any) {
+  } catch (e: unknown) {
     log.error("Failed to load settings", { error: getErrorMessage(e) });
     res.status(500).json({ error: "Failed to load settings" });
   }
 });
 
-router.put("/api/daily-brief/settings", authenticateUser, async (req: any, res: any) => {
+router.put("/api/daily-brief/settings", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const enabled = req.body?.enabled === true;
     const send_at = (req.body?.send_at || "13:00").toString();
@@ -49,19 +50,20 @@ router.put("/api/daily-brief/settings", authenticateUser, async (req: any, res: 
     }, { onConflict: "user_id" });
 
     res.json({ success: true });
-  } catch (e: any) {
+  } catch (e: unknown) {
     log.error("Failed to save settings", { error: getErrorMessage(e) });
     res.status(500).json({ error: "Failed to save settings" });
   }
 });
 
 // Send-now — operator-triggered preview email.
-router.post("/api/daily-brief/send-now", authenticateUser, async (req: any, res: any) => {
+router.post("/api/daily-brief/send-now", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const result = await sendDailyBriefEmail(req.user.id, { force: true });
     res.json({ success: true, ...result });
-  } catch (e: any) {
-    if (e?.code === "CLAUDE_OFFLINE") return res.status(503).json({ error: e.message, code: e.code });
+  } catch (e: unknown) {
+    const err = e as { code?: string; message?: string };
+    if (err?.code === "CLAUDE_OFFLINE") return res.status(503).json({ error: err.message, code: err.code });
     res.status(500).json({ error: "Send failed" });
   }
 });

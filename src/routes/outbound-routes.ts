@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { db, log, quotaTracker } from '../lib/server-context';
 import { authenticateUser } from '../middleware/auth';
 import { getErrorMessage } from '../lib/server-utils';
@@ -10,10 +10,19 @@ import { quotaRejectionHeaders } from '../lib/tenant-quotas';
 import { placeOutboundCall } from '../lib/vapi-client';
 import { SentryEvents } from '../lib/sentry-events';
 import { claudeRateLimiter, dialRateLimiter } from '../middleware/api-rate-limits';
+import type { AuthenticatedRequest } from '../types/auth';
+
+interface OutboundLead {
+  agent_id?: string;
+  customer_name?: string;
+  customer_number?: string;
+  phone_number?: string;
+  context?: string;
+}
 
 const router = Router();
 
-router.get('/api/outbound', authenticateUser, async (req: any, res: any) => {
+router.get('/api/outbound', authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const limitRaw = parseInt(req.query.limit as string);
     const offsetRaw = parseInt(req.query.offset as string);
@@ -39,7 +48,7 @@ router.get('/api/outbound', authenticateUser, async (req: any, res: any) => {
 // Returns upcoming scheduled callbacks for the operator dashboard.
 // Sorted by soonest first, capped at 50 for display purposes.
 // Rate-limited to 30 req/min per user to prevent scraping.
-router.get('/api/callbacks', claudeRateLimiter, authenticateUser, async (req: any, res: any) => {
+router.get('/api/callbacks', claudeRateLimiter, authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { data, error } = await db
       .from('wireline_outbound_leads')
@@ -53,13 +62,13 @@ router.get('/api/callbacks', claudeRateLimiter, authenticateUser, async (req: an
       .limit(50);
     if (error) throw error;
     res.json({ callbacks: data || [] });
-  } catch (e: any) {
-    log.error('GET /api/callbacks failed', { error: e?.message });
+  } catch (e: unknown) {
+    log.error('GET /api/callbacks failed', { error: getErrorMessage(e) });
     res.status(500).json({ error: 'Failed to load callbacks.' });
   }
 });
 
-router.delete('/api/outbound/:id', authenticateUser, async (req: any, res: any) => {
+router.delete('/api/outbound/:id', authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { error } = await db
       .from('wireline_outbound_leads')
@@ -74,7 +83,7 @@ router.delete('/api/outbound/:id', authenticateUser, async (req: any, res: any) 
   }
 });
 
-router.post('/api/outbound/dial', authenticateUser, dialRateLimiter, async (req: any, res: any) => {
+router.post('/api/outbound/dial', authenticateUser, dialRateLimiter, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { agentId, customerName, customerNumber, context } = req.body;
     if (!agentId || !customerNumber) {
@@ -162,7 +171,7 @@ router.post('/api/outbound/dial', authenticateUser, dialRateLimiter, async (req:
   }
 });
 
-router.post('/api/outbound/bulk', authenticateUser, async (req: any, res: any) => {
+router.post('/api/outbound/bulk', authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const validation = parseFormData(OutboundBulkSchema, {
       leads: req.body.leads,
@@ -196,7 +205,7 @@ router.post('/api/outbound/bulk', authenticateUser, async (req: any, res: any) =
       if (!ownedCampaign) return res.status(404).json({ error: 'Campaign not found' });
     }
 
-    const leadsWithUser = (leads || []).map((lead: any) => ({
+    const leadsWithUser = (leads || []).map((lead: OutboundLead) => ({
       ...lead,
       user_id: req.user.id,
       campaign_id: campaign_id || null,

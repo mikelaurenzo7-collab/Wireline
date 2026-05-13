@@ -1,4 +1,5 @@
-import express from "express";
+import express, { Response } from "express";
+import type { AuthenticatedRequest } from "../types/auth";
 import { db } from "../lib/server-context";
 import { authenticateUser } from "../middleware/auth";
 import * as claudeBrain from "../lib/claude-brain";
@@ -10,7 +11,7 @@ import { isSsrfUrl } from "../lib/webhook-validators";
 
 const router = express.Router();
 
-router.get("/status", authenticateUser, async (_req: any, res: any) => {
+router.get("/status", authenticateUser, async (_req: AuthenticatedRequest, res: Response) => {
   res.json({
     available: claudeBrain.isClaudeAvailable(),
     model: claudeBrain.CLAUDE_MODEL_DEFAULT,
@@ -22,7 +23,7 @@ router.get("/status", authenticateUser, async (_req: any, res: any) => {
   });
 });
 
-router.post("/brief", authenticateUser, async (req: any, res: any) => {
+router.post("/brief", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { agentId, customerName, customerNumber, reasonForCall, pastInteractionSummary } = req.body;
     let agentName = "Wireline Agent";
@@ -40,7 +41,7 @@ router.post("/brief", authenticateUser, async (req: any, res: any) => {
         agentArchetype = agent.archetype;
         role = agent.role || DEFAULT_AGENT_ROLE;
       }
-      knowledgeBase = (knowledge ?? []).map((k: any) => k.content);
+      knowledgeBase = (knowledge ?? []).map((k: { content: string }) => k.content);
     }
 
     const result = await claudeBrain.brief({
@@ -55,7 +56,7 @@ router.post("/brief", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-router.post("/qualify", authenticateUser, async (req: any, res: any) => {
+router.post("/qualify", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { source, transcript, callId, threadId, agentId } = req.body;
     let actualTranscript: string = transcript;
@@ -71,7 +72,7 @@ router.post("/qualify", authenticateUser, async (req: any, res: any) => {
       const { data: thread } = await db.from("wireline_email_threads").select("agent_id").eq("id", threadId).eq("user_id", req.user.id).single();
       if (!resolvedAgentId && thread?.agent_id) resolvedAgentId = thread.agent_id;
       const { data: msgs } = await db.from("wireline_email_messages").select("role, content").eq("thread_id", threadId).eq("user_id", req.user.id).order("created_at", { ascending: true }).limit(100);
-      actualTranscript = (msgs ?? []).map((m: any) => `${m.role.toUpperCase()}: ${m.content}`).join("\n\n");
+      actualTranscript = (msgs ?? []).map((m: { role: string; content: string }) => `${m.role.toUpperCase()}: ${m.content}`).join("\n\n");
     }
 
     if (!actualTranscript) {
@@ -95,7 +96,7 @@ router.post("/qualify", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-router.post("/objection-drill", authenticateUser, async (req: any, res: any) => {
+router.post("/objection-drill", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { agentId, topic, count } = req.body;
     let agentName = "Wireline Agent";
@@ -116,7 +117,7 @@ router.post("/objection-drill", authenticateUser, async (req: any, res: any) => 
   }
 });
 
-router.post("/cold-email", authenticateUser, async (req: any, res: any) => {
+router.post("/cold-email", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { agentId, ...rest } = req.body ?? {};
     let agentRole: string | undefined = rest.agentRole;
@@ -131,7 +132,7 @@ router.post("/cold-email", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-router.post("/persona-clone", authenticateUser, async (req: any, res: any) => {
+router.post("/persona-clone", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { description, samples, agentId, applyToAgent } = req.body;
     if (!Array.isArray(samples) || samples.length === 0) {
@@ -158,7 +159,7 @@ router.post("/persona-clone", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-router.post("/summarize-thread", authenticateUser, async (req: any, res: any) => {
+router.post("/summarize-thread", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { threadId } = req.body;
     const { data: thread } = await db.from("wireline_email_threads").select("subject").eq("id", threadId).eq("user_id", req.user.id).single();
@@ -174,7 +175,7 @@ router.post("/summarize-thread", authenticateUser, async (req: any, res: any) =>
   }
 });
 
-router.post("/route-intent", authenticateUser, async (req: any, res: any) => {
+router.post("/route-intent", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const result = await claudeBrain.routeIntent({ text: req.body.text || "" });
     res.json(result);
@@ -183,7 +184,7 @@ router.post("/route-intent", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-router.post("/email-draft", authenticateUser, async (req: any, res: any) => {
+router.post("/email-draft", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { threadId, agentId, userInstructions } = req.body;
     const { data: thread } = await db.from("wireline_email_threads").select("subject, agent_id").eq("id", threadId).eq("user_id", req.user.id).single();
@@ -209,8 +210,8 @@ router.post("/email-draft", authenticateUser, async (req: any, res: any) => {
         agentSignature = agent.email_signature || "";
         agentRole = agent.role || DEFAULT_AGENT_ROLE;
       }
-      knowledgeBase = (knowledge ?? []).map((k: any) => k.content);
-      directives = (directiveRows ?? []).map((d: any) => d.content);
+      knowledgeBase = (knowledge ?? []).map((k: { content: string }) => k.content);
+      directives = (directiveRows ?? []).map((d: { content: string }) => d.content);
     }
 
     const { data: msgs } = await db.from("wireline_email_messages").select("role, content").eq("thread_id", threadId).eq("user_id", req.user.id).order("created_at", { ascending: true }).limit(100);
@@ -232,7 +233,7 @@ router.post("/email-draft", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-router.post("/email-quick-replies", authenticateUser, async (req: any, res: any) => {
+router.post("/email-quick-replies", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { threadId, agentId } = req.body;
     if (!threadId) return res.status(400).json({ error: "threadId required" });
@@ -258,7 +259,7 @@ router.post("/email-quick-replies", authenticateUser, async (req: any, res: any)
         agentSignature = agent.email_signature || "";
         agentRole = agent.role || DEFAULT_AGENT_ROLE;
       }
-      knowledgeBase = (knowledge ?? []).map((k: any) => k.content);
+      knowledgeBase = (knowledge ?? []).map((k: { content: string }) => k.content);
     }
 
     const { data: msgs } = await db.from("wireline_email_messages").select("role, content").eq("thread_id", threadId).eq("user_id", req.user.id).order("created_at", { ascending: true }).limit(100);
@@ -276,7 +277,7 @@ router.post("/email-quick-replies", authenticateUser, async (req: any, res: any)
   }
 });
 
-router.post("/agent-review", authenticateUser, async (req: any, res: any) => {
+router.post("/agent-review", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { agentId, lookback } = req.body;
     if (!agentId) return res.status(400).json({ error: "agentId required" });
@@ -304,7 +305,7 @@ router.post("/agent-review", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-router.post("/call-playbook", authenticateUser, async (req: any, res: any) => {
+router.post("/call-playbook", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { agentId, scenario } = req.body;
     if (!agentId) return res.status(400).json({ error: "agentId required" });
@@ -322,9 +323,9 @@ router.post("/call-playbook", authenticateUser, async (req: any, res: any) => {
       agentName: agent.name,
       agentRole: agent.role || DEFAULT_AGENT_ROLE,
       scenario: scenario.trim(),
-      knowledgeBase: (knowledgeRows ?? []).map((k: any) => k.content),
-      directives: (directiveRows ?? []).map((d: any) => d.content),
-      companyName: (settings as any)?.company_name || undefined,
+      knowledgeBase: (knowledgeRows ?? []).map((k: { content: string }) => k.content),
+      directives: (directiveRows ?? []).map((d: { content: string }) => d.content),
+      companyName: (settings as { company_name?: string })?.company_name || undefined,
     });
 
     res.json({ playbook });
@@ -333,7 +334,7 @@ router.post("/call-playbook", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-router.post("/agent-review/apply-directive", authenticateUser, async (req: any, res: any) => {
+router.post("/agent-review/apply-directive", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const validation = parseFormData(DirectiveSchema, { content: req.body.directive });
     if (!validation.success) {
@@ -358,7 +359,7 @@ router.post("/agent-review/apply-directive", authenticateUser, async (req: any, 
   }
 });
 
-router.post("/post-call/:callId", authenticateUser, async (req: any, res: any) => {
+router.post("/post-call/:callId", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { data: call } = await db
       .from("wireline_call_logs")
@@ -394,7 +395,7 @@ router.post("/post-call/:callId", authenticateUser, async (req: any, res: any) =
   }
 });
 
-router.post("/coach", authenticateUser, async (req: any, res: any) => {
+router.post("/coach", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { transcript: rawTranscript, callId, agentId, isLive } = req.body;
     let transcript = rawTranscript as string | undefined;
@@ -427,7 +428,7 @@ router.post("/coach", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-router.post("/knowledge-from-url", authenticateUser, async (req: any, res: any) => {
+router.post("/knowledge-from-url", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { url, agentContext, maxEntries, maxPages } = req.body;
     if (!url || typeof url !== "string" || url.length > 2048) {
@@ -455,7 +456,7 @@ router.post("/knowledge-from-url", authenticateUser, async (req: any, res: any) 
   }
 });
 
-router.post("/knowledge-from-document", authenticateUser, async (req: any, res: any) => {
+router.post("/knowledge-from-document", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { pdfBase64, fileName, agentContext, maxEntries } = req.body;
     if (!pdfBase64 || typeof pdfBase64 !== "string") {
@@ -484,7 +485,7 @@ router.post("/knowledge-from-document", authenticateUser, async (req: any, res: 
   }
 });
 
-router.post("/knowledge-from-url/apply", authenticateUser, async (req: any, res: any) => {
+router.post("/knowledge-from-url/apply", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { agentId, entries } = req.body;
     if (!agentId || !Array.isArray(entries)) {
@@ -495,8 +496,8 @@ router.post("/knowledge-from-url/apply", authenticateUser, async (req: any, res:
     if (!agent) return res.status(404).json({ error: "Agent not found." });
 
     const rows = entries
-      .filter((e: any) => typeof e?.fact === "string" && e.fact.trim())
-      .map((e: any) => ({
+      .filter((e: unknown) => typeof e?.fact === "string" && e.fact.trim())
+      .map((e: unknown) => ({
         agent_id: agentId,
         user_id: req.user.id,
         content: e.fact.trim(),
@@ -513,7 +514,7 @@ router.post("/knowledge-from-url/apply", authenticateUser, async (req: any, res:
 });
 
 const KNOWLEDGE_DEDUPE_MAX_FACTS = 400;
-router.post("/knowledge-dedupe", authenticateUser, async (req: any, res: any) => {
+router.post("/knowledge-dedupe", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     if (!claudeBrain.isClaudeAvailable()) {
       return res.status(503).json({ error: "Claude required for knowledge dedupe.", code: "CLAUDE_OFFLINE" });
@@ -525,7 +526,7 @@ router.post("/knowledge-dedupe", authenticateUser, async (req: any, res: any) =>
     if (!rows || rows.length < 2) {
       return res.json({ clusters: [], total_analyzed: rows?.length || 0, message: "Not enough facts to dedupe." });
     }
-    const agentMap = new Map((agents || []).map((a: any) => [a.id, a.name]));
+    const agentMap = new Map((agents || []).map((a: { id: string; name: string }) => [a.id, a.name]));
     const result = await claudeBrain.findKnowledgeDuplicates({
       facts: rows.map((r: any) => ({
         id: r.id,
@@ -537,12 +538,12 @@ router.post("/knowledge-dedupe", authenticateUser, async (req: any, res: any) =>
     const safe = (result.clusters || [])
       .map((c: any) => ({
         ...c,
-        members: (c.members || []).filter((m: any) => validIds.has(m.id)),
+        members: (c.members || []).filter((m: { role: string; content: string }) => validIds.has(m.id)),
       }))
       .filter((c: any) =>
         c.members.length >= 2 &&
         validIds.has(c.recommended_keep_id) &&
-        c.members.some((m: any) => m.id === c.recommended_keep_id),
+        c.members.some((m: { role: string; content: string }) => m.id === c.recommended_keep_id),
       );
     res.json({
       clusters: safe,
@@ -554,7 +555,7 @@ router.post("/knowledge-dedupe", authenticateUser, async (req: any, res: any) =>
   }
 });
 
-router.post("/enrich-lead", authenticateUser, async (req: any, res: any) => {
+router.post("/enrich-lead", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     if (!claudeBrain.isClaudeAvailable()) {
       return res.status(503).json({ error: "Claude required for lead enrichment.", code: "CLAUDE_OFFLINE" });
@@ -575,7 +576,7 @@ router.post("/enrich-lead", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-router.post("/forge", authenticateUser, async (req: any, res: any) => {
+router.post("/forge", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { goal, industry, companyName, websiteUrl, voicePreference } = req.body;
     if (!goal) return res.status(400).json({ error: "goal required." });
@@ -586,7 +587,7 @@ router.post("/forge", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-router.post("/forge/create", authenticateUser, async (req: any, res: any) => {
+router.post("/forge/create", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { design, websiteUrl } = req.body;
     if (!design || !design.name) return res.status(400).json({ error: "design with name required." });

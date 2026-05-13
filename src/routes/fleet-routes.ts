@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Response } from "express";
 
 import { db, log } from "../lib/server-context";
 import { authenticateUser } from "../middleware/auth";
@@ -7,14 +7,29 @@ import { parseFormData, FleetTaskCreateSchema } from "../lib/form-validators";
 import { compileActivityFeed } from "../lib/fleet-activity";
 import { ROLE_PERSONALITY_TEMPLATES } from "../lib/agent-constants";
 import { claudeErr } from "../lib/claude-response-helpers";
+import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
 
 const FLEET_TASK_STATUSES = ['pending', 'open', 'in_progress', 'completed', 'cancelled'] as const;
 const FLEET_TASK_PRIORITIES = ['low', 'medium', 'high'] as const;
 
+interface FleetTask {
+  status?: string;
+  priority?: string;
+  due_date?: string;
+  created_at: string;
+}
 
-router.post("/api/fleet/seed", authenticateUser, async (req: any, res: any) => {
+interface TaskUpdateData {
+  status?: string;
+  priority?: string;
+  due_date?: string;
+  agent_id?: string;
+  resolution_notes?: string;
+}
+
+router.post("/api/fleet/seed", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   const userId = req.user.id;
   const specializedAgents = [
     {
@@ -90,7 +105,6 @@ router.post("/api/fleet/seed", authenticateUser, async (req: any, res: any) => {
         content: agent.personality
       });
       
-      // Add a default directive for each
       await db.from('wireline_directives').insert({
         agent_id: agent.id,
         user_id: userId,
@@ -105,7 +119,7 @@ router.post("/api/fleet/seed", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-router.get("/api/fleet/presence", authenticateUser, async (req: any, res: any) => {
+router.get("/api/fleet/presence", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { data, error } = await db.from('wireline_signal_presence')
       .select('*')
@@ -119,11 +133,8 @@ router.get("/api/fleet/presence", authenticateUser, async (req: any, res: any) =
   }
 });
 
-router.get("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => {
+router.get("/api/fleet/tasks", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    // Optional server-side filters — callers can pass ?status=pending&priority=high
-    // to avoid fetching the full task history when only a subset is needed (e.g.
-    // the DashboardHome high-priority widget).
     const VALID_STATUSES   = new Set(["pending", "in_progress", "completed", "cancelled"]);
     const VALID_PRIORITIES = new Set(["high", "medium", "low"]);
     const statusFilter   = typeof req.query.status   === "string" && VALID_STATUSES.has(req.query.status)   ? req.query.status   : null;
@@ -136,18 +147,16 @@ router.get("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => {
     if (statusFilter)   query = query.eq('status',   statusFilter);
     if (priorityFilter) query = query.eq('priority', priorityFilter);
 
-    // Hard cap on returned rows — protects against unfiltered loads
-    // ballooning into multi-thousand-row responses on busy fleets.
     const { data, error } = await query.limit(1000);
     
     if (error) throw error;
 
-    const sortedTasks = (data || []).sort((a: any, b: any) => {
+    const sortedTasks = (data || []).sort((a: FleetTask, b: FleetTask) => {
       if (a.status === 'completed' && b.status !== 'completed') return 1;
       if (a.status !== 'completed' && b.status === 'completed') return -1;
       const priorityWeight: Record<string, number> = { 'high': 3, 'medium': 2, 'low': 1 };
-      const weightA = priorityWeight[a.priority?.toLowerCase()] || 0;
-      const weightB = priorityWeight[b.priority?.toLowerCase()] || 0;
+      const weightA = priorityWeight[a.priority?.toLowerCase() || ''] || 0;
+      const weightB = priorityWeight[b.priority?.toLowerCase() || ''] || 0;
       if (weightA !== weightB) return weightB - weightA;
       if (a.due_date && b.due_date) return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
@@ -160,7 +169,7 @@ router.get("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-router.post("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => {
+router.post("/api/fleet/tasks", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const validation = parseFormData(FleetTaskCreateSchema, req.body);
     if (!validation.success) {
@@ -176,10 +185,10 @@ router.post("/api/fleet/tasks", authenticateUser, async (req: any, res: any) => 
   }
 });
 
-router.patch("/api/fleet/tasks/:id", authenticateUser, async (req: any, res: any) => {
+router.patch("/api/fleet/tasks/:id", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { status, priority, due_date, agent_id, resolution_notes } = req.body;
-    const updateData: any = {};
+    const updateData: TaskUpdateData = {};
     if (status !== undefined) {
       if (!FLEET_TASK_STATUSES.includes(status)) {
         return res.status(400).json({ error: `status must be one of: ${FLEET_TASK_STATUSES.join(', ')}` });
@@ -203,7 +212,7 @@ router.patch("/api/fleet/tasks/:id", authenticateUser, async (req: any, res: any
   }
 });
 
-router.get("/api/fleet/activity", authenticateUser, async (req: any, res: any) => {
+router.get("/api/fleet/activity", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
    try {
       const [logs, tasks, lessons, emails] = await Promise.all([
           db.from('wireline_call_logs').select('id, customer_number, lead_score, intent_label, summary, created_at').eq('user_id', req.user.id).order('created_at', { ascending: false }).limit(5),
@@ -212,8 +221,6 @@ router.get("/api/fleet/activity", authenticateUser, async (req: any, res: any) =
           db.from('wireline_email_threads').select('id, customer_email, lead_score, intent_label, created_at').eq('user_id', req.user.id).order('created_at', { ascending: false }).limit(5)
       ]);
 
-      // Surface backend failures explicitly instead of returning a
-      // misleading 200 with an empty feed.
       const queryError = logs.error || tasks.error || lessons.error || emails.error;
       if (queryError) throw queryError;
 
@@ -225,8 +232,8 @@ router.get("/api/fleet/activity", authenticateUser, async (req: any, res: any) =
       });
 
       res.json({ activity });
-   } catch(e: any) {
-      log.error("Activity feed error", { error: e?.message || String(e) });
+   } catch(e: unknown) {
+      log.error("Activity feed error", { error: getErrorMessage(e) });
       res.status(500).json({ error: "Failed to fetch activity" });
    }
 });
@@ -234,10 +241,9 @@ router.get("/api/fleet/activity", authenticateUser, async (req: any, res: any) =
 //  TRIAGE INBOX — "what needs my attention right now"
 // ──────────────────────────────────────────────────────────
 
-router.get("/api/triage", authenticateUser, async (req: any, res: any) => {
+router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const [{ data: hotLeads }, { data: complianceTasks }, { data: pendingTasks }, { data: knowledgeGaps }, { data: escalations }] = await Promise.all([
-      // Calls with high lead score from the last 7 days that don't have a follow-up logged.
       db.from("wireline_call_logs")
         .select("id, agent_id, customer_number, lead_score, intent_label, summary, created_at")
         .eq("user_id", req.user.id)

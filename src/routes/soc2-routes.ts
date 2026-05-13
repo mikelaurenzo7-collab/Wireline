@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Response } from "express";
 import { authenticateUser } from "../middleware/auth";
 import { soc2RateLimit } from "../middleware/api-rate-limits";
 import { db, log, requirePermission } from "../lib/server-context";
@@ -10,6 +10,7 @@ import {
   ALL_ROLES,
   buildIncidentRow,
 } from "../lib/soc2-controls";
+import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
 
@@ -22,7 +23,7 @@ router.get(
   authenticateUser,
   soc2RateLimit,
   requirePermission("audit.read"),
-  async (req: any, res: any) => {
+  async (req: AuthenticatedRequest, res: Response) => {
     try {
       const tenantId = req.user.id as string;
       const review = await runAccessReview(db, tenantId);
@@ -42,7 +43,7 @@ router.get(
   authenticateUser,
   soc2RateLimit,
   requirePermission("audit.read"),
-  async (req: any, res: any) => {
+  async (req: AuthenticatedRequest, res: Response) => {
     try {
       const tenantId = req.user.id as string;
       const review = await runAccessReview(db, tenantId);

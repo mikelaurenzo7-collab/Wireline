@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import { db, log, auditLogger } from "../lib/server-context";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage } from "../lib/server-utils";
@@ -7,15 +7,16 @@ import { clearBudgetCache, getBudgetSnapshot } from "../lib/spend-guards";
 import { planById, plansForClient } from "../lib/plan-catalog";
 import { getIncludedPhoneLineSlots } from "../lib/phone-line-entitlements";
 import Stripe from 'stripe';
+import type { AuthenticatedRequest } from "../types/auth";
 
 const router = express.Router();
-function billingBaseUrl(req: any): string {
+function billingBaseUrl(req: Request): string {
   return (process.env.APP_URL || req.get("origin") || "http://localhost:3000").replace(/\/+$/, "");
 }
 
 // ─── Stripe Webhook ──────────────────────────────────────────────────────────
 
-router.post('/stripe-webhook', async (req: any, res: any) => {
+router.post('/stripe-webhook', async (req: Request, res: Response) => {
   if (!stripeAvailable() || !process.env.STRIPE_WEBHOOK_SECRET) {
     return res.status(503).json({ error: 'Stripe webhook not configured.' });
   }
@@ -26,7 +27,7 @@ router.post('/stripe-webhook', async (req: any, res: any) => {
   try {
     // express.raw populated req.body as a Buffer
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
-  } catch (err: any) {
+  } catch (err: unknown) {
     log.warn('Stripe webhook signature verification failed', { error: getErrorMessage(err) });
     return res.status(400).json({ error: 'Webhook signature verification failed.' });
   }
@@ -46,7 +47,7 @@ router.post('/stripe-webhook', async (req: any, res: any) => {
       return res.json({ received: true, duplicate: true });
     }
     claimed = true;
-  } catch (err: any) {
+  } catch (err: unknown) {
     log.warn('Stripe idempotency claim failed — proceeding without idempotency guard', {
       error: getErrorMessage(err),
     });
@@ -70,7 +71,7 @@ router.post('/stripe-webhook', async (req: any, res: any) => {
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted': {
         const sub = event.data.object as Stripe.Subscription;
-        if (event.type === 'customer.subscription.created') (sub as any)._auditCreate = true;
+        if (event.type === 'customer.subscription.created') (sub as Record<string, unknown>)._auditCreate = true;
         await syncSubscriptionFromStripe(sub);
         break;
       }
@@ -131,7 +132,7 @@ router.post('/stripe-webhook', async (req: any, res: any) => {
         break;
     }
     res.json({ received: true });
-  } catch (err: any) {
+  } catch (err: unknown) {
     log.error('Stripe webhook handler error', { error: getErrorMessage(err) });
     if (claimed) {
       try {
@@ -146,7 +147,7 @@ router.post('/stripe-webhook', async (req: any, res: any) => {
 
 // ─── Spend budget ──────────────────────────────────────────────────────────
 
-router.put("/spend/budget", authenticateUser, async (req: any, res: any) => {
+router.put("/spend/budget", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const limit = Number(req.body.monthly_limit_usd ?? 0);
     const warn = Math.round(Number(req.body.warn_threshold_pct ?? 80));
@@ -168,10 +169,10 @@ router.put("/spend/budget", authenticateUser, async (req: any, res: any) => {
     if (error) throw error;
     clearBudgetCache(req.user.id);
     res.json({ budget: data });
-  } catch (e: any) { log.error("Failed to save budget", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to save budget" }); }
+  } catch (e: unknown) { log.error("Failed to save budget", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to save budget" }); }
 });
 
-router.get("/spend/status", authenticateUser, async (req: any, res: any) => {
+router.get("/spend/status", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const snap = await getBudgetSnapshot(req.user.id, true);
     const { data: alerts } = await db.from("wireline_spend_alerts")
@@ -191,16 +192,16 @@ router.get("/spend/status", authenticateUser, async (req: any, res: any) => {
       hard_capped_now: !!(snap.budget?.hard_cap && limit > 0 && snap.mtdCost >= limit),
       alerts_fired: alerts || [],
     });
-  } catch (e: any) { log.error("Failed to load spend status", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load spend status" }); }
+  } catch (e: unknown) { log.error("Failed to load spend status", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load spend status" }); }
 });
 
 // ─── Billing plans / checkout / portal ─────────────────────────────────────
 
-router.get("/billing/plans", (_req: any, res: any) => {
+router.get("/billing/plans", (_req: Request, res: Response) => {
   res.json({ plans: plansForClient(), stripe_configured: stripeAvailable() });
 });
 
-router.get("/billing/status", authenticateUser, async (req: any, res: any) => {
+router.get("/billing/status", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const [{ data: sub }, { count: agentCount }, { count: phoneLineCount }, entitlementSlots] = await Promise.all([
       db.from("wireline_subscriptions")
@@ -231,13 +232,13 @@ router.get("/billing/status", authenticateUser, async (req: any, res: any) => {
           }
         : null,
     });
-  } catch (e: any) {
+  } catch (e: unknown) {
     log.error("Failed to load status", { error: getErrorMessage(e) });
     res.status(500).json({ error: "Failed to load status" });
   }
 });
 
-router.post("/billing/checkout", authenticateUser, async (req: any, res: any) => {
+router.post("/billing/checkout", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     if (!stripeAvailable()) return res.status(503).json({ error: "Stripe not configured." });
     const planId = String(req.body?.plan_id || "").trim();
@@ -292,13 +293,13 @@ router.post("/billing/checkout", authenticateUser, async (req: any, res: any) =>
     void auditLogger.logBilling('checkout_started', {
       userId: req.user.id, plan: plan.id, customerId, ip: req.ip,
     }).catch(() => {});
-  } catch (e: any) {
-    log.error("Checkout creation failed", { error: e?.message || String(e) });
+  } catch (e: unknown) {
+    log.error("Checkout creation failed", { error: getErrorMessage(e) });
     res.status(500).json({ error: "Checkout failed" });
   }
 });
 
-router.post("/billing/portal", authenticateUser, async (req: any, res: any) => {
+router.post("/billing/portal", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     if (!stripeAvailable()) return res.status(503).json({ error: "Stripe not configured." });
     const { data: sub } = await db.from("wireline_subscriptions")
@@ -315,8 +316,8 @@ router.post("/billing/portal", authenticateUser, async (req: any, res: any) => {
     void auditLogger.logBilling('portal_opened', {
       userId: req.user.id, customerId: sub.stripe_customer_id, ip: req.ip,
     }).catch(() => {});
-  } catch (e: any) {
-    log.error("Portal session failed", { error: e?.message || String(e) });
+  } catch (e: unknown) {
+    log.error("Portal session failed", { error: getErrorMessage(e) });
     res.status(500).json({ error: "Portal failed" });
   }
 });

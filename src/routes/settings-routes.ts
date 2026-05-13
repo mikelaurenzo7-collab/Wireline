@@ -1,4 +1,5 @@
-import { Router } from 'express';
+import { Router, Response } from 'express';
+import type { AuthenticatedRequest } from '../types/auth';
 import { db, log, auditLogger } from '../lib/server-context';
 import { authenticateUser } from '../middleware/auth';
 import { getErrorMessage } from '../lib/server-utils';
@@ -11,7 +12,7 @@ import {
 
 const router = Router();
 
-router.get('/api/settings', authenticateUser, async (req: any, res: any) => {
+router.get('/api/settings', authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { data, error } = await db
       .from('wireline_settings')
@@ -25,7 +26,7 @@ router.get('/api/settings', authenticateUser, async (req: any, res: any) => {
   }
 });
 
-router.post('/api/settings', authenticateUser, async (req: any, res: any) => {
+router.post('/api/settings', authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const update = { ...req.body };
     delete update.id;
@@ -46,7 +47,7 @@ router.post('/api/settings', authenticateUser, async (req: any, res: any) => {
   }
 });
 
-router.get('/api/user-preferences', authenticateUser, async (req: any, res: any) => {
+router.get('/api/user-preferences', authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { data, error } = await db
       .from('wireline_user_preferences')
@@ -67,7 +68,7 @@ router.get('/api/user-preferences', authenticateUser, async (req: any, res: any)
   }
 });
 
-router.post('/api/user-preferences', authenticateUser, async (req: any, res: any) => {
+router.post('/api/user-preferences', authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const ALLOWED_FIELDS = [
       'persona',
@@ -77,7 +78,7 @@ router.post('/api/user-preferences', authenticateUser, async (req: any, res: any
       'keyboard_shortcuts_enabled',
       'preferences',
     ] as const;
-    const update: Record<string, any> = {};
+    const update: Record<string, unknown> = {};
     for (const f of ALLOWED_FIELDS) {
       if (req.body[f] !== undefined) update[f] = req.body[f];
     }
@@ -98,7 +99,7 @@ router.post('/api/user-preferences', authenticateUser, async (req: any, res: any
   }
 });
 
-router.get('/api/onboarding/progress', authenticateUser, async (req: any, res: any) => {
+router.get('/api/onboarding/progress', authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user.id;
     const [{ count: agentCount }, { count: callCount }, { data: settings }, { data: prefs }] =
@@ -141,7 +142,7 @@ router.get('/api/onboarding/progress', authenticateUser, async (req: any, res: a
 // Exports all user-owned data from every wireline_* table as a JSON file.
 // Returns a download URL or the JSON directly depending on implementation.
 // ─────────────────────────────────────────────────────────────────────────────
-router.post('/api/account/export', authenticateUser, async (req: any, res: any) => {
+router.post('/api/account/export', authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   const uid = req.user.id;
   try {
     log.info('account export requested', { uid });
@@ -187,7 +188,7 @@ router.post('/api/account/export', authenticateUser, async (req: any, res: any) 
       'wireline_jobs',
     ];
 
-    const exportData: Record<string, any[]> = {};
+    const exportData: Record<string, unknown[]> = {};
     let totalRows = 0;
 
     // Collect all user data from each table
@@ -197,7 +198,7 @@ router.post('/api/account/export', authenticateUser, async (req: any, res: any) 
         ? 'tenant_id'
         : 'user_id';
 
-      const { data, error } = await (db as any).from(table).select('*').eq(userCol, uid);
+      const { data, error } = await db.from(table).select('*').eq(userCol, uid);
 
       if (error) {
         log.warn(`account export: ${table} query failed`, { error: error.message });
@@ -229,7 +230,7 @@ router.post('/api/account/export', authenticateUser, async (req: any, res: any) 
       `attachment; filename="wireline-account-export-${uid.substring(0, 8)}-${Date.now()}.json"`,
     );
     res.status(200).json(exportPackage);
-  } catch (err: any) {
+  } catch (err: unknown) {
     log.error('account export failed', { uid, error: getErrorMessage(err) });
     res.status(500).json({ error: 'Account export failed. Please contact support.' });
   }
@@ -247,7 +248,7 @@ router.post(
   '/api/account/purge-old-data',
   authenticateUser,
   jobsRateLimit,
-  async (req: any, res: any) => {
+  async (req: AuthenticatedRequest, res: Response) => {
     const uid = req.user.id;
     try {
       const { data: settings } = await db
@@ -275,7 +276,7 @@ router.post(
         jobId: result.jobId,
       });
       res.json({ success: true, retention_days: retentionDays, job_id: result.jobId });
-    } catch (err: any) {
+    } catch (err: unknown) {
       log.error('POST /api/account/purge-old-data failed', {
         error: getErrorMessage(err),
         user_id: uid,
@@ -294,7 +295,7 @@ router.post(
 // Requires the authenticated user to confirm intent by passing
 // { confirm: "DELETE MY ACCOUNT" } in the body.
 // ─────────────────────────────────────────────────────────────────────────────
-router.delete('/api/user/account', authenticateUser, async (req: any, res: any) => {
+router.delete('/api/user/account', authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   const CONFIRMATION_PHRASE = 'DELETE MY ACCOUNT';
   if (req.body?.confirm !== CONFIRMATION_PHRASE) {
     return res.status(400).json({
@@ -356,7 +357,7 @@ router.delete('/api/user/account', authenticateUser, async (req: any, res: any) 
       grace_days: ACCOUNT_DELETION_GRACE_DAYS,
       cancel_endpoint: '/api/account/cancel-deletion',
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     log.error('account deletion enqueue failed', { uid, error: getErrorMessage(err) });
     res.status(500).json({ error: 'Failed to schedule account deletion.' });
   }
@@ -366,7 +367,7 @@ router.delete('/api/user/account', authenticateUser, async (req: any, res: any) 
 // Cancels a pending deletion request, provided the grace window has not yet
 // elapsed. Idempotent: if no pending row exists, returns 404.
 // ─────────────────────────────────────────────────────────────────────────────
-router.post('/api/account/cancel-deletion', authenticateUser, async (req: any, res: any) => {
+router.post('/api/account/cancel-deletion', authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   const uid = req.user.id;
   try {
     const { data: existing } = await db
@@ -402,7 +403,7 @@ router.post('/api/account/cancel-deletion', authenticateUser, async (req: any, r
       .catch(() => {});
 
     return res.json({ status: 'cancelled' });
-  } catch (err: any) {
+  } catch (err: unknown) {
     log.error('cancel-deletion failed', { uid, error: getErrorMessage(err) });
     res.status(500).json({ error: 'Failed to cancel deletion.' });
   }

@@ -1,10 +1,11 @@
-import express from "express";
+import express, { Request, Response, NextFunction } from "express";
 import { db } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import * as claudeBrain from "../lib/claude-brain";
 import { getHealthCapabilities, getIntegrationsStatus } from "../lib/integrations-registry";
 import { authenticateUser } from "../middleware/auth";
 import { getOperatorSloSnapshot } from "../lib/operator-slos";
+import type { AuthenticatedRequest } from "../types/auth";
 
 const router = express.Router();
 
@@ -26,7 +27,7 @@ async function probeDatabase(
     if (result?.error)
       return { ok: false, latency_ms: Date.now() - t0, error: result.error.message };
     return { ok: true, latency_ms: Date.now() - t0 };
-  } catch (err: any) {
+  } catch (err: unknown) {
     return { ok: false, latency_ms: Date.now() - t0, error: getErrorMessage(err) };
   }
 }
@@ -50,7 +51,7 @@ setInterval(
   10 * 60 * 1000,
 ).unref();
 
-function healthRateLimiter(req: any, res: any, next: any) {
+function healthRateLimiter(req: Request, res: Response, next: NextFunction) {
   const xff = req.headers["x-forwarded-for"];
   const key = (typeof xff === "string" ? xff.split(",")[0].trim() : null) || req.ip || "anon";
   const now = Date.now();
@@ -95,7 +96,7 @@ router.get("/integrations", healthRateLimiter, authenticateUser, (_req, res) => 
 });
 
 /** Authenticated SLO snapshot for the signed-in tenant (Admin → System). */
-router.get("/slos", healthRateLimiter, authenticateUser, async (req: any, res) => {
+router.get("/slos", healthRateLimiter, authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const n = Number(req.query.window_hours);
     const hours = Number.isFinite(n) ? Math.min(Math.max(n, 1), 168) : 24;
@@ -113,7 +114,7 @@ router.get("/slos", healthRateLimiter, authenticateUser, async (req: any, res) =
       banner_status,
       subscribable_events: ["slo.jobs.critical", "slo.webhooks.degraded", "slo.enrichment.dead"],
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     res.status(500).json({ error: getErrorMessage(err) });
   }
 });

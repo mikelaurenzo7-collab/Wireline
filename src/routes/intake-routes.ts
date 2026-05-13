@@ -24,7 +24,17 @@ async function generateIntakeKey(): Promise<{ plaintext: string; prefix: string;
   return { plaintext, prefix, hash };
 }
 
-async function resolveIntakeKey(provided: string | undefined): Promise<any | null> {
+interface IntakeKey {
+  id: string;
+  user_id: string;
+  name: string;
+  default_agent_id: string | null;
+  active: boolean;
+  use_count: number;
+  auto_dial: boolean;
+}
+
+async function resolveIntakeKey(provided: string | undefined): Promise<IntakeKey | null> {
   if (!provided || typeof provided !== "string" || !provided.startsWith(INTAKE_KEY_PREFIX)) return null;
   const hash = await sha256Hex(provided.trim());
   const { data } = await db.from("wireline_intake_keys")
@@ -96,7 +106,7 @@ type IntakeLeadInput = {
   name?: string;
   context?: string;
   message?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
   agent_id?: string;
   idempotency_key?: string;
 };
@@ -112,7 +122,7 @@ type IntakeLeadResult = {
   code?: string;
 };
 
-async function processIntakeLead(key: any, input: IntakeLeadInput, idemHeaderOverride?: string | null): Promise<IntakeLeadResult> {
+async function processIntakeLead(key: IntakeKey, input: IntakeLeadInput, idemHeaderOverride?: string | null): Promise<IntakeLeadResult> {
   const customer_number = (input.customer_number || input.phone || input.phone_number || "").toString().trim();
   if (!customer_number) {
     return { ok: false, error: "customer_number (or phone) is required.", code: "MISSING_NUMBER" };
@@ -206,7 +216,7 @@ async function processIntakeLead(key: any, input: IntakeLeadInput, idemHeaderOve
   }).catch((err) =>
     log.warn("lead.received webhook dispatch failed", {
       user_id: key.user_id,
-      error: (err as any)?.message || String(err),
+      error: err instanceof Error ? err.message : String(err),
     })
   );
 
@@ -235,7 +245,7 @@ async function processIntakeLead(key: any, input: IntakeLeadInput, idemHeaderOve
           }).eq("id", inserted.id);
           log.warn("Auto-dial failed for lead", { leadId: inserted.id, status: result.status, error: result.error });
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         await db.from("wireline_outbound_leads").update({
           status: "AutoDialFailed",
           metadata: { ...(metadata || {}), auto_dial_error: getErrorMessage(err) },
@@ -254,7 +264,7 @@ async function processIntakeLead(key: any, input: IntakeLeadInput, idemHeaderOve
 }
 
 // POST /lead — public, authenticated by X-Wireline-Key header
-router.post("/lead", async (req: any, res: any) => {
+router.post("/lead", async (req: Request, res: Response) => {
   try {
     const provided = req.headers["x-wireline-key"] as string | undefined;
     const key = await resolveIntakeKey(provided);
@@ -285,7 +295,7 @@ router.post("/lead", async (req: any, res: any) => {
     }
     const status = result.code === "MISSING_NUMBER" ? 400 : 500;
     return res.status(status).json({ error: result.error, code: result.code });
-  } catch (e: any) {
+  } catch (e: unknown) {
     log.error("Intake lead failed", { error: e?.message || String(e) });
     res.status(500).json({ error: "Intake failed" });
   }
@@ -294,7 +304,7 @@ router.post("/lead", async (req: any, res: any) => {
 // POST /leads — bulk intake, up to BULK_MAX leads per request
 const INTAKE_BULK_MAX = 100;
 
-router.post("/leads", async (req: any, res: any) => {
+router.post("/leads", async (req: Request, res: Response) => {
   try {
     const provided = req.headers["x-wireline-key"] as string | undefined;
     const key = await resolveIntakeKey(provided);
@@ -329,7 +339,7 @@ router.post("/leads", async (req: any, res: any) => {
     }
 
     const results = await Promise.all(
-      (leads as IntakeLeadInput[]).map((lead) => processIntakeLead(key, lead).catch((err: any) => ({
+      (leads as IntakeLeadInput[]).map((lead) => processIntakeLead(key, lead).catch((err: unknown) => ({
         ok: false,
         error: getErrorMessage(err),
         code: "PROCESS_FAILED",
@@ -352,14 +362,14 @@ router.post("/leads", async (req: any, res: any) => {
       failure_count: leads.length - successes,
       results,
     });
-  } catch (e: any) {
+  } catch (e: unknown) {
     log.error("Bulk intake failed", { error: e?.message || String(e) });
     res.status(500).json({ error: "Bulk intake failed" });
   }
 });
 
 // GET /keys — list intake keys for the authenticated user
-router.get("/keys", authenticateUser, async (req: any, res: any) => {
+router.get("/keys", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { data, error } = await db.from("wireline_intake_keys")
       .select("id, name, key_prefix, default_agent_id, auto_dial, active, last_used_at, use_count, created_at")
@@ -367,11 +377,11 @@ router.get("/keys", authenticateUser, async (req: any, res: any) => {
       .order("created_at", { ascending: false });
     if (error) throw error;
     res.json({ keys: data || [] });
-  } catch (e: any) { log.error("Failed to load keys", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load keys" }); }
+  } catch (e: unknown) { log.error("Failed to load keys", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load keys" }); }
 });
 
 // POST /keys — create a new intake key
-router.post("/keys", authenticateUser, async (req: any, res: any) => {
+router.post("/keys", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const name = (req.body?.name || "").toString().trim();
     if (!name) return res.status(400).json({ error: "name is required" });
@@ -393,13 +403,13 @@ router.post("/keys", authenticateUser, async (req: any, res: any) => {
       userId: req.user.id, keyId: data.id, keyPrefix: data.key_prefix, keyName: data.name, ip: req.ip,
     }).catch(() => {});
     res.json({ key: data, plaintext });
-  } catch (e: any) { log.error("Failed to create key", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to create key" }); }
+  } catch (e: unknown) { log.error("Failed to create key", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to create key" }); }
 });
 
 // PATCH /keys/:id — update an intake key
-router.patch("/keys/:id", authenticateUser, async (req: any, res: any) => {
+router.patch("/keys/:id", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const patch: any = {};
+    const patch: Record<string, unknown> = {};
     if (req.body?.name !== undefined) patch.name = String(req.body.name).slice(0, 80);
     if (req.body?.active !== undefined) patch.active = !!req.body.active;
     if (req.body?.default_agent_id !== undefined) patch.default_agent_id = req.body.default_agent_id || null;
@@ -412,18 +422,18 @@ router.patch("/keys/:id", authenticateUser, async (req: any, res: any) => {
       userId: req.user.id, keyId: data.id, keyPrefix: data.key_prefix, keyName: data.name, ip: req.ip,
     }).catch(() => {});
     res.json({ key: data });
-  } catch (e: any) { log.error("Failed to update key", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to update key" }); }
+  } catch (e: unknown) { log.error("Failed to update key", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to update key" }); }
 });
 
 // DELETE /keys/:id — delete an intake key
-router.delete("/keys/:id", authenticateUser, async (req: any, res: any) => {
+router.delete("/keys/:id", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     await db.from("wireline_intake_keys").delete().eq("id", req.params.id).eq("user_id", req.user.id);
     void auditLogger.logIntakeKey('deleted', {
       userId: req.user.id, keyId: req.params.id, ip: req.ip,
     }).catch(() => {});
     res.json({ success: true });
-  } catch (e: any) { log.error("Failed to delete key", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to delete key" }); }
+  } catch (e: unknown) { log.error("Failed to delete key", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to delete key" }); }
 });
 
 export default router;

@@ -93,7 +93,7 @@ app.use("/api/outbound/bulk", express.json({ limit: "16mb" }));
 app.use(express.json({ limit: "1mb" }));
 
 // Request correlation IDs
-app.use((req: any, res: any, next: any) => {
+app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
   const incoming = (req.headers["x-request-id"] as string | undefined)?.slice(0, 64);
   const requestId = incoming && /^[A-Za-z0-9._-]+$/.test(incoming) ? incoming : randomUUID();
   res.locals.requestId = requestId;
@@ -105,7 +105,7 @@ app.use((req: any, res: any, next: any) => {
 const supabaseOrigin = buildSupabaseOrigin();
 const CSP_CONNECT_SRCS = buildConnectSrcs(supabaseOrigin);
 
-app.use((req: any, res: any, next: any) => {
+app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
   Sentry.setTag("http.method", req.method);
   Sentry.setTag("http.path", req.path);
   res.on("finish", () => Sentry.setTag("http.status_code", res.statusCode));
@@ -123,7 +123,7 @@ app.use((req: any, res: any, next: any) => {
 
 // Slow request logging
 const SLOW_REQUEST_THRESHOLD_MS = 5_000;
-app.use((req: any, res: any, next: any) => {
+app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
   const start = Date.now();
   res.on("finish", () => {
     const dur = Date.now() - start;
@@ -193,22 +193,23 @@ app.use(soc2Router);
 app.use(oauthRouter);
 
 // Global error handler
-app.use((err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+app.use((err: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  const errObj = err as { message?: string; stack?: string };
   log.error("Unhandled global error", {
-    requestId: (res as any).locals?.requestId,
+    requestId: res.locals?.requestId,
     method: req.method,
     path: req.path,
     error: getErrorMessage(err),
-    stack: err?.stack,
+    stack: errObj?.stack,
   });
   if (process.env.SENTRY_DSN) {
     Sentry.captureException(err, {
-      tags: { requestId: (res as any).locals?.requestId, path: req.path, method: req.method },
+      tags: { requestId: res.locals?.requestId, path: req.path, method: req.method },
     });
   }
   res
     .status(500)
-    .json({ error: "Internal Server Error", requestId: (res as any).locals?.requestId });
+    .json({ error: "Internal Server Error", requestId: res.locals?.requestId });
 });
 
 // Vite / Static Serving
@@ -249,7 +250,7 @@ async function startServer() {
       process.exit(1);
     }, GRACE_MS).unref?.();
     server.close((err) => {
-      clearTimeout(forceTimer as any);
+      clearTimeout(forceTimer);
       if (err) {
         log.error("Error during server.close", { error: err.message });
         process.exit(1);
@@ -267,10 +268,11 @@ async function startServer() {
 let stopWorker: (() => void) | undefined = initJobWorker() || undefined;
 
 // Safety nets
-process.on("unhandledRejection", (reason: any) => {
+process.on("unhandledRejection", (reason: unknown) => {
+  const r = reason as { message?: string; stack?: string } | null;
   log.error("unhandledRejection", {
-    error: reason?.message || String(reason),
-    stack: reason?.stack,
+    error: r?.message || String(reason),
+    stack: r?.stack,
   });
 });
 process.on("uncaughtException", (err: Error) => {

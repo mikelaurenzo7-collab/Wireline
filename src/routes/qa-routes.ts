@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Response } from "express";
 import { db, log } from "../lib/server-context";
 import { authenticateUser } from "../middleware/auth";
 import { withAudit } from "../middleware/audit-middleware";
@@ -7,6 +7,7 @@ import { enqueue } from "../lib/job-queue";
 import * as claudeBrain from "../lib/claude-brain";
 import { getErrorMessage } from "../lib/server-utils";
 import { MAX_BATCH_SCORE_LIMIT } from "../lib/qa-constants";
+import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
 
@@ -14,8 +15,26 @@ const router = Router();
 // QA SCORING — Claude-powered call quality
 // ==========================================
 
+interface CallForQa {
+  id: string;
+  summary?: string;
+  transcript?: string;
+  sentiment?: string;
+  direction?: string;
+  duration_seconds?: number;
+  coaching_note?: string;
+  agent_id?: string;
+  wireline_agents?: { role?: string };
+}
+
+interface QaUpdatePayload {
+  qa_score: number;
+  qa_breakdown: Record<string, unknown>;
+  coaching_note?: string;
+}
+
 // Score a call against a 5-dimension QA rubric (20 pts each = 100 total).
-router.post("/score/:callId", authenticateUser, withAudit("qa"), async (req: any, res: any) => {
+router.post("/score/:callId", authenticateUser, withAudit("qa"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { callId } = req.params;
     const { data: call, error: callErr } = await db
@@ -31,16 +50,16 @@ router.post("/score/:callId", authenticateUser, withAudit("qa"), async (req: any
       return res.status(503).json({ error: "Claude is not configured." });
     }
 
-    // Agent role is fetched via the relation above — used for role-specific QA guidance.
-    const agentRole: string | undefined = (call as any).wireline_agents?.role ?? undefined;
+    const typedCall = call as unknown as CallForQa;
+    const agentRole: string | undefined = typedCall.wireline_agents?.role ?? undefined;
 
     const breakdown = await claudeBrain.qaScore({
-      direction: ((call as any).direction || "inbound") as "inbound" | "outbound",
+      direction: (typedCall.direction || "inbound") as "inbound" | "outbound",
       agentRole,
-      summary: (call as any).summary || "",
-      transcript: (call as any).transcript || "",
-      sentiment: (call as any).sentiment || "neutral",
-      durationSeconds: (call as any).duration_seconds,
+      summary: typedCall.summary || "",
+      transcript: typedCall.transcript || "",
+      sentiment: typedCall.sentiment || "neutral",
+      durationSeconds: typedCall.duration_seconds,
     });
 
     const QA_DIMENSIONS = ["greeting", "discovery", "solution", "objection", "closing"] as const;
@@ -49,8 +68,7 @@ router.post("/score/:callId", authenticateUser, withAudit("qa"), async (req: any
       Math.max(0, QA_DIMENSIONS.reduce((sum, dim) => sum + (Number(breakdown[dim]) || 0), 0))
     );
 
-    // Persist score + breakdown. Also write coaching_note if we generated one.
-    const updatePayload: any = { qa_score: score, qa_breakdown: breakdown };
+    const updatePayload: QaUpdatePayload = { qa_score: score, qa_breakdown: breakdown };
     if (breakdown.coaching_note) updatePayload.coaching_note = breakdown.coaching_note;
 
     await db
@@ -65,24 +83,23 @@ router.post("/score/:callId", authenticateUser, withAudit("qa"), async (req: any
         userId: req.user.id,
         type: 'adaptive_optimization',
         payload: {
-          agentId: (call as any).agent_id,
+          agentId: typedCall.agent_id,
           callId,
           score,
           breakdown
         }
-      }).catch(e => log.error("Failed to enqueue adaptive optimization", { error: e.message }));
+      }).catch((e: unknown) => log.error("Failed to enqueue adaptive optimization", { error: getErrorMessage(e) }));
     }
 
     res.json({ success: true, score, breakdown });
-  } catch (e: any) {
-    log.error("QA scoring failed", { error: e?.message });
+  } catch (e: unknown) {
+    log.error("QA scoring failed", { error: getErrorMessage(e) });
     res.status(500).json({ error: "QA scoring failed." });
   }
 });
 
 // Batch-score all unscored calls (or up to `limit`) for the authenticated user.
-// Runs with concurrency=3 to avoid hammering Claude. Returns scored/skipped/failed counts.
-router.post("/score-batch", authenticateUser, claudeRateLimiter, withAudit("qa"), async (req: any, res: any) => {
+router.post("/score-batch", authenticateUser, claudeRateLimiter, withAudit("qa"), async (req: AuthenticatedRequest, res: Response) => {
   if (!claudeBrain.isClaudeAvailable()) {
     return res.status(503).json({ error: "Claude is not configured." });
   }
@@ -108,40 +125,38 @@ router.post("/score-batch", authenticateUser, claudeRateLimiter, withAudit("qa")
     const CONCURRENCY = 3;
     let scored = 0, skipped = 0, failed = 0;
 
-    // Simple promise-chain semaphore — each slot is a chained promise so at most
-    // CONCURRENCY scoring requests run simultaneously. Array.prototype.map executes
-    // the callback synchronously in index order, so slotIdx increments are safe.
     const sem = Array.from({ length: CONCURRENCY }, () => Promise.resolve());
     let slotIdx = 0;
 
-    const tasks = calls.map((call: any) => {
+    const tasks = calls.map((call: unknown) => {
+      const typedCall = call as CallForQa;
       const slot = slotIdx % CONCURRENCY;
       slotIdx++;
       return (sem[slot] = sem[slot].then(async () => {
         try {
-          if (!call.transcript && !call.summary) { skipped++; return; }
-          const agentRole: string | undefined = (call as any).wireline_agents?.role ?? undefined;
+          if (!typedCall.transcript && !typedCall.summary) { skipped++; return; }
+          const agentRole: string | undefined = typedCall.wireline_agents?.role ?? undefined;
           const breakdown = await claudeBrain.qaScore({
-            direction: (call.direction || "inbound") as "inbound" | "outbound",
+            direction: (typedCall.direction || "inbound") as "inbound" | "outbound",
             agentRole,
-            summary: call.summary || "",
-            transcript: call.transcript || "",
-            sentiment: call.sentiment || "neutral",
-            durationSeconds: call.duration_seconds,
+            summary: typedCall.summary || "",
+            transcript: typedCall.transcript || "",
+            sentiment: typedCall.sentiment || "neutral",
+            durationSeconds: typedCall.duration_seconds,
           });
           const score = Math.min(
             100,
             Math.max(0, QA_DIMENSIONS.reduce((s, d) => s + (Number(breakdown[d]) || 0), 0))
           );
-          const updatePayload: any = { qa_score: score, qa_breakdown: breakdown };
+          const updatePayload: QaUpdatePayload = { qa_score: score, qa_breakdown: breakdown };
           if (breakdown.coaching_note) updatePayload.coaching_note = breakdown.coaching_note;
           await db.from("wireline_call_logs")
             .update(updatePayload)
-            .eq("id", call.id)
+            .eq("id", typedCall.id)
             .eq("user_id", req.user.id);
           scored++;
-        } catch (err: any) {
-          log.warn("Batch QA: single call scoring failed", { callId: call.id, error: getErrorMessage(err) });
+        } catch (err: unknown) {
+          log.warn("Batch QA: single call scoring failed", { callId: typedCall.id, error: getErrorMessage(err) });
           failed++;
         }
       }));
@@ -149,14 +164,22 @@ router.post("/score-batch", authenticateUser, claudeRateLimiter, withAudit("qa")
 
     await Promise.all(tasks);
     res.json({ scored, skipped, failed, total: calls.length });
-  } catch (e: any) {
-    log.error("Batch QA scoring failed", { error: e?.message });
+  } catch (e: unknown) {
+    log.error("Batch QA scoring failed", { error: getErrorMessage(e) });
     res.status(500).json({ error: "Batch QA scoring failed." });
   }
 });
 
+interface QaCallRow {
+  qa_score?: number;
+  qa_breakdown?: Record<string, number>;
+  direction?: string;
+  agent_id?: string;
+  created_at: string;
+}
+
 // Aggregate QA stats for the Insights Quality tab.
-router.get("/stats", authenticateUser, async (req: any, res: any) => {
+router.get("/stats", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const days = Math.min(90, Math.max(1, parseInt(String(req.query.days || "30"), 10)));
     const since = new Date(Date.now() - days * 86_400_000).toISOString();
@@ -174,7 +197,8 @@ router.get("/stats", authenticateUser, async (req: any, res: any) => {
       return res.json({ count: 0, avgScore: 0, distribution: [], dimensions: {}, trend: [] });
     }
 
-    const avgScore = Math.round(calls.reduce((s: number, c: any) => s + (c.qa_score || 0), 0) / calls.length);
+    const typedCalls = calls as unknown as QaCallRow[];
+    const avgScore = Math.round(typedCalls.reduce((s: number, c: QaCallRow) => s + (c.qa_score || 0), 0) / typedCalls.length);
 
     // Score distribution buckets
     const distribution = [
@@ -184,15 +208,15 @@ router.get("/stats", authenticateUser, async (req: any, res: any) => {
       { label: "Great (75–89)",     min: 75, max: 89,  count: 0, color: "#4DFFC4" },
       { label: "Excellent (90+)",   min: 90, max: 100, count: 0, color: "#7DF9FF" },
     ];
-    calls.forEach((c: any) => {
-      const bucket = distribution.find((b) => c.qa_score >= b.min && c.qa_score <= b.max);
+    typedCalls.forEach((c: QaCallRow) => {
+      const bucket = distribution.find((b) => (c.qa_score || 0) >= b.min && (c.qa_score || 0) <= b.max);
       if (bucket) bucket.count++;
     });
 
     // Average by QA dimension
     const dims = { greeting: 0, discovery: 0, solution: 0, objection: 0, closing: 0 };
     let dimCount = 0;
-    calls.forEach((c: any) => {
+    typedCalls.forEach((c: QaCallRow) => {
       if (c.qa_breakdown && typeof c.qa_breakdown === "object") {
         dims.greeting  += Number(c.qa_breakdown.greeting)  || 0;
         dims.discovery += Number(c.qa_breakdown.discovery) || 0;
@@ -214,19 +238,19 @@ router.get("/stats", authenticateUser, async (req: any, res: any) => {
 
     // 7-day trend (or last 7 available days)
     const byDay: Record<string, number[]> = {};
-    calls.forEach((c: any) => {
+    typedCalls.forEach((c: QaCallRow) => {
       const day = c.created_at.slice(0, 10);
       if (!byDay[day]) byDay[day] = [];
-      byDay[day].push(c.qa_score);
+      byDay[day].push(c.qa_score || 0);
     });
     const trend = Object.entries(byDay)
       .sort(([a], [b]) => a.localeCompare(b))
       .slice(-7)
       .map(([day, scores]) => ({ day, avg: Math.round(scores.reduce((s, n) => s + n, 0) / scores.length) }));
 
-    res.json({ count: calls.length, avgScore, distribution, dimensions, trend });
-  } catch (e: any) {
-    log.error("QA stats failed", { error: e?.message });
+    res.json({ count: typedCalls.length, avgScore, distribution, dimensions, trend });
+  } catch (e: unknown) {
+    log.error("QA stats failed", { error: getErrorMessage(e) });
     res.status(500).json({ error: "Failed to fetch QA stats." });
   }
 });

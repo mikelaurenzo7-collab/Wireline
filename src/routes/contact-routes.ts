@@ -1,8 +1,9 @@
-import { Router } from "express";
+import { Router, Response } from "express";
 import { db, log } from "../lib/server-context";
 import { authenticateUser } from "../middleware/auth";
 import { normalizePhoneTail, buildContactProfile } from "../lib/contact-profile";
 import { claudeErr } from "../lib/claude-response-helpers";
+import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
 
@@ -10,7 +11,7 @@ const router = Router();
 //  CONTACT PROFILE — unified per-customer history
 // ──────────────────────────────────────────────────────────
 
-router.get("/api/contacts/:number", authenticateUser, async (req: any, res: any) => {
+router.get("/api/contacts/:number", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const number = decodeURIComponent(req.params.number);
     const norm = normalizePhoneTail(number);

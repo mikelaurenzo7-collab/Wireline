@@ -1,17 +1,18 @@
-import { Router } from "express";
+import { Router, Response } from "express";
 
 import { db, log, auditLogger } from "../lib/server-context";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage } from "../lib/server-utils";
 import { computeAuditSummary } from "../lib/audit-summary";
 import { createAuditEventsHandler, createAuditStatsHandler, createAuditExportHandler } from "../lib/audit-routes";
+import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
 
 const auditRouteDeps = { db, auditLogger, log };
 
 
-router.get("/api/audit/summary", authenticateUser, async (req: any, res: any) => {
+router.get("/api/audit/summary", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const days = Math.min(parseInt((req.query.days as string) || "30"), 365);
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
@@ -31,7 +32,7 @@ router.get("/api/audit/summary", authenticateUser, async (req: any, res: any) =>
   }
 });
 
-router.get("/api/audit/recent", authenticateUser, async (req: any, res: any) => {
+router.get("/api/audit/recent", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const limit = Math.min(parseInt((req.query.limit as string) || "100"), 500);
     const { data, error } = await db
@@ -63,7 +64,7 @@ router.get("/api/audit/export", authenticateUser, createAuditExportHandler(audit
 //  to give operators a real safety net for LLM bills.
 // ──────────────────────────────────────────────────────────
 
-router.get("/api/spend/budget", authenticateUser, async (req: any, res: any) => {
+router.get("/api/spend/budget", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { data } = await db.from("wireline_spend_budgets")
       .select("monthly_limit_usd, hard_cap, warn_threshold_pct, enabled, updated_at")
@@ -77,7 +78,7 @@ router.get("/api/spend/budget", authenticateUser, async (req: any, res: any) => 
         updated_at: null,
       },
     });
-  } catch (e: any) { log.error("Failed to load budget", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load budget" }); }
+  } catch (e: unknown) { log.error("Failed to load budget", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load budget" }); }
 });
 
 export default router;

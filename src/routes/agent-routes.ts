@@ -1,4 +1,5 @@
-import { Router } from "express";
+import { Router, Response } from "express";
+import type { AuthenticatedRequest } from "../types/auth";
 
 import { db, log, auditLogger } from "../lib/server-context";
 import { authenticateUser } from "../middleware/auth";
@@ -16,12 +17,12 @@ import { claudeErr } from "../lib/claude-response-helpers";
 const router = Router();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-const isMissingRoleColumnError = (error: any) =>
+const isMissingRoleColumnError = (error: unknown) =>
   typeof error?.message === "string" &&
   error.message.includes("Could not find the 'role' column of 'wireline_agents'");
 
 
-router.get("/api/agents", authenticateUser, async (req: any, res: any) => {
+router.get("/api/agents", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { data: agents, error } = await db.from('wireline_agents').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false }).limit(500);
     if (error) log.warn("Failed to fetch agents", { userId: req.user.id, error: getErrorMessage(error) });
@@ -47,7 +48,7 @@ router.get("/api/agents/roles", (_req, res) => {
   });
 });
 
-router.post("/api/agents/:id/apply-role", authenticateUser, async (req: any, res: any) => {
+router.post("/api/agents/:id/apply-role", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { role } = req.body;
     const template = ROLE_PERSONALITY_TEMPLATES[role as keyof typeof ROLE_PERSONALITY_TEMPLATES];
@@ -76,7 +77,7 @@ router.post("/api/agents/:id/apply-role", authenticateUser, async (req: any, res
   }
 });
 
-router.get("/api/agents/:id/export", authenticateUser, async (req: any, res: any) => {
+router.get("/api/agents/:id/export", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const agentId = req.params.id;
     const userId = req.user.id;
@@ -99,8 +100,8 @@ router.get("/api/agents/:id/export", authenticateUser, async (req: any, res: any
         role: agentRes.data.role,
         enabled_tools: agentRes.data.enabled_tools ?? null,
         personality: personalityRes.data?.content ?? '',
-        directives: (directivesRes.data ?? []).map((d: any) => ({ content: d.content, priority: d.priority })),
-        knowledge: (knowledgeRes.data ?? []).map((k: any) => k.content),
+        directives: (directivesRes.data ?? []).map((d: { content: string; priority?: number }) => ({ content: d.content, priority: d.priority })),
+        knowledge: (knowledgeRes.data ?? []).map((k: { content: string }) => k.content),
       },
     };
 
@@ -117,7 +118,7 @@ router.get("/api/agents/:id/export", authenticateUser, async (req: any, res: any
   }
 });
 
-router.post("/api/agents/:id/import", authenticateUser, async (req: any, res: any) => {
+router.post("/api/agents/:id/import", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const agentId = req.params.id;
     const userId = req.user.id;
@@ -152,7 +153,7 @@ router.post("/api/agents/:id/import", authenticateUser, async (req: any, res: an
     // Merge directives (append new ones)
     if (Array.isArray(directives) && directives.length > 0) {
       await db.from('wireline_directives').insert(
-        directives.map((d: any) => ({ agent_id: agentId, user_id: userId, content: d.content, priority: d.priority ?? 5 }))
+        directives.map((d: { content: string; priority?: number }) => ({ agent_id: agentId, user_id: userId, content: d.content, priority: d.priority ?? 5 }))
       );
     }
 
@@ -187,7 +188,7 @@ router.post("/api/agents/:id/import", authenticateUser, async (req: any, res: an
   }
 });
 
-router.get("/api/agent-config/:id", authenticateUser, async (req: any, res: any) => {
+router.get("/api/agent-config/:id", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const agentId = req.params.id;
     const userId = req.user.id;
@@ -211,7 +212,7 @@ router.get("/api/agent-config/:id", authenticateUser, async (req: any, res: any)
   }
 });
 
-router.post("/api/agent-config/:id/manual", authenticateUser, async (req: any, res: any) => {
+router.post("/api/agent-config/:id/manual", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { type, content, overrideId } = req.body;
     const agentId = req.params.id;
@@ -251,7 +252,7 @@ router.post("/api/agent-config/:id/manual", authenticateUser, async (req: any, r
   }
 });
 
-router.delete("/api/agent-config/:id/:type/:rowId", authenticateUser, async (req: any, res: any) => {
+router.delete("/api/agent-config/:id/:type/:rowId", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { type, rowId } = req.params;
       const userId = req.user.id;
@@ -267,12 +268,12 @@ router.delete("/api/agent-config/:id/:type/:rowId", authenticateUser, async (req
 // directives, knowledge, and personality from a free-text operator message.
 // Saves the extracted data immediately, then returns a formatted confirmation
 // so the client can update the chat UI without a second round-trip.
-router.post("/api/train/extract", authenticateUser, async (req: any, res: any) => {
+router.post("/api/train/extract", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   const { message, agentId = "default-agent" } = req.body;
   const userId = req.user.id;
   if (!message?.trim()) return res.status(400).json({ error: "message is required" });
 
-  let parsed: { directives: any[]; knowledge: any[]; personality: string } = {
+  let parsed: { directives: Array<{ content: string; priority?: number }>; knowledge: Array<{ content: string }>; personality: string } = {
     directives: [], knowledge: [], personality: ""
   };
 
@@ -375,12 +376,12 @@ Respond ONLY in strict, valid JSON format (no markdown):
   try {
     if (parsed.directives.length) {
       await db.from('wireline_directives').insert(
-        parsed.directives.map((d: any) => ({ content: d.content, priority: d.priority ?? 5, agent_id: agentId, user_id: userId }))
+        parsed.directives.map((d: { content: string; priority?: number }) => ({ content: d.content, priority: d.priority ?? 5, agent_id: agentId, user_id: userId }))
       );
     }
     if (parsed.knowledge.length) {
       await db.from('wireline_knowledge').insert(
-        parsed.knowledge.map((k: any) => ({ content: k.content, agent_id: agentId, user_id: userId }))
+        parsed.knowledge.map((k: { content: string }) => ({ content: k.content, agent_id: agentId, user_id: userId }))
       );
     }
     if (parsed.personality) {
@@ -415,7 +416,7 @@ Respond ONLY in strict, valid JSON format (no markdown):
   res.json({ success: true, responseContent, directives: parsed.directives, knowledge: parsed.knowledge, personality: parsed.personality });
 });
 
-router.post("/api/train/save", authenticateUser, async (req: any, res: any) => {
+router.post("/api/train/save", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   const { extracted, agentId = "default-agent" } = req.body;
   const userId = req.user.id;
   
@@ -425,12 +426,12 @@ router.post("/api/train/save", authenticateUser, async (req: any, res: any) => {
     // Atomic update to Supabase with user_id enforcement
     if (parsed.directives && parsed.directives.length) {
       await db.from('wireline_directives').insert(
-        parsed.directives.map((d: any) => ({ ...d, agent_id: agentId, user_id: userId }))
+        parsed.directives.map((d: { content: string; priority?: number }) => ({ ...d, agent_id: agentId, user_id: userId }))
       );
     }
     if (parsed.knowledge && parsed.knowledge.length) {
       await db.from('wireline_knowledge').insert(
-        parsed.knowledge.map((k: any) => ({ ...k, agent_id: agentId, user_id: userId }))
+        parsed.knowledge.map((k: { content: string }) => ({ ...k, agent_id: agentId, user_id: userId }))
       );
     }
     if (parsed.personality) {
@@ -450,7 +451,7 @@ router.post("/api/train/save", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-router.post("/api/agents", authenticateUser, async (req: any, res: any) => {
+router.post("/api/agents", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     // Validate input using Zod schema
     const validation = parseFormData(AgentFormSchema, {
@@ -546,7 +547,7 @@ router.post("/api/agents", authenticateUser, async (req: any, res: any) => {
       agentName: name,
       metadata: { channel: channel || 'voice', archetype: agentRole },
       ip: req.ip
-    }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
+    }).catch((err: unknown) => log.warn('audit log failed', { error: getErrorMessage(err) }));
 
     res.json({ success: true, id: agentId });
   } catch (error) {
@@ -555,7 +556,7 @@ router.post("/api/agents", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-router.put("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
+router.put("/api/agents/:id", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     // Validate core fields using Zod schema
     const validation = parseFormData(AgentFormSchema, {
@@ -661,7 +662,7 @@ router.put("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
       agentId: req.params.id,
       metadata: { changes: sanitizeForAudit(req.body) },
       ip: req.ip
-    }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
+    }).catch((err: unknown) => log.warn('audit log failed', { error: getErrorMessage(err) }));
 
     res.json({ success: true });
   } catch (error) {
@@ -670,7 +671,7 @@ router.put("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
   }
 });
 
-router.delete("/api/agents/:id", authenticateUser, async (req: any, res: any) => {
+router.delete("/api/agents/:id", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const agentId = req.params.id;
     const userId = req.user.id;
@@ -726,16 +727,16 @@ router.delete("/api/agents/:id", authenticateUser, async (req: any, res: any) =>
       userId: req.user.id,
       agentId: agentId,
       ip: req.ip
-    }).catch((err: any) => log.warn('audit log failed', { error: getErrorMessage(err) }));
+    }).catch((err: unknown) => log.warn('audit log failed', { error: getErrorMessage(err) }));
     
     res.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     log.error("Failed to delete agent", { error: getErrorMessage(error) });
     res.status(500).json({ error: "Failed to delete agent." });
   }
 });
 
-router.post("/api/agents/:id/optimize", authenticateUser, async (req: any, res: any) => {
+router.post("/api/agents/:id/optimize", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
    try {
       const { id } = req.params;
       const { data: logs } = await db.from('wireline_call_logs')
@@ -760,7 +761,7 @@ router.post("/api/agents/:id/optimize", authenticateUser, async (req: any, res: 
                callLogs: logs as any,
             });
             return res.json({
-               suggestions: (review.suggested_directives || []).slice(0, 3).map((d: any) => d.directive),
+               suggestions: (review.suggested_directives || []).slice(0, 3).map((d: { directive?: string }) => d.directive),
                analysis: review.executive_summary,
                full_review: review,
             });
@@ -796,7 +797,7 @@ router.post("/api/agents/:id/optimize", authenticateUser, async (req: any, res: 
    }
 });
 
-router.get("/api/agents/:id/performance", authenticateUser, async (req: any, res: any) => {
+router.get("/api/agents/:id/performance", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const agentId = req.params.id;
     const { data: logs } = await db
@@ -808,13 +809,13 @@ router.get("/api/agents/:id/performance", authenticateUser, async (req: any, res
       .limit(500);
 
     res.json(computeAgentPerformance({ rows: logs || [] }));
-  } catch (e: any) {
+  } catch (e: unknown) {
     log.error("Agent performance error", { error: e?.message });
     res.json(emptyAgentPerformance());
   }
 });
 
-router.get("/api/agents/:id/scorecard", authenticateUser, async (req: any, res: any) => {
+router.get("/api/agents/:id/scorecard", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const agentId = req.params.id;
     const userId = req.user.id;
@@ -885,13 +886,13 @@ router.get("/api/agents/:id/scorecard", authenticateUser, async (req: any, res: 
     });
 
     res.json(result);
-  } catch (e: any) {
+  } catch (e: unknown) {
     log.error("Agent scorecard error", { error: getErrorMessage(e) });
     res.status(500).json({ error: 'Failed to compute scorecard' });
   }
 });
 
-router.get("/api/agents/:id/lessons", authenticateUser, async (req: any, res: any) => {
+router.get("/api/agents/:id/lessons", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
    try {
       const { data: lessons, error } = await db.from('wireline_agent_lessons').select('*')
          .eq('agent_id', req.params.id)
@@ -905,7 +906,7 @@ router.get("/api/agents/:id/lessons", authenticateUser, async (req: any, res: an
    }
 });
 
-router.post("/api/agents/:id/promote", authenticateUser, async (req: any, res: any) => {
+router.post("/api/agents/:id/promote", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
    try {
       const { lessonId, content } = req.body;
       const agentId = req.params.id;
@@ -956,7 +957,7 @@ router.post("/api/agents/:id/promote", authenticateUser, async (req: any, res: a
    }
 });
 
-router.delete("/api/agents/:id/lessons/:lessonId", authenticateUser, async (req: any, res: any) => {
+router.delete("/api/agents/:id/lessons/:lessonId", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
    try {
       await db.from('wireline_agent_lessons').delete()
          .eq('id', req.params.lessonId)
@@ -968,7 +969,7 @@ router.delete("/api/agents/:id/lessons/:lessonId", authenticateUser, async (req:
 });
 
 // Promote a [KNOWLEDGE GAP] lesson into the agent's knowledge base.
-router.post("/api/knowledge-gaps/:lessonId/promote", authenticateUser, async (req: any, res: any) => {
+router.post("/api/knowledge-gaps/:lessonId/promote", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { customContent } = req.body;
     const { data: lesson } = await db
@@ -1001,7 +1002,7 @@ router.post("/api/knowledge-gaps/:lessonId/promote", authenticateUser, async (re
 });
 
 // Agent Forge — create the actual agent + seed personality, directives, knowledge.
-router.post("/api/claude/forge/create", authenticateUser, async (req: any, res: any) => {
+router.post("/api/claude/forge/create", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { design, websiteUrl } = req.body;
     if (!design || !design.name) return res.status(400).json({ error: "design with name required." });

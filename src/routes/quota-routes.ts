@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Response } from "express";
 import { db, log, auditLogger, quotaTracker, requirePermission } from "../lib/server-context";
 import { authenticateUser } from "../middleware/auth";
 import { quotaRateLimit } from "../middleware/api-rate-limits";
@@ -7,6 +7,7 @@ import {
   PLAN_DEFAULTS, 
   validateOverride 
 } from "../lib/tenant-quotas";
+import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
 
@@ -15,7 +16,7 @@ const router = Router();
 // ──────────────────────────────────────────────────────────────────────────────
 
 /** GET /api/quotas — current plan profile + live usage for the calling user. */
-router.get("/", authenticateUser, quotaRateLimit, async (req: any, res: any) => {
+router.get("/", authenticateUser, quotaRateLimit, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user.id as string;
     const { plan, profile } = await quotaTracker.getProfile(userId);
@@ -44,7 +45,7 @@ router.get("/plans", quotaRateLimit, (_req, res) => {
  * `auditLogger.logSecurity` (deny path) and a dedicated `quota.override_set`
  * event on the accept path.
  */
-router.put("/override", authenticateUser, requirePermission("quotas.override"), quotaRateLimit, async (req: any, res: any) => {
+router.put("/override", authenticateUser, requirePermission("quotas.override"), quotaRateLimit, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const validation = validateOverride(req.body);
     if (!validation.ok) {

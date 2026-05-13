@@ -1,4 +1,5 @@
-import express from "express";
+import express, { Request, Response } from "express";
+import type { AuthenticatedRequest } from "../types/auth";
 import { google } from "googleapis";
 import { 
   db, 
@@ -57,7 +58,7 @@ router.get('/api/oauth/google/url', oauthRateLimiter, authenticateUser, (req: ex
      return res.status(500).json({ error: "Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET in environment variables." });
   }
 
-  const uid = (req as any).user?.id as string | undefined;
+  const uid = req.user?.id as string | undefined;
   const oauth2Client = getGoogleOAuthClient(req);
   const authUrl = oauth2Client.generateAuthUrl({
     access_type: 'offline',
@@ -140,7 +141,7 @@ router.get(['/api/oauth/google/callback', '/api/oauth/google/callback/'], oauthR
         } else { window.location.href = '/'; }
       </script><p>Authentication successful. You can close this window.</p></body></html>
     `);
-  } catch (error: any) {
+  } catch (error: unknown) {
     log.error("Google OAuth callback failed", { error: error.message });
     res.status(500).send("Authentication failed.");
   }
@@ -155,7 +156,7 @@ router.get("/api/oauth/microsoft/url", oauthRateLimiter, authenticateUser, (req:
     return res.status(500).json({ error: "Missing MICROSOFT_CLIENT_ID or MICROSOFT_CLIENT_SECRET" });
   }
 
-  const uid = (req as any).user?.id as string | undefined;
+  const uid = req.user?.id as string | undefined;
   const redirectUri = getMicrosoftRedirectUri(req);
   const params = new URLSearchParams({
     client_id:     process.env.MICROSOFT_CLIENT_ID!,
@@ -248,7 +249,7 @@ router.get("/api/oauth/microsoft/callback", oauthRateLimiter, async (req: expres
           } else { window.location.href = '/'; }
         </script><p>Authentication successful. You can close this window.</p></body></html>
       `);
-    } catch (e: any) {
+    } catch (e: unknown) {
       log.error("Microsoft OAuth callback failed", { error: e?.message || String(e) });
       res.status(500).send("Microsoft authentication failed.");
     }
@@ -267,7 +268,7 @@ router.get("/api/oauth/salesforce/url", oauthRateLimiter, authenticateUser, (req
   const baseUrl = (process.env.APP_URL && new URL(process.env.APP_URL).origin)
     || `${req.protocol}://${req.get("host")}`;
   const redirectUri = `${baseUrl}/api/oauth/salesforce/callback`;
-  const uid = (req as any).user?.id as string | undefined;
+  const uid = req.user?.id as string | undefined;
   const authUrl = getSalesforceAuthUrl(redirectUri, generateOAuthState(uid ? { userId: uid } : undefined));
   res.json({ url: authUrl });
 });
@@ -334,20 +335,20 @@ router.get("/api/oauth/salesforce/callback", oauthRateLimiter, async (req: expre
         } else { window.location.href = '/'; }
       </script><p>Salesforce connected successfully. You can close this window.</p></body></html>
     `);
-  } catch (e: any) {
+  } catch (e: unknown) {
     log.error("Salesforce OAuth callback failed", { error: e?.message || String(e) });
     res.status(500).send("Salesforce authentication failed. Please try again.");
   }
 });
 
 router.post("/api/oauth/salesforce/disconnect", authenticateUser, async (req: express.Request, res: express.Response) => {
-  const userId = (req as any).user?.id;
+  const userId = req.user?.id;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
   try {
     await disconnectSalesforce(userId);
     res.json({ ok: true });
-  } catch (e: any) {
+  } catch (e: unknown) {
     log.error("Salesforce disconnect failed", { error: e?.message });
     res.status(500).json({ error: "Failed to disconnect Salesforce" });
   }
@@ -365,7 +366,7 @@ router.get("/api/oauth/hubspot/url", oauthRateLimiter, authenticateUser, (req: e
   const baseUrl = (process.env.APP_URL && new URL(process.env.APP_URL).origin)
     || `${req.protocol}://${req.get("host")}`;
   const redirectUri = `${baseUrl}/api/oauth/hubspot/callback`;
-  const uid = (req as any).user?.id as string | undefined;
+  const uid = req.user?.id as string | undefined;
   const authUrl = getHubSpotAuthUrl(redirectUri, generateOAuthState(uid ? { userId: uid } : undefined));
   res.json({ url: authUrl });
 });
@@ -431,20 +432,20 @@ router.get("/api/oauth/hubspot/callback", oauthRateLimiter, async (req: express.
         } else { window.location.href = '/'; }
       </script><p>HubSpot connected successfully. You can close this window.</p></body></html>
     `);
-  } catch (e: any) {
+  } catch (e: unknown) {
     log.error("HubSpot OAuth callback failed", { error: e?.message || String(e) });
     res.status(500).send("HubSpot authentication failed. Please try again.");
   }
 });
 
 router.post("/api/oauth/hubspot/disconnect", authenticateUser, async (req: express.Request, res: express.Response) => {
-  const userId = (req as any).user?.id;
+  const userId = req.user?.id;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
   try {
     await disconnectHubSpot(userId);
     res.json({ ok: true });
-  } catch (e: any) {
+  } catch (e: unknown) {
     log.error("HubSpot disconnect failed", { error: e?.message });
     res.status(500).json({ error: "Failed to disconnect HubSpot" });
   }
@@ -455,7 +456,7 @@ router.post("/api/oauth/hubspot/disconnect", authenticateUser, async (req: expre
 // ────────────────────────────────────────────────────────────────────
 
 router.get("/api/oauth/crm/status", authenticateUser, async (req: express.Request, res: express.Response) => {
-  const userId = (req as any).user?.id;
+  const userId = req.user?.id;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
   try {
@@ -464,10 +465,10 @@ router.get("/api/oauth/crm/status", authenticateUser, async (req: express.Reques
       .select("provider, connected_email, instance_url, created_at, updated_at, metadata")
       .eq("user_id", userId);
 
-    const sfConn = (connections || []).find((c: any) => c.provider === "salesforce");
-    const hsConn = (connections || []).find((c: any) => c.provider === "hubspot");
-    const slackConn = (connections || []).find((c: any) => c.provider === "slack");
-    const zoomConn = (connections || []).find((c: any) => c.provider === "zoom");
+    const sfConn = (connections || []).find((c: { provider: string }) => c.provider === "salesforce");
+    const hsConn = (connections || []).find((c: { provider: string }) => c.provider === "hubspot");
+    const slackConn = (connections || []).find((c: { provider: string }) => c.provider === "slack");
+    const zoomConn = (connections || []).find((c: { provider: string }) => c.provider === "zoom");
 
     res.json({
       salesforce: sfConn ? {
@@ -487,7 +488,7 @@ router.get("/api/oauth/crm/status", authenticateUser, async (req: express.Reques
         team: slackConn.connected_email,
         instance_url: slackConn.instance_url,
         connected_at: slackConn.created_at,
-        default_channel_id: (slackConn as any).metadata?.default_channel ?? null,
+        default_channel_id: (slackConn as { metadata?: { default_channel?: string } }).metadata?.default_channel ?? null,
       } : { connected: false, configured: slackOAuthConfigured() },
       zoom: zoomConn ? {
         connected: true,
@@ -495,7 +496,7 @@ router.get("/api/oauth/crm/status", authenticateUser, async (req: express.Reques
         connected_at: zoomConn.created_at,
       } : { connected: false, configured: zoomOAuthConfigured() },
     });
-  } catch (e: any) {
+  } catch (e: unknown) {
     log.error("CRM status check failed", { error: e?.message });
     res.status(500).json({ error: "Failed to check CRM status" });
   }
@@ -512,7 +513,7 @@ router.get("/api/oauth/slack/url", oauthRateLimiter, authenticateUser, (req: exp
   const baseUrl = (process.env.APP_URL && new URL(process.env.APP_URL).origin)
     || `${req.protocol}://${req.get("host")}`;
   const redirectUri = `${baseUrl}/api/oauth/slack/callback`;
-  const uid = (req as any).user?.id as string | undefined;
+  const uid = req.user?.id as string | undefined;
   const authUrl = getSlackAuthUrl(redirectUri, generateOAuthState(uid ? { userId: uid } : undefined));
   res.json({ url: authUrl });
 });
@@ -565,14 +566,14 @@ router.get("/api/oauth/slack/callback", oauthRateLimiter, async (req: express.Re
         } else { window.location.href = '/'; }
       </script><p>Slack connected successfully. You can close this window.</p></body></html>
     `);
-  } catch (e: any) {
+  } catch (e: unknown) {
     log.error("Slack OAuth callback failed", { error: e?.message || String(e) });
     res.status(500).send("Slack authentication failed. Please try again.");
   }
 });
 
 router.post("/api/oauth/slack/disconnect", authenticateUser, async (req: express.Request, res: express.Response) => {
-  const userId = (req as any).user?.id;
+  const userId = req.user?.id;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   try {
     await disconnectSlack(userId);
@@ -583,7 +584,7 @@ router.post("/api/oauth/slack/disconnect", authenticateUser, async (req: express
 });
 
 router.get("/api/oauth/slack/channels", authenticateUser, async (req: express.Request, res: express.Response) => {
-  const userId = (req as any).user?.id;
+  const userId = req.user?.id;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   try {
     const channels = await listSlackChannels(userId);
@@ -594,7 +595,7 @@ router.get("/api/oauth/slack/channels", authenticateUser, async (req: express.Re
 });
 
 router.post("/api/oauth/slack/default-channel", authenticateUser, async (req: express.Request, res: express.Response) => {
-  const userId = (req as any).user?.id;
+  const userId = req.user?.id;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   const { channel_id } = req.body;
   if (!channel_id) return res.status(400).json({ error: "channel_id required" });
@@ -617,7 +618,7 @@ router.get("/api/oauth/zoom/url", oauthRateLimiter, authenticateUser, (req: expr
   const baseUrl = (process.env.APP_URL && new URL(process.env.APP_URL).origin)
     || `${req.protocol}://${req.get("host")}`;
   const redirectUri = `${baseUrl}/api/oauth/zoom/callback`;
-  const uid = (req as any).user?.id as string | undefined;
+  const uid = req.user?.id as string | undefined;
   const authUrl = getZoomAuthUrl(redirectUri, generateOAuthState(uid ? { userId: uid } : undefined));
   res.json({ url: authUrl });
 });
@@ -669,14 +670,14 @@ router.get("/api/oauth/zoom/callback", oauthRateLimiter, async (req: express.Req
         } else { window.location.href = '/'; }
       </script><p>Zoom connected successfully. You can close this window.</p></body></html>
     `);
-  } catch (e: any) {
+  } catch (e: unknown) {
     log.error("Zoom OAuth callback failed", { error: e?.message || String(e) });
     res.status(500).send("Zoom authentication failed. Please try again.");
   }
 });
 
 router.post("/api/oauth/zoom/disconnect", authenticateUser, async (req: express.Request, res: express.Response) => {
-  const userId = (req as any).user?.id;
+  const userId = req.user?.id;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   try {
     await disconnectZoom(userId);
@@ -691,12 +692,12 @@ router.post("/api/oauth/zoom/disconnect", authenticateUser, async (req: express.
 // ────────────────────────────────────────────────────────────────────
 
 router.get("/api/oauth/integration-health", authenticateUser, async (req: express.Request, res: express.Response) => {
-  const userId = (req as any).user?.id;
+  const userId = req.user?.id;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   try {
     const health = await computeIntegrationHealth(userId);
     res.json(health);
-  } catch (e: any) {
+  } catch (e: unknown) {
     log.error("integration-health failed", { error: e?.message });
     res.status(500).json({ error: "Failed to load integration health." });
   }

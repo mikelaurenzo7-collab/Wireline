@@ -1,13 +1,14 @@
-import { Router } from "express";
+import { Router, Response } from "express";
 import { db, log, auditLogger } from "../lib/server-context";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage } from "../lib/server-utils";
 import { syncGoogleDriveToKnowledge } from "../services/google-drive-sync";
 import { claudeRateLimiter } from "../middleware/api-rate-limits";
+import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
 
-router.post("/api/drive/ingest", authenticateUser, claudeRateLimiter, async (req: any, res: any) => {
+router.post("/api/drive/ingest", authenticateUser, claudeRateLimiter, async (req: AuthenticatedRequest, res: Response) => {
   const userId: string = req.user.id;
   const { agentId } = req.body;
   if (!agentId || typeof agentId !== 'string') {
@@ -26,7 +27,7 @@ router.post("/api/drive/ingest", authenticateUser, claudeRateLimiter, async (req
     const result = await syncGoogleDriveToKnowledge(userId, agentId);
     void auditLogger.logDataModification('settings.knowledge_base_updated', { userId, resource: 'google_drive_ingest', metadata: result });
     res.json(result);
-  } catch (e: any) {
+  } catch (e: unknown) {
     log.error("Google Drive ingest failed", { userId, agentId, error: getErrorMessage(e) });
     res.status(500).json({ error: "Drive knowledge ingest failed." });
   }

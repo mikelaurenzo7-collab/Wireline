@@ -1,4 +1,5 @@
-import express from "express";
+import express, { Request, Response } from "express";
+import type { AuthenticatedRequest } from "../types/auth";
 import * as claudeBrain from "../lib/claude-brain";
 import {
   db,
@@ -145,8 +146,8 @@ router.post("/api/vapi-webhook", async (req, res) => {
       ]);
 
       const _lessons = (lessonsData?.data || [])
-        .filter((l: any) => l.lesson && typeof l.lesson === 'string' && !l.lesson.startsWith(KNOWLEDGE_GAP_PREFIX))
-        .map((l: any) => l.lesson)
+        .filter((l: { lesson?: string }) => l.lesson && typeof l.lesson === 'string' && !l.lesson.startsWith(KNOWLEDGE_GAP_PREFIX))
+        .map((l: { lesson?: string }) => l.lesson)
         .join('\n');
 
       const pastCallHistory: any[] = (callerHistoryData as any)?.data || [];
@@ -226,7 +227,7 @@ Today is ${currentDateTime}.
           functions: buildRoleToolDefs(agentRole, enabledToolNames)
         }
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       log.error("Vapi webhook config error", { agentId: webhookAgentId, error: e?.message });
       return res.json({
           assistant: {
@@ -496,8 +497,8 @@ Today is ${currentDateTime}.
     const callId = (payload.call as { id?: string } | undefined)?.id || (message.call as { id?: string } | undefined)?.id;
     if (callId) {
       const turns: any[] = message.conversation || message.messages || [];
-      const userTurns = turns.filter((t: any) => t.role === "user").slice(-2);
-      const combined = userTurns.map((t: any) => (t.content || t.message || "").toLowerCase()).join(" ");
+      const userTurns = turns.filter((t: { role: string; content?: string; message?: string }) => t.role === "user").slice(-2);
+      const combined = userTurns.map((t: { content?: string; message?: string }) => (t.content || t.message || "").toLowerCase()).join(" ");
 
       const negativeHits = SENTIMENT_ANGRY_SIGNALS.filter(w => combined.includes(w)).length;
       const positiveHits = SENTIMENT_POSITIVE_SIGNALS.filter(w => combined.includes(w)).length;
@@ -606,7 +607,7 @@ Today is ${currentDateTime}.
               lesson_extracted: !!(result.lesson && result.lesson.trim()),
             };
 
-          } catch (err: any) {
+          } catch (err: unknown) {
             log.warn("Claude post-call analysis failed", { error: getErrorMessage(err) });
           }
         }
@@ -645,7 +646,7 @@ Today is ${currentDateTime}.
         // ... Legacy Gemini fallback and TCPA logging ...
         
         return res.json({ success: true });
-    } catch(e: any) {
+    } catch(e: unknown) {
       log.error("Failed to process call completion", { error: getErrorMessage(e) });
       return res.json({ success: false });
     }
