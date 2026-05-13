@@ -303,7 +303,7 @@ export default function AdminSettings() {
 
   const tabSwitcher = (
     <div className="flex p-1 rounded-full glass border border-white/10" role="tablist">
-      {(["carrier", "subscription", "flywheel", "system", "activity"] as const).map(t => (
+      {(["carrier", "subscription", "team", "flywheel", "system", "activity"] as const).map(t => (
         <button
           key={t}
           role="tab"
@@ -1139,6 +1139,7 @@ export default function AdminSettings() {
               <AuditActivityPanel />
             </motion.div>
           )}
+          {activeTab === "team" && (
             <motion.div
               key="team"
               initial={{ opacity: 0, y: 4 }}
@@ -1151,6 +1152,7 @@ export default function AdminSettings() {
                 onInvite={async (email, role) => {
                   const r = await authFetch("/api/team/invite", {
                     method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, role })
                   });
                   if (r.ok) {
@@ -1161,7 +1163,7 @@ export default function AdminSettings() {
                   }
                 }}
                 onRemove={async (id) => {
-                  const r = await authFetch(`/api/team/${id}`, { method: 'DELETE' });
+                  const r = await authFetch(`/api/team/${id}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' } });
                   if (r.ok) {
                     toastSuccess("Member removed.");
                     fetchTeam();

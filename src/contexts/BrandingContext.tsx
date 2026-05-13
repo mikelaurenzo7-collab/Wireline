@@ -39,10 +39,11 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
         const r = await authFetch("/api/settings");
         if (r.ok) {
           const d = await r.json();
+          const s = d.settings || d;
           setBranding({
-            brand_name: d.brand_name || DEFAULT_BRANDING.brand_name,
-            brand_logo_url: d.brand_logo_url || DEFAULT_BRANDING.brand_logo_url,
-            primary_color: d.primary_color || DEFAULT_BRANDING.primary_color,
+            brand_name: s.brand_name || DEFAULT_BRANDING.brand_name,
+            brand_logo_url: s.brand_logo_url || DEFAULT_BRANDING.brand_logo_url,
+            primary_color: s.primary_color || DEFAULT_BRANDING.primary_color,
           });
         }
       } catch (e) {

@@ -97,10 +97,10 @@ export default function CommandPalette() {
                 onKeyDown={e => {
                   if (e.key === "ArrowDown") {
                     e.preventDefault();
-                    setSelectedIndex(prev => (prev + 1) % filteredCommands.length);
+                    setSelectedIndex(prev => (prev + 1) % (filteredCommands.length || 1));
                   } else if (e.key === "ArrowUp") {
                     e.preventDefault();
-                    setSelectedIndex(prev => (prev - 1 + filteredCommands.length) % filteredCommands.length);
+                    setSelectedIndex(prev => (prev - 1 + filteredCommands.length) % (filteredCommands.length || 1));
                   } else if (e.key === "Enter") {
                     if (filteredCommands[selectedIndex]) handleSelect(filteredCommands[selectedIndex]);
                   }
