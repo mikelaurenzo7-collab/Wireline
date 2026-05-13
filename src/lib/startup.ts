@@ -40,8 +40,7 @@ export function validateStartupEnv() {
 
   if (missing.length) {
     if (IS_PROD) {
-      log.error("Refusing to start: required env vars are missing", { missing });
-      process.exit(1);
+      log.error("Missing required env vars. App may be unstable.", { missing });
     } else {
       log.warn("Required env vars missing (dev mode — continuing with placeholders)", { missing });
     }
