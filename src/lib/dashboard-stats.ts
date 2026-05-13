@@ -72,6 +72,11 @@ export interface DashboardStatsResult {
     date: string;
   }>;
   chartData: Array<{ name: string; signals: number; leads: number }>;
+  unitEconomics: {
+    costPerMinute: string;
+    costPerLead: string;
+    efficiencyScore: number; // 0-100 based on lead quality vs cost
+  };
 }
 
 /**
@@ -239,5 +244,10 @@ export function computeDashboardStats(input: DashboardStatsInput): DashboardStat
     week_delta,
     hotLeads: buildHotLeads(logs, hotEm),
     chartData: buildSevenDayChart(logs, appts, now),
+    unitEconomics: {
+      costPerMinute: totalMinutes > 0 ? (totalCost / totalMinutes).toFixed(2) : "0.00",
+      costPerLead: input.totalLeads > 0 ? (totalCost / input.totalLeads).toFixed(2) : "0.00",
+      efficiencyScore: Math.min(100, Math.round((avgLeadScore * (input.totalLeads / (totalCalls || 1))) * 1.5))
+    }
   };
 }

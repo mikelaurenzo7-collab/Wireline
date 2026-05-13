@@ -8,7 +8,7 @@ import { ActionItemSchema } from "./action-types";
 import { persistClaudeAuditRecords } from "../middleware/audit-middleware";
 import { buildCallCompletedOutcome, dispatchWebhook } from "./webhook-helpers";
 import { CRMService } from "./crm-service";
-import { enrichLead as apolloEnrich } from "./apollo-service";
+import { enrichLead as apolloEnrich, searchLeads as apolloSearch } from "./apollo-service";
 import { purgeAccount } from "./account-deletion";
 
 type SupportedCrmType = "salesforce" | "hubspot";
@@ -413,6 +413,45 @@ export async function handleJob(job: JobRow): Promise<void> {
       }
     } catch (error) {
       log.error("Proactive lead enrichment failed", { error: getErrorMessage(error) });
+    }
+  }
+
+  if (job.type === 'autonomous_prospecting') {
+    const p = job.payload as { userId: string };
+    const { data: settings } = await db.from('wireline_settings').select('*').eq('user_id', p.userId).single();
+    
+    if (!settings?.prospecting_enabled) {
+      log.info("Prospecting disabled for user", { userId: p.userId });
+      return;
+    }
+
+    log.info("Starting autonomous prospecting", { userId: p.userId, titles: settings.target_titles });
+
+    try {
+      const leads = await apolloSearch({
+        titles: settings.target_titles,
+        industries: settings.target_industries,
+        states: settings.target_states,
+        employee_ranges: settings.target_employee_ranges,
+        limit: 10
+      });
+
+      let added = 0;
+      for (const lead of leads) {
+        const { error } = await db.from('wireline_outbound_leads').insert({
+          user_id: p.userId,
+          customer_name: `${lead.first_name} ${lead.last_name}`,
+          customer_number: lead.phone,
+          email: lead.email,
+          status: 'New',
+          context: `Autonomously sourced via Apollo Intelligence for ${lead.title} role at ${lead.company}.`
+        });
+        if (!error) added++;
+      }
+
+      log.info("Autonomous prospecting complete", { userId: p.userId, leadsFound: leads.length, leadsAdded: added });
+    } catch (error) {
+      log.error("Autonomous prospecting failed", { error: getErrorMessage(error) });
     }
   }
 }
