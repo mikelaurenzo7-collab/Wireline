@@ -371,7 +371,8 @@ export default function AdminSettings() {
           <Loader2 className="w-5 h-5 animate-spin text-brand" aria-hidden="true" />
           <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">Loading settings</span>
         </div>
-      ) :         <AnimatePresence mode="wait">
+      ) : (
+        <AnimatePresence mode="wait">
           {activeTab === "branding" && (
             <motion.div
               key="branding"
