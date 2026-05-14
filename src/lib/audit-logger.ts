@@ -1,12 +1,12 @@
 // src/lib/audit-logger.ts
-import type { VercelPostgresDatabase } from 'drizzle-orm/vercel-postgres';
-import * as schema from '../db/schema';
-import type { AuditEventType, AuditSeverity } from '../types/audit';
+import type { VercelPgDatabase } from "drizzle-orm/vercel-postgres";
+import * as schema from "../db/schema";
+import type { AuditEventType, AuditSeverity } from "../types/audit";
 
 export class AuditLogger {
   private failureCount = 0;
 
-  constructor(private drizzle: VercelPostgresDatabase<typeof schema>) {}
+  constructor(private drizzle: VercelPgDatabase<typeof schema>) {}
 
   private async log(data: {
     eventType: AuditEventType;
@@ -27,18 +27,18 @@ export class AuditLogger {
   }): Promise<{ success: boolean; error?: string }> {
     // Validate required fields
     if (!data.action || !data.eventType) {
-      console.error('[AuditLogger] Missing required fields:', {
+      console.error("[AuditLogger] Missing required fields:", {
         action: data.action,
-        eventType: data.eventType
+        eventType: data.eventType,
       });
-      return { success: false, error: 'Missing required fields' };
+      return { success: false, error: "Missing required fields" };
     }
 
     const record = {
       eventType: data.eventType,
       userId: data.userId,
       action: data.action,
-      severity: data.severity || 'info',
+      severity: data.severity || "info",
       actorEmail: data.actorEmail,
       resourceType: data.resourceType,
       resourceId: data.resourceId,
@@ -56,10 +56,10 @@ export class AuditLogger {
       await this.drizzle.insert(schema.auditLog).values(record as any);
     } catch (error: any) {
       this.failureCount++;
-      console.error('[AuditLogger] Failed to log event:', {
+      console.error("[AuditLogger] Failed to log event:", {
         eventType: data.eventType,
         error: error.message,
-        totalFailures: this.failureCount
+        totalFailures: this.failureCount,
       });
       return { success: false, error: error.message };
     }
@@ -72,7 +72,7 @@ export class AuditLogger {
   }
 
   async logAuth(
-    action: 'login' | 'logout' | 'failed_login' | 'password_reset',
+    action: "login" | "logout" | "failed_login" | "password_reset",
     params: {
       userId?: string;
       email?: string;
@@ -80,20 +80,20 @@ export class AuditLogger {
       userAgent?: string;
       reason?: string;
       requestId?: string;
-    }
+    },
   ) {
     const eventTypeMap: Record<typeof action, AuditEventType> = {
-      'login': 'auth.login',
-      'logout': 'auth.logout',
-      'failed_login': 'auth.failed_login',
-      'password_reset': 'auth.password_reset'
+      login: "auth.login",
+      logout: "auth.logout",
+      failed_login: "auth.failed_login",
+      password_reset: "auth.password_reset",
     };
 
     return await this.log({
       eventType: eventTypeMap[action],
       userId: params.userId,
       action,
-      severity: action === 'failed_login' ? 'warning' : 'info',
+      severity: action === "failed_login" ? "warning" : "info",
       actorEmail: params.email,
       ip: params.ip,
       userAgent: params.userAgent,
@@ -103,36 +103,36 @@ export class AuditLogger {
   }
 
   async logAgentOperation(
-    action: 'created' | 'updated' | 'deleted' | 'training_updated',
+    action: "created" | "updated" | "deleted" | "training_updated",
     params: {
       userId: string;
       agentId: string;
       agentName?: string;
       metadata?: Record<string, any>;
       ip?: string;
-    }
+    },
   ) {
     const eventTypeMap: Record<typeof action, AuditEventType> = {
-      'created': 'agent.created',
-      'updated': 'agent.updated',
-      'deleted': 'agent.deleted',
-      'training_updated': 'agent.training_updated'
+      created: "agent.created",
+      updated: "agent.updated",
+      deleted: "agent.deleted",
+      training_updated: "agent.training_updated",
     };
 
     return await this.log({
       eventType: eventTypeMap[action],
       userId: params.userId,
       action,
-      severity: 'info',
-      resourceType: 'agent',
+      severity: "info",
+      resourceType: "agent",
       resourceId: params.agentId,
       metadata: { agent_name: params.agentName, ...params.metadata },
-      ip: params.ip
+      ip: params.ip,
     });
   }
 
   async logSecurity(
-    action: 'rate_limit_exceeded' | 'unauthorized_access' | 'suspicious_activity',
+    action: "rate_limit_exceeded" | "unauthorized_access" | "suspicious_activity",
     params: {
       userId?: string;
       resource?: string;
@@ -140,19 +140,19 @@ export class AuditLogger {
       userAgent?: string;
       metadata?: Record<string, any>;
       requestId?: string;
-    }
+    },
   ) {
     const eventTypeMap: Record<typeof action, AuditEventType> = {
-      'rate_limit_exceeded': 'security.rate_limit_exceeded',
-      'unauthorized_access': 'security.unauthorized_access',
-      'suspicious_activity': 'security.suspicious_activity'
+      rate_limit_exceeded: "security.rate_limit_exceeded",
+      unauthorized_access: "security.unauthorized_access",
+      suspicious_activity: "security.suspicious_activity",
     };
 
     return await this.log({
       eventType: eventTypeMap[action],
       userId: params.userId,
       action,
-      severity: 'critical',
+      severity: "critical",
       metadata: { resource: params.resource, ...params.metadata },
       ip: params.ip,
       userAgent: params.userAgent,
@@ -161,52 +161,52 @@ export class AuditLogger {
   }
 
   async logSettings(
-    action: 'updated' | 'api_key_rotated',
+    action: "updated" | "api_key_rotated",
     params: {
       userId: string;
       changes?: Record<string, any>;
       ip?: string;
-    }
+    },
   ) {
     const eventTypeMap: Record<typeof action, AuditEventType> = {
-      'updated': 'settings.updated',
-      'api_key_rotated': 'security.api_key_rotated'
+      updated: "settings.updated",
+      api_key_rotated: "security.api_key_rotated",
     };
 
     return await this.log({
       eventType: eventTypeMap[action],
       userId: params.userId,
       action,
-      severity: 'info',
-      resourceType: 'settings',
+      severity: "info",
+      resourceType: "settings",
       metadata: params.changes,
-      ip: params.ip
+      ip: params.ip,
     });
   }
 
   async logDataOperation(
-    action: 'export' | 'import' | 'bulk_delete',
+    action: "export" | "import" | "bulk_delete",
     params: {
       userId: string;
       resourceType: string;
       recordCount: number;
       ip?: string;
-    }
+    },
   ) {
     const eventTypeMap: Record<typeof action, AuditEventType> = {
-      'export': 'data.export',
-      'import': 'data.import',
-      'bulk_delete': 'data.bulk_delete'
+      export: "data.export",
+      import: "data.import",
+      bulk_delete: "data.bulk_delete",
     };
 
     return await this.log({
       eventType: eventTypeMap[action],
       userId: params.userId,
       action,
-      severity: action === 'bulk_delete' ? 'warning' : 'info',
+      severity: action === "bulk_delete" ? "warning" : "info",
       resourceType: params.resourceType,
       metadata: { record_count: params.recordCount },
-      ip: params.ip
+      ip: params.ip,
     });
   }
 
@@ -223,13 +223,13 @@ export class AuditLogger {
       resource?: string;
       metadata?: Record<string, any>;
       ip?: string;
-    }
+    },
   ) {
     return await this.log({
       eventType,
       userId: params.userId,
       action: eventType,
-      severity: 'info',
+      severity: "info",
       resourceType: params.resource,
       metadata: params.metadata,
       ip: params.ip,
@@ -242,9 +242,14 @@ export class AuditLogger {
    * for SOC 2 CC1.4 (system-of-record auth trail for paid features).
    */
   async logBilling(
-    action: 'subscription_created' | 'subscription_updated' | 'subscription_cancelled'
-          | 'payment_succeeded' | 'payment_failed'
-          | 'checkout_started' | 'portal_opened',
+    action:
+      | "subscription_created"
+      | "subscription_updated"
+      | "subscription_cancelled"
+      | "payment_succeeded"
+      | "payment_failed"
+      | "checkout_started"
+      | "portal_opened",
     params: {
       userId?: string;
       subscriptionId?: string;
@@ -253,23 +258,24 @@ export class AuditLogger {
       amountCents?: number;
       ip?: string;
       metadata?: Record<string, any>;
-    }
+    },
   ) {
     const eventTypeMap: Record<typeof action, AuditEventType> = {
-      'subscription_created': 'billing.subscription_created',
-      'subscription_updated': 'billing.subscription_updated',
-      'subscription_cancelled': 'billing.subscription_cancelled',
-      'payment_succeeded': 'billing.payment_succeeded',
-      'payment_failed': 'billing.payment_failed',
-      'checkout_started': 'billing.checkout_started',
-      'portal_opened': 'billing.portal_opened'
+      subscription_created: "billing.subscription_created",
+      subscription_updated: "billing.subscription_updated",
+      subscription_cancelled: "billing.subscription_cancelled",
+      payment_succeeded: "billing.payment_succeeded",
+      payment_failed: "billing.payment_failed",
+      checkout_started: "billing.checkout_started",
+      portal_opened: "billing.portal_opened",
     };
     return await this.log({
       eventType: eventTypeMap[action],
       userId: params.userId,
       action,
-      severity: action === 'payment_failed' || action === 'subscription_cancelled' ? 'warning' : 'info',
-      resourceType: 'billing',
+      severity:
+        action === "payment_failed" || action === "subscription_cancelled" ? "warning" : "info",
+      resourceType: "billing",
       resourceId: params.subscriptionId,
       metadata: {
         customer_id: params.customerId,
@@ -277,7 +283,7 @@ export class AuditLogger {
         amount_cents: params.amountCents,
         ...params.metadata,
       },
-      ip: params.ip
+      ip: params.ip,
     });
   }
 
@@ -287,29 +293,29 @@ export class AuditLogger {
    * their creation/rotation/deletion is security-relevant.
    */
   async logIntakeKey(
-    action: 'created' | 'updated' | 'deleted',
+    action: "created" | "updated" | "deleted",
     params: {
       userId: string;
       keyId: string;
       keyPrefix?: string;
       keyName?: string;
       ip?: string;
-    }
+    },
   ) {
     const eventTypeMap: Record<typeof action, AuditEventType> = {
-      'created': 'security.intake_key_created',
-      'updated': 'security.intake_key_updated',
-      'deleted': 'security.intake_key_deleted'
+      created: "security.intake_key_created",
+      updated: "security.intake_key_updated",
+      deleted: "security.intake_key_deleted",
     };
     return await this.log({
       eventType: eventTypeMap[action],
       userId: params.userId,
       action,
-      severity: action === 'deleted' ? 'warning' : 'info',
-      resourceType: 'intake_key',
+      severity: action === "deleted" ? "warning" : "info",
+      resourceType: "intake_key",
       resourceId: params.keyId,
       metadata: { key_prefix: params.keyPrefix, key_name: params.keyName },
-      ip: params.ip
+      ip: params.ip,
     });
   }
 
@@ -319,7 +325,7 @@ export class AuditLogger {
    * webhook URL, event filter set, and active flag.
    */
   async logWebhook(
-    action: 'created' | 'updated' | 'deleted' | 'tested',
+    action: "created" | "updated" | "deleted" | "tested",
     params: {
       userId: string;
       webhookId: string;
@@ -327,23 +333,23 @@ export class AuditLogger {
       events?: string[];
       active?: boolean;
       ip?: string;
-    }
+    },
   ) {
     const eventTypeMap: Record<typeof action, AuditEventType> = {
-      'created': 'api.webhook_created',
-      'updated': 'api.webhook_updated',
-      'deleted': 'api.webhook_deleted',
-      'tested': 'api.webhook_tested'
+      created: "api.webhook_created",
+      updated: "api.webhook_updated",
+      deleted: "api.webhook_deleted",
+      tested: "api.webhook_tested",
     };
     return await this.log({
       eventType: eventTypeMap[action],
       userId: params.userId,
       action,
-      severity: 'info',
-      resourceType: 'webhook',
+      severity: "info",
+      resourceType: "webhook",
       resourceId: params.webhookId,
       metadata: { url: params.url, events: params.events, active: params.active },
-      ip: params.ip
+      ip: params.ip,
     });
   }
 
@@ -353,27 +359,27 @@ export class AuditLogger {
    * and the source ("manual", "csv_import", "complaint", etc).
    */
   async logDnc(
-    action: 'added' | 'removed',
+    action: "added" | "removed",
     params: {
       userId: string;
       count: number;
       source?: string;
       ip?: string;
       metadata?: Record<string, any>;
-    }
+    },
   ) {
     const eventTypeMap: Record<typeof action, AuditEventType> = {
-      'added': 'dnc.added',
-      'removed': 'dnc.removed'
+      added: "dnc.added",
+      removed: "dnc.removed",
     };
     return await this.log({
       eventType: eventTypeMap[action],
       userId: params.userId,
       action,
-      severity: 'info',
-      resourceType: 'dnc_list',
+      severity: "info",
+      resourceType: "dnc_list",
       metadata: { count: params.count, source: params.source, ...params.metadata },
-      ip: params.ip
+      ip: params.ip,
     });
   }
 
@@ -381,28 +387,28 @@ export class AuditLogger {
    * Log quota-override administrative changes (Item 1) and refusals.
    */
   async logQuotaOverride(
-    action: 'set' | 'denied',
+    action: "set" | "denied",
     params: {
       userId?: string;
       targetUserId?: string;
       changes?: Record<string, any>;
       role?: string;
       ip?: string;
-    }
+    },
   ) {
     const eventTypeMap: Record<typeof action, AuditEventType> = {
-      'set': 'quota.override_set',
-      'denied': 'quota.override_denied'
+      set: "quota.override_set",
+      denied: "quota.override_denied",
     };
     return await this.log({
       eventType: eventTypeMap[action],
       userId: params.userId,
       action,
-      severity: action === 'denied' ? 'critical' : 'warning',
-      resourceType: 'quota',
+      severity: action === "denied" ? "critical" : "warning",
+      resourceType: "quota",
       resourceId: params.targetUserId,
       metadata: { changes: params.changes, role: params.role },
-      ip: params.ip
+      ip: params.ip,
     });
   }
 
@@ -412,28 +418,28 @@ export class AuditLogger {
    * lacked admin/owner role).
    */
   async logJobSweep(
-    action: 'started' | 'completed' | 'denied',
+    action: "started" | "completed" | "denied",
     params: {
       userId?: string;
-      mode?: 'cron' | 'manual';
+      mode?: "cron" | "manual";
       processed?: number;
       role?: string;
       ip?: string;
-    }
+    },
   ) {
     const eventTypeMap: Record<typeof action, AuditEventType> = {
-      'started': 'jobs.sweep_started',
-      'completed': 'jobs.sweep_completed',
-      'denied': 'jobs.sweep_denied'
+      started: "jobs.sweep_started",
+      completed: "jobs.sweep_completed",
+      denied: "jobs.sweep_denied",
     };
     return await this.log({
       eventType: eventTypeMap[action],
       userId: params.userId,
       action,
-      severity: action === 'denied' ? 'critical' : 'info',
-      resourceType: 'job_queue',
+      severity: action === "denied" ? "critical" : "info",
+      resourceType: "job_queue",
       metadata: { mode: params.mode, processed: params.processed, role: params.role },
-      ip: params.ip
+      ip: params.ip,
     });
   }
 
@@ -441,20 +447,16 @@ export class AuditLogger {
    * Log account self-deletion. This is irreversible so it carries
    * critical severity and is emitted BEFORE the auth row is removed.
    */
-  async logAccountDeletion(params: {
-    userId: string;
-    tablesTouched: string[];
-    ip?: string;
-  }) {
+  async logAccountDeletion(params: { userId: string; tablesTouched: string[]; ip?: string }) {
     return await this.log({
-      eventType: 'data.account_deleted',
+      eventType: "data.account_deleted",
       userId: params.userId,
-      action: 'account_deleted',
-      severity: 'critical',
-      resourceType: 'user_account',
+      action: "account_deleted",
+      severity: "critical",
+      resourceType: "user_account",
       resourceId: params.userId,
       metadata: { tables_touched: params.tablesTouched.length, tables: params.tablesTouched },
-      ip: params.ip
+      ip: params.ip,
     });
   }
 
@@ -468,32 +470,29 @@ export class AuditLogger {
     ip?: string;
   }) {
     return await this.log({
-      eventType: 'data.account_deletion_requested',
+      eventType: "data.account_deletion_requested",
       userId: params.userId,
-      action: 'account_deletion_requested',
-      severity: 'warning',
-      resourceType: 'user_account',
+      action: "account_deletion_requested",
+      severity: "warning",
+      resourceType: "user_account",
       resourceId: params.userId,
       metadata: { scheduled_purge_at: params.scheduledPurgeAt },
-      ip: params.ip
+      ip: params.ip,
     });
   }
 
   /**
    * Log a GDPR account-deletion cancellation (within the grace period).
    */
-  async logAccountDeletionCancelled(params: {
-    userId: string;
-    ip?: string;
-  }) {
+  async logAccountDeletionCancelled(params: { userId: string; ip?: string }) {
     return await this.log({
-      eventType: 'data.account_deletion_cancelled',
+      eventType: "data.account_deletion_cancelled",
       userId: params.userId,
-      action: 'account_deletion_cancelled',
-      severity: 'info',
-      resourceType: 'user_account',
+      action: "account_deletion_cancelled",
+      severity: "info",
+      resourceType: "user_account",
       resourceId: params.userId,
-      ip: params.ip
+      ip: params.ip,
     });
   }
 }

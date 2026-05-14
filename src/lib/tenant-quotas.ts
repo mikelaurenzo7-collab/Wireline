@@ -16,8 +16,9 @@
 // this module is for daily / monthly accounting.
 
 import { eq, sql, and } from "drizzle-orm";
-import type { VercelPostgresDatabase } from "drizzle-orm/vercel-postgres";
+import type { VercelPgDatabase } from "drizzle-orm/vercel-postgres";
 import * as schema from "../db/schema";
+import { log } from "./server-context";
 
 // ─────────────────────────────────────────────────────────────────
 // Plan defaults
@@ -109,10 +110,7 @@ export function resolveLimit(
   return planDefault;
 }
 
-export function resolveProfile(
-  plan: PlanTier,
-  overrides: QuotaOverrideRow[],
-): QuotaProfile {
+export function resolveProfile(plan: PlanTier, overrides: QuotaOverrideRow[]): QuotaProfile {
   const out: QuotaProfile = { ...PLAN_DEFAULTS[plan] };
   for (const o of overrides) {
     if (!ALL_DIMENSIONS.includes(o.dimension)) continue;
@@ -196,7 +194,7 @@ function nextMinuteResetIso(now: Date = new Date()): string {
 }
 
 export interface QuotaTrackerDeps {
-  drizzle: VercelPostgresDatabase<typeof schema>;
+  drizzle: VercelPgDatabase<typeof schema>;
   /** Resolves the plan tier for a user. */
   getPlanForUser: (userId: string) => Promise<PlanTier>;
 }
@@ -215,16 +213,16 @@ export class QuotaTracker {
         user_id: schema.quotaLimits.userId,
         dimension: schema.quotaLimits.dimension,
         value: schema.quotaLimits.value,
-        enabled: schema.quotaLimits.enabled
+        enabled: schema.quotaLimits.enabled,
       })
       .from(schema.quotaLimits)
       .where(eq(schema.quotaLimits.userId, userId));
-    
-    const rows = (data || []).map(r => ({
+
+    const rows = (data || []).map((r: (typeof data)[number]) => ({
       ...r,
       dimension: r.dimension as QuotaDimension,
       value: Number(r.value),
-      enabled: !!r.enabled
+      enabled: !!r.enabled,
     }));
     this.overrideCache.set(userId, { rows, cached_at: Date.now() });
     return rows;
@@ -245,8 +243,7 @@ export class QuotaTracker {
 
   /** Read current usage without incrementing. */
   async getUsage(userId: string, dimension: QuotaDimension): Promise<number> {
-    const periodKey =
-      dimension === "intake_rpm" ? minutePeriodKey() : dailyPeriodKey();
+    const periodKey = dimension === "intake_rpm" ? minutePeriodKey() : dailyPeriodKey();
     const [data] = await this.deps.drizzle
       .select({ used: schema.quotaUsage.used })
       .from(schema.quotaUsage)
@@ -254,8 +251,8 @@ export class QuotaTracker {
         and(
           eq(schema.quotaUsage.userId, userId),
           eq(schema.quotaUsage.dimension, dimension),
-          eq(schema.quotaUsage.periodKey, periodKey)
-        )
+          eq(schema.quotaUsage.periodKey, periodKey),
+        ),
       )
       .limit(1);
     return Number(data?.used ?? 0);
@@ -275,10 +272,8 @@ export class QuotaTracker {
   ): Promise<QuotaDecision> {
     const { profile } = await this.getProfile(userId);
     const limit = profile[dimension];
-    const periodKey =
-      dimension === "intake_rpm" ? minutePeriodKey() : dailyPeriodKey();
-    const resetAt =
-      dimension === "intake_rpm" ? nextMinuteResetIso() : nextDailyResetIso();
+    const periodKey = dimension === "intake_rpm" ? minutePeriodKey() : dailyPeriodKey();
+    const resetAt = dimension === "intake_rpm" ? nextMinuteResetIso() : nextDailyResetIso();
 
     // Atomic increment using ON CONFLICT ... UPDATE
     try {
@@ -292,11 +287,15 @@ export class QuotaTracker {
           updatedAt: new Date(),
         })
         .onConflictDoUpdate({
-          target: [schema.quotaUsage.userId, schema.quotaUsage.dimension, schema.quotaUsage.periodKey],
+          target: [
+            schema.quotaUsage.userId,
+            schema.quotaUsage.dimension,
+            schema.quotaUsage.periodKey,
+          ],
           set: {
             used: sql`${schema.quotaUsage.used} + ${BigInt(delta)}`,
             updatedAt: new Date(),
-          }
+          },
         })
         .returning();
 
@@ -316,7 +315,14 @@ export class QuotaTracker {
       log.error("quota checkAndIncrement failed", { error: error.message, userId, dimension });
       // Non-atomic fallback: select → if would-exceed, refuse without writing.
       const current = await this.getUsage(userId, dimension);
-      return buildDecision({ dimension, limit, used: current, delta, period_key: periodKey, reset_at: resetAt });
+      return buildDecision({
+        dimension,
+        limit,
+        used: current,
+        delta,
+        period_key: periodKey,
+        reset_at: resetAt,
+      });
     }
   }
 }
@@ -331,7 +337,9 @@ export interface OverrideRequest {
   enabled: boolean;
 }
 
-export function validateOverride(req: unknown): { ok: true; value: OverrideRequest } | { ok: false; error: string } {
+export function validateOverride(
+  req: unknown,
+): { ok: true; value: OverrideRequest } | { ok: false; error: string } {
   if (!req || typeof req !== "object") return { ok: false, error: "body must be an object" };
   const r = req as Record<string, unknown>;
   if (typeof r.dimension !== "string" || !ALL_DIMENSIONS.includes(r.dimension as QuotaDimension)) {

@@ -1,6 +1,5 @@
 import React from "react";
 import { BrowserRouter, useLocation } from "react-router-dom";
-import { MotionConfig } from "motion/react";
 import AuthPortal from "./components/AuthPortal";
 import { PrivacyPolicy, TermsOfService } from "./components/LegalPage";
 import CookieConsent from "./components/CookieConsent";
@@ -17,7 +16,7 @@ function AppContent() {
 
   // Legal pages are public — accessible before auth.
   if (location.pathname === "/privacy") return <PrivacyPolicy />;
-  if (location.pathname === "/terms")   return <TermsOfService />;
+  if (location.pathname === "/terms") return <TermsOfService />;
 
   if (!user) {
     return <AuthPortal />;
@@ -33,18 +32,16 @@ function AppContent() {
 
 export default function App() {
   return (
-    <MotionConfig reducedMotion="user">
-      <BrowserRouter>
-        <AuthProvider>
-          <BrandingProvider>
-            <ToastProvider>
-              <AppContent />
-              <ToastStack />
-              <CookieConsent />
-            </ToastProvider>
-          </BrandingProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </MotionConfig>
+    <BrowserRouter>
+      <AuthProvider>
+        <BrandingProvider>
+          <ToastProvider>
+            <AppContent />
+            <ToastStack />
+            <CookieConsent />
+          </ToastProvider>
+        </BrandingProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }

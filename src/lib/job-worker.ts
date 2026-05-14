@@ -66,7 +66,9 @@ async function syncCallActivityToCrm(input: {
     subject: `Wireline ${input.direction} call${subjectSuffix}`,
     description: buildCrmCallDescription(input),
     to_number: input.customerNumber,
-    duration_minutes: input.durationSeconds ? Math.max(1, Math.round(input.durationSeconds / 60)) : 0,
+    duration_minutes: input.durationSeconds
+      ? Math.max(1, Math.round(input.durationSeconds / 60))
+      : 0,
     outcome: input.intentLabel || "completed",
   });
 
@@ -92,93 +94,124 @@ async function syncCallActivityToCrm(input: {
  * Dispatches jobs from the wireline_jobs table.
  */
 export async function handleJob(job: JobRow): Promise<void> {
-  if (job.type === 'post_call_enrichment') {
+  if (job.type === "post_call_enrichment") {
     const p = job.payload as {
-      agentId: string; userId: string; callId: string;
-      agentName?: string; archetype?: string; role?: string;
-      customerNumber?: string; durationSeconds?: number;
-      summary?: string; transcript?: string;
+      agentId: string;
+      userId: string;
+      callId: string;
+      agentName?: string;
+      archetype?: string;
+      role?: string;
+      customerNumber?: string;
+      durationSeconds?: number;
+      summary?: string;
+      transcript?: string;
       useFlash?: boolean;
     };
-    
+
     // Check user tier for model selection
     const [settings] = await drizzle
       .select({ aiTier: schema.settings.aiTier, crmType: schema.settings.crmType })
       .from(schema.settings)
       .where(eq(schema.settings.userId, p.userId))
       .limit(1);
-    const useFlash = p.useFlash || settings?.aiTier === 'starter';
+    const useFlash = p.useFlash || settings?.aiTier === "starter";
 
     let result;
     let records: any[] = [];
 
     if (useFlash) {
-      log.info("Using Gemini Flash for post-call enrichment", { userId: p.userId, callId: p.callId });
+      log.info("Using Gemini Flash for post-call enrichment", {
+        userId: p.userId,
+        callId: p.callId,
+      });
       result = await geminiBrain.postCallAnalysis({
         transcript: p.transcript!,
-        summary: p.summary || ''
+        summary: p.summary || "",
       });
     } else {
       if (!claudeBrain.isClaudeAvailable() || !p.transcript) return;
       const capture = await claudeBrain.withAuditCapture(() =>
         claudeBrain.postCallAnalysis({
-          agentName:       p.agentName || 'Wireline Agent',
-          archetype:       p.archetype || 'Receptionist',
-          role:            p.role,
-          customerNumber:  p.customerNumber,
+          agentName: p.agentName || "Wireline Agent",
+          archetype: p.archetype || "Receptionist",
+          role: p.role,
+          customerNumber: p.customerNumber,
           durationSeconds: p.durationSeconds ?? 0,
-          summary:         p.summary || '',
-          transcript:      p.transcript!,
+          summary: p.summary || "",
+          transcript: p.transcript!,
         }),
       );
       result = capture.result;
       records = capture.records;
     }
 
-    await drizzle.update(schema.callLogs).set({
-      leadScore:    result.lead_score,
-      intentLabel:  result.intent_label,
-      sentiment:     result.sentiment,
-      coachingNote: result.coaching_note,
-    }).where(eq(schema.callLogs.vapiCallId, p.callId));
-    
+    await drizzle
+      .update(schema.callLogs)
+      .set({
+        leadScore: result.lead_score,
+        intentLabel: result.intent_label,
+        sentiment: result.sentiment,
+        coachingNote: result.coaching_note,
+      })
+      .where(eq(schema.callLogs.vapiCallId, p.callId));
+
     if (result.lesson?.trim()) {
-      await drizzle.insert(schema.agentLessons).values({
-        agentId: p.agentId,
-        userId: p.userId,
-        lesson: result.lesson.trim(),
-        sourceCallId: p.callId,
-        source: 'phone_call'
-      }).onConflictDoNothing({
-        target: [schema.agentLessons.agentId, schema.agentLessons.lesson]
-      });
+      await drizzle
+        .insert(schema.agentLessons)
+        .values({
+          agentId: p.agentId,
+          userId: p.userId,
+          lesson: result.lesson.trim(),
+          sourceCallId: p.callId,
+          source: "phone_call",
+        })
+        .onConflictDoNothing({
+          target: [schema.agentLessons.agentId, schema.agentLessons.lesson],
+        });
     }
-    
+
     if (useFlash) {
       const tokenCount = Math.ceil(((p.transcript?.length ?? 0) + (p.summary?.length ?? 0)) / 4);
-      await quotaTracker.checkAndIncrement(p.userId, 'claude_tokens_daily', Math.max(1, tokenCount)).catch((e: unknown) => {
-        log.warn("quota token increment failed — usage may be under-counted", { user_id: p.userId, error: getErrorMessage(e) });
-      });
+      await quotaTracker
+        .checkAndIncrement(p.userId, "claude_tokens_daily", Math.max(1, tokenCount))
+        .catch((e: unknown) => {
+          log.warn("quota token increment failed — usage may be under-counted", {
+            user_id: p.userId,
+            error: getErrorMessage(e),
+          });
+        });
     } else if (records.length) {
       await persistClaudeAuditRecords({
         userId: p.userId,
         action: "jobs.post_call_enrichment",
         records,
         requestMeta: { vapi_call_id: p.callId, agent_id: p.agentId },
-      }).catch((e: unknown) => log.warn("post_call audit persist failed", { error: getErrorMessage(e) }));
+      }).catch((e: unknown) =>
+        log.warn("post_call audit persist failed", { error: getErrorMessage(e) }),
+      );
     } else {
       const tokenCount = Math.ceil(((p.transcript?.length ?? 0) + (p.summary?.length ?? 0)) / 4);
-      await quotaTracker.checkAndIncrement(p.userId, 'claude_tokens_daily', Math.max(1, tokenCount)).catch((e: unknown) => {
-        log.warn("quota token increment failed — usage may be under-counted", { user_id: p.userId, error: getErrorMessage(e) });
-      });
+      await quotaTracker
+        .checkAndIncrement(p.userId, "claude_tokens_daily", Math.max(1, tokenCount))
+        .catch((e: unknown) => {
+          log.warn("quota token increment failed — usage may be under-counted", {
+            user_id: p.userId,
+            error: getErrorMessage(e),
+          });
+        });
     }
 
     const [logRow] = await drizzle
-      .select({ direction: schema.callLogs.direction, customerNumber: schema.callLogs.customerNumber })
+      .select({
+        direction: schema.callLogs.direction,
+        customerNumber: schema.callLogs.customerNumber,
+      })
       .from(schema.callLogs)
       .where(eq(schema.callLogs.vapiCallId, p.callId))
       .limit(1);
-    const direction = logRow?.direction === "outbound" ? "outbound" as const : "inbound" as const;
+    const direction =
+      logRow?.direction === "outbound" ? ("outbound" as const) : ("inbound" as const);
     const enrichment = {
       lead_score: result.lead_score,
       intent_label: result.intent_label,
@@ -207,11 +240,13 @@ export async function handleJob(job: JobRow): Promise<void> {
       leadScore: result.lead_score,
       intentLabel: result.intent_label,
       sentiment: result.sentiment,
-    }).catch((e: unknown) => log.warn("post_call CRM sync failed", {
-      userId: p.userId,
-      callId: p.callId,
-      error: getErrorMessage(e),
-    }));
+    }).catch((e: unknown) =>
+      log.warn("post_call CRM sync failed", {
+        userId: p.userId,
+        callId: p.callId,
+        error: getErrorMessage(e),
+      }),
+    );
     void dispatchWebhook(p.userId, "call.completed", payload);
     if (typeof result.lead_score === "number" && result.lead_score >= 70) {
       void dispatchWebhook(p.userId, "lead.hot", {
@@ -232,47 +267,51 @@ export async function handleJob(job: JobRow): Promise<void> {
     // Automatically enqueue action extraction after enrichment
     await enqueue(drizzle, {
       userId: p.userId,
-      type: 'v2a_action_extraction',
-      payload: { 
-        userId: p.userId, 
+      type: "v2a_action_extraction",
+      payload: {
+        userId: p.userId,
         callId: p.callId,
         summary: p.summary,
         transcript: p.transcript,
-        customerNumber: p.customerNumber
-      }
-    }).catch(e => log.error("Failed to enqueue V2A extraction", { error: getErrorMessage(e) }));
+        customerNumber: p.customerNumber,
+      },
+    }).catch((e) => log.error("Failed to enqueue V2A extraction", { error: getErrorMessage(e) }));
   }
 
-  if (job.type === 'v2a_action_extraction') {
-    const p = job.payload as { 
-      userId: string; 
-      callId: string; 
-      transcript: string; 
+  if (job.type === "v2a_action_extraction") {
+    const p = job.payload as {
+      userId: string;
+      callId: string;
+      transcript: string;
       summary: string;
       customerNumber?: string;
     };
-    
+
     const actions = await claudeBrain.extractActions({
       transcript: p.transcript,
       summary: p.summary,
-      customerNumber: p.customerNumber
+      customerNumber: p.customerNumber,
     });
 
     for (const action of actions) {
       await enqueue(drizzle, {
         userId: p.userId,
-        type: 'execute_action',
+        type: "execute_action",
         payload: {
           userId: p.userId,
           action,
-          context: { sourceId: p.callId, sourceType: 'phone_call' }
-        }
+          context: { sourceId: p.callId, sourceType: "phone_call" },
+        },
       });
     }
-    log.info("V2A extraction complete", { userId: p.userId, callId: p.callId, actionsCount: actions.length });
+    log.info("V2A extraction complete", {
+      userId: p.userId,
+      callId: p.callId,
+      actionsCount: actions.length,
+    });
   }
 
-  if (job.type === 'execute_action') {
+  if (job.type === "execute_action") {
     const p = job.payload as {
       userId: string;
       action: any;
@@ -288,7 +327,7 @@ export async function handleJob(job: JobRow): Promise<void> {
     await executeAction(p.userId, parsed.data, p.context);
   }
 
-  if (job.type === 'adaptive_optimization') {
+  if (job.type === "adaptive_optimization") {
     const p = job.payload as {
       agentId: string;
       userId: string;
@@ -297,49 +336,67 @@ export async function handleJob(job: JobRow): Promise<void> {
       breakdown: any;
     };
 
-    const [call] = await drizzle.select({ transcript: schema.callLogs.transcript }).from(schema.callLogs).where(eq(schema.callLogs.id, p.callId)).limit(1);
+    const [call] = await drizzle
+      .select({ transcript: schema.callLogs.transcript })
+      .from(schema.callLogs)
+      .where(eq(schema.callLogs.id, p.callId))
+      .limit(1);
     if (!call?.transcript) return;
 
     const lesson = await claudeBrain.synthesizeLesson({
       transcript: call.transcript,
       score: p.score,
-      breakdown: p.breakdown
+      breakdown: p.breakdown,
     });
 
     if (lesson) {
-      await drizzle.insert(schema.agentLessons).values({
-        agentId: p.agentId,
-        userId: p.userId,
-        lesson: lesson,
-        sourceCallId: p.callId,
-        source: 'adaptive_tuning'
-      }).onConflictDoNothing({
-        target: [schema.agentLessons.agentId, schema.agentLessons.lesson]
-      });
+      await drizzle
+        .insert(schema.agentLessons)
+        .values({
+          agentId: p.agentId,
+          userId: p.userId,
+          lesson: lesson,
+          sourceCallId: p.callId,
+          source: "adaptive_tuning",
+        })
+        .onConflictDoNothing({
+          target: [schema.agentLessons.agentId, schema.agentLessons.lesson],
+        });
       log.info("Adaptive optimization: new lesson synthesized", { agentId: p.agentId, lesson });
     }
   }
 
-  if (job.type === 'purge_old_data') {
+  if (job.type === "purge_old_data") {
     const p = job.payload as { user_id: string; retention_days?: number };
     if (!p.user_id) {
-      log.warn('purge_old_data job missing user_id', { jobId: job.id });
+      log.warn("purge_old_data job missing user_id", { jobId: job.id });
       return;
     }
-    const retentionDays = typeof p.retention_days === 'number' ? p.retention_days : 365;
+    const retentionDays = typeof p.retention_days === "number" ? p.retention_days : 365;
     try {
-      const result = await drizzle.execute(sql.raw(`SELECT wireline_purge_old_data('${p.user_id}', ${retentionDays})`));
-      log.info('purge_old_data job completed', { jobId: job.id, user_id: p.user_id, retention_days: retentionDays, result });
+      const result = await drizzle.execute(
+        sql.raw(`SELECT wireline_purge_old_data('${p.user_id}', ${retentionDays})`),
+      );
+      log.info("purge_old_data job completed", {
+        jobId: job.id,
+        user_id: p.user_id,
+        retention_days: retentionDays,
+        result,
+      });
     } catch (error: any) {
-      log.error('purge_old_data job failed', { jobId: job.id, user_id: p.user_id, error: error.message });
+      log.error("purge_old_data job failed", {
+        jobId: job.id,
+        user_id: p.user_id,
+        error: error.message,
+      });
       throw new Error(error.message);
     }
   }
 
-  if (job.type === 'purge_deleted_account') {
+  if (job.type === "purge_deleted_account") {
     const p = job.payload as { user_id: string; queue_id?: string };
     if (!p.user_id) {
-      log.warn('purge_deleted_account job missing user_id', { jobId: job.id });
+      log.warn("purge_deleted_account job missing user_id", { jobId: job.id });
       return;
     }
 
@@ -357,17 +414,25 @@ export async function handleJob(job: JobRow): Promise<void> {
       const [data] = await drizzle
         .select()
         .from(schema.deletionQueue)
-        .where(and(eq(schema.deletionQueue.userId, p.user_id), eq(schema.deletionQueue.status, 'pending')))
+        .where(
+          and(
+            eq(schema.deletionQueue.userId, p.user_id),
+            eq(schema.deletionQueue.status, "pending"),
+          ),
+        )
         .limit(1);
       queueRow = data;
     }
 
-    if (!queueRow || queueRow.status !== 'pending') {
-      log.info('purge_deleted_account skipped — no pending queue row', { jobId: job.id, user_id: p.user_id });
+    if (!queueRow || queueRow.status !== "pending") {
+      log.info("purge_deleted_account skipped — no pending queue row", {
+        jobId: job.id,
+        user_id: p.user_id,
+      });
       return;
     }
     if (new Date(queueRow.scheduledPurgeAt).getTime() > Date.now()) {
-      log.info('purge_deleted_account skipped — still within grace window', {
+      log.info("purge_deleted_account skipped — still within grace window", {
         jobId: job.id,
         user_id: p.user_id,
         scheduled_purge_at: queueRow.scheduledPurgeAt,
@@ -377,14 +442,22 @@ export async function handleJob(job: JobRow): Promise<void> {
 
     const result = await purgeAccount(p.user_id, { db: drizzle, log });
     if (!result.ok) {
-      log.error('purge_deleted_account failed', { jobId: job.id, user_id: p.user_id, error: result.error });
-      throw new Error(result.error ?? 'account purge failed');
+      log.error("purge_deleted_account failed", {
+        jobId: job.id,
+        user_id: p.user_id,
+        error: result.error,
+      });
+      throw new Error(result.error ?? "account purge failed");
     }
 
     // Audit BEFORE marking the queue row purged so the audit row is still
     // owned by a (now-deleted) user — historical record of the action.
     void auditLogger
-      .logAccountDeletion({ userId: p.user_id, tablesTouched: result.tablesTouched, ip: queueRow.ip ?? undefined })
+      .logAccountDeletion({
+        userId: p.user_id,
+        tablesTouched: result.tablesTouched,
+        ip: queueRow.ip ?? undefined,
+      })
       .catch(() => {});
 
     // Mark the queue row purged. The FK ON DELETE CASCADE from auth.users
@@ -392,55 +465,88 @@ export async function handleJob(job: JobRow): Promise<void> {
     // update may affect zero rows — that's fine.
     await drizzle
       .update(schema.deletionQueue)
-      .set({ status: 'purged', purgedAt: new Date() })
+      .set({ status: "purged", purgedAt: new Date() })
       .where(eq(schema.deletionQueue.id, queueRow.id));
 
-    log.info('purge_deleted_account completed', {
+    log.info("purge_deleted_account completed", {
       jobId: job.id,
       user_id: p.user_id,
       tables_touched: result.tablesTouched.length,
     });
   }
 
-  if (job.type === 'proactive_lead_enrichment') {
+  if (job.type === "proactive_lead_enrichment") {
     const p = job.payload as { userId: string; customerNumber: string };
-    
-    log.info("Starting proactive lead enrichment", { userId: p.userId, customerNumber: p.customerNumber });
+
+    log.info("Starting proactive lead enrichment", {
+      userId: p.userId,
+      customerNumber: p.customerNumber,
+    });
 
     try {
       const [enrichment, calls, emails] = await Promise.all([
         apolloEnrich(p.customerNumber),
-        drizzle.select({ summary: schema.callLogs.summary, createdAt: schema.callLogs.createdAt }).from(schema.callLogs).where(eq(schema.callLogs.customerNumber, p.customerNumber)).orderBy(desc(schema.callLogs.createdAt)).limit(3),
-        drizzle.select({ summary: schema.emailThreads.summary, lastMessageAt: schema.emailThreads.lastMessageAt }).from(schema.emailThreads).where(eq(schema.emailThreads.customerEmail, p.customerNumber)).orderBy(desc(schema.emailThreads.lastMessageAt)).limit(3),
+        drizzle
+          .select({ summary: schema.callLogs.summary, createdAt: schema.callLogs.createdAt })
+          .from(schema.callLogs)
+          .where(eq(schema.callLogs.customerNumber, p.customerNumber))
+          .orderBy(desc(schema.callLogs.createdAt))
+          .limit(3),
+        drizzle
+          .select({
+            summary: schema.emailThreads.summary,
+            lastMessageAt: schema.emailThreads.lastMessageAt,
+          })
+          .from(schema.emailThreads)
+          .where(eq(schema.emailThreads.customerEmail, p.customerNumber))
+          .orderBy(desc(schema.emailThreads.lastMessageAt))
+          .limit(3),
       ]);
 
       let summaryText = "";
-      if (calls?.length) summaryText += "Recent Calls: " + calls.map(c => c.summary || "No summary").join("; ") + ". ";
-      if (emails?.length) summaryText += "Recent Emails: " + emails.map(e => e.summary || "No summary").join("; ") + ". ";
+      if (calls?.length)
+        summaryText +=
+          "Recent Calls: " + calls.map((c) => c.summary || "No summary").join("; ") + ". ";
+      if (emails?.length)
+        summaryText +=
+          "Recent Emails: " + emails.map((e) => e.summary || "No summary").join("; ") + ". ";
 
       if (enrichment) {
-        await drizzle.insert(schema.leadDossiers).values({
-          userId: p.userId,
-          customerNumber: p.customerNumber,
-          fullName: enrichment.first_name && enrichment.last_name ? `${enrichment.first_name} ${enrichment.last_name}` : undefined,
-          jobTitle: enrichment.title,
-          company: enrichment.company,
-          linkedInUrl: enrichment.linkedin_url,
-          metadata: enrichment,
-          interactionSummary: summaryText || "No prior interactions found."
-        }).onConflictDoUpdate({
-          target: [schema.leadDossiers.userId, schema.leadDossiers.customerNumber],
-          set: {
-            fullName: enrichment.first_name && enrichment.last_name ? `${enrichment.first_name} ${enrichment.last_name}` : undefined,
+        await drizzle
+          .insert(schema.leadDossiers)
+          .values({
+            userId: p.userId,
+            customerNumber: p.customerNumber,
+            fullName:
+              enrichment.first_name && enrichment.last_name
+                ? `${enrichment.first_name} ${enrichment.last_name}`
+                : undefined,
             jobTitle: enrichment.title,
             company: enrichment.company,
             linkedInUrl: enrichment.linkedin_url,
             metadata: enrichment,
-            interactionSummary: summaryText || "No prior interactions found."
-          }
+            interactionSummary: summaryText || "No prior interactions found.",
+          })
+          .onConflictDoUpdate({
+            target: [schema.leadDossiers.userId, schema.leadDossiers.customerNumber],
+            set: {
+              fullName:
+                enrichment.first_name && enrichment.last_name
+                  ? `${enrichment.first_name} ${enrichment.last_name}`
+                  : undefined,
+              jobTitle: enrichment.title,
+              company: enrichment.company,
+              linkedInUrl: enrichment.linkedin_url,
+              metadata: enrichment,
+              interactionSummary: summaryText || "No prior interactions found.",
+            },
+          });
+
+        log.info("Lead enrichment successful", {
+          userId: p.userId,
+          customerNumber: p.customerNumber,
+          company: enrichment.company,
         });
-        
-        log.info("Lead enrichment successful", { userId: p.userId, customerNumber: p.customerNumber, company: enrichment.company });
       } else {
         log.info("No enrichment data found for lead", { customerNumber: p.customerNumber });
       }
@@ -449,16 +555,23 @@ export async function handleJob(job: JobRow): Promise<void> {
     }
   }
 
-  if (job.type === 'autonomous_prospecting') {
+  if (job.type === "autonomous_prospecting") {
     const p = job.payload as { userId: string };
-    const [settings] = await drizzle.select().from(schema.settings).where(eq(schema.settings.userId, p.userId)).limit(1);
-    
+    const [settings] = await drizzle
+      .select()
+      .from(schema.settings)
+      .where(eq(schema.settings.userId, p.userId))
+      .limit(1);
+
     if (!settings?.prospectingEnabled) {
       log.info("Prospecting disabled for user", { userId: p.userId });
       return;
     }
 
-    log.info("Starting autonomous prospecting", { userId: p.userId, titles: settings.targetTitles });
+    log.info("Starting autonomous prospecting", {
+      userId: p.userId,
+      titles: settings.targetTitles,
+    });
 
     try {
       const leads = await apolloSearch({
@@ -466,7 +579,7 @@ export async function handleJob(job: JobRow): Promise<void> {
         industries: settings.targetIndustries || [],
         states: settings.targetStates || [],
         employee_ranges: settings.targetEmployeeRanges || [],
-        limit: 10
+        limit: 10,
       });
 
       let added = 0;
@@ -477,20 +590,26 @@ export async function handleJob(job: JobRow): Promise<void> {
             customerName: `${lead.first_name} ${lead.last_name}`,
             customerNumber: lead.phone,
             email: lead.email,
-            status: 'New',
-            context: `Autonomously sourced via Apollo Intelligence for ${lead.title} role at ${lead.company}.`
+            status: "New",
+            context: `Autonomously sourced via Apollo Intelligence for ${lead.title} role at ${lead.company}.`,
           });
           added++;
-        } catch {}
+        } catch {
+          void 0; /* ignore duplicate lead / constraint violations */
+        }
       }
 
-      log.info("Autonomous prospecting complete", { userId: p.userId, leadsFound: leads.length, leadsAdded: added });
+      log.info("Autonomous prospecting complete", {
+        userId: p.userId,
+        leadsFound: leads.length,
+        leadsAdded: added,
+      });
     } catch (error) {
       log.error("Autonomous prospecting failed", { error: getErrorMessage(error) });
     }
   }
 
-  if (job.type === 'campaign_dial') {
+  if (job.type === "campaign_dial") {
     const p = job.payload as { userId: string };
     const { CampaignDialerService } = await import("../services/campaign-dialer");
     const dialer = new CampaignDialerService();
@@ -503,10 +622,10 @@ export async function handleJob(job: JobRow): Promise<void> {
  * Returns a stop function.
  */
 export function initJobWorker() {
-  if (process.env.VERCEL === '1') return null;
+  if (process.env.VERCEL === "1") return null;
 
   return startWorker(drizzle, handleJob, {
     pollIntervalMs: 10_000,
-    onError: (err) => log.error('job worker error', { error: err.message }),
+    onError: (err) => log.error("job worker error", { error: err.message }),
   });
 }
