@@ -14,6 +14,7 @@ import { LiveMonitor } from "../components/CommandCenter/LiveMonitor";
 import { ActionFeed } from "../components/CommandCenter/ActionFeed";
 import PageTransition from "../components/layout/PageTransition";
 import { clsx } from "clsx";
+import { motion } from "motion/react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 

@@ -202,14 +202,13 @@ export function verifyOAuthState(state: string | undefined): VerifiedOAuthState 
   }
 }
 
-/** When signed state has no embedded user id, resolve tenant via Supabase JWT (Authorization header or session cookie). */
 export async function resolveUserIdFromOAuthSession(req: express.Request): Promise<string | null> {
   const authHeader = req.headers.authorization;
-  const cookieToken = (req as express.Request & { cookies?: Record<string, string> }).cookies?.["sb-access-token"];
+  const cookieToken = (req as express.Request & { cookies?: Record<string, string> }).cookies?.["wireline_session"];
   const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : cookieToken;
   if (!bearerToken) return null;
   
-  const secret = process.env.SUPABASE_JWT_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+  const secret = process.env.INTERNAL_JWT_SECRET || process.env.SUPABASE_JWT_SECRET || "";
   const payload = await verifySupabaseJwt(bearerToken, secret);
   return payload?.sub ?? null;
 }
