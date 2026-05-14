@@ -10,7 +10,6 @@
 // All other callers should use the soft-delete flow via
 // POST /api/account/delete + the 30-day grace window.
 
-import { createClient } from '@supabase/supabase-js';
 import { sql } from 'drizzle-orm';
 import { drizzle } from './server-context';
 
@@ -63,8 +62,6 @@ const TENANT_SCOPED_TABLES = new Set<string>([
 export interface PurgeAccountDeps {
   db: typeof drizzle;
   log: { warn: (msg: string, meta?: Record<string, unknown>) => void; error: (msg: string, meta?: Record<string, unknown>) => void };
-  supabaseUrl?: string;
-  serviceRoleKey?: string;
 }
 
 export interface PurgeAccountResult {
@@ -102,7 +99,6 @@ export async function purgeAccount(
     await db.execute(sql.raw(`DELETE FROM wireline_users WHERE id = '${userId}'`));
     return { ok: true, tablesTouched, authRemoved: true };
   } catch (error: any) {
-    log.error('account purge: failed to delete wireline_users row', { userId, error: error.message });
     return { ok: false, tablesTouched, authRemoved: false, error: error.message };
   }
 }

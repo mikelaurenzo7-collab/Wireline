@@ -8,34 +8,11 @@ import { createRbacMiddleware, invalidateRoleCache } from "./require-role";
  */
 function makeMockDb(mockRole: string | null) {
   return {
-    from() {
-      return {
-        select() {
-          return {
-            eq() {
-              return {
-                is() {
-                  return {
-                    order() {
-                      return {
-                        limit() {
-                          return {
-                            maybeSingle: async () => ({
-                              data: mockRole === null ? null : { role: mockRole, revoked_at: null },
-                              error: null,
-                            }),
-                          };
-                        },
-                      };
-                    },
-                  };
-                },
-              };
-            },
-          };
-        },
-      };
-    },
+    select: vi.fn().mockReturnThis(),
+    from: vi.fn().mockReturnThis(),
+    where: vi.fn().mockReturnThis(),
+    orderBy: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockResolvedValue(mockRole === null ? [] : [{ role: mockRole }]),
   } as any;
 }
 

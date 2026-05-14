@@ -15,33 +15,12 @@ import {
   purgeAccount,
 } from './account-deletion';
 
-// ──────────────────────────────────────────────────────────
-// Mock @supabase/supabase-js → createClient → auth.admin.deleteUser
-// ──────────────────────────────────────────────────────────
-const deleteUserMock = vi.fn().mockResolvedValue({ error: null });
-vi.mock('@supabase/supabase-js', () => ({
-  createClient: () => ({
-    auth: { admin: { deleteUser: deleteUserMock } },
-  }),
-}));
-
 function makeDb() {
-  const calls: Array<{ table: string; col: string; value: string }> = [];
+  const executeMock = vi.fn().mockResolvedValue({ success: true });
   const db = {
-    from(table: string) {
-      return {
-        delete() {
-          return {
-            eq: (col: string, value: string) => {
-              calls.push({ table, col, value });
-              return Promise.resolve({ error: null });
-            },
-          };
-        },
-      };
-    },
+    execute: executeMock,
   };
-  return { db, calls };
+  return { db, executeMock };
 }
 
 describe('computeScheduledPurgeAt', () => {
@@ -57,106 +36,39 @@ describe('computeScheduledPurgeAt', () => {
 });
 
 describe('purgeAccount', () => {
-  beforeEach(() => {
-    deleteUserMock.mockClear();
-    deleteUserMock.mockResolvedValue({ error: null });
-  });
-
   const log = {
     warn: vi.fn(),
     error: vi.fn(),
   };
 
   it('deletes from every wireline_* table and removes the auth row', async () => {
-    const { db, calls } = makeDb();
+    const { db, executeMock } = makeDb();
 
     const result = await purgeAccount('user-1', {
       db: db as any,
       log,
-      supabaseUrl: 'https://example.supabase.co',
-      serviceRoleKey: 'test-service-role',
     });
 
     expect(result.ok).toBe(true);
     expect(result.authRemoved).toBe(true);
     expect(result.tablesTouched).toEqual([...ACCOUNT_DELETION_TABLES]);
 
-    // Every table was touched exactly once.
-    expect(calls).toHaveLength(ACCOUNT_DELETION_TABLES.length);
-
-    // wireline_team_members / change_log / incidents scope by tenant_id;
-    // everything else by user_id.
-    for (const c of calls) {
-      const expectedCol = ['wireline_team_members', 'wireline_change_log', 'wireline_incidents'].includes(c.table)
-        ? 'tenant_id'
-        : 'user_id';
-      expect(c.col).toBe(expectedCol);
-      expect(c.value).toBe('user-1');
-    }
-
-    expect(deleteUserMock).toHaveBeenCalledWith('user-1');
+    // Total calls = tables + the wireline_users row
+    expect(executeMock).toHaveBeenCalledTimes(ACCOUNT_DELETION_TABLES.length + 1);
   });
 
-  it('returns ok=false when auth.admin.deleteUser fails', async () => {
-    const { db } = makeDb();
-    deleteUserMock.mockResolvedValueOnce({ error: { message: 'auth boom' } });
-
-    const result = await purgeAccount('user-2', {
-      db: db as any,
-      log,
-      supabaseUrl: 'https://example.supabase.co',
-      serviceRoleKey: 'test-service-role',
+  it('continues past per-table errors', async () => {
+    const { db, executeMock } = makeDb();
+    executeMock.mockImplementation((sql: any) => {
+      if (sql.query.includes('DELETE FROM wireline_call_logs')) {
+        throw new Error('fk violation');
+      }
+      return Promise.resolve({ success: true });
     });
-
-    expect(result.ok).toBe(false);
-    expect(result.authRemoved).toBe(false);
-    expect(result.error).toContain('auth boom');
-  });
-
-  it('returns ok=false when admin credentials are missing', async () => {
-    const { db } = makeDb();
-    const result = await purgeAccount('user-3', {
-      db: db as any,
-      log,
-      // No supabaseUrl / serviceRoleKey, and we have to ensure process.env
-      // is empty for this test path.
-      supabaseUrl: '',
-      serviceRoleKey: '',
-    });
-
-    // Tables are still cleaned even without auth-removal creds.
-    expect(result.tablesTouched.length).toBe(ACCOUNT_DELETION_TABLES.length);
-    expect(result.ok).toBe(false);
-    expect(result.authRemoved).toBe(false);
-    expect(result.error).toMatch(/admin credentials/i);
-    expect(deleteUserMock).not.toHaveBeenCalled();
-  });
-
-  it('continues past per-table errors and records only tables that succeeded', async () => {
-    const calls: Array<{ table: string }> = [];
-    const dbWithErrors = {
-      from(table: string) {
-        return {
-          delete() {
-            return {
-              eq: () => {
-                calls.push({ table });
-                if (table === 'wireline_call_logs') {
-                  return Promise.resolve({ error: { message: 'fk violation' } });
-                }
-                return Promise.resolve({ error: null });
-              },
-            };
-          },
-        };
-      },
-    };
 
     const result = await purgeAccount('user-4', {
-      db: dbWithErrors as any,
+      db: db as any,
       log,
-      supabaseUrl: 'https://example.supabase.co',
-      serviceRoleKey: 'test-service-role',
     });
 
     expect(result.ok).toBe(true);

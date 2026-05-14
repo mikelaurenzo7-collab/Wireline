@@ -7,26 +7,12 @@
 import { randomBytes } from "node:crypto";
 
 /**
- * Build the CSP connect-src from the runtime Supabase URL so the browser's
- * fetch() is allowed to reach Supabase, Anthropic, Vapi, Google, and Stripe.
- * Evaluated once at module load; requires VITE_SUPABASE_URL to be set before
- * the module is imported (i.e. after dotenv.config()).
+ * Build the CSP connect-src origins for the runtime.
+ * fetch() is allowed to reach Anthropic, Vapi, Google, Microsoft Graph, and Stripe.
  */
-export function buildSupabaseOrigin(): string {
-  try {
-    const u = new URL(process.env.VITE_SUPABASE_URL || "https://placeholder.supabase.co");
-    return u.origin;
-  } catch {
-    return "https://*.supabase.co";
-  }
-}
-
-export function buildConnectSrcs(supabaseOrigin: string): string {
+export function buildConnectSrcs(): string {
   return [
     "'self'",
-    supabaseOrigin,
-    "https://*.supabase.co",
-    "wss://*.supabase.co",
     "https://api.anthropic.com",
     "https://api.vapi.ai",
     "wss://api.vapi.ai",

@@ -60,13 +60,13 @@ export interface IntegrationDescriptor {
 export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
   // ─── core ───────────────────────────────────────────────────────────────
   {
-    id: "supabase",
-    label: "Supabase",
-    description: "Postgres database, RLS, and auth.",
+    id: "drizzle",
+    label: "Vercel Postgres (Drizzle)",
+    description: "Sovereign Postgres database and ORM.",
     group: "core",
     required: true,
-    envVars: ["VITE_SUPABASE_URL", "VITE_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"],
-    docsUrl: "https://supabase.com/docs",
+    envVars: ["POSTGRES_URL", "INTERNAL_JWT_SECRET"],
+    docsUrl: "https://orm.drizzle.team/docs/overview",
   },
 
   // ─── ai ─────────────────────────────────────────────────────────────────
@@ -345,7 +345,7 @@ export function getHealthCapabilities() {
     claude:          claudeBrain.isClaudeAvailable(),
     gemini:          envIsPresent("GEMINI_API_KEY"),
     vapi:            envIsPresent("VAPI_PRIVATE_KEY"),
-    supabase:        envIsPresent("VITE_SUPABASE_URL"),
+    drizzle:         envIsPresent("POSTGRES_URL"),
     google_oauth:    envIsPresent("GOOGLE_CLIENT_ID"),
     microsoft_oauth: envIsPresent("MICROSOFT_CLIENT_ID"),
     stripe:          envIsPresent("STRIPE_SECRET_KEY"),

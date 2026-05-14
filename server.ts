@@ -20,7 +20,7 @@ import { randomUUID } from "node:crypto";
 import { db, IS_PROD, log } from "./src/lib/server-context";
 import { getErrorMessage } from "./src/lib/server-utils";
 import { validateStartupEnv } from "./src/lib/startup";
-import { buildCSP, buildConnectSrcs, buildSupabaseOrigin } from "./src/lib/csp";
+import { buildCSP, buildConnectSrcs } from "./src/lib/csp";
 import { isRedisConfigured, startMemoryCleanup } from "./src/lib/rate-limit";
 import { claudeRateLimiter } from "./src/middleware/api-rate-limits";
 import { initJobWorker } from "./src/lib/job-worker";
@@ -105,8 +105,7 @@ app.use((req: express.Request, res: express.Response, next: express.NextFunction
 });
 
 // Security headers
-const supabaseOrigin = buildSupabaseOrigin();
-const CSP_CONNECT_SRCS = buildConnectSrcs(supabaseOrigin);
+const CSP_CONNECT_SRCS = buildConnectSrcs();
 
 app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
   Sentry.setTag("http.method", req.method);
