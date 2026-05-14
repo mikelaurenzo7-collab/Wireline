@@ -66,10 +66,15 @@ validateStartupEnv();
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
-// Trust one hop (the Vercel edge proxy) so `req.ip` resolves to the real
-// client IP from X-Forwarded-For. Without this, attackers can forge XFF
-// directly and bypass per-IP rate limits.
-app.set("trust proxy", 1);
+// Trust exactly one proxy hop ONLY when running on Vercel (which sets
+// `VERCEL=1` and always overwrites X-Forwarded-For with the real client
+// IP). Outside Vercel — local dev, self-hosted, etc. — leave proxy trust
+// off so attackers can't forge XFF to rotate `req.ip` and bypass per-IP
+// rate limits. Self-hosted operators must explicitly opt in via a future
+// `TRUSTED_PROXY_HOPS` env var if they front the app with their own proxy.
+if (process.env.VERCEL === "1") {
+  app.set("trust proxy", 1);
+}
 
 // CORS setup
 const corsAllowList = (process.env.CORS_ORIGINS || "")
@@ -204,28 +209,30 @@ app.use("/api/auth", authRouter);
 
 // 404 API catch-all (Must be mounted after all valid API routes and before global error handler)
 app.use("/api", (req: express.Request, res: express.Response) => {
-  res.status(404).json({ error: "API Route Not Found", path: req.path, requestId: res.locals?.requestId });
+  res
+    .status(404)
+    .json({ error: "API Route Not Found", path: req.path, requestId: res.locals?.requestId });
 });
 
 // Global error handler
-app.use((err: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  const errObj = err as { message?: string; stack?: string };
-  log.error("Unhandled global error", {
-    requestId: res.locals?.requestId,
-    method: req.method,
-    path: req.path,
-    error: getErrorMessage(err),
-    stack: errObj?.stack,
-  });
-  if (process.env.SENTRY_DSN) {
-    Sentry.captureException(err, {
-      tags: { requestId: res.locals?.requestId, path: req.path, method: req.method },
+app.use(
+  (err: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    const errObj = err as { message?: string; stack?: string };
+    log.error("Unhandled global error", {
+      requestId: res.locals?.requestId,
+      method: req.method,
+      path: req.path,
+      error: getErrorMessage(err),
+      stack: errObj?.stack,
     });
-  }
-  res
-    .status(500)
-    .json({ error: "Internal Server Error", requestId: res.locals?.requestId });
-});
+    if (process.env.SENTRY_DSN) {
+      Sentry.captureException(err, {
+        tags: { requestId: res.locals?.requestId, path: req.path, method: req.method },
+      });
+    }
+    res.status(500).json({ error: "Internal Server Error", requestId: res.locals?.requestId });
+  },
+);
 
 // Vite / Static Serving
 async function startServer() {
@@ -260,10 +267,12 @@ async function startServer() {
     if (shuttingDown) return;
     shuttingDown = true;
     log.info(`Received ${signal} — starting graceful shutdown`);
-    const forceTimer = (setTimeout(() => {
-      log.error("Graceful shutdown timed out — forcing exit");
-      process.exit(1);
-    }, GRACE_MS) as any).unref?.();
+    const forceTimer = (
+      setTimeout(() => {
+        log.error("Graceful shutdown timed out — forcing exit");
+        process.exit(1);
+      }, GRACE_MS) as any
+    ).unref?.();
     server.close((err) => {
       clearTimeout(forceTimer);
       if (err) {
