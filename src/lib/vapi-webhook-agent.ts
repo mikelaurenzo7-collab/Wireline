@@ -153,5 +153,3 @@ export async function resolveVapiWebhookAgent(opts: {
 
   return { ok: true, webhookAgentId: resolvedAgentId, agentUserId: agentRow.userId as string };
 }
-
-}
