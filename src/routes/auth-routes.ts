@@ -21,15 +21,12 @@ const signupSchema = z.object({
   fullName: z.string().max(120).optional(),
 });
 
-function clientIp(req: Request): string {
-  const xff = req.headers["x-forwarded-for"];
-  const first = typeof xff === "string" ? xff.split(",")[0]?.trim() : Array.isArray(xff) ? xff[0] : undefined;
-  return first || req.ip || "anon";
-}
-
+// `req.ip` is the real client IP because server.ts sets `app.set('trust proxy', 1)`
+// — Express trusts exactly one hop (the Vercel edge), so client-supplied
+// X-Forwarded-For prefixes are ignored.
 async function authRateLimit(req: Request, res: Response, next: NextFunction) {
   const emailKey = String(req.body?.email || "").toLowerCase().slice(0, 254);
-  const key = `${clientIp(req)}:${emailKey}`;
+  const key = `${req.ip || "anon"}:${emailKey}`;
   try {
     const r = await rateLimit(key, { bucket: "auth", windowMs: 60_000, max: 5 });
     if (!r.allowed) {
@@ -49,7 +46,7 @@ async function authRateLimit(req: Request, res: Response, next: NextFunction) {
 router.post("/api/auth/signin", authRateLimit, async (req: Request, res: Response) => {
   const parsed = signinSchema.safeParse(req.body);
   if (!parsed.success) {
-    log.warn("Auth: signin validation failed", { ip: clientIp(req) });
+    log.warn("Auth: signin validation failed", { ip: req.ip });
     return res.status(400).json({ error: "Invalid email or password format" });
   }
   const { email, password } = parsed.data;
@@ -74,7 +71,7 @@ router.post("/api/auth/signin", authRateLimit, async (req: Request, res: Respons
 router.post("/api/auth/signup", authRateLimit, async (req: Request, res: Response) => {
   const parsed = signupSchema.safeParse(req.body);
   if (!parsed.success) {
-    log.warn("Auth: signup validation failed", { ip: clientIp(req) });
+    log.warn("Auth: signup validation failed", { ip: req.ip });
     return res.status(400).json({ error: "Email must be valid and password at least 8 characters" });
   }
   const { email, password, fullName } = parsed.data;

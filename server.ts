@@ -66,6 +66,11 @@ validateStartupEnv();
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
+// Trust one hop (the Vercel edge proxy) so `req.ip` resolves to the real
+// client IP from X-Forwarded-For. Without this, attackers can forge XFF
+// directly and bypass per-IP rate limits.
+app.set("trust proxy", 1);
+
 // CORS setup
 const corsAllowList = (process.env.CORS_ORIGINS || "")
   .split(",")
