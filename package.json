@@ -35,6 +35,9 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:check": "drizzle-kit check",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:update": "playwright test --update-snapshots",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -47,19 +50,19 @@
     "@anthropic-ai/sdk": "^0.92.0",
     "@google/genai": "^1.29.0",
     "@google/generative-ai": "^0.24.1",
-    "@supabase/supabase-js": "^2.104.0",
     "@sentry/node": "^10.51.0",
     "@sentry/react": "^10.51.0",
-    "@vercel/postgres": "^0.10.0",
-    "drizzle-orm": "^0.33.0",
+    "@supabase/supabase-js": "^2.104.0",
     "@tailwindcss/vite": "^4.1.14",
     "@types/cors": "^2.8.19",
     "@upstash/redis": "^1.38.0",
     "@vapi-ai/web": "^2.5.2",
+    "@vercel/postgres": "^0.10.0",
     "@vitejs/plugin-react": "^5.0.4",
     "clsx": "^2.1.1",
     "cors": "^2.8.6",
     "dotenv": "^17.2.3",
+    "drizzle-orm": "^0.33.0",
     "express": "^4.21.2",
     "googleapis": "^171.4.0",
     "lucide-react": "^0.546.0",
@@ -79,6 +82,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@resvg/resvg-js": "^2.6.2",
     "@sentry/vite-plugin": "^5.2.1",
     "@testing-library/dom": "^10.4.1",
@@ -100,14 +104,14 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "happy-dom": "^20.9.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.1",
     "prettier": "^3.5.3",
     "supertest": "^7.2.2",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0",
-    "husky": "^9.1.7",
-    "lint-staged": "^15.5.1",
     "vitest": "^4.1.5"
   }
 }
