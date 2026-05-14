@@ -43,8 +43,9 @@ import {
   detectOptOut, 
   CONSENT_RULE_VERSION 
 } from "../lib/tcpa-consent";
-import { postCallAnalysis as geminiPostCallAnalysis } from "../lib/gemini-brain";
 import { fetchWithTimeout } from "../lib/server-context";
+import { handleEndOfCallReport } from "../lib/vapi-handlers";
+import { buildVapiAssistant } from "../lib/vapi-assistant-factory";
 
 // The extraction from server.ts is now complete. The Gemini post-call lesson
 // extraction, TCPA consent ledger writer, and webhook dispatch are fully
@@ -108,135 +109,15 @@ router.post("/api/vapi-webhook", async (req, res) => {
   
   if (message && message.type === "assistant-request") {
     try {
-      const isOutbound = message.type === 'outboundPhoneCall' || message.call?.type === 'outboundPhoneCall';
-      const customerNumber = message.call?.customer?.number;
-      const safeCallerPhone = sanitizePhone(customerNumber);
-
-      const [agentConfig, _directivesData, _knowledgeData, _personalityData, lessonsData, callerHistoryData, capturedProfileData, callerLeadData] = await Promise.all([
-        db.from('wireline_agents').select('*').eq('id', webhookAgentId).single(),
-        db.from('wireline_directives').select('content, priority').eq('agent_id', webhookAgentId).order('priority', { ascending: false }).limit(500),
-        db.from('wireline_knowledge').select('content').eq('agent_id', webhookAgentId).limit(500),
-        db.from('wireline_personality').select('content').eq('agent_id', webhookAgentId).single(),
-        db.from('wireline_agent_lessons').select('lesson').eq('agent_id', webhookAgentId).order('created_at', { ascending: false }).limit(MAX_RUNTIME_LESSONS),
-        safeCallerPhone
-          ? db.from('wireline_call_logs')
-              .select('summary, intent_label, sentiment, created_at, direction')
-              .eq('customer_number', safeCallerPhone)
-              .eq('agent_id', webhookAgentId)
-              .order('created_at', { ascending: false })
-              .limit(3)
-          : Promise.resolve({ data: [] }),
-        safeCallerPhone && agent?.user_id
-          ? db.from('wireline_fleet_tasks')
-              .select('description, created_at')
-              .eq('user_id', agent.user_id)
-              .eq('task_type', 'customer_profile_captured')
-              .ilike('description', `%${safeCallerPhone}%`)
-              .order('created_at', { ascending: false })
-              .limit(1)
-              .maybeSingle()
-          : Promise.resolve({ data: null }),
-        safeCallerPhone && agent?.user_id
-          ? db.from('wireline_outbound_leads')
-              .select('customer_name, status, context')
-              .eq('user_id', agent.user_id)
-              .ilike('customer_number', `%${safeCallerPhone}%`)
-              .not('status', 'in', ['Blocked-DNC'])
-              .order('created_at', { ascending: false })
-              .limit(1)
-              .maybeSingle()
-          : Promise.resolve({ data: null }),
-      ]);
-
-      const _lessons = (lessonsData?.data || [])
-        .filter((l: { lesson?: string }) => l.lesson && typeof l.lesson === 'string' && !l.lesson.startsWith(KNOWLEDGE_GAP_PREFIX))
-        .map((l: { lesson?: string }) => l.lesson)
-        .join('\n');
-
-      const pastCallHistory: any[] = (callerHistoryData as any)?.data || [];
-      const callerProfile = buildCallerProfileBlock(pastCallHistory, false);
-
-      const rawProfileDesc = (capturedProfileData as any)?.data?.description || "";
-      const customerIntelBlock = buildCustomerIntelBlock(rawProfileDesc, false);
-
-      const currentDateTime = new Date().toLocaleString('en-US', { timeZone: 'America/New_York', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-
-      let leadContext = "";
-      const callerLead: any = (callerLeadData as any)?.data || null;
-      if (callerLead) {
-        const name   = callerLead.customer_name || "this contact";
-        const status = callerLead.status || "Unknown";
-        const ctx    = callerLead.context || "(no prior context)";
-        leadContext = isOutbound
-          ? `MISSION OBJECTIVE: You are calling ${name} (CRM status: ${status}). REASON FOR CALL: ${ctx}`
-          : `INBOUND CRM MATCH: This caller is ${name} (status: ${status}). PRIOR CONTEXT: ${ctx}`;
-      }
-
-      const agentRole = agentConfig?.data?.role || DEFAULT_AGENT_ROLE;
-      const enabledToolNames = resolveAgentTools(agentRole, agentConfig?.data?.enabled_tools)
-        .filter((toolName) => toolName !== "send_text_message" || !!userSettings?.twilio_messaging_enabled)
-        .filter((toolName) => toolName !== "lookup_phone_number" || !!userSettings?.twilio_lookup_enabled);
-      const archetype = isOutbound
-        ? (OUTBOUND_ARCHETYPE_BY_ROLE[agentRole] || 'The Closer')
-        : (agentConfig?.data?.archetype || 'Receptionist');
-      const { rules: archetypeRules, temp: llmTemp } = getArchetypeConfig(archetype);
-
-      const roleProtocol = ROLE_SPECIFIC_PROTOCOLS[agentRole] || "";
-
-      const systemPrompt = `
-## IDENTITY & MISSION
-You are ${agentConfig?.data?.name || 'Wireline Agent'}, a ${agentRole.replace(/_/g, ' ')} specialist.
-
-${callerProfile}
-${customerIntelBlock}
-
-${archetypeRules}
-${leadContext}
-${roleProtocol}
-Today is ${currentDateTime}.
-      `;
-
-      const inboundRuntimeProfile: AgentRuntimeProfile = {
-        timezone: agentConfig?.data?.timezone,
-        business_hours: agentConfig?.data?.business_hours,
-        compliance_mode: agentConfig?.data?.compliance_mode,
-        disallowed_topics: agentConfig?.data?.disallowed_topics,
-        escalation_keywords: agentConfig?.data?.escalation_keywords,
-        business_variables: agentConfig?.data?.business_variables,
-        out_of_hours_message: agentConfig?.data?.out_of_hours_message,
-        kpi_focus: agentConfig?.data?.kpi_focus,
-      };
-      const inboundRuntime = buildAgentRuntimeContext(systemPrompt, inboundRuntimeProfile);
-      const inboundFirstMessage =
-        (!inboundRuntime.inHours && inboundRuntime.outOfHoursMessage)
-          ? inboundRuntime.outOfHoursMessage
-          : (agentConfig?.data?.first_message || "Hello!");
-
-      return res.json({
-        assistant: {
-          name: agentConfig?.data?.name || "Wireline Agent",
-          firstMessage: inboundFirstMessage,
-          serverUrlSecret: VAPI_WEBHOOK_SECRET,
-          model: {
-            provider: voiceLlmProvider,
-            model: voiceLlmModel,
-            systemPrompt: inboundRuntime.prompt,
-            temperature: llmTemp,
-          },
-          voice: {
-            provider: "11labs",
-            voiceId: "bIHbv24MWmeRgasZH58o" 
-          },
-          functions: buildRoleToolDefs(agentRole, enabledToolNames)
-        }
-      });
+      const assistant = await buildVapiAssistant({ message: message as any, agent: agent as any, userSettings });
+      return res.json({ assistant });
     } catch (e: any) {
       log.error("Vapi webhook config error", { agentId: webhookAgentId, error: e?.message });
       return res.json({
-          assistant: {
-            firstMessage: "I'm sorry, I'm having trouble connecting.",
-            model: { provider: "google", model: "gemini-1.5-flash", systemPrompt: "Apologize and hang up." }
-          }
+        assistant: {
+          firstMessage: "I'm sorry, I'm having trouble connecting.",
+          model: { provider: "google", model: "gemini-1.5-flash", systemPrompt: "Apologize and hang up." }
+        }
       });
     }
   }
@@ -548,178 +429,9 @@ Today is ${currentDateTime}.
 
   if (message && message.type === "end-of-call-report") {
     try {
-        const call = message.call;
-        const analysis = message.analysis;
-        let duration = 0;
-        if (call?.endedAt && call?.startedAt) {
-           duration = Math.floor((new Date(call.endedAt).getTime() - new Date(call.startedAt).getTime()) / 1000);
-        }
-
-        await db.from('wireline_call_logs').insert({
-           user_id: agent?.user_id,
-           vapi_call_id: call?.id || "unknown",
-           agent_id: webhookAgentId,
-           direction: call?.type === "outboundPhoneCall" ? "outbound" : "inbound",
-           customer_number: call?.customer?.number || "",
-           duration_seconds: duration,
-           cost: call?.cost || 0.0,
-           summary: analysis?.summary || "No summary provided.",
-           transcript: message.transcript || "",
-           recording_url: message.recordingUrl || message.stereoRecordingUrl || null
-        });
-
-        SentryEvents.callCompleted({
-          duration_ms: duration * 1000,
-          agent_id: webhookAgentId,
-          direction: call?.type === "outboundPhoneCall" ? "outbound" : "inbound",
-        });
-
-        const userId = agent?.user_id as string | undefined;
-        const direction = call?.type === "outboundPhoneCall" ? "outbound" as const : "inbound" as const;
-        let enrichment: WirelineCallCompletedOutcome["enrichment"] = null;
-
-        if (userId && claudeBrain.isClaudeAvailable() && message.transcript) {
-          try {
-            const { data: agentDetail } = await db.from('wireline_agents').select('name, archetype, role').eq('id', webhookAgentId).single();
-            const cap = await claudeBrain.withAuditCapture(() =>
-              claudeBrain.postCallAnalysis({
-                agentName: agentDetail?.name || 'Wireline Agent',
-                archetype: agentDetail?.archetype || 'Receptionist',
-                role: agentDetail?.role || undefined,
-                customerNumber: call?.customer?.number,
-                durationSeconds: duration,
-                summary: analysis?.summary || '',
-                transcript: message.transcript || '',
-              }),
-            );
-            const result = cap.result;
-
-            await db.from('wireline_call_logs').update({
-              lead_score: result.lead_score,
-              intent_label: result.intent_label,
-              sentiment: result.sentiment,
-              coaching_note: result.coaching_note,
-            }).eq('vapi_call_id', call?.id);
-
-            await persistClaudeAuditRecords({
-              userId,
-              action: "vapi.post_call_analysis",
-              records: cap.records,
-              requestMeta: {
-                vapi_call_id: call?.id,
-                agent_id: webhookAgentId,
-              },
-            }).catch((e: unknown) => log.warn("Vapi Claude audit persist failed", { error: getErrorMessage(e) }));
-
-            enrichment = {
-              lead_score: result.lead_score,
-              intent_label: result.intent_label,
-              sentiment: result.sentiment,
-              coaching_note: result.coaching_note,
-              lesson_extracted: !!(result.lesson && result.lesson.trim()),
-            };
-
-          } catch (err: any) {
-            log.warn("Claude post-call analysis failed", { error: getErrorMessage(err) });
-          }
-        }
-
-        if (userId) {
-          const base = buildCallCompletedOutcome({
-            vapi_call_id: call?.id || "unknown",
-            agent_id: webhookAgentId,
-            customer_number: call?.customer?.number || null,
-            direction,
-            duration_seconds: duration,
-            enrichment_source: "sync_vapi_webhook",
-            enrichment,
-          });
-          void dispatchWebhook(userId, "call.completed", base);
-          const score = enrichment?.lead_score;
-          if (typeof score === "number" && score >= 70) {
-            void dispatchWebhook(userId, "lead.hot", { vapi_call_id: call?.id, lead_score: score, customer_number: base.customer_number });
-          }
-          const intent = (enrichment?.intent_label || "").toLowerCase();
-          if (intent === "escalation" || intent === "escalate") {
-            void dispatchWebhook(userId, "call.escalated", { vapi_call_id: call?.id, intent_label: enrichment?.intent_label, customer_number: base.customer_number });
-            void (async () => {
-              const ch = await getDefaultChannel(userId);
-              if (ch) {
-                await slackPostMessage(
-                  userId,
-                  ch,
-                  `🚨 *Call escalation*\nCaller: ${base.customer_number || "unknown"}\nIntent: ${enrichment?.intent_label || "escalation"}\nCall: ${call?.id || ""}`,
-                );
-              }
-            })();
-          }
-        }
-
-        // ─────────────────────────────────────────────────────────────────────
-        //  TCPA Compliance Ledger & Gemini Fallback
-        // ─────────────────────────────────────────────────────────────────────
-        if (userId) {
-          try {
-            // 1. Log the disclosure event for compliance
-            const { rule, state } = getConsentRuleForPhone(call?.customer?.number);
-            const ledgerRow = buildConsentLedgerRow({
-              user_id: userId,
-              call_id: call?.id,
-              customer_number: call?.customer?.number || "unknown",
-              event: "disclosure_played",
-              rule_version: CONSENT_RULE_VERSION,
-              rule,
-              state,
-            });
-            await db.from("wireline_consent_log").insert(ledgerRow);
-
-            // 2. Detect and log opt-out if found in transcript
-            const optOut = detectOptOut(message.transcript);
-            if (optOut.found) {
-              const optOutRow = buildConsentLedgerRow({
-                user_id: userId,
-                call_id: call?.id,
-                customer_number: call?.customer?.number || "unknown",
-                event: "opt_out_requested",
-                rule_version: CONSENT_RULE_VERSION,
-                rule,
-                state,
-                metadata: { matched_pattern: optOut.matched_pattern }
-              });
-              await db.from("wireline_consent_log").insert(optOutRow);
-              log.info("Opt-out detected and logged", { callId: call?.id, pattern: optOut.matched_pattern });
-            }
-
-            // 3. Gemini Fallback for analysis if enrichment is still empty
-            if (!enrichment && message.transcript) {
-              log.info("Running Gemini fallback for post-call analysis");
-              const geminiResult = await geminiPostCallAnalysis({
-                transcript: message.transcript,
-                summary: analysis?.summary || ""
-              });
-              
-              await db.from('wireline_call_logs').update({
-                lead_score: geminiResult.lead_score,
-                intent_label: geminiResult.intent_label,
-                sentiment: geminiResult.sentiment,
-                coaching_note: geminiResult.coaching_note,
-              }).eq('vapi_call_id', call?.id);
-
-              if (geminiResult.lesson && geminiResult.lesson.trim()) {
-                await db.from('wireline_agent_lessons').insert({
-                  agent_id: webhookAgentId,
-                  lesson: geminiResult.lesson,
-                  source_call_id: call?.id
-                });
-              }
-            }
-          } catch (compErr) {
-            log.error("Compliance/Fallback processing failed", { error: getErrorMessage(compErr) });
-          }
-        }
-        
-        return res.json({ success: true });
-    } catch(e: any) {
+      await handleEndOfCallReport({ message: message as any, agent: agent as any });
+      return res.json({ success: true });
+    } catch (e: any) {
       log.error("Failed to process call completion", { error: getErrorMessage(e) });
       return res.json({ success: false });
     }

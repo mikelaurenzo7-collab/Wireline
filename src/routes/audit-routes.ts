@@ -42,7 +42,7 @@ router.get("/api/audit/recent", authenticateUser, async (req: AuthenticatedReque
       .order("created_at", { ascending: false })
       .limit(limit);
     if (error) throw error;
-    res.json({ entries: data || [] });
+    res.json({ logs: data || [] });
   } catch {
     res.status(500).json({ error: "Audit fetch failed" });
   }

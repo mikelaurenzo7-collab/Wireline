@@ -87,9 +87,9 @@ export function AuditActivityPanel() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 shrink-0">
             {[
               { label: "Total Cost", val: `$${Number(totals.cost || 0).toFixed(4)}`, icon: DollarSign },
-              { label: "AI Actions", val: Number(totals.count || 0).toLocaleString(), icon: Activity },
+              { label: "AI Actions", val: Number(totals.calls || 0).toLocaleString(), icon: Activity },
               { label: "Avg Latency", val: `${Math.round(totals.avg_latency || 0)}ms`, icon: Clock },
-              { label: "Tokens Used", val: Number(totals.tokens || 0).toLocaleString(), icon: BarChart3 },
+              { label: "Tokens Used", val: Number((totals.input || 0) + (totals.output || 0)).toLocaleString(), icon: BarChart3 },
             ].map(s => (
               <div key={s.label} className="p-4 rounded-2xl glass border border-white/10">
                 <div className="flex items-center gap-2 mb-2 opacity-40">

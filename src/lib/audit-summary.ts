@@ -144,6 +144,7 @@ export function computeAuditSummary(input: {
       cost:               round4(totals.cost),
       cache_savings_usd:  round4(cacheSavings),
       avg_cost_per_call:  totals.calls ? round4(totals.cost / totals.calls) : 0,
+      avg_latency:        totals.calls ? Math.round(all.reduce((s, r) => s + num(r.latency_ms), 0) / totals.calls) : 0,
     },
     by_day,
     by_action,

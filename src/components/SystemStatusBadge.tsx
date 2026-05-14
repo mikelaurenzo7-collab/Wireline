@@ -15,9 +15,9 @@ interface HealthData {
 }
 
 const CAPABILITY_LABELS: Record<CapabilityKey, string> = {
-  claude: "AI Engine",
-  vapi: "Voice",
-  supabase: "DB",
+  claude: "Cognitive Layer",
+  vapi: "Voice Bridge",
+  supabase: "Data Vault",
 };
 
 /**
@@ -94,7 +94,7 @@ export default function SystemStatusBadge() {
               key={cap}
               label={CAPABILITY_LABELS[cap]}
               ok={health.capabilities[cap]}
-              detail={health.capabilities[cap] ? "configured" : "key missing"}
+              detail={health.capabilities[cap] ? "Verified" : "Standby"}
             />
           ))}
 

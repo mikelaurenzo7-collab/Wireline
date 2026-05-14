@@ -9,6 +9,8 @@ import {
   ACCOUNT_DELETION_GRACE_DAYS,
   computeScheduledPurgeAt,
 } from '../lib/account-deletion';
+import { validate } from '../middleware/validate';
+import { SettingsSchema } from '../../contracts/api-types';
 
 const router = Router();
 
@@ -16,7 +18,7 @@ router.get('/api/settings', authenticateUser, async (req: AuthenticatedRequest, 
   try {
     const { data, error } = await db
       .from('wireline_settings')
-      .select('*')
+      .select('id, user_id, subscription_status, max_agents, retention_days, business_name, crm_type, twilio_messaging_enabled, twilio_lookup_enabled, twilio_manager_alerts_enabled, twilio_messaging_service_sid, twilio_sms_from_number, twilio_whatsapp_from_number, twilio_manager_alert_number, vapi_phone_number_id, vapi_phone_inbound_agent_id, daily_brief_enabled, daily_brief_send_at, prospecting_enabled, target_titles, target_industries, target_states, target_employee_ranges, brand_name, brand_logo_url, primary_color')
       .eq('user_id', req.user.id)
       .single();
     if (error) throw error;
@@ -26,7 +28,7 @@ router.get('/api/settings', authenticateUser, async (req: AuthenticatedRequest, 
   }
 });
 
-router.post('/api/settings', authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/api/settings', authenticateUser, validate(SettingsSchema.partial()), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const update = { ...req.body };
     delete update.id;
