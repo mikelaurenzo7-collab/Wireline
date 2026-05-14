@@ -30,7 +30,7 @@ const router = Router();
 //  the centralized place to audit, edit, and prune.
 // ──────────────────────────────────────────────────────────
 
-router.get("/api/knowledge", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
+router.get("/api/knowledge", authenticateUser, async (req: AuthenticatedRequest<any, any, any>, res: Response) => {
   try {
     const [rows, agents] = await Promise.all([
       drizzle
@@ -52,13 +52,13 @@ router.get("/api/knowledge", authenticateUser, async (req: AuthenticatedRequest,
 
     const agentMap = new Map((agents || []).map((a: any) => [a.id, a]));
     const knowledge = (rows || []).map((r: any) => {
-      const agent = agentMap.get(r.agentId);
+      const agent = agentMap.get(r.agentId) as any;
       return {
         id: Number(r.id),
         agent_id: r.agentId,
         agent_name: agent?.name || "(unknown agent)",
         agent_archetype: agent?.archetype || null,
-        content: r.content,
+        content: (r as any).content,
         created_at: r.createdAt,
       };
     });
@@ -85,7 +85,7 @@ router.post("/api/knowledge", authenticateUser, rateLimiters.knowledgeRateLimite
     }
     if (!validation.data) throw new Error('Validation data missing');
 
-    const content = validation.data.content;
+    const content = (validation.data as any).content;
     const agent_id = (req.body?.agent_id || "").toString();
     if (!agent_id) return res.status(400).json({ error: "agent_id is required" });
 

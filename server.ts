@@ -255,10 +255,10 @@ async function startServer() {
     if (shuttingDown) return;
     shuttingDown = true;
     log.info(`Received ${signal} — starting graceful shutdown`);
-    const forceTimer = setTimeout(() => {
+    const forceTimer = (setTimeout(() => {
       log.error("Graceful shutdown timed out — forcing exit");
       process.exit(1);
-    }, GRACE_MS).unref?.();
+    }, GRACE_MS) as any).unref?.();
     server.close((err) => {
       clearTimeout(forceTimer);
       if (err) {
@@ -288,7 +288,7 @@ process.on("unhandledRejection", (reason: unknown) => {
 process.on("uncaughtException", (err: Error) => {
   log.error("uncaughtException", { error: err.message, stack: err.stack });
   if (process.env.VERCEL !== "1") {
-    setTimeout(() => process.exit(1), 100).unref?.();
+    (setTimeout(() => process.exit(1), 100) as any).unref?.();
   }
 });
 

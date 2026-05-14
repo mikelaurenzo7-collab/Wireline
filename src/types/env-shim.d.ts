@@ -1,0 +1,181 @@
+declare module "express" {
+  interface Express {
+    (): any;
+    json: (options?: any) => any;
+    raw: (options?: any) => any;
+    static: (path: string, options?: any) => any;
+    Router: () => any;
+  }
+
+  export interface Request { [key: string]: any; user: any; role: any; }
+  export interface Response { [key: string]: any; status(code: number): Response; json(data: any): Response; send(data: any): Response; }
+  export interface Router { [key: string]: any; get: any; post: any; put: any; delete: any; use: any; }
+
+  const express: Express;
+  export const Router: () => Router;
+  export const json: (options?: any) => any;
+  export const raw: (options?: any) => any;
+  export const static: (path: string, options?: any) => any;
+  export default express;
+}
+
+declare namespace express {
+  export type Request = any;
+  export type Response = any;
+  export type NextFunction = any;
+  export type RequestHandler = any;
+}
+
+declare module "http" {
+  export interface IncomingHttpHeaders {
+    [key: string]: string | string[] | undefined;
+  }
+}
+
+declare module "react" {
+  export type ReactNode = any;
+  export function useState<T>(init: T | (() => T)): [T, (val: T | ((prev: T) => T)) => void];
+  export function useEffect(effect: () => void | (() => void), deps?: any[]): void;
+  export function useCallback<T extends (...args: any[]) => any>(fn: T, deps: any[]): T;
+  export function useRef<T>(init: T | null): { current: T };
+  export function useMemo<T>(factory: () => T, deps: any[]): T;
+  export default React;
+}
+
+declare module "react/jsx-runtime" {
+  export const jsx: any;
+  export const jsxs: any;
+  export const Fragment: any;
+}
+
+declare module "lucide-react" {
+  export const LayoutGrid: any;
+  export const Activity: any;
+  export const ShieldCheck: any;
+  export const RefreshCw: any;
+  export const Terminal: any;
+  export const Zap: any;
+  export const Globe: any;
+  export const Cpu: any;
+  export const Lock: any;
+  export const Bell: any;
+}
+
+declare module "drizzle-orm" {
+  export const eq: any;
+  export const and: any;
+  export const or: any;
+  export const sql: any;
+  export const desc: any;
+  export const asc: any;
+  export const ilike: any;
+  export const relations: any;
+  export const gte: any;
+  export const lte: any;
+  export const lt: any;
+  export const inArray: any;
+}
+
+declare module "drizzle-orm/pg-core" {
+  export const pgTable: any;
+  export const text: any;
+  export const timestamp: any;
+  export const integer: any;
+  export const decimal: any;
+  export const boolean: any;
+  export const uuid: any;
+  export const bigint: any;
+  export const jsonb: any;
+  export const unique: any;
+}
+
+declare module "drizzle-orm/vercel-postgres" {
+  export const drizzle: any;
+  export type VercelPostgresDatabase<T = any> = any;
+}
+
+declare module "cors" {
+  export default function cors(options?: any): any;
+}
+
+declare module "dotenv" {
+  export function config(options?: any): any;
+}
+
+declare module "path" {
+  export function join(...paths: string[]): string;
+  export function resolve(...paths: string[]): string;
+}
+
+declare module "node:crypto" {
+  export const randomUUID: () => string;
+}
+
+declare module "node:fs" {
+  export const readFileSync: any;
+  export const writeFileSync: any;
+}
+
+declare module "vite" {
+  export const createServer: any;
+}
+
+declare module "@sentry/node" {
+  export const init: any;
+  export const captureException: any;
+  export const Handlers: any;
+  export const setTag: any;
+}
+
+declare module "@google/generative-ai" {
+  export class GoogleGenerativeAI {
+    constructor(apiKey: string);
+    getGenerativeModel(config: any): any;
+  }
+}
+
+declare module "clsx" {
+  export function clsx(...args: any[]): string;
+}
+
+declare module "motion/react" {
+  export const motion: any;
+}
+
+declare module "recharts" {
+  export const ResponsiveContainer: any;
+  export const AreaChart: any;
+  export const Area: any;
+  export const XAxis: any;
+  export const YAxis: any;
+  export const Tooltip: any;
+  export const PieChart: any;
+  export const Pie: any;
+  export const Cell: any;
+}
+
+declare module "stripe" {
+  class Stripe {
+    constructor(key: string, config?: any);
+    [key: string]: any;
+  }
+  namespace Stripe {
+    export type Checkout = any;
+    export type Event = any;
+    export type Customer = any;
+    export type Subscription = any;
+    export type LatestApiVersion = string;
+  }
+  export default Stripe;
+}
+
+declare interface ProcessEnv {
+  [key: string]: string | undefined;
+}
+
+declare var process: {
+  env: ProcessEnv;
+  exit(code?: number): never;
+  on(event: string, listener: any): any;
+  cwd(): string;
+};

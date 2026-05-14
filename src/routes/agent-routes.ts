@@ -557,7 +557,7 @@ router.post("/api/agents", authenticateUser, async (req: AuthenticatedRequest, r
 
     const { id, voice_id, channel } = req.body;
     if (!validation.data) throw new Error('Validation data missing after success check');
-    const { name, role, personality } = validation.data;
+    const { name, role, personality } = (validation.data || {}) as any;
     const agentRole = role || DEFAULT_AGENT_ROLE;
     const agentId = id || `agent-${Date.now()}`;
     try {
@@ -658,7 +658,7 @@ router.put("/api/agents/:id", authenticateUser, async (req: AuthenticatedRequest
       return res.status(400).json({ error: "enabled_tools must be an array of supported tool names" });
     }
 
-    const { name, role, personality } = validation.data!;
+    const { name, role, personality } = (validation.data || {}) as any;
     const { voice_id, voice_id_inbound, voice_id_outbound, voice_provider, first_message, archetype, ambient_noise, website_url, transfer_phone, email_auto_respond, email_agent_tone, email_signature, channel, autonomy_level, channels, slack_channel_id, auto_zoom_link } = req.body;
 
     // Validate autonomy_level if provided
@@ -1063,7 +1063,7 @@ router.post("/api/claude/forge/create", authenticateUser, async (req: Authentica
       content: d.content,
       priority: d.priority ?? 5,
     }));
-    if (directiveRows.length) await drizzle.insert(schema.directives).values(directiveRows);
+    if (directiveRows.length) await drizzle.insert(schema.directives).values(directiveRows as any);
 
     const knowledgeRows = (design.seed_knowledge || []).map((k: string) => ({
       agentId: agentId,

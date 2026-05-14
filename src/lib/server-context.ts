@@ -51,8 +51,8 @@ export async function fetchWithTimeout(
 //  Database Initialization (Drizzle ORM)
 // ────────────────────────────────────────────────────────────────────
 
-// New Drizzle ORM (Vercel Postgres / Neon)
-export const drizzle = drizzleDb(sql, { schema });
+export const db = drizzleDb(sql, { schema });
+export const drizzle = db;
 
 // ────────────────────────────────────────────────────────────────────
 //  Audit Logger & RBAC Middleware

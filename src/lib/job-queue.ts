@@ -43,7 +43,9 @@ export type JobType =
   | "adaptive_optimization"  // Auto-tune agent from low-scoring calls
   | "v2a_action_extraction"  // Voice-to-Action: extract action items from a call transcript
   | "execute_action"         // Execute an extracted action via the Action Engine
-  | "calendar_sync";         // Sync Google/Outlook calendars
+  | "calendar_sync"          // Sync Google/Outlook calendars
+  | "proactive_lead_enrichment" // Async lead enrichment
+  | "autonomous_prospecting";  // AI-driven lead discovery
 
 export interface JobPayload extends Record<string, unknown> {}
 

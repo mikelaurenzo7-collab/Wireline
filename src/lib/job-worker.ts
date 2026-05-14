@@ -422,7 +422,7 @@ export async function handleJob(job: JobRow): Promise<void> {
           jobTitle: enrichment.title,
           company: enrichment.company,
           linkedInUrl: enrichment.linkedin_url,
-          dossierData: enrichment,
+          metadata: enrichment,
           interactionSummary: summaryText || "No prior interactions found."
         }).onConflictDoUpdate({
           target: [schema.leadDossiers.userId, schema.leadDossiers.customerNumber],
@@ -431,7 +431,7 @@ export async function handleJob(job: JobRow): Promise<void> {
             jobTitle: enrichment.title,
             company: enrichment.company,
             linkedInUrl: enrichment.linkedin_url,
-            dossierData: enrichment,
+            metadata: enrichment,
             interactionSummary: summaryText || "No prior interactions found."
           }
         });

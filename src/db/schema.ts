@@ -1,5 +1,5 @@
-import { pgTable, text, timestamp, integer, decimal, boolean, uuid, bigint, jsonb } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import { pgTable, text, timestamp, integer, decimal, boolean, uuid, bigint, jsonb, unique } from 'drizzle-orm/pg-core';
+import { relations, sql } from 'drizzle-orm';
 
 // 0. IDENTITY & ACCOUNTS
 export const users = pgTable('wireline_users', {
@@ -443,6 +443,53 @@ export const quotaUsage = pgTable('wireline_quota_usage', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 }, (t) => ({
   pk: sql`PRIMARY KEY (${t.userId}, ${t.dimension}, ${t.periodKey})`,
+}));
+
+export const crmConnections = pgTable('wireline_crm_connections', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull(),
+  provider: text('provider').notNull(), // 'hubspot', 'salesforce', 'slack'
+  crmType: text('crm_type'),           // legacy alias/extra info
+  accessToken: text('access_token').notNull(),
+  refreshToken: text('refresh_token'),
+  expiresAt: timestamp('expires_at', { withTimezone: true }),
+  portalId: text('portal_id'),
+  instanceUrl: text('instance_url'),
+  metadata: jsonb('metadata'),
+  active: boolean('active').default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+});
+
+// 4.8 BACKGROUND JOBS
+export const jobs = pgTable('wireline_jobs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull(),
+  type: text('type').notNull(),
+  status: text('status').default('pending'),
+  payload: jsonb('payload'),
+  result: jsonb('result'),
+  error: text('error'),
+  startedAt: timestamp('started_at', { withTimezone: true }),
+  completedAt: timestamp('completed_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
+
+export const leadDossiers = pgTable('wireline_lead_dossiers', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull(),
+  leadId: bigint('lead_id', { mode: 'bigint' }).references(() => outboundLeads.id, { onDelete: 'cascade' }),
+  customerNumber: text('customer_number'),
+  fullName: text('full_name'),
+  jobTitle: text('job_title'),
+  company: text('company'),
+  linkedInUrl: text('linkedin_url'),
+  content: text('content'),
+  metadata: jsonb('metadata'),
+  interactionSummary: text('interaction_summary'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (t) => ({
+  unq: unique().on(t.userId, t.customerNumber),
 }));
 
 // Relations
