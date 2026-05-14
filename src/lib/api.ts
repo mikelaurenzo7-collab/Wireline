@@ -1,5 +1,3 @@
-import { supabase } from "./supabase";
-
 // Default per-request timeout for backend calls. Long enough for the
 // slowest Claude paths (deep-think recipes ~ 60-90s) but bounded so
 // the UI never spins forever on a stalled fetch.
@@ -48,8 +46,7 @@ function combineSignals(...signals: AbortSignal[]): AbortSignal {
 }
 
 export async function authFetch(url: string, options: RequestInit = {}) {
-  const { data: { session } } = await supabase.auth.getSession();
-  const token = session?.access_token;
+  const token = localStorage.getItem("wireline_token");
 
   const headers = {
     ...options.headers,

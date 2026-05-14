@@ -1,4 +1,6 @@
-import { supabase } from './supabase';
+import { drizzle } from './server-context';
+import { eq, and } from 'drizzle-orm';
+import { userPreferences, onboardingProgress } from '../db/schema';
 
 export interface UserPreferences {
   user_id: string;
@@ -11,14 +13,35 @@ export interface UserPreferences {
 }
 
 export async function getUserPreferences(userId: string): Promise<UserPreferences> {
-  const { data, error } = await supabase
-    .from('wireline_user_preferences')
-    .select('*')
-    .eq('user_id', userId)
-    .single();
+  try {
+    const data = await drizzle
+      .select()
+      .from(userPreferences)
+      .where(eq(userPreferences.userId, userId))
+      .limit(1);
 
-  if (error || !data) {
-    // Return defaults for new users
+    if (!data.length) {
+      return {
+        user_id: userId,
+        tour_completed: false,
+        onboarding_completed: false,
+        help_enabled: true,
+        keyboard_shortcuts_enabled: true,
+        preferences: {},
+      };
+    }
+
+    const row = data[0];
+    return {
+      user_id: row.userId,
+      persona: row.persona as any,
+      tour_completed: row.tourCompleted || false,
+      onboarding_completed: row.onboardingCompleted || false,
+      help_enabled: row.helpEnabled || true,
+      keyboard_shortcuts_enabled: row.keyboardShortcutsEnabled || true,
+      preferences: (row.preferences as any) || {},
+    };
+  } catch (error) {
     return {
       user_id: userId,
       tour_completed: false,
@@ -28,23 +51,27 @@ export async function getUserPreferences(userId: string): Promise<UserPreference
       preferences: {},
     };
   }
-
-  return data;
 }
 
 export async function updateUserPreferences(
   userId: string,
   updates: Partial<UserPreferences>
 ): Promise<void> {
-  const { error } = await supabase
-    .from('wireline_user_preferences')
-    .upsert({
-      user_id: userId,
-      ...updates,
-      updated_at: new Date().toISOString(),
-    });
+  const mapped: any = {};
+  if (updates.persona) mapped.persona = updates.persona;
+  if (updates.tour_completed !== undefined) mapped.tourCompleted = updates.tour_completed;
+  if (updates.onboarding_completed !== undefined) mapped.onboardingCompleted = updates.onboarding_completed;
+  if (updates.help_enabled !== undefined) mapped.helpEnabled = updates.help_enabled;
+  if (updates.keyboard_shortcuts_enabled !== undefined) mapped.keyboardShortcutsEnabled = updates.keyboard_shortcuts_enabled;
+  if (updates.preferences) mapped.preferences = updates.preferences;
 
-  if (error) throw error;
+  await drizzle
+    .insert(userPreferences)
+    .values({ userId, ...mapped })
+    .onConflictDoUpdate({
+      target: userPreferences.userId,
+      set: mapped
+    });
 }
 
 export async function trackOnboardingStep(
@@ -52,30 +79,39 @@ export async function trackOnboardingStep(
   stepId: string,
   metadata?: Record<string, any>
 ): Promise<{ completed: boolean }> {
-  const { error } = await supabase
-    .from('wireline_onboarding_progress')
-    .upsert({
-      user_id: userId,
-      step_id: stepId,
+  await drizzle
+    .insert(onboardingProgress)
+    .values({
+      userId,
+      stepId,
       completed: true,
-      completed_at: new Date().toISOString(),
+      completedAt: new Date(),
       metadata: metadata || {},
+    })
+    .onConflictDoUpdate({
+      target: [onboardingProgress.userId, onboardingProgress.stepId],
+      set: {
+        completed: true,
+        completedAt: new Date(),
+        metadata: metadata || {},
+      }
     });
 
-  if (error) throw error;
   return { completed: true };
 }
 
 export async function getOnboardingProgress(userId: string): Promise<Record<string, boolean>> {
-  const { data, error } = await supabase
-    .from('wireline_onboarding_progress')
-    .select('step_id, completed')
-    .eq('user_id', userId);
+  try {
+    const data = await drizzle
+      .select()
+      .from(onboardingProgress)
+      .where(eq(onboardingProgress.userId, userId));
 
-  if (error) return {};
-
-  return (data || []).reduce((acc, row) => {
-    acc[row.step_id] = row.completed;
-    return acc;
-  }, {} as Record<string, boolean>);
+    return data.reduce((acc, row) => {
+      acc[row.stepId] = row.completed || false;
+      return acc;
+    }, {} as Record<string, boolean>);
+  } catch (error) {
+    return {};
+  }
 }

@@ -1,24 +1,26 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 
-// Mock supabase before importing the module under test so the import side
-// effect (createClient) uses the mock rather than the real SDK.
-vi.mock("./supabase", () => ({
-  supabase: {
-    auth: {
-      getSession: vi.fn().mockResolvedValue({
-        data: { session: { access_token: "test-token" } },
-      }),
-    },
-  },
-}));
+// Mock localStorage for the browser context
+const localStorageMock = (function() {
+  let store: Record<string, string> = {};
+  return {
+    getItem: vi.fn((key: string) => store[key] || null),
+    setItem: vi.fn((key: string, value: string) => { store[key] = value.toString(); }),
+    clear: vi.fn(() => { store = {}; }),
+    removeItem: vi.fn((key: string) => { delete store[key]; }),
+  };
+})();
+Object.defineProperty(global, 'localStorage', { value: localStorageMock });
 
-// Import after mock is registered.
+// Import the module under test
 const { authFetch, safeJson } = await import("./api");
 
 describe("authFetch", () => {
   const originalFetch = global.fetch;
 
   beforeEach(() => {
+    localStorageMock.clear();
+    localStorageMock.setItem("wireline_token", "test-token");
     global.fetch = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ ok: true }), {
         status: 200,
@@ -32,7 +34,7 @@ describe("authFetch", () => {
     vi.clearAllMocks();
   });
 
-  it("attaches Authorization header when a session token is available", async () => {
+  it("attaches Authorization header when a local token is available", async () => {
     await authFetch("/api/test");
     const callArgs = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(callArgs[1].headers?.Authorization).toBe("Bearer test-token");
@@ -54,11 +56,6 @@ describe("authFetch", () => {
   });
 
   it("aborts the request when the internal timeout fires, even with a caller signal", async () => {
-    // Regression: passing a caller signal used to disable authFetch's
-    // 120s deadline, so a hung backend could leave the UI waiting forever.
-    // Hold the fetch open with a never-resolving promise, then advance
-    // fake time past DEFAULT_TIMEOUT_MS and assert the composed signal
-    // surfaces the abort.
     vi.useFakeTimers();
     let observed: AbortSignal | undefined;
     global.fetch = vi.fn().mockImplementation((_url, init) => {
@@ -68,10 +65,7 @@ describe("authFetch", () => {
 
     const ctrl = new AbortController();
     void authFetch("/api/slow", { signal: ctrl.signal });
-    // Drain the supabase.getSession microtask chain so the fetch dispatch
-    // (and the timeout setup) actually run. We *don't* run pending timers
-    // here — that would fire the deadline before we can observe the
-    // pre-timeout state.
+    
     await Promise.resolve();
     await Promise.resolve();
     expect(observed).toBeDefined();
@@ -82,10 +76,6 @@ describe("authFetch", () => {
   });
 
   it("honors caller cancellation while still enforcing its timeout deadline", async () => {
-    // Caller-driven aborts must still propagate to fetch (the previous
-    // behaviour). Composing with the timeout signal means we no longer
-    // pass the caller's signal through verbatim, so we assert via
-    // observable abort behaviour instead of object identity.
     let observed: AbortSignal | undefined;
     global.fetch = vi.fn().mockImplementation(async (_url, init) => {
       observed = (init as RequestInit).signal as AbortSignal;
@@ -100,12 +90,8 @@ describe("authFetch", () => {
     expect(observed!.aborted).toBe(true);
   });
 
-  it("omits the auth header when no session is available", async () => {
-    const { supabase } = await import("./supabase");
-    vi.mocked(supabase.auth.getSession).mockResolvedValueOnce({
-      data: { session: null },
-    } as any);
-
+  it("omits the auth header when no local token is available", async () => {
+    localStorageMock.removeItem("wireline_token");
     await authFetch("/api/test");
     const callArgs = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(callArgs[1].headers?.Authorization).toBeUndefined();

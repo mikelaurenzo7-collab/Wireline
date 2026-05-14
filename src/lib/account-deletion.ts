@@ -96,26 +96,15 @@ export async function purgeAccount(
     }
   }
 
-  // Delete the Supabase auth row last. Once gone the user is fully
+  // Delete the local auth row last. Once gone the user is fully
   // unauthenticated and cannot make further requests.
-  const url = deps.supabaseUrl ?? process.env.VITE_SUPABASE_URL;
-  const key = deps.serviceRoleKey ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) {
-    return {
-      ok: false,
-      tablesTouched,
-      authRemoved: false,
-      error: 'Supabase admin credentials missing — cannot remove auth row.',
-    };
+  try {
+    await db.execute(sql.raw(`DELETE FROM wireline_users WHERE id = '${userId}'`));
+    return { ok: true, tablesTouched, authRemoved: true };
+  } catch (error: any) {
+    log.error('account purge: failed to delete wireline_users row', { userId, error: error.message });
+    return { ok: false, tablesTouched, authRemoved: false, error: error.message };
   }
-  const adminClient = createClient(url, key);
-  const { error: authErr } = await adminClient.auth.admin.deleteUser(userId);
-  if (authErr) {
-    log.error('account purge: auth.admin.deleteUser failed', { userId, error: authErr.message });
-    return { ok: false, tablesTouched, authRemoved: false, error: authErr.message };
-  }
-
-  return { ok: true, tablesTouched, authRemoved: true };
 }
 
 /**

@@ -8,7 +8,6 @@ import * as claudeBrain from "../lib/claude-brain";
 import { claudeErr } from "../lib/claude-response-helpers";
 import { cachedInsight, setCachedInsight } from "../lib/insights-cache";
 import { enforceSpendCap, enforce24hSpendCap } from "../lib/spend-guards";
-import { enforceClaudeDailyTokenQuota } from "../middleware/claude-quota-middleware";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
@@ -160,7 +159,7 @@ router.get("/api/insights/leaderboard", authenticateUser, async (req: Authentica
   } catch (e) { claudeErr(res, e); }
 });
 
-router.get("/api/insights/topics", authenticateUser, enforce24hSpendCap, enforceSpendCap, enforceClaudeDailyTokenQuota, async (req: AuthenticatedRequest, res: Response) => {
+router.get("/api/insights/topics", authenticateUser, enforce24hSpendCap, enforceSpendCap, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const force = req.query.refresh === "1";
     const cacheKey = `topics:${req.user.id}`;
@@ -190,7 +189,7 @@ router.get("/api/insights/topics", authenticateUser, enforce24hSpendCap, enforce
   } catch (e) { claudeErr(res, e); }
 });
 
-router.get("/api/insights/failure-modes", authenticateUser, enforce24hSpendCap, enforceSpendCap, enforceClaudeDailyTokenQuota, async (req: AuthenticatedRequest, res: Response) => {
+router.get("/api/insights/failure-modes", authenticateUser, enforce24hSpendCap, enforceSpendCap, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const force = req.query.refresh === "1";
     const cacheKey = `failures:${req.user.id}`;
@@ -227,7 +226,7 @@ router.get("/api/insights/failure-modes", authenticateUser, enforce24hSpendCap, 
   } catch (e) { claudeErr(res, e); }
 });
 
-router.get("/api/insights/daily-brief", authenticateUser, enforce24hSpendCap, enforceSpendCap, enforceClaudeDailyTokenQuota, async (req: AuthenticatedRequest, res: Response) => {
+router.get("/api/insights/daily-brief", authenticateUser, enforce24hSpendCap, enforceSpendCap, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { payload, cached } = await computeDailyBrief(req.user.id, { force: req.query.refresh === "1" });
     res.json({ ...payload, cached });

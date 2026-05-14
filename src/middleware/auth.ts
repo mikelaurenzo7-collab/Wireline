@@ -1,18 +1,12 @@
 import * as Sentry from "@sentry/node";
 import type { Request, Response, NextFunction } from "express";
-import type { User } from "@supabase/supabase-js";
+import type { User } from "../types/auth";
 import { log, auditLogger } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
-import { verifySupabaseJwt } from "../lib/auth-utils";
+import { verifySupabaseJwt as verifyInternalJwt } from "../lib/auth-utils";
 
 /**
- * Express Request with an attached Supabase User.
- *
- * After `authenticateUser` succeeds, downstream handlers can safely cast
- * `req` to this shape. The canonical `AuthenticatedRequest` in
- * `src/types/auth.ts` extends this with the optional RBAC `role` field;
- * this lighter version avoids a circular-dependency edge between
- * middleware ↔ lib/soc2-controls.
+ * Express Request with an attached sovereign User.
  */
 interface AuthedReq extends Request {
   user?: User;
@@ -20,34 +14,24 @@ interface AuthedReq extends Request {
 
 /**
  * Basic authentication middleware.
- * Verifies the Bearer token against Supabase Auth.
+ * Verifies the sovereign JWT against the internal secret.
  */
 export async function authenticateUser(req: Request, res: Response, next: NextFunction) {
   const authedReq = req as AuthedReq;
 
-  // Idempotent: if an upstream middleware already authenticated this
-  // request (e.g. the /api/claude scope runs auth before the spend cap
-  // and audit middleware), skip the redundant Supabase round-trip.
+  // Idempotent check
   if (authedReq.user?.id) return next();
 
   const authHeader = req.headers.authorization;
-  if (!authHeader) {
-     // Audit log: missing auth header (non-blocking)
-     void auditLogger.logAuth('failed_login', {
-       email: req.body?.email,
-       ip: req.ip,
-       userAgent: req.get('user-agent'),
-       reason: 'missing_token',
-       requestId: res.locals?.requestId,
-     }).catch((err: unknown) => log.warn('audit log failed', { error: getErrorMessage(err) }));
-     
-     return res.status(401).json({ error: "No authorization header provided" });
+  const cookieToken = (req as any).cookies?.["wireline_session"];
+  const token = authHeader?.split(' ')[1] || cookieToken;
+
+  if (!token) {
+     return res.status(401).json({ error: "No authorization token provided" });
   }
 
-  const token = authHeader.split(' ')[1];
-  const secret = process.env.SUPABASE_JWT_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-  
-  const payload = await verifySupabaseJwt(token, secret);
+  const secret = process.env.INTERNAL_JWT_SECRET || process.env.SUPABASE_JWT_SECRET || "";
+  const payload = await verifyInternalJwt(token, secret);
 
   if (!payload) {
      // Audit log: invalid/expired token (non-blocking)
