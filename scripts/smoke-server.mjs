@@ -27,19 +27,18 @@ const child = spawn(process.execPath, ['dist/server.cjs'], {
     ...process.env,
     PORT,
     NODE_ENV: 'production',
-    // Health check probes the DB; without creds it returns 503 but the
-    // process should still be alive — that's all we're testing here.
-    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder',
-    VITE_SUPABASE_URL: process.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co',
-    VITE_SUPABASE_ANON_KEY: process.env.VITE_SUPABASE_ANON_KEY || 'placeholder',
-    // Prod-required by validateStartupEnv — provide placeholders so the server
-    // starts during CI where real secrets are absent.
+    // Health check probes the DB; without a real POSTGRES_URL it returns 503
+    // but the process should still be alive — that's all we're testing here.
+    POSTGRES_URL: process.env.POSTGRES_URL || 'postgres://placeholder:placeholder@localhost:5432/placeholder',
+    // Prod-required by requireSecret() / validateStartupEnv — provide placeholders
+    // so the server starts during CI where real secrets are absent.
+    INTERNAL_JWT_SECRET: process.env.INTERNAL_JWT_SECRET || 'smoke-test-placeholder-32-chars-minimum',
+    OAUTH_STATE_SECRET:  process.env.OAUTH_STATE_SECRET  || 'smoke-test-placeholder',
+    STRIPE_SECRET_KEY:   process.env.STRIPE_SECRET_KEY   || 'sk_test_placeholder',
     GEMINI_API_KEY:      process.env.GEMINI_API_KEY      || 'placeholder',
-    STRIPE_SECRET_KEY:   process.env.STRIPE_SECRET_KEY  || 'sk_test_placeholder',
     ANTHROPIC_API_KEY:   process.env.ANTHROPIC_API_KEY   || 'placeholder',
-    VAPI_PRIVATE_KEY:    process.env.VAPI_PRIVATE_KEY     || 'placeholder',
-    VAPI_WEBHOOK_SECRET: process.env.VAPI_WEBHOOK_SECRET  || 'placeholder',
-    OAUTH_STATE_SECRET:  process.env.OAUTH_STATE_SECRET   || 'placeholder',
+    VAPI_PRIVATE_KEY:    process.env.VAPI_PRIVATE_KEY    || 'placeholder',
+    VAPI_WEBHOOK_SECRET: process.env.VAPI_WEBHOOK_SECRET || 'placeholder',
   },
   stdio: ['ignore', 'pipe', 'pipe'],
 });

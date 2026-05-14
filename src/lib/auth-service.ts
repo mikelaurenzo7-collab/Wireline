@@ -1,9 +1,12 @@
 import { randomBytes, scryptSync, createHmac, timingSafeEqual } from "node:crypto";
-import { drizzle, log } from "./server-context";
+import { drizzle, log, requireSecret } from "./server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 
-const SECRET = process.env.SUPABASE_JWT_SECRET || "development-secret-key-at-least-32-chars-long";
+const SECRET = requireSecret(
+  "INTERNAL_JWT_SECRET",
+  "development-secret-key-at-least-32-chars-long",
+);
 
 /**
  * Hash a password using scrypt.

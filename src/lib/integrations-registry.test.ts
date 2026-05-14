@@ -57,13 +57,6 @@ describe("integrations registry", () => {
     expect(salesforce?.status).toBe("missing");
   });
 
-  it("surfaces the service-role key in Supabase integration health", async () => {
-    const { getIntegrationsStatus } = await import("./integrations-registry");
-    const supabase = getIntegrationsStatus().find((entry) => entry.id === "supabase");
-
-    expect(supabase?.envVars.map((entry) => entry.name)).toContain("SUPABASE_SERVICE_ROLE_KEY");
-  });
-
   it("marks Twilio configured when SID and auth token are present", async () => {
     process.env.TWILIO_ACCOUNT_SID = "AC123";
     process.env.TWILIO_AUTH_TOKEN = "twilio-token";

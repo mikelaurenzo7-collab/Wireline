@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/node";
 import type { Request, Response, NextFunction } from "express";
 import type { User } from "../types/auth";
-import { log, auditLogger } from "../lib/server-context";
+import { log, auditLogger, requireSecret } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { verifySupabaseJwt as verifyInternalJwt } from "../lib/auth-utils";
 
@@ -30,13 +30,16 @@ export async function authenticateUser(req: Request, res: Response, next: NextFu
      return res.status(401).json({ error: "No authorization token provided" });
   }
 
-  const secret = process.env.INTERNAL_JWT_SECRET || process.env.SUPABASE_JWT_SECRET || "";
+  const secret = requireSecret(
+    "INTERNAL_JWT_SECRET",
+    "development-secret-key-at-least-32-chars-long",
+  );
   const payload = await verifyInternalJwt(token, secret);
 
   if (!payload) {
      // Audit log: invalid/expired token (non-blocking)
      void auditLogger.logAuth('failed_login', {
-       email: req.body?.email,
+       email: req.body?.email ? "[redacted]" : undefined,
        ip: req.ip,
        userAgent: req.get('user-agent'),
        reason: !token ? 'missing_token' : 'invalid_token',

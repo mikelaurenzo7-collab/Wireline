@@ -1,12 +1,18 @@
 import Stripe from 'stripe';
-import { drizzle, log, auditLogger } from './server-context';
+import { drizzle, log, auditLogger, IS_PROD, requireSecret } from './server-context';
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 import { getErrorMessage } from './server-utils';
 import { planByPriceId } from './plan-catalog';
 import { dispatchWebhook } from './webhook-helpers';
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder', {
+// In production, refuse to boot without a real Stripe key.
+// In dev, fall through to a placeholder so unrelated test paths still load.
+const STRIPE_KEY = IS_PROD
+  ? requireSecret('STRIPE_SECRET_KEY')
+  : (process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder');
+
+export const stripe = new Stripe(STRIPE_KEY, {
   apiVersion: '2026-01-28.clover' as Stripe.LatestApiVersion,
   typescript: true,
 });

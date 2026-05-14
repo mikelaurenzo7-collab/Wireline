@@ -1,7 +1,7 @@
 import express from "express";
 import { google } from "googleapis";
 import { randomUUID, createHmac, timingSafeEqual } from "node:crypto";
-import { drizzle, fetchWithTimeout } from "./server-context";
+import { drizzle, fetchWithTimeout, requireSecret } from "./server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 import { encryptSecret, decryptSecret } from "./secret-vault";
@@ -148,7 +148,10 @@ export async function sendEmailViaMicrosoft(opts: {
 //  Shared OAuth State signing
 // ────────────────────────────────────────────────────────────────────
 
-const OAUTH_STATE_SECRET = process.env.OAUTH_STATE_SECRET || process.env.STRIPE_WEBHOOK_SECRET || "wireline-placeholder-secret";
+const OAUTH_STATE_SECRET = requireSecret(
+  "OAUTH_STATE_SECRET",
+  "wireline-placeholder-secret-dev-only",
+);
 
 /** Signed OAuth state may embed `userId` so browser callbacks can resolve the tenant without relying on cookies. */
 export interface VerifiedOAuthState {
@@ -208,7 +211,10 @@ export async function resolveUserIdFromOAuthSession(req: express.Request): Promi
   const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : cookieToken;
   if (!bearerToken) return null;
   
-  const secret = process.env.INTERNAL_JWT_SECRET || process.env.SUPABASE_JWT_SECRET || "";
+  const secret = requireSecret(
+    "INTERNAL_JWT_SECRET",
+    "development-secret-key-at-least-32-chars-long",
+  );
   const payload = await verifySupabaseJwt(bearerToken, secret);
   return payload?.sub ?? null;
 }

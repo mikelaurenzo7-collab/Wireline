@@ -1,4 +1,5 @@
-import { sql, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
+import { sql } from "@vercel/postgres";
 import { drizzle as drizzleDb } from "drizzle-orm/vercel-postgres";
 import * as schema from "../db/schema";
 import { AuditLogger } from "./audit-logger";
@@ -6,6 +7,29 @@ import { createRbacMiddleware } from "../middleware/require-role";
 import { QuotaTracker, type PlanTier } from "./tenant-quotas";
 
 export const IS_PROD = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
+
+// ────────────────────────────────────────────────────────────────────
+//  Required-secret helper
+// ────────────────────────────────────────────────────────────────────
+// Reads a secret env var. In production: throws at module load if missing
+// (the app refuses to boot). In development: returns the optional
+// devFallback if provided, otherwise throws. This is the single source of
+// truth for "must have" secrets across the codebase — eliminates the
+// scattered `process.env.X || "placeholder"` patterns that silently ship
+// insecure defaults into prod.
+export function requireSecret(name: string, devFallback?: string): string {
+  const v = process.env[name];
+  if (v && v.length > 0) return v;
+  if (IS_PROD) {
+    throw new Error(`[startup] Required secret ${name} is not set. Refusing to boot.`);
+  }
+  if (devFallback !== undefined) {
+    // eslint-disable-next-line no-console
+    console.warn(`[dev] ${name} not set — using insecure dev fallback.`);
+    return devFallback;
+  }
+  throw new Error(`[startup] Required secret ${name} is not set.`);
+}
 
 // ────────────────────────────────────────────────────────────────────
 //  Structured logger

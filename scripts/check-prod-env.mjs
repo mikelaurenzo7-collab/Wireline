@@ -14,10 +14,9 @@
 //   2 — missing recommended vars and PRODUCTION_CHECK=1 (CI hardening)
 
 const required = [
-  ["VITE_SUPABASE_URL",         "Supabase project URL — frontend + backend"],
-  ["VITE_SUPABASE_ANON_KEY",    "Supabase anon key — frontend client"],
-  ["SUPABASE_SERVICE_ROLE_KEY", "Supabase service role — backend privileged ops"],
-  ["OAUTH_STATE_SECRET",        "HMAC secret for OAuth CSRF state tokens — required in prod; dev falls back to STRIPE_WEBHOOK_SECRET"],
+  ["INTERNAL_JWT_SECRET", "HMAC secret for sovereign auth JWTs — token gen + verification"],
+  ["POSTGRES_URL",        "Vercel Postgres connection URL (pooled)"],
+  ["OAUTH_STATE_SECRET",  "HMAC secret for OAuth CSRF state tokens"],
 ];
 
 const recommended = [

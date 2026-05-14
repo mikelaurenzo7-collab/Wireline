@@ -8,12 +8,13 @@ import { log, IS_PROD } from "./server-context";
 export function validateStartupEnv() {
   // Required in production; warn in dev so local hacking still works.
   const prodRequired: [string, string | undefined][] = [
-    ["INTERNAL_JWT_SECRET", process.env.INTERNAL_JWT_SECRET || process.env.SUPABASE_JWT_SECRET],
+    ["INTERNAL_JWT_SECRET", process.env.INTERNAL_JWT_SECRET],
+    ["POSTGRES_URL",        process.env.POSTGRES_URL],
+    ["OAUTH_STATE_SECRET",  process.env.OAUTH_STATE_SECRET],
     ["ANTHROPIC_API_KEY",   process.env.ANTHROPIC_API_KEY],
     ["GEMINI_API_KEY",      process.env.GEMINI_API_KEY],
     ["VAPI_PRIVATE_KEY",    process.env.VAPI_PRIVATE_KEY],
     ["VAPI_WEBHOOK_SECRET", process.env.VAPI_WEBHOOK_SECRET],
-    ["OAUTH_STATE_SECRET",  process.env.OAUTH_STATE_SECRET],
   ];
 
   const missingProd = prodRequired.filter(([, v]) => !v).map(([k]) => k);
