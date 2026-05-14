@@ -91,6 +91,13 @@ router.post("/dnc", authenticateUser, async (req: AuthenticatedRequest, res: Res
         ip: req.ip,
         metadata: { requested: rows.length },
       }).catch(() => {});
+
+      // Mid-call compliance enforcement: terminate active calls for newly suppressed numbers
+      const { SentinelService } = await import("../services/sentinel");
+      const sentinel = new SentinelService();
+      for (const row of rows) {
+        void sentinel.terminateActiveCallsForNumber(row.phone).catch(() => {});
+      }
     }
     res.json({ success: true, added });
   } catch (e: any) {

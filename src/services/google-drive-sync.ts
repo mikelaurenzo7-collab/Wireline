@@ -55,7 +55,7 @@ export async function syncGoogleDriveToKnowledge(userId: string, agentId: string
 
   const drive = google.drive({ version: "v3", auth: oauth2Client });
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const gemini = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+  const gemini = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   // Fetch the 10 most recently modified Google Docs + plain text files
   const listResponse = await drive.files.list({
@@ -88,9 +88,15 @@ export async function syncGoogleDriveToKnowledge(userId: string, agentId: string
     if (!textContent || textContent.trim().length < 50) continue;
 
     const prompt = `You are a knowledge extraction system for an AI customer service agent.
-Read the following business document and extract key facts, policies, pricing, procedures, or FAQs that a customer service agent should know.
-Output each fact as a separate line starting with "* ".
-Be concise (1-2 sentences per fact). Skip boilerplate, headings, and administrative content.
+Read the following business document and extract key facts, policies, pricing, procedures, or FAQs.
+For each item, determine if it is "Knowledge" (static facts/info) or a "Directive" (a rule, procedure, or guardrail).
+
+Output format:
+[TYPE] Content
+
+Example:
+[Knowledge] Our standard pricing is $50/month.
+[Directive] Always ask for the account number before discussing billing.
 
 Document: ${file.name}
 Content:
@@ -98,21 +104,31 @@ ${textContent.substring(0, 15000)}`;
 
     const geminiResponse = await gemini.generateContent(prompt);
     const text = geminiResponse.response.text();
-    const lines = text.split("\n").filter((line) => line.trim().startsWith("*"));
+    const lines = text.split("\n").filter((line) => line.trim().startsWith("["));
 
     for (const line of lines) {
-      const cleanLesson = line.replace(/^\*\s*/, "").trim();
-      if (cleanLesson.length < 10) continue;
+      const isDirective = line.trim().startsWith("[Directive]");
+      const cleanContent = line.replace(/^\[(Knowledge|Directive)\]\s*/i, "").trim();
+      if (cleanContent.length < 10) continue;
 
-      await drizzle.insert(schema.agentLessons).values({
-        userId: userId,
-        agentId: agentId,
-        lesson: cleanLesson,
-        source: `Google Drive: ${file.name}`,
-      }).onConflictDoUpdate({
-        target: [schema.agentLessons.agentId, schema.agentLessons.lesson],
-        set: { updatedAt: new Date() }
-      });
+      if (isDirective) {
+        await drizzle.insert(schema.directives).values({
+          userId: userId,
+          agentId: agentId,
+          content: cleanContent,
+          priority: 5
+        });
+      } else {
+        await drizzle.insert(schema.agentLessons).values({
+          userId: userId,
+          agentId: agentId,
+          lesson: cleanContent,
+          source: `Google Drive: ${file.name}`,
+        }).onConflictDoUpdate({
+          target: [schema.agentLessons.agentId, schema.agentLessons.lesson],
+          set: { updatedAt: new Date() }
+        });
+      }
       ingestedCount++;
     }
   }

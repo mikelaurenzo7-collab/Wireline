@@ -9,7 +9,7 @@ import {
   fetchWithTimeout,
 } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, sql, or, ilike, notIn } from "drizzle-orm";
+import { eq, and, sql, or, ilike, not, inArray } from "drizzle-orm";
 import {
   timingSafeEq,
   VAPI_WEBHOOK_SECRET,
@@ -46,7 +46,6 @@ import {
   detectOptOut, 
   CONSENT_RULE_VERSION 
 } from "../lib/tcpa-consent";
-import { fetchWithTimeout } from "../lib/server-context";
 import { handleEndOfCallReport } from "../lib/vapi-handlers";
 import { buildVapiAssistant } from "../lib/vapi-assistant-factory";
 
@@ -110,7 +109,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
     if (message && message.type === "assistant-request") {
         return res.json({
             assistant: {
-                firstMessage: "We're sorry, but the automated service for this line is currently suspended.",
+                firstMessage: "The automated service for this line is suspended.",
                 model: { provider: "google", model: "gemini-1.5-flash", systemPrompt: "Explain suspension and end call." }
             }
         });
@@ -126,7 +125,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
       log.error("Vapi webhook config error", { agentId: webhookAgentId, error: e?.message });
       return res.json({
         assistant: {
-          firstMessage: "I'm sorry, I'm having trouble connecting.",
+          firstMessage: "I am having trouble connecting. Please try again.",
           model: { provider: "google", model: "gemini-1.5-flash", systemPrompt: "Apologize and hang up." }
         }
       });
@@ -196,7 +195,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
                 and(
                   eq(schema.outboundLeads.userId, agent?.user_id),
                   ilike(schema.outboundLeads.customerNumber, `%${safePhone}%`),
-                  notIn(schema.outboundLeads.status, PRESERVED_LEAD_STATUSES as any)
+                  not(inArray(schema.outboundLeads.status, PRESERVED_LEAD_STATUSES as any))
                 )
               );
           }
@@ -290,6 +289,11 @@ router.post("/api/vapi-webhook", async (req, res) => {
                 reason: toolCall.function.arguments?.reason || null,
               },
             }).catch(() => {});
+
+            // Real-time termination for the current call if it's the same number
+            const { SentinelService } = await import("../services/sentinel");
+            const sentinel = new SentinelService();
+            void sentinel.terminateActiveCallsForNumber(normalizedPhone).catch(() => {});
 
             results.push({ toolCallId: toolCall.id, result: `${rawPhone || normalizedPhone} is now on the Do Not Call list.` });
           }

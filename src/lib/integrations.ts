@@ -269,13 +269,14 @@ export class IntegrationService {
     });
     const d = await r.json() as any;
     
+    const table = account.emailAddress ? schema.emailAccounts : schema.calendarAccounts;
     await drizzle
-      .update(schema.calendarAccounts)
+      .update(table as any)
       .set({
         accessToken: encryptSecret(d.access_token),
-        expiresAt: Date.now() + (d.expires_in || 3600) * 1000,
+        expiresAt: BigInt(Date.now() + (d.expires_in || 3600) * 1000),
       })
-      .where(eq(schema.calendarAccounts.id, account.id));
+      .where(eq((table as any).id, account.id));
 
     return d.access_token;
   }

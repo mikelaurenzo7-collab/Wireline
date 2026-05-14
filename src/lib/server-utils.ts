@@ -70,6 +70,22 @@ export function sanitizeForAudit(obj: unknown): unknown {
  * The `db` parameter is typed loosely so it works with both the Supabase
  * client this server uses and the test mocks in /src/lib tests.
  */
+/**
+ * Recursively convert object keys from snake_case to camelCase.
+ * Useful for mapping frontend payloads to Drizzle/TS internal keys.
+ */
+export function mapObjectToCamel(obj: any): any {
+  if (obj === null || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(mapObjectToCamel);
+
+  const result: any = {};
+  for (const [key, value] of Object.entries(obj)) {
+    const camelKey = key.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+    result[camelKey] = mapObjectToCamel(value);
+  }
+  return result;
+}
+
 export async function ownsRow(
   db: { from: (table: string) => any },
   table: string,

@@ -5,7 +5,7 @@ import { log, auditLogger, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, sql, desc, inArray } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
-import { getErrorMessage, sanitizeForAudit } from "../lib/server-utils";
+import { getErrorMessage, sanitizeForAudit, mapObjectToCamel } from "../lib/server-utils";
 import { parseFormData, AgentFormSchema, AgentBusinessProfileSchema, GeminiAgentExtractionSchema } from "../lib/form-validators";
 import { ROLE_PERSONALITY_TEMPLATES, DEFAULT_AGENT_ROLE } from "../lib/agent-constants";
 import * as claudeBrain from "../lib/claude-brain";
@@ -19,9 +19,7 @@ import { claudeErr } from "../lib/claude-response-helpers";
 const router = Router();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "placeholder_gemini_key");
 
-const isMissingRoleColumnError = (error: any) =>
-  typeof error?.message === "string" &&
-  error.message.includes("Could not find the 'role' column of 'wireline_agents'");
+
 
 
 router.get("/api/agents", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
@@ -447,20 +445,20 @@ Respond ONLY in strict, valid JSON format (no markdown):
   }
 
   // ── Format confirmation message ───────────────────────────────────
-  let responseContent = "MODIFICATIONS SYNCED TO MISSION CONTROL.\n\n";
+  let responseContent = "Agent updated.\n\n";
   if (parsed.directives.length) {
-    responseContent += `ADDED ${parsed.directives.length} OPERATIONAL DIRECTIVE(S):\n`;
-    responseContent += parsed.directives.map((d: any) => `> [PRIORITY ${d.priority ?? 5}] ${d.content}`).join("\n") + "\n\n";
+    responseContent += `Added ${parsed.directives.length} directive(s):\n`;
+    responseContent += parsed.directives.map((d: any) => `> ${d.content}`).join("\n") + "\n\n";
   }
   if (parsed.knowledge.length) {
-    responseContent += `SYNCED ${parsed.knowledge.length} INTELLIGENCE FACT(S):\n`;
+    responseContent += `Synced ${parsed.knowledge.length} fact(s):\n`;
     responseContent += parsed.knowledge.map((k: any) => `> ${k.content}`).join("\n") + "\n\n";
   }
   if (parsed.personality) {
-    responseContent += `UPDATED NEURAL PERSONALITY:\n> ${parsed.personality}`;
+    responseContent += `Updated personality:\n> ${parsed.personality}`;
   }
   if (!parsed.directives.length && !parsed.knowledge.length && !parsed.personality) {
-    responseContent = "INPUT ANALYZED. NO NEW DIRECTIVES DETECTED. PLEASE SPECIFY CONCRETE OPERATIONAL RULES OR KNOWLEDGE ENTRY.";
+    responseContent = "No changes detected. Please specify rules or facts.";
   }
 
   res.json({ success: true, responseContent, directives: parsed.directives, knowledge: parsed.knowledge, personality: parsed.personality });
@@ -555,20 +553,23 @@ router.post("/api/agents", authenticateUser, async (req: AuthenticatedRequest, r
       return res.status(403).json({ error: `Quota Exceeded: Your plan only allows ${maxAgents} agents.` });
     }
 
-    const { id, voice_id, channel } = req.body;
-    if (!validation.data) throw new Error('Validation data missing after success check');
-    const { name, role, personality } = (validation.data || {}) as any;
-    const agentRole = role || DEFAULT_AGENT_ROLE;
+    const { id, personality, ...rest } = req.body;
     const agentId = id || `agent-${Date.now()}`;
+    const agentRole = rest.role || DEFAULT_AGENT_ROLE;
+
     try {
-      await drizzle.insert(schema.agents).values({
+      const agentValues = {
+        ...mapObjectToCamel(rest),
         id: agentId,
         userId: req.user.id,
-        name,
-        voiceId: voice_id || 'bIHbv24MWmeRgasZH58o',
-        channel: channel || 'voice',
+        voiceId: rest.voice_id || 'bIHbv24MWmeRgasZH58o',
+        channel: rest.channel || 'voice',
         role: agentRole
-      });
+      };
+      // Remove any fields that don't belong in the agents table
+      delete (agentValues as any).personality;
+
+      await drizzle.insert(schema.agents).values(agentValues);
     } catch (error: any) {
       log.error("Agent row insert failed", {
         userId: req.user.id,
@@ -581,7 +582,7 @@ router.post("/api/agents", authenticateUser, async (req: AuthenticatedRequest, r
     // Use provided personality or fall back to role-appropriate template
     const personalityContent = personality
       || ROLE_PERSONALITY_TEMPLATES[agentRole as keyof typeof ROLE_PERSONALITY_TEMPLATES]
-      || (channel === 'email'
+      || (rest.channel === 'email'
         ? "You are a professional email agent specialized in clear, efficient communication."
         : "You are a helpful assistant serving as a phone agent.");
 
@@ -605,8 +606,8 @@ router.post("/api/agents", authenticateUser, async (req: AuthenticatedRequest, r
     void auditLogger.logAgentOperation('created', {
       userId: req.user.id,
       agentId,
-      agentName: name,
-      metadata: { channel: channel || 'voice', archetype: agentRole },
+      agentName: rest.name,
+      metadata: { channel: rest.channel || 'voice', archetype: agentRole },
       ip: req.ip
     }).catch((err: unknown) => log.warn('audit log failed', { error: getErrorMessage(err) }));
 
@@ -630,92 +631,14 @@ router.put("/api/agents/:id", authenticateUser, async (req: AuthenticatedRequest
       return res.status(400).json({ error: "Validation failed", errors: validation.errors });
     }
 
-    // Validate the optional business-profile block. Each field is
-    // optional so partial updates work; unknown fields are rejected
-    // (strict mode) so callers can't sneak in arbitrary columns.
-    const profileFields = [
-      'business_hours',
-      'timezone',
-      'compliance_mode',
-      'disallowed_topics',
-      'escalation_keywords',
-      'business_variables',
-      'out_of_hours_message',
-      'kpi_focus',
-    ] as const;
-    const profileInput: Record<string, unknown> = {};
-    for (const k of profileFields) {
-      if (req.body[k] !== undefined) profileInput[k] = req.body[k];
-    }
-    const profileValidation = parseFormData(AgentBusinessProfileSchema, profileInput);
-    if (!profileValidation.success) {
-      return res.status(400).json({ error: "Validation failed", errors: profileValidation.errors });
+    const update = mapObjectToCamel(req.body);
+    delete update.id;
+    delete update.userId;
+    delete update.personality;
+    if (update.enabledTools !== undefined) {
+      update.enabledTools = update.enabledTools === null ? null : normalizeEnabledTools(update.enabledTools);
     }
 
-    const enabledToolsRaw = req.body.enabled_tools;
-    const enabledTools = enabledToolsRaw === null ? null : normalizeEnabledTools(enabledToolsRaw);
-    if (enabledToolsRaw !== undefined && enabledToolsRaw !== null && enabledTools === null) {
-      return res.status(400).json({ error: "enabled_tools must be an array of supported tool names" });
-    }
-
-    const { name, role, personality } = (validation.data || {}) as any;
-    const { voice_id, voice_id_inbound, voice_id_outbound, voice_provider, first_message, archetype, ambient_noise, website_url, transfer_phone, email_auto_respond, email_agent_tone, email_signature, channel, autonomy_level, channels, slack_channel_id, auto_zoom_link } = req.body;
-
-    // Validate autonomy_level if provided
-    const VALID_AUTONOMY = ["inherit", "auto", "draft", "supervised"];
-    if (autonomy_level !== undefined && !VALID_AUTONOMY.includes(autonomy_level)) {
-      return res.status(400).json({ error: `autonomy_level must be one of: ${VALID_AUTONOMY.join(", ")}` });
-    }
-
-    // Validate channels if provided
-    const VALID_CHANNELS = ["voice", "email", "sms"];
-    if (channels !== undefined) {
-      if (!Array.isArray(channels) || !channels.every((c: string) => VALID_CHANNELS.includes(c))) {
-        return res.status(400).json({ error: `channels must be an array containing: ${VALID_CHANNELS.join(", ")}` });
-      }
-    }
-
-    // Build the update payload — start with core fields, then merge
-    // any business-profile fields the caller actually sent (so a
-    // partial PATCH-style update doesn't clobber existing hours / mode
-    // / variables when the caller is only changing the agent's name).
-    const update: any = {
-      name,
-      voiceId: voice_id,
-      voiceIdInbound: voice_id_inbound,
-      voiceIdOutbound: voice_id_outbound,
-      voiceProvider: voice_provider,
-      firstMessage: first_message,
-      archetype,
-      ambientNoise: ambient_noise,
-      websiteUrl: website_url,
-      transferPhone: transfer_phone,
-      emailAutoRespond: email_auto_respond,
-      emailAgentTone: email_agent_tone,
-      emailSignature: email_signature,
-      channel,
-      role,
-    };
-    if (autonomy_level !== undefined) update.autonomyLevel = autonomy_level;
-    if (channels !== undefined) update.channels = channels;
-    if (slack_channel_id !== undefined) update.slackChannelId = slack_channel_id;
-    if (auto_zoom_link !== undefined) update.autoZoomLink = auto_zoom_link;
-    if (profileValidation.data) {
-      for (const k of profileFields) {
-        if ((profileValidation.data as any)[k] !== undefined) {
-          // Map snake_case profile keys to camelCase if they are in schema
-          const mappedKey = k.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
-          update[mappedKey] = (profileValidation.data as any)[k];
-        }
-      }
-    }
-    if (enabledToolsRaw !== undefined) {
-      update.enabledTools = enabledTools;
-    }
-    // personality is not stored on the agent row — it lives in
-    // wireline_personality. The caller passes it in for the AgentForm
-    // contract, but we only care that it validated.
-    void personality;
 
     await drizzle
       .update(schema.agents)

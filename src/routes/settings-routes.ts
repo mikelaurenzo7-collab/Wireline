@@ -5,7 +5,7 @@ import { settings, userPreferences, agents, callLogs, deletionQueue } from '../d
 import * as schema from '../db/schema';
 import { eq, sql, and, desc } from 'drizzle-orm';
 import { authenticateUser } from '../middleware/auth';
-import { getErrorMessage } from '../lib/server-utils';
+import { getErrorMessage, mapObjectToCamel } from '../lib/server-utils';
 import { enqueue } from '../lib/job-queue';
 import { jobsRateLimit } from '../middleware/api-rate-limits';
 import {
@@ -33,10 +33,10 @@ router.get('/api/settings', authenticateUser, async (req: AuthenticatedRequest, 
 
 router.post('/api/settings', authenticateUser, validate(SettingsSchema.partial()), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const update = { ...req.body };
+    const update = mapObjectToCamel(req.body);
     delete update.id;
-    delete update.user_id;
-    delete update.created_at;
+    delete update.userId;
+    delete update.createdAt;
 
     const [data] = await drizzle
       .update(settings)
@@ -205,6 +205,8 @@ router.post('/api/account/export', authenticateUser, async (req: AuthenticatedRe
       { key: 'appointments', table: schema.appointments },
       { key: 'call_logs', table: schema.callLogs },
       { key: 'email_accounts', table: schema.emailAccounts },
+      { key: 'calendar_accounts', table: schema.calendarAccounts },
+      { key: 'consent_log', table: schema.consentLog },
       { key: 'email_threads', table: schema.emailThreads },
       { key: 'email_messages', table: schema.emailMessages },
       { key: 'fleet_tasks', table: schema.fleetTasks },
@@ -258,7 +260,7 @@ router.post('/api/account/export', authenticateUser, async (req: AuthenticatedRe
     res.status(200).json(exportPackage);
   } catch (err: any) {
     log.error('account export failed', { uid, error: getErrorMessage(err) });
-    res.status(500).json({ error: 'Account export failed. Please contact support.' });
+    res.status(500).json({ error: 'Export failed.' });
   }
 });
 

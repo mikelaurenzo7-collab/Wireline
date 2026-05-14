@@ -134,7 +134,15 @@ export async function placeOutboundCall(opts: {
   const outboundRawProfileDesc = outboundCapturedProfileRes[0]?.description || "";
   const outboundCustomerIntelBlock = buildCustomerIntelBlock(outboundRawProfileDesc, true);
 
-  const currentDateTime = new Date().toLocaleString('en-US', { timeZone: 'America/New_York', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const currentDateTime = new Date().toLocaleString('en-US', { 
+    timeZone: agentConfig.timezone || 'America/New_York', 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric', 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  });
   const outboundAgentRole = agentConfig.role || DEFAULT_AGENT_ROLE;
   const archetype = OUTBOUND_ARCHETYPE_BY_ROLE[outboundAgentRole] || agentConfig.archetype || 'The Closer';
   const { rules: archetypeRules, temp: llmTemp } = getArchetypeConfig(archetype);

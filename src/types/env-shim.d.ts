@@ -73,6 +73,7 @@ declare module "drizzle-orm" {
   export const gte: any;
   export const lte: any;
   export const lt: any;
+  export const not: any;
   export const inArray: any;
 }
 
@@ -111,6 +112,21 @@ declare module "node:crypto" {
   export const randomUUID: () => string;
   export const createHmac: (algorithm: string, key: string) => any;
   export const timingSafeEqual: (a: any, b: any) => boolean;
+}
+
+declare module "child_process" {
+  export function exec(command: string, callback?: any): any;
+  export function spawn(command: string, args?: string[], options?: any): any;
+}
+
+declare module "util" {
+  export function promisify(fn: any): any;
+}
+
+declare module "fs/promises" {
+  export function readFile(path: string, options?: any): Promise<string | any>;
+  export function stat(path: string): Promise<any>;
+  export function writeFile(path: string, data: any, options?: any): Promise<void>;
 }
 
 declare module "node:fs" {
@@ -197,3 +213,21 @@ declare var Buffer: {
   isBuffer(obj: any): boolean;
   [key: string]: any;
 };
+
+declare function fetch(url: string, init?: any): Promise<any>;
+
+declare class URLSearchParams {
+  constructor(init?: any);
+  append(name: string, value: string): void;
+  delete(name: string): void;
+  get(name: string): string | null;
+  getAll(name: string): string[];
+  has(name: string): boolean;
+  set(name: string, value: string): void;
+  sort(): void;
+  toString(): string;
+  keys(): IterableIterator<string>;
+  values(): IterableIterator<string>;
+  entries(): IterableIterator<[string, string]>;
+  [Symbol.iterator](): IterableIterator<[string, string]>;
+}

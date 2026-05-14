@@ -66,6 +66,14 @@ export class CampaignDialerService {
           .update(schema.outboundLeads)
           .set({ status: 'Blocked-DNC' })
           .where(eq(schema.outboundLeads.id, lead.id));
+        
+        await drizzle.insert(schema.consentLog).values({
+          userId: lead.userId!,
+          customerNumber: lead.customerNumber,
+          event: 'outbound_blocked_dnc',
+          state: 'blocked',
+          metadata: { leadId: lead.id, campaignId: campaign.id }
+        });
         return;
       }
 
@@ -79,15 +87,25 @@ export class CampaignDialerService {
       });
 
       if (result.ok) {
-        await drizzle
-          .update(schema.outboundLeads)
-          .set({
-            status: 'Dialing',
-            attempts: (lead.attempts || 0) + 1,
-            lastCalledAt: new Date(),
-            callId: result.callId
+        await Promise.all([
+          drizzle
+            .update(schema.outboundLeads)
+            .set({
+              status: 'Dialing',
+              attempts: (lead.attempts || 0) + 1,
+              lastCalledAt: new Date(),
+              callId: result.callId
+            })
+            .where(eq(schema.outboundLeads.id, lead.id)),
+          drizzle.insert(schema.consentLog).values({
+            userId: lead.userId!,
+            customerNumber: lead.customerNumber,
+            callId: result.callId,
+            event: 'outbound_call_placed',
+            state: 'initiated',
+            metadata: { leadId: lead.id, campaignId: campaign.id }
           })
-          .where(eq(schema.outboundLeads.id, lead.id));
+        ]);
       } else {
         await drizzle
           .update(schema.outboundLeads)

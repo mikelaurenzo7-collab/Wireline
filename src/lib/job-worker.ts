@@ -146,7 +146,9 @@ export async function handleJob(job: JobRow): Promise<void> {
       await drizzle.insert(schema.agentLessons).values({
         agentId: p.agentId,
         userId: p.userId,
-        lesson: result.lesson.trim()
+        lesson: result.lesson.trim(),
+        sourceCallId: p.callId,
+        source: 'phone_call'
       }).onConflictDoNothing({
         target: [schema.agentLessons.agentId, schema.agentLessons.lesson]
       });
@@ -308,7 +310,9 @@ export async function handleJob(job: JobRow): Promise<void> {
       await drizzle.insert(schema.agentLessons).values({
         agentId: p.agentId,
         userId: p.userId,
-        lesson: lesson
+        lesson: lesson,
+        sourceCallId: p.callId,
+        source: 'adaptive_tuning'
       }).onConflictDoNothing({
         target: [schema.agentLessons.agentId, schema.agentLessons.lesson]
       });
