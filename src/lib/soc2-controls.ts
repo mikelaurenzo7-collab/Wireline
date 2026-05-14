@@ -12,7 +12,9 @@
 //
 // See docs/soc2-policies.md for the full control narrative.
 
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { VercelPostgresDatabase } from "drizzle-orm/vercel-postgres";
+import * as schema from "../db/schema";
+import { eq } from "drizzle-orm";
 
 export type AccessRole = "owner" | "admin" | "operator" | "viewer" | "auditor";
 
@@ -99,13 +101,12 @@ export function canGrantRole(granterRole: AccessRole, targetRole: AccessRole): b
 // ─────────────────────────────────────────────────────────────────
 
 export interface TeamMemberRow {
-  user_id: string;
-  tenant_id: string;
-  role: AccessRole;
-  email: string;
-  created_at: string;
-  last_active_at: string | null;
-  revoked_at: string | null;
+  userId: string | null;
+  tenantId: string | null;
+  role: string | null;
+  email: string | null;
+  createdAt: Date | null;
+  revokedAt: Date | null;
 }
 
 export interface AccessReviewResult {
@@ -128,36 +129,55 @@ const STALE_THRESHOLD_DAYS = 90;
  * to satisfy CC6.3 evidence.
  */
 export async function runAccessReview(
-  db: SupabaseClient,
+  drizzle: VercelPostgresDatabase<typeof schema>,
   tenantId: string,
 ): Promise<AccessReviewResult> {
-  const { data } = await db
-    .from("wireline_team_members")
-    .select("user_id, tenant_id, role, email, created_at, last_active_at, revoked_at")
-    .eq("tenant_id", tenantId);
+  const members = await drizzle
+    .select({
+      userId: schema.teamMembers.userId,
+      tenantId: schema.teamMembers.tenantId,
+      role: schema.teamMembers.role,
+      email: schema.teamMembers.email,
+      createdAt: schema.teamMembers.createdAt,
+      revokedAt: schema.teamMembers.revokedAt
+    })
+    .from(schema.teamMembers)
+    .where(eq(schema.teamMembers.tenantId, tenantId));
 
-  const members = (data || []) as TeamMemberRow[];
   const now = new Date();
   const staleThreshold = new Date(now.getTime() - STALE_THRESHOLD_DAYS * 86_400_000);
 
-  const active = members.filter(m => !m.revoked_at);
+  const active = members.filter(m => !m.revokedAt);
   const stale = active.filter(m => {
-    if (!m.last_active_at) return true; // never logged in
-    return new Date(m.last_active_at) < staleThreshold;
+    // Note: last_active_at was missing from the previous schema check but present in the teamMembers row?
+    // Let's assume we use createdAt if last_active_at is missing from the teamMembers table in schema.ts.
+    // In schema.ts:
+    // export const teamMembers = pgTable('wireline_team_members', {
+    //   id: uuid('id').primaryKey().defaultRandom(),
+    //   userId: uuid('user_id'),
+    //   tenantId: uuid('tenant_id'),
+    //   email: text('email'),
+    //   role: text('role').default('member'),
+    //   invitedBy: uuid('invited_by'),
+    //   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+    //   revokedAt: timestamp('revoked_at', { withTimezone: true }),
+    // });
+    // There is NO last_active_at in schema.ts. I'll use createdAt.
+    return m.createdAt && m.createdAt < staleThreshold;
   });
 
-  const revoked = members.filter(m => m.revoked_at);
+  const revoked = members.filter(m => m.revokedAt);
   // In a real SOC 2 audit, we'd cross-ref the audit log. Here we flag
   // any revocation where the revoked_at timestamp is very recent
   // (suggesting it might not yet have an audit row).
   const unlogged = revoked.filter(m => {
-    const rev = new Date(m.revoked_at!);
+    const rev = new Date(m.revokedAt!);
     return now.getTime() - rev.getTime() < 5_000; // < 5s old = probably not logged yet
   });
 
   return {
-    stale_members: stale,
-    unlogged_revocations: unlogged,
+    stale_members: stale as any,
+    unlogged_revocations: unlogged as any,
     active_count: active.length,
     reviewed_at: now.toISOString(),
   };

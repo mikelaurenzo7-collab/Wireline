@@ -1,4 +1,6 @@
-import { db, log } from "./server-context";
+import { drizzle, log } from "./server-context";
+import * as schema from "../db/schema";
+import { eq, and } from "drizzle-orm";
 import * as claudeBrain from "./claude-brain";
 import { getErrorMessage } from "./server-utils";
 import { SentryEvents } from "./sentry-events";
@@ -38,21 +40,21 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
   }
 
   // 1. Persist base call log
-  const { error: logError } = await db.from('wireline_call_logs').insert({
-    user_id: userId,
-    vapi_call_id: call?.id || "unknown",
-    agent_id: webhookAgentId,
-    direction: call?.type === "outboundPhoneCall" ? "outbound" : "inbound",
-    customer_number: call?.customer?.number || "",
-    duration_seconds: duration,
-    cost: call?.cost || 0.0,
-    summary: analysis?.summary || "No summary provided.",
-    transcript: message.transcript || "",
-    recording_url: message.recordingUrl || message.stereoRecordingUrl || null
-  });
-
-  if (logError) {
-    log.error("Failed to insert call log", { callId: call?.id, error: logError.message });
+  try {
+    await drizzle.insert(schema.callLogs).values({
+      userId,
+      vapiCallId: call?.id || "unknown",
+      agentId: webhookAgentId,
+      direction: call?.type === "outboundPhoneCall" ? "outbound" : "inbound",
+      customerNumber: call?.customer?.number || "",
+      durationSeconds: duration,
+      cost: String(call?.cost || 0.0),
+      summary: analysis?.summary || "No summary provided.",
+      transcript: message.transcript || "",
+      recordingUrl: message.recordingUrl || message.stereoRecordingUrl || null
+    });
+  } catch (logErr: any) {
+    log.error("Failed to insert call log", { callId: call?.id, error: getErrorMessage(logErr) });
   }
 
   SentryEvents.callCompleted({
@@ -67,7 +69,12 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
   // 2. AI Enrichment (Claude)
   if (claudeBrain.isClaudeAvailable() && message.transcript) {
     try {
-      const { data: agentDetail } = await db.from('wireline_agents').select('name, archetype, role').eq('id', webhookAgentId).single();
+      const [agentDetail] = await drizzle
+        .select({ name: schema.agents.name, archetype: schema.agents.archetype, role: schema.agents.role })
+        .from(schema.agents)
+        .where(eq(schema.agents.id, webhookAgentId))
+        .limit(1);
+
       const cap = await claudeBrain.withAuditCapture(() =>
         claudeBrain.postCallAnalysis({
           agentName: agentDetail?.name || 'Wireline Agent',
@@ -81,12 +88,14 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
       );
       const result = cap.result;
 
-      await db.from('wireline_call_logs').update({
-        lead_score: result.lead_score,
-        intent_label: result.intent_label,
-        sentiment: result.sentiment,
-        coaching_note: result.coaching_note,
-      }).eq('vapi_call_id', call?.id);
+      await drizzle.update(schema.callLogs)
+        .set({
+          leadScore: result.lead_score,
+          intentLabel: result.intent_label,
+          sentiment: result.sentiment,
+          coachingNote: result.coaching_note,
+        })
+        .where(eq(schema.callLogs.vapiCallId, call?.id));
 
       await persistClaudeAuditRecords({
         userId,
@@ -156,7 +165,17 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
       rule,
       state,
     });
-    await db.from("wireline_consent_log").insert(ledgerRow);
+    
+    await drizzle.insert(schema.consentLog).values({
+      userId: ledgerRow.user_id,
+      callId: ledgerRow.call_id,
+      customerNumber: ledgerRow.customer_number,
+      event: ledgerRow.event,
+      ruleVersion: ledgerRow.rule_version,
+      rule: ledgerRow.rule,
+      state: ledgerRow.state,
+      metadata: ledgerRow.metadata
+    });
 
     const optOut = detectOptOut(message.transcript || "");
     if (optOut.found) {
@@ -170,7 +189,17 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
         state,
         metadata: { matched_pattern: optOut.matched_pattern }
       });
-      await db.from("wireline_consent_log").insert(optOutRow);
+
+      await drizzle.insert(schema.consentLog).values({
+        userId: optOutRow.user_id,
+        callId: optOutRow.call_id,
+        customerNumber: optOutRow.customer_number,
+        event: optOutRow.event,
+        ruleVersion: optOutRow.rule_version,
+        rule: optOutRow.rule,
+        state: optOutRow.state,
+        metadata: optOutRow.metadata
+      });
     }
   } catch (compErr) {
     log.error("Compliance ledger writer failed", { error: getErrorMessage(compErr) });
@@ -184,18 +213,20 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
         summary: analysis?.summary || ""
       });
       
-      await db.from('wireline_call_logs').update({
-        lead_score: geminiResult.lead_score,
-        intent_label: geminiResult.intent_label,
-        sentiment: geminiResult.sentiment,
-        coaching_note: geminiResult.coaching_note,
-      }).eq('vapi_call_id', call?.id);
+      await drizzle.update(schema.callLogs)
+        .set({
+          leadScore: geminiResult.lead_score,
+          intentLabel: geminiResult.intent_label,
+          sentiment: geminiResult.sentiment,
+          coachingNote: geminiResult.coaching_note,
+        })
+        .where(eq(schema.callLogs.vapiCallId, call?.id));
 
       if (geminiResult.lesson && geminiResult.lesson.trim()) {
-        await db.from('wireline_agent_lessons').insert({
-          agent_id: webhookAgentId,
+        await drizzle.insert(schema.agentLessons).values({
+          agentId: webhookAgentId,
           lesson: geminiResult.lesson,
-          source_call_id: call?.id
+          sourceCallId: call?.id
         });
       }
     } catch (gErr) {

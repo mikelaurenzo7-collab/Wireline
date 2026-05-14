@@ -3,21 +3,28 @@
  * one dedicated line per agent seat on their plan (tier `max_agents`).
  */
 
-import { db } from "./server-context";
+import { drizzle } from "./server-context";
+import * as schema from "../db/schema";
+import { eq } from "drizzle-orm";
 import { stripeAvailable } from "./stripe-helpers";
 import { planById } from "./plan-catalog";
 
 export async function getIncludedPhoneLineSlots(userId: string): Promise<number> {
-  const { data: settings } = await db
-    .from("wireline_settings")
-    .select("subscription_status")
-    .eq("user_id", userId)
-    .maybeSingle();
+  const [settings] = await drizzle
+    .select({ subscriptionStatus: schema.settings.subscriptionStatus })
+    .from(schema.settings)
+    .where(eq(schema.settings.userId, userId))
+    .limit(1);
 
-  const subStatus = settings?.subscription_status || "active";
+  const subStatus = settings?.subscriptionStatus || "active";
   if (subStatus !== "active") return 0;
 
-  const { data: sub } = await db.from("wireline_subscriptions").select("plan").eq("user_id", userId).maybeSingle();
+  const [sub] = await drizzle
+    .select({ plan: schema.subscriptions.plan })
+    .from(schema.subscriptions)
+    .where(eq(schema.subscriptions.userId, userId))
+    .limit(1);
+    
   const tier = planById(sub?.plan || undefined);
   if (tier) return tier.max_agents;
 

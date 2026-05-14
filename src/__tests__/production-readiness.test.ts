@@ -15,9 +15,8 @@ import { timingSafeEqual } from "node:crypto";
 
 /** Mirrors validateStartupEnv logic from server.ts */
 function checkStartupEnv(env: Record<string, string | undefined>, isProd: boolean) {
-  const alwaysRequired = ["VITE_SUPABASE_URL", "VITE_SUPABASE_ANON_KEY"];
-  const prodRequired   = [
-    "SUPABASE_SERVICE_ROLE_KEY",
+  const prodRequired = [
+    "INTERNAL_JWT_SECRET",
     "ANTHROPIC_API_KEY",
     "GEMINI_API_KEY",
     "VAPI_PRIVATE_KEY",
@@ -25,17 +24,12 @@ function checkStartupEnv(env: Record<string, string | undefined>, isProd: boolea
     "OAUTH_STATE_SECRET",
   ];
 
-  const missingAlways = alwaysRequired.filter((k) => !env[k]);
-  const missingProd   = prodRequired.filter((k) => !env[k]);
-  const missing       = isProd ? [...missingAlways, ...missingProd] : missingAlways;
-
+  const missing = isProd ? prodRequired.filter((k) => !env[k]) : [];
   return { missing, wouldExit: isProd && missing.length > 0 };
 }
 
 const BASE_ENV: Record<string, string> = {
-  VITE_SUPABASE_URL:      "https://example.supabase.co",
-  VITE_SUPABASE_ANON_KEY: "anon-key",
-  SUPABASE_SERVICE_ROLE_KEY: "service-role-key",
+  INTERNAL_JWT_SECRET:    "jwt-secret-at-least-32-chars-long",
   ANTHROPIC_API_KEY:      "sk-ant-xxx",
   GEMINI_API_KEY:         "gemini-key",
   VAPI_PRIVATE_KEY:       "vapi-priv",
@@ -50,17 +44,10 @@ describe("startup validation", () => {
     expect(wouldExit).toBe(false);
   });
 
-  it("exits in prod when VITE_SUPABASE_URL is missing", () => {
-    const env = { ...BASE_ENV, VITE_SUPABASE_URL: undefined };
+  it("exits in prod when INTERNAL_JWT_SECRET is missing", () => {
+    const env = { ...BASE_ENV, INTERNAL_JWT_SECRET: undefined };
     const { missing, wouldExit } = checkStartupEnv(env, true);
-    expect(missing).toContain("VITE_SUPABASE_URL");
-    expect(wouldExit).toBe(true);
-  });
-
-  it("exits in prod when VITE_SUPABASE_ANON_KEY is missing", () => {
-    const env = { ...BASE_ENV, VITE_SUPABASE_ANON_KEY: undefined };
-    const { missing, wouldExit } = checkStartupEnv(env, true);
-    expect(missing).toContain("VITE_SUPABASE_ANON_KEY");
+    expect(missing).toContain("INTERNAL_JWT_SECRET");
     expect(wouldExit).toBe(true);
   });
 
@@ -68,13 +55,6 @@ describe("startup validation", () => {
     const env = { ...BASE_ENV, ANTHROPIC_API_KEY: undefined };
     const { missing, wouldExit } = checkStartupEnv(env, true);
     expect(missing).toContain("ANTHROPIC_API_KEY");
-    expect(wouldExit).toBe(true);
-  });
-
-  it("exits in prod when SUPABASE_SERVICE_ROLE_KEY is missing", () => {
-    const env = { ...BASE_ENV, SUPABASE_SERVICE_ROLE_KEY: undefined };
-    const { missing, wouldExit } = checkStartupEnv(env, true);
-    expect(missing).toContain("SUPABASE_SERVICE_ROLE_KEY");
     expect(wouldExit).toBe(true);
   });
 
@@ -107,11 +87,7 @@ describe("startup validation", () => {
   });
 
   it("does NOT exit in dev when prod-required vars are absent", () => {
-    const env = {
-      VITE_SUPABASE_URL:      "https://example.supabase.co",
-      VITE_SUPABASE_ANON_KEY: "anon-key",
-      // ANTHROPIC_API_KEY, VAPI_PRIVATE_KEY, VAPI_WEBHOOK_SECRET omitted
-    };
+    const env = {};
     const { missing, wouldExit } = checkStartupEnv(env, false);
     expect(missing).toHaveLength(0);
     expect(wouldExit).toBe(false);

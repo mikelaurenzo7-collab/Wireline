@@ -1,5 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
-import { sql } from "@vercel/postgres";
+import { sql, eq } from "drizzle-orm";
 import { drizzle as drizzleDb } from "drizzle-orm/vercel-postgres";
 import * as schema from "../db/schema";
 import { AuditLogger } from "./audit-logger";
@@ -49,13 +48,8 @@ export async function fetchWithTimeout(
 }
 
 // ────────────────────────────────────────────────────────────────────
-//  Database Initialization (Phased Migration)
+//  Database Initialization (Drizzle ORM)
 // ────────────────────────────────────────────────────────────────────
-const supabaseUrl = process.env.VITE_SUPABASE_URL || "https://placeholder-url.supabase.co";
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || "placeholder-key";
-
-// Legacy Supabase Client (Standard API)
-export const db = createClient(supabaseUrl, supabaseKey);
 
 // New Drizzle ORM (Vercel Postgres / Neon)
 export const drizzle = drizzleDb(sql, { schema });
@@ -63,22 +57,23 @@ export const drizzle = drizzleDb(sql, { schema });
 // ────────────────────────────────────────────────────────────────────
 //  Audit Logger & RBAC Middleware
 // ────────────────────────────────────────────────────────────────────
-export const auditLogger = new AuditLogger(db as any);
-export const { requirePermission, requireRole } = createRbacMiddleware({ db: db as any, auditLogger });
+export const auditLogger = new AuditLogger(drizzle);
+export const { requirePermission, requireRole } = createRbacMiddleware({ drizzle, auditLogger });
 
 // ────────────────────────────────────────────────────────────────────
 //  Quota Tracker
 // ────────────────────────────────────────────────────────────────────
 export const quotaTracker = new QuotaTracker({
-  db: db as any,
+  drizzle,
   getPlanForUser: async (userId: string): Promise<PlanTier> => {
     try {
-      const { data } = await db
-        .from('wireline_settings')
-        .select('subscription_status')
-        .eq('user_id', userId)
-        .maybeSingle();
-      const status = (data as { subscription_status?: string } | null)?.subscription_status ?? 'free';
+      const [data] = await drizzle
+        .select({ status: schema.settings.subscriptionStatus })
+        .from(schema.settings)
+        .where(eq(schema.settings.userId, userId))
+        .limit(1);
+      
+      const status = data?.status ?? 'free';
       if (status === 'enterprise') return 'enterprise';
       if (status === 'pro')        return 'pro';
       if (status === 'starter' || status === 'active') return 'starter';

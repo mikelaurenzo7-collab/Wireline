@@ -1,5 +1,7 @@
 import { Router, Response } from "express";
-import { db, log } from "../lib/server-context";
+import { log, drizzle } from "../lib/server-context";
+import * as schema from "../db/schema";
+import { eq, and, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -9,13 +11,12 @@ const router = Router();
 // GET /api/team — list all members in the user's organization
 router.get("/api/team", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { data: members, error } = await db
-      .from('wireline_team_members')
-      .select('*')
-      .eq('tenant_id', req.user.id) // Assuming owner user id is the tenant id for now
-      .order('created_at', { ascending: false });
+    const members = await drizzle
+      .select()
+      .from(schema.teamMembers)
+      .where(eq(schema.teamMembers.tenantId, req.user.id))
+      .orderBy(desc(schema.teamMembers.createdAt));
     
-    if (error) throw error;
     res.json({ members: members || [] });
   } catch (error: any) {
     log.error("Failed to fetch team members", { error: getErrorMessage(error) });
@@ -29,15 +30,13 @@ router.post("/api/team/invite", authenticateUser, async (req: AuthenticatedReque
     const { email, role } = req.body;
     if (!email) return res.status(400).json({ error: "Email is required" });
 
-    const { data, error } = await db.from('wireline_team_members').insert({
-      tenant_id: req.user.id,
-      user_id: null, // To be filled when they sign up
+    const [data] = await drizzle.insert(schema.teamMembers).values({
+      tenantId: req.user.id,
+      userId: null, 
       email,
       role: role || 'member',
-      invited_by: req.user.id
-    }).select().single();
-
-    if (error) throw error;
+      invitedBy: req.user.id
+    }).returning();
     
     // Attempt to send invitation email autonomously via user's connected integrations
     try {
@@ -77,13 +76,10 @@ router.post("/api/team/invite", authenticateUser, async (req: AuthenticatedReque
 // DELETE /api/team/:id — remove a member or revoke invitation
 router.delete("/api/team/:id", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { error } = await db
-      .from('wireline_team_members')
-      .delete()
-      .eq('id', req.params.id)
-      .eq('tenant_id', req.user.id);
+    await drizzle
+      .delete(schema.teamMembers)
+      .where(and(eq(schema.teamMembers.id, req.params.id), eq(schema.teamMembers.tenantId, req.user.id)));
     
-    if (error) throw error;
     res.json({ success: true });
   } catch (error: any) {
     log.error("Failed to remove team member", { error: getErrorMessage(error) });

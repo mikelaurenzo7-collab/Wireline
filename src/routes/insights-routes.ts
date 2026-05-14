@@ -1,6 +1,8 @@
 import { Router, Response } from "express";
 
-import { db } from "../lib/server-context";
+import { drizzle, log } from "../lib/server-context";
+import * as schema from "../db/schema";
+import { eq, and, sql, desc, gte, lt, or } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import * as claudeBrain from "../lib/claude-brain";
 import { claudeErr } from "../lib/claude-response-helpers";
@@ -39,21 +41,21 @@ interface AuditCostRow {
 router.get("/api/insights/funnel", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const days = Math.min(parseInt((req.query.days as string) || "30"), 365);
-    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
-    const [{ data: calls }, { data: appts }, { data: leads }] = await Promise.all([
-      db.from("wireline_call_logs").select("lead_score, intent_label, duration_seconds, created_at").eq("user_id", req.user.id).gte("created_at", since),
-      db.from("wireline_appointments").select("status").eq("user_id", req.user.id).gte("created_at", since),
-      db.from("wireline_outbound_leads").select("status").eq("user_id", req.user.id).gte("created_at", since),
+    const [calls, appts, leads] = await Promise.all([
+      drizzle.select({ leadScore: schema.callLogs.leadScore, intentLabel: schema.callLogs.intentLabel, durationSeconds: schema.callLogs.durationSeconds, createdAt: schema.callLogs.createdAt }).from(schema.callLogs).where(and(eq(schema.callLogs.userId, req.user.id), gte(schema.callLogs.createdAt, since))),
+      drizzle.select({ status: schema.appointments.status, createdAt: schema.appointments.createdAt }).from(schema.appointments).where(and(eq(schema.appointments.userId, req.user.id), gte(schema.appointments.createdAt, since))),
+      drizzle.select({ status: schema.outboundLeads.status, createdAt: schema.outboundLeads.createdAt }).from(schema.outboundLeads).where(and(eq(schema.outboundLeads.userId, req.user.id), gte(schema.outboundLeads.createdAt, since))),
     ]);
 
     const totalCalls = calls?.length || 0;
-    const connected = (calls || []).filter((c: CallRow) => (c.duration_seconds || 0) > 10).length;
-    const qualified = (calls || []).filter((c: CallRow) => (c.lead_score || 0) >= 50).length;
-    const highIntent = (calls || []).filter((c: CallRow) => c.intent_label === "high").length;
+    const connected = (calls || []).filter((c: any) => (c.durationSeconds || 0) > 10).length;
+    const qualified = (calls || []).filter((c: any) => (c.leadScore || 0) >= 50).length;
+    const highIntent = (calls || []).filter((c: any) => c.intentLabel === "high").length;
     const bookings = (appts || []).length;
-    const completed = (appts || []).filter((a: { status?: string }) => a.status === "Completed").length;
-    const queuedLeads = (leads || []).filter((l: { status?: string }) => l.status === "Pending" || l.status === "Queued").length;
+    const completed = (appts || []).filter((a: any) => a.status === "Completed").length;
+    const queuedLeads = (leads || []).filter((l: any) => l.status === "Pending" || l.status === "Queued").length;
 
     res.json({
       window_days: days,
@@ -73,21 +75,20 @@ router.get("/api/insights/funnel", authenticateUser, async (req: AuthenticatedRe
 router.get("/api/insights/heatmap", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const days = Math.min(parseInt((req.query.days as string) || "30"), 365);
-    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
-    const { data: calls } = await db
-      .from("wireline_call_logs")
-      .select("created_at, lead_score")
-      .eq("user_id", req.user.id)
-      .gte("created_at", since);
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const calls = await drizzle
+      .select({ createdAt: schema.callLogs.createdAt, leadScore: schema.callLogs.leadScore })
+      .from(schema.callLogs)
+      .where(and(eq(schema.callLogs.userId, req.user.id), gte(schema.callLogs.createdAt, since)));
 
     const grid: { hour: number; weekday: number; count: number; avg_score: number }[] = [];
     const buckets: Record<string, { c: number; s: number }> = {};
     for (const c of calls || []) {
-      const d = new Date(c.created_at);
+      const d = new Date(c.createdAt);
       const key = `${d.getDay()}-${d.getHours()}`;
       const b = buckets[key] || { c: 0, s: 0 };
       b.c++;
-      b.s += c.lead_score || 0;
+      b.s += c.leadScore || 0;
       buckets[key] = b;
     }
     for (let w = 0; w < 7; w++) {
@@ -103,39 +104,43 @@ router.get("/api/insights/heatmap", authenticateUser, async (req: AuthenticatedR
 router.get("/api/insights/leaderboard", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const days = Math.min(parseInt((req.query.days as string) || "30"), 365);
-    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
-    const [{ data: agents }, { data: calls }, { data: appts }, { data: auditCosts }] = await Promise.all([
-      db.from("wireline_agents").select("id, name, archetype, channel, role").eq("user_id", req.user.id).limit(500),
-      db.from("wireline_call_logs").select("agent_id, lead_score, intent_label, duration_seconds, cost, created_at").eq("user_id", req.user.id).gte("created_at", since),
-      db.from("wireline_appointments").select("agent_id").eq("user_id", req.user.id).gte("created_at", since),
-      db.from("wireline_audit_log").select("metadata->agent_id, metadata->cost_usd").eq("user_id", req.user.id).eq("event_type", "ai.api_call").eq("provider", "anthropic").gte("created_at", since),
+    const [agents, calls, appts, auditLogs] = await Promise.all([
+      drizzle.select({ id: schema.agents.id, name: schema.agents.name, archetype: schema.agents.archetype, channel: schema.agents.channel, role: schema.agents.role }).from(schema.agents).where(eq(schema.agents.userId, req.user.id)).limit(500),
+      drizzle.select({ agentId: schema.callLogs.agentId, leadScore: schema.callLogs.leadScore, intentLabel: schema.callLogs.intentLabel, durationSeconds: schema.callLogs.durationSeconds, cost: schema.callLogs.cost, createdAt: schema.callLogs.createdAt }).from(schema.callLogs).where(and(eq(schema.callLogs.userId, req.user.id), gte(schema.callLogs.createdAt, since))),
+      drizzle.select({ agentId: schema.appointments.agentId }).from(schema.appointments).where(and(eq(schema.appointments.userId, req.user.id), gte(schema.appointments.createdAt, since))),
+      drizzle.select({ metadata: schema.auditLog.metadata }).from(schema.auditLog).where(and(eq(schema.auditLog.userId, req.user.id), eq(schema.auditLog.eventType, "ai.api_call"), gte(schema.auditLog.createdAt, since))),
     ]);
 
     const aiCostByAgent: Record<string, number> = {};
-    for (const row of auditCosts || []) {
-      const r = row as unknown as AuditCostRow;
-      const id = r.agent_id || "unknown";
-      const c = Number(r.cost_usd) || 0;
+    for (const row of auditLogs || []) {
+      const meta = row.metadata as any;
+      if (!meta) continue;
+      const id = meta.agent_id || "unknown";
+      const c = Number(meta.cost_usd) || 0;
       aiCostByAgent[id] = (aiCostByAgent[id] || 0) + c;
     }
 
-    const callsByAgent: Record<string, CallRow[]> = {};
-    for (const c of (calls || []) as CallRow[]) {
-      const id = (c as CallRow & { agent_id?: string }).agent_id || "unknown";
+    const callsByAgent: Record<string, any[]> = {};
+    for (const c of (calls || [])) {
+      const id = c.agentId || "unknown";
       (callsByAgent[id] ||= []).push(c);
     }
     const apptsByAgent: Record<string, number> = {};
-    for (const a of (appts || []) as Array<{ agent_id?: string }>) apptsByAgent[a.agent_id || "unknown"] = (apptsByAgent[a.agent_id || "unknown"] || 0) + 1;
+    for (const a of (appts || [])) {
+      const id = a.agentId || "unknown";
+      apptsByAgent[id] = (apptsByAgent[id] || 0) + 1;
+    }
 
-    const rows = (agents || []).map((a: AgentRow) => {
+    const rows = (agents || []).map((a: any) => {
       const agentCalls = callsByAgent[a.id] || [];
       const total = agentCalls.length;
-      const qualifiedCount = agentCalls.filter((c) => (c.lead_score || 0) >= 50).length;
-      const highIntentCount = agentCalls.filter((c) => c.intent_label === "high").length;
-      const minutes = Math.round(agentCalls.reduce((s, c) => s + (c.duration_seconds || 0), 0) / 60);
-      const cost = Number(agentCalls.reduce((s, c) => s + Number((c as CallRow & { cost?: number }).cost || 0), 0).toFixed(2));
-      const avgScore = total ? Math.round(agentCalls.reduce((s, c) => s + (c.lead_score || 0), 0) / total) : 0;
+      const qualifiedCount = agentCalls.filter((c) => (c.leadScore || 0) >= 50).length;
+      const highIntentCount = agentCalls.filter((c) => c.intentLabel === "high").length;
+      const minutes = Math.round(agentCalls.reduce((s, c) => s + (c.durationSeconds || 0), 0) / 60);
+      const cost = Number(agentCalls.reduce((s, c) => s + Number(c.cost || 0), 0).toFixed(2));
+      const avgScore = total ? Math.round(agentCalls.reduce((s, c) => s + (c.leadScore || 0), 0) / total) : 0;
       const bookings = apptsByAgent[a.id] || 0;
       const costPerQualified = qualifiedCount ? Number((cost / qualifiedCount).toFixed(2)) : 0;
       const outcomes = qualifiedCount + bookings;
@@ -149,7 +154,7 @@ router.get("/api/insights/leaderboard", authenticateUser, async (req: Authentica
         cost_per_qualified: costPerQualified, cost_per_outcome: costPerOutcome,
         conversion_rate: total ? Math.round((qualifiedCount / total) * 100) : 0,
       };
-    }).sort((a: { qualified: number }, b: { qualified: number }) => b.qualified - a.qualified);
+    }).sort((a: any, b: any) => b.qualified - a.qualified);
 
     res.json({ window_days: days, agents: rows });
   } catch (e) { claudeErr(res, e); }
@@ -166,17 +171,18 @@ router.get("/api/insights/topics", authenticateUser, enforce24hSpendCap, enforce
     if (!claudeBrain.isClaudeAvailable()) {
       return res.status(503).json({ error: "Claude required for topic clustering.", code: "CLAUDE_OFFLINE" });
     }
-    const { data: rows } = await db
-      .from("wireline_call_logs")
-      .select("summary, intent_label")
-      .eq("user_id", req.user.id)
-      .order("created_at", { ascending: false })
+    const rows = await drizzle
+      .select({ summary: schema.callLogs.summary, intentLabel: schema.callLogs.intentLabel })
+      .from(schema.callLogs)
+      .where(eq(schema.callLogs.userId, req.user.id))
+      .orderBy(desc(schema.callLogs.createdAt))
       .limit(120);
+    
     if (!rows || rows.length < 3) {
       return res.json({ topics: [], total_analyzed: rows?.length || 0, message: "Not enough data yet — run more calls." });
     }
     const result = await claudeBrain.clusterTopics({
-      summaries: rows.map((r: { summary?: string; intent_label?: string }) => ({ summary: r.summary || "", intent_label: r.intent_label })),
+      summaries: rows.map((r: any) => ({ summary: r.summary || "", intent_label: r.intentLabel })),
       windowDays: 14,
     });
     setCachedInsight(cacheKey, result);
@@ -195,17 +201,27 @@ router.get("/api/insights/failure-modes", authenticateUser, enforce24hSpendCap, 
     if (!claudeBrain.isClaudeAvailable()) {
       return res.status(503).json({ error: "Claude required for failure analysis.", code: "CLAUDE_OFFLINE" });
     }
-    const { data: rows } = await db
-      .from("wireline_call_logs")
-      .select("summary, transcript, lead_score, intent_label")
-      .eq("user_id", req.user.id)
-      .or("lead_score.lt.30,intent_label.eq.low,intent_label.eq.none")
-      .order("created_at", { ascending: false })
+
+    const rows = await drizzle
+      .select({ summary: schema.callLogs.summary, transcript: schema.callLogs.transcript, leadScore: schema.callLogs.leadScore, intentLabel: schema.callLogs.intentLabel })
+      .from(schema.callLogs)
+      .where(
+        and(
+          eq(schema.callLogs.userId, req.user.id),
+          or(
+            lt(schema.callLogs.leadScore, 30),
+            eq(schema.callLogs.intentLabel, "low"),
+            eq(schema.callLogs.intentLabel, "none")
+          )
+        )
+      )
+      .orderBy(desc(schema.callLogs.createdAt))
       .limit(20);
+
     if (!rows || rows.length < 2) {
       return res.json({ modes: [], message: "Not enough failed calls yet — system is performing well." });
     }
-    const result = await claudeBrain.clusterFailureModes({ failedCalls: rows as Parameters<typeof claudeBrain.clusterFailureModes>[0]["failedCalls"] });
+    const result = await claudeBrain.clusterFailureModes({ failedCalls: rows.map(r => ({ summary: r.summary, transcript: r.transcript, lead_score: r.leadScore, intent_label: r.intentLabel })) as any });
     setCachedInsight(cacheKey, result);
     res.json({ ...result, cached: false });
   } catch (e) { claudeErr(res, e); }

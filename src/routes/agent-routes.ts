@@ -1,7 +1,9 @@
 import { Router, Response } from "express";
 import type { AuthenticatedRequest } from "../types/auth";
 
-import { db, log, auditLogger } from "../lib/server-context";
+import { log, auditLogger, drizzle } from "../lib/server-context";
+import * as schema from "../db/schema";
+import { eq, and, sql, desc, inArray } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage, sanitizeForAudit } from "../lib/server-utils";
 import { parseFormData, AgentFormSchema, AgentBusinessProfileSchema, GeminiAgentExtractionSchema } from "../lib/form-validators";
@@ -24,10 +26,15 @@ const isMissingRoleColumnError = (error: any) =>
 
 router.get("/api/agents", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { data: agents, error } = await db.from('wireline_agents').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false }).limit(500);
-    if (error) log.warn("Failed to fetch agents", { userId: req.user.id, error: getErrorMessage(error) });
-    res.json({ agents: agents || [] });
-  } catch {
+    const agentsList = await drizzle
+      .select()
+      .from(schema.agents)
+      .where(eq(schema.agents.userId, req.user.id))
+      .orderBy(desc(schema.agents.createdAt))
+      .limit(500);
+    res.json({ agents: agentsList });
+  } catch (error: any) {
+    log.warn("Failed to fetch agents", { userId: req.user.id, error: getErrorMessage(error) });
     res.json({ agents: [] }); 
   }
 });
@@ -59,16 +66,26 @@ router.post("/api/agents/:id/apply-role", authenticateUser, async (req: Authenti
     // a user could overwrite another user's agent's personality by
     // guessing the agent_id (and the upsert's onConflict: 'agent_id'
     // would even reassign ownership via the user_id field).
-    const { data: agent } = await db
-      .from('wireline_agents')
-      .select('id')
-      .eq('id', req.params.id)
-      .eq('user_id', req.user.id)
-      .maybeSingle();
+    const [agent] = await drizzle
+      .select({ id: schema.agents.id })
+      .from(schema.agents)
+      .where(
+        and(
+          eq(schema.agents.id, req.params.id),
+          eq(schema.agents.userId, req.user.id)
+        )
+      )
+      .limit(1);
+    
     if (!agent) return res.status(404).json({ error: "Agent not found" });
 
-    await db.from('wireline_personality')
-      .upsert({ agent_id: req.params.id, user_id: req.user.id, content: template }, { onConflict: 'agent_id' });
+    await drizzle
+      .insert(schema.personality)
+      .values({ agentId: req.params.id, userId: req.user.id, content: template })
+      .onConflictDoUpdate({
+        target: schema.personality.agentId,
+        set: { content: template }
+      });
 
     res.json({ success: true, content: template });
   } catch (error) {
@@ -83,29 +100,30 @@ router.get("/api/agents/:id/export", authenticateUser, async (req: Authenticated
     const userId = req.user.id;
 
     const [agentRes, personalityRes, directivesRes, knowledgeRes] = await Promise.all([
-      db.from('wireline_agents').select('*').eq('id', agentId).eq('user_id', userId).single(),
-      db.from('wireline_personality').select('content').eq('agent_id', agentId).single(),
-      db.from('wireline_directives').select('content, priority').eq('agent_id', agentId).eq('user_id', userId).limit(500),
-      db.from('wireline_knowledge').select('content').eq('agent_id', agentId).eq('user_id', userId).limit(500),
+      drizzle.select().from(schema.agents).where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId))).limit(1),
+      drizzle.select({ content: schema.personality.content }).from(schema.personality).where(eq(schema.personality.agentId, agentId)).limit(1),
+      drizzle.select({ content: schema.directives.content, priority: schema.directives.priority }).from(schema.directives).where(and(eq(schema.directives.agentId, agentId), eq(schema.directives.userId, userId))).limit(500),
+      drizzle.select({ content: schema.knowledge.content }).from(schema.knowledge).where(and(eq(schema.knowledge.agentId, agentId), eq(schema.knowledge.userId, userId))).limit(500),
     ]);
 
-    if (!agentRes.data) return res.status(404).json({ error: 'Agent not found' });
+    const agentData = agentRes[0];
+    if (!agentData) return res.status(404).json({ error: 'Agent not found' });
 
     const exportData = {
       wireline_export_version: 1,
       exported_at: new Date().toISOString(),
       agent: {
-        name: agentRes.data.name,
-        channel: agentRes.data.channel,
-        role: agentRes.data.role,
-        enabled_tools: agentRes.data.enabled_tools ?? null,
-        personality: personalityRes.data?.content ?? '',
-        directives: (directivesRes.data ?? []).map((d: { content: string; priority?: number }) => ({ content: d.content, priority: d.priority })),
-        knowledge: (knowledgeRes.data ?? []).map((k: { content: string }) => k.content),
+        name: agentData.name,
+        channel: agentData.channel,
+        role: agentData.role,
+        enabled_tools: agentData.enabledTools ?? null,
+        personality: personalityRes[0]?.content ?? '',
+        directives: (directivesRes ?? []).map((d: { content: string; priority: number | null }) => ({ content: d.content, priority: d.priority })),
+        knowledge: (knowledgeRes ?? []).map((k: { content: string }) => k.content),
       },
     };
 
-    const safeName = agentRes.data.name
+    const safeName = agentData.name
       .replace(/[^\w\s-]/g, '')   // strip non-word chars (quotes, newlines, path chars)
       .replace(/\s+/g, '_')
       .slice(0, 64)
@@ -129,51 +147,60 @@ router.post("/api/agents/:id/import", authenticateUser, async (req: Authenticate
       return res.status(400).json({ error: 'Invalid export file format' });
     }
 
-    // SECURITY: verify the target agent belongs to the caller. Without
-    // this, the personality upsert (onConflict: 'agent_id') would let
-    // any authenticated user overwrite another user's agent.
-    const { data: ownedAgent } = await db
-      .from('wireline_agents')
-      .select('id')
-      .eq('id', agentId)
-      .eq('user_id', userId)
-      .maybeSingle();
+    const [ownedAgent] = await drizzle
+      .select({ id: schema.agents.id })
+      .from(schema.agents)
+      .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
+      .limit(1);
     if (!ownedAgent) return res.status(404).json({ error: 'Agent not found' });
 
     const { personality, directives, knowledge, role, channel, enabled_tools } = payload.agent;
 
-    // Replace personality
     if (personality) {
-      await db.from('wireline_personality').upsert(
-        { agent_id: agentId, user_id: userId, content: personality },
-        { onConflict: 'agent_id' }
-      );
+      await drizzle
+        .insert(schema.personality)
+        .values({ agentId, userId, content: personality })
+        .onConflictDoUpdate({
+          target: schema.personality.agentId,
+          set: { content: personality }
+        });
     }
 
-    // Merge directives (append new ones)
     if (Array.isArray(directives) && directives.length > 0) {
-      await db.from('wireline_directives').insert(
-        directives.map((d: { content: string; priority?: number }) => ({ agent_id: agentId, user_id: userId, content: d.content, priority: d.priority ?? 5 }))
-      );
+      await drizzle
+        .insert(schema.directives)
+        .values(
+          directives.map((d: { content: string; priority?: number }) => ({ 
+            agentId, 
+            userId, 
+            content: d.content, 
+            priority: d.priority ?? 5 
+          }))
+        );
     }
 
-    // Merge knowledge (append new ones)
     if (Array.isArray(knowledge) && knowledge.length > 0) {
-      await db.from('wireline_knowledge').insert(
-        knowledge.map((k: string) => ({ agent_id: agentId, user_id: userId, content: k }))
-      );
+      await drizzle
+        .insert(schema.knowledge)
+        .values(
+          knowledge.map((k: string) => ({ 
+            agentId, 
+            userId, 
+            content: k 
+          }))
+        );
     }
 
     const toolConfig = enabled_tools === null ? null : normalizeEnabledTools(enabled_tools);
-    const importedAgentPatch: Record<string, unknown> = {};
+    const importedAgentPatch: any = {};
     if (typeof role === 'string') importedAgentPatch.role = role;
     if (typeof channel === 'string') importedAgentPatch.channel = channel;
-    if (enabled_tools !== undefined) importedAgentPatch.enabled_tools = toolConfig;
+    if (enabled_tools !== undefined) importedAgentPatch.enabledTools = toolConfig;
     if (Object.keys(importedAgentPatch).length > 0) {
-      await db.from('wireline_agents')
-        .update(importedAgentPatch)
-        .eq('id', agentId)
-        .eq('user_id', userId);
+      await drizzle
+        .update(schema.agents)
+        .set(importedAgentPatch)
+        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)));
     }
 
     const imported = {
@@ -193,18 +220,16 @@ router.get("/api/agent-config/:id", authenticateUser, async (req: AuthenticatedR
     const agentId = req.params.id;
     const userId = req.user.id;
 
-    // Fetch in parallel — personality (one row), directives (many), knowledge (many).
-    // Directives use priority 1-10; 10 is higher up the instruction chain.
-    const [personalityRes, directivesRes, knowledgeRes] = await Promise.all([
-      db.from('wireline_personality').select('content').eq('agent_id', agentId).maybeSingle(),
-      db.from('wireline_directives').select('id, content, priority').eq('agent_id', agentId).eq('user_id', userId).order('priority', { ascending: false }),
-      db.from('wireline_knowledge').select('id, content').eq('agent_id', agentId).eq('user_id', userId).order('created_at', { ascending: false }),
+    const [personalityRow, directivesList, knowledgeList] = await Promise.all([
+      drizzle.select({ content: schema.personality.content }).from(schema.personality).where(eq(schema.personality.agentId, agentId)).limit(1),
+      drizzle.select().from(schema.directives).where(and(eq(schema.directives.agentId, agentId), eq(schema.directives.userId, userId))).orderBy(desc(schema.directives.priority)),
+      drizzle.select().from(schema.knowledge).where(and(eq(schema.knowledge.agentId, agentId), eq(schema.knowledge.userId, userId))).orderBy(desc(schema.knowledge.createdAt)),
     ]);
 
     res.json({
-      personality: personalityRes.data?.content || '',
-      directives: directivesRes.data || [],
-      knowledge: knowledgeRes.data || []
+      personality: personalityRow[0]?.content || '',
+      directives: directivesList || [],
+      knowledge: knowledgeList || []
     });
   } catch (error) {
     log.error("Config fetch error", { error: getErrorMessage(error) });
@@ -220,26 +245,32 @@ router.post("/api/agent-config/:id/manual", authenticateUser, async (req: Authen
 
     if (!content) return res.status(400).json({ error: "Content is required" });
 
-    // Validate the target agent belongs to this user.
-    const { data: agent } = await db.from('wireline_agents').select('id').eq('id', agentId).eq('user_id', userId).maybeSingle();
+    const [agent] = await drizzle
+      .select({ id: schema.agents.id })
+      .from(schema.agents)
+      .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
+      .limit(1);
     if (!agent) return res.status(404).json({ error: "Agent not found" });
 
     if (type === 'personality') {
-       await db.from('wireline_personality').upsert(
-         { agent_id: agentId, content, user_id: userId },
-         { onConflict: 'agent_id' }
-       );
+       await drizzle
+         .insert(schema.personality)
+         .values({ agentId, content, userId })
+         .onConflictDoUpdate({
+           target: schema.personality.agentId,
+           set: { content }
+         });
     } else if (type === 'directive') {
        if (overrideId) {
-          await db.from('wireline_directives').update({ content }).eq('id', overrideId).eq('user_id', userId);
+          await drizzle.update(schema.directives).set({ content }).where(and(eq(schema.directives.id, BigInt(overrideId)), eq(schema.directives.userId, userId)));
        } else {
-          await db.from('wireline_directives').insert({ agent_id: agentId, content, priority: 5, user_id: userId });
+          await drizzle.insert(schema.directives).values({ agentId, content, priority: 5, userId });
        }
     } else if (type === 'knowledge') {
        if (overrideId) {
-          await db.from('wireline_knowledge').update({ content }).eq('id', overrideId).eq('user_id', userId);
+          await drizzle.update(schema.knowledge).set({ content }).where(and(eq(schema.knowledge.id, BigInt(overrideId)), eq(schema.knowledge.userId, userId)));
        } else {
-          await db.from('wireline_knowledge').insert({ agent_id: agentId, content, user_id: userId });
+          await drizzle.insert(schema.knowledge).values({ agentId, content, userId });
        }
     } else {
        return res.status(400).json({ error: "Invalid type — must be personality, directive, or knowledge" });
@@ -256,8 +287,8 @@ router.delete("/api/agent-config/:id/:type/:rowId", authenticateUser, async (req
     try {
       const { type, rowId } = req.params;
       const userId = req.user.id;
-      if (type === 'directive') await db.from('wireline_directives').delete().eq('id', rowId).eq('user_id', userId);
-      if (type === 'knowledge') await db.from('wireline_knowledge').delete().eq('id', rowId).eq('user_id', userId);
+      if (type === 'directive') await drizzle.delete(schema.directives).where(and(eq(schema.directives.id, BigInt(rowId)), eq(schema.directives.userId, userId)));
+      if (type === 'knowledge') await drizzle.delete(schema.knowledge).where(and(eq(schema.knowledge.id, BigInt(rowId)), eq(schema.knowledge.userId, userId)));
       res.json({ success: true });
     } catch {
       res.status(500).json({ error: "Failed to delete" });
@@ -375,21 +406,40 @@ Respond ONLY in strict, valid JSON format (no markdown):
   // ── Persist ───────────────────────────────────────────────────────
   try {
     if (parsed.directives.length) {
-      await db.from('wireline_directives').insert(
-        parsed.directives.map((d: { content: string; priority?: number }) => ({ content: d.content, priority: d.priority ?? 5, agent_id: agentId, user_id: userId }))
-      );
+      await drizzle
+        .insert(schema.directives)
+        .values(
+          parsed.directives.map((d: { content: string; priority?: number }) => ({ 
+            content: d.content, 
+            priority: d.priority ?? 5, 
+            agentId, 
+            userId 
+          }))
+        );
     }
     if (parsed.knowledge.length) {
-      await db.from('wireline_knowledge').insert(
-        parsed.knowledge.map((k: { content: string }) => ({ content: k.content, agent_id: agentId, user_id: userId }))
-      );
+      await drizzle
+        .insert(schema.knowledge)
+        .values(
+          parsed.knowledge.map((k: { content: string }) => ({ 
+            content: k.content, 
+            agentId, 
+            userId 
+          }))
+        );
     }
     if (parsed.personality) {
-      await db.from('wireline_personality').upsert({
-        agent_id: agentId,
-        user_id: userId,
-        content: parsed.personality,
-      });
+      await drizzle
+        .insert(schema.personality)
+        .values({
+          agentId,
+          userId,
+          content: parsed.personality,
+        })
+        .onConflictDoUpdate({
+          target: schema.personality.agentId,
+          set: { content: parsed.personality }
+        });
     }
   } catch (err) {
     log.error("Training persistence failed", { error: getErrorMessage(err) });
@@ -423,25 +473,40 @@ router.post("/api/train/save", authenticateUser, async (req: AuthenticatedReques
   try {
     const parsed = extracted || {};
 
-    // Atomic update to Supabase with user_id enforcement
     if (parsed.directives && parsed.directives.length) {
-      await db.from('wireline_directives').insert(
-        parsed.directives.map((d: { content: string; priority?: number }) => ({ ...d, agent_id: agentId, user_id: userId }))
-      );
+      await drizzle
+        .insert(schema.directives)
+        .values(
+          parsed.directives.map((d: { content: string; priority?: number }) => ({ 
+            ...d, 
+            agentId, 
+            userId 
+          }))
+        );
     }
     if (parsed.knowledge && parsed.knowledge.length) {
-      await db.from('wireline_knowledge').insert(
-        parsed.knowledge.map((k: { content: string }) => ({ ...k, agent_id: agentId, user_id: userId }))
-      );
+      await drizzle
+        .insert(schema.knowledge)
+        .values(
+          parsed.knowledge.map((k: { content: string }) => ({ 
+            ...k, 
+            agentId, 
+            userId 
+          }))
+        );
     }
     if (parsed.personality) {
-      // Upsert personality with user_id enforcement
-      await db.from('wireline_personality').upsert({ 
-        agent_id: agentId, 
-        user_id: userId,
-        content: parsed.personality,
-        updated_at: new Date().toISOString()
-      });
+      await drizzle
+        .insert(schema.personality)
+        .values({ 
+          agentId, 
+          userId,
+          content: parsed.personality
+        })
+        .onConflictDoUpdate({
+          target: schema.personality.agentId,
+          set: { content: parsed.personality }
+        });
     }
 
     res.json({ success: true });
@@ -465,19 +530,28 @@ router.post("/api/agents", authenticateUser, async (req: AuthenticatedRequest, r
     }
 
     // SECURITY ENFORCEMENT: Check Subscription Status for this specific user
-    const { data: userSettings } = await db.from('wireline_settings').select('subscription_status, max_agents').eq('user_id', req.user.id).single();
+    const [userSettings] = await drizzle
+      .select({ subscriptionStatus: schema.settings.subscriptionStatus, maxAgents: schema.settings.maxAgents })
+      .from(schema.settings)
+      .where(eq(schema.settings.userId, req.user.id))
+      .limit(1);
 
     // Gating mechanism: Prevent agent creation if the account is unpaid
-    const subscriptionStatus = userSettings?.subscription_status || 'active';
+    const subscriptionStatus = userSettings?.subscriptionStatus || 'active';
     if (subscriptionStatus !== 'active') {
        return res.status(403).json({ error: "Access Denied: Please upgrade your billing plan." });
     }
 
     // Agent Limit Check
-    const maxAgents = userSettings?.max_agents || 3;
-    const { count: agentCount } = await db.from('wireline_agents').select('*', { count: 'exact', head: true }).eq('user_id', req.user.id);
+    const maxAgents = userSettings?.maxAgents || 3;
+    const [{ count }] = await drizzle
+      .select({ count: sql`count(*)` })
+      .from(schema.agents)
+      .where(eq(schema.agents.userId, req.user.id));
+    
+    const agentCount = Number(count);
 
-    if (agentCount !== null && agentCount >= maxAgents) {
+    if (agentCount >= maxAgents) {
       return res.status(403).json({ error: `Quota Exceeded: Your plan only allows ${maxAgents} agents.` });
     }
 
@@ -486,33 +560,20 @@ router.post("/api/agents", authenticateUser, async (req: AuthenticatedRequest, r
     const { name, role, personality } = validation.data;
     const agentRole = role || DEFAULT_AGENT_ROLE;
     const agentId = id || `agent-${Date.now()}`;
-    let agentInsert = await db.from('wireline_agents').insert({
-      id: agentId,
-      user_id: req.user.id,
-      name,
-      voice_id: voice_id || 'bIHbv24MWmeRgasZH58o',
-      channel: channel || 'voice',
-      role: agentRole
-    });
-    let _usedLegacyRoleFallback = false;
-
-    if (agentInsert.error && isMissingRoleColumnError(agentInsert.error)) {
-      _usedLegacyRoleFallback = true;
-      log.warn("wireline_agents.role missing; retrying legacy insert", { userId: req.user.id, agentId });
-      agentInsert = await db.from('wireline_agents').insert({
+    try {
+      await drizzle.insert(schema.agents).values({
         id: agentId,
-        user_id: req.user.id,
+        userId: req.user.id,
         name,
-        voice_id: voice_id || 'bIHbv24MWmeRgasZH58o',
+        voiceId: voice_id || 'bIHbv24MWmeRgasZH58o',
         channel: channel || 'voice',
+        role: agentRole
       });
-    }
-
-    if (agentInsert.error) {
+    } catch (error: any) {
       log.error("Agent row insert failed", {
         userId: req.user.id,
         agentId,
-        error: getErrorMessage(agentInsert.error),
+        error: error.message,
       });
       return res.status(500).json({ error: "Failed to create agent" });
     }
@@ -524,19 +585,19 @@ router.post("/api/agents", authenticateUser, async (req: AuthenticatedRequest, r
         ? "You are a professional email agent specialized in clear, efficient communication."
         : "You are a helpful assistant serving as a phone agent.");
 
-    const personalityInsert = await db.from('wireline_personality').insert({
-       agent_id: agentId,
-       user_id: req.user.id,
-       content: personalityContent
-    });
-
-    if (personalityInsert.error) {
+    try {
+      await drizzle.insert(schema.personality).values({
+        agentId: agentId,
+        userId: req.user.id,
+        content: personalityContent
+      });
+    } catch (error: any) {
       log.error("Agent personality insert failed", {
         userId: req.user.id,
         agentId,
-        error: getErrorMessage(personalityInsert.error),
+        error: error.message,
       });
-      await db.from('wireline_agents').delete().eq('id', agentId).eq('user_id', req.user.id);
+      await drizzle.delete(schema.agents).where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)));
       return res.status(500).json({ error: "Failed to create agent" });
     }
     
@@ -618,43 +679,48 @@ router.put("/api/agents/:id", authenticateUser, async (req: AuthenticatedRequest
     // any business-profile fields the caller actually sent (so a
     // partial PATCH-style update doesn't clobber existing hours / mode
     // / variables when the caller is only changing the agent's name).
-    const update: Record<string, unknown> = {
+    const update: any = {
       name,
-      voice_id,
-      voice_id_inbound,
-      voice_id_outbound,
-      voice_provider,
-      first_message,
+      voiceId: voice_id,
+      voiceIdInbound: voice_id_inbound,
+      voiceIdOutbound: voice_id_outbound,
+      voiceProvider: voice_provider,
+      firstMessage: first_message,
       archetype,
-      ambient_noise,
-      website_url,
-      transfer_phone,
-      email_auto_respond,
-      email_agent_tone,
-      email_signature,
+      ambientNoise: ambient_noise,
+      websiteUrl: website_url,
+      transferPhone: transfer_phone,
+      emailAutoRespond: email_auto_respond,
+      emailAgentTone: email_agent_tone,
+      emailSignature: email_signature,
       channel,
       role,
     };
-    if (autonomy_level !== undefined) update.autonomy_level = autonomy_level;
+    if (autonomy_level !== undefined) update.autonomyLevel = autonomy_level;
     if (channels !== undefined) update.channels = channels;
-    if (slack_channel_id !== undefined) update.slack_channel_id = slack_channel_id;
-    if (auto_zoom_link !== undefined) update.auto_zoom_link = auto_zoom_link;
+    if (slack_channel_id !== undefined) update.slackChannelId = slack_channel_id;
+    if (auto_zoom_link !== undefined) update.autoZoomLink = auto_zoom_link;
     if (profileValidation.data) {
       for (const k of profileFields) {
         if ((profileValidation.data as any)[k] !== undefined) {
-          (update as any)[k] = (profileValidation.data as any)[k];
+          // Map snake_case profile keys to camelCase if they are in schema
+          const mappedKey = k.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+          update[mappedKey] = (profileValidation.data as any)[k];
         }
       }
     }
     if (enabledToolsRaw !== undefined) {
-      update.enabled_tools = enabledTools;
+      update.enabledTools = enabledTools;
     }
     // personality is not stored on the agent row — it lives in
     // wireline_personality. The caller passes it in for the AgentForm
     // contract, but we only care that it validated.
     void personality;
 
-    await db.from('wireline_agents').update(update).eq('id', req.params.id).eq('user_id', req.user.id);
+    await drizzle
+      .update(schema.agents)
+      .set(update)
+      .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)));
 
     // Audit log: agent update (sanitize sensitive fields)
     void auditLogger.logAgentOperation('updated', {
@@ -676,49 +742,27 @@ router.delete("/api/agents/:id", authenticateUser, async (req: AuthenticatedRequ
     const agentId = req.params.id;
     const userId = req.user.id;
 
-    // Confirm the agent belongs to this user before touching anything.
-    const { data: agent, error: lookupErr } = await db
-      .from("wireline_agents")
-      .select("id")
-      .eq("id", agentId)
-      .eq("user_id", userId)
-      .maybeSingle();
+    const [agent] = await drizzle
+      .select({ id: schema.agents.id })
+      .from(schema.agents)
+      .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
+      .limit(1);
 
-    if (lookupErr) throw lookupErr;
     if (!agent) return res.status(404).json({ error: "Agent not found." });
 
     // Null-out agent_id on tables that would otherwise block the delete.
-    const nullTables = [
-      { table: "wireline_call_logs",      label: "call_logs" },
-      { table: "wireline_appointments",   label: "appointments" },
-      { table: "wireline_outbound_leads", label: "outbound_leads" },
-      { table: "wireline_fleet_tasks",    label: "fleet_tasks" },
-      { table: "wireline_phone_numbers",  label: "phone_numbers" },
-      { table: "wireline_signal_presence",label: "signal_presence" },
-    ] as const;
-
-    const nullResults = await Promise.allSettled(
-      nullTables.map(({ table }) =>
-        db.from(table as any).update({ agent_id: null }).eq("agent_id", agentId).eq("user_id", userId)
-      )
-    );
-
-    nullResults.forEach((r, i) => {
-      if (r.status === "rejected" || (r.status === "fulfilled" && (r.value as any)?.error)) {
-        const reason = r.status === "rejected" ? getErrorMessage(r.reason) : (r.value as any)?.error?.message;
-        log.warn(`agent delete: failed to null agent_id on ${nullTables[i].label}`, { agentId, reason });
-      }
-    });
+    await Promise.allSettled([
+      drizzle.update(schema.callLogs).set({ agentId: null }).where(and(eq(schema.callLogs.agentId, agentId), eq(schema.callLogs.userId, userId))),
+      drizzle.update(schema.appointments).set({ agentId: null }).where(and(eq(schema.appointments.agentId, agentId), eq(schema.appointments.userId, userId))),
+      drizzle.update(schema.outboundLeads).set({ agentId: null }).where(and(eq(schema.outboundLeads.agentId, agentId), eq(schema.outboundLeads.userId, userId))),
+      drizzle.update(schema.fleetTasks).set({ agentId: null }).where(and(eq(schema.fleetTasks.agentId, agentId), eq(schema.fleetTasks.userId, userId))),
+      drizzle.update(schema.phoneNumbers).set({ agentId: null }).where(and(eq(schema.phoneNumbers.agentId, agentId), eq(schema.phoneNumbers.userId, userId))),
+      drizzle.update(schema.signalPresence).set({ agentId: null }).where(and(eq(schema.signalPresence.agentId, agentId), eq(schema.signalPresence.userId, userId))),
+    ]);
 
     // Delete the agent row — CASCADE handles directives, knowledge,
     // personality, and lessons automatically.
-    const { error: deleteErr } = await db
-      .from("wireline_agents")
-      .delete()
-      .eq("id", agentId)
-      .eq("user_id", userId);
-
-    if (deleteErr) throw deleteErr;
+    await drizzle.delete(schema.agents).where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)));
 
     log.info("agent deleted", { agentId, userId });
     
@@ -738,22 +782,27 @@ router.delete("/api/agents/:id", authenticateUser, async (req: AuthenticatedRequ
 
 router.post("/api/agents/:id/optimize", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
    try {
-      const { id } = req.params;
-      const { data: logs } = await db.from('wireline_call_logs')
-         .select('summary, transcript, lead_score, intent_label')
-         .eq('agent_id', id).eq('user_id', req.user.id)
-         .order('created_at', { ascending: false }).limit(10);
+    const { id } = req.params;
+    const logs = await drizzle
+       .select({ summary: schema.callLogs.summary, transcript: schema.callLogs.transcript, leadScore: schema.callLogs.leadScore, intentLabel: schema.callLogs.intentLabel })
+       .from(schema.callLogs)
+       .where(and(eq(schema.callLogs.agentId, id), eq(schema.callLogs.userId, req.user.id)))
+       .orderBy(desc(schema.callLogs.createdAt))
+       .limit(10);
 
-      if (!logs || logs.length === 0) {
-         return res.json({ suggestions: [], reason: "Insufficient data: Need at least 1 completed mission log." });
-      }
+    if (!logs || logs.length === 0) {
+       return res.json({ suggestions: [], reason: "Insufficient data: Need at least 1 completed mission log." });
+    }
 
       // Claude path — uses the same agent-review tool as /api/claude/agent-review,
       // but flattens the response to {suggestions, analysis} for legacy callers.
       if (claudeBrain.isClaudeAvailable()) {
          try {
-            const { data: agent } = await db.from('wireline_agents')
-               .select('name, archetype, role').eq('id', id).eq('user_id', req.user.id).single();
+            const [agent] = await drizzle
+               .select({ name: schema.agents.name, archetype: schema.agents.archetype, role: schema.agents.role })
+               .from(schema.agents)
+               .where(and(eq(schema.agents.id, id), eq(schema.agents.userId, req.user.id)))
+               .limit(1);
             const review = await claudeBrain.agentReview({
                agentName: agent?.name || 'Wireline Agent',
                archetype: agent?.archetype || 'Receptionist',
@@ -800,12 +849,17 @@ router.post("/api/agents/:id/optimize", authenticateUser, async (req: Authentica
 router.get("/api/agents/:id/performance", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const agentId = req.params.id;
-    const { data: logs } = await db
-      .from('wireline_call_logs')
-      .select('id, lead_score, duration_seconds, sentiment, created_at')
-      .eq('agent_id', agentId)
-      .eq('user_id', req.user.id)
-      .order('created_at', { ascending: false })
+    const logs = await drizzle
+      .select({ 
+        id: schema.callLogs.id, 
+        leadScore: schema.callLogs.leadScore, 
+        durationSeconds: schema.callLogs.durationSeconds, 
+        sentiment: schema.callLogs.sentiment, 
+        createdAt: schema.callLogs.createdAt 
+      })
+      .from(schema.callLogs)
+      .where(and(eq(schema.callLogs.agentId, agentId), eq(schema.callLogs.userId, req.user.id)))
+      .orderBy(desc(schema.callLogs.createdAt))
       .limit(500);
 
     res.json(computeAgentPerformance({ rows: logs || [] }));
@@ -826,51 +880,25 @@ router.get("/api/agents/:id/scorecard", authenticateUser, async (req: Authentica
     const days = Math.min(Math.max(Number.isFinite(daysRaw) ? daysRaw : 30, 1), 365);
 
     // Verify ownership AND read kpi_focus in one shot.
-    const { data: agent } = await db
-      .from('wireline_agents')
-      .select('id, kpi_focus')
-      .eq('id', agentId)
-      .eq('user_id', userId)
-      .maybeSingle();
+    const [agent] = await drizzle
+      .select({ id: schema.agents.id, kpiFocus: schema.agents.kpiFocus })
+      .from(schema.agents)
+      .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
+      .limit(1);
     if (!agent) return res.status(404).json({ error: 'Agent not found' });
 
-    const focus: string = agent.kpi_focus || 'general';
+    const focus: string = agent.kpiFocus || 'general';
 
     const now = Date.now();
     const windowMs = days * 24 * 60 * 60 * 1000;
     const periodStart = new Date(now - windowMs).toISOString();
     const priorStart  = new Date(now - 2 * windowMs).toISOString();
 
-    // Two periods: current and prior, of equal length, so we can show
-    // a delta_pct without inventing a baseline.
     const [currentLogs, priorLogs, appts, openTasks] = await Promise.all([
-      db.from('wireline_call_logs')
-        .select('id, lead_score, duration_seconds, sentiment, intent_label, created_at, customer_number')
-        .eq('agent_id', agentId).eq('user_id', userId)
-        .gte('created_at', periodStart)
-        .order('created_at', { ascending: false })
-        .limit(2000),
-      db.from('wireline_call_logs')
-        .select('id, lead_score, duration_seconds, sentiment, intent_label, created_at')
-        .eq('agent_id', agentId).eq('user_id', userId)
-        .gte('created_at', priorStart).lt('created_at', periodStart)
-        .limit(2000),
-      // Booked appointments attributed to this agent in the current window
-      // — used as the conversion numerator.
-      db.from('wireline_appointments')
-        .select('id, created_at')
-        .eq('agent_id', agentId).eq('user_id', userId)
-        .gte('created_at', periodStart)
-        .limit(2000),
-      // Open follow-up fleet tasks linked to calls in the current window
-      // — proxy for "calls that needed a human after the agent". Used in
-      // the resolution-rate computation.
-      db.from('wireline_fleet_tasks')
-        .select('id, source_id, source_type, created_at')
-        .eq('agent_id', agentId).eq('user_id', userId)
-        .gte('created_at', periodStart)
-        .eq('source_type', 'phone_call')
-        .limit(2000),
+      drizzle.select().from(schema.callLogs).where(and(eq(schema.callLogs.agentId, agentId), eq(schema.callLogs.userId, userId), sql`${schema.callLogs.createdAt} >= ${periodStart}`)).orderBy(desc(schema.callLogs.createdAt)).limit(2000),
+      drizzle.select().from(schema.callLogs).where(and(eq(schema.callLogs.agentId, agentId), eq(schema.callLogs.userId, userId), sql`${schema.callLogs.createdAt} >= ${priorStart} AND ${schema.callLogs.createdAt} < ${periodStart}`)).limit(2000),
+      drizzle.select({ id: schema.appointments.id, createdAt: schema.appointments.createdAt }).from(schema.appointments).where(and(eq(schema.appointments.agentId, agentId), eq(schema.appointments.userId, userId), sql`${schema.appointments.createdAt} >= ${periodStart}`)).limit(2000),
+      drizzle.select({ id: schema.fleetTasks.id, sourceId: schema.fleetTasks.sourceId, sourceType: schema.fleetTasks.sourceType, createdAt: schema.fleetTasks.createdAt }).from(schema.fleetTasks).where(and(eq(schema.fleetTasks.agentId, agentId), eq(schema.fleetTasks.userId, userId), sql`${schema.fleetTasks.createdAt} >= ${periodStart}`, eq(schema.fleetTasks.sourceType, 'phone_call'))).limit(2000),
     ]);
 
     // Hand the rows to the pure scorecard math (src/lib/agent-scorecard.ts)
@@ -879,10 +907,10 @@ router.get("/api/agents/:id/scorecard", authenticateUser, async (req: Authentica
       focus,
       windowDays: days,
       now,
-      currentLogs: currentLogs.data || [],
-      priorLogs:   priorLogs.data || [],
-      appointments: appts.data || [],
-      openFollowUps: openTasks.data || [],
+      currentLogs: currentLogs || [],
+      priorLogs:   priorLogs || [],
+      appointments: appts || [],
+      openFollowUps: openTasks || [],
     });
 
     res.json(result);
@@ -894,12 +922,12 @@ router.get("/api/agents/:id/scorecard", authenticateUser, async (req: Authentica
 
 router.get("/api/agents/:id/lessons", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
    try {
-      const { data: lessons, error } = await db.from('wireline_agent_lessons').select('*')
-         .eq('agent_id', req.params.id)
-         .eq('user_id', req.user.id)
-         .order('created_at', { ascending: false })
+      const lessons = await drizzle
+         .select()
+         .from(schema.agentLessons)
+         .where(and(eq(schema.agentLessons.agentId, req.params.id), eq(schema.agentLessons.userId, req.user.id)))
+         .orderBy(desc(schema.agentLessons.createdAt))
          .limit(200);
-      if (error) throw error;
       res.json({ lessons });
    } catch {
       res.status(500).json({ error: "Failed to fetch lessons" });
@@ -914,12 +942,11 @@ router.post("/api/agents/:id/promote", authenticateUser, async (req: Authenticat
       // SECURITY: verify the caller owns the target agent before inserting
       // a directive against it. Without this, an attacker could promote a
       // lesson into another user's agent's directives.
-      const { data: ownedAgent } = await db
-        .from('wireline_agents')
-        .select('id')
-        .eq('id', agentId)
-        .eq('user_id', req.user.id)
-        .maybeSingle();
+      const [ownedAgent] = await drizzle
+        .select({ id: schema.agents.id })
+        .from(schema.agents)
+        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
+        .limit(1);
       if (!ownedAgent) return res.status(404).json({ error: "Agent not found" });
 
       // Validate content shape — keeps the directive within table limits.
@@ -932,18 +959,16 @@ router.post("/api/agents/:id/promote", authenticateUser, async (req: Authenticat
 
       // Insert into wireline_directives (the table that agent-config reads from).
       // Priority 5 = medium on the 1-10 scale used throughout the app.
-      const { error: promoError } = await db.from('wireline_directives').insert({
-         agent_id: agentId,
+      await drizzle.insert(schema.directives).values({
+         agentId: agentId,
          content: content.trim(),
          priority: 5,
-         user_id: req.user.id
+         userId: req.user.id
       });
-      if (promoError) throw promoError;
 
       // Delete the lesson after promotion — verify ownership first
-      await db.from('wireline_agent_lessons').delete()
-         .eq('id', lessonId)
-         .eq('user_id', req.user.id);
+      await drizzle.delete(schema.agentLessons)
+         .where(and(eq(schema.agentLessons.id, BigInt(lessonId)), eq(schema.agentLessons.userId, req.user.id)));
 
       // Track agent optimization when lessons are promoted to directives
       SentryEvents.agentOptimized({
@@ -959,9 +984,8 @@ router.post("/api/agents/:id/promote", authenticateUser, async (req: Authenticat
 
 router.delete("/api/agents/:id/lessons/:lessonId", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
    try {
-      await db.from('wireline_agent_lessons').delete()
-         .eq('id', req.params.lessonId)
-         .eq('user_id', req.user.id);
+      await drizzle.delete(schema.agentLessons)
+         .where(and(eq(schema.agentLessons.id, BigInt(req.params.lessonId)), eq(schema.agentLessons.userId, req.user.id)));
       res.json({ success: true });
    } catch {
       res.status(500).json({ error: "Delete failed" });
@@ -972,12 +996,11 @@ router.delete("/api/agents/:id/lessons/:lessonId", authenticateUser, async (req:
 router.post("/api/knowledge-gaps/:lessonId/promote", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { customContent } = req.body;
-    const { data: lesson } = await db
-      .from("wireline_agent_lessons")
-      .select("id, agent_id, lesson, user_id")
-      .eq("id", req.params.lessonId)
-      .eq("user_id", req.user.id)
-      .single();
+    const [lesson] = await drizzle
+      .select({ id: schema.agentLessons.id, agentId: schema.agentLessons.agentId, lesson: schema.agentLessons.lesson, userId: schema.agentLessons.userId })
+      .from(schema.agentLessons)
+      .where(and(eq(schema.agentLessons.id, BigInt(req.params.lessonId)), eq(schema.agentLessons.userId, req.user.id)))
+      .limit(1);
     if (!lesson) return res.status(404).json({ error: "Lesson not found." });
 
     const content =
@@ -991,12 +1014,12 @@ router.post("/api/knowledge-gaps/:lessonId/promote", authenticateUser, async (re
       return res.status(400).json({ error: "Content must be 2000 characters or less." });
     }
 
-    await db.from("wireline_knowledge").insert({
-      agent_id: lesson.agent_id,
-      user_id: req.user.id,
+    await drizzle.insert(schema.knowledge).values({
+      agentId: lesson.agentId,
+      userId: req.user.id,
       content,
     });
-    await db.from("wireline_agent_lessons").delete().eq("id", lesson.id);
+    await drizzle.delete(schema.agentLessons).where(eq(schema.agentLessons.id, BigInt(lesson.id)));
     res.json({ success: true });
   } catch (e) { claudeErr(res, e); }
 });
@@ -1009,39 +1032,45 @@ router.post("/api/claude/forge/create", authenticateUser, async (req: Authentica
 
     const agentId = `agent-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
-    const { error: agentErr } = await db.from("wireline_agents").insert({
-      id: agentId,
-      user_id: req.user.id,
-      name: design.name,
-      archetype: design.archetype || "Receptionist",
-      first_message: design.first_message || `Hi, this is ${design.name}. How can I help?`,
-      website_url: websiteUrl || null,
-      channel: "voice",
-    });
-    if (agentErr) throw agentErr;
+    try {
+      await drizzle.insert(schema.agents).values({
+        id: agentId,
+        userId: req.user.id,
+        name: design.name,
+        archetype: design.archetype || "Receptionist",
+        firstMessage: design.first_message || `Hi, this is ${design.name}. How can I help?`,
+        websiteUrl: websiteUrl || null,
+        channel: "voice",
+      });
+    } catch (e: any) {
+      throw e;
+    }
 
     if (design.personality_block) {
-      await db.from("wireline_personality").upsert({
-        agent_id: agentId,
-        user_id: req.user.id,
+      await drizzle.insert(schema.personality).values({
+        agentId: agentId,
+        userId: req.user.id,
         content: design.personality_block,
+      }).onConflictDoUpdate({
+        target: schema.personality.agentId,
+        set: { content: design.personality_block }
       });
     }
 
     const directiveRows = (design.directives || []).map((d: any) => ({
-      agent_id: agentId,
-      user_id: req.user.id,
+      agentId: agentId,
+      userId: req.user.id,
       content: d.content,
       priority: d.priority ?? 5,
     }));
-    if (directiveRows.length) await db.from("wireline_directives").insert(directiveRows);
+    if (directiveRows.length) await drizzle.insert(schema.directives).values(directiveRows);
 
     const knowledgeRows = (design.seed_knowledge || []).map((k: string) => ({
-      agent_id: agentId,
-      user_id: req.user.id,
+      agentId: agentId,
+      userId: req.user.id,
       content: k,
     }));
-    if (knowledgeRows.length) await db.from("wireline_knowledge").insert(knowledgeRows);
+    if (knowledgeRows.length) await drizzle.insert(schema.knowledge).values(knowledgeRows);
 
     res.json({ success: true, agentId });
   } catch (e) {

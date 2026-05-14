@@ -1,5 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { db, log, fetchWithTimeout } from "../lib/server-context";
+import { log, fetchWithTimeout, drizzle } from "../lib/server-context";
+import * as schema from "../db/schema";
+import { eq, and, sql, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage } from "../lib/server-utils";
 import * as rateLimiters from "../middleware/api-rate-limits";
@@ -18,8 +20,12 @@ const router = Router();
 // ==========================================
 router.get("/api/phone-numbers", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { data, error } = await db.from('wireline_phone_numbers').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false });
-    if (error) throw error;
+    const data = await drizzle
+      .select()
+      .from(schema.phoneNumbers)
+      .where(eq(schema.phoneNumbers.userId, req.user.id))
+      .orderBy(desc(schema.phoneNumbers.createdAt));
+    
     res.json({ numbers: data || [] });
   } catch {
     res.json({ numbers: [] });
@@ -29,7 +35,11 @@ router.get("/api/phone-numbers", authenticateUser, async (req: AuthenticatedRequ
 router.post("/api/phone-numbers", authenticateUser, rateLimiters.phoneNumberRateLimiter, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { phone_number, vapi_number_id } = req.body;
-    await db.from('wireline_phone_numbers').insert({ phone_number, vapi_number_id, user_id: req.user.id });
+    await drizzle.insert(schema.phoneNumbers).values({
+      phoneNumber: phone_number,
+      vapiNumberId: vapi_number_id,
+      userId: req.user.id
+    });
     res.json({ success: true });
   } catch {
     res.status(500).json({ error: "Failed to add phone number" });
@@ -40,21 +50,20 @@ router.patch("/api/phone-numbers/:id", authenticateUser, rateLimiters.phoneNumbe
   try {
     const { agent_id } = req.body;
 
-    // SECURITY: if assigning to an agent, verify it belongs to the caller.
-    // Without this, a user could route their inbound calls to another
-    // user's agent — billing/usage attribution would land on the agent
-    // owner, not the phone number owner.
     if (agent_id) {
-      const { data: agent } = await db
-        .from('wireline_agents')
-        .select('id')
-        .eq('id', agent_id)
-        .eq('user_id', req.user.id)
-        .maybeSingle();
+      const [agent] = await drizzle
+        .select({ id: schema.agents.id })
+        .from(schema.agents)
+        .where(and(eq(schema.agents.id, agent_id), eq(schema.agents.userId, req.user.id)))
+        .limit(1);
       if (!agent) return res.status(404).json({ error: "Agent not found" });
     }
 
-    await db.from('wireline_phone_numbers').update({ agent_id }).eq('id', req.params.id).eq('user_id', req.user.id);
+    await drizzle
+      .update(schema.phoneNumbers)
+      .set({ agentId: agent_id })
+      .where(and(eq(schema.phoneNumbers.id, BigInt(req.params.id)), eq(schema.phoneNumbers.userId, req.user.id)));
+    
     res.json({ success: true });
   } catch (error: any) {
     log.error("Failed to update phone number assignment", { error: getErrorMessage(error) });
@@ -64,11 +73,10 @@ router.patch("/api/phone-numbers/:id", authenticateUser, rateLimiters.phoneNumbe
 
 router.delete("/api/phone-numbers/:id", authenticateUser, rateLimiters.phoneNumberRateLimiter, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { error } = await db.from('wireline_phone_numbers')
-      .delete()
-      .eq('id', req.params.id)
-      .eq('user_id', req.user.id);
-    if (error) throw error;
+    await drizzle
+      .delete(schema.phoneNumbers)
+      .where(and(eq(schema.phoneNumbers.id, BigInt(req.params.id)), eq(schema.phoneNumbers.userId, req.user.id)));
+    
     res.json({ success: true });
   } catch (error: any) {
     log.error("Failed to delete phone number", { error: getErrorMessage(error) });

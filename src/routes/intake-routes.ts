@@ -1,6 +1,8 @@
 import express, { Request, Response } from "express";
 import type { AuthenticatedRequest } from "../types/auth";
-import { db, log, auditLogger } from "../lib/server-context";
+import { log, auditLogger, drizzle } from "../lib/server-context";
+import * as schema from "../db/schema";
+import { eq, and, sql, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage } from "../lib/server-utils";
 import { dispatchWebhook } from "../lib/webhook-helpers";
@@ -38,12 +40,22 @@ interface IntakeKey {
 async function resolveIntakeKey(provided: string | undefined): Promise<IntakeKey | null> {
   if (!provided || typeof provided !== "string" || !provided.startsWith(INTAKE_KEY_PREFIX)) return null;
   const hash = await sha256Hex(provided.trim());
-  const { data } = await db.from("wireline_intake_keys")
-    .select("id, user_id, name, default_agent_id, active, use_count, auto_dial")
-    .eq("key_hash", hash)
-    .maybeSingle();
+  const [data] = await drizzle
+    .select({
+      id: schema.intakeKeys.id,
+      user_id: schema.intakeKeys.userId,
+      name: schema.intakeKeys.name,
+      default_agent_id: schema.intakeKeys.defaultAgentId,
+      active: schema.intakeKeys.active,
+      use_count: schema.intakeKeys.useCount,
+      auto_dial: schema.intakeKeys.autoDial
+    })
+    .from(schema.intakeKeys)
+    .where(eq(schema.intakeKeys.keyHash, hash))
+    .limit(1);
+  
   if (!data || !data.active) return null;
-  return data;
+  return data as any;
 }
 
 // Per-key distributed rate limit. Public endpoint, so a single noisy
@@ -151,52 +163,69 @@ async function processIntakeLead(key: IntakeKey, input: IntakeLeadInput, idemHea
   const idemKeyTrimmed = idemKey ? String(idemKey).trim().slice(0, 255) : null;
 
   if (idemKeyTrimmed) {
-    const { data: existing } = await db.from("wireline_outbound_leads")
-      .select("id, call_id, status")
-      .eq("user_id", key.user_id)
-      .eq("idempotency_key", idemKeyTrimmed)
-      .maybeSingle();
+    const [existing] = await drizzle
+      .select({ id: schema.outboundLeads.id, callId: schema.outboundLeads.callId, status: schema.outboundLeads.status })
+      .from(schema.outboundLeads)
+      .where(
+        and(
+          eq(schema.outboundLeads.userId, key.user_id),
+          eq(schema.outboundLeads.idempotencyKey, idemKeyTrimmed)
+        )
+      )
+      .limit(1);
+
     if (existing) {
       return {
         ok: true,
-        lead_id: existing.id,
+        lead_id: Number(existing.id),
         idempotent_replay: true,
-        status: existing.status,
-        call_id: existing.call_id,
+        status: existing.status ?? undefined,
+        call_id: existing.callId,
         auto_dial_initiated: false,
       };
     }
   }
 
-  const nowIso = new Date().toISOString();
-  const { data: inserted, error } = await db.from("wireline_outbound_leads").insert({
-    user_id: key.user_id,
-    agent_id,
-    customer_name: customer_name || null,
-    customer_number,
-    phone_number: customer_number,
-    context: context || null,
-    status: "Pending",
-    source: "inbound",
-    metadata,
-    received_at: nowIso,
-    idempotency_key: idemKeyTrimmed,
-  }).select("id").single();
-
-  if (error) {
+  const now = new Date();
+  let insertedId: bigint | undefined;
+  try {
+    const [inserted] = await drizzle
+      .insert(schema.outboundLeads)
+      .values({
+        userId: key.user_id,
+        agentId: agent_id,
+        customerName: customer_name || null,
+        customerNumber: customer_number,
+        phoneNumber: customer_number,
+        context: context || null,
+        status: "Pending",
+        source: "inbound",
+        metadata: metadata as any,
+        receivedAt: now,
+        idempotencyKey: idemKeyTrimmed,
+      })
+      .returning({ id: schema.outboundLeads.id });
+    insertedId = inserted.id;
+  } catch (error: any) {
     if (idemKeyTrimmed && (error.code === "23505" || /duplicate key/i.test(error.message || ""))) {
-      const { data: replay } = await db.from("wireline_outbound_leads")
-        .select("id, call_id, status")
-        .eq("user_id", key.user_id)
-        .eq("idempotency_key", idemKeyTrimmed)
-        .maybeSingle();
+      const [replay] = await drizzle
+        .select({ id: schema.outboundLeads.id, callId: schema.outboundLeads.callId, status: schema.outboundLeads.status })
+        .from(schema.outboundLeads)
+        .where(
+          and(
+            eq(schema.outboundLeads.userId, key.user_id),
+            eq(schema.outboundLeads.idempotencyKey, idemKeyTrimmed)
+          )
+        )
+        .limit(1);
+      
       if (replay) {
         return {
           ok: true,
-          lead_id: replay.id,
+          lead_id: Number(replay.id),
           idempotent_replay: true,
-          status: replay.status,
-          call_id: replay.call_id,
+          status: replay.status ?? undefined,
+          call_id: replay.callId,
           auto_dial_initiated: false,
         };
       }
@@ -205,7 +234,7 @@ async function processIntakeLead(key: IntakeKey, input: IntakeLeadInput, idemHea
   }
 
   dispatchWebhook(key.user_id, "lead.received", {
-    lead_id: inserted?.id,
+    lead_id: insertedId ? Number(insertedId) : undefined,
     customer_name: customer_name || null,
     customer_number,
     context: context || null,
@@ -213,7 +242,7 @@ async function processIntakeLead(key: IntakeKey, input: IntakeLeadInput, idemHea
     agent_id,
     intake_key: { id: key.id, name: key.name },
     auto_dial: !!key.auto_dial && !!agent_id,
-    at: nowIso,
+    at: now.toISOString(),
   }).catch((err) =>
     log.warn("lead.received webhook dispatch failed", {
       user_id: key.user_id,
@@ -222,7 +251,7 @@ async function processIntakeLead(key: IntakeKey, input: IntakeLeadInput, idemHea
   );
 
   let auto_dial_initiated = false;
-  if (key.auto_dial && agent_id && inserted?.id) {
+  if (key.auto_dial && agent_id && insertedId) {
     auto_dial_initiated = true;
     (async () => {
       try {
@@ -234,31 +263,40 @@ async function processIntakeLead(key: IntakeKey, input: IntakeLeadInput, idemHea
           context: context || `Inbound lead via ${key.name}`,
         });
         if (result.ok) {
-          await db.from("wireline_outbound_leads").update({
-            call_id: result.callId,
-            status: "Dialing",
-            last_called_at: new Date().toISOString(),
-          }).eq("id", inserted.id);
+          await drizzle
+            .update(schema.outboundLeads)
+            .set({
+              callId: result.callId,
+              status: "Dialing",
+              lastCalledAt: new Date(),
+            })
+            .where(eq(schema.outboundLeads.id, insertedId!));
         } else {
-          await db.from("wireline_outbound_leads").update({
-            status: "AutoDialFailed",
-            metadata: { ...(metadata || {}), auto_dial_error: result.error, auto_dial_status: result.status },
-          }).eq("id", inserted.id);
-          log.warn("Auto-dial failed for lead", { leadId: inserted.id, status: result.status, error: result.error });
+          await drizzle
+            .update(schema.outboundLeads)
+            .set({
+              status: "AutoDialFailed",
+              metadata: { ...(metadata || {}), auto_dial_error: result.error, auto_dial_status: result.status } as any,
+            })
+            .where(eq(schema.outboundLeads.id, insertedId!));
+          log.warn("Auto-dial failed for lead", { leadId: insertedId, status: result.status, error: result.error });
         }
       } catch (err: any) {
-        await db.from("wireline_outbound_leads").update({
-          status: "AutoDialFailed",
-          metadata: { ...(metadata || {}), auto_dial_error: getErrorMessage(err) },
-        }).eq("id", inserted.id);
-        log.warn("Auto-dial threw for lead", { leadId: inserted.id, error: getErrorMessage(err) });
+        await drizzle
+          .update(schema.outboundLeads)
+          .set({
+            status: "AutoDialFailed",
+            metadata: { ...(metadata || {}), auto_dial_error: getErrorMessage(err) } as any,
+          })
+          .where(eq(schema.outboundLeads.id, insertedId!));
+        log.warn("Auto-dial threw for lead", { leadId: insertedId, error: getErrorMessage(err) });
       }
     })();
   }
 
   return {
     ok: true,
-    lead_id: inserted?.id,
+    lead_id: insertedId ? Number(insertedId) : undefined,
     idempotent_replay: false,
     auto_dial_initiated,
   };
@@ -286,11 +324,14 @@ router.post("/lead", async (req: Request, res: Response) => {
 
     if (result.ok) {
       if (!result.idempotent_replay) {
-        const nowIso = new Date().toISOString();
-        db.from("wireline_intake_keys").update({
-          last_used_at: nowIso,
-          use_count: (key.use_count || 0) + 1,
-        }).eq("id", key.id).then(() => {}, () => {});
+        drizzle
+          .update(schema.intakeKeys)
+          .set({
+            lastUsedAt: new Date(),
+            useCount: (key.use_count || 0) + 1,
+          })
+          .where(eq(schema.intakeKeys.id, key.id))
+          .then(() => {}, () => {});
       }
       return res.json(result);
     }
@@ -349,11 +390,14 @@ router.post("/leads", async (req: Request, res: Response) => {
 
     const successes = results.filter(r => r.ok).length;
     if (successes > 0) {
-      const nowIso = new Date().toISOString();
-      db.from("wireline_intake_keys").update({
-        last_used_at: nowIso,
-        use_count: (key.use_count || 0) + successes,
-      }).eq("id", key.id).then(() => {}, () => {});
+      drizzle
+        .update(schema.intakeKeys)
+        .set({
+          lastUsedAt: new Date(),
+          useCount: (key.use_count || 0) + successes,
+        })
+        .where(eq(schema.intakeKeys.id, key.id))
+        .then(() => {}, () => {});
     }
 
     res.json({
@@ -372,11 +416,21 @@ router.post("/leads", async (req: Request, res: Response) => {
 // GET /keys — list intake keys for the authenticated user
 router.get("/keys", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { data, error } = await db.from("wireline_intake_keys")
-      .select("id, name, key_prefix, default_agent_id, auto_dial, active, last_used_at, use_count, created_at")
-      .eq("user_id", req.user.id)
-      .order("created_at", { ascending: false });
-    if (error) throw error;
+    const data = await drizzle
+      .select({
+        id: schema.intakeKeys.id,
+        name: schema.intakeKeys.name,
+        key_prefix: schema.intakeKeys.keyPrefix,
+        default_agent_id: schema.intakeKeys.defaultAgentId,
+        auto_dial: schema.intakeKeys.autoDial,
+        active: schema.intakeKeys.active,
+        last_used_at: schema.intakeKeys.lastUsedAt,
+        use_count: schema.intakeKeys.useCount,
+        created_at: schema.intakeKeys.createdAt
+      })
+      .from(schema.intakeKeys)
+      .where(eq(schema.intakeKeys.userId, req.user.id))
+      .orderBy(desc(schema.intakeKeys.createdAt));
     res.json({ keys: data || [] });
   } catch (e: any) { log.error("Failed to load keys", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load keys" }); }
 });
@@ -390,16 +444,27 @@ router.post("/keys", authenticateUser, async (req: AuthenticatedRequest, res: Re
     const auto_dial = !!req.body?.auto_dial;
 
     const { plaintext, prefix, hash } = await generateIntakeKey();
-    const { data, error } = await db.from("wireline_intake_keys").insert({
-      user_id: req.user.id,
-      name: name.slice(0, 80),
-      key_prefix: prefix,
-      key_hash: hash,
-      default_agent_id,
-      auto_dial,
-      active: true,
-    }).select("id, name, key_prefix, default_agent_id, auto_dial, active, created_at").single();
-    if (error) throw error;
+    const [data] = await drizzle
+      .insert(schema.intakeKeys)
+      .values({
+        userId: req.user.id,
+        name: name.slice(0, 80),
+        keyPrefix: prefix,
+        keyHash: hash,
+        defaultAgentId: default_agent_id,
+        autoDial: auto_dial,
+        active: true,
+      })
+      .returning({
+        id: schema.intakeKeys.id,
+        name: schema.intakeKeys.name,
+        key_prefix: schema.intakeKeys.keyPrefix,
+        default_agent_id: schema.intakeKeys.defaultAgentId,
+        auto_dial: schema.intakeKeys.autoDial,
+        active: schema.intakeKeys.active,
+        created_at: schema.intakeKeys.createdAt
+      });
+
     void auditLogger.logIntakeKey('created', {
       userId: req.user.id, keyId: data.id, keyPrefix: data.key_prefix, keyName: data.name, ip: req.ip,
     }).catch(() => {});
@@ -410,15 +475,28 @@ router.post("/keys", authenticateUser, async (req: AuthenticatedRequest, res: Re
 // PATCH /keys/:id — update an intake key
 router.patch("/keys/:id", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const patch: Record<string, unknown> = {};
+    const patch: any = {};
     if (req.body?.name !== undefined) patch.name = String(req.body.name).slice(0, 80);
     if (req.body?.active !== undefined) patch.active = !!req.body.active;
-    if (req.body?.default_agent_id !== undefined) patch.default_agent_id = req.body.default_agent_id || null;
-    if (req.body?.auto_dial !== undefined) patch.auto_dial = !!req.body.auto_dial;
-    const { data, error } = await db.from("wireline_intake_keys").update(patch)
-      .eq("id", req.params.id).eq("user_id", req.user.id)
-      .select("id, name, key_prefix, default_agent_id, auto_dial, active, last_used_at, use_count, created_at").single();
-    if (error) throw error;
+    if (req.body?.default_agent_id !== undefined) patch.defaultAgentId = req.body.default_agent_id || null;
+    if (req.body?.auto_dial !== undefined) patch.autoDial = !!req.body.auto_dial;
+    
+    const [data] = await drizzle
+      .update(schema.intakeKeys)
+      .set(patch)
+      .where(and(eq(schema.intakeKeys.id, req.params.id), eq(schema.intakeKeys.userId, req.user.id)))
+      .returning({
+        id: schema.intakeKeys.id,
+        name: schema.intakeKeys.name,
+        key_prefix: schema.intakeKeys.keyPrefix,
+        default_agent_id: schema.intakeKeys.defaultAgentId,
+        auto_dial: schema.intakeKeys.autoDial,
+        active: schema.intakeKeys.active,
+        last_used_at: schema.intakeKeys.lastUsedAt,
+        use_count: schema.intakeKeys.useCount,
+        created_at: schema.intakeKeys.createdAt
+      });
+
     void auditLogger.logIntakeKey('updated', {
       userId: req.user.id, keyId: data.id, keyPrefix: data.key_prefix, keyName: data.name, ip: req.ip,
     }).catch(() => {});
@@ -429,7 +507,10 @@ router.patch("/keys/:id", authenticateUser, async (req: AuthenticatedRequest, re
 // DELETE /keys/:id — delete an intake key
 router.delete("/keys/:id", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    await db.from("wireline_intake_keys").delete().eq("id", req.params.id).eq("user_id", req.user.id);
+    await drizzle
+      .delete(schema.intakeKeys)
+      .where(and(eq(schema.intakeKeys.id, req.params.id), eq(schema.intakeKeys.userId, req.user.id)));
+    
     void auditLogger.logIntakeKey('deleted', {
       userId: req.user.id, keyId: req.params.id, ip: req.ip,
     }).catch(() => {});

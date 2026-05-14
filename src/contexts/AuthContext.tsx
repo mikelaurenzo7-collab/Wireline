@@ -1,12 +1,23 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { User, Session } from "@supabase/supabase-js";
-import { supabase } from "../lib/supabase";
+
+export interface User {
+  id: string;
+  email: string;
+  full_name?: string;
+  role?: string;
+}
+
+export interface Session {
+  access_token: string;
+  user: User;
+}
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  signIn: (session: Session) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -14,6 +25,7 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   loading: true,
   signOut: async () => {},
+  signIn: () => {},
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -22,31 +34,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    // Listen for changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
+    // Initial load from local storage
+    const stored = localStorage.getItem("wireline_session");
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored) as Session;
+        setSession(parsed);
+        setUser(parsed.user);
+      } catch (e) {
+        localStorage.removeItem("wireline_session");
+      }
+    }
+    setLoading(false);
   }, []);
 
+  const signIn = (newSession: Session) => {
+    localStorage.setItem("wireline_session", JSON.stringify(newSession));
+    setSession(newSession);
+    setUser(newSession.user);
+  };
+
   const signOut = async () => {
-    await supabase.auth.signOut();
+    localStorage.removeItem("wireline_session");
+    setSession(null);
+    setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signOut, signIn }}>
       {children}
     </AuthContext.Provider>
   );

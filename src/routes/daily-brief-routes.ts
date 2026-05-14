@@ -1,5 +1,7 @@
 import { Router, Response } from "express";
-import { db, log } from "../lib/server-context";
+import { log, drizzle } from "../lib/server-context";
+import * as schema from "../db/schema";
+import { eq, and, sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { sendDailyBriefEmail } from "../lib/daily-brief";
 import { getErrorMessage } from "../lib/server-utils";
@@ -10,21 +12,34 @@ const router = Router();
 // Settings: GET / PUT for the daily-brief schedule.
 router.get("/api/daily-brief/settings", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { data } = await db.from("wireline_settings")
-      .select("daily_brief_enabled, daily_brief_send_at, daily_brief_recipient, daily_brief_last_sent_at, daily_brief_last_error")
-      .eq("user_id", req.user.id).maybeSingle();
-    const { data: accounts } = await db.from("wireline_email_accounts")
-      .select("email_address").eq("user_id", req.user.id).limit(1);
+    const [settings] = await drizzle
+      .select({
+        dailyBriefEnabled: schema.settings.dailyBriefEnabled,
+        dailyBriefSendAt: schema.settings.dailyBriefSendAt,
+        dailyBriefRecipient: schema.settings.dailyBriefRecipient,
+        dailyBriefLastSentAt: schema.settings.dailyBriefLastSentAt,
+        dailyBriefLastError: schema.settings.dailyBriefLastError
+      })
+      .from(schema.settings)
+      .where(eq(schema.settings.userId, req.user.id))
+      .limit(1);
+
+    const accounts = await drizzle
+      .select({ emailAddress: schema.emailAccounts.emailAddress })
+      .from(schema.emailAccounts)
+      .where(eq(schema.emailAccounts.userId, req.user.id))
+      .limit(1);
+
     res.json({
       settings: {
-        enabled: !!data?.daily_brief_enabled,
-        send_at: data?.daily_brief_send_at || "13:00",
-        recipient: data?.daily_brief_recipient || req.user.email || null,
-        last_sent_at: data?.daily_brief_last_sent_at || null,
-        last_error: data?.daily_brief_last_error || null,
+        enabled: !!settings?.dailyBriefEnabled,
+        send_at: settings?.dailyBriefSendAt || "13:00",
+        recipient: settings?.dailyBriefRecipient || req.user.email || null,
+        last_sent_at: settings?.dailyBriefLastSentAt || null,
+        last_error: settings?.dailyBriefLastError || null,
       },
-      gmail_connected: !!accounts?.[0]?.email_address,
-      gmail_address: accounts?.[0]?.email_address || null,
+      gmail_connected: !!accounts?.[0]?.emailAddress,
+      gmail_address: accounts?.[0]?.emailAddress || null,
     });
   } catch (e: any) {
     log.error("Failed to load settings", { error: getErrorMessage(e) });
@@ -42,12 +57,22 @@ router.put("/api/daily-brief/settings", authenticateUser, async (req: Authentica
     const recipient = (req.body?.recipient || "").toString().trim() || null;
     if (recipient && !/^\S+@\S+\.\S+$/.test(recipient)) return res.status(400).json({ error: "recipient must be a valid email." });
 
-    await db.from("wireline_settings").upsert({
-      user_id: req.user.id,
-      daily_brief_enabled: enabled,
-      daily_brief_send_at: send_at,
-      daily_brief_recipient: recipient,
-    }, { onConflict: "user_id" });
+    await drizzle
+      .insert(schema.settings)
+      .values({
+        userId: req.user.id,
+        dailyBriefEnabled: enabled,
+        dailyBriefSendAt: send_at,
+        dailyBriefRecipient: recipient,
+      })
+      .onConflictDoUpdate({
+        target: schema.settings.userId,
+        set: {
+          dailyBriefEnabled: enabled,
+          dailyBriefSendAt: send_at,
+          dailyBriefRecipient: recipient,
+        }
+      });
 
     res.json({ success: true });
   } catch (e: any) {

@@ -1,16 +1,6 @@
-// src/lib/audit-routes.ts
-//
-// Extracted Express handlers for the /api/audit/* endpoints. Living
-// in their own module so we can unit-test them against an in-memory
-// Supabase mock without dragging in the entire 11k-line server.ts.
-//
-// The handlers expect `req.user.id` to already be populated by the
-// authenticateUser middleware that's applied at registration time in
-// server.ts. The shape of `db` matches the @supabase/supabase-js
-// client (only the chain methods we actually call are exercised, so
-// tests can hand-roll a tiny stub).
-
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { VercelPostgresDatabase } from 'drizzle-orm/vercel-postgres';
+import * as schema from '../db/schema';
+import { eq, and, or, ilike, gte, lte, desc, inArray, sql } from 'drizzle-orm';
 import type { AuditLogger } from './audit-logger';
 
 export interface AuditRoutesLogger {
@@ -18,7 +8,7 @@ export interface AuditRoutesLogger {
 }
 
 export interface AuditRoutesDeps {
-  db: SupabaseClient;
+  drizzle: VercelPostgresDatabase<typeof schema>;
   auditLogger: Pick<AuditLogger, 'logDataOperation'>;
   log: AuditRoutesLogger;
 }
@@ -33,24 +23,11 @@ export interface AuditFilterInput {
   days?: number;
 }
 
-// Allow-list pattern for event_type values: lowercase alnum, dot,
-// underscore, hyphen. Anything else is dropped before we feed it to the
-// PostgREST `or` filter syntax — otherwise a malicious category name
-// could inject extra clauses (e.g. `,user_id.neq.<uuid>`).
 const EVENT_TYPE_TOKEN = /^[a-z0-9_.-]+$/i;
 
-/**
- * Apply the standard audit filter set to a PostgREST query builder.
- *
- * `event_type` accepts either a fully-qualified type (`agent.created`)
- * or a category prefix (`agent`, `auth`, `security`, …). Anything
- * without a dot is treated as a prefix and matched with
- * `event_type ilike 'prefix.%'` so the UI's category chips actually
- * filter. Mixed inputs (some prefixes, some concrete) are supported in
- * a single `or` clause.
- */
-export function applyAuditFilters(query: any, filters: AuditFilterInput): any {
+export function buildAuditFilters(userId: string, filters: AuditFilterInput) {
   const { event_type, severity, resource_type, start_date, end_date, search, days } = filters;
+  const clauses: any[] = [eq(schema.auditLog.userId, userId)];
 
   if (event_type !== undefined && event_type !== null && event_type !== '') {
     const raw = Array.isArray(event_type) ? event_type : [event_type];
@@ -62,18 +39,13 @@ export function applyAuditFilters(query: any, filters: AuditFilterInput): any {
       if (s.includes('.')) types.push(s);
       else prefixes.push(s);
     }
-    if (types.length && prefixes.length) {
-      const clauses = [
-        ...types.map((t) => `event_type.eq.${t}`),
-        ...prefixes.map((p) => `event_type.ilike.${p}.%`),
-      ];
-      query = query.or(clauses.join(','));
-    } else if (types.length) {
-      query = query.in('event_type', types);
-    } else if (prefixes.length) {
-      const clauses = prefixes.map((p) => `event_type.ilike.${p}.%`);
-      query = query.or(clauses.join(','));
+    
+    const typeClauses = [];
+    if (types.length) typeClauses.push(inArray(schema.auditLog.eventType, types));
+    if (prefixes.length) {
+      prefixes.forEach(p => typeClauses.push(ilike(schema.auditLog.eventType, `${p}.%`)));
     }
+    if (typeClauses.length) clauses.push(or(...typeClauses));
   }
 
   if (severity !== undefined && severity !== null && severity !== '') {
@@ -81,40 +53,34 @@ export function applyAuditFilters(query: any, filters: AuditFilterInput): any {
     const clean = severities
       .map((s) => String(s).trim())
       .filter((s) => /^[a-z]+$/i.test(s));
-    if (clean.length) query = query.in('severity', clean);
+    if (clean.length) clauses.push(inArray(schema.auditLog.severity, clean));
   }
 
   if (resource_type) {
-    query = query.eq('resource_type', String(resource_type));
+    clauses.push(eq(schema.auditLog.resourceType, String(resource_type)));
   }
 
   if (start_date) {
-    query = query.gte('created_at', String(start_date));
+    clauses.push(gte(schema.auditLog.createdAt, new Date(String(start_date))));
   } else if (days) {
     const since = new Date();
     since.setDate(since.getDate() - days);
-    query = query.gte('created_at', since.toISOString());
+    clauses.push(gte(schema.auditLog.createdAt, since));
   }
   if (end_date) {
-    query = query.lte('created_at', String(end_date));
+    clauses.push(lte(schema.auditLog.createdAt, new Date(String(end_date))));
   }
 
   if (search) {
-    // Escape LIKE metacharacters so an `_` or `%` in the search term
-    // doesn't expand to unbounded wildcards. Order matters: escape the
-    // backslash itself FIRST, otherwise the replacement we add for `%`
-    // and `_` would be re-doubled by a second pass. Also strip the few
-    // characters PostgREST's `or` syntax treats specially.
-    const sanitized = String(search)
-      .replace(/\\/g, '\\\\')
-      .replace(/[%_]/g, '\\$&')
-      .replace(/[,()]/g, '');
-    query = query.or(
-      `action.ilike.%${sanitized}%,actor_email.ilike.%${sanitized}%,resource_id.ilike.%${sanitized}%`,
-    );
+    const sanitized = String(search).replace(/[%_]/g, '\\$&');
+    clauses.push(or(
+      ilike(schema.auditLog.action, `%${sanitized}%`),
+      ilike(schema.auditLog.actorEmail, `%${sanitized}%`),
+      ilike(schema.auditLog.resourceId, `%${sanitized}%`)
+    ));
   }
 
-  return query;
+  return and(...clauses);
 }
 
 function parseDays(daysParam: unknown, fallback: number): number {
@@ -124,7 +90,7 @@ function parseDays(daysParam: unknown, fallback: number): number {
 }
 
 export function createAuditEventsHandler(deps: AuditRoutesDeps) {
-  const { db, log } = deps;
+  const { drizzle, log } = deps;
   return async function auditEventsHandler(req: any, res: any) {
     const userId = req.user.id;
     const {
@@ -149,14 +115,7 @@ export function createAuditEventsHandler(deps: AuditRoutesDeps) {
     const offset = Math.max(offsetRaw, 0);
 
     try {
-      let query = db
-        .from('wireline_audit_log')
-        .select('*', { count: 'exact' })
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .range(offset, offset + limit - 1);
-
-      query = applyAuditFilters(query, {
+      const filters = buildAuditFilters(userId, {
         event_type,
         severity,
         resource_type,
@@ -166,8 +125,20 @@ export function createAuditEventsHandler(deps: AuditRoutesDeps) {
         days,
       });
 
-      const { data, error, count } = await query;
-      if (error) throw error;
+      const [countRes] = await drizzle
+        .select({ count: sql`count(*)` })
+        .from(schema.auditLog)
+        .where(filters);
+      
+      const count = Number(countRes.count);
+
+      const data = await drizzle
+        .select()
+        .from(schema.auditLog)
+        .where(filters)
+        .orderBy(desc(schema.auditLog.createdAt))
+        .limit(limit)
+        .offset(offset);
 
       res.json({
         events: data || [],
@@ -189,7 +160,7 @@ export function createAuditEventsHandler(deps: AuditRoutesDeps) {
 }
 
 export function createAuditStatsHandler(deps: AuditRoutesDeps) {
-  const { db, log } = deps;
+  const { drizzle, log } = deps;
   return async function auditStatsHandler(req: any, res: any) {
     const userId = req.user.id;
     const { days: daysParam = '30' } = req.query;
@@ -202,14 +173,11 @@ export function createAuditStatsHandler(deps: AuditRoutesDeps) {
       const since = new Date();
       since.setDate(since.getDate() - days);
 
-      const { data, error } = await db
-        .from('wireline_audit_log')
-        .select('*')
-        .eq('user_id', userId)
-        .gte('created_at', since.toISOString());
-      if (error) throw error;
+      const events = await drizzle
+        .select()
+        .from(schema.auditLog)
+        .where(and(eq(schema.auditLog.userId, userId), gte(schema.auditLog.createdAt, since)));
 
-      const events = data || [];
       const bySeverity: Record<string, number> = {};
       const byType: Record<string, number> = {};
       let totalCost = 0;
@@ -219,19 +187,14 @@ export function createAuditStatsHandler(deps: AuditRoutesDeps) {
         const sev = event.severity || 'info';
         bySeverity[sev] = (bySeverity[sev] || 0) + 1;
 
-        const type = event.event_type || event.action || 'unknown';
+        const type = event.eventType || event.action || 'unknown';
         byType[type] = (byType[type] || 0) + 1;
 
-        if (event.cost_usd) {
-          const parsed = parseFloat(String(event.cost_usd));
+        if (event.costUsd) {
+          const parsed = parseFloat(String(event.costUsd));
           if (!isNaN(parsed)) totalCost += parsed;
         }
 
-        // Count API / AI usage. We treat anything in the `ai.*`
-        // namespace (legacy `ai.api_call` rows from the AI-spend
-        // pipeline) OR the newer `api.*` namespace
-        // (`api.webhook_sent`, `api.intake_received`, …) as API/AI
-        // usage so the dashboard tile matches the actual cost figure.
         if (typeof type === 'string' && (type.startsWith('api.') || type.startsWith('ai.'))) {
           apiCalls++;
         }
@@ -261,8 +224,6 @@ export function createAuditStatsHandler(deps: AuditRoutesDeps) {
 function sanitizeCSV(val: any): string {
   if (val === null || val === undefined) return '';
   const str = String(val);
-  // Prevent CSV formula injection — prefix dangerous leading
-  // characters with a single quote so spreadsheets render them as text.
   if (str.match(/^[=@+-]/)) {
     return `"'${str.replace(/"/g, '""')}"`;
   }
@@ -270,7 +231,7 @@ function sanitizeCSV(val: any): string {
 }
 
 export function createAuditExportHandler(deps: AuditRoutesDeps) {
-  const { db, auditLogger, log } = deps;
+  const { drizzle, auditLogger, log } = deps;
   return async function auditExportHandler(req: any, res: any) {
     const userId = req.user.id;
     const {
@@ -290,13 +251,7 @@ export function createAuditExportHandler(deps: AuditRoutesDeps) {
     }
 
     try {
-      let query = db
-        .from('wireline_audit_log')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-      query = applyAuditFilters(query, {
+      const filters = buildAuditFilters(userId, {
         event_type,
         severity,
         resource_type,
@@ -306,10 +261,12 @@ export function createAuditExportHandler(deps: AuditRoutesDeps) {
         days,
       });
 
-      const { data, error } = await query;
-      if (error) throw error;
+      const data = await drizzle
+        .select()
+        .from(schema.auditLog)
+        .where(filters)
+        .orderBy(desc(schema.auditLog.createdAt));
 
-      // Audit the export itself — non-blocking.
       void auditLogger
         .logDataOperation('export', {
           userId,
@@ -317,7 +274,7 @@ export function createAuditExportHandler(deps: AuditRoutesDeps) {
           recordCount: data?.length || 0,
           ip: req.ip,
         })
-        .catch(() => {/* logger already records its own failures */});
+        .catch(() => {});
 
       if (format === 'json') {
         res.setHeader('Content-Type', 'application/json');
@@ -331,9 +288,9 @@ export function createAuditExportHandler(deps: AuditRoutesDeps) {
 
       const events = data || [];
       const headers = [
-        'created_at', 'event_type', 'severity', 'action',
-        'actor_email', 'resource_type', 'resource_id',
-        'ip_address', 'cost_usd', 'latency_ms',
+        'createdAt', 'eventType', 'severity', 'action',
+        'actorEmail', 'resourceType', 'resourceId',
+        'ipAddress', 'costUsd', 'latencyMs',
       ];
       const csvRows = [headers.join(',')];
       for (const event of events) {

@@ -1,5 +1,7 @@
 import Stripe from 'stripe';
-import { db, log, auditLogger } from './server-context';
+import { drizzle, log, auditLogger } from './server-context';
+import * as schema from "../db/schema";
+import { eq } from "drizzle-orm";
 import { getErrorMessage } from './server-utils';
 import { planByPriceId } from './plan-catalog';
 import { dispatchWebhook } from './webhook-helpers';
@@ -17,18 +19,18 @@ export function stripeAvailable(): boolean {
 export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
   const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer.id;
 
-  const { data: existing } = await db
-    .from('wireline_subscriptions')
-    .select('user_id, status')
-    .eq('stripe_customer_id', customerId)
-    .maybeSingle();
+  const [existing] = await drizzle
+    .select({ userId: schema.subscriptions.userId, status: schema.subscriptions.status })
+    .from(schema.subscriptions)
+    .where(eq(schema.subscriptions.stripeCustomerId, customerId))
+    .limit(1);
 
-  if (!existing?.user_id) {
+  if (!existing?.userId) {
     log.warn('Stripe sync: no subscription row for customer — skipping mirror', { customerId });
     return;
   }
 
-  const userId = existing.user_id;
+  const userId = existing.userId;
   const priceId = sub.items?.data?.[0]?.price?.id || null;
   const plan = planByPriceId(priceId);
   const stripeStatus = sub.status;
@@ -44,34 +46,41 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
     ? new Date(sub.current_period_end * 1000).toISOString()
     : null;
 
-  const upsertPatch: Record<string, unknown> = {
-    user_id: userId,
-    stripe_customer_id: customerId,
-    stripe_subscription_id: sub.id,
+  await drizzle.insert(schema.subscriptions).values({
+    userId: userId,
+    stripeCustomerId: customerId,
+    stripeSubscriptionId: sub.id,
     plan: plan?.id ?? null,
     status: stripeStatus,
-    current_period_end: currentPeriodEndIso,
-    cancel_at_period_end: !!sub.cancel_at_period_end,
-    updated_at: new Date().toISOString(),
-  };
+    currentPeriodEnd: currentPeriodEndIso ? new Date(currentPeriodEndIso) : null,
+    cancelAtPeriodEnd: !!sub.cancel_at_period_end,
+    updatedAt: new Date(),
+  }).onConflictDoUpdate({
+    target: [schema.subscriptions.userId],
+    set: {
+      stripeCustomerId: customerId,
+      stripeSubscriptionId: sub.id,
+      plan: plan?.id ?? null,
+      status: stripeStatus,
+      currentPeriodEnd: currentPeriodEndIso ? new Date(currentPeriodEndIso) : null,
+      cancelAtPeriodEnd: !!sub.cancel_at_period_end,
+      updatedAt: new Date(),
+    }
+  });
 
-  const { error } = await db
-    .from('wireline_subscriptions')
-    .upsert(upsertPatch, { onConflict: 'user_id' });
-
-  if (error) {
-    log.error('Stripe mirror upsert failed', { userId, error: error.message });
-    throw error;
-  }
-
-  const settingsUpsert: Record<string, unknown> = {
-    user_id: userId,
-    subscription_status: localStatus,
-    max_agents: plan?.max_agents ?? 3,
-    updated_at: new Date().toISOString(),
-  };
-
-  await db.from('wireline_settings').upsert(settingsUpsert, { onConflict: 'user_id' });
+  await drizzle.insert(schema.settings).values({
+    userId: userId,
+    subscriptionStatus: localStatus,
+    maxAgents: plan?.max_agents ?? 3,
+    updatedAt: new Date(),
+  }).onConflictDoUpdate({
+    target: [schema.settings.userId],
+    set: {
+      subscriptionStatus: localStatus,
+      maxAgents: plan?.max_agents ?? 3,
+      updatedAt: new Date(),
+    }
+  });
 
   dispatchWebhook(userId, 'subscription.changed', {
     plan: plan?.id ?? null,

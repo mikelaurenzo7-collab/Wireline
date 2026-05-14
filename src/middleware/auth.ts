@@ -1,8 +1,9 @@
 import * as Sentry from "@sentry/node";
 import type { Request, Response, NextFunction } from "express";
 import type { User } from "@supabase/supabase-js";
-import { db, log, auditLogger } from "../lib/server-context";
+import { log, auditLogger } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
+import { verifySupabaseJwt } from "../lib/auth-utils";
 
 /**
  * Express Request with an attached Supabase User.
@@ -44,9 +45,11 @@ export async function authenticateUser(req: Request, res: Response, next: NextFu
   }
 
   const token = authHeader.split(' ')[1];
-  const { data: { user }, error } = await db.auth.getUser(token);
+  const secret = process.env.SUPABASE_JWT_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+  
+  const payload = await verifySupabaseJwt(token, secret);
 
-  if (error || !user) {
+  if (!payload) {
      // Audit log: invalid/expired token (non-blocking)
      void auditLogger.logAuth('failed_login', {
        email: req.body?.email,
@@ -59,9 +62,20 @@ export async function authenticateUser(req: Request, res: Response, next: NextFu
      return res.status(401).json({ error: "Invalid or expired session" });
   }
 
+  // Map JWT payload to a compatible User object
+  const user = {
+    id: payload.sub,
+    email: payload.email,
+    role: payload.role || 'authenticated',
+    aud: payload.aud,
+    app_metadata: {},
+    user_metadata: {},
+    created_at: new Date(payload.iat * 1000).toISOString(),
+  } as any;
+
   authedReq.user = user;
 
-  // Attach user context to Sentry for all subsequent events (errors, metrics, etc.)
+  // Attach user context to Sentry
   Sentry.setUser({
     id: user.id,
     email: user.email,

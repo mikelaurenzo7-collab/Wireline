@@ -1,6 +1,8 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { timingSafeEqual as cryptoTimingSafeEqual } from "node:crypto";
-import { db, log, auditLogger } from "../lib/server-context";
+import { log, auditLogger, drizzle } from "../lib/server-context";
+import * as schema from "../db/schema";
+import { eq, and, sql, lte, gte } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { jobsRateLimit, jobsSweepRateLimit } from "../middleware/api-rate-limits";
 import { getErrorMessage } from "../lib/server-utils";
@@ -22,7 +24,7 @@ const router = Router();
 
 router.get("/stats", authenticateUser, jobsRateLimit, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const stats = await getQueueStats(db, req.user.id);
+    const stats = await getQueueStats(drizzle, req.user.id);
     res.json(stats);
   } catch (err) {
     log.error("GET /api/jobs/stats failed", { error: getErrorMessage(err) });
@@ -50,7 +52,7 @@ const cronOrAdminAuth = (req: SweepRequest, res: Response, next: NextFunction) =
     if (authErr) return next(authErr);
     if (res.headersSent) return;
     try {
-      const role = await getCallerRole(db, req.user.id);
+      const role = await getCallerRole(drizzle, req.user.id);
       if (role !== "owner" && role !== "admin") {
         void auditLogger
           .logJobSweep("denied", {
@@ -87,35 +89,34 @@ router.post("/sweep", cronOrAdminAuth, jobsSweepRateLimit, async (req: SweepRequ
       now.getUTCMinutes() === 0 &&
       (req._sweepMode === "cron" || !req._sweepMode)
     ) {
-      const { data: tenants } = await db
-        .from("wireline_settings")
-        .select("user_id, retention_days");
+      const tenants = await drizzle
+        .select({ userId: schema.settings.userId, retentionDays: schema.settings.retentionDays })
+        .from(schema.settings);
+      
       if (tenants) {
         for (const t of tenants) {
-          await enqueue(db, {
-            userId: t.user_id,
+          await enqueue(drizzle, {
+            userId: t.userId,
             type: "purge_old_data",
-            payload: { user_id: t.user_id, retention_days: t.retention_days },
+            payload: { user_id: t.userId, retention_days: t.retentionDays },
           });
         }
       }
     }
 
     if (req._sweepMode === "cron" || !req._sweepMode) {
-      const { data: dueDeletions, error: dueErr } = await db
-        .from("wireline_deletion_queue")
-        .select("id, user_id")
-        .eq("status", "pending")
-        .lte("scheduled_purge_at", new Date().toISOString())
+      const dueDeletions = await drizzle
+        .select({ id: schema.deletionQueue.id, userId: schema.deletionQueue.userId })
+        .from(schema.deletionQueue)
+        .where(and(eq(schema.deletionQueue.status, "pending"), lte(schema.deletionQueue.scheduledPurgeAt, new Date())))
         .limit(50);
-      if (dueErr) {
-        log.warn("deletion-queue sweep query failed", { error: dueErr.message });
-      } else if (dueDeletions) {
-        for (const row of dueDeletions as Array<{ id: string; user_id: string }>) {
-          await enqueue(db, {
-            userId: row.user_id,
+      
+      if (dueDeletions) {
+        for (const row of dueDeletions) {
+          await enqueue(drizzle, {
+            userId: row.userId,
             type: "purge_deleted_account",
-            payload: { user_id: row.user_id, queue_id: row.id },
+            payload: { user_id: row.userId, queue_id: String(row.id) },
             maxAttempts: 3,
           });
         }
@@ -123,14 +124,14 @@ router.post("/sweep", cronOrAdminAuth, jobsSweepRateLimit, async (req: SweepRequ
     }
     let processed = 0;
     for (let i = 0; i < 10; i++) {
-      const job = await claim(db);
+      const job = await claim(drizzle);
       if (!job) break;
       try {
         await handleJob(job);
-        await complete(db, job.id);
+        await complete(drizzle, job.id);
         processed++;
       } catch (sweepErr: any) {
-        await fail(db, job, getErrorMessage(sweepErr));
+        await fail(drizzle, job, getErrorMessage(sweepErr));
       }
     }
     const mode = req._sweepMode || "cron";

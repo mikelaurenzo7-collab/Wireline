@@ -1,4 +1,6 @@
-import { db } from "./server-context";
+import { drizzle } from "./server-context";
+import * as schema from "../db/schema";
+import { eq } from "drizzle-orm";
 import {
   googleGrantedScopesAllowCalendarWrite,
   microsoftGrantedScopesAllowCalendarWrite,
@@ -19,31 +21,31 @@ export interface IntegrationHealthResult {
 export async function computeIntegrationHealth(userId: string): Promise<IntegrationHealthResult> {
   const reasons: string[] = [];
 
-  const { data: emails } = await db
-    .from("wireline_email_accounts")
-    .select("provider, oauth_granted_scopes")
-    .eq("user_id", userId);
+  const emails = await drizzle
+    .select({ provider: schema.emailAccounts.provider, oauthGrantedScopes: schema.emailAccounts.oauthGrantedScopes })
+    .from(schema.emailAccounts)
+    .where(eq(schema.emailAccounts.userId, userId));
 
-  const { data: cals } = await db
-    .from("wireline_calendar_accounts")
-    .select("provider, oauth_granted_scopes")
-    .eq("user_id", userId);
+  const cals = await drizzle
+    .select({ provider: schema.calendarAccounts.provider, oauthGrantedScopes: schema.calendarAccounts.oauthGrantedScopes })
+    .from(schema.calendarAccounts)
+    .where(eq(schema.calendarAccounts.userId, userId));
 
   const hasGoogle =
-    !!(emails || []).some((r: any) => r.provider === "google") ||
-    !!(cals || []).some((r: any) => r.provider === "google");
+    emails.some((r: any) => r.provider === "google") ||
+    cals.some((r: any) => r.provider === "google");
   const hasMicrosoft =
-    !!(emails || []).some((r: any) => r.provider === "microsoft") ||
-    !!(cals || []).some((r: any) => r.provider === "microsoft");
+    emails.some((r: any) => r.provider === "microsoft") ||
+    cals.some((r: any) => r.provider === "microsoft");
 
   const googleScopeStrings: string[] = [
-    ...(emails || []).filter((r: any) => r.provider === "google").map((r: any) => r.oauth_granted_scopes),
-    ...(cals || []).filter((r: any) => r.provider === "google").map((r: any) => r.oauth_granted_scopes),
+    ...emails.filter((r: any) => r.provider === "google").map((r: any) => r.oauthGrantedScopes),
+    ...cals.filter((r: any) => r.provider === "google").map((r: any) => r.oauthGrantedScopes),
   ].filter((s): s is string => typeof s === "string" && s.trim().length > 0);
 
   const msScopeStrings: string[] = [
-    ...(emails || []).filter((r: any) => r.provider === "microsoft").map((r: any) => r.oauth_granted_scopes),
-    ...(cals || []).filter((r: any) => r.provider === "microsoft").map((r: any) => r.oauth_granted_scopes),
+    ...emails.filter((r: any) => r.provider === "microsoft").map((r: any) => r.oauthGrantedScopes),
+    ...cals.filter((r: any) => r.provider === "microsoft").map((r: any) => r.oauthGrantedScopes),
   ].filter((s): s is string => typeof s === "string" && s.trim().length > 0);
 
   let calendar_scope_unknown_google = false;

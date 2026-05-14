@@ -1,5 +1,7 @@
 import { Router, Response } from "express";
-import { db, log } from "../lib/server-context";
+import { log, drizzle } from "../lib/server-context";
+import * as schema from "../db/schema";
+import { eq, and, sql, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage } from "../lib/server-utils";
 import { parseFormData, KnowledgeSchema } from "../lib/form-validators";
@@ -30,32 +32,39 @@ const router = Router();
 
 router.get("/api/knowledge", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const [{ data: rows, error }, { data: agents }] = await Promise.all([
-      db.from("wireline_knowledge")
-        .select("id, agent_id, content, created_at")
-        .eq("user_id", req.user.id)
-        .order("created_at", { ascending: false })
+    const [rows, agents] = await Promise.all([
+      drizzle
+        .select({
+          id: schema.knowledge.id,
+          agentId: schema.knowledge.agentId,
+          content: schema.knowledge.content,
+          createdAt: schema.knowledge.createdAt
+        })
+        .from(schema.knowledge)
+        .where(eq(schema.knowledge.userId, req.user.id))
+        .orderBy(desc(schema.knowledge.createdAt))
         .limit(2000),
-      db.from("wireline_agents")
-        .select("id, name, archetype")
-        .eq("user_id", req.user.id),
+      drizzle
+        .select({ id: schema.agents.id, name: schema.agents.name, archetype: schema.agents.archetype })
+        .from(schema.agents)
+        .where(eq(schema.agents.userId, req.user.id)),
     ]);
-    if (error) throw error;
-    const agentMap = new Map((agents || []).map((a: AgentRef) => [a.id, a]));
-    const knowledge = (rows || []).map((r: KnowledgeRow) => {
-      const agent = agentMap.get(r.agent_id) as AgentRef | undefined;
+
+    const agentMap = new Map((agents || []).map((a: any) => [a.id, a]));
+    const knowledge = (rows || []).map((r: any) => {
+      const agent = agentMap.get(r.agentId);
       return {
-        id: r.id,
-        agent_id: r.agent_id,
+        id: Number(r.id),
+        agent_id: r.agentId,
         agent_name: agent?.name || "(unknown agent)",
         agent_archetype: agent?.archetype || null,
         content: r.content,
-        created_at: r.created_at,
+        created_at: r.createdAt,
       };
     });
     res.json({
       knowledge,
-      agents: (agents || []).map((a: AgentRef) => ({ id: a.id, name: a.name, archetype: a.archetype })),
+      agents: (agents || []).map((a: any) => ({ id: a.id, name: a.name, archetype: a.archetype })),
       total: knowledge.length,
     });
   } catch (e: any) { 
@@ -80,22 +89,23 @@ router.post("/api/knowledge", authenticateUser, rateLimiters.knowledgeRateLimite
     const agent_id = (req.body?.agent_id || "").toString();
     if (!agent_id) return res.status(400).json({ error: "agent_id is required" });
 
-    // Confirm the agent belongs to this user before insert.
-    const { data: agent } = await db.from("wireline_agents")
-      .select("id, name, archetype")
-      .eq("id", agent_id).eq("user_id", req.user.id).maybeSingle();
+    const [agent] = await drizzle
+      .select({ id: schema.agents.id })
+      .from(schema.agents)
+      .where(and(eq(schema.agents.id, agent_id), eq(schema.agents.userId, req.user.id)))
+      .limit(1);
+
     if (!agent) return res.status(404).json({ error: "Agent not found." });
 
-    const { data, error } = await db.from("wireline_knowledge")
-      .insert({
-        agent_id,
-        user_id: req.user.id,
+    const [data] = await drizzle
+      .insert(schema.knowledge)
+      .values({
+        agentId: agent_id,
+        userId: req.user.id,
         content,
       })
-      .select()
-      .single();
+      .returning();
 
-    if (error) throw error;
     res.json({ success: true, knowledge: data });
   } catch (e: any) { 
     log.error("Failed to add knowledge", { error: getErrorMessage(e) }); 
@@ -109,12 +119,13 @@ router.patch("/api/knowledge/:id", authenticateUser, async (req: AuthenticatedRe
     if (typeof content !== 'string' || content.trim().length === 0) {
       return res.status(400).json({ error: "content is required" });
     }
-    const { data, error } = await db.from("wireline_knowledge")
-      .update({ content: content.trim() })
-      .eq("id", req.params.id)
-      .eq("user_id", req.user.id)
-      .select().single();
-    if (error) throw error;
+    
+    const [data] = await drizzle
+      .update(schema.knowledge)
+      .set({ content: content.trim() })
+      .where(and(eq(schema.knowledge.id, BigInt(req.params.id)), eq(schema.knowledge.userId, req.user.id)))
+      .returning();
+
     res.json({ success: true, knowledge: data });
   } catch (e: any) { 
     log.error("Failed to update knowledge", { error: getErrorMessage(e) }); 
@@ -124,11 +135,9 @@ router.patch("/api/knowledge/:id", authenticateUser, async (req: AuthenticatedRe
 
 router.delete("/api/knowledge/:id", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { error } = await db.from("wireline_knowledge")
-      .delete()
-      .eq("id", req.params.id)
-      .eq("user_id", req.user.id);
-    if (error) throw error;
+    await drizzle
+      .delete(schema.knowledge)
+      .where(and(eq(schema.knowledge.id, BigInt(req.params.id)), eq(schema.knowledge.userId, req.user.id)));
     res.json({ success: true });
   } catch (e: any) { 
     log.error("Failed to delete knowledge", { error: getErrorMessage(e) }); 

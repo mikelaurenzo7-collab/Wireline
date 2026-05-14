@@ -1,7 +1,7 @@
 import { Router, Response } from "express";
 import { authenticateUser } from "../middleware/auth";
 import { soc2RateLimit } from "../middleware/api-rate-limits";
-import { db, log, requirePermission } from "../lib/server-context";
+import { log, requirePermission, drizzle } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import {
   runAccessReview,
@@ -26,7 +26,7 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const tenantId = req.user.id as string;
-      const review = await runAccessReview(db, tenantId);
+      const review = await runAccessReview(drizzle, tenantId);
       res.json(review);
     } catch (e: any) {
       log.error("GET /api/soc2/access-review failed", { error: getErrorMessage(e) });
@@ -46,7 +46,7 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const tenantId = req.user.id as string;
-      const review = await runAccessReview(db, tenantId);
+      const review = await runAccessReview(drizzle, tenantId);
       const incidentTemplate = buildIncidentRow({
         severity: "P3",
         title: "[Template] Service degradation — brief description",

@@ -1,4 +1,6 @@
-import { db, log, fetchWithTimeout } from "./server-context";
+import { drizzle, log, fetchWithTimeout } from "./server-context";
+import * as schema from "../db/schema";
+import { eq, and } from "drizzle-orm";
 import { decryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
 
@@ -22,8 +24,8 @@ export interface SlackChannel {
 
 interface SlackConnection {
   id: string;
-  access_token: string;
-  metadata: { team_id?: string; team_name?: string; bot_user_id?: string; default_channel?: string } | null;
+  accessToken: string;
+  metadata: any;
 }
 
 // ────────────────────────────────────────────────────────────────────
@@ -88,19 +90,23 @@ export async function exchangeSlackCode(code: string, redirectUri: string): Prom
 // ────────────────────────────────────────────────────────────────────
 
 async function getConnection(userId: string): Promise<SlackConnection | null> {
-  const { data } = await db
-    .from("wireline_crm_connections")
-    .select("id, access_token, metadata")
-    .eq("user_id", userId)
-    .eq("provider", "slack")
-    .single();
+  const [data] = await drizzle
+    .select({
+      id: schema.crmConnections.id,
+      accessToken: schema.crmConnections.accessToken,
+      metadata: schema.crmConnections.metadata
+    })
+    .from(schema.crmConnections)
+    .where(and(eq(schema.crmConnections.userId, userId), eq(schema.crmConnections.provider, "slack")))
+    .limit(1);
+  
   return data || null;
 }
 
 async function getToken(userId: string): Promise<string | null> {
   const conn = await getConnection(userId);
   if (!conn) return null;
-  return decryptSecret(conn.access_token);
+  return decryptSecret(conn.accessToken);
 }
 
 // ────────────────────────────────────────────────────────────────────
@@ -189,14 +195,12 @@ export async function setDefaultChannel(userId: string, channelId: string): Prom
   if (!conn) return;
   const meta = (conn.metadata || {}) as any;
   meta.default_channel = channelId;
-  await db.from("wireline_crm_connections")
-    .update({ metadata: meta, updated_at: new Date().toISOString() })
-    .eq("id", conn.id);
+  await drizzle.update(schema.crmConnections)
+    .set({ metadata: meta, updatedAt: new Date() })
+    .where(eq(schema.crmConnections.id, conn.id));
 }
 
 export async function disconnectSlack(userId: string): Promise<void> {
-  await db.from("wireline_crm_connections")
-    .delete()
-    .eq("user_id", userId)
-    .eq("provider", "slack");
+  await drizzle.delete(schema.crmConnections)
+    .where(and(eq(schema.crmConnections.userId, userId), eq(schema.crmConnections.provider, "slack")));
 }

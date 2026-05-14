@@ -19,7 +19,11 @@
 // serverless, callers should also trigger a sweep from a
 // `POST /api/jobs/sweep` endpoint to compensate for cold-start gaps.
 
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { drizzle } from "./server-context";
+import * as schema from "../db/schema";
+import { eq, and, sql, desc, lte, gte, inArray } from "drizzle-orm";
+
+type DrizzleDB = typeof drizzle;
 
 // ─────────────────────────────────────────────────────────────────
 // Types
@@ -91,25 +95,28 @@ export interface EnqueueResult {
 }
 
 export async function enqueue(
-  db: SupabaseClient,
+  db: DrizzleDB,
   opts: EnqueueOptions,
 ): Promise<EnqueueResult> {
   const runAt = opts.runAt ?? new Date();
-  const { data, error } = await db
-    .from("wireline_jobs")
-    .insert({
-      user_id: opts.userId,
-      type: opts.type,
-      payload: opts.payload,
-      status: "pending" as JobStatus,
-      attempts: 0,
-      max_attempts: opts.maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
-      run_at: runAt.toISOString(),
-    })
-    .select("id")
-    .single();
-  if (error) return { ok: false, error: error.message };
-  return { ok: true, jobId: (data as { id: string }).id };
+  try {
+    const [data] = await db
+      .insert(schema.jobs)
+      .values({
+        userId: opts.userId,
+        type: opts.type,
+        payload: opts.payload,
+        status: "pending" as JobStatus,
+        attempts: 0,
+        maxAttempts: opts.maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
+        runAt: runAt,
+      })
+      .returning({ id: schema.jobs.id });
+    
+    return { ok: true, jobId: data.id };
+  } catch (error: any) {
+    return { ok: false, error: error.message };
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -135,79 +142,79 @@ export async function enqueue(
  * the RPC doesn't exist yet — safe for single-worker setups.
  */
 export async function claimJob(
-  db: SupabaseClient,
+  db: DrizzleDB,
   typeFilter?: JobType[],
-): Promise<JobRow | null> {
-  // Try atomic RPC first
-  try {
-    const { data, error } = await db.rpc("wireline_claim_job", {
-      p_types: typeFilter ?? null,
-    });
-    if (!error && data) return data as JobRow;
-  } catch {
-    // RPC not available — fall through
-  }
+): Promise<any | null> {
+  return await db.transaction(async (tx) => {
+    const whereClauses = [
+      eq(schema.jobs.status, "pending"),
+      lte(schema.jobs.runAt, new Date()),
+    ];
+    if (typeFilter?.length) {
+      whereClauses.push(inArray(schema.jobs.type, typeFilter));
+    }
 
-  // Non-atomic fallback: best-effort for low-concurrency deployments
-  const q = db
-    .from("wireline_jobs")
-    .select("*")
-    .eq("status", "pending")
-    .lte("run_at", new Date().toISOString())
-    .order("run_at", { ascending: true })
-    .limit(1);
-  if (typeFilter?.length) {
-    // `in` filter — Supabase PostgREST: col=in.(a,b,c)
-    q.in("type", typeFilter);
-  }
-  const { data } = await q;
-  if (!data || (data as JobRow[]).length === 0) return null;
-  const job = (data as JobRow[])[0];
+    const [job] = await tx
+      .select()
+      .from(schema.jobs)
+      .where(and(...whereClauses))
+      .orderBy(schema.jobs.runAt)
+      .limit(1)
+      .for("update", { skipLocked: true });
 
-  const { error: ue } = await db
-    .from("wireline_jobs")
-    .update({
-      status: "running" as JobStatus,
-      started_at: new Date().toISOString(),
-      attempts: (job.attempts ?? 0) + 1,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", job.id)
-    .eq("status", "pending"); // guard against double-claim
-  if (ue) return null; // lost the race — another worker claimed it
-  return { ...job, status: "running", attempts: job.attempts + 1 };
+    if (!job) return null;
+
+    const [updated] = await tx
+      .update(schema.jobs)
+      .set({
+        status: "running" as JobStatus,
+        startedAt: new Date(),
+        attempts: (job.attempts ?? 0) + 1,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.jobs.id, job.id))
+      .returning();
+
+    return updated;
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────
 // Completion helpers
 // ─────────────────────────────────────────────────────────────────
 
-export async function completeJob(db: SupabaseClient, jobId: string): Promise<void> {
-  await db.from("wireline_jobs").update({
-    status: "done" as JobStatus,
-    finished_at: new Date().toISOString(),
-    error: null,
-    updated_at: new Date().toISOString(),
-  }).eq("id", jobId);
+export async function completeJob(db: DrizzleDB, jobId: string): Promise<void> {
+  await db
+    .update(schema.jobs)
+    .set({
+      status: "done" as JobStatus,
+      finishedAt: new Date(),
+      error: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(schema.jobs.id, jobId));
 }
 
 export async function failJob(
-  db: SupabaseClient,
-  job: Pick<JobRow, "id" | "attempts" | "max_attempts">,
+  db: DrizzleDB,
+  job: Pick<schema.Job, "id" | "attempts" | "maxAttempts">,
   errorMessage: string,
 ): Promise<void> {
-  const exhausted = job.attempts >= job.max_attempts;
+  const exhausted = (job.attempts || 0) >= (job.maxAttempts || 5);
   const nextRunAt = exhausted
     ? null
-    : new Date(Date.now() + backoffSeconds(job.attempts) * 1000).toISOString();
+    : new Date(Date.now() + backoffSeconds(job.attempts || 0) * 1000);
 
-  await db.from("wireline_jobs").update({
-    status: (exhausted ? "dead" : "failed") as JobStatus,
-    error: errorMessage.slice(0, 2000),
-    finished_at: exhausted ? new Date().toISOString() : null,
-    run_at: nextRunAt ?? new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  }).eq("id", job.id);
+  await db
+    .update(schema.jobs)
+    .set({
+      status: (exhausted ? "dead" : "failed") as JobStatus,
+      error: errorMessage.slice(0, 2000),
+      finishedAt: exhausted ? new Date() : null,
+      runAt: nextRunAt ?? new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(schema.jobs.id, job.id));
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -235,8 +242,8 @@ export interface WorkerOptions {
  *   process.on("SIGTERM", stop);
  */
 export function startWorker(
-  db: SupabaseClient,
-  handler: JobHandler,
+  db: DrizzleDB,
+  handler: any,
   opts: WorkerOptions = {},
 ): () => void {
   const pollMs = opts.pollIntervalMs ?? 10_000;
@@ -293,23 +300,22 @@ export interface QueueStats {
   done_last_hour: number;
 }
 
-export async function getQueueStats(db: SupabaseClient, userId?: string): Promise<QueueStats> {
-  const anHourAgo = new Date(Date.now() - 3_600_000).toISOString();
-  const scoped = <T extends { eq: (col: string, val: string) => T }>(q: T): T =>
-    userId ? q.eq("user_id", userId) : q;
+export async function getQueueStats(db: DrizzleDB, userId?: string): Promise<QueueStats> {
+  const anHourAgo = new Date(Date.now() - 3_600_000);
+  
   const [pending, running, failed, dead, done] = await Promise.all([
-    scoped(db.from("wireline_jobs").select("id", { count: "exact", head: true }).eq("status", "pending") as any),
-    scoped(db.from("wireline_jobs").select("id", { count: "exact", head: true }).eq("status", "running") as any),
-    scoped(db.from("wireline_jobs").select("id", { count: "exact", head: true }).eq("status", "failed") as any),
-    scoped(db.from("wireline_jobs").select("id", { count: "exact", head: true }).eq("status", "dead") as any),
-    scoped(db.from("wireline_jobs").select("id", { count: "exact", head: true })
-      .eq("status", "done").gte("finished_at", anHourAgo) as any),
+    db.select({ count: sql<number>`count(*)` }).from(schema.jobs).where(and(eq(schema.jobs.status, "pending"), userId ? eq(schema.jobs.userId, userId) : undefined)).then(r => r[0].count),
+    db.select({ count: sql<number>`count(*)` }).from(schema.jobs).where(and(eq(schema.jobs.status, "running"), userId ? eq(schema.jobs.userId, userId) : undefined)).then(r => r[0].count),
+    db.select({ count: sql<number>`count(*)` }).from(schema.jobs).where(and(eq(schema.jobs.status, "failed"), userId ? eq(schema.jobs.userId, userId) : undefined)).then(r => r[0].count),
+    db.select({ count: sql<number>`count(*)` }).from(schema.jobs).where(and(eq(schema.jobs.status, "dead"), userId ? eq(schema.jobs.userId, userId) : undefined)).then(r => r[0].count),
+    db.select({ count: sql<number>`count(*)` }).from(schema.jobs).where(and(eq(schema.jobs.status, "done"), gte(schema.jobs.finishedAt, anHourAgo), userId ? eq(schema.jobs.userId, userId) : undefined)).then(r => r[0].count),
   ]);
+
   return {
-    pending:       pending.count ?? 0,
-    running:       running.count ?? 0,
-    failed:        failed.count ?? 0,
-    dead:          dead.count ?? 0,
-    done_last_hour: done.count ?? 0,
+    pending: pending || 0,
+    running: running || 0,
+    failed: failed || 0,
+    dead: dead || 0,
+    done_last_hour: done || 0,
   };
 }

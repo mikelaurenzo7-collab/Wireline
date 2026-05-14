@@ -1,5 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { db, log, quotaTracker } from '../lib/server-context';
+import { log, quotaTracker, drizzle } from '../lib/server-context';
+import * as schema from '../db/schema';
+import { eq, and, sql, desc, isNotNull } from 'drizzle-orm';
 import { authenticateUser } from '../middleware/auth';
 import { getErrorMessage } from '../lib/server-utils';
 import { parseFormData } from '../lib/form-validators';
@@ -28,19 +30,29 @@ router.get('/api/outbound', authenticateUser, async (req: AuthenticatedRequest, 
     const offsetRaw = parseInt(req.query.offset as string);
     const limit = Math.min(Math.max(1, isNaN(limitRaw) ? 100 : limitRaw), 500);
     const offset = isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw);
-    const { data, count, error } = await db
-      .from('wireline_outbound_leads')
-      .select('*', { count: 'exact' })
-      .eq('user_id', req.user.id)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
-    if (error) throw error;
+
+    const [countResult] = await drizzle
+      .select({ count: sql`count(*)` })
+      .from(schema.outboundLeads)
+      .where(eq(schema.outboundLeads.userId, req.user.id));
+    
+    const count = Number(countResult.count);
+
+    const data = await drizzle
+      .select()
+      .from(schema.outboundLeads)
+      .where(eq(schema.outboundLeads.userId, req.user.id))
+      .orderBy(desc(schema.outboundLeads.createdAt))
+      .limit(limit)
+      .offset(offset);
+
     res.json({
       leads: data || [],
       total: count || 0,
-      hasMore: count ? offset + limit < count : false,
+      hasMore: offset + limit < count,
     });
-  } catch {
+  } catch (error: any) {
+    log.error('GET /api/outbound failed', { error: error.message });
     res.json({ leads: [], total: 0, hasMore: false });
   }
 });
@@ -50,17 +62,27 @@ router.get('/api/outbound', authenticateUser, async (req: AuthenticatedRequest, 
 // Rate-limited to 30 req/min per user to prevent scraping.
 router.get('/api/callbacks', claudeRateLimiter, authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { data, error } = await db
-      .from('wireline_outbound_leads')
-      .select(
-        'id, customer_name, customer_number, callback_scheduled_at, last_contact_summary, agent_id, attempts',
+    const data = await drizzle
+      .select({
+        id: schema.outboundLeads.id,
+        customer_name: schema.outboundLeads.customerName,
+        customer_number: schema.outboundLeads.customerNumber,
+        callback_scheduled_at: schema.outboundLeads.callbackScheduledAt,
+        last_contact_summary: schema.outboundLeads.lastContactSummary,
+        agent_id: schema.outboundLeads.agentId,
+        attempts: schema.outboundLeads.attempts,
+      })
+      .from(schema.outboundLeads)
+      .where(
+        and(
+          eq(schema.outboundLeads.userId, req.user.id),
+          eq(schema.outboundLeads.status, 'Callback-Scheduled'),
+          isNotNull(schema.outboundLeads.callbackScheduledAt)
+        )
       )
-      .eq('user_id', req.user.id)
-      .eq('status', 'Callback-Scheduled')
-      .not('callback_scheduled_at', 'is', null)
-      .order('callback_scheduled_at', { ascending: true })
+      .orderBy(schema.outboundLeads.callbackScheduledAt)
       .limit(50);
-    if (error) throw error;
+
     res.json({ callbacks: data || [] });
   } catch (e: any) {
     log.error('GET /api/callbacks failed', { error: getErrorMessage(e) });
@@ -70,12 +92,14 @@ router.get('/api/callbacks', claudeRateLimiter, authenticateUser, async (req: Au
 
 router.delete('/api/outbound/:id', authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { error } = await db
-      .from('wireline_outbound_leads')
-      .delete()
-      .eq('id', req.params.id)
-      .eq('user_id', req.user.id);
-    if (error) throw error;
+    await drizzle
+      .delete(schema.outboundLeads)
+      .where(
+        and(
+          eq(schema.outboundLeads.id, BigInt(req.params.id)),
+          eq(schema.outboundLeads.userId, req.user.id)
+        )
+      );
     res.json({ success: true });
   } catch (error: any) {
     log.error('Failed to delete lead', { error: getErrorMessage(error) });
@@ -148,13 +172,13 @@ router.post('/api/outbound/dial', authenticateUser, dialRateLimiter, async (req:
     });
     if (!result.ok) return res.status(result.status).json({ error: result.error });
 
-    await db.from('wireline_outbound_leads').insert({
-      user_id: req.user.id,
-      agent_id: agentId,
-      customer_name: customerName,
-      customer_number: customerNumber,
+    await drizzle.insert(schema.outboundLeads).values({
+      userId: req.user.id,
+      agentId: agentId,
+      customerName: customerName,
+      customerNumber: customerNumber,
       context: context,
-      call_id: result.callId,
+      callId: result.callId,
       status: 'Dialing',
     });
 
@@ -183,55 +207,61 @@ router.post('/api/outbound/bulk', authenticateUser, async (req: AuthenticatedReq
     const { leads, campaign_id } = validation.data!;
 
     // SECURITY ENFORCEMENT
-    const { data: userSettings } = await db
-      .from('wireline_settings')
-      .select('subscription_status')
-      .eq('user_id', req.user.id)
-      .single();
-    if (userSettings?.subscription_status !== 'active') {
+    const [userSettings] = await drizzle
+      .select({ subscriptionStatus: schema.settings.subscriptionStatus })
+      .from(schema.settings)
+      .where(eq(schema.settings.userId, req.user.id))
+      .limit(1);
+
+    if (userSettings?.subscriptionStatus !== 'active') {
       return res.status(403).json({ error: 'Access Denied: Inactive billing plan.' });
     }
 
-    // Verify campaign_id (when supplied) belongs to the caller. Without
-    // this an attacker could attribute their leads to another user's
-    // campaign, polluting the campaign's analytics + lead pool.
+    // Verify campaign_id (when supplied) belongs to the caller.
     if (campaign_id) {
-      const { data: ownedCampaign } = await db
-        .from('wireline_outbound_campaigns')
-        .select('id')
-        .eq('id', campaign_id)
-        .eq('user_id', req.user.id)
-        .maybeSingle();
+      const [ownedCampaign] = await drizzle
+        .select({ id: schema.outboundCampaigns.id })
+        .from(schema.outboundCampaigns)
+        .where(
+          and(
+            eq(schema.outboundCampaigns.id, campaign_id),
+            eq(schema.outboundCampaigns.userId, req.user.id)
+          )
+        )
+        .limit(1);
       if (!ownedCampaign) return res.status(404).json({ error: 'Campaign not found' });
     }
 
-    const leadsWithUser = (leads || []).map((lead: OutboundLead) => ({
-      ...lead,
-      user_id: req.user.id,
-      campaign_id: campaign_id || null,
+    const leadsWithUser = (leads || []).map((lead: any) => ({
+      userId: req.user.id,
+      agentId: lead.agent_id,
+      customerName: lead.customer_name,
+      customerNumber: lead.customer_number || lead.phone_number,
+      phoneNumber: lead.phone_number || lead.customer_number,
+      context: lead.context,
+      campaignId: campaign_id || null,
     }));
 
-    const { data, error } = await db
-      .from('wireline_outbound_leads')
-      .insert(leadsWithUser)
-      .select('id');
-    if (error) throw error;
+    const insertedLeads = await drizzle
+      .insert(schema.outboundLeads)
+      .values(leadsWithUser)
+      .returning({ id: schema.outboundLeads.id });
 
     // Track bulk campaign start
-    if (data?.length > 0) {
-      const { data: agent } = await db
-        .from('wireline_agents')
-        .select('id')
-        .eq('user_id', req.user.id)
-        .limit(1)
-        .single();
+    if (insertedLeads.length > 0) {
+      const [agent] = await drizzle
+        .select({ id: schema.agents.id })
+        .from(schema.agents)
+        .where(eq(schema.agents.userId, req.user.id))
+        .limit(1);
+
       SentryEvents.outboundDialStarted({
-        lead_count: data.length,
+        lead_count: insertedLeads.length,
         agent_id: agent?.id || 'unknown',
       });
     }
 
-    res.json({ success: true, inserted: data.length });
+    res.json({ success: true, inserted: insertedLeads.length });
   } catch {
     res.status(500).json({ error: 'Failed to queue leads' });
   }

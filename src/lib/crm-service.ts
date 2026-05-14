@@ -1,4 +1,6 @@
-import { db, log } from "./server-context";
+import { drizzle, log } from "./server-context";
+import * as schema from "../db/schema";
+import { eq, and, desc, inArray } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
 import * as salesforce from "./salesforce-service";
 import * as hubspot from "./hubspot-service";
@@ -9,16 +11,23 @@ function normalizePhone(value: string | null | undefined): string {
 }
 
 async function getActiveCrm(userId: string): Promise<"salesforce" | "hubspot" | null> {
-  const { data } = await db
-    .from("wireline_crm_connections")
-    .select("provider")
-    .eq("user_id", userId)
-    .in("provider", ["salesforce", "hubspot"])
-    .order("updated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  const p = data?.provider;
-  return p === "salesforce" || p === "hubspot" ? p : null;
+  try {
+    const [data] = await drizzle
+      .select({ provider: schema.crmConnections.provider })
+      .from(schema.crmConnections)
+      .where(and(
+        eq(schema.crmConnections.userId, userId),
+        inArray(schema.crmConnections.provider, ["salesforce", "hubspot"])
+      ))
+      .orderBy(desc(schema.crmConnections.updatedAt))
+      .limit(1);
+
+    const p = data?.provider;
+    return p === "salesforce" || p === "hubspot" ? p : null;
+  } catch (err: any) {
+    log.warn("getActiveCrm lookup failed", { userId, error: err.message });
+    return null;
+  }
 }
 
 /**

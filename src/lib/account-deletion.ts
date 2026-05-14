@@ -11,6 +11,8 @@
 // POST /api/account/delete + the 30-day grace window.
 
 import { createClient } from '@supabase/supabase-js';
+import { sql } from 'drizzle-orm';
+import { drizzle } from './server-context';
 
 // Order matters: child tables before parent tables to satisfy any FKs that
 // are not ON DELETE CASCADE.
@@ -59,7 +61,7 @@ const TENANT_SCOPED_TABLES = new Set<string>([
 ]);
 
 export interface PurgeAccountDeps {
-  db: any;
+  db: typeof drizzle;
   log: { warn: (msg: string, meta?: Record<string, unknown>) => void; error: (msg: string, meta?: Record<string, unknown>) => void };
   supabaseUrl?: string;
   serviceRoleKey?: string;
@@ -86,11 +88,11 @@ export async function purgeAccount(
 
   for (const table of ACCOUNT_DELETION_TABLES) {
     const userCol = TENANT_SCOPED_TABLES.has(table) ? 'tenant_id' : 'user_id';
-    const { error } = await db.from(table).delete().eq(userCol, userId);
-    if (error) {
-      log.warn(`account purge: ${table} error`, { error: error.message });
-    } else {
+    try {
+      await db.execute(sql.raw(`DELETE FROM ${table} WHERE ${userCol} = '${userId}'`));
       tablesTouched.push(table);
+    } catch (error: any) {
+      log.warn(`account purge: ${table} error`, { error: error.message });
     }
   }
 

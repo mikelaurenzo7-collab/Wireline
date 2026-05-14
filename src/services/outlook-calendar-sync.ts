@@ -1,5 +1,7 @@
 import { encryptSecret, decryptSecret } from "../lib/secret-vault";
-import { db } from "../lib/server-context";
+import { drizzle, log } from "../lib/server-context";
+import * as schema from "../db/schema";
+import { eq, and } from "drizzle-orm";
 
 export async function syncOutlookCalendar(userId: string) {
   if (!process.env.MICROSOFT_CLIENT_ID || !process.env.MICROSOFT_CLIENT_SECRET) {
@@ -7,15 +9,13 @@ export async function syncOutlookCalendar(userId: string) {
   }
 
   // 1. Fetch Microsoft Calendar accounts for this user
-  const { data: accounts, error: accountErr } = await db
-    .from("wireline_calendar_accounts")
-    .select("*")
-    .eq("user_id", userId)
-    .eq("provider", "microsoft");
-
-  if (accountErr) {
-    throw new Error(`Failed to fetch calendar accounts: ${accountErr.message}`);
-  }
+  const accounts = await drizzle
+    .select()
+    .from(schema.calendarAccounts)
+    .where(and(
+      eq(schema.calendarAccounts.userId, userId),
+      eq(schema.calendarAccounts.provider, "microsoft")
+    ));
 
   if (!accounts || accounts.length === 0) {
     return { status: "no_accounts" };
@@ -25,15 +25,15 @@ export async function syncOutlookCalendar(userId: string) {
 
   for (const account of accounts) {
     try {
-      let accessToken = decryptSecret(account.access_token);
+      let accessToken = decryptSecret(account.accessToken);
       
       // Check if token needs refresh
-      if (account.expires_at && Date.now() > account.expires_at - 60_000) {
+      if (account.expiresAt && Date.now() > Number(account.expiresAt) - 60_000) {
         const params = new URLSearchParams({
           client_id:     process.env.MICROSOFT_CLIENT_ID,
           client_secret: process.env.MICROSOFT_CLIENT_SECRET,
           grant_type:    "refresh_token",
-          refresh_token: account.refresh_token ? decryptSecret(account.refresh_token) : "",
+          refresh_token: account.refreshToken ? decryptSecret(account.refreshToken) : "",
         });
         
         const r = await fetch("https://login.microsoftonline.com/common/oauth2/v2.0/token", { 
@@ -44,17 +44,17 @@ export async function syncOutlookCalendar(userId: string) {
         
         const d = await r.json() as any;
         if (!r.ok || !d.access_token) {
-           console.error("Microsoft token refresh failed for account", account.id, d);
+           log.error("Microsoft token refresh failed for account", { accountId: account.id, error: d });
            continue;
         }
         
         accessToken = d.access_token;
-        await db.from("wireline_calendar_accounts")
-           .update({ 
-             access_token: encryptSecret(accessToken), 
-             expires_at: Date.now() + (d.expires_in || 3600) * 1000 
+        await drizzle.update(schema.calendarAccounts)
+           .set({ 
+             accessToken: encryptSecret(accessToken), 
+             expiresAt: BigInt(Date.now() + (d.expires_in || 3600) * 1000)
           })
-          .eq("id", account.id);
+          .where(eq(schema.calendarAccounts.id, account.id));
       }
 
       // Fetch events using Microsoft Graph API for next 30 days
@@ -77,22 +77,31 @@ export async function syncOutlookCalendar(userId: string) {
       for (const event of events) {
         if (!event.id || !event.start?.dateTime || !event.end?.dateTime) continue;
 
-        await db.from("wireline_calendar_events").upsert({
-          user_id: userId,
-          account_id: account.id,
-          external_event_id: event.id,
+        await drizzle.insert(schema.calendarEvents).values({
+          userId: userId,
+          accountId: account.id,
+          externalEventId: event.id,
           title: event.subject || "Busy",
           // Graph API returns time with a timezone object, we'll try to convert to ISO
-          start_time: new Date(event.start.dateTime + 'Z').toISOString(),
-          end_time: new Date(event.end.dateTime + 'Z').toISOString(),
+          startTime: new Date(event.start.dateTime + 'Z'),
+          endTime: new Date(event.end.dateTime + 'Z'),
           status: event.showAs || "confirmed",
-          updated_at: new Date().toISOString()
-        }, { onConflict: "account_id, external_event_id" });
+          updatedAt: new Date()
+        }).onConflictDoUpdate({
+          target: [schema.calendarEvents.accountId, schema.calendarEvents.externalEventId],
+          set: {
+            title: event.subject || "Busy",
+            startTime: new Date(event.start.dateTime + 'Z'),
+            endTime: new Date(event.end.dateTime + 'Z'),
+            status: event.showAs || "confirmed",
+            updatedAt: new Date()
+          }
+        });
 
         totalSynced++;
       }
-    } catch (err) {
-      console.error(`Failed to sync Outlook calendar for account ${account.id}:`, err);
+    } catch (err: any) {
+      log.error(`Failed to sync Outlook calendar for account ${account.id}:`, { error: err.message });
     }
   }
 

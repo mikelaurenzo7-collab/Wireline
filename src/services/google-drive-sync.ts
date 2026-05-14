@@ -1,7 +1,9 @@
 import { google } from "googleapis";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { encryptSecret, decryptSecret } from "../lib/secret-vault";
-import { db } from "../lib/server-context";
+import { drizzle, log } from "../lib/server-context";
+import * as schema from "../db/schema";
+import { eq, and } from "drizzle-orm";
 
 export async function syncGoogleDriveToKnowledge(userId: string, agentId: string) {
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
@@ -14,35 +16,41 @@ export async function syncGoogleDriveToKnowledge(userId: string, agentId: string
   // Use the existing Gmail OAuth account — the expanded SCOPES (drive.readonly)
   // are requested during the /api/oauth/google/url flow so existing tokens
   // may require re-authorization if they predate the scope expansion.
-  const { data: accounts, error: accountErr } = await db
-    .from("wireline_email_accounts")
-    .select("id, access_token, refresh_token, expires_at")
-    .eq("user_id", userId)
-    .eq("provider", "google")
+  const [account] = await drizzle
+    .select({
+      id: schema.emailAccounts.id,
+      accessToken: schema.emailAccounts.accessToken,
+      refreshToken: schema.emailAccounts.refreshToken,
+      expiresAt: schema.emailAccounts.expiresAt
+    })
+    .from(schema.emailAccounts)
+    .where(and(eq(schema.emailAccounts.userId, userId), eq(schema.emailAccounts.provider, "google")))
     .limit(1);
 
-  if (accountErr || !accounts || accounts.length === 0) {
+  if (!account) {
     return { status: "no_accounts", message: "No Google account connected. Connect via Settings → Integrations." };
   }
 
-  const account = accounts[0];
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET
   );
 
   oauth2Client.setCredentials({
-    access_token: decryptSecret(account.access_token),
-    refresh_token: account.refresh_token ? decryptSecret(account.refresh_token) : null,
-    expiry_date: account.expires_at,
+    access_token: decryptSecret(account.accessToken),
+    refresh_token: account.refreshToken ? decryptSecret(account.refreshToken) : null,
+    expiry_date: account.expiresAt ? Number(account.expiresAt) : null,
   });
 
   // Persist refreshed tokens automatically
   oauth2Client.on("tokens", async (tokens) => {
     if (!tokens.access_token) return;
-    const update: Record<string, unknown> = { access_token: encryptSecret(tokens.access_token), expires_at: tokens.expiry_date };
-    if (tokens.refresh_token) update.refresh_token = encryptSecret(tokens.refresh_token);
-    await db.from("wireline_email_accounts").update(update).eq("id", account.id);
+    const update: any = { accessToken: encryptSecret(tokens.access_token), expiresAt: tokens.expiry_date ? BigInt(tokens.expiry_date) : null, updatedAt: new Date() };
+    if (tokens.refresh_token) update.refreshToken = encryptSecret(tokens.refresh_token);
+    
+    await drizzle.update(schema.emailAccounts)
+      .set(update)
+      .where(eq(schema.emailAccounts.id, account.id));
   });
 
   const drive = google.drive({ version: "v3", auth: oauth2Client });
@@ -96,15 +104,15 @@ ${textContent.substring(0, 15000)}`;
       const cleanLesson = line.replace(/^\*\s*/, "").trim();
       if (cleanLesson.length < 10) continue;
 
-      await db.from("wireline_agent_lessons").upsert(
-        {
-          user_id: userId,
-          agent_id: agentId,
-          lesson: cleanLesson,
-          source: `Google Drive: ${file.name}`,
-        },
-        { onConflict: "agent_id, lesson" }
-      );
+      await drizzle.insert(schema.agentLessons).values({
+        userId: userId,
+        agentId: agentId,
+        lesson: cleanLesson,
+        source: `Google Drive: ${file.name}`,
+      }).onConflictDoUpdate({
+        target: [schema.agentLessons.agentId, schema.agentLessons.lesson],
+        set: { updatedAt: new Date() }
+      });
       ingestedCount++;
     }
   }

@@ -15,7 +15,9 @@
 // rate-limiter (see rate-limit.ts) handles per-second enforcement;
 // this module is for daily / monthly accounting.
 
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { eq, sql, and } from "drizzle-orm";
+import type { VercelPostgresDatabase } from "drizzle-orm/vercel-postgres";
+import * as schema from "../db/schema";
 
 // ─────────────────────────────────────────────────────────────────
 // Plan defaults
@@ -194,7 +196,7 @@ function nextMinuteResetIso(now: Date = new Date()): string {
 }
 
 export interface QuotaTrackerDeps {
-  db: SupabaseClient;
+  drizzle: VercelPostgresDatabase<typeof schema>;
   /** Resolves the plan tier for a user. */
   getPlanForUser: (userId: string) => Promise<PlanTier>;
 }
@@ -208,11 +210,22 @@ export class QuotaTracker {
     if (cached && Date.now() - cached.cached_at < OVERRIDE_CACHE_TTL_MS) {
       return cached.rows;
     }
-    const { data } = await this.deps.db
-      .from("wireline_quota_limits")
-      .select("user_id, dimension, value, enabled")
-      .eq("user_id", userId);
-    const rows = (data || []) as QuotaOverrideRow[];
+    const data = await this.deps.drizzle
+      .select({
+        user_id: schema.quotaLimits.userId,
+        dimension: schema.quotaLimits.dimension,
+        value: schema.quotaLimits.value,
+        enabled: schema.quotaLimits.enabled
+      })
+      .from(schema.quotaLimits)
+      .where(eq(schema.quotaLimits.userId, userId));
+    
+    const rows = (data || []).map(r => ({
+      ...r,
+      dimension: r.dimension as QuotaDimension,
+      value: Number(r.value),
+      enabled: !!r.enabled
+    }));
     this.overrideCache.set(userId, { rows, cached_at: Date.now() });
     return rows;
   }
@@ -234,14 +247,18 @@ export class QuotaTracker {
   async getUsage(userId: string, dimension: QuotaDimension): Promise<number> {
     const periodKey =
       dimension === "intake_rpm" ? minutePeriodKey() : dailyPeriodKey();
-    const { data } = await this.deps.db
-      .from("wireline_quota_usage")
-      .select("used")
-      .eq("user_id", userId)
-      .eq("dimension", dimension)
-      .eq("period_key", periodKey)
-      .maybeSingle();
-    return Number((data as { used?: number } | null)?.used ?? 0);
+    const [data] = await this.deps.drizzle
+      .select({ used: schema.quotaUsage.used })
+      .from(schema.quotaUsage)
+      .where(
+        and(
+          eq(schema.quotaUsage.userId, userId),
+          eq(schema.quotaUsage.dimension, dimension),
+          eq(schema.quotaUsage.periodKey, periodKey)
+        )
+      )
+      .limit(1);
+    return Number(data?.used ?? 0);
   }
 
   /**
@@ -263,47 +280,44 @@ export class QuotaTracker {
     const resetAt =
       dimension === "intake_rpm" ? nextMinuteResetIso() : nextDailyResetIso();
 
-    // Try atomic RPC first
+    // Atomic increment using ON CONFLICT ... UPDATE
     try {
-      const { data, error } = await this.deps.db.rpc("wireline_quota_increment", {
-        p_user_id: userId,
-        p_dimension: dimension,
-        p_period_key: periodKey,
-        p_delta: delta,
-        p_limit: limit,
-      });
-      if (!error && data !== null && typeof data === "object") {
-        const row = data as { used: number; allowed: boolean };
-        return {
-          allowed: row.allowed,
+      const [row] = await this.deps.drizzle
+        .insert(schema.quotaUsage)
+        .values({
+          userId,
           dimension,
-          limit,
-          used: row.used,
-          remaining: Math.max(0, limit - row.used),
-          period_key: periodKey,
-          reset_at: resetAt,
-        };
-      }
-    } catch {
-      // Fall through to non-atomic path.
-    }
+          periodKey,
+          used: BigInt(delta),
+          updatedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: [schema.quotaUsage.userId, schema.quotaUsage.dimension, schema.quotaUsage.periodKey],
+          set: {
+            used: sql`${schema.quotaUsage.used} + ${BigInt(delta)}`,
+            updatedAt: new Date(),
+          }
+        })
+        .returning();
 
-    // Non-atomic fallback: select → if would-exceed, refuse without writing.
-    const current = await this.getUsage(userId, dimension);
-    if (current + delta > limit) {
+      const used = Number(row.used);
+      const allowed = used <= limit;
+
+      return {
+        allowed,
+        dimension,
+        limit,
+        used,
+        remaining: Math.max(0, limit - used),
+        period_key: periodKey,
+        reset_at: resetAt,
+      };
+    } catch (error: any) {
+      log.error("quota checkAndIncrement failed", { error: error.message, userId, dimension });
+      // Non-atomic fallback: select → if would-exceed, refuse without writing.
+      const current = await this.getUsage(userId, dimension);
       return buildDecision({ dimension, limit, used: current, delta, period_key: periodKey, reset_at: resetAt });
     }
-    await this.deps.db.from("wireline_quota_usage").upsert(
-      {
-        user_id: userId,
-        dimension,
-        period_key: periodKey,
-        used: current + delta,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id,dimension,period_key" },
-    );
-    return buildDecision({ dimension, limit, used: current + delta, delta: 0, period_key: periodKey, reset_at: resetAt });
   }
 }
 

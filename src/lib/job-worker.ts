@@ -1,4 +1,6 @@
-import { db, log, quotaTracker, auditLogger } from "./server-context";
+import { log, quotaTracker, auditLogger, drizzle } from "./server-context";
+import * as schema from "../db/schema";
+import { eq, and, sql, desc, or, ilike } from "drizzle-orm";
 import * as claudeBrain from "./claude-brain";
 import * as geminiBrain from "./gemini-brain";
 import { getErrorMessage } from "./server-utils";
@@ -100,8 +102,12 @@ export async function handleJob(job: JobRow): Promise<void> {
     };
     
     // Check user tier for model selection
-    const { data: settings } = await db.from('wireline_settings').select('ai_tier, crm_type').eq('user_id', p.userId).single();
-    const useFlash = p.useFlash || settings?.ai_tier === 'starter';
+    const [settings] = await drizzle
+      .select({ aiTier: schema.settings.aiTier, crmType: schema.settings.crmType })
+      .from(schema.settings)
+      .where(eq(schema.settings.userId, p.userId))
+      .limit(1);
+    const useFlash = p.useFlash || settings?.aiTier === 'starter';
 
     let result;
     let records: any[] = [];
@@ -129,18 +135,21 @@ export async function handleJob(job: JobRow): Promise<void> {
       records = capture.records;
     }
 
-    await db.from('wireline_call_logs').update({
-      lead_score:    result.lead_score,
-      intent_label:  result.intent_label,
+    await drizzle.update(schema.callLogs).set({
+      leadScore:    result.lead_score,
+      intentLabel:  result.intent_label,
       sentiment:     result.sentiment,
-      coaching_note: result.coaching_note,
-    }).eq('vapi_call_id', p.callId);
+      coachingNote: result.coaching_note,
+    }).where(eq(schema.callLogs.vapiCallId, p.callId));
     
     if (result.lesson?.trim()) {
-      await db.from('wireline_agent_lessons').upsert(
-        { agent_id: p.agentId, user_id: p.userId, lesson: result.lesson.trim() },
-        { onConflict: 'agent_id,lesson', ignoreDuplicates: true },
-      );
+      await drizzle.insert(schema.agentLessons).values({
+        agentId: p.agentId,
+        userId: p.userId,
+        lesson: result.lesson.trim()
+      }).onConflictDoNothing({
+        target: [schema.agentLessons.agentId, schema.agentLessons.lesson]
+      });
     }
     
     if (useFlash) {
@@ -162,11 +171,11 @@ export async function handleJob(job: JobRow): Promise<void> {
       });
     }
 
-    const { data: logRow } = await db
-      .from("wireline_call_logs")
-      .select("direction, customer_number")
-      .eq("vapi_call_id", p.callId)
-      .maybeSingle();
+    const [logRow] = await drizzle
+      .select({ direction: schema.callLogs.direction, customerNumber: schema.callLogs.customerNumber })
+      .from(schema.callLogs)
+      .where(eq(schema.callLogs.vapiCallId, p.callId))
+      .limit(1);
     const direction = logRow?.direction === "outbound" ? "outbound" as const : "inbound" as const;
     const enrichment = {
       lead_score: result.lead_score,
@@ -178,7 +187,7 @@ export async function handleJob(job: JobRow): Promise<void> {
     const payload = buildCallCompletedOutcome({
       vapi_call_id: p.callId,
       agent_id: p.agentId,
-      customer_number: logRow?.customer_number || p.customerNumber || null,
+      customer_number: logRow?.customerNumber || p.customerNumber || null,
       direction,
       duration_seconds: p.durationSeconds,
       enrichment_source: "async_post_call_job",
@@ -186,7 +195,7 @@ export async function handleJob(job: JobRow): Promise<void> {
     });
     await syncCallActivityToCrm({
       userId: p.userId,
-      crmType: settings?.crm_type,
+      crmType: settings?.crmType,
       agentName: p.agentName,
       callId: p.callId,
       direction,
@@ -219,7 +228,7 @@ export async function handleJob(job: JobRow): Promise<void> {
     }
 
     // Automatically enqueue action extraction after enrichment
-    await enqueue(db, {
+    await enqueue(drizzle, {
       userId: p.userId,
       type: 'v2a_action_extraction',
       payload: { 
@@ -248,7 +257,7 @@ export async function handleJob(job: JobRow): Promise<void> {
     });
 
     for (const action of actions) {
-      await enqueue(db, {
+      await enqueue(drizzle, {
         userId: p.userId,
         type: 'execute_action',
         payload: {
@@ -286,7 +295,7 @@ export async function handleJob(job: JobRow): Promise<void> {
       breakdown: any;
     };
 
-    const { data: call } = await db.from('wireline_call_logs').select('transcript').eq('id', p.callId).single();
+    const [call] = await drizzle.select({ transcript: schema.callLogs.transcript }).from(schema.callLogs).where(eq(schema.callLogs.id, p.callId)).limit(1);
     if (!call?.transcript) return;
 
     const lesson = await claudeBrain.synthesizeLesson({
@@ -296,10 +305,13 @@ export async function handleJob(job: JobRow): Promise<void> {
     });
 
     if (lesson) {
-      await db.from('wireline_agent_lessons').upsert(
-        { agent_id: p.agentId, user_id: p.userId, lesson: lesson },
-        { onConflict: 'agent_id,lesson', ignoreDuplicates: true },
-      );
+      await drizzle.insert(schema.agentLessons).values({
+        agentId: p.agentId,
+        userId: p.userId,
+        lesson: lesson
+      }).onConflictDoNothing({
+        target: [schema.agentLessons.agentId, schema.agentLessons.lesson]
+      });
       log.info("Adaptive optimization: new lesson synthesized", { agentId: p.agentId, lesson });
     }
   }
@@ -311,15 +323,13 @@ export async function handleJob(job: JobRow): Promise<void> {
       return;
     }
     const retentionDays = typeof p.retention_days === 'number' ? p.retention_days : 365;
-    const { data, error } = await db.rpc('wireline_purge_old_data', {
-      p_user_id: p.user_id,
-      p_retention_days: retentionDays,
-    });
-    if (error) {
+    try {
+      const result = await drizzle.execute(sql.raw(`SELECT wireline_purge_old_data('${p.user_id}', ${retentionDays})`));
+      log.info('purge_old_data job completed', { jobId: job.id, user_id: p.user_id, retention_days: retentionDays, result });
+    } catch (error: any) {
       log.error('purge_old_data job failed', { jobId: job.id, user_id: p.user_id, error: error.message });
       throw new Error(error.message);
     }
-    log.info('purge_old_data job completed', { jobId: job.id, user_id: p.user_id, retention_days: retentionDays, result: data });
   }
 
   if (job.type === 'purge_deleted_account') {
@@ -331,38 +341,37 @@ export async function handleJob(job: JobRow): Promise<void> {
 
     // Guard: the queue row must still be 'pending' AND past its
     // scheduled_purge_at. If the user cancelled in the grace window, skip.
-    let queueRow: { id: string; status: string; scheduled_purge_at: string; ip: string | null } | null = null;
+    let queueRow: any = null;
     if (p.queue_id) {
-      const { data } = await db
-        .from('wireline_deletion_queue')
-        .select('id, status, scheduled_purge_at, ip')
-        .eq('id', p.queue_id)
-        .maybeSingle();
-      queueRow = (data as any) ?? null;
+      const [data] = await drizzle
+        .select()
+        .from(schema.deletionQueue)
+        .where(eq(schema.deletionQueue.id, BigInt(p.queue_id)))
+        .limit(1);
+      queueRow = data;
     } else {
-      const { data } = await db
-        .from('wireline_deletion_queue')
-        .select('id, status, scheduled_purge_at, ip')
-        .eq('user_id', p.user_id)
-        .eq('status', 'pending')
-        .maybeSingle();
-      queueRow = (data as any) ?? null;
+      const [data] = await drizzle
+        .select()
+        .from(schema.deletionQueue)
+        .where(and(eq(schema.deletionQueue.userId, p.user_id), eq(schema.deletionQueue.status, 'pending')))
+        .limit(1);
+      queueRow = data;
     }
 
     if (!queueRow || queueRow.status !== 'pending') {
       log.info('purge_deleted_account skipped — no pending queue row', { jobId: job.id, user_id: p.user_id });
       return;
     }
-    if (new Date(queueRow.scheduled_purge_at).getTime() > Date.now()) {
+    if (new Date(queueRow.scheduledPurgeAt).getTime() > Date.now()) {
       log.info('purge_deleted_account skipped — still within grace window', {
         jobId: job.id,
         user_id: p.user_id,
-        scheduled_purge_at: queueRow.scheduled_purge_at,
+        scheduled_purge_at: queueRow.scheduledPurgeAt,
       });
       return;
     }
 
-    const result = await purgeAccount(p.user_id, { db, log });
+    const result = await purgeAccount(p.user_id, { db: drizzle, log });
     if (!result.ok) {
       log.error('purge_deleted_account failed', { jobId: job.id, user_id: p.user_id, error: result.error });
       throw new Error(result.error ?? 'account purge failed');
@@ -377,10 +386,10 @@ export async function handleJob(job: JobRow): Promise<void> {
     // Mark the queue row purged. The FK ON DELETE CASCADE from auth.users
     // would have already removed it when the auth row was deleted, so this
     // update may affect zero rows — that's fine.
-    await db
-      .from('wireline_deletion_queue')
-      .update({ status: 'purged', purged_at: new Date().toISOString() })
-      .eq('id', queueRow.id);
+    await drizzle
+      .update(schema.deletionQueue)
+      .set({ status: 'purged', purgedAt: new Date() })
+      .where(eq(schema.deletionQueue.id, queueRow.id));
 
     log.info('purge_deleted_account completed', {
       jobId: job.id,
@@ -395,10 +404,10 @@ export async function handleJob(job: JobRow): Promise<void> {
     log.info("Starting proactive lead enrichment", { userId: p.userId, customerNumber: p.customerNumber });
 
     try {
-      const [enrichment, { data: calls }, { data: emails }] = await Promise.all([
+      const [enrichment, calls, emails] = await Promise.all([
         apolloEnrich(p.customerNumber),
-        db.from('wireline_call_logs').select('summary, created_at').eq('customer_number', p.customerNumber).order('created_at', { ascending: false }).limit(3),
-        db.from('wireline_email_threads').select('summary, last_message_at').eq('customer_number', p.customerNumber).order('last_message_at', { ascending: false }).limit(3),
+        drizzle.select({ summary: schema.callLogs.summary, createdAt: schema.callLogs.createdAt }).from(schema.callLogs).where(eq(schema.callLogs.customerNumber, p.customerNumber)).orderBy(desc(schema.callLogs.createdAt)).limit(3),
+        drizzle.select({ summary: schema.emailThreads.summary, lastMessageAt: schema.emailThreads.lastMessageAt }).from(schema.emailThreads).where(eq(schema.emailThreads.customerEmail, p.customerNumber)).orderBy(desc(schema.emailThreads.lastMessageAt)).limit(3),
       ]);
 
       let summaryText = "";
@@ -406,16 +415,26 @@ export async function handleJob(job: JobRow): Promise<void> {
       if (emails?.length) summaryText += "Recent Emails: " + emails.map(e => e.summary || "No summary").join("; ") + ". ";
 
       if (enrichment) {
-        await db.from('wireline_lead_dossiers').upsert({
-          user_id: p.userId,
-          customer_number: p.customerNumber,
-          full_name: enrichment.first_name && enrichment.last_name ? `${enrichment.first_name} ${enrichment.last_name}` : undefined,
-          job_title: enrichment.title,
+        await drizzle.insert(schema.leadDossiers).values({
+          userId: p.userId,
+          customerNumber: p.customerNumber,
+          fullName: enrichment.first_name && enrichment.last_name ? `${enrichment.first_name} ${enrichment.last_name}` : undefined,
+          jobTitle: enrichment.title,
           company: enrichment.company,
-          linked_in_url: enrichment.linkedin_url,
-          dossier_data: enrichment,
-          interaction_summary: summaryText || "No prior interactions found."
-        }, { onConflict: 'user_id,customer_number' });
+          linkedInUrl: enrichment.linkedin_url,
+          dossierData: enrichment,
+          interactionSummary: summaryText || "No prior interactions found."
+        }).onConflictDoUpdate({
+          target: [schema.leadDossiers.userId, schema.leadDossiers.customerNumber],
+          set: {
+            fullName: enrichment.first_name && enrichment.last_name ? `${enrichment.first_name} ${enrichment.last_name}` : undefined,
+            jobTitle: enrichment.title,
+            company: enrichment.company,
+            linkedInUrl: enrichment.linkedin_url,
+            dossierData: enrichment,
+            interactionSummary: summaryText || "No prior interactions found."
+          }
+        });
         
         log.info("Lead enrichment successful", { userId: p.userId, customerNumber: p.customerNumber, company: enrichment.company });
       } else {
@@ -428,35 +447,37 @@ export async function handleJob(job: JobRow): Promise<void> {
 
   if (job.type === 'autonomous_prospecting') {
     const p = job.payload as { userId: string };
-    const { data: settings } = await db.from('wireline_settings').select('*').eq('user_id', p.userId).single();
+    const [settings] = await drizzle.select().from(schema.settings).where(eq(schema.settings.userId, p.userId)).limit(1);
     
-    if (!settings?.prospecting_enabled) {
+    if (!settings?.prospectingEnabled) {
       log.info("Prospecting disabled for user", { userId: p.userId });
       return;
     }
 
-    log.info("Starting autonomous prospecting", { userId: p.userId, titles: settings.target_titles });
+    log.info("Starting autonomous prospecting", { userId: p.userId, titles: settings.targetTitles });
 
     try {
       const leads = await apolloSearch({
-        titles: settings.target_titles,
-        industries: settings.target_industries,
-        states: settings.target_states,
-        employee_ranges: settings.target_employee_ranges,
+        titles: settings.targetTitles || [],
+        industries: settings.targetIndustries || [],
+        states: settings.targetStates || [],
+        employee_ranges: settings.targetEmployeeRanges || [],
         limit: 10
       });
 
       let added = 0;
       for (const lead of leads) {
-        const { error } = await db.from('wireline_outbound_leads').insert({
-          user_id: p.userId,
-          customer_name: `${lead.first_name} ${lead.last_name}`,
-          customer_number: lead.phone,
-          email: lead.email,
-          status: 'New',
-          context: `Autonomously sourced via Apollo Intelligence for ${lead.title} role at ${lead.company}.`
-        });
-        if (!error) added++;
+        try {
+          await drizzle.insert(schema.outboundLeads).values({
+            userId: p.userId,
+            customerName: `${lead.first_name} ${lead.last_name}`,
+            customerNumber: lead.phone,
+            email: lead.email,
+            status: 'New',
+            context: `Autonomously sourced via Apollo Intelligence for ${lead.title} role at ${lead.company}.`
+          });
+          added++;
+        } catch {}
       }
 
       log.info("Autonomous prospecting complete", { userId: p.userId, leadsFound: leads.length, leadsAdded: added });
@@ -473,7 +494,7 @@ export async function handleJob(job: JobRow): Promise<void> {
 export function initJobWorker() {
   if (process.env.VERCEL === '1') return null;
 
-  return startWorker(db, handleJob, {
+  return startWorker(drizzle, handleJob, {
     pollIntervalMs: 10_000,
     onError: (err) => log.error('job worker error', { error: err.message }),
   });

@@ -1,6 +1,8 @@
 import { google } from "googleapis";
 import { encryptSecret, decryptSecret } from "../lib/secret-vault";
-import { db } from "../lib/server-context";
+import { drizzle, log } from "../lib/server-context";
+import * as schema from "../db/schema";
+import { eq, and } from "drizzle-orm";
 
 export async function syncGoogleCalendar(userId: string) {
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
@@ -8,15 +10,13 @@ export async function syncGoogleCalendar(userId: string) {
   }
 
   // 1. Fetch Google Calendar accounts for this user
-  const { data: accounts, error: accountErr } = await db
-    .from("wireline_calendar_accounts")
-    .select("*")
-    .eq("user_id", userId)
-    .eq("provider", "google");
-
-  if (accountErr) {
-    throw new Error(`Failed to fetch calendar accounts: ${accountErr.message}`);
-  }
+  const accounts = await drizzle
+    .select()
+    .from(schema.calendarAccounts)
+    .where(and(
+      eq(schema.calendarAccounts.userId, userId),
+      eq(schema.calendarAccounts.provider, "google")
+    ));
 
   if (!accounts || accounts.length === 0) {
     return { status: "no_accounts" };
@@ -32,30 +32,26 @@ export async function syncGoogleCalendar(userId: string) {
       );
 
       oauth2Client.setCredentials({
-        access_token: decryptSecret(account.access_token),
-        refresh_token: account.refresh_token ? decryptSecret(account.refresh_token) : null,
-        expiry_date: account.expires_at,
+        access_token: decryptSecret(account.accessToken),
+        refresh_token: account.refreshToken ? decryptSecret(account.refreshToken) : null,
+        expiry_date: account.expiresAt ? Number(account.expiresAt) : null,
       });
 
       // Handle token refresh automatically if expired
       oauth2Client.on('tokens', async (tokens) => {
         if (!tokens.access_token) return;
+        const update: any = { 
+          accessToken: encryptSecret(tokens.access_token), 
+          expiresAt: tokens.expiry_date ? BigInt(tokens.expiry_date) : null,
+          updatedAt: new Date()
+        };
         if (tokens.refresh_token) {
-           await db.from("wireline_calendar_accounts")
-             .update({ 
-               access_token: encryptSecret(tokens.access_token), 
-               refresh_token: encryptSecret(tokens.refresh_token),
-               expires_at: tokens.expiry_date 
-             })
-             .eq("id", account.id);
-        } else {
-           await db.from("wireline_calendar_accounts")
-             .update({ 
-               access_token: encryptSecret(tokens.access_token),
-               expires_at: tokens.expiry_date 
-             })
-             .eq("id", account.id);
+          update.refreshToken = encryptSecret(tokens.refresh_token);
         }
+        
+        await drizzle.update(schema.calendarAccounts)
+          .set(update)
+          .where(eq(schema.calendarAccounts.id, account.id));
       });
 
       const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
@@ -79,21 +75,30 @@ export async function syncGoogleCalendar(userId: string) {
       for (const event of events) {
         if (!event.id || !event.start?.dateTime || !event.end?.dateTime) continue;
 
-        await db.from("wireline_calendar_events").upsert({
-          user_id: userId,
-          account_id: account.id,
-          external_event_id: event.id,
+        await drizzle.insert(schema.calendarEvents).values({
+          userId: userId,
+          accountId: account.id,
+          externalEventId: event.id,
           title: event.summary || "Busy",
-          start_time: event.start.dateTime,
-          end_time: event.end.dateTime,
+          startTime: new Date(event.start.dateTime),
+          endTime: new Date(event.end.dateTime),
           status: event.status || "confirmed",
-          updated_at: new Date().toISOString()
-        }, { onConflict: "account_id, external_event_id" });
+          updatedAt: new Date()
+        }).onConflictDoUpdate({
+          target: [schema.calendarEvents.accountId, schema.calendarEvents.externalEventId],
+          set: {
+            title: event.summary || "Busy",
+            startTime: new Date(event.start.dateTime),
+            endTime: new Date(event.end.dateTime),
+            status: event.status || "confirmed",
+            updatedAt: new Date()
+          }
+        });
 
         totalSynced++;
       }
-    } catch (err) {
-      console.error(`Failed to sync calendar for account ${account.id}:`, err);
+    } catch (err: any) {
+      log.error(`Failed to sync calendar for account ${account.id}:`, { error: err.message });
     }
   }
 

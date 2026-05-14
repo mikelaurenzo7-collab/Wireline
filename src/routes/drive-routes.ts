@@ -1,5 +1,6 @@
-import { Router, Response } from "express";
-import { db, log, auditLogger } from "../lib/server-context";
+import { log, auditLogger, drizzle } from "../lib/server-context";
+import * as schema from "../db/schema";
+import { eq, and } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage } from "../lib/server-utils";
 import { syncGoogleDriveToKnowledge } from "../services/google-drive-sync";
@@ -15,14 +16,13 @@ router.post("/api/drive/ingest", authenticateUser, claudeRateLimiter, async (req
     return res.status(400).json({ error: "agentId is required." });
   }
   try {
-    // Verify agent belongs to user
-    const { data: agent, error: agentErr } = await db
-      .from("wireline_agents")
-      .select("id")
-      .eq("id", agentId)
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (agentErr || !agent) return res.status(404).json({ error: "Agent not found." });
+    const [agent] = await drizzle
+      .select({ id: schema.agents.id })
+      .from(schema.agents)
+      .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
+      .limit(1);
+    
+    if (!agent) return res.status(404).json({ error: "Agent not found." });
 
     const result = await syncGoogleDriveToKnowledge(userId, agentId);
     void auditLogger.logDataModification('settings.knowledge_base_updated', { userId, resource: 'google_drive_ingest', metadata: result });

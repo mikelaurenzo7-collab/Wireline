@@ -6,7 +6,9 @@
  * Operators can omit `?agentId=` on serverUrl when routing is inferred from this id.
  */
 
-import { db, log } from "./server-context";
+import { drizzle, log } from "./server-context";
+import * as schema from "../db/schema";
+import { eq, and, desc } from "drizzle-orm";
 
 export function extractVapiPhoneNumberId(body: Record<string, unknown> | undefined | null): string | undefined {
   if (!body || typeof body !== "object") return undefined;
@@ -35,15 +37,19 @@ export function extractVapiPhoneNumberId(body: Record<string, unknown> | undefin
 }
 
 async function pickDefaultVoiceAgent(userId: string): Promise<string | null> {
-  const { data, error } = await db
-    .from("wireline_agents")
-    .select("id")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-  if (error) log.warn("pickDefaultVoiceAgent query failed", { userId, error: error.message });
-  return data?.id ?? null;
+  try {
+    const [data] = await drizzle
+      .select({ id: schema.agents.id })
+      .from(schema.agents)
+      .where(eq(schema.agents.userId, userId))
+      .orderBy(desc(schema.agents.createdAt))
+      .limit(1);
+    
+    return data?.id ?? null;
+  } catch (err: any) {
+    log.warn("pickDefaultVoiceAgent query failed", { userId, error: err.message });
+    return null;
+  }
 }
 
 export type ResolveVapiWebhookAgentResult =
@@ -61,54 +67,41 @@ export async function resolveVapiWebhookAgent(opts: {
   let enforceTenantUserId: string | null = null;
 
   if (phoneNumberId) {
-    const { data: line, error: lineErr } = await db
-      .from("wireline_phone_numbers")
-      .select("agent_id, user_id")
-      .eq("vapi_number_id", phoneNumberId)
-      .maybeSingle();
-
-    if (lineErr) {
-      log.warn("resolveVapiWebhookAgent wireline_phone_numbers lookup failed", {
-        phoneNumberId,
-        error: lineErr.message,
-      });
-    }
+    const [line] = await drizzle
+      .select({ agentId: schema.phoneNumbers.agentId, userId: schema.phoneNumbers.userId })
+      .from(schema.phoneNumbers)
+      .where(eq(schema.phoneNumbers.vapiNumberId, phoneNumberId))
+      .limit(1);
 
     if (line) {
-      enforceTenantUserId = line.user_id as string;
-      if (line.agent_id) {
-        resolvedAgentId = line.agent_id as string;
+      enforceTenantUserId = line.userId as string;
+      if (line.agentId) {
+        resolvedAgentId = line.agentId as string;
       } else {
-        const { data: st } = await db
-          .from("wireline_settings")
-          .select("vapi_phone_inbound_agent_id")
-          .eq("user_id", line.user_id)
-          .maybeSingle();
+        const [st] = await drizzle
+          .select({ vapiPhoneInboundAgentId: schema.settings.vapiPhoneInboundAgentId })
+          .from(schema.settings)
+          .where(eq(schema.settings.userId, line.userId))
+          .limit(1);
+
         const pref =
-          typeof st?.vapi_phone_inbound_agent_id === "string" ? st.vapi_phone_inbound_agent_id.trim() : "";
+          typeof st?.vapiPhoneInboundAgentId === "string" ? st.vapiPhoneInboundAgentId.trim() : "";
         resolvedAgentId =
           pref
           || (await pickDefaultVoiceAgent(enforceTenantUserId))
           || undefined;
       }
     } else {
-      const { data: st, error: stErr } = await db
-        .from("wireline_settings")
-        .select("user_id, vapi_phone_inbound_agent_id")
-        .eq("vapi_phone_number_id", phoneNumberId)
-        .maybeSingle();
+      const [st] = await drizzle
+        .select({ userId: schema.settings.userId, vapiPhoneInboundAgentId: schema.settings.vapiPhoneInboundAgentId })
+        .from(schema.settings)
+        .where(eq(schema.settings.vapiPhoneNumberId, phoneNumberId))
+        .limit(1);
 
-      if (stErr) {
-        log.warn("resolveVapiWebhookAgent settings lookup failed", {
-          phoneNumberId,
-          error: stErr.message,
-        });
-      }
-
-      if (st?.user_id) {
-        enforceTenantUserId = st.user_id as string;
+      if (st?.userId) {
+        enforceTenantUserId = st.userId as string;
         const pref =
-          typeof st.vapi_phone_inbound_agent_id === "string" ? st.vapi_phone_inbound_agent_id.trim() : "";
+          typeof st.vapiPhoneInboundAgentId === "string" ? st.vapiPhoneInboundAgentId.trim() : "";
         resolvedAgentId =
           pref
           || (await pickDefaultVoiceAgent(enforceTenantUserId))
@@ -135,25 +128,21 @@ export async function resolveVapiWebhookAgent(opts: {
     };
   }
 
-  const { data: agentRow, error: agentErr } = await db
-    .from("wireline_agents")
-    .select("user_id")
-    .eq("id", resolvedAgentId)
-    .maybeSingle();
+  const [agentRow] = await drizzle
+    .select({ userId: schema.agents.userId })
+    .from(schema.agents)
+    .where(eq(schema.agents.id, resolvedAgentId))
+    .limit(1);
 
-  if (agentErr) {
-    log.warn("resolveVapiWebhookAgent agent lookup failed", { resolvedAgentId, error: agentErr.message });
-  }
-
-  if (!agentRow?.user_id) {
+  if (!agentRow?.userId) {
     return { ok: false, status: 404, body: { error: "Agent not found" } };
   }
 
-  if (enforceTenantUserId && agentRow.user_id !== enforceTenantUserId) {
+  if (enforceTenantUserId && agentRow.userId !== enforceTenantUserId) {
     log.warn("Vapi webhook rejected mismatched tenant for agent resolution", {
       agentId: resolvedAgentId,
       expectedUserId: enforceTenantUserId,
-      actualUserId: agentRow.user_id,
+      actualUserId: agentRow.userId,
     });
     return {
       ok: false,
@@ -162,5 +151,7 @@ export async function resolveVapiWebhookAgent(opts: {
     };
   }
 
-  return { ok: true, webhookAgentId: resolvedAgentId, agentUserId: agentRow.user_id as string };
+  return { ok: true, webhookAgentId: resolvedAgentId, agentUserId: agentRow.userId as string };
+}
+
 }

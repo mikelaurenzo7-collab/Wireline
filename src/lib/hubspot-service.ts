@@ -1,4 +1,6 @@
-import { db, log, fetchWithTimeout } from "./server-context";
+import { drizzle, log, fetchWithTimeout } from "./server-context";
+import * as schema from "../db/schema";
+import { eq, and } from "drizzle-orm";
 import { encryptSecret, decryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
 
@@ -34,9 +36,9 @@ export interface HubSpotCallLog {
 
 interface CrmConnection {
   id: string;
-  access_token: string;
-  refresh_token: string;
-  expires_at: number;
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number | null;
 }
 
 // ────────────────────────────────────────────────────────────────────
@@ -106,7 +108,7 @@ async function refreshHubSpotToken(conn: CrmConnection): Promise<{ access_token:
     grant_type: "refresh_token",
     client_id: process.env.HUBSPOT_CLIENT_ID!,
     client_secret: process.env.HUBSPOT_CLIENT_SECRET!,
-    refresh_token: decryptSecret(conn.refresh_token),
+    refresh_token: decryptSecret(conn.refreshToken),
   });
 
   const r = await fetchWithTimeout(
@@ -130,12 +132,17 @@ async function refreshHubSpotToken(conn: CrmConnection): Promise<{ access_token:
 }
 
 async function getConnection(userId: string): Promise<CrmConnection | null> {
-  const { data } = await db
-    .from("wireline_crm_connections")
-    .select("id, access_token, refresh_token, expires_at")
-    .eq("user_id", userId)
-    .eq("provider", "hubspot")
-    .single();
+  const [data] = await drizzle
+    .select({
+      id: schema.crmConnections.id,
+      accessToken: schema.crmConnections.accessToken,
+      refreshToken: schema.crmConnections.refreshToken,
+      expiresAt: schema.crmConnections.expiresAt
+    })
+    .from(schema.crmConnections)
+    .where(and(eq(schema.crmConnections.userId, userId), eq(schema.crmConnections.provider, "hubspot")))
+    .limit(1);
+  
   return data || null;
 }
 
@@ -143,20 +150,20 @@ async function getValidToken(userId: string): Promise<string | null> {
   const conn = await getConnection(userId);
   if (!conn) return null;
 
-  if (conn.expires_at && Date.now() < conn.expires_at - 60_000) {
-    return decryptSecret(conn.access_token);
+  if (conn.expiresAt && Date.now() < conn.expiresAt - 60_000) {
+    return decryptSecret(conn.accessToken);
   }
 
   try {
     const updated = await refreshHubSpotToken(conn);
-    await db.from("wireline_crm_connections")
-      .update({
-        access_token: encryptSecret(updated.access_token),
-        refresh_token: encryptSecret(updated.refresh_token),
-        expires_at: updated.expires_at,
-        updated_at: new Date().toISOString(),
+    await drizzle.update(schema.crmConnections)
+      .set({
+        accessToken: encryptSecret(updated.access_token),
+        refreshToken: encryptSecret(updated.refresh_token),
+        expiresAt: updated.expires_at,
+        updatedAt: new Date(),
       })
-      .eq("id", conn.id);
+      .where(eq(schema.crmConnections.id, conn.id));
     return updated.access_token;
   } catch (err) {
     log.error("HubSpot token refresh failed", { error: getErrorMessage(err) });
@@ -351,11 +358,9 @@ export async function createDeal(params: {
 }
 
 export async function disconnectHubSpot(userId: string): Promise<void> {
-  await db.from("wireline_crm_connections")
-    .delete()
-    .eq("user_id", userId)
-    .eq("provider", "hubspot");
-  await db.from("wireline_settings")
-    .update({ crm_type: null })
-    .eq("user_id", userId);
+  await drizzle.delete(schema.crmConnections)
+    .where(and(eq(schema.crmConnections.userId, userId), eq(schema.crmConnections.provider, "hubspot")));
+  await drizzle.update(schema.settings)
+    .set({ crmType: null })
+    .where(eq(schema.settings.userId, userId));
 }

@@ -1,6 +1,8 @@
 import twilio from "twilio";
 
-import { db, log } from "./server-context";
+import { drizzle, log } from "./server-context";
+import * as schema from "../db/schema";
+import { eq } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
 
 export type TwilioMessageChannel = "sms" | "whatsapp";
@@ -76,30 +78,28 @@ function formatMessageAddress(raw: string, channel: TwilioMessageChannel): strin
 }
 
 async function getTenantSettings(userId: string): Promise<TwilioTenantSettings> {
-  const { data } = await db
-    .from("wireline_settings")
-    .select([
-      "twilio_messaging_enabled",
-      "twilio_lookup_enabled",
-      "twilio_manager_alerts_enabled",
-      "twilio_messaging_service_sid",
-      "twilio_sms_from_number",
-      "twilio_whatsapp_from_number",
-      "twilio_manager_alert_number",
-    ].join(","))
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  const row = (data || null) as Record<string, any> | null;
+  const [row] = await drizzle
+    .select({
+      twilioMessagingEnabled: schema.settings.twilioMessagingEnabled,
+      twilioLookupEnabled: schema.settings.twilioLookupEnabled,
+      twilioManagerAlertsEnabled: schema.settings.twilioManagerAlertsEnabled,
+      twilioMessagingServiceSid: schema.settings.twilioMessagingServiceSid,
+      twilioSmsFromNumber: schema.settings.twilioSmsFromNumber,
+      twilioWhatsappFromNumber: schema.settings.twilioWhatsappFromNumber,
+      twilioManagerAlertNumber: schema.settings.twilioManagerAlertNumber,
+    })
+    .from(schema.settings)
+    .where(eq(schema.settings.userId, userId))
+    .limit(1);
 
   return {
-    messagingEnabled: !!row?.twilio_messaging_enabled,
-    lookupEnabled: !!row?.twilio_lookup_enabled,
-    managerAlertsEnabled: !!row?.twilio_manager_alerts_enabled,
-    messagingServiceSid: row?.twilio_messaging_service_sid || null,
-    smsFromNumber: row?.twilio_sms_from_number || null,
-    whatsappFromNumber: row?.twilio_whatsapp_from_number || null,
-    managerAlertNumber: row?.twilio_manager_alert_number || null,
+    messagingEnabled: !!row?.twilioMessagingEnabled,
+    lookupEnabled: !!row?.twilioLookupEnabled,
+    managerAlertsEnabled: !!row?.twilioManagerAlertsEnabled,
+    messagingServiceSid: row?.twilioMessagingServiceSid || null,
+    smsFromNumber: row?.twilioSmsFromNumber || null,
+    whatsappFromNumber: row?.twilioWhatsappFromNumber || null,
+    managerAlertNumber: row?.twilioManagerAlertNumber || null,
   };
 }
 

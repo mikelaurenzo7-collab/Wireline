@@ -5,7 +5,9 @@
  * Extracted from server.ts to avoid circular dependencies.
  */
 
-import { db } from "./server-context";
+import { drizzle, log } from "./server-context";
+import * as schema from "../db/schema";
+import { eq, and, gte, lt, desc } from "drizzle-orm";
 import * as claudeBrain from "./claude-brain";
 import { google } from "googleapis";
 import { buildOAuthClient } from "./oauth-helpers";
@@ -29,25 +31,45 @@ export async function computeDailyBrief(userId: string, opts?: { force?: boolean
   const yEnd   = new Date(yStart); yEnd.setDate(yEnd.getDate() + 1);
   const wStart = new Date(); wStart.setDate(wStart.getDate() - 7);
 
-  const [{ data: yCalls }, { data: wCalls }, { data: appts }, { data: tasks }, { data: leads }, { data: wins }, { data: losses }] = await Promise.all([
-    db.from("wireline_call_logs").select("lead_score, intent_label, duration_seconds, cost, summary, customer_number").eq("user_id", userId).gte("created_at", yStart.toISOString()).lt("created_at", yEnd.toISOString()),
-    db.from("wireline_call_logs").select("lead_score, duration_seconds, cost").eq("user_id", userId).gte("created_at", wStart.toISOString()),
-    db.from("wireline_appointments").select("id").eq("user_id", userId).gte("created_at", yStart.toISOString()).lt("created_at", yEnd.toISOString()),
-    db.from("wireline_fleet_tasks").select("priority, description").eq("user_id", userId).eq("status", "pending").order("created_at", { ascending: false }).limit(8),
-    db.from("wireline_outbound_leads").select("id").eq("user_id", userId).eq("status", "Pending"),
-    db.from("wireline_call_logs").select("customer_number, lead_score, summary").eq("user_id", userId).gte("created_at", yStart.toISOString()).gte("lead_score", 70).order("lead_score", { ascending: false }).limit(3),
-    db.from("wireline_call_logs").select("customer_number, lead_score, summary").eq("user_id", userId).gte("created_at", yStart.toISOString()).lt("lead_score", 30).order("created_at", { ascending: false }).limit(3),
+  const [yCalls, wCalls, appts, tasks, leads, wins, losses] = await Promise.all([
+    drizzle.select({ leadScore: schema.callLogs.leadScore, intentLabel: schema.callLogs.intentLabel, durationSeconds: schema.callLogs.durationSeconds, cost: schema.callLogs.cost, summary: schema.callLogs.summary, customerNumber: schema.callLogs.customerNumber })
+      .from(schema.callLogs)
+      .where(and(eq(schema.callLogs.userId, userId), gte(schema.callLogs.createdAt, yStart), lt(schema.callLogs.createdAt, yEnd))),
+    drizzle.select({ leadScore: schema.callLogs.leadScore, durationSeconds: schema.callLogs.durationSeconds, cost: schema.callLogs.cost })
+      .from(schema.callLogs)
+      .where(and(eq(schema.callLogs.userId, userId), gte(schema.callLogs.createdAt, wStart))),
+    drizzle.select({ id: schema.appointments.id })
+      .from(schema.appointments)
+      .where(and(eq(schema.appointments.userId, userId), gte(schema.appointments.createdAt, yStart), lt(schema.appointments.createdAt, yEnd))),
+    drizzle.select({ priority: schema.fleetTasks.priority, description: schema.fleetTasks.description })
+      .from(schema.fleetTasks)
+      .where(and(eq(schema.fleetTasks.userId, userId), eq(schema.fleetTasks.status, "pending")))
+      .orderBy(desc(schema.fleetTasks.createdAt))
+      .limit(8),
+    drizzle.select({ id: schema.outboundLeads.id })
+      .from(schema.outboundLeads)
+      .where(and(eq(schema.outboundLeads.userId, userId), eq(schema.outboundLeads.status, "Pending"))),
+    drizzle.select({ customerNumber: schema.callLogs.customerNumber, leadScore: schema.callLogs.leadScore, summary: schema.callLogs.summary })
+      .from(schema.callLogs)
+      .where(and(eq(schema.callLogs.userId, userId), gte(schema.callLogs.createdAt, yStart), gte(schema.callLogs.leadScore, 70)))
+      .orderBy(desc(schema.callLogs.leadScore))
+      .limit(3),
+    drizzle.select({ customerNumber: schema.callLogs.customerNumber, leadScore: schema.callLogs.leadScore, summary: schema.callLogs.summary })
+      .from(schema.callLogs)
+      .where(and(eq(schema.callLogs.userId, userId), gte(schema.callLogs.createdAt, yStart), lt(schema.callLogs.leadScore, 30)))
+      .orderBy(desc(schema.callLogs.createdAt))
+      .limit(3),
   ]);
 
   const yTotal = yCalls?.length || 0;
-  const yMinutes = Math.round((yCalls || []).reduce((s: number, c: any) => s + (c.duration_seconds || 0), 0) / 60);
-  const yAvgScore = yTotal ? Math.round((yCalls || []).reduce((s: number, c: any) => s + (c.lead_score || 0), 0) / yTotal) : 0;
-  const yHighIntent = (yCalls || []).filter((c: any) => c.intent_label === "high").length;
+  const yMinutes = Math.round((yCalls || []).reduce((s: number, c: any) => s + (c.durationSeconds || 0), 0) / 60);
+  const yAvgScore = yTotal ? Math.round((yCalls || []).reduce((s: number, c: any) => s + (c.leadScore || 0), 0) / yTotal) : 0;
+  const yHighIntent = (yCalls || []).filter((c: any) => c.intentLabel === "high").length;
   const yCost = Number((yCalls || []).reduce((s: number, c: any) => s + Number(c.cost || 0), 0).toFixed(2));
 
   const wDays = 7;
   const wAvgPerDay = (wCalls?.length || 0) / wDays;
-  const wAvgScore = wCalls?.length ? (wCalls || []).reduce((s: number, c: any) => s + (c.lead_score || 0), 0) / wCalls.length : 0;
+  const wAvgScore = wCalls?.length ? (wCalls || []).reduce((s: number, c: any) => s + (c.leadScore || 0), 0) / wCalls.length : 0;
   const wAvgCostPerDay = (wCalls || []).reduce((s: number, c: any) => s + Number(c.cost || 0), 0) / wDays;
 
   const callsPct = wAvgPerDay > 0 ? ((yTotal - wAvgPerDay) / wAvgPerDay) * 100 : 0;
@@ -70,8 +92,8 @@ export async function computeDailyBrief(userId: string, opts?: { force?: boolean
       score_pct: Math.round(scorePct),
       cost_pct: Math.round(costPct),
     },
-    recentWinSamples: (wins || []).map(w => ({ customer: w.customer_number || "Contact", score: w.lead_score || 0, summary: w.summary || "" })),
-    recentLossSamples: (losses || []).map(l => ({ customer: l.customer_number || "Contact", score: l.lead_score || 0, summary: l.summary || "" })),
+    recentWinSamples: (wins || []).map(w => ({ customer: w.customerNumber || "Contact", score: w.leadScore || 0, summary: w.summary || "" })),
+    recentLossSamples: (losses || []).map(l => ({ customer: l.customerNumber || "Contact", score: l.leadScore || 0, summary: l.summary || "" })),
     openTasks: (tasks || []).map((t: any) => ({ priority: t.priority || "medium", description: t.description || "" })),
   });
 
@@ -189,14 +211,23 @@ function escapeHtml(s: any): string {
 
 export async function sendDailyBriefEmail(userId: string, opts?: { force?: boolean }) {
   // Pull settings + the operator's connected Gmail account.
-  const [{ data: settings }, { data: accounts }] = await Promise.all([
-    db.from("wireline_settings").select("daily_brief_recipient, daily_brief_enabled").eq("user_id", userId).maybeSingle(),
-    db.from("wireline_email_accounts").select("access_token, refresh_token, expires_at, email_address").eq("user_id", userId).limit(1),
+  const [settingsRow, accountRow] = await Promise.all([
+    drizzle.select({ dailyBriefRecipient: schema.settings.dailyBriefRecipient, dailyBriefEnabled: schema.settings.dailyBriefEnabled })
+      .from(schema.settings)
+      .where(eq(schema.settings.userId, userId))
+      .limit(1)
+      .then(rows => rows[0] || null),
+    drizzle.select({ accessToken: schema.emailAccounts.accessToken, refreshToken: schema.emailAccounts.refreshToken, expiresAt: schema.emailAccounts.expiresAt, emailAddress: schema.emailAccounts.emailAddress })
+      .from(schema.emailAccounts)
+      .where(and(eq(schema.emailAccounts.userId, userId), eq(schema.emailAccounts.provider, "google")))
+      .limit(1)
+      .then(rows => rows[0] || null),
   ]);
-  const recipient = settings?.daily_brief_recipient;
-  if (!recipient) throw new Error("No recipient configured (daily_brief_recipient).");
-  const account: any = accounts?.[0];
-  if (!account?.refresh_token) throw new Error("No connected Gmail account — connect one in Carrier Bridge first.");
+
+  const recipient = settingsRow?.dailyBriefRecipient;
+  if (!recipient) throw new Error("No recipient configured (dailyBriefRecipient).");
+  const account: any = accountRow;
+  if (!account?.refreshToken) throw new Error("No connected Gmail account — connect one in Carrier Bridge first.");
 
   // Compute the brief (uses the per-day cache) — may throw CLAUDE_OFFLINE.
   const { payload } = await computeDailyBrief(userId, { force: opts?.force === true });
@@ -205,16 +236,16 @@ export async function sendDailyBriefEmail(userId: string, opts?: { force?: boole
 
   const oauth2Client = buildOAuthClient();
   oauth2Client.setCredentials({
-    access_token: decryptSecret(account.access_token),
-    refresh_token: account.refresh_token ? decryptSecret(account.refresh_token) : null,
-    expiry_date: account.expires_at,
+    access_token: decryptSecret(account.accessToken),
+    refresh_token: account.refreshToken ? decryptSecret(account.refreshToken) : null,
+    expiry_date: account.expiresAt ? Number(account.expiresAt) : null,
   });
   const gmail = google.gmail({ version: "v1", auth: oauth2Client });
 
   // Multipart/alternative — text part first, then HTML, per RFC 2046.
   const boundary = `----wirelineboundary${Date.now().toString(36)}`;
   const messageParts = [
-    `From: ${account.email_address || "me"}`,
+    `From: ${account.emailAddress || "me"}`,
     `To: ${recipient}`,
     `Subject: ${subject}`,
     `MIME-Version: 1.0`,

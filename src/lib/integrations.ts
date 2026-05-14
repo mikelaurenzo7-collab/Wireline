@@ -1,5 +1,7 @@
 import { google } from "googleapis";
-import { db, log } from "./server-context";
+import { drizzle, log } from "./server-context";
+import * as schema from "../db/schema";
+import { eq, and } from "drizzle-orm";
 import { decryptSecret, encryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
 import { createMeeting as createZoomMeeting } from "./zoom-service";
@@ -60,12 +62,13 @@ export class IntegrationService {
       // Check if the agent has auto_zoom_link enabled
       let zoomUrl: string | undefined;
       if (params.agentId) {
-        const { data: agent } = await db.from("wireline_agents")
-          .select("auto_zoom_link")
-          .eq("id", params.agentId)
-          .eq("user_id", this.userId)
-          .single();
-        if (agent?.auto_zoom_link) {
+        const [agent] = await drizzle
+          .select({ autoZoomLink: schema.agents.autoZoomLink })
+          .from(schema.agents)
+          .where(and(eq(schema.agents.id, params.agentId), eq(schema.agents.userId, this.userId)))
+          .limit(1);
+
+        if (agent?.autoZoomLink) {
           const meeting = await createZoomMeeting(this.userId, {
             topic: params.title,
             startTime: params.startTime,
@@ -130,9 +133,17 @@ export class IntegrationService {
   // --- Private Helpers ---
 
   private async getAccounts(type: "calendar" | "mail") {
-    const table = type === "calendar" ? "wireline_calendar_accounts" : "wireline_email_accounts";
-    const { data } = await db.from(table).select("*").eq("user_id", this.userId);
-    return data || [];
+    if (type === "calendar") {
+      return await drizzle
+        .select()
+        .from(schema.calendarAccounts)
+        .where(eq(schema.calendarAccounts.userId, this.userId));
+    } else {
+      return await drizzle
+        .select()
+        .from(schema.emailAccounts)
+        .where(eq(schema.emailAccounts.userId, this.userId));
+    }
   }
 
   private async getGoogleClient(account: any) {
@@ -257,10 +268,15 @@ export class IntegrationService {
       body: params.toString(),
     });
     const d = await r.json() as any;
-    await db.from("wireline_calendar_accounts").update({
-      access_token: encryptSecret(d.access_token),
-      expires_at: Date.now() + (d.expires_in || 3600) * 1000,
-    }).eq("id", account.id);
+    
+    await drizzle
+      .update(schema.calendarAccounts)
+      .set({
+        accessToken: encryptSecret(d.access_token),
+        expiresAt: Date.now() + (d.expires_in || 3600) * 1000,
+      })
+      .where(eq(schema.calendarAccounts.id, account.id));
+
     return d.access_token;
   }
 }

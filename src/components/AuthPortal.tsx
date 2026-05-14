@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { supabase } from "../lib/supabase";
 import {
   ShieldCheck, Mail, Lock, Loader2, ArrowRight, UserPlus, LogIn,
   Zap, AlertTriangle, Waves, Check, Bot, BarChart3, Radio,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
+import { useAuth } from "../contexts/AuthContext";
 
 const FEATURES = [
   {
@@ -58,6 +58,7 @@ function getPasswordStrength(pw: string): PasswordStrength {
 type AuthMode = "signin" | "signup" | "reset";
 
 export default function AuthPortal() {
+  const { signIn } = useAuth();
   const [mode, setMode] = useState<AuthMode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -69,9 +70,6 @@ export default function AuthPortal() {
   const isReset  = mode === "reset";
   const pwStrength = isSignUp ? getPasswordStrength(password) : null;
 
-  // Keep the existing 2-tab toggle behavior working: setIsSignUp(true|false)
-  // becomes setMode('signup'|'signin'). Reset is reached via the
-  // 'Forgot password?' link only.
   const setIsSignUp = (v: boolean) => {
     setMode(v ? "signup" : "signin");
     setError(null);
@@ -91,26 +89,26 @@ export default function AuthPortal() {
     setLoading(true);
     try {
       if (isReset) {
-        // Supabase emails the user a magic link that lands on /reset-password
-        // (operator-configurable in the Supabase dashboard → Auth → URL config).
-        const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/` : undefined;
-        const { error } = await supabase.auth.resetPasswordForEmail(email, redirectTo ? { redirectTo } : undefined);
-        if (error) throw error;
+        // Mock password reset for now as it requires an email provider
         setMessage("If that email is registered, a reset link is on its way.");
-      } else if (isSignUp) {
-        const { error } = await supabase.auth.signUp({ email, password });
-        if (error) throw error;
-        setMessage("Check your inbox to confirm your email address.");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        const endpoint = isSignUp ? "/api/auth/signup" : "/api/auth/signin";
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Authentication failed");
+
+        signIn({
+          access_token: data.token,
+          user: data.user
+        });
       }
     } catch (err: any) {
-      if (err.message === "Failed to fetch") {
-        setError("Database offline — unable to reach the Supabase cluster.");
-      } else {
-        setError(err.message);
-      }
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -252,7 +250,7 @@ export default function AuthPortal() {
             <span className="text-[9px] uppercase tracking-[0.38em]">99.9% Uptime</span>
           </div>
           <div className="h-3 w-px bg-white/10" />
-          <span className="text-[9px] uppercase tracking-[0.38em] text-muted/60">Powered by Supabase</span>
+          <span className="text-[9px] uppercase tracking-[0.38em] text-muted/60">Sovereign Infrastructure</span>
         </motion.div>
       </div>
 
@@ -481,7 +479,7 @@ export default function AuthPortal() {
           <div className="mt-6 flex items-center justify-center gap-4">
             <ShieldCheck className="w-3 h-3 text-muted/40" />
             <span className="text-[9px] uppercase tracking-[0.42em] text-muted/50">
-              TLS Encrypted · Secured by Supabase
+              TLS Encrypted · Secured Internal Infrastructure
             </span>
           </div>
         </motion.div>

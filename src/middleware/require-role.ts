@@ -16,7 +16,9 @@
 // authenticated user owns their data by definition.
 
 import type { Request, Response, NextFunction } from "express";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { eq, sql, and, isNull, desc } from "drizzle-orm";
+import type { VercelPostgresDatabase } from "drizzle-orm/vercel-postgres";
+import * as schema from "../db/schema";
 import {
   ROLE_PERMISSIONS,
   ROLE_HIERARCHY,
@@ -33,7 +35,7 @@ const ROLE_CACHE_TTL_MS = 30_000;
 const roleCache = new Map<string, RoleCacheEntry>();
 
 export interface RbacDeps {
-  db: SupabaseClient;
+  drizzle: VercelPostgresDatabase<typeof schema>;
   auditLogger?: {
     logSecurity?: (
       action: "rate_limit_exceeded" | "unauthorized_access" | "suspicious_activity",
@@ -60,27 +62,26 @@ export interface RbacDeps {
  *
  * Result is cached per user-id for 30s to avoid hammering the DB.
  */
-export async function getCallerRole(db: SupabaseClient, userId: string): Promise<AccessRole> {
+export async function getCallerRole(drizzle: VercelPostgresDatabase<typeof schema>, userId: string): Promise<AccessRole> {
   const cached = roleCache.get(userId);
   if (cached && Date.now() - cached.cached_at < ROLE_CACHE_TTL_MS) {
     return cached.role;
   }
-  const { data, error } = await db
-    .from("wireline_team_members")
-    .select("role, revoked_at")
-    .eq("user_id", userId)
-    .is("revoked_at", null)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error) {
-    // Real DB error — propagate so middleware fail-closes. We do NOT
-    // treat this as the legacy/single-tenant case because we cannot
-    // distinguish a missing table from a transient outage at this layer.
-    throw new Error(`role lookup failed: ${error.message}`);
-  }
+  
+  const [data] = await drizzle
+    .select({ role: schema.teamMembers.role })
+    .from(schema.teamMembers)
+    .where(
+      and(
+        eq(schema.teamMembers.userId, userId),
+        isNull(schema.teamMembers.revokedAt)
+      )
+    )
+    .orderBy(desc(schema.teamMembers.createdAt))
+    .limit(1);
+
   let role: AccessRole = "owner";
-  const r = (data as { role?: string } | null)?.role;
+  const r = data?.role;
   if (r && r in ROLE_HIERARCHY) {
     role = r as AccessRole;
   }
@@ -117,7 +118,7 @@ export function createRbacMiddleware(deps: RbacDeps) {
         return;
       }
       try {
-        const role = await getCallerRole(deps.db, userId);
+        const role = await getCallerRole(deps.drizzle, userId);
         (req as any).role = role;
         if (!hasPermission(role, permission)) {
           // Audit the refused privilege use — SOC 2 CC7.2 evidence.
@@ -158,7 +159,7 @@ export function createRbacMiddleware(deps: RbacDeps) {
         return;
       }
       try {
-        const role = await getCallerRole(deps.db, userId);
+        const role = await getCallerRole(deps.drizzle, userId);
         (req as any).role = role;
         if (ROLE_HIERARCHY[role] < threshold) {
           deny(res, 403, `Forbidden: requires role "${minRole}" or higher`, "FORBIDDEN");

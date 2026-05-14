@@ -1,5 +1,7 @@
 import { Router, Response } from "express";
-import { db, log } from "../lib/server-context";
+import { log, drizzle } from "../lib/server-context";
+import * as schema from "../db/schema";
+import { eq, and, sql, gte, isNull, isNotNull, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { withAudit } from "../middleware/audit-middleware";
 import { claudeRateLimiter } from "../middleware/api-rate-limits";
@@ -37,21 +39,31 @@ interface QaUpdatePayload {
 router.post("/score/:callId", authenticateUser, withAudit("qa"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { callId } = req.params;
-    const { data: call, error: callErr } = await db
-      .from("wireline_call_logs")
-      .select("id, summary, transcript, sentiment, direction, duration_seconds, coaching_note, agent_id, wireline_agents(role)")
-      .eq("id", callId)
-      .eq("user_id", req.user.id)
-      .single();
+    const [call] = await drizzle
+      .select({
+        id: schema.callLogs.id,
+        summary: schema.callLogs.summary,
+        transcript: schema.callLogs.transcript,
+        sentiment: schema.callLogs.sentiment,
+        direction: schema.callLogs.direction,
+        durationSeconds: schema.callLogs.durationSeconds,
+        coachingNote: schema.callLogs.coachingNote,
+        agentId: schema.callLogs.agentId,
+        agentRole: schema.agents.role
+      })
+      .from(schema.callLogs)
+      .leftJoin(schema.agents, eq(schema.callLogs.agentId, schema.agents.id))
+      .where(and(eq(schema.callLogs.id, callId), eq(schema.callLogs.userId, req.user.id)))
+      .limit(1);
 
-    if (callErr || !call) return res.status(404).json({ error: "Call not found." });
+    if (!call) return res.status(404).json({ error: "Call not found." });
 
     if (!claudeBrain.isClaudeAvailable()) {
       return res.status(503).json({ error: "Claude is not configured." });
     }
 
-    const typedCall = call as unknown as CallForQa;
-    const agentRole: string | undefined = typedCall.wireline_agents?.role ?? undefined;
+    const typedCall = call;
+    const agentRole: string | undefined = typedCall.agentRole ?? undefined;
 
     const breakdown = await claudeBrain.qaScore({
       direction: (typedCall.direction || "inbound") as "inbound" | "outbound",
@@ -68,22 +80,21 @@ router.post("/score/:callId", authenticateUser, withAudit("qa"), async (req: Aut
       Math.max(0, QA_DIMENSIONS.reduce((sum, dim) => sum + (Number((breakdown as any)[dim]) || 0), 0))
     );
 
-    const updatePayload: QaUpdatePayload = { qa_score: score, qa_breakdown: breakdown as unknown as Record<string, unknown> };
-    if (breakdown.coaching_note) updatePayload.coaching_note = breakdown.coaching_note;
+    const updatePayload: any = { qaScore: score, qaBreakdown: breakdown as any };
+    if (breakdown.coaching_note) updatePayload.coachingNote = breakdown.coaching_note;
 
-    await db
-      .from("wireline_call_logs")
-      .update(updatePayload)
-      .eq("id", callId)
-      .eq("user_id", req.user.id);
+    await drizzle
+      .update(schema.callLogs)
+      .set(updatePayload)
+      .where(and(eq(schema.callLogs.id, callId), eq(schema.callLogs.userId, req.user.id)));
 
     // Adaptive Optimization: Trigger refinement if score is low (< 60)
     if (score < 60) {
-      await enqueue(db, {
+      await enqueue(drizzle, {
         userId: req.user.id,
         type: 'adaptive_optimization',
         payload: {
-          agentId: typedCall.agent_id,
+          agentId: typedCall.agentId,
           callId,
           score,
           breakdown
@@ -108,15 +119,30 @@ router.post("/score-batch", authenticateUser, claudeRateLimiter, withAudit("qa")
     const days  = req.body.days ? Math.min(90, Math.max(1, parseInt(String(req.body.days), 10))) : undefined;
     const since = days ? new Date(Date.now() - days * 86_400_000).toISOString() : undefined;
 
-    const baseQuery = db
-      .from("wireline_call_logs")
-      .select("id, summary, transcript, sentiment, direction, duration_seconds, agent_id, wireline_agents(role)")
-      .eq("user_id", req.user.id)
-      .is("qa_score", null)
-      .order("created_at", { ascending: false })
+    const whereClauses = [
+      eq(schema.callLogs.userId, req.user.id),
+      isNull(schema.callLogs.qaScore)
+    ];
+    if (since) {
+      whereClauses.push(gte(schema.callLogs.createdAt, new Date(since)));
+    }
+
+    const calls = await drizzle
+      .select({
+        id: schema.callLogs.id,
+        summary: schema.callLogs.summary,
+        transcript: schema.callLogs.transcript,
+        sentiment: schema.callLogs.sentiment,
+        direction: schema.callLogs.direction,
+        durationSeconds: schema.callLogs.durationSeconds,
+        agentId: schema.callLogs.agentId,
+        agentRole: schema.agents.role
+      })
+      .from(schema.callLogs)
+      .leftJoin(schema.agents, eq(schema.callLogs.agentId, schema.agents.id))
+      .where(and(...whereClauses))
+      .orderBy(desc(schema.callLogs.createdAt))
       .limit(limit);
-    const { data: calls, error } = await (since ? baseQuery.gte("created_at", since) : baseQuery);
-    if (error) throw error;
     if (!calls || calls.length === 0) {
       return res.json({ scored: 0, skipped: 0, failed: 0, total: 0 });
     }
@@ -135,25 +161,23 @@ router.post("/score-batch", authenticateUser, claudeRateLimiter, withAudit("qa")
       return (sem[slot] = sem[slot].then(async () => {
         try {
           if (!typedCall.transcript && !typedCall.summary) { skipped++; return; }
-          const agentRole: string | undefined = typedCall.wireline_agents?.role ?? undefined;
           const breakdown = await claudeBrain.qaScore({
             direction: (typedCall.direction || "inbound") as "inbound" | "outbound",
-            agentRole,
+            agentRole: typedCall.agentRole ?? undefined,
             summary: typedCall.summary || "",
             transcript: typedCall.transcript || "",
             sentiment: typedCall.sentiment || "neutral",
-            durationSeconds: typedCall.duration_seconds,
+            durationSeconds: typedCall.durationSeconds,
           });
           const score = Math.min(
             100,
             Math.max(0, QA_DIMENSIONS.reduce((s, d) => s + (Number((breakdown as any)[d]) || 0), 0))
           );
-          const updatePayload: QaUpdatePayload = { qa_score: score, qa_breakdown: breakdown as unknown as Record<string, unknown> };
-          if (breakdown.coaching_note) updatePayload.coaching_note = breakdown.coaching_note;
-          await db.from("wireline_call_logs")
-            .update(updatePayload)
-            .eq("id", typedCall.id)
-            .eq("user_id", req.user.id);
+          const updatePayload: any = { qaScore: score, qaBreakdown: breakdown as any };
+          if (breakdown.coaching_note) updatePayload.coachingNote = breakdown.coaching_note;
+          await drizzle.update(schema.callLogs)
+            .set(updatePayload)
+            .where(and(eq(schema.callLogs.id, typedCall.id), eq(schema.callLogs.userId, req.user.id)));
           scored++;
         } catch (err: any) {
           log.warn("Batch QA: single call scoring failed", { callId: typedCall.id, error: getErrorMessage(err) });
@@ -184,15 +208,22 @@ router.get("/stats", authenticateUser, async (req: AuthenticatedRequest, res: Re
     const days = Math.min(90, Math.max(1, parseInt(String(req.query.days || "30"), 10)));
     const since = new Date(Date.now() - days * 86_400_000).toISOString();
 
-    const { data: calls, error } = await db
-      .from("wireline_call_logs")
-      .select("qa_score, qa_breakdown, direction, agent_id, created_at")
-      .eq("user_id", req.user.id)
-      .gte("created_at", since)
-      .not("qa_score", "is", null)
-      .order("created_at", { ascending: false });
+    const calls = await drizzle
+      .select({
+        qaScore: schema.callLogs.qaScore,
+        qaBreakdown: schema.callLogs.qaBreakdown,
+        direction: schema.callLogs.direction,
+        agentId: schema.callLogs.agentId,
+        createdAt: schema.callLogs.createdAt
+      })
+      .from(schema.callLogs)
+      .where(and(
+        eq(schema.callLogs.userId, req.user.id),
+        gte(schema.callLogs.createdAt, new Date(since)),
+        isNotNull(schema.callLogs.qaScore)
+      ))
+      .orderBy(desc(schema.callLogs.createdAt));
 
-    if (error) throw error;
     if (!calls || calls.length === 0) {
       return res.json({ count: 0, avgScore: 0, distribution: [], dimensions: {}, trend: [] });
     }

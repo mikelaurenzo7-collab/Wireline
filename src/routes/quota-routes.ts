@@ -1,5 +1,7 @@
 import { Router, Response } from "express";
-import { db, log, auditLogger, quotaTracker, requirePermission } from "../lib/server-context";
+import { drizzle, log, auditLogger, quotaTracker, requirePermission } from "../lib/server-context";
+import * as schema from "../db/schema";
+import { eq, and } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { quotaRateLimit } from "../middleware/api-rate-limits";
 import { getErrorMessage } from "../lib/server-utils";
@@ -52,11 +54,22 @@ router.put("/override", authenticateUser, requirePermission("quotas.override"), 
       return res.status(400).json({ error: (validation as { ok: false; error: string }).error });
     }
     const { dimension, value, enabled } = validation.value;
-    const { error } = await db.from("wireline_quota_limits").upsert(
-      { user_id: req.user.id, dimension, value, enabled, updated_at: new Date().toISOString() },
-      { onConflict: "user_id,dimension" },
-    );
-    if (error) throw error;
+    
+    await drizzle.insert(schema.quotaLimits).values({
+      userId: req.user.id,
+      dimension,
+      value,
+      enabled: enabled ?? true,
+      updatedAt: new Date(),
+    }).onConflictDoUpdate({
+      target: [schema.quotaLimits.userId, schema.quotaLimits.dimension],
+      set: {
+        value,
+        enabled: enabled ?? true,
+        updatedAt: new Date(),
+      }
+    });
+
     quotaTracker.invalidate(req.user.id);
     // Audit the accepted override — SOC 2 CC8.1 change-management evidence.
     void auditLogger

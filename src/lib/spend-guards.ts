@@ -9,7 +9,9 @@
  * system-wide 24h cap (enforce24hSpendCap) uses an in-process accumulator.
  */
 
-import { db, log } from "./server-context";
+import { drizzle, log } from "./server-context";
+import * as schema from "../db/schema";
+import { eq, and, gte } from "drizzle-orm";
 
 // ──────────────────────────────────────────────────────────────────────
 //  PER-USER monthly hard-cap
@@ -42,8 +44,8 @@ function currentPeriod(now = new Date()): string {
   return now.toISOString().slice(0, 7); // YYYY-MM
 }
 
-function periodStartIso(period: string): string {
-  return `${period}-01T00:00:00.000Z`;
+function periodStartIso(period: string): Date {
+  return new Date(`${period}-01T00:00:00.000Z`);
 }
 
 export function clearBudgetCache(userId: string) {
@@ -57,26 +59,32 @@ export async function getBudgetSnapshot(userId: string, bypassCache: boolean = f
     return cached;
   }
 
-  const [{ data: budget }, { data: rows }] = await Promise.all([
-    db.from("wireline_spend_budgets")
-      .select("monthly_limit_usd, hard_cap, warn_threshold_pct, enabled")
-      .eq("user_id", userId)
-      .maybeSingle(),
-    db.from("wireline_audit_log")
-      .select("cost_usd")
-      .eq("user_id", userId)
-      .gte("created_at", periodStartIso(period)),
+  const [budgetRow, logRows] = await Promise.all([
+    drizzle.select({
+      monthlyLimitUsd: schema.spendBudgets.monthlyLimitUsd,
+      hardCap: schema.spendBudgets.hardCap,
+      warnThresholdPct: schema.spendBudgets.warnThresholdPct,
+      enabled: schema.spendBudgets.enabled
+    })
+    .from(schema.spendBudgets)
+    .where(eq(schema.spendBudgets.userId, userId))
+    .limit(1)
+    .then(rows => rows[0] || null),
+
+    drizzle.select({ costUsd: schema.auditLog.costUsd })
+      .from(schema.auditLog)
+      .where(and(eq(schema.auditLog.userId, userId), gte(schema.auditLog.createdAt, periodStartIso(period)))),
   ]);
 
-  const mtdCost = (rows || []).reduce((s: number, r: any) => s + Number(r.cost_usd || 0), 0);
+  const mtdCost = (logRows || []).reduce((s: number, r: any) => s + Number(r.costUsd || 0), 0);
   const entry: BudgetCacheEntry = {
     fetchedAt: Date.now(),
-    budget: budget
+    budget: budgetRow
       ? {
-          monthly_limit_usd: Number(budget.monthly_limit_usd || 0),
-          hard_cap: !!budget.hard_cap,
-          warn_threshold_pct: Number(budget.warn_threshold_pct || 80),
-          enabled: budget.enabled !== false,
+          monthly_limit_usd: Number(budgetRow.monthlyLimitUsd || 0),
+          hard_cap: !!budgetRow.hardCap,
+          warn_threshold_pct: Number(budgetRow.warnThresholdPct || 80),
+          enabled: budgetRow.enabled !== false,
         }
       : null,
     mtdCost,
@@ -118,10 +126,15 @@ export async function evaluateSpend(userId: string, deltaUsd: number) {
 
     for (const t of thresholdsToFire) {
       // Debounce: insert (user, period, threshold) — duplicate row => already fired.
-      const { error } = await db
-        .from("wireline_spend_alerts")
-        .insert({ user_id: userId, period: snap.period, threshold_pct: t.pct });
-      if (error) continue; // unique-violation or insert error → skip silently
+      try {
+        await drizzle
+          .insert(schema.spendAlerts)
+          .values({ userId: userId, period: snap.period, thresholdPct: t.pct });
+      } catch {
+        // unique-violation or insert error → skip silently
+        continue;
+      }
+
       await dispatchWebhook(userId, t.event, {
         period: snap.period,
         month_to_date_usd: Number(snap.mtdCost.toFixed(4)),

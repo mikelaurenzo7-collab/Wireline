@@ -1,5 +1,7 @@
 import { Router, Response } from "express";
-import { db, log } from "../lib/server-context";
+import { log, drizzle } from "../lib/server-context";
+import * as schema from "../db/schema";
+import { eq, and, sql, desc, ilike } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { normalizePhoneTail, buildContactProfile } from "../lib/contact-profile";
 import { claudeErr } from "../lib/claude-response-helpers";
@@ -18,44 +20,76 @@ router.get("/api/contacts/:number", authenticateUser, async (req: AuthenticatedR
     if (!norm) return res.status(400).json({ error: "Invalid phone number." });
 
     // 1. Get lead dossier to find email address
-    const { data: dossier } = await db.from('wireline_lead_dossiers')
-      .select('customer_email')
-      .eq('user_id', req.user.id)
-      .ilike('customer_number', `%${norm}`)
-      .maybeSingle();
+    const [dossier] = await drizzle
+      .select({ customerEmail: schema.leadDossiers.customerEmail })
+      .from(schema.leadDossiers)
+      .where(and(eq(schema.leadDossiers.userId, req.user.id), ilike(schema.leadDossiers.customerNumber, `%${norm}`)))
+      .limit(1);
 
-    const customerEmail = dossier?.customer_email;
+    const customerEmail = dossier?.customerEmail;
 
     // 2. Fetch all omnichannel activity
-    const [callsRes, leadsRes, apptsRes, emailsRes] = await Promise.all([
-      db.from("wireline_call_logs")
-        .select("id, agent_id, direction, customer_number, duration_seconds, cost, summary, transcript, recording_url, lead_score, intent_label, created_at")
-        .eq("user_id", req.user.id)
-        .ilike("customer_number", `%${norm}`)
-        .order("created_at", { ascending: false }),
-      db.from("wireline_outbound_leads")
-        .select("id, agent_id, customer_name, status, context, last_called_at, created_at, phone_number")
-        .eq("user_id", req.user.id)
-        .ilike("phone_number", `%${norm}`)
-        .order("created_at", { ascending: false }),
-      db.from("wireline_appointments")
-        .select("id, agent_id, customer_name, service_type, date, time, status, created_at")
-        .eq("user_id", req.user.id)
-        .order("created_at", { ascending: false }),
-      customerEmail ? db.from("wireline_email_threads")
-        .select("*")
-        .eq("user_id", req.user.id)
-        .eq("customer_email", customerEmail)
-        .order("last_message_at", { ascending: false }) : Promise.resolve({ data: [] }),
+    const [calls, leads, appts, emails] = await Promise.all([
+      drizzle
+        .select({
+          id: schema.callLogs.id,
+          agent_id: schema.callLogs.agentId,
+          direction: schema.callLogs.direction,
+          customer_number: schema.callLogs.customerNumber,
+          duration_seconds: schema.callLogs.durationSeconds,
+          cost: schema.callLogs.cost,
+          summary: schema.callLogs.summary,
+          transcript: schema.callLogs.transcript,
+          recording_url: schema.callLogs.recordingUrl,
+          lead_score: schema.callLogs.leadScore,
+          intent_label: schema.callLogs.intentLabel,
+          created_at: schema.callLogs.createdAt
+        })
+        .from(schema.callLogs)
+        .where(and(eq(schema.callLogs.userId, req.user.id), ilike(schema.callLogs.customerNumber, `%${norm}`)))
+        .orderBy(desc(schema.callLogs.createdAt)),
+      drizzle
+        .select({
+          id: schema.outboundLeads.id,
+          agent_id: schema.outboundLeads.agentId,
+          customer_name: schema.outboundLeads.customerName,
+          status: schema.outboundLeads.status,
+          context: schema.outboundLeads.context,
+          last_called_at: schema.outboundLeads.lastCalledAt,
+          created_at: schema.outboundLeads.createdAt,
+          phone_number: schema.outboundLeads.phoneNumber
+        })
+        .from(schema.outboundLeads)
+        .where(and(eq(schema.outboundLeads.userId, req.user.id), ilike(schema.outboundLeads.phoneNumber, `%${norm}`)))
+        .orderBy(desc(schema.outboundLeads.createdAt)),
+      drizzle
+        .select({
+          id: schema.appointments.id,
+          agent_id: schema.appointments.agentId,
+          customer_name: schema.appointments.customerName,
+          service_type: schema.appointments.serviceType,
+          date: schema.appointments.date,
+          time: schema.appointments.time,
+          status: schema.appointments.status,
+          created_at: schema.appointments.createdAt
+        })
+        .from(schema.appointments)
+        .where(eq(schema.appointments.userId, req.user.id))
+        .orderBy(desc(schema.appointments.createdAt)),
+      customerEmail ? drizzle
+        .select()
+        .from(schema.emailThreads)
+        .where(and(eq(schema.emailThreads.userId, req.user.id), eq(schema.emailThreads.customerEmail, customerEmail)))
+        .orderBy(desc(schema.emailThreads.lastMessageAt)) : Promise.resolve([]),
     ]);
 
     res.json(buildContactProfile({
       number,
       normalized: norm,
-      calls:  callsRes.data  || [],
-      leads:  leadsRes.data  || [],
-      appts:  apptsRes.data  || [],
-      emails: emailsRes.data || [],
+      calls:  calls  || [],
+      leads:  leads  || [],
+      appts:  appts  || [],
+      emails: emails || [],
     }));
   } catch (e) {
     log.error("Contact profile fetch failed", { error: e instanceof Error ? e.message : String(e) });

@@ -6,16 +6,9 @@ import { log, IS_PROD } from "./server-context";
  * secrets.
  */
 export function validateStartupEnv() {
-  // Hard required in all environments (app cannot function without these).
-  const alwaysRequired: [string, string | undefined][] = [
-    ["VITE_SUPABASE_URL",     process.env.VITE_SUPABASE_URL],
-    ["VITE_SUPABASE_ANON_KEY", process.env.VITE_SUPABASE_ANON_KEY],
-  ];
   // Required in production; warn in dev so local hacking still works.
-  // The server must boot with the service-role key in production so
-  // privileged DB paths never silently fall back to the anon key.
   const prodRequired: [string, string | undefined][] = [
-    ["SUPABASE_SERVICE_ROLE_KEY", process.env.SUPABASE_SERVICE_ROLE_KEY],
+    ["INTERNAL_JWT_SECRET", process.env.INTERNAL_JWT_SECRET || process.env.SUPABASE_JWT_SECRET],
     ["ANTHROPIC_API_KEY",   process.env.ANTHROPIC_API_KEY],
     ["GEMINI_API_KEY",      process.env.GEMINI_API_KEY],
     ["VAPI_PRIVATE_KEY",    process.env.VAPI_PRIVATE_KEY],
@@ -23,9 +16,8 @@ export function validateStartupEnv() {
     ["OAUTH_STATE_SECRET",  process.env.OAUTH_STATE_SECRET],
   ];
 
-  const missingAlways = alwaysRequired.filter(([, v]) => !v).map(([k]) => k);
-  const missingProd   = prodRequired.filter(([, v]) => !v).map(([k]) => k);
-  const missing       = IS_PROD ? [...missingAlways, ...missingProd] : missingAlways;
+  const missingProd = prodRequired.filter(([, v]) => !v).map(([k]) => k);
+  const missing     = IS_PROD ? missingProd : [];
 
   const recommended: string[] = [];
   if (!process.env.APP_URL) recommended.push("APP_URL");

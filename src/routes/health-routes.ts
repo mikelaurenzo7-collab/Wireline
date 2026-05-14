@@ -1,5 +1,6 @@
 import express, { Request, Response, NextFunction } from "express";
-import { db } from "../lib/server-context";
+import { drizzle, log } from "../lib/server-context";
+import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
 import * as claudeBrain from "../lib/claude-brain";
 import { getHealthCapabilities, getIntegrationsStatus } from "../lib/integrations-registry";
@@ -14,18 +15,17 @@ async function probeDatabase(
 ): Promise<{ ok: boolean; latency_ms: number; error?: string }> {
   const t0 = Date.now();
   try {
-    const probe = db
-      .from("wireline_settings")
-      .select("user_id", { head: true, count: "exact" })
+    const probe = drizzle
+      .select({ id: schema.settings.userId })
+      .from(schema.settings)
       .limit(1);
-    const result = (await Promise.race([
+
+    await Promise.race([
       probe,
       new Promise((_resolve, reject) =>
         setTimeout(() => reject(new Error("db probe timed out")), timeoutMs),
       ),
-    ])) as { error?: { message: string } | null };
-    if (result?.error)
-      return { ok: false, latency_ms: Date.now() - t0, error: result.error.message };
+    ]);
     return { ok: true, latency_ms: Date.now() - t0 };
   } catch (err: any) {
     return { ok: false, latency_ms: Date.now() - t0, error: getErrorMessage(err) };
@@ -97,7 +97,7 @@ router.get("/slos", healthRateLimiter, authenticateUser, async (req: Authenticat
   try {
     const n = Number(req.query.window_hours);
     const hours = Number.isFinite(n) ? Math.min(Math.max(n, 1), 168) : 24;
-    const snapshot = await getOperatorSloSnapshot(db, req.user.id, hours);
+    const snapshot = await getOperatorSloSnapshot(drizzle, req.user.id, hours);
 
     const dimValues = Object.values(snapshot.dimensions) as string[];
     const banner_status = dimValues.includes("critical")

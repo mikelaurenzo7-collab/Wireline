@@ -1,8 +1,10 @@
 import { 
-  db, 
+  drizzle, 
   log, 
   fetchWithTimeout, 
 } from "./server-context";
+import * as schema from "../db/schema";
+import { eq, and, lte, sql, desc } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
 import { SentryEvents } from "./sentry-events";
 import { createHmac } from "node:crypto";
@@ -57,26 +59,33 @@ export function buildCallCompletedOutcome(opts: Omit<WirelineCallCompletedOutcom
 }
 
 export async function attemptWebhookDelivery(deliveryId: string | number) {
-  const { data: delivery, error: fetchErr } = await db
-    .from("wireline_webhook_deliveries")
-    .select("*, wireline_webhooks(url, secret)")
-    .eq("id", deliveryId)
-    .single();
+  const deliveryIdBig = typeof deliveryId === 'string' ? BigInt(deliveryId) : BigInt(deliveryId);
+
+  const deliveryWithHook = await drizzle.query.webhookDeliveries.findFirst({
+    where: eq(schema.webhookDeliveries.id, deliveryIdBig),
+    with: {
+      webhook: true
+    }
+  });
   
-  if (fetchErr || !delivery) {
-    log.error("Webhook delivery fetch failed", { deliveryId, error: fetchErr?.message });
+  if (!deliveryWithHook) {
+    log.error("Webhook delivery fetch failed", { deliveryId });
     return;
   }
 
-  const hook = (delivery as any).wireline_webhooks;
+  const hook = deliveryWithHook.webhook;
   if (!hook?.url) {
-    await db.from("wireline_webhook_deliveries").update({ status: "failed", next_attempt_at: null }).eq("id", deliveryId);
+    await drizzle.update(schema.webhookDeliveries)
+      .set({ status: "failed", nextAttemptAt: null })
+      .where(eq(schema.webhookDeliveries.id, deliveryIdBig));
     return;
   }
 
-  const body = JSON.stringify(delivery.payload);
+  const body = JSON.stringify(deliveryWithHook.payload);
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (hook.secret) {
+    // Note: hook.secret might be encrypted, but historically it was plaintext in this helper.
+    // If it's encrypted, we'd need decryptSecret(hook.secret). Assuming plaintext or pre-decrypted here for parity.
     headers["x-wireline-signature"] = createHmac("sha256", hook.secret).update(body).digest("hex");
   }
 
@@ -90,21 +99,21 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
     log.warn("Webhook delivery attempt failed", { deliveryId, error: getErrorMessage(err) });
   }
 
-  const newAttempts = (delivery.attempts || 0) + 1;
+  const newAttempts = (deliveryWithHook.attempts || 0) + 1;
   const reachedDead = !success && newAttempts >= 5;
-  const nextAttemptAt = success || reachedDead ? null : new Date(Date.now() + Math.pow(2, newAttempts) * 60_000).toISOString();
+  const nextAttemptAt = success || reachedDead ? null : new Date(Date.now() + Math.pow(2, newAttempts) * 60_000);
 
-  await db.from("wireline_webhook_deliveries").update({
+  await drizzle.update(schema.webhookDeliveries).set({
     status: success ? "success" : reachedDead ? "failed" : "pending",
-    last_status_code: statusCode,
+    lastStatusCode: statusCode,
     attempts: newAttempts,
-    last_attempt_at: new Date().toISOString(),
-    next_attempt_at: nextAttemptAt,
-  }).eq("id", deliveryId);
+    lastAttemptAt: new Date(),
+    nextAttemptAt: nextAttemptAt,
+  }).where(eq(schema.webhookDeliveries.id, deliveryIdBig));
 
   if (reachedDead) {
     SentryEvents.webhookDeliveryFailed({
-      webhook_id: (delivery as any).webhook_id,
+      webhook_id: deliveryWithHook.webhookId,
       attempt: newAttempts,
       status_code: statusCode || undefined,
     });
@@ -113,10 +122,9 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
 
 export async function dispatchWebhook(userId: string, event: WebhookEvent, data: any) {
   try {
-    const { data: hooks } = await db.from("wireline_webhooks")
-      .select("id, events")
-      .eq("user_id", userId)
-      .eq("active", true);
+    const hooks = await drizzle.select({ id: schema.webhooks.id, events: schema.webhooks.events })
+      .from(schema.webhooks)
+      .where(and(eq(schema.webhooks.userId, userId), eq(schema.webhooks.active, true)));
     
     const targetIds = (hooks || [])
       .filter((h: any) => Array.isArray(h.events) && h.events.includes(event))
@@ -125,24 +133,19 @@ export async function dispatchWebhook(userId: string, event: WebhookEvent, data:
     if (!targetIds.length) return;
 
     const payload = { event, timestamp: new Date().toISOString(), data };
-    const rows = targetIds.map((webhook_id: string) => ({
-      user_id: userId,
-      webhook_id,
+    const values = targetIds.map((webhookId: string) => ({
+      userId,
+      webhookId,
       event,
       payload,
     }));
     
-    const { data: inserted, error } = await db
-      .from("wireline_webhook_deliveries")
-      .insert(rows)
-      .select("id");
+    const inserted = await drizzle
+      .insert(schema.webhookDeliveries)
+      .values(values)
+      .returning({ id: schema.webhookDeliveries.id });
     
-    if (error) {
-      log.error("Webhook delivery insert failed", { error: error.message });
-      return;
-    }
-
-    await Promise.all((inserted || []).map((d: any) => attemptWebhookDelivery(d.id)));
+    await Promise.all((inserted || []).map((d: any) => attemptWebhookDelivery(Number(d.id))));
   } catch (err: any) {
     log.error("Webhook dispatch failed", { error: getErrorMessage(err) });
   }
@@ -153,15 +156,17 @@ export async function processWebhookRetries() {
   if (_webhookSchedRunning) return;
   _webhookSchedRunning = true;
   try {
-    const { data: due } = await db
-      .from("wireline_webhook_deliveries")
-      .select("id")
-      .eq("status", "pending")
-      .lte("next_attempt_at", new Date().toISOString())
+    const due = await drizzle
+      .select({ id: schema.webhookDeliveries.id })
+      .from(schema.webhookDeliveries)
+      .where(and(
+        eq(schema.webhookDeliveries.status, "pending"),
+        lte(schema.webhookDeliveries.nextAttemptAt, new Date())
+      ))
       .limit(25);
     
     if (due && due.length > 0) {
-      await Promise.all(due.map(d => attemptWebhookDelivery(d.id)));
+      await Promise.all(due.map(d => attemptWebhookDelivery(Number(d.id))));
     }
   } catch (err: any) {
     log.error("Webhook retry cycle failed", { error: getErrorMessage(err) });

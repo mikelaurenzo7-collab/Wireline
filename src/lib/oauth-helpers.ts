@@ -1,9 +1,12 @@
 import express from "express";
 import { google } from "googleapis";
 import { randomUUID, createHmac, timingSafeEqual } from "node:crypto";
-import { db, fetchWithTimeout } from "./server-context";
+import { drizzle, fetchWithTimeout } from "./server-context";
+import * as schema from "../db/schema";
+import { eq } from "drizzle-orm";
 import { encryptSecret, decryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
+import { verifySupabaseJwt } from "./auth-utils";
 
 // ────────────────────────────────────────────────────────────────────
 //  Google OAuth Constants & Helpers
@@ -63,13 +66,13 @@ export function getMicrosoftRedirectUri(req: express.Request): string {
 /** Refresh a Microsoft access token using the stored refresh token.
  *  Returns the updated { access_token, expires_at } to persist. */
 export async function refreshMicrosoftToken(account: {
-  refresh_token: string;
+  refreshToken: string;
 }): Promise<{ access_token: string; expires_at: number }> {
   const params = new URLSearchParams({
     client_id:     process.env.MICROSOFT_CLIENT_ID!,
     client_secret: process.env.MICROSOFT_CLIENT_SECRET!,
     grant_type:    "refresh_token",
-    refresh_token: decryptSecret(account.refresh_token),
+    refresh_token: decryptSecret(account.refreshToken),
     scope:         MS_SCOPES,
   });
   const r = await fetch(
@@ -87,23 +90,28 @@ export async function refreshMicrosoftToken(account: {
 /** Returns a valid Microsoft access token for the account, refreshing if needed. */
 export async function getMicrosoftAccessToken(account: {
   id: string;
-  access_token: string;
-  refresh_token: string;
-  expires_at: number;
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: bigint | null;
 }): Promise<string> {
-  if (account.expires_at && Date.now() < account.expires_at - 60_000) {
-    return decryptSecret(account.access_token);
+  const expiresAtMs = account.expiresAt ? Number(account.expiresAt) : 0;
+  if (expiresAtMs && Date.now() < expiresAtMs - 60_000) {
+    return decryptSecret(account.accessToken);
   }
   const updated = await refreshMicrosoftToken(account);
-  await db.from("wireline_email_accounts")
-    .update({ access_token: encryptSecret(updated.access_token), expires_at: updated.expires_at })
-    .eq("id", account.id);
+  await drizzle.update(schema.emailAccounts)
+    .set({ 
+      accessToken: encryptSecret(updated.access_token), 
+      expiresAt: BigInt(updated.expires_at),
+      updatedAt: new Date()
+    })
+    .where(eq(schema.emailAccounts.id, account.id));
   return updated.access_token;
 }
 
 /** Send an email via Microsoft Graph API (delegated auth). */
 export async function sendEmailViaMicrosoft(opts: {
-  account: { id: string; access_token: string; refresh_token: string; expires_at: number };
+  account: { id: string; accessToken: string; refreshToken: string; expiresAt: bigint | null };
   to: string;
   subject: string;
   body: string;
@@ -200,8 +208,10 @@ export async function resolveUserIdFromOAuthSession(req: express.Request): Promi
   const cookieToken = (req as express.Request & { cookies?: Record<string, string> }).cookies?.["sb-access-token"];
   const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : cookieToken;
   if (!bearerToken) return null;
-  const { data: { user } } = await db.auth.getUser(bearerToken);
-  return user?.id ?? null;
+  
+  const secret = process.env.SUPABASE_JWT_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+  const payload = await verifySupabaseJwt(bearerToken, secret);
+  return payload?.sub ?? null;
 }
 
 /** Space-delimited Microsoft Graph scope line passed at token time — must include write access for booking. */

@@ -1,5 +1,7 @@
 import express, { Response } from "express";
-import { db, log, auditLogger, requirePermission } from "../lib/server-context";
+import { log, auditLogger, requirePermission, drizzle } from "../lib/server-context";
+import * as schema from "../db/schema";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { getErrorMessage } from "../lib/server-utils";
 import { authenticateUser } from "../middleware/auth";
 import { validateWebhookUrl } from "../lib/webhook-validators";
@@ -15,10 +17,26 @@ const WEBHOOK_PUBLIC_COLUMNS =
 
 router.get("/", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { data, error } = await db.from("wireline_webhooks")
-      .select(WEBHOOK_PUBLIC_COLUMNS).eq("user_id", req.user.id).order("created_at", { ascending: false });
-    if (error) throw error;
-    res.json({ webhooks: data || [], available_events: WEBHOOK_EVENTS });
+    const webhooks = await drizzle
+      .select({
+        id: schema.webhooks.id,
+        userId: schema.webhooks.userId,
+        name: schema.webhooks.name,
+        url: schema.webhooks.url,
+        events: schema.webhooks.events,
+        active: schema.webhooks.active,
+        lastTriggeredAt: schema.webhooks.lastTriggeredAt,
+        lastStatus: schema.webhooks.lastStatus,
+        lastError: schema.webhooks.lastError,
+        deliveryCount: schema.webhooks.deliveryCount,
+        createdAt: schema.webhooks.createdAt,
+        secretLastFour: schema.webhooks.secretLastFour
+      })
+      .from(schema.webhooks)
+      .where(eq(schema.webhooks.userId, req.user.id))
+      .orderBy(desc(schema.webhooks.createdAt));
+
+    res.json({ webhooks: webhooks || [], available_events: WEBHOOK_EVENTS });
   } catch (e: any) { log.error("Failed to load webhooks", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load webhooks" }); }
 });
 
@@ -45,18 +63,22 @@ router.post("/", authenticateUser, requirePermission("webhooks.manage"), webhook
         code: "VAULT_UNCONFIGURED",
       });
     }
-    const row: Record<string, unknown> = {
-      user_id: req.user.id, name, url, events, active: active ?? true,
+
+    const values: any = {
+      userId: req.user.id, 
+      name, 
+      url, 
+      events, 
+      active: active ?? true,
     };
     if (plaintextSecret) {
-      row.secret_encrypted = encryptSecret(plaintextSecret);
-      row.secret_last_four = lastFour(plaintextSecret);
-      row.secret = null;
+      values.secretEncrypted = encryptSecret(plaintextSecret);
+      values.secretLastFour = lastFour(plaintextSecret);
+      values.secret = null;
     }
 
-    const { data, error } = await db.from("wireline_webhooks").insert(row)
-      .select(WEBHOOK_PUBLIC_COLUMNS).single();
-    if (error) throw error;
+    const [data] = await drizzle.insert(schema.webhooks).values(values).returning();
+
     void auditLogger.logWebhook('created', {
       userId: req.user.id, webhookId: data.id, url: data.url, events: data.events, active: data.active, ip: req.ip,
     }).catch(() => {});
@@ -66,16 +88,26 @@ router.post("/", authenticateUser, requirePermission("webhooks.manage"), webhook
 
 router.patch("/:id", authenticateUser, requirePermission("webhooks.manage"), webhooksRateLimit, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const patch: Record<string, unknown> = {};
-    for (const k of ["name", "url", "events", "active"]) {
-      if (req.body[k] !== undefined) patch[k] = req.body[k];
+    const patch: any = {};
+    if (req.body.name !== undefined) patch.name = req.body.name;
+    if (req.body.url !== undefined) {
+      patch.url = req.body.url;
+      const urlErr = await validateWebhookUrl(patch.url as string);
+      if (urlErr) return res.status(400).json({ error: urlErr });
     }
-    if (patch.url) { const urlErr = await validateWebhookUrl(patch.url as string); if (urlErr) return res.status(400).json({ error: urlErr }); }
+    if (req.body.events !== undefined) {
+      patch.events = req.body.events;
+      if (!Array.isArray(patch.events) || (patch.events as string[]).some((e: string) => !WEBHOOK_EVENTS.includes(e as WebhookEvent))) {
+        return res.status(400).json({ error: "Invalid events." });
+      }
+    }
+    if (req.body.active !== undefined) patch.active = !!req.body.active;
+
     if (req.body.secret !== undefined) {
       const s = req.body.secret;
       if (s === null || s === "") {
-        patch.secret_encrypted = null;
-        patch.secret_last_four = null;
+        patch.secretEncrypted = null;
+        patch.secretLastFour = null;
         patch.secret = null;
       } else {
         if (String(s).length < 16) {
@@ -87,19 +119,18 @@ router.patch("/:id", authenticateUser, requirePermission("webhooks.manage"), web
             code: "VAULT_UNCONFIGURED",
           });
         }
-        patch.secret_encrypted = encryptSecret(String(s));
-        patch.secret_last_four = lastFour(String(s));
+        patch.secretEncrypted = encryptSecret(String(s));
+        patch.secretLastFour = lastFour(String(s));
         patch.secret = null;
       }
     }
-    if (patch.events) {
-      if (!Array.isArray(patch.events) || (patch.events as string[]).some((e: string) => !WEBHOOK_EVENTS.includes(e as WebhookEvent))) {
-        return res.status(400).json({ error: "Invalid events." });
-      }
-    }
-    const { data, error } = await db.from("wireline_webhooks").update(patch)
-      .eq("id", req.params.id).eq("user_id", req.user.id).select(WEBHOOK_PUBLIC_COLUMNS).single();
-    if (error) throw error;
+
+    const [data] = await drizzle
+      .update(schema.webhooks)
+      .set(patch)
+      .where(and(eq(schema.webhooks.id, req.params.id), eq(schema.webhooks.userId, req.user.id)))
+      .returning();
+
     void auditLogger.logWebhook('updated', {
       userId: req.user.id, webhookId: data.id, url: data.url, events: data.events, active: data.active, ip: req.ip,
     }).catch(() => {});
@@ -109,7 +140,7 @@ router.patch("/:id", authenticateUser, requirePermission("webhooks.manage"), web
 
 router.delete("/:id", authenticateUser, requirePermission("webhooks.manage"), webhooksRateLimit, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    await db.from("wireline_webhooks").delete().eq("id", req.params.id).eq("user_id", req.user.id);
+    await drizzle.delete(schema.webhooks).where(and(eq(schema.webhooks.id, req.params.id), eq(schema.webhooks.userId, req.user.id)));
     void auditLogger.logWebhook('deleted', {
       userId: req.user.id, webhookId: req.params.id, ip: req.ip,
     }).catch(() => {});
@@ -119,7 +150,7 @@ router.delete("/:id", authenticateUser, requirePermission("webhooks.manage"), we
 
 router.post("/:id/test", authenticateUser, requirePermission("webhooks.manage"), webhooksRateLimit, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { data: hook } = await db.from("wireline_webhooks").select("id").eq("id", req.params.id).eq("user_id", req.user.id).single();
+    const [hook] = await drizzle.select({ id: schema.webhooks.id }).from(schema.webhooks).where(and(eq(schema.webhooks.id, req.params.id), eq(schema.webhooks.userId, req.user.id))).limit(1);
     if (!hook) return res.status(404).json({ error: "Webhook not found." });
     await dispatchWebhook(req.user.id, "task.created", {
       test: true, message: "This is a test ping from Wireline.", at: new Date().toISOString(),
@@ -134,16 +165,28 @@ router.post("/:id/test", authenticateUser, requirePermission("webhooks.manage"),
 router.get("/:id/deliveries", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const limit = Math.min(parseInt((req.query.limit as string) || "50"), 200);
-    const { data: hook } = await db.from("wireline_webhooks")
-      .select("id").eq("id", req.params.id).eq("user_id", req.user.id).maybeSingle();
+    const [hook] = await drizzle.select({ id: schema.webhooks.id }).from(schema.webhooks).where(and(eq(schema.webhooks.id, req.params.id), eq(schema.webhooks.userId, req.user.id))).limit(1);
     if (!hook) return res.status(404).json({ error: "Webhook not found." });
-    const { data, error } = await db.from("wireline_webhook_deliveries")
-      .select("id, event, attempts, max_attempts, status, last_status_code, last_error, next_attempt_at, delivered_at, created_at")
-      .eq("webhook_id", req.params.id)
-      .order("created_at", { ascending: false })
+
+    const deliveries = await drizzle
+      .select({
+        id: schema.webhookDeliveries.id,
+        event: schema.webhookDeliveries.event,
+        attempts: schema.webhookDeliveries.attempts,
+        maxAttempts: schema.webhookDeliveries.maxAttempts,
+        status: schema.webhookDeliveries.status,
+        lastStatusCode: schema.webhookDeliveries.lastStatusCode,
+        lastError: schema.webhookDeliveries.lastError,
+        nextAttemptAt: schema.webhookDeliveries.nextAttemptAt,
+        deliveredAt: schema.webhookDeliveries.deliveredAt,
+        createdAt: schema.webhookDeliveries.createdAt
+      })
+      .from(schema.webhookDeliveries)
+      .where(eq(schema.webhookDeliveries.webhookId, req.params.id))
+      .orderBy(desc(schema.webhookDeliveries.createdAt))
       .limit(limit);
-    if (error) throw error;
-    res.json({ deliveries: data || [] });
+
+    res.json({ deliveries: deliveries || [] });
   } catch (e: any) { log.error("Failed to load deliveries", { error: getErrorMessage(e) }); res.status(500).json({ error: "Failed to load deliveries" }); }
 });
 
@@ -151,15 +194,16 @@ router.post("/deliveries/:id/retry", authenticateUser, async (req: Authenticated
   try {
     const id = parseInt(req.params.id);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Invalid delivery id." });
-    const { data: row } = await db.from("wireline_webhook_deliveries")
-      .select("id, user_id, status").eq("id", id).maybeSingle();
-    if (!row || row.user_id !== req.user.id) return res.status(404).json({ error: "Delivery not found." });
-    await db.from("wireline_webhook_deliveries").update({
+    const [row] = await drizzle.select({ id: schema.webhookDeliveries.id, userId: schema.webhookDeliveries.userId }).from(schema.webhookDeliveries).where(eq(schema.webhookDeliveries.id, BigInt(id))).limit(1);
+    if (!row || row.userId !== req.user.id) return res.status(404).json({ error: "Delivery not found." });
+    
+    await drizzle.update(schema.webhookDeliveries).set({
       status: "pending",
-      next_attempt_at: new Date().toISOString(),
-      last_error: null,
-      last_status_code: null,
-    }).eq("id", id);
+      nextAttemptAt: new Date(),
+      lastError: null,
+      lastStatusCode: null,
+    }).where(eq(schema.webhookDeliveries.id, BigInt(id)));
+
     attemptWebhookDelivery(id).catch((err: unknown) =>
       log.warn("webhook delivery attempt failed", { delivery_id: id, error: err instanceof Error ? err.message : String(err) })
     );
@@ -171,8 +215,7 @@ router.delete("/deliveries/:id", authenticateUser, async (req: AuthenticatedRequ
   try {
     const id = parseInt(req.params.id);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Invalid delivery id." });
-    await db.from("wireline_webhook_deliveries")
-      .delete().eq("id", id).eq("user_id", req.user.id);
+    await drizzle.delete(schema.webhookDeliveries).where(and(eq(schema.webhookDeliveries.id, BigInt(id)), eq(schema.webhookDeliveries.userId, req.user.id)));
     res.json({ success: true });
   } catch (e: any) { log.error("Discard failed", { error: getErrorMessage(e) }); res.status(500).json({ error: "Discard failed" }); }
 });

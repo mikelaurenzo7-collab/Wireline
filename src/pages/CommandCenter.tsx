@@ -7,7 +7,6 @@ import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip,
   PieChart, Pie, Cell
 } from "recharts";
-import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
 import { log } from "../lib/server-context";
 import { authFetch } from "../lib/api";
@@ -78,39 +77,33 @@ export default function CommandCenter() {
 
   const fetchPresence = useCallback(async () => {
     if (!user) return;
-    const { data, error } = await supabase
-      .from("wireline_signal_presence")
-      .select("*")
-      .eq("user_id", user.id);
-
-    if (error) {
-      log.error("Failed to fetch live presence", { error });
-      return;
-    }
-
-    if (mountedRef.current) {
-      setCalls((data || []).map(s => ({
-        id: s.id,
-        customer_number: s.customer_number,
-        sentiment_label: s.label || "Connected",
-        urgency: s.urgency || 0,
-        status: s.status === 'escalated' ? 'escalated' : 'active'
-      })));
+    try {
+      const res = await authFetch("/api/fleet/presence");
+      if (!res.ok) throw new Error("Presence fetch failed");
       
-      // Fetch dossiers for new numbers
-      const numbers = data?.map(s => s.customer_number).filter(n => !dossiers[n]) || [];
-      if (numbers.length > 0) {
-        const { data: dossData } = await supabase
-          .from('wireline_lead_dossiers')
-          .select('*')
-          .in('customer_number', numbers);
+      const { signals } = await res.json();
+
+      if (mountedRef.current) {
+        setCalls((signals || []).map((s: any) => ({
+          id: s.id,
+          customer_number: s.customer_number,
+          sentiment_label: s.label || "Connected",
+          urgency: s.urgency || 0,
+          status: s.status === 'escalated' ? 'escalated' : 'active'
+        })));
         
-        if (dossData) {
-          const newDoss: Record<string, LeadDossier> = {};
-          dossData.forEach(d => { newDoss[d.customer_number] = d; });
-          setDossiers(prev => ({ ...prev, ...newDoss }));
+        // Fetch dossiers for new numbers
+        const numbers = (signals || []).map((s: any) => s.customer_number).filter((n: string) => !dossiers[n]);
+        if (numbers.length > 0) {
+          const dossRes = await authFetch(`/api/dashboard/dossiers?numbers=${numbers.join(",")}`);
+          if (dossRes.ok) {
+            const { dossiers: newDossData } = await dossRes.json();
+            setDossiers(prev => ({ ...prev, ...newDossData }));
+          }
         }
       }
+    } catch (err) {
+      log.error("Failed to fetch live presence", { err });
     }
   }, [user, dossiers]);
 
@@ -122,7 +115,7 @@ export default function CommandCenter() {
         authFetch("/api/fleet/stats"),
       ]);
 
-      const actionsData = await actionsRes.json();
+      const { tasks: actionsData } = await actionsRes.json();
       const statsData = await statsRes.json();
 
       if (mountedRef.current) {
@@ -150,35 +143,14 @@ export default function CommandCenter() {
     fetchAll();
     fetchPresence();
 
-    const channel = supabase
-      .channel("command-center-presence")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "wireline_signal_presence",
-          filter: `user_id=eq.${user?.id}`,
-        },
-        () => fetchPresence(),
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "wireline_fleet_tasks",
-          filter: `user_id=eq.${user?.id}`,
-        },
-        () => fetchAll(),
-      )
-      .subscribe();
-
+    // High-frequency polling for real-time feel (5s)
+    const fastTimer = setInterval(fetchPresence, 5_000);
+    // Standard polling for stats (60s)
     const slowTimer = setInterval(fetchAll, 60_000);
     
     return () => {
       mountedRef.current = false;
-      supabase.removeChannel(channel);
+      clearInterval(fastTimer);
       clearInterval(slowTimer);
     };
   }, [fetchAll, fetchPresence, user]);

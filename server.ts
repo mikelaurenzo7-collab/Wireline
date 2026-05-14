@@ -58,6 +58,7 @@ import calendarRouter from "./src/routes/calendar-routes";
 import settingsRouter from "./src/routes/settings-routes";
 import teamRouter from "./src/routes/team-routes";
 import kimiRouter from "./src/routes/kimi-routes";
+import authRouter from "./src/routes/auth-routes";
 
 // Startup env validation
 validateStartupEnv();
@@ -195,6 +196,7 @@ app.use(soc2Router);
 app.use(oauthRouter);
 app.use(teamRouter);
 app.use("/api/kimi", kimiRouter);
+app.use("/api/auth", authRouter);
 
 // 404 API catch-all (Must be mounted after all valid API routes and before global error handler)
 app.use("/api", (req: express.Request, res: express.Response) => {

@@ -8,7 +8,8 @@
  * is never blocked.
  */
 
-import { db, log, quotaTracker } from "../lib/server-context";
+import { drizzle, log, quotaTracker } from "../lib/server-context";
+import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
 import * as claudeBrain from "../lib/claude-brain";
 import type { ClaudeCallMeta } from "../lib/claude-brain";
@@ -28,15 +29,15 @@ export async function persistClaudeAuditRecords(opts: {
 }): Promise<void> {
   if (!opts.records.length) return;
   const rows = opts.records.map((r) => ({
-    user_id: opts.userId,
+    userId: opts.userId,
     action: opts.action,
     provider: r.provider,
     model: r.model,
-    input_tokens: r.input_tokens,
-    output_tokens: r.output_tokens,
-    cache_read_tokens: r.cache_read_tokens,
-    cache_create_tokens: r.cache_create_tokens,
-    cost_usd: claudeBrain.estimateCost(
+    inputTokens: r.input_tokens,
+    outputTokens: r.output_tokens,
+    cacheReadTokens: r.cache_read_tokens,
+    cacheCreateTokens: r.cache_create_tokens,
+    costUsd: String(claudeBrain.estimateCost(
       {
         input_tokens: r.input_tokens,
         output_tokens: r.output_tokens,
@@ -44,17 +45,19 @@ export async function persistClaudeAuditRecords(opts: {
         cache_creation_input_tokens: r.cache_create_tokens,
       },
       r.model,
-    ),
-    latency_ms: r.latency_ms,
+    )),
+    latencyMs: r.latency_ms,
     metadata: { ...(opts.requestMeta || {}) },
   }));
 
-  const deltaUsd = rows.reduce((s: number, r: { cost_usd?: unknown }) => s + Number(r.cost_usd || 0), 0);
-  const { error } = await db.from("wireline_audit_log").insert(rows);
-  if (error) {
-    log.error("Audit insert failed", { error: getErrorMessage(error) });
+  const deltaUsd = rows.reduce((s: number, r: any) => s + Number(r.costUsd || 0), 0);
+  try {
+    await drizzle.insert(schema.auditLog).values(rows);
+  } catch (err: any) {
+    log.error("Audit insert failed", { error: getErrorMessage(err) });
     return;
   }
+  
   const tokenDelta = opts.records.reduce((sum, r) => sum + r.input_tokens + r.output_tokens, 0);
   if (tokenDelta > 0) {
     try {

@@ -1,4 +1,6 @@
-import { db, log, fetchWithTimeout } from "./server-context";
+import { drizzle, log, fetchWithTimeout } from "./server-context";
+import * as schema from "../db/schema";
+import { eq, and } from "drizzle-orm";
 import { encryptSecret, decryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
 
@@ -122,13 +124,28 @@ async function refreshZoomToken(conn: ZoomConnection): Promise<{ access_token: s
 // ────────────────────────────────────────────────────────────────────
 
 async function getConnection(userId: string): Promise<ZoomConnection | null> {
-  const { data } = await db
-    .from("wireline_crm_connections")
-    .select("id, access_token, refresh_token, expires_at")
-    .eq("user_id", userId)
-    .eq("provider", "zoom")
-    .single();
-  return data || null;
+  const [data] = await drizzle
+    .select({
+      id: schema.crmConnections.id,
+      access_token: schema.crmConnections.accessToken,
+      refresh_token: schema.crmConnections.refreshToken,
+      expires_at: schema.crmConnections.expiresAt
+    })
+    .from(schema.crmConnections)
+    .where(and(
+      eq(schema.crmConnections.userId, userId),
+      eq(schema.crmConnections.provider, "zoom")
+    ))
+    .limit(1);
+
+  if (!data) return null;
+
+  return {
+    id: data.id,
+    access_token: data.access_token || "",
+    refresh_token: data.refresh_token || "",
+    expires_at: data.expires_at ? Number(data.expires_at) : 0,
+  };
 }
 
 async function getValidToken(userId: string): Promise<string | null> {
@@ -141,14 +158,14 @@ async function getValidToken(userId: string): Promise<string | null> {
 
   try {
     const updated = await refreshZoomToken(conn);
-    await db.from("wireline_crm_connections")
-      .update({
-        access_token: encryptSecret(updated.access_token),
-        refresh_token: encryptSecret(updated.refresh_token),
-        expires_at: updated.expires_at,
-        updated_at: new Date().toISOString(),
+    await drizzle.update(schema.crmConnections)
+      .set({
+        accessToken: encryptSecret(updated.access_token),
+        refreshToken: encryptSecret(updated.refresh_token),
+        expiresAt: BigInt(updated.expires_at),
+        updatedAt: new Date(),
       })
-      .eq("id", conn.id);
+      .where(eq(schema.crmConnections.id, conn.id));
     return updated.access_token;
   } catch (err) {
     log.error("Zoom token refresh failed", { error: getErrorMessage(err) });
@@ -214,8 +231,9 @@ export async function createMeeting(userId: string, params: {
 }
 
 export async function disconnectZoom(userId: string): Promise<void> {
-  await db.from("wireline_crm_connections")
-    .delete()
-    .eq("user_id", userId)
-    .eq("provider", "zoom");
+  await drizzle.delete(schema.crmConnections)
+    .where(and(
+      eq(schema.crmConnections.userId, userId),
+      eq(schema.crmConnections.provider, "zoom")
+    ));
 }

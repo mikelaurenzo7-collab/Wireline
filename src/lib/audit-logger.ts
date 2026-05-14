@@ -1,11 +1,12 @@
 // src/lib/audit-logger.ts
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { VercelPostgresDatabase } from 'drizzle-orm/vercel-postgres';
+import * as schema from '../db/schema';
 import type { AuditEventType, AuditSeverity } from '../types/audit';
 
 export class AuditLogger {
   private failureCount = 0;
 
-  constructor(private supabase: SupabaseClient) {}
+  constructor(private drizzle: VercelPostgresDatabase<typeof schema>) {}
 
   private async log(data: {
     eventType: AuditEventType;
@@ -34,26 +35,26 @@ export class AuditLogger {
     }
 
     const record = {
-      event_type: data.eventType,
-      user_id: data.userId,
+      eventType: data.eventType,
+      userId: data.userId,
       action: data.action,
       severity: data.severity || 'info',
-      actor_email: data.actorEmail,
-      resource_type: data.resourceType,
-      resource_id: data.resourceId,
+      actorEmail: data.actorEmail,
+      resourceType: data.resourceType,
+      resourceId: data.resourceId,
       metadata: data.metadata,
-      ip_address: data.ip,
-      user_agent: data.userAgent,
+      ipAddress: data.ip,
+      userAgent: data.userAgent,
       provider: data.provider,
       model: data.model,
-      cost_usd: data.costUsd,
-      latency_ms: data.latencyMs,
-      request_id: data.requestId,
+      costUsd: data.costUsd ? String(data.costUsd) : undefined, // decimal as string
+      latencyMs: data.latencyMs,
+      requestId: data.requestId,
     };
 
-    const { error } = await this.supabase.from('wireline_audit_log').insert(record);
-
-    if (error) {
+    try {
+      await this.drizzle.insert(schema.auditLog).values(record as any);
+    } catch (error: any) {
       this.failureCount++;
       console.error('[AuditLogger] Failed to log event:', {
         eventType: data.eventType,

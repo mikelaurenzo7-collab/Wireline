@@ -1,6 +1,8 @@
 import express, { Response } from "express";
 import type { AuthenticatedRequest } from "../types/auth";
-import { db } from "../lib/server-context";
+import { drizzle } from "../lib/server-context";
+import * as schema from "../db/schema";
+import { eq, and, sql, desc, inArray } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import * as claudeBrain from "../lib/claude-brain";
 import { claudeErr } from "../lib/claude-response-helpers";
@@ -32,16 +34,25 @@ router.post("/brief", authenticateUser, async (req: AuthenticatedRequest, res: R
     let role: string | undefined;
 
     if (agentId) {
-      const [{ data: agent }, { data: knowledge }] = await Promise.all([
-        db.from("wireline_agents").select("name, archetype, role").eq("id", agentId).eq("user_id", req.user.id).single(),
-        db.from("wireline_knowledge").select("content").eq("agent_id", agentId).eq("user_id", req.user.id).limit(500),
+      const [agentRows, knowledgeRows] = await Promise.all([
+        drizzle
+          .select({ name: schema.agents.name, archetype: schema.agents.archetype, role: schema.agents.role })
+          .from(schema.agents)
+          .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
+          .limit(1),
+        drizzle
+          .select({ content: schema.knowledge.content })
+          .from(schema.knowledge)
+          .where(and(eq(schema.knowledge.agentId, agentId), eq(schema.knowledge.userId, req.user.id)))
+          .limit(500),
       ]);
+      const agent = agentRows[0];
       if (agent) {
         agentName = agent.name;
-        agentArchetype = agent.archetype;
+        agentArchetype = agent.archetype || "Receptionist";
         role = agent.role || DEFAULT_AGENT_ROLE;
       }
-      knowledgeBase = (knowledge ?? []).map((k: { content: string }) => k.content);
+      knowledgeBase = (knowledgeRows ?? []).map((k: { content: string }) => k.content);
     }
 
     const result = await claudeBrain.brief({
@@ -64,15 +75,31 @@ router.post("/qualify", authenticateUser, async (req: AuthenticatedRequest, res:
     let resolvedAgentId: string | undefined = agentId;
 
     if (!actualTranscript && callId) {
-      const { data: call } = await db.from("wireline_call_logs").select("*").eq("id", callId).eq("user_id", req.user.id).single();
+      const [call] = await drizzle
+        .select()
+        .from(schema.callLogs)
+        .where(and(eq(schema.callLogs.id, BigInt(callId)), eq(schema.callLogs.userId, req.user.id)))
+        .limit(1);
+      
       actualTranscript = call?.transcript ?? call?.summary ?? "";
-      metadata = { customer_number: call?.customer_number, duration_seconds: call?.duration_seconds };
-      if (!resolvedAgentId && call?.agent_id) resolvedAgentId = call.agent_id;
+      metadata = { customer_number: call?.customerNumber, duration_seconds: call?.durationSeconds };
+      if (!resolvedAgentId && call?.agentId) resolvedAgentId = call.agentId;
     } else if (!actualTranscript && threadId) {
-      const { data: thread } = await db.from("wireline_email_threads").select("agent_id").eq("id", threadId).eq("user_id", req.user.id).single();
-      if (!resolvedAgentId && thread?.agent_id) resolvedAgentId = thread.agent_id;
-      const { data: msgs } = await db.from("wireline_email_messages").select("role, content").eq("thread_id", threadId).eq("user_id", req.user.id).order("created_at", { ascending: true }).limit(100);
-      actualTranscript = (msgs ?? []).map((m: { role: string; content: string }) => `${m.role.toUpperCase()}: ${m.content}`).join("\n\n");
+      const [thread] = await drizzle
+        .select({ agentId: schema.emailThreads.agentId })
+        .from(schema.emailThreads)
+        .where(and(eq(schema.emailThreads.id, threadId), eq(schema.emailThreads.userId, req.user.id)))
+        .limit(1);
+      
+      if (!resolvedAgentId && thread?.agentId) resolvedAgentId = thread.agentId;
+      const msgs = await drizzle
+        .select({ role: schema.emailMessages.role, content: schema.emailMessages.content })
+        .from(schema.emailMessages)
+        .where(and(eq(schema.emailMessages.threadId, threadId), eq(schema.emailMessages.userId, req.user.id)))
+        .orderBy(schema.emailMessages.createdAt)
+        .limit(100);
+      
+      actualTranscript = (msgs ?? []).map((m: { role: string | null; content: string | null }) => `${(m.role || 'user').toUpperCase()}: ${m.content}`).join("\n\n");
     }
 
     if (!actualTranscript) {
@@ -81,7 +108,11 @@ router.post("/qualify", authenticateUser, async (req: AuthenticatedRequest, res:
 
     let role: string | undefined;
     if (resolvedAgentId) {
-      const { data: agent } = await db.from("wireline_agents").select("role").eq("id", resolvedAgentId).eq("user_id", req.user.id).single();
+      const [agent] = await drizzle
+        .select({ role: schema.agents.role })
+        .from(schema.agents)
+        .where(and(eq(schema.agents.id, resolvedAgentId), eq(schema.agents.userId, req.user.id)))
+        .limit(1);
       if (agent) role = agent.role || DEFAULT_AGENT_ROLE;
     }
 
@@ -103,8 +134,12 @@ router.post("/objection-drill", authenticateUser, async (req: AuthenticatedReque
     let archetype = "Receptionist";
     let role: string | undefined;
     if (agentId) {
-      const { data: agent } = await db.from("wireline_agents").select("name, archetype, role").eq("id", agentId).eq("user_id", req.user.id).single();
-      if (agent) { agentName = agent.name; archetype = agent.archetype; role = agent.role || DEFAULT_AGENT_ROLE; }
+      const [agent] = await drizzle
+        .select({ name: schema.agents.name, archetype: schema.agents.archetype, role: schema.agents.role })
+        .from(schema.agents)
+        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
+        .limit(1);
+      if (agent) { agentName = agent.name; archetype = agent.archetype || "Receptionist"; role = agent.role || DEFAULT_AGENT_ROLE; }
     }
     const result = await claudeBrain.objectionDrill({
       agentName, archetype, role,
@@ -122,7 +157,11 @@ router.post("/cold-email", authenticateUser, async (req: AuthenticatedRequest, r
     const { agentId, ...rest } = req.body ?? {};
     let agentRole: string | undefined = rest.agentRole;
     if (agentId && !agentRole) {
-      const { data: agent } = await db.from("wireline_agents").select("role").eq("id", agentId).eq("user_id", req.user.id).single();
+      const [agent] = await drizzle
+        .select({ role: schema.agents.role })
+        .from(schema.agents)
+        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
+        .limit(1);
       if (agent) agentRole = agent.role || DEFAULT_AGENT_ROLE;
     }
     const result = await claudeBrain.coldEmail({ ...rest, agentRole });
@@ -144,12 +183,19 @@ router.post("/persona-clone", authenticateUser, async (req: AuthenticatedRequest
     });
 
     if (applyToAgent && agentId) {
-      const { data: agent } = await db.from("wireline_agents").select("id").eq("id", agentId).eq("user_id", req.user.id).single();
+      const [agent] = await drizzle
+        .select({ id: schema.agents.id })
+        .from(schema.agents)
+        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
+        .limit(1);
       if (agent) {
-        await db.from("wireline_personality").upsert({
-          agent_id: agentId,
-          user_id: req.user.id,
+        await drizzle.insert(schema.personality).values({
+          agentId,
+          userId: req.user.id,
           content: result.persona_block,
+        }).onConflictDoUpdate({
+          target: schema.personality.agentId,
+          set: { content: result.persona_block, userId: req.user.id }
         });
       }
     }
@@ -162,9 +208,21 @@ router.post("/persona-clone", authenticateUser, async (req: AuthenticatedRequest
 router.post("/summarize-thread", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { threadId } = req.body;
-    const { data: thread } = await db.from("wireline_email_threads").select("subject").eq("id", threadId).eq("user_id", req.user.id).single();
+    const [thread] = await drizzle
+      .select({ subject: schema.emailThreads.subject })
+      .from(schema.emailThreads)
+      .where(and(eq(schema.emailThreads.id, threadId), eq(schema.emailThreads.userId, req.user.id)))
+      .limit(1);
+    
     if (!thread) return res.status(404).json({ error: "Thread not found." });
-    const { data: msgs } = await db.from("wireline_email_messages").select("role, content").eq("thread_id", threadId).eq("user_id", req.user.id).order("created_at", { ascending: true }).limit(100);
+    
+    const msgs = await drizzle
+      .select({ role: schema.emailMessages.role, content: schema.emailMessages.content })
+      .from(schema.emailMessages)
+      .where(and(eq(schema.emailMessages.threadId, threadId), eq(schema.emailMessages.userId, req.user.id)))
+      .orderBy(schema.emailMessages.createdAt)
+      .limit(100);
+    
     const result = await claudeBrain.threadSummary({
       subject: thread.subject || "(no subject)",
       messages: (msgs ?? []) as any,
@@ -187,10 +245,15 @@ router.post("/route-intent", authenticateUser, async (req: AuthenticatedRequest,
 router.post("/email-draft", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { threadId, agentId, userInstructions } = req.body;
-    const { data: thread } = await db.from("wireline_email_threads").select("subject, agent_id").eq("id", threadId).eq("user_id", req.user.id).single();
+    const [thread] = await drizzle
+      .select({ subject: schema.emailThreads.subject, agentId: schema.emailThreads.agentId })
+      .from(schema.emailThreads)
+      .where(and(eq(schema.emailThreads.id, threadId), eq(schema.emailThreads.userId, req.user.id)))
+      .limit(1);
+    
     if (!thread) return res.status(404).json({ error: "Thread not found." });
 
-    const targetAgentId = agentId || thread.agent_id;
+    const targetAgentId = agentId || thread.agentId;
     let agentName = "Wireline Agent";
     let agentTone = "Professional";
     let agentRole: string | undefined;
@@ -199,22 +262,41 @@ router.post("/email-draft", authenticateUser, async (req: AuthenticatedRequest, 
     let directives: string[] = [];
 
     if (targetAgentId) {
-      const [{ data: agent }, { data: knowledge }, { data: directiveRows }] = await Promise.all([
-        db.from("wireline_agents").select("name, email_agent_tone, email_signature, role").eq("id", targetAgentId).eq("user_id", req.user.id).single(),
-        db.from("wireline_knowledge").select("content").eq("agent_id", targetAgentId).eq("user_id", req.user.id).limit(500),
-        db.from("wireline_directives").select("content").eq("agent_id", targetAgentId).eq("user_id", req.user.id).order("priority", { ascending: false }).limit(500),
+      const [agentRows, knowledgeRows, directiveRows] = await Promise.all([
+        drizzle
+          .select({ name: schema.agents.name, emailAgentTone: schema.agents.emailAgentTone, emailSignature: schema.agents.emailSignature, role: schema.agents.role })
+          .from(schema.agents)
+          .where(and(eq(schema.agents.id, targetAgentId), eq(schema.agents.userId, req.user.id)))
+          .limit(1),
+        drizzle
+          .select({ content: schema.knowledge.content })
+          .from(schema.knowledge)
+          .where(and(eq(schema.knowledge.agentId, targetAgentId), eq(schema.knowledge.userId, req.user.id)))
+          .limit(500),
+        drizzle
+          .select({ content: schema.directives.content })
+          .from(schema.directives)
+          .where(and(eq(schema.directives.agentId, targetAgentId), eq(schema.directives.userId, req.user.id)))
+          .orderBy(desc(schema.directives.priority))
+          .limit(500),
       ]);
+      const agent = agentRows[0];
       if (agent) {
         agentName = agent.name;
-        agentTone = agent.email_agent_tone || "Professional";
-        agentSignature = agent.email_signature || "";
+        agentTone = agent.emailAgentTone || "Professional";
+        agentSignature = agent.emailSignature || "";
         agentRole = agent.role || DEFAULT_AGENT_ROLE;
       }
-      knowledgeBase = (knowledge ?? []).map((k: { content: string }) => k.content);
+      knowledgeBase = (knowledgeRows ?? []).map((k: { content: string }) => k.content);
       directives = (directiveRows ?? []).map((d: { content: string }) => d.content);
     }
 
-    const { data: msgs } = await db.from("wireline_email_messages").select("role, content").eq("thread_id", threadId).eq("user_id", req.user.id).order("created_at", { ascending: true }).limit(100);
+    const msgs = await drizzle
+      .select({ role: schema.emailMessages.role, content: schema.emailMessages.content })
+      .from(schema.emailMessages)
+      .where(and(eq(schema.emailMessages.threadId, threadId), eq(schema.emailMessages.userId, req.user.id)))
+      .orderBy(schema.emailMessages.createdAt)
+      .limit(100);
 
     const result = await claudeBrain.smartDraft({
       agentName, agentTone, agentRole, agentSignature,
@@ -238,10 +320,15 @@ router.post("/email-quick-replies", authenticateUser, async (req: AuthenticatedR
     const { threadId, agentId } = req.body;
     if (!threadId) return res.status(400).json({ error: "threadId required" });
 
-    const { data: thread } = await db.from("wireline_email_threads").select("subject, agent_id").eq("id", threadId).eq("user_id", req.user.id).single();
+    const [thread] = await drizzle
+      .select({ subject: schema.emailThreads.subject, agentId: schema.emailThreads.agentId })
+      .from(schema.emailThreads)
+      .where(and(eq(schema.emailThreads.id, threadId), eq(schema.emailThreads.userId, req.user.id)))
+      .limit(1);
+    
     if (!thread) return res.status(404).json({ error: "Thread not found." });
 
-    const targetAgentId = agentId || thread.agent_id;
+    const targetAgentId = agentId || thread.agentId;
     let agentName = "Wireline Agent";
     let agentTone = "Professional";
     let agentRole: string | undefined;
@@ -249,20 +336,34 @@ router.post("/email-quick-replies", authenticateUser, async (req: AuthenticatedR
     let knowledgeBase: string[] = [];
 
     if (targetAgentId) {
-      const [{ data: agent }, { data: knowledge }] = await Promise.all([
-        db.from("wireline_agents").select("name, email_agent_tone, email_signature, role").eq("id", targetAgentId).eq("user_id", req.user.id).single(),
-        db.from("wireline_knowledge").select("content").eq("agent_id", targetAgentId).eq("user_id", req.user.id).limit(20),
+      const [agentRows, knowledgeRows] = await Promise.all([
+        drizzle
+          .select({ name: schema.agents.name, emailAgentTone: schema.agents.emailAgentTone, emailSignature: schema.agents.emailSignature, role: schema.agents.role })
+          .from(schema.agents)
+          .where(and(eq(schema.agents.id, targetAgentId), eq(schema.agents.userId, req.user.id)))
+          .limit(1),
+        drizzle
+          .select({ content: schema.knowledge.content })
+          .from(schema.knowledge)
+          .where(and(eq(schema.knowledge.agentId, targetAgentId), eq(schema.knowledge.userId, req.user.id)))
+          .limit(20),
       ]);
+      const agent = agentRows[0];
       if (agent) {
         agentName = agent.name;
-        agentTone = agent.email_agent_tone || "Professional";
-        agentSignature = agent.email_signature || "";
+        agentTone = agent.emailAgentTone || "Professional";
+        agentSignature = agent.emailSignature || "";
         agentRole = agent.role || DEFAULT_AGENT_ROLE;
       }
-      knowledgeBase = (knowledge ?? []).map((k: { content: string }) => k.content);
+      knowledgeBase = (knowledgeRows ?? []).map((k: { content: string }) => k.content);
     }
 
-    const { data: msgs } = await db.from("wireline_email_messages").select("role, content").eq("thread_id", threadId).eq("user_id", req.user.id).order("created_at", { ascending: true }).limit(100);
+    const msgs = await drizzle
+      .select({ role: schema.emailMessages.role, content: schema.emailMessages.content })
+      .from(schema.emailMessages)
+      .where(and(eq(schema.emailMessages.threadId, threadId), eq(schema.emailMessages.userId, req.user.id)))
+      .orderBy(schema.emailMessages.createdAt)
+      .limit(100);
 
     const result = await claudeBrain.quickReplies({
       agentName, agentTone, agentRole, agentSignature,
@@ -281,14 +382,19 @@ router.post("/agent-review", authenticateUser, async (req: AuthenticatedRequest,
   try {
     const { agentId, lookback } = req.body;
     if (!agentId) return res.status(400).json({ error: "agentId required" });
-    const { data: agent } = await db.from("wireline_agents").select("name, archetype, role").eq("id", agentId).eq("user_id", req.user.id).single();
+    const [agent] = await drizzle
+      .select({ name: schema.agents.name, archetype: schema.agents.archetype, role: schema.agents.role })
+      .from(schema.agents)
+      .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
+      .limit(1);
+    
     if (!agent) return res.status(404).json({ error: "Agent not found." });
-    const { data: logs } = await db
-      .from("wireline_call_logs")
-      .select("summary, transcript, lead_score, intent_label")
-      .eq("agent_id", agentId)
-      .eq("user_id", req.user.id)
-      .order("created_at", { ascending: false })
+    
+    const logs = await drizzle
+      .select({ summary: schema.callLogs.summary, transcript: schema.callLogs.transcript, leadScore: schema.callLogs.leadScore, intentLabel: schema.callLogs.intentLabel })
+      .from(schema.callLogs)
+      .where(and(eq(schema.callLogs.agentId, agentId), eq(schema.callLogs.userId, req.user.id)))
+      .orderBy(desc(schema.callLogs.createdAt))
       .limit(Math.min(lookback ?? 15, 30));
     if (!logs || logs.length === 0) {
       return res.status(400).json({ error: "Insufficient data — need at least 1 completed call.", code: "NO_DATA" });
@@ -311,12 +417,31 @@ router.post("/call-playbook", authenticateUser, async (req: AuthenticatedRequest
     if (!agentId) return res.status(400).json({ error: "agentId required" });
     if (!scenario?.trim()) return res.status(400).json({ error: "scenario required" });
 
-    const [{ data: agent }, { data: knowledgeRows }, { data: directiveRows }, { data: settings }] = await Promise.all([
-      db.from("wireline_agents").select("name, role").eq("id", agentId).eq("user_id", req.user.id).single(),
-      db.from("wireline_knowledge").select("content").eq("agent_id", agentId).eq("user_id", req.user.id).limit(20),
-      db.from("wireline_directives").select("content").eq("agent_id", agentId).eq("user_id", req.user.id).order("priority", { ascending: false }).limit(10),
-      db.from("wireline_settings").select("company_name").eq("user_id", req.user.id).maybeSingle(),
+    const [agentRows, knowledgeRows, directiveRows, settingRows] = await Promise.all([
+      drizzle
+        .select({ name: schema.agents.name, role: schema.agents.role })
+        .from(schema.agents)
+        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
+        .limit(1),
+      drizzle
+        .select({ content: schema.knowledge.content })
+        .from(schema.knowledge)
+        .where(and(eq(schema.knowledge.agentId, agentId), eq(schema.knowledge.userId, req.user.id)))
+        .limit(20),
+      drizzle
+        .select({ content: schema.directives.content })
+        .from(schema.directives)
+        .where(and(eq(schema.directives.agentId, agentId), eq(schema.directives.userId, req.user.id)))
+        .orderBy(desc(schema.directives.priority))
+        .limit(10),
+      drizzle
+        .select({ businessName: schema.settings.businessName })
+        .from(schema.settings)
+        .where(eq(schema.settings.userId, req.user.id))
+        .limit(1),
     ]);
+    const agent = agentRows[0];
+    const settings = settingRows[0];
     if (!agent) return res.status(404).json({ error: "Agent not found." });
 
     const playbook = await claudeBrain.buildCallPlaybook({
@@ -325,7 +450,7 @@ router.post("/call-playbook", authenticateUser, async (req: AuthenticatedRequest
       scenario: scenario.trim(),
       knowledgeBase: (knowledgeRows ?? []).map((k: { content: string }) => k.content),
       directives: (directiveRows ?? []).map((d: { content: string }) => d.content),
-      companyName: (settings as { company_name?: string })?.company_name || undefined,
+      companyName: settings?.businessName || undefined,
     });
 
     res.json({ playbook });
@@ -344,12 +469,17 @@ router.post("/agent-review/apply-directive", authenticateUser, async (req: Authe
 
     const { agentId, priority } = req.body;
     const { content: directive } = validation.data;
-    const { data: agent } = await db.from("wireline_agents").select("id").eq("id", agentId).eq("user_id", req.user.id).single();
+    const [agent] = await drizzle
+      .select({ id: schema.agents.id })
+      .from(schema.agents)
+      .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
+      .limit(1);
+    
     if (!agent) return res.status(404).json({ error: "Agent not found." });
     const priorityMap: Record<string, number> = { critical: 10, high: 7, medium: 5, low: 3 };
-    await db.from("wireline_directives").insert({
-      agent_id: agentId,
-      user_id: req.user.id,
+    await drizzle.insert(schema.directives).values({
+      agentId,
+      userId: req.user.id,
       content: directive,
       priority: priorityMap[priority] ?? 5,
     });
@@ -361,33 +491,37 @@ router.post("/agent-review/apply-directive", authenticateUser, async (req: Authe
 
 router.post("/post-call/:callId", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { data: call } = await db
-      .from("wireline_call_logs")
-      .select("*, agent_id, user_id")
-      .eq("id", req.params.callId)
-      .eq("user_id", req.user.id)
-      .single();
+    const [call] = await drizzle
+      .select()
+      .from(schema.callLogs)
+      .where(and(eq(schema.callLogs.id, BigInt(req.params.callId)), eq(schema.callLogs.userId, req.user.id)))
+      .limit(1);
+    
     if (!call) return res.status(404).json({ error: "Call not found." });
-    const { data: agent } = await db
-      .from("wireline_agents")
-      .select("name, archetype, role")
-      .eq("id", call.agent_id)
-      .single();
+    
+    const [agent] = await drizzle
+      .select({ name: schema.agents.name, archetype: schema.agents.archetype, role: schema.agents.role })
+      .from(schema.agents)
+      .where(eq(schema.agents.id, call.agentId || ''))
+      .limit(1);
 
     const result = await claudeBrain.postCallAnalysis({
       agentName: agent?.name || "Wireline Agent",
       archetype: agent?.archetype || "Receptionist",
       role: agent?.role || undefined,
-      customerNumber: call.customer_number,
-      durationSeconds: call.duration_seconds,
+      customerNumber: call.customerNumber,
+      durationSeconds: call.durationSeconds,
       summary: call.summary || "",
       transcript: call.transcript || "",
     });
 
-    await db.from("wireline_call_logs").update({
-      lead_score: result.lead_score,
-      intent_label: result.intent_label,
-    }).eq("id", call.id);
+    await drizzle
+      .update(schema.callLogs)
+      .set({
+        leadScore: result.lead_score,
+        intentLabel: result.intent_label,
+      })
+      .where(eq(schema.callLogs.id, call.id));
 
     res.json({ analysis: result });
   } catch (e) {
@@ -404,19 +538,28 @@ router.post("/coach", authenticateUser, async (req: AuthenticatedRequest, res: R
     let role: string | undefined;
 
     if (callId) {
-      const { data: call } = await db.from("wireline_call_logs")
-        .select("transcript, agent_id")
-        .eq("id", callId).eq("user_id", req.user.id).single();
+      const [call] = await drizzle
+        .select({ transcript: schema.callLogs.transcript, agentId: schema.callLogs.agentId })
+        .from(schema.callLogs)
+        .where(and(eq(schema.callLogs.id, BigInt(callId)), eq(schema.callLogs.userId, req.user.id)))
+        .limit(1);
+      
       if (call) {
-        transcript = transcript || call.transcript;
-        const { data: a } = await db.from("wireline_agents")
-          .select("name, archetype, role").eq("id", call.agent_id).single();
-        if (a) { agentName = a.name; archetype = a.archetype; role = a.role || undefined; }
+        transcript = transcript || call.transcript || undefined;
+        const [a] = await drizzle
+          .select({ name: schema.agents.name, archetype: schema.agents.archetype, role: schema.agents.role })
+          .from(schema.agents)
+          .where(eq(schema.agents.id, call.agentId || ''))
+          .limit(1);
+        if (a) { agentName = a.name; archetype = a.archetype || "Receptionist"; role = a.role || undefined; }
       }
     } else if (agentId) {
-      const { data: a } = await db.from("wireline_agents")
-        .select("name, archetype, role").eq("id", agentId).eq("user_id", req.user.id).single();
-      if (a) { agentName = a.name; archetype = a.archetype; role = a.role || undefined; }
+      const [a] = await drizzle
+        .select({ name: schema.agents.name, archetype: schema.agents.archetype, role: schema.agents.role })
+        .from(schema.agents)
+        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
+        .limit(1);
+      if (a) { agentName = a.name; archetype = a.archetype || "Receptionist"; role = a.role || undefined; }
     }
 
     if (!transcript) return res.status(400).json({ error: "Provide a transcript or callId." });
@@ -491,19 +634,23 @@ router.post("/knowledge-from-url/apply", authenticateUser, async (req: Authentic
     if (!agentId || !Array.isArray(entries)) {
       return res.status(400).json({ error: "agentId and entries[] required." });
     }
-    const { data: agent } = await db.from("wireline_agents")
-      .select("id").eq("id", agentId).eq("user_id", req.user.id).single();
+    const [agent] = await drizzle
+      .select({ id: schema.agents.id })
+      .from(schema.agents)
+      .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
+      .limit(1);
+    
     if (!agent) return res.status(404).json({ error: "Agent not found." });
 
     const rows = entries
       .filter((e: any) => typeof e?.fact === "string" && e.fact.trim())
       .map((e: any) => ({
-        agent_id: agentId,
-        user_id: req.user.id,
+        agentId: agentId,
+        userId: req.user.id,
         content: e.fact.trim(),
       }));
     if (rows.length === 0) return res.status(400).json({ error: "No valid entries to insert." });
-    await db.from("wireline_knowledge").insert(rows);
+    await drizzle.insert(schema.knowledge).values(rows);
     dispatchWebhook(req.user.id, "knowledge_updated", {
       action: "bulk_created", agent_id: agentId, count: rows.length,
     }).catch(() => {});
@@ -519,18 +666,26 @@ router.post("/knowledge-dedupe", authenticateUser, async (req: AuthenticatedRequ
     if (!claudeBrain.isClaudeAvailable()) {
       return res.status(503).json({ error: "Claude required for knowledge dedupe.", code: "CLAUDE_OFFLINE" });
     }
-    const [{ data: rows }, { data: agents }] = await Promise.all([
-      db.from("wireline_knowledge").select("id, agent_id, content").eq("user_id", req.user.id).limit(KNOWLEDGE_DEDUPE_MAX_FACTS),
-      db.from("wireline_agents").select("id, name").eq("user_id", req.user.id).limit(500),
+    const [rows, agentList] = await Promise.all([
+      drizzle
+        .select({ id: schema.knowledge.id, agentId: schema.knowledge.agentId, content: schema.knowledge.content })
+        .from(schema.knowledge)
+        .where(eq(schema.knowledge.userId, req.user.id))
+        .limit(KNOWLEDGE_DEDUPE_MAX_FACTS),
+      drizzle
+        .select({ id: schema.agents.id, name: schema.agents.name })
+        .from(schema.agents)
+        .where(eq(schema.agents.userId, req.user.id))
+        .limit(500),
     ]);
     if (!rows || rows.length < 2) {
       return res.json({ clusters: [], total_analyzed: rows?.length || 0, message: "Not enough facts to dedupe." });
     }
-    const agentMap = new Map((agents || []).map((a: { id: string; name: string }) => [a.id, a.name]));
+    const agentMap = new Map((agentList || []).map((a: { id: string; name: string }) => [a.id, a.name]));
     const result = await claudeBrain.findKnowledgeDuplicates({
       facts: rows.map((r: any) => ({
-        id: r.id,
-        agent_name: agentMap.get(r.agent_id) || "(unknown)",
+        id: Number(r.id),
+        agent_name: agentMap.get(r.agentId || '') || "(unknown)",
         content: r.content,
       })),
     });
@@ -594,39 +749,41 @@ router.post("/forge/create", authenticateUser, async (req: AuthenticatedRequest,
 
     const agentId = `agent-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
-    const { error: agentErr } = await db.from("wireline_agents").insert({
+    await drizzle.insert(schema.agents).values({
       id: agentId,
-      user_id: req.user.id,
+      userId: req.user.id,
       name: design.name,
       archetype: design.archetype || "Receptionist",
-      first_message: design.first_message || `Hi, this is ${design.name}. How can I help?`,
-      website_url: websiteUrl || null,
+      firstMessage: design.first_message || `Hi, this is ${design.name}. How can I help?`,
+      websiteUrl: websiteUrl || null,
       channel: "voice",
     });
-    if (agentErr) throw agentErr;
 
     if (design.personality_block) {
-      await db.from("wireline_personality").upsert({
-        agent_id: agentId,
-        user_id: req.user.id,
+      await drizzle.insert(schema.personality).values({
+        agentId: agentId,
+        userId: req.user.id,
         content: design.personality_block,
+      }).onConflictDoUpdate({
+        target: schema.personality.agentId,
+        set: { content: design.personality_block, userId: req.user.id }
       });
     }
 
     const directiveRows = (design.directives || []).map((d: any) => ({
-      agent_id: agentId,
-      user_id: req.user.id,
+      agentId: agentId,
+      userId: req.user.id,
       content: d.content,
       priority: d.priority ?? 5,
     }));
-    if (directiveRows.length) await db.from("wireline_directives").insert(directiveRows);
+    if (directiveRows.length) await drizzle.insert(schema.directives).values(directiveRows);
 
     const knowledgeRows = (design.seed_knowledge || []).map((k: string) => ({
-      agent_id: agentId,
-      user_id: req.user.id,
+      agentId: agentId,
+      userId: req.user.id,
       content: k,
     }));
-    if (knowledgeRows.length) await db.from("wireline_knowledge").insert(knowledgeRows);
+    if (knowledgeRows.length) await drizzle.insert(schema.knowledge).values(knowledgeRows);
 
     res.json({ success: true, agentId });
   } catch (e) {

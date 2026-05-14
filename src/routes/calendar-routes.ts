@@ -1,5 +1,7 @@
 import { Router, Response } from "express";
-import { db, log } from "../lib/server-context";
+import { drizzle, log } from "../lib/server-context";
+import * as schema from "../db/schema";
+import { eq, and, gte, desc, asc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage } from "../lib/server-utils";
 import { syncGoogleCalendar } from "../services/google-calendar-sync";
@@ -11,12 +13,18 @@ const router = Router();
 router.get("/api/calendar/accounts", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   const userId: string = req.user.id;
   try {
-    const { data, error } = await db
-      .from("wireline_calendar_accounts")
-      .select("id, email_address, provider, created_at, updated_at")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
-    if (error) throw error;
+    const data = await drizzle
+      .select({
+        id: schema.calendarAccounts.id,
+        emailAddress: schema.calendarAccounts.emailAddress,
+        provider: schema.calendarAccounts.provider,
+        createdAt: schema.calendarAccounts.createdAt,
+        updatedAt: schema.calendarAccounts.updatedAt
+      })
+      .from(schema.calendarAccounts)
+      .where(eq(schema.calendarAccounts.userId, userId))
+      .orderBy(desc(schema.calendarAccounts.createdAt));
+
     res.json({ accounts: data || [] });
   } catch (e: any) { 
     log.error("Calendar accounts fetch failed", { userId, error: getErrorMessage(e) }); 
@@ -44,14 +52,23 @@ router.post("/api/calendar/sync", authenticateUser, async (req: AuthenticatedReq
 router.get("/api/calendar/events", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   const userId: string = req.user.id;
   try {
-    const { data, error } = await db
-      .from("wireline_calendar_events")
-      .select("id, title, start_time, end_time, status, account_id")
-      .eq("user_id", userId)
-      .gte("end_time", new Date().toISOString())
-      .order("start_time", { ascending: true })
+    const data = await drizzle
+      .select({
+        id: schema.calendarEvents.id,
+        title: schema.calendarEvents.title,
+        startTime: schema.calendarEvents.startTime,
+        endTime: schema.calendarEvents.endTime,
+        status: schema.calendarEvents.status,
+        accountId: schema.calendarEvents.accountId
+      })
+      .from(schema.calendarEvents)
+      .where(and(
+        eq(schema.calendarEvents.userId, userId),
+        gte(schema.calendarEvents.endTime, new Date())
+      ))
+      .orderBy(asc(schema.calendarEvents.startTime))
       .limit(100);
-    if (error) throw error;
+
     res.json({ events: data || [] });
   } catch (e: any) {
     log.error("Calendar events fetch failed", { userId, error: getErrorMessage(e) });

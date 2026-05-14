@@ -1,12 +1,15 @@
 import { Router, Response } from "express";
 
-import { db, log } from "../lib/server-context";
+import { log, drizzle, auditLogger } from "../lib/server-context";
+import * as schema from "../db/schema";
+import { eq, and, sql, desc, inArray, like, ne, gte, or } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage } from "../lib/server-utils";
 import { parseFormData, FleetTaskCreateSchema } from "../lib/form-validators";
 import { compileActivityFeed } from "../lib/fleet-activity";
 import { ROLE_PERSONALITY_TEMPLATES } from "../lib/agent-constants";
 import { executeAction } from "../lib/action-engine";
+import { claudeErr } from "../lib/claude-response-helpers";
 import type { ActionItem } from "../lib/action-types";
 import type { AuthenticatedRequest } from "../types/auth";
 
@@ -15,19 +18,21 @@ const router = Router();
 const FLEET_TASK_STATUSES = ['pending', 'open', 'in_progress', 'completed', 'cancelled'] as const;
 const FLEET_TASK_PRIORITIES = ['low', 'medium', 'high'] as const;
 
-interface FleetTask {
-  status?: string;
-  priority?: string;
-  due_date?: string;
-  created_at: string;
+interface FleetTaskRow {
+  id: string;
+  status: string | null;
+  priority: string | null;
+  dueDate: Date | null;
+  createdAt: Date | null;
+  agent?: { name: string | null } | null;
 }
 
 interface TaskUpdateData {
   status?: string;
   priority?: string;
-  due_date?: string;
-  agent_id?: string;
-  resolution_notes?: string;
+  dueDate?: Date;
+  agentId?: string;
+  resolutionNotes?: string;
 }
 
 router.post("/api/fleet/seed", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
@@ -88,27 +93,27 @@ router.post("/api/fleet/seed", authenticateUser, async (req: AuthenticatedReques
 
   try {
     for (const agent of specializedAgents) {
-      await db.from('wireline_agents').insert({
+      await drizzle.insert(schema.agents).values({
         id: agent.id,
-        user_id: userId,
+        userId: userId,
         name: agent.name,
         channel: agent.channel,
         role: agent.role,
         archetype: agent.archetype,
-        first_message: agent.first_message,
-        email_agent_tone: agent.email_agent_tone,
-        email_signature: agent.email_signature
+        firstMessage: agent.first_message,
+        emailAgentTone: agent.email_agent_tone,
+        emailSignature: agent.email_signature
       });
 
-      await db.from('wireline_personality').insert({
-        agent_id: agent.id,
-        user_id: userId,
+      await drizzle.insert(schema.personality).values({
+        agentId: agent.id,
+        userId: userId,
         content: agent.personality
       });
       
-      await db.from('wireline_directives').insert({
-        agent_id: agent.id,
-        user_id: userId,
+      await drizzle.insert(schema.directives).values({
+        agentId: agent.id,
+        userId: userId,
         content: "Always verify the customer's identity before discussing account details.",
         priority: 10
       });
@@ -122,12 +127,12 @@ router.post("/api/fleet/seed", authenticateUser, async (req: AuthenticatedReques
 
 router.get("/api/fleet/presence", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { data, error } = await db.from('wireline_signal_presence')
-      .select('*')
-      .eq('user_id', req.user.id);
+    const signals = await drizzle
+      .select()
+      .from(schema.signalPresence)
+      .where(eq(schema.signalPresence.userId, req.user.id));
     
-    if (error) throw error;
-    res.json({ signals: data || [] });
+    res.json({ signals });
   } catch (error: any) {
     log.error("Presence fetch failed", { error: getErrorMessage(error) });
     res.json({ signals: [] });
@@ -141,26 +146,44 @@ router.get("/api/fleet/tasks", authenticateUser, async (req: AuthenticatedReques
     const statusFilter   = typeof req.query.status   === "string" && VALID_STATUSES.has(req.query.status)   ? req.query.status   : null;
     const priorityFilter = typeof req.query.priority === "string" && VALID_PRIORITIES.has(req.query.priority) ? req.query.priority : null;
 
-    let query = db.from('wireline_fleet_tasks')
-                  .select('*, wireline_agents(name)')
-                  .eq('user_id', req.user.id);
+    const whereClauses = [eq(schema.fleetTasks.userId, req.user.id)];
+    if (statusFilter) whereClauses.push(eq(schema.fleetTasks.status, statusFilter));
+    if (priorityFilter) whereClauses.push(eq(schema.fleetTasks.priority, priorityFilter));
 
-    if (statusFilter)   query = query.eq('status',   statusFilter);
-    if (priorityFilter) query = query.eq('priority', priorityFilter);
+    const tasks = await drizzle
+      .select({
+        id: schema.fleetTasks.id,
+        userId: schema.fleetTasks.userId,
+        sourceType: schema.fleetTasks.sourceType,
+        sourceId: schema.fleetTasks.sourceId,
+        targetChannel: schema.fleetTasks.targetChannel,
+        agentId: schema.fleetTasks.agentId,
+        customerInfo: schema.fleetTasks.customerInfo,
+        taskType: schema.fleetTasks.taskType,
+        description: schema.fleetTasks.description,
+        status: schema.fleetTasks.status,
+        priority: schema.fleetTasks.priority,
+        dueDate: schema.fleetTasks.dueDate,
+        resolutionNotes: schema.fleetTasks.resolutionNotes,
+        createdAt: schema.fleetTasks.createdAt,
+        agent: {
+          name: schema.agents.name
+        }
+      })
+      .from(schema.fleetTasks)
+      .leftJoin(schema.agents, eq(schema.fleetTasks.agentId, schema.agents.id))
+      .where(and(...whereClauses))
+      .limit(1000);
 
-    const { data, error } = await query.limit(1000);
-    
-    if (error) throw error;
-
-    const sortedTasks = (data || []).sort((a: FleetTask, b: FleetTask) => {
+    const sortedTasks = (tasks || []).sort((a: any, b: any) => {
       if (a.status === 'completed' && b.status !== 'completed') return 1;
       if (a.status !== 'completed' && b.status === 'completed') return -1;
       const priorityWeight: Record<string, number> = { 'high': 3, 'medium': 2, 'low': 1 };
       const weightA = priorityWeight[a.priority?.toLowerCase() || ''] || 0;
       const weightB = priorityWeight[b.priority?.toLowerCase() || ''] || 0;
       if (weightA !== weightB) return weightB - weightA;
-      if (a.due_date && b.due_date) return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      if (a.dueDate && b.dueDate) return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      return new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime();
     });
 
     res.json({ tasks: sortedTasks });
@@ -177,11 +200,23 @@ router.post("/api/fleet/tasks", authenticateUser, async (req: AuthenticatedReque
       return res.status(400).json({ error: "Validation failed", errors: validation.errors });
     }
     const { description, task_type, priority, source_type, source_id, target_channel, customer_info, agent_id, due_date } = validation.data!;
-    await db.from('wireline_fleet_tasks').insert({
-       source_type, source_id, target_channel, customer_info, task_type, description, agent_id, status: 'pending', user_id: req.user.id, priority, due_date
+    
+    await drizzle.insert(schema.fleetTasks).values({
+       sourceType: source_type, 
+       sourceId: source_id, 
+       targetChannel: target_channel, 
+       customerInfo: customer_info, 
+       taskType: task_type, 
+       description, 
+       agentId: agent_id, 
+       status: 'pending', 
+       userId: req.user.id, 
+       priority, 
+       dueDate: due_date ? new Date(due_date) : null
     });
     res.json({ success: true });
-  } catch {
+  } catch (error: any) {
+    log.error("Failed to create fleet task", { error: error.message });
     res.status(500).json({ error: "Failed to create fleet task" });
   }
 });
@@ -189,7 +224,7 @@ router.post("/api/fleet/tasks", authenticateUser, async (req: AuthenticatedReque
 router.patch("/api/fleet/tasks/:id", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { status, priority, due_date, agent_id, resolution_notes } = req.body;
-    const updateData: TaskUpdateData = {};
+    const updateData: any = {};
     if (status !== undefined) {
       if (!FLEET_TASK_STATUSES.includes(status)) {
         return res.status(400).json({ error: `status must be one of: ${FLEET_TASK_STATUSES.join(', ')}` });
@@ -202,13 +237,17 @@ router.patch("/api/fleet/tasks/:id", authenticateUser, async (req: Authenticated
       }
       updateData.priority = priority;
     }
-    if (due_date !== undefined) updateData.due_date = due_date;
-    if (agent_id !== undefined) updateData.agent_id = agent_id;
-    if (resolution_notes !== undefined) updateData.resolution_notes = resolution_notes;
+    if (due_date !== undefined) updateData.dueDate = new Date(due_date);
+    if (agent_id !== undefined) updateData.agentId = agent_id;
+    if (resolution_notes !== undefined) updateData.resolutionNotes = resolution_notes;
     
-    await db.from('wireline_fleet_tasks').update(updateData).eq('id', req.params.id).eq('user_id', req.user.id);
+    await drizzle
+      .update(schema.fleetTasks)
+      .set(updateData)
+      .where(and(eq(schema.fleetTasks.id, req.params.id), eq(schema.fleetTasks.userId, req.user.id)));
     res.json({ success: true });
-  } catch {
+  } catch (error: any) {
+    log.error("Failed to update fleet task", { error: error.message });
     res.status(500).json({ error: "Failed to update fleet task" });
   }
 });
@@ -218,13 +257,13 @@ router.post("/api/fleet/tasks/:id/approve", authenticateUser, async (req: Authen
     const taskId = req.params.id;
     const userId = req.user.id;
 
-    const { data: task, error: fetchError } = await db.from('wireline_fleet_tasks')
-      .select('*')
-      .eq('id', taskId)
-      .eq('user_id', userId)
-      .single();
+    const [task] = await drizzle
+      .select()
+      .from(schema.fleetTasks)
+      .where(and(eq(schema.fleetTasks.id, taskId), eq(schema.fleetTasks.userId, userId)))
+      .limit(1);
 
-    if (fetchError || !task) {
+    if (!task) {
       return res.status(404).json({ error: "Task not found" });
     }
 
@@ -233,21 +272,22 @@ router.post("/api/fleet/tasks/:id/approve", authenticateUser, async (req: Authen
     }
 
     const actionItem: ActionItem = {
-      type: task.task_type as any,
+      type: task.taskType as any,
       priority: task.priority as any,
-      payload: task.payload || {},
-      agentId: task.agent_id
+      payload: (task.customerInfo as any) || {},
+      agentId: task.agentId ?? undefined
     };
 
     const result = await executeAction(userId, actionItem, {
-      sourceId: task.source_id || taskId,
-      sourceType: task.source_type || 'manual_approval'
+      sourceId: task.sourceId || taskId,
+      sourceType: task.sourceType || 'manual_approval'
     }, "auto");
 
     if (result.success) {
-      await db.from('wireline_fleet_tasks')
-        .update({ status: 'completed', resolution_notes: 'Approved and executed by operator' })
-        .eq('id', taskId);
+      await drizzle
+        .update(schema.fleetTasks)
+        .set({ status: 'completed', resolutionNotes: 'Approved and executed by operator' })
+        .where(eq(schema.fleetTasks.id, taskId));
       res.json({ success: true });
     } else {
       res.status(500).json({ error: result.error || "Action execution failed" });
@@ -261,20 +301,17 @@ router.post("/api/fleet/tasks/:id/approve", authenticateUser, async (req: Authen
 router.get("/api/fleet/activity", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
    try {
       const [logs, tasks, lessons, emails] = await Promise.all([
-          db.from('wireline_call_logs').select('id, customer_number, lead_score, intent_label, summary, created_at').eq('user_id', req.user.id).order('created_at', { ascending: false }).limit(5),
-          db.from('wireline_fleet_tasks').select('id, description, status, priority, created_at').eq('user_id', req.user.id).order('created_at', { ascending: false }).limit(5),
-          db.from('wireline_agent_lessons').select('id, lesson, created_at').eq('user_id', req.user.id).order('created_at', { ascending: false }).limit(5),
-          db.from('wireline_email_threads').select('id, customer_email, lead_score, intent_label, created_at').eq('user_id', req.user.id).order('created_at', { ascending: false }).limit(5)
+          drizzle.select({ id: schema.callLogs.id, customerNumber: schema.callLogs.customerNumber, leadScore: schema.callLogs.leadScore, intentLabel: schema.callLogs.intentLabel, summary: schema.callLogs.summary, createdAt: schema.callLogs.createdAt }).from(schema.callLogs).where(eq(schema.callLogs.userId, req.user.id)).orderBy(desc(schema.callLogs.createdAt)).limit(5),
+          drizzle.select({ id: schema.fleetTasks.id, description: schema.fleetTasks.description, status: schema.fleetTasks.status, priority: schema.fleetTasks.priority, createdAt: schema.fleetTasks.createdAt }).from(schema.fleetTasks).where(eq(schema.fleetTasks.userId, req.user.id)).orderBy(desc(schema.fleetTasks.createdAt)).limit(5),
+          drizzle.select({ id: schema.agentLessons.id, lesson: schema.agentLessons.lesson, createdAt: schema.agentLessons.createdAt }).from(schema.agentLessons).where(eq(schema.agentLessons.userId, req.user.id)).orderBy(desc(schema.agentLessons.createdAt)).limit(5),
+          drizzle.select({ id: schema.emailThreads.id, customerEmail: schema.emailThreads.customerEmail, leadScore: schema.emailThreads.leadScore, intentLabel: schema.emailThreads.intentLabel, createdAt: schema.emailThreads.createdAt }).from(schema.emailThreads).where(eq(schema.emailThreads.userId, req.user.id)).orderBy(desc(schema.emailThreads.createdAt)).limit(5)
       ]);
 
-      const queryError = logs.error || tasks.error || lessons.error || emails.error;
-      if (queryError) throw queryError;
-
       const activity = compileActivityFeed({
-         logs:    logs.data    || [],
-         tasks:   tasks.data   || [],
-         lessons: lessons.data || [],
-         emails:  emails.data  || [],
+         logs:    logs    || [],
+         tasks:   tasks   || [],
+         lessons: lessons || [],
+         emails:  emails  || [],
       });
 
       res.json({ activity });
@@ -289,39 +326,36 @@ router.get("/api/fleet/activity", authenticateUser, async (req: AuthenticatedReq
 
 router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const [{ data: hotLeads }, { data: complianceTasks }, { data: pendingTasks }, { data: knowledgeGaps }, { data: escalations }] = await Promise.all([
-      db.from("wireline_call_logs")
-        .select("id, agent_id, customer_number, lead_score, intent_label, summary, created_at")
-        .eq("user_id", req.user.id)
-        .gte("lead_score", 70)
-        .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
-        .order("lead_score", { ascending: false })
+    const [hotLeads, complianceTasks, pendingTasks, knowledgeGaps, escalations] = await Promise.all([
+      drizzle
+        .select({ id: schema.callLogs.id, agentId: schema.callLogs.agentId, customerNumber: schema.callLogs.customerNumber, leadScore: schema.callLogs.leadScore, intentLabel: schema.callLogs.intentLabel, summary: schema.callLogs.summary, createdAt: schema.callLogs.createdAt })
+        .from(schema.callLogs)
+        .where(and(eq(schema.callLogs.userId, req.user.id), gte(schema.callLogs.leadScore, 70), gte(schema.callLogs.createdAt, new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))))
+        .orderBy(desc(schema.callLogs.leadScore))
         .limit(30),
-      db.from("wireline_fleet_tasks")
-        .select("*")
-        .eq("user_id", req.user.id)
-        .eq("task_type", "compliance_review")
-        .eq("status", "pending")
-        .order("created_at", { ascending: false })
+      drizzle
+        .select()
+        .from(schema.fleetTasks)
+        .where(and(eq(schema.fleetTasks.userId, req.user.id), eq(schema.fleetTasks.taskType, "compliance_review"), eq(schema.fleetTasks.status, "pending")))
+        .orderBy(desc(schema.fleetTasks.createdAt))
         .limit(20),
-      db.from("wireline_fleet_tasks")
-        .select("*")
-        .eq("user_id", req.user.id)
-        .eq("status", "pending")
-        .neq("task_type", "compliance_review")
-        .order("created_at", { ascending: false })
+      drizzle
+        .select()
+        .from(schema.fleetTasks)
+        .where(and(eq(schema.fleetTasks.userId, req.user.id), eq(schema.fleetTasks.status, "pending"), ne(schema.fleetTasks.taskType, "compliance_review")))
+        .orderBy(desc(schema.fleetTasks.createdAt))
         .limit(30),
-      db.from("wireline_agent_lessons")
-        .select("id, agent_id, lesson, created_at")
-        .eq("user_id", req.user.id)
-        .like("lesson", "[KNOWLEDGE GAP]%")
-        .order("created_at", { ascending: false })
+      drizzle
+        .select({ id: schema.agentLessons.id, agentId: schema.agentLessons.agentId, lesson: schema.agentLessons.lesson, createdAt: schema.agentLessons.createdAt })
+        .from(schema.agentLessons)
+        .where(and(eq(schema.agentLessons.userId, req.user.id), like(schema.agentLessons.lesson, "[KNOWLEDGE GAP]%")))
+        .orderBy(desc(schema.agentLessons.createdAt))
         .limit(30),
-      db.from("wireline_call_logs")
-        .select("id, agent_id, customer_number, lead_score, summary, created_at")
-        .eq("user_id", req.user.id)
-        .or("intent_label.eq.escalation")
-        .order("created_at", { ascending: false })
+      drizzle
+        .select({ id: schema.callLogs.id, agentId: schema.callLogs.agentId, customerNumber: schema.callLogs.customerNumber, leadScore: schema.callLogs.leadScore, summary: schema.callLogs.summary, createdAt: schema.callLogs.createdAt })
+        .from(schema.callLogs)
+        .where(and(eq(schema.callLogs.userId, req.user.id), eq(schema.callLogs.intentLabel, "escalation")))
+        .orderBy(desc(schema.callLogs.createdAt))
         .limit(20),
     ]);
 

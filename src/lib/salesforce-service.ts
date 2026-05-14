@@ -1,4 +1,6 @@
-import { db, log, fetchWithTimeout } from "./server-context";
+import { drizzle, log, fetchWithTimeout } from "./server-context";
+import * as schema from "../db/schema";
+import { eq, and } from "drizzle-orm";
 import { encryptSecret, decryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
 
@@ -30,10 +32,10 @@ export interface SalesforceCallLog {
 
 interface CrmConnection {
   id: string;
-  instance_url: string;
-  access_token: string;
-  refresh_token: string;
-  expires_at: number;
+  instanceUrl: string | null;
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number | null;
 }
 
 // ────────────────────────────────────────────────────────────────────
@@ -104,7 +106,7 @@ async function refreshSalesforceToken(conn: CrmConnection): Promise<{ access_tok
     grant_type: "refresh_token",
     client_id: process.env.SALESFORCE_CLIENT_ID!,
     client_secret: process.env.SALESFORCE_CLIENT_SECRET!,
-    refresh_token: decryptSecret(conn.refresh_token),
+    refresh_token: decryptSecret(conn.refreshToken),
   });
 
   const r = await fetchWithTimeout(
@@ -127,12 +129,18 @@ async function refreshSalesforceToken(conn: CrmConnection): Promise<{ access_tok
 }
 
 async function getConnection(userId: string): Promise<CrmConnection | null> {
-  const { data } = await db
-    .from("wireline_crm_connections")
-    .select("id, instance_url, access_token, refresh_token, expires_at")
-    .eq("user_id", userId)
-    .eq("provider", "salesforce")
-    .single();
+  const [data] = await drizzle
+    .select({
+      id: schema.crmConnections.id,
+      instanceUrl: schema.crmConnections.instanceUrl,
+      accessToken: schema.crmConnections.accessToken,
+      refreshToken: schema.crmConnections.refreshToken,
+      expiresAt: schema.crmConnections.expiresAt
+    })
+    .from(schema.crmConnections)
+    .where(and(eq(schema.crmConnections.userId, userId), eq(schema.crmConnections.provider, "salesforce")))
+    .limit(1);
+  
   return data || null;
 }
 
@@ -140,20 +148,20 @@ async function getValidToken(userId: string): Promise<{ token: string; instanceU
   const conn = await getConnection(userId);
   if (!conn) return null;
 
-  if (conn.expires_at && Date.now() < conn.expires_at - 60_000) {
-    return { token: decryptSecret(conn.access_token), instanceUrl: conn.instance_url };
+  if (conn.expiresAt && Date.now() < conn.expiresAt - 60_000) {
+    return { token: decryptSecret(conn.accessToken), instanceUrl: conn.instanceUrl || "" };
   }
 
   try {
     const updated = await refreshSalesforceToken(conn);
-    await db.from("wireline_crm_connections")
-      .update({
-        access_token: encryptSecret(updated.access_token),
-        expires_at: updated.expires_at,
-        updated_at: new Date().toISOString(),
+    await drizzle.update(schema.crmConnections)
+      .set({
+        accessToken: encryptSecret(updated.access_token),
+        expiresAt: updated.expires_at,
+        updatedAt: new Date(),
       })
-      .eq("id", conn.id);
-    return { token: updated.access_token, instanceUrl: conn.instance_url };
+      .where(eq(schema.crmConnections.id, conn.id));
+    return { token: updated.access_token, instanceUrl: conn.instanceUrl || "" };
   } catch (err) {
     log.error("Salesforce token refresh failed", { error: getErrorMessage(err) });
     return null;
@@ -260,7 +268,7 @@ export async function createOpportunity(params: {
       CloseDate: params.close_date || new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10),
     };
     if (params.amount) body.Amount = params.amount;
-    if (params.contact_id) body.ContactId = params.contact_id;
+    if (params.contact_id) body.WhoId = params.contact_id; // For Opportunity, WhoId is used for Contact relation
 
     const res = await fetchWithTimeout(
       `${creds.instanceUrl}/services/data/v59.0/sobjects/Opportunity`,
@@ -284,11 +292,9 @@ export async function createOpportunity(params: {
 }
 
 export async function disconnectSalesforce(userId: string): Promise<void> {
-  await db.from("wireline_crm_connections")
-    .delete()
-    .eq("user_id", userId)
-    .eq("provider", "salesforce");
-  await db.from("wireline_settings")
-    .update({ crm_type: null })
-    .eq("user_id", userId);
+  await drizzle.delete(schema.crmConnections)
+    .where(and(eq(schema.crmConnections.userId, userId), eq(schema.crmConnections.provider, "salesforce")));
+  await drizzle.update(schema.settings)
+    .set({ crmType: null })
+    .where(eq(schema.settings.userId, userId));
 }

@@ -1,5 +1,7 @@
 import { Router, Response } from "express";
-import { db, log, auditLogger } from "../lib/server-context";
+import { log, auditLogger, drizzle } from "../lib/server-context";
+import * as schema from "../db/schema";
+import { eq, and, sql, desc, inArray } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { tcpaRateLimit } from "../middleware/api-rate-limits";
 import { 
@@ -34,12 +36,19 @@ interface DncRow {
 // List DNC entries
 router.get("/dnc", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { data, error } = await db
-      .from("wireline_dnc_list")
-      .select("id, phone, phone_raw, reason, source, created_at")
-      .eq("user_id", req.user.id)
-      .order("created_at", { ascending: false });
-    if (error) throw error;
+    const data = await drizzle
+      .select({
+        id: schema.dncList.id,
+        phone: schema.dncList.phone,
+        phoneRaw: schema.dncList.phoneRaw,
+        reason: schema.dncList.reason,
+        source: schema.dncList.source,
+        createdAt: schema.dncList.createdAt
+      })
+      .from(schema.dncList)
+      .where(eq(schema.dncList.userId, req.user.id))
+      .orderBy(desc(schema.dncList.createdAt));
+    
     res.json({ entries: data || [] });
   } catch (e: any) {
     log.error("DNC list fetch failed", { error: getErrorMessage(e) });
@@ -54,24 +63,25 @@ router.post("/dnc", authenticateUser, async (req: AuthenticatedRequest, res: Res
     if (!entries || entries.length === 0) {
       return res.status(400).json({ error: "entries array is required." });
     }
-    const rows: DncRow[] = entries
+    const rows = entries
       .filter((e: DncEntry) => e.phone)
       .map((e: DncEntry) => ({
-        user_id: req.user.id,
+        userId: req.user.id,
         phone: normalizeDncPhone(e.phone),
-        phone_raw: e.phone,
+        phoneRaw: e.phone,
         reason: e.reason || null,
         source: e.source || "manual",
       }))
-      .filter((r: DncRow) => r.phone.length > 0);
+      .filter((r: any) => r.phone.length > 0);
 
     if (rows.length === 0) return res.status(400).json({ error: "No valid phone numbers provided." });
 
-    const { data, error } = await db
-      .from("wireline_dnc_list")
-      .upsert(rows, { onConflict: "user_id,phone", ignoreDuplicates: true })
-      .select("id");
-    if (error) throw error;
+    const data = await drizzle
+      .insert(schema.dncList)
+      .values(rows)
+      .onConflictDoNothing()
+      .returning({ id: schema.dncList.id });
+    
     const added = data?.length ?? 0;
     if (added > 0) {
       void auditLogger.logDnc('added', {
@@ -92,12 +102,10 @@ router.post("/dnc", authenticateUser, async (req: AuthenticatedRequest, res: Res
 // Remove a number from DNC list
 router.delete("/dnc/:id", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { error } = await db
-      .from("wireline_dnc_list")
-      .delete()
-      .eq("id", req.params.id)
-      .eq("user_id", req.user.id);
-    if (error) throw error;
+    await drizzle
+      .delete(schema.dncList)
+      .where(and(eq(schema.dncList.id, req.params.id), eq(schema.dncList.userId, req.user.id)));
+    
     void auditLogger.logDnc('removed', {
       userId: req.user.id, count: 1, ip: req.ip, metadata: { dnc_id: req.params.id },
     }).catch(() => {});
@@ -124,18 +132,26 @@ router.get("/tcpa/consent-check", authenticateUser, tcpaRateLimit, async (req: A
 
     const isMarketing = req.query.is_marketing !== "false";
 
-    const [dncRow, settingsRow] = await Promise.all([
-      db.from("wireline_dnc_list").select("id").eq("user_id", req.user.id).eq("phone", normalizeDncPhone(phone)).maybeSingle(),
-      db.from("wireline_settings").select("business_name").eq("user_id", req.user.id).maybeSingle(),
+    const [dncRows, settingRows] = await Promise.all([
+      drizzle
+        .select({ id: schema.dncList.id })
+        .from(schema.dncList)
+        .where(and(eq(schema.dncList.userId, req.user.id), eq(schema.dncList.phone, normalizeDncPhone(phone))))
+        .limit(1),
+      drizzle
+        .select({ businessName: schema.settings.businessName })
+        .from(schema.settings)
+        .where(eq(schema.settings.userId, req.user.id))
+        .limit(1),
     ]);
 
     const { rule, state } = getConsentRuleForPhone(phone);
     const decision = evaluateOutboundConsent({
       phone,
-      is_internal_dnc: !!dncRow.data,
+      is_internal_dnc: dncRows.length > 0,
       is_marketing_call: isMarketing,
       has_express_written_consent: !isMarketing,
-      business_name: (settingsRow.data as { business_name?: string } | null)?.business_name ?? undefined,
+      business_name: settingRows[0]?.businessName || undefined,
     });
 
     res.json({

@@ -2,11 +2,14 @@ import express, { Request, Response } from "express";
 import type { AuthenticatedRequest } from "../types/auth";
 import * as claudeBrain from "../lib/claude-brain";
 import {
-  db,
+  drizzle,
   log,
   IS_PROD,
   auditLogger,
+  fetchWithTimeout,
 } from "../lib/server-context";
+import * as schema from "../db/schema";
+import { eq, and, sql, or, ilike, notIn } from "drizzle-orm";
 import {
   timingSafeEq,
   VAPI_WEBHOOK_SECRET,
@@ -87,13 +90,21 @@ router.post("/api/vapi-webhook", async (req, res) => {
   const agent = { id: webhookAgentId, user_id: routed.agentUserId };
   const message = payload.message as Record<string, any> | undefined;
 
-  const { data: userSettings } = await db.from('wireline_settings')
-    .select('subscription_status, voice_llm_provider, voice_llm_model, twilio_messaging_enabled, twilio_lookup_enabled')
-    .eq('user_id', agent.user_id).single();
+  const [userSettings] = await drizzle
+    .select({
+      subscriptionStatus: schema.settings.subscriptionStatus,
+      voiceLlmProvider: schema.settings.voiceLlmProvider,
+      voiceLlmModel: schema.settings.voiceLlmModel,
+      twilioMessagingEnabled: schema.settings.twilioMessagingEnabled,
+      twilioLookupEnabled: schema.settings.twilioLookupEnabled
+    })
+    .from(schema.settings)
+    .where(eq(schema.settings.userId, agent.user_id))
+    .limit(1);
     
-  const subscriptionStatus = userSettings?.subscription_status || 'active';
-  const voiceLlmProvider = userSettings?.voice_llm_provider || 'google';
-  const voiceLlmModel = userSettings?.voice_llm_model || 'gemini-1.5-flash';
+  const subscriptionStatus = userSettings?.subscriptionStatus || 'active';
+  const voiceLlmProvider = userSettings?.voiceLlmProvider || 'google';
+  const voiceLlmModel = userSettings?.voiceLlmModel || 'gemini-1.5-flash';
   
   if (subscriptionStatus !== 'active') {
     if (message && message.type === "assistant-request") {
@@ -109,7 +120,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
   
   if (message && message.type === "assistant-request") {
     try {
-      const assistant = await buildVapiAssistant({ message: message as any, agent: agent as any, userSettings });
+      const assistant = await buildVapiAssistant({ message: message as any, agent: agent as any, userSettings: userSettings as any });
       return res.json({ assistant });
     } catch (e: any) {
       log.error("Vapi webhook config error", { agentId: webhookAgentId, error: e?.message });
@@ -128,18 +139,18 @@ router.post("/api/vapi-webhook", async (req, res) => {
       if (toolCall.function.name === "create_fleet_task") {
         try {
             const { description, priority } = toolCall.function.arguments;
-            const { data: task, error: taskError } = await db.from('wireline_fleet_tasks').insert({
-               user_id: agent?.user_id,
-               agent_id: webhookAgentId,
-               task_type: 'follow_up',
+            const [task] = await drizzle.insert(schema.fleetTasks).values({
+               userId: agent?.user_id,
+               agentId: webhookAgentId,
+               taskType: 'follow_up',
                description,
                priority: priority || 'medium',
                status: 'pending',
-               source_type: 'phone_call',
-               source_id: (message.call as { id?: string } | undefined)?.id || (payload.call as { id?: string } | undefined)?.id || "in-call",
-               target_channel: 'manual',
-            }).select('id').single();
-            if (taskError) throw taskError;
+               sourceType: 'phone_call',
+               sourceId: (message.call as { id?: string } | undefined)?.id || (payload.call as { id?: string } | undefined)?.id || "in-call",
+               targetChannel: 'manual',
+            }).returning({ id: schema.fleetTasks.id });
+            
             results.push({ toolCallId: toolCall.id, result: `Task ${task.id.split('-')[0]} created.` });
         } catch {
             results.push({ toolCallId: toolCall.id, result: "Failed to create task." });
@@ -150,14 +161,20 @@ router.post("/api/vapi-webhook", async (req, res) => {
         try {
             const { query } = toolCall.function.arguments;
             const safeQuery = String(query || '').replace(/[^A-Za-z0-9 @.\-+]/g, '').slice(0, 80);
-            const { data: leads } = await db.from('wireline_outbound_leads')
-              .select('name, status, email, customer_number, last_contact_summary, context')
-              .or(`name.ilike.%${safeQuery}%,email.ilike.%${safeQuery}%,customer_number.ilike.%${safeQuery}%`)
-              .eq('user_id', agent?.user_id)
+            const leads = await drizzle.select({ name: schema.outboundLeads.customerName, status: schema.outboundLeads.status, customerNumber: schema.outboundLeads.customerNumber, context: schema.outboundLeads.context }).from(schema.outboundLeads)
+              .where(
+                and(
+                  eq(schema.outboundLeads.userId, agent?.user_id),
+                  or(
+                    ilike(schema.outboundLeads.customerName, `%${safeQuery}%`),
+                    ilike(schema.outboundLeads.customerNumber, `%${safeQuery}%`)
+                  )
+                )
+              )
               .limit(3);
             
             if (leads && leads.length > 0) {
-               const summaries = leads.map(l => `${l.name} (${l.status}) | Phone: ${l.customer_number || 'N/A'}`);
+               const summaries = leads.map(l => `${l.name} (${l.status}) | Phone: ${l.customerNumber || 'N/A'}`);
                results.push({ toolCallId: toolCall.id, result: `Found records:\n${summaries.join('\n')}` });
             } else {
                results.push({ toolCallId: toolCall.id, result: "No matching records found." });
@@ -173,11 +190,15 @@ router.post("/api/vapi-webhook", async (req, res) => {
           const customerPhone = (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number || (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
           if (customerPhone) {
             const safePhone = sanitizePhone(customerPhone);
-            await db.from('wireline_outbound_leads')
-              .update({ status, last_contact_summary: notes || '', last_called_at: new Date() })
-              .eq('user_id', agent?.user_id)
-              .ilike('customer_number', `%${safePhone}%`)
-              .not('status', 'in', PRESERVED_LEAD_STATUSES);
+            await drizzle.update(schema.outboundLeads)
+              .set({ status, context: notes || '', lastCalledAt: new Date() })
+              .where(
+                and(
+                  eq(schema.outboundLeads.userId, agent?.user_id),
+                  ilike(schema.outboundLeads.customerNumber, `%${safePhone}%`),
+                  notIn(schema.outboundLeads.status, PRESERVED_LEAD_STATUSES as any)
+                )
+              );
           }
           results.push({ toolCallId: toolCall.id, result: `Lead status updated to '${status}'.` });
         } catch {
@@ -252,13 +273,13 @@ router.post("/api/vapi-webhook", async (req, res) => {
           if (!normalizedPhone) {
             results.push({ toolCallId: toolCall.id, result: "No valid phone number was available to suppress." });
           } else {
-            await db.from("wireline_dnc_list").upsert({
-              user_id: agent?.user_id,
+            await drizzle.insert(schema.dncList).values({
+              userId: agent?.user_id,
               phone: normalizedPhone,
-              phone_raw: rawPhone,
+              phoneRaw: rawPhone,
               reason: toolCall.function.arguments?.reason || "agent opt-out",
               source: "agent_tool",
-            }, { onConflict: "user_id,phone", ignoreDuplicates: true });
+            }).onConflictDoNothing({ target: [schema.dncList.userId, schema.dncList.phone] });
 
             void auditLogger.logDnc("added", {
               userId: agent?.user_id,
@@ -363,25 +384,28 @@ router.post("/api/vapi-webhook", async (req, res) => {
      const status = (message as { status?: string }).status || (payload.call as { status?: string } | undefined)?.status;
      if (callId) {
         if (['in-progress', 'ringing', 'queued'].includes(status)) {
-           await db.from('wireline_signal_presence').upsert({
+           await drizzle.insert(schema.signalPresence).values({
               id: callId,
-              user_id: agent?.user_id,
-              agent_id: webhookAgentId,
-              customer_number: (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number || "Unknown",
+              userId: agent?.user_id,
+              agentId: webhookAgentId,
+              customerNumber: (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number || "Unknown",
               status: status,
-              started_at: new Date().toISOString()
+              startedAt: new Date()
+           }).onConflictDoUpdate({
+              target: schema.signalPresence.id,
+              set: { status, startedAt: new Date() }
            });
 
            const customerNumber = (payload.call as any)?.customer?.number;
            if (customerNumber && agent?.user_id) {
-              await enqueue(db, {
+              await enqueue(drizzle, {
                  userId: agent.user_id,
                  type: 'proactive_lead_enrichment',
                  payload: { userId: agent.user_id, customerNumber }
               }).catch(e => log.warn("Enrichment queue failed", { error: getErrorMessage(e) }));
            }
         } else if (status === 'ended' || status === 'completed') {
-           await db.from('wireline_signal_presence').delete().eq('id', callId);
+           await drizzle.delete(schema.signalPresence).where(eq(schema.signalPresence.id, callId));
         }
      }
   }
@@ -404,10 +428,11 @@ router.post("/api/vapi-webhook", async (req, res) => {
       if (negativeHits >= 1) {
         analyzeLiveSentiment(combined).then(async (result) => {
           if (result.escalate) {
-             await db.from('wireline_signal_presence').update({ 
-               label: `🚨 Escalation Risk: ${result.reason}`,
-               urgency: result.urgency 
-             }).eq('id', callId);
+             await drizzle.update(schema.signalPresence)
+               .set({ 
+                 label: `🚨 Escalation Risk: ${result.reason}`
+               })
+               .where(eq(schema.signalPresence.id, callId));
              
              // Circuit Breaker Notification
              const notifier = new NotificationService(agent.user_id);
@@ -423,7 +448,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
         }).catch(e => log.error("Circuit breaker analysis failed", { error: e.message }));
       }
 
-      await db.from('wireline_signal_presence').update({ label: liveSentimentLabel }).eq('id', callId);
+      await drizzle.update(schema.signalPresence).set({ label: liveSentimentLabel }).where(eq(schema.signalPresence.id, callId));
     }
   }
 
