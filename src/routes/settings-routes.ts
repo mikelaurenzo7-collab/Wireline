@@ -367,14 +367,14 @@ router.delete('/api/user/account', authenticateUser, async (req: AuthenticatedRe
     void auditLogger
       .logAccountDeletionRequested({
         userId: uid,
-        scheduledPurgeAt: queueRow.scheduled_purge_at,
+        scheduledPurgeAt: queueRow.scheduledPurgeAt,
         ip: req.ip,
       })
       .catch(() => {});
 
     return res.status(202).json({
       status: 'pending',
-      scheduled_purge_at: queueRow.scheduled_purge_at,
+      scheduled_purge_at: queueRow.scheduledPurgeAt,
       grace_days: ACCOUNT_DELETION_GRACE_DAYS,
       cancel_endpoint: '/api/account/cancel-deletion',
     });

@@ -48,6 +48,7 @@ export const settings = pgTable('wireline_settings', {
   brandName: text('brand_name'),
   brandLogoUrl: text('brand_logo_url'),
   primaryColor: text('primary_color'),
+  aiTier: text('ai_tier').default('starter'),
 });
 
 // 1.1 USER PREFERENCES
@@ -89,6 +90,7 @@ export const deletionQueue = pgTable('wireline_deletion_queue', {
   scheduledPurgeAt: timestamp('scheduled_purge_at', { withTimezone: true }),
   status: text('status').default('pending'),
   cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
+  purgedAt: timestamp('purged_at', { withTimezone: true }),
   ip: text('ip'),
   userAgent: text('user_agent'),
 });
@@ -113,6 +115,18 @@ export const agents = pgTable('wireline_agents', {
   channel: text('channel').default('voice'),
   role: text('role').default('customer_service'),
   enabledTools: jsonb('enabled_tools'),
+  autonomyLevel: text('autonomy_level').default('inherit'),
+  channels: text('channels').array(),
+  slackChannelId: text('slack_channel_id'),
+  autoZoomLink: boolean('auto_zoom_link').default(false),
+  businessHours: jsonb('business_hours'),
+  timezone: text('timezone').default('UTC'),
+  complianceMode: text('compliance_mode').default('standard'),
+  disallowedTopics: text('disallowed_topics').array(),
+  escalationKeywords: text('escalation_keywords').array(),
+  businessVariables: jsonb('business_variables'),
+  outOfHoursMessage: text('out_of_hours_message'),
+  kpiFocus: text('kpi_focus'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 
@@ -144,8 +158,13 @@ export const agentLessons = pgTable('wireline_agent_lessons', {
   userId: uuid('user_id'),
   agentId: text('agent_id').references(() => agents.id, { onDelete: 'cascade' }),
   lesson: text('lesson').notNull(),
+  sourceCallId: text('source_call_id'),
+  source: text('source'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
-});
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+}, (t) => ({
+  unq: unique().on(t.agentId, t.lesson),
+}));
 
 // 2.2 COMMITMENTS & LOGISTICS
 export const appointments = pgTable('wireline_appointments', {
@@ -195,6 +214,16 @@ export const emailAccounts = pgTable('wireline_email_accounts', {
   refreshToken: text('refresh_token'),
   expiresAt: bigint('expires_at', { mode: 'bigint' }),
   agentId: text('agent_id').references(() => agents.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
+
+export const calendarAccounts = pgTable('wireline_calendar_accounts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id'),
+  provider: text('provider').default('google'),
+  accessToken: text('access_token'),
+  refreshToken: text('refresh_token'),
+  expiresAt: bigint('expires_at', { mode: 'bigint' }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 
@@ -274,6 +303,7 @@ export const outboundLeads = pgTable('wireline_outbound_leads', {
   phoneNumber: text('phone_number'),
   customerNumber: text('customer_number'),
   customerName: text('customer_name'),
+  email: text('email'),
   context: text('context'),
   status: text('status').default('Pending'),
   callId: text('call_id'),
@@ -379,6 +409,20 @@ export const dncList = pgTable('wireline_dnc_list', {
   phoneRaw: text('phone_raw'),
   reason: text('reason'),
   source: text('source').default('manual'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
+
+// 4.2.1 CONSENT LOG (COMPLIANCE LEDGER)
+export const consentLog = pgTable('wireline_consent_log', {
+  id: bigint('id', { mode: 'bigint' }).primaryKey(),
+  userId: uuid('user_id').notNull(),
+  callId: text('call_id'),
+  customerNumber: text('customer_number'),
+  event: text('event').notNull(),
+  ruleVersion: text('rule_version'),
+  rule: text('rule'),
+  state: text('state'),
+  metadata: jsonb('metadata').default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 

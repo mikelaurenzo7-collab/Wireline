@@ -152,9 +152,9 @@ export class IntegrationService {
       process.env.GOOGLE_CLIENT_SECRET
     );
     oauth2Client.setCredentials({
-      access_token: decryptSecret(account.access_token),
-      refresh_token: account.refresh_token ? decryptSecret(account.refresh_token) : null,
-      expiry_date: account.expires_at,
+      access_token: decryptSecret(account.accessToken),
+      refresh_token: account.refreshToken ? decryptSecret(account.refreshToken) : null,
+      expiry_date: account.expiresAt ? Number(account.expiresAt) : null,
     });
     return oauth2Client;
   }
@@ -253,14 +253,14 @@ export class IntegrationService {
   }
 
   private async getMicrosoftToken(account: any): Promise<string> {
-    if (account.expires_at && Date.now() < account.expires_at - 60_000) {
-      return decryptSecret(account.access_token);
+    if (account.expiresAt && Date.now() < Number(account.expiresAt) - 60_000) {
+      return decryptSecret(account.accessToken);
     }
     const params = new URLSearchParams({
       client_id: process.env.MICROSOFT_CLIENT_ID!,
       client_secret: process.env.MICROSOFT_CLIENT_SECRET!,
       grant_type: "refresh_token",
-      refresh_token: decryptSecret(account.refresh_token),
+      refresh_token: decryptSecret(account.refreshToken),
     });
     const r = await fetch("https://login.microsoftonline.com/common/oauth2/v2.0/token", {
       method: "POST",

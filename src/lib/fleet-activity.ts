@@ -16,12 +16,12 @@
 // ────────────────────────────────────────────────────────────────────────
 
 export interface CallLogRow {
-  id: string;
-  customer_number?: string | null;
-  lead_score?: number | null;
-  intent_label?: string | null;
+  id: string | number;
+  customerNumber?: string | null;
+  leadScore?: number | null;
+  intentLabel?: string | null;
   summary?: string | null;
-  created_at: string;
+  createdAt: Date | string;
 }
 
 export interface FleetTaskRow {
@@ -29,21 +29,21 @@ export interface FleetTaskRow {
   description?: string | null;
   status?: string | null;
   priority?: string | null;
-  created_at: string;
+  createdAt: Date | string;
 }
 
 export interface AgentLessonRow {
-  id: string;
+  id: string | number;
   lesson?: string | null;
-  created_at: string;
+  createdAt: Date | string;
 }
 
 export interface EmailThreadRow {
   id: string;
-  customer_email?: string | null;
-  lead_score?: number | null;
-  intent_label?: string | null;
-  created_at: string;
+  customerEmail?: string | null;
+  leadScore?: number | null;
+  intentLabel?: string | null;
+  createdAt: Date | string;
 }
 
 export type ActivityImportance = 'critical' | 'high' | 'medium' | 'low';
@@ -70,13 +70,13 @@ export function truncatePreview(text: string | null | undefined, max = PREVIEW_L
 
 export function callLogToActivity(l: CallLogRow): ActivityEntry {
   return {
-    id: l.id,
+    id: String(l.id),
     type: 'SIGNAL_ANALYZED',
     trigger: 'Voice Ingestion',
-    action: `Intent extracted: ${l.intent_label || 'Analysis Pending'}`,
-    meta: l.customer_number || '',
-    timestamp: l.created_at,
-    importance: (l.lead_score ?? 0) > 70 ? 'high' : 'medium',
+    action: `Intent extracted: ${l.intentLabel || 'Analysis Pending'}`,
+    meta: l.customerNumber || '',
+    timestamp: String(l.createdAt),
+    importance: (l.leadScore ?? 0) > 70 ? 'high' : 'medium',
   };
 }
 
@@ -87,19 +87,19 @@ export function fleetTaskToActivity(t: FleetTaskRow): ActivityEntry {
     trigger: 'Functional Requirement Detected',
     action: `New Task: ${truncatePreview(t.description)}`,
     meta: t.status || '',
-    timestamp: t.created_at,
+    timestamp: String(t.createdAt),
     importance: t.priority === 'high' ? 'critical' : 'medium',
   };
 }
 
 export function agentLessonToActivity(l: AgentLessonRow): ActivityEntry {
   return {
-    id: l.id,
+    id: String(l.id),
     type: 'NEURAL_OPTIMIZATION',
     trigger: 'Behavioral Deviation',
     action: `Lesson Learned: ${truncatePreview(l.lesson)}`,
     meta: 'Agent Refinement',
-    timestamp: l.created_at,
+    timestamp: String(l.createdAt),
     importance: 'low',
   };
 }
@@ -109,9 +109,9 @@ export function emailThreadToActivity(e: EmailThreadRow): ActivityEntry {
     id: e.id,
     type: 'DIGITAL_RELAY',
     trigger: 'OMNI_CHANNEL_SYNC',
-    action: `Email Thread Synced: ${e.intent_label || 'Scanning'}`,
-    meta: e.customer_email || '',
-    timestamp: e.created_at,
+    action: `Email Thread Synced: ${e.intentLabel || 'Scanning'}`,
+    meta: e.customerEmail || '',
+    timestamp: String(e.createdAt),
     importance: 'medium',
   };
 }

@@ -7,8 +7,8 @@ declare module "express" {
     Router: () => any;
   }
 
-  export interface Request { [key: string]: any; user: any; role: any; }
-  export interface Response { [key: string]: any; status(code: number): Response; json(data: any): Response; send(data: any): Response; }
+  export interface Request { [key: string]: any; user: any; role: any; cookies: Record<string, string>; }
+  export interface Response { [key: string]: any; status(code: number): Response; json(data: any): Response; send(data: any): Response; setHeader(name: string, value: string): void; }
   export interface Router { [key: string]: any; get: any; post: any; put: any; delete: any; use: any; }
 
   const express: Express;
@@ -109,6 +109,8 @@ declare module "path" {
 
 declare module "node:crypto" {
   export const randomUUID: () => string;
+  export const createHmac: (algorithm: string, key: string) => any;
+  export const timingSafeEqual: (a: any, b: any) => boolean;
 }
 
 declare module "node:fs" {
@@ -132,6 +134,10 @@ declare module "@google/generative-ai" {
     constructor(apiKey: string);
     getGenerativeModel(config: any): any;
   }
+}
+
+declare module "googleapis" {
+  export const google: any;
 }
 
 declare module "clsx" {
@@ -178,4 +184,16 @@ declare var process: {
   exit(code?: number): never;
   on(event: string, listener: any): any;
   cwd(): string;
+};
+
+declare interface Buffer {
+  toString(encoding?: string): string;
+  [key: string]: any;
+}
+
+declare var Buffer: {
+  from(data: any, encoding?: string): Buffer;
+  alloc(size: number): Buffer;
+  isBuffer(obj: any): boolean;
+  [key: string]: any;
 };

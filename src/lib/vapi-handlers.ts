@@ -224,6 +224,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
 
       if (geminiResult.lesson && geminiResult.lesson.trim()) {
         await drizzle.insert(schema.agentLessons).values({
+          userId,
           agentId: webhookAgentId,
           lesson: geminiResult.lesson,
           sourceCallId: call?.id

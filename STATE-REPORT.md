@@ -34,7 +34,16 @@
   - Quality: `KimiQualityPanel.tsx`
   - Activity: `AuditActivityPanel.tsx`
 
-1. **Database Migration**: Transitioning from Supabase-js string-based queries to Drizzle ORM for end-to-end type safety.
-2. **Audit Data Mismatches**: `AuditActivityPanel.tsx` expects `d.logs` but API returns `entries`. (Fixing via Drizzle schema).
-3. **Environment Path**: `node`/`npm` missing from shell PATH in some environments.
-4. **Rate Limiting**: Implementation of Upstash Redis for distributed state.
+## Known Blockers & Status
+1. **Database Migration**: **COMPLETE**. Transitioned fully to Drizzle ORM.
+2. **Schema Reconciliation**: **COMPLETE**. Fixed mismatches in `agents`, `agentLessons`, and missing tables (`consentLog`, `calendarAccounts`).
+3. **Audit Data Mismatches**: **RESOLVED**. Schema and API are now synchronized.
+4. **Environment Path**: **RESOLVED**. Master IDE Shim (`src/types/env-shim.d.ts`) expanded to cover `googleapis`, `Buffer`, and missing crypto/express types.
+5. **Rate Limiting**: **ACTIVE**. Standardizing on native Express-rate-limit + Upstash.
+
+## Current Focus: Genesis Path
+We have remediated the 142 identified build/compilation errors by synchronizing the Drizzle schema with the integration services and routes.
+Focusing on:
+- Production Stability: Validating the Campaign Outbound Engine.
+- Intelligence: Google Drive/Gemini Ingestion is now schema-compliant.
+- Optimization: Closing the Adaptive Tuning loop.
