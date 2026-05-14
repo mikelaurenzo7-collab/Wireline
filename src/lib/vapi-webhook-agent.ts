@@ -10,19 +10,20 @@ import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
 
-export function extractVapiPhoneNumberId(body: Record<string, unknown> | undefined | null): string | undefined {
+export function extractVapiPhoneNumberId(
+  body: Record<string, unknown> | undefined | null,
+): string | undefined {
   if (!body || typeof body !== "object") return undefined;
   const message = body.message as Record<string, unknown> | undefined;
   const call =
-    (message?.call as Record<string, unknown> | undefined)
-    ?? (body.call as Record<string, unknown> | undefined);
+    (message?.call as Record<string, unknown> | undefined) ??
+    (body.call as Record<string, unknown> | undefined);
 
-  const tidFromCall =
-    typeof call?.phoneNumberId === "string" ? call.phoneNumberId.trim() : "";
+  const tidFromCall = typeof call?.phoneNumberId === "string" ? call.phoneNumberId.trim() : "";
 
   const phoneNumber =
-    (body.phoneNumber as Record<string, unknown> | undefined)
-    ?? (message?.phoneNumber as Record<string, unknown> | undefined);
+    (body.phoneNumber as Record<string, unknown> | undefined) ??
+    (message?.phoneNumber as Record<string, unknown> | undefined);
   const tidFromPhoneObj = typeof phoneNumber?.id === "string" ? phoneNumber.id.trim() : "";
 
   const tidTop =
@@ -44,7 +45,7 @@ async function pickDefaultVoiceAgent(userId: string): Promise<string | null> {
       .where(eq(schema.agents.userId, userId))
       .orderBy(desc(schema.agents.createdAt))
       .limit(1);
-    
+
     return data?.id ?? null;
   } catch (err: any) {
     log.warn("pickDefaultVoiceAgent query failed", { userId, error: err.message });
@@ -86,14 +87,14 @@ export async function resolveVapiWebhookAgent(opts: {
 
         const pref =
           typeof st?.vapiPhoneInboundAgentId === "string" ? st.vapiPhoneInboundAgentId.trim() : "";
-        resolvedAgentId =
-          pref
-          || (await pickDefaultVoiceAgent(enforceTenantUserId))
-          || undefined;
+        resolvedAgentId = pref || (await pickDefaultVoiceAgent(enforceTenantUserId)) || undefined;
       }
     } else {
       const [st] = await drizzle
-        .select({ userId: schema.settings.userId, vapiPhoneInboundAgentId: schema.settings.vapiPhoneInboundAgentId })
+        .select({
+          userId: schema.settings.userId,
+          vapiPhoneInboundAgentId: schema.settings.vapiPhoneInboundAgentId,
+        })
         .from(schema.settings)
         .where(eq(schema.settings.vapiPhoneNumberId, phoneNumberId))
         .limit(1);
@@ -102,10 +103,7 @@ export async function resolveVapiWebhookAgent(opts: {
         enforceTenantUserId = st.userId as string;
         const pref =
           typeof st.vapiPhoneInboundAgentId === "string" ? st.vapiPhoneInboundAgentId.trim() : "";
-        resolvedAgentId =
-          pref
-          || (await pickDefaultVoiceAgent(enforceTenantUserId))
-          || undefined;
+        resolvedAgentId = pref || (await pickDefaultVoiceAgent(enforceTenantUserId)) || undefined;
       }
     }
   }
@@ -152,6 +150,4 @@ export async function resolveVapiWebhookAgent(opts: {
   }
 
   return { ok: true, webhookAgentId: resolvedAgentId, agentUserId: agentRow.userId as string };
-}
-
 }

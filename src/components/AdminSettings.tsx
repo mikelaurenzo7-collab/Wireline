@@ -56,7 +56,11 @@ export default function AdminSettings() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeletingNumber, setIsDeletingNumber] = useState<number | string | null>(null);
-  const [claudeStatus, setClaudeStatus] = useState<{ available: boolean; model: string; capabilities?: string[] } | null>(null);
+  const [claudeStatus, setClaudeStatus] = useState<{
+    available: boolean;
+    model: string;
+    capabilities?: string[];
+  } | null>(null);
   type IntegrationRow = {
     id: string;
     label: string;
@@ -72,15 +76,25 @@ export default function AdminSettings() {
   const [operationalSlos, setOperationalSlos] = useState<Record<string, unknown> | null>(null);
   const [integrationHealth, setIntegrationHealth] = useState<IntegrationHealthPayload | null>(null);
 
-  const [activeTab, setActiveTab] = useState<"branding" | "carrier" | "subscription" | "team" | "flywheel" | "system" | "activity" | "quality">("branding");
+  const [activeTab, setActiveTab] = useState<
+    | "branding"
+    | "carrier"
+    | "subscription"
+    | "team"
+    | "flywheel"
+    | "system"
+    | "activity"
+    | "quality"
+  >("branding");
 
   const [carrierNumbers, setCarrierNumbers] = useState<any[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  const providerDocsUrl = {
-    google: "https://ai.google.dev/gemini-api/docs/models",
-    anthropic: "https://docs.anthropic.com/en/docs/about-claude/models/overview",
-  }[settings.voice_llm_provider] ?? "https://ai.google.dev/gemini-api/docs/models";
+  const providerDocsUrl =
+    {
+      google: "https://ai.google.dev/gemini-api/docs/models",
+      anthropic: "https://docs.anthropic.com/en/docs/about-claude/models/overview",
+    }[settings.voice_llm_provider] ?? "https://ai.google.dev/gemini-api/docs/models";
 
   const fetchIntegrationHealth = async () => {
     try {
@@ -92,7 +106,14 @@ export default function AdminSettings() {
     }
   };
 
-  useEffect(() => { fetchData(); fetchClaudeStatus(); fetchIntegrations(); fetchOperationalSlos(); fetchIntegrationHealth(); fetchTeam(); }, []);
+  useEffect(() => {
+    fetchData();
+    fetchClaudeStatus();
+    fetchIntegrations();
+    fetchOperationalSlos();
+    fetchIntegrationHealth();
+    fetchTeam();
+  }, []);
 
   const fetchTeam = async () => {
     try {
@@ -101,14 +122,18 @@ export default function AdminSettings() {
         const d = await r.json();
         setTeamMembers(d.members || []);
       }
-    } catch { /* non-critical */ }
+    } catch {
+      /* non-critical */
+    }
   };
 
   const fetchClaudeStatus = async () => {
     try {
       const r = await authFetch("/api/claude/status");
       if (r.ok) setClaudeStatus(await r.json());
-    } catch { /* non-critical */ }
+    } catch {
+      /* non-critical */
+    }
   };
 
   const fetchIntegrations = async () => {
@@ -118,7 +143,9 @@ export default function AdminSettings() {
         const d = await r.json();
         setIntegrations(d.integrations || []);
       }
-    } catch { /* non-critical */ }
+    } catch {
+      /* non-critical */
+    }
   };
 
   const fetchOperationalSlos = async () => {
@@ -135,7 +162,10 @@ export default function AdminSettings() {
     try {
       const r = await authFetch("/api/soc2/evidence-pack");
       if (!r.ok) {
-        toastError("Export unavailable", "Requires audit.read permission — owner, admin, or auditor roles.");
+        toastError(
+          "Export unavailable",
+          "Requires audit.read permission — owner, admin, or auditor roles.",
+        );
         return;
       }
       const data = await r.json();
@@ -156,9 +186,11 @@ export default function AdminSettings() {
     setIsLoading(true);
     try {
       const [settingsRes, agentsRes, numbersRes] = await Promise.all([
-        authFetch("/api/settings").then(r => r.json()),
-        authFetch("/api/agents").then(r => r.json()),
-        authFetch("/api/phone-numbers").then(r => r.json()).catch(() => ({ numbers: [] }))
+        authFetch("/api/settings").then((r) => r.json()),
+        authFetch("/api/agents").then((r) => r.json()),
+        authFetch("/api/phone-numbers")
+          .then((r) => r.json())
+          .catch(() => ({ numbers: [] })),
       ]);
 
       if (settingsRes) {
@@ -221,10 +253,10 @@ export default function AdminSettings() {
       const res = await authFetch("/api/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings)
+        body: JSON.stringify(settings),
       });
       if (!res.ok) throw new Error("Save failed");
-      
+
       updateBranding({
         brand_name: settings.brand_name,
         brand_logo_url: settings.brand_logo_url,
@@ -243,7 +275,7 @@ export default function AdminSettings() {
       const res = await authFetch("/api/team/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, role })
+        body: JSON.stringify({ email, role }),
       });
       if (!res.ok) throw new Error("Invite failed");
       toastSuccess("Invitation sent", `An invite has been sent to ${email}`);
@@ -269,7 +301,7 @@ export default function AdminSettings() {
       await authFetch("/api/phone-numbers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone_number, vapi_number_id })
+        body: JSON.stringify({ phone_number, vapi_number_id }),
       });
       fetchData();
       toastSuccess("Number added", phone_number);
@@ -283,7 +315,7 @@ export default function AdminSettings() {
       await authFetch(`/api/phone-numbers/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agent_id })
+        body: JSON.stringify({ agent_id }),
       });
       fetchData();
     } catch (e) {
@@ -296,20 +328,21 @@ export default function AdminSettings() {
     setConfirmState({
       open: true,
       title: "Remove number",
-      message: "Remove this phone number from your fleet? The number stays in your Wireline voice network, but it will stop routing calls to agents.",
+      message:
+        "Remove this phone number from your fleet? The number stays in your Wireline voice network, but it will stop routing calls to agents.",
       onConfirm: async () => {
         setConfirmState(CLOSED_CONFIRM);
         setIsDeletingNumber(id);
-    try {
-      const resp = await authFetch(`/api/phone-numbers/${id}`, { method: "DELETE" });
-      if (resp.ok) {
-        setPhoneNumbers(prev => prev.filter(n => n.id !== id));
-      }
-    } catch (e) {
-      console.error(e);
-      toastError("Delete failed", "Could not remove this carrier number. Please try again.");
-    }
-    setIsDeletingNumber(null);
+        try {
+          const resp = await authFetch(`/api/phone-numbers/${id}`, { method: "DELETE" });
+          if (resp.ok) {
+            setPhoneNumbers((prev) => prev.filter((n) => n.id !== id));
+          }
+        } catch (e) {
+          console.error(e);
+          toastError("Delete failed", "Could not remove this carrier number. Please try again.");
+        }
+        setIsDeletingNumber(null);
       },
     });
   };
@@ -334,7 +367,18 @@ export default function AdminSettings() {
 
   const tabSwitcher = (
     <div className="flex p-1 rounded-full glass border border-white/10" role="tablist">
-      {(["branding", "carrier", "subscription", "team", "flywheel", "system", "quality", "activity"] as const).map(t => (
+      {(
+        [
+          "branding",
+          "carrier",
+          "subscription",
+          "team",
+          "flywheel",
+          "system",
+          "quality",
+          "activity",
+        ] as const
+      ).map((t) => (
         <button
           key={t}
           role="tab"
@@ -343,10 +387,24 @@ export default function AdminSettings() {
           onClick={() => setActiveTab(t)}
           className={cn(
             "px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.25em] transition-colors",
-            activeTab === t ? "bg-brand/20 text-brand" : "text-muted hover:text-ink"
+            activeTab === t ? "bg-brand/20 text-brand" : "text-muted hover:text-ink",
           )}
         >
-          {t === "branding" ? "Branding" : t === "carrier" ? "Carrier" : t === "subscription" ? "Billing" : t === "team" ? "Team" : t === "flywheel" ? "Growth" : t === "system" ? "System" : t === "quality" ? "Quality" : "Activity"}
+          {t === "branding"
+            ? "Branding"
+            : t === "carrier"
+              ? "Carrier"
+              : t === "subscription"
+                ? "Billing"
+                : t === "team"
+                  ? "Team"
+                  : t === "flywheel"
+                    ? "Growth"
+                    : t === "system"
+                      ? "System"
+                      : t === "quality"
+                        ? "Quality"
+                        : "Activity"}
         </button>
       ))}
     </div>
@@ -354,173 +412,177 @@ export default function AdminSettings() {
 
   return (
     <div className="h-full flex flex-col min-h-0">
-    <HubTabs tabs={SYSTEM_HUB} label="System sub-navigation" />
-    <div className="flex-1 min-h-0">
-    <PageShell
-      title="Settings"
-      eyebrow="Admin · Configuration"
-      subtitle="API credentials, phone numbers, and platform configuration."
-      actions={tabSwitcher}
-    >
-      <IntegrationHealthBanner
-        health={integrationHealth}
-        onOpenIntegrations={() => setActiveTab("system")}
-      />
-      {isLoading ? (
-        <div role="status" aria-live="polite" className="h-full flex flex-col items-center justify-center gap-3">
-          <Loader2 className="w-5 h-5 animate-spin text-brand" aria-hidden="true" />
-          <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">Loading settings</span>
-        </div>
-      ) :         <AnimatePresence mode="wait">
-          {activeTab === "branding" && (
-            <motion.div
-              key="branding"
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="h-full"
+      <HubTabs tabs={SYSTEM_HUB} label="System sub-navigation" />
+      <div className="flex-1 min-h-0">
+        <PageShell
+          title="Settings"
+          eyebrow="Admin · Configuration"
+          subtitle="API credentials, phone numbers, and platform configuration."
+          actions={tabSwitcher}
+        >
+          <IntegrationHealthBanner
+            health={integrationHealth}
+            onOpenIntegrations={() => setActiveTab("system")}
+          />
+          {isLoading ? (
+            <div
+              role="status"
+              aria-live="polite"
+              className="h-full flex flex-col items-center justify-center gap-3"
             >
-              <BrandingPanel 
-                settings={settings} 
-                onUpdate={setSettings} 
-                onSave={saveSettings} 
-                isSaving={isSaving} 
-              />
-            </motion.div>
-          )}
+              <Loader2 className="w-5 h-5 animate-spin text-brand" aria-hidden="true" />
+              <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">
+                Loading settings
+              </span>
+            </div>
+          ) : (
+            <AnimatePresence mode="wait">
+              {activeTab === "branding" && (
+                <motion.div
+                  key="branding"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="h-full"
+                >
+                  <BrandingPanel
+                    settings={settings}
+                    onUpdate={setSettings}
+                    onSave={saveSettings}
+                    isSaving={isSaving}
+                  />
+                </motion.div>
+              )}
 
-          {activeTab === "carrier" && (
-            <motion.div
-              key="carrier"
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="h-full"
-            >
-              <CarrierPanel 
-                settings={settings}
-                agents={agents}
-                phoneNumbers={phoneNumbers}
-                carrierNumbers={carrierNumbers}
-                isSaving={isSaving}
-                isSyncing={isSyncing}
-                onUpdateSettings={setSettings}
-                onSaveSettings={saveSettings}
-                onSyncNumbers={syncCarrierNumbers}
-                onAddNumber={addPhoneNumber}
-                onDeleteNumber={deletePhoneNumber}
-                onUpdateNumberAgent={updateNumberAgent}
-              />
-            </motion.div>
-          )}
+              {activeTab === "carrier" && (
+                <motion.div
+                  key="carrier"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="h-full"
+                >
+                  <CarrierPanel
+                    settings={settings}
+                    agents={agents}
+                    phoneNumbers={phoneNumbers}
+                    carrierNumbers={carrierNumbers}
+                    isSaving={isSaving}
+                    isSyncing={isSyncing}
+                    onUpdateSettings={setSettings}
+                    onSaveSettings={saveSettings}
+                    onSyncNumbers={syncCarrierNumbers}
+                    onAddNumber={addPhoneNumber}
+                    onDeleteNumber={deletePhoneNumber}
+                    onUpdateNumberAgent={updateNumberAgent}
+                  />
+                </motion.div>
+              )}
 
-          {activeTab === "subscription" && (
-            <motion.div
-              key="subscription"
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="h-full"
-            >
-              <SubscriptionPanel 
-                settings={settings}
-                agents={agents}
-                isSaving={isSaving}
-                onUpdateSettings={setSettings}
-                onSaveSettings={saveSettings}
-                onDeleteAccount={deleteAccount}
-              />
-            </motion.div>
-          )}
+              {activeTab === "subscription" && (
+                <motion.div
+                  key="subscription"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="h-full"
+                >
+                  <SubscriptionPanel
+                    settings={settings}
+                    agents={agents}
+                    isSaving={isSaving}
+                    onUpdateSettings={setSettings}
+                    onSaveSettings={saveSettings}
+                    onDeleteAccount={deleteAccount}
+                  />
+                </motion.div>
+              )}
 
-          {activeTab === "team" && (
-            <motion.div
-              key="team"
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="h-full"
-            >
-              <TeamPanel 
-                members={teamMembers} 
-                onInvite={inviteTeamMember} 
-                onRemove={removeTeamMember} 
-              />
-            </motion.div>
-          )}
-          
-          {activeTab === "flywheel" && (
-            <motion.div
-              key="flywheel"
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="h-full"
-            >
-              <GrowthPanel 
-                settings={settings} 
-                setSettings={setSettings} 
-                onSave={saveSettings} 
-                isSaving={isSaving} 
-              />
-            </motion.div>
-          )}
+              {activeTab === "team" && (
+                <motion.div
+                  key="team"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="h-full"
+                >
+                  <TeamPanel
+                    members={teamMembers}
+                    onInvite={inviteTeamMember}
+                    onRemove={removeTeamMember}
+                  />
+                </motion.div>
+              )}
 
-          {activeTab === "system" && (
-            <motion.div
-              key="system"
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="h-full"
-            >
-              <SystemPanel 
-                claudeStatus={claudeStatus} 
-                integrations={integrations}
-                operationalSlos={operationalSlos}
-                onOpenIntegrations={() => setActiveTab("system")} 
-              />
-            </motion.div>
-          )}
+              {activeTab === "flywheel" && (
+                <motion.div
+                  key="flywheel"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="h-full"
+                >
+                  <GrowthPanel
+                    settings={settings}
+                    setSettings={setSettings}
+                    onSave={saveSettings}
+                    isSaving={isSaving}
+                  />
+                </motion.div>
+              )}
 
-          {activeTab === "quality" && (
-            <motion.div
-              key="quality"
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="h-full"
-            >
-              <KimiQualityPanel />
-            </motion.div>
-          )}
+              {activeTab === "system" && (
+                <motion.div
+                  key="system"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="h-full"
+                >
+                  <SystemPanel
+                    claudeStatus={claudeStatus}
+                    integrations={integrations}
+                    operationalSlos={operationalSlos}
+                    onOpenIntegrations={() => setActiveTab("system")}
+                  />
+                </motion.div>
+              )}
 
-          {activeTab === "activity" && (
-            <motion.div
-              key="activity"
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="h-full"
-            >
-              <AuditActivityPanel />
-            </motion.div>
+              {activeTab === "quality" && (
+                <motion.div
+                  key="quality"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="h-full"
+                >
+                  <KimiQualityPanel />
+                </motion.div>
+              )}
+
+              {activeTab === "activity" && (
+                <motion.div
+                  key="activity"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="h-full"
+                >
+                  <AuditActivityPanel />
+                </motion.div>
+              )}
+            </AnimatePresence>
           )}
-        </AnimatePresence>
-      )}
-    </PageShell>
-    <ConfirmModal
-      open={confirmState.open}
-      title={confirmState.title}
-      message={confirmState.message}
-      danger
-      onConfirm={confirmState.onConfirm}
-      onCancel={() => setConfirmState(CLOSED_CONFIRM)}
-    />
-    </div>
+        </PageShell>
+        <ConfirmModal
+          open={confirmState.open}
+          title={confirmState.title}
+          message={confirmState.message}
+          danger
+          onConfirm={confirmState.onConfirm}
+          onCancel={() => setConfirmState(CLOSED_CONFIRM)}
+        />
+      </div>
     </div>
   );
 }
-
-
-
