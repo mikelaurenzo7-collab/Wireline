@@ -153,6 +153,11 @@ const OAUTH_STATE_SECRET = requireSecret(
   "wireline-placeholder-secret-dev-only",
 );
 
+const INTERNAL_JWT_SECRET = requireSecret(
+  "INTERNAL_JWT_SECRET",
+  "development-secret-key-at-least-32-chars-long",
+);
+
 /** Signed OAuth state may embed `userId` so browser callbacks can resolve the tenant without relying on cookies. */
 export interface VerifiedOAuthState {
   ok: boolean;
@@ -211,11 +216,7 @@ export async function resolveUserIdFromOAuthSession(req: express.Request): Promi
   const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : cookieToken;
   if (!bearerToken) return null;
   
-  const secret = requireSecret(
-    "INTERNAL_JWT_SECRET",
-    "development-secret-key-at-least-32-chars-long",
-  );
-  const payload = await verifySupabaseJwt(bearerToken, secret);
+  const payload = await verifySupabaseJwt(bearerToken, INTERNAL_JWT_SECRET);
   return payload?.sub ?? null;
 }
 

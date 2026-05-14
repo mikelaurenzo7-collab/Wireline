@@ -1,18 +1,16 @@
 import Stripe from 'stripe';
-import { drizzle, log, auditLogger, IS_PROD, requireSecret } from './server-context';
+import { drizzle, log, auditLogger } from './server-context';
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 import { getErrorMessage } from './server-utils';
 import { planByPriceId } from './plan-catalog';
 import { dispatchWebhook } from './webhook-helpers';
 
-// In production, refuse to boot without a real Stripe key.
-// In dev, fall through to a placeholder so unrelated test paths still load.
-const STRIPE_KEY = IS_PROD
-  ? requireSecret('STRIPE_SECRET_KEY')
-  : (process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder');
-
-export const stripe = new Stripe(STRIPE_KEY, {
+// Stripe is OPTIONAL — billing-routes imports this module unconditionally,
+// so we cannot throw at import time. When STRIPE_SECRET_KEY is unset,
+// `stripeAvailable()` returns false and billing endpoints return 503 via
+// their existing guards.
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder', {
   apiVersion: '2026-01-28.clover' as Stripe.LatestApiVersion,
   typescript: true,
 });

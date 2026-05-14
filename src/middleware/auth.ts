@@ -5,6 +5,12 @@ import { log, auditLogger, requireSecret } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { verifySupabaseJwt as verifyInternalJwt } from "../lib/auth-utils";
 
+// Resolved once at module load — fails fast on misconfiguration.
+const INTERNAL_JWT_SECRET = requireSecret(
+  "INTERNAL_JWT_SECRET",
+  "development-secret-key-at-least-32-chars-long",
+);
+
 /**
  * Express Request with an attached sovereign User.
  */
@@ -30,11 +36,7 @@ export async function authenticateUser(req: Request, res: Response, next: NextFu
      return res.status(401).json({ error: "No authorization token provided" });
   }
 
-  const secret = requireSecret(
-    "INTERNAL_JWT_SECRET",
-    "development-secret-key-at-least-32-chars-long",
-  );
-  const payload = await verifyInternalJwt(token, secret);
+  const payload = await verifyInternalJwt(token, INTERNAL_JWT_SECRET);
 
   if (!payload) {
      // Audit log: invalid/expired token (non-blocking)

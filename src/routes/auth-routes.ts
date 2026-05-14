@@ -7,15 +7,29 @@ import { rateLimit } from "../lib/rate-limit";
 
 const router = Router();
 
-const credsSchema = z.object({
+// Sign-in: accept any non-empty password so legacy users registered before
+// the min-length rule can still authenticate.
+const signinSchema = z.object({
+  email: z.string().email().max(254),
+  password: z.string().min(1).max(256),
+});
+
+// Sign-up: enforce 8-char minimum to set a baseline going forward.
+const signupSchema = z.object({
   email: z.string().email().max(254),
   password: z.string().min(8).max(256),
   fullName: z.string().max(120).optional(),
 });
 
+function clientIp(req: Request): string {
+  const xff = req.headers["x-forwarded-for"];
+  const first = typeof xff === "string" ? xff.split(",")[0]?.trim() : Array.isArray(xff) ? xff[0] : undefined;
+  return first || req.ip || "anon";
+}
+
 async function authRateLimit(req: Request, res: Response, next: NextFunction) {
   const emailKey = String(req.body?.email || "").toLowerCase().slice(0, 254);
-  const key = `${req.ip || "anon"}:${emailKey}`;
+  const key = `${clientIp(req)}:${emailKey}`;
   try {
     const r = await rateLimit(key, { bucket: "auth", windowMs: 60_000, max: 5 });
     if (!r.allowed) {
@@ -33,9 +47,9 @@ async function authRateLimit(req: Request, res: Response, next: NextFunction) {
  * Authenticate a user and return a JWT.
  */
 router.post("/api/auth/signin", authRateLimit, async (req: Request, res: Response) => {
-  const parsed = credsSchema.safeParse(req.body);
+  const parsed = signinSchema.safeParse(req.body);
   if (!parsed.success) {
-    log.warn("Auth: signin validation failed", { ip: req.ip });
+    log.warn("Auth: signin validation failed", { ip: clientIp(req) });
     return res.status(400).json({ error: "Invalid email or password format" });
   }
   const { email, password } = parsed.data;
@@ -58,9 +72,9 @@ router.post("/api/auth/signin", authRateLimit, async (req: Request, res: Respons
  * Register a new user and return a JWT.
  */
 router.post("/api/auth/signup", authRateLimit, async (req: Request, res: Response) => {
-  const parsed = credsSchema.safeParse(req.body);
+  const parsed = signupSchema.safeParse(req.body);
   if (!parsed.success) {
-    log.warn("Auth: signup validation failed", { ip: req.ip });
+    log.warn("Auth: signup validation failed", { ip: clientIp(req) });
     return res.status(400).json({ error: "Email must be valid and password at least 8 characters" });
   }
   const { email, password, fullName } = parsed.data;
