@@ -11,3 +11,9 @@ coverage/
 # Don't commit PNGs to avoid binary churn; the build pipeline produces them.
 public/og-image.png
 public/apple-touch-icon.png
+
+# Playwright
+playwright-report/
+test-results/
+e2e/screenshots/*.png
+!e2e/screenshots/.gitkeep
