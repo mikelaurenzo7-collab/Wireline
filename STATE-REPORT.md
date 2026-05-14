@@ -2,8 +2,8 @@
 
 ## Tech Stack
 - Frontend: React 19 + Vite + Tailwind CSS 4.1
-- Backend: Express (server.ts) + Supabase (PostgreSQL)
-- Auth: Supabase Auth
+- Backend: Express (server.ts) + Vercel Postgres (Neon) + Drizzle ORM
+- Auth: Supabase Auth (Migrating to Clerk or Auth.js planned)
 - Integrations: Vapi, Stripe, Twilio, Anthropic (Claude), Google (Gemini/Gmail), CRM
 
 ## Database (20+ tables)
@@ -34,8 +34,7 @@
   - Quality: `KimiQualityPanel.tsx`
   - Activity: `AuditActivityPanel.tsx`
 
-## Gaps Identified
-1. **Audit Data Mismatches**: `AuditActivityPanel.tsx` expects `d.logs` but API returns `entries`. Totals fields (`tokens`, `count`, `avg_latency`) are also mismatched.
-2. **Environment Path**: `node`/`npm` missing from shell PATH in some environments.
-3. **Rate Limiting**: Production using in-memory rate limiting instead of Redis.
-4. **Supabase CLI**: Project ref and DB connection string provided but CLI link not verified.
+1. **Database Migration**: Transitioning from Supabase-js string-based queries to Drizzle ORM for end-to-end type safety.
+2. **Audit Data Mismatches**: `AuditActivityPanel.tsx` expects `d.logs` but API returns `entries`. (Fixing via Drizzle schema).
+3. **Environment Path**: `node`/`npm` missing from shell PATH in some environments.
+4. **Rate Limiting**: Implementation of Upstash Redis for distributed state.

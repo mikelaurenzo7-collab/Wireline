@@ -185,19 +185,19 @@ export function AuditActivityPanel() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[11px] font-medium text-ink truncate uppercase tracking-wider">{formatActionName(entry.action)}</p>
-                      <p className="text-[9px] text-muted truncate">{entry.metadata?.agent_name || "System"} · {entry.model_id}</p>
+                      <p className="text-[9px] text-muted truncate">{entry.metadata?.agent_name || "System"} · {entry.model || entry.model_id}</p>
                     </div>
                     <div className="flex flex-col items-end gap-1">
-                      {entry.latency_ms && (
+                      {(entry.latencyMs || entry.latency_ms) && (
                         <span className="text-[8px] font-mono text-muted/60 tabular-nums flex items-center gap-1">
-                          <Clock className="w-2.5 h-2.5" />{entry.latency_ms}ms
+                          <Clock className="w-2.5 h-2.5" />{entry.latencyMs || entry.latency_ms}ms
                         </span>
                       )}
                       <span className="text-[9px] font-mono text-ink/70 tabular-nums w-16 text-right">
-                        {entry.cost_usd != null ? `$${Number(entry.cost_usd).toFixed(5)}` : "—"}
+                        {(entry.costUsd ?? entry.cost_usd) != null ? `$${Number(entry.costUsd ?? entry.cost_usd).toFixed(5)}` : "—"}
                       </span>
                       <span className="text-[8px] text-muted/50 tabular-nums w-24 text-right">
-                        {formatDateTime(entry.created_at, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }, "")}
+                        {formatDateTime(entry.createdAt ?? entry.created_at, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }, "")}
                       </span>
                     </div>
                   </div>

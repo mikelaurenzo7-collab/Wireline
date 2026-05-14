@@ -1,4 +1,4 @@
-# Database Schema Contract
+# Database Schema Contract (Drizzle ORM + Vercel Postgres)
 
 ## Table: `wireline_settings`
 - `id`: TEXT (Primary Key)

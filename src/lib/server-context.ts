@@ -1,4 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
+import { sql } from "@vercel/postgres";
+import { drizzle as drizzleDb } from "drizzle-orm/vercel-postgres";
+import * as schema from "../db/schema";
 import { AuditLogger } from "./audit-logger";
 import { createRbacMiddleware } from "../middleware/require-role";
 import { QuotaTracker, type PlanTier } from "./tenant-quotas";
@@ -46,23 +49,28 @@ export async function fetchWithTimeout(
 }
 
 // ────────────────────────────────────────────────────────────────────
-//  Database Initialization
+//  Database Initialization (Phased Migration)
 // ────────────────────────────────────────────────────────────────────
 const supabaseUrl = process.env.VITE_SUPABASE_URL || "https://placeholder-url.supabase.co";
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || "placeholder-key";
+
+// Legacy Supabase Client (Standard API)
 export const db = createClient(supabaseUrl, supabaseKey);
+
+// New Drizzle ORM (Vercel Postgres / Neon)
+export const drizzle = drizzleDb(sql, { schema });
 
 // ────────────────────────────────────────────────────────────────────
 //  Audit Logger & RBAC Middleware
 // ────────────────────────────────────────────────────────────────────
-export const auditLogger = new AuditLogger(db);
-export const { requirePermission, requireRole } = createRbacMiddleware({ db, auditLogger });
+export const auditLogger = new AuditLogger(db as any);
+export const { requirePermission, requireRole } = createRbacMiddleware({ db: db as any, auditLogger });
 
 // ────────────────────────────────────────────────────────────────────
 //  Quota Tracker
 // ────────────────────────────────────────────────────────────────────
 export const quotaTracker = new QuotaTracker({
-  db,
+  db: db as any,
   getPlanForUser: async (userId: string): Promise<PlanTier> => {
     try {
       const { data } = await db

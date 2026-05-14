@@ -1,6 +1,8 @@
 import { Router, Response } from "express";
 
-import { db, log, auditLogger } from "../lib/server-context";
+import { db, drizzle, log, auditLogger } from "../lib/server-context";
+import { auditLog } from "../db/schema";
+import { eq, gte, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage } from "../lib/server-utils";
 import { computeAuditSummary } from "../lib/audit-summary";
@@ -17,14 +19,15 @@ router.get("/api/audit/summary", authenticateUser, async (req: AuthenticatedRequ
     const days = Math.min(parseInt((req.query.days as string) || "30"), 365);
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-    const { data: rows, error } = await db
-      .from("wireline_audit_log")
-      .select("action, provider, model, input_tokens, output_tokens, cache_read_tokens, cache_create_tokens, cost_usd, latency_ms, created_at")
-      .eq("user_id", req.user.id)
-      .gte("created_at", since)
-      .order("created_at", { ascending: false })
+    const rows = await drizzle
+      .select()
+      .from(auditLog)
+      .where(
+        eq(auditLog.userId, req.user.id),
+        gte(auditLog.createdAt, new Date(since))
+      )
+      .orderBy(desc(auditLog.createdAt))
       .limit(5000);
-    if (error) throw error;
 
     res.json(computeAuditSummary({ rows: rows || [], windowDays: days }));
   } catch {
@@ -35,13 +38,13 @@ router.get("/api/audit/summary", authenticateUser, async (req: AuthenticatedRequ
 router.get("/api/audit/recent", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const limit = Math.min(parseInt((req.query.limit as string) || "100"), 500);
-    const { data, error } = await db
-      .from("wireline_audit_log")
-      .select("*")
-      .eq("user_id", req.user.id)
-      .order("created_at", { ascending: false })
+    const data = await drizzle
+      .select()
+      .from(auditLog)
+      .where(eq(auditLog.userId, req.user.id))
+      .orderBy(desc(auditLog.createdAt))
       .limit(limit);
-    if (error) throw error;
+
     res.json({ logs: data || [] });
   } catch {
     res.status(500).json({ error: "Audit fetch failed" });
