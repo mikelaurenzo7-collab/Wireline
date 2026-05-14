@@ -17,7 +17,7 @@
 
 import type { Request, Response, NextFunction } from "express";
 import { eq, sql, and, isNull, desc } from "drizzle-orm";
-import type { VercelPostgresDatabase } from "drizzle-orm/vercel-postgres";
+import type { VercelPgDatabase } from "drizzle-orm/vercel-postgres";
 import * as schema from "../db/schema";
 import {
   ROLE_PERMISSIONS,
@@ -35,7 +35,7 @@ const ROLE_CACHE_TTL_MS = 30_000;
 const roleCache = new Map<string, RoleCacheEntry>();
 
 export interface RbacDeps {
-  drizzle: VercelPostgresDatabase<typeof schema>;
+  drizzle: VercelPgDatabase<typeof schema>;
   auditLogger?: {
     logSecurity?: (
       action: "rate_limit_exceeded" | "unauthorized_access" | "suspicious_activity",
@@ -62,21 +62,19 @@ export interface RbacDeps {
  *
  * Result is cached per user-id for 30s to avoid hammering the DB.
  */
-export async function getCallerRole(drizzle: VercelPostgresDatabase<typeof schema>, userId: string): Promise<AccessRole> {
+export async function getCallerRole(
+  drizzle: VercelPgDatabase<typeof schema>,
+  userId: string,
+): Promise<AccessRole> {
   const cached = roleCache.get(userId);
   if (cached && Date.now() - cached.cached_at < ROLE_CACHE_TTL_MS) {
     return cached.role;
   }
-  
+
   const [data] = await drizzle
     .select({ role: schema.teamMembers.role })
     .from(schema.teamMembers)
-    .where(
-      and(
-        eq(schema.teamMembers.userId, userId),
-        isNull(schema.teamMembers.revokedAt)
-      )
-    )
+    .where(and(eq(schema.teamMembers.userId, userId), isNull(schema.teamMembers.revokedAt)))
     .orderBy(desc(schema.teamMembers.createdAt))
     .limit(1);
 

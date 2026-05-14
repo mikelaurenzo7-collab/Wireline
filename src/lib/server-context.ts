@@ -1,4 +1,5 @@
-import { sql, eq } from "drizzle-orm";
+import { sql } from "@vercel/postgres";
+import { eq } from "drizzle-orm";
 import { drizzle as drizzleDb } from "drizzle-orm/vercel-postgres";
 import * as schema from "../db/schema";
 import { AuditLogger } from "./audit-logger";
@@ -15,18 +16,22 @@ function emitLog(level: LogLevel, msg: string, fields?: Record<string, unknown>)
   const entry = { ts: new Date().toISOString(), level, msg, ...(fields || {}) };
   if (IS_PROD) {
     // eslint-disable-next-line no-console
-    (level === "error" ? console.error : level === "warn" ? console.warn : console.log)(JSON.stringify(entry));
+    (level === "error" ? console.error : level === "warn" ? console.warn : console.log)(
+      JSON.stringify(entry),
+    );
   } else {
     // eslint-disable-next-line no-console
     (level === "error" ? console.error : level === "warn" ? console.warn : console.log)(
-      `[${level}]`, msg, fields ?? ""
+      `[${level}]`,
+      msg,
+      fields ?? "",
     );
   }
 }
 export const log = {
   debug: (msg: string, fields?: Record<string, unknown>) => emitLog("debug", msg, fields),
-  info:  (msg: string, fields?: Record<string, unknown>) => emitLog("info", msg, fields),
-  warn:  (msg: string, fields?: Record<string, unknown>) => emitLog("warn", msg, fields),
+  info: (msg: string, fields?: Record<string, unknown>) => emitLog("info", msg, fields),
+  warn: (msg: string, fields?: Record<string, unknown>) => emitLog("warn", msg, fields),
   error: (msg: string, fields?: Record<string, unknown>) => emitLog("error", msg, fields),
 };
 
@@ -72,14 +77,14 @@ export const quotaTracker = new QuotaTracker({
         .from(schema.settings)
         .where(eq(schema.settings.userId, userId))
         .limit(1);
-      
-      const status = data?.status ?? 'free';
-      if (status === 'enterprise') return 'enterprise';
-      if (status === 'pro')        return 'pro';
-      if (status === 'starter' || status === 'active') return 'starter';
-      return 'free';
+
+      const status = data?.status ?? "free";
+      if (status === "enterprise") return "enterprise";
+      if (status === "pro") return "pro";
+      if (status === "starter" || status === "active") return "starter";
+      return "free";
     } catch {
-      return 'starter'; // Fail-open on DB errors.
+      return "starter"; // Fail-open on DB errors.
     }
-  }
+  },
 });

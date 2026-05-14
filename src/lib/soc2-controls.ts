@@ -12,18 +12,18 @@
 //
 // See docs/soc2-policies.md for the full control narrative.
 
-import type { VercelPostgresDatabase } from "drizzle-orm/vercel-postgres";
+import type { VercelPgDatabase } from "drizzle-orm/vercel-postgres";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 
 export type AccessRole = "owner" | "admin" | "operator" | "viewer" | "auditor";
 
 export const ROLE_HIERARCHY: Record<AccessRole, number> = {
-  owner:    50,
-  admin:    40,
+  owner: 50,
+  admin: 40,
   operator: 30,
-  viewer:   20,
-  auditor:  10,
+  viewer: 20,
+  auditor: 10,
 };
 
 export const ALL_ROLES: AccessRole[] = ["owner", "admin", "operator", "viewer", "auditor"];
@@ -70,16 +70,8 @@ export const ROLE_PERMISSIONS: Record<AccessRole, string[]> = {
     "knowledge.read",
     "insights.read",
   ],
-  viewer: [
-    "calls.read",
-    "leads.read",
-    "insights.read",
-  ],
-  auditor: [
-    "audit.read",
-    "calls.read",
-    "insights.read",
-  ],
+  viewer: ["calls.read", "leads.read", "insights.read"],
+  auditor: ["audit.read", "calls.read", "insights.read"],
 };
 
 export function hasPermission(role: AccessRole, permission: string): boolean {
@@ -89,7 +81,7 @@ export function hasPermission(role: AccessRole, permission: string): boolean {
 export function canGrantRole(granterRole: AccessRole, targetRole: AccessRole): boolean {
   // Granter must have at least operator-level privilege, AND the target
   // role must be strictly below the granter's level.
-  const MIN_GRANT_LEVEL = ROLE_HIERARCHY['operator']; // 30
+  const MIN_GRANT_LEVEL = ROLE_HIERARCHY["operator"]; // 30
   return (
     ROLE_HIERARCHY[granterRole] >= MIN_GRANT_LEVEL &&
     ROLE_HIERARCHY[granterRole] > ROLE_HIERARCHY[targetRole]
@@ -129,7 +121,7 @@ const STALE_THRESHOLD_DAYS = 90;
  * to satisfy CC6.3 evidence.
  */
 export async function runAccessReview(
-  drizzle: VercelPostgresDatabase<typeof schema>,
+  drizzle: VercelPgDatabase<typeof schema>,
   tenantId: string,
 ): Promise<AccessReviewResult> {
   const members = await drizzle
@@ -139,7 +131,7 @@ export async function runAccessReview(
       role: schema.teamMembers.role,
       email: schema.teamMembers.email,
       createdAt: schema.teamMembers.createdAt,
-      revokedAt: schema.teamMembers.revokedAt
+      revokedAt: schema.teamMembers.revokedAt,
     })
     .from(schema.teamMembers)
     .where(eq(schema.teamMembers.tenantId, tenantId));
@@ -147,8 +139,8 @@ export async function runAccessReview(
   const now = new Date();
   const staleThreshold = new Date(now.getTime() - STALE_THRESHOLD_DAYS * 86_400_000);
 
-  const active = members.filter(m => !m.revokedAt);
-  const stale = active.filter(m => {
+  const active = members.filter((m: (typeof members)[number]) => !m.revokedAt);
+  const stale = active.filter((m: (typeof members)[number]) => {
     // Note: last_active_at was missing from the previous schema check but present in the teamMembers row?
     // Let's assume we use createdAt if last_active_at is missing from the teamMembers table in schema.ts.
     // In schema.ts:
@@ -166,11 +158,11 @@ export async function runAccessReview(
     return m.createdAt && m.createdAt < staleThreshold;
   });
 
-  const revoked = members.filter(m => m.revokedAt);
+  const revoked = members.filter((m: (typeof members)[number]) => m.revokedAt);
   // In a real SOC 2 audit, we'd cross-ref the audit log. Here we flag
   // any revocation where the revoked_at timestamp is very recent
   // (suggesting it might not yet have an audit row).
-  const unlogged = revoked.filter(m => {
+  const unlogged = revoked.filter((m: (typeof members)[number]) => {
     const rev = new Date(m.revokedAt!);
     return now.getTime() - rev.getTime() < 5_000; // < 5s old = probably not logged yet
   });
@@ -212,18 +204,18 @@ export interface ChangeLogEntry {
 
 export function buildChangeLogRow(entry: ChangeLogEntry): Record<string, unknown> {
   return {
-    tenant_id:       entry.tenant_id,
-    actor_user_id:   entry.actor_user_id,
-    actor_email:     entry.actor_email,
-    change_type:     entry.change_type,
-    target_user_id:  entry.target_user_id ?? null,
-    target_email:    entry.target_email ?? null,
-    previous_value:  entry.previous_value ?? null,
-    new_value:       entry.new_value ?? null,
-    justification:   entry.justification ?? null,
-    approved_by:     entry.approved_by ?? null,
-    metadata:        entry.metadata ?? {},
-    created_at:      new Date().toISOString(),
+    tenant_id: entry.tenant_id,
+    actor_user_id: entry.actor_user_id,
+    actor_email: entry.actor_email,
+    change_type: entry.change_type,
+    target_user_id: entry.target_user_id ?? null,
+    target_email: entry.target_email ?? null,
+    previous_value: entry.previous_value ?? null,
+    new_value: entry.new_value ?? null,
+    justification: entry.justification ?? null,
+    approved_by: entry.approved_by ?? null,
+    metadata: entry.metadata ?? {},
+    created_at: new Date().toISOString(),
   };
 }
 
@@ -242,9 +234,9 @@ export function buildChangeLogRow(entry: ChangeLogEntry): Record<string, unknown
  */
 export function looksEncrypted(value: string | null | undefined): boolean {
   if (!value) return false;
-  if (/^[0-9a-f]{64}$/i.test(value)) return true;  // SHA-256 hex
-  if (/^\$2[aby]\$/.test(value)) return true;        // bcrypt
-  if (value.startsWith("ek_")) return true;           // Wireline encrypted key prefix
+  if (/^[0-9a-f]{64}$/i.test(value)) return true; // SHA-256 hex
+  if (/^\$2[aby]\$/.test(value)) return true; // bcrypt
+  if (value.startsWith("ek_")) return true; // Wireline encrypted key prefix
   return false;
 }
 
@@ -271,7 +263,9 @@ export interface IncidentRecord {
 }
 
 /** P1 / P2 incidents must notify affected customers within 72 hours (GDPR Art. 33). */
-export function notificationDeadlineIso(incident: Pick<IncidentRecord, "severity" | "detected_at">): string | null {
+export function notificationDeadlineIso(
+  incident: Pick<IncidentRecord, "severity" | "detected_at">,
+): string | null {
   if (incident.severity !== "P1" && incident.severity !== "P2") return null;
   const detected = new Date(incident.detected_at);
   return new Date(detected.getTime() + 72 * 3_600_000).toISOString();

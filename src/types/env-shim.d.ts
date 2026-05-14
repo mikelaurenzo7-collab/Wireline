@@ -7,9 +7,28 @@ declare module "express" {
     Router: () => any;
   }
 
-  export interface Request { [key: string]: any; user: any; role: any; cookies: Record<string, string>; }
-  export interface Response { [key: string]: any; status(code: number): Response; json(data: any): Response; send(data: any): Response; setHeader(name: string, value: string): void; }
-  export interface Router { [key: string]: any; get: any; post: any; put: any; delete: any; use: any; }
+  export interface Request {
+    [key: string]: any;
+    user?: any;
+    role: any;
+    cookies: Record<string, string>;
+  }
+  export interface Response {
+    [key: string]: any;
+    status(code: number): Response;
+    json(data: any): Response;
+    send(data: any): Response;
+    setHeader(name: string, value: string): void;
+  }
+  export interface Router {
+    [key: string]: any;
+    get: any;
+    post: any;
+    put: any;
+    delete: any;
+    use: any;
+  }
+  export type NextFunction = any;
 
   const express: Express;
   export const Router: () => Router;
@@ -32,35 +51,6 @@ declare module "http" {
   }
 }
 
-declare module "react" {
-  export type ReactNode = any;
-  export function useState<T>(init: T | (() => T)): [T, (val: T | ((prev: T) => T)) => void];
-  export function useEffect(effect: () => void | (() => void), deps?: any[]): void;
-  export function useCallback<T extends (...args: any[]) => any>(fn: T, deps: any[]): T;
-  export function useRef<T>(init: T | null): { current: T };
-  export function useMemo<T>(factory: () => T, deps: any[]): T;
-  export default React;
-}
-
-declare module "react/jsx-runtime" {
-  export const jsx: any;
-  export const jsxs: any;
-  export const Fragment: any;
-}
-
-declare module "lucide-react" {
-  export const LayoutGrid: any;
-  export const Activity: any;
-  export const ShieldCheck: any;
-  export const RefreshCw: any;
-  export const Terminal: any;
-  export const Zap: any;
-  export const Globe: any;
-  export const Cpu: any;
-  export const Lock: any;
-  export const Bell: any;
-}
-
 declare module "drizzle-orm" {
   export const eq: any;
   export const and: any;
@@ -75,6 +65,12 @@ declare module "drizzle-orm" {
   export const lt: any;
   export const not: any;
   export const inArray: any;
+  export const notInArray: any;
+  export const isNull: any;
+  export const isNotNull: any;
+  export const count: any;
+  export const like: any;
+  export const ne: any;
 }
 
 declare module "drizzle-orm/pg-core" {
@@ -92,7 +88,7 @@ declare module "drizzle-orm/pg-core" {
 
 declare module "drizzle-orm/vercel-postgres" {
   export const drizzle: any;
-  export type VercelPostgresDatabase<T = any> = any;
+  export type VercelPgDatabase<T = any> = any;
 }
 
 declare module "cors" {
@@ -141,8 +137,11 @@ declare module "vite" {
 declare module "@sentry/node" {
   export const init: any;
   export const captureException: any;
+  export const captureMessage: any;
   export const Handlers: any;
   export const setTag: any;
+  export const setUser: any;
+  export type CaptureContext = any;
 }
 
 declare module "@google/generative-ai" {
@@ -157,11 +156,8 @@ declare module "googleapis" {
 }
 
 declare module "clsx" {
+  export type ClassValue = any;
   export function clsx(...args: any[]): string;
-}
-
-declare module "motion/react" {
-  export const motion: any;
 }
 
 declare module "recharts" {
@@ -173,6 +169,12 @@ declare module "recharts" {
   export const Tooltip: any;
   export const PieChart: any;
   export const Pie: any;
+  export const CartesianGrid: any;
+  export const RadarChart: any;
+  export const Radar: any;
+  export const PolarGrid: any;
+  export const PolarAngleAxis: any;
+  export const PolarRadiusAxis: any;
   export const Cell: any;
 }
 
@@ -200,18 +202,6 @@ declare var process: {
   exit(code?: number): never;
   on(event: string, listener: any): any;
   cwd(): string;
-};
-
-declare interface Buffer {
-  toString(encoding?: string): string;
-  [key: string]: any;
-}
-
-declare var Buffer: {
-  from(data: any, encoding?: string): Buffer;
-  alloc(size: number): Buffer;
-  isBuffer(obj: any): boolean;
-  [key: string]: any;
 };
 
 declare function fetch(url: string, init?: any): Promise<any>;
