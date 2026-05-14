@@ -6,14 +6,19 @@ import { placeOutboundCall } from '../lib/vapi-client';
 
 export class CampaignDialerService {
   /**
-   * Processes all active campaigns and dials eligible leads.
+   * Processes active campaigns and dials eligible leads.
+   * @param userId Optional filter to only process campaigns for a specific user.
    */
-  async processAllCampaigns() {
+  async processAllCampaigns(userId?: string) {
     try {
       const activeCampaigns = await drizzle
         .select()
         .from(schema.outboundCampaigns)
-        .where(eq(schema.outboundCampaigns.status, 'active'));
+        .where(
+          userId 
+            ? and(eq(schema.outboundCampaigns.status, 'active'), eq(schema.outboundCampaigns.userId, userId))
+            : eq(schema.outboundCampaigns.status, 'active')
+        );
 
       log.info(`Processing ${activeCampaigns.length} active campaigns`);
 

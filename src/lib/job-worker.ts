@@ -485,6 +485,13 @@ export async function handleJob(job: JobRow): Promise<void> {
       log.error("Autonomous prospecting failed", { error: getErrorMessage(error) });
     }
   }
+
+  if (job.type === 'campaign_dial') {
+    const p = job.payload as { userId: string };
+    const { CampaignDialerService } = await import("../services/campaign-dialer");
+    const dialer = new CampaignDialerService();
+    await dialer.processAllCampaigns(p.userId);
+  }
 }
 
 /**
