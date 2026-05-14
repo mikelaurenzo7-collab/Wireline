@@ -30,6 +30,11 @@
     "assets": "node scripts/render-image-assets.mjs",
     "check-prod-env": "node scripts/check-prod-env.mjs",
     "oauth:redirects": "node scripts/print-oauth-redirects.mjs",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:check": "drizzle-kit check",
     "prepare": "husky"
   },
   "lint-staged": {
