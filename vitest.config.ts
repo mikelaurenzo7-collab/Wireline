@@ -21,7 +21,6 @@ export default defineConfig({
       "src/lib/user-journey.test.ts",
       "src/middleware/require-role.test.ts",
       "src/routes/__tests__/account-deletion-routes.test.ts",
-      "src/__tests__/campaign-dialer.test.ts",
       "src/components/admin/__tests__/SubscriptionPanel.test.tsx",
       "src/components/admin/__tests__/SystemPanel.test.tsx",
       "src/components/__tests__/AuthPortal.test.tsx",
