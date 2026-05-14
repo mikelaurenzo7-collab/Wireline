@@ -12,8 +12,6 @@ export default defineConfig({
       "src/lib/audit-routes.test.ts",
       "src/lib/tenant-quotas.test.ts",
       "src/lib/account-deletion.test.ts",
-      "src/lib/audit-logger.test.ts",
-      "src/lib/audit-summary.test.ts",
       "src/lib/contact-profile.test.ts",
       "src/lib/crm-service.test.ts",
       "src/lib/fleet-activity.test.ts",
