@@ -21,6 +21,8 @@ const required = [
 ];
 
 const recommended = [
+  ["INTERNAL_JWT_SECRET",       "Session JWT signing — required in prod by validateStartupEnv (alias: SUPABASE_JWT_SECRET)"],
+  ["POSTGRES_URL",              "Drizzle / server Postgres — Supabase pooler URI; required for API routes using the ORM"],
   ["ANTHROPIC_API_KEY",         "Claude — required for /api/claude/* recipes"],
   ["VITE_VAPI_PUBLIC_KEY",      "Vapi — required for browser-side test calls from the dashboard"],
   ["VAPI_PRIVATE_KEY",          "Vapi — required for outbound/inbound voice agents"],
