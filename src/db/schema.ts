@@ -11,6 +11,7 @@ import {
   unique,
 } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
+// Index support via sql`` for Drizzle ORM 0.33 compatibility
 
 // 0. IDENTITY & ACCOUNTS
 export const users = pgTable("wireline_users", {
@@ -107,39 +108,46 @@ export const deletionQueue = pgTable("wireline_deletion_queue", {
 });
 
 // 2. FLEET INVENTORY (AGENTS)
-export const agents = pgTable("wireline_agents", {
-  id: text("id").primaryKey(),
-  userId: uuid("user_id"),
-  name: text("name").notNull(),
-  voiceId: text("voice_id"),
-  voiceIdInbound: text("voice_id_inbound"),
-  voiceIdOutbound: text("voice_id_outbound"),
-  voiceProvider: text("voice_provider").default("11labs"),
-  firstMessage: text("first_message"),
-  archetype: text("archetype").default("Receptionist"),
-  ambientNoise: text("ambient_noise").default("off"),
-  websiteUrl: text("website_url"),
-  transferPhone: text("transfer_phone"),
-  emailAutoRespond: boolean("email_auto_respond").default(true),
-  emailAgentTone: text("email_agent_tone").default("Professional"),
-  emailSignature: text("email_signature"),
-  channel: text("channel").default("voice"),
-  role: text("role").default("customer_service"),
-  enabledTools: jsonb("enabled_tools"),
-  autonomyLevel: text("autonomy_level").default("inherit"),
-  channels: text("channels").array(),
-  slackChannelId: text("slack_channel_id"),
-  autoZoomLink: boolean("auto_zoom_link").default(false),
-  businessHours: jsonb("business_hours"),
-  timezone: text("timezone").default("UTC"),
-  complianceMode: text("compliance_mode").default("standard"),
-  disallowedTopics: text("disallowed_topics").array(),
-  escalationKeywords: text("escalation_keywords").array(),
-  businessVariables: jsonb("business_variables"),
-  outOfHoursMessage: text("out_of_hours_message"),
-  kpiFocus: text("kpi_focus"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-});
+export const agents = pgTable(
+  "wireline_agents",
+  {
+    id: text("id").primaryKey(),
+    userId: uuid("user_id"),
+    name: text("name").notNull(),
+    voiceId: text("voice_id"),
+    voiceIdInbound: text("voice_id_inbound"),
+    voiceIdOutbound: text("voice_id_outbound"),
+    voiceProvider: text("voice_provider").default("11labs"),
+    firstMessage: text("first_message"),
+    archetype: text("archetype").default("Receptionist"),
+    ambientNoise: text("ambient_noise").default("off"),
+    websiteUrl: text("website_url"),
+    transferPhone: text("transfer_phone"),
+    emailAutoRespond: boolean("email_auto_respond").default(true),
+    emailAgentTone: text("email_agent_tone").default("Professional"),
+    emailSignature: text("email_signature"),
+    channel: text("channel").default("voice"),
+    role: text("role").default("customer_service"),
+    enabledTools: jsonb("enabled_tools"),
+    autonomyLevel: text("autonomy_level").default("inherit"),
+    channels: text("channels").array(),
+    slackChannelId: text("slack_channel_id"),
+    autoZoomLink: boolean("auto_zoom_link").default(false),
+    businessHours: jsonb("business_hours"),
+    timezone: text("timezone").default("UTC"),
+    complianceMode: text("compliance_mode").default("standard"),
+    disallowedTopics: text("disallowed_topics").array(),
+    escalationKeywords: text("escalation_keywords").array(),
+    businessVariables: jsonb("business_variables"),
+    outOfHoursMessage: text("out_of_hours_message"),
+    kpiFocus: text("kpi_focus"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    userIdIdx: sql`CREATE INDEX idx_agents_user_id ON wireline_agents USING btree (user_id)`,
+    createdAtIdx: sql`CREATE INDEX idx_agents_created_at ON wireline_agents USING btree (created_at)`,
+  }),
+);
 
 // 2.1 COGNITIVE ENGINE (TRAINING DATA)
 export const directives = pgTable("wireline_directives", {
@@ -184,42 +192,59 @@ export const agentLessons = pgTable(
 );
 
 // 2.2 COMMITMENTS & LOGISTICS
-export const appointments = pgTable("wireline_appointments", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id"),
-  agentId: text("agent_id").references(() => agents.id),
-  callId: text("call_id"),
-  date: text("date"),
-  time: text("time"),
-  customerName: text("customer_name"),
-  serviceType: text("service_type"),
-  status: text("status").default("Scheduled"),
-  notes: text("notes"),
-  phoneNumber: text("phone_number"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-});
+export const appointments = pgTable(
+  "wireline_appointments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id"),
+    agentId: text("agent_id").references(() => agents.id),
+    callId: text("call_id"),
+    date: text("date"),
+    time: text("time"),
+    customerName: text("customer_name"),
+    serviceType: text("service_type"),
+    status: text("status").default("Scheduled"),
+    notes: text("notes"),
+    phoneNumber: text("phone_number"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_appointments_user_id ON wireline_appointments USING btree (user_id)`,
+    userCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_appointments_user_created ON wireline_appointments USING btree (user_id, created_at)`,
+    createdAtIdx: sql`CREATE INDEX IF NOT EXISTS idx_appointments_created_at ON wireline_appointments USING btree (created_at)`,
+  }),
+);
 
 // 3. SIGNAL ARCHIVES (CALL LOGS)
-export const callLogs = pgTable("wireline_call_logs", {
-  id: bigint("id", { mode: "bigint" }).primaryKey(),
-  userId: uuid("user_id"),
-  vapiCallId: text("vapi_call_id").unique(),
-  agentId: text("agent_id").references(() => agents.id),
-  direction: text("direction"),
-  customerNumber: text("customer_number"),
-  durationSeconds: integer("duration_seconds"),
-  cost: decimal("cost", { precision: 10, scale: 4 }),
-  summary: text("summary"),
-  transcript: text("transcript"),
-  recordingUrl: text("recording_url"),
-  leadScore: integer("lead_score").default(0),
-  intentLabel: text("intent_label").default("none"),
-  sentiment: text("sentiment").default("neutral"),
-  coachingNote: text("coaching_note"),
-  qaScore: integer("qa_score"),
-  qaBreakdown: jsonb("qa_breakdown"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-});
+export const callLogs = pgTable(
+  "wireline_call_logs",
+  {
+    id: bigint("id", { mode: "bigint" }).primaryKey(),
+    userId: uuid("user_id"),
+    vapiCallId: text("vapi_call_id").unique(),
+    agentId: text("agent_id").references(() => agents.id),
+    direction: text("direction"),
+    customerNumber: text("customer_number"),
+    durationSeconds: integer("duration_seconds"),
+    cost: decimal("cost", { precision: 10, scale: 4 }),
+    summary: text("summary"),
+    transcript: text("transcript"),
+    recordingUrl: text("recording_url"),
+    leadScore: integer("lead_score").default(0),
+    intentLabel: text("intent_label").default("none"),
+    sentiment: text("sentiment").default("neutral"),
+    coachingNote: text("coaching_note"),
+    qaScore: integer("qa_score"),
+    qaBreakdown: jsonb("qa_breakdown"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_user_id ON wireline_call_logs USING btree (user_id)`,
+    userCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_user_created ON wireline_call_logs USING btree (user_id, created_at)`,
+    agentIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_agent_id ON wireline_call_logs USING btree (agent_id)`,
+    createdAtIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_created_at ON wireline_call_logs USING btree (created_at)`,
+  }),
+);
 
 // 3.1 OMNICHANNEL RELAY (EMAIL)
 export const emailAccounts = pgTable("wireline_email_accounts", {
@@ -265,20 +290,29 @@ export const calendarEvents = pgTable(
   }),
 );
 
-export const emailThreads = pgTable("wireline_email_threads", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id"),
-  accountId: uuid("account_id").references(() => emailAccounts.id, { onDelete: "cascade" }),
-  threadId: text("thread_id").unique(),
-  customerEmail: text("customer_email"),
-  subject: text("subject"),
-  status: text("status").default("open"),
-  summary: text("summary"),
-  leadScore: integer("lead_score").default(0),
-  intentLabel: text("intent_label").default("none"),
-  lastMessageAt: timestamp("last_message_at", { withTimezone: true }).defaultNow(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-});
+export const emailThreads = pgTable(
+  "wireline_email_threads",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id"),
+    accountId: uuid("account_id").references(() => emailAccounts.id, { onDelete: "cascade" }),
+    threadId: text("thread_id").unique(),
+    customerEmail: text("customer_email"),
+    subject: text("subject"),
+    status: text("status").default("open"),
+    summary: text("summary"),
+    leadScore: integer("lead_score").default(0),
+    intentLabel: text("intent_label").default("none"),
+    lastMessageAt: timestamp("last_message_at", { withTimezone: true }).defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_email_threads_user_id ON wireline_email_threads USING btree (user_id)`,
+    leadScoreIdx: sql`CREATE INDEX IF NOT EXISTS idx_email_threads_lead_score ON wireline_email_threads USING btree (lead_score)`,
+    userLeadScoreIdx: sql`CREATE INDEX IF NOT EXISTS idx_email_threads_user_lead_score ON wireline_email_threads USING btree (user_id, lead_score)`,
+    createdAtIdx: sql`CREATE INDEX IF NOT EXISTS idx_email_threads_created_at ON wireline_email_threads USING btree (created_at)`,
+  }),
+);
 
 export const emailMessages = pgTable("wireline_email_messages", {
   id: bigint("id", { mode: "bigint" }).primaryKey(),
@@ -291,22 +325,31 @@ export const emailMessages = pgTable("wireline_email_messages", {
 });
 
 // 3.2 FLEET HANDOFF (TASKS)
-export const fleetTasks = pgTable("wireline_fleet_tasks", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id"),
-  sourceType: text("source_type"),
-  sourceId: text("source_id"),
-  targetChannel: text("target_channel"),
-  agentId: text("agent_id").references(() => agents.id),
-  customerInfo: jsonb("customer_info"),
-  taskType: text("task_type"),
-  description: text("description"),
-  status: text("status").default("pending"),
-  priority: text("priority").default("medium"),
-  dueDate: timestamp("due_date", { withTimezone: true }),
-  resolutionNotes: text("resolution_notes"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-});
+export const fleetTasks = pgTable(
+  "wireline_fleet_tasks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id"),
+    sourceType: text("source_type"),
+    sourceId: text("source_id"),
+    targetChannel: text("target_channel"),
+    agentId: text("agent_id").references(() => agents.id),
+    customerInfo: jsonb("customer_info"),
+    taskType: text("task_type"),
+    description: text("description"),
+    status: text("status").default("pending"),
+    priority: text("priority").default("medium"),
+    dueDate: timestamp("due_date", { withTimezone: true }),
+    resolutionNotes: text("resolution_notes"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_fleet_tasks_user_id ON wireline_fleet_tasks USING btree (user_id)`,
+    statusIdx: sql`CREATE INDEX IF NOT EXISTS idx_fleet_tasks_status ON wireline_fleet_tasks USING btree (status)`,
+    userStatusIdx: sql`CREATE INDEX IF NOT EXISTS idx_fleet_tasks_user_status ON wireline_fleet_tasks USING btree (user_id, status)`,
+    createdAtIdx: sql`CREATE INDEX IF NOT EXISTS idx_fleet_tasks_created_at ON wireline_fleet_tasks USING btree (created_at)`,
+  }),
+);
 
 // 3.3 NETWORK LINKS (PHONE NUMBERS)
 export const phoneNumbers = pgTable("wireline_phone_numbers", {
@@ -319,58 +362,85 @@ export const phoneNumbers = pgTable("wireline_phone_numbers", {
 });
 
 // 3.4 OUTBOUND SIGNAL (LEADS & CAMPAIGNS)
-export const outboundCampaigns = pgTable("wireline_outbound_campaigns", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id"),
-  name: text("name").notNull(),
-  goal: text("goal"),
-  agentId: text("agent_id").references(() => agents.id, { onDelete: "set null" }),
-  status: text("status").default("draft"),
-  callWindowStart: text("call_window_start").default("09:00"),
-  callWindowEnd: text("call_window_end").default("17:00"),
-  maxAttempts: integer("max_attempts").default(3),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-});
+export const outboundCampaigns = pgTable(
+  "wireline_outbound_campaigns",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id"),
+    name: text("name").notNull(),
+    goal: text("goal"),
+    agentId: text("agent_id").references(() => agents.id, { onDelete: "set null" }),
+    status: text("status").default("draft"),
+    callWindowStart: text("call_window_start").default("09:00"),
+    callWindowEnd: text("call_window_end").default("17:00"),
+    maxAttempts: integer("max_attempts").default(3),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_campaigns_user_id ON wireline_outbound_campaigns USING btree (user_id)`,
+    userCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_campaigns_user_created ON wireline_outbound_campaigns USING btree (user_id, created_at)`,
+  }),
+);
 
 /**
  * Outbound Leads - Lead state machine:
  *   Pending -> Queued -> Dialing -> Connected -> Completed/Failed
  *   Terminal states: Completed, Failed, Blocked-DNC, Max-Attempts
  */
-export const outboundLeads = pgTable("wireline_outbound_leads", {
-  id: bigint("id", { mode: "bigint" }).primaryKey(),
-  userId: uuid("user_id"),
-  agentId: text("agent_id").references(() => agents.id),
-  campaignId: uuid("campaign_id").references(() => outboundCampaigns.id, { onDelete: "set null" }),
-  phoneNumber: text("phone_number"),
-  customerNumber: text("customer_number"),
-  customerName: text("customer_name"),
-  email: text("email"),
-  context: text("context"),
-  // Status values: Pending, Queued, Dialing, Connected, Completed, Failed, Blocked-DNC, Max-Attempts
-  status: text("status").default("Pending"),
-  callId: text("call_id"),
-  lastCalledAt: timestamp("last_called_at", { withTimezone: true }),
-  attempts: integer("attempts").default(0),
-  source: text("source").default("manual"),
-  metadata: jsonb("metadata"),
-  receivedAt: timestamp("received_at", { withTimezone: true }),
-  idempotencyKey: text("idempotency_key"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-});
+export const outboundLeads = pgTable(
+  "wireline_outbound_leads",
+  {
+    id: bigint("id", { mode: "bigint" }).primaryKey(),
+    userId: uuid("user_id"),
+    agentId: text("agent_id").references(() => agents.id),
+    campaignId: uuid("campaign_id").references(() => outboundCampaigns.id, {
+      onDelete: "set null",
+    }),
+    phoneNumber: text("phone_number"),
+    customerNumber: text("customer_number"),
+    customerName: text("customer_name"),
+    email: text("email"),
+    context: text("context"),
+    // Status values: Pending, Queued, Dialing, Connected, Completed, Failed, Blocked-DNC, Max-Attempts
+    status: text("status").default("Pending"),
+    callId: text("call_id"),
+    lastCalledAt: timestamp("last_called_at", { withTimezone: true }),
+    attempts: integer("attempts").default(0),
+    source: text("source").default("manual"),
+    metadata: jsonb("metadata"),
+    receivedAt: timestamp("received_at", { withTimezone: true }),
+    idempotencyKey: text("idempotency_key"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_user_id ON wireline_outbound_leads USING btree (user_id)`,
+    campaignIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_campaign_id ON wireline_outbound_leads USING btree (campaign_id)`,
+    statusIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_status ON wireline_outbound_leads USING btree (status)`,
+    userCampaignIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_user_campaign ON wireline_outbound_leads USING btree (user_id, campaign_id)`,
+    userStatusIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_user_status ON wireline_outbound_leads USING btree (user_id, status)`,
+    createdAtIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_created_at ON wireline_outbound_leads USING btree (created_at)`,
+  }),
+);
 
 // 3.5 REAL-TIME SIGNAL PRESENCE
-export const signalPresence = pgTable("wireline_signal_presence", {
-  id: text("id").primaryKey(), // call_id
-  userId: uuid("user_id"),
-  agentId: text("agent_id").references(() => agents.id),
-  customerNumber: text("customer_number"),
-  status: text("status"),
-  label: text("label").default("Live · Active"),
-  type: text("type").default("voice"),
-  startedAt: timestamp("started_at", { withTimezone: true }).defaultNow(),
-});
+export const signalPresence = pgTable(
+  "wireline_signal_presence",
+  {
+    id: text("id").primaryKey(), // call_id
+    userId: uuid("user_id"),
+    agentId: text("agent_id").references(() => agents.id),
+    customerNumber: text("customer_number"),
+    status: text("status"),
+    label: text("label").default("Live · Active"),
+    type: text("type").default("voice"),
+    startedAt: timestamp("started_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_signal_presence_user_id ON wireline_signal_presence USING btree (user_id)`,
+    agentIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_signal_presence_agent_id ON wireline_signal_presence USING btree (agent_id)`,
+  }),
+);
 
 // 3.6 INTAKE KEYS (API ACCESS)
 export const intakeKeys = pgTable("wireline_intake_keys", {
@@ -388,28 +458,37 @@ export const intakeKeys = pgTable("wireline_intake_keys", {
 });
 
 // 4. AUDIT LOG (AI SPEND & COMPLIANCE)
-export const auditLog = pgTable("wireline_audit_log", {
-  id: bigint("id", { mode: "bigint" }).primaryKey(),
-  userId: uuid("user_id"),
-  action: text("action").notNull(),
-  provider: text("provider"),
-  model: text("model"),
-  inputTokens: integer("input_tokens").default(0),
-  outputTokens: integer("output_tokens").default(0),
-  cacheReadTokens: integer("cache_read_tokens").default(0),
-  cacheCreateTokens: integer("cache_create_tokens").default(0),
-  costUsd: decimal("cost_usd", { precision: 12, scale: 6 }).default("0"),
-  latencyMs: integer("latency_ms"),
-  metadata: jsonb("metadata"),
-  eventType: text("event_type").notNull().default("ai.api_call"),
-  severity: text("severity").notNull().default("info"),
-  actorEmail: text("actor_email"),
-  resourceType: text("resource_type"),
-  resourceId: text("resource_id"),
-  ipAddress: text("ip_address"),
-  userAgent: text("user_agent"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-});
+export const auditLog = pgTable(
+  "wireline_audit_log",
+  {
+    id: bigint("id", { mode: "bigint" }).primaryKey(),
+    userId: uuid("user_id"),
+    action: text("action").notNull(),
+    provider: text("provider"),
+    model: text("model"),
+    inputTokens: integer("input_tokens").default(0),
+    outputTokens: integer("output_tokens").default(0),
+    cacheReadTokens: integer("cache_read_tokens").default(0),
+    cacheCreateTokens: integer("cache_create_tokens").default(0),
+    costUsd: decimal("cost_usd", { precision: 12, scale: 6 }).default("0"),
+    latencyMs: integer("latency_ms"),
+    metadata: jsonb("metadata"),
+    eventType: text("event_type").notNull().default("ai.api_call"),
+    severity: text("severity").notNull().default("info"),
+    actorEmail: text("actor_email"),
+    resourceType: text("resource_type"),
+    resourceId: text("resource_id"),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_audit_log_user_id ON wireline_audit_log USING btree (user_id)`,
+    eventTypeIdx: sql`CREATE INDEX IF NOT EXISTS idx_audit_log_event_type ON wireline_audit_log USING btree (event_type)`,
+    userCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_audit_log_user_created ON wireline_audit_log USING btree (user_id, created_at)`,
+    createdAtIdx: sql`CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON wireline_audit_log USING btree (created_at)`,
+  }),
+);
 
 // 4.1 WEBHOOKS
 export const webhooks = pgTable("wireline_webhooks", {
