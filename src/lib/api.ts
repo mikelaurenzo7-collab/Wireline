@@ -33,24 +33,42 @@ function combineSignals(...signals: AbortSignal[]): AbortSignal {
   type AnyFn = (this: typeof AbortSignal, signals: AbortSignal[]) => AbortSignal;
   const anyFn = (AbortSignal as unknown as { any?: AnyFn }).any;
   if (typeof anyFn === "function") {
-    try { return anyFn.call(AbortSignal, live); } catch { /* fall through */ }
+    try {
+      return anyFn.call(AbortSignal, live);
+    } catch {
+      /* fall through */
+    }
   }
   // Fallback: forward the first signal that aborts to a fresh controller.
   const controller = new AbortController();
   const onAbort = (s: AbortSignal) => controller.abort(s.reason);
   for (const s of live) {
-    if (s.aborted) { onAbort(s); break; }
+    if (s.aborted) {
+      onAbort(s);
+      break;
+    }
     s.addEventListener("abort", () => onAbort(s), { once: true });
   }
   return controller.signal;
 }
 
 export async function authFetch(url: string, options: RequestInit = {}) {
-  const token = localStorage.getItem("wireline_token");
+  // AuthContext stores session as "wireline_session" with { access_token, user }
+  const sessionJson = localStorage.getItem("wireline_session");
+  let token: string | null = null;
+  if (sessionJson) {
+    try {
+      const session = JSON.parse(sessionJson);
+      token = session?.access_token || null;
+    } catch {
+      token = null;
+    }
+  }
 
-  const headers = {
-    ...options.headers,
-    ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...((options.headers as Record<string, string>) || {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
   // Always install the deadline. If the caller supplied a signal we
