@@ -7,7 +7,7 @@ import { authenticateUser } from "../middleware/auth";
 import { jobsRateLimit, jobsSweepRateLimit } from "../middleware/api-rate-limits";
 import { getErrorMessage } from "../lib/server-utils";
 import { getCallerRole } from "../middleware/require-role";
-import { getQueueStats } from "../lib/job-queue";
+import { enqueue, getQueueStats } from "../lib/job-queue";
 import { handleJob } from "../lib/job-worker";
 import type { AuthenticatedRequest } from "../types/auth";
 
@@ -22,15 +22,69 @@ const router = Router();
 // JOB QUEUE ENDPOINTS
 // ──────────────────────────────────────────────────────────────────────────────
 
-router.get("/stats", authenticateUser, jobsRateLimit, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const stats = await getQueueStats(drizzle, req.user.id);
-    res.json(stats);
-  } catch (err) {
-    log.error("GET /api/jobs/stats failed", { error: getErrorMessage(err) });
-    res.status(500).json({ error: "Failed to fetch job stats" });
-  }
-});
+router.get(
+  "/stats",
+  authenticateUser,
+  jobsRateLimit,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const stats = await getQueueStats(drizzle, req.user.id);
+      res.json(stats);
+    } catch (err) {
+      log.error("GET /api/jobs/stats failed", { error: getErrorMessage(err) });
+      res.status(500).json({ error: "Failed to fetch job stats" });
+    }
+  },
+);
+
+/**
+ * POST /api/jobs/prospect — enqueue an `autonomous_prospecting` job for the
+ * authenticated tenant. Drives the "Activate Growth" button in the Command
+ * Center header. The worker (src/lib/job-worker.ts) reads the tenant's
+ * prospecting preferences and calls Apollo with them.
+ *
+ * Returns:
+ *   { ok: true, jobId, prospectingEnabled }
+ *
+ * When the tenant has `settings.prospecting_enabled = false`, the job is
+ * still queued but the worker will short-circuit with a log line. The
+ * response surfaces `prospectingEnabled` so the UI can prompt the operator
+ * to flip the flag in Admin → Growth before retrying.
+ */
+router.post(
+  "/prospect",
+  authenticateUser,
+  jobsRateLimit,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const [settings] = await drizzle
+        .select({
+          prospectingEnabled: schema.settings.prospectingEnabled,
+        })
+        .from(schema.settings)
+        .where(eq(schema.settings.userId, req.user.id))
+        .limit(1);
+
+      const result = await enqueue(drizzle, {
+        userId: req.user.id,
+        type: "autonomous_prospecting",
+        payload: { userId: req.user.id },
+      });
+      if (!result.ok) {
+        return res.status(500).json({ error: result.error || "Failed to enqueue job" });
+      }
+
+      res.json({
+        ok: true,
+        jobId: result.jobId ?? null,
+        prospectingEnabled: !!settings?.prospectingEnabled,
+      });
+    } catch (err) {
+      log.error("POST /api/jobs/prospect failed", { error: getErrorMessage(err) });
+      res.status(500).json({ error: "Failed to enqueue prospecting job" });
+    }
+  },
+);
 
 const cronOrAdminAuth = (req: SweepRequest, res: Response, next: NextFunction) => {
   const expectedCronSecret = process.env.CRON_SECRET || "";
@@ -74,82 +128,92 @@ const cronOrAdminAuth = (req: SweepRequest, res: Response, next: NextFunction) =
   });
 };
 
-router.post("/sweep", cronOrAdminAuth, jobsSweepRateLimit, async (req: SweepRequest, res: Response) => {
-  try {
-    const {
-      claimJob: claim,
-      completeJob: complete,
-      failJob: fail,
-      enqueue,
-    } = await import("../lib/job-queue");
+router.post(
+  "/sweep",
+  cronOrAdminAuth,
+  jobsSweepRateLimit,
+  async (req: SweepRequest, res: Response) => {
+    try {
+      const {
+        claimJob: claim,
+        completeJob: complete,
+        failJob: fail,
+        enqueue,
+      } = await import("../lib/job-queue");
 
-    const now = new Date();
-    if (
-      now.getUTCHours() === 2 &&
-      now.getUTCMinutes() === 0 &&
-      (req._sweepMode === "cron" || !req._sweepMode)
-    ) {
-      const tenants = await drizzle
-        .select({ userId: schema.settings.userId, retentionDays: schema.settings.retentionDays })
-        .from(schema.settings);
-      
-      if (tenants) {
-        for (const t of tenants) {
-          await enqueue(drizzle, {
-            userId: t.userId,
-            type: "purge_old_data",
-            payload: { user_id: t.userId, retention_days: t.retentionDays },
-          });
+      const now = new Date();
+      if (
+        now.getUTCHours() === 2 &&
+        now.getUTCMinutes() === 0 &&
+        (req._sweepMode === "cron" || !req._sweepMode)
+      ) {
+        const tenants = await drizzle
+          .select({ userId: schema.settings.userId, retentionDays: schema.settings.retentionDays })
+          .from(schema.settings);
+
+        if (tenants) {
+          for (const t of tenants) {
+            await enqueue(drizzle, {
+              userId: t.userId,
+              type: "purge_old_data",
+              payload: { user_id: t.userId, retention_days: t.retentionDays },
+            });
+          }
         }
       }
-    }
 
-    if (req._sweepMode === "cron" || !req._sweepMode) {
-      const dueDeletions = await drizzle
-        .select({ id: schema.deletionQueue.id, userId: schema.deletionQueue.userId })
-        .from(schema.deletionQueue)
-        .where(and(eq(schema.deletionQueue.status, "pending"), lte(schema.deletionQueue.scheduledPurgeAt, new Date())))
-        .limit(50);
-      
-      if (dueDeletions) {
-        for (const row of dueDeletions) {
-          await enqueue(drizzle, {
-            userId: row.userId,
-            type: "purge_deleted_account",
-            payload: { user_id: row.userId, queue_id: String(row.id) },
-            maxAttempts: 3,
-          });
+      if (req._sweepMode === "cron" || !req._sweepMode) {
+        const dueDeletions = await drizzle
+          .select({ id: schema.deletionQueue.id, userId: schema.deletionQueue.userId })
+          .from(schema.deletionQueue)
+          .where(
+            and(
+              eq(schema.deletionQueue.status, "pending"),
+              lte(schema.deletionQueue.scheduledPurgeAt, new Date()),
+            ),
+          )
+          .limit(50);
+
+        if (dueDeletions) {
+          for (const row of dueDeletions) {
+            await enqueue(drizzle, {
+              userId: row.userId,
+              type: "purge_deleted_account",
+              payload: { user_id: row.userId, queue_id: String(row.id) },
+              maxAttempts: 3,
+            });
+          }
         }
       }
-    }
-    let processed = 0;
-    for (let i = 0; i < 10; i++) {
-      const job = await claim(drizzle);
-      if (!job) break;
-      try {
-        await handleJob(job);
-        await complete(drizzle, job.id);
-        processed++;
-      } catch (sweepErr: any) {
-        await fail(drizzle, job, getErrorMessage(sweepErr));
+      let processed = 0;
+      for (let i = 0; i < 10; i++) {
+        const job = await claim(drizzle);
+        if (!job) break;
+        try {
+          await handleJob(job);
+          await complete(drizzle, job.id);
+          processed++;
+        } catch (sweepErr: any) {
+          await fail(drizzle, job, getErrorMessage(sweepErr));
+        }
       }
+      const mode = req._sweepMode || "cron";
+      res.json({ processed, mode });
+      if (processed > 0) {
+        void auditLogger
+          .logJobSweep("completed", {
+            userId: req.user?.id,
+            mode: mode as "cron" | "manual",
+            processed,
+            ip: req.ip,
+          })
+          .catch(() => {});
+      }
+    } catch (err) {
+      log.error("POST /api/jobs/sweep failed", { error: getErrorMessage(err) });
+      res.status(500).json({ error: "Sweep failed" });
     }
-    const mode = req._sweepMode || "cron";
-    res.json({ processed, mode });
-    if (processed > 0) {
-      void auditLogger
-        .logJobSweep("completed", {
-          userId: req.user?.id,
-          mode: mode as "cron" | "manual",
-          processed,
-          ip: req.ip,
-        })
-        .catch(() => {});
-    }
-  } catch (err) {
-    log.error("POST /api/jobs/sweep failed", { error: getErrorMessage(err) });
-    res.status(500).json({ error: "Sweep failed" });
-  }
-});
+  },
+);
 
 export default router;

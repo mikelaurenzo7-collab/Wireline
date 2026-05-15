@@ -126,7 +126,7 @@ app.use((req: express.Request, res: express.Response, next: express.NextFunction
 });
 
 // Security headers
-const CSP_CONNECT_SRCS = buildConnectSrcs();
+const CSP_CONNECT_SRCS = buildConnectSrcs(!IS_PROD);
 
 app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
   Sentry.setTag("http.method", req.method);
