@@ -93,6 +93,7 @@ export default function AdminSettings() {
 
   const [carrierNumbers, setCarrierNumbers] = useState<any[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isProvisioningVapi, setIsProvisioningVapi] = useState(false);
 
   const providerDocsUrl =
     {
@@ -314,6 +315,24 @@ export default function AdminSettings() {
     }
   };
 
+  const provisionVapiPhone = async (agentId: string | null) => {
+    setIsProvisioningVapi(true);
+    try {
+      const res = await authFetch("/api/phone-numbers/provision-vapi", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agent_id: agentId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Provisioning failed");
+      toastSuccess("Number provisioned", data.phone_number || "New line attached.");
+      await fetchData();
+    } catch (e: any) {
+      toastError("Provisioning failed", e.message || "Could not provision Vapi number.");
+    }
+    setIsProvisioningVapi(false);
+  };
+
   const updateNumberAgent = async (id: string, agent_id: string) => {
     try {
       await authFetch(`/api/phone-numbers/${id}`, {
@@ -473,12 +492,14 @@ export default function AdminSettings() {
                     carrierNumbers={carrierNumbers}
                     isSaving={isSaving}
                     isSyncing={isSyncing}
+                    isProvisioningVapi={isProvisioningVapi}
                     onUpdateSettings={setSettings}
                     onSaveSettings={saveSettings}
                     onSyncNumbers={syncCarrierNumbers}
                     onAddNumber={addPhoneNumber}
                     onDeleteNumber={deletePhoneNumber}
                     onUpdateNumberAgent={updateNumberAgent}
+                    onProvisionVapi={provisionVapiPhone}
                   />
                 </motion.div>
               )}
