@@ -3,7 +3,11 @@ import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 
-const SECRET = process.env.SUPABASE_JWT_SECRET || "development-secret-key-at-least-32-chars-long";
+// Use INTERNAL_JWT_SECRET (preferred) or fall back to SUPABASE_JWT_SECRET for backward compatibility
+const SECRET =
+  process.env.INTERNAL_JWT_SECRET ||
+  process.env.SUPABASE_JWT_SECRET ||
+  "development-secret-key-at-least-32-chars-long";
 
 /**
  * Hash a password using scrypt.
@@ -39,12 +43,12 @@ export function generateToken(user: { id: string; email: string }): string {
     exp: now + 60 * 60 * 24 * 7, // 7 days
     aud: "authenticated",
     role: "authenticated",
-    iss: "wireline-internal"
+    iss: "wireline-internal",
   };
 
   const base64Header = Buffer.from(JSON.stringify(header)).toString("base64url");
   const base64Payload = Buffer.from(JSON.stringify(payload)).toString("base64url");
-  
+
   const signature = createHmac("sha256", SECRET)
     .update(`${base64Header}.${base64Payload}`)
     .digest("base64url");
@@ -77,22 +81,22 @@ export const authService = {
       user: {
         id: user.id,
         email: user.email,
-        full_name: user.fullName
+        full_name: user.fullName,
       },
-      token: generateToken({ id: user.id, email: user.email })
+      token: generateToken({ id: user.id, email: user.email }),
     };
   },
 
   async signUp(email: string, password: string, fullName?: string) {
     const passwordHash = hashPassword(password);
-    
+
     try {
       const [user] = await drizzle
         .insert(schema.users)
         .values({
           email,
           passwordHash,
-          fullName
+          fullName,
         })
         .returning();
 
@@ -100,13 +104,13 @@ export const authService = {
         user: {
           id: user.id,
           email: user.email,
-          full_name: user.fullName
+          full_name: user.fullName,
         },
-        token: generateToken({ id: user.id, email: user.email })
+        token: generateToken({ id: user.id, email: user.email }),
       };
     } catch (err: any) {
       log.error("Auth: Sign up failed", { email, error: err.message });
       throw err;
     }
-  }
+  },
 };
