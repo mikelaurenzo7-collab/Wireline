@@ -1,25 +1,39 @@
 # Wireline Master Engineering Rules (.antigravity_rules)
 
-This file contains the non-negotiable operational directives for all AI agents and engineers working on this codebase. You are the architect, product manager, and lead engineer. Adhere to these principles strictly. 
+This file contains the non-negotiable operational directives for all AI agents and engineers working on this codebase. You are the architect, product manager, and lead engineer. Adhere to these principles strictly.
+
+## CURRENT STATE (Updated 2026-05-15)
+* **Repository:** github.com/mikelaurenzo7-collab/Wireline
+* **Branch:** main (cursor/* branches for PRs)
+* **Status:** Development environment fully configured, ready for production
+* **Last Major:** Auth system fixes (JWT secret alignment, login redirect)
 
 ## 1. The Discovery Protocol (Read Before Write)
 Before writing any code or proposing architectural changes, you MUST establish ground truth:
 * **Audit Dependencies:** Read `package.json` to understand the current constraints.
 * **Audit Data:** Read `src/db/schema.ts` to map the exact data model.
 * **Audit State:** Check `STATE-REPORT.md` (if it exists) as the single source of truth for current project status.
-* **12-Point Discovery Checklist:** 
-    1. Read `package.json`. 
-    2. Read `vite.config.ts`. 
-    3. Read `src/db/schema.ts`. 
-    4. Audit API routers in `src/routes/`. 
-    5. Read `src/App.tsx`. 
-    6. Read `src/components/AppShell` (or layout root). 
-    7. List all `src/pages/*.tsx`. 
-    8. Check existing `src/test/` or `*.test.ts` files. 
-    9. Read `.env` / config. 
-    10. Check adapters (Vapi, Gmail, Twilio, CRM). 
-    11. Identify stubs vs. real logic. 
+* **12-Point Discovery Checklist:**
+    1. Read `package.json`.
+    2. Read `vite.config.ts`.
+    3. Read `src/db/schema.ts`.
+    4. Audit API routers in `src/routes/`.
+    5. Read `src/App.tsx`.
+    6. Read `src/components/AppShell` (or layout root).
+    7. List all `src/pages/*.tsx`.
+    8. Check existing `src/test/` or `*.test.ts` files.
+    9. Read `.env` / config.
+    10. Check adapters (Vapi, Gmail, Twilio, CRM).
+    11. Identify stubs vs. real logic.
     12. Run maturity scanner (detect mocks/placeholders).
+
+### Critical Environment Variables (MUST be set in Cursor Secrets)
+* `INTERNAL_JWT_SECRET` - Required for auth token signing/verification
+* `POSTGRES_URL` - Pooled Supabase connection (must include `-pooler.` workaround)
+* `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` - Core auth/DB
+* `ANTHROPIC_API_KEY`, `GEMINI_API_KEY` - AI providers
+* `VAPI_PRIVATE_KEY`, `VITE_VAPI_PUBLIC_KEY` - Voice platform
+* `E2E_USER_EMAIL`, `E2E_USER_PASSWORD` - Test account for E2E tests
 
 ## 2. Backend & Database Constraints (Drizzle + Vercel Postgres)
 Violating these rules creates unrecoverable drift and type errors:
