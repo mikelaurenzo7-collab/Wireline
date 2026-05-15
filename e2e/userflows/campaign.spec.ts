@@ -29,6 +29,16 @@ test.describe("Campaign Management Flows", () => {
     await page.goto("/login");
     await page.waitForLoadState("domcontentloaded");
 
+    // Dismiss cookie consent popup if present (blocks UI)
+    const cookieDismiss = page
+      .locator('button:has-text("Accept"), button:has-text("OK"), .cookie-banner button')
+      .first();
+    try {
+      await cookieDismiss.click({ timeout: 3000 });
+    } catch {
+      // Popup not present or already dismissed
+    }
+
     // Wait for auth form with flexible selectors
     await expect(page.locator("input").first()).toBeVisible({ timeout: 10000 });
 
@@ -41,10 +51,10 @@ test.describe("Campaign Management Flows", () => {
       .first();
     await passwordInput.fill(password || "");
 
-    // Click sign in
-    await page.locator('button:has-text("Sign"), button[type="submit"]').first().click();
+    // Click sign in button (use submit type for reliability)
+    await page.locator('button[type="submit"]').click();
 
-    // Wait for dashboard
+    // Wait for dashboard or redirect
     await expect(page).toHaveURL(/dashboard|home|admin/, { timeout: 15000 });
   };
 
