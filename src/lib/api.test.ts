@@ -103,7 +103,7 @@ describe("authFetch", () => {
   });
 
   it("omits the auth header when no local token is available", async () => {
-    localStorageMock.removeItem("wireline_token");
+    localStorageMock.removeItem("wireline_session");
     await authFetch("/api/test");
     const callArgs = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(callArgs[1].headers?.Authorization).toBeUndefined();
