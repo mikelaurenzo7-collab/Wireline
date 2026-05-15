@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getTableColumns } from "drizzle-orm";
+import { getTableColumns } from "drizzle-orm/utils";
 import * as schema from "./schema";
 
 /**
@@ -23,6 +23,16 @@ const REQUIRED_COLUMNS: Record<string, readonly string[]> = {
     // /api/claude/quick-replies to look up the owning agent from a thread.
     "agentId",
   ],
+  // Tenant-default autonomy mode used by action-engine.executeAction.
+  settings: ["autonomyLevel"],
+  // OAuth scope tracking used by computeIntegrationHealth.
+  emailAccounts: ["oauthGrantedScopes"],
+  // OAuth scope tracking + onConflict upsert key in /api/oauth/*/callback.
+  calendarAccounts: ["oauthGrantedScopes", "emailAddress"],
+  // Used by GET /api/contacts/:number to find the email for a phone number.
+  leadDossiers: ["customerEmail"],
+  // Surfaced by GET /api/callbacks and written by AI Action Engine.
+  outboundLeads: ["callbackScheduledAt", "lastContactSummary"],
 };
 
 describe("schema column reachability", () => {

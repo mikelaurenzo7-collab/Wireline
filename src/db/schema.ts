@@ -61,6 +61,13 @@ export const settings = pgTable("wireline_settings", {
   brandLogoUrl: text("brand_logo_url"),
   primaryColor: text("primary_color"),
   aiTier: text("ai_tier").default("starter"),
+  /**
+   * Tenant-wide default autonomy. Per-agent autonomy in `agents.autonomyLevel`
+   * overrides this when set to anything other than "inherit". Values:
+   * "auto" — execute actions immediately; "draft" — queue for human review;
+   * "supervised" — auto-execute high-confidence, draft the rest.
+   */
+  autonomyLevel: text("autonomy_level").default("draft"),
 });
 
 // 1.1 USER PREFERENCES
@@ -255,19 +262,41 @@ export const emailAccounts = pgTable("wireline_email_accounts", {
   accessToken: text("access_token"),
   refreshToken: text("refresh_token"),
   expiresAt: bigint("expires_at", { mode: "bigint" }),
+  /**
+   * Space-delimited scope string returned by the OAuth provider on the most
+   * recent token grant. Consumed by `computeIntegrationHealth` to detect
+   * accounts that need a re-consent for calendar.events / Calendars.ReadWrite.
+   */
+  oauthGrantedScopes: text("oauth_granted_scopes"),
   agentId: text("agent_id").references(() => agents.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
-export const calendarAccounts = pgTable("wireline_calendar_accounts", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id"),
-  provider: text("provider").default("google"),
-  accessToken: text("access_token"),
-  refreshToken: text("refresh_token"),
-  expiresAt: bigint("expires_at", { mode: "bigint" }),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-});
+export const calendarAccounts = pgTable(
+  "wireline_calendar_accounts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id"),
+    /**
+     * Mirrors `wireline_email_accounts.email_address` so the same OAuth
+     * grant lands in both tables. Used as the conflict target for the
+     * upsert in `/api/oauth/{google,microsoft}/callback`.
+     */
+    emailAddress: text("email_address"),
+    provider: text("provider").default("google"),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    expiresAt: bigint("expires_at", { mode: "bigint" }),
+    oauthGrantedScopes: text("oauth_granted_scopes"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    userEmailUniq: unique("wireline_calendar_accounts_user_id_email_address_key").on(
+      t.userId,
+      t.emailAddress,
+    ),
+  }),
+);
 
 export const calendarEvents = pgTable(
   "wireline_calendar_events",
@@ -388,8 +417,10 @@ export const outboundCampaigns = pgTable(
 
 /**
  * Outbound Leads - Lead state machine:
- *   Pending -> Queued -> Dialing -> Connected -> Completed/Failed
+ *   Pending -> Queued -> Dialing -> Connected -> (Completed | Voicemail-Left
+ *     | Callback-Scheduled | Failed)
  *   Terminal states: Completed, Failed, Blocked-DNC, Max-Attempts
+ *   Sticky retry states (preserved by tools): Voicemail-Left, Callback-Scheduled
  */
 export const outboundLeads = pgTable(
   "wireline_outbound_leads",
@@ -405,10 +436,22 @@ export const outboundLeads = pgTable(
     customerName: text("customer_name"),
     email: text("email"),
     context: text("context"),
-    // Status values: Pending, Queued, Dialing, Connected, Completed, Failed, Blocked-DNC, Max-Attempts
+    // Status values: Pending, Queued, Dialing, Connected, Completed,
+    // Voicemail-Left, Callback-Scheduled, Failed, Blocked-DNC, Max-Attempts
     status: text("status").default("Pending"),
     callId: text("call_id"),
     lastCalledAt: timestamp("last_called_at", { withTimezone: true }),
+    /**
+     * When the agent or operator scheduled the next outreach attempt. Drives
+     * `/api/callbacks` and the "Upcoming Callbacks" pane in OutboundDialer.
+     */
+    callbackScheduledAt: timestamp("callback_scheduled_at", { withTimezone: true }),
+    /**
+     * Short free-text summary of the most recent contact attempt. Surfaced
+     * in the callbacks UI and written by the AI Action Engine `update_crm`
+     * handler.
+     */
+    lastContactSummary: text("last_contact_summary"),
     attempts: integer("attempts").default(0),
     source: text("source").default("manual"),
     metadata: jsonb("metadata"),
@@ -422,6 +465,7 @@ export const outboundLeads = pgTable(
     statusIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_status ON wireline_outbound_leads USING btree (status)`,
     userCampaignIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_user_campaign ON wireline_outbound_leads USING btree (user_id, campaign_id)`,
     userStatusIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_user_status ON wireline_outbound_leads USING btree (user_id, status)`,
+    callbackIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_callback_scheduled_at ON wireline_outbound_leads USING btree (user_id, callback_scheduled_at) WHERE callback_scheduled_at IS NOT NULL`,
     createdAtIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_created_at ON wireline_outbound_leads USING btree (created_at)`,
   }),
 );
@@ -675,6 +719,11 @@ export const leadDossiers = pgTable(
       onDelete: "cascade",
     }),
     customerNumber: text("customer_number"),
+    /**
+     * Best-known email for the customer. Used by `/api/contacts/:number` to
+     * stitch the outbound history to the omnichannel email inbox.
+     */
+    customerEmail: text("customer_email"),
     fullName: text("full_name"),
     jobTitle: text("job_title"),
     company: text("company"),
@@ -686,6 +735,7 @@ export const leadDossiers = pgTable(
   },
   (t) => ({
     unq: unique().on(t.userId, t.customerNumber),
+    customerEmailIdx: sql`CREATE INDEX IF NOT EXISTS idx_lead_dossiers_user_email ON wireline_lead_dossiers USING btree (user_id, customer_email) WHERE customer_email IS NOT NULL`,
   }),
 );
 
