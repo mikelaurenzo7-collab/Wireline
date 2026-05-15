@@ -52,8 +52,10 @@ router.get("/api/campaigns", authenticateUser, async (req: AuthenticatedRequest,
         if (!row.campaignId) continue;
         const s = leadStats[row.campaignId] ?? { total: 0, dialed: 0, connected: 0 };
         s.total++;
+        // Count as dialed if not in initial states
         if (row.status !== "Pending" && row.status !== "Queued") s.dialed++;
-        if (row.status === "Completed") s.connected++;
+        // Count as connected if status is Connected or Completed (call was answered)
+        if (row.status === "Connected" || row.status === "Completed") s.connected++;
         leadStats[row.campaignId] = s;
       }
     }

@@ -333,6 +333,11 @@ export const outboundCampaigns = pgTable("wireline_outbound_campaigns", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
+/**
+ * Outbound Leads - Lead state machine:
+ *   Pending -> Queued -> Dialing -> Connected -> Completed/Failed
+ *   Terminal states: Completed, Failed, Blocked-DNC, Max-Attempts
+ */
 export const outboundLeads = pgTable("wireline_outbound_leads", {
   id: bigint("id", { mode: "bigint" }).primaryKey(),
   userId: uuid("user_id"),
@@ -343,6 +348,7 @@ export const outboundLeads = pgTable("wireline_outbound_leads", {
   customerName: text("customer_name"),
   email: text("email"),
   context: text("context"),
+  // Status values: Pending, Queued, Dialing, Connected, Completed, Failed, Blocked-DNC, Max-Attempts
   status: text("status").default("Pending"),
   callId: text("call_id"),
   lastCalledAt: timestamp("last_called_at", { withTimezone: true }),
