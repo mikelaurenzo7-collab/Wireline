@@ -1,23 +1,20 @@
-import { Router, Response } from 'express';
-import type { AuthenticatedRequest } from '../types/auth';
-import { drizzle, log, auditLogger } from '../lib/server-context';
-import { settings, userPreferences, agents, callLogs, deletionQueue } from '../db/schema';
-import * as schema from '../db/schema';
-import { eq, sql, and, desc } from 'drizzle-orm';
-import { authenticateUser } from '../middleware/auth';
-import { getErrorMessage, mapObjectToCamel } from '../lib/server-utils';
-import { enqueue } from '../lib/job-queue';
-import { jobsRateLimit } from '../middleware/api-rate-limits';
-import {
-  ACCOUNT_DELETION_GRACE_DAYS,
-  computeScheduledPurgeAt,
-} from '../lib/account-deletion';
-import { validate } from '../middleware/validate';
-import { SettingsSchema } from '../../contracts/api-types';
+import { Router, Response } from "express";
+import type { AuthenticatedRequest } from "../types/auth";
+import { drizzle, log, auditLogger } from "../lib/server-context";
+import { settings, userPreferences, agents, callLogs, deletionQueue } from "../db/schema";
+import * as schema from "../db/schema";
+import { eq, sql, and, desc } from "drizzle-orm";
+import { authenticateUser } from "../middleware/auth";
+import { getErrorMessage, mapObjectToCamel } from "../lib/server-utils";
+import { enqueue } from "../lib/job-queue";
+import { jobsRateLimit } from "../middleware/api-rate-limits";
+import { ACCOUNT_DELETION_GRACE_DAYS, computeScheduledPurgeAt } from "../lib/account-deletion";
+import { validate } from "../middleware/validate";
+import { SettingsSchema } from "../../contracts/api-types";
 
 const router = Router();
 
-router.get('/api/settings', authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
+router.get("/api/settings", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const [data] = await drizzle
       .select()
@@ -31,114 +28,162 @@ router.get('/api/settings', authenticateUser, async (req: AuthenticatedRequest, 
   }
 });
 
-router.post('/api/settings', authenticateUser, validate(SettingsSchema.partial()), async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const update = mapObjectToCamel(req.body);
-    delete update.id;
-    delete update.userId;
-    delete update.createdAt;
+router.post(
+  "/api/settings",
+  authenticateUser,
+  validate(SettingsSchema.partial()),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const update = mapObjectToCamel(req.body);
+      delete update.id;
+      delete update.userId;
+      delete update.createdAt;
 
-    const [data] = await drizzle
-      .update(settings)
-      .set(update)
-      .where(eq(settings.userId, req.user.id))
-      .returning();
+      const [data] = await drizzle
+        .update(settings)
+        .set(update)
+        .where(eq(settings.userId, req.user.id))
+        .returning();
 
-    res.json({ settings: data });
-  } catch (error) {
-    log.error('Failed to update settings', { error: getErrorMessage(error) });
-    res.status(500).json({ error: 'Failed to update settings' });
-  }
-});
-
-router.get('/api/user-preferences', authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const [data] = await drizzle
-      .select()
-      .from(userPreferences)
-      .where(eq(userPreferences.userId, req.user.id))
-      .limit(1);
-
-    res.json({
-      tour_completed: data?.tour_completed ?? false,
-      onboarding_completed: data?.onboarding_completed ?? false,
-      help_enabled: data?.help_enabled ?? true,
-      keyboard_shortcuts_enabled: data?.keyboard_shortcuts_enabled ?? true,
-      preferences: data?.preferences ?? {},
-    });
-  } catch (error) {
-    log.error('Failed to fetch user preferences', { error });
-    res.status(500).json({ error: 'Failed to fetch preferences' });
-  }
-});
-
-router.post('/api/user-preferences', authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const ALLOWED_FIELDS = [
-      'persona',
-      'tour_completed',
-      'onboarding_completed',
-      'help_enabled',
-      'keyboard_shortcuts_enabled',
-      'preferences',
-    ] as const;
-    const update: Record<string, unknown> = {};
-    for (const f of ALLOWED_FIELDS) {
-      if (req.body[f] !== undefined) update[f] = req.body[f];
+      res.json({ settings: data });
+    } catch (error) {
+      log.error("Failed to update settings", { error: getErrorMessage(error) });
+      res.status(500).json({ error: "Failed to update settings" });
     }
+  },
+);
 
-    const [data] = await drizzle
-      .insert(userPreferences)
-      .values({
-        ...update,
-        userId: req.user.id,
-        updatedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: userPreferences.userId,
-        set: update,
-      })
-      .returning();
-
-    res.json({ preferences: data });
-  } catch (error) {
-    log.error('Failed to update preferences', { error: getErrorMessage(error) });
-    res.status(500).json({ error: 'Failed to update preferences' });
-  }
-});
-
-router.get('/api/onboarding/progress', authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const userId = req.user.id;
-    const [
-      [agentRow],
-      [callLogRow],
-      [settingsRow],
-      [prefsRow]
-    ] = await Promise.all([
-      drizzle.select({ count: sql<number>`count(*)` }).from(agents).where(eq(agents.userId, userId)),
-      drizzle.select({ count: sql<number>`count(*)` }).from(callLogs).where(eq(callLogs.userId, userId)),
-      drizzle.select({ subscriptionStatus: settings.subscriptionStatus, vapiPrivateKey: settings.vapiPrivateKey })
-        .from(settings)
-        .where(eq(settings.userId, userId))
-        .limit(1),
-      drizzle.select({ onboardingCompleted: userPreferences.onboardingCompleted })
+router.get(
+  "/api/user-preferences",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const [data] = await drizzle
+        .select()
         .from(userPreferences)
-        .where(eq(userPreferences.userId, userId))
-        .limit(1),
-    ]);
+        .where(eq(userPreferences.userId, req.user.id))
+        .limit(1);
 
-    res.json({
-      has_agents: Number(agentRow?.count || 0) > 0,
-      has_calls: Number(callLogRow?.count || 0) > 0,
-      has_billing: settingsRow?.subscriptionStatus === 'active',
-      has_voice: !!settingsRow?.vapiPrivateKey,
-      completed: !!prefsRow?.onboardingCompleted,
-    });
-  } catch {
-    res.status(500).json({ error: 'Failed to fetch progress' });
-  }
-});
+      // Drizzle returns the JS property names declared on the table (camelCase).
+      // The HTTP contract is snake_case so the React client (which uses
+      // snake_case throughout) can read these directly.
+      res.json({
+        tour_completed: data?.tourCompleted ?? false,
+        onboarding_completed: data?.onboardingCompleted ?? false,
+        help_enabled: data?.helpEnabled ?? true,
+        keyboard_shortcuts_enabled: data?.keyboardShortcutsEnabled ?? true,
+        persona: data?.persona ?? null,
+        preferences: data?.preferences ?? {},
+      });
+    } catch (error) {
+      log.error("Failed to fetch user preferences", { error });
+      res.status(500).json({ error: "Failed to fetch preferences" });
+    }
+  },
+);
+
+router.post(
+  "/api/user-preferences",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      // Map snake_case HTTP body → Drizzle camelCase column names. The
+      // previous version passed snake_case keys straight through, so values
+      // for tour_completed / onboarding_completed / help_enabled /
+      // keyboard_shortcuts_enabled were silently dropped by Drizzle (which
+      // matches keys to JS property names, not column names).
+      const body = req.body ?? {};
+      const update: Record<string, unknown> = {};
+      if (typeof body.persona === "string" || body.persona === null) {
+        update.persona = body.persona;
+      }
+      if (typeof body.tour_completed === "boolean") update.tourCompleted = body.tour_completed;
+      if (typeof body.onboarding_completed === "boolean")
+        update.onboardingCompleted = body.onboarding_completed;
+      if (typeof body.help_enabled === "boolean") update.helpEnabled = body.help_enabled;
+      if (typeof body.keyboard_shortcuts_enabled === "boolean")
+        update.keyboardShortcutsEnabled = body.keyboard_shortcuts_enabled;
+      if (body.preferences && typeof body.preferences === "object") {
+        update.preferences = body.preferences;
+      }
+
+      if (Object.keys(update).length === 0) {
+        return res.status(400).json({ error: "No valid preference fields supplied." });
+      }
+
+      const [data] = await drizzle
+        .insert(userPreferences)
+        .values({
+          ...update,
+          userId: req.user.id,
+          updatedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: userPreferences.userId,
+          set: { ...update, updatedAt: new Date() },
+        })
+        .returning();
+
+      res.json({
+        preferences: {
+          tour_completed: data?.tourCompleted ?? false,
+          onboarding_completed: data?.onboardingCompleted ?? false,
+          help_enabled: data?.helpEnabled ?? true,
+          keyboard_shortcuts_enabled: data?.keyboardShortcutsEnabled ?? true,
+          persona: data?.persona ?? null,
+          preferences: data?.preferences ?? {},
+        },
+      });
+    } catch (error) {
+      log.error("Failed to update preferences", { error: getErrorMessage(error) });
+      res.status(500).json({ error: "Failed to update preferences" });
+    }
+  },
+);
+
+router.get(
+  "/api/onboarding/progress",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user.id;
+      const [[agentRow], [callLogRow], [settingsRow], [prefsRow]] = await Promise.all([
+        drizzle
+          .select({ count: sql<number>`count(*)` })
+          .from(agents)
+          .where(eq(agents.userId, userId)),
+        drizzle
+          .select({ count: sql<number>`count(*)` })
+          .from(callLogs)
+          .where(eq(callLogs.userId, userId)),
+        drizzle
+          .select({
+            subscriptionStatus: settings.subscriptionStatus,
+            vapiPrivateKey: settings.vapiPrivateKey,
+          })
+          .from(settings)
+          .where(eq(settings.userId, userId))
+          .limit(1),
+        drizzle
+          .select({ onboardingCompleted: userPreferences.onboardingCompleted })
+          .from(userPreferences)
+          .where(eq(userPreferences.userId, userId))
+          .limit(1),
+      ]);
+
+      res.json({
+        has_agents: Number(agentRow?.count || 0) > 0,
+        has_calls: Number(callLogRow?.count || 0) > 0,
+        has_billing: settingsRow?.subscriptionStatus === "active",
+        has_voice: !!settingsRow?.vapiPrivateKey,
+        completed: !!prefsRow?.onboardingCompleted,
+      });
+    } catch (error) {
+      log.error("Failed to fetch onboarding progress", { error: getErrorMessage(error) });
+      res.status(500).json({ error: "Failed to fetch progress" });
+    }
+  },
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────────────────────
@@ -146,123 +191,129 @@ router.get('/api/onboarding/progress', authenticateUser, async (req: Authenticat
 // Exports all user-owned data from every wireline_* table as a JSON file.
 // Returns a download URL or the JSON directly depending on implementation.
 // ─────────────────────────────────────────────────────────────────────────────
-router.post('/api/account/export', authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
-  const uid = req.user.id;
-  try {
-    log.info('account export requested', { uid });
+router.post(
+  "/api/account/export",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const uid = req.user.id;
+    try {
+      log.info("account export requested", { uid });
 
-    // List of all tables to export (same order as delete for consistency)
-    const tables = [
-      'wireline_settings',
-      'wireline_agents',
-      'wireline_directives',
-      'wireline_knowledge',
-      'wireline_personality',
-      'wireline_agent_lessons',
-      'wireline_appointments',
-      'wireline_call_logs',
-      'wireline_email_accounts',
-      'wireline_email_threads',
-      'wireline_email_messages',
-      'wireline_fleet_tasks',
-      'wireline_phone_numbers',
-      'wireline_outbound_leads',
-      'wireline_outbound_campaigns',
-      'wireline_signal_presence',
-      'wireline_audit_log',
-      'wireline_webhooks',
-      'wireline_webhook_deliveries',
-      'wireline_spend_budgets',
-      'wireline_spend_alerts',
-      'wireline_intake_keys',
-      'wireline_subscriptions',
-      'wireline_stripe_events',
-      'wireline_dnc_list',
-      'wireline_user_preferences',
-      'wireline_onboarding_progress',
-      'wireline_consent_log',
-      'wireline_quota_limits',
-      'wireline_quota_usage',
-      'wireline_calendar_accounts',
-      'wireline_calendar_events',
-      'wireline_crm_connections',
-      'wireline_team_members',
-      'wireline_change_log',
-      'wireline_incidents',
-      'wireline_jobs',
-    ];
+      // List of all tables to export (same order as delete for consistency)
+      const tables = [
+        "wireline_settings",
+        "wireline_agents",
+        "wireline_directives",
+        "wireline_knowledge",
+        "wireline_personality",
+        "wireline_agent_lessons",
+        "wireline_appointments",
+        "wireline_call_logs",
+        "wireline_email_accounts",
+        "wireline_email_threads",
+        "wireline_email_messages",
+        "wireline_fleet_tasks",
+        "wireline_phone_numbers",
+        "wireline_outbound_leads",
+        "wireline_outbound_campaigns",
+        "wireline_signal_presence",
+        "wireline_audit_log",
+        "wireline_webhooks",
+        "wireline_webhook_deliveries",
+        "wireline_spend_budgets",
+        "wireline_spend_alerts",
+        "wireline_intake_keys",
+        "wireline_subscriptions",
+        "wireline_stripe_events",
+        "wireline_dnc_list",
+        "wireline_user_preferences",
+        "wireline_onboarding_progress",
+        "wireline_consent_log",
+        "wireline_quota_limits",
+        "wireline_quota_usage",
+        "wireline_calendar_accounts",
+        "wireline_calendar_events",
+        "wireline_crm_connections",
+        "wireline_team_members",
+        "wireline_change_log",
+        "wireline_incidents",
+        "wireline_jobs",
+      ];
 
-    const exportData: Record<string, any[]> = {};
-    let totalRows = 0;
+      const exportData: Record<string, any[]> = {};
+      let totalRows = 0;
 
-    const tablesToExport = [
-      { key: 'settings', table: schema.settings },
-      { key: 'agents', table: schema.agents },
-      { key: 'directives', table: schema.directives },
-      { key: 'knowledge', table: schema.knowledge },
-      { key: 'personality', table: schema.personality },
-      { key: 'lessons', table: schema.agentLessons },
-      { key: 'appointments', table: schema.appointments },
-      { key: 'call_logs', table: schema.callLogs },
-      { key: 'email_accounts', table: schema.emailAccounts },
-      { key: 'calendar_accounts', table: schema.calendarAccounts },
-      { key: 'consent_log', table: schema.consentLog },
-      { key: 'email_threads', table: schema.emailThreads },
-      { key: 'email_messages', table: schema.emailMessages },
-      { key: 'fleet_tasks', table: schema.fleetTasks },
-      { key: 'phone_numbers', table: schema.phoneNumbers },
-      { key: 'outbound_leads', table: schema.outboundLeads },
-      { key: 'outbound_campaigns', table: schema.outboundCampaigns },
-      { key: 'signal_presence', table: schema.signalPresence },
-      { key: 'audit_log', table: schema.auditLog },
-      { key: 'webhooks', table: schema.webhooks },
-      { key: 'webhook_deliveries', table: schema.webhookDeliveries },
-      { key: 'spend_budgets', table: schema.spendBudgets },
-      { key: 'dnc_list', table: schema.dncList },
-      { key: 'user_preferences', table: schema.userPreferences },
-      { key: 'onboarding_progress', table: schema.onboardingProgress },
-      { key: 'quota_limits', table: schema.quotaLimits },
-      { key: 'subscriptions', table: schema.subscriptions },
-      { key: 'team_members', table: schema.teamMembers, useTenant: true },
-    ];
+      const tablesToExport = [
+        { key: "settings", table: schema.settings },
+        { key: "agents", table: schema.agents },
+        { key: "directives", table: schema.directives },
+        { key: "knowledge", table: schema.knowledge },
+        { key: "personality", table: schema.personality },
+        { key: "lessons", table: schema.agentLessons },
+        { key: "appointments", table: schema.appointments },
+        { key: "call_logs", table: schema.callLogs },
+        { key: "email_accounts", table: schema.emailAccounts },
+        { key: "calendar_accounts", table: schema.calendarAccounts },
+        { key: "consent_log", table: schema.consentLog },
+        { key: "email_threads", table: schema.emailThreads },
+        { key: "email_messages", table: schema.emailMessages },
+        { key: "fleet_tasks", table: schema.fleetTasks },
+        { key: "phone_numbers", table: schema.phoneNumbers },
+        { key: "outbound_leads", table: schema.outboundLeads },
+        { key: "outbound_campaigns", table: schema.outboundCampaigns },
+        { key: "signal_presence", table: schema.signalPresence },
+        { key: "audit_log", table: schema.auditLog },
+        { key: "webhooks", table: schema.webhooks },
+        { key: "webhook_deliveries", table: schema.webhookDeliveries },
+        { key: "spend_budgets", table: schema.spendBudgets },
+        { key: "dnc_list", table: schema.dncList },
+        { key: "user_preferences", table: schema.userPreferences },
+        { key: "onboarding_progress", table: schema.onboardingProgress },
+        { key: "quota_limits", table: schema.quotaLimits },
+        { key: "subscriptions", table: schema.subscriptions },
+        { key: "team_members", table: schema.teamMembers, useTenant: true },
+      ];
 
-    for (const item of tablesToExport) {
-      const col = (item as any).useTenant ? (item.table as any).tenantId : (item.table as any).userId;
-      const rows = await drizzle
-        .select()
-        .from(item.table as any)
-        .where(eq(col, uid));
-      
-      exportData[item.key] = rows;
-      totalRows += rows.length;
+      for (const item of tablesToExport) {
+        const col = (item as any).useTenant
+          ? (item.table as any).tenantId
+          : (item.table as any).userId;
+        const rows = await drizzle
+          .select()
+          .from(item.table as any)
+          .where(eq(col, uid));
+
+        exportData[item.key] = rows;
+        totalRows += rows.length;
+      }
+
+      // Add metadata
+      const exportPackage = {
+        metadata: {
+          user_id: uid,
+          email: req.user.email || "unknown",
+          exported_at: new Date().toISOString(),
+          total_rows: totalRows,
+          wireline_version: "1.0.0",
+        },
+        tables: exportData,
+      };
+
+      log.info("account export completed", { uid, totalRows });
+
+      // Return as JSON download
+      res.setHeader("Content-Type", "application/json");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="wireline-account-export-${uid.substring(0, 8)}-${Date.now()}.json"`,
+      );
+      res.status(200).json(exportPackage);
+    } catch (err: any) {
+      log.error("account export failed", { uid, error: getErrorMessage(err) });
+      res.status(500).json({ error: "Export failed." });
     }
-
-    // Add metadata
-    const exportPackage = {
-      metadata: {
-        user_id: uid,
-        email: req.user.email || 'unknown',
-        exported_at: new Date().toISOString(),
-        total_rows: totalRows,
-        wireline_version: '1.0.0',
-      },
-      tables: exportData,
-    };
-
-    log.info('account export completed', { uid, totalRows });
-
-    // Return as JSON download
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="wireline-account-export-${uid.substring(0, 8)}-${Date.now()}.json"`,
-    );
-    res.status(200).json(exportPackage);
-  } catch (err: any) {
-    log.error('account export failed', { uid, error: getErrorMessage(err) });
-    res.status(500).json({ error: 'Export failed.' });
-  }
-});
+  },
+);
 
 // Data Retention: POST /api/account/purge-old-data
 // Enqueues an on-demand data-retention purge job for the authenticated tenant.
@@ -273,7 +324,7 @@ router.post('/api/account/export', authenticateUser, async (req: AuthenticatedRe
 // function wireline_purge_old_data(). Minimum retention is 90 days.
 // ─────────────────────────────────────────────────────────────────────────────
 router.post(
-  '/api/account/purge-old-data',
+  "/api/account/purge-old-data",
   authenticateUser,
   jobsRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -284,31 +335,31 @@ router.post(
         .from(settings)
         .where(eq(settings.userId, uid))
         .limit(1);
-      
+
       const retentionDays = settingsRow?.retentionDays ?? 365;
 
       const result = await enqueue(drizzle, {
         userId: uid,
-        type: 'purge_old_data',
+        type: "purge_old_data",
         payload: { user_id: uid, retention_days: retentionDays },
         maxAttempts: 3,
       });
       if (!result.ok) {
-        log.error('Failed to enqueue purge_old_data job', { user_id: uid, error: result.error });
-        return res.status(500).json({ error: 'Failed to schedule purge job' });
+        log.error("Failed to enqueue purge_old_data job", { user_id: uid, error: result.error });
+        return res.status(500).json({ error: "Failed to schedule purge job" });
       }
-      log.info('purge_old_data job enqueued on demand', {
+      log.info("purge_old_data job enqueued on demand", {
         user_id: uid,
         retention_days: retentionDays,
         jobId: result.jobId,
       });
       res.json({ success: true, retention_days: retentionDays, job_id: result.jobId });
     } catch (err: any) {
-      log.error('POST /api/account/purge-old-data failed', {
+      log.error("POST /api/account/purge-old-data failed", {
         error: getErrorMessage(err),
         user_id: uid,
       });
-      res.status(500).json({ error: 'Failed to schedule purge job' });
+      res.status(500).json({ error: "Failed to schedule purge job" });
     }
   },
 );
@@ -322,108 +373,113 @@ router.post(
 // Requires the authenticated user to confirm intent by passing
 // { confirm: "DELETE MY ACCOUNT" } in the body.
 // ─────────────────────────────────────────────────────────────────────────────
-router.delete('/api/user/account', authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
-  const CONFIRMATION_PHRASE = 'DELETE MY ACCOUNT';
-  if (req.body?.confirm !== CONFIRMATION_PHRASE) {
-    return res.status(400).json({
-      error: `Send { "confirm": "${CONFIRMATION_PHRASE}" } to confirm deletion.`,
-      grace_days: ACCOUNT_DELETION_GRACE_DAYS,
-      info:
-        `Account deletion is reversible for ${ACCOUNT_DELETION_GRACE_DAYS} days via POST /api/account/cancel-deletion.`,
-    });
-  }
-  const uid = req.user.id;
-  try {
-    const requestedAt = new Date();
-    const scheduledPurgeAt = computeScheduledPurgeAt(requestedAt);
-
-    const [existing] = await drizzle
-      .select()
-      .from(deletionQueue)
-      .where(sql`${deletionQueue.userId} = ${uid} AND ${deletionQueue.status} = 'pending'`)
-      .limit(1);
-
-    let queueRow: typeof deletionQueue.$inferSelect;
-    if (existing) {
-      queueRow = existing;
-    } else {
-      const [inserted] = await drizzle
-        .insert(deletionQueue)
-        .values({
-          userId: uid,
-          requestedAt,
-          scheduledPurgeAt,
-          status: 'pending',
-          ip: req.ip ?? null,
-          userAgent: req.headers?.['user-agent'] ?? null,
-        })
-        .returning();
-      
-      if (!inserted) {
-        log.error('account deletion: enqueue failed', { uid });
-        return res.status(500).json({ error: 'Failed to schedule account deletion.' });
-      }
-      queueRow = inserted;
+router.delete(
+  "/api/user/account",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const CONFIRMATION_PHRASE = "DELETE MY ACCOUNT";
+    if (req.body?.confirm !== CONFIRMATION_PHRASE) {
+      return res.status(400).json({
+        error: `Send { "confirm": "${CONFIRMATION_PHRASE}" } to confirm deletion.`,
+        grace_days: ACCOUNT_DELETION_GRACE_DAYS,
+        info: `Account deletion is reversible for ${ACCOUNT_DELETION_GRACE_DAYS} days via POST /api/account/cancel-deletion.`,
+      });
     }
+    const uid = req.user.id;
+    try {
+      const requestedAt = new Date();
+      const scheduledPurgeAt = computeScheduledPurgeAt(requestedAt);
 
-    void auditLogger
-      .logAccountDeletionRequested({
-        userId: uid,
-        scheduledPurgeAt: queueRow.scheduledPurgeAt,
-        ip: req.ip,
-      })
-      .catch(() => {});
+      const [existing] = await drizzle
+        .select()
+        .from(deletionQueue)
+        .where(sql`${deletionQueue.userId} = ${uid} AND ${deletionQueue.status} = 'pending'`)
+        .limit(1);
 
-    return res.status(202).json({
-      status: 'pending',
-      scheduled_purge_at: queueRow.scheduledPurgeAt,
-      grace_days: ACCOUNT_DELETION_GRACE_DAYS,
-      cancel_endpoint: '/api/account/cancel-deletion',
-    });
-  } catch (err: any) {
-    log.error('account deletion enqueue failed', { uid, error: getErrorMessage(err) });
-    res.status(500).json({ error: 'Failed to schedule account deletion.' });
-  }
-});
+      let queueRow: typeof deletionQueue.$inferSelect;
+      if (existing) {
+        queueRow = existing;
+      } else {
+        const [inserted] = await drizzle
+          .insert(deletionQueue)
+          .values({
+            userId: uid,
+            requestedAt,
+            scheduledPurgeAt,
+            status: "pending",
+            ip: req.ip ?? null,
+            userAgent: req.headers?.["user-agent"] ?? null,
+          })
+          .returning();
+
+        if (!inserted) {
+          log.error("account deletion: enqueue failed", { uid });
+          return res.status(500).json({ error: "Failed to schedule account deletion." });
+        }
+        queueRow = inserted;
+      }
+
+      void auditLogger
+        .logAccountDeletionRequested({
+          userId: uid,
+          scheduledPurgeAt: queueRow.scheduledPurgeAt,
+          ip: req.ip,
+        })
+        .catch(() => {});
+
+      return res.status(202).json({
+        status: "pending",
+        scheduled_purge_at: queueRow.scheduledPurgeAt,
+        grace_days: ACCOUNT_DELETION_GRACE_DAYS,
+        cancel_endpoint: "/api/account/cancel-deletion",
+      });
+    } catch (err: any) {
+      log.error("account deletion enqueue failed", { uid, error: getErrorMessage(err) });
+      res.status(500).json({ error: "Failed to schedule account deletion." });
+    }
+  },
+);
 
 // GDPR / data-deletion: POST /api/account/cancel-deletion
 // Cancels a pending deletion request, provided the grace window has not yet
 // elapsed. Idempotent: if no pending row exists, returns 404.
 // ─────────────────────────────────────────────────────────────────────────────
-router.post('/api/account/cancel-deletion', authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
-  const uid = req.user.id;
-  try {
-    const [existing] = await drizzle
-      .select()
-      .from(deletionQueue)
-      .where(sql`${deletionQueue.userId} = ${uid} AND ${deletionQueue.status} = 'pending'`)
-      .limit(1);
+router.post(
+  "/api/account/cancel-deletion",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const uid = req.user.id;
+    try {
+      const [existing] = await drizzle
+        .select()
+        .from(deletionQueue)
+        .where(sql`${deletionQueue.userId} = ${uid} AND ${deletionQueue.status} = 'pending'`)
+        .limit(1);
 
-    if (!existing) {
-      return res.status(404).json({ error: 'No pending deletion request found.' });
+      if (!existing) {
+        return res.status(404).json({ error: "No pending deletion request found." });
+      }
+
+      if (existing.scheduledPurgeAt && existing.scheduledPurgeAt.getTime() <= Date.now()) {
+        return res.status(410).json({
+          error: "Grace period has expired. Deletion can no longer be cancelled.",
+          scheduled_purge_at: existing.scheduledPurgeAt.toISOString(),
+        });
+      }
+
+      await drizzle
+        .update(deletionQueue)
+        .set({ status: "cancelled", cancelledAt: new Date() })
+        .where(eq(deletionQueue.id, existing.id));
+
+      void auditLogger.logAccountDeletionCancelled({ userId: uid, ip: req.ip }).catch(() => {});
+
+      return res.json({ status: "cancelled" });
+    } catch (err: any) {
+      log.error("cancel-deletion failed", { uid, error: getErrorMessage(err) });
+      res.status(500).json({ error: "Failed to cancel deletion." });
     }
-
-    if (existing.scheduledPurgeAt && existing.scheduledPurgeAt.getTime() <= Date.now()) {
-      return res.status(410).json({
-        error: 'Grace period has expired. Deletion can no longer be cancelled.',
-        scheduled_purge_at: existing.scheduledPurgeAt.toISOString(),
-      });
-    }
-
-    await drizzle
-      .update(deletionQueue)
-      .set({ status: 'cancelled', cancelledAt: new Date() })
-      .where(eq(deletionQueue.id, existing.id));
-
-    void auditLogger
-      .logAccountDeletionCancelled({ userId: uid, ip: req.ip })
-      .catch(() => {});
-
-    return res.json({ status: 'cancelled' });
-  } catch (err: any) {
-    log.error('cancel-deletion failed', { uid, error: getErrorMessage(err) });
-    res.status(500).json({ error: 'Failed to cancel deletion.' });
-  }
-});
+  },
+);
 
 export default router;
