@@ -210,7 +210,7 @@ app.use(soc2Router);
 app.use(oauthRouter);
 app.use(teamRouter);
 app.use("/api/kimi", kimiRouter);
-app.use("/api/auth", authRouter);
+app.use(authRouter);
 
 // 404 API catch-all (Must be mounted after all valid API routes and before global error handler)
 app.use("/api", (req: express.Request, res: express.Response) => {
