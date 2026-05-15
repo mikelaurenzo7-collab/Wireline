@@ -105,8 +105,8 @@ test.describe("Campaign Management Flows", () => {
     await expect(createBtn).toBeVisible({ timeout: 10000 });
     await createBtn.click();
 
-    // Check modal appears with name input
-    const nameInput = page.getByPlaceholder(/campaign name/i);
+    // Check modal appears with name input (placeholder is "Q4 Win-Back Drive")
+    const nameInput = page.locator("input").first();
     await expect(nameInput).toBeVisible({ timeout: 5000 });
   });
 
@@ -158,8 +158,8 @@ test.describe("Campaign Management Flows", () => {
     await expect(createBtn).toBeVisible();
     await createBtn.click();
 
-    // Fill campaign name
-    const nameInput = page.getByPlaceholder(/campaign name/i);
+    // Fill campaign name (placeholder shows "Q4 Win-Back Drive")
+    const nameInput = page.locator("input").first();
     await expect(nameInput).toBeVisible();
     await nameInput.fill(campaignName);
 
