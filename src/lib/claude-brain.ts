@@ -1638,6 +1638,7 @@ Qualify this lead now.`;
     tool: TOOLS.qualify,
     deepThink: true,
     maxTokens: 4096,
+    complexity: "medium",
   });
 }
 
@@ -1656,7 +1657,7 @@ export async function objectionDrill(input: ObjectionDrillInput) {
     if (!roleGuidance)
       console.warn(
         `[claude-brain] objectionDrill: unknown role "${input.role}" — no role lens applied.`,
-      );  
+      );
   }
   const system = `You are a sales-coaching AI generating objection-handling drills for the autonomous agent "${input.agentName}" (archetype: ${input.archetype}${input.role ? `, role: ${input.role}` : ""}). Make drills realistic, varied in difficulty, and tied to a recommended response that respects the archetype's tone. Coaching notes should explain *why* the response works.${roleGuidance ? `\n\nRole-specific drill lens — ${roleGuidance} Drills should reflect the objections, edge cases, and compliance pitfalls this role actually encounters.` : ""}`;
 
@@ -1668,6 +1669,7 @@ Generate ${input.count ?? 5} drills covering a range of difficulties.`;
     user,
     tool: TOOLS.objectionDrill,
     maxTokens: 4096,
+    complexity: "medium",
   });
 }
 
@@ -1690,7 +1692,7 @@ export async function coldEmail(input: ColdEmailInput) {
     if (!roleGuidance)
       console.warn(
         `[claude-brain] coldEmail: unknown role "${input.agentRole}" — no role lens applied.`,
-      );  
+      );
   }
   const system = `You are an elite cold-outreach copywriter. Write emails that get replies. Rules:
 - Subject line: 4–7 words, no clickbait, hint at value.
@@ -1711,6 +1713,7 @@ CTA: ${input.callToAction ?? "ask for a 15-minute intro call"}.`;
     user,
     tool: TOOLS.coldEmail,
     maxTokens: 2048,
+    complexity: "medium",
   });
 }
 
@@ -1757,6 +1760,7 @@ Summarize now.`;
     user,
     tool: TOOLS.threadSummary,
     maxTokens: 3072,
+    complexity: "simple",
   });
 }
 
@@ -1770,6 +1774,7 @@ export async function routeIntent(input: IntentInput) {
     user: input.text,
     tool: TOOLS.intent,
     maxTokens: 1024,
+    complexity: "simple",
   });
 }
 
@@ -1792,7 +1797,7 @@ export async function agentReview(input: AgentReviewInput) {
     if (!roleGuidance)
       console.warn(
         `[claude-brain] agentReview: unknown role "${input.role}" — no role lens applied.`,
-      );  
+      );
   }
   const system = `You are a senior fleet operator reviewing the performance of an autonomous voice agent. Use evidence from the call logs. Be specific, tactical, and willing to be critical. Recommended directives should be concrete instructions the agent can immediately follow — not vague advice. Knowledge entries should be facts/policies that prevent recurring failures.${roleGuidance ? `\n\nRole-specific review lens — ${roleGuidance}` : ""}`;
 
@@ -1819,6 +1824,7 @@ Deliver the review now.`;
     tool: TOOLS.agentReview,
     deepThink: true,
     maxTokens: 8192,
+    complexity: "medium",
   });
 }
 
@@ -1841,7 +1847,7 @@ export async function smartDraft(input: SmartDraftInput) {
     if (!roleGuidance)
       console.warn(
         `[claude-brain] smartDraft: unknown role "${input.agentRole}" — no role lens applied.`,
-      );  
+      );
   }
   // Stable cacheable prefix: persona + knowledge + directives.
   // Volatile suffix: thread + user instructions.
@@ -1877,6 +1883,7 @@ Output the email body only — no subject, no signature.`;
     user,
     cacheSystem: true,
     maxTokens: 2048,
+    complexity: "medium",
   });
 
   const body = input.agentSignature
@@ -1932,7 +1939,7 @@ export async function postCallAnalysis(input: PostCallInput) {
     if (!roleGuidance)
       console.warn(
         `[claude-brain] postCallAnalysis: unknown role "${input.role}" — no scoring lens applied.`,
-      );  
+      );
   }
   const system = `You are a senior call analyst delivering post-call enrichment for an autonomous agent on the Wireline relay. Be evidence-driven and concise:
 - score lead intent honestly (0–100); if there's no signal, score low.
@@ -1959,6 +1966,7 @@ ${input.transcript || "(none)"}
     tool: TOOLS.postCallAnalysis,
     deepThink: true,
     maxTokens: 4096,
+    complexity: "medium",
   });
 }
 
@@ -1995,6 +2003,7 @@ Coach this conversation now.`;
     tool: TOOLS.coach,
     deepThink: false,
     maxTokens: 2048,
+    complexity: "medium",
   });
 }
 
@@ -2078,15 +2087,19 @@ After crawling, extract every concrete fact a customer-service agent would need:
 
   const messages: Anthropic.MessageParam[] = [{ role: "user", content: userPrompt }];
 
+  // Knowledge extraction is structured retrieval, not deep reasoning —
+  // Sonnet handles it well at ~5x lower cost than Opus.
+  const model = selectModelForTask("medium");
+
   let _t = Date.now();
   let response = await client.messages.create({
-    model: CLAUDE_MODEL_DEFAULT,
+    model,
     max_tokens: maxTokens,
     system,
     tools,
     messages,
   });
-  recordUsage(CLAUDE_MODEL_DEFAULT, response, Date.now() - _t);
+  recordUsage(model, response, Date.now() - _t);
 
   // Server-side tool loop — `pause_turn` means Claude hit the per-request
   // server-side iteration cap (10 by default) and needs us to re-send the
@@ -2098,13 +2111,13 @@ After crawling, extract every concrete fact a customer-service agent would need:
     messages.push({ role: "assistant", content: response.content });
     _t = Date.now();
     response = await client.messages.create({
-      model: CLAUDE_MODEL_DEFAULT,
+      model,
       max_tokens: maxTokens,
       system,
       tools,
       messages,
     });
-    recordUsage(CLAUDE_MODEL_DEFAULT, response, Date.now() - _t);
+    recordUsage(model, response, Date.now() - _t);
   }
 
   for (const block of response.content) {
@@ -2138,9 +2151,10 @@ export async function knowledgeFromDocument(input: KnowledgeFromDocumentInput) {
   const client = getClient();
   const system = `You are a knowledge-base curator for an autonomous voice/email agent. Read the provided document and extract every concrete fact a customer-service agent would need: services, pricing, hours, contact info, return/refund policies, FAQ answers, business address, key personnel. Each entry must be atomic, self-contained, and useful in isolation (the agent will quote it verbatim). Skip marketing fluff. ${input.maxEntries ? `Limit to ~${input.maxEntries} entries.` : ""} Then call deliver_knowledge_entries with the result.`;
 
+  const model = selectModelForTask("medium");
   const t0 = Date.now();
   const response = await client.messages.create({
-    model: CLAUDE_MODEL_DEFAULT,
+    model,
     max_tokens: 8192,
     system,
     tools: [TOOLS.knowledgeFromUrl],
@@ -2167,7 +2181,7 @@ export async function knowledgeFromDocument(input: KnowledgeFromDocumentInput) {
     ],
   });
 
-  recordUsage(CLAUDE_MODEL_DEFAULT, response, Date.now() - t0);
+  recordUsage(model, response, Date.now() - t0);
   for (const block of response.content) {
     if (block.type === "tool_use" && block.name === "deliver_knowledge_entries") {
       return block.input as {
@@ -2254,7 +2268,7 @@ export async function smartEmailReply(input: SmartEmailReplyInput): Promise<{
     if (!roleGuidance)
       console.warn(
         `[claude-brain] smartEmailReply: unknown role "${input.agentRole}" — no role lens applied.`,
-      );  
+      );
   }
   const system = `## IDENTITY
 You are ${input.agentName}, an autonomous email agent.
@@ -2283,9 +2297,13 @@ ${input.knowledgeBase.length ? input.knowledgeBase.map((k) => `- ${k}`).join("\n
   let bookedRef: string | undefined;
   let safety = 8;
 
+  // Smart-reply is structured email drafting + tool use; Sonnet handles it
+  // well at ~5x lower cost than Opus.
+  const model = selectModelForTask("medium");
+
   while (safety-- > 0) {
     const body: Anthropic.MessageCreateParams = {
-      model: CLAUDE_MODEL_DEFAULT,
+      model,
       max_tokens: 4096,
       system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
       messages,
@@ -2294,7 +2312,7 @@ ${input.knowledgeBase.length ? input.knowledgeBase.map((k) => `- ${k}`).join("\n
 
     const _t = Date.now();
     const response = await client.messages.create(body);
-    recordUsage(CLAUDE_MODEL_DEFAULT, response, Date.now() - _t);
+    recordUsage(model, response, Date.now() - _t);
 
     if (response.stop_reason === "tool_use") {
       messages.push({ role: "assistant", content: response.content });
@@ -2363,6 +2381,7 @@ export async function scoreIntent(input: { subject?: string; body: string }) {
     tool: SCORE_INTENT_TOOL,
     deepThink: false,
     maxTokens: 512,
+    complexity: "simple",
   });
 }
 
@@ -2423,6 +2442,7 @@ Deliver the daily brief now.`;
     tool: TOOLS.dailyBrief,
     deepThink: true,
     maxTokens: 3072,
+    complexity: "medium",
   });
 }
 
@@ -2447,6 +2467,7 @@ ${input.summaries.map((s, i) => `${i + 1}. [${s.intent_label || "?"}] ${s.summar
     tool: TOOLS.topicClusters,
     deepThink: false,
     maxTokens: 4096,
+    complexity: "medium",
   });
 }
 
@@ -2485,6 +2506,7 @@ ${input.failedCalls
     tool: TOOLS.failureModes,
     deepThink: true,
     maxTokens: 4096,
+    complexity: "medium",
   });
 }
 
@@ -2534,6 +2556,7 @@ ${input.facts.map((f) => `[id=${f.id}${f.agent_name ? ` · ${f.agent_name}` : ""
     tool: TOOLS.knowledgeDedupe,
     deepThink: false,
     maxTokens: 4096,
+    complexity: "simple",
   });
 }
 
@@ -2598,7 +2621,9 @@ Search the web, then call deliver_lead_enrichment.`;
 
   const messages: Anthropic.MessageParam[] = [{ role: "user", content: userPrompt }];
 
-  const model = CLAUDE_MODEL_DEFAULT;
+  // Lead enrichment is web research + structured output — Sonnet handles
+  // it well at ~5x lower cost than Opus.
+  const model = selectModelForTask("medium");
   const maxTokens = 4096;
 
   let _t = Date.now();
@@ -2681,6 +2706,7 @@ Deliver 3 quick-reply options using the deliver_quick_replies tool.`;
     tool: TOOLS.quickReplies,
     cacheSystem: true,
     maxTokens: 1024,
+    complexity: "simple",
   });
 }
 
@@ -2753,7 +2779,7 @@ Score each dimension 0–20 and provide a concise, actionable coaching note.`;
     tool: TOOLS.qaScore,
     deepThink: false,
     maxTokens: 512,
-    model: CLAUDE_MODEL_DEFAULT,
+    complexity: "medium",
   });
 }
 
@@ -2899,6 +2925,7 @@ export async function extractActions(params: {
     user: `Transcript: ${params.transcript}\nSummary: ${params.summary}\nCustomer: ${params.customerNumber || "Unknown"}`,
     tool: TOOLS.businessActions,
     cacheSystem: true,
+    complexity: "simple",
   });
   return result.actions;
 }
@@ -2916,6 +2943,7 @@ export async function synthesizeLesson(params: {
       "You are the Wireline Agent Coach. Synthesize ONE tactical lesson for the agent based on their failure. =30 words.",
     user: `Score: ${params.score}\nBreakdown: ${JSON.stringify(params.breakdown)}\nTranscript: ${params.transcript}`,
     cacheSystem: true,
+    complexity: "medium",
   });
   return text.trim();
 }
