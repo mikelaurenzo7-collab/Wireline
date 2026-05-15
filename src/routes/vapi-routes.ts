@@ -233,7 +233,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
                 and(
                   eq(schema.outboundLeads.userId, agent?.user_id),
                   ilike(schema.outboundLeads.customerNumber, `%${safePhone}%`),
-                  not(inArray(schema.outboundLeads.status, PRESERVED_LEAD_STATUSES as any)),
+                  not(inArray(schema.outboundLeads.status, PRESERVED_LEAD_STATUSES)),
                 ),
               );
           }
