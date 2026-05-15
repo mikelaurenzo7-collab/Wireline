@@ -367,6 +367,14 @@ export const fleetTasks = pgTable(
     targetChannel: text("target_channel"),
     agentId: text("agent_id").references(() => agents.id),
     customerInfo: jsonb("customer_info"),
+    /**
+     * Action payload for "draft" autonomy items — the proposed email body,
+     * SMS text, contract envelope IDs, prospect search parameters, etc.
+     * The AI Action Engine writes here and ActionFeed reads via
+     * `action.payload.<field>`. Distinct from `customerInfo`, which is
+     * who the action is for; `payload` is what the action will do.
+     */
+    payload: jsonb("payload"),
     taskType: text("task_type"),
     description: text("description"),
     status: text("status").default("pending"),

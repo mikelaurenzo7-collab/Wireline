@@ -33,6 +33,10 @@ const REQUIRED_COLUMNS: Record<string, readonly string[]> = {
   leadDossiers: ["customerEmail"],
   // Surfaced by GET /api/callbacks and written by AI Action Engine.
   outboundLeads: ["callbackScheduledAt", "lastContactSummary"],
+  // The AI Action Engine writes proposed action bodies (draft email,
+  // contract envelope IDs, prospect search args) into this jsonb column;
+  // GET /api/fleet/tasks surfaces it to ActionFeed.
+  fleetTasks: ["payload"],
 };
 
 describe("schema column reachability", () => {
