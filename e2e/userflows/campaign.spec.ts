@@ -148,8 +148,13 @@ test.describe("Campaign Management Flows", () => {
     // 1. Navigate to outbound dialer
     await page.goto("/outbound");
 
-    // 2. Create a campaign
-    const createBtn = page.getByRole("button", { name: /create campaign|new campaign/i });
+    // 2. Click CAMPAIGNS tab, then create campaign
+    const campaignsTab = page.getByRole("button", { name: /campaigns/i });
+    await expect(campaignsTab).toBeVisible();
+    await campaignsTab.click();
+
+    // Look for create/new button
+    const createBtn = page.getByRole("button", { name: /new/i });
     await expect(createBtn).toBeVisible();
     await createBtn.click();
 
