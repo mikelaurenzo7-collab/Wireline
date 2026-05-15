@@ -15,22 +15,22 @@ describe("estimateCost — Opus 4.x default rates", () => {
     expect(estimateCost({})).toBe(0);
   });
 
-  it("computes input_tokens at $5/M", () => {
-    // 1M input tokens * $5/M = $5
-    expect(estimateCost({ input_tokens: 1_000_000 })).toBeCloseTo(5, 5);
+  it("computes input_tokens at $15/M (current Opus pricing)", () => {
+    // 1M input tokens * $15/M = $15
+    expect(estimateCost({ input_tokens: 1_000_000 })).toBeCloseTo(15, 5);
   });
 
-  it("computes output_tokens at $25/M", () => {
-    expect(estimateCost({ output_tokens: 1_000_000 })).toBeCloseTo(25, 5);
+  it("computes output_tokens at $75/M (current Opus pricing)", () => {
+    expect(estimateCost({ output_tokens: 1_000_000 })).toBeCloseTo(75, 5);
   });
 
-  it("computes cache reads at ~10% of input rate (Opus: $0.50/M)", () => {
-    // 1M cache_read_input_tokens * (5 * 0.10) = $0.50
-    expect(estimateCost({ cache_read_input_tokens: 1_000_000 })).toBeCloseTo(0.5, 5);
+  it("computes cache reads at ~10% of input rate (Opus: $1.50/M)", () => {
+    // 1M cache_read_input_tokens * (15 * 0.10) = $1.50
+    expect(estimateCost({ cache_read_input_tokens: 1_000_000 })).toBeCloseTo(1.5, 5);
   });
 
-  it("computes cache writes at 1.25x input rate (Opus: $6.25/M)", () => {
-    expect(estimateCost({ cache_creation_input_tokens: 1_000_000 })).toBeCloseTo(6.25, 5);
+  it("computes cache writes at 1.25x input rate (Opus: $18.75/M)", () => {
+    expect(estimateCost({ cache_creation_input_tokens: 1_000_000 })).toBeCloseTo(18.75, 5);
   });
 
   it("sums all components", () => {
@@ -40,9 +40,9 @@ describe("estimateCost — Opus 4.x default rates", () => {
       cache_read_input_tokens: 200_000,
       cache_creation_input_tokens: 10_000,
     });
-    // 100k * $5/M + 50k * $25/M + 200k * $0.50/M + 10k * $6.25/M
-    // = 0.5 + 1.25 + 0.1 + 0.0625 = 1.9125
-    expect(cost).toBeCloseTo(1.9125, 4);
+    // 100k * $15/M + 50k * $75/M + 200k * $1.50/M + 10k * $18.75/M
+    // = 1.5 + 3.75 + 0.3 + 0.1875 = 5.7375
+    expect(cost).toBeCloseTo(5.7375, 4);
   });
 });
 
@@ -57,8 +57,8 @@ describe("estimateCost — model-specific rates", () => {
     expect(estimateCost({ output_tokens: 1_000_000 }, "claude-haiku-4-5")).toBeCloseTo(5, 5);
   });
 
-  it("falls back to Opus rates for unrecognized model names", () => {
-    expect(estimateCost({ input_tokens: 1_000_000 }, "future-model")).toBeCloseTo(5, 5);
+  it("falls back to Opus rates ($15/M) for unrecognized model names", () => {
+    expect(estimateCost({ input_tokens: 1_000_000 }, "future-model")).toBeCloseTo(15, 5);
   });
 });
 
