@@ -5,14 +5,98 @@
  * Extracted from server.ts to avoid circular dependencies.
  */
 
-import { drizzle, fetchWithTimeout } from "./server-context";
+import { drizzle, fetchWithTimeout, log } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc, ilike, sql } from "drizzle-orm";
 import { isDncBlocked } from "./compliance";
-import { sanitizePhone, KNOWLEDGE_GAP_PREFIX, MAX_RUNTIME_LESSONS, buildCallerProfileBlock, OUTBOUND_ARCHETYPE_BY_ROLE, getArchetypeConfig, ROLE_SPECIFIC_PROTOCOLS, buildRoleToolDefs } from "./vapi-helpers";
+import {
+  sanitizePhone,
+  KNOWLEDGE_GAP_PREFIX,
+  MAX_RUNTIME_LESSONS,
+  buildCallerProfileBlock,
+  OUTBOUND_ARCHETYPE_BY_ROLE,
+  getArchetypeConfig,
+  ROLE_SPECIFIC_PROTOCOLS,
+  buildRoleToolDefs,
+} from "./vapi-helpers";
 import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "./agent-runtime";
 import { buildCustomerIntelBlock } from "./customer-intel";
 import { DEFAULT_AGENT_ROLE } from "./agent-constants";
+
+// Retry configuration for transient failures
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 500;
+const RETRY_BACKOFF_MULTIPLIER = 2;
+
+// HTTP status codes that indicate transient failures worth retrying
+const TRANSIENT_ERROR_CODES = new Set([408, 429, 500, 502, 503, 504]);
+
+/**
+ * Delay helper for retry backoff
+ */
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Execute a fetch with retry logic for transient failures.
+ * Uses exponential backoff: 500ms, 1000ms, 2000ms between retries.
+ */
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  timeoutMs: number,
+  operationName: string,
+): Promise<Response> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      const response = await fetchWithTimeout(url, options, timeoutMs);
+
+      // If response is ok or not a transient error, return immediately
+      if (response.ok || !TRANSIENT_ERROR_CODES.has(response.status)) {
+        return response;
+      }
+
+      // Transient error - will retry
+      const retryAfter =
+        attempt < MAX_RETRIES - 1
+          ? RETRY_DELAY_MS * Math.pow(RETRY_BACKOFF_MULTIPLIER, attempt)
+          : 0;
+
+      log.warn(
+        `${operationName}: Transient error ${response.status}, retrying after ${retryAfter}ms (attempt ${attempt + 1}/${MAX_RETRIES})`,
+      );
+
+      if (attempt < MAX_RETRIES - 1) {
+        await delay(retryAfter);
+      }
+    } catch (error) {
+      // Network errors (timeout, connection reset, etc.) are retriable
+      lastError = error instanceof Error ? error : new Error(String(error));
+
+      const retryAfter =
+        attempt < MAX_RETRIES - 1
+          ? RETRY_DELAY_MS * Math.pow(RETRY_BACKOFF_MULTIPLIER, attempt)
+          : 0;
+
+      log.warn(
+        `${operationName}: Network error, retrying after ${retryAfter}ms (attempt ${attempt + 1}/${MAX_RETRIES})`,
+        {
+          error: lastError.message,
+        },
+      );
+
+      if (attempt < MAX_RETRIES - 1) {
+        await delay(retryAfter);
+      }
+    }
+  }
+
+  // All retries exhausted
+  throw lastError || new Error(`${operationName}: Failed after ${MAX_RETRIES} attempts`);
+}
 
 export type PlaceCallResult = {
   ok: boolean;
@@ -21,7 +105,11 @@ export type PlaceCallResult = {
   callId?: string;
 };
 
-function buildOutboundFirstMessage(role: string, agentName: string, customerName?: string | null): string {
+function buildOutboundFirstMessage(
+  role: string,
+  agentName: string,
+  customerName?: string | null,
+): string {
   const name = agentName || "your representative";
   const firstName = customerName?.trim() ? customerName.trim().split(" ")[0] : null;
   const customer = firstName || "there";
@@ -72,19 +160,32 @@ export async function placeOutboundCall(opts: {
     .where(eq(schema.settings.userId, userId))
     .limit(1);
 
-  const subscriptionStatus = userSettings?.subscriptionStatus || 'active';
-  if (subscriptionStatus !== 'active') {
-    return { ok: false, status: 403, error: "Access Denied: Please upgrade your billing plan to access outbound dialing." };
+  const subscriptionStatus = userSettings?.subscriptionStatus || "active";
+  if (subscriptionStatus !== "active") {
+    return {
+      ok: false,
+      status: 403,
+      error: "Access Denied: Please upgrade your billing plan to access outbound dialing.",
+    };
   }
 
-  if (customerNumber && await isDncBlocked(userId, customerNumber)) {
-    return { ok: false, status: 403, error: "DNC blocked: this number is on the Do Not Call list." };
+  if (customerNumber && (await isDncBlocked(userId, customerNumber))) {
+    return {
+      ok: false,
+      status: 403,
+      error: "DNC blocked: this number is on the Do Not Call list.",
+    };
   }
 
   const settings = userSettings;
   const vapiSecret = process.env.VAPI_PRIVATE_KEY;
   if (!vapiSecret || !settings?.vapiPhoneNumberId) {
-    return { ok: false, status: 400, error: "Platform Error: Master telecom carrier not configured. Please ensure VAPI_PRIVATE_KEY is set in environment secrets." };
+    return {
+      ok: false,
+      status: 400,
+      error:
+        "Platform Error: Master telecom carrier not configured. Please ensure VAPI_PRIVATE_KEY is set in environment secrets.",
+    };
   }
 
   const safeOutboundPhone = sanitizePhone(customerNumber);
@@ -95,24 +196,60 @@ export async function placeOutboundCall(opts: {
     personalityRes,
     lessonsRes,
     outboundCallerHistoryRes,
-    outboundCapturedProfileRes
+    outboundCapturedProfileRes,
   ] = await Promise.all([
     drizzle.select().from(schema.agents).where(eq(schema.agents.id, agentId)).limit(1),
-    drizzle.select().from(schema.directives).where(eq(schema.directives.agentId, agentId)).orderBy(desc(schema.directives.priority)).limit(500),
+    drizzle
+      .select()
+      .from(schema.directives)
+      .where(eq(schema.directives.agentId, agentId))
+      .orderBy(desc(schema.directives.priority))
+      .limit(500),
     drizzle.select().from(schema.knowledge).where(eq(schema.knowledge.agentId, agentId)).limit(500),
-    drizzle.select().from(schema.personality).where(eq(schema.personality.agentId, agentId)).limit(1),
-    drizzle.select().from(schema.agentLessons).where(eq(schema.agentLessons.agentId, agentId)).orderBy(desc(schema.agentLessons.createdAt)).limit(MAX_RUNTIME_LESSONS),
+    drizzle
+      .select()
+      .from(schema.personality)
+      .where(eq(schema.personality.agentId, agentId))
+      .limit(1),
+    drizzle
+      .select()
+      .from(schema.agentLessons)
+      .where(eq(schema.agentLessons.agentId, agentId))
+      .orderBy(desc(schema.agentLessons.createdAt))
+      .limit(MAX_RUNTIME_LESSONS),
     safeOutboundPhone
-      ? drizzle.select({ summary: schema.callLogs.summary, intentLabel: schema.callLogs.intentLabel, sentiment: schema.callLogs.sentiment, createdAt: schema.callLogs.createdAt, direction: schema.callLogs.direction })
+      ? drizzle
+          .select({
+            summary: schema.callLogs.summary,
+            intentLabel: schema.callLogs.intentLabel,
+            sentiment: schema.callLogs.sentiment,
+            createdAt: schema.callLogs.createdAt,
+            direction: schema.callLogs.direction,
+          })
           .from(schema.callLogs)
-          .where(and(eq(schema.callLogs.customerNumber, safeOutboundPhone), eq(schema.callLogs.agentId, agentId)))
+          .where(
+            and(
+              eq(schema.callLogs.customerNumber, safeOutboundPhone),
+              eq(schema.callLogs.agentId, agentId),
+            ),
+          )
           .orderBy(desc(schema.callLogs.createdAt))
           .limit(3)
       : Promise.resolve([]),
     safeOutboundPhone
-      ? drizzle.select({ description: schema.fleetTasks.description, createdAt: schema.fleetTasks.createdAt })
+      ? drizzle
+          .select({
+            description: schema.fleetTasks.description,
+            createdAt: schema.fleetTasks.createdAt,
+          })
           .from(schema.fleetTasks)
-          .where(and(eq(schema.fleetTasks.agentId, agentId), eq(schema.fleetTasks.taskType, 'customer_profile_captured'), ilike(schema.fleetTasks.description, `%${safeOutboundPhone}%`)))
+          .where(
+            and(
+              eq(schema.fleetTasks.agentId, agentId),
+              eq(schema.fleetTasks.taskType, "customer_profile_captured"),
+              ilike(schema.fleetTasks.description, `%${safeOutboundPhone}%`),
+            ),
+          )
           .orderBy(desc(schema.fleetTasks.createdAt))
           .limit(1)
       : Promise.resolve([]),
@@ -124,9 +261,12 @@ export async function placeOutboundCall(opts: {
   }
 
   const lessons = (lessonsRes || [])
-    .filter((l: any) => l.lesson && typeof l.lesson === 'string' && !l.lesson.startsWith(KNOWLEDGE_GAP_PREFIX))
+    .filter(
+      (l: any) =>
+        l.lesson && typeof l.lesson === "string" && !l.lesson.startsWith(KNOWLEDGE_GAP_PREFIX),
+    )
     .map((l: any) => l.lesson)
-    .join('\n');
+    .join("\n");
 
   const outboundPastCalls: any[] = outboundCallerHistoryRes || [];
   const outboundCallerProfile = buildCallerProfileBlock(outboundPastCalls, true);
@@ -134,26 +274,27 @@ export async function placeOutboundCall(opts: {
   const outboundRawProfileDesc = outboundCapturedProfileRes[0]?.description || "";
   const outboundCustomerIntelBlock = buildCustomerIntelBlock(outboundRawProfileDesc, true);
 
-  const currentDateTime = new Date().toLocaleString('en-US', { 
-    timeZone: agentConfig.timezone || 'America/New_York', 
-    weekday: 'long', 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric', 
-    hour: '2-digit', 
-    minute: '2-digit' 
+  const currentDateTime = new Date().toLocaleString("en-US", {
+    timeZone: agentConfig.timezone || "America/New_York",
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
   const outboundAgentRole = agentConfig.role || DEFAULT_AGENT_ROLE;
-  const archetype = OUTBOUND_ARCHETYPE_BY_ROLE[outboundAgentRole] || agentConfig.archetype || 'The Closer';
+  const archetype =
+    OUTBOUND_ARCHETYPE_BY_ROLE[outboundAgentRole] || agentConfig.archetype || "The Closer";
   const { rules: archetypeRules, temp: llmTemp } = getArchetypeConfig(archetype);
-  const ambientNoiseActive = agentConfig.ambientNoise && agentConfig.ambientNoise !== 'off';
+  const ambientNoiseActive = agentConfig.ambientNoise && agentConfig.ambientNoise !== "off";
   const roleProtocol = ROLE_SPECIFIC_PROTOCOLS[outboundAgentRole] || "";
-  const voiceLlmProvider = settings?.voiceLlmProvider || 'google';
-  const voiceLlmModel = settings?.voiceLlmModel || 'gemini-1.5-flash';
+  const voiceLlmProvider = settings?.voiceLlmProvider || "google";
+  const voiceLlmModel = settings?.voiceLlmModel || "gemini-1.5-flash";
 
   const systemPrompt = `
 ## IDENTITY & OUTBOUND MISSION
-You are ${agentConfig.name || "a scheduling agent"}, a ${outboundAgentRole.replace(/_/g, ' ')} specialist making an outbound call.
+You are ${agentConfig.name || "a scheduling agent"}, a ${outboundAgentRole.replace(/_/g, " ")} specialist making an outbound call.
 ${ambientNoiseActive ? "You are operating from a professional office environment. Speak with focused, professional energy." : ""}
 
 ${outboundCallerProfile}
@@ -225,10 +366,10 @@ Never end an outbound call without:
 Never invent prices, availability, dates, or product specs. If you don't know: "Great question — let me have someone with the exact details reach out to you. What's the best email?"
 
 ## ABSOLUTE OPERATOR RULES
-${(directivesRes || []).map((d: any) => `[PRIORITY ${d.priority}] ${d.content}`).join('\n') || "Follow all standard professional and ethical guidelines."}
+${(directivesRes || []).map((d: any) => `[PRIORITY ${d.priority}] ${d.content}`).join("\n") || "Follow all standard professional and ethical guidelines."}
 
 ## KNOWLEDGE BASE
-${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join('\n') || "No specific knowledge base entries loaded."}
+${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No specific knowledge base entries loaded."}
     `;
 
   const runtimeProfile: AgentRuntimeProfile = {
@@ -247,8 +388,8 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join('\n') || "No speci
       ok: false,
       status: 409,
       error:
-        runtime.outOfHoursMessage
-        || "Outbound dialing is suspended outside this agent's configured business hours.",
+        runtime.outOfHoursMessage ||
+        "Outbound dialing is suspended outside this agent's configured business hours.",
     };
   }
   const finalSystemPrompt = runtime.prompt;
@@ -262,8 +403,14 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join('\n') || "No speci
     customer: { number: customerNumber },
     assistant: {
       name: agentConfig.name || "Wireline Outbound Agent",
-      firstMessage: agentConfig.firstMessage || buildOutboundFirstMessage(outboundAgentRole, agentConfig.name || "your representative", customerName),
-      backgroundSound: agentConfig.ambientNoise || 'off',
+      firstMessage:
+        agentConfig.firstMessage ||
+        buildOutboundFirstMessage(
+          outboundAgentRole,
+          agentConfig.name || "your representative",
+          customerName,
+        ),
+      backgroundSound: agentConfig.ambientNoise || "off",
       ...(outboundServerUrl && { serverUrl: outboundServerUrl }),
       serverUrlSecret: process.env.VAPI_WEBHOOK_SECRET,
       serverMessages: ["tool-calls", "status-update", "conversation-update", "end-of-call-report"],
@@ -282,19 +429,35 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join('\n') || "No speci
     },
   };
 
-  const vapiResponse = await fetchWithTimeout("https://api.vapi.ai/call/phone", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${vapiSecret}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(vapiPayload),
-  }, 20_000);
+  try {
+    const vapiResponse = await fetchWithRetry(
+      "https://api.vapi.ai/call/phone",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${vapiSecret}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(vapiPayload),
+      },
+      20_000,
+      "Vapi placeOutboundCall",
+    );
 
-  if (!vapiResponse.ok) {
-    const errBody = await vapiResponse.text();
-    return { ok: false, status: 502, error: `Vapi API Error: ${errBody}` };
+    if (!vapiResponse.ok) {
+      const errBody = await vapiResponse.text();
+      return { ok: false, status: 502, error: `Vapi API Error: ${errBody}` };
+    }
+    const vapiData = await vapiResponse.json();
+    return { ok: true, status: 200, callId: vapiData.id };
+  } catch (error) {
+    const errMsg = error instanceof Error ? error.message : String(error);
+    log.error("Vapi API call failed after retries", {
+      error: errMsg,
+      userId,
+      agentId,
+      customerNumber,
+    });
+    return { ok: false, status: 502, error: `Vapi API Error (retries exhausted): ${errMsg}` };
   }
-  const vapiData = await vapiResponse.json();
-  return { ok: true, status: 200, callId: vapiData.id };
 }
