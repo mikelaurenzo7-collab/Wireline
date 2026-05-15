@@ -24,7 +24,29 @@ function getRedis(): Redis | null {
   return redis;
 }
 
+// In-memory fallback with LRU eviction to prevent OOM
+const MAX_MEMORY_BUCKETS = 10_000; // Limit to prevent unbounded growth
 const memBuckets = new Map<string, { count: number; resetAt: number }>();
+const accessOrder: string[] = [];
+
+/** Evict least-recently-used bucket if at capacity */
+function evictLRUIfNeeded(): void {
+  while (memBuckets.size >= MAX_MEMORY_BUCKETS && accessOrder.length > 0) {
+    const oldestKey = accessOrder.shift();
+    if (oldestKey) {
+      memBuckets.delete(oldestKey);
+    }
+  }
+}
+
+/** Update access order for LRU tracking */
+function touchKey(key: string): void {
+  const idx = accessOrder.indexOf(key);
+  if (idx !== -1) {
+    accessOrder.splice(idx, 1);
+  }
+  accessOrder.push(key);
+}
 
 export interface RateLimitResult {
   allowed: boolean;
@@ -83,13 +105,17 @@ export async function rateLimit(key: string, opts: RateLimiterOptions): Promise<
     }
   }
 
-  // In-memory fallback.
+  // In-memory fallback with LRU eviction.
   const bucket = memBuckets.get(composite);
   if (!bucket || bucket.resetAt <= now) {
+    // Evict oldest entries if at capacity
+    evictLRUIfNeeded();
     memBuckets.set(composite, { count: 1, resetAt: now + opts.windowMs });
+    touchKey(composite);
     return { allowed: true, remaining: opts.max - 1, resetMs: opts.windowMs };
   }
   bucket.count += 1;
+  touchKey(composite);
   return {
     allowed: bucket.count <= opts.max,
     remaining: Math.max(0, opts.max - bucket.count),
@@ -101,9 +127,23 @@ export async function rateLimit(key: string, opts: RateLimiterOptions): Promise<
 export function startMemoryCleanup(intervalMs = 5 * 60_000) {
   const id = setInterval(() => {
     const now = Date.now();
+    const expiredKeys: string[] = [];
+
     for (const [k, b] of memBuckets) {
-      if (b.resetAt <= now) memBuckets.delete(k);
+      if (b.resetAt <= now) {
+        expiredKeys.push(k);
+        memBuckets.delete(k);
+      }
     }
+
+    // Clean up access order to prevent memory leak
+    for (const k of expiredKeys) {
+      const idx = accessOrder.indexOf(k);
+      if (idx !== -1) accessOrder.splice(idx, 1);
+    }
+
+    // Enforce LRU limit
+    evictLRUIfNeeded();
   }, intervalMs);
   // Don't keep the event loop alive on shutdown.
   (id as any).unref?.();

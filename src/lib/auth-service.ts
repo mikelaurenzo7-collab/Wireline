@@ -4,10 +4,21 @@ import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 
 // Use INTERNAL_JWT_SECRET (preferred) or fall back to SUPABASE_JWT_SECRET for backward compatibility
-const SECRET =
-  process.env.INTERNAL_JWT_SECRET ||
-  process.env.SUPABASE_JWT_SECRET ||
-  "development-secret-key-at-least-32-chars-long";
+const SECRET = process.env.INTERNAL_JWT_SECRET || process.env.SUPABASE_JWT_SECRET;
+
+// Enforce JWT secret configuration - no weak fallbacks for production security
+if (!SECRET) {
+  throw new Error(
+    "JWT_SECRET_NOT_CONFIGURED: INTERNAL_JWT_SECRET or SUPABASE_JWT_SECRET must be set. " +
+      "In development, use a secure random string (at least 32 characters). " +
+      "In production, this is a critical security requirement.",
+  );
+}
+
+// Validate minimum secret length for security
+if (SECRET.length < 32) {
+  log.warn("JWT secret is less than 32 characters - this may compromise token security");
+}
 
 /**
  * Hash a password using scrypt.
