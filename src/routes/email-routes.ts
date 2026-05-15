@@ -5,11 +5,20 @@ import { eq, and, desc, asc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
+import rateLimit from "express-rate-limit";
 
 const router = Router();
 
+const emailAccountRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 router.get(
   "/api/emails/accounts",
+  emailAccountRateLimiter,
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -28,6 +37,7 @@ router.get(
 
 router.patch(
   "/api/emails/accounts/:id",
+  emailAccountRateLimiter,
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
