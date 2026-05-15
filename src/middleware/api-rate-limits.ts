@@ -231,3 +231,22 @@ export const dialRateLimiter = createRateLimiter({
   windowMs: 60 * 1000,
   max: 60,
 });
+
+/**
+ * User-preferences rate limiter.
+ *
+ * `/api/user-preferences` is called from the React shell on every page
+ * mount (AuthContext + several settings consumers re-read it for fresh
+ * state). A typical authenticated session can easily issue 40+ reads in
+ * the first minute as the operator navigates between pages — way past
+ * the `jobsRateLimit` ceiling of 20 / 15 min that CodeQL Autofix applied.
+ *
+ * Bucket is sized for an interactive UI: 240 reads/min per user, with a
+ * 15-minute window so brief navigation bursts don't trip the limiter.
+ * Still protects against credential-stuffing style abuse.
+ */
+export const userPreferencesRateLimit = createRateLimiter({
+  bucket: "api:user-preferences",
+  windowMs: 60 * 1000,
+  max: 240,
+});

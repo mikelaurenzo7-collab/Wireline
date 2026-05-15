@@ -7,6 +7,23 @@
 // import guarantees env is populated before any other import evaluates.
 import "dotenv/config";
 
+// Make `BigInt` JSON-serializable globally. Drizzle's `bigint({ mode: 'bigint' })`
+// returns native BigInt values for ids on `callLogs`, `auditLog`,
+// `outboundLeads`, `webhookDeliveries`, etc. Express's res.json() calls
+// JSON.stringify, which throws `TypeError: Do not know how to serialize a
+// BigInt` without this shim — every endpoint that returns one of those
+// id columns would 500. Stringifying is safe for JSON consumers (the JS
+// `Number` type can't represent ids above 2^53 anyway).
+if (typeof (BigInt.prototype as unknown as { toJSON?: () => string }).toJSON !== "function") {
+  Object.defineProperty(BigInt.prototype, "toJSON", {
+    value: function toJSON(this: bigint) {
+      return this.toString();
+    },
+    writable: true,
+    configurable: true,
+  });
+}
+
 // Sentry must be imported and initialized BEFORE other modules so its
 // instrumentation can wrap http/express. Graceful no-op when SENTRY_DSN is unset.
 import * as Sentry from "@sentry/node";
@@ -126,7 +143,7 @@ app.use((req: express.Request, res: express.Response, next: express.NextFunction
 });
 
 // Security headers
-const CSP_CONNECT_SRCS = buildConnectSrcs();
+const CSP_CONNECT_SRCS = buildConnectSrcs(!IS_PROD);
 
 app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
   Sentry.setTag("http.method", req.method);

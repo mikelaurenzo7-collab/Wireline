@@ -9,9 +9,13 @@ import { randomBytes } from "node:crypto";
 /**
  * Build the CSP connect-src origins for the runtime.
  * fetch() is allowed to reach Anthropic, Vapi, Google, Microsoft Graph, and Stripe.
+ *
+ * In dev mode we also allow Vite's HMR transport (ws + http to any localhost
+ * port) — Vite picks a random HMR port at boot, so the CSP can't pin a single
+ * one. Production never reaches this branch.
  */
-export function buildConnectSrcs(): string {
-  return [
+export function buildConnectSrcs(isDev: boolean = false): string {
+  const base = [
     "'self'",
     "https://api.anthropic.com",
     "https://api.vapi.ai",
@@ -22,7 +26,13 @@ export function buildConnectSrcs(): string {
     "https://login.microsoftonline.com",
     "https://graph.microsoft.com",
     "https://api.stripe.com",
-  ].join(" ");
+  ];
+  if (isDev) {
+    // Vite HMR opens a WebSocket on a port it picks at startup. Allow the
+    // dev origin (and ws://) so the dev shell doesn't spam CSP warnings.
+    base.push("ws://localhost:*", "http://localhost:*", "ws://127.0.0.1:*");
+  }
+  return base.join(" ");
 }
 
 /**
@@ -38,11 +48,7 @@ export function buildConnectSrcs(): string {
  * @param connectSrcs - Pre-built connect-src string. Defaults to a minimal
  *                      self-only value if not provided (useful in tests).
  */
-export function buildCSP(
-  isDev: boolean,
-  nonce?: string,
-  connectSrcs = "'self'",
-): string {
+export function buildCSP(isDev: boolean, nonce?: string, connectSrcs = "'self'"): string {
   // In dev keep 'unsafe-inline' + 'unsafe-eval' for Vite HMR.
   // In prod, OAuth callback pages receive a per-request nonce so their one
   // inline postMessage script is allowed without 'unsafe-inline' being global.
@@ -55,9 +61,16 @@ export function buildCSP(
   return [
     `default-src 'self'`,
     `script-src ${scriptSrc}`,
-    `style-src 'self' 'unsafe-inline'`,
+    // Allow Google Fonts stylesheet. We pull `Instrument Serif`, `Geist`, and
+    // `JetBrains Mono` via `@import url('https://fonts.googleapis.com/...')`
+    // in `src/index.css`; without this entry the entire Google Fonts request
+    // is blocked at every page load.
+    `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
     `img-src 'self' data: blob: https:`,
-    `font-src 'self' data:`,
+    // fonts.gstatic.com serves the actual .woff2 files referenced by the
+    // Google Fonts CSS above. Without this entry the fonts fail to download
+    // and the UI silently falls back to a system serif.
+    `font-src 'self' data: https://fonts.gstatic.com`,
     `connect-src ${connectSrcs}`,
     `media-src 'self' blob:`,
     `worker-src 'self' blob:`,

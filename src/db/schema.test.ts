@@ -37,6 +37,10 @@ const REQUIRED_COLUMNS: Record<string, readonly string[]> = {
   // contract envelope IDs, prospect search args) into this jsonb column;
   // GET /api/fleet/tasks surfaces it to ActionFeed.
   fleetTasks: ["payload"],
+  // The OAuth callbacks (Salesforce/HubSpot/Slack/Zoom) write the
+  // human-readable account label here; GET /api/oauth/crm/status reads
+  // it to render CrmConnectionCard.
+  crmConnections: ["connectedEmail"],
 };
 
 describe("schema column reachability", () => {

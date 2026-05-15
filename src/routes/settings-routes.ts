@@ -7,7 +7,7 @@ import { eq, sql, and, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage, mapObjectToCamel } from "../lib/server-utils";
 import { enqueue } from "../lib/job-queue";
-import { jobsRateLimit } from "../middleware/api-rate-limits";
+import { jobsRateLimit, userPreferencesRateLimit } from "../middleware/api-rate-limits";
 import { ACCOUNT_DELETION_GRACE_DAYS, computeScheduledPurgeAt } from "../lib/account-deletion";
 import { validate } from "../middleware/validate";
 import { SettingsSchema } from "../../contracts/api-types";
@@ -56,7 +56,7 @@ router.post(
 router.get(
   "/api/user-preferences",
   authenticateUser,
-  jobsRateLimit,
+  userPreferencesRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const [data] = await drizzle
@@ -86,7 +86,7 @@ router.get(
 router.post(
   "/api/user-preferences",
   authenticateUser,
-  jobsRateLimit,
+  userPreferencesRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       // Map snake_case HTTP body → Drizzle camelCase column names. The

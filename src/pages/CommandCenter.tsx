@@ -1,13 +1,30 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { 
-  LayoutGrid, Activity, ShieldCheck, RefreshCw, 
-  Terminal, Zap, Globe, Cpu, Lock, Bell
+import {
+  LayoutGrid,
+  Activity,
+  ShieldCheck,
+  RefreshCw,
+  Terminal,
+  Zap,
+  Globe,
+  Cpu,
+  Lock,
+  Bell,
 } from "lucide-react";
 import {
-  ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip,
-  PieChart, Pie, Cell
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 import { useAuth } from "../contexts/AuthContext";
+import { useToast } from "../contexts/ToastContext";
+import { useNavigate } from "react-router-dom";
 import { log } from "../lib/server-context";
 import { authFetch } from "../lib/api";
 import { LiveMonitor } from "../components/CommandCenter/LiveMonitor";
@@ -60,7 +77,7 @@ type LeadDossier = {
 
 const SENTIMENT_COLORS = {
   positive: "#10b981", // emerald-500
-  neutral: "#6366f1",  // indigo-500
+  neutral: "#6366f1", // indigo-500
   negative: "#f43f5e", // rose-500
 };
 
@@ -68,12 +85,15 @@ const SENTIMENT_COLORS = {
 
 export default function CommandCenter() {
   const { user } = useAuth();
+  const { success: toastSuccess, error: toastError, info: toastInfo } = useToast();
+  const navigate = useNavigate();
   const [calls, setCalls] = useState<LiveCall[]>([]);
   const [actions, setActions] = useState<ActionItem[]>([]);
   const [dossiers, setDossiers] = useState<Record<string, LeadDossier>>({});
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [activatingGrowth, setActivatingGrowth] = useState(false);
   const mountedRef = useRef(true);
 
   const fetchPresence = useCallback(async () => {
@@ -81,25 +101,29 @@ export default function CommandCenter() {
     try {
       const res = await authFetch("/api/fleet/presence");
       if (!res.ok) throw new Error("Presence fetch failed");
-      
+
       const { signals } = await res.json();
 
       if (mountedRef.current) {
-        setCalls((signals || []).map((s: any) => ({
-          id: s.id,
-          customer_number: s.customer_number,
-          sentiment_label: s.label || "Connected",
-          urgency: s.urgency || 0,
-          status: s.status === 'escalated' ? 'escalated' : 'active'
-        })));
-        
+        setCalls(
+          (signals || []).map((s: any) => ({
+            id: s.id,
+            customer_number: s.customer_number,
+            sentiment_label: s.label || "Connected",
+            urgency: s.urgency || 0,
+            status: s.status === "escalated" ? "escalated" : "active",
+          })),
+        );
+
         // Fetch dossiers for new numbers
-        const numbers = (signals || []).map((s: any) => s.customer_number).filter((n: string) => !dossiers[n]);
+        const numbers = (signals || [])
+          .map((s: any) => s.customer_number)
+          .filter((n: string) => !dossiers[n]);
         if (numbers.length > 0) {
           const dossRes = await authFetch(`/api/dashboard/dossiers?numbers=${numbers.join(",")}`);
           if (dossRes.ok) {
             const { dossiers: newDossData } = await dossRes.json();
-            setDossiers(prev => ({ ...prev, ...newDossData }));
+            setDossiers((prev) => ({ ...prev, ...newDossData }));
           }
         }
       }
@@ -111,25 +135,36 @@ export default function CommandCenter() {
   const fetchAll = useCallback(async () => {
     if (!user) return;
     try {
+      // `/api/fleet/stats` was a phantom endpoint — it was never declared
+      // on the server, so the Command Center showed perpetual "Awaiting
+      // data" with 404s in the Network tab. `/api/dashboard/stats` returns
+      // the same shape (sentimentBreakdown / unitEconomics / agents …).
       const [actionsRes, statsRes] = await Promise.all([
         authFetch("/api/fleet/tasks"),
-        authFetch("/api/fleet/stats"),
+        authFetch("/api/dashboard/stats"),
       ]);
 
       const { tasks: actionsData } = await actionsRes.json();
       const statsData = await statsRes.json();
 
       if (mountedRef.current) {
-        setActions((actionsData || []).map((t: any) => ({
-          id: t.id,
-          type: t.task_type,
-          priority: t.priority,
-          status: t.status === "completed" ? "completed" : t.status === "cancelled" ? "failed" : "pending",
-          description: t.description ?? t.task_type,
-          created_at: t.created_at,
-          payload: t.payload,
-          reasoning: t.resolution_notes
-        })));
+        setActions(
+          (actionsData || []).map((t: any) => ({
+            id: t.id,
+            type: t.task_type,
+            priority: t.priority,
+            status:
+              t.status === "completed"
+                ? "completed"
+                : t.status === "cancelled"
+                  ? "failed"
+                  : "pending",
+            description: t.description ?? t.task_type,
+            created_at: t.created_at,
+            payload: t.payload,
+            reasoning: t.resolution_notes,
+          })),
+        );
         setStats(statsData);
       }
     } catch (err) {
@@ -148,7 +183,7 @@ export default function CommandCenter() {
     const fastTimer = setInterval(fetchPresence, 5_000);
     // Standard polling for stats (60s)
     const slowTimer = setInterval(fetchAll, 60_000);
-    
+
     return () => {
       mountedRef.current = false;
       clearInterval(fastTimer);
@@ -165,9 +200,21 @@ export default function CommandCenter() {
 
   const sentimentData = stats
     ? [
-        { name: "Positive", value: stats.sentimentBreakdown?.positive ?? 0, color: SENTIMENT_COLORS.positive },
-        { name: "Neutral", value: stats.sentimentBreakdown?.neutral ?? 0, color: SENTIMENT_COLORS.neutral },
-        { name: "Negative", value: stats.sentimentBreakdown?.negative ?? 0, color: SENTIMENT_COLORS.negative },
+        {
+          name: "Positive",
+          value: stats.sentimentBreakdown?.positive ?? 0,
+          color: SENTIMENT_COLORS.positive,
+        },
+        {
+          name: "Neutral",
+          value: stats.sentimentBreakdown?.neutral ?? 0,
+          color: SENTIMENT_COLORS.neutral,
+        },
+        {
+          name: "Negative",
+          value: stats.sentimentBreakdown?.negative ?? 0,
+          color: SENTIMENT_COLORS.negative,
+        },
       ].filter((d) => d.value > 0)
     : [];
 
@@ -181,11 +228,15 @@ export default function CommandCenter() {
           <div className="space-y-1">
             <div className="flex items-center gap-2 mb-2">
               <span className="flex h-2 w-2 rounded-full bg-brand animate-pulse" />
-              <span className="text-[10px] uppercase tracking-[0.4em] font-bold text-muted">System Active</span>
+              <span className="text-[10px] uppercase tracking-[0.4em] font-bold text-muted">
+                System Active
+              </span>
             </div>
             <h1 className="text-4xl font-black tracking-tighter text-ink flex items-baseline gap-3">
               Wireline OS
-              <span className="text-sm font-mono font-medium text-muted/40 tracking-normal">v4.7.2-stable</span>
+              <span className="text-sm font-mono font-medium text-muted/40 tracking-normal">
+                v4.7.2-stable
+              </span>
             </h1>
             <p className="text-sm text-muted max-w-lg leading-relaxed">
               Autonomous Omnichannel Command. Real-time telemetry and intelligence hub.
@@ -195,29 +246,74 @@ export default function CommandCenter() {
           <div className="flex items-center gap-3">
             <button
               onClick={async () => {
+                if (activatingGrowth) return;
+                setActivatingGrowth(true);
                 try {
-                  const res = await authFetch("/api/jobs/prospect", { method: 'POST' });
-                  if (res.ok) alert("Autonomous Growth Engine Activated! Sourcing new leads...");
-                } catch (e) {
-                  alert("Failed to activate growth engine. Check network.");
+                  const res = await authFetch("/api/jobs/prospect", { method: "POST" });
+                  if (!res.ok) {
+                    const body = await res.json().catch(() => ({}));
+                    throw new Error(body.error || `HTTP ${res.status}`);
+                  }
+                  const body = (await res.json().catch(() => ({}))) as {
+                    prospectingEnabled?: boolean;
+                  };
+                  if (body.prospectingEnabled === false) {
+                    toastInfo(
+                      "Prospecting is disabled",
+                      "Open Settings → Growth to enable autonomous prospecting and configure targeting.",
+                    );
+                  } else {
+                    toastSuccess(
+                      "Growth engine queued",
+                      "Apollo Intelligence is sourcing new leads. They'll appear in Outbound shortly.",
+                    );
+                  }
+                } catch (err: any) {
+                  toastError(
+                    "Failed to activate growth engine",
+                    err?.message || "Check network and try again.",
+                  );
+                } finally {
+                  setActivatingGrowth(false);
                 }
               }}
-              className="flex items-center gap-2 px-6 py-3 bg-brand text-white rounded-2xl hover:bg-brand-2 transition-all shadow-xl shadow-brand/20 active:scale-95"
+              disabled={activatingGrowth}
+              className="flex items-center gap-2 px-6 py-3 bg-brand text-white rounded-2xl hover:bg-brand-2 transition-all shadow-xl shadow-brand/20 active:scale-95 disabled:opacity-60 disabled:cursor-wait"
             >
-              <Zap className="w-4 h-4 fill-current" />
-              <span className="text-xs font-black uppercase tracking-widest">Activate Growth</span>
+              <Zap className={clsx("w-4 h-4 fill-current", activatingGrowth && "animate-pulse")} />
+              <span className="text-xs font-black uppercase tracking-widest">
+                {activatingGrowth ? "Activating…" : "Activate Growth"}
+              </span>
             </button>
 
+            {/* Live telemetry strip — bound to real fleet/presence state.
+                Previously this rendered hardcoded "0.02ms Latency" / "12 Online"
+                placeholders that violated the no-mocks rule and confused
+                operators who couldn't reconcile the numbers with their
+                actual data. */}
             <div className="hidden xl:flex items-center gap-6 px-6 py-3 bg-black/[0.02] border border-black/5 rounded-2xl">
               <div className="flex flex-col">
-                <span className="text-[9px] uppercase tracking-wider text-muted font-bold">Network Load</span>
-                <span className="text-xs font-mono font-bold text-brand">0.02ms Latency</span>
+                <span className="text-[9px] uppercase tracking-wider text-muted font-bold">
+                  Live Calls
+                </span>
+                <span className="text-xs font-mono font-bold text-brand">
+                  {calls.length} active
+                </span>
               </div>
               <div className="w-px h-6 bg-black/5" />
-              <div className="flex flex-col">
-                <span className="text-[9px] uppercase tracking-wider text-muted font-bold">Active Agents</span>
-                <span className="text-xs font-mono font-bold text-brand">12 Online</span>
-              </div>
+              <button
+                type="button"
+                onClick={() => navigate("/agents")}
+                className="flex flex-col text-left hover:opacity-80 transition-opacity"
+                title="View fleet"
+              >
+                <span className="text-[9px] uppercase tracking-wider text-muted font-bold">
+                  Fleet Size
+                </span>
+                <span className="text-xs font-mono font-bold text-brand">
+                  {stats?.agents?.length ?? 0} agents
+                </span>
+              </button>
             </div>
 
             <button
@@ -233,7 +329,6 @@ export default function CommandCenter() {
 
         {/* Dashboard Grid */}
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-          
           {/* Left Column: Live Monitor (8/12) */}
           <div className="xl:col-span-8 space-y-8">
             <div className="relative group">
@@ -252,11 +347,13 @@ export default function CommandCenter() {
                     Market Sentiment
                   </h3>
                 </div>
-                
+
                 {sentimentData.length === 0 ? (
                   <div className="h-48 flex flex-col items-center justify-center gap-3 text-center border border-dashed border-black/8 rounded-2xl bg-black/[0.01]">
                     <Activity className="w-6 h-6 text-muted/20" />
-                    <p className="text-[10px] text-muted uppercase tracking-[0.2em]">Awaiting Data</p>
+                    <p className="text-[10px] text-muted uppercase tracking-[0.2em]">
+                      Awaiting Data
+                    </p>
                   </div>
                 ) : (
                   <div className="flex items-center gap-8">
@@ -275,8 +372,13 @@ export default function CommandCenter() {
                               <Cell key={entry.name} fill={entry.color} />
                             ))}
                           </Pie>
-                          <Tooltip 
-                            contentStyle={{ background: '#fff', border: '1px solid rgba(0,0,0,0.05)', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }} 
+                          <Tooltip
+                            contentStyle={{
+                              background: "#fff",
+                              border: "1px solid rgba(0,0,0,0.05)",
+                              borderRadius: "12px",
+                              boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
+                            }}
                           />
                         </PieChart>
                       </ResponsiveContainer>
@@ -285,11 +387,18 @@ export default function CommandCenter() {
                       {sentimentData.map((d) => (
                         <div key={d.name} className="flex items-center justify-between group">
                           <div className="flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full" style={{ background: d.color }} />
-                            <span className="text-[11px] font-medium text-muted group-hover:text-ink transition-colors">{d.name}</span>
+                            <span
+                              className="w-2 h-2 rounded-full"
+                              style={{ background: d.color }}
+                            />
+                            <span className="text-[11px] font-medium text-muted group-hover:text-ink transition-colors">
+                              {d.name}
+                            </span>
                           </div>
                           <span className="text-[11px] font-mono font-bold text-ink">
-                            {totalSentiment > 0 ? `${Math.round((d.value / totalSentiment) * 100)}%` : "—"}
+                            {totalSentiment > 0
+                              ? `${Math.round((d.value / totalSentiment) * 100)}%`
+                              : "—"}
                           </span>
                         </div>
                       ))}
@@ -306,28 +415,40 @@ export default function CommandCenter() {
                     Unit Economics
                   </h3>
                   <div className="flex items-center gap-1.5 px-2.5 py-1 bg-brand/10 border border-brand/20 rounded-full">
-                    <span className="text-[9px] font-bold text-brand uppercase tracking-wider">Efficiency: {stats?.unitEconomics?.efficiencyScore ?? 0}%</span>
+                    <span className="text-[9px] font-bold text-brand uppercase tracking-wider">
+                      Efficiency: {stats?.unitEconomics?.efficiencyScore ?? 0}%
+                    </span>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/5">
-                    <span className="text-[9px] font-medium text-muted uppercase tracking-wider block mb-1">Cost / Min</span>
-                    <span className="text-xl font-bold text-ink">${stats?.unitEconomics?.costPerMinute ?? "0.00"}</span>
+                    <span className="text-[9px] font-medium text-muted uppercase tracking-wider block mb-1">
+                      Cost / Min
+                    </span>
+                    <span className="text-xl font-bold text-ink">
+                      ${stats?.unitEconomics?.costPerMinute ?? "0.00"}
+                    </span>
                   </div>
                   <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/5">
-                    <span className="text-[9px] font-medium text-muted uppercase tracking-wider block mb-1">Cost / Lead</span>
-                    <span className="text-xl font-bold text-ink">${stats?.unitEconomics?.costPerLead ?? "0.00"}</span>
+                    <span className="text-[9px] font-medium text-muted uppercase tracking-wider block mb-1">
+                      Cost / Lead
+                    </span>
+                    <span className="text-xl font-bold text-ink">
+                      ${stats?.unitEconomics?.costPerLead ?? "0.00"}
+                    </span>
                   </div>
                 </div>
 
                 <div className="mt-6 p-4 rounded-2xl bg-brand/5 border border-brand/10">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-bold text-brand uppercase tracking-wider">Fleet ROI Projection</span>
+                    <span className="text-[10px] font-bold text-brand uppercase tracking-wider">
+                      Fleet ROI Projection
+                    </span>
                     <span className="text-[10px] font-mono font-bold text-brand">EXCELLENT</span>
                   </div>
                   <div className="h-1.5 w-full bg-brand/10 rounded-full overflow-hidden">
-                    <motion.div 
+                    <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${stats?.unitEconomics?.efficiencyScore ?? 0}%` }}
                       className="h-full bg-brand rounded-full"

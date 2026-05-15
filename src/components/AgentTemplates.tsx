@@ -1,8 +1,22 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  Target, Zap, Calendar, Mail, DollarSign, Shield, RefreshCw,
-  BarChart3, Filter, Headphones, Sparkles, Building2, Search, Loader2, MessageCircle,
+  Target,
+  Zap,
+  Calendar,
+  Mail,
+  DollarSign,
+  Shield,
+  RefreshCw,
+  BarChart3,
+  Filter,
+  Headphones,
+  Sparkles,
+  Building2,
+  Search,
+  Loader2,
+  MessageCircle,
+  Check,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { authFetch, safeJson } from "../lib/api";
@@ -209,13 +223,16 @@ function TemplateCard({
   template,
   onDeploy,
   deploying,
+  deployedCount,
 }: {
   template: Template;
   onDeploy: (t: Template) => void;
   deploying: boolean;
+  deployedCount: number;
 }) {
   const [hovered, setHovered] = useState(false);
   const Icon = template.icon;
+  const alreadyDeployed = deployedCount > 0;
 
   return (
     <motion.div
@@ -225,7 +242,7 @@ function TemplateCard({
       exit={{ opacity: 0, scale: 0.96 }}
       className={cn(
         "relative rounded-2xl glass border transition-all duration-200 flex flex-col group overflow-hidden",
-        hovered ? "aurora-ring border-transparent" : "border-white/10"
+        hovered ? "aurora-ring border-transparent" : "border-white/10",
       )}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -247,13 +264,27 @@ function TemplateCard({
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap justify-end">
+            {/* Deployed-in-fleet badge — surfaces when this tenant already
+                has one or more agents instantiated from this template, so
+                operators don't accidentally double-deploy. */}
+            {alreadyDeployed && (
+              <span
+                className="px-1.5 py-0.5 rounded-full border text-[9px] uppercase tracking-[0.22em] leading-none flex items-center gap-1 bg-emerald-500/10 border-emerald-500/30 text-emerald-600"
+                title={
+                  deployedCount === 1 ? "Already in your fleet" : `${deployedCount} in your fleet`
+                }
+              >
+                <Check className="w-2.5 h-2.5" />
+                {deployedCount === 1 ? "Deployed" : `Deployed ×${deployedCount}`}
+              </span>
+            )}
             {/* Channel badge */}
             <span
               className={cn(
                 "px-1.5 py-0.5 rounded-full border text-[9px] uppercase tracking-[0.22em] leading-none",
                 template.channel === "email"
                   ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600"
-                  : "bg-brand/10 border-brand/30 text-brand"
+                  : "bg-brand/10 border-brand/30 text-brand",
               )}
             >
               {template.channel}
@@ -296,17 +327,16 @@ function TemplateCard({
         </AnimatePresence>
       </div>
 
-      {/* Deploy button */}
+      {/* Deploy button — label changes when the template is already in
+          the fleet so operators don't double-deploy without realizing it. */}
       <div className="relative z-10 px-4 pb-4">
         <button
           onClick={() => onDeploy(template)}
           disabled={deploying}
           className="brutal-btn w-full !py-2 !text-[11px] !tracking-[0.3em] disabled:opacity-50 flex items-center justify-center gap-2"
         >
-          {deploying ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : null}
-          Deploy Agent
+          {deploying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+          {alreadyDeployed ? "Deploy Another" : "Deploy Agent"}
         </button>
       </div>
     </motion.div>
@@ -350,6 +380,33 @@ export default function AgentTemplates() {
   const [activeCategory, setActiveCategory] = useState<(typeof CATEGORIES)[number]>("All");
   const [search, setSearch] = useState("");
   const [deploying, setDeploying] = useState<string | null>(null);
+  const [deployedNames, setDeployedNames] = useState<string[]>([]);
+
+  // Pull the current fleet so each template card can render a 'Deployed'
+  // badge + 'Deploy Another' button when an agent with the matching name
+  // already exists. Refetches after every successful deploy below.
+  const refetchAgents = async () => {
+    try {
+      const r = await authFetch("/api/agents");
+      if (!r.ok) return;
+      const data = (await r.json()) as { agents?: Array<{ name?: string | null }> };
+      setDeployedNames((data.agents ?? []).map((a) => (a.name ?? "").toLowerCase()));
+    } catch {
+      /* non-critical — gallery still works without the badge */
+    }
+  };
+
+  useEffect(() => {
+    refetchAgents();
+  }, []);
+
+  const deployedCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const n of deployedNames) {
+      counts.set(n, (counts.get(n) ?? 0) + 1);
+    }
+    return counts;
+  }, [deployedNames]);
 
   const q = search.toLowerCase();
   const visible = AGENT_TEMPLATES.filter((t) => {
@@ -382,6 +439,9 @@ export default function AgentTemplates() {
         toastError("Deployment failed", data.error || "Please try again.");
       } else {
         toastSuccess("Agent deployed!", template.name);
+        // Refresh the deployed-set so the badge updates immediately, then
+        // navigate the operator to the fleet view.
+        await refetchAgents();
         navigate("/agents");
       }
     } catch {
@@ -395,7 +455,9 @@ export default function AgentTemplates() {
       {/* Top bar */}
       <div className="px-4 py-3 border-b border-white/8 flex flex-col gap-3 shrink-0">
         <div>
-          <div className="text-[10px] uppercase tracking-[0.45em] text-brand/80">Fleet · Templates</div>
+          <div className="text-[10px] uppercase tracking-[0.45em] text-brand/80">
+            Fleet · Templates
+          </div>
           <h2 className="font-display italic lowercase text-2xl text-ink leading-none mt-0.5">
             agent gallery
           </h2>
@@ -423,7 +485,7 @@ export default function AgentTemplates() {
                 "px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.25em] transition-all border",
                 activeCategory === cat
                   ? "bg-brand/15 border-brand/40 text-brand"
-                  : "glass border-white/10 text-muted hover:text-ink hover:border-white/25"
+                  : "glass border-white/10 text-muted hover:text-ink hover:border-white/25",
               )}
             >
               {cat}
@@ -454,6 +516,7 @@ export default function AgentTemplates() {
                 template={template}
                 onDeploy={handleDeploy}
                 deploying={deploying === template.id}
+                deployedCount={deployedCounts.get(template.name.toLowerCase()) ?? 0}
               />
             ))}
           </AnimatePresence>
