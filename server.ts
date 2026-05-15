@@ -1,5 +1,11 @@
-import dotenv from "dotenv";
-dotenv.config();
+// `dotenv/config` runs the side-effect import BEFORE any of the imports
+// below are evaluated. ESM hoists `import` statements above the module body,
+// so `dotenv.config()` in the body would load AFTER every other imported
+// module's top-level code — meaning modules that read `process.env.*` at
+// import time (e.g. `src/lib/auth-service.ts` for `INTERNAL_JWT_SECRET`)
+// would never see values declared only in `.env`. Using the side-effect
+// import guarantees env is populated before any other import evaluates.
+import "dotenv/config";
 
 // Sentry must be imported and initialized BEFORE other modules so its
 // instrumentation can wrap http/express. Graceful no-op when SENTRY_DSN is unset.
