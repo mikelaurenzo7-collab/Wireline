@@ -296,6 +296,7 @@ export const emailThreads = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     userId: uuid("user_id"),
     accountId: uuid("account_id").references(() => emailAccounts.id, { onDelete: "cascade" }),
+    agentId: text("agent_id").references(() => agents.id, { onDelete: "set null" }),
     threadId: text("thread_id").unique(),
     customerEmail: text("customer_email"),
     subject: text("subject"),
@@ -303,6 +304,7 @@ export const emailThreads = pgTable(
     summary: text("summary"),
     leadScore: integer("lead_score").default(0),
     intentLabel: text("intent_label").default("none"),
+    read: boolean("read").default(false).notNull(),
     lastMessageAt: timestamp("last_message_at", { withTimezone: true }).defaultNow(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
@@ -310,6 +312,7 @@ export const emailThreads = pgTable(
     userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_email_threads_user_id ON wireline_email_threads USING btree (user_id)`,
     leadScoreIdx: sql`CREATE INDEX IF NOT EXISTS idx_email_threads_lead_score ON wireline_email_threads USING btree (lead_score)`,
     userLeadScoreIdx: sql`CREATE INDEX IF NOT EXISTS idx_email_threads_user_lead_score ON wireline_email_threads USING btree (user_id, lead_score)`,
+    userReadIdx: sql`CREATE INDEX IF NOT EXISTS idx_email_threads_user_read ON wireline_email_threads USING btree (user_id, read)`,
     createdAtIdx: sql`CREATE INDEX IF NOT EXISTS idx_email_threads_created_at ON wireline_email_threads USING btree (created_at)`,
   }),
 );
