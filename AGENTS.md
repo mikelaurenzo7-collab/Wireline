@@ -16,7 +16,11 @@ This starts Express with Vite middleware on `http://localhost:3000`. Both fronte
 
 **Important:** The `POSTGRES_URL` env var must be a **Supabase Transaction-mode pooled** connection string (port 6543, hostname like `aws-N-REGION.pooler.supabase.com`). The `@vercel/postgres` package (v0.10) detects pooled URLs by checking for `-pooler.` in the string. New-style Supabase pooler hostnames use `.pooler.` instead, so the URL must include `?application_name=-pooler.wireline` as a workaround for the detection check. Without this, the server logs `invalid_connection_string` errors.
 
-If the `POSTGRES_URL` secret provided by Cursor Cloud is a direct connection (port 5432, `db.*.supabase.co`), you must unset it in the shell before running the dev server so dotenv picks up the correct value from `.env`: `unset POSTGRES_URL && npm run dev`.
+If the `POSTGRES_URL` secret provided by Cursor Cloud is a direct connection (port 5432, `db.*.supabase.co`), you must unset it in the shell before running the dev server so dotenv picks up the correct value from `.env`. The `CORS_ORIGINS` secret may also need to be unset — when it contains only the production URL, the CORS middleware rejects `localhost` requests and the frontend fails to load scripts. In dev mode with empty `CORS_ORIGINS`, the server allows all origins.
+
+```bash
+unset POSTGRES_URL CORS_ORIGINS && npm run dev
+```
 
 ### Lint, test, and build
 
