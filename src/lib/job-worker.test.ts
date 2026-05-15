@@ -302,8 +302,8 @@ describe("job-worker · handleJob", () => {
       )
       .join("");
     expect(flattened).toContain("wireline_purge_old_data");
-    expect(flattened).toContain("tenant-1");
-    expect(flattened).toContain("365");
+    // With parameterized queries, values are passed as parameters, not in the SQL string
+    // The retention_days default (365) is verified in the log assertion below
     expect(m.log.info).toHaveBeenCalledWith(
       "purge_old_data job completed",
       expect.objectContaining({ user_id: "tenant-1", retention_days: 365 }),
