@@ -94,7 +94,7 @@ export const spendBudgets = pgTable("wireline_spend_budgets", {
 
 // 1.2.1 SPEND ALERTS
 export const spendAlerts = pgTable("wireline_spend_alerts", {
-  id: bigint("id", { mode: "bigint" }).primaryKey(),
+  id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
   userId: uuid("user_id"),
   thresholdPct: integer("threshold_pct"),
   period: text("period"),
@@ -158,7 +158,7 @@ export const agents = pgTable(
 
 // 2.1 COGNITIVE ENGINE (TRAINING DATA)
 export const directives = pgTable("wireline_directives", {
-  id: bigint("id", { mode: "bigint" }).primaryKey(),
+  id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
   userId: uuid("user_id"),
   agentId: text("agent_id").references(() => agents.id, { onDelete: "cascade" }),
   content: text("content").notNull(),
@@ -166,7 +166,7 @@ export const directives = pgTable("wireline_directives", {
 });
 
 export const knowledge = pgTable("wireline_knowledge", {
-  id: bigint("id", { mode: "bigint" }).primaryKey(),
+  id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
   userId: uuid("user_id"),
   agentId: text("agent_id").references(() => agents.id, { onDelete: "cascade" }),
   content: text("content").notNull(),
@@ -184,7 +184,7 @@ export const personality = pgTable("wireline_personality", {
 export const agentLessons = pgTable(
   "wireline_agent_lessons",
   {
-    id: bigint("id", { mode: "bigint" }).primaryKey(),
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
     userId: uuid("user_id"),
     agentId: text("agent_id").references(() => agents.id, { onDelete: "cascade" }),
     lesson: text("lesson").notNull(),
@@ -226,7 +226,7 @@ export const appointments = pgTable(
 export const callLogs = pgTable(
   "wireline_call_logs",
   {
-    id: bigint("id", { mode: "bigint" }).primaryKey(),
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
     userId: uuid("user_id"),
     vapiCallId: text("vapi_call_id").unique(),
     agentId: text("agent_id").references(() => agents.id),
@@ -347,7 +347,7 @@ export const emailThreads = pgTable(
 );
 
 export const emailMessages = pgTable("wireline_email_messages", {
-  id: bigint("id", { mode: "bigint" }).primaryKey(),
+  id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
   userId: uuid("user_id"),
   threadId: uuid("thread_id").references(() => emailThreads.id, { onDelete: "cascade" }),
   googleMessageId: text("google_message_id").unique(),
@@ -393,7 +393,7 @@ export const fleetTasks = pgTable(
 
 // 3.3 NETWORK LINKS (PHONE NUMBERS)
 export const phoneNumbers = pgTable("wireline_phone_numbers", {
-  id: bigint("id", { mode: "bigint" }).primaryKey(),
+  id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
   userId: uuid("user_id"),
   phoneNumber: text("phone_number").unique().notNull(),
   vapiNumberId: text("vapi_number_id"),
@@ -433,7 +433,7 @@ export const outboundCampaigns = pgTable(
 export const outboundLeads = pgTable(
   "wireline_outbound_leads",
   {
-    id: bigint("id", { mode: "bigint" }).primaryKey(),
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
     userId: uuid("user_id"),
     agentId: text("agent_id").references(() => agents.id),
     campaignId: uuid("campaign_id").references(() => outboundCampaigns.id, {
@@ -516,7 +516,7 @@ export const intakeKeys = pgTable("wireline_intake_keys", {
 export const auditLog = pgTable(
   "wireline_audit_log",
   {
-    id: bigint("id", { mode: "bigint" }).primaryKey(),
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
     userId: uuid("user_id"),
     action: text("action").notNull(),
     provider: text("provider"),
@@ -567,7 +567,7 @@ export const webhooks = pgTable("wireline_webhooks", {
 });
 
 export const webhookDeliveries = pgTable("wireline_webhook_deliveries", {
-  id: bigint("id", { mode: "bigint" }).primaryKey(),
+  id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
   userId: uuid("user_id").notNull(),
   webhookId: uuid("webhook_id")
     .notNull()
@@ -597,7 +597,7 @@ export const dncList = pgTable("wireline_dnc_list", {
 
 // 4.2.1 CONSENT LOG (COMPLIANCE LEDGER)
 export const consentLog = pgTable("wireline_consent_log", {
-  id: bigint("id", { mode: "bigint" }).primaryKey(),
+  id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
   userId: uuid("user_id").notNull(),
   callId: text("call_id"),
   customerNumber: text("customer_number"),
@@ -680,21 +680,43 @@ export const quotaUsage = pgTable(
   }),
 );
 
-export const crmConnections = pgTable("wireline_crm_connections", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id").notNull(),
-  provider: text("provider").notNull(), // 'hubspot', 'salesforce', 'slack'
-  crmType: text("crm_type"), // legacy alias/extra info
-  accessToken: text("access_token").notNull(),
-  refreshToken: text("refresh_token"),
-  expiresAt: timestamp("expires_at", { withTimezone: true }),
-  portalId: text("portal_id"),
-  instanceUrl: text("instance_url"),
-  metadata: jsonb("metadata"),
-  active: boolean("active").default(true),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-});
+export const crmConnections = pgTable(
+  "wireline_crm_connections",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    provider: text("provider").notNull(), // 'hubspot', 'salesforce', 'slack', 'zoom'
+    crmType: text("crm_type"), // legacy alias/extra info
+    accessToken: text("access_token").notNull(),
+    refreshToken: text("refresh_token"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    portalId: text("portal_id"),
+    instanceUrl: text("instance_url"),
+    /**
+     * Human-readable account label written by the OAuth callbacks: the
+     * Salesforce/HubSpot owner email, the Slack workspace name, or the
+     * Zoom account type. Surfaced by GET /api/oauth/crm/status so the
+     * operator can confirm which workspace/account is connected without
+     * re-running the OAuth flow.
+     */
+    connectedEmail: text("connected_email"),
+    metadata: jsonb("metadata"),
+    active: boolean("active").default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    /**
+     * Reconnecting the same provider for the same tenant must update the
+     * existing row, not create a duplicate. The OAuth callbacks pass
+     * `(user_id, provider)` as the conflict target on every upsert.
+     */
+    userProviderUniq: unique("wireline_crm_connections_user_id_provider_key").on(
+      t.userId,
+      t.provider,
+    ),
+  }),
+);
 
 // 4.8 BACKGROUND JOBS
 export const jobs = pgTable("wireline_jobs", {
