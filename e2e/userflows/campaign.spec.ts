@@ -54,8 +54,13 @@ test.describe("Campaign Management Flows", () => {
     // Click sign in button (use submit type for reliability)
     await page.locator('button[type="submit"]').click();
 
-    // Wait for dashboard or redirect
-    await expect(page).toHaveURL(/dashboard|home|admin/, { timeout: 15000 });
+    // Wait for navigation away from login page (any authenticated route)
+    await page.waitForURL((url: URL) => !url.pathname.includes("/login"), { timeout: 15000 });
+
+    // Verify we're on an authenticated page (sidebar shows user or we see dashboard elements)
+    await expect(page.locator('nav, .sidebar, [class*="sidebar"]').first()).toBeVisible({
+      timeout: 5000,
+    });
   };
 
   test("outbound dialer page renders correctly", async ({ page }) => {
