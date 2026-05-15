@@ -46,6 +46,7 @@ import {
 } from "../lib/tcpa-consent";
 import { handleEndOfCallReport } from "../lib/vapi-handlers";
 import { buildVapiAssistant } from "../lib/vapi-assistant-factory";
+import { shouldQueueWebhook } from "../lib/vapi-webhook-queue";
 
 // The extraction from server.ts is now complete. The Gemini post-call lesson
 // extraction, TCPA consent ledger writer, and webhook dispatch are fully
@@ -580,12 +581,37 @@ router.post("/api/vapi-webhook", async (req, res) => {
   }
 
   if (message && message.type === "end-of-call-report") {
+    // Queue for async processing to prevent Vapi timeout/retries
+    // End-of-call processing can take 10-30s (AI analysis, webhook dispatch)
     try {
-      await handleEndOfCallReport({ message: message as any, agent: agent as any });
-      return res.json({ success: true });
+      await enqueue(drizzle, {
+        userId: agent.user_id,
+        type: "vapi_webhook",
+        payload: {
+          webhookType: "end-of-call-report",
+          payload: req.body,
+          agentId: webhookAgentId,
+          userId: agent.user_id,
+          webhookAgentId,
+        } as Record<string, unknown>,
+      });
+      log.info("Queued end-of-call-report for async processing", {
+        agentId: webhookAgentId,
+        callId: (message.call as { id?: string })?.id,
+      });
+      return res.json({ success: true, queued: true });
     } catch (e: any) {
-      log.error("Failed to process call completion", { error: getErrorMessage(e) });
-      return res.json({ success: false });
+      log.error("Failed to queue end-of-call-report", { error: getErrorMessage(e) });
+      // Fallback to sync processing if queue fails
+      try {
+        await handleEndOfCallReport({ message: message as any, agent: agent as any });
+        return res.json({ success: true });
+      } catch (e2: any) {
+        log.error("Failed to process call completion (sync fallback)", {
+          error: getErrorMessage(e2),
+        });
+        return res.json({ success: false });
+      }
     }
   }
 

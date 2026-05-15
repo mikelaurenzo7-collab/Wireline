@@ -32,20 +32,21 @@ type DrizzleDB = typeof drizzle;
 export type JobStatus = "pending" | "running" | "done" | "failed" | "dead";
 
 export type JobType =
-  | "post_call_enrichment"   // Async Claude post-call analysis replacing inline call
-  | "webhook_delivery"       // Re-use / extend existing webhook retry mechanism
-  | "daily_brief"            // Pre-compute operator daily brief
-  | "campaign_dial"          // One outbound dial within a campaign
-  | "consent_check"          // Pre-call TCPA gateway check
-  | "purge_old_data"          // GDPR data-retention TTL purge (nightly, per-tenant)
-  | "purge_deleted_account"  // GDPR Phase 1.5 — hard-delete account after 30-day grace
-  | "google_drive_ingest"    // Sync documents via Gemini
-  | "adaptive_optimization"  // Auto-tune agent from low-scoring calls
-  | "v2a_action_extraction"  // Voice-to-Action: extract action items from a call transcript
-  | "execute_action"         // Execute an extracted action via the Action Engine
-  | "calendar_sync"          // Sync Google/Outlook calendars
+  | "post_call_enrichment" // Async Claude post-call analysis replacing inline call
+  | "webhook_delivery" // Re-use / extend existing webhook retry mechanism
+  | "vapi_webhook" // Async Vapi webhook processing (end-of-call, status updates)
+  | "daily_brief" // Pre-compute operator daily brief
+  | "campaign_dial" // One outbound dial within a campaign
+  | "consent_check" // Pre-call TCPA gateway check
+  | "purge_old_data" // GDPR data-retention TTL purge (nightly, per-tenant)
+  | "purge_deleted_account" // GDPR Phase 1.5 — hard-delete account after 30-day grace
+  | "google_drive_ingest" // Sync documents via Gemini
+  | "adaptive_optimization" // Auto-tune agent from low-scoring calls
+  | "v2a_action_extraction" // Voice-to-Action: extract action items from a call transcript
+  | "execute_action" // Execute an extracted action via the Action Engine
+  | "calendar_sync" // Sync Google/Outlook calendars
   | "proactive_lead_enrichment" // Async lead enrichment
-  | "autonomous_prospecting";  // AI-driven lead discovery
+  | "autonomous_prospecting"; // AI-driven lead discovery
 
 export interface JobPayload extends Record<string, unknown> {}
 
@@ -57,7 +58,7 @@ export interface JobRow {
   status: JobStatus;
   attempts: number;
   max_attempts: number;
-  run_at: string;        // ISO — when the job is eligible to be picked up
+  run_at: string; // ISO — when the job is eligible to be picked up
   started_at: string | null;
   finished_at: string | null;
   error: string | null;
@@ -86,8 +87,8 @@ export interface EnqueueOptions {
   userId: string;
   type: JobType;
   payload: JobPayload;
-  runAt?: Date;            // Default: now (run immediately)
-  maxAttempts?: number;    // Default: DEFAULT_MAX_ATTEMPTS
+  runAt?: Date; // Default: now (run immediately)
+  maxAttempts?: number; // Default: DEFAULT_MAX_ATTEMPTS
 }
 
 export interface EnqueueResult {
@@ -96,10 +97,7 @@ export interface EnqueueResult {
   error?: string;
 }
 
-export async function enqueue(
-  db: DrizzleDB,
-  opts: EnqueueOptions,
-): Promise<EnqueueResult> {
+export async function enqueue(db: DrizzleDB, opts: EnqueueOptions): Promise<EnqueueResult> {
   const runAt = opts.runAt ?? new Date();
   try {
     const [data] = await db
@@ -114,7 +112,7 @@ export async function enqueue(
         runAt: runAt,
       })
       .returning({ id: schema.jobs.id });
-    
+
     return { ok: true, jobId: data.id };
   } catch (error: any) {
     return { ok: false, error: error.message };
@@ -143,15 +141,9 @@ export async function enqueue(
  * Falls back to a non-atomic select+update on older deployments where
  * the RPC doesn't exist yet — safe for single-worker setups.
  */
-export async function claimJob(
-  db: DrizzleDB,
-  typeFilter?: JobType[],
-): Promise<any | null> {
+export async function claimJob(db: DrizzleDB, typeFilter?: JobType[]): Promise<any | null> {
   return await db.transaction(async (tx) => {
-    const whereClauses = [
-      eq(schema.jobs.status, "pending"),
-      lte(schema.jobs.runAt, new Date()),
-    ];
+    const whereClauses = [eq(schema.jobs.status, "pending"), lte(schema.jobs.runAt, new Date())];
     if (typeFilter?.length) {
       whereClauses.push(inArray(schema.jobs.type, typeFilter));
     }
@@ -243,11 +235,7 @@ export interface WorkerOptions {
  *   const stop = startWorker(db, myHandler, { pollIntervalMs: 5000 });
  *   process.on("SIGTERM", stop);
  */
-export function startWorker(
-  db: DrizzleDB,
-  handler: any,
-  opts: WorkerOptions = {},
-): () => void {
+export function startWorker(db: DrizzleDB, handler: any, opts: WorkerOptions = {}): () => void {
   const pollMs = opts.pollIntervalMs ?? 10_000;
   let stopped = false;
   let timer: ReturnType<typeof setTimeout> | null = null;
@@ -304,13 +292,47 @@ export interface QueueStats {
 
 export async function getQueueStats(db: DrizzleDB, userId?: string): Promise<QueueStats> {
   const anHourAgo = new Date(Date.now() - 3_600_000);
-  
+
   const [pending, running, failed, dead, done] = await Promise.all([
-    db.select({ count: sql<number>`count(*)` }).from(schema.jobs).where(and(eq(schema.jobs.status, "pending"), userId ? eq(schema.jobs.userId, userId) : undefined)).then(r => r[0].count),
-    db.select({ count: sql<number>`count(*)` }).from(schema.jobs).where(and(eq(schema.jobs.status, "running"), userId ? eq(schema.jobs.userId, userId) : undefined)).then(r => r[0].count),
-    db.select({ count: sql<number>`count(*)` }).from(schema.jobs).where(and(eq(schema.jobs.status, "failed"), userId ? eq(schema.jobs.userId, userId) : undefined)).then(r => r[0].count),
-    db.select({ count: sql<number>`count(*)` }).from(schema.jobs).where(and(eq(schema.jobs.status, "dead"), userId ? eq(schema.jobs.userId, userId) : undefined)).then(r => r[0].count),
-    db.select({ count: sql<number>`count(*)` }).from(schema.jobs).where(and(eq(schema.jobs.status, "done"), gte(schema.jobs.finishedAt, anHourAgo), userId ? eq(schema.jobs.userId, userId) : undefined)).then(r => r[0].count),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.jobs)
+      .where(
+        and(eq(schema.jobs.status, "pending"), userId ? eq(schema.jobs.userId, userId) : undefined),
+      )
+      .then((r) => r[0].count),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.jobs)
+      .where(
+        and(eq(schema.jobs.status, "running"), userId ? eq(schema.jobs.userId, userId) : undefined),
+      )
+      .then((r) => r[0].count),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.jobs)
+      .where(
+        and(eq(schema.jobs.status, "failed"), userId ? eq(schema.jobs.userId, userId) : undefined),
+      )
+      .then((r) => r[0].count),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.jobs)
+      .where(
+        and(eq(schema.jobs.status, "dead"), userId ? eq(schema.jobs.userId, userId) : undefined),
+      )
+      .then((r) => r[0].count),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.jobs)
+      .where(
+        and(
+          eq(schema.jobs.status, "done"),
+          gte(schema.jobs.finishedAt, anHourAgo),
+          userId ? eq(schema.jobs.userId, userId) : undefined,
+        ),
+      )
+      .then((r) => r[0].count),
   ]);
 
   return {
