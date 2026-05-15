@@ -32,13 +32,16 @@ test.describe("Authentication Flows", () => {
   });
 
   test("successful login redirects to dashboard", async ({ page }) => {
-    // Skip if no test credentials configured
-    test.skip(!process.env.E2E_TEST_EMAIL, "No E2E test credentials");
+    // Skip if no test credentials configured (supports both Vercel and local naming)
+    const email = process.env.E2E_USER_EMAIL || process.env.E2E_TEST_EMAIL;
+    test.skip(!email, "No E2E test credentials");
 
     await page.goto("/login");
 
-    await page.getByPlaceholder(/email/i).fill(process.env.E2E_TEST_EMAIL!);
-    await page.getByPlaceholder(/password/i).fill(process.env.E2E_TEST_PASSWORD!);
+    await page.getByPlaceholder(/email/i).fill(email!);
+    await page
+      .getByPlaceholder(/password/i)
+      .fill((process.env.E2E_USER_PASSWORD || process.env.E2E_TEST_PASSWORD)!);
     await page.getByRole("button", { name: /sign in/i }).click();
 
     // Should redirect to dashboard
