@@ -10,58 +10,61 @@
 // All other callers should use the soft-delete flow via
 // POST /api/account/delete + the 30-day grace window.
 
-import { sql } from 'drizzle-orm';
-import { drizzle } from './server-context';
+import { sql } from "drizzle-orm";
+import { drizzle } from "./server-context";
 
 // Order matters: child tables before parent tables to satisfy any FKs that
 // are not ON DELETE CASCADE.
 export const ACCOUNT_DELETION_TABLES: ReadonlyArray<string> = [
-  'wireline_audit_log',
-  'wireline_signal_presence',
-  'wireline_fleet_tasks',
-  'wireline_webhook_deliveries',
-  'wireline_webhooks',
-  'wireline_intake_keys',
-  'wireline_agent_lessons',
-  'wireline_directives',
-  'wireline_knowledge',
-  'wireline_personality',
-  'wireline_email_messages',
-  'wireline_email_threads',
-  'wireline_email_accounts',
-  'wireline_call_logs',
-  'wireline_outbound_leads',
-  'wireline_outbound_campaigns',
-  'wireline_appointments',
-  'wireline_dnc_list',
-  'wireline_phone_numbers',
-  'wireline_agents',
-  'wireline_spend_alerts',
-  'wireline_spend_budgets',
-  'wireline_stripe_events',
-  'wireline_subscriptions',
-  'wireline_onboarding_progress',
-  'wireline_user_preferences',
-  'wireline_calendar_events',
-  'wireline_calendar_accounts',
-  'wireline_crm_connections',
-  'wireline_team_members',
-  'wireline_change_log',
-  'wireline_incidents',
-  'wireline_jobs',
-  'wireline_settings',
+  "wireline_audit_log",
+  "wireline_signal_presence",
+  "wireline_fleet_tasks",
+  "wireline_webhook_deliveries",
+  "wireline_webhooks",
+  "wireline_intake_keys",
+  "wireline_agent_lessons",
+  "wireline_directives",
+  "wireline_knowledge",
+  "wireline_personality",
+  "wireline_email_messages",
+  "wireline_email_threads",
+  "wireline_email_accounts",
+  "wireline_call_logs",
+  "wireline_outbound_leads",
+  "wireline_outbound_campaigns",
+  "wireline_appointments",
+  "wireline_dnc_list",
+  "wireline_phone_numbers",
+  "wireline_agents",
+  "wireline_spend_alerts",
+  "wireline_spend_budgets",
+  "wireline_stripe_events",
+  "wireline_subscriptions",
+  "wireline_onboarding_progress",
+  "wireline_user_preferences",
+  "wireline_calendar_events",
+  "wireline_calendar_accounts",
+  "wireline_crm_connections",
+  "wireline_team_members",
+  "wireline_change_log",
+  "wireline_incidents",
+  "wireline_jobs",
+  "wireline_settings",
 ];
 
 // Tables that scope by tenant_id instead of user_id.
 const TENANT_SCOPED_TABLES = new Set<string>([
-  'wireline_team_members',
-  'wireline_change_log',
-  'wireline_incidents',
+  "wireline_team_members",
+  "wireline_change_log",
+  "wireline_incidents",
 ]);
 
 export interface PurgeAccountDeps {
   db: typeof drizzle;
-  log: { warn: (msg: string, meta?: Record<string, unknown>) => void; error: (msg: string, meta?: Record<string, unknown>) => void };
+  log: {
+    warn: (msg: string, meta?: Record<string, unknown>) => void;
+    error: (msg: string, meta?: Record<string, unknown>) => void;
+  };
 }
 
 export interface PurgeAccountResult {
@@ -84,9 +87,11 @@ export async function purgeAccount(
   const tablesTouched: string[] = [];
 
   for (const table of ACCOUNT_DELETION_TABLES) {
-    const userCol = TENANT_SCOPED_TABLES.has(table) ? 'tenant_id' : 'user_id';
+    const userCol = TENANT_SCOPED_TABLES.has(table) ? "tenant_id" : "user_id";
     try {
-      await db.execute(sql.raw(`DELETE FROM ${table} WHERE ${userCol} = '${userId}'`));
+      // Use parameterized query to prevent SQL injection
+      // Table name is validated against known list, userId is parameterized
+      await db.execute(sql`DELETE FROM ${sql.raw(table)} WHERE ${sql.raw(userCol)} = ${userId}`);
       tablesTouched.push(table);
     } catch (error: any) {
       log.warn(`account purge: ${table} error`, { error: error.message });
@@ -96,7 +101,7 @@ export async function purgeAccount(
   // Delete the local auth row last. Once gone the user is fully
   // unauthenticated and cannot make further requests.
   try {
-    await db.execute(sql.raw(`DELETE FROM wireline_users WHERE id = '${userId}'`));
+    await db.execute(sql`DELETE FROM wireline_users WHERE id = ${userId}`);
     return { ok: true, tablesTouched, authRemoved: true };
   } catch (error: any) {
     return { ok: false, tablesTouched, authRemoved: false, error: error.message };

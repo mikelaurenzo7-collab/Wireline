@@ -374,8 +374,9 @@ export async function handleJob(job: JobRow): Promise<void> {
     }
     const retentionDays = typeof p.retention_days === "number" ? p.retention_days : 365;
     try {
+      // Use parameterized query to prevent SQL injection
       const result = await drizzle.execute(
-        sql.raw(`SELECT wireline_purge_old_data('${p.user_id}', ${retentionDays})`),
+        sql`SELECT wireline_purge_old_data(${p.user_id}, ${retentionDays})`,
       );
       log.info("purge_old_data job completed", {
         jobId: job.id,
