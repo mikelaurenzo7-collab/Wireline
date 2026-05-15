@@ -56,6 +56,7 @@ router.post(
 router.get(
   "/api/user-preferences",
   authenticateUser,
+  jobsRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const [data] = await drizzle
@@ -85,6 +86,7 @@ router.get(
 router.post(
   "/api/user-preferences",
   authenticateUser,
+  jobsRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       // Map snake_case HTTP body → Drizzle camelCase column names. The
