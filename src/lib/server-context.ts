@@ -1,1 +1,95 @@
-aW1wb3J0IHBrZyBmcm9tICdwZyc7CmNvbnN0IHsgUG9vbCB9ID0gcGtnOwppbXBvcnQgeyBlcSB9IGZyb20gImRyaXp6bGUtb3JtIjsKaW1wb3J0IHsgZHJpenpsZSBhcyBkcml6emxlRGIgfSBmcm9tICJkcml6emxlLW9ybS9ub2RlLXBvc3RncmVzIjsKaW1wb3J0ICogYXMgc2NoZW1hIGZyb20gIi4uL2RiL3NjaGVtYSI7CmltcG9ydCB7IEF1ZGl0TG9nZ2VyIH0gZnJvbSAiLi9hdWRpdC1sb2dnZXIiOwppbXBvcnQgeyBjcmVhdGVSYmFjTWlkZGxld2FyZSB9IGZyb20gIi4uL21pZGRsZXdhcmUvcmVxdWlyZS1yb2xlIjsKaW1wb3J0IHsgUXVvdGFUcmFja2VyLCB0eXBlIFBsYW5UaWVyIH0gZnJvbSAiLi90ZW5hbnQtcXVvdGFzIjsKCmV4cG9ydCBjb25zdCBJU19QUk9EID0gcHJvY2Vzcy5lbnYuTk9ERV9FTlYgPT09ICJwcm9kdWN0aW9uIiB8fCBwcm9jZXNzLmVudi5WRVJDRUwgPT09ICIxIjsKCi8vIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgAovLyAgU3RydWN0dXJlZCBsb2dnZXIKLy8g4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSAdHlwZSBMb2dMZXZlbCA9ICJkZWJ1ZyIgfCAiaW5mbyIgfCAid2FybiIgfCAiZXJyb3IiOwpmdW5jdGlvbiBlbWl0TG9nKGxldmVsOiBMb2dMZXZlbCwgbXNnOiBzdHJpbmcsIGZpZWxkcz86IFJlY29yZDxzdHJpbmcsIHVua25vd24+KSB7CiAgY29uc3QgZW50cnkgPSB7IHRzOiBuZXcgRGF0ZSgpLnRvSVNPU3RyaW5nKCksIGxldmVsLCBtc2csIC4uLihmaWVsZHMgfHwge30pIH07CiAgaWYgKElTX1BST0QpIHsKICAgIC8vIGVzbGludC1kaXNhYmxlLW5leHQtbGluZSBuby1jb25zb2xlCiAgICAobGV2ZWwgPT09ICJlcnJvciIgPyBjb25zb2xlLmVycm9yIDogbGV2ZWwgPT09ICJ3YXJuIiA/IGNvbnNvbGUud2FybiA6IGNvbnNvbGUubG9nKSgKICAgICAgSlNPTi5zdHJpbmdpZnkoZW50cnkpLAogICAgKTsKICB9IGVsc2UgewogICAgLy8gZXNsaW50LWRpc2FibGUtbmV4dC1saW5lIG5vLWNvbnNvbGUKICAgIChsZXZlbCA9PT0gImVycm9yIiA/IGNvbnNvbGUuZXJyb3IgOiBsZXZlbCA9PT0gIndhcm4iID8gY29uc29sZS53YXJuIDogY29uc29sZS5sb2cpKAogICAgICBgWyR7bGV2ZWx9XWAsCiAgICAgIG1zZywKICAgICAgZmllbGRzID8/ICIiLAogICAgKTsKICB9Cn1leHBvcnQgY29uc3QgbG9nID0gewogIGRlYnVnOiAobXNnOiBzdHJpbmcsIGZpZWxkcz86IFJlY29yZDxzdHJpbmcsIHVua25vd24+KSA9PiBlbWl0TG9nKCJkZWJ1ZyIsIG1zZywgZmllbGRzKSwKICBpbmZvOiAobXNnOiBzdHJpbmcsIGZpZWxkcz86IFJlY29yZDxzdHJpbmcsIHVua25vd24+KSA9PiBlbWl0TG9nKCJpbmZvIiwgbXNnLCBmaWVsZHMpLAogIHdhcm46IChtc2c6IHN0cmluZywgZmllbGRzPzogUmVjb3JkPHN0cmluZywgdW5rbm93bj4pID0+IGVtaXRMb2coIndhcm4iLCBtc2csIGZpZWxkcyksCiAgZXJyb3I6IChtc2c6IHN0cmluZywgZmllbGRzPzogUmVjb3JkPHN0cmluZywgdW5rbm93bj4pID0+IGVtaXRMb2coImVycm9yIiwgbXNnLCBmaWVsZHMpLAp9OwoKLy8g4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSACi8vICBmZXRjaFdpdGhUaW1lb3V0Ci8vIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgApleHBvcnQgYXN5bmMgZnVuY3Rpb24gZmV0Y2hXaXRoVGltZW91dCgKICB1cmw6IHN0cmluZywKICBpbml0OiBSZXF1ZXN0SW5pdCA9IHt9LAogIHRpbWVvdXRNcyA9IDE1XzAwMCwKKTogUHJvbWlzZTxSZXNwb25zZT4gewogIGNvbnN0IGN0cmwgPSBuZXcgQWJvcnRDb250cm9sbGVyKCk7CiAgY29uc3QgdGltZXIgPSBzZXRUaW1lb3V0KCgpID0+IGN0cmwuYWJvcnQoKSwgdGltZW91dE1zKTsKICB0cnkgewogICAgcmV0dXJuIGF3YWl0IGZldGNoKHVybCwgeyAuLi5pbml0LCBzaWduYWw6IGN0cmwuc2lnbmFsIH0pOwogIH0gZmluYWxseSB7CiAgICBjbGVhclRpbWVvdXQodGltZXIpOwogIH0KfQoKLy8g4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSACi8vICBEYXRhYmFzZSBJbml0aWFsaXphdGlvbiAoRHJpenpsZSBPUk0pCi8vIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgAoKY29uc3QgcG9vbCA9IG5ldyBQb29sKHsKICBjb25uZWN0aW9uU3RyaW5nOiBwcm9jZXNzLmVudi5QT1NUR1JFU19VUkwsCn0pOwoKZXhwb3J0IGNvbnN0IGRiID0gZHJpenpsZURiKHBvb2wsIHsgc2NoZW1hIH0pOwpleHBvcnQgY29uc3QgZHJpenpsZSA9IGRiOwoKLy8g4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSACi8vICBBdWRpdExvZ2dlciAmIFJCQUMgTWlkZGxld2FyZQovLyDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIAKZXhwb3J0IGNvbnN0IGF1ZWRpdExvZ2dlciA9IG5ldyBBdWRpdExvZ2dlcihkcml6emxlKTsKZXhwb3J0IGNvbnN0IHsgcmVxdWlyZVBlcm1pc3Npb24sIHJlcXVpcmVSb2xlIH0gPSBjcmVhdGVSYmFjTWlkZGxld2FyZSh7IGRyaXp6bGUsIGF1ZGl0TG9nZ2VyIH0pOwoKLy8g4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSACi8vICBRdW90YSBUcmFja2VyCi8vIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgCmV4cG9ydCBjb25zdCBxdW90YVRyYWNrZXIgPSBuZXcgUXVvdGFUcmFja2VyKHsKICBkcml6emxlLAogIGdldFBsYW5Gb3JVc2VyOiBhc3luYyAodXNlcklkOiBzdHJpbmcpOiBQcm9taXNlPFBsYW5UaWVyPiA9PiB7CiAgICB0cnkgewogICAgICBjb25zdCBbZGF0YV0gPSBhd2FpdCBkcml6emxlCiAgICAgICAgLnNlbGVjdCh7IHN0YXR1czogc2NoZW1hLnNldHRpbmdzLnN1YnNjcmlwdGlvblN0YXR1cyB9KQogICAgICAgIC5mcm9tKHNjaGVtYS5zZXR0aW5ncykKICAgICAgICAud2hlcmUoZXEoc2NoZW1hLnNldHRpbmdzLnVzZXJJZCwgdXNlcklkKSkKICAgICAgICAubGltaXQoMSk7CgogICAgICBjb25zdCBzdGF0dXMgPSBkYXRhPy5zdGF0dXMgPz8gImZyZWUiOwogICAgICBpZiAoc3RhdHVzID09PSAiZW50ZXJwcmlzZSIpIHJldHVybiAiZW50ZXJwcmlzZSI7CiAgICAgIGlmIChzdGF0dXMgPT09ICJwcm8iKSByZXR1cm4gInBybyI7CiAgICAgIGlmIChzdGF0dXMgPT09ICJzdGFydGVyIiB8fCBzdGF0dXMgPT09ICJhY3RpdmUiKSByZXR1cm4gInN0YXJ0ZXIiOwogICAgICByZXR1cm4gImZyZWUiOwogICAgfSBjYXRjaCB7CiAgICAgIHJldHVybiAic3RhcnRlciI7IC8vIEZhaWwtb3BlbiBvbiBEQiBlcnJvcnMuCiAgICB9CiAgfSwKfSk7Cg==
+import pkg from 'pg';
+const { Pool } = pkg;
+import { eq } from "drizzle-orm";
+import { drizzle as drizzleDb } from "drizzle-orm/node-postgres";
+import * as schema from "../db/schema";
+import { AuditLogger } from "./audit-logger";
+import { createRbacMiddleware } from "../middleware/require-role";
+import { QuotaTracker, type PlanTier } from "./tenant-quotas";
+
+export const IS_PROD = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
+
+// ────────────────────────────────────────────────────────────────────
+//  Structured logger
+// ────────────────────────────────────────────────────────────────────
+type LogLevel = "debug" | "info" | "warn" | "error";
+function emitLog(level: LogLevel, msg: string, fields?: Record<string, unknown>) {
+  const entry = { ts: new Date().toISOString(), level, msg, ...(fields || {}) };
+  if (IS_PROD) {
+    // eslint-disable-next-line no-console
+    (level === "error" ? console.error : level === "warn" ? console.warn : console.log)(
+      JSON.stringify(entry),
+    );
+  } else {
+    // eslint-disable-next-line no-console
+    (level === "error" ? console.error : level === "warn" ? console.warn : console.log)(
+      `[${level}]`,
+      msg,
+      fields ?? "",
+    );
+  }
+}
+export const log = {
+  debug: (msg: string, fields?: Record<string, unknown>) => emitLog("debug", msg, fields),
+  info: (msg: string, fields?: Record<string, unknown>) => emitLog("info", msg, fields),
+  warn: (msg: string, fields?: Record<string, unknown>) => emitLog("warn", msg, fields),
+  error: (msg: string, fields?: Record<string, unknown>) => emitLog("error", msg, fields),
+};
+
+// ────────────────────────────────────────────────────────────────────
+//  fetchWithTimeout
+// ────────────────────────────────────────────────────────────────────
+export async function fetchWithTimeout(
+  url: string,
+  init: RequestInit = {},
+  timeoutMs = 15_000,
+): Promise<Response> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: ctrl.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────
+//  Database Initialization (Drizzle ORM)
+// ────────────────────────────────────────────────────────────────────
+
+const pool = new Pool({
+  connectionString: process.env.POSTGRES_URL,
+});
+
+export const db = drizzleDb(pool, { schema });
+export const drizzle = db;
+
+// ────────────────────────────────────────────────────────────────────
+//  Audit Logger & RBAC Middleware
+// ────────────────────────────────────────────────────────────────────
+export const auditLogger = new AuditLogger(drizzle);
+export const { requirePermission, requireRole } = createRbacMiddleware({ drizzle, auditLogger });
+
+// ────────────────────────────────────────────────────────────────────
+//  Quota Tracker
+// ────────────────────────────────────────────────────────────────────
+export const quotaTracker = new QuotaTracker({
+  drizzle,
+  getPlanForUser: async (userId: string): Promise<PlanTier> => {
+    try {
+      const [data] = await drizzle
+        .select({ status: schema.settings.subscriptionStatus })
+        .from(schema.settings)
+        .where(eq(schema.settings.userId, userId))
+        .limit(1);
+
+      const status = data?.status ?? "free";
+      if (status === "enterprise") return "enterprise";
+      if (status === "pro") return "pro";
+      if (status === "starter" || status === "active") return "starter";
+      return "free";
+    } catch {
+      return "starter"; // Fail-open on DB errors.
+    }
+  },
+});
