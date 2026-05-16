@@ -31,6 +31,8 @@ export default defineConfig({
     video: "on-first-retry",
   },
   projects: ci && !fullMatrix ? [allProjects[0]!] : allProjects,
+  /** Skip the long @visual-full crawl in CI unless E2E_INCLUDE_VISUAL_FULL=1 (scheduled QA). */
+  grepInvert: ci && process.env.E2E_INCLUDE_VISUAL_FULL !== "1" ? /@visual-full/ : undefined,
   webServer: {
     command: "npm run dev",
     url: "http://localhost:3000",

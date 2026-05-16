@@ -36,6 +36,7 @@
     "db:studio": "drizzle-kit studio",
     "db:check": "drizzle-kit check",
     "e2e": "playwright test",
+    "e2e:visual-full": "playwright test --grep @visual-full",
     "e2e:ui": "playwright test --ui",
     "e2e:update": "playwright test --update-snapshots",
     "prepare": "husky"
