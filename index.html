@@ -27,13 +27,14 @@
     <meta property="og:image" content="https://www.wireline.app/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Wireline — AI voice and email automation" />
+    <meta property="og:image:alt" content="wireline — AI voice and email automation" />
 
     <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@wirelineapp" />
-    <meta name="twitter:title" content="Wireline — AI Voice &amp; Email Agents" />
-    <meta name="twitter:description" content="Always-on AI agents that handle calls, qualify leads, and book appointments automatically." />
+    <title>Always-on AI agents that handle calls, qualify leads, and book appointments automatically.</title>
+    <meta name="twitter:title" content="Wireline — AI voice &amp; Email Agents" />
+    <meta name="twitter:description" content="Always-on AI products that handle calls, qualify leads, and book appointments automatically." />
     <meta name="twitter:image" content="https://www.wireline.app/og-image.png" />
 
     <!-- Preconnect to key origins for faster API bootstrap -->
@@ -42,10 +43,17 @@
     <link rel="dns-prefetch" href="https://api.anthropic.com" />
     <link rel="dns-prefetch" href="https://api.vapi.ai" />
 
-    <!-- Favicons & PWA -->
+    <!-- Favicons &amp; PWA -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
+
+    <script>
+      // Polyfill Buffer for browser compatibility
+      window.global = window;
+      window.process = { env: {} };
+      window.Buffer = window.Buffer || require('buffer').Buffer;
+    </script>
   </head>
   <body>
     <div id="root"></div>
