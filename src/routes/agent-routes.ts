@@ -16,13 +16,48 @@ import { ROLE_PERSONALITY_TEMPLATES, DEFAULT_AGENT_ROLE } from "../lib/agent-con
 import * as claudeBrain from "../lib/claude-brain";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { computeAgentPerformance, emptyAgentPerformance } from "../lib/agent-performance";
-import { computeScorecard } from "../lib/agent-scorecard";
+import {
+  computeScorecard,
+  type CallLogRow,
+  type AppointmentRow,
+  type FollowUpTaskRow,
+} from "../lib/agent-scorecard";
 import { SentryEvents } from "../lib/sentry-events";
 import { normalizeEnabledTools } from "../lib/agent-capabilities";
 import { claudeErr } from "../lib/claude-response-helpers";
 
 const router = Router();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "placeholder_gemini_key");
+
+function toScorecardCallRow(r: typeof schema.callLogs.$inferSelect): CallLogRow {
+  return {
+    id: String(r.id),
+    lead_score: r.leadScore,
+    duration_seconds: r.durationSeconds,
+    sentiment: r.sentiment,
+    intent_label: r.intentLabel,
+    created_at: r.createdAt instanceof Date ? r.createdAt.toISOString() : String(r.createdAt ?? ""),
+  };
+}
+
+function toScorecardAppointmentRow(a: { id: string; createdAt: Date | null }): AppointmentRow {
+  return {
+    id: a.id,
+    created_at: a.createdAt instanceof Date ? a.createdAt.toISOString() : String(a.createdAt ?? ""),
+  };
+}
+
+function toScorecardFollowUpRow(t: {
+  id: string;
+  sourceId: string | null;
+  createdAt: Date | null;
+}): FollowUpTaskRow {
+  return {
+    id: t.id,
+    source_id: t.sourceId,
+    created_at: t.createdAt instanceof Date ? t.createdAt.toISOString() : String(t.createdAt ?? ""),
+  };
+}
 
 router.get("/api/agents", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
@@ -1005,7 +1040,17 @@ router.get(
         .orderBy(desc(schema.callLogs.createdAt))
         .limit(500);
 
-      res.json(computeAgentPerformance({ rows: logs || [] }));
+      res.json(
+        computeAgentPerformance({
+          rows: (logs || []).map((l) => ({
+            duration_seconds: l.durationSeconds,
+            lead_score: l.leadScore,
+            sentiment: l.sentiment,
+            created_at:
+              l.createdAt instanceof Date ? l.createdAt.toISOString() : String(l.createdAt ?? ""),
+          })),
+        }),
+      );
     } catch (e: any) {
       log.error("Agent performance error", { error: e?.message });
       res.json(emptyAgentPerformance());
@@ -1101,10 +1146,10 @@ router.get(
         focus,
         windowDays: days,
         now,
-        currentLogs: currentLogs || [],
-        priorLogs: priorLogs || [],
-        appointments: appts || [],
-        openFollowUps: openTasks || [],
+        currentLogs: (currentLogs || []).map(toScorecardCallRow),
+        priorLogs: (priorLogs || []).map(toScorecardCallRow),
+        appointments: (appts || []).map(toScorecardAppointmentRow),
+        openFollowUps: (openTasks || []).map(toScorecardFollowUpRow),
       });
 
       res.json(result);

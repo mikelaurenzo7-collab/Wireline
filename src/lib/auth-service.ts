@@ -102,7 +102,7 @@ export const authService = {
     const passwordHash = hashPassword(password);
 
     try {
-      const [user] = await drizzle
+      const inserted = await drizzle
         .insert(schema.users)
         .values({
           email,
@@ -110,6 +110,9 @@ export const authService = {
           fullName,
         })
         .returning();
+      const rows = Array.isArray(inserted) ? inserted : [];
+      const user = rows[0];
+      if (!user) throw new Error("Sign up insert returned no row");
 
       return {
         user: {

@@ -74,7 +74,7 @@ router.post(
         summary: typedCall.summary || "",
         transcript: typedCall.transcript || "",
         sentiment: typedCall.sentiment || "neutral",
-        durationSeconds: typedCall.duration_seconds,
+        durationSeconds: typedCall.durationSeconds ?? 0,
       });
 
       const QA_DIMENSIONS = ["greeting", "discovery", "solution", "objection", "closing"] as const;

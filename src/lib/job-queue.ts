@@ -100,7 +100,7 @@ export interface EnqueueResult {
 export async function enqueue(db: DrizzleDB, opts: EnqueueOptions): Promise<EnqueueResult> {
   const runAt = opts.runAt ?? new Date();
   try {
-    const [data] = await db
+    const inserted = await db
       .insert(schema.jobs)
       .values({
         userId: opts.userId,
@@ -112,6 +112,10 @@ export async function enqueue(db: DrizzleDB, opts: EnqueueOptions): Promise<Enqu
         runAt: runAt,
       })
       .returning({ id: schema.jobs.id });
+
+    const rows = Array.isArray(inserted) ? inserted : [];
+    const data = rows[0];
+    if (!data) return { ok: false, error: "enqueue returned no row" };
 
     return { ok: true, jobId: data.id };
   } catch (error: any) {
@@ -158,7 +162,7 @@ export async function claimJob(db: DrizzleDB, typeFilter?: JobType[]): Promise<a
 
     if (!job) return null;
 
-    const [updated] = await tx
+    const updatedRows = await tx
       .update(schema.jobs)
       .set({
         status: "running" as JobStatus,
@@ -169,7 +173,7 @@ export async function claimJob(db: DrizzleDB, typeFilter?: JobType[]): Promise<a
       .where(eq(schema.jobs.id, job.id))
       .returning();
 
-    return updated;
+    return Array.isArray(updatedRows) ? updatedRows[0] : undefined;
   });
 }
 

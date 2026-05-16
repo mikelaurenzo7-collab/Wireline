@@ -230,17 +230,15 @@ router.get(
       const responseData = {
         ...stats,
         agents: agentsResult || [],
-        recentLogs: (logsResult || [])
-          .slice(0, 100)
-          .map((l) => ({
-            ...l,
-            customer_number: l.customerNumber,
-            duration_seconds: l.durationSeconds,
-            lead_score: l.leadScore,
-            intent_label: l.intentLabel,
-            coaching_note: l.coachingNote,
-            created_at: l.createdAt,
-          })),
+        recentLogs: (logsResult || []).slice(0, 100).map((l) => ({
+          id: String(l.id),
+          customer_number: l.customerNumber,
+          duration_seconds: l.durationSeconds,
+          lead_score: l.leadScore,
+          intent_label: l.intentLabel,
+          coaching_note: l.coachingNote,
+          created_at: l.createdAt as Date,
+        })),
       };
 
       // Cache the computed stats for 60 seconds
@@ -418,7 +416,7 @@ router.post(
         if (!agent) return res.status(404).json({ error: "Agent not found" });
       }
 
-      const [data] = await drizzle
+      const inserted = await drizzle
         .insert(schema.appointments)
         .values({
           userId: req.user.id,
@@ -433,6 +431,10 @@ router.post(
           status: APPOINTMENT_STATUSES.includes(status) ? status : "Scheduled",
         })
         .returning();
+
+      const insRows = Array.isArray(inserted) ? inserted : [];
+      const data = insRows[0];
+      if (!data) return res.status(500).json({ error: "Failed to create appointment" });
 
       res.json({ appointment: data });
     } catch (error: any) {
@@ -501,7 +503,7 @@ router.patch(
       if (bodyUpdates.phone_number !== undefined) updates.phoneNumber = bodyUpdates.phone_number;
       if (bodyUpdates.agent_id !== undefined) updates.agentId = bodyUpdates.agent_id;
 
-      const [data] = await drizzle
+      const updatedRows = await drizzle
         .update(schema.appointments)
         .set(updates)
         .where(
@@ -511,6 +513,10 @@ router.patch(
           ),
         )
         .returning();
+
+      const rows = Array.isArray(updatedRows) ? updatedRows : [];
+      const data = rows[0];
+      if (!data) return res.status(404).json({ error: "Appointment not found" });
 
       res.json({ appointment: data });
     } catch (error: any) {

@@ -163,7 +163,7 @@ router.put("/spend/budget", authenticateUser, async (req: AuthenticatedRequest, 
     if (!Number.isInteger(warn) || warn < 1 || warn > 99)
       return res.status(400).json({ error: "warn_threshold_pct must be 1–99" });
 
-    const [data] = await drizzle
+    const inserted = await drizzle
       .insert(schema.spendBudgets)
       .values({
         userId: req.user.id,
@@ -184,6 +184,10 @@ router.put("/spend/budget", authenticateUser, async (req: AuthenticatedRequest, 
         },
       })
       .returning();
+
+    const rows = Array.isArray(inserted) ? inserted : [];
+    const data = rows[0];
+    if (!data) return res.status(500).json({ error: "Failed to save budget" });
 
     clearBudgetCache(req.user.id);
     res.json({ budget: data });

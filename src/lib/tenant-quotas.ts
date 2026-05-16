@@ -18,7 +18,7 @@
 import { eq, sql, and } from "drizzle-orm";
 import type { VercelPgDatabase } from "drizzle-orm/vercel-postgres";
 import * as schema from "../db/schema";
-import { log } from "./server-context";
+import { log } from "./server-logger";
 
 // ─────────────────────────────────────────────────────────────────
 // Plan defaults

@@ -39,11 +39,15 @@ router.post(
       delete update.userId;
       delete update.createdAt;
 
-      const [data] = await drizzle
+      const updatedRows = await drizzle
         .update(settings)
         .set(update)
         .where(eq(settings.userId, req.user.id))
         .returning();
+
+      const rows = Array.isArray(updatedRows) ? updatedRows : [];
+      const data = rows[0];
+      if (!data) return res.status(500).json({ error: "Failed to update settings" });
 
       res.json({ settings: data });
     } catch (error) {
@@ -113,7 +117,7 @@ router.post(
         return res.status(400).json({ error: "No valid preference fields supplied." });
       }
 
-      const [data] = await drizzle
+      const prefRows = await drizzle
         .insert(userPreferences)
         .values({
           ...update,
@@ -125,6 +129,10 @@ router.post(
           set: { ...update, updatedAt: new Date() },
         })
         .returning();
+
+      const rows = Array.isArray(prefRows) ? prefRows : [];
+      const data = rows[0];
+      if (!data) return res.status(500).json({ error: "Failed to update preferences" });
 
       res.json({
         preferences: {
@@ -402,7 +410,7 @@ router.delete(
       if (existing) {
         queueRow = existing;
       } else {
-        const [inserted] = await drizzle
+        const insertedRows = await drizzle
           .insert(deletionQueue)
           .values({
             userId: uid,
@@ -413,6 +421,9 @@ router.delete(
             userAgent: req.headers?.["user-agent"] ?? null,
           })
           .returning();
+
+        const ins = Array.isArray(insertedRows) ? insertedRows : [];
+        const inserted = ins[0];
 
         if (!inserted) {
           log.error("account deletion: enqueue failed", { uid });
