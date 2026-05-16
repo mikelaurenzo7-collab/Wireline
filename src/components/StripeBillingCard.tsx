@@ -313,7 +313,7 @@ function ActiveSubCard({
     <div className="rounded-2xl glass border border-white/12 p-8 md:p-10 relative overflow-hidden">
       <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-15 blur-3xl pointer-events-none"
         style={{ background: accent }} />
-      <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
+      <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 lg:gap-6">
         <div className="flex items-center gap-5">
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0"
             style={{ background: `${accent}18`, border: `1px solid ${accent}40` }}>

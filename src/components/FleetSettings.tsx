@@ -636,7 +636,7 @@ export default function FleetSettings() {
                       {/* Role assignment row */}
                       <div className="rounded-xl glass border border-white/8 p-3 flex flex-wrap items-center gap-3">
                         <Briefcase className="w-3.5 h-3.5 text-brand shrink-0" />
-                        <div className="flex-1 min-w-[180px] space-y-1">
+                        <div className="flex-1 min-w-0 basis-[min(100%,14rem)] sm:min-w-[10rem] space-y-1">
                           <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">Agent role</label>
                           <div className="relative">
                             <select
@@ -652,7 +652,7 @@ export default function FleetSettings() {
                           </div>
                         </div>
                         <div className="flex flex-col gap-1.5">
-                          <p className="text-[10px] text-muted/70 leading-relaxed max-w-[280px]">
+                          <p className="text-[10px] text-muted/70 leading-relaxed max-w-full sm:max-w-md">
                             {AGENT_ROLES.find(r => r.value === (selectedAgent.role || 'customer_service'))?.description}
                           </p>
                           <button

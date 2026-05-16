@@ -231,7 +231,7 @@ export default function KnowledgeBaseManager() {
         initial={{ y: -16, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-8"
+        className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-4 lg:gap-6"
       >
         <div className="space-y-5">
           <div className="flex flex-wrap items-center gap-2.5">

@@ -82,7 +82,7 @@ export default function CallLogs() {
           type="text"
           aria-label="Search calls"
           placeholder="Search signals…"
-          className="h-9 w-44 lg:w-60 pl-8 pr-3 rounded-full glass border border-black/10 text-[11px] text-ink placeholder:text-muted/60 focus:border-brand/40 focus:outline-none transition-all"
+          className="h-9 w-full min-w-0 max-w-[10.5rem] sm:max-w-[12rem] md:max-w-[14rem] lg:w-60 lg:max-w-none pl-8 pr-3 rounded-full glass border border-black/10 text-[11px] text-ink placeholder:text-muted/60 focus:border-brand/40 focus:outline-none transition-all"
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
@@ -121,7 +121,7 @@ export default function CallLogs() {
             (rendered below in the empty-detail branch + inside CallDetail)
             clears selectedCall to bring the list back. */}
         <div className={cn(
-          "col-span-12 lg:col-span-5 xl:col-span-4 h-full",
+          "col-span-12 lg:col-span-4 h-full",
           selectedCall && "hidden lg:block"
         )}>
           <Panel
@@ -249,7 +249,7 @@ export default function CallLogs() {
         {/* Detail pane — hidden on mobile when nothing is selected so the
             list takes the full viewport. */}
         <div className={cn(
-          "col-span-12 lg:col-span-7 xl:col-span-8 h-full",
+          "col-span-12 lg:col-span-8 h-full",
           !selectedCall && "hidden lg:block"
         )}>
           {selectedCall ? <CallDetail call={selectedCall} formatDuration={formatDuration} onBack={() => setSelectedCall(null)} /> : (
