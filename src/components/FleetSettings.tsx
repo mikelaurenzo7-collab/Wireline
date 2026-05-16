@@ -404,7 +404,7 @@ export default function FleetSettings() {
       {/* Sidebar: Agents List — full-width on mobile; collapses when an
           agent is selected so the detail editor gets the full viewport. */}
       <aside className={cn(
-        "w-full md:w-[420px] border-b md:border-b-0 md:border-r border-white/8 h-auto md:h-full flex flex-col shrink-0",
+        "w-full md:w-[min(17rem,32vw)] xl:w-[20rem] 2xl:w-[26.25rem] border-b md:border-b-0 md:border-r border-white/8 h-auto md:h-full flex flex-col shrink-0",
         selectedAgent && "hidden md:flex"
       )}>
         <div className="px-4 py-3 border-b border-white/8 flex items-center justify-between gap-3 shrink-0">

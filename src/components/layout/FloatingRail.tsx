@@ -11,6 +11,19 @@ import { useBranding } from "../../contexts/BrandingContext";
 
 const RAIL_PINNED_KEY = "wireline.rail.pinned";
 
+/** When unset, prefer icon-only rail on laptops so content gets horizontal room. */
+function readInitialPinned(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const v = window.localStorage.getItem(RAIL_PINNED_KEY);
+    if (v === "1") return true;
+    if (v === "0") return false;
+    return window.matchMedia("(min-width: 1280px)").matches;
+  } catch {
+    return false;
+  }
+}
+
 export default function FloatingRail({ 
   open, 
   setOpen, 
@@ -30,10 +43,7 @@ export default function FloatingRail({
     return item.matches.some(m => location.pathname === m || location.pathname.startsWith(`${m}/`));
   };
 
-  const [pinned, setPinned] = useState<boolean>(() => {
-    if (typeof window === "undefined") return true;
-    try { return window.localStorage.getItem(RAIL_PINNED_KEY) !== "0"; } catch { return true; }
-  });
+  const [pinned, setPinned] = useState<boolean>(readInitialPinned);
 
   const togglePin = () => {
     setPinned(p => {
@@ -101,8 +111,8 @@ export default function FloatingRail({
         </div>
 
         <span className={cn(
-          "relative z-10 text-[12px] leading-none tracking-wide truncate min-w-0",
-          expanded ? "flex-1 max-lg:flex-1" : "hidden max-lg:inline-block max-lg:flex-1",
+          "relative z-10 leading-none tracking-wide truncate min-w-0",
+          expanded ? "flex-1 text-[11px] xl:text-[12px] max-lg:flex-1" : "hidden max-lg:inline-block max-lg:flex-1 max-lg:text-[12px]",
           active ? "font-semibold" : "font-normal"
         )}>
           {item.label}
@@ -162,8 +172,10 @@ export default function FloatingRail({
         aria-label="Main navigation"
         className={cn(
           "fixed top-3 bottom-3 left-3 z-[70] flex flex-col transition-[width,transform] duration-300 ease-out",
-          "w-[260px]",
-          expanded ? "lg:w-[228px]" : "lg:w-[68px]",
+          "w-[min(17.5rem,calc(100vw-1.5rem))]",
+          expanded
+            ? "lg:max-xl:w-[11.75rem] xl:max-2xl:w-[13rem] 2xl:w-[14rem]"
+            : "lg:w-[4.5rem]",
           open ? "translate-x-0" : "-translate-x-[calc(100%+0.75rem)] lg:translate-x-0"
         )}
         style={{
@@ -217,7 +229,7 @@ export default function FloatingRail({
                 expanded ? "flex flex-col gap-1" : "hidden",
                 "max-lg:flex max-lg:flex-col max-lg:gap-1"
               )}>
-                <span className="brand-wordmark text-[17px] leading-none">
+                <span className="brand-wordmark text-[15px] xl:text-[17px] leading-none truncate">
                   {branding.brand_name.toUpperCase()}
                 </span>
                 <span className="text-[8px] tracking-[0.38em] uppercase text-muted/70 leading-none">
@@ -382,7 +394,9 @@ export default function FloatingRail({
         aria-hidden="true"
         className={cn(
           "hidden lg:block shrink-0 transition-[width] duration-300 ease-out",
-          expanded ? "w-[244px]" : "w-[84px]"
+          expanded
+            ? "lg:max-xl:w-[13rem] xl:max-2xl:w-[14.5rem] 2xl:w-[15.25rem]"
+            : "lg:w-[5.25rem]"
         )}
       />
     </>
