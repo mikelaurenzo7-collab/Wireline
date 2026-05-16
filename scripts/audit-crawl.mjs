@@ -96,6 +96,15 @@ const report = [];
       const resp = await page.goto(`${BASE}${r.path}`, { waitUntil: "networkidle", timeout: 30000 });
       httpStatus = resp ? resp.status() : null;
       await page.waitForTimeout(1800); // let animations + lazy widgets settle
+      // Defeat the app's internal-scroll containers so fullPage captures everything
+      await page.addStyleTag({ content: `
+        html, body { height: auto !important; overflow: visible !important; }
+        main { overflow: visible !important; height: auto !important; }
+        [class*="overflow-y-auto"], [class*="overflow-hidden"] { overflow: visible !important; max-height: none !important; }
+        [class*="h-full"], [class*="h-screen"] { height: auto !important; min-height: auto !important; }
+        [class*="min-h-0"] { min-height: 0 !important; }
+      ` }).catch(() => {});
+      await page.waitForTimeout(300);
       finalUrl = page.url();
       title = await page.title().catch(() => null);
       await page.screenshot({ path: `${OUT}/${r.slug}.png`, fullPage: true });
