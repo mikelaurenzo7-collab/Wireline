@@ -3,14 +3,14 @@
  * E2E Golden-Path Smoke Tests
  *
  * Validates critical user flows against a running Wireline server.
- * Requires: a running server at BASE_URL (default http://localhost:5173)
- * and valid Supabase credentials for a test user.
+ * Requires: a running server at BASE_URL (default http://localhost:3000)
+ * and valid session credentials for a test user (see E2E_USER_* below).
  *
  * Env:
- *   E2E_BASE_URL     — server base URL (default: http://localhost:5173)
+ *   E2E_BASE_URL     — server base URL (default: http://localhost:3000)
  *   E2E_USER_EMAIL   — test user email
  *   E2E_USER_PASSWORD — test user password
- *   VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY — required for sign-in (same project as deployment)
+ *   (Optional legacy) VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY — only if falling back to Supabase password auth
  *   CRON_SECRET      — optional; if set and length >= 16, POST /api/jobs/sweep is tested with Bearer auth
  *
  * Usage:
@@ -19,7 +19,7 @@
  * Exit 0 if all golden paths pass, exit 1 otherwise.
  */
 
-const BASE_URL = process.env.E2E_BASE_URL || "http://localhost:5173";
+const BASE_URL = process.env.E2E_BASE_URL || "http://localhost:3000";
 const EMAIL = process.env.E2E_USER_EMAIL;
 const PASSWORD = process.env.E2E_USER_PASSWORD;
 
@@ -204,20 +204,30 @@ async function main() {
   console.log(`Target: ${BASE_URL}`);
   console.log(`Auth: ${EMAIL ? `${EMAIL} (credentials provided)` : "no credentials (auth tests skipped)"}`);
 
-  // Authenticate if credentials provided
+  // Authenticate if credentials provided (Wireline /api/auth/signin first, then Supabase fallback)
   if (EMAIL && PASSWORD) {
     try {
-      const { createClient } = await import("@supabase/supabase-js");
-      const supabaseUrl = process.env.VITE_SUPABASE_URL;
-      const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
-      if (supabaseUrl && supabaseKey) {
-        const sb = createClient(supabaseUrl, supabaseKey);
-        const { data, error } = await sb.auth.signInWithPassword({ email: EMAIL, password: PASSWORD });
-        if (error) {
-          console.error(`  Auth failed: ${error.message}`);
+      const { status, json } = await req("POST", "/api/auth/signin", { email: EMAIL, password: PASSWORD });
+      if (status === 200 && json && json.token) {
+        token = json.token;
+        console.log("  Authenticated via Wireline /api/auth/signin.");
+      } else {
+        const supabaseUrl = process.env.VITE_SUPABASE_URL;
+        const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+        if (supabaseUrl && supabaseKey) {
+          const { createClient } = await import("@supabase/supabase-js");
+          const sb = createClient(supabaseUrl, supabaseKey);
+          const { data, error } = await sb.auth.signInWithPassword({ email: EMAIL, password: PASSWORD });
+          if (error) {
+            console.error(`  Auth failed: ${error.message}`);
+          } else {
+            token = data.session.access_token;
+            console.log("  Authenticated via Supabase sign-in.");
+          }
         } else {
-          token = data.session.access_token;
-          console.log("  Authenticated successfully.");
+          console.error(
+            `  Auth failed: POST /api/auth/signin returned ${status}${json?.error ? ` — ${json.error}` : ""}`,
+          );
         }
       }
     } catch (e) {
