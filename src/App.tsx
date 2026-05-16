@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, lazy, Suspense } from "react";
 import { BrowserRouter, useLocation, useNavigate } from "react-router-dom";
 import AuthPortal from "./components/AuthPortal";
 import { PrivacyPolicy, TermsOfService } from "./components/LegalPage";
@@ -9,6 +9,8 @@ import { ToastProvider } from "./contexts/ToastContext";
 import AppShell from "./components/layout/AppShell";
 import CommandPalette from "./components/CommandPalette";
 import { BrandingProvider } from "./contexts/BrandingContext";
+
+const Pricing = lazy(() => import("./pages/Pricing"));
 
 function AppContent() {
   const { user } = useAuth();
@@ -22,9 +24,16 @@ function AppContent() {
     }
   }, [user, location.pathname, navigate]);
 
-  // Legal pages are public — accessible before auth.
+  // Public pages — accessible before auth.
   if (location.pathname === "/privacy") return <PrivacyPolicy />;
   if (location.pathname === "/terms") return <TermsOfService />;
+  if (location.pathname === "/pricing") {
+    return (
+      <Suspense fallback={<div className="min-h-screen" />}>
+        <Pricing />
+      </Suspense>
+    );
+  }
 
   if (!user) {
     return <AuthPortal />;
