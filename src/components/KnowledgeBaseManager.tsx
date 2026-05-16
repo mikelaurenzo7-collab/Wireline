@@ -353,7 +353,7 @@ export default function KnowledgeBaseManager() {
 
       {/* Filter strip */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[280px]">
+        <div className="relative flex-1 min-w-0 basis-0 sm:basis-auto sm:min-w-[12rem]">
           <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
           <input
             value={search}

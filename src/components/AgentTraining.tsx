@@ -160,7 +160,7 @@ export default function AgentTraining() {
           <div className="flex items-center gap-2 w-full lg:w-auto">
             <Users className="w-3.5 h-3.5 text-brand shrink-0" />
             <span className="text-[10px] uppercase tracking-[0.3em] text-muted/70 hidden sm:inline">Agent</span>
-            <div className="relative flex-1 lg:flex-none lg:min-w-[260px]">
+            <div className="relative flex-1 lg:flex-none lg:max-xl:min-w-0 lg:max-xl:max-w-[min(100%,18rem)] xl:min-w-[220px] 2xl:min-w-[260px]">
               <select
                 value={selectedAgentId}
                 onChange={e => setSelectedAgentId(e.target.value)}

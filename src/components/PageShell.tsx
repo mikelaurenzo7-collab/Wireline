@@ -78,9 +78,8 @@ export default function PageShell({
               </div>
             )}
             <h1 className="font-display italic leading-[0.88] tracking-tight text-ink truncate"
-              // Smaller floor on phones; the original 2rem was too tall to
-              // share a line with mobile-header buttons on narrow screens.
-              style={{ fontSize: "clamp(1.6rem, 6vw, 3.25rem)" }}
+              // Slower vw growth than 6vw keeps laptop headers from dominating the shell.
+              style={{ fontSize: "clamp(1.55rem, 4vw + 0.35rem, 3.25rem)" }}
             >
               <span className="text-aurora">{title}</span>
             </h1>

@@ -281,7 +281,10 @@ export default function EmailInbox() {
               icon={Inbox}
               scroll
               flush
-              className={cn("lg:w-[420px] shrink-0", selectedThread && "hidden lg:flex")}
+              className={cn(
+                "w-full lg:max-xl:w-[min(17rem,32vw)] xl:w-[20rem] 2xl:w-[26.25rem] shrink-0",
+                selectedThread && "hidden lg:flex",
+              )}
               actions={
                 <span className="text-[9px] uppercase tracking-[0.3em] text-muted/70 tabular-nums">
                   {threads.length}
