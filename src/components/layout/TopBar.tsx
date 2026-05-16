@@ -145,8 +145,9 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
             </span>
           </Link>
 
-          {/* Desktop nav — grouped, with subtle dividers between groups */}
-          <nav className="hidden lg:flex items-center gap-1 ml-3 flex-1 min-w-0">
+          {/* Desktop nav — grouped, with subtle dividers between groups.
+              Keep flex-none so nav doesn't grow into the right cluster's space. */}
+          <nav className="hidden lg:flex items-center gap-1 ml-3 shrink-0">
             {NAV_GROUPS.map((group, gIdx) => (
               <React.Fragment key={group.label}>
                 {gIdx > 0 && <span aria-hidden="true" className="mx-1 h-5 w-px bg-black/12" />}
@@ -155,8 +156,8 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
             ))}
           </nav>
 
-          {/* Spacer when nav is mobile-collapsed */}
-          <div className="flex-1 lg:hidden" />
+          {/* Flex spacer pushes the right cluster to the edge */}
+          <div className="flex-1" />
 
           {/* Right cluster */}
           <div className="flex items-center gap-2 shrink-0">
