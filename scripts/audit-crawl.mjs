@@ -96,15 +96,34 @@ const report = [];
       const resp = await page.goto(`${BASE}${r.path}`, { waitUntil: "networkidle", timeout: 30000 });
       httpStatus = resp ? resp.status() : null;
       await page.waitForTimeout(1800); // let animations + lazy widgets settle
-      // Defeat the app's internal-scroll containers so fullPage captures everything
+      // Defeat the app's internal-scroll containers so fullPage captures everything.
+      // The app uses h-screen + nested overflow-hidden + h-full for the AppShell
+      // pattern. We override aggressively so the body extends to content height.
       await page.addStyleTag({ content: `
-        html, body { height: auto !important; overflow: visible !important; }
-        main { overflow: visible !important; height: auto !important; }
-        [class*="overflow-y-auto"], [class*="overflow-hidden"] { overflow: visible !important; max-height: none !important; }
-        [class*="h-full"], [class*="h-screen"] { height: auto !important; min-height: auto !important; }
+        html, body { height: auto !important; min-height: 0 !important; overflow: visible !important; max-height: none !important; }
+        * { max-height: none !important; }
+        main, [role="main"] { overflow: visible !important; height: auto !important; min-height: 0 !important; }
+        [class*="overflow-y-auto"], [class*="overflow-hidden"], [class*="overflow-y-scroll"] {
+          overflow: visible !important;
+          overflow-y: visible !important;
+          max-height: none !important;
+          height: auto !important;
+        }
+        [class*="h-full"], [class*="h-screen"], [class*="min-h-screen"] {
+          height: auto !important;
+          min-height: 0 !important;
+        }
         [class*="min-h-0"] { min-height: 0 !important; }
+        [class*="flex-col"][class*="h-screen"] > main { flex: none !important; }
       ` }).catch(() => {});
-      await page.waitForTimeout(300);
+      // Trigger reflow + give lazy widgets a chance to render below-the-fold
+      await page.evaluate(() => {
+        document.body.style.height = "auto";
+        window.scrollTo(0, document.body.scrollHeight);
+      }).catch(() => {});
+      await page.waitForTimeout(600);
+      await page.evaluate(() => window.scrollTo(0, 0)).catch(() => {});
+      await page.waitForTimeout(200);
       finalUrl = page.url();
       title = await page.title().catch(() => null);
       await page.screenshot({ path: `${OUT}/${r.slug}.png`, fullPage: true });
