@@ -1,7 +1,20 @@
 import React, { useState } from "react";
 import {
-  ShieldCheck, Mail, Lock, Loader2, ArrowRight, UserPlus, LogIn,
-  Zap, AlertTriangle, Waves, Check, Bot, BarChart3, Radio,
+  ShieldCheck,
+  Mail,
+  Lock,
+  Loader2,
+  ArrowRight,
+  UserPlus,
+  LogIn,
+  Zap,
+  AlertTriangle,
+  Waves,
+  Check,
+  Bot,
+  BarChart3,
+  Radio,
+  Phone,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
@@ -46,11 +59,11 @@ function getPasswordStrength(pw: string): PasswordStrength {
   if (/[^A-Za-z0-9]/.test(pw)) score++;
   const clamped = Math.min(score, 4) as 0 | 1 | 2 | 3 | 4;
   const meta: Record<number, { label: string; color: string }> = {
-    0: { label: "Too short",  color: "#FF6B6B" },
-    1: { label: "Weak",       color: "#FF9A5C" },
-    2: { label: "Fair",       color: "#FFD166" },
-    3: { label: "Good",       color: "#4DFFC4" },
-    4: { label: "Strong",     color: "#0AC8D4" },
+    0: { label: "Too short", color: "#FF6B6B" },
+    1: { label: "Weak", color: "#FF9A5C" },
+    2: { label: "Fair", color: "#FFD166" },
+    3: { label: "Good", color: "#4DFFC4" },
+    4: { label: "Strong", color: "#0AC8D4" },
   };
   return { score: clamped, ...meta[clamped] };
 }
@@ -67,7 +80,7 @@ export default function AuthPortal() {
   const [message, setMessage] = useState<string | null>(null);
 
   const isSignUp = mode === "signup";
-  const isReset  = mode === "reset";
+  const isReset = mode === "reset";
   const pwStrength = isSignUp ? getPasswordStrength(password) : null;
 
   const setIsSignUp = (v: boolean) => {
@@ -96,7 +109,7 @@ export default function AuthPortal() {
         const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password })
+          body: JSON.stringify({ email, password }),
         });
 
         const data = await res.json();
@@ -104,7 +117,7 @@ export default function AuthPortal() {
 
         signIn({
           access_token: data.token,
-          user: data.user
+          user: data.user,
         });
       }
     } catch (err: any) {
@@ -151,8 +164,12 @@ export default function AuthPortal() {
       {/* ── LEFT PANEL — brand showcase ─────────────────────────────────────── */}
       <div className="hidden lg:flex lg:w-[54%] xl:w-[56%] flex-col relative z-10 p-10 xl:p-14 overflow-hidden">
         {/* Decorative vertical line on right edge */}
-        <div className="absolute top-0 right-0 w-px h-full"
-          style={{ background: "linear-gradient(to bottom, transparent, rgba(10,200,212,0.35) 30%, rgba(197,139,255,0.35) 70%, transparent)" }}
+        <div
+          className="absolute top-0 right-0 w-px h-full"
+          style={{
+            background:
+              "linear-gradient(to bottom, transparent, rgba(10,200,212,0.35) 30%, rgba(197,139,255,0.35) 70%, transparent)",
+          }}
         />
 
         {/* Logo */}
@@ -166,14 +183,17 @@ export default function AuthPortal() {
             className="relative w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
             style={{
               background: "linear-gradient(135deg, #0AC8D4 0%, #9B59F5 50%, #E040C0 100%)",
-              boxShadow: "0 8px 24px -8px rgba(10,200,212,0.60), 0 0 0 1px rgba(255,255,255,0.22) inset"
+              boxShadow:
+                "0 8px 24px -8px rgba(10,200,212,0.60), 0 0 0 1px rgba(255,255,255,0.22) inset",
             }}
           >
             <Waves className="w-5 h-5 text-paper" strokeWidth={2.5} />
           </div>
           <div>
             <span className="brand-wordmark text-2xl leading-none">WIRELINE</span>
-            <p className="text-[8px] tracking-[0.42em] uppercase text-muted mt-0.5">AI Voice Platform</p>
+            <p className="text-[8px] tracking-[0.42em] uppercase text-muted mt-0.5">
+              AI Voice Platform
+            </p>
           </div>
         </motion.div>
 
@@ -186,7 +206,9 @@ export default function AuthPortal() {
         >
           <div className="flex items-center gap-2 mb-4">
             <span className="hero-accent-line" />
-            <span className="text-[9px] uppercase tracking-[0.5em] text-muted/70">The Future of Sales</span>
+            <span className="text-[9px] uppercase tracking-[0.5em] text-muted/70">
+              The Future of Sales
+            </span>
           </div>
           <h2 className="font-display italic text-5xl xl:text-6xl leading-[0.88] tracking-tight mb-6">
             <span className="text-aurora">AI agents that</span>
@@ -194,10 +216,56 @@ export default function AuthPortal() {
             <span className="text-ink">close deals for you</span>
           </h2>
           <p className="text-sm text-muted/80 leading-relaxed max-w-md">
-            Wireline gives your team superhuman voice agents — trained on your playbook,
-            available 24/7, and improving with every call.
+            Wireline gives your team superhuman voice agents — trained on your playbook, available
+            24/7, and improving with every call.
           </p>
         </motion.div>
+
+        {/* Demo call CTA — the highest-leverage thing on the landing page.
+            Anyone (signed in or not) can call this number and experience
+            the platform end-to-end in under a minute. */}
+        <motion.a
+          href="tel:+16305811834"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+          className="group relative block rounded-2xl p-5 mb-6 overflow-hidden border border-white/12 hover:border-white/24 transition-colors"
+          style={{
+            background:
+              "linear-gradient(135deg, rgba(10,200,212,0.18), rgba(155,89,245,0.18) 50%, rgba(224,64,192,0.18))",
+            boxShadow:
+              "0 16px 40px -16px rgba(10,200,212,0.45), 0 0 0 1px rgba(255,255,255,0.06) inset",
+          }}
+        >
+          <div
+            className="absolute -top-10 -right-10 w-40 h-40 rounded-full blur-3xl opacity-30 pointer-events-none"
+            style={{ background: "radial-gradient(circle, #0AC8D4, transparent 70%)" }}
+          />
+          <div className="relative z-10 flex items-center gap-4">
+            <div
+              className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+              style={{
+                background: "linear-gradient(135deg, #0AC8D4, #9B59F5)",
+                boxShadow:
+                  "0 6px 20px -6px rgba(10,200,212,0.6), 0 0 0 1px rgba(255,255,255,0.16) inset",
+              }}
+            >
+              <Phone className="w-5 h-5 text-paper" strokeWidth={2.2} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[9px] uppercase tracking-[0.42em] text-muted/80 mb-1">
+                Hear a Wireline agent live · no signup
+              </p>
+              <p className="font-display italic text-2xl xl:text-3xl leading-none text-ink">
+                +1 (630) 581-1834
+              </p>
+              <p className="text-[11px] text-muted/70 mt-1">
+                Liam picks up · 90-second product demo · always on
+              </p>
+            </div>
+            <ArrowRight className="w-5 h-5 text-ink/40 group-hover:text-ink group-hover:translate-x-1 transition-all shrink-0" />
+          </div>
+        </motion.a>
 
         {/* Feature cards */}
         <div className="grid grid-cols-2 gap-3 mb-12">
@@ -250,7 +318,9 @@ export default function AuthPortal() {
             <span className="text-[9px] uppercase tracking-[0.38em]">99.9% Uptime</span>
           </div>
           <div className="h-3 w-px bg-white/10" />
-          <span className="text-[9px] uppercase tracking-[0.38em] text-muted/60">Sovereign Infrastructure</span>
+          <span className="text-[9px] uppercase tracking-[0.38em] text-muted/60">
+            Sovereign Infrastructure
+          </span>
         </motion.div>
       </div>
 
@@ -262,13 +332,26 @@ export default function AuthPortal() {
             className="w-16 h-16 rounded-2xl flex items-center justify-center"
             style={{
               background: "linear-gradient(135deg, #0AC8D4 0%, #9B59F5 50%, #E040C0 100%)",
-              boxShadow: "0 16px 40px -10px rgba(10,200,212,0.55)"
+              boxShadow: "0 16px 40px -10px rgba(10,200,212,0.55)",
             }}
           >
             <Waves className="w-8 h-8 text-paper" strokeWidth={2.2} />
           </div>
           <h1 className="brand-wordmark text-5xl leading-none">WIRELINE</h1>
           <p className="text-[9px] uppercase tracking-[0.5em] text-muted">AI Voice Platform</p>
+
+          {/* Compact mobile-only demo CTA (the desktop one lives on the left brand panel) */}
+          <a
+            href="tel:+16305811834"
+            className="mt-4 group flex items-center gap-2.5 px-4 py-2.5 rounded-xl glass border border-white/12 hover:border-white/24 transition-colors"
+            style={{ boxShadow: "0 8px 24px -12px rgba(10,200,212,0.4)" }}
+          >
+            <Phone className="w-3.5 h-3.5 text-brand" strokeWidth={2.4} />
+            <span className="text-[11px] uppercase tracking-[0.32em] text-ink">
+              Try the demo · (630) 581-1834
+            </span>
+            <ArrowRight className="w-3 h-3 text-ink/40 group-hover:text-ink group-hover:translate-x-0.5 transition-all" />
+          </a>
         </div>
 
         <motion.div
@@ -299,43 +382,44 @@ export default function AuthPortal() {
                   {isReset
                     ? "Enter your email and we'll send you a reset link."
                     : isSignUp
-                    ? "Start your 14-day free trial. No credit card required."
-                    : "Sign in to your Wireline operator console."}
+                      ? "Start your 14-day free trial. No credit card required."
+                      : "Sign in to your Wireline operator console."}
                 </p>
               </div>
 
               {/* Tab toggle — hidden in reset mode */}
               {!isReset && (
-              <div className="relative z-10 mb-7">
-                <div className="relative flex p-1 rounded-2xl bg-black/8 border border-black/10">
-                  <motion.div
-                    layout
-                    className="absolute inset-y-1 w-[calc(50%-4px)] rounded-xl"
-                    style={{
-                      background: "linear-gradient(135deg, rgba(10,200,212,0.20), rgba(197,139,255,0.20))",
-                      border: "1px solid rgba(10,200,212,0.35)",
-                      left: isSignUp ? "calc(50% + 2px)" : "4px",
-                      boxShadow: "0 6px 20px -8px rgba(10,200,212,0.5)"
-                    }}
-                    transition={{ type: "spring", stiffness: 400, damping: 34 }}
-                  />
-                  {[
-                    { label: "Sign In", value: false },
-                    { label: "Sign Up", value: true },
-                  ].map(opt => (
-                    <button
-                      key={String(opt.value)}
-                      onClick={() => setIsSignUp(opt.value)}
-                      className={cn(
-                        "relative z-10 flex-1 py-3 text-[11px] uppercase tracking-[0.3em] transition-colors",
-                        isSignUp === opt.value ? "text-ink" : "text-muted hover:text-ink/70"
-                      )}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
+                <div className="relative z-10 mb-7">
+                  <div className="relative flex p-1 rounded-2xl bg-black/8 border border-black/10">
+                    <motion.div
+                      layout
+                      className="absolute inset-y-1 w-[calc(50%-4px)] rounded-xl"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, rgba(10,200,212,0.20), rgba(197,139,255,0.20))",
+                        border: "1px solid rgba(10,200,212,0.35)",
+                        left: isSignUp ? "calc(50% + 2px)" : "4px",
+                        boxShadow: "0 6px 20px -8px rgba(10,200,212,0.5)",
+                      }}
+                      transition={{ type: "spring", stiffness: 400, damping: 34 }}
+                    />
+                    {[
+                      { label: "Sign In", value: false },
+                      { label: "Sign Up", value: true },
+                    ].map((opt) => (
+                      <button
+                        key={String(opt.value)}
+                        onClick={() => setIsSignUp(opt.value)}
+                        className={cn(
+                          "relative z-10 flex-1 py-3 text-[11px] uppercase tracking-[0.3em] transition-colors",
+                          isSignUp === opt.value ? "text-ink" : "text-muted hover:text-ink/70",
+                        )}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
               )}
 
               <form onSubmit={handleAuth} className="relative z-10 space-y-5">
@@ -350,77 +434,96 @@ export default function AuthPortal() {
                       type="email"
                       required
                       value={email}
-                      onChange={e => setEmail(e.target.value)}
+                      onChange={(e) => setEmail(e.target.value)}
                       className="auth-input"
                       placeholder="operator@company.io"
                     />
                     <div
                       className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity"
-                      style={{ boxShadow: "0 0 0 1px rgba(10,200,212,0.4), 0 0 20px rgba(10,200,212,0.18)" }}
+                      style={{
+                        boxShadow: "0 0 0 1px rgba(10,200,212,0.4), 0 0 20px rgba(10,200,212,0.18)",
+                      }}
                     />
                   </div>
                 </div>
 
                 {/* Password — hidden in reset mode */}
                 {!isReset && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[10px] uppercase tracking-[0.4em] text-muted/80 flex items-center gap-1.5">
-                      <Lock className="w-3 h-3 text-brand" />
-                      Password
-                    </label>
-                    {!isSignUp && (
-                      <button
-                        type="button"
-                        onClick={() => { setMode("reset"); setError(null); setMessage(null); }}
-                        className="text-[9px] uppercase tracking-[0.3em] text-muted/60 hover:text-brand transition-colors"
-                      >
-                        Forgot?
-                      </button>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] uppercase tracking-[0.4em] text-muted/80 flex items-center gap-1.5">
+                        <Lock className="w-3 h-3 text-brand" />
+                        Password
+                      </label>
+                      {!isSignUp && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMode("reset");
+                            setError(null);
+                            setMessage(null);
+                          }}
+                          className="text-[9px] uppercase tracking-[0.3em] text-muted/60 hover:text-brand transition-colors"
+                        >
+                          Forgot?
+                        </button>
+                      )}
+                    </div>
+                    <div className="relative group">
+                      <input
+                        type="password"
+                        required
+                        minLength={isSignUp ? 8 : undefined}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="auth-input tracking-[0.32em]"
+                        placeholder="••••••••••••"
+                      />
+                      <div
+                        className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity"
+                        style={{
+                          boxShadow:
+                            "0 0 0 1px rgba(10,200,212,0.4), 0 0 20px rgba(10,200,212,0.18)",
+                        }}
+                      />
+                    </div>
+                    {/* Password strength meter — sign-up only */}
+                    {isSignUp && password.length > 0 && pwStrength && (
+                      <div className="space-y-1.5">
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4].map((i) => (
+                            <div
+                              key={i}
+                              className="h-1 flex-1 rounded-full transition-all duration-300"
+                              style={{
+                                background:
+                                  i <= pwStrength.score
+                                    ? pwStrength.color
+                                    : "rgba(255,255,255,0.08)",
+                              }}
+                            />
+                          ))}
+                        </div>
+                        <p
+                          className="text-[9px] uppercase tracking-[0.3em]"
+                          style={{ color: pwStrength.color }}
+                        >
+                          {pwStrength.label}
+                        </p>
+                      </div>
                     )}
                   </div>
-                  <div className="relative group">
-                    <input
-                      type="password"
-                      required
-                      minLength={isSignUp ? 8 : undefined}
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      className="auth-input tracking-[0.32em]"
-                      placeholder="••••••••••••"
-                    />
-                    <div
-                      className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity"
-                      style={{ boxShadow: "0 0 0 1px rgba(10,200,212,0.4), 0 0 20px rgba(10,200,212,0.18)" }}
-                    />
-                  </div>
-                  {/* Password strength meter — sign-up only */}
-                  {isSignUp && password.length > 0 && pwStrength && (
-                    <div className="space-y-1.5">
-                      <div className="flex gap-1">
-                        {[1, 2, 3, 4].map(i => (
-                          <div
-                            key={i}
-                            className="h-1 flex-1 rounded-full transition-all duration-300"
-                            style={{
-                              background: i <= pwStrength.score ? pwStrength.color : "rgba(255,255,255,0.08)",
-                            }}
-                          />
-                        ))}
-                      </div>
-                      <p className="text-[9px] uppercase tracking-[0.3em]" style={{ color: pwStrength.color }}>
-                        {pwStrength.label}
-                      </p>
-                    </div>
-                  )}
-                </div>
                 )}
 
                 {/* Reset-mode footer — link back to sign-in */}
                 {isReset && (
                   <button
                     type="button"
-                    onClick={() => { setMode("signin"); setError(null); setMessage(null); }}
+                    onClick={() => {
+                      setMode("signin");
+                      setError(null);
+                      setMessage(null);
+                    }}
                     className="text-[10px] uppercase tracking-[0.3em] text-muted/60 hover:text-brand transition-colors"
                   >
                     ← Back to sign in
@@ -462,13 +565,23 @@ export default function AuthPortal() {
                   className="brutal-btn w-full !py-4 !px-6 !text-[12px] !tracking-[0.3em]"
                 >
                   {loading ? (
-                    <><Loader2 className="w-4 h-4 animate-spin" /> Connecting…</>
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" /> Connecting…
+                    </>
                   ) : isReset ? (
-                    <><Mail className="w-4 h-4" /> Send Reset Link <ArrowRight className="w-4 h-4" /></>
+                    <>
+                      <Mail className="w-4 h-4" /> Send Reset Link{" "}
+                      <ArrowRight className="w-4 h-4" />
+                    </>
                   ) : isSignUp ? (
-                    <><UserPlus className="w-4 h-4" /> Create Account <ArrowRight className="w-4 h-4" /></>
+                    <>
+                      <UserPlus className="w-4 h-4" /> Create Account{" "}
+                      <ArrowRight className="w-4 h-4" />
+                    </>
                   ) : (
-                    <><LogIn className="w-4 h-4" /> Sign In <ArrowRight className="w-4 h-4" /></>
+                    <>
+                      <LogIn className="w-4 h-4" /> Sign In <ArrowRight className="w-4 h-4" />
+                    </>
                   )}
                 </button>
               </form>

@@ -1,10 +1,10 @@
 name: CI
 
+# Triggers temporarily reduced to manual-only (workflow_dispatch) while
+# GitHub Actions billing is being sorted. Restore push + pull_request
+# triggers once billing is current.
 on:
-  push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
+  workflow_dispatch:
 
 jobs:
   verify:

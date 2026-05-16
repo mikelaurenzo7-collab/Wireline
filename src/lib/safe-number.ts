@@ -22,10 +22,10 @@
  *   NaN/Infinity   → null
  */
 export function safeNumber(input: unknown): number | null {
-  if (typeof input === 'number') {
+  if (typeof input === "number") {
     return Number.isFinite(input) ? input : null;
   }
-  if (typeof input === 'string') {
+  if (typeof input === "string") {
     const s = input.trim();
     if (!s) return null;
     // Reject strings that aren't pure numerics — Number("12.5px") is
@@ -34,7 +34,7 @@ export function safeNumber(input: unknown): number | null {
     const n = Number(s);
     return Number.isFinite(n) ? n : null;
   }
-  if (typeof input === 'boolean') return input ? 1 : 0;
+  if (typeof input === "boolean") return input ? 1 : 0;
   return null;
 }
 
@@ -101,10 +101,33 @@ export function formatPercent(
  */
 export function formatInt(input: unknown, fallback?: string): string {
   const n = safeNumber(input);
-  if (n == null) return fallback ?? '0';
+  if (n == null) return fallback ?? "0";
   try {
     return Math.round(n).toLocaleString();
   } catch {
-    return fallback ?? '0';
+    return fallback ?? "0";
   }
+}
+
+/**
+ * Human-friendly phone formatter, never throws. Strips non-digits then formats
+ * North American 10/11-digit numbers as "+1 (555) 123-4567". Falls back to the
+ * raw input for anything that doesn't match a known pattern.
+ *
+ *   formatPhone("15551234567")  → "+1 (555) 123-4567"
+ *   formatPhone("5551234567")   → "(555) 123-4567"
+ *   formatPhone("+44 20 7946")  → "+44 20 7946"  (passthrough — not NANP)
+ */
+export function formatPhone(input: unknown, fallback?: string): string {
+  if (input == null) return fallback ?? "";
+  const raw = String(input).trim();
+  if (!raw) return fallback ?? "";
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length === 11 && digits.startsWith("1")) {
+    return `+1 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+  }
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  return raw;
 }
