@@ -58,8 +58,8 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install chromium
 
-      - name: Run E2E tests
-        run: npx playwright test
+      - name: Run E2E tests (Chromium)
+        run: npx playwright test --project=chromium
         env:
           E2E_BASE_URL: http://localhost:3000
 

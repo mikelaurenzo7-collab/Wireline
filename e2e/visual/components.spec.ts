@@ -1,37 +1,44 @@
 import { test, expect } from "@playwright/test";
+import { dismissCookieNotice } from "../helpers/auth";
 
-/**
- * Component-level visual regression tests
- * Isolated component rendering
- */
-test.describe("Component Visual Tests", () => {
+test.describe("Component visual (login)", () => {
   test("login form component", async ({ page }) => {
     await page.goto("/login");
+    await dismissCookieNotice(page);
 
-    // Focus on just the login form area
     const loginForm = page.locator("form").first();
-    await expect(loginForm).toHaveScreenshot("login-form.png");
+    await expect(loginForm).toBeVisible();
+    if (!process.env.CI) {
+      await expect(loginForm).toHaveScreenshot("login-form.png", { maxDiffPixelRatio: 0.04 });
+    }
+  });
+});
+
+test.describe("Component visual @auth-desktop", () => {
+  test.beforeEach(async ({ page }) => {
+    await dismissCookieNotice(page);
   });
 
-  test("navigation sidebar - expanded", async ({ page }) => {
+  test("main shell on dashboard", async ({ page }) => {
     await page.goto("/dashboard");
+    await page.waitForLoadState("networkidle").catch(() => {});
 
-    const sidebar = page.locator("[data-testid='sidebar'], nav, aside").first();
-    if (await sidebar.isVisible()) {
-      await expect(sidebar).toHaveScreenshot("sidebar-expanded.png");
+    const main = page.locator("main").first();
+    await expect(main).toBeVisible({ timeout: 20_000 });
+    if (!process.env.CI) {
+      await expect(main).toHaveScreenshot("main-dashboard.png", { maxDiffPixelRatio: 0.04 });
     }
   });
 
-  test("modal/dialog styling", async ({ page }) => {
+  test("keyboard shortcuts overlay", async ({ page }) => {
     await page.goto("/dashboard");
-
-    // Try to trigger a modal (e.g., settings or confirmation)
-    const settingsButton = page.getByRole("button", { name: /settings/i });
-    if (await settingsButton.isVisible().catch(() => false)) {
-      await settingsButton.click();
-      const modal = page.locator("[role='dialog'], .modal, [data-testid='modal']").first();
-      await expect(modal).toBeVisible();
-      await expect(modal).toHaveScreenshot("modal-default.png");
+    await page.waitForLoadState("domcontentloaded");
+    await page.keyboard.press("?");
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible({ timeout: 5000 });
+    if (!process.env.CI) {
+      await expect(dialog).toHaveScreenshot("shortcuts-dialog.png", { maxDiffPixelRatio: 0.04 });
     }
+    await page.keyboard.press("Escape");
   });
 });

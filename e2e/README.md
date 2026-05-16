@@ -1,21 +1,29 @@
 # Wireline E2E Testing with Playwright
 
+## Projects
+
+| Project | Purpose |
+|---------|---------|
+| `chromium` | Unauthenticated flows, login UI, legal pages, outbound gate — **default in CI** |
+| `chromium-mobile` / `chromium-tablet` | Same tests except `@auth-desktop` and `@desktop-only` (grep-inverted) |
+| `setup` + `chromium-authed` | When `E2E_USER_EMAIL` + `E2E_USER_PASSWORD` are set: writes `e2e/.auth/user.json`, then runs every `@auth-desktop` journey (full navigation, hubs, admin tabs, rail, command palette, campaigns, visuals) |
+
 ## Quick Start
 
 ```bash
 # Install browsers (one-time)
 npx playwright install chromium
 
-# Run all e2e tests
-npx playwright test
+# Run Chromium-only (matches CI)
+npx playwright test --project=chromium
 
-# Run specific test file
-npx playwright test userflows/auth.spec.ts
+# Authenticated deep suite (needs working POSTGRES_URL + valid user)
+E2E_USER_EMAIL=you@example.com E2E_USER_PASSWORD='…' npx playwright test --project=chromium-authed
 
 # Run with UI for debugging
 npx playwright test --ui
 
-# Update snapshots after intentional visual changes
+# Record visual baselines locally (snapshots are skipped when CI=true in specs)
 npx playwright test --update-snapshots
 ```
 
@@ -23,58 +31,54 @@ npx playwright test --update-snapshots
 
 ```
 e2e/
-├── userflows/       # End-to-end user journeys (auth, agent creation, etc.)
-├── visual/          # Visual regression tests (screenshot comparisons)
-├── screenshots/     # Baseline screenshots for comparison
-└── README.md        # This file
+├── auth.setup.ts          # Writes storage state when E2E credentials exist
+├── helpers/               # Shared auth + shell assertions
+├── userflows/             # Auth, navigation, campaigns, fleet, command palette
+├── visual/                # Optional screenshots
+├── .auth/user.json        # Generated; gitignored (.gitkeep keeps folder)
+└── README.md              # This file
 ```
 
 ## Environment Variables
 
 ```bash
-# Test target
 E2E_BASE_URL=http://localhost:3000
 
-# Test credentials (for auth flows)
-E2E_TEST_EMAIL=test@example.com
-E2E_TEST_PASSWORD=yourpassword
+# Optional: deployed preview (disables Playwright webServer)
+# E2E_BASE_URL=https://your-app.vercel.app
 
-# CI mode
-CI=true  # Runs with retries, single worker
+E2E_USER_EMAIL=you@example.com
+E2E_USER_PASSWORD=yourpassword
+# Legacy: E2E_TEST_EMAIL, E2E_TEST_PASSWORD
+
+# CI=true on GitHub Actions — retries + snapshot skips in visual specs
 ```
 
-## Visual Regression Workflow
+Playwright’s `webServer` child process sets `NODE_ENV=development`, clears `VERCEL`, and clears `CORS_ORIGINS` so Vite HMR from `http://localhost:3000` is never blocked by production CORS inherited from the parent shell.
 
-1. **First run**: Creates baseline screenshots
-2. **Subsequent runs**: Compares against baseline
-3. **On intentional changes**: Run with `--update-snapshots`
-4. **Review diffs**: Check `test-results/` folder or HTML report
+## Tag conventions
+
+- **`@auth-desktop`**: requires `e2e/auth.setup.ts` session; desktop layout (floating rail, hub strips).
+- **`@desktop-only`**: excluded from mobile/tablet via `grepInvert` (for future narrow-viewport skips).
 
 ## Critical User Flows Covered
 
-- [x] Authentication (login/logout)
-- [x] Dashboard rendering (desktop/mobile)
-- [x] Voice agent creation
-- [ ] Campaign management
-- [ ] Call log review
-- [ ] Settings configuration
-- [ ] Billing flow
+- [x] Authentication (login UI, invalid credentials, successful login when creds + DB exist)
+- [x] Public legal pages (`/privacy`, `/terms`)
+- [x] Outbound route shows sign-in when logged out
+- [x] Full route map + hub tabs + admin tabs + rail + ⌘K palette (`@auth-desktop`)
+- [x] Campaign modal / CSV paths (`@auth-desktop`, needs API + DB)
+- [x] Fleet / agents tabs (`@auth-desktop`)
 
 ## Adding New Tests
+
+Use `signInSubmitButton(page)` from `e2e/helpers/auth.ts` for the email form — the screen has two controls named “Sign In” (mode tab + submit).
 
 ```typescript
 import { test, expect } from "@playwright/test";
 
 test("describe what you're testing", async ({ page }) => {
   await page.goto("/your-route");
-
-  // Interactions
-  await page.getByRole("button").click();
-
-  // Assertions
-  await expect(page.getByText("expected text")).toBeVisible();
-
-  // Visual snapshot (optional)
-  await expect(page).toHaveScreenshot("name.png");
+  await expect(page.getByRole("button")).toBeVisible();
 });
 ```
