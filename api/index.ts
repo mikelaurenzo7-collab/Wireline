@@ -4,9 +4,11 @@
 
 // Import the pre-built server bundle (created by the build script)
 // The build outputs dist/server.cjs which contains the bundled Express app
+// @ts-ignore
 import * as serverModule from "../dist/server.cjs";
 
-const app = serverModule.app || serverModule.default;
+// The bundled app is exported on the 'app' property via the build footer
+const app = (serverModule as any).app || (serverModule as any).default || serverModule;
 
 // Export the Express app as the serverless function handler
 // Vercel will invoke this handler for all /api/* requests
