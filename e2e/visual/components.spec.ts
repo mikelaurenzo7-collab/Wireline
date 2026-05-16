@@ -1,37 +1,28 @@
 import { test, expect } from "@playwright/test";
+import { dismissCookieBanner, hasE2eCredentials, loginAsTestUser } from "../fixtures/auth";
 
-/**
- * Component-level visual regression tests
- * Isolated component rendering
- */
-test.describe("Component Visual Tests", () => {
+test.describe("Component Visual Tests — public", () => {
   test("login form component", async ({ page }) => {
     await page.goto("/login");
+    await dismissCookieBanner(page);
 
-    // Focus on just the login form area
     const loginForm = page.locator("form").first();
     await expect(loginForm).toHaveScreenshot("login-form.png");
   });
+});
 
-  test("navigation sidebar - expanded", async ({ page }) => {
-    await page.goto("/dashboard");
-
-    const sidebar = page.locator("[data-testid='sidebar'], nav, aside").first();
-    if (await sidebar.isVisible()) {
-      await expect(sidebar).toHaveScreenshot("sidebar-expanded.png");
-    }
+test.describe("Component Visual Tests — authenticated chrome", () => {
+  test.beforeEach(async ({ page }) => {
+    test.skip(!hasE2eCredentials(), "Set E2E credentials for shell screenshots");
+    await loginAsTestUser(page);
   });
 
-  test("modal/dialog styling", async ({ page }) => {
+  test("navigation rail visible", async ({ page }) => {
     await page.goto("/dashboard");
+    await page.waitForLoadState("domcontentloaded");
 
-    // Try to trigger a modal (e.g., settings or confirmation)
-    const settingsButton = page.getByRole("button", { name: /settings/i });
-    if (await settingsButton.isVisible().catch(() => false)) {
-      await settingsButton.click();
-      const modal = page.locator("[role='dialog'], .modal, [data-testid='modal']").first();
-      await expect(modal).toBeVisible();
-      await expect(modal).toHaveScreenshot("modal-default.png");
-    }
+    const rail = page.locator("aside").first();
+    await expect(rail).toBeVisible({ timeout: 20_000 });
+    await expect(rail).toHaveScreenshot("sidebar-expanded.png");
   });
 });

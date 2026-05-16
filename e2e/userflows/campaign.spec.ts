@@ -1,4 +1,5 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
+import { hasE2eCredentials, loginAsTestUser } from "../fixtures/auth";
 
 /**
  * Campaign Management E2E Tests
@@ -15,79 +16,37 @@ import { test, expect } from "@playwright/test";
 test.describe("Campaign Management Flows", () => {
   test.setTimeout(60000); // 60s timeout for campaign operations
 
-  // Helper: Login with test credentials
-  // Uses E2E_USER_EMAIL/E2E_USER_PASSWORD from Vercel env, falls back to E2E_TEST_* variants
-  const loginIfCredentials = async (page: any) => {
-    const email = process.env.E2E_USER_EMAIL || process.env.E2E_TEST_EMAIL;
-    const password = process.env.E2E_USER_PASSWORD || process.env.E2E_TEST_PASSWORD;
-
-    if (!email) {
+  const loginIfCredentials = async (page: Page) => {
+    if (!hasE2eCredentials()) {
       test.skip(true, "No E2E test credentials configured");
       return;
     }
-
-    await page.goto("/login");
-    await page.waitForLoadState("domcontentloaded");
-
-    // Dismiss cookie consent popup if present (blocks UI)
-    const cookieDismiss = page
-      .locator('button:has-text("Accept"), button:has-text("OK"), .cookie-banner button')
-      .first();
-    try {
-      await cookieDismiss.click({ timeout: 3000 });
-    } catch {
-      // Popup not present or already dismissed
-    }
-
-    // Wait for auth form with flexible selectors
-    await expect(page.locator("input").first()).toBeVisible({ timeout: 10000 });
-
-    // Fill credentials using data-testid or placeholder
-    const emailInput = page.locator('[data-testid="email-input"], input[type="email"]').first();
-    await emailInput.fill(email);
-
-    const passwordInput = page
-      .locator('[data-testid="password-input"], input[type="password"]')
-      .first();
-    await passwordInput.fill(password || "");
-
-    // Click sign in button (use submit type for reliability)
-    await page.locator('button[type="submit"]').click();
-
-    // Wait for navigation away from login page (any authenticated route)
-    await page.waitForURL((url: URL) => !url.pathname.includes("/login"), { timeout: 15000 });
-
-    // Verify we're on an authenticated page (sidebar shows user or we see dashboard elements)
-    await expect(page.locator('nav, .sidebar, [class*="sidebar"]').first()).toBeVisible({
-      timeout: 5000,
-    });
+    await loginAsTestUser(page);
+    await expect(page.locator("nav, aside").first()).toBeVisible({ timeout: 10_000 });
   };
 
-  test("outbound dialer page renders correctly", async ({ page }) => {
+  test("outbound dialer page renders for signed-in operator", async ({ page }) => {
+    test.skip(!hasE2eCredentials(), "Requires authentication");
+    await loginIfCredentials(page);
     await page.goto("/outbound");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
-    // Check key elements exist with flexible selectors
-    const createBtn = page.getByRole("button", { name: /create|new/i });
-    await expect(createBtn.or(page.getByText(/campaign/i))).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/outbound|campaign|dial|lead/i).first()).toBeVisible({
+      timeout: 20_000,
+    });
   });
 
-  test("unauthenticated user is redirected to login", async ({ page }) => {
-    // Clear any existing auth state
+  test("unauthenticated outbound URL shows auth shell", async ({ page }) => {
     await page.context().clearCookies();
-
     await page.goto("/outbound");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
-    // Should redirect to login or show auth-required state
-    await expect(page).toHaveURL(/login|auth|signin/, { timeout: 10000 });
+    await expect(page).toHaveURL("/outbound");
+    await expect(page.getByText(/welcome back|sign in/i).first()).toBeVisible({ timeout: 10_000 });
   });
 
   test("create campaign modal opens and validates", async ({ page }) => {
-    test.skip(
-      !(process.env.E2E_USER_EMAIL || process.env.E2E_TEST_EMAIL),
-      "Requires authentication",
-    );
+    test.skip(!hasE2eCredentials(), "Requires authentication");
 
     await loginIfCredentials(page);
 

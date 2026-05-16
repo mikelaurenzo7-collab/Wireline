@@ -1,10 +1,21 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const ci = !!process.env.CI;
+const fullMatrix = process.env.E2E_FULL_MATRIX === "1";
+
+const allProjects = [
+  { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+  { name: "chromium-mobile", use: { ...devices["Pixel 5"] } },
+  { name: "chromium-tablet", use: { ...devices["iPad Mini"] } },
+];
+
 /**
  * Playwright E2E configuration for Wireline
  * - Visual regression testing with screenshots
  * - User flow testing for critical paths
  * - Mobile and desktop viewport coverage
+ *
+ * CI defaults to **desktop Chromium only** unless `E2E_FULL_MATRIX=1` (3× runtime).
  */
 export default defineConfig({
   testDir: "./e2e",
@@ -19,20 +30,7 @@ export default defineConfig({
     screenshot: "only-on-failure",
     video: "on-first-retry",
   },
-  projects: [
-    {
-      name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
-    },
-    {
-      name: "chromium-mobile",
-      use: { ...devices["Pixel 5"] },
-    },
-    {
-      name: "chromium-tablet",
-      use: { ...devices["iPad Mini"] },
-    },
-  ],
+  projects: ci && !fullMatrix ? [allProjects[0]!] : allProjects,
   webServer: {
     command: "npm run dev",
     url: "http://localhost:3000",

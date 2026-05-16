@@ -1,60 +1,72 @@
 import { test, expect } from "@playwright/test";
+import { hasE2eCredentials, loginAsTestUser } from "../fixtures/auth";
 
 /**
- * Voice Agent critical user flow
- * Create agent → Configure → Test call
+ * Voice / fleet agent flows (real routes: /agents → FleetSettings).
  */
-test.describe("Voice Agent Creation Flow", () => {
-  // Support both Vercel env naming (E2E_USER_*) and local naming (E2E_TEST_*)
-  const getCredentials = () => ({
-    email: process.env.E2E_USER_EMAIL || process.env.E2E_TEST_EMAIL,
-    password: process.env.E2E_USER_PASSWORD || process.env.E2E_TEST_PASSWORD,
-  });
-
-  test.skip(!getCredentials().email, "E2E test credentials required");
-
+test.describe("Fleet agent flows", () => {
   test.beforeEach(async ({ page }) => {
-    const { email, password } = getCredentials();
-    // Login
-    await page.goto("/login");
-    await page.getByPlaceholder(/email/i).fill(email!);
-    await page.getByPlaceholder(/password/i).fill(password!);
-    await page.getByRole("button", { name: /sign in/i }).click();
-    await expect(page).toHaveURL(/dashboard/);
+    test.skip(!hasE2eCredentials(), "Set E2E_USER_EMAIL + E2E_USER_PASSWORD (or E2E_TEST_*)");
+    await loginAsTestUser(page);
   });
 
-  test("create new voice agent", async ({ page }) => {
-    // Navigate to agent creation
-    await page.goto("/agents/new");
-
-    // Fill agent details
-    await page.getByLabel(/agent name/i).fill("E2E Test Agent");
-    await page.getByLabel(/description/i).fill("Created by automated E2E test");
-
-    // Select archetype
-    await page.getByLabel(/archetype/i).selectOption("receptionist");
-
-    // Save agent
-    await page.getByRole("button", { name: /create|save/i }).click();
-
-    // Should redirect to agent detail or show success
-    await expect(page.getByText(/created|success/i)).toBeVisible();
-  });
-
-  test("configure agent phone number", async ({ page }) => {
+  test("fleet page loads and can switch to My Fleet", async ({ page }) => {
     await page.goto("/agents");
+    await page.waitForLoadState("domcontentloaded");
 
-    // Find test agent
-    const agentRow = page.getByText("E2E Test Agent").first();
-    await agentRow.click();
+    await expect(page.getByRole("tab", { name: /my fleet/i })).toBeVisible({ timeout: 20_000 });
+    await page.getByRole("tab", { name: /my fleet/i }).click();
 
-    // Navigate to phone settings
-    await page.getByRole("tab", { name: /phone|voice|settings/i }).click();
+    await expect(page.getByText(/create a new agent/i)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("button", { name: /create agent/i })).toBeVisible();
+  });
 
-    // Configure with test number (mock/Vapi test number)
-    await page.getByLabel(/phone number/i).fill("+15555555555");
-    await page.getByRole("button", { name: /save|update/i }).click();
+  test("create voice agent when subscription allows", async ({ page }) => {
+    test.setTimeout(90_000);
 
-    await expect(page.getByText(/updated|success/i)).toBeVisible();
+    const suffix = `${Date.now()}`.slice(-8);
+    const agentId = `e2e-voice-${suffix}`;
+    const agentName = `E2E Voice ${suffix}`;
+
+    await page.goto("/agents");
+    await page.getByRole("tab", { name: /my fleet/i }).click();
+
+    await page.getByPlaceholder("e.g. sales-bot-1").fill(agentId);
+    await page.getByPlaceholder("e.g. Sophie").fill(agentName);
+
+    await page.getByRole("button", { name: /create agent/i }).click();
+
+    const outcome = page.getByText(
+      /agent deployed|subscription required|fleet capacity reached|deployment failed|access denied/i,
+    );
+    await expect(outcome.first()).toBeVisible({ timeout: 25_000 });
+
+    if (
+      await page
+        .getByText(/subscription required/i)
+        .isVisible()
+        .catch(() => false)
+    ) {
+      test.skip(true, "E2E tenant needs active subscription to create agents");
+    }
+    if (
+      await page
+        .getByText(/fleet capacity reached/i)
+        .isVisible()
+        .catch(() => false)
+    ) {
+      test.skip(true, "E2E tenant at max agents — cannot add another");
+    }
+    if (
+      await page
+        .getByText(/deployment failed|access denied/i)
+        .first()
+        .isVisible()
+        .catch(() => false)
+    ) {
+      throw new Error("Agent creation failed — check API response / entitlements");
+    }
+
+    await expect(page.getByText(agentName).first()).toBeVisible({ timeout: 15_000 });
   });
 });

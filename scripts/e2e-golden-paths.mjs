@@ -3,7 +3,7 @@
  * E2E Golden-Path Smoke Tests
  *
  * Validates critical user flows against a running Wireline server.
- * Requires: a running server at BASE_URL (default http://localhost:5173)
+ * Requires: a running server at BASE_URL (default http://localhost:3000)
  * and valid Supabase credentials for a test user.
  *
  * Env:
@@ -19,7 +19,7 @@
  * Exit 0 if all golden paths pass, exit 1 otherwise.
  */
 
-const BASE_URL = process.env.E2E_BASE_URL || "http://localhost:5173";
+const BASE_URL = process.env.E2E_BASE_URL || "http://localhost:3000";
 const EMAIL = process.env.E2E_USER_EMAIL;
 const PASSWORD = process.env.E2E_USER_PASSWORD;
 

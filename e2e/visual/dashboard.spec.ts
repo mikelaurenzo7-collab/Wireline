@@ -1,14 +1,14 @@
 import { test, expect } from "@playwright/test";
+import { hasE2eCredentials, loginAsTestUser } from "../fixtures/auth";
 
 /**
  * Visual regression tests for Dashboard
- * Screenshots compared against baseline
+ * Screenshots compared against baseline (per Playwright project / viewport).
  */
 test.describe("Dashboard Visual Regression", () => {
   test.beforeEach(async ({ page }) => {
-    // Mock auth or login before each test
-    await page.goto("/login");
-    // Add auth mocking here if needed
+    test.skip(!hasE2eCredentials(), "Set E2E credentials for authenticated dashboard snapshots");
+    await loginAsTestUser(page);
   });
 
   test("dashboard layout - desktop", async ({ page }) => {
@@ -28,6 +28,7 @@ test.describe("Dashboard Visual Regression", () => {
 
     await expect(page).toHaveScreenshot("dashboard-mobile.png", {
       fullPage: false,
+      clip: { x: 0, y: 0, width: 375, height: 812 },
     });
   });
 });
