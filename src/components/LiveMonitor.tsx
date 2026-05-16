@@ -236,7 +236,7 @@ export default function LiveMonitor() {
       }
     >
       {loading ? (
-        <div className="h-full flex flex-col items-center justify-center gap-4">
+        <div className="h-full flex flex-col items-center justify-center gap-4 min-w-0">
           <div className="relative w-14 h-14">
             <div
               className="absolute inset-0 rounded-full opacity-40"
@@ -254,7 +254,7 @@ export default function LiveMonitor() {
           <p className="text-[9px] uppercase tracking-[0.5em] text-muted/60">Establishing connection…</p>
         </div>
       ) : (
-        <div className="h-full flex flex-col gap-3 overflow-hidden">
+        <div className="h-full flex flex-col gap-3 overflow-hidden min-w-0">
           {/* Distress alert banner — appears when any active call hits frustrated/tense state */}
           {(() => {
             const distressedCalls = signals.filter(s => isDistressedLabel(s.label));
@@ -295,9 +295,9 @@ export default function LiveMonitor() {
           </div>
 
           {/* Main grid */}
-          <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-12 gap-3">
+          <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-3 min-w-0">
             {/* Active calls panel */}
-            <div className="xl:col-span-5 h-full">
+            <div className="lg:col-span-5 h-full min-w-0">
               <Panel
                 title="Active Calls"
                 hint={activeCount > 0 ? `${activeCount} live` : "idle"}
@@ -386,7 +386,7 @@ export default function LiveMonitor() {
             </div>
 
             {/* Activity feed */}
-            <div className="xl:col-span-7 h-full">
+            <div className="lg:col-span-7 h-full min-w-0">
               <Panel title="Recent Activity" hint="Fleet events" icon={Activity} scroll flush>
                 <AnimatePresence mode="popLayout">
                   {activity.length === 0 ? (

@@ -378,9 +378,9 @@ export default function AuditLog() {
   }, []);
 
   return (
-    <div className="h-full flex flex-col min-h-0">
+    <div className="h-full flex flex-col min-h-0 min-w-0">
       <HubTabs tabs={SYSTEM_HUB} label="System sub-navigation" />
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 min-w-0">
         <PageShell
           title="Audit Log"
           subtitle="System activity monitoring & compliance"
@@ -411,7 +411,7 @@ export default function AuditLog() {
             </button>
           }
         >
-          <div className="h-full flex flex-col gap-4 p-4 overflow-y-auto scrollbar-hide">
+          <div className="h-full flex flex-col gap-4 p-3 sm:p-4 overflow-y-auto scrollbar-hide min-w-0">
             {/* Stats Overview */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard

@@ -222,7 +222,7 @@ export default function CommandCenter() {
 
   return (
     <PageTransition>
-      <div className="max-w-[1600px] mx-auto space-y-8 pb-12">
+      <div className="app-page-max-2xl space-y-5 md:space-y-7 lg:space-y-8 pb-8 md:pb-12 min-w-0 w-full">
         {/* Elite Command Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-black/5">
           <div className="space-y-1">
@@ -328,9 +328,9 @@ export default function CommandCenter() {
         </div>
 
         {/* Dashboard Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 lg:gap-8">
           {/* Left Column: Live Monitor (8/12) */}
-          <div className="xl:col-span-8 space-y-8">
+          <div className="lg:col-span-8 space-y-5 md:space-y-6 lg:space-y-8 min-w-0">
             <div className="relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-brand/20 to-brand-2/20 rounded-[2.5rem] blur opacity-25 group-hover:opacity-40 transition duration-1000" />
               <div className="relative glass border-black/5 rounded-[2rem] p-8 min-h-[400px]">
@@ -338,7 +338,7 @@ export default function CommandCenter() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 lg:gap-8">
               {/* Analytics: Sentiment */}
               <div className="glass border-black/5 rounded-[2rem] p-8">
                 <div className="flex items-center justify-between mb-8">
@@ -356,8 +356,8 @@ export default function CommandCenter() {
                     </p>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-8">
-                    <div className="w-1/2 h-[160px]">
+                  <div className="flex flex-col sm:flex-row items-center gap-4 md:gap-6 lg:gap-8 min-w-0 w-full">
+                    <div className="w-full sm:w-1/2 max-w-[280px] sm:max-w-none mx-auto sm:mx-0 h-[160px] shrink-0">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
@@ -383,7 +383,7 @@ export default function CommandCenter() {
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
-                    <div className="flex-1 space-y-3">
+                    <div className="flex-1 min-w-0 space-y-3 w-full sm:w-auto">
                       {sentimentData.map((d) => (
                         <div key={d.name} className="flex items-center justify-between group">
                           <div className="flex items-center gap-2">
@@ -460,7 +460,7 @@ export default function CommandCenter() {
           </div>
 
           {/* Right Column: Intelligence & Actions (4/12) */}
-          <div className="xl:col-span-4 space-y-8">
+          <div className="lg:col-span-4 space-y-5 md:space-y-6 lg:space-y-8 min-w-0">
             {/* Intelligence Hub (Action Feed) */}
             <div className="glass border-black/5 rounded-[2rem] p-8 h-full min-h-[600px] flex flex-col">
               <ActionFeed actions={actions} onRefresh={refresh} />

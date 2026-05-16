@@ -70,7 +70,7 @@ export function KimiQualityPanel() {
       {/* Maturity Score Header */}
       <div className="relative group">
         <div className="absolute -inset-1 bg-gradient-to-r from-brand/20 to-brand-2/20 rounded-[2rem] blur opacity-25" />
-        <div className="relative glass border-black/5 rounded-[2rem] p-8 flex flex-col md:flex-row items-center justify-between gap-8">
+        <div className="relative glass border-black/5 rounded-[2rem] p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-8 min-w-0">
           <div className="space-y-2 text-center md:text-left">
             <div className="flex items-center justify-center md:justify-start gap-2">
               <Sparkles className="w-4 h-4 text-brand" />

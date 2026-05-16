@@ -357,7 +357,7 @@ export default function FleetSettings() {
 
   return (
     <>
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col min-h-0 min-w-0">
       {/* Tab strip */}
       <div className="px-4 py-2 border-b border-white/8 flex items-center gap-1.5 shrink-0" role="tablist">
         <button
@@ -599,7 +599,7 @@ export default function FleetSettings() {
               key={selectedAgent.id}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              className="max-w-[1200px] mx-auto space-y-3"
+              className="w-full max-w-[min(75rem,100%)] mx-auto space-y-3 min-w-0"
             >
               {(() => {
                 const selectedToolNames = resolveAgentTools(selectedAgent.role, selectedAgent.enabled_tools);

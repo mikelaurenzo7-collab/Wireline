@@ -415,9 +415,9 @@ export default function AdminSettings() {
   );
 
   return (
-    <div className="h-full flex flex-col min-h-0">
+    <div className="h-full flex flex-col min-h-0 min-w-0">
       <HubTabs tabs={SYSTEM_HUB} label="System sub-navigation" />
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 min-w-0">
         <PageShell
           title="Settings"
           eyebrow="Admin · Configuration"

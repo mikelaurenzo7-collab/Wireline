@@ -225,7 +225,7 @@ export default function KnowledgeBaseManager() {
   };
 
   return (
-    <div className="h-full overflow-y-auto scrollbar-hide w-full max-w-[1700px] mx-auto space-y-4">
+    <div className="h-full overflow-y-auto scrollbar-hide app-page-max-ultra space-y-4 min-w-0">
       <HubTabs tabs={TRAINING_HUB} label="Training sub-navigation" />
       <motion.header
         initial={{ y: -16, opacity: 0 }}

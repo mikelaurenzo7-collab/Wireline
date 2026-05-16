@@ -130,6 +130,31 @@
   }
 }
 
+/* Consistent readable measure on wide dashboards (rem = 16px root). */
+.app-page-max {
+  width: 100%;
+  max-width: min(87.5rem, 100%);
+  margin-inline: auto;
+}
+
+.app-page-max-wide {
+  width: 100%;
+  max-width: min(93.75rem, 100%);
+  margin-inline: auto;
+}
+
+.app-page-max-2xl {
+  width: 100%;
+  max-width: min(100rem, 100%);
+  margin-inline: auto;
+}
+
+.app-page-max-ultra {
+  width: 100%;
+  max-width: min(106.25rem, 100%);
+  margin-inline: auto;
+}
+
 /* ─────────────────────────  AURORA UTILITIES  ───────────────────────── */
 
 @utility brutal-border {

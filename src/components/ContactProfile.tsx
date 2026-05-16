@@ -91,7 +91,7 @@ export default function ContactProfile() {
   const lastTouch = formatDate(data.stats.last_touch);
 
   return (
-    <div className="h-full overflow-y-auto scrollbar-hide w-full max-w-[1500px] mx-auto space-y-4">
+    <div className="h-full overflow-y-auto scrollbar-hide app-page-max-wide space-y-4 min-w-0">
       <Link to="/" className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-muted hover:text-brand transition-colors">
         <ChevronLeft className="w-3.5 h-3.5" /> Back
       </Link>

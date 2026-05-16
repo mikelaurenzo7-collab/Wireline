@@ -404,9 +404,9 @@ export default function AppointmentsView() {
 
   return (
     <>
-      <div className="h-full flex flex-col min-h-0">
+      <div className="h-full flex flex-col min-h-0 min-w-0">
         <HubTabs tabs={CHANNELS_HUB} label="Channels sub-navigation" />
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 min-w-0">
       <PageShell
         title="Appointments"
         eyebrow="Operations · Schedule"
@@ -423,7 +423,7 @@ export default function AppointmentsView() {
             <CalendarGrid appointments={appointments} onSelect={a => { setEditTarget(a); setShowModal(true); }} />
           </Panel>
         ) : (
-          <div className="h-full grid grid-cols-1 xl:grid-cols-2 gap-3 overflow-hidden">
+          <div className="h-full min-w-0 grid grid-cols-1 lg:grid-cols-2 gap-3 overflow-hidden">
             {/* Active */}
             <Panel
               title="Upcoming"

@@ -482,9 +482,9 @@ export default function OutboundDialer() {
           </span>
         </div>
       ) : (
-        <div className="h-full grid grid-cols-1 xl:grid-cols-12 gap-3 min-h-0">
+        <div className="h-full grid grid-cols-1 lg:grid-cols-12 gap-3 min-h-0">
           {/* Configuration */}
-          <div className="xl:col-span-5 min-h-0">
+          <div className="lg:col-span-5 min-h-0">
             <Panel
               title="Parameters"
               hint={mode === "single" ? "SINGLE CALL" : "BULK UPLOAD"}
@@ -744,7 +744,7 @@ export default function OutboundDialer() {
           </div>
 
           {/* Operations Queue */}
-          <div className="xl:col-span-7 min-h-0">
+          <div className="lg:col-span-7 min-h-0">
             <Panel
               title="Queue"
               hint={leadsTotal > 0 ? `${leads.length}/${leadsTotal}` : "QUEUE"}
@@ -895,9 +895,9 @@ export default function OutboundDialer() {
   );
 
   const campaignsTab = (
-    <div className="h-full grid grid-cols-1 xl:grid-cols-12 gap-3 min-h-0">
+    <div className="h-full grid grid-cols-1 lg:grid-cols-12 gap-3 min-h-0">
       {/* Campaign list */}
-      <div className="xl:col-span-5 min-h-0">
+      <div className="lg:col-span-5 min-h-0">
         <Panel
           title="Campaigns"
           hint={`${campaigns.length} total`}
@@ -1000,7 +1000,7 @@ export default function OutboundDialer() {
       </div>
 
       {/* Campaign detail */}
-      <div className="xl:col-span-7 min-h-0">
+      <div className="lg:col-span-7 min-h-0">
         {selectedCampaign ? (
           <Panel
             title={selectedCampaign.name}
@@ -1372,9 +1372,9 @@ export default function OutboundDialer() {
 
   return (
     <>
-      <div className="h-full flex flex-col min-h-0">
+      <div className="h-full flex flex-col min-h-0 min-w-0">
         <HubTabs tabs={CHANNELS_HUB} label="Channels sub-navigation" />
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 min-w-0">
           <PageShell
             title="Outbound"
             eyebrow="Communications · Outbound"

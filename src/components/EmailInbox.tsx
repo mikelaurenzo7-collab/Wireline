@@ -263,16 +263,16 @@ export default function EmailInbox() {
   );
 
   return (
-    <div className="h-full flex flex-col min-h-0">
+    <div className="h-full flex flex-col min-h-0 min-w-0">
       <HubTabs tabs={CHANNELS_HUB} label="Channels sub-navigation" />
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 min-w-0">
         <PageShell
           title="Email"
           eyebrow="Communications · Email"
           subtitle={`${threads.length} thread${threads.length === 1 ? "" : "s"} in your inbox.`}
           actions={syncAction}
         >
-          <div className="h-full flex flex-col lg:flex-row gap-3 min-h-0">
+          <div className="h-full flex flex-col lg:flex-row gap-3 min-h-0 min-w-0">
             {/* Thread list — full-width on mobile; hides when a thread is
             selected so the reader gets the full viewport. */}
             <Panel

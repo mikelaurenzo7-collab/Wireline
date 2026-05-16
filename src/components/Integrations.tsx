@@ -194,7 +194,7 @@ export default function Integrations() {
         subtitle="Bridge external data streams and carrier protocols into the fleet."
         actions={syncAction}
       >
-        <div className="h-full flex flex-col gap-3 min-h-0">
+        <div className="h-full flex flex-col gap-3 min-h-0 min-w-0">
           <Panel
             title="email carriers"
             hint="GMAIL · OUTLOOK"

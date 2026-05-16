@@ -106,16 +106,16 @@ export default function CallLogs() {
   );
 
   return (
-    <div className="h-full flex flex-col min-h-0">
+    <div className="h-full flex flex-col min-h-0 min-w-0">
     <HubTabs tabs={CHANNELS_HUB} label="Channels sub-navigation" />
-    <div className="flex-1 min-h-0">
+    <div className="flex-1 min-h-0 min-w-0">
     <PageShell
       eyebrow="Communications · Voice"
       title="Call Logs"
       subtitle="Recorded calls and agent responses"
       actions={actions}
     >
-      <div className="h-full grid grid-cols-12 gap-3">
+      <div className="h-full min-w-0 grid grid-cols-12 gap-3">
         {/* List pane — hidden on mobile when a call is selected so the
             detail pane gets the full viewport. The detail's "Back" affordance
             (rendered below in the empty-detail branch + inside CallDetail)

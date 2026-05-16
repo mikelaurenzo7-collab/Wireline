@@ -57,7 +57,7 @@ export default function PageShell({
   const activeTab = tabs?.find(t => t.id === activeId) ?? tabs?.[0];
 
   return (
-    <div className="h-full w-full flex flex-col overflow-hidden">
+    <div className="h-full w-full min-w-0 flex flex-col overflow-hidden">
       {/* Header */}
       <motion.header
         initial={{ y: -10, opacity: 0 }}
@@ -251,7 +251,7 @@ export function Panel({
         className={cn(
           "flex-1 min-h-0",
           scroll ? "overflow-y-auto panel-scroll" : "overflow-hidden",
-          !flush && "p-4",
+          !flush && "p-3 sm:p-4",
           bodyClassName
         )}
       >

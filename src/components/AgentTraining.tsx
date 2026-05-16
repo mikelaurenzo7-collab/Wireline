@@ -146,9 +146,9 @@ export default function AgentTraining() {
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden min-w-0">
       <header className="shrink-0 px-4 md:px-6 pt-4 pb-3 sticky top-0 z-30 backdrop-blur-xl bg-paper/70 border-b border-white/8">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 max-w-[1400px] mx-auto w-full">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 app-page-max">
           <div className="flex items-center gap-3 min-w-0">
             <div>
               <div className="text-[10px] uppercase tracking-[0.45em] text-brand/80 mb-1">Studio · Training</div>
@@ -177,7 +177,7 @@ export default function AgentTraining() {
         </div>
 
         {/* Claude Brain rail — recipes scoped to the selected agent */}
-        <div className="max-w-[1400px] mx-auto w-full mt-3">
+        <div className="app-page-max mt-3">
           <div className="relative aurora-ring rounded-2xl">
             <div className="relative rounded-2xl glass p-3 flex flex-wrap items-center gap-2 overflow-hidden">
               <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-25 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #9B59F5, transparent)" }} />
@@ -203,7 +203,7 @@ export default function AgentTraining() {
           </div>
         </div>
 
-        <nav className="flex flex-wrap gap-1.5 max-w-[1400px] mx-auto w-full mt-3">
+        <nav className="flex flex-wrap gap-1.5 app-page-max mt-3">
           {[
             {
               id: 'admin',
@@ -247,7 +247,7 @@ export default function AgentTraining() {
       </header>
 
       <div className="px-4 md:px-6 pt-3">
-        <div className="max-w-[1400px] mx-auto w-full">
+        <div className="app-page-max">
           <HubTabs tabs={TRAINING_HUB} label="Training sub-navigation" />
         </div>
       </div>

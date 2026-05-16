@@ -24,7 +24,7 @@ export default function InsightsView() {
 
   const wrap = (label: string, node: React.ReactNode) => (
     <WidgetBoundary label={label}>
-      <div className="h-full w-full overflow-y-auto scrollbar-hide pr-1">
+      <div className="h-full w-full min-w-0 overflow-y-auto scrollbar-hide pr-1">
         {node}
       </div>
     </WidgetBoundary>
@@ -105,7 +105,7 @@ function FunnelView({ days }: { days: number }) {
   if (stages.length === 0 || stages.every((s: any) => s.count === 0)) {
     return (
       <div className="relative aurora-ring rounded-3xl">
-        <div className="relative rounded-3xl glass-strong overflow-hidden p-10 md:p-14 flex flex-col items-center gap-5 text-center">
+        <div className="relative rounded-3xl glass-strong overflow-hidden p-6 sm:p-8 md:p-11 lg:p-14 flex flex-col items-center gap-5 text-center">
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #0AC8D422, #9B59F522)" }}>
             <TrendingUp className="w-8 h-8 text-brand" />
           </div>
@@ -1001,7 +1001,7 @@ function QualityView({ days }: { days: number }) {
     return (
       <div className="space-y-4">
         <div className="relative aurora-ring rounded-3xl">
-          <div className="relative rounded-3xl glass-strong overflow-hidden p-10 md:p-14 flex flex-col items-center gap-5 text-center">
+          <div className="relative rounded-3xl glass-strong overflow-hidden p-6 sm:p-8 md:p-11 lg:p-14 flex flex-col items-center gap-5 text-center">
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg,#0AC8D422,#9B59F522)" }}>
               <Star className="w-8 h-8 text-brand" />
             </div>

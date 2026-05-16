@@ -135,7 +135,7 @@ export default function StripeBillingCard() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl glass border border-white/10 p-10 flex items-center gap-4">
+      <div className="rounded-2xl glass border border-white/10 p-6 sm:p-8 md:p-10 flex items-center gap-4">
         <Loader2 className="w-5 h-5 animate-spin text-brand" />
         <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">Loading billing state…</span>
       </div>
@@ -166,7 +166,7 @@ export default function StripeBillingCard() {
   const hasActive = sub?.has_subscription && (sub.status === "active" || sub.status === "trialing");
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 md:space-y-8">
       {/* Active subscription card */}
       {sub?.has_subscription && (
         <ActiveSubCard sub={sub} agentCount={agentCount} busy={busy === "portal"} onPortal={openPortal} />
@@ -180,7 +180,7 @@ export default function StripeBillingCard() {
       )}
 
       {/* Plan picker */}
-      <div className="rounded-2xl glass border border-white/10 p-8 md:p-10 space-y-8">
+      <div className="rounded-2xl glass border border-white/10 p-6 sm:p-8 md:p-10 space-y-5 md:space-y-8">
         <div className="border-b border-white/8 pb-6">
           <h3 className="font-display italic lowercase text-3xl text-ink">
             {hasActive ? "change plan" : "choose a plan"}

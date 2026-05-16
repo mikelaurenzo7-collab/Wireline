@@ -256,7 +256,7 @@ export default function DashboardHome() {
   if (isLoading && !stats) {
     return (
       <PageShell title="Dashboard" eyebrow="Today" actions={voiceButton}>
-        <div className="h-full w-full flex flex-col items-center justify-center gap-4">
+        <div className="h-full w-full min-w-0 flex flex-col items-center justify-center gap-4">
           <div className="relative w-20 h-20">
             <div className="absolute inset-0 rounded-full" style={{
               background: "conic-gradient(from 0deg, #0AC8D4, #9B59F5, #E040C0, #10B981, #0AC8D4)",
@@ -278,7 +278,7 @@ export default function DashboardHome() {
   const delta = stats?.week_delta ?? {};
 
   const Pulse = (
-    <div className="h-full flex flex-col gap-3 overflow-hidden">
+    <div className="h-full flex flex-col gap-3 overflow-hidden min-w-0">
       {/* ── First-run hero: shown when the owner has no agents yet ── */}
       {!(stats?.agents?.length) && !isLoading && (
         <div className="shrink-0 relative aurora-ring rounded-2xl">
@@ -675,7 +675,7 @@ export default function DashboardHome() {
     </div>
   );
   const Brief = (
-    <div className="h-full grid grid-cols-12 gap-3">
+    <div className="h-full min-w-0 grid grid-cols-12 gap-3">
       <div className="col-span-12 lg:col-span-7 h-full overflow-hidden">
         <Panel title="Daily Brief" hint="AI Summary" icon={Sparkles} scroll>
           <WidgetBoundary label="Daily Brief">
@@ -701,7 +701,7 @@ export default function DashboardHome() {
   );
 
   const Fleet = (
-    <div className="h-full grid grid-cols-12 gap-3">
+    <div className="h-full min-w-0 grid grid-cols-12 gap-3">
       <div className="col-span-12 lg:col-span-7 h-full">
         <Panel
           title="Hot Leads"
@@ -818,7 +818,7 @@ export default function DashboardHome() {
   );
 
   const HistoryView = (
-    <div className="h-full grid grid-cols-12 gap-3">
+    <div className="h-full min-w-0 grid grid-cols-12 gap-3">
       <div className="col-span-12 lg:col-span-8 h-full">
         <Panel
           title="Recent Calls"
