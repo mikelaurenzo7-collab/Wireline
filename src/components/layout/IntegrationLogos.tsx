@@ -165,7 +165,7 @@ export default function IntegrationLogos() {
             }}
           >
             <div className="h-[18px] w-auto inline-flex items-center">
-              {React.cloneElement(logo.svg as React.ReactElement, {
+              {React.cloneElement(logo.svg as React.ReactElement<any>, {
                 style: { height: "100%", width: "auto", display: "block" },
               })}
             </div>
