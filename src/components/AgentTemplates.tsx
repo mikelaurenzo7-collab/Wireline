@@ -17,6 +17,10 @@ import {
   Loader2,
   MessageCircle,
   Check,
+  User,
+  PhoneIncoming,
+  ClipboardList,
+  Receipt,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { authFetch, safeJson } from "../lib/api";
@@ -202,6 +206,66 @@ const AGENT_TEMPLATES = [
     firstMessage:
       "Hi! I'm calling on behalf of [Company] — we'd love your feedback on your recent experience. This takes under 2 minutes.",
   },
+  // === PERSONAL & LIFESTYLE ===
+  // For individuals on the Personal tier ($29/mo, 1 agent) — agents
+  // represent a single human rather than a business. Versatile concierge
+  // by default plus three specialty sub-types for high-value individual
+  // use cases (call screening, errand-running, bill negotiation).
+  {
+    id: "personal-concierge",
+    category: "Personal & Lifestyle",
+    name: "Personal Concierge",
+    description:
+      "Super-versatile personal assistant. Books appointments, handles follow-ups, screens calls, and takes messages — on your behalf.",
+    role: "personal_assistant",
+    channel: "voice" as const,
+    icon: User,
+    accent: "#4DFFC4",
+    badge: "Personal · most versatile",
+    firstMessage: "Hi, this is [Your Name]'s assistant. How can I help you today?",
+  },
+  {
+    id: "personal-screener",
+    category: "Personal & Lifestyle",
+    name: "Call Screener",
+    description:
+      "Picks up unknown numbers, screens spam and sales calls, takes messages from legitimate callers, and never bothers you for nothing.",
+    role: "personal_assistant",
+    channel: "voice" as const,
+    icon: PhoneIncoming,
+    accent: "#4DFFC4",
+    badge: "Personal · inbound",
+    firstMessage:
+      "Hi, you've reached [Your Name]'s line — I'm their assistant. Can I take a quick message or let them know what this is about?",
+  },
+  {
+    id: "personal-errand",
+    category: "Personal & Lifestyle",
+    name: "Errand Caller",
+    description:
+      "Calls dentists, plumbers, hairdressers, restaurants, and government offices to book, confirm, or reschedule on your behalf.",
+    role: "personal_assistant",
+    channel: "voice" as const,
+    icon: ClipboardList,
+    accent: "#4DFFC4",
+    badge: "Personal · outbound",
+    firstMessage:
+      "Hi, I'm calling on behalf of [Your Name] — they asked me to [book / reschedule / confirm] [appointment type]. Is now a good time?",
+  },
+  {
+    id: "personal-negotiator",
+    category: "Personal & Lifestyle",
+    name: "Bill Negotiator",
+    description:
+      "Calls your cable, internet, insurance, or wireless carrier to renegotiate rates, dispute charges, or cancel cleanly. Polite but firm.",
+    role: "personal_assistant",
+    channel: "voice" as const,
+    icon: Receipt,
+    accent: "#4DFFC4",
+    badge: "Personal · saves $$",
+    firstMessage:
+      "Hi, I'm calling on behalf of [Your Name], account [Account #] — they've asked me to discuss their current plan and pricing.",
+  },
 ] as const;
 
 type Template = (typeof AGENT_TEMPLATES)[number];
@@ -213,6 +277,7 @@ const CATEGORIES = [
   "Scheduling",
   "Collections & Finance",
   "Marketing",
+  "Personal & Lifestyle",
 ] as const;
 
 // ────────────────────────────────────────────────────────────────────────────
