@@ -155,7 +155,7 @@ const EventRow = React.memo(
             </div>
             <div className="text-right">
               {event.cost_usd != null && (
-                <p className="text-sm text-ink">${event.cost_usd.toFixed(4)}</p>
+                <p className="text-sm text-ink">${Number(event.cost_usd ?? 0).toFixed(4)}</p>
               )}
             </div>
           </div>

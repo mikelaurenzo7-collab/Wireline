@@ -16,6 +16,7 @@ import { authFetch } from "../lib/api";
 import PageShell, { Panel } from "./PageShell";
 import { useToast } from "../contexts/ToastContext";
 import ConfirmModal from "./ConfirmModal";
+import CrmConnectionCard from "./CrmConnectionCard";
 
 type ConfirmState = { open: boolean; onConfirm: () => void };
 const CLOSED_CONFIRM: ConfirmState = { open: false, onConfirm: () => {} };
@@ -402,6 +403,13 @@ export default function Integrations() {
                 </motion.div>
               )}
             </AnimatePresence>
+          </div>
+
+          {/* CRM & messaging — HubSpot, Salesforce, Slack — surfaced here
+              alongside email so operators find every external connector in
+              one place instead of having to dig into Admin → Integrations. */}
+          <div className="mt-6">
+            <CrmConnectionCard />
           </div>
         </div>
       </PageShell>
