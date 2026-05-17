@@ -13,6 +13,7 @@ import {
   GeminiAgentExtractionSchema,
 } from "../lib/form-validators";
 import { ROLE_PERSONALITY_TEMPLATES, DEFAULT_AGENT_ROLE } from "../lib/agent-constants";
+import { composeAgentPersonality } from "../lib/template-overlays";
 import * as claudeBrain from "../lib/claude-brain";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { computeAgentPerformance, emptyAgentPerformance } from "../lib/agent-performance";
@@ -669,11 +670,15 @@ router.post("/api/agents", authenticateUser, async (req: AuthenticatedRequest, r
       return res.status(400).json({ error: "Validation failed", errors: validation.errors });
     }
 
-    // SECURITY ENFORCEMENT: Check Subscription Status for this specific user
+    // SECURITY ENFORCEMENT: Check Subscription Status for this specific user.
+    // Also pull business-profile fields so the role + template overlays can
+    // substitute {{businessName}} etc. into the agent's system prompt at
+    // create-time — no manual personalization step needed.
     const [userSettings] = await drizzle
       .select({
         subscriptionStatus: schema.settings.subscriptionStatus,
         maxAgents: schema.settings.maxAgents,
+        businessName: schema.settings.businessName,
       })
       .from(schema.settings)
       .where(eq(schema.settings.userId, req.user.id))
@@ -700,7 +705,7 @@ router.post("/api/agents", authenticateUser, async (req: AuthenticatedRequest, r
         .json({ error: `Quota Exceeded: Your plan only allows ${maxAgents} agents.` });
     }
 
-    const { id, personality, ...rest } = req.body;
+    const { id, personality, templateId, firstMessage, ...rest } = req.body;
     const agentId = id || `agent-${Date.now()}`;
     const agentRole = rest.role || DEFAULT_AGENT_ROLE;
 
@@ -726,13 +731,30 @@ router.post("/api/agents", authenticateUser, async (req: AuthenticatedRequest, r
       return res.status(500).json({ error: "Failed to create agent" });
     }
 
-    // Use provided personality or fall back to role-appropriate template
-    const personalityContent =
-      personality ||
+    // Compose personality from layered templates + operator overrides:
+    //   role base (deep methodology) + template overlay (tactic specifics)
+    //   + operator custom (highest priority), with {{businessName}} etc.
+    //   substituted from the operator's settings row.
+    const rolePersonality =
       ROLE_PERSONALITY_TEMPLATES[agentRole as keyof typeof ROLE_PERSONALITY_TEMPLATES] ||
       (rest.channel === "email"
         ? "You are a professional email agent specialized in clear, efficient communication."
         : "You are a helpful assistant serving as a phone agent.");
+
+    const businessContext = {
+      businessName: (userSettings as any)?.businessName,
+      businessType: (userSettings as any)?.businessType,
+      operatingHours: (userSettings as any)?.businessHours,
+      escalationContact: (userSettings as any)?.escalationContact,
+      primaryProduct: (userSettings as any)?.primaryProduct,
+    };
+
+    const personalityContent = composeAgentPersonality({
+      rolePersonality,
+      templateId: typeof templateId === "string" ? templateId : null,
+      operatorCustom: typeof personality === "string" ? personality : null,
+      businessContext,
+    });
 
     try {
       await drizzle.insert(schema.personality).values({

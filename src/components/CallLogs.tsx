@@ -690,9 +690,6 @@ function CallDetail({
                       <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
                       Decrypted signal buffer
                     </div>
-                    <audio controls className="w-full h-9">
-                      <source src={call.recording_url} type="audio/mpeg" />
-                    </audio>
                     <a
                       href={call.recording_url}
                       download

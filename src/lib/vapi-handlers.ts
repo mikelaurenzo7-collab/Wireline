@@ -46,7 +46,11 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
     );
   }
 
-  // 1. Persist base call log
+  // 1. Persist base call log. The unique constraint on vapi_call_id is the
+  //    idempotency boundary for the whole handler — duplicate Vapi retries
+  //    fail-fast here, and the rest of the pipeline (usage tracking, Stripe
+  //    overage, webhooks) is gated on `insertedFresh` to avoid double-counting.
+  let insertedFresh = false;
   try {
     await drizzle.insert(schema.callLogs).values({
       userId,
@@ -60,13 +64,24 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
       transcript: message.transcript || "",
       recordingUrl: message.recordingUrl || message.stereoRecordingUrl || null,
     });
+    insertedFresh = true;
   } catch (logErr: any) {
-    log.error("Failed to insert call log", { callId: call?.id, error: getErrorMessage(logErr) });
+    if (logErr?.code === "23505" || /duplicate key/i.test(logErr?.message || "")) {
+      log.info("Duplicate end-of-call-report ignored (idempotent retry)", { callId: call?.id });
+    } else {
+      log.error("Failed to insert call log", { callId: call?.id, error: getErrorMessage(logErr) });
+    }
   }
 
   // Fire-and-forget monthly voice-minute tracking + Stripe overage emission.
-  // trackVoiceMinutes is fail-OPEN — its errors never block this handler.
-  void trackVoiceMinutes({ userId, durationSeconds: duration });
+  // Gated on a successful fresh insert so Vapi retries don't double-bill.
+  if (insertedFresh) {
+    void trackVoiceMinutes({
+      userId,
+      durationSeconds: duration,
+      vapiCallId: call?.id || "unknown",
+    });
+  }
 
   SentryEvents.callCompleted({
     duration_ms: duration * 1000,

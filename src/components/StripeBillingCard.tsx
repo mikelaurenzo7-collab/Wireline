@@ -188,11 +188,11 @@ export default function StripeBillingCard() {
           </code>
           ,{" "}
           <code className="font-mono text-brand px-1.5 py-0.5 rounded-md bg-white/5">
-            _PRO_PRICE_ID
+            STRIPE_PRO_PRICE_ID
           </code>
           ,{" "}
           <code className="font-mono text-brand px-1.5 py-0.5 rounded-md bg-white/5">
-            _ENTERPRISE_PRICE_ID
+            STRIPE_ENTERPRISE_PRICE_ID
           </code>
           ) to enable real billing.
         </p>

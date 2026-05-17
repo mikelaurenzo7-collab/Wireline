@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
 import { planByPriceId } from "./plan-catalog";
 import { dispatchWebhook } from "./webhook-helpers";
+import { invalidateDashboard } from "./dashboard-cache";
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_placeholder", {
   apiVersion: "2026-01-28.clover" as Stripe.LatestApiVersion,
@@ -34,6 +35,8 @@ export function stripeAvailable(): boolean {
 export async function emitVoiceMinuteOverageEvent(opts: {
   customerId: string;
   minutes: number;
+  /** Stable per-call id — used as the Stripe meter idempotency key. */
+  vapiCallId: string;
 }): Promise<void> {
   const eventName = process.env.STRIPE_VOICE_OVERAGE_METER_EVENT_NAME;
   if (!eventName || !stripeAvailable() || opts.minutes <= 0) return;
@@ -44,8 +47,10 @@ export async function emitVoiceMinuteOverageEvent(opts: {
       stripe_customer_id: opts.customerId,
       value: String(opts.minutes),
     },
-    // Idempotency window: collapse duplicate emits within a minute.
-    identifier: `voice_overage_${opts.customerId}_${Date.now()}`,
+    // Stable identifier — Stripe collapses duplicates on this key. Vapi
+    // retries that somehow bypass the call_logs unique constraint will
+    // still collapse here, so we never double-bill the same call.
+    identifier: `voice_overage_${opts.vapiCallId}`,
   });
 }
 
@@ -121,6 +126,10 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
         updatedAt: new Date(),
       },
     });
+
+  // Plan / max_agents changes mutate dashboard stats — clear the cache so the
+  // operator sees the new tier immediately instead of waiting up to 60s.
+  invalidateDashboard(userId);
 
   dispatchWebhook(userId, "subscription.changed", {
     plan: plan?.id ?? null,

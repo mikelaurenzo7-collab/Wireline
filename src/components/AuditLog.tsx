@@ -563,7 +563,7 @@ export default function AuditLog() {
                   </motion.div>
                 </div>
               ) : filteredEvents.length === 0 ? (
-                searchQuery ? (
+                searchQuery.trim() ? (
                   <EmptyState
                     icon={Shield}
                     title="No matches"

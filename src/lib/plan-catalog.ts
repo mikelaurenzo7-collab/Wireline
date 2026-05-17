@@ -133,14 +133,22 @@ export function planById(id: string | null | undefined): StripePlan | null {
 }
 
 export function plansForClient() {
-  return STRIPE_PLANS.map((p) => ({
-    id: p.id,
-    name: p.name,
-    price_usd_monthly: p.price_usd_monthly,
-    max_agents: p.max_agents,
-    voice_minutes_monthly: p.voice_minutes_monthly,
-    overage_per_min_usd: p.overage_per_min_usd,
-    features: p.features,
-    configured: !!process.env[p.priceIdEnv],
-  }));
+  return STRIPE_PLANS.map((p) => {
+    // price_usd_monthly === 0 is the "contact sales" sentinel for Enterprise.
+    // Never expose it as a checkout-able plan even if STRIPE_ENTERPRISE_PRICE_ID
+    // is still set from an older paid Enterprise tier — that would let anyone
+    // subscribe to Enterprise at $0/mo backed by a real Stripe price.
+    const contactSales = p.price_usd_monthly === 0;
+    return {
+      id: p.id,
+      name: p.name,
+      price_usd_monthly: p.price_usd_monthly,
+      max_agents: p.max_agents,
+      voice_minutes_monthly: p.voice_minutes_monthly,
+      overage_per_min_usd: p.overage_per_min_usd,
+      features: p.features,
+      configured: !contactSales && !!process.env[p.priceIdEnv],
+      contact_sales: contactSales,
+    };
+  });
 }

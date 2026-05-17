@@ -344,9 +344,10 @@ export default function Pricing() {
             No long-term contracts · Cancel anytime · USD pricing
           </p>
           <p className="text-[12px] text-muted/65">
-            Voice minutes are pooled across all agents in your workspace. Overage billed at $0.20 /
-            min (Pro: $0.18 / min) — priced at our cost, not a profit center. Most teams stay well
-            inside plan. Email volume is unlimited on all plans.
+            Voice minutes are pooled across all agents in your workspace. Overage is tier-based
+            (Personal: $0.25/min · Starter: $0.20/min · Pro: $0.18/min · Business: $0.16/min) —
+            priced at our cost, not a profit center. Most teams stay well inside plan. Email volume
+            is unlimited on all plans.
           </p>
         </motion.div>
       </section>

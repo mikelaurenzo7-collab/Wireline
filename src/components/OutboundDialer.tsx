@@ -687,13 +687,6 @@ export default function OutboundDialer() {
                         onClick={() => fileInputRef.current?.click()}
                         className="w-full rounded-xl glass border border-dashed border-white/15 hover:border-brand/40 hover:bg-brand/5 transition-all py-8 flex flex-col items-center justify-center gap-2 group"
                       >
-                        <input
-                          type="file"
-                          accept=".csv"
-                          className="hidden"
-                          ref={fileInputRef}
-                          onChange={handleFileUpload}
-                        />
                         {isUploading ? (
                           <Loader2 className="w-7 h-7 text-brand animate-spin" />
                         ) : (
@@ -1379,6 +1372,17 @@ export default function OutboundDialer() {
 
   return (
     <>
+      {/* Always-mounted file input — both EmptyState CTAs (single-mode queue
+          and campaign view) trigger it via fileInputRef, so it must live
+          outside the Bulk-mode subtree. Hidden visually; click is fully
+          synthetic. */}
+      <input
+        type="file"
+        accept=".csv"
+        className="hidden"
+        ref={fileInputRef}
+        onChange={handleFileUpload}
+      />
       <div className="h-full flex flex-col min-h-0">
         <HubTabs tabs={CHANNELS_HUB} label="Channels sub-navigation" />
         <div className="flex-1 min-h-0">

@@ -58,8 +58,15 @@ export interface VoiceUsageSnapshot {
 export async function trackVoiceMinutes(opts: {
   userId: string;
   durationSeconds: number;
+  /**
+   * Stable per-call identifier used to make the Stripe meter event
+   * idempotent — Vapi retries (or any other duplicate invocation that
+   * gets past the call_logs unique constraint) will collapse to a single
+   * Stripe event because the identifier is deterministic.
+   */
+  vapiCallId: string;
 }): Promise<void> {
-  const { userId, durationSeconds } = opts;
+  const { userId, durationSeconds, vapiCallId } = opts;
   if (!userId || !Number.isFinite(durationSeconds) || durationSeconds <= 0) return;
 
   // Round up — never under-bill, never charge for sub-minute fractions
@@ -115,6 +122,7 @@ export async function trackVoiceMinutes(opts: {
       await emitVoiceMinuteOverageEvent({
         customerId: sub.stripeCustomerId,
         minutes: newOverageMinutes,
+        vapiCallId,
       }).catch((e) =>
         log.warn("Stripe overage emission failed", {
           userId,
