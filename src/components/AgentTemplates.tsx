@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import DeployAgentModal, { DeployValues } from "./DeployAgentModal";
 import {
   Target,
   Zap,
@@ -17,6 +18,10 @@ import {
   Loader2,
   MessageCircle,
   Check,
+  User,
+  PhoneIncoming,
+  ClipboardList,
+  Receipt,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { authFetch, safeJson } from "../lib/api";
@@ -202,6 +207,66 @@ const AGENT_TEMPLATES = [
     firstMessage:
       "Hi! I'm calling on behalf of [Company] — we'd love your feedback on your recent experience. This takes under 2 minutes.",
   },
+  // === PERSONAL & LIFESTYLE ===
+  // For individuals on the Personal tier ($29/mo, 1 agent) — agents
+  // represent a single human rather than a business. Versatile concierge
+  // by default plus three specialty sub-types for high-value individual
+  // use cases (call screening, errand-running, bill negotiation).
+  {
+    id: "personal-concierge",
+    category: "Personal & Lifestyle",
+    name: "Personal Concierge",
+    description:
+      "Super-versatile personal assistant. Books appointments, handles follow-ups, screens calls, and takes messages — on your behalf.",
+    role: "personal_assistant",
+    channel: "voice" as const,
+    icon: User,
+    accent: "#4DFFC4",
+    badge: "Personal · most versatile",
+    firstMessage: "Hi, this is [Your Name]'s assistant. How can I help you today?",
+  },
+  {
+    id: "personal-screener",
+    category: "Personal & Lifestyle",
+    name: "Call Screener",
+    description:
+      "Picks up unknown numbers, screens spam and sales calls, takes messages from legitimate callers, and never bothers you for nothing.",
+    role: "personal_assistant",
+    channel: "voice" as const,
+    icon: PhoneIncoming,
+    accent: "#4DFFC4",
+    badge: "Personal · inbound",
+    firstMessage:
+      "Hi, you've reached [Your Name]'s line — I'm their assistant. Can I take a quick message or let them know what this is about?",
+  },
+  {
+    id: "personal-errand",
+    category: "Personal & Lifestyle",
+    name: "Errand Caller",
+    description:
+      "Calls dentists, plumbers, hairdressers, restaurants, and government offices to book, confirm, or reschedule on your behalf.",
+    role: "personal_assistant",
+    channel: "voice" as const,
+    icon: ClipboardList,
+    accent: "#4DFFC4",
+    badge: "Personal · outbound",
+    firstMessage:
+      "Hi, I'm calling on behalf of [Your Name] — they asked me to [book / reschedule / confirm] [appointment type]. Is now a good time?",
+  },
+  {
+    id: "personal-negotiator",
+    category: "Personal & Lifestyle",
+    name: "Bill Negotiator",
+    description:
+      "Calls your cable, internet, insurance, or wireless carrier to renegotiate rates, dispute charges, or cancel cleanly. Polite but firm.",
+    role: "personal_assistant",
+    channel: "voice" as const,
+    icon: Receipt,
+    accent: "#4DFFC4",
+    badge: "Personal · saves $$",
+    firstMessage:
+      "Hi, I'm calling on behalf of [Your Name], account [Account #] — they've asked me to discuss their current plan and pricing.",
+  },
 ] as const;
 
 type Template = (typeof AGENT_TEMPLATES)[number];
@@ -213,7 +278,31 @@ const CATEGORIES = [
   "Scheduling",
   "Collections & Finance",
   "Marketing",
+  "Personal & Lifestyle",
 ] as const;
+
+// Recommended default voice gender per template. Operator can override in
+// the deploy modal — this is just a smart starting point so the toggle
+// lands on a sensible default for the use case (e.g. assertive collections
+// reads better as male, salon receptionist as female).
+const DEFAULT_GENDER_BY_TEMPLATE: Record<string, "female" | "male"> = {
+  "sales-sdr": "male",
+  "sales-closer": "male",
+  "lead-qualifier-inbound": "female",
+  "support-tier1": "female",
+  "support-email": "female",
+  "scheduler-medical": "female",
+  "scheduler-salon": "female",
+  "scheduler-realestate": "male",
+  "collections-soft": "female",
+  "collections-hard": "male",
+  "marketing-reengagement": "female",
+  "marketing-survey": "female",
+  "personal-concierge": "female",
+  "personal-screener": "female",
+  "personal-errand": "female",
+  "personal-negotiator": "male",
+};
 
 // ────────────────────────────────────────────────────────────────────────────
 // Template Card
@@ -381,6 +470,7 @@ export default function AgentTemplates() {
   const [search, setSearch] = useState("");
   const [deploying, setDeploying] = useState<string | null>(null);
   const [deployedNames, setDeployedNames] = useState<string[]>([]);
+  const [modalTemplate, setModalTemplate] = useState<Template | null>(null);
 
   // Pull the current fleet so each template card can render a 'Deployed'
   // badge + 'Deploy Another' button when an agent with the matching name
@@ -419,35 +509,54 @@ export default function AgentTemplates() {
     return matchesCategory && matchesSearch;
   });
 
-  const handleDeploy = async (template: Template) => {
+  // Step 1: clicking "Deploy" opens the modal so the operator can name
+  // the agent and pick a voice (male / female + specific voice). Step 2
+  // (handleConfirmedDeploy) actually POSTs to /api/agents with the
+  // values the operator chose.
+  const handleOpenDeploy = (template: Template) => {
     if (deploying) return;
-    setDeploying(template.id);
+    setModalTemplate(template);
+  };
+
+  const handleConfirmedDeploy = async (values: DeployValues) => {
+    if (!modalTemplate) return;
+    setDeploying(modalTemplate.id);
     try {
-      const uniqueId = `${template.id}-${Date.now()}`;
+      const uniqueId = `${modalTemplate.id}-${Date.now()}`;
       const resp = await authFetch("/api/agents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: uniqueId,
-          name: template.name,
-          channel: template.channel,
-          role: template.role,
+          // Operator-chosen name (defaults to template.name, fully editable)
+          name: values.name,
+          channel: modalTemplate.channel,
+          role: modalTemplate.role,
+          // Operator-chosen voice — 11labs/OpenAI id selected by gender
+          // toggle + optional specific voice picker in the modal.
+          voice_id: values.voiceId,
+          // templateId drives the server-side personality overlay; firstMessage
+          // is the opener with {{businessName}}-style placeholders substituted
+          // server-side from the operator's settings row.
+          templateId: modalTemplate.id,
+          firstMessage: modalTemplate.firstMessage,
         }),
       });
       const data = await safeJson(resp);
       if (!resp.ok) {
         toastError("Deployment failed", data.error || "Please try again.");
-      } else {
-        toastSuccess("Agent deployed!", template.name);
-        // Refresh the deployed-set so the badge updates immediately, then
-        // navigate the operator to the fleet view.
-        await refetchAgents();
-        navigate("/agents");
+        setDeploying(null);
+        return;
       }
+      toastSuccess("Agent deployed", values.name);
+      setModalTemplate(null);
+      setDeploying(null);
+      await refetchAgents();
+      navigate("/agents");
     } catch {
       toastError("Deployment failed", "Could not reach the server. Please try again.");
+      setDeploying(null);
     }
-    setDeploying(null);
   };
 
   return (
@@ -514,7 +623,7 @@ export default function AgentTemplates() {
               <TemplateCard
                 key={template.id}
                 template={template}
-                onDeploy={handleDeploy}
+                onDeploy={handleOpenDeploy}
                 deploying={deploying === template.id}
                 deployedCount={deployedCounts.get(template.name.toLowerCase()) ?? 0}
               />
@@ -525,6 +634,31 @@ export default function AgentTemplates() {
           <CustomAgentCard />
         </div>
       </div>
+
+      <DeployAgentModal
+        open={modalTemplate !== null}
+        template={
+          modalTemplate
+            ? {
+                id: modalTemplate.id,
+                name: modalTemplate.name,
+                description: modalTemplate.description,
+                category: modalTemplate.category,
+                role: modalTemplate.role,
+                channel: modalTemplate.channel,
+                firstMessage: modalTemplate.firstMessage,
+                // Recommend a default gender per template — operator can override
+                defaultGender: DEFAULT_GENDER_BY_TEMPLATE[modalTemplate.id] ?? "female",
+              }
+            : null
+        }
+        onClose={() => {
+          if (deploying) return;
+          setModalTemplate(null);
+        }}
+        onConfirm={handleConfirmedDeploy}
+        deploying={deploying === modalTemplate?.id}
+      />
     </div>
   );
 }

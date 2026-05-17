@@ -20,6 +20,7 @@ import {
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../contexts/AuthContext";
+import IntegrationLogos from "./layout/IntegrationLogos";
 
 const FEATURES = [
   {
@@ -330,6 +331,9 @@ export default function AuthPortal() {
             );
           })}
         </div>
+
+        {/* Integration logo strip — trust signal showing the stack we run on */}
+        <IntegrationLogos />
 
         {/* Trust row */}
         <motion.div

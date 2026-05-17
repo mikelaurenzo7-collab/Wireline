@@ -230,17 +230,15 @@ router.get(
       const responseData = {
         ...stats,
         agents: agentsResult || [],
-        recentLogs: (logsResult || [])
-          .slice(0, 100)
-          .map((l) => ({
-            ...l,
-            customer_number: l.customerNumber,
-            duration_seconds: l.durationSeconds,
-            lead_score: l.leadScore,
-            intent_label: l.intentLabel,
-            coaching_note: l.coachingNote,
-            created_at: l.createdAt,
-          })),
+        recentLogs: (logsResult || []).slice(0, 100).map((l) => ({
+          id: l.id,
+          customer_number: l.customerNumber,
+          duration_seconds: l.durationSeconds,
+          lead_score: l.leadScore,
+          intent_label: l.intentLabel,
+          coaching_note: l.coachingNote,
+          created_at: l.createdAt,
+        })),
       };
 
       // Cache the computed stats for 60 seconds
