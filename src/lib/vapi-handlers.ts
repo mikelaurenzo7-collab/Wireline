@@ -4,16 +4,21 @@ import { eq, and } from "drizzle-orm";
 import * as claudeBrain from "./claude-brain";
 import { getErrorMessage } from "./server-utils";
 import { SentryEvents } from "./sentry-events";
-import { buildCallCompletedOutcome, dispatchWebhook, type WirelineCallCompletedOutcome } from "./webhook-helpers";
+import {
+  buildCallCompletedOutcome,
+  dispatchWebhook,
+  type WirelineCallCompletedOutcome,
+} from "./webhook-helpers";
 import { postCallAnalysis as geminiPostCallAnalysis } from "./gemini-brain";
-import { 
-  getConsentRuleForPhone, 
-  buildConsentLedgerRow, 
-  detectOptOut, 
-  CONSENT_RULE_VERSION 
+import {
+  getConsentRuleForPhone,
+  buildConsentLedgerRow,
+  detectOptOut,
+  CONSENT_RULE_VERSION,
 } from "./tcpa-consent";
 import { persistClaudeAuditRecords } from "../middleware/audit-middleware";
 import { getDefaultChannel, postMessage as slackPostMessage } from "./slack-service";
+import { trackVoiceMinutes } from "./voice-usage";
 
 export interface CallReportPayload {
   message: {
@@ -33,10 +38,12 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
   const { call, analysis } = message;
   const webhookAgentId = agent.id;
   const userId = agent.user_id;
-  
+
   let duration = 0;
   if (call?.endedAt && call?.startedAt) {
-    duration = Math.floor((new Date(call.endedAt).getTime() - new Date(call.startedAt).getTime()) / 1000);
+    duration = Math.floor(
+      (new Date(call.endedAt).getTime() - new Date(call.startedAt).getTime()) / 1000,
+    );
   }
 
   // 1. Persist base call log
@@ -51,11 +58,15 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
       cost: String(call?.cost || 0.0),
       summary: analysis?.summary || "No summary provided.",
       transcript: message.transcript || "",
-      recordingUrl: message.recordingUrl || message.stereoRecordingUrl || null
+      recordingUrl: message.recordingUrl || message.stereoRecordingUrl || null,
     });
   } catch (logErr: any) {
     log.error("Failed to insert call log", { callId: call?.id, error: getErrorMessage(logErr) });
   }
+
+  // Fire-and-forget monthly voice-minute tracking + Stripe overage emission.
+  // trackVoiceMinutes is fail-OPEN — its errors never block this handler.
+  void trackVoiceMinutes({ userId, durationSeconds: duration });
 
   SentryEvents.callCompleted({
     duration_ms: duration * 1000,
@@ -63,32 +74,38 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
     direction: call?.type === "outboundPhoneCall" ? "outbound" : "inbound",
   });
 
-  const direction = call?.type === "outboundPhoneCall" ? "outbound" as const : "inbound" as const;
+  const direction =
+    call?.type === "outboundPhoneCall" ? ("outbound" as const) : ("inbound" as const);
   let enrichment: WirelineCallCompletedOutcome["enrichment"] = null;
 
   // 2. AI Enrichment (Claude)
   if (claudeBrain.isClaudeAvailable() && message.transcript) {
     try {
       const [agentDetail] = await drizzle
-        .select({ name: schema.agents.name, archetype: schema.agents.archetype, role: schema.agents.role })
+        .select({
+          name: schema.agents.name,
+          archetype: schema.agents.archetype,
+          role: schema.agents.role,
+        })
         .from(schema.agents)
         .where(eq(schema.agents.id, webhookAgentId))
         .limit(1);
 
       const cap = await claudeBrain.withAuditCapture(() =>
         claudeBrain.postCallAnalysis({
-          agentName: agentDetail?.name || 'Wireline Agent',
-          archetype: agentDetail?.archetype || 'Receptionist',
+          agentName: agentDetail?.name || "Wireline Agent",
+          archetype: agentDetail?.archetype || "Receptionist",
           role: agentDetail?.role || undefined,
           customerNumber: call?.customer?.number,
           durationSeconds: duration,
-          summary: analysis?.summary || '',
-          transcript: message.transcript || '',
+          summary: analysis?.summary || "",
+          transcript: message.transcript || "",
         }),
       );
       const result = cap.result;
 
-      await drizzle.update(schema.callLogs)
+      await drizzle
+        .update(schema.callLogs)
         .set({
           leadScore: result.lead_score,
           intentLabel: result.intent_label,
@@ -105,7 +122,9 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
           vapi_call_id: call?.id,
           agent_id: webhookAgentId,
         },
-      }).catch((e: unknown) => log.warn("Vapi Claude audit persist failed", { error: getErrorMessage(e) }));
+      }).catch((e: unknown) =>
+        log.warn("Vapi Claude audit persist failed", { error: getErrorMessage(e) }),
+      );
 
       enrichment = {
         lead_score: result.lead_score,
@@ -114,7 +133,6 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
         coaching_note: result.coaching_note,
         lesson_extracted: !!(result.lesson && result.lesson.trim()),
       };
-
     } catch (err: any) {
       log.warn("Claude post-call analysis failed", { error: getErrorMessage(err) });
     }
@@ -132,15 +150,23 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
   });
 
   void dispatchWebhook(userId, "call.completed", baseOutcome);
-  
+
   const score = enrichment?.lead_score;
   if (typeof score === "number" && score >= 70) {
-    void dispatchWebhook(userId, "lead.hot", { vapi_call_id: call?.id, lead_score: score, customer_number: baseOutcome.customer_number });
+    void dispatchWebhook(userId, "lead.hot", {
+      vapi_call_id: call?.id,
+      lead_score: score,
+      customer_number: baseOutcome.customer_number,
+    });
   }
 
   const intent = (enrichment?.intent_label || "").toLowerCase();
   if (intent === "escalation" || intent === "escalate") {
-    void dispatchWebhook(userId, "call.escalated", { vapi_call_id: call?.id, intent_label: enrichment?.intent_label, customer_number: baseOutcome.customer_number });
+    void dispatchWebhook(userId, "call.escalated", {
+      vapi_call_id: call?.id,
+      intent_label: enrichment?.intent_label,
+      customer_number: baseOutcome.customer_number,
+    });
     void (async () => {
       const ch = await getDefaultChannel(userId);
       if (ch) {
@@ -165,7 +191,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
       rule,
       state,
     });
-    
+
     await drizzle.insert(schema.consentLog).values({
       userId: ledgerRow.user_id,
       callId: ledgerRow.call_id,
@@ -174,7 +200,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
       ruleVersion: ledgerRow.rule_version,
       rule: ledgerRow.rule,
       state: ledgerRow.state,
-      metadata: ledgerRow.metadata
+      metadata: ledgerRow.metadata,
     });
 
     const optOut = detectOptOut(message.transcript || "");
@@ -187,7 +213,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
         rule_version: CONSENT_RULE_VERSION,
         rule,
         state,
-        metadata: { matched_pattern: optOut.matched_pattern }
+        metadata: { matched_pattern: optOut.matched_pattern },
       });
 
       await drizzle.insert(schema.consentLog).values({
@@ -198,7 +224,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
         ruleVersion: optOutRow.rule_version,
         rule: optOutRow.rule,
         state: optOutRow.state,
-        metadata: optOutRow.metadata
+        metadata: optOutRow.metadata,
       });
     }
   } catch (compErr) {
@@ -210,10 +236,11 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
     try {
       const geminiResult = await geminiPostCallAnalysis({
         transcript: message.transcript,
-        summary: analysis?.summary || ""
+        summary: analysis?.summary || "",
       });
-      
-      await drizzle.update(schema.callLogs)
+
+      await drizzle
+        .update(schema.callLogs)
         .set({
           leadScore: geminiResult.lead_score,
           intentLabel: geminiResult.intent_label,
@@ -227,7 +254,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
           userId,
           agentId: webhookAgentId,
           lesson: geminiResult.lesson,
-          sourceCallId: call?.id
+          sourceCallId: call?.id,
         });
       }
     } catch (gErr) {

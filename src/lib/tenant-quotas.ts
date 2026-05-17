@@ -24,7 +24,7 @@ import { log } from "./server-context";
 // Plan defaults
 // ─────────────────────────────────────────────────────────────────
 
-export type PlanTier = "free" | "personal" | "starter" | "pro" | "enterprise";
+export type PlanTier = "free" | "personal" | "starter" | "pro" | "business" | "enterprise";
 
 export interface QuotaProfile {
   /** Anthropic input+output tokens per UTC day. */
@@ -72,6 +72,13 @@ export const PLAN_DEFAULTS: Record<PlanTier, QuotaProfile> = {
     concurrent_dials: 25,
     knowledge_rows: 20_000,
     intake_rpm: 240,
+  },
+  business: {
+    claude_tokens_daily: 20_000_000,
+    voice_minutes_daily: 600, // 5,000/mo ÷ 30 × 3.6 buffer
+    concurrent_dials: 50,
+    knowledge_rows: 50_000,
+    intake_rpm: 600,
   },
   enterprise: {
     claude_tokens_daily: 50_000_000,

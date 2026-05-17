@@ -8,6 +8,7 @@ import { stripe, stripeAvailable, syncSubscriptionFromStripe } from "../lib/stri
 import { clearBudgetCache, getBudgetSnapshot } from "../lib/spend-guards";
 import { planById, plansForClient } from "../lib/plan-catalog";
 import { getIncludedPhoneLineSlots } from "../lib/phone-line-entitlements";
+import { getVoiceUsageSnapshot } from "../lib/voice-usage";
 import Stripe from "stripe";
 import type { AuthenticatedRequest } from "../types/auth";
 
@@ -230,6 +231,16 @@ router.get("/spend/status", authenticateUser, async (req: AuthenticatedRequest, 
 
 router.get("/billing/plans", (_req: Request, res: Response) => {
   res.json({ plans: plansForClient(), stripe_configured: stripeAvailable() });
+});
+
+router.get("/billing/usage", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const snapshot = await getVoiceUsageSnapshot(req.user!.id);
+    res.json(snapshot);
+  } catch (err) {
+    log.error("/billing/usage failed", { error: getErrorMessage(err) });
+    res.status(500).json({ error: "Failed to load usage snapshot" });
+  }
 });
 
 router.get(

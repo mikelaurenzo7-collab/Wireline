@@ -86,6 +86,25 @@ const TIERS: Tier[] = [
     ],
   },
   {
+    id: "business",
+    name: "Business",
+    price: "$999",
+    cadence: "/ month",
+    blurb: "Corporate teams running multiple campaigns and need SSO + audit.",
+    cta: "Start free trial",
+    ctaHref: "/signup?plan=business",
+    features: [
+      "25 AI voice agents",
+      "5,000 voice minutes / month",
+      "25 connected mailboxes",
+      "SSO + audit log export",
+      "Up to 50 team seats",
+      "Everything in Pro",
+      "Priority support · Slack channel",
+      "Overage at $0.16 / min",
+    ],
+  },
+  {
     id: "enterprise",
     name: "Enterprise",
     price: "Custom",
@@ -96,8 +115,8 @@ const TIERS: Tier[] = [
     features: [
       "Unlimited agents + minutes",
       "Unlimited mailboxes + seats",
-      "SAML SSO + audit log export",
-      "99.9% SLA + dedicated CSM",
+      "SAML SSO + advanced compliance",
+      "99.95% SLA + dedicated CSM",
       "BYO Twilio / RingCentral / 8x8",
       "Custom integrations + private model deployment",
       "Net-30 invoicing",
@@ -193,7 +212,7 @@ export default function Pricing() {
 
       {/* Tier grid */}
       <section className="relative z-10 px-4 lg:px-10 max-w-7xl mx-auto pb-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 lg:gap-4">
           {TIERS.map((tier, i) => (
             <motion.div
               key={tier.id}

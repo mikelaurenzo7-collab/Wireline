@@ -10,7 +10,7 @@
  * in sync.
  */
 
-export type StripePlanId = "personal" | "starter" | "pro" | "enterprise";
+export type StripePlanId = "personal" | "starter" | "pro" | "business" | "enterprise";
 
 export type StripePlan = {
   id: StripePlanId;
@@ -83,6 +83,25 @@ export const STRIPE_PLANS: StripePlan[] = [
     ],
   },
   {
+    id: "business",
+    name: "Business",
+    price_usd_monthly: 999,
+    max_agents: 25,
+    voice_minutes_monthly: 5_000,
+    overage_per_min_usd: 0.16,
+    priceIdEnv: "STRIPE_BUSINESS_PRICE_ID",
+    features: [
+      "25 AI agents (voice + email)",
+      "Dedicated voice number per agent",
+      "5,000 voice minutes / month",
+      "Everything in Pro",
+      "SSO + audit log export",
+      "Up to 50 team seats",
+      "Priority support · Slack channel",
+      "Overage billed at $0.16 / min",
+    ],
+  },
+  {
     id: "enterprise",
     name: "Enterprise",
     price_usd_monthly: 0, // contact sales
@@ -93,10 +112,10 @@ export const STRIPE_PLANS: StripePlan[] = [
     features: [
       "Up to 100 agents (custom bundles)",
       "Dedicated voice numbers + BYO carrier option",
-      "50,000 voice minutes (custom volume)",
-      "Everything in Pro",
-      "SSO + SAML",
-      "Custom data retention",
+      "50,000+ voice minutes (custom volume)",
+      "Everything in Business",
+      "SAML SSO + advanced compliance",
+      "Custom data retention + private model deployment",
       "Dedicated success manager",
       "99.95% uptime SLA",
     ],
