@@ -22,6 +22,94 @@ import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../contexts/AuthContext";
 import IntegrationLogos from "./layout/IntegrationLogos";
 
+/**
+ * 10 live Wireline demo agents — one per role we ship as a template.
+ * Each has its own Vapi-backed AI assistant + dedicated phone number.
+ * Anyone can call any of these from any phone, no signup.
+ *
+ * Keep in sync with the Vapi assistants in account `mikelaurenzo7-7694`
+ * (revaluate/wireline project). Adding / removing here is the marketing
+ * surface; the Vapi side is provisioned via /tmp/build-demo-agents.sh.
+ */
+const DEMO_AGENTS: ReadonlyArray<{
+  name: string;
+  role: string;
+  tel: string;
+  display: string;
+  tint: string;
+}> = [
+  {
+    name: "Liam",
+    role: "Sales Closer",
+    tel: "+16305811834",
+    display: "(630) 581-1834",
+    tint: "#0AC8D4",
+  },
+  {
+    name: "Sarah",
+    role: "Customer Support",
+    tel: "+16306425661",
+    display: "(630) 642-5661",
+    tint: "#E040C0",
+  },
+  {
+    name: "Maya",
+    role: "Scheduling Concierge",
+    tel: "+16306425927",
+    display: "(630) 642-5927",
+    tint: "#9B59F5",
+  },
+  {
+    name: "Marcus",
+    role: "Medical Office Intake",
+    tel: "+16173134469",
+    display: "(617) 313-4469",
+    tint: "#10B981",
+  },
+  {
+    name: "Aisha",
+    role: "Real Estate Lead Capture",
+    tel: "+19733638874",
+    display: "(973) 363-8874",
+    tint: "#FFC07D",
+  },
+  {
+    name: "Devon",
+    role: "Bill Negotiator",
+    tel: "+12075935155",
+    display: "(207) 593-5155",
+    tint: "#f43f5e",
+  },
+  {
+    name: "Elena",
+    role: "Insurance Claims Intake",
+    tel: "+19044601596",
+    display: "(904) 460-1596",
+    tint: "#06b6d4",
+  },
+  {
+    name: "Tyler",
+    role: "Tech Support",
+    tel: "+15642389455",
+    display: "(564) 238-9455",
+    tint: "#8b5cf6",
+  },
+  {
+    name: "Priya",
+    role: "Executive Assistant",
+    tel: "+15727269365",
+    display: "(572) 726-9365",
+    tint: "#ec4899",
+  },
+  {
+    name: "Jake",
+    role: "Outbound SDR",
+    tel: "+14692571581",
+    display: "(469) 257-1581",
+    tint: "#f59e0b",
+  },
+];
+
 const FEATURES = [
   {
     icon: PhoneIncoming,
@@ -235,68 +323,44 @@ export default function AuthPortal() {
           className="mb-6"
         >
           <p className="text-[9px] uppercase tracking-[0.42em] text-muted/80 mb-3 text-center">
-            Hear a Wireline agent live · no signup · call from any phone
+            Hear 10 Wireline agents live · no signup · tap to call
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <a
-              href="tel:+16305811834"
-              className="group relative block rounded-2xl p-4 overflow-hidden border border-white/12 hover:border-white/24 transition-colors"
-              style={{
-                background: "linear-gradient(135deg, rgba(10,200,212,0.18), rgba(155,89,245,0.10))",
-                boxShadow: "0 12px 32px -16px rgba(10,200,212,0.45)",
-              }}
-            >
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                  style={{
-                    background: "linear-gradient(135deg, #0AC8D4, #9B59F5)",
-                    boxShadow: "0 6px 16px -6px rgba(10,200,212,0.6)",
-                  }}
-                >
-                  <Phone className="w-4 h-4 text-paper" strokeWidth={2.4} />
+          {/* 10-agent demo grid — one number per agent type. Each card is a
+              real Vapi-backed AI agent answering 24/7. Maps to the marketing
+              landing-page card system: name + role + phone + click-to-call. */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-2.5">
+            {DEMO_AGENTS.map((a) => (
+              <a
+                key={a.tel}
+                href={`tel:${a.tel}`}
+                className="group relative block rounded-xl p-3 overflow-hidden border border-white/12 hover:border-white/24 transition-colors"
+                style={{
+                  background: `linear-gradient(135deg, ${a.tint}26, ${a.tint}10)`,
+                  boxShadow: `0 8px 20px -12px ${a.tint}66`,
+                }}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                    style={{
+                      background: `linear-gradient(135deg, ${a.tint}, ${a.tint}cc)`,
+                      boxShadow: `0 4px 10px -4px ${a.tint}aa`,
+                    }}
+                  >
+                    <Phone className="w-3.5 h-3.5 text-paper" strokeWidth={2.4} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[9px] uppercase tracking-[0.3em] text-muted/70 leading-none mb-1 truncate">
+                      {a.name} · {a.role}
+                    </p>
+                    <p className="font-display italic text-base leading-none text-ink truncate">
+                      {a.display}
+                    </p>
+                  </div>
+                  <ArrowRight className="w-3.5 h-3.5 text-ink/40 group-hover:text-ink group-hover:translate-x-0.5 transition-all shrink-0" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[9px] uppercase tracking-[0.36em] text-muted/70 mb-0.5">
-                    Liam · outbound · male
-                  </p>
-                  <p className="font-display italic text-xl leading-tight text-ink">
-                    (630) 581-1834
-                  </p>
-                </div>
-                <ArrowRight className="w-4 h-4 text-ink/40 group-hover:text-ink group-hover:translate-x-0.5 transition-all shrink-0" />
-              </div>
-            </a>
-            <a
-              href="tel:+16306425661"
-              className="group relative block rounded-2xl p-4 overflow-hidden border border-white/12 hover:border-white/24 transition-colors"
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(224,64,192,0.18), rgba(255,107,217,0.10))",
-                boxShadow: "0 12px 32px -16px rgba(224,64,192,0.45)",
-              }}
-            >
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                  style={{
-                    background: "linear-gradient(135deg, #E040C0, #9B59F5)",
-                    boxShadow: "0 6px 16px -6px rgba(224,64,192,0.6)",
-                  }}
-                >
-                  <Phone className="w-4 h-4 text-paper" strokeWidth={2.4} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[9px] uppercase tracking-[0.36em] text-muted/70 mb-0.5">
-                    Sarah · inbound · female
-                  </p>
-                  <p className="font-display italic text-xl leading-tight text-ink">
-                    (630) 642-5661
-                  </p>
-                </div>
-                <ArrowRight className="w-4 h-4 text-ink/40 group-hover:text-ink group-hover:translate-x-0.5 transition-all shrink-0" />
-              </div>
-            </a>
+              </a>
+            ))}
           </div>
         </motion.div>
 
@@ -378,30 +442,6 @@ export default function AuthPortal() {
           </div>
           <h1 className="brand-wordmark text-5xl leading-none">WIRELINE</h1>
           <p className="text-[9px] uppercase tracking-[0.5em] text-muted">AI Voice Platform</p>
-
-          {/* Compact mobile-only demo CTA pair (the desktop layout lives on the left brand panel) */}
-          <div className="mt-4 flex flex-col sm:flex-row gap-2 w-full max-w-xs">
-            <a
-              href="tel:+16305811834"
-              className="group flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl glass border border-white/12 hover:border-white/24 transition-colors"
-              style={{ boxShadow: "0 8px 24px -12px rgba(10,200,212,0.4)" }}
-            >
-              <Phone className="w-3 h-3 text-brand shrink-0" strokeWidth={2.4} />
-              <span className="text-[10px] uppercase tracking-[0.28em] text-ink whitespace-nowrap">
-                Liam · 581-1834
-              </span>
-            </a>
-            <a
-              href="tel:+16306425661"
-              className="group flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl glass border border-white/12 hover:border-white/24 transition-colors"
-              style={{ boxShadow: "0 8px 24px -12px rgba(224,64,192,0.4)" }}
-            >
-              <Phone className="w-3 h-3 shrink-0" style={{ color: "#E040C0" }} strokeWidth={2.4} />
-              <span className="text-[10px] uppercase tracking-[0.28em] text-ink whitespace-nowrap">
-                Sarah · 642-5661
-              </span>
-            </a>
-          </div>
         </div>
 
         <motion.div
