@@ -432,6 +432,13 @@ export default function AgentTemplates() {
           name: template.name,
           channel: template.channel,
           role: template.role,
+          // Pass templateId so the server can apply the template-specific
+          // playbook overlay on top of the role's base methodology, and
+          // firstMessage so the agent opens with the template's intended
+          // hook (with {{businessName}}-style placeholders substituted
+          // from the operator's settings server-side).
+          templateId: template.id,
+          firstMessage: template.firstMessage,
         }),
       });
       const data = await safeJson(resp);
