@@ -74,7 +74,10 @@ router.post(
         summary: typedCall.summary || "",
         transcript: typedCall.transcript || "",
         sentiment: typedCall.sentiment || "neutral",
-        durationSeconds: typedCall.duration_seconds,
+        // Drizzle returns camelCase; the snake_case was a stale reference
+        // that always evaluated to undefined → call duration treated as 0
+        // in qa.scoring, dropping scores for shorter calls. Fixed.
+        durationSeconds: typedCall.durationSeconds,
       });
 
       const QA_DIMENSIONS = ["greeting", "discovery", "solution", "objection", "closing"] as const;
