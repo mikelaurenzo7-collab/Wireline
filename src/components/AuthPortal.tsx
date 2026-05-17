@@ -23,28 +23,20 @@ import { useAuth } from "../contexts/AuthContext";
 import IntegrationLogos from "./layout/IntegrationLogos";
 
 /**
- * 10 live Wireline demo agents — one per role we ship as a template.
- * Each has its own Vapi-backed AI assistant + dedicated phone number.
- * Anyone can call any of these from any phone, no signup.
- *
- * Keep in sync with the Vapi assistants in account `mikelaurenzo7-7694`
- * (revaluate/wireline project). Adding / removing here is the marketing
- * surface; the Vapi side is provisioned via /tmp/build-demo-agents.sh.
+ * 4 live Wireline customer-service agents — these are the real way to
+ * reach the Wireline team. Each handles a different scope (sales,
+ * support, tech, scheduling) and can escalate to a human via the
+ * escalate_to_human Vapi tool which hits /api/escalate.
  */
-const DEMO_AGENTS: ReadonlyArray<{
+type AgentCard = {
   name: string;
   role: string;
   tel: string;
   display: string;
   tint: string;
-}> = [
-  {
-    name: "Liam",
-    role: "Sales Closer",
-    tel: "+16305811834",
-    display: "(630) 581-1834",
-    tint: "#0AC8D4",
-  },
+};
+
+const CONTACT_AGENTS: ReadonlyArray<AgentCard> = [
   {
     name: "Sarah",
     role: "Customer Support",
@@ -53,12 +45,35 @@ const DEMO_AGENTS: ReadonlyArray<{
     tint: "#E040C0",
   },
   {
+    name: "Liam",
+    role: "Sales & Demos",
+    tel: "+16305811834",
+    display: "(630) 581-1834",
+    tint: "#0AC8D4",
+  },
+  {
+    name: "Tyler",
+    role: "Technical Support",
+    tel: "+15642389455",
+    display: "(564) 238-9455",
+    tint: "#8b5cf6",
+  },
+  {
     name: "Maya",
-    role: "Scheduling Concierge",
+    role: "Book a Demo",
     tel: "+16306425927",
     display: "(630) 642-5927",
     tint: "#9B59F5",
   },
+];
+
+/**
+ * 6 vertical demo agents — these aren't customer service. They're
+ * proof points showing the platform's range. Each role-plays a real
+ * business use case (medical clinic intake, real-estate front desk,
+ * bill negotiator, etc.) and pitches Wireline when asked.
+ */
+const DEMO_AGENTS: ReadonlyArray<AgentCard> = [
   {
     name: "Marcus",
     role: "Medical Office Intake",
@@ -86,13 +101,6 @@ const DEMO_AGENTS: ReadonlyArray<{
     tel: "+19044601596",
     display: "(904) 460-1596",
     tint: "#06b6d4",
-  },
-  {
-    name: "Tyler",
-    role: "Tech Support",
-    tel: "+15642389455",
-    display: "(564) 238-9455",
-    tint: "#8b5cf6",
   },
   {
     name: "Priya",
@@ -136,6 +144,40 @@ const FEATURES = [
     accent: "#10B981",
   },
 ];
+
+function AgentCardLink({ agent }: { agent: AgentCard }) {
+  return (
+    <a
+      href={`tel:${agent.tel}`}
+      className="group relative block rounded-xl p-3 overflow-hidden border border-white/12 hover:border-white/24 transition-colors"
+      style={{
+        background: `linear-gradient(135deg, ${agent.tint}26, ${agent.tint}10)`,
+        boxShadow: `0 8px 20px -12px ${agent.tint}66`,
+      }}
+    >
+      <div className="flex items-center gap-2.5">
+        <div
+          className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+          style={{
+            background: `linear-gradient(135deg, ${agent.tint}, ${agent.tint}cc)`,
+            boxShadow: `0 4px 10px -4px ${agent.tint}aa`,
+          }}
+        >
+          <Phone className="w-3.5 h-3.5 text-paper" strokeWidth={2.4} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[9px] uppercase tracking-[0.3em] text-muted/70 leading-none mb-1 truncate">
+            {agent.name} · {agent.role}
+          </p>
+          <p className="font-display italic text-base leading-none text-ink truncate">
+            {agent.display}
+          </p>
+        </div>
+        <ArrowRight className="w-3.5 h-3.5 text-ink/40 group-hover:text-ink group-hover:translate-x-0.5 transition-all shrink-0" />
+      </div>
+    </a>
+  );
+}
 
 type PasswordStrength = { score: 0 | 1 | 2 | 3 | 4; label: string; color: string };
 
@@ -316,50 +358,37 @@ export default function AuthPortal() {
         {/* Demo call CTA — two distinct agents (male / female) so visitors
             can hear voice + persona variety in our fleet. Tap-to-call on
             mobile, click-to-call on macOS / Windows with telephony apps. */}
+        {/* Two-section split: 4 real contact lines + 6 vertical demos.
+            Same card renderer (AgentCardLink below) — keeps visual
+            consistency, just changes the heading framing. */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+          className="mb-5"
+        >
+          <p className="text-[9px] uppercase tracking-[0.42em] text-brand/90 mb-3 text-center">
+            Talk to Wireline · 4 lines · live AI 24/7
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {CONTACT_AGENTS.map((a) => (
+              <AgentCardLink key={a.tel} agent={a} />
+            ))}
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.22, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
           className="mb-6"
         >
           <p className="text-[9px] uppercase tracking-[0.42em] text-muted/80 mb-3 text-center">
-            Hear 10 Wireline agents live · no signup · tap to call
+            See it work · 6 vertical demos · tap to call
           </p>
-          {/* 10-agent demo grid — one number per agent type. Each card is a
-              real Vapi-backed AI agent answering 24/7. Maps to the marketing
-              landing-page card system: name + role + phone + click-to-call. */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {DEMO_AGENTS.map((a) => (
-              <a
-                key={a.tel}
-                href={`tel:${a.tel}`}
-                className="group relative block rounded-xl p-3 overflow-hidden border border-white/12 hover:border-white/24 transition-colors"
-                style={{
-                  background: `linear-gradient(135deg, ${a.tint}26, ${a.tint}10)`,
-                  boxShadow: `0 8px 20px -12px ${a.tint}66`,
-                }}
-              >
-                <div className="flex items-center gap-2.5">
-                  <div
-                    className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                    style={{
-                      background: `linear-gradient(135deg, ${a.tint}, ${a.tint}cc)`,
-                      boxShadow: `0 4px 10px -4px ${a.tint}aa`,
-                    }}
-                  >
-                    <Phone className="w-3.5 h-3.5 text-paper" strokeWidth={2.4} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[9px] uppercase tracking-[0.3em] text-muted/70 leading-none mb-1 truncate">
-                      {a.name} · {a.role}
-                    </p>
-                    <p className="font-display italic text-base leading-none text-ink truncate">
-                      {a.display}
-                    </p>
-                  </div>
-                  <ArrowRight className="w-3.5 h-3.5 text-ink/40 group-hover:text-ink group-hover:translate-x-0.5 transition-all shrink-0" />
-                </div>
-              </a>
+              <AgentCardLink key={a.tel} agent={a} />
             ))}
           </div>
         </motion.div>
