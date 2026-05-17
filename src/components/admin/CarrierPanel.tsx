@@ -390,6 +390,100 @@ export function CarrierPanel({
           </div>
         </div>
       </Panel>
+
+      {/* SMS / text messaging — backend already wired to Twilio via
+          send_text_message action. This panel surfaces the per-tenant
+          sender configuration so operators can actually enable it. */}
+      <Panel title="SMS &amp; text messaging" hint="OUTBOUND TEXTS · OPT-OUT TRACKED" icon={Phone}>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] p-3">
+            <div>
+              <p className="text-sm text-ink leading-none">Enable outbound SMS</p>
+              <p className="text-[10px] text-muted/70 mt-1 leading-relaxed">
+                Lets your agents follow up via text. Replies trigger TCPA opt-out tracking.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                onUpdateSettings({
+                  ...settings,
+                  twilio_messaging_enabled: !settings.twilio_messaging_enabled,
+                })
+              }
+              aria-pressed={!!settings.twilio_messaging_enabled}
+              className={cn(
+                "shrink-0 w-11 h-6 rounded-full transition-colors relative",
+                settings.twilio_messaging_enabled ? "bg-brand" : "bg-black/15",
+              )}
+            >
+              <span
+                className={cn(
+                  "absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all shadow",
+                  settings.twilio_messaging_enabled ? "left-5" : "left-0.5",
+                )}
+              />
+            </button>
+          </div>
+
+          <div className="space-y-1.5">
+            <label
+              htmlFor="twilio-sms-from"
+              className="text-[9px] uppercase tracking-[0.3em] text-muted/70"
+            >
+              SMS sender number
+            </label>
+            <input
+              id="twilio-sms-from"
+              type="tel"
+              value={settings.twilio_sms_from_number || ""}
+              onChange={(e) =>
+                onUpdateSettings({ ...settings, twilio_sms_from_number: e.target.value })
+              }
+              placeholder="+1 800 555 0100"
+              className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 font-mono"
+            />
+            <p className="text-[10px] text-muted/60 leading-relaxed">
+              A Twilio-verified number you own. Outbound texts go from this number.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <label
+              htmlFor="twilio-messaging-sid"
+              className="text-[9px] uppercase tracking-[0.3em] text-muted/70"
+            >
+              OR Messaging Service SID (recommended for scale)
+            </label>
+            <input
+              id="twilio-messaging-sid"
+              type="text"
+              value={settings.twilio_messaging_service_sid || ""}
+              onChange={(e) =>
+                onUpdateSettings({ ...settings, twilio_messaging_service_sid: e.target.value })
+              }
+              placeholder="MG••••••••••••••••••••••••••••••••"
+              className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 font-mono"
+            />
+            <p className="text-[10px] text-muted/60 leading-relaxed">
+              Twilio's pool of numbers with auto-failover. Overrides the single sender above.
+            </p>
+          </div>
+
+          <button
+            onClick={onSaveSettings}
+            disabled={isSaving}
+            className="w-full mt-2 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.3em] hover:bg-brand/25 transition-colors disabled:opacity-30"
+          >
+            {isSaving ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <KeyRound className="w-3 h-3" />
+            )}
+            Save messaging config
+          </button>
+        </div>
+      </Panel>
     </div>
   );
 }
