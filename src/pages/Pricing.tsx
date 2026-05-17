@@ -42,6 +42,7 @@ const TIERS: Tier[] = [
       "1 connected mailbox (Gmail or Outlook)",
       "Call logs + transcripts + sentiment",
       "Web dashboard, no team seats",
+      "Overage at $0.25 / min",
     ],
     notIncluded: ["Outbound campaigns", "Slack alerts", "Multi-user team"],
   },
@@ -55,11 +56,12 @@ const TIERS: Tier[] = [
     ctaHref: "/signup?plan=starter",
     features: [
       "3 AI voice agents",
-      "1,000 voice minutes / month",
+      "500 voice minutes / month",
       "3 connected mailboxes",
       "Outbound dialer (CSV upload, auto-dial)",
       "Live call monitor",
       "Up to 5 team seats",
+      "Overage at $0.20 / min — only if you exceed",
     ],
   },
   {
@@ -73,13 +75,14 @@ const TIERS: Tier[] = [
     highlight: true,
     features: [
       "10 AI voice agents",
-      "5,000 voice minutes / month",
+      "2,500 voice minutes / month",
       "10 connected mailboxes",
       "Outbound dialer + email campaigns",
       "Slack alerts on key events",
       "Up to 25 team seats",
       "Advanced insights + funnel analysis",
       "Webhook + Action Engine",
+      "Overage at $0.18 / min — small volume discount",
     ],
   },
   {
@@ -322,8 +325,9 @@ export default function Pricing() {
             No long-term contracts · Cancel anytime · USD pricing
           </p>
           <p className="text-[12px] text-muted/65">
-            Voice minutes are pooled across all agents in your workspace. Overage billed at $0.08 /
-            min. Email volume is unlimited on all plans.
+            Voice minutes are pooled across all agents in your workspace. Overage billed at $0.20 /
+            min (Pro: $0.18 / min) — priced at our cost, not a profit center. Most teams stay well
+            inside plan. Email volume is unlimited on all plans.
           </p>
         </motion.div>
       </section>

@@ -48,6 +48,7 @@ export const quotaTracker = new QuotaTracker({
       if (status === "enterprise") return "enterprise";
       if (status === "pro") return "pro";
       if (status === "starter" || status === "active") return "starter";
+      if (status === "personal") return "personal";
       return "free";
     } catch {
       return "starter";

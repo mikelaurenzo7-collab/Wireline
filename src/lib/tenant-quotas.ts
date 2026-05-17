@@ -24,7 +24,7 @@ import { log } from "./server-context";
 // Plan defaults
 // ─────────────────────────────────────────────────────────────────
 
-export type PlanTier = "free" | "starter" | "pro" | "enterprise";
+export type PlanTier = "free" | "personal" | "starter" | "pro" | "enterprise";
 
 export interface QuotaProfile {
   /** Anthropic input+output tokens per UTC day. */
@@ -39,24 +39,36 @@ export interface QuotaProfile {
   intake_rpm: number;
 }
 
+// Daily voice-minute caps are tuned at ~2× of the monthly plan cap divided
+// by 30 days — generous enough to absorb a campaign-spike day, tight enough
+// that an abusive single day can't blow through the monthly cap. Real
+// monthly cap enforcement (with overage billing) lives in plan-catalog.ts
+// + Stripe metered usage when wired.
 export const PLAN_DEFAULTS: Record<PlanTier, QuotaProfile> = {
   free: {
     claude_tokens_daily: 200_000,
-    voice_minutes_daily: 60,
+    voice_minutes_daily: 10, // ~5 min/day average → 5 min spike headroom
     concurrent_dials: 1,
     knowledge_rows: 200,
     intake_rpm: 10,
   },
+  personal: {
+    claude_tokens_daily: 300_000,
+    voice_minutes_daily: 15, // 100/mo ÷ 30 × 4.5 buffer for spike days
+    concurrent_dials: 2,
+    knowledge_rows: 500,
+    intake_rpm: 30,
+  },
   starter: {
     claude_tokens_daily: 1_500_000,
-    voice_minutes_daily: 600,
+    voice_minutes_daily: 60, // 500/mo ÷ 30 × 3.6 buffer for campaign days
     concurrent_dials: 5,
     knowledge_rows: 2_000,
     intake_rpm: 60,
   },
   pro: {
     claude_tokens_daily: 8_000_000,
-    voice_minutes_daily: 4_000,
+    voice_minutes_daily: 300, // 2,500/mo ÷ 30 × 3.6 buffer for heavy campaigns
     concurrent_dials: 25,
     knowledge_rows: 20_000,
     intake_rpm: 240,
