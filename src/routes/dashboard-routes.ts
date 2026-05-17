@@ -6,7 +6,7 @@ import { eq, and, sql, desc, isNotNull, lt, gte, inArray } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { computeDashboardStats } from "../lib/dashboard-stats";
 import { computeDashboardBenchmarks } from "../lib/dashboard-benchmarks";
-import { getErrorMessage } from "../lib/server-utils";
+import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import { getCachedDashboard, setCachedDashboard } from "../lib/dashboard-cache";
 
 const router = Router();
@@ -90,8 +90,13 @@ router.get("/api/calls", authenticateUser, async (req: AuthenticatedRequest, res
       .limit(limit)
       .offset(offset);
 
+    // UI reads snake_case (call.customer_number, call.lead_score, etc.).
+    // Drizzle returns camelCase. Normalize at the boundary so the call
+    // detail panel actually populates lead score, intent label, transcript
+    // metadata, recording URL — everything beyond the few fields that
+    // happened to match by coincidence (id, summary, transcript, direction).
     res.json({
-      calls: calls || [],
+      calls: mapObjectToSnake(calls || []),
       hasMore: offset + limit < count,
       total: count || 0,
     });
@@ -230,17 +235,15 @@ router.get(
       const responseData = {
         ...stats,
         agents: agentsResult || [],
-        recentLogs: (logsResult || [])
-          .slice(0, 100)
-          .map((l) => ({
-            ...l,
-            customer_number: l.customerNumber,
-            duration_seconds: l.durationSeconds,
-            lead_score: l.leadScore,
-            intent_label: l.intentLabel,
-            coaching_note: l.coachingNote,
-            created_at: l.createdAt,
-          })),
+        recentLogs: (logsResult || []).slice(0, 100).map((l) => ({
+          ...l,
+          customer_number: l.customerNumber,
+          duration_seconds: l.durationSeconds,
+          lead_score: l.leadScore,
+          intent_label: l.intentLabel,
+          coaching_note: l.coachingNote,
+          created_at: l.createdAt,
+        })),
       };
 
       // Cache the computed stats for 60 seconds
@@ -333,7 +336,7 @@ router.get(
         .offset(offset);
 
       res.json({
-        appointments: appointments || [],
+        appointments: mapObjectToSnake(appointments || []),
         total: count || 0,
         hasMore: offset + limit < count,
       });
