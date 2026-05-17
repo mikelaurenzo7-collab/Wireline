@@ -223,23 +223,25 @@ export default function CommandCenter() {
 
   return (
     <PageTransition>
-      <div className="max-w-[1600px] mx-auto space-y-8 pb-12">
-        {/* Elite Command Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-black/5">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="flex h-2 w-2 rounded-full bg-brand animate-pulse" />
-              <span className="text-[10px] uppercase tracking-[0.4em] font-bold text-muted">
+      <div className="max-w-[1600px] mx-auto space-y-5 pb-8">
+        {/* Elite Command Header — tightened so the onboarding card fits
+            above the fold on a 900px viewport. Title/subtitle/stats kept
+            but vertical density compressed ~40px without losing brand. */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 pb-3 border-b border-black/5">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="flex h-1.5 w-1.5 rounded-full bg-brand animate-pulse" />
+              <span className="text-[9px] uppercase tracking-[0.4em] font-bold text-muted">
                 System Active
               </span>
             </div>
-            <h1 className="text-4xl font-black tracking-tighter text-ink flex items-baseline gap-3">
+            <h1 className="text-2xl md:text-3xl font-black tracking-tighter text-ink flex items-baseline gap-2">
               Wireline OS
-              <span className="text-sm font-mono font-medium text-muted/40 tracking-normal">
+              <span className="text-xs font-mono font-medium text-muted/40 tracking-normal">
                 v4.7.2-stable
               </span>
             </h1>
-            <p className="text-sm text-muted max-w-lg leading-relaxed">
+            <p className="text-[12px] text-muted/80 max-w-lg leading-snug">
               Live calls, fleet status, and unit economics for your entire agent operation — one
               screen, real time.
             </p>
