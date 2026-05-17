@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import DeployAgentModal, { DeployValues } from "./DeployAgentModal";
 import {
   Target,
   Zap,
@@ -280,6 +281,29 @@ const CATEGORIES = [
   "Personal & Lifestyle",
 ] as const;
 
+// Recommended default voice gender per template. Operator can override in
+// the deploy modal — this is just a smart starting point so the toggle
+// lands on a sensible default for the use case (e.g. assertive collections
+// reads better as male, salon receptionist as female).
+const DEFAULT_GENDER_BY_TEMPLATE: Record<string, "female" | "male"> = {
+  "sales-sdr": "male",
+  "sales-closer": "male",
+  "lead-qualifier-inbound": "female",
+  "support-tier1": "female",
+  "support-email": "female",
+  "scheduler-medical": "female",
+  "scheduler-salon": "female",
+  "scheduler-realestate": "male",
+  "collections-soft": "female",
+  "collections-hard": "male",
+  "marketing-reengagement": "female",
+  "marketing-survey": "female",
+  "personal-concierge": "female",
+  "personal-screener": "female",
+  "personal-errand": "female",
+  "personal-negotiator": "male",
+};
+
 // ────────────────────────────────────────────────────────────────────────────
 // Template Card
 // ────────────────────────────────────────────────────────────────────────────
@@ -446,6 +470,7 @@ export default function AgentTemplates() {
   const [search, setSearch] = useState("");
   const [deploying, setDeploying] = useState<string | null>(null);
   const [deployedNames, setDeployedNames] = useState<string[]>([]);
+  const [modalTemplate, setModalTemplate] = useState<Template | null>(null);
 
   // Pull the current fleet so each template card can render a 'Deployed'
   // badge + 'Deploy Another' button when an agent with the matching name
@@ -484,42 +509,54 @@ export default function AgentTemplates() {
     return matchesCategory && matchesSearch;
   });
 
-  const handleDeploy = async (template: Template) => {
+  // Step 1: clicking "Deploy" opens the modal so the operator can name
+  // the agent and pick a voice (male / female + specific voice). Step 2
+  // (handleConfirmedDeploy) actually POSTs to /api/agents with the
+  // values the operator chose.
+  const handleOpenDeploy = (template: Template) => {
     if (deploying) return;
-    setDeploying(template.id);
+    setModalTemplate(template);
+  };
+
+  const handleConfirmedDeploy = async (values: DeployValues) => {
+    if (!modalTemplate) return;
+    setDeploying(modalTemplate.id);
     try {
-      const uniqueId = `${template.id}-${Date.now()}`;
+      const uniqueId = `${modalTemplate.id}-${Date.now()}`;
       const resp = await authFetch("/api/agents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: uniqueId,
-          name: template.name,
-          channel: template.channel,
-          role: template.role,
-          // Pass templateId so the server can apply the template-specific
-          // playbook overlay on top of the role's base methodology, and
-          // firstMessage so the agent opens with the template's intended
-          // hook (with {{businessName}}-style placeholders substituted
-          // from the operator's settings server-side).
-          templateId: template.id,
-          firstMessage: template.firstMessage,
+          // Operator-chosen name (defaults to template.name, fully editable)
+          name: values.name,
+          channel: modalTemplate.channel,
+          role: modalTemplate.role,
+          // Operator-chosen voice — 11labs/OpenAI id selected by gender
+          // toggle + optional specific voice picker in the modal.
+          voice_id: values.voiceId,
+          // templateId drives the server-side personality overlay; firstMessage
+          // is the opener with {{businessName}}-style placeholders substituted
+          // server-side from the operator's settings row.
+          templateId: modalTemplate.id,
+          firstMessage: modalTemplate.firstMessage,
         }),
       });
       const data = await safeJson(resp);
       if (!resp.ok) {
         toastError("Deployment failed", data.error || "Please try again.");
-      } else {
-        toastSuccess("Agent deployed!", template.name);
-        // Refresh the deployed-set so the badge updates immediately, then
-        // navigate the operator to the fleet view.
-        await refetchAgents();
-        navigate("/agents");
+        setDeploying(null);
+        return;
       }
+      toastSuccess("Agent deployed", values.name);
+      setModalTemplate(null);
+      setDeploying(null);
+      await refetchAgents();
+      navigate("/agents");
     } catch {
       toastError("Deployment failed", "Could not reach the server. Please try again.");
+      setDeploying(null);
     }
-    setDeploying(null);
   };
 
   return (
@@ -586,7 +623,7 @@ export default function AgentTemplates() {
               <TemplateCard
                 key={template.id}
                 template={template}
-                onDeploy={handleDeploy}
+                onDeploy={handleOpenDeploy}
                 deploying={deploying === template.id}
                 deployedCount={deployedCounts.get(template.name.toLowerCase()) ?? 0}
               />
@@ -597,6 +634,31 @@ export default function AgentTemplates() {
           <CustomAgentCard />
         </div>
       </div>
+
+      <DeployAgentModal
+        open={modalTemplate !== null}
+        template={
+          modalTemplate
+            ? {
+                id: modalTemplate.id,
+                name: modalTemplate.name,
+                description: modalTemplate.description,
+                category: modalTemplate.category,
+                role: modalTemplate.role,
+                channel: modalTemplate.channel,
+                firstMessage: modalTemplate.firstMessage,
+                // Recommend a default gender per template — operator can override
+                defaultGender: DEFAULT_GENDER_BY_TEMPLATE[modalTemplate.id] ?? "female",
+              }
+            : null
+        }
+        onClose={() => {
+          if (deploying) return;
+          setModalTemplate(null);
+        }}
+        onConfirm={handleConfirmedDeploy}
+        deploying={deploying === modalTemplate?.id}
+      />
     </div>
   );
 }
