@@ -685,7 +685,7 @@ export const crmConnections = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: uuid("user_id").notNull(),
-    provider: text("provider").notNull(), // 'hubspot', 'salesforce', 'slack', 'zoom'
+    provider: text("provider").notNull(), // hubspot, salesforce, slack, zoom, meta, …
     crmType: text("crm_type"), // legacy alias/extra info
     accessToken: text("access_token").notNull(),
     refreshToken: text("refresh_token"),

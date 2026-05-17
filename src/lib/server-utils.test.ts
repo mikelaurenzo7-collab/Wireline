@@ -2,7 +2,12 @@
 // is the last line of defense against credential leakage into audit logs.
 
 import { describe, it, expect, vi } from "vitest";
-import { getErrorMessage, sanitizeForAudit, ownsRow } from "./server-utils";
+import {
+  getErrorMessage,
+  sanitizeForAudit,
+  ownsRow,
+  isDatabaseConnectivityError,
+} from "./server-utils";
 
 describe("getErrorMessage", () => {
   it("extracts the message from a real Error instance", () => {
@@ -32,6 +37,21 @@ describe("getErrorMessage", () => {
 
   it("handles thrown numbers", () => {
     expect(getErrorMessage(42)).toBe("42");
+  });
+});
+
+describe("isDatabaseConnectivityError", () => {
+  it("returns true for ECONNREFUSED error codes", () => {
+    const err = Object.assign(new Error("connect ECONNREFUSED"), { code: "ECONNREFUSED" });
+    expect(isDatabaseConnectivityError(err)).toBe(true);
+  });
+
+  it("returns true when the message mentions connection refused", () => {
+    expect(isDatabaseConnectivityError(new Error("connection refused"))).toBe(true);
+  });
+
+  it("returns false for unrelated application errors", () => {
+    expect(isDatabaseConnectivityError(new Error("Invalid email or password"))).toBe(false);
   });
 });
 

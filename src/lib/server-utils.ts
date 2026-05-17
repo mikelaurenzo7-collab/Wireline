@@ -14,6 +14,46 @@ export function getErrorMessage(error: unknown): string {
 }
 
 /**
+ * True when a Postgres / TCP failure likely caused the error (Vercel cold
+ * start, bad POSTGRES_URL, pooler down). Used by auth routes to return 503
+ * instead of a generic 500 so operators know to retry or fix env.
+ */
+export function isDatabaseConnectivityError(error: unknown): boolean {
+  const msg = getErrorMessage(error).toLowerCase();
+  const code =
+    typeof error === "object" && error !== null && "code" in error
+      ? String((error as { code?: unknown }).code)
+      : "";
+
+  if (
+    code === "ECONNREFUSED" ||
+    code === "ETIMEDOUT" ||
+    code === "ENOTFOUND" ||
+    code === "57P03" ||
+    code === "08006" ||
+    code === "08003" ||
+    code === "ECONNRESET"
+  ) {
+    return true;
+  }
+
+  if (
+    msg.includes("econnrefused") ||
+    msg.includes("connection refused") ||
+    msg.includes("connection terminated") ||
+    msg.includes("invalid_connection_string") ||
+    msg.includes("db probe timed out") ||
+    (msg.includes("timeout") && msg.includes("connect")) ||
+    msg.includes("getaddrinfo") ||
+    msg.includes("server closed the connection")
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
  * Recursively redact sensitive fields from an arbitrary object before
  * persisting to the audit log. The audit trail is queryable by
  * non-engineers, so credentials must never reach it.
@@ -24,14 +64,7 @@ export function getErrorMessage(error: unknown): string {
 export function sanitizeForAudit(obj: unknown): unknown {
   if (!obj || typeof obj !== "object") return obj;
 
-  const sensitivePatterns = [
-    "key",
-    "secret",
-    "password",
-    "token",
-    "credential",
-    "auth",
-  ];
+  const sensitivePatterns = ["key", "secret", "password", "token", "credential", "auth"];
 
   if (Array.isArray(obj)) {
     return obj.map((item) => sanitizeForAudit(item));
@@ -75,7 +108,7 @@ export function sanitizeForAudit(obj: unknown): unknown {
  * Useful for mapping frontend payloads to Drizzle/TS internal keys.
  */
 export function mapObjectToCamel(obj: any): any {
-  if (obj === null || typeof obj !== 'object') return obj;
+  if (obj === null || typeof obj !== "object") return obj;
   if (Array.isArray(obj)) return obj.map(mapObjectToCamel);
 
   const result: any = {};

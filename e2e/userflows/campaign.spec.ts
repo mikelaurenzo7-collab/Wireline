@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { installMockWirelineSession } from "../helpers/mock-auth";
 
 /**
  * Campaign Management E2E Tests
@@ -64,23 +65,28 @@ test.describe("Campaign Management Flows", () => {
   };
 
   test("outbound dialer page renders correctly", async ({ page }) => {
+    await installMockWirelineSession(page);
     await page.goto("/outbound");
     await page.waitForLoadState("networkidle");
 
-    // Check key elements exist with flexible selectors
-    const createBtn = page.getByRole("button", { name: /create|new/i });
-    await expect(createBtn.or(page.getByText(/campaign/i))).toBeVisible({ timeout: 10000 });
+    // PageShell title — avoids strict-mode collisions from multiple "Campaign" strings/buttons
+    await expect(page.getByRole("heading", { name: /^outbound$/i })).toBeVisible({
+      timeout: 10000,
+    });
   });
 
-  test("unauthenticated user is redirected to login", async ({ page }) => {
-    // Clear any existing auth state
-    await page.context().clearCookies();
-
+  test("unauthenticated user sees sign-in (auth portal)", async ({ page }) => {
+    await page.goto("/login");
+    await page.evaluate(() => {
+      localStorage.removeItem("wireline_session");
+      localStorage.removeItem("wireline_cookie_consent");
+    });
     await page.goto("/outbound");
-    await page.waitForLoadState("networkidle");
-
-    // Should redirect to login or show auth-required state
-    await expect(page).toHaveURL(/login|auth|signin/, { timeout: 10000 });
+    await page.waitForLoadState("domcontentloaded");
+    // App keeps the path but renders AuthPortal when there is no session
+    await expect(page.locator("form").getByRole("button", { name: /sign in/i })).toBeVisible({
+      timeout: 15_000,
+    });
   });
 
   test("create campaign modal opens and validates", async ({ page }) => {

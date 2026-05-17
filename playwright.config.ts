@@ -34,7 +34,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run dev",
+    // Avoid inheriting a broken POSTGRES_URL from the parent shell (AGENTS.md).
+    command: "env -u POSTGRES_URL -u CORS_ORIGINS npm run dev",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,

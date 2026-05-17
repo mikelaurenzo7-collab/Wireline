@@ -10,12 +10,14 @@ import {
   ChevronDown,
   RotateCw,
   Terminal,
+  PlugZap,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { authFetch } from "../lib/api";
 import PageShell, { Panel } from "./PageShell";
 import { useToast } from "../contexts/ToastContext";
 import ConfirmModal from "./ConfirmModal";
+import CrmConnectionCard from "./CrmConnectionCard";
 
 type ConfirmState = { open: boolean; onConfirm: () => void };
 const CLOSED_CONFIRM: ConfirmState = { open: false, onConfirm: () => {} };
@@ -325,6 +327,18 @@ export default function Integrations() {
             )}
           </Panel>
 
+          <Panel
+            title="crm · slack · meta · zoom"
+            hint="OPERATOR OAUTH"
+            icon={PlugZap}
+            scroll
+            flush
+          >
+            <div className="px-3 py-2 min-h-[120px]">
+              <CrmConnectionCard />
+            </div>
+          </Panel>
+
           {/* OAuth diagnostics */}
           <div className="shrink-0">
             <button
@@ -378,6 +392,39 @@ export default function Integrations() {
                       <p className="text-[10px] text-muted/80 leading-relaxed">
                         Add this to Azure portal → App registrations → Authentication → Redirect
                         URIs.
+                      </p>
+                    </div>
+
+                    {/* Slack */}
+                    <div className="space-y-2 pt-2 border-t border-white/8">
+                      <div className="flex items-center gap-2">
+                        <Webhook className="w-3.5 h-3.5 text-purple-500" />
+                        <h4 className="font-display italic lowercase text-sm text-ink">
+                          slack oauth redirect uri
+                        </h4>
+                      </div>
+                      <code className="block w-full px-3 py-2 rounded-lg bg-black/40 border border-white/8 font-mono text-[11px] text-purple-400 select-all break-all">
+                        {window.location.origin}/api/oauth/slack/callback
+                      </code>
+                      <p className="text-[10px] text-muted/80 leading-relaxed">
+                        Slack API → Your App → OAuth & Permissions → Redirect URLs.
+                      </p>
+                    </div>
+
+                    {/* Meta */}
+                    <div className="space-y-2 pt-2 border-t border-white/8">
+                      <div className="flex items-center gap-2">
+                        <Webhook className="w-3.5 h-3.5 text-indigo-500" />
+                        <h4 className="font-display italic lowercase text-sm text-ink">
+                          meta (facebook login) redirect uri
+                        </h4>
+                      </div>
+                      <code className="block w-full px-3 py-2 rounded-lg bg-black/40 border border-white/8 font-mono text-[11px] text-indigo-400 select-all break-all">
+                        {window.location.origin}/api/oauth/meta/callback
+                      </code>
+                      <p className="text-[10px] text-muted/80 leading-relaxed">
+                        Meta for Developers → Your App → Facebook Login → Settings → Valid OAuth
+                        Redirect URIs.
                       </p>
                     </div>
 

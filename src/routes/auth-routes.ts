@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { authService } from "../lib/auth-service";
 import { log } from "../lib/server-context";
+import { isDatabaseConnectivityError } from "../lib/server-utils";
 
 const router = Router();
 
@@ -22,7 +23,14 @@ router.post("/api/auth/signin", async (req: Request, res: Response) => {
 
     res.json(result);
   } catch (error) {
-    // New refined logger captures the full error object
+    if (isDatabaseConnectivityError(error)) {
+      log.error("Auth: Sign in failed (database unreachable)", { error });
+      return res.status(503).json({
+        error:
+          "Sign-in is unavailable because the database cannot be reached. Check POSTGRES_URL on the server, then try again.",
+        code: "DATABASE_UNAVAILABLE",
+      });
+    }
     log.error("Auth: Sign in endpoint failed", { error });
     res.status(500).json({ error: "Internal server error" });
   }
@@ -42,8 +50,17 @@ router.post("/api/auth/signup", async (req: Request, res: Response) => {
     const result = await authService.signUp(email, password, fullName);
     res.json(result);
   } catch (error: any) {
-    if (error.code === "23505") { // Unique violation in Postgres
+    if (error.code === "23505") {
+      // Unique violation in Postgres
       return res.status(400).json({ error: "An account with this email already exists" });
+    }
+    if (isDatabaseConnectivityError(error)) {
+      log.error("Auth: Sign up failed (database unreachable)", { error });
+      return res.status(503).json({
+        error:
+          "Sign-up is unavailable because the database cannot be reached. Check POSTGRES_URL on the server, then try again.",
+        code: "DATABASE_UNAVAILABLE",
+      });
     }
     log.error("Auth: Sign up endpoint failed", { error });
     res.status(500).json({ error: "Internal server error" });

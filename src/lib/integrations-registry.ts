@@ -24,14 +24,14 @@ import * as claudeBrain from "./claude-brain";
 export type IntegrationStatus = "configured" | "missing" | "fallback";
 
 export type IntegrationGroup =
-  | "core"          // app cannot function without these
-  | "ai"            // LLM providers
-  | "voice"         // voice provider
-  | "oauth"         // OAuth-based identity / mailbox connections
-  | "billing"       // payment provider
-  | "actions"       // optional integrations wired into the Action Engine
-  | "infra"         // rate-limit / observability / data-plane plumbing
-  | "security";     // crypto / secret material
+  | "core" // app cannot function without these
+  | "ai" // LLM providers
+  | "voice" // voice provider
+  | "oauth" // OAuth-based identity / mailbox connections
+  | "billing" // payment provider
+  | "actions" // optional integrations wired into the Action Engine
+  | "infra" // rate-limit / observability / data-plane plumbing
+  | "security"; // crypto / secret material
 
 export interface IntegrationDescriptor {
   /** Stable identifier (kebab-case). Surface this in API responses. */
@@ -112,7 +112,8 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
     group: "oauth",
     required: false,
     envVars: ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"],
-    fallback: "Without it, Gmail-based email agents and the scheduled Daily Brief email are disabled.",
+    fallback:
+      "Without it, Gmail-based email agents and the scheduled Daily Brief email are disabled.",
   },
   {
     id: "microsoft-oauth",
@@ -145,7 +146,8 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
     group: "actions",
     required: false,
     envVars: ["APOLLO_API_KEY"],
-    fallback: "Without it, searchLeads()/enrichLead() return empty and the prospecting recipe is a no-op.",
+    fallback:
+      "Without it, searchLeads()/enrichLead() return empty and the prospecting recipe is a no-op.",
     docsUrl: "https://app.apollo.io/#/settings/integrations/api",
   },
   {
@@ -193,7 +195,8 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
   {
     id: "slack",
     label: "Slack",
-    description: "Real-time team notifications — agent books a meeting, closes a deal, or escalates.",
+    description:
+      "Real-time team notifications — agent books a meeting, closes a deal, or escalates.",
     group: "actions",
     required: false,
     envVars: ["SLACK_CLIENT_ID", "SLACK_CLIENT_SECRET"],
@@ -212,12 +215,25 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
       "Operators connect via Admin → Integrations → Zoom. Without CLIENT_ID/SECRET the 'Connect Zoom' button is hidden.",
     docsUrl: "https://marketplace.zoom.us/develop/create",
   },
+  {
+    id: "meta",
+    label: "Meta (Facebook Login)",
+    description:
+      "Marketing Graph foundation — connect a Meta user for Pages/Ads automations (token stored encrypted).",
+    group: "actions",
+    required: false,
+    envVars: ["META_APP_ID", "META_APP_SECRET"],
+    fallback:
+      "Operators connect via Integrations → Meta. Without META_APP_ID / META_APP_SECRET the Connect button is hidden.",
+    docsUrl: "https://developers.facebook.com/docs/facebook-login",
+  },
 
   // ─── infra ──────────────────────────────────────────────────────────────
   {
     id: "upstash-redis",
     label: "Upstash Redis",
-    description: "Distributed rate-limit and spend-cap counters. Strongly recommended on serverless.",
+    description:
+      "Distributed rate-limit and spend-cap counters. Strongly recommended on serverless.",
     group: "infra",
     required: false,
     envVars: ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"],
@@ -244,7 +260,8 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
     group: "security",
     required: false,
     envVars: ["WIRELINE_DATA_KEY"],
-    fallback: "Without it, POST/PATCH /api/webhooks with a signing secret returns 503 VAULT_UNCONFIGURED.",
+    fallback:
+      "Without it, POST/PATCH /api/webhooks with a signing secret returns 503 VAULT_UNCONFIGURED.",
   },
 ] as const;
 
@@ -294,7 +311,8 @@ function evaluateStatus(d: IntegrationDescriptor): IntegrationStatus {
       return haveAccount && haveToken ? "configured" : "missing";
     }
     case "salesforce": {
-      const haveOAuth = envIsPresent("SALESFORCE_CLIENT_ID") && envIsPresent("SALESFORCE_CLIENT_SECRET");
+      const haveOAuth =
+        envIsPresent("SALESFORCE_CLIENT_ID") && envIsPresent("SALESFORCE_CLIENT_SECRET");
       return haveOAuth ? "configured" : "missing";
     }
     case "hubspot": {
@@ -309,7 +327,8 @@ function evaluateStatus(d: IntegrationDescriptor): IntegrationStatus {
       return "missing";
     }
     case "upstash-redis": {
-      const have = envIsPresent("UPSTASH_REDIS_REST_URL") && envIsPresent("UPSTASH_REDIS_REST_TOKEN");
+      const have =
+        envIsPresent("UPSTASH_REDIS_REST_URL") && envIsPresent("UPSTASH_REDIS_REST_TOKEN");
       if (have) return "configured";
       return process.env.WIRELINE_ALLOW_INMEMORY_RATE_LIMIT === "true" ? "fallback" : "missing";
     }
@@ -342,21 +361,25 @@ export function getIntegrationsStatus(): IntegrationStatusResult[] {
  */
 export function getHealthCapabilities() {
   return {
-    claude:          claudeBrain.isClaudeAvailable(),
-    gemini:          envIsPresent("GEMINI_API_KEY"),
-    vapi:            envIsPresent("VAPI_PRIVATE_KEY"),
-    drizzle:         envIsPresent("POSTGRES_URL"),
-    google_oauth:    envIsPresent("GOOGLE_CLIENT_ID"),
+    claude: claudeBrain.isClaudeAvailable(),
+    gemini: envIsPresent("GEMINI_API_KEY"),
+    vapi: envIsPresent("VAPI_PRIVATE_KEY"),
+    drizzle: envIsPresent("POSTGRES_URL"),
+    google_oauth: envIsPresent("GOOGLE_CLIENT_ID"),
     microsoft_oauth: envIsPresent("MICROSOFT_CLIENT_ID"),
-    stripe:          envIsPresent("STRIPE_SECRET_KEY"),
-    apollo:          envIsPresent("APOLLO_API_KEY"),
-    docusign:        envIsPresent("DOCUSIGN_ACCOUNT_ID") &&
-                       (envIsPresent("DOCUSIGN_JWT_TOKEN") || envIsPresent("DOCUSIGN_ACCESS_TOKEN")),
-    salesforce:      envIsPresent("SALESFORCE_CLIENT_ID") && envIsPresent("SALESFORCE_CLIENT_SECRET"),
-    hubspot:         envIsPresent("HUBSPOT_CLIENT_ID") && envIsPresent("HUBSPOT_CLIENT_SECRET"),
-    twilio:          envIsPresent("TWILIO_ACCOUNT_SID") && envIsPresent("TWILIO_AUTH_TOKEN"),
-    upstash:         envIsPresent("UPSTASH_REDIS_REST_URL") && envIsPresent("UPSTASH_REDIS_REST_TOKEN"),
-    sentry:          envIsPresent("SENTRY_DSN") || envIsPresent("VITE_SENTRY_DSN"),
-    secret_vault:    envIsPresent("WIRELINE_DATA_KEY"),
+    stripe: envIsPresent("STRIPE_SECRET_KEY"),
+    apollo: envIsPresent("APOLLO_API_KEY"),
+    docusign:
+      envIsPresent("DOCUSIGN_ACCOUNT_ID") &&
+      (envIsPresent("DOCUSIGN_JWT_TOKEN") || envIsPresent("DOCUSIGN_ACCESS_TOKEN")),
+    salesforce: envIsPresent("SALESFORCE_CLIENT_ID") && envIsPresent("SALESFORCE_CLIENT_SECRET"),
+    hubspot: envIsPresent("HUBSPOT_CLIENT_ID") && envIsPresent("HUBSPOT_CLIENT_SECRET"),
+    twilio: envIsPresent("TWILIO_ACCOUNT_SID") && envIsPresent("TWILIO_AUTH_TOKEN"),
+    slack: envIsPresent("SLACK_CLIENT_ID") && envIsPresent("SLACK_CLIENT_SECRET"),
+    zoom: envIsPresent("ZOOM_CLIENT_ID") && envIsPresent("ZOOM_CLIENT_SECRET"),
+    meta: envIsPresent("META_APP_ID") && envIsPresent("META_APP_SECRET"),
+    upstash: envIsPresent("UPSTASH_REDIS_REST_URL") && envIsPresent("UPSTASH_REDIS_REST_TOKEN"),
+    sentry: envIsPresent("SENTRY_DSN") || envIsPresent("VITE_SENTRY_DSN"),
+    secret_vault: envIsPresent("WIRELINE_DATA_KEY"),
   };
 }

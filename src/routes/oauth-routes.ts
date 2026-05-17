@@ -43,6 +43,13 @@ import {
   exchangeZoomCode,
   disconnectZoom,
 } from "../lib/zoom-service";
+import {
+  metaOAuthConfigured,
+  getMetaAuthUrl,
+  exchangeMetaCode,
+  fetchMetaMe,
+  disconnectMeta,
+} from "../lib/meta-service";
 import { computeIntegrationHealth } from "../lib/integration-health";
 
 const router = express.Router();
@@ -57,11 +64,9 @@ router.get(
   authenticateUser,
   (req: express.Request, res: express.Response) => {
     if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-      return res
-        .status(500)
-        .json({
-          error: "Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET in environment variables.",
-        });
+      return res.status(500).json({
+        error: "Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET in environment variables.",
+      });
     }
 
     const uid = req.user?.id as string | undefined;
@@ -364,12 +369,9 @@ router.get(
   authenticateUser,
   (req: express.Request, res: express.Response) => {
     if (!sfOAuthConfigured()) {
-      return res
-        .status(500)
-        .json({
-          error:
-            "Missing SALESFORCE_CLIENT_ID or SALESFORCE_CLIENT_SECRET in environment variables.",
-        });
+      return res.status(500).json({
+        error: "Missing SALESFORCE_CLIENT_ID or SALESFORCE_CLIENT_SECRET in environment variables.",
+      });
     }
 
     const baseUrl =
@@ -506,11 +508,9 @@ router.get(
   authenticateUser,
   (req: express.Request, res: express.Response) => {
     if (!hsOAuthConfigured()) {
-      return res
-        .status(500)
-        .json({
-          error: "Missing HUBSPOT_CLIENT_ID or HUBSPOT_CLIENT_SECRET in environment variables.",
-        });
+      return res.status(500).json({
+        error: "Missing HUBSPOT_CLIENT_ID or HUBSPOT_CLIENT_SECRET in environment variables.",
+      });
     }
 
     const baseUrl =
@@ -673,6 +673,7 @@ router.get(
       const hsConn = findBy("hubspot");
       const slackConn = findBy("slack");
       const zoomConn = findBy("zoom");
+      const metaConn = findBy("meta");
 
       res.json({
         salesforce: sfConn
@@ -709,6 +710,14 @@ router.get(
               connected_at: zoomConn.createdAt,
             }
           : { connected: false, configured: zoomOAuthConfigured() },
+        meta: metaConn
+          ? {
+              connected: true,
+              email: metaConn.connectedEmail,
+              instance_url: metaConn.instanceUrl,
+              connected_at: metaConn.createdAt,
+            }
+          : { connected: false, configured: metaOAuthConfigured() },
       });
     } catch (e: any) {
       log.error("CRM status check failed", { error: e?.message });
@@ -727,11 +736,9 @@ router.get(
   authenticateUser,
   (req: express.Request, res: express.Response) => {
     if (!slackOAuthConfigured()) {
-      return res
-        .status(500)
-        .json({
-          error: "Missing SLACK_CLIENT_ID or SLACK_CLIENT_SECRET in environment variables.",
-        });
+      return res.status(500).json({
+        error: "Missing SLACK_CLIENT_ID or SLACK_CLIENT_SECRET in environment variables.",
+      });
     }
     const baseUrl =
       (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
@@ -870,6 +877,128 @@ router.post(
       res.json({ ok: true });
     } catch {
       res.status(500).json({ error: "Failed to set default channel" });
+    }
+  },
+);
+
+// ────────────────────────────────────────────────────────────────────
+//  Meta (Facebook Login) OAuth
+// ────────────────────────────────────────────────────────────────────
+
+router.get(
+  "/api/oauth/meta/url",
+  oauthRateLimiter,
+  authenticateUser,
+  (req: express.Request, res: express.Response) => {
+    if (!metaOAuthConfigured()) {
+      return res.status(500).json({
+        error: "Missing META_APP_ID or META_APP_SECRET in environment variables.",
+      });
+    }
+    const baseUrl =
+      (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+      `${req.protocol}://${req.get("host")}`;
+    const redirectUri = `${baseUrl}/api/oauth/meta/callback`;
+    const uid = req.user?.id as string | undefined;
+    const authUrl = getMetaAuthUrl(
+      redirectUri,
+      generateOAuthState(uid ? { userId: uid } : undefined),
+    );
+    res.json({ url: authUrl });
+  },
+);
+
+router.get(
+  "/api/oauth/meta/callback",
+  oauthRateLimiter,
+  async (req: express.Request, res: express.Response) => {
+    const { code, state, error: oauthError, error_description: oauthDesc } = req.query;
+    if (oauthError) {
+      return res
+        .status(400)
+        .send(`Meta OAuth error: ${oauthError}${oauthDesc ? ` — ${oauthDesc}` : ""}`);
+    }
+    const vs = verifyOAuthState(state as string | undefined);
+    if (!vs.ok) {
+      return res.status(400).send("Invalid or expired OAuth state.");
+    }
+    if (!code || typeof code !== "string") {
+      return res.status(400).send("No code provided by Meta.");
+    }
+
+    try {
+      const baseUrl =
+        (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+        `${req.protocol}://${req.get("host")}`;
+      const redirectUri = `${baseUrl}/api/oauth/meta/callback`;
+      const tokens = await exchangeMetaCode(code, redirectUri);
+
+      let userId: string | null = vs.userId ?? (await resolveUserIdFromOAuthSession(req));
+      if (!userId) {
+        return res.status(401).send("Could not identify user. Please reconnect from the app.");
+      }
+
+      const me = await fetchMetaMe(tokens.access_token);
+      const accessEnc = encryptSecret(tokens.access_token);
+      const expiresAt = new Date(Date.now() + tokens.expires_in * 1000);
+      const label = me.email || me.name || me.id;
+      const metaMetadata = { meta_user_id: me.id, name: me.name ?? null, email: me.email ?? null };
+
+      await drizzle
+        .insert(schema.crmConnections)
+        .values({
+          userId,
+          provider: "meta",
+          instanceUrl: "https://business.facebook.com",
+          accessToken: accessEnc,
+          expiresAt,
+          connectedEmail: label,
+          metadata: metaMetadata,
+        })
+        .onConflictDoUpdate({
+          target: [schema.crmConnections.userId, schema.crmConnections.provider],
+          set: {
+            instanceUrl: "https://business.facebook.com",
+            accessToken: accessEnc,
+            expiresAt,
+            connectedEmail: label,
+            metadata: metaMetadata,
+            updatedAt: new Date(),
+            active: true,
+          },
+        });
+
+      const targetOrigin =
+        (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+        `${req.protocol}://${req.get("host")}`;
+      const cspNonce = generateCspNonce();
+      res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, cspNonce));
+      res.send(`
+      <html><body><script nonce="${cspNonce}">
+        if (window.opener) {
+          window.opener.postMessage({ type: 'CRM_OAUTH_SUCCESS', provider: 'meta' }, ${JSON.stringify(targetOrigin)});
+          window.close();
+        } else { window.location.href = '/'; }
+      </script><p>Meta connected successfully. You can close this window.</p></body></html>
+    `);
+    } catch (e: any) {
+      log.error("Meta OAuth callback failed", { error: e?.message || String(e) });
+      res.status(500).send("Meta authentication failed. Please try again.");
+    }
+  },
+);
+
+router.post(
+  "/api/oauth/meta/disconnect",
+  authenticateUser,
+  async (req: express.Request, res: express.Response) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    try {
+      await disconnectMeta(userId);
+      res.json({ ok: true });
+    } catch {
+      res.status(500).json({ error: "Failed to disconnect Meta" });
     }
   },
 );

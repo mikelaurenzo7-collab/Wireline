@@ -6,7 +6,6 @@ import ConfirmModal from "./ConfirmModal";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
-import CrmConnectionCard from "./CrmConnectionCard";
 import IntegrationHealthBanner, { type IntegrationHealthPayload } from "./IntegrationHealthBanner";
 import PageShell, { Panel } from "./PageShell";
 import HubTabs, { SYSTEM_HUB } from "./HubTabs";

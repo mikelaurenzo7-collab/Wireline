@@ -33,6 +33,9 @@ export async function fetchWithTimeout(
 
 const pool = new Pool({
   connectionString: process.env.POSTGRES_URL,
+  max: Math.min(20, Math.max(2, Number(process.env.POSTGRES_POOL_MAX || 8) || 8)),
+  connectionTimeoutMillis: 12_000,
+  idleTimeoutMillis: 20_000,
 });
 
 export const db = drizzleDb(pool, { schema });
