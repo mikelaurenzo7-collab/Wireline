@@ -7,7 +7,6 @@ import ToastStack from "./components/Toast";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import AppShell from "./components/layout/AppShell";
-import CommandPalette from "./components/CommandPalette";
 import { BrandingProvider } from "./contexts/BrandingContext";
 
 const Pricing = lazy(() => import("./pages/Pricing"));
@@ -39,12 +38,8 @@ function AppContent() {
     return <AuthPortal />;
   }
 
-  return (
-    <>
-      <AppShell />
-      <CommandPalette />
-    </>
-  );
+  // AppShell already renders the ⌘K CommandBar — don't double-mount.
+  return <AppShell />;
 }
 
 export default function App() {

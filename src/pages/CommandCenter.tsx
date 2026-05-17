@@ -29,6 +29,7 @@ import { log } from "../lib/server-logger";
 import { authFetch } from "../lib/api";
 import { LiveMonitor } from "../components/CommandCenter/LiveMonitor";
 import { ActionFeed } from "../components/CommandCenter/ActionFeed";
+import OnboardingQuickstart from "../components/OnboardingQuickstart";
 import PageTransition from "../components/layout/PageTransition";
 import { clsx } from "clsx";
 import { motion } from "motion/react";
@@ -326,6 +327,9 @@ export default function CommandCenter() {
             </button>
           </div>
         </div>
+
+        {/* Onboarding quickstart — self-hides once all 4 steps complete */}
+        <OnboardingQuickstart />
 
         {/* Dashboard Grid */}
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
