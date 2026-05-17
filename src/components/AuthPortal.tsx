@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   ShieldCheck,
   Mail,
@@ -349,9 +350,12 @@ export default function AuthPortal() {
             <span className="text-[9px] uppercase tracking-[0.38em]">99.9% Uptime</span>
           </div>
           <div className="h-3 w-px bg-white/10" />
-          <span className="text-[9px] uppercase tracking-[0.38em] text-muted/60">
-            Sovereign Infrastructure
-          </span>
+          <Link
+            to="/pricing"
+            className="text-[9px] uppercase tracking-[0.38em] text-muted/60 hover:text-ink transition-colors"
+          >
+            Pricing →
+          </Link>
         </motion.div>
       </div>
 

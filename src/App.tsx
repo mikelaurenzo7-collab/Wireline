@@ -7,6 +7,7 @@ import ToastStack from "./components/Toast";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import AppShell from "./components/layout/AppShell";
+import NotFound from "./components/layout/NotFound";
 import { BrandingProvider } from "./contexts/BrandingContext";
 
 const Pricing = lazy(() => import("./pages/Pricing"));
@@ -31,6 +32,16 @@ function AppContent() {
       <Suspense fallback={<div className="min-h-screen" />}>
         <Pricing />
       </Suspense>
+    );
+  }
+  // Explicit public 404 route — used by marketing emails, error redirects, etc.
+  // Renders the friendly NotFound with public CTAs (demo line, pricing, home)
+  // instead of bouncing into the sign-in form.
+  if (location.pathname === "/not-found" || location.pathname === "/404") {
+    return (
+      <div className="min-h-screen relative bg-paper">
+        <NotFound mode="public" />
+      </div>
     );
   }
 

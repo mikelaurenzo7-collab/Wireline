@@ -240,7 +240,8 @@ export default function CommandCenter() {
               </span>
             </h1>
             <p className="text-sm text-muted max-w-lg leading-relaxed">
-              Autonomous Omnichannel Command. Real-time telemetry and intelligence hub.
+              Live calls, fleet status, and unit economics for your entire agent operation — one
+              screen, real time.
             </p>
           </div>
 

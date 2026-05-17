@@ -1,18 +1,187 @@
 import React from "react";
-import { Link } from "react-router-dom";
-import { Activity, ChevronRight } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import { motion } from "motion/react";
+import { ChevronRight, Home, Phone, MessageSquare, Compass, Mail } from "lucide-react";
 
-export default function NotFound() {
+/**
+ * NotFound — context-aware 404. Detects whether the visitor is signed-in
+ * (App.tsx renders this through AppShell with TopBar) or public (App.tsx
+ * checks /not-found path explicitly so an unauth user hitting a typo URL
+ * doesn't get bounced into the sign-in form).
+ *
+ * The `mode` prop forces a specific render for the public route; the
+ * default behaviour is to detect signed-in via the absence of `mode`.
+ */
+export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
+  const location = useLocation();
+  const isPublic = mode === "public";
+
   return (
-    <div className="min-h-[70vh] flex flex-col items-center justify-center gap-6 text-center px-6">
-      <div className="font-display italic text-aurora text-[8rem] md:text-[12rem] leading-none">404</div>
-      <p className="text-[10px] uppercase tracking-[0.6em] text-muted">Page not found</p>
-      <p className="text-ink/55 max-w-md text-sm leading-relaxed">
-        This page doesn't exist. Use ⌘K to jump anywhere, or head back to the dashboard.
-      </p>
-      <Link to="/" className="brutal-btn !py-3 !px-6 !text-[11px] !tracking-[0.3em]">
-        <Activity className="w-3.5 h-3.5" /> Back to Dashboard <ChevronRight className="w-3.5 h-3.5" />
-      </Link>
+    <div className="min-h-[80vh] flex flex-col items-center justify-center gap-8 text-center px-6 py-12 relative">
+      {/* Subtle aurora glow behind the 404 mark */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 flex items-center justify-center -z-10"
+      >
+        <div
+          className="w-[55vw] h-[55vw] max-w-[700px] max-h-[700px] rounded-full opacity-40 blur-3xl"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(10,200,212,0.25), rgba(155,89,245,0.18) 50%, transparent 70%)",
+          }}
+        />
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.92, y: 16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+        className="font-display italic text-aurora text-[7rem] md:text-[10rem] xl:text-[12rem] leading-none select-none"
+      >
+        404
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.5 }}
+        className="space-y-3 max-w-md"
+      >
+        <p className="text-[10px] uppercase tracking-[0.6em] text-muted">Page not found</p>
+        <h2 className="font-display italic text-2xl md:text-3xl text-ink leading-tight">
+          {isPublic ? "Lost the signal" : "Off the map"}
+        </h2>
+        <p className="text-ink/55 text-sm leading-relaxed">
+          {location.pathname && location.pathname !== "/" && (
+            <>
+              We couldn't find{" "}
+              <code className="px-1.5 py-0.5 rounded bg-black/[0.04] text-[12px] font-mono text-ink/70">
+                {location.pathname.length > 32
+                  ? location.pathname.slice(0, 32) + "…"
+                  : location.pathname}
+              </code>
+              .{" "}
+            </>
+          )}
+          {isPublic
+            ? "Try the demo line, browse pricing, or head home."
+            : "The page may have moved. Use ⌘K to jump anywhere, or pick a starting point below."}
+        </p>
+      </motion.div>
+
+      {/* Action cards — context-aware */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.55 }}
+        className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-2xl"
+      >
+        {isPublic ? (
+          <>
+            <NotFoundCard to="/" icon={Home} label="Home" hint="Back to landing" accent="#0AC8D4" />
+            <a
+              href="tel:+16305811834"
+              className="group relative flex items-center gap-3 p-4 rounded-2xl glass border border-white/12 hover:border-white/24 transition-colors"
+              style={{ boxShadow: "0 8px 24px -12px rgba(10,200,212,0.35)" }}
+            >
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                style={{
+                  background: "linear-gradient(135deg, #0AC8D4, #9B59F5)",
+                  boxShadow: "0 4px 12px -4px rgba(10,200,212,0.55)",
+                }}
+              >
+                <Phone className="w-4 h-4 text-paper" strokeWidth={2.4} />
+              </div>
+              <div className="text-left flex-1 min-w-0">
+                <p className="text-[10px] uppercase tracking-[0.32em] text-muted">Try the demo</p>
+                <p className="text-[12px] text-ink font-medium truncate">(630) 581-1834</p>
+              </div>
+            </a>
+            <NotFoundCard
+              to="/pricing"
+              icon={Compass}
+              label="Pricing"
+              hint="4 plans, free trial"
+              accent="#E040C0"
+            />
+          </>
+        ) : (
+          <>
+            <NotFoundCard
+              to="/"
+              icon={Home}
+              label="Home"
+              hint="Operations overview"
+              accent="#0AC8D4"
+            />
+            <NotFoundCard
+              to="/agents"
+              icon={MessageSquare}
+              label="Agents"
+              hint="Manage your fleet"
+              accent="#9B59F5"
+            />
+            <NotFoundCard
+              to="/inbox"
+              icon={Mail}
+              label="Email"
+              hint="Inbox + threads"
+              accent="#E040C0"
+            />
+          </>
+        )}
+      </motion.div>
+
+      {isPublic && (
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4, duration: 0.5 }}
+          className="text-[10px] uppercase tracking-[0.42em] text-muted/60"
+        >
+          Already have an account?{" "}
+          <Link to="/" className="text-brand hover:text-brand-2 transition-colors">
+            Sign in →
+          </Link>
+        </motion.p>
+      )}
     </div>
+  );
+}
+
+function NotFoundCard({
+  to,
+  icon: Icon,
+  label,
+  hint,
+  accent,
+}: {
+  to: string;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  label: string;
+  hint: string;
+  accent: string;
+}) {
+  return (
+    <Link
+      to={to}
+      className="group relative flex items-center gap-3 p-4 rounded-2xl glass border border-white/12 hover:border-white/24 transition-colors"
+    >
+      <div
+        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border border-white/8"
+        style={{
+          background: `linear-gradient(135deg, ${accent}25, ${accent}10)`,
+          color: accent,
+        }}
+      >
+        <Icon className="w-4 h-4" strokeWidth={2.2} />
+      </div>
+      <div className="text-left flex-1 min-w-0">
+        <p className="text-[10px] uppercase tracking-[0.32em] text-muted">{hint}</p>
+        <p className="text-[12px] text-ink font-medium">{label}</p>
+      </div>
+      <ChevronRight className="w-4 h-4 text-ink/30 group-hover:text-ink group-hover:translate-x-0.5 transition-all shrink-0" />
+    </Link>
   );
 }
