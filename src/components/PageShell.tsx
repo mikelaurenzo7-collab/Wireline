@@ -49,12 +49,19 @@ interface PageShellProps {
 }
 
 export default function PageShell({
-  title, subtitle, eyebrow, actions, tabs, children, defaultTab, bodyClassName,
+  title,
+  subtitle,
+  eyebrow,
+  actions,
+  tabs,
+  children,
+  defaultTab,
+  bodyClassName,
 }: PageShellProps) {
   const [activeId, setActiveId] = useState<string>(
-    defaultTab ?? (tabs && tabs.length > 0 ? tabs[0].id : "")
+    defaultTab ?? (tabs && tabs.length > 0 ? tabs[0].id : ""),
   );
-  const activeTab = tabs?.find(t => t.id === activeId) ?? tabs?.[0];
+  const activeTab = tabs?.find((t) => t.id === activeId) ?? tabs?.[0];
 
   return (
     <div className="h-full w-full flex flex-col overflow-hidden">
@@ -77,7 +84,8 @@ export default function PageShell({
                 </p>
               </div>
             )}
-            <h1 className="font-display italic leading-[0.88] tracking-tight text-ink truncate"
+            <h1
+              className="font-display italic leading-[0.88] tracking-tight text-ink truncate"
               // Smaller floor on phones; the original 2rem was too tall to
               // share a line with mobile-header buttons on narrow screens.
               style={{ fontSize: "clamp(1.6rem, 6vw, 3.25rem)" }}
@@ -97,27 +105,30 @@ export default function PageShell({
         </div>
 
         {/* Gradient separator line */}
-        <div className="h-px" style={{
-          background: "linear-gradient(90deg, rgba(10,200,212,0.20) 0%, rgba(155,89,245,0.15) 40%, rgba(224,64,192,0.10) 70%, transparent 100%)"
-        }} />
+        <div
+          className="h-px"
+          style={{
+            background:
+              "linear-gradient(90deg, rgba(10,200,212,0.20) 0%, rgba(155,89,245,0.15) 40%, rgba(224,64,192,0.10) 70%, transparent 100%)",
+          }}
+        />
       </motion.header>
 
       {/* Tab strip */}
       {tabs && tabs.length > 0 && (
         <div className="shrink-0 flex items-center gap-1 mb-4 overflow-x-auto scrollbar-hide">
           <div className="flex items-center gap-1 p-1 rounded-2xl glass border border-black/8">
-            {tabs.map(tab => {
+            {tabs.map((tab) => {
               const Icon = tab.icon;
               const active = tab.id === activeId;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveId(tab.id)}
+                  aria-current={active ? "page" : undefined}
                   className={cn(
                     "relative shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all text-[10px] uppercase tracking-[0.22em] font-medium",
-                    active
-                      ? "text-white"
-                      : "text-muted hover:text-ink hover:bg-black/5"
+                    active ? "text-white" : "text-muted hover:text-ink hover:bg-black/5",
                   )}
                 >
                   {active && (
@@ -125,8 +136,10 @@ export default function PageShell({
                       layoutId="tab-active-bg"
                       className="absolute inset-0 rounded-xl"
                       style={{
-                        background: "linear-gradient(135deg, #0AC8D4 0%, #9B59F5 55%, #E040C0 100%)",
-                        boxShadow: "0 3px 12px -6px rgba(10,200,212,0.50), 0 0 0 1px rgba(255,255,255,0.18) inset"
+                        background:
+                          "linear-gradient(135deg, #0AC8D4 0%, #9B59F5 55%, #E040C0 100%)",
+                        boxShadow:
+                          "0 3px 12px -6px rgba(10,200,212,0.50), 0 0 0 1px rgba(255,255,255,0.18) inset",
                       }}
                       transition={{ type: "spring", stiffness: 420, damping: 36 }}
                     />
@@ -135,10 +148,12 @@ export default function PageShell({
                     {Icon && <Icon className="w-3 h-3" />}
                     {tab.label}
                     {tab.badge != null && tab.badge !== 0 && (
-                      <span className={cn(
-                        "ml-0.5 px-1.5 py-px rounded-full text-[8px] font-mono leading-none",
-                        active ? "bg-white/20 text-white" : "bg-black/8 text-muted"
-                      )}>
+                      <span
+                        className={cn(
+                          "ml-0.5 px-1.5 py-px rounded-full text-[8px] font-mono leading-none",
+                          active ? "bg-white/20 text-white" : "bg-black/8 text-muted",
+                        )}
+                      >
                         {tab.badge}
                       </span>
                     )}
@@ -162,7 +177,9 @@ export default function PageShell({
           >
             {activeTab.content}
           </motion.div>
-        ) : children}
+        ) : (
+          children
+        )}
       </div>
     </div>
   );
@@ -190,17 +207,26 @@ interface PanelProps {
 }
 
 export function Panel({
-  title, hint, actions, icon: Icon, scroll = false, children,
-  className, bodyClassName, flush = false, accent = "#0AC8D4",
+  title,
+  hint,
+  actions,
+  icon: Icon,
+  scroll = false,
+  children,
+  className,
+  bodyClassName,
+  flush = false,
+  accent = "#0AC8D4",
 }: PanelProps) {
   return (
     <section
       className={cn(
         "relative rounded-2xl glass border border-black/8 flex flex-col h-full min-h-0 overflow-hidden",
-        className
+        className,
       )}
       style={{
-        boxShadow: "0 1px 0 rgba(255,255,255,0.80) inset, 0 0 0 1px rgba(10,200,212,0.03), 0 8px 32px -10px rgba(0,0,0,0.10), 0 3px 12px -4px rgba(10,200,212,0.06)"
+        boxShadow:
+          "0 1px 0 rgba(255,255,255,0.80) inset, 0 0 0 1px rgba(10,200,212,0.03), 0 8px 32px -10px rgba(0,0,0,0.10), 0 3px 12px -4px rgba(10,200,212,0.06)",
       }}
     >
       {/* Subtle ambient glow behind header */}
@@ -220,7 +246,7 @@ export function Panel({
                 style={{
                   background: `linear-gradient(135deg, ${accent}18, ${accent}06)`,
                   color: accent,
-                  boxShadow: `0 0 10px ${accent}20`
+                  boxShadow: `0 0 10px ${accent}20`,
                 }}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -243,9 +269,13 @@ export function Panel({
 
       {/* Header separator */}
       {(title || actions) && (
-        <div className="shrink-0 mx-4 h-px" style={{
-          background: "linear-gradient(90deg, rgba(0,0,0,0.04), rgba(0,0,0,0.07) 40%, rgba(0,0,0,0.03))"
-        }} />
+        <div
+          className="shrink-0 mx-4 h-px"
+          style={{
+            background:
+              "linear-gradient(90deg, rgba(0,0,0,0.04), rgba(0,0,0,0.07) 40%, rgba(0,0,0,0.03))",
+          }}
+        />
       )}
 
       <div
@@ -253,7 +283,7 @@ export function Panel({
           "flex-1 min-h-0",
           scroll ? "overflow-y-auto panel-scroll" : "overflow-hidden",
           !flush && "p-4",
-          bodyClassName
+          bodyClassName,
         )}
       >
         {children}
@@ -264,7 +294,12 @@ export function Panel({
 
 /* Compact stat tile — drop-in for hero metric grids.  */
 export function StatTile({
-  label, value, sub, icon: Icon, accent = "#0AC8D4", trend,
+  label,
+  value,
+  sub,
+  icon: Icon,
+  accent = "#0AC8D4",
+  trend,
 }: {
   label: string;
   value: ReactNode;
@@ -311,13 +346,17 @@ export function StatTile({
 
         <div className="flex items-center gap-2">
           {sub && (
-            <p className="text-[9px] uppercase tracking-[0.28em] text-muted truncate flex-1">{sub}</p>
+            <p className="text-[9px] uppercase tracking-[0.28em] text-muted truncate flex-1">
+              {sub}
+            </p>
           )}
           {trend && (
-            <span className={cn(
-              "shrink-0 text-[9px] font-mono font-medium",
-              trendPositive ? "text-emerald-600" : "text-rose-500"
-            )}>
+            <span
+              className={cn(
+                "shrink-0 text-[9px] font-mono font-medium",
+                trendPositive ? "text-emerald-600" : "text-rose-500",
+              )}
+            >
               {trendPositive ? "↑" : "↓"} {Math.abs(trend.value)}%
             </span>
           )}

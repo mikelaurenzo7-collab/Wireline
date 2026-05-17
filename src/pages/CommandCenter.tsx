@@ -374,7 +374,7 @@ export default function CommandCenter() {
                     <div className="h-48 flex flex-col items-center justify-center gap-3 text-center border border-dashed border-black/8 rounded-2xl bg-black/[0.01]">
                       <Activity className="w-6 h-6 text-muted/20" />
                       <p className="text-[10px] text-muted uppercase tracking-[0.2em]">
-                        Awaiting Data
+                        awaiting data
                       </p>
                     </div>
                   ) : (
