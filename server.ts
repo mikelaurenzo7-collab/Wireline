@@ -119,7 +119,11 @@ app.use(
       if (!IS_PROD && corsAllowList.length === 0) return callback(null, true);
       if (corsAllowList.includes(origin)) return callback(null, true);
       log.warn("CORS rejected origin", { origin });
-      return callback(new Error("Origin not permitted by CORS"));
+      // Return `false` (not an Error) so cors omits Access-Control-Allow-Origin
+      // headers instead of crashing the request with HTTP 500. Same-origin
+      // requests succeed because the browser doesn't need CORS headers for
+      // those; cross-origin requests get blocked by the browser as intended.
+      return callback(null, false);
     },
     credentials: true,
   }),
