@@ -22,27 +22,27 @@ import { useAuth } from "../contexts/AuthContext";
 
 const FEATURES = [
   {
-    icon: Bot,
-    title: "AI Voice Agents",
-    desc: "Deploy intelligent voice agents that handle inbound and outbound calls 24/7.",
+    icon: PhoneIncoming,
+    title: "Inbound Support",
+    desc: "Agents pick up 24/7 — answer questions, route urgent calls, schedule appointments, and capture intent.",
     accent: "#0AC8D4",
   },
   {
-    icon: BarChart3,
-    title: "Real-time Analytics",
-    desc: "Funnel analysis, sentiment scoring, topic clusters and leaderboards in one view.",
+    icon: PhoneOutgoing,
+    title: "Outbound Sales",
+    desc: "Upload a CSV, pick a playbook, launch auto-dial campaigns. Qualified meetings on your calendar by morning.",
     accent: "#9B59F5",
   },
   {
-    icon: Radio,
-    title: "Live Call Monitor",
-    desc: "Watch every active call and intervene with real-time coaching.",
+    icon: MailCheck,
+    title: "Email Agents",
+    desc: "Agents triage your inbox, reply on-brand, follow up, and escalate the ones you need to see personally.",
     accent: "#E040C0",
   },
   {
-    icon: Zap,
-    title: "Outbound Campaigns",
-    desc: "Upload a CSV, choose your agent, and launch auto-dial campaigns instantly.",
+    icon: Radio,
+    title: "Live Monitor & Insights",
+    desc: "Watch every conversation in real time. Sentiment, funnels, topic clusters, leaderboards — one dashboard.",
     accent: "#10B981",
   },
 ];
@@ -207,17 +207,19 @@ export default function AuthPortal() {
           <div className="flex items-center gap-2 mb-4">
             <span className="hero-accent-line" />
             <span className="text-[9px] uppercase tracking-[0.5em] text-muted/70">
-              The Future of Sales
+              One fleet, every channel
             </span>
           </div>
           <h2 className="font-display italic text-5xl xl:text-6xl leading-[0.88] tracking-tight mb-6">
-            <span className="text-aurora">AI agents that</span>
+            <span className="text-aurora">AI agents for every</span>
             <br />
-            <span className="text-ink">close deals for you</span>
+            <span className="text-ink">customer conversation</span>
           </h2>
           <p className="text-sm text-muted/80 leading-relaxed max-w-md">
-            Wireline gives your team superhuman voice agents — trained on your playbook, available
-            24/7, and improving with every call.
+            Wireline runs your <span className="text-ink/90">inbound support</span>,{" "}
+            <span className="text-ink/90">outbound sales</span>, and{" "}
+            <span className="text-ink/90">email follow-ups</span> across one fleet of AI agents —
+            trained on your playbook, available 24/7, improving with every interaction.
           </p>
         </motion.div>
 
@@ -260,7 +262,7 @@ export default function AuthPortal() {
                 +1 (630) 581-1834
               </p>
               <p className="text-[11px] text-muted/70 mt-1">
-                Liam picks up · 90-second product demo · always on
+                Liam picks up — ask anything · 24/7 inbound demo
               </p>
             </div>
             <ArrowRight className="w-5 h-5 text-ink/40 group-hover:text-ink group-hover:translate-x-1 transition-all shrink-0" />
