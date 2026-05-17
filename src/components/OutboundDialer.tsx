@@ -42,6 +42,7 @@ import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import CsvExportButton from "./CsvExportButton";
 import PageShell, { Panel } from "./PageShell";
 import HubTabs, { CHANNELS_HUB } from "./HubTabs";
+import EmptyState from "./EmptyState";
 import { useToast } from "../contexts/ToastContext";
 import ConfirmModal from "./ConfirmModal";
 
@@ -770,19 +771,20 @@ export default function OutboundDialer() {
             >
               <AnimatePresence mode="popLayout">
                 {leads.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center gap-3 py-16 text-center">
-                    <div className="w-14 h-14 rounded-2xl glass border border-white/10 flex items-center justify-center text-muted">
-                      <Phone className="w-6 h-6" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <h3 className="font-display italic lowercase text-2xl text-ink">
-                        queue idle
-                      </h3>
-                      <p className="text-[10px] uppercase tracking-[0.4em] text-muted/70">
-                        No leads in pipeline
-                      </p>
-                    </div>
-                  </div>
+                  <EmptyState
+                    icon={UploadCloud}
+                    title="Queue is idle"
+                    description="Upload a CSV of contacts and your agent will dial through them with full call notes saved to the CRM."
+                    accent="#0AC8D4"
+                    actions={[
+                      {
+                        label: "Upload CSV",
+                        onClick: () => fileInputRef.current?.click(),
+                        primary: true,
+                      },
+                      { label: "Browse templates", to: "/agents" },
+                    ]}
+                  />
                 ) : (
                   <div className="divide-y divide-white/6">
                     {leads.map((lead, idx) => (
@@ -1285,14 +1287,19 @@ export default function OutboundDialer() {
                 <Loader2 className="w-5 h-5 animate-spin text-brand" />
               </div>
             ) : campaignLeads.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
-                <p className="text-[10px] uppercase tracking-[0.4em] text-muted/50">
-                  No leads assigned to this campaign
-                </p>
-                <p className="text-[10px] text-muted/40">
-                  Use the Bulk tab and select this campaign when uploading a CSV.
-                </p>
-              </div>
+              <EmptyState
+                icon={Megaphone}
+                title="No leads in campaign"
+                description="Upload a CSV from the Bulk tab and pick this campaign in the dropdown — assigned leads land here."
+                accent="#9B59F5"
+                actions={[
+                  {
+                    label: "Upload CSV",
+                    onClick: () => fileInputRef.current?.click(),
+                    primary: true,
+                  },
+                ]}
+              />
             ) : (
               <>
                 {/* Retry failed banner */}

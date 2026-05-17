@@ -360,9 +360,9 @@ export default function AuthPortal() {
       </div>
 
       {/* ── RIGHT PANEL — auth form ──────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col items-center justify-center relative z-10 p-6 md:p-10">
+      <div className="flex-1 flex flex-col items-center justify-center relative z-10 py-4 px-6 md:p-10">
         {/* Mobile logo */}
-        <div className="lg:hidden mb-10 flex flex-col items-center gap-3">
+        <div className="lg:hidden mb-5 sm:mb-10 flex flex-col items-center gap-3">
           <div
             className="w-16 h-16 rounded-2xl flex items-center justify-center"
             style={{

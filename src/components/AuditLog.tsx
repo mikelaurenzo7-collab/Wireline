@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import PageShell, { Panel } from "./PageShell";
 import HubTabs, { SYSTEM_HUB } from "./HubTabs";
+import EmptyState from "./EmptyState";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
@@ -562,15 +563,22 @@ export default function AuditLog() {
                   </motion.div>
                 </div>
               ) : filteredEvents.length === 0 ? (
-                <div className="text-center py-20">
-                  <Shield className="w-12 h-12 text-muted/40 mx-auto mb-4" />
-                  <p className="text-sm text-muted">No events found</p>
-                  <p className="text-xs text-muted/60 mt-1">
-                    {searchQuery
-                      ? "Try adjusting your search or filters"
-                      : "No audit events in the selected time range"}
-                  </p>
-                </div>
+                searchQuery ? (
+                  <EmptyState
+                    icon={Shield}
+                    title="No matches"
+                    description="Try a different search term or widen the time range filter."
+                    accent="#0AC8D4"
+                  />
+                ) : (
+                  <EmptyState
+                    icon={Shield}
+                    title="Audit trail is quiet"
+                    description="Every agent action, escalation, and policy check writes here. Deploy an agent to start the feed."
+                    accent="#0AC8D4"
+                    actions={[{ label: "Deploy an agent", to: "/agents", primary: true }]}
+                  />
+                )
               ) : (
                 <div className="space-y-3">
                   {filteredEvents.map((event) => (

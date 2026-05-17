@@ -198,7 +198,7 @@ export default function Pricing() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 + i * 0.08, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
               className={`relative rounded-3xl p-6 lg:p-7 flex flex-col ${
-                tier.highlight ? "aurora-ring" : ""
+                tier.highlight ? "aurora-ring md:scale-[1.04] md:-my-2 md:z-10" : ""
               }`}
             >
               <div
@@ -211,18 +211,18 @@ export default function Pricing() {
                   tier.highlight
                     ? {
                         boxShadow:
-                          "0 16px 40px -16px rgba(10,200,212,0.4), 0 0 0 1px rgba(255,255,255,0.06) inset",
+                          "0 0 60px -15px rgba(10,200,212,0.55), 0 24px 48px -16px rgba(10,200,212,0.35), 0 0 0 1px rgba(255,255,255,0.08) inset",
                       }
                     : undefined
                 }
               >
                 {tier.highlight && (
                   <span
-                    className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.42em] font-medium"
+                    className="absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-1 rounded-full text-[10px] uppercase tracking-[0.35em] font-semibold"
                     style={{
                       background: "linear-gradient(135deg, #0AC8D4, #9B59F5)",
                       color: "#fff",
-                      boxShadow: "0 4px 12px -4px rgba(10,200,212,0.5)",
+                      boxShadow: "0 6px 18px -4px rgba(10,200,212,0.6)",
                     }}
                   >
                     Most popular

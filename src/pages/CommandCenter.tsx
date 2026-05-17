@@ -338,148 +338,158 @@ export default function CommandCenter() {
         </div>
 
         {/* Onboarding quickstart — self-hides once all 4 steps complete */}
-        <OnboardingQuickstart />
+        <section className="space-y-3">
+          <span className="text-[10px] uppercase tracking-[0.35em] text-muted font-medium">
+            Get started
+          </span>
+          <OnboardingQuickstart />
+        </section>
 
         {/* Dashboard Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-          {/* Left Column: Live Monitor (8/12) */}
-          <div className="xl:col-span-8 space-y-8">
-            <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-brand/20 to-brand-2/20 rounded-[2.5rem] blur opacity-25 group-hover:opacity-40 transition duration-1000" />
-              <div className="relative glass border-black/5 rounded-[2rem] p-8 min-h-[400px]">
-                <LiveMonitor calls={calls} />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Analytics: Sentiment */}
-              <div className="glass border-black/5 rounded-[2rem] p-8">
-                <div className="flex items-center justify-between mb-8">
-                  <h3 className="text-[10px] uppercase tracking-[0.4em] font-medium text-muted flex items-center gap-2">
-                    <Globe className="w-3.5 h-3.5 text-brand" />
-                    Market Sentiment
-                  </h3>
+        <section className="space-y-4 pt-4 border-t border-black/5">
+          <span className="text-[10px] uppercase tracking-[0.35em] text-muted font-medium block">
+            Live operations
+          </span>
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+            {/* Left Column: Live Monitor (8/12) */}
+            <div className="xl:col-span-8 space-y-8">
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-brand/20 to-brand-2/20 rounded-[2.5rem] blur opacity-25 group-hover:opacity-40 transition duration-1000" />
+                <div className="relative glass border-black/5 rounded-[2rem] p-8 min-h-[400px]">
+                  <LiveMonitor calls={calls} />
                 </div>
+              </div>
 
-                {sentimentData.length === 0 ? (
-                  <div className="h-48 flex flex-col items-center justify-center gap-3 text-center border border-dashed border-black/8 rounded-2xl bg-black/[0.01]">
-                    <Activity className="w-6 h-6 text-muted/20" />
-                    <p className="text-[10px] text-muted uppercase tracking-[0.2em]">
-                      Awaiting Data
-                    </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Analytics: Sentiment */}
+                <div className="glass border-black/5 rounded-[2rem] p-8">
+                  <div className="flex items-center justify-between mb-8">
+                    <h3 className="text-[10px] uppercase tracking-[0.4em] font-medium text-muted flex items-center gap-2">
+                      <Globe className="w-3.5 h-3.5 text-brand" />
+                      Market Sentiment
+                    </h3>
                   </div>
-                ) : (
-                  <div className="flex items-center gap-8">
-                    <div className="w-1/2 h-[160px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={sentimentData}
-                            innerRadius={50}
-                            outerRadius={75}
-                            paddingAngle={5}
-                            dataKey="value"
-                            stroke="none"
-                          >
-                            {sentimentData.map((entry) => (
-                              <Cell key={entry.name} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip
-                            contentStyle={{
-                              background: "#fff",
-                              border: "1px solid rgba(0,0,0,0.05)",
-                              borderRadius: "12px",
-                              boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
-                            }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
+
+                  {sentimentData.length === 0 ? (
+                    <div className="h-48 flex flex-col items-center justify-center gap-3 text-center border border-dashed border-black/8 rounded-2xl bg-black/[0.01]">
+                      <Activity className="w-6 h-6 text-muted/20" />
+                      <p className="text-[10px] text-muted uppercase tracking-[0.2em]">
+                        Awaiting Data
+                      </p>
                     </div>
-                    <div className="flex-1 space-y-3">
-                      {sentimentData.map((d) => (
-                        <div key={d.name} className="flex items-center justify-between group">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className="w-2 h-2 rounded-full"
-                              style={{ background: d.color }}
+                  ) : (
+                    <div className="flex items-center gap-8">
+                      <div className="w-1/2 h-[160px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={sentimentData}
+                              innerRadius={50}
+                              outerRadius={75}
+                              paddingAngle={5}
+                              dataKey="value"
+                              stroke="none"
+                            >
+                              {sentimentData.map((entry) => (
+                                <Cell key={entry.name} fill={entry.color} />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              contentStyle={{
+                                background: "#fff",
+                                border: "1px solid rgba(0,0,0,0.05)",
+                                borderRadius: "12px",
+                                boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
+                              }}
                             />
-                            <span className="text-[11px] font-medium text-muted group-hover:text-ink transition-colors">
-                              {d.name}
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="flex-1 space-y-3">
+                        {sentimentData.map((d) => (
+                          <div key={d.name} className="flex items-center justify-between group">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="w-2 h-2 rounded-full"
+                                style={{ background: d.color }}
+                              />
+                              <span className="text-[11px] font-medium text-muted group-hover:text-ink transition-colors">
+                                {d.name}
+                              </span>
+                            </div>
+                            <span className="text-[11px] font-mono font-bold text-ink">
+                              {totalSentiment > 0
+                                ? `${Math.round((d.value / totalSentiment) * 100)}%`
+                                : "—"}
                             </span>
                           </div>
-                          <span className="text-[11px] font-mono font-bold text-ink">
-                            {totalSentiment > 0
-                              ? `${Math.round((d.value / totalSentiment) * 100)}%`
-                              : "—"}
-                          </span>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Analytics: Unit Economics */}
+                <div className="glass border-black/5 rounded-[2rem] p-8">
+                  <div className="flex items-center justify-between mb-8">
+                    <h3 className="text-[10px] uppercase tracking-[0.4em] font-medium text-muted flex items-center gap-2">
+                      <Zap className="w-3.5 h-3.5 text-brand" />
+                      Unit Economics
+                    </h3>
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-brand/10 border border-brand/20 rounded-full">
+                      <span className="text-[9px] font-bold text-brand uppercase tracking-wider">
+                        Efficiency: {stats?.unitEconomics?.efficiencyScore ?? 0}%
+                      </span>
                     </div>
                   </div>
-                )}
-              </div>
 
-              {/* Analytics: Unit Economics */}
-              <div className="glass border-black/5 rounded-[2rem] p-8">
-                <div className="flex items-center justify-between mb-8">
-                  <h3 className="text-[10px] uppercase tracking-[0.4em] font-medium text-muted flex items-center gap-2">
-                    <Zap className="w-3.5 h-3.5 text-brand" />
-                    Unit Economics
-                  </h3>
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-brand/10 border border-brand/20 rounded-full">
-                    <span className="text-[9px] font-bold text-brand uppercase tracking-wider">
-                      Efficiency: {stats?.unitEconomics?.efficiencyScore ?? 0}%
-                    </span>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/5">
+                      <span className="text-[9px] font-medium text-muted uppercase tracking-wider block mb-1">
+                        Cost / Min
+                      </span>
+                      <span className="text-xl font-bold text-ink">
+                        ${stats?.unitEconomics?.costPerMinute ?? "0.00"}
+                      </span>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/5">
+                      <span className="text-[9px] font-medium text-muted uppercase tracking-wider block mb-1">
+                        Cost / Lead
+                      </span>
+                      <span className="text-xl font-bold text-ink">
+                        ${stats?.unitEconomics?.costPerLead ?? "0.00"}
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/5">
-                    <span className="text-[9px] font-medium text-muted uppercase tracking-wider block mb-1">
-                      Cost / Min
-                    </span>
-                    <span className="text-xl font-bold text-ink">
-                      ${stats?.unitEconomics?.costPerMinute ?? "0.00"}
-                    </span>
-                  </div>
-                  <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/5">
-                    <span className="text-[9px] font-medium text-muted uppercase tracking-wider block mb-1">
-                      Cost / Lead
-                    </span>
-                    <span className="text-xl font-bold text-ink">
-                      ${stats?.unitEconomics?.costPerLead ?? "0.00"}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-6 p-4 rounded-2xl bg-brand/5 border border-brand/10">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-bold text-brand uppercase tracking-wider">
-                      Fleet ROI Projection
-                    </span>
-                    <span className="text-[10px] font-mono font-bold text-brand">EXCELLENT</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-brand/10 rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${stats?.unitEconomics?.efficiencyScore ?? 0}%` }}
-                      className="h-full bg-brand rounded-full"
-                    />
+                  <div className="mt-6 p-4 rounded-2xl bg-brand/5 border border-brand/10">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[10px] font-bold text-brand uppercase tracking-wider">
+                        Fleet ROI Projection
+                      </span>
+                      <span className="text-[10px] font-mono font-bold text-brand">EXCELLENT</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-brand/10 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${stats?.unitEconomics?.efficiencyScore ?? 0}%` }}
+                        className="h-full bg-brand rounded-full"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Right Column: Intelligence & Actions (4/12) */}
-          <div className="xl:col-span-4 space-y-8">
-            {/* Intelligence Hub (Action Feed) */}
-            <div className="glass border-black/5 rounded-[2rem] p-8 h-full min-h-[600px] flex flex-col">
-              <ActionFeed actions={actions} onRefresh={refresh} />
+            {/* Right Column: Intelligence & Actions (4/12) */}
+            <div className="xl:col-span-4 space-y-8">
+              {/* Intelligence Hub (Action Feed) */}
+              <div className="glass border-black/5 rounded-[2rem] p-8 h-full min-h-[600px] flex flex-col">
+                <ActionFeed actions={actions} onRefresh={refresh} />
+              </div>
             </div>
           </div>
-        </div>
+        </section>
       </div>
     </PageTransition>
   );
