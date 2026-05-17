@@ -1,8 +1,16 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
+
+/** When unset, Vitest does not load repo-root `.env.local` into `import.meta.env` (keeps Sentry/Vite tests clean). */
+const useVercelEnvInTest = process.env.WIRELINE_USE_VERCEL_ENV_IN_TEST === "true";
 
 export default defineConfig({
   plugins: [react()],
+  envDir: useVercelEnvInTest ? process.cwd() : resolve(__dirname, "src/test/no-vite-env"),
   test: {
     environment: "happy-dom",
     globals: true,

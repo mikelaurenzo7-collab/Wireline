@@ -16,7 +16,7 @@ This starts Express with Vite middleware on `http://localhost:3000`. Both fronte
 
 **Important:** The `POSTGRES_URL` env var must be a **Supabase Transaction-mode pooled** connection string (port 6543, hostname like `aws-N-REGION.pooler.supabase.com`). The `@vercel/postgres` package (v0.10) detects pooled URLs by checking for `-pooler.` in the string. New-style Supabase pooler hostnames use `.pooler.` instead, so the URL must include `?application_name=-pooler.wireline` as a workaround for the detection check. Without this, the server logs `invalid_connection_string` errors.
 
-If the `POSTGRES_URL` secret provided by Cursor Cloud is a direct connection (port 5432, `db.*.supabase.co`), you must unset it in the shell before running the dev server so dotenv picks up the correct value from `.env`. The `CORS_ORIGINS` secret may also need to be unset — when it contains only the production URL, the CORS middleware rejects `localhost` requests and the frontend fails to load scripts. In dev mode with empty `CORS_ORIGINS`, the server allows all origins.
+If the `POSTGRES_URL` secret provided by Cursor Cloud is a direct connection (port 5432, `db.*.supabase.co`), you must unset it in the shell before running the dev server so dotenv picks up the correct value from `.env` or **`.env.local`** (e.g. `vercel env pull`). The `CORS_ORIGINS` secret may also need to be unset — when it contains only the production URL, the CORS middleware rejects `localhost` requests and the frontend fails to load scripts. In dev mode with empty `CORS_ORIGINS`, the server allows all origins.
 
 ```bash
 unset POSTGRES_URL CORS_ORIGINS && npm run dev
@@ -30,8 +30,11 @@ unset POSTGRES_URL CORS_ORIGINS && npm run dev
 | ESLint | `npm run lint:eslint` |
 | Format check | `npm run format:check` |
 | Unit tests (Vitest) | `npm run test:run` |
+| Unit tests + Vercel env pull first | `npm run test:run:vercel` (needs `VERCEL_TOKEN` + `vercel link`) |
 | E2E tests (Playwright) | `npm run e2e` |
+| E2E + Vercel env pull first | `npm run e2e:vercel` |
 | Full verify | `npm run verify` |
+| Full verify + Vercel env pull first | `npm run verify:vercel` |
 | Build | `npm run build` |
 
 ### Database schema

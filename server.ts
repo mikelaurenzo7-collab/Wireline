@@ -1,11 +1,6 @@
-// `dotenv/config` runs the side-effect import BEFORE any of the imports
-// below are evaluated. ESM hoists `import` statements above the module body,
-// so `dotenv.config()` in the body would load AFTER every other imported
-// module's top-level code — meaning modules that read `process.env.*` at
-// import time (e.g. `src/lib/auth-service.ts` for `INTERNAL_JWT_SECRET`)
-// would never see values declared only in `.env`. Using the side-effect
-// import guarantees env is populated before any other import evaluates.
-import "dotenv/config";
+// Load `.env` then `.env.local` (Vercel CLI pull) before any module reads
+// `process.env` at import time — see `src/lib/env-load.ts`.
+import "./src/lib/env-load";
 
 // Make `BigInt` JSON-serializable globally. Drizzle's `bigint({ mode: 'bigint' })`
 // returns native BigInt values for ids on `callLogs`, `auditLog`,

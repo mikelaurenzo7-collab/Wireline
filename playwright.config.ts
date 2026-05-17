@@ -1,4 +1,8 @@
+import { existsSync } from "node:fs";
 import { defineConfig, devices } from "@playwright/test";
+
+/** When `.env.local` exists (e.g. from `vercel env pull`), let the dev server load DB/CORS from it. */
+const hasVercelPulledEnv = existsSync(".env.local");
 
 /**
  * Playwright E2E configuration for Wireline
@@ -34,8 +38,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    // Avoid inheriting a broken POSTGRES_URL from the parent shell (AGENTS.md).
-    command: "env -u POSTGRES_URL -u CORS_ORIGINS npm run dev",
+    // With Vercel-pulled `.env.local`, use normal dev; otherwise strip inherited
+    // bad POSTGRES_URL / CORS from the parent shell (AGENTS.md).
+    command: hasVercelPulledEnv ? "npm run dev" : "env -u POSTGRES_URL -u CORS_ORIGINS npm run dev",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
