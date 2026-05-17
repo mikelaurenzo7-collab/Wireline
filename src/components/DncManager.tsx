@@ -385,6 +385,7 @@ export default function DncManager() {
                               </button>
                               <button
                                 onClick={() => setConfirmId(null)}
+                                aria-label="Cancel delete"
                                 className="h-7 w-7 rounded-full glass border border-white/10 text-muted hover:text-ink transition-all flex items-center justify-center"
                               >
                                 <X className="w-3 h-3" />
@@ -393,6 +394,7 @@ export default function DncManager() {
                           ) : (
                             <button
                               onClick={() => setConfirmId(entry.id)}
+                              aria-label={`Remove ${entry.phone_raw || entry.phone} from DNC list`}
                               className="h-7 w-7 rounded-full glass border border-white/10 text-muted hover:text-rose-500 hover:border-rose-500/30 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100"
                             >
                               <Trash2 className="w-3 h-3" />
