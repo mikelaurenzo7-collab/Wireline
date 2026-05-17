@@ -1,11 +1,17 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { log, fetchWithTimeout, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, sql, desc } from "drizzle-orm";
+import { eq, and, sql, desc, isNull, notInArray } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage } from "../lib/server-utils";
 import * as rateLimiters from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
+import {
+  listVapiNumbers,
+  provisionVapiNumber,
+  vapiAccountHeadroom,
+  POPULAR_AREA_CODES,
+} from "../lib/vapi-phone-numbers";
 
 interface VapiPhoneNumber {
   id: string;
@@ -18,97 +24,300 @@ const router = Router();
 // ==========================================
 // 1.5.4 PHONE NUMBER MANAGEMENT
 // ==========================================
-router.get("/api/phone-numbers", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const data = await drizzle
-      .select()
-      .from(schema.phoneNumbers)
-      .where(eq(schema.phoneNumbers.userId, req.user.id))
-      .orderBy(desc(schema.phoneNumbers.createdAt));
-    
-    res.json({ numbers: data || [] });
-  } catch {
-    res.json({ numbers: [] });
-  }
-});
+router.get(
+  "/api/phone-numbers",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const data = await drizzle
+        .select()
+        .from(schema.phoneNumbers)
+        .where(eq(schema.phoneNumbers.userId, req.user.id))
+        .orderBy(desc(schema.phoneNumbers.createdAt));
 
-router.post("/api/phone-numbers", authenticateUser, rateLimiters.phoneNumberRateLimiter, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { phone_number, vapi_number_id } = req.body;
-    await drizzle.insert(schema.phoneNumbers).values({
-      phoneNumber: phone_number,
-      vapiNumberId: vapi_number_id,
-      userId: req.user.id
-    });
-    res.json({ success: true });
-  } catch {
-    res.status(500).json({ error: "Failed to add phone number" });
-  }
-});
-
-router.patch("/api/phone-numbers/:id", authenticateUser, rateLimiters.phoneNumberRateLimiter, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { agent_id } = req.body;
-
-    if (agent_id) {
-      const [agent] = await drizzle
-        .select({ id: schema.agents.id })
-        .from(schema.agents)
-        .where(and(eq(schema.agents.id, agent_id), eq(schema.agents.userId, req.user.id)))
-        .limit(1);
-      if (!agent) return res.status(404).json({ error: "Agent not found" });
+      res.json({ numbers: data || [] });
+    } catch {
+      res.json({ numbers: [] });
     }
+  },
+);
 
-    await drizzle
-      .update(schema.phoneNumbers)
-      .set({ agentId: agent_id })
-      .where(and(eq(schema.phoneNumbers.id, BigInt(req.params.id)), eq(schema.phoneNumbers.userId, req.user.id)));
-    
-    res.json({ success: true });
-  } catch (error: any) {
-    log.error("Failed to update phone number assignment", { error: getErrorMessage(error) });
-    res.status(500).json({ error: "Failed to update phone number assignment" });
-  }
+router.post(
+  "/api/phone-numbers",
+  authenticateUser,
+  rateLimiters.phoneNumberRateLimiter,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { phone_number, vapi_number_id } = req.body;
+      await drizzle.insert(schema.phoneNumbers).values({
+        phoneNumber: phone_number,
+        vapiNumberId: vapi_number_id,
+        userId: req.user.id,
+      });
+      res.json({ success: true });
+    } catch {
+      res.status(500).json({ error: "Failed to add phone number" });
+    }
+  },
+);
+
+router.patch(
+  "/api/phone-numbers/:id",
+  authenticateUser,
+  rateLimiters.phoneNumberRateLimiter,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { agent_id } = req.body;
+
+      if (agent_id) {
+        const [agent] = await drizzle
+          .select({ id: schema.agents.id })
+          .from(schema.agents)
+          .where(and(eq(schema.agents.id, agent_id), eq(schema.agents.userId, req.user.id)))
+          .limit(1);
+        if (!agent) return res.status(404).json({ error: "Agent not found" });
+      }
+
+      await drizzle
+        .update(schema.phoneNumbers)
+        .set({ agentId: agent_id })
+        .where(
+          and(
+            eq(schema.phoneNumbers.id, BigInt(req.params.id)),
+            eq(schema.phoneNumbers.userId, req.user.id),
+          ),
+        );
+
+      res.json({ success: true });
+    } catch (error: any) {
+      log.error("Failed to update phone number assignment", { error: getErrorMessage(error) });
+      res.status(500).json({ error: "Failed to update phone number assignment" });
+    }
+  },
+);
+
+router.delete(
+  "/api/phone-numbers/:id",
+  authenticateUser,
+  rateLimiters.phoneNumberRateLimiter,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      await drizzle
+        .delete(schema.phoneNumbers)
+        .where(
+          and(
+            eq(schema.phoneNumbers.id, BigInt(req.params.id)),
+            eq(schema.phoneNumbers.userId, req.user.id),
+          ),
+        );
+
+      res.json({ success: true });
+    } catch (error: any) {
+      log.error("Failed to delete phone number", { error: getErrorMessage(error) });
+      res.status(500).json({ error: "Failed to delete phone number." });
+    }
+  },
+);
+
+// ==========================================
+// 1.5.5 NUMBER POOL — self-serve picker
+// ==========================================
+// The Vapi side is hidden from the client. Responses talk about
+// "available numbers" and "regions", never mention Vapi by name.
+
+/** Curated area-code list for the picker dropdown. */
+router.get("/api/phone-numbers/area-codes", authenticateUser, (_req: Request, res: Response) => {
+  res.json({ area_codes: POPULAR_AREA_CODES });
 });
 
-router.delete("/api/phone-numbers/:id", authenticateUser, rateLimiters.phoneNumberRateLimiter, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    await drizzle
-      .delete(schema.phoneNumbers)
-      .where(and(eq(schema.phoneNumbers.id, BigInt(req.params.id)), eq(schema.phoneNumbers.userId, req.user.id)));
-    
-    res.json({ success: true });
-  } catch (error: any) {
-    log.error("Failed to delete phone number", { error: getErrorMessage(error) });
-    res.status(500).json({ error: "Failed to delete phone number." });
-  }
-});
+/**
+ * Available numbers in the pool — Vapi-provisioned numbers that haven't
+ * been claimed by any wireline user yet (no row in wireline_phone_numbers).
+ *
+ * Used by the agent-deploy modal and the onboarding "Connect a phone
+ * number" step. Caches at the request boundary (no need for refresh
+ * between renders).
+ */
+router.get(
+  "/api/phone-numbers/available",
+  authenticateUser,
+  async (_req: AuthenticatedRequest, res: Response) => {
+    try {
+      const [poolNumbers, claimedRows] = await Promise.all([
+        listVapiNumbers(),
+        drizzle.select({ vapiId: schema.phoneNumbers.vapiNumberId }).from(schema.phoneNumbers),
+      ]);
+      const claimed = new Set(claimedRows.map((r) => r.vapiId).filter(Boolean));
+      const available = poolNumbers
+        .filter((n) => n.provider === "vapi" && !claimed.has(n.id) && n.number)
+        .map((n) => {
+          const e164 = n.number || "";
+          const ac = e164.startsWith("+1") ? e164.slice(2, 5) : "";
+          const meta = POPULAR_AREA_CODES.find((m) => m.code === ac);
+          return {
+            phone_number: e164,
+            area_code: ac || null,
+            region: meta ? `${meta.city}, ${meta.state}` : null,
+          };
+        });
+      res.json({ available });
+    } catch (e: any) {
+      log.error("Failed to list available pool numbers", { error: getErrorMessage(e) });
+      res.status(503).json({ error: "Number pool unavailable. Try again shortly." });
+    }
+  },
+);
+
+/**
+ * Try to buy a fresh number in a specific area code. Used when the
+ * pool is exhausted OR the user wants a region we don't have in pool.
+ * Subject to the Vapi free-tier headroom; returns 409 if cap hit.
+ */
+router.post(
+  "/api/phone-numbers/search",
+  authenticateUser,
+  rateLimiters.phoneNumberRateLimiter,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const areaCode = String(req.body?.area_code || "").trim();
+      if (!/^\d{3}$/.test(areaCode)) {
+        return res.status(400).json({ error: "area_code must be a 3-digit US code." });
+      }
+
+      const headroom = await vapiAccountHeadroom();
+      if (headroom.remaining <= 0) {
+        return res.status(409).json({
+          error:
+            "Free phone-number capacity reached. Release an unused number from /admin → Numbers to free a slot, or contact sales for paid numbers.",
+          code: "POOL_CAPACITY_REACHED",
+          headroom,
+        });
+      }
+
+      const fresh = await provisionVapiNumber({
+        areaCode,
+        name: `Wireline · self-serve ${areaCode}`,
+      });
+      res.json({
+        phone_number: fresh.number,
+        area_code: areaCode,
+      });
+    } catch (e: any) {
+      // Vapi rejected — most commonly "area code not available"
+      const msg = getErrorMessage(e);
+      if (/not available/i.test(msg)) {
+        return res.status(404).json({
+          error: "That area code has no inventory right now. Try another nearby code.",
+          code: "AREA_CODE_UNAVAILABLE",
+        });
+      }
+      log.error("phone-numbers/search failed", { error: msg });
+      res.status(503).json({ error: "Could not search for a number. Try again shortly." });
+    }
+  },
+);
+
+/**
+ * Claim a number from the pool — attach it to the caller's chosen agent
+ * (or create the wireline_phone_numbers row with no agent if agent_id
+ * is omitted). Wires the Vapi assistant binding so calls actually route.
+ */
+router.post(
+  "/api/phone-numbers/claim",
+  authenticateUser,
+  rateLimiters.phoneNumberRateLimiter,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const phoneNumber = String(req.body?.phone_number || "").trim();
+      const agentId = req.body?.agent_id ? String(req.body.agent_id).trim() : null;
+      if (!phoneNumber) {
+        return res.status(400).json({ error: "phone_number is required." });
+      }
+
+      // Re-fetch pool to translate e164 → Vapi id AND verify it's actually
+      // unclaimed. Doing both in one go avoids a race where two users claim
+      // the same number simultaneously (only one will hit a unique-constraint
+      // violation on phone_number, the other will succeed cleanly).
+      const [poolNumbers, claimedRows] = await Promise.all([
+        listVapiNumbers(),
+        drizzle.select({ vapiId: schema.phoneNumbers.vapiNumberId }).from(schema.phoneNumbers),
+      ]);
+      const match = poolNumbers.find((n) => n.number === phoneNumber && n.provider === "vapi");
+      if (!match) {
+        return res.status(404).json({ error: "That number isn't in the pool anymore." });
+      }
+      const claimed = new Set(claimedRows.map((r) => r.vapiId).filter(Boolean));
+      if (claimed.has(match.id)) {
+        return res.status(409).json({ error: "That number was just claimed. Pick another." });
+      }
+
+      // If an agent was named, validate ownership before binding the
+      // number to it. Wireline's inbound flow routes calls based on the
+      // phone_numbers.agent_id lookup at webhook time, so the in-DB row
+      // is sufficient — we don't need to push an assistantId into Vapi.
+      if (agentId) {
+        const [agent] = await drizzle
+          .select({ id: schema.agents.id })
+          .from(schema.agents)
+          .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
+          .limit(1);
+        if (!agent) return res.status(404).json({ error: "Agent not found." });
+      }
+
+      await drizzle.insert(schema.phoneNumbers).values({
+        userId: req.user.id,
+        phoneNumber,
+        vapiNumberId: match.id,
+        agentId,
+      });
+
+      res.json({ success: true, phone_number: phoneNumber, agent_id: agentId });
+    } catch (e: any) {
+      // Unique-constraint race winner already inserted the row — surface
+      // a clean conflict so the picker can re-fetch the pool.
+      const msg = getErrorMessage(e);
+      if (/duplicate key|unique constraint/i.test(msg)) {
+        return res.status(409).json({ error: "That number was just claimed. Pick another." });
+      }
+      log.error("phone-numbers/claim failed", { error: msg });
+      res.status(503).json({ error: "Could not claim that number. Try again." });
+    }
+  },
+);
 
 // ==========================================
 // 1.5.6 CARRIER SYNC (VAPI PROXY)
 // ==========================================
-router.get("/api/carrier/numbers", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const vapiSecret = process.env.VAPI_PRIVATE_KEY;
-    if (!vapiSecret) return res.json({ numbers: [] });
+router.get(
+  "/api/carrier/numbers",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const vapiSecret = process.env.VAPI_PRIVATE_KEY;
+      if (!vapiSecret) return res.json({ numbers: [] });
 
-    const response = await fetchWithTimeout("https://api.vapi.ai/phone-number", {
-      headers: { "Authorization": `Bearer ${vapiSecret}` }
-    }, 15_000);
-    const data = await response.json() as VapiPhoneNumber[];
-    
-    // The Vapi response is usually an array of phone number objects
-    const formatted = (data || []).map((num: VapiPhoneNumber) => ({
-      id: num.id,
-      number: num.number,
-      provider: num.provider
-    }));
+      const response = await fetchWithTimeout(
+        "https://api.vapi.ai/phone-number",
+        {
+          headers: { Authorization: `Bearer ${vapiSecret}` },
+        },
+        15_000,
+      );
+      const data = (await response.json()) as VapiPhoneNumber[];
 
-    res.json({ numbers: formatted });
-  } catch (error: any) {
-    log.error("Vapi sync error", { error: getErrorMessage(error) });
-    res.json({ numbers: [] });
-  }
-});
+      // The Vapi response is usually an array of phone number objects
+      const formatted = (data || []).map((num: VapiPhoneNumber) => ({
+        id: num.id,
+        number: num.number,
+        provider: num.provider,
+      }));
+
+      res.json({ numbers: formatted });
+    } catch (error: any) {
+      log.error("Vapi sync error", { error: getErrorMessage(error) });
+      res.json({ numbers: [] });
+    }
+  },
+);
 
 export default router;
