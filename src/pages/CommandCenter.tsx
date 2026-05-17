@@ -245,47 +245,55 @@ export default function CommandCenter() {
           </div>
 
           <div className="flex items-center gap-3">
-            <button
-              onClick={async () => {
-                if (activatingGrowth) return;
-                setActivatingGrowth(true);
-                try {
-                  const res = await authFetch("/api/jobs/prospect", { method: "POST" });
-                  if (!res.ok) {
-                    const body = await res.json().catch(() => ({}));
-                    throw new Error(body.error || `HTTP ${res.status}`);
-                  }
-                  const body = (await res.json().catch(() => ({}))) as {
-                    prospectingEnabled?: boolean;
-                  };
-                  if (body.prospectingEnabled === false) {
-                    toastInfo(
-                      "Prospecting is disabled",
-                      "Open Settings → Growth to enable autonomous prospecting and configure targeting.",
+            {/* Hide "Activate Growth" until the user has at least one agent —
+                this CTA fires Apollo prospecting which is meaningless until
+                there's an agent to receive the leads, and on fresh accounts
+                it competes for attention with OnboardingQuickstart below. */}
+            {(stats?.agents?.length ?? 0) > 0 && (
+              <button
+                onClick={async () => {
+                  if (activatingGrowth) return;
+                  setActivatingGrowth(true);
+                  try {
+                    const res = await authFetch("/api/jobs/prospect", { method: "POST" });
+                    if (!res.ok) {
+                      const body = await res.json().catch(() => ({}));
+                      throw new Error(body.error || `HTTP ${res.status}`);
+                    }
+                    const body = (await res.json().catch(() => ({}))) as {
+                      prospectingEnabled?: boolean;
+                    };
+                    if (body.prospectingEnabled === false) {
+                      toastInfo(
+                        "Prospecting is disabled",
+                        "Open Settings → Growth to enable autonomous prospecting and configure targeting.",
+                      );
+                    } else {
+                      toastSuccess(
+                        "Growth engine queued",
+                        "Apollo Intelligence is sourcing new leads. They'll appear in Outbound shortly.",
+                      );
+                    }
+                  } catch (err: any) {
+                    toastError(
+                      "Failed to activate growth engine",
+                      err?.message || "Check network and try again.",
                     );
-                  } else {
-                    toastSuccess(
-                      "Growth engine queued",
-                      "Apollo Intelligence is sourcing new leads. They'll appear in Outbound shortly.",
-                    );
+                  } finally {
+                    setActivatingGrowth(false);
                   }
-                } catch (err: any) {
-                  toastError(
-                    "Failed to activate growth engine",
-                    err?.message || "Check network and try again.",
-                  );
-                } finally {
-                  setActivatingGrowth(false);
-                }
-              }}
-              disabled={activatingGrowth}
-              className="flex items-center gap-2 px-6 py-3 bg-brand text-white rounded-2xl hover:bg-brand-2 transition-all shadow-xl shadow-brand/20 active:scale-95 disabled:opacity-60 disabled:cursor-wait"
-            >
-              <Zap className={clsx("w-4 h-4 fill-current", activatingGrowth && "animate-pulse")} />
-              <span className="text-xs font-black uppercase tracking-widest">
-                {activatingGrowth ? "Activating…" : "Activate Growth"}
-              </span>
-            </button>
+                }}
+                disabled={activatingGrowth}
+                className="flex items-center gap-2 px-6 py-3 bg-brand text-white rounded-2xl hover:bg-brand-2 transition-all shadow-xl shadow-brand/20 active:scale-95 disabled:opacity-60 disabled:cursor-wait"
+              >
+                <Zap
+                  className={clsx("w-4 h-4 fill-current", activatingGrowth && "animate-pulse")}
+                />
+                <span className="text-xs font-black uppercase tracking-widest">
+                  {activatingGrowth ? "Activating…" : "Activate Growth"}
+                </span>
+              </button>
+            )}
 
             {/* Live telemetry strip — bound to real fleet/presence state.
                 Previously this rendered hardcoded "0.02ms Latency" / "12 Online"
