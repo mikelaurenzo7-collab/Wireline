@@ -178,4 +178,3 @@ export async function getVoiceUsageSnapshot(userId: string): Promise<VoiceUsageS
     stripe_metered: !!process.env.STRIPE_VOICE_OVERAGE_METER_EVENT_NAME,
   };
 }
-// Deploy author fix: this commit re-authors with the user's GitHub noreply
