@@ -32,14 +32,15 @@
     <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@wirelineapp" />
-    <title>Always-on AI agents that handle calls, qualify leads, and book appointments automatically.</title>
     <meta name="twitter:title" content="Wireline — AI voice &amp; Email Agents" />
     <meta name="twitter:description" content="Always-on AI products that handle calls, qualify leads, and book appointments automatically." />
     <meta name="twitter:image" content="https://www.wireline.app/og-image.png" />
 
-    <!-- Preconnect to key origins for faster API bootstrap -->
+    <!-- Preconnect to key origins for faster API bootstrap.
+         supabase.co handles auth + DB queries on every page; preconnect
+         shaves ~150-300ms off the first authenticated request. -->
     <link rel="preconnect" href="https://supabase.co" crossorigin />
-    <link rel="dns-prefetch" href="https://supabase.co" />
+    <link rel="preconnect" href="https://ogenlhodmwvyacvnrsnj.supabase.co" crossorigin />
     <link rel="dns-prefetch" href="https://api.anthropic.com" />
     <link rel="dns-prefetch" href="https://api.vapi.ai" />
 
