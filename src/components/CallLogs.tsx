@@ -643,8 +643,36 @@ function CallDetail({
                   </p>
                 ) : (
                   transcriptLines.map((line: string, i: number) => {
-                    const isAI = line.startsWith("AI:") || line.startsWith("Agent:");
-                    const isUser = line.startsWith("User:") || line.startsWith("Human:");
+                    // Parse "Speaker: content" — real Vapi transcripts use the
+                    // actual agent name (e.g. "Liam:") not the canonical "AI:".
+                    // Match any leading "Word:" and bucket by known patterns so
+                    // every line shows a meaningful label instead of "System".
+                    const prefixMatch = line.match(/^([A-Z][A-Za-z\s_-]{0,30}):\s*(.*)$/);
+                    const rawSpeaker = prefixMatch?.[1]?.trim() ?? "";
+                    const body = prefixMatch?.[2] ?? line;
+                    const speaker = rawSpeaker.toLowerCase();
+                    const callerWords = [
+                      "user",
+                      "human",
+                      "caller",
+                      "customer",
+                      "client",
+                      "prospect",
+                      "lead",
+                    ];
+                    const systemWords = ["system", "operator"];
+                    const isUser = callerWords.includes(speaker);
+                    const isSystem = systemWords.includes(speaker);
+                    // Anything left with a name prefix is the AGENT side
+                    // (the agent's name, "AI", "Agent", "Assistant", etc.).
+                    const isAI = !!rawSpeaker && !isUser && !isSystem;
+                    const label = !rawSpeaker
+                      ? "Transcript"
+                      : isUser
+                        ? "Caller"
+                        : isSystem
+                          ? "System"
+                          : rawSpeaker; // show the real agent name
                     return (
                       <div
                         key={i}
@@ -663,9 +691,9 @@ function CallDetail({
                             isAI ? "text-muted" : isUser ? "text-brand" : "text-ink",
                           )}
                         >
-                          {isAI ? "Agent" : isUser ? "Carrier" : "System"}
+                          {label}
                         </div>
-                        {line.replace(/^(AI|Agent|User|Human|System):\s*/i, "")}
+                        {body}
                       </div>
                     );
                   })
