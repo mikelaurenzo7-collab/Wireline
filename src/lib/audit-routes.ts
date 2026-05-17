@@ -2,6 +2,7 @@ import type { VercelPgDatabase } from "drizzle-orm/vercel-postgres";
 import * as schema from "../db/schema";
 import { eq, and, or, ilike, gte, lte, desc, inArray, sql } from "drizzle-orm";
 import type { AuditLogger } from "./audit-logger";
+import { mapObjectToSnake } from "./server-utils";
 
 export interface AuditRoutesLogger {
   error: (msg: string, ctx?: Record<string, any>) => void;
@@ -140,8 +141,9 @@ export function createAuditEventsHandler(deps: AuditRoutesDeps) {
         .limit(limit)
         .offset(offset);
 
+      // UI reads snake_case throughout; Drizzle returns camelCase. Normalize.
       res.json({
-        events: data || [],
+        events: mapObjectToSnake(data || []),
         total: count || 0,
         limit,
         offset,

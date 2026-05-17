@@ -9,6 +9,7 @@ import { ToastProvider } from "./contexts/ToastContext";
 import AppShell from "./components/layout/AppShell";
 import NotFound from "./components/layout/NotFound";
 import { BrandingProvider } from "./contexts/BrandingContext";
+import { MotionConfig } from "motion/react";
 
 const Pricing = lazy(() => import("./pages/Pricing"));
 
@@ -55,16 +56,22 @@ function AppContent() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <BrandingProvider>
-          <ToastProvider>
-            <AppContent />
-            <ToastStack />
-            <CookieConsent />
-          </ToastProvider>
-        </BrandingProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    // reducedMotion="user" tells motion to honor the OS-level
+    // prefers-reduced-motion media query. Users with vestibular disorders
+    // (or anyone who flipped the system toggle) now get static UI instead
+    // of aurora/glow/scale animations.
+    <MotionConfig reducedMotion="user">
+      <BrowserRouter>
+        <AuthProvider>
+          <BrandingProvider>
+            <ToastProvider>
+              <AppContent />
+              <ToastStack />
+              <CookieConsent />
+            </ToastProvider>
+          </BrandingProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </MotionConfig>
   );
 }

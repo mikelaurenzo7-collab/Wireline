@@ -24,14 +24,7 @@ export function getErrorMessage(error: unknown): string {
 export function sanitizeForAudit(obj: unknown): unknown {
   if (!obj || typeof obj !== "object") return obj;
 
-  const sensitivePatterns = [
-    "key",
-    "secret",
-    "password",
-    "token",
-    "credential",
-    "auth",
-  ];
+  const sensitivePatterns = ["key", "secret", "password", "token", "credential", "auth"];
 
   if (Array.isArray(obj)) {
     return obj.map((item) => sanitizeForAudit(item));
@@ -75,13 +68,39 @@ export function sanitizeForAudit(obj: unknown): unknown {
  * Useful for mapping frontend payloads to Drizzle/TS internal keys.
  */
 export function mapObjectToCamel(obj: any): any {
-  if (obj === null || typeof obj !== 'object') return obj;
+  if (obj === null || typeof obj !== "object") return obj;
   if (Array.isArray(obj)) return obj.map(mapObjectToCamel);
 
   const result: any = {};
   for (const [key, value] of Object.entries(obj)) {
     const camelKey = key.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
     result[camelKey] = mapObjectToCamel(value);
+  }
+  return result;
+}
+
+/**
+ * Inverse of mapObjectToCamel — converts camelCase keys to snake_case
+ * recursively. Used at API boundaries to give the SPA the
+ * `customer_name` / `created_at` / `event_type` shape it expects,
+ * since the React UI is snake_case throughout but Drizzle hands us
+ * camelCase columns.
+ *
+ * Date objects are stringified to ISO so JSON.stringify doesn't drop
+ * timezone offsets. BigInt is coerced to string to dodge JSON.stringify
+ * crashes on PostgreSQL bigint columns.
+ */
+export function mapObjectToSnake(obj: any): any {
+  if (obj === null || obj === undefined) return obj;
+  if (obj instanceof Date) return obj.toISOString();
+  if (typeof obj === "bigint") return obj.toString();
+  if (typeof obj !== "object") return obj;
+  if (Array.isArray(obj)) return obj.map(mapObjectToSnake);
+
+  const result: any = {};
+  for (const [key, value] of Object.entries(obj)) {
+    const snakeKey = key.replace(/([A-Z])/g, (g) => `_${g[0].toLowerCase()}`);
+    result[snakeKey] = mapObjectToSnake(value);
   }
   return result;
 }

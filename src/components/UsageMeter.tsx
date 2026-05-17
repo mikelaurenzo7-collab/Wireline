@@ -52,7 +52,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
         )}
       >
         <Loader2 className="w-3 h-3 animate-spin" />
-        Loading usage
+        Loading voice usage
       </div>
     );
   }
