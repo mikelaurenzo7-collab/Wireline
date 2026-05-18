@@ -104,7 +104,7 @@ export default function Pipeline() {
       }
     >
       <div className="h-full overflow-x-auto overflow-y-hidden pb-1">
-        <div className="flex gap-3 min-w-max h-full pr-3">
+        <div className="flex gap-3 h-full pr-3">
           {STAGES.map((stage) => {
             const leads = board[stage.id] || [];
             return (
@@ -119,7 +119,7 @@ export default function Pipeline() {
                   const id = e.dataTransfer.getData("text/plain");
                   if (id) moveLead(id, stage.id);
                 }}
-                className="w-[300px] shrink-0 flex flex-col h-full"
+                className="min-w-[180px] flex-1 flex flex-col h-full"
               >
                 <Panel
                   title={stage.label}

@@ -63,7 +63,7 @@ export function CarrierPanel({
     }[settings.voice_llm_provider] ?? "https://ai.google.dev/gemini-api/docs/models";
 
   return (
-    <div className="h-full grid grid-cols-1 xl:grid-cols-2 gap-3 min-h-0">
+    <div className="h-full grid grid-cols-1 xl:grid-cols-2 gap-3 min-h-0 overflow-y-auto panel-scroll pb-4">
       {/* Carrier authentication */}
       <Panel title="Wireline Voice Network" hint="CALLS" icon={Cpu} scroll>
         <div className="space-y-4">
@@ -270,7 +270,7 @@ export function CarrierPanel({
       </Panel>
 
       {/* Pool picker — self-serve number provisioning */}
-      <Panel title="Get a phone number" hint="POOL · LOCAL PRESENCE" icon={Phone}>
+      <Panel title="Get a phone number" hint="POOL · LOCAL PRESENCE" icon={Phone} scroll>
         <PhoneNumberPicker
           onClaim={() => {
             // Re-sync the list panel below so the freshly-claimed
@@ -416,7 +416,7 @@ export function CarrierPanel({
       {/* SMS / text messaging — backend already wired to Twilio via
           send_text_message action. This panel surfaces the per-tenant
           sender configuration so operators can actually enable it. */}
-      <Panel title="SMS &amp; text messaging" hint="OUTBOUND TEXTS · OPT-OUT TRACKED" icon={Phone}>
+      <Panel title="SMS &amp; text messaging" hint="OUTBOUND TEXTS · OPT-OUT TRACKED" icon={Phone} scroll>
         <div className="space-y-3">
           {/* Inbound webhook URL — operators paste this into Twilio's
               Messaging webhook field on each of their numbers. Without

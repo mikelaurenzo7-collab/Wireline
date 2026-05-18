@@ -140,14 +140,14 @@ const EventRow = React.memo(
           <SeverityIcon severity={event.severity} />
           <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-5 gap-3">
             <div className="md:col-span-2">
-              <p className="text-sm text-ink font-medium truncate">
+              <p className="text-sm text-ink font-medium">
                 {event.event_type || event.action}
               </p>
-              <p className="text-xs text-muted truncate">{event.actor_email || "System"}</p>
+              <p className="text-xs text-muted">{event.actor_email || "System"}</p>
             </div>
             <div>
               <p className="text-xs text-muted">Resource</p>
-              <p className="text-sm text-ink truncate">{event.resource_id || "—"}</p>
+              <p className="text-sm text-ink">{event.resource_id || "—"}</p>
             </div>
             <div>
               <p className="text-xs text-muted">Time</p>

@@ -345,7 +345,7 @@ export default function DncManager() {
                             <Phone className="w-3.5 h-3.5 text-rose-500" />
                           </div>
                           <div className="min-w-0">
-                            <p className="font-mono text-sm text-ink truncate">
+                            <p className="font-mono text-sm text-ink">
                               {entry.phone_raw || entry.phone}
                             </p>
                             <div className="flex items-center gap-1.5 mt-0.5">

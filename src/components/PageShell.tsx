@@ -252,12 +252,12 @@ export function Panel({
               </div>
             )}
             {title && (
-              <h3 className="font-display italic text-base text-ink leading-none truncate">
+              <h3 className="font-display italic text-base text-ink leading-tight">
                 {title}
               </h3>
             )}
             {hint && (
-              <span className="text-[9px] uppercase tracking-[0.30em] text-muted/60 truncate ml-1">
+              <span className="text-[9px] uppercase tracking-[0.30em] text-muted/60 ml-1 shrink-0">
                 {hint}
               </span>
             )}

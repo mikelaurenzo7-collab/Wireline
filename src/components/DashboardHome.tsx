@@ -64,6 +64,7 @@ export default function DashboardHome() {
     events: Array<{ summary: string }>;
   } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [onboardingComplete, setOnboardingComplete] = useState(false);
   // Lazily-instantiated Vapi instance. Stays null until the first
   // toggleCall click. Listeners attach inside ensureVapi the first
   // time it runs.
@@ -927,20 +928,22 @@ export default function DashboardHome() {
   );
   const Brief = (
     <div className="h-full grid grid-cols-12 gap-3">
-      <div className="col-span-12 lg:col-span-7 h-full overflow-hidden">
+      <div className={cn("col-span-12 h-full overflow-hidden", onboardingComplete ? "" : "lg:col-span-7")}>
         <Panel title="Daily Brief" hint="AI Summary" icon={Sparkles} scroll>
           <WidgetBoundary label="Daily Brief">
             <DailyBrief />
           </WidgetBoundary>
         </Panel>
       </div>
-      <div className="col-span-12 lg:col-span-5 h-full overflow-hidden">
-        <Panel title="Quickstart" hint="First-run" icon={Activity} scroll>
-          <WidgetBoundary label="Quickstart">
-            <OnboardingQuickstart />
-          </WidgetBoundary>
-        </Panel>
-      </div>
+      {!onboardingComplete && (
+        <div className="col-span-12 lg:col-span-5 h-full overflow-hidden">
+          <Panel title="Quickstart" hint="First-run" icon={Activity} scroll>
+            <WidgetBoundary label="Quickstart">
+              <OnboardingQuickstart onComplete={setOnboardingComplete} />
+            </WidgetBoundary>
+          </Panel>
+        </div>
+      )}
       <div className="col-span-12 h-full overflow-hidden">
         <Panel title="How am I doing?" hint="Performance · 30-day window" icon={TrendingUp} scroll>
           <WidgetBoundary label="Performance Benchmarks">

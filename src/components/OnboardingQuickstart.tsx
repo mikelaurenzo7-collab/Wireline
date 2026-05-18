@@ -64,7 +64,7 @@ const STEPS = [
   },
 ] as const;
 
-export default function OnboardingQuickstart() {
+export default function OnboardingQuickstart({ onComplete }: { onComplete?: (completed: boolean) => void }) {
   const [progress, setProgress] = useState<ProgressData | null>(null);
   const [loading, setLoading] = useState(true);
   // Tier drives whether we show the 4-step self-serve flow or a
@@ -100,6 +100,7 @@ export default function OnboardingQuickstart() {
         ]);
         setProgress({ agents: a, knowledge: k, numbers: n, calls: c });
         setPlanId(planRes);
+        onComplete?.(a > 0 && k > 0 && n > 0 && c > 0);
       } finally {
         setLoading(false);
       }

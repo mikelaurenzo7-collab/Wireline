@@ -2489,80 +2489,96 @@ function KnowledgeFromDocumentForm({
 
   return (
     <FormShell>
-      <Field
-        label="Document"
-        hint="PDF up to 32 MB. Brochures, menus, FAQ docs, policies, price sheets — anything customer-facing."
-      >
-        <label
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={onDrop}
-          className="relative flex flex-col items-center justify-center gap-3 px-6 py-10 rounded-2xl glass border-2 border-dashed border-white/15 hover:border-brand/40 transition-all cursor-pointer text-center"
-        >
-          <input
-            type="file"
-            accept="application/pdf,.pdf"
-            onChange={onFile}
-            className="absolute inset-0 opacity-0 cursor-pointer"
+      {!result ? (
+        <>
+          <Field
+            label="Document"
+            hint="PDF up to 32 MB. Brochures, menus, FAQ docs, policies, price sheets — anything customer-facing."
+          >
+            <label
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={onDrop}
+              className="relative flex flex-col items-center justify-center gap-3 px-6 py-10 rounded-2xl glass border-2 border-dashed border-white/15 hover:border-brand/40 transition-all cursor-pointer text-center"
+            >
+              <input
+                type="file"
+                accept="application/pdf,.pdf"
+                onChange={onFile}
+                className="absolute inset-0 opacity-0 cursor-pointer"
+              />
+              {file ? (
+                <>
+                  <div className="w-12 h-12 rounded-2xl glass border border-brand/30 flex items-center justify-center text-brand">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-ink leading-tight">{file.name}</p>
+                    <p className="text-[10px] uppercase tracking-[0.3em] text-muted">
+                      {(file.size / 1024 / 1024).toFixed(2)} MB · ready
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setFile(null);
+                      setResult(null);
+                      setApplied(null);
+                    }}
+                    className="relative z-10 text-[10px] uppercase tracking-[0.3em] text-rose-500 hover:text-rose-400 transition-colors flex items-center gap-1.5"
+                  >
+                    <Trash2 className="w-3 h-3" /> Remove
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="w-12 h-12 rounded-2xl glass border border-white/10 flex items-center justify-center text-brand">
+                    <FileUp className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-ink/85">Drop a PDF here, or click to choose</p>
+                    <p className="text-[10px] uppercase tracking-[0.3em] text-muted">
+                      Up to 32 MB · Wireline AI reads it natively
+                    </p>
+                  </div>
+                </>
+              )}
+            </label>
+          </Field>
+          <Field
+            label="Agent Context (optional)"
+            hint="What's this agent's job? Helps Wireline AI prioritize relevant facts."
+          >
+            <TextInput
+              value={agentContext}
+              onChange={setAgentContext}
+              placeholder="Front-desk agent for HVAC service company."
+            />
+          </Field>
+          <RunButton
+            onClick={run}
+            loading={loading}
+            disabled={disabled || !file}
+            label="Read & Extract"
           />
-          {file ? (
-            <>
-              <div className="w-12 h-12 rounded-2xl glass border border-brand/30 flex items-center justify-center text-brand">
-                <FileText className="w-5 h-5" />
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-ink leading-tight">{file.name}</p>
-                <p className="text-[10px] uppercase tracking-[0.3em] text-muted">
-                  {(file.size / 1024 / 1024).toFixed(2)} MB · ready
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setFile(null);
-                  setResult(null);
-                  setApplied(null);
-                }}
-                className="relative z-10 text-[10px] uppercase tracking-[0.3em] text-rose-500 hover:text-rose-400 transition-colors flex items-center gap-1.5"
-              >
-                <Trash2 className="w-3 h-3" /> Remove
-              </button>
-            </>
-          ) : (
-            <>
-              <div className="w-12 h-12 rounded-2xl glass border border-white/10 flex items-center justify-center text-brand">
-                <FileUp className="w-5 h-5" />
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-ink/85">Drop a PDF here, or click to choose</p>
-                <p className="text-[10px] uppercase tracking-[0.3em] text-muted">
-                  Up to 32 MB · Wireline AI reads it natively
-                </p>
-              </div>
-            </>
-          )}
-        </label>
-      </Field>
-      <Field
-        label="Agent Context (optional)"
-        hint="What's this agent's job? Helps Wireline AI prioritize relevant facts."
-      >
-        <TextInput
-          value={agentContext}
-          onChange={setAgentContext}
-          placeholder="Front-desk agent for HVAC service company."
-        />
-      </Field>
-      <RunButton
-        onClick={run}
-        loading={loading}
-        disabled={disabled || !file}
-        label="Read & Extract"
-      />
+        </>
+      ) : (
+        <div className="flex items-center justify-between mb-2">
+          <button
+            onClick={() => {
+              setResult(null);
+              setApplied(null);
+            }}
+            className="text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand transition-colors flex items-center gap-1.5"
+          >
+            ← Back to Upload
+          </button>
+        </div>
+      )}
 
       {err && <ErrCard error={err} />}
       {result && (
-        <div className="space-y-4 pt-3">
+        <div className="space-y-4 pt-1">
           <ResultCard title="Document Summary">
             <p>{result.page_summary}</p>
           </ResultCard>
