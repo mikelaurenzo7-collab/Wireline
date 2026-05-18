@@ -219,12 +219,12 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
     id: "meta",
     label: "Meta (Facebook + Instagram Ads)",
     description:
-      "Routes Meta Lead Ad submissions into the outbound dialer for sub-30-second callbacks, and exports conversions back via Meta CAPI for ROAS tracking.",
+      "Planned: route Meta Lead Ad submissions into the outbound dialer + export CAPI conversions. Env vars are reserved in Vercel; the webhook + CAPI handlers are not yet built.",
     group: "actions",
     required: false,
     envVars: ["META_APP_ID", "META_APP_SECRET"],
     fallback:
-      "Without Meta credentials, Lead Ads webhooks aren't accepted and CAPI conversions aren't reported back to Meta — Wireline runs the rest of the platform unaffected.",
+      "Not wired in code yet — META_APP_ID / META_APP_SECRET are reserved but the Lead Ads webhook + CAPI conversion endpoints have not been implemented. Track in Craft → Roadmap.",
     docsUrl: "https://developers.facebook.com/apps",
   },
 
@@ -240,16 +240,6 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
     fallback:
       "Without it, rate limits fall back to per-process in-memory state. On Vercel this means near-zero protection against runaway spend.",
     docsUrl: "https://console.upstash.com",
-  },
-  {
-    id: "sentry",
-    label: "Sentry",
-    description: "Backend + frontend error monitoring and release source maps.",
-    group: "infra",
-    required: false,
-    envVars: ["SENTRY_DSN", "VITE_SENTRY_DSN"],
-    fallback: "Without it, exceptions only surface in runtime logs — no alerting, no aggregation.",
-    docsUrl: "https://sentry.io/",
   },
 
   // ─── security ───────────────────────────────────────────────────────────
@@ -319,13 +309,6 @@ function evaluateStatus(d: IntegrationDescriptor): IntegrationStatus {
       const haveOAuth = envIsPresent("HUBSPOT_CLIENT_ID") && envIsPresent("HUBSPOT_CLIENT_SECRET");
       return haveOAuth ? "configured" : "missing";
     }
-    case "sentry": {
-      const be = envIsPresent("SENTRY_DSN");
-      const fe = envIsPresent("VITE_SENTRY_DSN");
-      if (be && fe) return "configured";
-      if (be || fe) return "fallback";
-      return "missing";
-    }
     case "upstash-redis": {
       const have =
         envIsPresent("UPSTASH_REDIS_REST_URL") && envIsPresent("UPSTASH_REDIS_REST_TOKEN");
@@ -376,7 +359,6 @@ export function getHealthCapabilities() {
     hubspot: envIsPresent("HUBSPOT_CLIENT_ID") && envIsPresent("HUBSPOT_CLIENT_SECRET"),
     twilio: envIsPresent("TWILIO_ACCOUNT_SID") && envIsPresent("TWILIO_AUTH_TOKEN"),
     upstash: envIsPresent("UPSTASH_REDIS_REST_URL") && envIsPresent("UPSTASH_REDIS_REST_TOKEN"),
-    sentry: envIsPresent("SENTRY_DSN") || envIsPresent("VITE_SENTRY_DSN"),
     secret_vault: envIsPresent("WIRELINE_DATA_KEY"),
     meta: envIsPresent("META_APP_ID") && envIsPresent("META_APP_SECRET"),
   };
