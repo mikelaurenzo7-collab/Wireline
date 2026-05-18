@@ -13,6 +13,13 @@ const DIAL_RATE_WINDOW_MS = 60_000;
 const DIAL_RATE_MAX = 30;
 const SIGNIN_RATE_WINDOW_MS = 15 * 60_000;
 const SIGNIN_RATE_MAX = 5;
+// Forgot-password is rate-limited tighter than signin because each
+// triggered request mints a token + (when transport is wired) fires an
+// email — both have real-cost surface area. Keyed by both email and IP
+// so an attacker rotating IPs can't spam one account, and one IP can't
+// spray reset emails across many tenants.
+const FORGOT_PASSWORD_RATE_WINDOW_MS = 15 * 60_000;
+const FORGOT_PASSWORD_RATE_MAX = 3;
 
 export async function emailRateLimiter(req: any, res: any, next: any) {
   const userId = req.user?.id;
@@ -106,6 +113,38 @@ export async function signinRateLimiter(req: any, res: any, next: any) {
     return res.status(429).json({
       error: "Too many sign-in attempts. Wait 15 minutes and try again.",
       code: "SIGNIN_RATE_LIMIT",
+    });
+  }
+  next();
+}
+
+/**
+ * Forgot-password rate limiter — keyed by (email, IP) like signin so it
+ * can't be bypassed by rotating either dimension. 3 requests per
+ * 15-minute window. Always responds 429 + Retry-After on lockout so the
+ * frontend can show the user when to try again.
+ */
+export async function forgotPasswordRateLimiter(req: any, res: any, next: any) {
+  const email = (req.body?.email || "").toString().toLowerCase().trim();
+  const ip = req.ip || "anon";
+  const key = email ? `forgotpw:${email}:${ip}` : `forgotpw:anon:${ip}`;
+  const result = await rateLimit(key, {
+    bucket: "forgot_password",
+    windowMs: FORGOT_PASSWORD_RATE_WINDOW_MS,
+    max: FORGOT_PASSWORD_RATE_MAX,
+  });
+  if (!result.allowed) {
+    void auditLogger
+      .logSecurity("rate_limit_exceeded", {
+        resource: "auth_forgot_password",
+        ip: req.ip,
+        userId: email,
+      })
+      .catch(() => {});
+    res.setHeader("Retry-After", Math.ceil(FORGOT_PASSWORD_RATE_WINDOW_MS / 1000));
+    return res.status(429).json({
+      error: "Too many password reset requests. Wait 15 minutes and try again.",
+      code: "FORGOT_PASSWORD_RATE_LIMIT",
     });
   }
   next();

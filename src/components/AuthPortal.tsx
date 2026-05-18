@@ -143,8 +143,14 @@ export default function AuthPortal() {
     setLoading(true);
     try {
       if (isReset) {
-        // Mock password reset for now as it requires an email provider
-        setMessage("If that email is registered, a reset link is on its way.");
+        const res = await fetch("/api/auth/forgot-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Password reset request failed");
+        setMessage(data.message || "If that email is registered, a reset link is on its way.");
       } else {
         const endpoint = isSignUp ? "/api/auth/signup" : "/api/auth/signin";
         const res = await fetch(endpoint, {

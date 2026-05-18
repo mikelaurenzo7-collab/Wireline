@@ -12,6 +12,7 @@ import { BrandingProvider } from "./contexts/BrandingContext";
 import { MotionConfig } from "motion/react";
 
 const Pricing = lazy(() => import("./pages/Pricing"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 function AppContent() {
   const { user } = useAuth();
@@ -32,6 +33,15 @@ function AppContent() {
     return (
       <Suspense fallback={<div className="min-h-screen" />}>
         <Pricing />
+      </Suspense>
+    );
+  }
+  // /reset-password lands here from the password-reset email. Must
+  // render BEFORE the auth guard below so a signed-out user can use it.
+  if (location.pathname === "/reset-password") {
+    return (
+      <Suspense fallback={<div className="min-h-screen" />}>
+        <ResetPassword />
       </Suspense>
     );
   }

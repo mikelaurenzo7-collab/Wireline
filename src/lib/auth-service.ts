@@ -142,7 +142,11 @@ export const authService = {
 
     const plaintext = randomBytes(32).toString("base64url");
     const tokenHash = createHash("sha256").update(plaintext).digest("hex");
-    const expiresAt = new Date(Date.now() + 15 * 60_000);
+    // 1-hour TTL — mailbox delays (Gmail throttling, corp filters) can
+    // push 15-minute tokens over the edge in transit. 1 hour gives a
+    // comfortable safety margin while still being short enough that
+    // stolen email forensics matter.
+    const expiresAt = new Date(Date.now() + 60 * 60_000);
 
     await drizzle.insert(schema.passwordResetTokens).values({
       userId: user.id,
@@ -179,14 +183,21 @@ export const authService = {
     if (!row) return null;
 
     const newHash = hashPassword(newPassword);
-    await drizzle
-      .update(schema.users)
-      .set({ passwordHash: newHash, updatedAt: now })
-      .where(eq(schema.users.id, row.userId));
-    await drizzle
-      .update(schema.passwordResetTokens)
-      .set({ usedAt: now })
-      .where(eq(schema.passwordResetTokens.id, row.id));
+    // Wrap password update + token mark-used in a single transaction so
+    // we can never leave a "password rotated but token still consumable"
+    // state (replay window) or "token marked used but password not
+    // rotated" state (user locked out). Same defense-in-depth rationale
+    // as the audit3 hotfix on tenant demo backfill.
+    await drizzle.transaction(async (tx) => {
+      await tx
+        .update(schema.users)
+        .set({ passwordHash: newHash, updatedAt: now })
+        .where(eq(schema.users.id, row.userId));
+      await tx
+        .update(schema.passwordResetTokens)
+        .set({ usedAt: now })
+        .where(eq(schema.passwordResetTokens.id, row.id));
+    });
 
     const [user] = await drizzle
       .select()
