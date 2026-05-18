@@ -291,7 +291,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                     </div>
                     
                     {/* Visual indicator of next step */}
-                    {index < steps.length - 1 && (
+                    {activeStepIndex < steps.length - 1 && (
                       <div className="flex items-center gap-3 mt-4 opacity-70">
                         <div className="h-px flex-1 bg-white/10" />
                         <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-muted">
