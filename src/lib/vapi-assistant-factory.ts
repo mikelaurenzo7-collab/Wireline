@@ -15,6 +15,7 @@ import {
 import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "./agent-runtime";
 import { buildCustomerIntelBlock } from "./customer-intel";
 import { resolveAgentTools } from "./agent-capabilities";
+import { VAPI_TENANT_DEFAULT_MODEL } from "./claude-brain";
 
 const DEFAULT_AGENT_ROLE = "customer_service";
 
@@ -173,11 +174,12 @@ export async function buildVapiAssistant({
   }
 
   const agentRole = agentConfigRow?.role || DEFAULT_AGENT_ROLE;
-  // Default brain: Claude Sonnet 4.6 via Vapi (in their allowlist as of May 2026).
-  // Smarter than Gemini Flash for objection handling + multi-turn CS work, half
-  // the cost of Opus. Operators can override per-tenant via settings.voice_llm_*.
+  // Default brain: VAPI_TENANT_DEFAULT_MODEL (Sonnet, currently). Smarter
+  // than Gemini Flash for objection handling + multi-turn CS work, half
+  // the cost of Opus. Operators can override per-tenant via
+  // settings.voice_llm_*. Source of truth: claude-brain.ts.
   const voiceLlmProvider = userSettings?.voice_llm_provider || "anthropic";
-  const voiceLlmModel = userSettings?.voice_llm_model || "claude-sonnet-4-6";
+  const voiceLlmModel = userSettings?.voice_llm_model || VAPI_TENANT_DEFAULT_MODEL;
 
   const enabledToolNames = resolveAgentTools(agentRole, agentConfigRow?.enabledTools)
     .filter(

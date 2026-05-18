@@ -28,6 +28,7 @@ interface Lead {
   attempts: number | null;
   lastCalledAt: string | null;
   lastContactSummary: string | null;
+  demo?: boolean;
 }
 
 export default function Pipeline() {
@@ -155,8 +156,16 @@ export default function Pipeline() {
                           background: `linear-gradient(135deg, ${stage.tint}10, transparent 70%)`,
                         }}
                       >
-                        <p className="text-[12px] font-semibold text-ink truncate">
+                        <p className="text-[12px] font-semibold text-ink truncate flex items-center gap-1.5">
                           {lead.customerName || "(no name)"}
+                          {lead.demo && (
+                            <span
+                              className="text-[8px] uppercase tracking-[0.32em] px-1.5 py-0.5 rounded-md bg-amber-500/15 border border-dashed border-amber-500/50 text-amber-700 leading-none shrink-0"
+                              title="Seeded showcase record — not a real lead"
+                            >
+                              Demo
+                            </span>
+                          )}
                         </p>
                         <div className="flex items-center gap-2 mt-1 text-[10px] text-muted/80">
                           {lead.customerNumber && (

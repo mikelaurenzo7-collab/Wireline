@@ -10,6 +10,7 @@ import { compileActivityFeed } from "../lib/fleet-activity";
 import { ROLE_PERSONALITY_TEMPLATES } from "../lib/agent-constants";
 import { executeAction } from "../lib/action-engine";
 import { claudeErr } from "../lib/claude-response-helpers";
+import { pickRotatedVoiceId } from "../data/voice-roster";
 import type { ActionItem } from "../lib/action-types";
 import type { AuthenticatedRequest } from "../types/auth";
 
@@ -104,7 +105,22 @@ router.post(
     }>;
 
     try {
-      for (const agent of specializedAgents) {
+      // Snapshot the tenant's current agent count once before the loop
+      // so rotation indices are stable + distinct across this seed
+      // batch even though the COUNT(*) result changes mid-loop.
+      const [{ existing }] = await drizzle
+        .select({ existing: sql<number>`COUNT(*)::int` })
+        .from(schema.agents)
+        .where(eq(schema.agents.userId, userId));
+      const existingCount = Number(existing) || 0;
+
+      for (let i = 0; i < specializedAgents.length; i++) {
+        const agent = specializedAgents[i];
+        // Voice rotation — bypasses the /api/agents fallback path because
+        // this seed inserts directly. Without this every seeded agent
+        // would inherit the factory's PLATFORM_DEFAULT_VOICE_ID and
+        // sound identical, undercutting the voice-picker selling point.
+        const rotatedVoiceId = pickRotatedVoiceId(existingCount + i);
         await drizzle.insert(schema.agents).values({
           id: agent.id,
           userId: userId,
@@ -115,6 +131,7 @@ router.post(
           firstMessage: agent.first_message,
           emailAgentTone: agent.email_agent_tone,
           emailSignature: agent.email_signature,
+          voiceId: rotatedVoiceId,
         });
 
         await drizzle.insert(schema.personality).values({

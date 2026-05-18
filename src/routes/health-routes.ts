@@ -5,6 +5,11 @@ import { getErrorMessage } from "../lib/server-utils";
 import { getHealthCapabilities, getIntegrationsStatus } from "../lib/integrations-registry";
 import { authenticateUser } from "../middleware/auth";
 import { getOperatorSloSnapshot } from "../lib/operator-slos";
+import {
+  CLAUDE_MODEL_DEFAULT,
+  VAPI_PREMIUM_MODEL,
+  VAPI_TENANT_DEFAULT_MODEL,
+} from "../lib/claude-brain";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = express.Router();
@@ -95,10 +100,15 @@ router.get("/internal", healthRateLimiter, authenticateUser, async (_req, res) =
     uptime_s: Math.round(process.uptime()),
     db: dbStatus,
     capabilities: getHealthCapabilities(),
-    // Generic label only — no third-party model name on customer-visible
-    // surfaces. Brand the brain as "Wireline" to the outside world.
-    ai_brain: "wireline-premium",
-    voice_brain: "wireline-premium",
+    // Distinct identifiers per runtime so operators + monitoring can
+    // see exactly which model each layer is on. The in-app reasoning
+    // brain (post-call digest, recipes, QA) leads the voice-agent
+    // brain (constrained to whatever Vapi's allowlist accepts), and
+    // the 10 showcase agents on the landing page run a higher tier
+    // than the tenant default.
+    app_model: CLAUDE_MODEL_DEFAULT,
+    voice_agent_model: VAPI_TENANT_DEFAULT_MODEL,
+    voice_agent_premium_model: VAPI_PREMIUM_MODEL,
     timestamp: new Date().toISOString(),
   });
 });

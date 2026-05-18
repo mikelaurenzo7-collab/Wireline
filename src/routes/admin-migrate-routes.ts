@@ -306,4 +306,94 @@ router.post(
   },
 );
 
+/**
+ * Audit3 — adds `demo` boolean to four tables so the UI can pill-mark
+ * seeded showcase rows. Idempotent. Backfills demo=true on rows whose
+ * vapiCallId starts with 'seed-call-' (the seed script's signature) so
+ * existing seeded data inherits the flag.
+ */
+router.post(
+  "/api/admin/migrate-audit3",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const ownerEmail = process.env.OWNER_EMAIL;
+    if (!ownerEmail || req.user?.email !== ownerEmail) {
+      return res.status(403).json({ error: "Owner only." });
+    }
+    try {
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_call_logs
+        ADD COLUMN IF NOT EXISTS demo boolean DEFAULT false NOT NULL;
+      `);
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_outbound_leads
+        ADD COLUMN IF NOT EXISTS demo boolean DEFAULT false NOT NULL;
+      `);
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_appointments
+        ADD COLUMN IF NOT EXISTS demo boolean DEFAULT false NOT NULL;
+      `);
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_dnc_list
+        ADD COLUMN IF NOT EXISTS demo boolean DEFAULT false NOT NULL;
+      `);
+
+      // Backfill — call_logs only. The seed script's vapi_call_id starts
+      // with 'seed-call-' which is a unique-to-seed signature, so we can
+      // safely flip demo=true on those.
+      //
+      // We intentionally do NOT backfill outbound_leads / appointments /
+      // dnc_list — those tables only have phone numbers as a signature,
+      // and a real production customer who happens to have one of the
+      // SAMPLE_CUSTOMERS phones would get incorrectly flipped to demo.
+      // Operators who need the existing seeded rows in those tables
+      // marked can call DELETE /api/admin/demo-data + re-seed via
+      // POST /api/admin/seed-demo-account; new inserts now stamp
+      // demo=true at write time.
+      const r1 = await drizzle.execute(sql`
+        UPDATE wireline_call_logs SET demo = true
+        WHERE demo = false AND vapi_call_id LIKE 'seed-call-%';
+      `);
+      const r2 = { rowCount: 0 };
+      const r3 = { rowCount: 0 };
+      const r4 = { rowCount: 0 };
+
+      // One-shot orphan cleanup: delete every supervisor_subscriptions
+      // row that violates the route's same-tenant ownership invariant —
+      // either no matching call_log at all OR the call_log belongs to
+      // a different tenant (cross-tenant snoop probes the route now
+      // refuses). Mirrors the daily janitor's NOT EXISTS predicate so
+      // both paths produce the same result.
+      const r5 = await drizzle.execute(sql`
+        DELETE FROM wireline_supervisor_subscriptions s
+        WHERE NOT EXISTS (
+          SELECT 1
+          FROM wireline_call_logs c
+          WHERE c.vapi_call_id = s.call_id
+            AND c.user_id = s.user_id
+        )
+      `);
+
+      log.info("Audit3 migration completed", {
+        userId: req.user.id,
+        backfilled: {
+          call_logs: (r1 as any).rowCount ?? 0,
+          outbound_leads: (r2 as any).rowCount ?? 0,
+          appointments: (r3 as any).rowCount ?? 0,
+          dnc_list: (r4 as any).rowCount ?? 0,
+          orphan_subs_deleted: (r5 as any).rowCount ?? 0,
+        },
+      });
+      return res.json({
+        ok: true,
+        message:
+          "demo column added to call_logs / outbound_leads / appointments / dnc_list with backfill; orphaned supervisor_subscriptions cleaned.",
+      });
+    } catch (e: any) {
+      log.error("Audit3 migration failed", { error: e?.message });
+      return res.status(500).json({ error: e?.message || "Migration failed" });
+    }
+  },
+);
+
 export default router;

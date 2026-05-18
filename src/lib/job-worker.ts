@@ -720,6 +720,41 @@ export async function handleJob(job: JobRow): Promise<void> {
       log.error("auto_qa_score failed", { callLogId: p.callLogId, error: err?.message });
     }
   }
+
+  if (job.type === "sweep_orphan_supervisor_subs") {
+    // Delete any supervisor_subscriptions row that violates the
+    // ownership invariant the route enforces at insert time: the
+    // subscription's user_id MUST match the user_id of the call_log row
+    // the call_id points at. Catches both:
+    //   - rows whose call_id doesn't reference any call at all
+    //     (audit probes, dev testing)
+    //   - rows whose call_id points at ANOTHER tenant's call (the
+    //     cross-tenant snoop case the route now blocks)
+    // The NOT EXISTS subquery requires both call_id match AND user_id
+    // match — single-table same-row check.
+    try {
+      const result: any = await drizzle.execute(sql`
+        DELETE FROM wireline_supervisor_subscriptions s
+        WHERE NOT EXISTS (
+          SELECT 1
+          FROM wireline_call_logs c
+          WHERE c.vapi_call_id = s.call_id
+            AND c.user_id = s.user_id
+        )
+        RETURNING s.id
+      `);
+      const deleted = (result?.rowCount ?? result?.rows?.length ?? 0) | 0;
+      log.info("sweep_orphan_supervisor_subs completed", { deleted });
+    } catch (err: any) {
+      // Re-throw after logging so the outer claim/fail/retry loop in
+      // job-queue marks the job failed and dead-letters/retries it.
+      // Without the throw, the job silently completes successfully
+      // even when the DELETE crashed, masking real DB issues from the
+      // queue health metrics.
+      log.error("sweep_orphan_supervisor_subs failed", { error: err?.message });
+      throw err;
+    }
+  }
 }
 
 /**

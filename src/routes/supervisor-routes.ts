@@ -30,6 +30,9 @@ const router = Router();
 // in the subscription table and pre-DB-lookup probing.
 const VALID_CALL_ID = /^[A-Za-z0-9_-]{8,64}$/;
 
+const SUPERVISOR_MODES = ["listen", "whisper", "barge"] as const;
+type SupervisorMode = (typeof SUPERVISOR_MODES)[number];
+
 router.post(
   "/api/supervisor/subscribe",
   authenticateUser,
@@ -42,7 +45,19 @@ router.post(
       return res.status(400).json({ error: "callId format invalid" });
     }
 
-    const mode = ["listen", "whisper", "barge"].includes(req.body?.mode) ? req.body.mode : "listen";
+    // Mode validation: explicit allowlist. Omitted mode → default "listen"
+    // (preserves prior behavior). Supplied-but-unknown mode → 400 instead
+    // of silent coercion, so audit-style probes ("god-mode", "haxor")
+    // surface as caller errors rather than landing as "listen" rows.
+    let mode: SupervisorMode = "listen";
+    if (req.body?.mode !== undefined) {
+      if (!SUPERVISOR_MODES.includes(req.body.mode)) {
+        return res
+          .status(400)
+          .json({ error: `mode must be one of: ${SUPERVISOR_MODES.join(", ")}` });
+      }
+      mode = req.body.mode;
+    }
     const note = typeof req.body?.note === "string" ? req.body.note : null;
 
     // CRITICAL: the call MUST exist in call_logs and MUST be owned by the
