@@ -377,127 +377,16 @@ router.post(
 
       res.json({ success: true, dispatching: queued.length });
 
-      // Fire-and-forget: dial sequentially with a configurable gap between calls
-      // so the Vapi rate limiter is not hit. The entire async body is wrapped in
-      // try/catch so a thrown error always marks the campaign completed/failed.
-      const windowStart = campaign.callWindowStart || "09:00";
-      const windowEnd = campaign.callWindowEnd || "21:00";
+      // Enqueue the campaign to be dialed by the durable background worker queue.
+      // This prevents serverless timeouts and allows proper concurrency control.
+      await import("../lib/job-queue").then((mq) =>
+        mq.enqueue(drizzle, {
+          userId: req.user.id,
+          type: "campaign_dial",
+          payload: { userId: req.user.id },
+        })
+      );
 
-      function isWithinCallWindow(): boolean {
-        const now = new Date();
-        const hhmm = now.toISOString().slice(11, 16); // "HH:MM" in UTC
-        return hhmm >= windowStart && hhmm <= windowEnd;
-      }
-
-      (async () => {
-        try {
-          for (const lead of queued) {
-            const [campaignCheck] = await drizzle
-              .select({ status: schema.outboundCampaigns.status })
-              .from(schema.outboundCampaigns)
-              .where(eq(schema.outboundCampaigns.id, campaignId))
-              .limit(1);
-
-            if (!campaignCheck || campaignCheck.status !== "running") {
-              log.info("Campaign stopped by operator between leads", { campaignId });
-              return;
-            }
-
-            while (!isWithinCallWindow()) {
-              log.info("Campaign paused — outside call window", {
-                campaignId,
-                window: `${windowStart}-${windowEnd}`,
-              });
-              await new Promise((resolve) => setTimeout(resolve, CALL_WINDOW_CHECK_INTERVAL_MS));
-
-              const [campaignStatus] = await drizzle
-                .select({ status: schema.outboundCampaigns.status })
-                .from(schema.outboundCampaigns)
-                .where(eq(schema.outboundCampaigns.id, campaignId))
-                .limit(1);
-
-              if (!campaignStatus || campaignStatus.status !== "running") {
-                log.info("Campaign stopped during window wait", { campaignId });
-                return;
-              }
-            }
-
-            try {
-              if (lead.customerNumber && (await isDncBlocked(req.user.id, lead.customerNumber))) {
-                log.warn("Campaign: lead skipped — DNC match", { leadId: lead.id });
-                await drizzle
-                  .update(schema.outboundLeads)
-                  .set({ status: "Blocked-DNC" })
-                  .where(eq(schema.outboundLeads.id, lead.id));
-                await new Promise((resolve) => setTimeout(resolve, CAMPAIGN_DIAL_SPACING_MS));
-                continue;
-              }
-
-              const maxAttempts = campaign.maxAttempts || 3;
-              if ((lead.attempts || 0) >= maxAttempts) {
-                log.info("Campaign: lead max_attempts reached — skipping", {
-                  leadId: lead.id,
-                  attempts: lead.attempts,
-                });
-                await drizzle
-                  .update(schema.outboundLeads)
-                  .set({ status: "Max-Attempts" })
-                  .where(eq(schema.outboundLeads.id, lead.id));
-                await new Promise((resolve) => setTimeout(resolve, CAMPAIGN_DIAL_SPACING_MS));
-                continue;
-              }
-
-              const result = await placeOutboundCall({
-                userId: req.user.id,
-                agentId: lead.agentId || campaign.agentId || undefined,
-                customerName: lead.customerName,
-                customerNumber: lead.customerNumber!,
-                context: lead.context || undefined,
-              });
-              const newStatus = result.ok ? "Dialing" : "Failed";
-              await drizzle
-                .update(schema.outboundLeads)
-                .set({
-                  status: newStatus,
-                  lastCalledAt: new Date(),
-                  attempts: (lead.attempts || 0) + 1,
-                })
-                .where(eq(schema.outboundLeads.id, lead.id));
-            } catch (e) {
-              log.error("Campaign launch: lead dial failed", {
-                leadId: lead.id,
-                error: e instanceof Error ? e.message : String(e),
-              });
-              await drizzle
-                .update(schema.outboundLeads)
-                .set({ status: "Failed", lastCalledAt: new Date() })
-                .where(eq(schema.outboundLeads.id, lead.id));
-            }
-            await new Promise((resolve) => setTimeout(resolve, CAMPAIGN_DIAL_SPACING_MS));
-          }
-          // Mark campaign complete when all leads have been attempted.
-          await drizzle
-            .update(schema.outboundCampaigns)
-            .set({ status: "completed", updatedAt: new Date() })
-            .where(
-              and(
-                eq(schema.outboundCampaigns.id, campaignId),
-                eq(schema.outboundCampaigns.userId, req.user.id),
-              ),
-            );
-        } catch (e: any) {
-          log.error("Campaign launch loop failed", { campaignId, error: e?.message });
-          await drizzle
-            .update(schema.outboundCampaigns)
-            .set({ status: "completed", updatedAt: new Date() })
-            .where(
-              and(
-                eq(schema.outboundCampaigns.id, campaignId),
-                eq(schema.outboundCampaigns.userId, req.user.id),
-              ),
-            );
-        }
-      })();
     } catch (error: any) {
       log.error("Campaign launch failed", { error: getErrorMessage(error) });
       res.status(500).json({ error: "Failed to launch campaign." });
