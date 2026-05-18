@@ -285,7 +285,7 @@ export default function LiveMonitor() {
           </p>
         </div>
       ) : (
-        <div className="h-full flex flex-col gap-3 overflow-hidden">
+        <div className="h-full flex flex-col gap-2 overflow-hidden">
           {/* Distress alert banner — appears when any active call hits frustrated/tense state */}
           {(() => {
             const distressedCalls = signals.filter((s) => isDistressedLabel(s.label));
@@ -320,7 +320,7 @@ export default function LiveMonitor() {
           })()}
 
           {/* Stat row */}
-          <div className="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-2">
             <StatTile
               label="Active Calls"
               value={activeCount}
@@ -352,7 +352,7 @@ export default function LiveMonitor() {
           </div>
 
           {/* Main grid */}
-          <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-12 gap-3">
+          <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-12 gap-2">
             {/* Active calls panel */}
             <div className="xl:col-span-5 h-full">
               <Panel
@@ -376,7 +376,7 @@ export default function LiveMonitor() {
                       key="idle"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="h-full min-h-[200px] flex flex-col items-center justify-center gap-4 text-center px-6 py-12"
+                      className="h-full min-h-[160px] flex flex-col items-center justify-center gap-4 text-center px-6 py-12"
                     >
                       {/* Animated idle rings */}
                       <div className="relative w-16 h-16">
@@ -407,7 +407,7 @@ export default function LiveMonitor() {
                           initial={{ opacity: 0, x: -8 }}
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: 8 }}
-                          className="relative px-4 py-4 hover:bg-white/[0.03] transition-colors overflow-hidden"
+                          className="relative px-3 py-2 hover:bg-white/[0.03] transition-colors overflow-hidden"
                         >
                           {/* Green ambient glow for active call */}
                           <div
@@ -455,7 +455,7 @@ export default function LiveMonitor() {
                       key="no-activity"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="h-full min-h-[200px] flex items-center justify-center"
+                      className="h-full min-h-[160px] flex items-center justify-center"
                     >
                       <p className="text-[9px] uppercase tracking-[0.5em] text-muted/50">
                         No recent activity
@@ -469,7 +469,7 @@ export default function LiveMonitor() {
                           layout
                           initial={{ opacity: 0, y: 4 }}
                           animate={{ opacity: 1, y: 0 }}
-                          className="px-4 py-3 hover:bg-white/3 transition-colors group"
+                          className="px-3 py-2 hover:bg-white/3 transition-colors group"
                         >
                           <ActivityRow ev={ev} agentName={agentName} />
                         </motion.div>

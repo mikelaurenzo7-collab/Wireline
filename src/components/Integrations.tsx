@@ -234,7 +234,7 @@ export default function Integrations() {
         subtitle="Connect your CRM, calendar, inbox, carrier, and Slack — your agents act through them in real time."
         actions={syncAction}
       >
-        <div className="h-full flex flex-col gap-3 min-h-0">
+        <div className="h-full flex flex-col gap-2 min-h-0">
           <Panel
             title="email carriers"
             hint="GMAIL · OUTLOOK"
@@ -261,14 +261,14 @@ export default function Integrations() {
             }
           >
             {loading ? (
-              <div className="h-full flex flex-col items-center justify-center gap-3 py-16">
+              <div className="h-full flex flex-col items-center justify-center gap-2 py-8">
                 <Loader2 className="w-5 h-5 animate-spin text-brand" />
                 <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">
                   Loading integrations
                 </span>
               </div>
             ) : accounts.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center gap-6 py-16 text-center px-6">
+              <div className="h-full flex flex-col items-center justify-center gap-4 py-8 text-center px-6">
                 <div className="w-14 h-14 rounded-2xl glass border border-white/10 flex items-center justify-center text-muted">
                   <Mail className="w-6 h-6" />
                 </div>
@@ -305,7 +305,7 @@ export default function Integrations() {
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
                       key={acc.id}
-                      className="px-4 py-3.5 flex flex-col xl:flex-row xl:items-center gap-4 hover:bg-white/3 transition-colors"
+                      className="px-3 py-2 flex flex-col xl:flex-row xl:items-center gap-3 hover:bg-white/3 transition-colors"
                     >
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         <div
@@ -386,7 +386,7 @@ export default function Integrations() {
                   exit={{ height: 0, opacity: 0 }}
                   className="mt-3 overflow-hidden"
                 >
-                  <div className="rounded-2xl glass border border-white/8 p-4 space-y-4">
+                  <div className="rounded-2xl glass border border-white/8 p-3 space-y-3">
                     {/* Google */}
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
@@ -449,11 +449,11 @@ export default function Integrations() {
               one place instead of having to dig into Admin → Integrations.
               Plan-gated to Pro+ — Personal / Starter see an upgrade card
               instead of the live connectors. */}
-          <div className="mt-6">
+          <div className="mt-3">
             {planMeetsRequirement(planId, "pro") ? (
               <CrmConnectionCard />
             ) : (
-              <div className="rounded-2xl glass border border-white/10 p-5 relative overflow-hidden">
+              <div className="rounded-2xl glass border border-white/10 p-4 relative overflow-hidden">
                 <div
                   className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
                   style={{ background: "radial-gradient(circle, #9B59F5, transparent)" }}

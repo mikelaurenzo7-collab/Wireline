@@ -233,7 +233,7 @@ export default function CommandCenter() {
 
   return (
     <PageTransition>
-      <div className="max-w-[1600px] mx-auto space-y-4 pb-4">
+      <div className="max-w-[1600px] mx-auto space-y-2 pb-2">
         {/* Elite Command Header — tightened so the onboarding card fits
             above the fold on a 900px viewport. Title/subtitle/stats kept
             but vertical density compressed ~40px without losing brand. */}
@@ -375,21 +375,21 @@ export default function CommandCenter() {
             below the fold on a typical demo laptop. Tightened to p-5,
             min-h-[280px], gap-4. Internal Live Monitor still uses its
             own card. */}
-        <section className="space-y-3 pt-3 border-t border-black/5">
+        <section className="space-y-2 pt-2 border-t border-black/5">
           <span className="text-[10px] uppercase tracking-[0.35em] text-muted font-medium block">
             Live operations
           </span>
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-3">
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-2">
             {/* Left Column: Live Monitor (8/12) */}
-            <div className="xl:col-span-8 space-y-3">
+            <div className="xl:col-span-8 space-y-2">
               <div className="relative group">
                 <div className="absolute -inset-1 bg-gradient-to-r from-brand/20 to-brand-2/20 rounded-[2.5rem] blur opacity-25 group-hover:opacity-40 transition duration-1000" />
-                <div className="relative glass border-black/5 rounded-[2rem] p-4 min-h-[240px]">
+                <div className="relative glass border-black/5 rounded-[2rem] p-4 min-h-[180px]">
                   <LiveMonitor calls={calls} />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {/* Analytics: Sentiment */}
                 <div className="glass border-black/5 rounded-[2rem] p-4">
                   <div className="flex items-center justify-between mb-4">
@@ -413,7 +413,7 @@ export default function CommandCenter() {
                     </div>
                   ) : (
                     <div className="flex items-center gap-8">
-                      <div className="w-1/2 h-[160px]">
+                      <div className="w-1/2 h-[120px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
@@ -477,7 +477,7 @@ export default function CommandCenter() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-2">
                     <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/5">
                       <span className="text-[9px] font-medium text-muted uppercase tracking-wider block mb-1">
                         Cost / Min
@@ -516,9 +516,9 @@ export default function CommandCenter() {
             </div>
 
             {/* Right Column: Intelligence & Actions (4/12) */}
-            <div className="xl:col-span-4 space-y-3">
+            <div className="xl:col-span-4 space-y-2">
               {/* Intelligence Hub (Action Feed) */}
-              <div className="glass border-black/5 rounded-[2rem] p-4 h-full min-h-[240px] flex flex-col">
+              <div className="glass border-black/5 rounded-[2rem] p-4 h-full min-h-[180px] flex flex-col">
                 <ActionFeed actions={actions} onRefresh={refresh} />
               </div>
             </div>

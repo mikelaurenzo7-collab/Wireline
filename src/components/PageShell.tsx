@@ -70,11 +70,11 @@ export default function PageShell({
         initial={{ y: -10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="shrink-0 pb-2 sm:pb-3 mb-2"
+        className="shrink-0 pb-1 sm:pb-1 mb-1"
       >
         {/* eyebrow + actions row — stacks on mobile so action buttons
             don't get squeezed against the title or fall off-canvas. */}
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-6 mb-3">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-1">
           <div className="min-w-0 flex-1">
             {eyebrow && (
               <div className="flex items-center gap-2 mb-2 sm:mb-2.5">
@@ -88,7 +88,7 @@ export default function PageShell({
               className="font-display italic leading-[0.88] tracking-tight text-ink truncate"
               // Smaller floor on phones; the original 2rem was too tall to
               // share a line with mobile-header buttons on narrow screens.
-              style={{ fontSize: "clamp(1.4rem, 4vw, 2.25rem)" }}
+              style={{ fontSize: "clamp(1.2rem, 3vw, 1.8rem)" }}
             >
               <span className="text-aurora">{title}</span>
             </h1>
@@ -116,7 +116,7 @@ export default function PageShell({
 
       {/* Tab strip */}
       {tabs && tabs.length > 0 && (
-        <div className="shrink-0 flex items-center gap-1 mb-3 overflow-x-auto scrollbar-hide">
+        <div className="shrink-0 flex items-center gap-1 mb-2 overflow-x-auto scrollbar-hide">
           <div className="flex items-center gap-1 p-1 rounded-2xl glass border border-black/8">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -238,7 +238,7 @@ export function Panel({
       )}
 
       {(title || actions) && (
-        <header className="relative shrink-0 px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
+        <header className="relative shrink-0 px-3 py-2 flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2.5 min-w-0">
             {Icon && (
               <div
@@ -282,7 +282,7 @@ export function Panel({
         className={cn(
           "flex-1 min-h-0",
           scroll ? "overflow-y-auto panel-scroll" : "overflow-hidden",
-          !flush && "p-4",
+          !flush && "p-3",
           bodyClassName,
         )}
       >

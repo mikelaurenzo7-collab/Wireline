@@ -64,7 +64,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
         aria-label={`Go to ${item.label}`}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "group relative flex items-center gap-2 h-9 px-3 rounded-lg transition-colors text-[12px] font-medium tracking-wide",
+          "group relative flex items-center gap-2 h-8 px-2 rounded-lg transition-colors text-[12px] font-medium tracking-wide",
           active ? "text-paper" : "text-ink/65 hover:text-ink hover:bg-white/8",
         )}
       >
@@ -119,7 +119,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
           paddingTop: "max(0px, env(safe-area-inset-top, 0))",
         }}
       >
-        <div className="h-14 flex items-center gap-2 px-3 md:px-4 lg:px-5">
+        <div className="h-11 flex items-center gap-2 px-2 md:px-3 lg:px-4">
           {/* Logo / Brand */}
           <Link
             to="/"
@@ -130,7 +130,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
               whileHover={{ rotate: 8, scale: 1.06 }}
               whileTap={{ scale: 0.96 }}
               transition={{ type: "spring", stiffness: 400, damping: 20 }}
-              className="relative w-9 h-9 rounded-xl flex items-center justify-center overflow-hidden shrink-0"
+              className="relative w-7 h-7 rounded-xl flex items-center justify-center overflow-hidden shrink-0"
               style={{
                 background: "linear-gradient(135deg, #0AC8D4 0%, #9B59F5 50%, #E040C0 100%)",
                 boxShadow:
@@ -166,7 +166,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
             </div>
             <button
               onClick={onShowShortcuts}
-              className="hidden md:flex items-center gap-1.5 h-9 px-2.5 rounded-lg text-muted/65 hover:text-ink hover:bg-white/5 transition-colors"
+              className="hidden md:flex items-center gap-1.5 h-7 px-2 rounded-lg text-muted/65 hover:text-ink hover:bg-white/5 transition-colors"
               aria-label="Show keyboard shortcuts"
               title="Keyboard shortcuts"
             >
@@ -178,7 +178,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
 
             <div className="hidden md:flex items-center gap-2 rounded-lg border border-black/8 glass px-2 py-1">
               <div
-                className="w-7 h-7 rounded-full flex items-center justify-center text-white font-medium text-xs"
+                className="w-6 h-6 rounded-full flex items-center justify-center text-white font-medium text-[10px]"
                 style={{ background: "linear-gradient(135deg, #0AC8D4, #9B59F5)" }}
                 aria-hidden="true"
               >
@@ -196,7 +196,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
                 onClick={() => signOut()}
                 title="Sign out"
                 aria-label="Sign out"
-                className="shrink-0 w-7 h-7 rounded-md flex items-center justify-center text-ink/40 hover:text-rose-600 hover:bg-rose-500/8 border border-black/7 hover:border-rose-500/35 transition-colors"
+                className="shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-ink/40 hover:text-rose-600 hover:bg-rose-500/8 border border-black/7 hover:border-rose-500/35 transition-colors"
               >
                 <LogOut className="w-3 h-3" />
               </button>
