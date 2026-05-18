@@ -258,6 +258,13 @@ export const callLogs = pgTable(
     coachingNote: text("coaching_note"),
     qaScore: integer("qa_score"),
     qaBreakdown: jsonb("qa_breakdown"),
+    // Single-word outcome bucket the post-call digest uses for the email
+    // subject + Insights breakdown: booked | qualified | followup | dnc |
+    // unreachable | info | other.
+    outcomeTag: text("outcome_tag"),
+    // Campaign attribution — denormalized from phoneNumbers.campaignLabel at
+    // write time so /insights queries don't need a join.
+    campaignSource: text("campaign_source"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   (t) => ({
@@ -477,6 +484,84 @@ export const callQueues = pgTable(
   }),
 );
 
+/**
+ * Multi-touch outbound cadences. A cadence is a sequence of steps (call /
+ * sms / email) with delays between them. Operators define one once; the
+ * sentinel job worker ticks through it for every lead enrolled.
+ *
+ * Example steps payload:
+ *   [
+ *     { type: "call",  delayHours: 0  },
+ *     { type: "sms",   delayHours: 24, template: "Hi {{name}}, following up on our call..." },
+ *     { type: "email", delayHours: 72, template: "..." },
+ *     { type: "call",  delayHours: 168 }
+ *   ]
+ */
+export const cadences = pgTable(
+  "wireline_cadences",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    name: text("name").notNull(),
+    description: text("description"),
+    agentId: text("agent_id"),
+    steps: jsonb("steps").notNull(),
+    active: boolean("active").default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_cadences_user_id ON wireline_cadences (user_id)`,
+  }),
+);
+
+/**
+ * Per-lead cadence execution state. One row per (lead, cadence) enrollment.
+ * Sentinel scans this table for rows where next_due_at <= now() AND status =
+ * 'active', executes the step, advances the counter, schedules next.
+ */
+export const cadenceRuns = pgTable(
+  "wireline_cadence_runs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    cadenceId: uuid("cadence_id").notNull(),
+    leadId: bigint("lead_id", { mode: "bigint" }).notNull(),
+    currentStep: integer("current_step").default(0).notNull(),
+    nextDueAt: timestamp("next_due_at", { withTimezone: true }),
+    status: text("status").default("active"),
+    lastResult: text("last_result"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    dueIdx: sql`CREATE INDEX IF NOT EXISTS idx_cadence_runs_due ON wireline_cadence_runs (status, next_due_at) WHERE status = 'active'`,
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_cadence_runs_user_id ON wireline_cadence_runs (user_id)`,
+    leadIdx: sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_cadence_runs_lead_unique ON wireline_cadence_runs (lead_id, cadence_id)`,
+  }),
+);
+
+/**
+ * Live call supervisor subscriptions — supervisor clicks "Listen in" or
+ * "Whisper" on a live call in /cockpit, we capture the intent here. V1 is
+ * a bookmark + later audit; V2 wires Vapi's WebRTC streaming for real-time
+ * audio.
+ */
+export const supervisorSubscriptions = pgTable(
+  "wireline_supervisor_subscriptions",
+  {
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
+    userId: uuid("user_id").notNull(),
+    callId: text("call_id").notNull(),
+    mode: text("mode").default("listen"),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    callIdx: sql`CREATE INDEX IF NOT EXISTS idx_supervisor_subs_call ON wireline_supervisor_subscriptions (call_id)`,
+    userIdx: sql`CREATE INDEX IF NOT EXISTS idx_supervisor_subs_user ON wireline_supervisor_subscriptions (user_id)`,
+  }),
+);
+
 // 3.2 FLEET HANDOFF (TASKS)
 export const fleetTasks = pgTable(
   "wireline_fleet_tasks",
@@ -519,6 +604,9 @@ export const phoneNumbers = pgTable("wireline_phone_numbers", {
   phoneNumber: text("phone_number").unique().notNull(),
   vapiNumberId: text("vapi_number_id"),
   agentId: text("agent_id").references(() => agents.id),
+  // Marketing-campaign label so /insights can break down "calls from X ad".
+  // Free-form ("Google Ads — Spring '26", "LinkedIn — Founder Pitch", etc.).
+  campaignLabel: text("campaign_label"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
@@ -583,6 +671,13 @@ export const outboundLeads = pgTable(
     lastContactSummary: text("last_contact_summary"),
     attempts: integer("attempts").default(0),
     source: text("source").default("manual"),
+    // Pipeline kanban stage. Independent of `status` (which tracks dial state)
+    // — this tracks deal progression: cold → contacted → qualified → demo →
+    // won | lost. UI groups leads by this column on /pipeline.
+    pipelineStage: text("pipeline_stage").default("cold"),
+    // Marketing campaign attribution — set by csv-upload or auto-derived from
+    // the inbound number's campaignLabel.
+    campaignSource: text("campaign_source"),
     metadata: jsonb("metadata"),
     receivedAt: timestamp("received_at", { withTimezone: true }),
     idempotencyKey: text("idempotency_key"),

@@ -616,6 +616,12 @@ export async function handleJob(job: JobRow): Promise<void> {
     const dialer = new CampaignDialerService();
     await dialer.processAllCampaigns(p.userId);
   }
+
+  if (job.type === "cadence_tick") {
+    const { tickDueCadenceRuns } = await import("./cadence-engine");
+    const summary = await tickDueCadenceRuns({ limit: 100 });
+    log.info("cadence_tick processed", summary);
+  }
 }
 
 /**

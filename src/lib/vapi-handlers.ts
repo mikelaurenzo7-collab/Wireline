@@ -19,6 +19,7 @@ import {
 import { persistClaudeAuditRecords } from "../middleware/audit-middleware";
 import { getDefaultChannel, postMessage as slackPostMessage } from "./slack-service";
 import { trackVoiceMinutes } from "./voice-usage";
+import { runPostCallDigest } from "./post-call-digest";
 
 export interface CallReportPayload {
   message: {
@@ -51,20 +52,25 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
   //    fail-fast here, and the rest of the pipeline (usage tracking, Stripe
   //    overage, webhooks) is gated on `insertedFresh` to avoid double-counting.
   let insertedFresh = false;
+  let insertedCallLogId: bigint | null = null;
   try {
-    await drizzle.insert(schema.callLogs).values({
-      userId,
-      vapiCallId: call?.id || "unknown",
-      agentId: webhookAgentId,
-      direction: call?.type === "outboundPhoneCall" ? "outbound" : "inbound",
-      customerNumber: call?.customer?.number || "",
-      durationSeconds: duration,
-      cost: String(call?.cost || 0.0),
-      summary: analysis?.summary || "No summary provided.",
-      transcript: message.transcript || "",
-      recordingUrl: message.recordingUrl || message.stereoRecordingUrl || null,
-    });
+    const inserted = await drizzle
+      .insert(schema.callLogs)
+      .values({
+        userId,
+        vapiCallId: call?.id || "unknown",
+        agentId: webhookAgentId,
+        direction: call?.type === "outboundPhoneCall" ? "outbound" : "inbound",
+        customerNumber: call?.customer?.number || "",
+        durationSeconds: duration,
+        cost: String(call?.cost || 0.0),
+        summary: analysis?.summary || "No summary provided.",
+        transcript: message.transcript || "",
+        recordingUrl: message.recordingUrl || message.stereoRecordingUrl || null,
+      })
+      .returning({ id: schema.callLogs.id });
     insertedFresh = true;
+    insertedCallLogId = inserted[0]?.id ?? null;
   } catch (logErr: any) {
     if (logErr?.code === "23505" || /duplicate key/i.test(logErr?.message || "")) {
       log.info("Duplicate end-of-call-report ignored (idempotent retry)", { callId: call?.id });
@@ -81,6 +87,26 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
       durationSeconds: duration,
       vapiCallId: call?.id || "unknown",
     });
+
+    // Post-call digest — classify outcome, log to CRM, email the operator.
+    // Fire-and-forget; never blocks the webhook response.
+    if (insertedCallLogId !== null) {
+      void runPostCallDigest({
+        userId,
+        callLogId: insertedCallLogId,
+        dialedNumber: call?.phoneNumber?.number || call?.phoneNumber || null,
+        customerNumber: call?.customer?.number || null,
+        customerName: call?.customer?.name || null,
+        agentName: call?.assistant?.name || null,
+        direction: call?.type === "outboundPhoneCall" ? "outbound" : "inbound",
+        durationSeconds: duration,
+        summary: analysis?.summary || null,
+        sentiment: null,
+        intentLabel: null,
+      }).catch((err: any) =>
+        log.warn("runPostCallDigest unhandled rejection", { error: err?.message }),
+      );
+    }
   }
 
   SentryEvents.callCompleted({

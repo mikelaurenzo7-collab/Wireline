@@ -9,6 +9,7 @@ import {
   BarChart3,
   LayoutGrid,
   LifeBuoy,
+  Kanban,
 } from "lucide-react";
 
 export type NavItem = {
@@ -61,6 +62,7 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
         icon: Radio,
         matches: ["/outbound", "/inbox", "/appointments"],
       },
+      { label: "Pipeline", path: "/pipeline", icon: Kanban },
     ],
   },
   {
@@ -88,6 +90,7 @@ export const PAGE_TITLES: Record<string, string> = {
   "/integrations": "Integrations",
   "/admin": "Settings",
   "/help": "Help",
+  "/pipeline": "Pipeline",
 };
 
 export const ROUTE_ACCENTS: Record<string, [string, string]> = {
@@ -107,6 +110,7 @@ export const ROUTE_ACCENTS: Record<string, [string, string]> = {
   "/dnc": ["#E040C0", "#FF6B6B"],
   "/audit": ["#9B59F5", "#FFC07D"],
   "/help": ["#10B981", "#0AC8D4"],
+  "/pipeline": ["#9B59F5", "#10B981"],
 };
 
 export function getRouteAccent(pathname: string): [string, string] {

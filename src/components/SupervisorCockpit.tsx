@@ -143,16 +143,54 @@ export default function SupervisorCockpit() {
                           {c.sentiment_label}
                         </span>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          info("Listen-in coming soon", "Audio streaming wires next sprint.")
-                        }
-                        className="w-full text-[10px] uppercase tracking-[0.28em] px-3 py-1.5 rounded-full glass border border-white/10 text-muted hover:text-brand hover:border-brand/40 transition-colors flex items-center justify-center gap-1.5"
-                      >
-                        <Headphones className="w-3 h-3" />
-                        Listen in
-                      </button>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              const r = await authFetch("/api/supervisor/subscribe", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ callId: c.id, mode: "listen" }),
+                              });
+                              const d = await r.json();
+                              info(
+                                "Subscribed to call",
+                                d?.message || "Bookmarked for live review.",
+                              );
+                            } catch {
+                              info("Subscription failed", "Try again in a moment.");
+                            }
+                          }}
+                          className="text-[10px] uppercase tracking-[0.24em] px-2 py-1.5 rounded-full glass border border-white/10 text-muted hover:text-brand hover:border-brand/40 transition-colors flex items-center justify-center gap-1.5"
+                        >
+                          <Headphones className="w-3 h-3" />
+                          Listen
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              const r = await authFetch("/api/supervisor/subscribe", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ callId: c.id, mode: "whisper" }),
+                              });
+                              const d = await r.json();
+                              info(
+                                "Whisper coach queued",
+                                d?.message || "Coaching intent captured for the agent.",
+                              );
+                            } catch {
+                              info("Subscription failed", "Try again in a moment.");
+                            }
+                          }}
+                          className="text-[10px] uppercase tracking-[0.24em] px-2 py-1.5 rounded-full glass border border-white/10 text-muted hover:text-violet-500 hover:border-violet-500/40 transition-colors flex items-center justify-center gap-1.5"
+                        >
+                          <Headphones className="w-3 h-3" />
+                          Whisper
+                        </button>
+                      </div>
                     </motion.div>
                   );
                 })}

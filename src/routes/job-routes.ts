@@ -162,6 +162,18 @@ router.post(
         }
       }
 
+      // Always enqueue a single cadence tick per sweep — the tick is
+      // cluster-safe (each worker pulls one batch up to limit and updates
+      // rows transactionally). One every 5 minutes is enough resolution
+      // for cadence delays measured in hours.
+      if (req._sweepMode === "cron" || !req._sweepMode) {
+        await enqueue(drizzle, {
+          userId: null as any,
+          type: "cadence_tick",
+          payload: {},
+        }).catch(() => {});
+      }
+
       if (req._sweepMode === "cron" || !req._sweepMode) {
         const dueDeletions = await drizzle
           .select({ id: schema.deletionQueue.id, userId: schema.deletionQueue.userId })
