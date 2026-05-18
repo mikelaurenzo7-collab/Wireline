@@ -162,16 +162,25 @@ router.post(
         }
       }
 
+      // Sentinel user_id for tenant-agnostic system jobs. wireline_jobs.user_id
+      // is NOT NULL (Codex review caught the prior null-insert bug), so global
+      // jobs (cadence_tick, sweep_orphan_supervisor_subs) need an explicit
+      // non-null owner. We use the all-zero UUID as a system sentinel — it
+      // can never collide with a real tenant UUID, and the job handlers for
+      // these types iterate every tenant's due rows anyway, so they don't
+      // read job.user_id.
+      const SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000000";
+
       // Always enqueue a single cadence tick per sweep — the tick is
       // cluster-safe (each worker pulls one batch up to limit and updates
       // rows transactionally). One every 5 minutes is enough resolution
       // for cadence delays measured in hours.
       if (req._sweepMode === "cron" || !req._sweepMode) {
         await enqueue(drizzle, {
-          userId: null as any,
+          userId: SYSTEM_USER_ID,
           type: "cadence_tick",
           payload: {},
-        }).catch(() => {});
+        }).catch((e: any) => log.warn("cadence_tick enqueue failed", { error: e?.message }));
       }
 
       // Daily at 03:15 UTC: janitor sweep for orphaned supervisor
@@ -186,10 +195,12 @@ router.post(
         (req._sweepMode === "cron" || !req._sweepMode)
       ) {
         await enqueue(drizzle, {
-          userId: null as any,
+          userId: SYSTEM_USER_ID,
           type: "sweep_orphan_supervisor_subs",
           payload: {},
-        }).catch(() => {});
+        }).catch((e: any) =>
+          log.warn("sweep_orphan_supervisor_subs enqueue failed", { error: e?.message }),
+        );
       }
 
       if (req._sweepMode === "cron" || !req._sweepMode) {
