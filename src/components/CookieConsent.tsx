@@ -47,7 +47,7 @@ export default function CookieConsent() {
         >
           {/* Slim bottom bar — full width, never overlaps content columns */}
           <div
-            className="border-t border-black/8 backdrop-blur-xl px-4 py-3 flex items-center gap-3"
+            className="border-t border-black/8 backdrop-blur-xl px-3 sm:px-4 py-3 flex items-center gap-3"
             style={{ background: "rgba(245,240,232,0.92)" }}
           >
             {/* Icon */}
@@ -88,9 +88,9 @@ export default function CookieConsent() {
               type="button"
               onClick={dismiss}
               aria-label="Dismiss cookie notice"
-              className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center hover:bg-black/8 transition-colors text-muted hover:text-ink"
+              className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center hover:bg-black/8 transition-colors text-muted hover:text-ink"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         </motion.div>

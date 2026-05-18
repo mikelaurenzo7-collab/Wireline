@@ -219,7 +219,7 @@ export default function Pricing() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="font-display italic text-4xl md:text-5xl lg:text-6xl leading-[0.92] tracking-tight mb-4"
+          className="font-display italic text-4xl sm:text-5xl lg:text-6xl leading-[1.05] sm:leading-[0.95] tracking-tight mb-4 text-balance"
         >
           <span className="text-aurora">Plans that scale</span>
           <br />
@@ -291,8 +291,8 @@ export default function Pricing() {
       </section>
 
       {/* Tier grid */}
-      <section className="relative z-10 px-4 lg:px-10 max-w-7xl mx-auto pb-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 lg:gap-4">
+      <section className="relative z-10 px-4 sm:px-6 lg:px-10 max-w-7xl mx-auto pb-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {TIERS.map((tier, i) => (
             <motion.div
               key={tier.id}
@@ -401,7 +401,7 @@ export default function Pricing() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7, duration: 0.6 }}
-          className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto"
+          className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 max-w-5xl mx-auto"
         >
           {VALUE_BULLETS.map(({ icon: Icon, text }) => (
             <div

@@ -81,18 +81,18 @@ export default function ResetPassword() {
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-paper">
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div
-          className="absolute -top-[25%] -left-[15%] w-[70vw] h-[70vw] rounded-full"
+          className="absolute -top-[25%] -left-[15%] w-[70vw] h-[70vw] max-w-[640px] max-h-[640px] rounded-full"
           style={{ background: "radial-gradient(circle, rgba(10,200,212,0.16), transparent 60%)" }}
         />
         <div
-          className="absolute -bottom-[20%] -right-[15%] w-[65vw] h-[65vw] rounded-full"
+          className="absolute -bottom-[20%] -right-[15%] w-[65vw] h-[65vw] max-w-[600px] max-h-[600px] rounded-full"
           style={{
             background: "radial-gradient(circle, rgba(10, 200, 212,0.16), transparent 60%)",
           }}
         />
       </div>
 
-      <div className="relative z-10 w-full max-w-md p-8 mx-4">
+      <div className="relative z-10 w-full max-w-md p-6 sm:p-8 mx-4">
         <div className="flex items-center gap-3 mb-10">
           <div
             className="relative w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
@@ -183,7 +183,7 @@ export default function ResetPassword() {
             <button
               type="submit"
               disabled={loading || !password || password !== confirm}
-              className="w-full px-5 py-3 rounded-xl text-sm font-medium text-paper transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-5 py-3.5 min-h-[48px] rounded-xl text-sm font-medium text-paper transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.99]"
               style={{
                 background: "#0AC8D4",
                 boxShadow: "0 8px 24px -8px rgba(10,200,212,0.50)",

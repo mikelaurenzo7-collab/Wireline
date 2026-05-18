@@ -202,7 +202,7 @@ export default function AuthPortal() {
         {/* Global aurora backdrop */}
         <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
           <motion.div
-            className="absolute -top-[25%] -left-[15%] w-[70vw] h-[70vw] rounded-full"
+            className="absolute -top-[25%] -left-[15%] w-[70vw] h-[70vw] max-w-[720px] max-h-[720px] rounded-full"
             style={{
               background: "radial-gradient(circle, rgba(10,200,212,0.22), transparent 60%)",
             }}
@@ -210,7 +210,7 @@ export default function AuthPortal() {
             transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
           />
           <motion.div
-            className="absolute -bottom-[20%] -right-[15%] w-[65vw] h-[65vw] rounded-full"
+            className="absolute -bottom-[20%] -right-[15%] w-[65vw] h-[65vw] max-w-[680px] max-h-[680px] rounded-full"
             style={{
               background: "radial-gradient(circle, rgba(10, 200, 212,0.22), transparent 60%)",
             }}
@@ -218,7 +218,7 @@ export default function AuthPortal() {
             transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
           />
           <motion.div
-            className="absolute top-[35%] left-[30%] w-[50vw] h-[50vw] rounded-full"
+            className="absolute top-[35%] left-[30%] w-[50vw] h-[50vw] max-w-[520px] max-h-[520px] rounded-full hidden md:block"
             style={{
               background: "radial-gradient(circle, rgba(10, 200, 212,0.18), transparent 60%)",
             }}
@@ -291,7 +291,7 @@ export default function AuthPortal() {
                 One fleet, every channel
               </span>
             </div>
-            <h2 className="font-display italic text-4xl xl:text-5xl leading-[0.88] tracking-tight mb-4">
+            <h2 className="font-display italic text-4xl xl:text-5xl leading-[1.0] xl:leading-[0.92] tracking-tight mb-4 text-balance">
               <span className="text-aurora">AI agents for every</span>
               <br />
               <span className="text-ink">customer conversation</span>
@@ -365,7 +365,7 @@ export default function AuthPortal() {
               </span>
               <span className="flex-1 h-px bg-brand/30" />
             </div>
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-2 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
               {WIRELINE_CONTACT_AGENTS.map((a) => (
                 <AgentCardLink key={a.tel} agent={a} isDemo={false} />
               ))}
@@ -376,7 +376,7 @@ export default function AuthPortal() {
               </span>
               <span className="flex-1 h-px bg-white/10" />
             </div>
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {WIRELINE_DEMO_AGENTS.map((a) => (
                 <AgentCardLink key={a.tel} agent={a} isDemo={true} />
               ))}
@@ -442,9 +442,8 @@ export default function AuthPortal() {
               </div>
             </div>
             {/* Hero copy */}
-            <h2 className="font-display italic text-3xl leading-tight tracking-tight mb-3">
-              <span className="text-aurora">AI agents for every</span>
-              <br />
+            <h2 className="font-display italic text-2xl sm:text-3xl leading-snug tracking-tight mb-3 text-balance">
+              <span className="text-aurora">AI agents for every</span>{" "}
               <span className="text-ink">customer conversation</span>
             </h2>
             <p className="text-[12px] text-muted/80 leading-relaxed mb-5">

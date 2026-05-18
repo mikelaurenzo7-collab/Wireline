@@ -18,39 +18,39 @@ function LegalLayout({
 }) {
   return (
     <div className="min-h-screen bg-paper text-ink">
-      <div className="max-w-3xl mx-auto px-6 py-16">
+      <div className="max-w-3xl mx-auto px-5 sm:px-6 py-10 sm:py-16">
         <Link
           to="/"
-          className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.25em] text-muted hover:text-ink transition-colors mb-10"
+          className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.25em] text-muted hover:text-ink transition-colors mb-10 -mx-2 px-2 py-2 rounded-lg hover:bg-black/[0.03]"
         >
           <ArrowLeft className="w-3.5 h-3.5" /> Back to app
         </Link>
 
         <div className="flex items-center gap-3 mb-2">
           <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
             style={{ background: "#0AC8D4" }}
           >
             <Icon className="w-5 h-5 text-paper" />
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">{title}</h1>
         </div>
         <p className="text-[11px] text-muted mb-10">Last updated: {LAST_UPDATED}</p>
 
-        <div className="prose prose-sm max-w-none space-y-8 text-ink/80 leading-relaxed">
+        <div className="prose prose-sm sm:prose-base max-w-none space-y-8 text-ink/85 leading-relaxed">
           {children}
         </div>
 
-        <div className="mt-16 pt-8 border-t border-black/8 flex flex-wrap gap-4 text-[10px] text-muted/50">
-          <Link to="/privacy" className="hover:text-muted transition-colors">
+        <div className="mt-16 pt-8 border-t border-black/8 flex flex-wrap gap-x-4 gap-y-2 text-[10px] text-muted/60">
+          <Link to="/privacy" className="hover:text-muted transition-colors py-1">
             Privacy Policy
           </Link>
-          <span>·</span>
-          <Link to="/terms" className="hover:text-muted transition-colors">
+          <span aria-hidden="true">·</span>
+          <Link to="/terms" className="hover:text-muted transition-colors py-1">
             Terms of Service
           </Link>
-          <span>·</span>
-          <Link to="/privacy#ccpa" className="hover:text-muted transition-colors">
+          <span aria-hidden="true">·</span>
+          <Link to="/privacy#ccpa" className="hover:text-muted transition-colors py-1">
             Do Not Sell My Information
           </Link>
         </div>

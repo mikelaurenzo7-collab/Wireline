@@ -24,7 +24,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
         className="pointer-events-none absolute inset-0 flex items-center justify-center -z-10"
       >
         <div
-          className="w-[55vw] h-[55vw] max-w-[700px] max-h-[700px] rounded-full opacity-40 blur-3xl"
+          className="w-[55vw] h-[55vw] max-w-[700px] max-h-[700px] sm:opacity-40 opacity-25 rounded-full blur-3xl"
           style={{
             background:
               "radial-gradient(circle, rgba(10,200,212,0.25), rgba(10, 200, 212,0.18) 50%, transparent 70%)",
@@ -36,7 +36,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
         initial={{ opacity: 0, scale: 0.92, y: 16 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-        className="font-display italic text-aurora text-[7rem] md:text-[10rem] xl:text-[12rem] leading-none select-none"
+        className="font-display italic text-aurora text-[6rem] sm:text-[8rem] lg:text-[10rem] xl:text-[12rem] leading-none select-none"
       >
         404
       </motion.div>
@@ -63,9 +63,15 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               .{" "}
             </>
           )}
-          {isPublic
-            ? "Try the demo line, browse pricing, or head home."
-            : "The page may have moved. Use ⌘K to jump anywhere, or pick a starting point below."}
+          {isPublic ? (
+            "Try the demo line, browse pricing, or head home."
+          ) : (
+            <>
+              The page may have moved.{" "}
+              <span className="hidden sm:inline">Use ⌘K to jump anywhere, or pick</span>
+              <span className="sm:hidden">Pick</span> a starting point below.
+            </>
+          )}
         </p>
       </motion.div>
 
@@ -74,7 +80,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.55 }}
-        className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-2xl"
+        className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full max-w-2xl"
       >
         {isPublic ? (
           <>
@@ -141,7 +147,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
           className="text-[10px] uppercase tracking-[0.42em] text-muted/60"
         >
           Already have an account?{" "}
-          <Link to="/" className="text-brand hover:text-brand-2 transition-colors">
+          <Link to="/" className="text-brand hover:opacity-80 transition-opacity">
             Sign in →
           </Link>
         </motion.p>
