@@ -1,13 +1,19 @@
 /**
  * Live-call supervisor endpoints — v1 captures the subscription intent
  * (listen / whisper / barge) so supervisors can bookmark live calls for
- * post-call review and the audit trail. V2 wires Vapi's WebRTC streaming
- * for actual real-time audio.
+ * post-call review and the audit trail. V2 wires real-time WebRTC audio.
  *
- * Why ship the stub now: it's the most-asked-for enterprise demo feature.
- * Having the button work + capturing intent in the audit log closes the
+ * Why ship the stub now: most-asked-for enterprise demo feature. Having
+ * the button work + capturing intent in the audit log closes the
  * "can supervisors monitor live calls?" question on a sales call, and the
  * audio wiring lands later without changing the UX.
+ *
+ * SECURITY: only allow subscriptions to calls that EXIST in this tenant's
+ * call_logs. The prior version permitted speculative subscriptions for
+ * any string callId, which left an attack window where a hostile user
+ * could pre-subscribe to a call id BEFORE it existed (collision attack)
+ * or to another tenant's id (cross-tenant snoop). Now we require the
+ * call to be owned by the requester at subscription time.
  */
 
 import { Router, Response } from "express";
@@ -19,28 +25,36 @@ import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
 
+// Reject any callId that doesn't look like a UUID (Wireline carrier call
+// ids) or a numeric id (legacy internal id). Prevents both garbage rows
+// in the subscription table and pre-DB-lookup probing.
+const VALID_CALL_ID = /^[A-Za-z0-9_-]{8,64}$/;
+
 router.post(
   "/api/supervisor/subscribe",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
+
     const callId = (req.body?.callId || "").toString().trim();
     if (!callId) return res.status(400).json({ error: "callId is required" });
+    if (!VALID_CALL_ID.test(callId)) {
+      return res.status(400).json({ error: "callId format invalid" });
+    }
+
     const mode = ["listen", "whisper", "barge"].includes(req.body?.mode) ? req.body.mode : "listen";
     const note = typeof req.body?.note === "string" ? req.body.note : null;
 
-    // CRITICAL: if the call has already landed in call_logs, verify it
-    // belongs to this tenant. Without this, a supervisor could subscribe
-    // to ANY tenant's live call by guessing the vapi call id.
-    // (Live calls that haven't been logged yet still pass through —
-    // intent-capture only — but the moment the log exists we enforce.)
-    const [existing] = await drizzle
+    // CRITICAL: the call MUST exist in call_logs and MUST be owned by the
+    // requester. No speculative subscriptions, no enumeration of other
+    // tenants' call ids. 404 (not 403) on either failure mode so the
+    // response is indistinguishable to an attacker probing.
+    const [callRow] = await drizzle
       .select({ userId: schema.callLogs.userId })
       .from(schema.callLogs)
       .where(eq(schema.callLogs.vapiCallId, callId))
       .limit(1);
-    if (existing && existing.userId !== req.user.id) {
-      // 404 instead of 403 so attackers can't enumerate other tenants' call ids.
+    if (!callRow || callRow.userId !== req.user.id) {
       return res.status(404).json({ error: "Call not found" });
     }
 
@@ -59,7 +73,7 @@ router.post(
           ? "Bookmarked for live monitoring. Audio streaming lands later this quarter — for now you can review the recording the moment the call ends."
           : mode === "whisper"
             ? "Whisper-coach intent captured. Real-time audio streaming is in beta — your note will be surfaced to the agent on its next call."
-            : "Barge-in queued. The supervisor cockpit will attach you to the line as soon as Vapi's WebRTC channel is wired up.",
+            : "Barge-in queued. The supervisor cockpit will attach you to the line as soon as the live-audio channel is wired up.",
     });
   },
 );

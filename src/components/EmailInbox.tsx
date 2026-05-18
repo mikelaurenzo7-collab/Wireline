@@ -202,7 +202,7 @@ export default function EmailInbox() {
         const data = await res.json();
         setQuickReplies(data.suggestions || []);
       } else if (res.status === 503) {
-        toastError("Quick replies unavailable", "Claude API key not configured.");
+        toastError("Quick replies unavailable", "AI brain isn't configured on this workspace yet.");
       }
     } catch (e: any) {
       toastError("Quick replies failed", e.message);

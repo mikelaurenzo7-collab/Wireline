@@ -2,7 +2,6 @@ import express, { Request, Response, NextFunction } from "express";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
-import * as claudeBrain from "../lib/claude-brain";
 import { getHealthCapabilities, getIntegrationsStatus } from "../lib/integrations-registry";
 import { authenticateUser } from "../middleware/auth";
 import { getOperatorSloSnapshot } from "../lib/operator-slos";
@@ -15,10 +14,7 @@ async function probeDatabase(
 ): Promise<{ ok: boolean; latency_ms: number; error?: string }> {
   const t0 = Date.now();
   try {
-    const probe = drizzle
-      .select({ id: schema.settings.userId })
-      .from(schema.settings)
-      .limit(1);
+    const probe = drizzle.select({ id: schema.settings.userId }).from(schema.settings).limit(1);
 
     await Promise.race([
       probe,
@@ -67,7 +63,31 @@ function healthRateLimiter(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
+/**
+ * Public health probe — INTENTIONALLY MINIMAL. Returns enough for load
+ * balancers + uptime monitors to know we're alive, but no information
+ * disclosure (no capability matrix, no model names, no vendor names, no
+ * db latency, no uptime). Full detail moved to /api/health/internal,
+ * which is authenticated.
+ *
+ * A "too talkative" health endpoint is a free reconnaissance gift to
+ * attackers and reads as amateur on a security-conscious prospect's
+ * first probe.
+ */
 router.get("/", healthRateLimiter, async (_req, res) => {
+  const dbStatus = await probeDatabase();
+  res.status(dbStatus.ok ? 200 : 503).json({
+    ok: dbStatus.ok,
+    timestamp: new Date().toISOString(),
+  });
+});
+
+/**
+ * Authenticated detail probe — same data the old public probe returned,
+ * now gated behind a valid JWT. Used by the in-app SystemPanel + the
+ * monitoring stack (which signs in as a service account).
+ */
+router.get("/internal", healthRateLimiter, authenticateUser, async (_req, res) => {
   const dbStatus = await probeDatabase();
   const status = dbStatus.ok ? "ok" : "degraded";
   res.status(200).json({
@@ -75,7 +95,10 @@ router.get("/", healthRateLimiter, async (_req, res) => {
     uptime_s: Math.round(process.uptime()),
     db: dbStatus,
     capabilities: getHealthCapabilities(),
-    claude_model: claudeBrain.CLAUDE_MODEL_DEFAULT,
+    // Generic label only — no third-party model name on customer-visible
+    // surfaces. Brand the brain as "Wireline" to the outside world.
+    ai_brain: "wireline-premium",
+    voice_brain: "wireline-premium",
     timestamp: new Date().toISOString(),
   });
 });
@@ -93,27 +116,32 @@ router.get("/integrations", healthRateLimiter, authenticateUser, (_req, res) => 
 });
 
 /** Authenticated SLO snapshot for the signed-in tenant (Admin → System). */
-router.get("/slos", healthRateLimiter, authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const n = Number(req.query.window_hours);
-    const hours = Number.isFinite(n) ? Math.min(Math.max(n, 1), 168) : 24;
-    const snapshot = await getOperatorSloSnapshot(drizzle, req.user.id, hours);
+router.get(
+  "/slos",
+  healthRateLimiter,
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const n = Number(req.query.window_hours);
+      const hours = Number.isFinite(n) ? Math.min(Math.max(n, 1), 168) : 24;
+      const snapshot = await getOperatorSloSnapshot(drizzle, req.user.id, hours);
 
-    const dimValues = Object.values(snapshot.dimensions) as string[];
-    const banner_status = dimValues.includes("critical")
-      ? "critical"
-      : dimValues.includes("warn")
-        ? "warn"
-        : "ok";
+      const dimValues = Object.values(snapshot.dimensions) as string[];
+      const banner_status = dimValues.includes("critical")
+        ? "critical"
+        : dimValues.includes("warn")
+          ? "warn"
+          : "ok";
 
-    res.json({
-      ...snapshot,
-      banner_status,
-      subscribable_events: ["slo.jobs.critical", "slo.webhooks.degraded", "slo.enrichment.dead"],
-    });
-  } catch (err: any) {
-    res.status(500).json({ error: getErrorMessage(err) });
-  }
-});
+      res.json({
+        ...snapshot,
+        banner_status,
+        subscribable_events: ["slo.jobs.critical", "slo.webhooks.degraded", "slo.enrichment.dead"],
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: getErrorMessage(err) });
+    }
+  },
+);
 
 export default router;

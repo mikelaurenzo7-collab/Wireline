@@ -427,7 +427,7 @@ function CallDetail({
           <button
             onClick={handleScoreQa}
             disabled={scoring}
-            title="Run QA scoring with Claude"
+            title="Run AI quality scoring"
             className={cn(
               "h-7 px-2.5 rounded-full border text-[9px] uppercase tracking-[0.22em] transition-all flex items-center gap-1 shrink-0",
               qaScore !== null

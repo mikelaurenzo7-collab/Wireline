@@ -1,5 +1,18 @@
 import React from "react";
-import { Zap, ShieldCheck, Activity, Globe, Cpu, AlertTriangle, CheckCircle2, Terminal, HardDrive, Network, Gauge, Loader2 } from "lucide-react";
+import {
+  Zap,
+  ShieldCheck,
+  Activity,
+  Globe,
+  Cpu,
+  AlertTriangle,
+  CheckCircle2,
+  Terminal,
+  HardDrive,
+  Network,
+  Gauge,
+  Loader2,
+} from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Panel } from "../PageShell";
 
@@ -10,20 +23,31 @@ interface SystemPanelProps {
   onOpenIntegrations?: () => void;
 }
 
-export function SystemPanel({ claudeStatus, integrations, operationalSlos, onOpenIntegrations }: SystemPanelProps) {
+export function SystemPanel({
+  claudeStatus,
+  integrations,
+  operationalSlos,
+  onOpenIntegrations,
+}: SystemPanelProps) {
   const getSloStatusColor = (health: string) => {
     switch (health) {
-      case 'critical': return 'text-rose-500 bg-rose-500/10 border-rose-500/20 shadow-[0_0_15px_rgba(244,63,94,0.15)]';
-      case 'warn': return 'text-amber-500 bg-amber-500/10 border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.15)]';
-      default: return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.15)]';
+      case "critical":
+        return "text-rose-500 bg-rose-500/10 border-rose-500/20 shadow-[0_0_15px_rgba(244,63,94,0.15)]";
+      case "warn":
+        return "text-amber-500 bg-amber-500/10 border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.15)]";
+      default:
+        return "text-emerald-500 bg-emerald-500/10 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.15)]";
     }
   };
 
   const getSloDotColor = (health: string) => {
     switch (health) {
-      case 'critical': return 'bg-rose-500';
-      case 'warn': return 'bg-amber-500';
-      default: return 'bg-emerald-500';
+      case "critical":
+        return "bg-rose-500";
+      case "warn":
+        return "bg-amber-500";
+      default:
+        return "bg-emerald-500";
     }
   };
 
@@ -42,7 +66,9 @@ export function SystemPanel({ claudeStatus, integrations, operationalSlos, onOpe
                   <span className="text-2xl font-display text-ink">ACTIVE</span>
                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 </div>
-                <p className="text-[9px] text-muted leading-relaxed">System uptime 99.98% over last 30 days.</p>
+                <p className="text-[9px] text-muted leading-relaxed">
+                  System uptime 99.98% over last 30 days.
+                </p>
               </div>
 
               <div className="p-4 rounded-2xl glass border border-brand-3/20 bg-brand-3/5 space-y-3">
@@ -53,7 +79,9 @@ export function SystemPanel({ claudeStatus, integrations, operationalSlos, onOpe
                   <span className="text-2xl font-display text-ink">SECURE</span>
                   <ShieldCheck className="w-3.5 h-3.5 text-brand-3" />
                 </div>
-                <p className="text-[9px] text-muted leading-relaxed">Isolation verified for {operationalSlos?.window_hours || 24}h window.</p>
+                <p className="text-[9px] text-muted leading-relaxed">
+                  Isolation verified for {operationalSlos?.window_hours || 24}h window.
+                </p>
               </div>
 
               <div className="p-4 rounded-2xl glass border border-white/10 bg-white/5 space-y-3">
@@ -64,7 +92,9 @@ export function SystemPanel({ claudeStatus, integrations, operationalSlos, onOpe
                   <span className="text-2xl font-display text-ink">24ms</span>
                   <Globe className="w-3.5 h-3.5 text-muted" />
                 </div>
-                <p className="text-[9px] text-muted leading-relaxed">Global average latency within nominal range.</p>
+                <p className="text-[9px] text-muted leading-relaxed">
+                  Global average latency within nominal range.
+                </p>
               </div>
 
               <div className="p-4 rounded-2xl glass border border-brand/20 bg-brand/5 space-y-3">
@@ -72,9 +102,14 @@ export function SystemPanel({ claudeStatus, integrations, operationalSlos, onOpe
                   <Gauge className="w-3 h-3 text-brand" /> Throughput
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-display text-ink">{operationalSlos?.jobs?.queue?.done_last_hour || 0}<span className="text-[10px] text-muted">/h</span></span>
+                  <span className="text-2xl font-display text-ink">
+                    {operationalSlos?.jobs?.queue?.done_last_hour || 0}
+                    <span className="text-[10px] text-muted">/h</span>
+                  </span>
                 </div>
-                <p className="text-[9px] text-muted leading-relaxed">Post-call enrichment processing rate.</p>
+                <p className="text-[9px] text-muted leading-relaxed">
+                  Post-call enrichment processing rate.
+                </p>
               </div>
             </div>
 
@@ -83,73 +118,120 @@ export function SystemPanel({ claudeStatus, integrations, operationalSlos, onOpe
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Zap className="w-4 h-4 text-brand" />
-                  <h5 className="text-[10px] uppercase tracking-[0.4em] text-muted font-black">Service Level Objectives</h5>
+                  <h5 className="text-[10px] uppercase tracking-[0.4em] text-muted font-black">
+                    Service Level Objectives
+                  </h5>
                 </div>
-                <span className="text-[9px] font-mono text-muted uppercase">Last Evaluation: {operationalSlos?.evaluated_at ? new Date(operationalSlos.evaluated_at).toLocaleTimeString() : '...'}</span>
+                <span className="text-[9px] font-mono text-muted uppercase">
+                  Last Evaluation:{" "}
+                  {operationalSlos?.evaluated_at
+                    ? new Date(operationalSlos.evaluated_at).toLocaleTimeString()
+                    : "..."}
+                </span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {operationalSlos?.dimensions ? (
                   Object.entries(operationalSlos.dimensions).map(([key, health]: [string, any]) => (
-                    <div key={key} className={cn(
-                      "p-5 rounded-2xl border transition-all duration-500",
-                      getSloStatusColor(health)
-                    )}>
+                    <div
+                      key={key}
+                      className={cn(
+                        "p-5 rounded-2xl border transition-all duration-500",
+                        getSloStatusColor(health),
+                      )}
+                    >
                       <div className="flex items-center justify-between mb-4">
-                        <span className="text-[10px] uppercase tracking-[0.2em] font-black">{key.replace(/_/g, ' ')}</span>
+                        <span className="text-[10px] uppercase tracking-[0.2em] font-black">
+                          {key.replace(/_/g, " ")}
+                        </span>
                         <div className={cn("w-2 h-2 rounded-full", getSloDotColor(health))} />
                       </div>
                       <div className="space-y-4">
-                        {key === 'jobs_queue' && (
+                        {key === "jobs_queue" && (
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
-                              <p className="text-[9px] uppercase tracking-widest opacity-60">Pending</p>
-                              <p className="text-xl font-display">{operationalSlos?.jobs?.queue?.pending ?? 0}</p>
+                              <p className="text-[9px] uppercase tracking-widest opacity-60">
+                                Pending
+                              </p>
+                              <p className="text-xl font-display">
+                                {operationalSlos?.jobs?.queue?.pending ?? 0}
+                              </p>
                             </div>
                             <div className="space-y-1">
-                              <p className="text-[9px] uppercase tracking-widest opacity-60">Success Rate</p>
+                              <p className="text-[9px] uppercase tracking-widest opacity-60">
+                                Success Rate
+                              </p>
                               <p className="text-xl font-display">99.8%</p>
                             </div>
                           </div>
                         )}
-                        {key === 'webhooks' && (
+                        {key === "webhooks" && (
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
-                              <p className="text-[9px] uppercase tracking-widest opacity-60">Rate</p>
-                              <p className="text-xl font-display">{operationalSlos?.webhooks?.success_rate ? `${(operationalSlos.webhooks.success_rate * 100).toFixed(1)}%` : '100%'}</p>
+                              <p className="text-[9px] uppercase tracking-widest opacity-60">
+                                Rate
+                              </p>
+                              <p className="text-xl font-display">
+                                {operationalSlos?.webhooks?.success_rate
+                                  ? `${(operationalSlos.webhooks.success_rate * 100).toFixed(1)}%`
+                                  : "100%"}
+                              </p>
                             </div>
                             <div className="space-y-1">
-                              <p className="text-[9px] uppercase tracking-widest opacity-60">Attempts</p>
-                              <p className="text-xl font-display">{operationalSlos?.webhooks?.attempts_in_window ?? 0}</p>
+                              <p className="text-[9px] uppercase tracking-widest opacity-60">
+                                Attempts
+                              </p>
+                              <p className="text-xl font-display">
+                                {operationalSlos?.webhooks?.attempts_in_window ?? 0}
+                              </p>
                             </div>
                           </div>
                         )}
-                        {key === 'ai_errors' && (
+                        {key === "ai_errors" && (
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
-                              <p className="text-[9px] uppercase tracking-widest opacity-60">Claude Calls</p>
-                              <p className="text-xl font-display">{operationalSlos?.ai_reliability?.claude_calls_in_window ?? 0}</p>
+                              <p className="text-[9px] uppercase tracking-widest opacity-60">
+                                AI Calls
+                              </p>
+                              <p className="text-xl font-display">
+                                {operationalSlos?.ai_reliability?.claude_calls_in_window ?? 0}
+                              </p>
                             </div>
                             <div className="space-y-1">
-                              <p className="text-[9px] uppercase tracking-widest opacity-60">Svr Events</p>
-                              <p className="text-xl font-display">{operationalSlos?.ai_reliability?.error_severity_events_in_window ?? 0}</p>
+                              <p className="text-[9px] uppercase tracking-widest opacity-60">
+                                Svr Events
+                              </p>
+                              <p className="text-xl font-display">
+                                {operationalSlos?.ai_reliability?.error_severity_events_in_window ??
+                                  0}
+                              </p>
                             </div>
                           </div>
                         )}
-                        {key === 'enrichment_failures' && (
+                        {key === "enrichment_failures" && (
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
-                              <p className="text-[9px] uppercase tracking-widest opacity-60">Dead Letter</p>
-                              <p className="text-xl font-display">{operationalSlos?.jobs?.enrichment?.dead ?? 0}</p>
+                              <p className="text-[9px] uppercase tracking-widest opacity-60">
+                                Dead Letter
+                              </p>
+                              <p className="text-xl font-display">
+                                {operationalSlos?.jobs?.enrichment?.dead ?? 0}
+                              </p>
                             </div>
                             <div className="space-y-1">
-                              <p className="text-[9px] uppercase tracking-widest opacity-60">Processing</p>
-                              <p className="text-xl font-display">{operationalSlos?.jobs?.enrichment?.running ?? 0}</p>
+                              <p className="text-[9px] uppercase tracking-widest opacity-60">
+                                Processing
+                              </p>
+                              <p className="text-xl font-display">
+                                {operationalSlos?.jobs?.enrichment?.running ?? 0}
+                              </p>
                             </div>
                           </div>
                         )}
                         <p className="text-[10px] opacity-70 leading-relaxed italic">
-                          {health === 'ok' ? 'Current telemetry within nominal performance bounds.' : 'Threshold breach detected. Investigating upstream dependencies.'}
+                          {health === "ok"
+                            ? "Current telemetry within nominal performance bounds."
+                            : "Threshold breach detected. Investigating upstream dependencies."}
                         </p>
                       </div>
                     </div>
@@ -157,7 +239,9 @@ export function SystemPanel({ claudeStatus, integrations, operationalSlos, onOpe
                 ) : (
                   <div className="col-span-2 py-20 text-center space-y-4">
                     <Loader2 className="w-8 h-8 text-brand/20 animate-spin mx-auto" />
-                    <p className="text-[10px] text-muted uppercase tracking-[0.3em]">Synching Telemetry Stream...</p>
+                    <p className="text-[10px] text-muted uppercase tracking-[0.3em]">
+                      Synching Telemetry Stream...
+                    </p>
                   </div>
                 )}
               </div>
@@ -168,7 +252,9 @@ export function SystemPanel({ claudeStatus, integrations, operationalSlos, onOpe
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Network className="w-4 h-4 text-brand" />
-                  <h5 className="text-[10px] uppercase tracking-[0.4em] text-muted font-black">System Backbone</h5>
+                  <h5 className="text-[10px] uppercase tracking-[0.4em] text-muted font-black">
+                    System Backbone
+                  </h5>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
@@ -186,7 +272,7 @@ export function SystemPanel({ claudeStatus, integrations, operationalSlos, onOpe
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
                     <div className="space-y-0.5">
                       <p className="text-[11px] font-bold text-ink">Carrier Bridge</p>
-                      <p className="text-[9px] text-muted truncate">Vapi + Twilio Synchronized</p>
+                      <p className="text-[9px] text-muted truncate">Voice + SMS Synchronized</p>
                     </div>
                   </div>
                 </div>
@@ -213,14 +299,22 @@ export function SystemPanel({ claudeStatus, integrations, operationalSlos, onOpe
                 <span className="opacity-50">#</span> system_init --verbose
               </div>
               <div className="text-muted/60 leading-relaxed">
-                [08:42:01] Bootstrapping Wireline OS v1.4.2...<br/>
-                [08:42:02] Initializing LLM mesh (Anthropic + Gemini)...<br/>
-                [08:42:04] Verifying carrier interconnects...<br/>
-                [08:42:05] Loading cognitive shards for 28 agents...<br/>
-                [08:42:07] <span className="text-emerald-500">READY</span> - All systems operational.<br/>
+                [08:42:01] Bootstrapping Wireline OS v1.4.2...
+                <br />
+                [08:42:02] Initializing LLM mesh (Anthropic + Gemini)...
+                <br />
+                [08:42:04] Verifying carrier interconnects...
+                <br />
+                [08:42:05] Loading cognitive shards for 28 agents...
+                <br />
+                [08:42:07] <span className="text-emerald-500">READY</span> - All systems
+                operational.
+                <br />
               </div>
               <div className="pt-4 space-y-2">
-                <p className="text-ink font-bold uppercase tracking-widest text-[9px]">Active Directives</p>
+                <p className="text-ink font-bold uppercase tracking-widest text-[9px]">
+                  Active Directives
+                </p>
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-2 text-muted">
                     <CheckCircle2 className="w-3 h-3 text-emerald-500" />
@@ -239,9 +333,12 @@ export function SystemPanel({ claudeStatus, integrations, operationalSlos, onOpe
             </div>
 
             <div className="p-5 rounded-2xl glass border border-brand/20 bg-brand/5 space-y-4">
-              <p className="text-[9px] uppercase tracking-widest text-brand font-black">Security Advisory</p>
+              <p className="text-[9px] uppercase tracking-widest text-brand font-black">
+                Security Advisory
+              </p>
               <p className="text-[11px] text-ink leading-relaxed">
-                "Ensure your <span className="text-brand font-bold">VAPI_WEBHOOK_SECRET</span> is rotated every 90 days to maintain SOC 2 compliance."
+                "Ensure your <span className="text-brand font-bold">VAPI_WEBHOOK_SECRET</span> is
+                rotated every 90 days to maintain SOC 2 compliance."
               </p>
               <button className="text-[9px] uppercase tracking-widest text-muted hover:text-brand transition-colors font-bold">
                 View Compliance Manual →

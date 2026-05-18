@@ -188,15 +188,15 @@ export function CarrierPanel({
                     {[
                       {
                         v: "google",
-                        label: "Gemini",
-                        sub: "PLATFORM",
-                        desc: "Lowest latency cognitive bridge.",
+                        label: "Standard",
+                        sub: "FAST",
+                        desc: "Lowest latency for high-volume queues.",
                       },
                       {
                         v: "anthropic",
-                        label: "Claude",
-                        sub: "PREMIUM",
-                        desc: "Advanced reasoning and steering.",
+                        label: "Premium",
+                        sub: "RECOMMENDED",
+                        desc: "Advanced reasoning, objection handling, and steering.",
                       },
                     ].map((p) => (
                       <button

@@ -146,7 +146,7 @@ const TIERS: Tier[] = [
 const VALUE_BULLETS = [
   { icon: Phone, text: "Call our demo line — (630) 581-1834 — Liam picks up 24/7" },
   { icon: ShieldCheck, text: "SOC 2-ready architecture, encrypted secrets at rest" },
-  { icon: Sparkles, text: "Powered by Claude Opus + ElevenLabs voices" },
+  { icon: Sparkles, text: "Powered by Wireline's premium AI brain + studio-grade voices" },
   { icon: Zap, text: "Setup in under 10 minutes — no devs required" },
 ];
 

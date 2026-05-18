@@ -3,13 +3,12 @@ import { motion } from "motion/react";
 
 /**
  * Compact monochrome SVG logos for partners + integrations we ship.
- * Rendered as a horizontal trust strip on the AuthPortal — meant to
- * communicate "battle-tested stack" without being a noisy marketing
- * banner.
+ * Rendered as a two-row strip on the AuthPortal:
+ *   Row 1 — "Powered by": the AI/voice partners (Anthropic, Vapi, ElevenLabs)
+ *   Row 2 — "Integrates with": the customer's stack (Google, MS, Stripe, etc.)
  *
- * All logos are rendered in `currentColor` so they inherit the muted
- * text color and don't fight the aurora background. They lighten on
- * hover to subtly invite the eye.
+ * All logos render in `currentColor` so they inherit the muted text color
+ * and don't fight the aurora background. They lighten on hover.
  *
  * SVG paths sourced from publicly-available brand asset kits (each
  * vendor's official brand page) and simplified to single-color form.
@@ -24,7 +23,9 @@ type LogoDef = {
   scale?: number;
 };
 
-const LOGOS: LogoDef[] = [
+// The AI/voice partners that build the agent's voice + brain. Shown as
+// the "Powered by" row — top of the strip — for trust signaling.
+const POWERED_BY: LogoDef[] = [
   {
     name: "Anthropic",
     svg: (
@@ -34,13 +35,41 @@ const LOGOS: LogoDef[] = [
     ),
   },
   {
-    name: "OpenAI",
+    name: "Vapi",
     svg: (
-      <svg viewBox="0 0 256 260" fill="currentColor" aria-label="OpenAI">
-        <path d="M239.2 106.5a64.5 64.5 0 0 0-5.6-53.1A65.3 65.3 0 0 0 163 22a64.5 64.5 0 0 0-49-22 65.4 65.4 0 0 0-62.4 45.4 64.6 64.6 0 0 0-43.2 31.4 65.4 65.4 0 0 0 8.1 76.6 64.5 64.5 0 0 0 5.6 53.1A65.4 65.4 0 0 0 93 238a64.5 64.5 0 0 0 49 22 65.4 65.4 0 0 0 62.4-45.4 64.6 64.6 0 0 0 43.2-31.4 65.4 65.4 0 0 0-8.4-76.7Zm-97.3 136a48.4 48.4 0 0 1-31.1-11.3l1.5-.9 51.7-29.8a8.4 8.4 0 0 0 4.3-7.4v-72.8l21.9 12.6c.2.1.4.3.4.6V194a48.5 48.5 0 0 1-48.7 48.5Zm-104.2-44.5a48.3 48.3 0 0 1-5.8-32.5l1.6.9 51.7 29.8a8.4 8.4 0 0 0 8.4 0l63.2-36.4v25.3a.7.7 0 0 1-.3.6L104 215.7a48.6 48.6 0 0 1-66.3-17.7ZM24 97.8a48.3 48.3 0 0 1 25.2-21.3v60a8.4 8.4 0 0 0 4.2 7.3l62.8 36.3-21.9 12.7a.8.8 0 0 1-.7 0L41.4 163A48.5 48.5 0 0 1 24 97.8Zm179.6 41.8L140.9 103l21.8-12.6a.8.8 0 0 1 .8 0l52.2 30.2a48.5 48.5 0 0 1-7.4 87.5v-60a8.5 8.5 0 0 0-4.7-7.5Zm21.7-32.6-1.5-1-51.6-30a8.4 8.4 0 0 0-8.5 0L100.6 112V86.7a.7.7 0 0 1 .3-.6L153 56a48.5 48.5 0 0 1 72.2 50.4Zm-137 44.6-21.9-12.6a.8.8 0 0 1-.4-.6V69a48.5 48.5 0 0 1 79.6-37.2l-1.5.8L92.3 62.5a8.4 8.4 0 0 0-4.2 7.3v72.7Zm11.9-25.6L128 110l28 16v32l-28 16-28-16Z" />
+      <svg viewBox="0 0 120 24" fill="currentColor" aria-label="Vapi">
+        {/* Wordmark glyph: bar-and-V combo for Vapi voice infra */}
+        <rect x="0" y="4" width="3" height="16" rx="1" />
+        <rect x="6" y="8" width="3" height="12" rx="1" />
+        <rect x="12" y="2" width="3" height="20" rx="1" />
+        <rect x="18" y="6" width="3" height="14" rx="1" />
+        <text
+          x="28"
+          y="18"
+          fontFamily="ui-sans-serif, system-ui, -apple-system"
+          fontSize="16"
+          fontWeight="700"
+          letterSpacing="-0.5"
+        >
+          vapi
+        </text>
       </svg>
     ),
+    scale: 0.95,
   },
+  {
+    name: "ElevenLabs",
+    svg: (
+      <svg viewBox="0 0 100 100" fill="currentColor" aria-label="ElevenLabs">
+        <rect x="22" y="12" width="22" height="76" rx="2" />
+        <rect x="56" y="12" width="22" height="76" rx="2" />
+      </svg>
+    ),
+    scale: 0.95,
+  },
+];
+
+const INTEGRATIONS: LogoDef[] = [
   {
     name: "Google",
     svg: (
@@ -129,17 +158,31 @@ const LOGOS: LogoDef[] = [
       </svg>
     ),
   },
-  {
-    name: "ElevenLabs",
-    svg: (
-      <svg viewBox="0 0 100 100" fill="currentColor" aria-label="ElevenLabs">
-        <rect x="22" y="12" width="22" height="76" rx="2" />
-        <rect x="56" y="12" width="22" height="76" rx="2" />
-      </svg>
-    ),
-    scale: 0.95,
-  },
 ];
+
+function LogoRow({ logos, height = 18 }: { logos: LogoDef[]; height?: number }) {
+  return (
+    <div className="flex items-center justify-center flex-wrap gap-x-7 gap-y-3 opacity-70 hover:opacity-100 transition-opacity">
+      {logos.map((logo) => (
+        <div
+          key={logo.name}
+          className="text-ink/55 hover:text-ink transition-colors"
+          title={logo.name}
+          style={{
+            height,
+            transform: logo.scale ? `scale(${logo.scale})` : undefined,
+          }}
+        >
+          <div className="w-auto inline-flex items-center" style={{ height }}>
+            {React.cloneElement(logo.svg as React.ReactElement<any>, {
+              style: { height: "100%", width: "auto", display: "block" },
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function IntegrationLogos() {
   return (
@@ -147,30 +190,20 @@ export default function IntegrationLogos() {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.45, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-      className="mt-10 pt-8 border-t border-white/8"
-      aria-label="Wireline runs on and integrates with"
+      className="mt-10 pt-8 border-t border-white/8 space-y-5"
+      aria-label="Wireline is powered by and integrates with"
     >
-      <p className="text-[8px] uppercase tracking-[0.5em] text-muted/55 mb-4 text-center">
-        Built on · integrates with
-      </p>
-      <div className="flex items-center justify-center flex-wrap gap-x-7 gap-y-4 opacity-70 hover:opacity-100 transition-opacity">
-        {LOGOS.map((logo) => (
-          <div
-            key={logo.name}
-            className="text-ink/55 hover:text-ink transition-colors"
-            title={logo.name}
-            style={{
-              height: 18,
-              transform: logo.scale ? `scale(${logo.scale})` : undefined,
-            }}
-          >
-            <div className="h-[18px] w-auto inline-flex items-center">
-              {React.cloneElement(logo.svg as React.ReactElement<any>, {
-                style: { height: "100%", width: "auto", display: "block" },
-              })}
-            </div>
-          </div>
-        ))}
+      <div>
+        <p className="text-[8px] uppercase tracking-[0.5em] text-brand/70 mb-3 text-center">
+          Powered by
+        </p>
+        <LogoRow logos={POWERED_BY} height={22} />
+      </div>
+      <div className="pt-1">
+        <p className="text-[8px] uppercase tracking-[0.5em] text-muted/55 mb-3 text-center">
+          Integrates with
+        </p>
+        <LogoRow logos={INTEGRATIONS} height={16} />
       </div>
     </motion.div>
   );

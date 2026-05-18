@@ -394,8 +394,7 @@ const Step: React.FC<{
 };
 
 function StepCTA({ stepId }: { stepId: string }) {
-  if (stepId === "agent")
-    return <ClaudeRecipeButton recipe="agent-forge" label="Forge with Claude" />;
+  if (stepId === "agent") return <ClaudeRecipeButton recipe="agent-forge" label="Forge an Agent" />;
   if (stepId === "knowledge")
     return <ClaudeRecipeButton recipe="knowledge-from-url" label="Ingest from URL" />;
   if (stepId === "number") return <CTAButton to="/agents" label="Connect a Number" />;

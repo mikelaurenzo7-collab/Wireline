@@ -930,7 +930,7 @@ function AISpendView({ days }: { days: number }) {
               accent="#0AC8D4"
             />
             <SpendStat
-              label="Claude Calls"
+              label="AI Calls"
               value={String(totals.calls)}
               icon={Brain}
               accent="#9B59F5"

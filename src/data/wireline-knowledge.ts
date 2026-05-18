@@ -182,10 +182,10 @@ export const WIRELINE_COMPETITOR_NOTES = {
     "Strong workflow builder. We're stronger on the ops side — supervisor cockpit, call queues, audit trail.",
   Bland:
     "Great voice quality. We add the surrounding console — SMS threads, email inbox, CRM sync, autonomy controls.",
-  "Vapi (direct)":
-    "Vapi is the voice infrastructure we run on top of. They're a developer SDK; we're the full operator console + compliance + multi-channel layer. Pick us if you don't want to build the agent layer yourself.",
+  CallRail:
+    "Call tracking + attribution with AI bolted on. We're the agent layer itself — your agents handle the call, not just track it.",
   Twilio:
-    "Twilio is infrastructure. We're the agent + ops layer on top of Twilio (and Vapi). Six weeks of dev work, done.",
+    "Twilio is raw telecom infrastructure. Wireline is the agent + ops layer — operators ship in days, not months of internal dev work.",
   "AWS Connect":
     "Connect is enterprise telecom. We're a fraction of the lift for the operator — minutes to deploy vs. months.",
 } as const;
