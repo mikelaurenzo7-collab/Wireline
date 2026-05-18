@@ -10,17 +10,10 @@ import { parseFormData, CampaignCreateSchema, CampaignUpdateSchema } from "../li
 import {
   computeOutcomeBreakdown,
   computeCallStats,
-  callIdsFromLeads,
 } from "../lib/campaign-analytics";
 import { claudeRateLimiter } from "../middleware/api-rate-limits";
 
 const router = Router();
-
-const CALL_WINDOW_CHECK_INTERVAL_MS = 30000;
-const CAMPAIGN_DIAL_SPACING_MS = 2000;
-
-import { isDncBlocked } from "../lib/compliance";
-import { placeOutboundCall } from "../lib/vapi-client";
 
 router.get("/api/campaigns", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {

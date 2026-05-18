@@ -543,9 +543,9 @@ router.post("/api/vapi-webhook", async (req, res) => {
         try {
           const { amount_promised, payment_date, payment_method } = toolCall.function.arguments;
           await drizzle.insert(schema.auditLog).values({
-            userId: agent?.user_id,
-            eventType: "payment_promise",
-            details: { amount_promised, payment_date, payment_method },
+            userId: agent.user_id,
+            action: "payment_promise",
+            metadata: { amount_promised, payment_date, payment_method },
           });
           results.push({ toolCallId: toolCall.id, result: "Payment promise legally recorded in compliance ledger." });
         } catch {
