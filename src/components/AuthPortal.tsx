@@ -272,12 +272,28 @@ export default function AuthPortal() {
             <br />
             <span className="text-ink">customer conversation</span>
           </h2>
-          <p className="text-[13px] text-muted/80 leading-relaxed max-w-md">
+          <p className="text-[13px] text-muted/80 leading-relaxed max-w-md mb-5">
             Wireline runs your <span className="text-ink/90">inbound support</span>,{" "}
             <span className="text-ink/90">outbound sales</span>, and{" "}
             <span className="text-ink/90">email follow-ups</span> across one fleet of AI agents —
             trained on your playbook, available 24/7, improving with every interaction.
           </p>
+          <div className="flex items-center gap-5">
+            <div className="flex flex-col">
+              <span className="font-display italic text-2xl text-ink">10M+</span>
+              <span className="text-[9px] uppercase tracking-[0.2em] text-muted/60">Calls Handled</span>
+            </div>
+            <div className="w-px h-6 bg-white/10" />
+            <div className="flex flex-col">
+              <span className="font-display italic text-2xl text-ink">$150M+</span>
+              <span className="text-[9px] uppercase tracking-[0.2em] text-muted/60">Pipeline Gen</span>
+            </div>
+            <div className="w-px h-6 bg-white/10" />
+            <div className="flex flex-col">
+              <span className="font-display italic text-2xl text-ink">4.9/5</span>
+              <span className="text-[9px] uppercase tracking-[0.2em] text-muted/60">Avg CSAT</span>
+            </div>
+          </div>
         </motion.div>
 
         {/* All 10 demo agents in a single dense grid. Top 4 are the LIVE
@@ -293,9 +309,29 @@ export default function AuthPortal() {
           transition={{ delay: 0.15, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
           className="mb-6 flex-1"
         >
+          <a
+            href="tel:+16305811834"
+            className="flex items-center justify-between mb-4 bg-[#0AC8D4]/10 border border-[#0AC8D4]/30 rounded-xl p-3 hover:bg-[#0AC8D4]/20 transition-colors group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-[#0AC8D4] flex items-center justify-center shadow-[0_0_15px_rgba(10,200,212,0.4)]">
+                <Phone className="w-4 h-4 text-white" fill="currentColor" />
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-[#0AC8D4] font-medium leading-tight">
+                  Call our demo line now
+                </p>
+                <p className="font-display italic text-xl text-ink leading-tight mt-0.5">
+                  (630) 581-1834
+                </p>
+              </div>
+            </div>
+            <ArrowRight className="w-5 h-5 text-[#0AC8D4] group-hover:translate-x-1 transition-transform" />
+          </a>
+
           <div className="flex items-center gap-2 mb-3">
             <span className="text-[9px] uppercase tracking-[0.4em] text-brand/90 font-medium">
-              Call our team · Try the platform live
+              Wireline Team
             </span>
             <span className="flex-1 h-px bg-brand/30" />
           </div>
