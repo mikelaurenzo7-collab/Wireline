@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Shield, FileText, ArrowLeft } from "lucide-react";
+import { PageMeta } from "../lib/page-meta";
 
 const LAST_UPDATED = "May 9, 2026";
 
@@ -63,6 +64,10 @@ function Section({ id, title, children }: { id?: string; title: string; children
 export function PrivacyPolicy() {
   return (
     <LegalLayout title="Privacy Policy" icon={Shield}>
+      <PageMeta
+        title="Privacy Policy"
+        description="Wireline's privacy policy — how we collect, use, and protect your data. Sub-processors: Supabase, Vapi, Anthropic, Stripe, Sentry, and Vercel. Last updated May 9, 2026."
+      />
 
       <Section title="1. Who We Are">
         <p>
@@ -212,6 +217,10 @@ export function PrivacyPolicy() {
 export function TermsOfService() {
   return (
     <LegalLayout title="Terms of Service" icon={FileText}>
+      <PageMeta
+        title="Terms of Service"
+        description="Wireline's terms of service — acceptable use, billing, telemarketing compliance (TCPA), limitation of liability, and governing law (Delaware). Last updated May 9, 2026."
+      />
 
       <Section title="1. Acceptance">
         <p>

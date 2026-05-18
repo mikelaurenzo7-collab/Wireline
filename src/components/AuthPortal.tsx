@@ -20,6 +20,7 @@ import {
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../contexts/AuthContext";
+import { PageMeta } from "../lib/page-meta";
 import IntegrationLogos from "./layout/IntegrationLogos";
 import {
   WIRELINE_CONTACT_AGENTS,
@@ -175,6 +176,15 @@ export default function AuthPortal() {
   };
 
   return (
+    <>
+      <PageMeta
+        title={isReset ? "Reset Password" : isSignUp ? "Create Account" : "Sign In"}
+        description={
+          isSignUp
+            ? "Start your 14-day free Wireline trial — deploy an AI voice agent in under 10 minutes. No credit card required."
+            : "Sign in to your Wireline operator console to manage your AI voice agents, call logs, and outbound campaigns."
+        }
+      />
     <div className="h-screen flex relative overflow-hidden">
       {/* Global aurora backdrop */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
@@ -699,5 +709,6 @@ export default function AuthPortal() {
         </motion.div>
       </div>
     </div>
+    </>
   );
 }

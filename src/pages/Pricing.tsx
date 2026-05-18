@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
+import { PageMeta } from "../lib/page-meta";
 import {
   Check,
   Waves,
@@ -153,6 +154,10 @@ const VALUE_BULLETS = [
 export default function Pricing() {
   return (
     <div className="min-h-screen relative overflow-hidden">
+      <PageMeta
+        title="Plans & Pricing"
+        description="Wireline pricing plans from $29/month Personal to Enterprise custom. Every plan includes AI voice agents, real-time call logs, sentiment scoring, and the Wireline Demo Line. 14-day free trial, no credit card required."
+      />
       {/* Aurora backdrop — toned down so the tier cards win the eye.
           Previously 60vw at 0.18 opacity dominated the hero on 1366×768
           laptops; now 40vw at 0.10 reads as ambient accent. */}
