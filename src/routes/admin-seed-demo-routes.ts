@@ -142,14 +142,59 @@ const TABLE_MAP: Record<string, any> = {
   wireline_dnc_list: dncList,
 };
 
+/**
+ * Count rows scoped to a tenant. The seed endpoint counts only demo=true
+ * rows when deciding whether to top up; otherwise a tenant that has
+ * legitimate real call_logs would be considered "already seeded" and we'd
+ * insert 0 showcase rows. Knowledge entries don't have a demo column
+ * (per-agent config, not transactional) so they're counted plain.
+ */
 async function countRows(tableName: string, userId: string): Promise<number> {
   const table = TABLE_MAP[tableName];
   if (!table) throw new Error(`Unknown table: ${tableName}`);
+  const filters = [eq(table.userId, userId)];
+  if (tableName !== "wireline_knowledge") {
+    filters.push(eq(table.demo, true));
+  }
   const [row] = await drizzle
     .select({ c: sql<number>`COUNT(*)::int` })
     .from(table)
-    .where(eq(table.userId, userId));
+    .where(and(...filters));
   return Number(row?.c ?? 0);
+}
+
+/**
+ * Tenant-scoped backfill for pre-audit3 seeded rows. Flips demo=true on
+ * any row owned by THIS specific tenant whose phone matches one of the
+ * SAMPLE_CUSTOMERS phones. Safe because it's scoped to the explicitly-
+ * targeted demo user (not a global UPDATE that could hit real production
+ * rows with the same numbers). Runs idempotently on every seed call.
+ */
+async function backfillTenantDemoRows(userId: string): Promise<void> {
+  const seedPhones = SAMPLE_CUSTOMERS.map((c) => c.phone);
+  try {
+    await drizzle.execute(sql`
+      UPDATE wireline_outbound_leads SET demo = true
+      WHERE user_id = ${userId} AND demo = false AND customer_number = ANY(${seedPhones});
+    `);
+    await drizzle.execute(sql`
+      UPDATE wireline_appointments SET demo = true
+      WHERE user_id = ${userId} AND demo = false AND phone_number = ANY(${seedPhones});
+    `);
+    await drizzle.execute(sql`
+      UPDATE wireline_dnc_list SET demo = true
+      WHERE user_id = ${userId} AND demo = false AND phone = ANY(${seedPhones});
+    `);
+    // call_logs were backfilled by the migration via vapi_call_id LIKE
+    // 'seed-call-%' (unique-to-seed signature). Catch any stragglers
+    // here for symmetry.
+    await drizzle.execute(sql`
+      UPDATE wireline_call_logs SET demo = true
+      WHERE user_id = ${userId} AND demo = false AND vapi_call_id LIKE 'seed-call-%';
+    `);
+  } catch (err: any) {
+    log.warn("Seed tenant backfill failed", { userId, error: err?.message });
+  }
 }
 
 function randomCreatedAt(daysBack: number): Date {
@@ -179,6 +224,14 @@ router.post(
         error: `Demo user has no agents. Create at least one agent before seeding.`,
       });
     }
+
+    // Tenant-scoped backfill for any pre-audit3 rows that are still
+    // demo=false. Safe — only flips rows owned by THIS user whose phone
+    // matches a SAMPLE_CUSTOMERS entry, not a global UPDATE. After this
+    // runs, countRows() (which counts demo=true) reflects the true
+    // demo footprint and we top up to TARGET without piling new rows
+    // on top of old stranded ones.
+    await backfillTenantDemoRows(userId);
 
     const report: SeedReport[] = [];
 
