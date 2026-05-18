@@ -456,10 +456,15 @@ export default function AuthPortal() {
         </motion.div>
       </div>
 
-      {/* ── RIGHT PANEL — auth form ──────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col items-center justify-center relative z-10 py-4 px-6 md:p-10">
+      {/* ── RIGHT PANEL — auth form ────────────────────────────────────────────
+           Anchored to the top (not vertically centered) so the Sign In
+           button is reliably above the fold at 1280×800 / 1366×768 laptops.
+           Previously `justify-center` pushed the form to ~440px from the top
+           of an 800px viewport, putting the Sign In button at ~875px —
+           below the fold. */}
+      <div className="flex-1 flex flex-col items-center relative z-10 py-4 px-6 md:py-6 md:px-10 overflow-y-auto">
         {/* Mobile logo */}
-        <div className="lg:hidden mb-5 sm:mb-10 flex flex-col items-center gap-3">
+        <div className="lg:hidden mb-4 flex flex-col items-center gap-2">
           <div
             className="w-16 h-16 rounded-2xl flex items-center justify-center"
             style={{
@@ -477,11 +482,11 @@ export default function AuthPortal() {
           initial={{ opacity: 0, y: 20, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full max-w-md"
+          className="w-full max-w-md mt-2 md:mt-8"
         >
           {/* Form card */}
           <div className="relative aurora-ring rounded-3xl">
-            <div className="relative rounded-3xl p-8 md:p-10 glass-strong overflow-hidden">
+            <div className="relative rounded-3xl p-6 md:p-8 glass-strong overflow-hidden">
               {/* Subtle ambient glows inside card */}
               <div
                 className="absolute -top-24 -right-24 w-56 h-56 rounded-full opacity-20 blur-3xl pointer-events-none"
@@ -541,7 +546,7 @@ export default function AuthPortal() {
                 </div>
               )}
 
-              <form onSubmit={handleAuth} className="relative z-10 space-y-5">
+              <form onSubmit={handleAuth} className="relative z-10 space-y-4">
                 {/* Email */}
                 <div className="space-y-2">
                   <label className="text-[10px] uppercase tracking-[0.4em] text-muted/80 flex items-center gap-1.5">
