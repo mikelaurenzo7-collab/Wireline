@@ -350,8 +350,59 @@ export default function AuthPortal() {
            of an 800px viewport, putting the Sign In button at ~875px —
            below the fold. */}
       <div className="flex-1 flex flex-col items-center relative z-10 py-4 px-6 md:py-6 md:px-10 overflow-y-auto">
-        {/* Mobile logo */}
-        <div className="lg:hidden mb-4 flex flex-col items-center gap-2">
+        {/* ── Mobile marketing hero — lg:hidden so it only renders below the desktop breakpoint ── */}
+        <div className="lg:hidden w-full max-w-md mb-6 pt-4">
+          {/* Logo + wordmark row */}
+          <div className="flex items-center gap-3 mb-5">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+              style={{
+                background: "linear-gradient(135deg, #0AC8D4 0%, #9B59F5 50%, #E040C0 100%)",
+                boxShadow: "0 8px 24px -8px rgba(10,200,212,0.60)",
+              }}
+            >
+              <Waves className="w-5 h-5 text-paper" strokeWidth={2.5} />
+            </div>
+            <div>
+              <span className="brand-wordmark text-2xl leading-none">WIRELINE</span>
+              <p className="text-[8px] tracking-[0.42em] uppercase text-muted mt-0.5">AI Voice Platform</p>
+            </div>
+          </div>
+          {/* Hero copy */}
+          <h2 className="font-display italic text-3xl leading-tight tracking-tight mb-3">
+            <span className="text-aurora">AI agents for every</span>
+            <br />
+            <span className="text-ink">customer conversation</span>
+          </h2>
+          <p className="text-[12px] text-muted/80 leading-relaxed mb-5">
+            Wireline runs your inbound support, outbound sales, and email follow-ups across
+            one fleet of AI agents — trained on your playbook, available 24/7.
+          </p>
+          {/* Feature pill badges */}
+          <div className="flex flex-wrap gap-2">
+            {FEATURES.map((f) => {
+              const Icon = f.icon;
+              return (
+                <div
+                  key={f.title}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full glass border text-[10px] text-ink/80"
+                  style={{ borderColor: `${f.accent}35` }}
+                >
+                  <Icon className="w-3 h-3 shrink-0" style={{ color: f.accent }} />
+                  {f.title}
+                </div>
+              );
+            })}
+          </div>
+          {/* Subtle divider */}
+          <div
+            className="mt-6 h-px w-full"
+            style={{ background: "linear-gradient(to right, transparent, rgba(10,200,212,0.3), rgba(197,139,255,0.3), transparent)" }}
+          />
+        </div>
+
+        {/* Mobile logo — retained for the form-card width reference, hidden visually below hero */}
+        <div className="hidden">
           <div
             className="w-16 h-16 rounded-2xl flex items-center justify-center"
             style={{
@@ -369,7 +420,7 @@ export default function AuthPortal() {
           initial={{ opacity: 0, y: 20, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full max-w-md mt-2 md:mt-8"
+          className="w-full max-w-md"
         >
           {/* Form card */}
           <div className="relative aurora-ring rounded-3xl">
