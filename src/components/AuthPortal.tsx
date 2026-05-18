@@ -55,35 +55,30 @@ const FEATURES = [
   },
 ];
 
-function AgentCardLink({ agent }: { agent: AgentCard }) {
+function AgentCardLink({ agent, isDemo }: { agent: AgentCard; isDemo?: boolean }) {
   return (
     <a
       href={`tel:${agent.tel}`}
-      className="group relative block rounded-2xl p-4 overflow-hidden border border-white/12 hover:border-white/28 hover:scale-[1.015] transition-all duration-200"
-      style={{
-        background: `linear-gradient(135deg, ${agent.tint}2c, ${agent.tint}12)`,
-        boxShadow: `0 10px 28px -14px ${agent.tint}88`,
-      }}
+      className="group relative block rounded-xl p-3 overflow-hidden border border-white/10 hover:border-white/20 hover:bg-white/5 transition-all duration-200 glass"
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-start gap-3">
         <div
-          className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-          style={{
-            background: `linear-gradient(135deg, ${agent.tint}, ${agent.tint}cc)`,
-            boxShadow: `0 6px 14px -4px ${agent.tint}aa`,
-          }}
+          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-white/10"
+          style={{ background: isDemo ? 'rgba(255,255,255,0.03)' : `${agent.tint}1a` }}
         >
-          <Phone className="w-4 h-4 text-paper" strokeWidth={2.4} />
+          <Phone className="w-3.5 h-3.5" style={{ color: isDemo ? '#a1a1aa' : agent.tint }} strokeWidth={2.4} />
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[10px] uppercase tracking-[0.32em] text-muted/80 leading-none mb-1.5 truncate">
-            {agent.name} · {agent.role}
+        <div className="flex-1 min-w-0 pr-2">
+          <p className="text-[9px] uppercase tracking-[0.2em] text-muted/70 leading-none mb-1">
+            {isDemo ? 'DEMO' : 'LIVE'} · {agent.name}
           </p>
-          <p className="font-display italic text-lg leading-none text-ink truncate">
-            {agent.display}
+          <p className="font-display italic text-sm leading-tight text-ink/90 group-hover:text-ink transition-colors line-clamp-2">
+            {agent.role}
           </p>
         </div>
-        <ArrowRight className="w-4 h-4 text-ink/40 group-hover:text-ink group-hover:translate-x-1 transition-all shrink-0" />
+        <div className="shrink-0 flex items-center self-center justify-center w-6 h-6 rounded-full border border-white/5 group-hover:bg-white/10 transition-colors">
+          <ArrowRight className="w-3 h-3 text-ink/40 group-hover:text-ink group-hover:translate-x-0.5 transition-all" />
+        </div>
       </div>
     </a>
   );
@@ -224,7 +219,7 @@ export default function AuthPortal() {
            Without this, the left column at lg+ widths grows to ~1020px,
            making the Sign In button on the right scroll-required even
            though it's anchored to the top of its column. */}
-      <div className="hidden lg:flex lg:w-[54%] xl:w-[56%] flex-col relative z-10 p-6 xl:p-10 h-screen overflow-y-auto scrollbar-hide">
+      <div className="hidden lg:flex lg:w-[54%] xl:w-[56%] flex-col relative z-10 p-6 xl:p-8 h-screen overflow-y-auto scrollbar-hide">
         {/* Decorative vertical line on right edge */}
         <div
           className="absolute top-0 right-0 w-px h-full"
@@ -239,21 +234,21 @@ export default function AuthPortal() {
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="flex items-center gap-3 mb-16"
+          className="flex items-center gap-3 mb-8"
         >
           <div
-            className="relative w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+            className="relative w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
             style={{
               background: "linear-gradient(135deg, #0AC8D4 0%, #9B59F5 50%, #E040C0 100%)",
               boxShadow:
                 "0 8px 24px -8px rgba(10,200,212,0.60), 0 0 0 1px rgba(255,255,255,0.22) inset",
             }}
           >
-            <Waves className="w-5 h-5 text-paper" strokeWidth={2.5} />
+            <Waves className="w-4 h-4 text-paper" strokeWidth={2.5} />
           </div>
           <div>
-            <span className="brand-wordmark text-2xl leading-none">WIRELINE</span>
-            <p className="text-[8px] tracking-[0.42em] uppercase text-muted mt-0.5">
+            <span className="brand-wordmark text-xl leading-none">WIRELINE</span>
+            <p className="text-[7px] tracking-[0.42em] uppercase text-muted mt-0.5">
               AI Voice Platform
             </p>
           </div>
@@ -264,20 +259,20 @@ export default function AuthPortal() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-          className="mb-12"
+          className="mb-8"
         >
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mb-3">
             <span className="hero-accent-line" />
-            <span className="text-[9px] uppercase tracking-[0.5em] text-muted/70">
+            <span className="text-[8px] uppercase tracking-[0.5em] text-muted/70">
               One fleet, every channel
             </span>
           </div>
-          <h2 className="font-display italic text-5xl xl:text-6xl leading-[0.88] tracking-tight mb-6">
+          <h2 className="font-display italic text-4xl xl:text-5xl leading-[0.88] tracking-tight mb-4">
             <span className="text-aurora">AI agents for every</span>
             <br />
             <span className="text-ink">customer conversation</span>
           </h2>
-          <p className="text-sm text-muted/80 leading-relaxed max-w-md">
+          <p className="text-[13px] text-muted/80 leading-relaxed max-w-md">
             Wireline runs your <span className="text-ink/90">inbound support</span>,{" "}
             <span className="text-ink/90">outbound sales</span>, and{" "}
             <span className="text-ink/90">email follow-ups</span> across one fleet of AI agents —
@@ -296,31 +291,32 @@ export default function AuthPortal() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-          className="mb-5"
+          className="mb-6 flex-1"
         >
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-[9px] uppercase tracking-[0.4em] text-brand/90">
-              Talk to Wireline · 6 live customer-service lines
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-[9px] uppercase tracking-[0.4em] text-brand/90 font-medium">
+              Call our team · Try the platform live
             </span>
             <span className="flex-1 h-px bg-brand/30" />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-2 mb-4">
             {WIRELINE_CONTACT_AGENTS.map((a) => (
-              <AgentCardLink key={a.tel} agent={a} />
+              <AgentCardLink key={a.tel} agent={a} isDemo={false} />
             ))}
           </div>
-          <div className="flex items-center gap-2 mt-3 mb-2">
-            <span className="text-[9px] uppercase tracking-[0.4em] text-muted/70">
-              See us in action · 4 vertical demo agents
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-[9px] uppercase tracking-[0.4em] text-muted/60">
+              Vertical Role-Plays
             </span>
             <span className="flex-1 h-px bg-white/10" />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-2">
             {WIRELINE_DEMO_AGENTS.map((a) => (
-              <AgentCardLink key={a.tel} agent={a} />
+              <AgentCardLink key={a.tel} agent={a} isDemo={true} />
             ))}
           </div>
         </motion.div>
+
 
         {/* Integration logo strip — trust signal showing the stack we run on */}
         <IntegrationLogos />
