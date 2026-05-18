@@ -103,12 +103,24 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
   });
   const campaignSource = await resolveCampaignSource(ctx.userId, ctx.dialedNumber);
 
+  // Safe-parse the callLogId. The digest is fire-and-forget from the
+  // webhook handler, so a parse failure must not throw — log + bail.
+  let callLogIdBig: bigint;
+  try {
+    callLogIdBig = BigInt(ctx.callLogId as any);
+  } catch {
+    log.warn("post-call digest: unparseable callLogId — skipping", {
+      callLogId: String(ctx.callLogId),
+    });
+    return { outcomeTag, campaignSource, crmLogged: false, emailSent: false };
+  }
+
   // 1. Write outcome + campaign back to the call log
   try {
     await drizzle
       .update(schema.callLogs)
       .set({ outcomeTag, campaignSource })
-      .where(eq(schema.callLogs.id, BigInt(ctx.callLogId as any)));
+      .where(eq(schema.callLogs.id, callLogIdBig));
   } catch (err: any) {
     log.warn("post-call digest: callLog update failed", { error: err?.message });
   }

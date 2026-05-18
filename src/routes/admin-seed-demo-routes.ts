@@ -125,12 +125,30 @@ async function pickFirstAgentId(userId: string): Promise<string | null> {
   return rows[0]?.id ?? null;
 }
 
-async function countRows(table: string, userId: string): Promise<number> {
-  const rows: any = await drizzle.execute(
-    sql.raw(`SELECT COUNT(*)::int AS c FROM ${table} WHERE user_id = '${userId}'`),
-  );
-  const data = (rows.rows ?? rows) as Array<{ c: number }>;
-  return Number(data[0]?.c ?? 0);
+/**
+ * Type-safe row count by table name. Uses a hardcoded table map so the
+ * `table` string can never be interpolated into raw SQL, and parameterizes
+ * `userId` via drizzle's query builder — closes the SQL injection that
+ * the previous `sql.raw('... WHERE user_id = ${userId}')` opened. Even
+ * though the endpoint is owner-only-gated, fundamental injection is
+ * never acceptable.
+ */
+const TABLE_MAP: Record<string, any> = {
+  wireline_call_logs: callLogs,
+  wireline_outbound_leads: outboundLeads,
+  wireline_appointments: appointments,
+  wireline_knowledge: knowledge,
+  wireline_dnc_list: dncList,
+};
+
+async function countRows(tableName: string, userId: string): Promise<number> {
+  const table = TABLE_MAP[tableName];
+  if (!table) throw new Error(`Unknown table: ${tableName}`);
+  const [row] = await drizzle
+    .select({ c: sql<number>`COUNT(*)::int` })
+    .from(table)
+    .where(eq(table.userId, userId));
+  return Number(row?.c ?? 0);
 }
 
 function randomCreatedAt(daysBack: number): Date {

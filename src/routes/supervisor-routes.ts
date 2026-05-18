@@ -29,6 +29,21 @@ router.post(
     const mode = ["listen", "whisper", "barge"].includes(req.body?.mode) ? req.body.mode : "listen";
     const note = typeof req.body?.note === "string" ? req.body.note : null;
 
+    // CRITICAL: if the call has already landed in call_logs, verify it
+    // belongs to this tenant. Without this, a supervisor could subscribe
+    // to ANY tenant's live call by guessing the vapi call id.
+    // (Live calls that haven't been logged yet still pass through —
+    // intent-capture only — but the moment the log exists we enforce.)
+    const [existing] = await drizzle
+      .select({ userId: schema.callLogs.userId })
+      .from(schema.callLogs)
+      .where(eq(schema.callLogs.vapiCallId, callId))
+      .limit(1);
+    if (existing && existing.userId !== req.user.id) {
+      // 404 instead of 403 so attackers can't enumerate other tenants' call ids.
+      return res.status(404).json({ error: "Call not found" });
+    }
+
     const [row] = await drizzle
       .insert(schema.supervisorSubscriptions)
       .values({ userId: req.user.id, callId, mode, note })

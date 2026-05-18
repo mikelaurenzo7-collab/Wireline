@@ -118,6 +118,22 @@ async function syncOneAgent(
   try {
     // 1. PATCH the assistant — first message + system prompt + serverUrl.
     const systemPrompt = buildSystemPromptForAgent(agent, kind);
+
+    // Vapi's system prompt cap is ~32k chars. Reject above 30k so we
+    // never silent-fail a sync; the caller sees a clear error per agent
+    // and the operator knows to trim the knowledge file.
+    const MAX_PROMPT_CHARS = 30_000;
+    if (systemPrompt.length > MAX_PROMPT_CHARS) {
+      return {
+        agent: agent.name,
+        display: agent.display,
+        tel: agent.tel,
+        assistantId: numEntry.assistantId,
+        status: "failed",
+        reason: `prompt ${systemPrompt.length} chars exceeds ${MAX_PROMPT_CHARS} cap — trim wireline-knowledge.ts`,
+      };
+    }
+
     const assistantPayload: Record<string, any> = {
       firstMessage: agent.firstMessage,
       model: {

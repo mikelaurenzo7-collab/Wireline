@@ -145,6 +145,15 @@ router.post(
     if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
     const leadId = req.body?.leadId;
     if (!leadId) return res.status(400).json({ error: "leadId is required" });
+
+    // Safe-parse the leadId — BigInt(undefined) or BigInt("not a number") throws.
+    let leadIdBig: bigint;
+    try {
+      leadIdBig = BigInt(leadId);
+    } catch {
+      return res.status(400).json({ error: "leadId must be a numeric id" });
+    }
+
     const [cadence] = await drizzle
       .select()
       .from(schema.cadences)
@@ -153,6 +162,21 @@ router.post(
     if (!cadence) return res.status(404).json({ error: "Cadence not found" });
     if (cadence.active === false) {
       return res.status(400).json({ error: "Cadence is inactive — re-enable before enrolling." });
+    }
+
+    // CRITICAL: verify the lead belongs to the requesting tenant. Without this,
+    // an attacker could enroll any tenant's lead in their own cadence —
+    // cross-tenant data linkage + workflow manipulation.
+    const [lead] = await drizzle
+      .select({ id: schema.outboundLeads.id })
+      .from(schema.outboundLeads)
+      .where(
+        and(eq(schema.outboundLeads.id, leadIdBig), eq(schema.outboundLeads.userId, req.user.id)),
+      )
+      .limit(1);
+    if (!lead) {
+      // Generic 404 so attackers can't enumerate other tenants' lead ids.
+      return res.status(404).json({ error: "Lead not found" });
     }
 
     const steps = cadence.steps as CadenceStep[];
@@ -165,7 +189,7 @@ router.post(
         .values({
           userId: req.user.id,
           cadenceId: cadence.id,
-          leadId: BigInt(leadId),
+          leadId: leadIdBig,
           currentStep: 0,
           nextDueAt,
           status: "active",

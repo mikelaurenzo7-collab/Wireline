@@ -75,13 +75,17 @@ router.post("/api/auth/password-reset", async (req: Request, res: Response) => {
     }
     const issued = await authService.createPasswordResetToken(email, req.ip);
     if (issued) {
-      // TODO: wire up real email transport. For v1 we log so support can
-      // copy/paste the link to the user.
-      const resetUrl = `https://trywireline.com/reset-password?token=${issued.token}`;
+      // SECURITY: NEVER log the plaintext token — that's account takeover
+      // for anyone with log access. Log only that an issue happened +
+      // expiry + a short prefix for correlation. Real email transport
+      // (SES/Postmark) is the only path the plaintext token should travel.
+      // If you need to manually issue while email is unwired, retrieve
+      // from the wireline_password_reset_tokens admin view via your DB
+      // tool — never the application logs.
       log.info("Password reset token issued", {
         email,
         expiresAt: issued.expiresAt.toISOString(),
-        resetUrl,
+        tokenPrefix: issued.token.slice(0, 6) + "…",
       });
     }
     return res.json({

@@ -629,6 +629,17 @@ export async function handleJob(job: JobRow): Promise<void> {
       log.warn("auto_qa_score skipped — claude unavailable", { callLogId: p.callLogId });
       return;
     }
+
+    // Safe-parse the callLogId — BigInt() throws on malformed input which
+    // would crash the worker. Skip the job cleanly instead.
+    let callLogIdBig: bigint;
+    try {
+      callLogIdBig = BigInt(p.callLogId as any);
+    } catch {
+      log.warn("auto_qa_score skipped — unparseable callLogId", { callLogId: p.callLogId });
+      return;
+    }
+
     const [call] = await drizzle
       .select({
         id: schema.callLogs.id,
@@ -638,15 +649,35 @@ export async function handleJob(job: JobRow): Promise<void> {
         sentiment: schema.callLogs.sentiment,
         direction: schema.callLogs.direction,
         durationSeconds: schema.callLogs.durationSeconds,
+        qaScore: schema.callLogs.qaScore,
         agentRole: schema.agents.role,
       })
       .from(schema.callLogs)
       .leftJoin(schema.agents, eq(schema.callLogs.agentId, schema.agents.id))
-      .where(eq(schema.callLogs.id, BigInt(p.callLogId as any)))
+      .where(eq(schema.callLogs.id, callLogIdBig))
       .limit(1);
 
     if (!call || !call.transcript) {
       log.info("auto_qa_score skipped — no call or transcript", { callLogId: p.callLogId });
+      return;
+    }
+
+    // Idempotency: if the call already has a QA score (e.g. Vapi retried
+    // end-of-call-report and the job ran twice), skip the second pass to
+    // save a Claude API call per duplicate.
+    if (call.qaScore != null) {
+      log.info("auto_qa_score skipped — already scored", { callLogId: p.callLogId });
+      return;
+    }
+
+    // Cost gate: skip auto-QA on calls under 30s — those are almost always
+    // unreachable / voicemail / wrong-number and carry no coachable
+    // signal. Saves a Claude call per dead-call without losing learning.
+    if ((call.durationSeconds || 0) < 30) {
+      log.info("auto_qa_score skipped — call too short for useful coaching", {
+        callLogId: p.callLogId,
+        durationSeconds: call.durationSeconds,
+      });
       return;
     }
 
@@ -674,7 +705,7 @@ export async function handleJob(job: JobRow): Promise<void> {
       await drizzle
         .update(schema.callLogs)
         .set(updates)
-        .where(eq(schema.callLogs.id, BigInt(p.callLogId as any)));
+        .where(eq(schema.callLogs.id, callLogIdBig));
 
       if (score < 60 && call.agentId) {
         await enqueue(drizzle, {

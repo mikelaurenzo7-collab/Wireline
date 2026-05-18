@@ -20,6 +20,7 @@ import { eq, and, lte, asc } from "drizzle-orm";
 import { placeOutboundCall } from "./vapi-client";
 import { sendTenantMessage } from "./twilio-service";
 import { IntegrationService } from "./integrations";
+import { isDncBlocked } from "./compliance";
 
 interface CadenceStep {
   type: "call" | "sms" | "email";
@@ -58,6 +59,20 @@ async function executeStep(
   lead: LeadRow,
 ): Promise<{ ok: boolean; result: string }> {
   const agentId = step.agentId || cadence.agentId || lead.agentId;
+
+  // TCPA/GDPR: refuse any call or SMS step when the number is on this
+  // tenant's DNC list. A lead can land on DNC after being enrolled — we
+  // must re-check at execution time, not just at enroll time.
+  if ((step.type === "call" || step.type === "sms") && lead.customerNumber) {
+    try {
+      if (await isDncBlocked(cadence.userId, lead.customerNumber)) {
+        return { ok: false, result: "skipped — number on DNC" };
+      }
+    } catch (err: any) {
+      log.warn("cadence DNC check failed — failing closed", { error: err?.message });
+      return { ok: false, result: "DNC check failed (fail-closed)" };
+    }
+  }
 
   if (step.type === "call") {
     if (!lead.customerNumber) return { ok: false, result: "no phone number on lead" };
@@ -144,7 +159,13 @@ export async function tickDueCadenceRuns({
           agentId: schema.outboundLeads.agentId,
         })
         .from(schema.outboundLeads)
-        .where(eq(schema.outboundLeads.id, run.leadId))
+        // Defense in depth: ensure the lead still belongs to the same tenant
+        // that owns the cadence run. The enroll endpoint already validates
+        // this, but if a row were corrupted or migrated, we must not act
+        // on another tenant's lead.
+        .where(
+          and(eq(schema.outboundLeads.id, run.leadId), eq(schema.outboundLeads.userId, run.userId)),
+        )
         .limit(1);
       if (!leadRow) {
         await drizzle
