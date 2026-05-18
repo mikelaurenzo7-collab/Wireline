@@ -391,6 +391,11 @@ router.post(
         });
       }
 
+      // Bust the per-tenant dashboard cache so call/lead/appointment
+      // counts update immediately. Symmetric with the DELETE
+      // /api/admin/demo-data path which also calls this.
+      invalidateDashboard(userId);
+
       log.info("Demo account seeded", { userId, targetEmail, report });
 
       return res.json({
