@@ -1,7 +1,9 @@
-import React, { useState } from "react";
-import { Plus, Trash2, ArrowRight, Save, Play, Settings2, GripVertical, CheckCircle2, ChevronRight, Workflow } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Plus, Trash2, ArrowRight, Save, Play, Settings2, GripVertical, CheckCircle2, ChevronRight, Workflow, Loader2 } from "lucide-react";
 import { motion, AnimatePresence, Reorder } from "motion/react";
 import { cn } from "../lib/utils";
+import { authFetch } from "../lib/api";
+import { useToast } from "../contexts/ToastContext";
 
 // Linear step definition for the agent flow
 export interface FlowStep {
@@ -17,39 +19,47 @@ interface AgentFlowComposerProps {
 }
 
 export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
-  // We'll initialize with a default sales flow for demonstration.
-  // In a real implementation, this would fetch from and save to the backend.
-  const [steps, setSteps] = useState<FlowStep[]>([
-    {
-      id: "step-1",
-      name: "Greeting & Verification",
-      instructions: "Greet the user warmly. Verify you are speaking with the decision maker. Introduce the reason for the call.",
-      transitionCondition: "User confirms their identity and expresses willingness to continue.",
-    },
-    {
-      id: "step-2",
-      name: "Qualification",
-      instructions: "Ask qualifying questions to determine their current pain points and budget constraints. Do not pitch yet.",
-      transitionCondition: "User has provided at least 2 distinct pain points.",
-    },
-    {
-      id: "step-3",
-      name: "Pitch & Solution",
-      instructions: "Present our solution aligning with the pain points they just shared. Focus on ROI.",
-      transitionCondition: "User shows interest in the solution or asks for pricing.",
-    },
-    {
-      id: "step-4",
-      name: "Closing",
-      instructions: "Propose a next step, such as booking a demo or sending an agreement.",
-      transitionCondition: "User agrees to the next step or explicitly declines.",
-      isEndNode: true,
-    }
-  ]);
-
-  const [activeStepId, setActiveStepId] = useState<string>(steps[0]?.id || "");
+  const { error: toastError, success: toastSuccess } = useToast();
+  const [steps, setSteps] = useState<FlowStep[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeStepId, setActiveStepId] = useState<string>("");
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const fetchFlow = async () => {
+      setIsLoading(true);
+      try {
+        const res = await authFetch(`/api/agent-config/${agentId}`);
+        const data = await res.json();
+        if (!active) return;
+        
+        if (data.flowConfig && Array.isArray(data.flowConfig)) {
+          setSteps(data.flowConfig);
+          setActiveStepId(data.flowConfig[0]?.id || "");
+        } else {
+          // Default empty or starter state (only if null/undefined)
+          const initialSteps = [
+            {
+              id: "step-1",
+              name: "Greeting & Verification",
+              instructions: "Greet the user warmly. Verify you are speaking with the decision maker. Introduce the reason for the call.",
+              transitionCondition: "User confirms their identity and expresses willingness to continue.",
+            }
+          ];
+          setSteps(initialSteps);
+          setActiveStepId(initialSteps[0].id);
+        }
+      } catch (err) {
+        if (active) toastError("Failed to load agent flow configuration");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    };
+    fetchFlow();
+    return () => { active = false; };
+  }, [agentId, toastError]);
 
   const activeStepIndex = steps.findIndex(s => s.id === activeStepId);
   const activeStep = steps[activeStepIndex];
@@ -82,13 +92,37 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
     setIsSaving(true);
     setSaveSuccess(false);
     
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    setIsSaving(false);
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 2500);
+    try {
+      const res = await authFetch(`/api/agent-config/${agentId}/manual`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "flow",
+          content: steps,
+        }),
+      });
+      if (!res.ok) throw new Error("Save failed");
+      
+      setSaveSuccess(true);
+      toastSuccess("Flow configuration saved");
+      setTimeout(() => setSaveSuccess(false), 2500);
+    } catch (err) {
+      toastError("Failed to save flow configuration");
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4 text-brand">
+          <Loader2 className="w-8 h-8 animate-spin" />
+          <span className="text-[10px] uppercase tracking-[0.3em]">Loading Neural Flow...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full flex flex-col xl:flex-row gap-4 p-4 lg:p-6 overflow-hidden">

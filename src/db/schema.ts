@@ -158,6 +158,7 @@ export const agents = pgTable(
     disallowedTopics: text("disallowed_topics").array(),
     escalationKeywords: text("escalation_keywords").array(),
     businessVariables: jsonb("business_variables"),
+    flowConfig: jsonb("flow_config"),
     outOfHoursMessage: text("out_of_hours_message"),
     kpiFocus: text("kpi_focus"),
     // Per-archetype silence tolerance for Vapi calls. NULL → factory uses

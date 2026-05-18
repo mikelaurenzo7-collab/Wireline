@@ -297,7 +297,12 @@ router.get(
       const agentId = req.params.id;
       const userId = req.user.id;
 
-      const [personalityRow, directivesList, knowledgeList] = await Promise.all([
+      const [agentRow, personalityRow, directivesList, knowledgeList] = await Promise.all([
+        drizzle
+          .select({ flowConfig: schema.agents.flowConfig })
+          .from(schema.agents)
+          .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
+          .limit(1),
         drizzle
           .select({ content: schema.personality.content })
           .from(schema.personality)
@@ -316,6 +321,7 @@ router.get(
       ]);
 
       res.json({
+        flowConfig: agentRow[0]?.flowConfig || null,
         personality: personalityRow[0]?.content || "",
         directives: directivesList || [],
         knowledge: knowledgeList || [],
@@ -378,10 +384,15 @@ router.post(
         } else {
           await drizzle.insert(schema.knowledge).values({ agentId, content, userId });
         }
+      } else if (type === "flow") {
+        await drizzle
+          .update(schema.agents)
+          .set({ flowConfig: content })
+          .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)));
       } else {
         return res
           .status(400)
-          .json({ error: "Invalid type — must be personality, directive, or knowledge" });
+          .json({ error: "Invalid type — must be personality, directive, knowledge, or flow" });
       }
 
       res.json({ success: true });
