@@ -431,7 +431,64 @@ router.post(
         })
         .catch(() => {});
     } catch (e: any) {
-      log.error("Portal session failed", { error: getErrorMessage(e) });
+      // Stripe SDK errors carry rich diagnostic context that the old
+      // `getErrorMessage(e)` collapsed to a single message string —
+      // making it impossible to tell from prod logs whether the portal
+      // is misconfigured (no default config saved in Stripe Dashboard),
+      // the key is in the wrong mode (live key + test customer), the
+      // customer was deleted in Stripe, or something else. Capture the
+      // full Stripe error envelope so the next 500 actually points us
+      // at the root cause. See https://stripe.com/docs/api/errors for
+      // the field semantics.
+      const stripeErr = {
+        type: e?.type, // e.g. "StripeInvalidRequestError"
+        code: e?.code, // e.g. "billing_portal_configuration_default_missing"
+        statusCode: e?.statusCode,
+        requestId: e?.requestId,
+        param: e?.param,
+        // The raw message from Stripe usually tells you exactly what to fix
+        // in the Dashboard. Truncate aggressively in case Stripe ever
+        // returns something verbose.
+        rawMessage: typeof e?.raw?.message === "string" ? e.raw.message.slice(0, 500) : undefined,
+        message: getErrorMessage(e),
+      };
+      log.error("Portal session failed", {
+        stripeError: stripeErr,
+        userId: req.user?.id,
+      });
+
+      // Surface a more specific client error for the well-known root
+      // causes — the generic "Portal failed" leaves operators staring
+      // at a 500 with no remediation path. Stripe documents these codes
+      // verbatim, so matching on `code` is safe and durable.
+      if (stripeErr.code === "billing_portal_configuration_default_missing") {
+        return res.status(503).json({
+          error:
+            "Stripe Customer Portal is not configured. " +
+            "An operator must save the default portal configuration in the Stripe Dashboard.",
+          code: "PORTAL_NOT_CONFIGURED",
+        });
+      }
+      if (stripeErr.type === "StripeAuthenticationError") {
+        return res.status(503).json({
+          error: "Stripe authentication failed — server key may be in the wrong mode.",
+          code: "STRIPE_AUTH_ERROR",
+        });
+      }
+      if (
+        stripeErr.type === "StripeInvalidRequestError" &&
+        (stripeErr.code === "resource_missing" || /No such customer/i.test(stripeErr.message))
+      ) {
+        // Customer existed in our DB but was deleted (or never existed)
+        // in Stripe — likely a test/live mode mismatch on the customer
+        // id. Fall back to a 404 so the UI can prompt re-checkout.
+        return res.status(404).json({
+          error:
+            "Stripe customer record is missing — please re-run checkout to recreate your billing profile.",
+          code: "STRIPE_CUSTOMER_MISSING",
+        });
+      }
+
       res.status(500).json({ error: "Portal failed" });
     }
   },
