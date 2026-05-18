@@ -20,6 +20,7 @@ import {
   Zap,
   Target,
   Clock,
+  Workflow,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
@@ -30,12 +31,13 @@ import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import { HelpTooltip } from "./HelpTooltip";
 import HubTabs, { TRAINING_HUB } from "./HubTabs";
 import { useToast } from "../contexts/ToastContext";
+import AgentFlowComposer from "./AgentFlowComposer";
 
 type Message = { role: "user" | "assistant"; content: string };
 
 export default function AgentTraining() {
   const { error: toastError } = useToast();
-  const [activeTab, setActiveTab] = useState<"admin" | "simulator" | "database">("admin");
+  const [activeTab, setActiveTab] = useState<"admin" | "simulator" | "database" | "flow">("admin");
   const [agents, setAgents] = useState<any[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState("default-agent");
   const [messages, setMessages] = useState<Message[]>([
@@ -314,6 +316,12 @@ export default function AgentTraining() {
 
         <nav className="flex flex-wrap gap-1.5 max-w-[1400px] mx-auto w-full mt-3">
           {[
+            {
+              id: "flow",
+              label: "Flow composer",
+              icon: Workflow,
+              help: "Define linear conversation stages and transitions for your agent",
+            },
             {
               id: "admin",
               label: "Neural relay",
@@ -902,6 +910,19 @@ export default function AgentTraining() {
                   </div>
                 </motion.div>
               )}
+            </motion.div>
+          )}
+
+          {activeTab === "flow" && (
+            <motion.div
+              key="flow"
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              className="h-full"
+            >
+              <AgentFlowComposer agentId={selectedAgentId} />
             </motion.div>
           )}
 
