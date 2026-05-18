@@ -113,9 +113,9 @@ export type DemoAgent = ContactAgent;
 export const WIRELINE_DEMO_AGENTS: ReadonlyArray<DemoAgent> = [
   {
     name: "Marcus",
-    role: "Medical Office Intake (demo)",
+    role: "Healthcare-Style Demo",
     scope:
-      "Role-plays a clinic front desk — greets patients, captures reason for visit, schedules appointments, handles insurance pre-check.",
+      "Role-plays a clinic front desk — greets patients, captures reason for visit, schedules appointments, handles insurance pre-check. Healthcare-style demo; not currently HIPAA-certified (BAA available on the Enterprise tier roadmap).",
     firstMessage:
       "Thanks for calling Wireline Medical, this is Marcus — are you booking an appointment or do you have a question about an existing one?",
     handles: "medical, healthcare, clinic, patient intake",

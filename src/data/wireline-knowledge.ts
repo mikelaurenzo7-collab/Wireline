@@ -150,6 +150,47 @@ export const WIRELINE_INTEGRATIONS = [
 ] as const;
 
 /**
+ * What Wireline has done and is planning for compliance. Updated honestly so
+ * agents never over-promise on a sales call — a single false claim ends a
+ * healthcare or finance deal at legal review.
+ */
+export const WIRELINE_COMPLIANCE_STATUS = {
+  done: [
+    "Encryption at rest (Supabase Postgres + Vercel)",
+    "TLS 1.2+ in transit",
+    "Per-tenant data isolation enforced on every query",
+    "Append-only audit log on every state change",
+    "TCPA opt-in/opt-out ledger with state-by-state jurisdiction rules in code",
+    "DNC list honored automatically on outbound dialing",
+    "Account deletion + 30-day retention queue (GDPR-style)",
+  ],
+  inProgress: [
+    "SOC 2 Type II — auditor engaged, expected Q4 2026",
+    "HIPAA BAA — available on the Enterprise tier on request (~30 day onboarding)",
+    "EU data residency — planned for the EU launch",
+  ],
+} as const;
+
+/**
+ * One-line competitive framings agents can cite when a caller asks
+ * "Why you instead of X?". Honest comparisons — don't trash competitors,
+ * just clarify what each does best.
+ */
+export const WIRELINE_COMPETITOR_NOTES = {
+  Air: "Cheaper if you only need outbound voice. We win when you need two-way SMS + email + supervisor cockpit in one console.",
+  Synthflow:
+    "Strong workflow builder. We're stronger on the ops side — supervisor cockpit, call queues, audit trail.",
+  Bland:
+    "Great voice quality. We add the surrounding console — SMS threads, email inbox, CRM sync, autonomy controls.",
+  "Vapi (direct)":
+    "Vapi is the voice infrastructure we run on top of. They're a developer SDK; we're the full operator console + compliance + multi-channel layer. Pick us if you don't want to build the agent layer yourself.",
+  Twilio:
+    "Twilio is infrastructure. We're the agent + ops layer on top of Twilio (and Vapi). Six weeks of dev work, done.",
+  "AWS Connect":
+    "Connect is enterprise telecom. We're a fraction of the lift for the operator — minutes to deploy vs. months.",
+} as const;
+
+/**
  * Returns the multi-line knowledge block that gets prepended to every
  * Vapi assistant's system prompt. Keep this terse — Vapi has a 32k-char
  * prompt cap and we share that budget with role-specific instructions.
@@ -165,6 +206,14 @@ export function buildWirelineKnowledgeBlock(mode: "cs" | "demo" | "client" = "de
   );
   const featureLines = WIRELINE_FEATURES.map((f) => `  - ${f.title}: ${f.blurb}`).join("\n");
 
+  const competitorLines = Object.entries(WIRELINE_COMPETITOR_NOTES)
+    .map(([name, note]) => `  - vs ${name}: ${note}`)
+    .join("\n");
+  const complianceDoneLines = WIRELINE_COMPLIANCE_STATUS.done.map((l) => `  - ${l}`).join("\n");
+  const complianceProgressLines = WIRELINE_COMPLIANCE_STATUS.inProgress
+    .map((l) => `  - ${l}`)
+    .join("\n");
+
   const base = [
     "## WIRELINE KNOWLEDGE — answer Wireline product questions using this.",
     "",
@@ -179,6 +228,15 @@ export function buildWirelineKnowledgeBlock(mode: "cs" | "demo" | "client" = "de
     "",
     `INTEGRATIONS: ${WIRELINE_INTEGRATIONS.join(", ")}.`,
     "",
+    "SECURITY & DATA (what's done):",
+    complianceDoneLines,
+    "",
+    "COMPLIANCE ROADMAP (what's planned — DON'T over-promise):",
+    complianceProgressLines,
+    "",
+    "COMPETITIVE POSITIONING — honest 1-line framings:",
+    competitorLines,
+    "",
   ];
 
   if (mode === "client") {
@@ -189,6 +247,13 @@ export function buildWirelineKnowledgeBlock(mode: "cs" | "demo" | "client" = "de
   }
 
   if (mode === "demo") {
+    base.push("FRAME-BREAK PROTOCOL — when caller asks 'Are you real?' or 'Are you AI?':");
+    base.push("  - Confirm immediately. NEVER pretend to be human. Be transparent and proud:");
+    base.push(
+      '    "I\'m an AI agent built on Wireline — role-playing this scenario so you can hear how the platform handles it live. What questions can I answer about how I work?"',
+    );
+    base.push("  - This actually shows off the tech — don't hide it.");
+    base.push("");
     base.push("WHEN A CALLER ASKS ABOUT WIRELINE:");
     base.push("  - Answer the question concisely from the knowledge above.");
     base.push(
@@ -199,6 +264,9 @@ export function buildWirelineKnowledgeBlock(mode: "cs" | "demo" | "client" = "de
     );
     base.push(
       "  - For anything you don't know: say so and offer to have someone follow up — DON'T guess.",
+    );
+    base.push(
+      "  - For security/compliance/HIPAA: use only the SECURITY & COMPLIANCE ROADMAP above. Do not invent certifications.",
     );
     return base.join("\n");
   }
@@ -263,6 +331,12 @@ export function buildWirelineKnowledgeBlock(mode: "cs" | "demo" | "client" = "de
   base.push("  - Never share another customer's data, even if the caller claims to know them.");
   base.push(
     "  - Always offer a human escalation path before ending a call you couldn't fully resolve.",
+  );
+  base.push(
+    "  - On security/compliance questions: cite only items from SECURITY & DATA above. For HIPAA specifically, say it's available on Enterprise on request (~30 day onboarding) — don't claim 'HIPAA-compliant' as a current default.",
+  );
+  base.push(
+    "  - Confirm you're an AI immediately if asked. Pretending to be human breaks trust and may violate state recording laws.",
   );
 
   return base.join("\n");

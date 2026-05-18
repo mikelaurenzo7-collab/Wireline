@@ -229,9 +229,9 @@ export default function Integrations() {
   return (
     <>
       <PageShell
-        title="Carrier Bridge"
-        eyebrow="Intelligence · Integrations"
-        subtitle="Bridge external data streams and carrier protocols into the fleet."
+        title="Integration Hub"
+        eyebrow="Connections"
+        subtitle="Connect your CRM, calendar, inbox, carrier, and Slack — your agents act through them in real time."
         actions={syncAction}
       >
         <div className="h-full flex flex-col gap-3 min-h-0">

@@ -25,6 +25,18 @@ export const users = pgTable("wireline_users", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
+// Single-use password-reset tokens with 15-minute TTL. The token itself is
+// only stored hashed (sha256) so a DB leak doesn't enable account takeover.
+export const passwordResetTokens = pgTable("wireline_password_reset_tokens", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull(),
+  tokenHash: text("token_hash").notNull().unique(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
+  requestedIp: text("requested_ip"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
 // 1. SETTINGS & BILLING
 export const settings = pgTable("wireline_settings", {
   id: text("id").primaryKey(),
@@ -148,6 +160,9 @@ export const agents = pgTable(
     businessVariables: jsonb("business_variables"),
     outOfHoursMessage: text("out_of_hours_message"),
     kpiFocus: text("kpi_focus"),
+    // Per-archetype silence tolerance for Vapi calls. NULL → factory uses
+    // archetype default (Receptionist 5s, SDR 2s, etc.).
+    silenceTimeoutSeconds: integer("silence_timeout_seconds"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   (t) => ({

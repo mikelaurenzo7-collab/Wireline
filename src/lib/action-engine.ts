@@ -283,24 +283,45 @@ async function handleUpdateCRM(userId: string, action: ActionItem, _context: { s
     log.warn("Internal CRM update failed", { error: err.message });
   }
 
-  // 2. Sync with external CRM if configured
+  // 2. Sync with external CRM if configured. Resolve the active CRM from the
+  // OAuth connection (most accurate signal) AND from settings.crmType (legacy).
+  // If neither is set, report honestly so the agent doesn't tell the caller
+  // "I've updated your CRM" when no CRM is wired.
   const [settings] = await drizzle
     .select({ crmType: schema.settings.crmType })
     .from(schema.settings)
     .where(eq(schema.settings.userId, userId))
     .limit(1);
 
-  if (settings?.crmType && (settings.crmType === "salesforce" || settings.crmType === "hubspot")) {
-    const crm = new CRMService(userId);
-    await crm.updateLead({
-      crmType: settings.crmType as "salesforce" | "hubspot",
-      customerNumber: action.payload.customer_number,
-      status: action.payload.status,
-      notes: action.payload.notes,
-    });
+  let crmSynced = false;
+  let crmType: "salesforce" | "hubspot" | null = null;
+  if (settings?.crmType === "salesforce" || settings?.crmType === "hubspot") {
+    crmType = settings.crmType;
   }
 
-  return { success: true };
+  if (crmType) {
+    try {
+      const crm = new CRMService(userId);
+      crmSynced = await crm.updateLead({
+        crmType,
+        customerNumber: action.payload.customer_number,
+        status: action.payload.status,
+        notes: action.payload.notes,
+      });
+    } catch (err: any) {
+      log.warn("External CRM sync failed", { userId, crmType, error: err?.message });
+      crmSynced = false;
+    }
+  }
+
+  return {
+    success: true,
+    detail: crmType
+      ? crmSynced
+        ? `Synced status update to ${crmType}.`
+        : `Logged locally — ${crmType} sync didn't find a matching contact.`
+      : "Logged locally — connect a CRM in Settings to push updates externally.",
+  };
 }
 
 async function handleCreateInternalTask(

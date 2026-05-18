@@ -139,4 +139,56 @@ router.post(
   },
 );
 
+/**
+ * Auth-gated DDL endpoint for the password-reset tokens table +
+ * the new agents.silence_timeout_seconds column. Idempotent: every
+ * statement uses IF NOT EXISTS so re-running is safe.
+ */
+router.post(
+  "/api/admin/migrate-auth-and-agent-extras",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const ownerEmail = process.env.OWNER_EMAIL;
+    if (!ownerEmail || req.user?.email !== ownerEmail) {
+      return res.status(403).json({ error: "Owner only." });
+    }
+
+    try {
+      await drizzle.execute(sql`
+        CREATE TABLE IF NOT EXISTS wireline_password_reset_tokens (
+          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          user_id uuid NOT NULL,
+          token_hash text NOT NULL UNIQUE,
+          expires_at timestamptz NOT NULL,
+          used_at timestamptz,
+          requested_ip text,
+          created_at timestamptz DEFAULT now()
+        );
+      `);
+      await drizzle.execute(sql`
+        CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id
+        ON wireline_password_reset_tokens (user_id);
+      `);
+      await drizzle.execute(sql`
+        CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_expires
+        ON wireline_password_reset_tokens (expires_at);
+      `);
+
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_agents
+        ADD COLUMN IF NOT EXISTS silence_timeout_seconds integer;
+      `);
+
+      log.info("Auth/agent extras migration completed", { userId: req.user.id });
+      return res.json({
+        ok: true,
+        message: "wireline_password_reset_tokens + agents.silence_timeout_seconds ensured.",
+      });
+    } catch (e: any) {
+      log.error("Auth/agent migration failed", { error: e?.message });
+      return res.status(500).json({ error: e?.message || "Migration failed" });
+    }
+  },
+);
+
 export default router;
