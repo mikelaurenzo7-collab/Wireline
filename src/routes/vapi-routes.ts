@@ -31,6 +31,8 @@ import {
 } from "../lib/webhook-helpers";
 import { analyzeLiveSentiment } from "../lib/gemini-brain";
 import { IntegrationService } from "../lib/integrations";
+import { CRMService } from "../lib/crm-service";
+import { createMeeting as createZoomMeeting } from "../lib/zoom-service";
 import { NotificationService } from "../lib/notifications";
 import { postMessage as slackPostMessage, getDefaultChannel } from "../lib/slack-service";
 import { normalizeDncPhone } from "../lib/compliance";
@@ -467,11 +469,11 @@ router.post("/api/vapi-webhook", async (req, res) => {
       if (toolCall.function.name === "crm_search_contacts") {
         try {
           const { query } = toolCall.function.arguments;
-          const service = new IntegrationService(agent?.user_id);
-          const contacts = await service.searchCrmContacts(query);
+          const service = new CRMService(agent.user_id);
+          const { contacts } = await service.searchContacts(query);
           results.push({
             toolCallId: toolCall.id,
-            result: contacts ? `Found CRM contacts: ${JSON.stringify(contacts)}` : "No contacts found or CRM not connected.",
+            result: contacts && contacts.length > 0 ? `Found CRM contacts: ${JSON.stringify(contacts)}` : "No contacts found or CRM not connected.",
           });
         } catch {
           results.push({ toolCallId: toolCall.id, result: "CRM search error." });
@@ -481,8 +483,17 @@ router.post("/api/vapi-webhook", async (req, res) => {
       if (toolCall.function.name === "crm_log_call") {
         try {
           const { contact_id, subject, notes } = toolCall.function.arguments;
-          const service = new IntegrationService(agent?.user_id);
-          const success = await service.logCrmActivity({ contactId: contact_id, subject, notes });
+          const service = new CRMService(agent.user_id);
+          const fallbackNumber =
+            (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
+            (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
+          const success = await service.logCall({
+            crmType: "auto",
+            subject,
+            description: notes || "Call logged automatically by agent.",
+            to_number: fallbackNumber || "",
+            contact_id,
+          });
           results.push({
             toolCallId: toolCall.id,
             result: success ? "Call logged to CRM successfully." : "Failed to log call to CRM.",
@@ -495,8 +506,14 @@ router.post("/api/vapi-webhook", async (req, res) => {
       if (toolCall.function.name === "crm_create_opportunity") {
         try {
           const { name, contact_id, stage, amount } = toolCall.function.arguments;
-          const service = new IntegrationService(agent?.user_id);
-          const success = await service.createCrmOpportunity({ name, contactId: contact_id, stage, amount });
+          const service = new CRMService(agent.user_id);
+          const success = await service.createOpportunity({
+            crmType: "auto",
+            name,
+            contact_id,
+            stage,
+            amount: amount ? Number(amount) : undefined,
+          });
           results.push({
             toolCallId: toolCall.id,
             result: success ? "Opportunity created successfully in CRM." : "Failed to create opportunity.",
@@ -528,11 +545,14 @@ router.post("/api/vapi-webhook", async (req, res) => {
       if (toolCall.function.name === "generate_zoom_link") {
         try {
           const { topic, start_time, duration } = toolCall.function.arguments;
-          const service = new IntegrationService(agent?.user_id);
-          const zoomLink = await service.createZoomMeeting({ topic, startTime: start_time, duration });
+          const zoomMeeting = await createZoomMeeting(agent.user_id, {
+            topic,
+            startTime: start_time,
+            duration: duration ? Number(duration) : undefined,
+          });
           results.push({
             toolCallId: toolCall.id,
-            result: zoomLink ? `Zoom meeting created: ${zoomLink}` : "Failed to create Zoom meeting.",
+            result: zoomMeeting ? `Zoom meeting created: ${zoomMeeting.join_url}` : "Failed to create Zoom meeting.",
           });
         } catch {
           results.push({ toolCallId: toolCall.id, result: "Zoom error." });
