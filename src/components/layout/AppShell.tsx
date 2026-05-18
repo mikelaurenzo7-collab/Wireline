@@ -1,7 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Waves } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
+import WirelineMark from "../WirelineMark";
 import ErrorBoundary from "../ErrorBoundary";
 import AuroraBackdrop from "./AuroraBackdrop";
 import TopBar from "./TopBar";
@@ -94,7 +94,7 @@ export default function AppShell() {
           <div className="absolute inset-2 rounded-full bg-paper" />
           <div className="absolute inset-4 rounded-full glass flex items-center justify-center">
             <div className="animate-pulse">
-              <Waves className="w-16 h-16 text-aurora" strokeWidth={1.5} />
+              <WirelineMark className="w-16 h-16 text-brand" strokeWidth={90} />
             </div>
           </div>
         </div>

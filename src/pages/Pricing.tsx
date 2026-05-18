@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { PageMeta } from "../lib/page-meta";
+import WirelineMark from "../components/WirelineMark";
 import {
   Check,
   Waves,
@@ -189,7 +190,7 @@ export default function Pricing() {
                 "0 4px 14px -4px rgba(10,200,212,0.55), 0 0 0 1px rgba(255,255,255,0.22) inset",
             }}
           >
-            <Waves className="w-4 h-4 text-paper" strokeWidth={2.5} />
+            <WirelineMark className="w-4 h-4 text-paper" strokeWidth={130} />
           </div>
           <span className="brand-wordmark text-[16px] leading-none">WIRELINE</span>
         </Link>

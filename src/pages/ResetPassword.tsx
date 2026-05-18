@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Lock, Waves, AlertTriangle, Check } from "lucide-react";
+import { Lock, AlertTriangle, Check } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import WirelineMark from "../components/WirelineMark";
 
 /**
  * /reset-password?token=<raw>
@@ -102,7 +103,7 @@ export default function ResetPassword() {
                 "0 8px 24px -8px rgba(10,200,212,0.60), 0 0 0 1px rgba(255,255,255,0.22) inset",
             }}
           >
-            <Waves className="w-5 h-5 text-paper" strokeWidth={2.5} />
+            <WirelineMark className="w-5 h-5 text-paper" strokeWidth={130} />
           </div>
           <div>
             <span className="brand-wordmark text-2xl leading-none">WIRELINE</span>

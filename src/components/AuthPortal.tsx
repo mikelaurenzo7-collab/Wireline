@@ -22,6 +22,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../contexts/AuthContext";
 import { PageMeta } from "../lib/page-meta";
 import IntegrationLogos from "./layout/IntegrationLogos";
+import WirelineMark from "./WirelineMark";
 import {
   WIRELINE_CONTACT_AGENTS,
   WIRELINE_DEMO_AGENTS,
@@ -268,7 +269,7 @@ export default function AuthPortal() {
                   "0 8px 24px -8px rgba(10,200,212,0.60), 0 0 0 1px rgba(255,255,255,0.22) inset",
               }}
             >
-              <Waves className="w-4 h-4 text-paper" strokeWidth={2.5} />
+              <WirelineMark className="w-4 h-4 text-paper" strokeWidth={130} />
             </div>
             <div>
               <span className="brand-wordmark text-xl leading-none">WIRELINE</span>
@@ -432,7 +433,7 @@ export default function AuthPortal() {
                   boxShadow: "0 8px 24px -8px rgba(10,200,212,0.60)",
                 }}
               >
-                <Waves className="w-5 h-5 text-paper" strokeWidth={2.5} />
+                <WirelineMark className="w-5 h-5 text-paper" strokeWidth={130} />
               </div>
               <div>
                 <span className="brand-wordmark text-2xl leading-none">WIRELINE</span>
@@ -485,7 +486,7 @@ export default function AuthPortal() {
                 boxShadow: "0 16px 40px -10px rgba(10,200,212,0.55)",
               }}
             >
-              <Waves className="w-8 h-8 text-paper" strokeWidth={2.2} />
+              <WirelineMark className="w-8 h-8 text-paper" strokeWidth={120} />
             </div>
             <h1 className="brand-wordmark text-5xl leading-none">WIRELINE</h1>
             <p className="text-[9px] uppercase tracking-[0.5em] text-muted">AI Voice Platform</p>

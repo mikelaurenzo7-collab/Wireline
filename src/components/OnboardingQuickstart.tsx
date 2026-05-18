@@ -19,6 +19,7 @@ import {
   Zap,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
+import WirelineMark from "./WirelineMark";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 
 interface ProgressData {
@@ -232,7 +233,7 @@ export default function OnboardingQuickstart() {
                 className="w-9 h-9 rounded-xl flex items-center justify-center"
                 style={{ background: "linear-gradient(135deg, #0AC8D4, #0AC8D4, #0AC8D4)" }}
               >
-                <Waves className="w-4 h-4 text-paper" strokeWidth={2.5} />
+                <WirelineMark className="w-4 h-4 text-paper" strokeWidth={130} />
               </div>
               <div>
                 <div className="text-[9px] uppercase tracking-[0.4em] text-brand flex items-center gap-1.5">

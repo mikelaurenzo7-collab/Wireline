@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Keyboard, LogOut, Waves } from "lucide-react";
+import { Menu, X, Keyboard, LogOut } from "lucide-react";
+import WirelineMark from "../WirelineMark";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../../contexts/AuthContext";
 import { authFetch } from "../../lib/api";
@@ -137,7 +138,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
                   "0 4px 14px -4px rgba(10,200,212,0.55), 0 0 0 1px rgba(255,255,255,0.22) inset",
               }}
             >
-              <Waves className="w-4 h-4 text-paper relative z-10" strokeWidth={2.5} />
+              <WirelineMark className="w-4 h-4 text-paper relative z-10" strokeWidth={130} />
               <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent" />
             </motion.div>
             <span className="brand-wordmark text-[16px] leading-none hidden sm:inline">
@@ -246,7 +247,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
                       background: "#0AC8D4",
                     }}
                   >
-                    <Waves className="w-4 h-4 text-paper" strokeWidth={2.5} />
+                    <WirelineMark className="w-4 h-4 text-paper" strokeWidth={130} />
                   </div>
                   <span className="brand-wordmark text-[16px] leading-none">
                     {branding.brand_name.toUpperCase()}
