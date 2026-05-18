@@ -168,8 +168,14 @@ export default function CommandCenter() {
         );
         setStats(statsData);
       }
-    } catch (err) {
-      log.error("Command Center data fetch failed", { err });
+    } catch (err: any) {
+      // Suppress aborted-fetch noise — they fire on every page navigation.
+      const msg = String(err?.message || "");
+      if (err?.name === "AbortError" || msg.includes("Failed to fetch")) {
+        // expected when user navigates mid-request
+      } else {
+        log.error("Command Center data fetch failed", { err });
+      }
     } finally {
       if (mountedRef.current) setLoading(false);
     }

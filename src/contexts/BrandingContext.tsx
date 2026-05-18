@@ -46,8 +46,12 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
             primary_color: s.primary_color || DEFAULT_BRANDING.primary_color,
           });
         }
-      } catch (e) {
-        console.error("Failed to fetch branding", e);
+      } catch (e: any) {
+        // AbortError fires when the user navigates away mid-fetch — that's
+        // not a real failure; only log unexpected errors.
+        if (e?.name !== "AbortError" && !String(e?.message || "").includes("Failed to fetch")) {
+          console.error("Failed to fetch branding", e);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -57,7 +61,7 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   const updateBranding = (newSettings: Partial<BrandingSettings>) => {
-    setBranding(prev => ({ ...prev, ...newSettings }));
+    setBranding((prev) => ({ ...prev, ...newSettings }));
   };
 
   return (

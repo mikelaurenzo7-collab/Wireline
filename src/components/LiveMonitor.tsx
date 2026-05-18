@@ -199,7 +199,12 @@ export default function LiveMonitor() {
       setAgents(agentsRes.agents || []);
       setLastRefresh(new Date());
     } catch (e: any) {
+      // Aborted fetches (user navigated away) + transient "Failed to fetch"
+      // network blips are not real failures — they fire whenever the
+      // component unmounts mid-request. Stay quiet.
       if (e?.name === "AbortError") return;
+      const msg = String(e?.message || "");
+      if (msg.includes("Failed to fetch")) return;
       if (mountedRef.current) console.error("LiveMonitor fetch failed:", e);
     } finally {
       if (mountedRef.current) setLoading(false);

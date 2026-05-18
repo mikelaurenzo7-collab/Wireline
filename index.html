@@ -116,12 +116,11 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
 
-    <script>
-      // Polyfill Buffer for browser compatibility
-      window.global = window;
-      window.process = { env: {} };
-      window.Buffer = window.Buffer || require('buffer').Buffer;
-    </script>
+    <!-- Buffer polyfill: removed. The previous inline script was a no-op
+         (calling Node's `require("buffer")` doesn't work in the browser)
+         AND violated our CSP "script-src 'self'" directive on every page
+         load. Vite bundles `globalThis.Buffer` via vite-plugin-node-polyfills
+         where actually needed. -->
   </head>
   <body>
     <div id="root"></div>
