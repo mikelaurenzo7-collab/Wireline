@@ -9,16 +9,17 @@ import { sendContract } from "./docusign-service";
 import { searchLeads } from "./apollo-service";
 import { sendTenantMessage } from "./twilio-service";
 import { postMessage as slackPostMessage, getDefaultChannel } from "./slack-service";
+import { resolveAgentTools } from "./agent-capabilities";
 
 /**
  * The Action Engine is responsible for executing tasks extracted by the AI
  * from voice or text interactions.
  */
 export async function executeAction(
-  userId: string, 
+  userId: string,
   action: ActionItem,
   context: { sourceId: string; sourceType: string },
-  autonomyOverride?: "auto" | "draft"
+  autonomyOverride?: "auto" | "draft",
 ): Promise<ActionResult> {
   try {
     let autonomy: string = autonomyOverride || "draft";
@@ -44,7 +45,43 @@ export async function executeAction(
         }
       }
     }
-    log.info("Executing autonomous action", { userId, type: action.type, priority: action.priority, autonomy });
+    log.info("Executing autonomous action", {
+      userId,
+      type: action.type,
+      priority: action.priority,
+      autonomy,
+    });
+
+    // Per-agent tool gating — if the action targets a specific agent and
+    // that agent's enabled_tools array excludes this action type, refuse
+    // the action regardless of autonomy mode. Operators control this from
+    // FleetSettings → agent detail → Channels. When enabled_tools is null
+    // (the default), fall back to role-based defaults (resolveAgentTools).
+    if (action.agentId) {
+      const [agentRow] = await drizzle
+        .select({
+          role: schema.agents.role,
+          enabledTools: schema.agents.enabledTools,
+        })
+        .from(schema.agents)
+        .where(and(eq(schema.agents.id, action.agentId), eq(schema.agents.userId, userId)))
+        .limit(1);
+
+      if (agentRow) {
+        const allowedTools = resolveAgentTools(agentRow.role ?? undefined, agentRow.enabledTools);
+        if (!allowedTools.includes(action.type as any)) {
+          log.warn("Action blocked — agent not authorized for tool", {
+            userId,
+            agentId: action.agentId,
+            type: action.type,
+          });
+          return {
+            success: false,
+            error: `This agent is not authorized to use "${action.type}". Enable it in Agents → Channels.`,
+          };
+        }
+      }
+    }
 
     if (autonomy === "auto") {
       const service = new IntegrationService(userId);
@@ -53,7 +90,7 @@ export async function executeAction(
           const emailOk = await service.sendEmail({
             to: action.payload.to,
             subject: action.payload.subject,
-            body: action.payload.body
+            body: action.payload.body,
           });
           return { success: emailOk };
         }
@@ -120,43 +157,100 @@ export async function executeAction(
 async function handleSendEmail(userId: string, action: ActionItem, context: { sourceId: string }) {
   // For now, we save as a "Draft Task" in the fleet_tasks table for human approval.
   // Future: Integration with Postmark/SendGrid for auto-sending.
-  const [data] = await drizzle.insert(schema.fleetTasks).values({
-    userId: userId,
-    taskType: "email_draft",
-    description: `[AI Draft] ${action.payload.subject || "Follow-up"}`,
-    payload: {
-      to: action.payload.to,
-      subject: action.payload.subject,
-      body: action.payload.body,
-      reasoning: action.reasoning
-    },
-    priority: action.priority,
-    status: "pending",
-    sourceType: "phone_call",
-    sourceId: context.sourceId
-  }).returning({ id: schema.fleetTasks.id });
+  const [data] = await drizzle
+    .insert(schema.fleetTasks)
+    .values({
+      userId: userId,
+      taskType: "email_draft",
+      description: `[AI Draft] ${action.payload.subject || "Follow-up"}`,
+      payload: {
+        to: action.payload.to,
+        subject: action.payload.subject,
+        body: action.payload.body,
+        reasoning: action.reasoning,
+      },
+      priority: action.priority,
+      status: "pending",
+      sourceType: "phone_call",
+      sourceId: context.sourceId,
+    })
+    .returning({ id: schema.fleetTasks.id });
 
   if (!data) throw new Error("Failed to insert email draft task");
   return { success: true, actionId: data.id };
 }
 
-async function handleScheduleCalendar(userId: string, action: ActionItem, context: { sourceId: string }) {
-  const [data] = await drizzle.insert(schema.fleetTasks).values({
-    userId: userId,
-    taskType: "calendar_invite",
-    description: `[AI Request] Schedule ${action.payload.event_name || "Meeting"}`,
-    payload: action.payload,
-    priority: action.priority,
-    status: "pending",
-    sourceType: "phone_call",
-    sourceId: context.sourceId
-  }).returning({ id: schema.fleetTasks.id });
+async function handleScheduleCalendar(
+  userId: string,
+  action: ActionItem,
+  context: { sourceId: string },
+) {
+  const [data] = await drizzle
+    .insert(schema.fleetTasks)
+    .values({
+      userId: userId,
+      taskType: "calendar_invite",
+      description: `[AI Request] Schedule ${action.payload.event_name || "Meeting"}`,
+      payload: action.payload,
+      priority: action.priority,
+      status: "pending",
+      sourceType: "phone_call",
+      sourceId: context.sourceId,
+    })
+    .returning({ id: schema.fleetTasks.id });
 
   if (!data) throw new Error("Failed to insert calendar invite task");
   return { success: true, actionId: data.id };
 }
 
-async function handleSendTextMessage(userId: string, action: ActionItem, context: { sourceId: string }) {
+/**
+ * Per-agent SMS authorization gate.
+ *
+ * Resolves the agent's enabled_tools (jsonb on wireline_agents) — null
+ * means "use role defaults" (which include send_text_message for every
+ * role). An explicit array that omits send_text_message means the
+ * operator has turned SMS off for this specific agent. Refuse the send.
+ *
+ * Backward-compatible: existing agents with null enabledTools keep
+ * full role-default behavior.
+ */
+async function agentMaySendSms(
+  userId: string,
+  agentId: string | undefined,
+): Promise<{ allowed: true } | { allowed: false; reason: string }> {
+  if (!agentId) return { allowed: true }; // no agent context = tenant-level action
+  try {
+    const [row] = await drizzle
+      .select({ role: schema.agents.role, enabledTools: schema.agents.enabledTools })
+      .from(schema.agents)
+      .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
+      .limit(1);
+    if (!row) return { allowed: true };
+    const tools = resolveAgentTools(row.role ?? undefined, row.enabledTools);
+    if (!tools.includes("send_text_message")) {
+      return {
+        allowed: false,
+        reason: "Agent has SMS disabled. Enable it in Fleet → Agent → Channels.",
+      };
+    }
+    return { allowed: true };
+  } catch {
+    // Fail OPEN — never block sending on a DB blip
+    return { allowed: true };
+  }
+}
+
+async function handleSendTextMessage(
+  userId: string,
+  action: ActionItem,
+  context: { sourceId: string },
+) {
+  const gate = await agentMaySendSms(userId, action.agentId);
+  if (!gate.allowed) {
+    log.info("SMS blocked by per-agent tool gate", { userId, agentId: action.agentId });
+    return { success: false, error: gate.reason };
+  }
+
   const outcome = await sendTenantMessage(userId, {
     to: action.payload.to,
     body: action.payload.body,
@@ -173,12 +267,18 @@ async function handleSendTextMessage(userId: string, action: ActionItem, context
 async function handleUpdateCRM(userId: string, action: ActionItem, _context: { sourceId: string }) {
   // 1. Update internal Wireline leads table
   try {
-    await drizzle.update(schema.outboundLeads)
-      .set({ 
+    await drizzle
+      .update(schema.outboundLeads)
+      .set({
         status: action.payload.status,
-        lastContactSummary: action.payload.notes || "Updated by AI Action Engine"
+        lastContactSummary: action.payload.notes || "Updated by AI Action Engine",
       })
-      .where(and(eq(schema.outboundLeads.userId, userId), eq(schema.outboundLeads.customerNumber, action.payload.customer_number)));
+      .where(
+        and(
+          eq(schema.outboundLeads.userId, userId),
+          eq(schema.outboundLeads.customerNumber, action.payload.customer_number),
+        ),
+      );
   } catch (err: any) {
     log.warn("Internal CRM update failed", { error: err.message });
   }
@@ -196,30 +296,41 @@ async function handleUpdateCRM(userId: string, action: ActionItem, _context: { s
       crmType: settings.crmType as "salesforce" | "hubspot",
       customerNumber: action.payload.customer_number,
       status: action.payload.status,
-      notes: action.payload.notes
+      notes: action.payload.notes,
     });
   }
-  
+
   return { success: true };
 }
 
-async function handleCreateInternalTask(userId: string, action: ActionItem, context: { sourceId: string }) {
-  const [data] = await drizzle.insert(schema.fleetTasks).values({
-    userId: userId,
-    taskType: "internal_followup",
-    description: action.payload.description || "Manual follow-up required",
-    payload: action.payload,
-    priority: action.priority,
-    status: "pending",
-    sourceType: "phone_call",
-    sourceId: context.sourceId
-  }).returning({ id: schema.fleetTasks.id });
+async function handleCreateInternalTask(
+  userId: string,
+  action: ActionItem,
+  context: { sourceId: string },
+) {
+  const [data] = await drizzle
+    .insert(schema.fleetTasks)
+    .values({
+      userId: userId,
+      taskType: "internal_followup",
+      description: action.payload.description || "Manual follow-up required",
+      payload: action.payload,
+      priority: action.priority,
+      status: "pending",
+      sourceType: "phone_call",
+      sourceId: context.sourceId,
+    })
+    .returning({ id: schema.fleetTasks.id });
 
   if (!data) throw new Error("Failed to insert internal follow-up task");
   return { success: true, actionId: data.id };
 }
 
-async function handleSendContract(userId: string, action: ActionItem, context: { sourceId: string }) {
+async function handleSendContract(
+  userId: string,
+  action: ActionItem,
+  context: { sourceId: string },
+) {
   const result = await sendContract({
     recipientName: action.payload.recipient_name,
     recipientEmail: action.payload.recipient_email,
@@ -231,11 +342,18 @@ async function handleSendContract(userId: string, action: ActionItem, context: {
 
   if (!result) {
     // Fallback: save as a task for human to send manually
-    return await handleCreateInternalTask(userId, {
-      ...action,
-      type: "create_internal_task",
-      payload: { ...action.payload, description: `[DocuSign Pending] Send contract to ${action.payload.recipient_email}` }
-    }, context);
+    return await handleCreateInternalTask(
+      userId,
+      {
+        ...action,
+        type: "create_internal_task",
+        payload: {
+          ...action.payload,
+          description: `[DocuSign Pending] Send contract to ${action.payload.recipient_email}`,
+        },
+      },
+      context,
+    );
   }
 
   // Log the envelope to the database for tracking
@@ -254,7 +372,11 @@ async function handleSendContract(userId: string, action: ActionItem, context: {
   return { success: true, actionId: result.envelopeId };
 }
 
-async function handleProspectLeads(userId: string, action: ActionItem, _context: { sourceId: string }) {
+async function handleProspectLeads(
+  userId: string,
+  action: ActionItem,
+  _context: { sourceId: string },
+) {
   const leads = await searchLeads({
     titles: action.payload.titles,
     industries: action.payload.industries,
@@ -269,7 +391,7 @@ async function handleProspectLeads(userId: string, action: ActionItem, _context:
   }
 
   // Insert discovered leads into the outbound leads table
-  const rows = leads.map(lead => ({
+  const rows = leads.map((lead) => ({
     userId: userId,
     customerNumber: lead.phone,
     customerName: `${lead.first_name} ${lead.last_name}`.trim(),
@@ -283,11 +405,12 @@ async function handleProspectLeads(userId: string, action: ActionItem, _context:
   }));
 
   try {
-    await drizzle.insert(schema.outboundLeads)
+    await drizzle
+      .insert(schema.outboundLeads)
       .values(rows)
       .onConflictDoUpdate({
         target: [schema.outboundLeads.userId, schema.outboundLeads.customerNumber],
-        set: { updatedAt: new Date() } // Just a dummy update to handle conflict
+        set: { updatedAt: new Date() }, // Just a dummy update to handle conflict
       });
   } catch (err: any) {
     log.error("Failed to insert Apollo leads", { error: err.message });
@@ -311,25 +434,32 @@ async function handleProspectLeads(userId: string, action: ActionItem, _context:
 //  bypass this gate (see the `if (autonomy === "auto")` branch above).
 // ────────────────────────────────────────────────────────────────────
 
-async function handleDraftSendContract(userId: string, action: ActionItem, context: { sourceId: string }) {
-  const [data] = await drizzle.insert(schema.fleetTasks).values({
-    userId: userId,
-    taskType: "contract_draft",
-    description: `[AI Draft] Send contract to ${action.payload.recipient_name || action.payload.recipient_email || "recipient"}`,
-    payload: {
-      recipient_name: action.payload.recipient_name,
-      recipient_email: action.payload.recipient_email,
-      template_id: action.payload.template_id,
-      subject: action.payload.subject,
-      message: action.payload.message,
-      prefill_fields: action.payload.prefill_fields,
-      reasoning: action.reasoning,
-    },
-    priority: action.priority,
-    status: "pending",
-    sourceType: "phone_call",
-    sourceId: context.sourceId,
-  }).returning({ id: schema.fleetTasks.id });
+async function handleDraftSendContract(
+  userId: string,
+  action: ActionItem,
+  context: { sourceId: string },
+) {
+  const [data] = await drizzle
+    .insert(schema.fleetTasks)
+    .values({
+      userId: userId,
+      taskType: "contract_draft",
+      description: `[AI Draft] Send contract to ${action.payload.recipient_name || action.payload.recipient_email || "recipient"}`,
+      payload: {
+        recipient_name: action.payload.recipient_name,
+        recipient_email: action.payload.recipient_email,
+        template_id: action.payload.template_id,
+        subject: action.payload.subject,
+        message: action.payload.message,
+        prefill_fields: action.payload.prefill_fields,
+        reasoning: action.reasoning,
+      },
+      priority: action.priority,
+      status: "pending",
+      sourceType: "phone_call",
+      sourceId: context.sourceId,
+    })
+    .returning({ id: schema.fleetTasks.id });
 
   if (!data) throw new Error("Failed to insert contract draft task");
   return { success: true, actionId: data.id };
@@ -343,56 +473,67 @@ async function handleDraftSendTextMessage(
 ) {
   const channel = action.payload.channel === "whatsapp" ? "whatsapp" : "sms";
   const description = `[AI Draft] ${channel.toUpperCase()} ${action.payload.to || "recipient"}${failureReason ? ` (${failureReason})` : ""}`;
-  const [data] = await drizzle.insert(schema.fleetTasks).values({
-    userId: userId,
-    taskType: "text_message_draft",
-    description,
-    payload: {
-      to: action.payload.to,
-      body: action.payload.body,
-      channel,
-      reasoning: action.reasoning,
-      failure_reason: failureReason,
-    },
-    priority: action.priority,
-    status: "pending",
-    sourceType: "phone_call",
-    sourceId: context.sourceId,
-  }).returning({ id: schema.fleetTasks.id });
+  const [data] = await drizzle
+    .insert(schema.fleetTasks)
+    .values({
+      userId: userId,
+      taskType: "text_message_draft",
+      description,
+      payload: {
+        to: action.payload.to,
+        body: action.payload.body,
+        channel,
+        reasoning: action.reasoning,
+        failure_reason: failureReason,
+      },
+      priority: action.priority,
+      status: "pending",
+      sourceType: "phone_call",
+      sourceId: context.sourceId,
+    })
+    .returning({ id: schema.fleetTasks.id });
 
   if (!data) throw new Error("Failed to insert text message draft task");
   return { success: true, actionId: data.id };
 }
 
-async function handleDraftProspectLeads(userId: string, action: ActionItem, context: { sourceId: string }) {
-  const [data] = await drizzle.insert(schema.fleetTasks).values({
-    userId: userId,
-    taskType: "prospect_draft",
-    description: `[AI Draft] Prospect Apollo for ${(action.payload.titles || []).join(", ") || "lead criteria"}`,
-    payload: {
-      titles: action.payload.titles,
-      industries: action.payload.industries,
-      states: action.payload.states,
-      employee_ranges: action.payload.employee_ranges,
-      limit: action.payload.limit || 25,
-      reasoning: action.reasoning,
-    },
-    priority: action.priority,
-    status: "pending",
-    sourceType: "phone_call",
-    sourceId: context.sourceId,
-  }).returning({ id: schema.fleetTasks.id });
+async function handleDraftProspectLeads(
+  userId: string,
+  action: ActionItem,
+  context: { sourceId: string },
+) {
+  const [data] = await drizzle
+    .insert(schema.fleetTasks)
+    .values({
+      userId: userId,
+      taskType: "prospect_draft",
+      description: `[AI Draft] Prospect Apollo for ${(action.payload.titles || []).join(", ") || "lead criteria"}`,
+      payload: {
+        titles: action.payload.titles,
+        industries: action.payload.industries,
+        states: action.payload.states,
+        employee_ranges: action.payload.employee_ranges,
+        limit: action.payload.limit || 25,
+        reasoning: action.reasoning,
+      },
+      priority: action.priority,
+      status: "pending",
+      sourceType: "phone_call",
+      sourceId: context.sourceId,
+    })
+    .returning({ id: schema.fleetTasks.id });
 
   if (!data) throw new Error("Failed to insert prospect draft task");
   return { success: true, actionId: data.id };
 }
 
 async function handleNotifySlack(userId: string, action: ActionItem): Promise<ActionResult> {
-  const channel = action.payload.channel || await getDefaultChannel(userId);
+  const channel = action.payload.channel || (await getDefaultChannel(userId));
   if (!channel) {
     return { success: false, error: "No Slack channel configured" };
   }
-  const text = action.payload.message || action.reasoning || "Notification from your Wireline agent";
+  const text =
+    action.payload.message || action.reasoning || "Notification from your Wireline agent";
   const ok = await slackPostMessage(userId, channel, text);
   return { success: ok, error: ok ? undefined : "Slack message delivery failed" };
 }

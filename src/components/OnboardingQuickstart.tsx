@@ -66,11 +66,16 @@ const STEPS = [
 export default function OnboardingQuickstart() {
   const [progress, setProgress] = useState<ProgressData | null>(null);
   const [loading, setLoading] = useState(true);
+  // Tier drives whether we show the 4-step self-serve flow or a
+  // white-glove onboarding card (Business / Enterprise tier). Without
+  // this gate, a 500-seat call center buyer lands on the same setup
+  // screen as a $29 solo operator — sets the wrong expectations.
+  const [planId, setPlanId] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
-        const [a, k, n, c] = await Promise.all([
+        const [a, k, n, c, planRes] = await Promise.all([
           authFetch("/api/agents")
             .then((r) => r.json())
             .then((d) => d.agents?.length ?? 0)
@@ -87,13 +92,86 @@ export default function OnboardingQuickstart() {
             .then((r) => r.json())
             .then((d) => d.total ?? 0)
             .catch(() => 0),
+          authFetch("/api/billing/status")
+            .then((r) => r.json())
+            .then((d) => d.subscription?.plan_id || d.subscription?.plan || null)
+            .catch(() => null),
         ]);
         setProgress({ agents: a, knowledge: k, numbers: n, calls: c });
+        setPlanId(planRes);
       } finally {
         setLoading(false);
       }
     })();
   }, []);
+
+  /**
+   * Business / Enterprise customers don't onboard themselves. Show a
+   * white-glove card pointing them at human-led onboarding instead of
+   * the 4-step self-serve flow. The CTAs route to Maya (our scheduling
+   * agent) and Mike's email — both already live on (630) 642-5927 and
+   * mikelaurenzo7@gmail.com.
+   */
+  if (planId === "business" || planId === "enterprise") {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative aurora-ring rounded-3xl"
+      >
+        <div className="relative rounded-3xl glass-strong overflow-hidden p-6 md:p-8">
+          <div
+            className="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-30 blur-3xl pointer-events-none"
+            style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }}
+          />
+          <div
+            className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full opacity-25 blur-3xl pointer-events-none"
+            style={{ background: "radial-gradient(circle, #E040C0, transparent)" }}
+          />
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+            <div className="flex items-start gap-4 flex-1 min-w-0">
+              <div
+                className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: "linear-gradient(135deg, #0AC8D4, #9B59F5, #E040C0)" }}
+              >
+                <Sparkles className="w-5 h-5 text-paper" strokeWidth={2.5} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] uppercase tracking-[0.4em] text-brand flex items-center gap-1.5 mb-1">
+                  White-glove onboarding · {planId === "enterprise" ? "Enterprise" : "Business"}
+                </div>
+                <h2 className="font-display italic text-2xl md:text-3xl text-ink leading-tight">
+                  Let's get your fleet live
+                </h2>
+                <p className="text-sm text-muted/80 mt-1.5 leading-relaxed max-w-xl">
+                  Your account includes a dedicated onboarding session — voice cloning,
+                  integrations, team setup, and the first 100 calls reviewed together. Book a 30-min
+                  kickoff with our scheduling lead and we'll have your first agent live within 48
+                  hours.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col gap-2 shrink-0 w-full md:w-auto">
+              <a
+                href="tel:+16306425927"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-brand text-paper text-[11px] uppercase tracking-[0.3em] hover:bg-brand/90 transition-colors"
+              >
+                <Phone className="w-3.5 h-3.5" />
+                Call Maya — (630) 642-5927
+              </a>
+              <a
+                href="mailto:mikelaurenzo7@gmail.com?subject=Wireline%20kickoff"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full glass border border-white/12 text-ink text-[11px] uppercase tracking-[0.3em] hover:border-white/24 transition-colors"
+              >
+                <Mail className="w-3.5 h-3.5" />
+                Email the founder
+              </a>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
 
   if (loading || !progress)
     return (
