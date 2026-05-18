@@ -188,13 +188,13 @@ export function CarrierPanel({
                     {[
                       {
                         v: "google",
-                        label: "Standard",
+                        label: "Gemini 1.5 (Standard)",
                         sub: "FAST",
                         desc: "Lowest latency for high-volume queues.",
                       },
                       {
                         v: "anthropic",
-                        label: "Premium",
+                        label: "Claude 3.5 (Premium)",
                         sub: "RECOMMENDED",
                         desc: "Advanced reasoning, objection handling, and steering.",
                       },

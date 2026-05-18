@@ -21,6 +21,12 @@ import {
   Target,
   Clock,
   Workflow,
+  Beaker,
+  Brain,
+  ListFilter,
+  Settings,
+  Shield,
+  Blocks,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
@@ -32,12 +38,13 @@ import { HelpTooltip } from "./HelpTooltip";
 import HubTabs, { TRAINING_HUB } from "./HubTabs";
 import { useToast } from "../contexts/ToastContext";
 import AgentFlowComposer from "./AgentFlowComposer";
+import AgentActionEngine from "./AgentActionEngine";
 
 type Message = { role: "user" | "assistant"; content: string };
 
 export default function AgentTraining() {
   const { error: toastError } = useToast();
-  const [activeTab, setActiveTab] = useState<"admin" | "simulator" | "database" | "flow">("admin");
+  const [activeTab, setActiveTab] = useState<"admin" | "simulator" | "database" | "flow" | "actions">("flow");
   const [agents, setAgents] = useState<any[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState("default-agent");
   const [messages, setMessages] = useState<Message[]>([
@@ -323,6 +330,12 @@ export default function AgentTraining() {
               help: "Define linear conversation stages and transitions for your agent",
             },
             {
+              id: "actions",
+              label: "Action engine",
+              icon: Blocks,
+              help: "Configure which integrations and tools this agent is authorized to use",
+            },
+            {
               id: "admin",
               label: "Neural relay",
               icon: MessageSquare,
@@ -371,6 +384,19 @@ export default function AgentTraining() {
 
       <main className="flex-1 min-h-0 relative">
         <AnimatePresence mode="wait">
+          {activeTab === "actions" && (
+            <motion.div
+              key="actions"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute inset-0 overflow-y-auto scrollbar-hide"
+            >
+              <AgentActionEngine agentId={selectedAgentId} />
+            </motion.div>
+          )}
+
           {activeTab === "admin" && (
             <motion.div
               key="admin"
