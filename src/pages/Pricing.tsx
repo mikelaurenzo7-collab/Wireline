@@ -153,7 +153,7 @@ const VALUE_BULLETS = [
 
 export default function Pricing() {
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="min-h-screen relative">
       <PageMeta
         title="Plans & Pricing"
         description="Wireline pricing plans from $29/month Personal to Enterprise custom. Every plan includes AI voice agents, real-time call logs, sentiment scoring, and the Wireline Demo Line. 14-day free trial, no credit card required."
@@ -200,12 +200,12 @@ export default function Pricing() {
       </header>
 
       {/* Hero */}
-      <section className="relative z-10 px-6 lg:px-10 pt-8 pb-12 max-w-6xl mx-auto text-center">
+      <section className="relative z-10 px-6 lg:px-10 pt-4 pb-8 max-w-5xl mx-auto text-center">
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass border border-white/8 mb-6"
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass border border-white/8 mb-4"
         >
           <span className="w-2 h-2 rounded-full bg-emerald-500" />
           <span className="text-[10px] uppercase tracking-[0.42em] text-muted">
@@ -217,7 +217,7 @@ export default function Pricing() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="font-display italic text-5xl md:text-6xl lg:text-7xl leading-[0.92] tracking-tight mb-5"
+          className="font-display italic text-4xl md:text-5xl lg:text-6xl leading-[0.92] tracking-tight mb-4"
         >
           <span className="text-aurora">Plans that scale</span>
           <br />
@@ -297,8 +297,8 @@ export default function Pricing() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 + i * 0.08, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-              className={`relative rounded-3xl p-6 lg:p-7 flex flex-col ${
-                tier.highlight ? "aurora-ring md:scale-[1.04] md:-my-2 md:z-10" : ""
+              className={`relative rounded-3xl p-4 lg:p-5 flex flex-col ${
+                tier.highlight ? "aurora-ring md:scale-[1.02] md:-my-1 md:z-10" : ""
               }`}
             >
               <div
@@ -306,7 +306,7 @@ export default function Pricing() {
                   tier.highlight
                     ? "glass-strong border-2 border-brand/40"
                     : "glass border border-white/8"
-                } p-6 lg:p-7 flex flex-col flex-1 overflow-hidden`}
+                } p-5 flex flex-col flex-1 overflow-hidden`}
                 style={
                   tier.highlight
                     ? {
@@ -318,7 +318,7 @@ export default function Pricing() {
               >
                 {tier.highlight && (
                   <span
-                    className="absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-1 rounded-full text-[10px] uppercase tracking-[0.35em] font-semibold"
+                    className="absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-1 rounded-full text-[10px] uppercase tracking-[0.35em] font-semibold z-10"
                     style={{
                       background: "linear-gradient(135deg, #0AC8D4, #9B59F5)",
                       color: "#fff",
@@ -330,14 +330,14 @@ export default function Pricing() {
                 )}
 
                 <div className="mb-4">
-                  <h2 className="font-display italic text-3xl text-ink mb-1">{tier.name}</h2>
-                  <p className="text-[12px] text-muted/75 leading-snug">{tier.blurb}</p>
+                  <h2 className="font-display italic text-2xl text-ink mb-1">{tier.name}</h2>
+                  <p className="text-[11px] text-muted/75 leading-snug">{tier.blurb}</p>
                 </div>
 
                 <div className="mb-5 flex items-baseline gap-1">
-                  <span className="font-display italic text-5xl text-ink">{tier.price}</span>
+                  <span className="font-display italic text-4xl text-ink">{tier.price}</span>
                   {tier.cadence && (
-                    <span className="text-[11px] text-muted/70">{tier.cadence}</span>
+                    <span className="text-[10px] text-muted/70">{tier.cadence}</span>
                   )}
                 </div>
 
