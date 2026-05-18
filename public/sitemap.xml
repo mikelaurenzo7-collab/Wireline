@@ -1,12 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!--
-    Wireline is a single-page app; authenticated routes are excluded.
-    Only the login / landing surface is indexable.
+    Wireline is a single-page app. Only routes that render meaningful
+    content without an auth session are indexable. Authenticated dashboard
+    routes (/admin, /agents, /logs, etc.) sit behind JWT and are excluded.
   -->
   <url>
-    <loc>https://www.wireline.app/</loc>
+    <loc>https://trywireline.com/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://trywireline.com/pricing</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://trywireline.com/privacy</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://trywireline.com/terms</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
   </url>
 </urlset>
