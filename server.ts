@@ -113,6 +113,16 @@ async function validateDatabaseConnection(): Promise<boolean> {
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
+// Trust the proxy chain when running behind Vercel (1 hop). Without this:
+//   - req.ip falls back to the immediate TCP peer (always Vercel's edge),
+//     defeating per-IP rate limiting
+//   - express-rate-limit logs a recurring ValidationError when it sees an
+//     X-Forwarded-For header it can't authenticate
+// Trust value `1` = trust exactly one upstream proxy (Vercel's edge).
+if (IS_PROD) {
+  app.set("trust proxy", 1);
+}
+
 // CORS setup
 const corsAllowList = (process.env.CORS_ORIGINS || "")
   .split(",")
