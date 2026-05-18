@@ -149,31 +149,31 @@ function AgentCardLink({ agent }: { agent: AgentCard }) {
   return (
     <a
       href={`tel:${agent.tel}`}
-      className="group relative block rounded-xl p-3 overflow-hidden border border-white/12 hover:border-white/24 transition-colors"
+      className="group relative block rounded-2xl p-4 overflow-hidden border border-white/12 hover:border-white/28 hover:scale-[1.015] transition-all duration-200"
       style={{
-        background: `linear-gradient(135deg, ${agent.tint}26, ${agent.tint}10)`,
-        boxShadow: `0 8px 20px -12px ${agent.tint}66`,
+        background: `linear-gradient(135deg, ${agent.tint}2c, ${agent.tint}12)`,
+        boxShadow: `0 10px 28px -14px ${agent.tint}88`,
       }}
     >
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-3">
         <div
-          className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+          className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
           style={{
             background: `linear-gradient(135deg, ${agent.tint}, ${agent.tint}cc)`,
-            boxShadow: `0 4px 10px -4px ${agent.tint}aa`,
+            boxShadow: `0 6px 14px -4px ${agent.tint}aa`,
           }}
         >
-          <Phone className="w-3.5 h-3.5 text-paper" strokeWidth={2.4} />
+          <Phone className="w-4 h-4 text-paper" strokeWidth={2.4} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[9px] uppercase tracking-[0.3em] text-muted/70 leading-none mb-1 truncate">
+          <p className="text-[10px] uppercase tracking-[0.32em] text-muted/80 leading-none mb-1.5 truncate">
             {agent.name} · {agent.role}
           </p>
-          <p className="font-display italic text-base leading-none text-ink truncate">
+          <p className="font-display italic text-lg leading-none text-ink truncate">
             {agent.display}
           </p>
         </div>
-        <ArrowRight className="w-3.5 h-3.5 text-ink/40 group-hover:text-ink group-hover:translate-x-0.5 transition-all shrink-0" />
+        <ArrowRight className="w-4 h-4 text-ink/40 group-hover:text-ink group-hover:translate-x-1 transition-all shrink-0" />
       </div>
     </a>
   );
@@ -393,38 +393,6 @@ export default function AuthPortal() {
             ))}
           </div>
         </motion.div>
-
-        {/* Feature cards */}
-        <div className="grid grid-cols-2 gap-3 mb-12">
-          {FEATURES.map((f, i) => {
-            const Icon = f.icon;
-            return (
-              <motion.div
-                key={f.title}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 + i * 0.08, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className="relative rounded-xl p-4 glass border border-white/8 overflow-hidden"
-              >
-                <div
-                  className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-2xl opacity-20 pointer-events-none"
-                  style={{ background: f.accent }}
-                />
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center mb-3 border border-white/8"
-                  style={{
-                    background: `linear-gradient(135deg, ${f.accent}25, ${f.accent}08)`,
-                    color: f.accent,
-                  }}
-                >
-                  <Icon className="w-4 h-4" />
-                </div>
-                <p className="text-[11px] font-medium text-ink mb-1">{f.title}</p>
-                <p className="text-[10px] text-muted/70 leading-relaxed">{f.desc}</p>
-              </motion.div>
-            );
-          })}
-        </div>
 
         {/* Integration logo strip — trust signal showing the stack we run on */}
         <IntegrationLogos />
@@ -713,8 +681,47 @@ export default function AuthPortal() {
             </div>
           </div>
 
+          {/* Feature pillars — moved here from the left brand panel so they
+              fill the white space under the sign-in card and reinforce
+              value-props at the moment of conversion (the user is right
+              next to the Sign In button when they read these). */}
+          <div className="grid grid-cols-2 gap-3 mt-5">
+            {FEATURES.map((f, i) => {
+              const Icon = f.icon;
+              return (
+                <motion.div
+                  key={f.title}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    delay: 0.2 + i * 0.08,
+                    duration: 0.5,
+                    ease: [0.16, 1, 0.3, 1],
+                  }}
+                  className="relative rounded-xl p-3 glass border border-white/8 overflow-hidden"
+                >
+                  <div
+                    className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-2xl opacity-20 pointer-events-none"
+                    style={{ background: f.accent }}
+                  />
+                  <div
+                    className="w-7 h-7 rounded-lg flex items-center justify-center mb-2 border border-white/8"
+                    style={{
+                      background: `linear-gradient(135deg, ${f.accent}25, ${f.accent}08)`,
+                      color: f.accent,
+                    }}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                  </div>
+                  <p className="text-[11px] font-medium text-ink mb-0.5 leading-tight">{f.title}</p>
+                  <p className="text-[10px] text-muted/70 leading-snug">{f.desc}</p>
+                </motion.div>
+              );
+            })}
+          </div>
+
           {/* Footer */}
-          <div className="mt-6 flex items-center justify-center gap-4">
+          <div className="mt-5 flex items-center justify-center gap-4">
             <ShieldCheck className="w-3 h-3 text-muted/40" />
             <span className="text-[9px] uppercase tracking-[0.42em] text-muted/50">
               TLS Encrypted · Secured Internal Infrastructure
