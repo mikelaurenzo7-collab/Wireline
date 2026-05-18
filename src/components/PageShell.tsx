@@ -238,7 +238,7 @@ export function Panel({
 
       {(title || actions) && (
         <header className="relative shrink-0 px-3 py-2 flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 min-w-0">
             {Icon && (
               <div
                 className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-black/8"
@@ -257,7 +257,7 @@ export function Panel({
               </h3>
             )}
             {hint && (
-              <span className="text-[9px] uppercase tracking-[0.30em] text-muted/60 ml-1 shrink-0">
+              <span className="text-[9px] uppercase tracking-[0.30em] text-muted/60 ml-1">
                 {hint}
               </span>
             )}
