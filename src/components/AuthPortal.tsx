@@ -260,7 +260,7 @@ export default function AuthPortal() {
   };
 
   return (
-    <div className="min-h-screen flex relative overflow-hidden">
+    <div className="h-screen flex relative overflow-hidden">
       {/* Global aurora backdrop */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <motion.div
@@ -293,8 +293,13 @@ export default function AuthPortal() {
       </div>
       <div className="scanline" />
 
-      {/* ── LEFT PANEL — brand showcase ─────────────────────────────────────── */}
-      <div className="hidden lg:flex lg:w-[54%] xl:w-[56%] flex-col relative z-10 p-10 xl:p-14 overflow-hidden">
+      {/* ── LEFT PANEL — brand showcase ───────────────────────────────────────
+           h-screen + overflow-y-auto so the agent showcase + integration
+           strip don't push the whole layout taller than the viewport.
+           Without this, the left column at lg+ widths grows to ~1020px,
+           making the Sign In button on the right scroll-required even
+           though it's anchored to the top of its column. */}
+      <div className="hidden lg:flex lg:w-[54%] xl:w-[56%] flex-col relative z-10 p-6 xl:p-10 h-screen overflow-y-auto scrollbar-hide">
         {/* Decorative vertical line on right edge */}
         <div
           className="absolute top-0 right-0 w-px h-full"
@@ -355,38 +360,34 @@ export default function AuthPortal() {
           </p>
         </motion.div>
 
-        {/* Demo call CTA — two distinct agents (male / female) so visitors
-            can hear voice + persona variety in our fleet. Tap-to-call on
-            mobile, click-to-call on macOS / Windows with telephony apps. */}
-        {/* Two-section split: 4 real contact lines + 6 vertical demos.
-            Same card renderer (AgentCardLink below) — keeps visual
-            consistency, just changes the heading framing. */}
+        {/* All 10 demo agents in a single dense grid — 4 contact lines
+            up top, 6 vertical demos below, separated by a thin divider
+            line instead of two separate sections + double headers. Saves
+            ~70px of vertical vs. the two-grid layout and lets the entire
+            agent showcase + sign-in fit above the 768px fold on stock
+            laptops. */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
           className="mb-5"
         >
-          <p className="text-[9px] uppercase tracking-[0.42em] text-brand/90 mb-3 text-center">
-            Talk to Wireline · 4 lines · live AI 24/7
+          <p className="text-[9px] uppercase tracking-[0.42em] text-brand/90 mb-2 text-center">
+            Call any of these 10 live AI agents · tap to dial
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {CONTACT_AGENTS.map((a) => (
               <AgentCardLink key={a.tel} agent={a} />
             ))}
           </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.22, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-          className="mb-6"
-        >
-          <p className="text-[9px] uppercase tracking-[0.42em] text-muted/80 mb-3 text-center">
-            See it work · 6 vertical demos · tap to call
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div className="my-2 flex items-center gap-2">
+            <span className="flex-1 h-px bg-white/8" />
+            <span className="text-[8px] uppercase tracking-[0.4em] text-muted/60">
+              6 vertical demos
+            </span>
+            <span className="flex-1 h-px bg-white/8" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {DEMO_AGENTS.map((a) => (
               <AgentCardLink key={a.tel} agent={a} />
             ))}
