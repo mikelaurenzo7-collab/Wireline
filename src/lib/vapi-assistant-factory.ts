@@ -140,6 +140,23 @@ export async function buildVapiAssistant({
       : Promise.resolve(null),
   ]);
 
+  let flowConfigBlock = "";
+  if (agentConfigRow?.flowConfig && Array.isArray(agentConfigRow.flowConfig) && agentConfigRow.flowConfig.length > 0) {
+    const steps = agentConfigRow.flowConfig;
+    let formattedSteps = steps.map((s: any, i: number) => {
+      let stepStr = `[STAGE ${i + 1}: ${s.name}]\n- INSTRUCTIONS: ${s.instructions}`;
+      if (s.transitionCondition && !s.isEndNode) {
+        stepStr += `\n- TRANSITION CRITERIA: Proceed to stage ${i + 2} only when: ${s.transitionCondition}`;
+      }
+      if (s.isEndNode) {
+        stepStr += `\n- END NODE: Gracefully end the call after completing these instructions.`;
+      }
+      return stepStr;
+    }).join("\n\n");
+    
+    flowConfigBlock = `\n## CRITICAL CONVERSATION FLOW (MANDATORY)\nYou must progress through the following stages strictly in order. Do not skip stages unless explicitly forced by the caller. Start at STAGE 1.\n\n${formattedSteps}\n`;
+  }
+
   const _lessons = (lessonsData || [])
     .filter(
       (l: { lesson?: string | null }) =>
@@ -196,7 +213,7 @@ export async function buildVapiAssistant({
 
   const roleProtocol = ROLE_SPECIFIC_PROTOCOLS[agentRole] || "";
 
-  const systemPrompt = `
+const systemPrompt = `
 ## IDENTITY & MISSION
 You are ${agentConfigRow?.name || "Wireline Agent"}, a ${agentRole.replace(/_/g, " ")} specialist.
 
@@ -206,6 +223,7 @@ ${customerIntelBlock}
 ${archetypeRules}
 ${leadContext}
 ${roleProtocol}
+${flowConfigBlock}
 Today is ${currentDateTime}.
   `;
 
@@ -260,6 +278,7 @@ Today is ${currentDateTime}.
     model: {
       provider: voiceLlmProvider,
       model: voiceLlmModel,
+      fallbackModels: ["gpt-4o", "gemini-1.5-pro", "gpt-4-turbo"],
       systemPrompt: runtime.prompt,
       temperature: llmTemp,
     },
