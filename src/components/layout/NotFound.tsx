@@ -47,9 +47,9 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
         transition={{ delay: 0.1, duration: 0.5 }}
         className="space-y-3 max-w-md"
       >
-        <p className="text-[10px] uppercase tracking-[0.6em] text-muted">Page not found</p>
+        <p className="text-[10px] uppercase tracking-[0.6em] text-muted">Error 404</p>
         <h2 className="font-display italic text-2xl md:text-3xl text-ink leading-tight">
-          {isPublic ? "Lost the signal" : "Off the map"}
+          Page not found
         </h2>
         <p className="text-ink/55 text-sm leading-relaxed">
           {location.pathname && location.pathname !== "/" && (

@@ -173,8 +173,11 @@ export async function buildVapiAssistant({
   }
 
   const agentRole = agentConfigRow?.role || DEFAULT_AGENT_ROLE;
-  const voiceLlmProvider = userSettings?.voice_llm_provider || "google";
-  const voiceLlmModel = userSettings?.voice_llm_model || "gemini-1.5-flash";
+  // Default brain: Claude Sonnet 4.6 via Vapi (in their allowlist as of May 2026).
+  // Smarter than Gemini Flash for objection handling + multi-turn CS work, half
+  // the cost of Opus. Operators can override per-tenant via settings.voice_llm_*.
+  const voiceLlmProvider = userSettings?.voice_llm_provider || "anthropic";
+  const voiceLlmModel = userSettings?.voice_llm_model || "claude-sonnet-4-6";
 
   const enabledToolNames = resolveAgentTools(agentRole, agentConfigRow?.enabledTools)
     .filter(
@@ -220,10 +223,38 @@ Today is ${currentDateTime}.
       ? runtime.outOfHoursMessage
       : agentConfigRow?.firstMessage || "Hello!";
 
+  // Honor the operator's configured voice. Before this fix, every customer
+  // assistant got Liam's default voice regardless of what they set in Fleet
+  // Settings — silent override of their config. Direction-specific override:
+  // voiceIdOutbound for outbound dial, voiceIdInbound for inbound, voiceId as
+  // the shared fallback, and the platform default only if nothing is set.
+  const PLATFORM_DEFAULT_VOICE_ID = "bIHbv24MWmeRgasZH58o";
+  const directionalVoiceId = isOutbound
+    ? agentConfigRow?.voiceIdOutbound
+    : agentConfigRow?.voiceIdInbound;
+  const resolvedVoiceId =
+    directionalVoiceId || agentConfigRow?.voiceId || PLATFORM_DEFAULT_VOICE_ID;
+  const resolvedVoiceProvider = agentConfigRow?.voiceProvider || "11labs";
+
+  // Per-archetype silence timeout. Outbound SDRs need short patience (caller
+  // dodging); CS agents need longer (caller thinking). Operator can override
+  // per-agent via FleetSettings → Advanced.
+  const archetypeSilenceDefault: Record<string, number> = {
+    "The Closer": 2,
+    "The Hunter": 2,
+    "The Negotiator": 3,
+    "The Collector": 3,
+    Scheduler: 4,
+    Receptionist: 5,
+  };
+  const silenceTimeoutSeconds =
+    (agentConfigRow as any)?.silenceTimeoutSeconds ?? archetypeSilenceDefault[archetype] ?? 5;
+
   return {
     name: agentConfigRow?.name || "Wireline Agent",
     firstMessage: firstMessage,
     serverUrlSecret: VAPI_WEBHOOK_SECRET,
+    silenceTimeoutSeconds,
     model: {
       provider: voiceLlmProvider,
       model: voiceLlmModel,
@@ -231,8 +262,8 @@ Today is ${currentDateTime}.
       temperature: llmTemp,
     },
     voice: {
-      provider: (agentConfigRow?.voiceProvider as "11labs" | "openai") || "11labs",
-      voiceId: agentConfigRow?.voiceId || "bIHbv24MWmeRgasZH58o",
+      provider: resolvedVoiceProvider,
+      voiceId: resolvedVoiceId,
     },
     functions: buildRoleToolDefs(agentRole, enabledToolNames),
   };

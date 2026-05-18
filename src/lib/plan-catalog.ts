@@ -1,15 +1,26 @@
 /**
  * Single source for Stripe-backed plan tiers: agent caps (voice-number slots
- * match the same cap), pricing surface, and price-id → plan resolution at runtime.
+ * match the same cap), pricing surface, voice-minute caps + overage rate,
+ * and price-id → plan resolution at runtime.
+ *
+ * Unit economics: variable cost per voice minute lands around $0.13
+ * (Vapi infra + 11labs synthesis + Claude reasoning + Twilio per-call).
+ * Plan limits + overage rates are tuned so every tier stays cash-positive
+ * at full utilization. Pricing.tsx renders the same numbers; keep them
+ * in sync.
  */
 
-export type StripePlanId = "starter" | "pro" | "enterprise";
+export type StripePlanId = "personal" | "starter" | "pro" | "business" | "enterprise";
 
 export type StripePlan = {
   id: StripePlanId;
   name: string;
   price_usd_monthly: number;
   max_agents: number;
+  /** Pooled monthly voice minutes across all agents in the workspace. */
+  voice_minutes_monthly: number;
+  /** Per-minute overage rate when monthly cap is exceeded. */
+  overage_per_min_usd: number;
   features: string[];
   /** Env var holding the Stripe price_… id for this tier. */
   priceIdEnv: string;
@@ -17,48 +28,94 @@ export type StripePlan = {
 
 export const STRIPE_PLANS: StripePlan[] = [
   {
+    id: "personal",
+    name: "Personal",
+    price_usd_monthly: 29,
+    max_agents: 1,
+    voice_minutes_monthly: 100,
+    overage_per_min_usd: 0.25,
+    priceIdEnv: "STRIPE_PERSONAL_PRICE_ID",
+    features: [
+      "1 AI voice agent (voice + email)",
+      "One dedicated Wireline voice number",
+      "100 voice minutes / month",
+      "Unlimited inbound email",
+      "Call logs + transcripts + sentiment",
+      "Overage billed at $0.25 / min",
+    ],
+  },
+  {
     id: "starter",
     name: "Starter",
-    price_usd_monthly: 79,
-    max_agents: 10,
+    price_usd_monthly: 99,
+    max_agents: 3,
+    voice_minutes_monthly: 500,
+    overage_per_min_usd: 0.2,
     priceIdEnv: "STRIPE_STARTER_PRICE_ID",
     features: [
-      "10 AI agents (voice + email)",
-      "One permanent dedicated Wireline voice number per agent you run (provision in Admin)",
-      "Unlimited inbound calls",
-      "200 outbound calls / month",
-      "Daily Brief + Triage Inbox",
-      "Webhooks · Intake API",
+      "3 AI agents (voice + email)",
+      "Dedicated voice number per agent",
+      "500 voice minutes / month",
+      "Outbound dialer (CSV + auto-dial)",
+      "Live call monitor + sentiment",
+      "Up to 5 team seats",
+      "Overage billed at $0.20 / min",
     ],
   },
   {
     id: "pro",
     name: "Pro",
-    price_usd_monthly: 299,
-    max_agents: 25,
+    price_usd_monthly: 399,
+    max_agents: 10,
+    voice_minutes_monthly: 2_500,
+    overage_per_min_usd: 0.18,
     priceIdEnv: "STRIPE_PRO_PRICE_ID",
     features: [
-      "25 AI agents (voice + email)",
-      "One permanent dedicated voice number per agent you run",
-      "Unlimited outbound calls",
-      "Auto-dial new leads instantly",
-      "Knowledge Atlas + Insights",
-      "Everything in Starter",
+      "10 AI agents (voice + email)",
+      "Dedicated voice number per agent",
+      "2,500 voice minutes / month",
+      "Outbound dialer + email campaigns",
+      "Slack alerts on key events",
+      "Up to 25 team seats",
+      "Webhook + Action Engine",
+      "Overage billed at $0.18 / min",
       "Priority support",
+    ],
+  },
+  {
+    id: "business",
+    name: "Business",
+    price_usd_monthly: 999,
+    max_agents: 25,
+    voice_minutes_monthly: 5_000,
+    overage_per_min_usd: 0.16,
+    priceIdEnv: "STRIPE_BUSINESS_PRICE_ID",
+    features: [
+      "25 AI agents (voice + email)",
+      "Dedicated voice number per agent",
+      "5,000 voice minutes / month",
+      "Everything in Pro",
+      "SSO + audit log export",
+      "Up to 50 team seats",
+      "Priority support · Slack channel",
+      "Overage billed at $0.16 / min",
     ],
   },
   {
     id: "enterprise",
     name: "Enterprise",
-    price_usd_monthly: 1199,
+    price_usd_monthly: 0, // contact sales
     max_agents: 100,
+    voice_minutes_monthly: 50_000,
+    overage_per_min_usd: 0.15,
     priceIdEnv: "STRIPE_ENTERPRISE_PRICE_ID",
     features: [
-      "100 AI agents",
-      "One permanent dedicated voice number per agent you run · custom bundles available",
-      "Everything in Pro",
-      "SSO + SAML",
-      "Custom data retention",
+      "Up to 100 agents (custom bundles)",
+      "Dedicated voice numbers + BYO carrier option",
+      "50,000+ voice minutes (custom volume)",
+      "Everything in Business",
+      "SAML SSO + advanced compliance",
+      "Custom data retention + private model deployment",
       "Dedicated success manager",
       "99.95% uptime SLA",
     ],
@@ -76,12 +133,22 @@ export function planById(id: string | null | undefined): StripePlan | null {
 }
 
 export function plansForClient() {
-  return STRIPE_PLANS.map((p) => ({
-    id: p.id,
-    name: p.name,
-    price_usd_monthly: p.price_usd_monthly,
-    max_agents: p.max_agents,
-    features: p.features,
-    configured: !!process.env[p.priceIdEnv],
-  }));
+  return STRIPE_PLANS.map((p) => {
+    // price_usd_monthly === 0 is the "contact sales" sentinel for Enterprise.
+    // Never expose it as a checkout-able plan even if STRIPE_ENTERPRISE_PRICE_ID
+    // is still set from an older paid Enterprise tier — that would let anyone
+    // subscribe to Enterprise at $0/mo backed by a real Stripe price.
+    const contactSales = p.price_usd_monthly === 0;
+    return {
+      id: p.id,
+      name: p.name,
+      price_usd_monthly: p.price_usd_monthly,
+      max_agents: p.max_agents,
+      voice_minutes_monthly: p.voice_minutes_monthly,
+      overage_per_min_usd: p.overage_per_min_usd,
+      features: p.features,
+      configured: !contactSales && !!process.env[p.priceIdEnv],
+      contact_sales: contactSales,
+    };
+  });
 }

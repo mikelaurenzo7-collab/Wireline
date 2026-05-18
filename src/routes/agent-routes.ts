@@ -5,7 +5,12 @@ import { log, auditLogger, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, sql, desc, inArray } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
-import { getErrorMessage, sanitizeForAudit, mapObjectToCamel } from "../lib/server-utils";
+import {
+  getErrorMessage,
+  sanitizeForAudit,
+  mapObjectToCamel,
+  mapObjectToSnake,
+} from "../lib/server-utils";
 import {
   parseFormData,
   AgentFormSchema,
@@ -33,7 +38,10 @@ router.get("/api/agents", authenticateUser, async (req: AuthenticatedRequest, re
       .where(eq(schema.agents.userId, req.user.id))
       .orderBy(desc(schema.agents.createdAt))
       .limit(500);
-    res.json({ agents: agentsList });
+    // SPA reads snake_case (agent.voice_id, agent.first_message, agent.user_id).
+    // Drizzle returns camelCase. Normalize so FleetSettings and downstream
+    // consumers find the fields they expect.
+    res.json({ agents: mapObjectToSnake(agentsList) });
   } catch (error: any) {
     log.warn("Failed to fetch agents", { userId: req.user.id, error: getErrorMessage(error) });
     res.json({ agents: [] });
@@ -670,7 +678,7 @@ router.post("/api/agents", authenticateUser, async (req: AuthenticatedRequest, r
       return res.status(400).json({ error: "Validation failed", errors: validation.errors });
     }
 
-    // SECURITY ENFORCEMENT: Check Subscription Status for this specific user
+    // SECURITY ENFORCEMENT: Check Subscription Status for this specific user.
     // Also pull business-profile fields so the role + template overlays can
     // substitute {{businessName}} etc. into the agent's system prompt at
     // create-time — no manual personalization step needed.

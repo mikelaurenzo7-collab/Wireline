@@ -4,7 +4,7 @@ import { log, drizzle, auditLogger } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, sql, desc, inArray, like, ne, gte, or } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
-import { getErrorMessage } from "../lib/server-utils";
+import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import { parseFormData, FleetTaskCreateSchema } from "../lib/form-validators";
 import { compileActivityFeed } from "../lib/fleet-activity";
 import { ROLE_PERSONALITY_TEMPLATES } from "../lib/agent-constants";
@@ -524,12 +524,15 @@ router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, re
       ],
     );
 
+    // UI reads snake_case (customer_number, lead_score, created_at). Drizzle
+    // hands us camelCase. Normalize at the boundary so the triage card stops
+    // falling back to "Unknown caller" for every entry.
     res.json({
-      hot_leads: hotLeads || [],
-      compliance: complianceTasks || [],
-      pending_tasks: pendingTasks || [],
-      knowledge_gaps: knowledgeGaps || [],
-      escalations: escalations || [],
+      hot_leads: mapObjectToSnake(hotLeads || []),
+      compliance: mapObjectToSnake(complianceTasks || []),
+      pending_tasks: mapObjectToSnake(pendingTasks || []),
+      knowledge_gaps: mapObjectToSnake(knowledgeGaps || []),
+      escalations: mapObjectToSnake(escalations || []),
       counts: {
         hot_leads: hotLeads?.length || 0,
         compliance: complianceTasks?.length || 0,

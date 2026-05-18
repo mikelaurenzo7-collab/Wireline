@@ -616,6 +616,79 @@ export async function handleJob(job: JobRow): Promise<void> {
     const dialer = new CampaignDialerService();
     await dialer.processAllCampaigns(p.userId);
   }
+
+  if (job.type === "cadence_tick") {
+    const { tickDueCadenceRuns } = await import("./cadence-engine");
+    const summary = await tickDueCadenceRuns({ limit: 100 });
+    log.info("cadence_tick processed", summary);
+  }
+
+  if (job.type === "auto_qa_score") {
+    const p = job.payload as { callLogId: number | string; userId: string };
+    if (!claudeBrain.isClaudeAvailable()) {
+      log.warn("auto_qa_score skipped — claude unavailable", { callLogId: p.callLogId });
+      return;
+    }
+    const [call] = await drizzle
+      .select({
+        id: schema.callLogs.id,
+        agentId: schema.callLogs.agentId,
+        summary: schema.callLogs.summary,
+        transcript: schema.callLogs.transcript,
+        sentiment: schema.callLogs.sentiment,
+        direction: schema.callLogs.direction,
+        durationSeconds: schema.callLogs.durationSeconds,
+        agentRole: schema.agents.role,
+      })
+      .from(schema.callLogs)
+      .leftJoin(schema.agents, eq(schema.callLogs.agentId, schema.agents.id))
+      .where(eq(schema.callLogs.id, BigInt(p.callLogId as any)))
+      .limit(1);
+
+    if (!call || !call.transcript) {
+      log.info("auto_qa_score skipped — no call or transcript", { callLogId: p.callLogId });
+      return;
+    }
+
+    try {
+      const breakdown = await claudeBrain.qaScore({
+        direction: (call.direction || "inbound") as "inbound" | "outbound",
+        agentRole: call.agentRole || undefined,
+        summary: call.summary || "",
+        transcript: call.transcript || "",
+        sentiment: call.sentiment || "neutral",
+        durationSeconds: call.durationSeconds || 0,
+      });
+      const QA_DIMS = ["greeting", "discovery", "solution", "objection", "closing"] as const;
+      const score = Math.min(
+        100,
+        Math.max(
+          0,
+          QA_DIMS.reduce((s, d) => s + (Number((breakdown as any)[d]) || 0), 0),
+        ),
+      );
+
+      const updates: any = { qaScore: score, qaBreakdown: breakdown as any };
+      if ((breakdown as any)?.coaching_note)
+        updates.coachingNote = (breakdown as any).coaching_note;
+      await drizzle
+        .update(schema.callLogs)
+        .set(updates)
+        .where(eq(schema.callLogs.id, BigInt(p.callLogId as any)));
+
+      if (score < 60 && call.agentId) {
+        await enqueue(drizzle, {
+          userId: p.userId,
+          type: "adaptive_optimization",
+          payload: { agentId: call.agentId, callId: String(call.id), score, breakdown },
+        });
+      }
+
+      log.info("auto_qa_score completed", { callLogId: p.callLogId, score });
+    } catch (err: any) {
+      log.error("auto_qa_score failed", { callLogId: p.callLogId, error: err?.message });
+    }
+  }
 }
 
 /**

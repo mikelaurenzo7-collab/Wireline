@@ -25,6 +25,18 @@ export const users = pgTable("wireline_users", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
+// Single-use password-reset tokens with 15-minute TTL. The token itself is
+// only stored hashed (sha256) so a DB leak doesn't enable account takeover.
+export const passwordResetTokens = pgTable("wireline_password_reset_tokens", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull(),
+  tokenHash: text("token_hash").notNull().unique(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
+  requestedIp: text("requested_ip"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
 // 1. SETTINGS & BILLING
 export const settings = pgTable("wireline_settings", {
   id: text("id").primaryKey(),
@@ -148,6 +160,9 @@ export const agents = pgTable(
     businessVariables: jsonb("business_variables"),
     outOfHoursMessage: text("out_of_hours_message"),
     kpiFocus: text("kpi_focus"),
+    // Per-archetype silence tolerance for Vapi calls. NULL → factory uses
+    // archetype default (Receptionist 5s, SDR 2s, etc.).
+    silenceTimeoutSeconds: integer("silence_timeout_seconds"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   (t) => ({
@@ -243,6 +258,13 @@ export const callLogs = pgTable(
     coachingNote: text("coaching_note"),
     qaScore: integer("qa_score"),
     qaBreakdown: jsonb("qa_breakdown"),
+    // Single-word outcome bucket the post-call digest uses for the email
+    // subject + Insights breakdown: booked | qualified | followup | dnc |
+    // unreachable | info | other.
+    outcomeTag: text("outcome_tag"),
+    // Campaign attribution — denormalized from phoneNumbers.campaignLabel at
+    // write time so /insights queries don't need a join.
+    campaignSource: text("campaign_source"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   (t) => ({
@@ -356,6 +378,190 @@ export const emailMessages = pgTable("wireline_email_messages", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
+// 3.1b SMS THREADS + MESSAGES — two-way text conversations.
+// Mirrors the email_threads/email_messages shape so the SmsThreads UI
+// can reuse the same inbox layout. One thread per (user, customer phone)
+// pair; messages append in time order. Inbound writes from the Twilio
+// webhook; outbound writes from twilio-service.sendTenantMessage.
+export const smsThreads = pgTable(
+  "wireline_sms_threads",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    agentId: text("agent_id").references(() => agents.id, { onDelete: "set null" }),
+    customerNumber: text("customer_number").notNull(),
+    status: text("status").default("open"),
+    summary: text("summary"),
+    unreadCount: integer("unread_count").default(0).notNull(),
+    lastMessageAt: timestamp("last_message_at", { withTimezone: true }).defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    userCustomerUnique: sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_sms_threads_user_customer ON wireline_sms_threads (user_id, customer_number)`,
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_sms_threads_user_id ON wireline_sms_threads (user_id)`,
+    lastMessageIdx: sql`CREATE INDEX IF NOT EXISTS idx_sms_threads_last_message ON wireline_sms_threads (last_message_at DESC)`,
+  }),
+);
+
+export const smsMessages = pgTable(
+  "wireline_sms_messages",
+  {
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
+    userId: uuid("user_id").notNull(),
+    threadId: uuid("thread_id").references(() => smsThreads.id, { onDelete: "cascade" }),
+    direction: text("direction").notNull(), // 'in' or 'out'
+    body: text("body").notNull(),
+    twilioSid: text("twilio_sid"),
+    /** Optional agent that authored an outbound message. Null for inbound + operator replies. */
+    agentId: text("agent_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    threadCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_sms_messages_thread_created ON wireline_sms_messages (thread_id, created_at)`,
+  }),
+);
+
+// 3.1c AGENT TEAMS + CALL QUEUES — call-center scaffolding.
+// Distinct from the human-team RBAC concept in wireline_team_members
+// (workspace user invites). These tables group AI AGENTS into teams
+// for call-center routing — one tenant has many agent teams (e.g.
+// "Inbound Support", "Outbound Sales"). Each agent team optionally
+// overrides the platform Twilio sender. Call queues sit one level
+// deeper: when a customer dials a queue's number, we route to the
+// least-busy agent in that queue's team.
+export const agentTeams = pgTable(
+  "wireline_agent_teams",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    name: text("name").notNull(),
+    /** Per-team SMS sender — overrides settings.twilio_sms_from_number for agents in this team. */
+    smsFromNumber: text("sms_from_number"),
+    /** Optional manager email — destination for escalations from this team. */
+    managerEmail: text("manager_email"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_agent_teams_user_id ON wireline_agent_teams (user_id)`,
+  }),
+);
+
+export const agentTeamMembers = pgTable(
+  "wireline_agent_team_members",
+  {
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
+    teamId: uuid("team_id").references(() => agentTeams.id, { onDelete: "cascade" }),
+    agentId: text("agent_id").references(() => agents.id, { onDelete: "cascade" }),
+    /** "member" or "lead" — leads get first routing preference. */
+    role: text("role").default("member"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    teamAgentUnique: sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_agent_team_members_team_agent ON wireline_agent_team_members (team_id, agent_id)`,
+  }),
+);
+
+export const callQueues = pgTable(
+  "wireline_call_queues",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    teamId: uuid("team_id").references(() => agentTeams.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    /** vapi_number_id this queue answers on. */
+    vapiNumberId: text("vapi_number_id"),
+    /** Max seconds before overflow_action triggers. */
+    maxWaitSeconds: integer("max_wait_seconds").default(60),
+    /** "voicemail" | "transfer" | "queue" — what happens when no agent is free. */
+    overflowAction: text("overflow_action").default("voicemail"),
+    /** Phone number to transfer to when overflow_action='transfer'. */
+    overflowTransferTo: text("overflow_transfer_to"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_queues_user_id ON wireline_call_queues (user_id)`,
+    vapiNumberIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_queues_vapi_number ON wireline_call_queues (vapi_number_id)`,
+  }),
+);
+
+/**
+ * Multi-touch outbound cadences. A cadence is a sequence of steps (call /
+ * sms / email) with delays between them. Operators define one once; the
+ * sentinel job worker ticks through it for every lead enrolled.
+ *
+ * Example steps payload:
+ *   [
+ *     { type: "call",  delayHours: 0  },
+ *     { type: "sms",   delayHours: 24, template: "Hi {{name}}, following up on our call..." },
+ *     { type: "email", delayHours: 72, template: "..." },
+ *     { type: "call",  delayHours: 168 }
+ *   ]
+ */
+export const cadences = pgTable(
+  "wireline_cadences",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    name: text("name").notNull(),
+    description: text("description"),
+    agentId: text("agent_id"),
+    steps: jsonb("steps").notNull(),
+    active: boolean("active").default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_cadences_user_id ON wireline_cadences (user_id)`,
+  }),
+);
+
+/**
+ * Per-lead cadence execution state. One row per (lead, cadence) enrollment.
+ * Sentinel scans this table for rows where next_due_at <= now() AND status =
+ * 'active', executes the step, advances the counter, schedules next.
+ */
+export const cadenceRuns = pgTable(
+  "wireline_cadence_runs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    cadenceId: uuid("cadence_id").notNull(),
+    leadId: bigint("lead_id", { mode: "bigint" }).notNull(),
+    currentStep: integer("current_step").default(0).notNull(),
+    nextDueAt: timestamp("next_due_at", { withTimezone: true }),
+    status: text("status").default("active"),
+    lastResult: text("last_result"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    dueIdx: sql`CREATE INDEX IF NOT EXISTS idx_cadence_runs_due ON wireline_cadence_runs (status, next_due_at) WHERE status = 'active'`,
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_cadence_runs_user_id ON wireline_cadence_runs (user_id)`,
+    leadIdx: sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_cadence_runs_lead_unique ON wireline_cadence_runs (lead_id, cadence_id)`,
+  }),
+);
+
+/**
+ * Live call supervisor subscriptions — supervisor clicks "Listen in" or
+ * "Whisper" on a live call in /cockpit, we capture the intent here. V1 is
+ * a bookmark + later audit; V2 wires Vapi's WebRTC streaming for real-time
+ * audio.
+ */
+export const supervisorSubscriptions = pgTable(
+  "wireline_supervisor_subscriptions",
+  {
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
+    userId: uuid("user_id").notNull(),
+    callId: text("call_id").notNull(),
+    mode: text("mode").default("listen"),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    callIdx: sql`CREATE INDEX IF NOT EXISTS idx_supervisor_subs_call ON wireline_supervisor_subscriptions (call_id)`,
+    userIdx: sql`CREATE INDEX IF NOT EXISTS idx_supervisor_subs_user ON wireline_supervisor_subscriptions (user_id)`,
+  }),
+);
+
 // 3.2 FLEET HANDOFF (TASKS)
 export const fleetTasks = pgTable(
   "wireline_fleet_tasks",
@@ -398,6 +604,9 @@ export const phoneNumbers = pgTable("wireline_phone_numbers", {
   phoneNumber: text("phone_number").unique().notNull(),
   vapiNumberId: text("vapi_number_id"),
   agentId: text("agent_id").references(() => agents.id),
+  // Marketing-campaign label so /insights can break down "calls from X ad".
+  // Free-form ("Google Ads — Spring '26", "LinkedIn — Founder Pitch", etc.).
+  campaignLabel: text("campaign_label"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
@@ -462,6 +671,13 @@ export const outboundLeads = pgTable(
     lastContactSummary: text("last_contact_summary"),
     attempts: integer("attempts").default(0),
     source: text("source").default("manual"),
+    // Pipeline kanban stage. Independent of `status` (which tracks dial state)
+    // — this tracks deal progression: cold → contacted → qualified → demo →
+    // won | lost. UI groups leads by this column on /pipeline.
+    pipelineStage: text("pipeline_stage").default("cold"),
+    // Marketing campaign attribution — set by csv-upload or auto-derived from
+    // the inbound number's campaignLabel.
+    campaignSource: text("campaign_source"),
     metadata: jsonb("metadata"),
     receivedAt: timestamp("received_at", { withTimezone: true }),
     idempotencyKey: text("idempotency_key"),

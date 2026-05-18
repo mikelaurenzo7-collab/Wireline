@@ -22,6 +22,17 @@ export default function CookieConsent() {
     setVisible(false);
   };
 
+  // Escape dismisses the cookie notice — gives keyboard-only users a way out
+  // without having to tab through the page to reach the X button.
+  useEffect(() => {
+    if (!visible) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") dismiss();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [visible]);
+
   return (
     <AnimatePresence>
       {visible && (
@@ -35,27 +46,41 @@ export default function CookieConsent() {
           aria-label="Cookie notice"
         >
           <div className="rounded-2xl glass-strong border border-black/8 backdrop-blur-xl shadow-2xl px-5 py-4 flex items-start gap-4">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
-              style={{ background: "linear-gradient(135deg, rgba(10,200,212,0.15), rgba(155,89,245,0.15))", border: "1px solid rgba(10,200,212,0.20)" }}>
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
+              style={{
+                background: "linear-gradient(135deg, rgba(10,200,212,0.15), rgba(155,89,245,0.15))",
+                border: "1px solid rgba(10,200,212,0.20)",
+              }}
+            >
               <Cookie className="w-4 h-4 text-brand" />
             </div>
 
             <div className="flex-1 min-w-0">
               <p className="text-[12px] font-medium text-ink mb-0.5">Cookies &amp; Privacy</p>
               <p className="text-[11px] text-muted/80 leading-relaxed">
-                We use only essential cookies required to keep you signed in — no advertising or cross-site
-                tracking.{" "}
-                <Link to="/privacy" className="text-brand hover:text-brand/80 underline" onClick={dismiss}>
+                We use only essential cookies required to keep you signed in — no advertising or
+                cross-site tracking.{" "}
+                <Link
+                  to="/privacy"
+                  className="text-brand hover:text-brand/80 underline"
+                  onClick={dismiss}
+                >
                   Privacy policy
                 </Link>
                 {" · "}
-                <Link to="/terms" className="text-brand hover:text-brand/80 underline" onClick={dismiss}>
+                <Link
+                  to="/terms"
+                  className="text-brand hover:text-brand/80 underline"
+                  onClick={dismiss}
+                >
                   Terms
                 </Link>
               </p>
             </div>
 
             <button
+              type="button"
               onClick={dismiss}
               aria-label="Dismiss cookie notice"
               className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center hover:bg-black/5 transition-colors text-muted hover:text-ink mt-0.5"

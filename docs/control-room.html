@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Wireline · Control Room — Founder Second Brain</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg-grain: #0c0c12;
+    --surface: #12121a;
+    --surface-2: #16161f;
+    --surface-hover: #1b1b25;
+    --border: #26262f;
+    --border-soft: #1d1d27;
+    --text: #ededf0;
+    --text-soft: #c3c3cc;
+    --muted: #7c7c87;
+    --muted-2: #555560;
+    --amber: #f59e0b;
+    --amber-soft: #fbbf24;
+    --amber-glow: rgba(245, 158, 11, 0.12);
+    --amber-line: rgba(245, 158, 11, 0.35);
+
+    --c-voice: #3b82f6;
+    --c-auth: #14b8a6;
+    --c-money: #10b981;
+    --c-ui: #a855f7;
+    --c-comply: #ef4444;
+    --c-integ: #f97316;
+    --c-data: #06b6d4;
+    --c-perf: #eab308;
+
+    --display: 'Instrument Serif', 'Times New Roman', serif;
+    --sans: 'IBM Plex Sans', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body { height: 100%; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-weight: 300;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, var(--amber-glow), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 110%, rgba(59, 130, 246, 0.04), transparent);
+    background-attachment: fixed;
+  }
+
+  /* Subtle film grain overlay */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; pointer-events: none; z-index: 100;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='200' height='200' filter='url(%23n)' opacity='1'/></svg>");
+  }
+
+  /* ──────────────  LAYOUT  ────────────── */
+  .app {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    min-height: 100vh;
+  }
+
+  /* ──────────────  SIDEBAR  ────────────── */
+  .sidebar {
+    position: sticky; top: 0;
+    height: 100vh;
+    background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+    border-right: 1px solid var(--border-soft);
+    padding: 32px 24px;
+    display: flex; flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .brand {
+    display: flex; flex-direction: column;
+    margin-bottom: 40px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .brand-mark {
+    color: var(--amber);
+    font-family: var(--mono);
+    font-size: 14px;
+    letter-spacing: 0.3em;
+    margin-bottom: 8px;
+  }
+  .brand-name {
+    font-family: var(--display);
+    font-size: 32px;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .brand-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  .nav-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted-2);
+    margin-bottom: 12px;
+  }
+
+  .nav { display: flex; flex-direction: column; gap: 2px; margin-bottom: 32px; }
+  .nav a {
+    display: flex; align-items: baseline; gap: 12px;
+    padding: 10px 12px;
+    color: var(--text-soft);
+    text-decoration: none;
+    font-size: 13px;
+    border-radius: 4px;
+    transition: all 0.18s ease;
+    border-left: 2px solid transparent;
+  }
+  .nav a:hover {
+    background: var(--surface-hover);
+    color: var(--text);
+    border-left-color: var(--amber-line);
+  }
+  .nav a .nav-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+  .nav a.active {
+    background: var(--surface-hover);
+    color: var(--amber-soft);
+    border-left-color: var(--amber);
+  }
+  .nav a.active .nav-num { color: var(--amber); }
+
+  .sidebar-meta {
+    margin-top: auto;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-soft);
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    line-height: 1.8;
+  }
+
+  /* ──────────────  MAIN  ────────────── */
+  main {
+    padding: 64px 80px 120px;
+    max-width: 1240px;
+  }
+
+  .hero { margin-bottom: 96px; }
+  .hero-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 24px;
+  }
+  .hero h1 {
+    font-family: var(--display);
+    font-size: 88px;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    font-weight: 400;
+    margin-bottom: 24px;
+  }
+  .hero h1 em {
+    font-style: italic;
+    color: var(--amber-soft);
+  }
+  .hero-sub {
+    font-size: 19px;
+    line-height: 1.55;
+    color: var(--text-soft);
+    max-width: 640px;
+    font-weight: 300;
+  }
+  .hero-meta {
+    display: flex; gap: 32px;
+    margin-top: 40px;
+    padding-top: 32px;
+    border-top: 1px solid var(--border-soft);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .hero-meta strong {
+    display: block;
+    color: var(--text);
+    font-weight: 500;
+    font-size: 14px;
+    text-transform: none;
+    letter-spacing: 0;
+    margin-top: 4px;
+  }
+
+  /* ──────────────  SECTIONS  ────────────── */
+  section.board {
+    margin-bottom: 120px;
+    scroll-margin-top: 32px;
+  }
+  .board-head {
+    display: flex; align-items: baseline; gap: 16px;
+    margin-bottom: 12px;
+  }
+  .board-num {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    color: var(--amber);
+  }
+  .board-line {
+    flex: 1; height: 1px;
+    background: linear-gradient(90deg, var(--amber-line), transparent);
+  }
+  .board h2 {
+    font-family: var(--display);
+    font-size: 56px;
+    line-height: 1;
+    letter-spacing: -0.025em;
+    font-weight: 400;
+    margin-bottom: 16px;
+  }
+  .board h2 em { font-style: italic; color: var(--amber-soft); }
+  .board-intro {
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--text-soft);
+    max-width: 720px;
+    margin-bottom: 40px;
+    font-weight: 300;
+  }
+
+  /* ──────────────  DIAGRAM FRAME  ────────────── */
+  .diagram-frame {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 40px;
+    overflow-x: auto;
+    box-shadow:
+      0 1px 0 0 rgba(255, 255, 255, 0.03) inset,
+      0 30px 80px -30px rgba(0, 0, 0, 0.5);
+  }
+  .diagram-frame .mermaid {
+    background: transparent !important;
+    text-align: center;
+  }
+  .diagram-frame .mermaid svg { max-width: 100%; height: auto; }
+
+  /* ──────────────  CHEAT SHEET  ────────────── */
+  .cheat-groups { display: flex; flex-direction: column; gap: 28px; }
+  .cheat-group {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .cheat-group-head {
+    padding: 18px 28px;
+    display: flex; align-items: center; gap: 14px;
+    border-bottom: 1px solid var(--border-soft);
+    background: var(--surface-2);
+  }
+  .cheat-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    box-shadow: 0 0 12px currentColor;
+  }
+  .cheat-group-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+  .cheat-row {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr auto;
+    gap: 24px;
+    align-items: center;
+    padding: 18px 28px;
+    border-bottom: 1px solid var(--border-soft);
+    transition: background 0.18s;
+  }
+  .cheat-row:last-child { border-bottom: none; }
+  .cheat-row:hover { background: var(--surface-hover); }
+  .cheat-symptom {
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 400;
+  }
+  .cheat-target {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-soft);
+    line-height: 1.7;
+    word-break: break-word;
+  }
+  .cheat-target code {
+    color: var(--amber-soft);
+    background: rgba(245, 158, 11, 0.08);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+
+  /* ──────────────  COPY BUTTON  ────────────── */
+  .copy-btn {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid var(--border);
+    padding: 8px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+  }
+  .copy-btn:hover {
+    color: var(--amber);
+    border-color: var(--amber-line);
+    background: var(--amber-glow);
+  }
+  .copy-btn.copied {
+    color: var(--c-money);
+    border-color: var(--c-money);
+  }
+
+  /* ──────────────  COMMAND PALETTE  ────────────── */
+  .palette { display: flex; flex-direction: column; gap: 20px; }
+  .palette-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .palette-card-head {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding: 24px 28px 16px;
+    gap: 24px;
+  }
+  .palette-want {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: 26px;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+  .palette-want::before {
+    content: '“';
+    color: var(--amber);
+    margin-right: 4px;
+  }
+  .palette-want::after {
+    content: '”';
+    color: var(--amber);
+    margin-left: 4px;
+  }
+  .palette-prompt {
+    margin: 0 28px 24px;
+    padding: 20px 24px;
+    background: var(--bg-grain);
+    border: 1px solid var(--border-soft);
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.75;
+    color: var(--text-soft);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .palette-prompt code {
+    color: var(--amber-soft);
+    background: rgba(245, 158, 11, 0.08);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+  .palette-tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    margin: 0 28px 24px;
+  }
+
+  /* ──────────────  END FOOTER  ────────────── */
+  .closer {
+    margin-top: 120px;
+    padding-top: 48px;
+    border-top: 1px solid var(--border-soft);
+    text-align: center;
+  }
+  .closer-quote {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: 28px;
+    line-height: 1.3;
+    color: var(--text-soft);
+    max-width: 560px;
+    margin: 0 auto 24px;
+    letter-spacing: -0.01em;
+  }
+  .closer-sig {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ──────────────  MOBILE  ────────────── */
+  @media (max-width: 960px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar {
+      position: static; height: auto;
+      border-right: none;
+      border-bottom: 1px solid var(--border-soft);
+    }
+    main { padding: 40px 24px 80px; }
+    .hero h1 { font-size: 56px; }
+    .board h2 { font-size: 36px; }
+    .cheat-row { grid-template-columns: 1fr; gap: 8px; }
+    .palette-card-head { flex-direction: column; }
+  }
+
+  /* ──────────────  SCROLLBAR  ────────────── */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted-2); }
+
+  /* Mermaid font override */
+  .mermaid text, .mermaid span, .mermaid div {
+    font-family: var(--mono) !important;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ──────────────  SIDEBAR  ────────────── -->
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">◆ ◆ ◆</span>
+      <span class="brand-name">Wireline</span>
+      <span class="brand-tag">Control Room</span>
+    </div>
+
+    <div class="nav-title">Understand</div>
+    <nav class="nav" id="nav-understand">
+      <a href="#section-01"><span class="nav-num">01</span>The System at a Glance</a>
+      <a href="#section-02"><span class="nav-num">02</span>How a Call Happens</a>
+      <a href="#section-03"><span class="nav-num">03</span>The Page Map</a>
+      <a href="#section-04"><span class="nav-num">04</span>The Data Model</a>
+    </nav>
+
+    <div class="nav-title">Act</div>
+    <nav class="nav" id="nav-act">
+      <a href="#section-05"><span class="nav-num">05</span>The Cheat Sheet</a>
+      <a href="#section-06"><span class="nav-num">06</span>The Command Palette</a>
+      <a href="#section-07"><span class="nav-num">07</span>The Roadmap</a>
+    </nav>
+
+    <div class="nav-title">Follow the Money</div>
+    <nav class="nav" id="nav-money">
+      <a href="#section-08"><span class="nav-num">08</span>The AI Cost Map</a>
+    </nav>
+
+    <div class="sidebar-meta">
+      Built for Michael Laurenzo<br />
+      Wireline v1.1.1-production<br />
+      Synced 18 May 2026 · cadence UI · attribution UI · auto-coach · ROI calculator · polish
+    </div>
+  </aside>
+
+  <!-- ──────────────  MAIN  ────────────── -->
+  <main>
+
+    <!-- HERO -->
+    <header class="hero">
+      <div class="hero-eyebrow">◆ Founder Second Brain</div>
+      <h1>The <em>Control Room</em><br />for Wireline.</h1>
+      <p class="hero-sub">
+        Eight windows. One organism. When you are lost, walk to the right window — the answer is already on the wall. This document is yours, lives in your repo, and answers to no platform.
+      </p>
+      <div class="hero-meta">
+        <div><span>Tables</span><strong>43+</strong></div>
+        <div><span>API Routers</span><strong>42</strong></div>
+        <div><span>Pages</span><strong>20</strong></div>
+        <div><span>Live AI Agents</span><strong>10</strong></div>
+        <div><span>Pricing Tiers</span><strong>6</strong></div>
+        <div><span>Status</span><strong>Live on trywireline.com</strong></div>
+      </div>
+    </header>
+
+    <!-- ────────── 01 ────────── -->
+    <section class="board" id="section-01">
+      <div class="board-head">
+        <span class="board-num">01 ◆ UNDERSTAND</span>
+        <span class="board-line"></span>
+      </div>
+      <h2>The System <em>at a Glance</em></h2>
+      <p class="board-intro">
+        Your platform from a hilltop. Five organs, named in plain English: the Storefront (what users see), the Brain (where decisions happen), the Memory (what gets remembered), the Helpers (third-party muscle), and the Watchers (eyes on the system). Every other diagram in this room zooms into one piece of this map.
+      </p>
+      <div class="diagram-frame">
+<pre class="mermaid">
+flowchart LR
+    classDef storefront fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff
+    classDef brain fill:#0d9488,stroke:#0f766e,color:#ffffff
+    classDef memory fill:#7c3aed,stroke:#6d28d9,color:#ffffff
+    classDef helper fill:#ea580c,stroke:#c2410c,color:#ffffff
+    classDef watcher fill:#dc2626,stroke:#991b1b,color:#ffffff
+    classDef user fill:#0a0a0f,stroke:#3f3f46,color:#ffffff
+
+    U["Customer in browser"]:::user
+    EDGE["Vercel Edge Network"]:::storefront
+
+    subgraph SF ["THE STOREFRONT"]
+        APP["React 19 App Shell"]:::storefront
+        PAGES["16 Pages"]:::storefront
+        AUTH_UI["Auth Portal"]:::storefront
+    end
+
+    subgraph BR ["THE BRAIN"]
+        EXPRESS["Express server.ts"]:::brain
+        ROUTES["31 Route Handlers"]:::brain
+        CLAUDE_BRAIN["Claude Brain (tiered)"]:::brain
+        GEMINI["Gemini Brain"]:::brain
+        JOBS["Job Queue and Worker"]:::brain
+    end
+
+    subgraph MEM ["THE MEMORY"]
+        POSTGRES["Postgres on Supabase"]:::memory
+        DRIZZLE["Drizzle ORM"]:::memory
+        REDIS["Upstash Redis"]:::memory
+    end
+
+    subgraph HELP ["THE HELPERS"]
+        VAPI["Vapi runtime"]:::helper
+        TWILIO["Twilio"]:::helper
+        STRIPE["Stripe"]:::helper
+        GOOGLE["Google APIs"]:::helper
+        CRM["CRM Adapters"]:::helper
+    end
+
+    subgraph WATCH ["THE WATCHERS"]
+        SENTRY["Sentry"]:::watcher
+        AUDIT["Audit Log"]:::watcher
+        HEALTH["Health and SLOs"]:::watcher
+    end
+
+    U --> EDGE
+    EDGE --> APP
+    APP --> PAGES
+    APP --> AUTH_UI
+    PAGES -->|"API calls"| EXPRESS
+    AUTH_UI -->|"JWT"| EXPRESS
+    EXPRESS --> ROUTES
+    ROUTES --> CLAUDE_BRAIN
+    ROUTES --> GEMINI
+    ROUTES --> JOBS
+    ROUTES --> DRIZZLE
+    DRIZZLE --> POSTGRES
+    ROUTES --> REDIS
+    ROUTES --> VAPI
+    ROUTES --> TWILIO
+    ROUTES --> STRIPE
+    ROUTES --> GOOGLE
+    ROUTES --> CRM
+    VAPI -->|"webhooks"| ROUTES
+    EXPRESS --> SENTRY
+    ROUTES --> AUDIT
+    EXPRESS --> HEALTH
+</pre>
+      </div>
+    </section>
+
+    <!-- ────────── 02 ────────── -->
+    <section class="board" id="section-02">
+      <div class="board-head">
+        <span class="board-num">02 ◆ UNDERSTAND</span>
+        <span class="board-line"></span>
+      </div>
+      <h2>How a Call <em>Happens</em></h2>
+      <p class="board-intro">
+        The magic moment, choreographed. A caller dials your number and twenty-two steps later their transcript, summary, and CRM record are written. This is the dance you should be able to recite in your sleep — because every "why didn't this work?" question lives somewhere on this timeline.
+      </p>
+      <div class="diagram-frame">
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor Caller as "Caller"
+    participant Tel as "Twilio / Carrier"
+    participant Vapi as "Vapi runtime"
+    participant Wire as "Wireline"
+    participant Brain as "Claude / Gemini"
+    participant DB as "Supabase Postgres"
+    participant CRM as "CRM"
+    participant Queue as "Webhook Queue"
+
+    Caller->>Tel: "Dials your Wireline number"
+    Tel->>Vapi: "Routes to assigned Vapi number"
+    Vapi->>Wire: "POST /api/vapi-webhook (assistant-request)"
+    Wire->>DB: "Look up agent config by phone number"
+    DB-->>Wire: "Returns voice, prompt, archetype, first_message"
+    Wire-->>Vapi: "Returns full assistant config"
+    Vapi->>Caller: "Agent speaks first_message"
+    Caller->>Vapi: "Responds in natural speech"
+    Vapi->>Brain: "Streams transcript for next reply"
+    Brain-->>Vapi: "Returns next utterance"
+    Vapi->>Wire: "POST tool-call: book_appointment"
+    Wire->>CRM: "Create lead and book slot"
+    CRM-->>Wire: "Success"
+    Wire-->>Vapi: "Tool result"
+    Vapi->>Caller: "Confirms booking on the call"
+    Caller->>Vapi: "Hangs up"
+    Vapi->>Wire: "POST end-of-call-report"
+    Wire->>Queue: "Queue async (immediate 200 OK)"
+    Queue->>Brain: "Summary, lead-score, intent"
+    Brain-->>Queue: "Enriched analysis"
+    Queue->>DB: "Insert into wireline_call_logs"
+    Queue->>CRM: "Sync transcript and outcome"
+</pre>
+      </div>
+    </section>
+
+    <!-- ────────── 03 ────────── -->
+    <section class="board" id="section-03">
+      <div class="board-head">
+        <span class="board-num">03 ◆ UNDERSTAND</span>
+        <span class="board-line"></span>
+      </div>
+      <h2>The Page <em>Map</em></h2>
+      <p class="board-intro">
+        Every screen in your app, sorted by what it is for. Three purposes only: <em>run</em> the operation (daily ops), <em>set up</em> the operation (configure once), <em>govern</em> the operation (admin and compliance). The next time a customer asks where to do X, you already know.
+      </p>
+      <div class="diagram-frame">
+<pre class="mermaid">
+flowchart LR
+    classDef ops fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff
+    classDef setup fill:#0d9488,stroke:#0f766e,color:#ffffff
+    classDef govern fill:#7c3aed,stroke:#6d28d9,color:#ffffff
+    classDef public fill:#52525b,stroke:#27272a,color:#ffffff
+    classDef entry fill:#0a0a0f,stroke:#3f3f46,color:#ffffff
+
+    USER["Signed-in user lands at /"]:::entry
+
+    subgraph PUB ["PUBLIC"]
+        PRIVACY["/privacy"]:::public
+        TERMS["/terms"]:::public
+        AUTHP["AuthPortal"]:::public
+    end
+
+    subgraph OPS ["RUN — daily work"]
+        CMD["/ Command Center"]:::ops
+        DASH["/dashboard Operations"]:::ops
+        LIVE["/live Real-time Monitor"]:::ops
+        TRIAGE["/triage Inbox Triage"]:::ops
+        LOGS["/logs Call Archives"]:::ops
+        INBOX["/inbox Email Relay"]:::ops
+        OUTBOUND["/outbound Dialer"]:::ops
+        APPTS["/appointments"]:::ops
+    end
+
+    subgraph SETUP ["SET UP — configure once"]
+        AGENTS["/agents Fleet Inventory"]:::setup
+        TRAIN["/train Engine Training"]:::setup
+        KNOW["/knowledge Knowledge Base"]:::setup
+        INTEG["/integrations Adapters"]:::setup
+    end
+
+    subgraph GOV ["GOVERN — admin and compliance"]
+        ADMIN["/admin Platform Settings"]:::govern
+        DNC["/dnc Do Not Call"]:::govern
+        AUDIT["/audit Security Logs"]:::govern
+    end
+
+    USER --> CMD
+    CMD --> LIVE
+    CMD --> TRIAGE
+    CMD --> LOGS
+    CMD --> INBOX
+    CMD --> OUTBOUND
+    OUTBOUND --> APPTS
+    CMD --> AGENTS
+    AGENTS --> TRAIN
+    AGENTS --> KNOW
+    AGENTS --> INTEG
+    CMD --> ADMIN
+    ADMIN --> DNC
+    ADMIN --> AUDIT
+</pre>
+      </div>
+    </section>
+
+    <!-- ────────── 04 ────────── -->
+    <section class="board" id="section-04">
+      <div class="board-head">
+        <span class="board-num">04 ◆ UNDERSTAND</span>
+        <span class="board-line"></span>
+      </div>
+      <h2>The Data <em>Model</em></h2>
+      <p class="board-intro">
+        The skeleton. Every agent, call, lead, audit entry and dollar of Stripe revenue lives in one of these tables. When you see the relationships, you can answer any "where is that stored?" question yourself — and Claude Code will write surgical migrations on command.
+      </p>
+      <div class="diagram-frame">
+<pre class="mermaid">
+erDiagram
+    WIRELINE_USERS ||--o{ WIRELINE_SETTINGS : "configures"
+    WIRELINE_USERS ||--o{ WIRELINE_AGENTS : "owns fleet of"
+    WIRELINE_USERS ||--o{ WIRELINE_PHONE_NUMBERS : "rents"
+    WIRELINE_USERS ||--o{ WIRELINE_OUTBOUND_CAMPAIGNS : "runs"
+    WIRELINE_USERS ||--o{ WIRELINE_AUDIT_LOG : "generates"
+    WIRELINE_USERS ||--o{ WIRELINE_DELETION_QUEUE : "may request"
+    WIRELINE_AGENTS ||--o{ WIRELINE_PHONE_NUMBERS : "assigned to"
+    WIRELINE_AGENTS ||--o{ WIRELINE_CALL_LOGS : "handles"
+    WIRELINE_AGENTS ||--o{ WIRELINE_FLEET_TASKS : "executes"
+    WIRELINE_OUTBOUND_CAMPAIGNS ||--o{ WIRELINE_OUTBOUND_LEADS : "contains"
+    WIRELINE_OUTBOUND_LEADS ||--o{ WIRELINE_CALL_LOGS : "produces"
+    WIRELINE_CALL_LOGS ||--o{ WIRELINE_SIGNAL_PRESENCE : "tracks"
+    WIRELINE_USERS ||--o{ WIRELINE_DNC_LIST : "maintains"
+    WIRELINE_USERS ||--o{ WIRELINE_EMAIL_THREADS : "receives"
+
+    WIRELINE_USERS { uuid id PK text email text name timestamptz created_at }
+    WIRELINE_SETTINGS { text id PK uuid user_id FK text subscription_status integer max_agents text vapi_private_key integer retention_days }
+    WIRELINE_AGENTS { text id PK uuid user_id FK text name text voice_id text archetype text channel text first_message }
+    WIRELINE_PHONE_NUMBERS { bigint id PK uuid user_id FK text phone_number text vapi_number_id text agent_id FK }
+    WIRELINE_CALL_LOGS { bigint id PK uuid user_id FK text vapi_call_id text agent_id FK text direction text customer_number integer duration_seconds decimal cost text summary text transcript integer lead_score text intent_label }
+    WIRELINE_OUTBOUND_CAMPAIGNS { text id PK uuid user_id FK text name text status }
+    WIRELINE_OUTBOUND_LEADS { bigint id PK uuid user_id FK text campaign_id FK text status text phone text name }
+    WIRELINE_FLEET_TASKS { bigint id PK uuid user_id FK text status }
+    WIRELINE_EMAIL_THREADS { bigint id PK uuid user_id FK integer lead_score }
+    WIRELINE_AUDIT_LOG { bigint id PK uuid user_id FK text event_type timestamptz created_at }
+    WIRELINE_SIGNAL_PRESENCE { text id PK text call_id FK text state }
+    WIRELINE_DNC_LIST { bigint id PK uuid user_id FK text phone_number }
+    WIRELINE_DELETION_QUEUE { bigint id PK uuid user_id FK timestamptz scheduled_for }
+</pre>
+      </div>
+    </section>
+
+    <!-- ────────── 05 CHEAT SHEET ────────── -->
+    <section class="board" id="section-05">
+      <div class="board-head">
+        <span class="board-num">05 ◆ ACT</span>
+        <span class="board-line"></span>
+      </div>
+      <h2>The Cheat <em>Sheet</em></h2>
+      <p class="board-intro">
+        Symptom in, file path out. When something is wrong, find the row, copy the path, paste it into Claude Code with the fix you want. You will never again be stuck on "I do not know where to start." The starting line is always here.
+      </p>
+
+      <div class="cheat-groups">
+
+        <div class="cheat-group">
+          <div class="cheat-group-head"><span class="cheat-dot" style="background:var(--c-voice);color:var(--c-voice)"></span><span class="cheat-group-title">Voice and Calls</span></div>
+          <div class="cheat-row"><div class="cheat-symptom">Agent says the wrong thing, wrong tone, or wrong personality</div><div class="cheat-target"><code>src/lib/vapi-assistant-factory.ts</code> + <code>src/components/AgentTraining.tsx</code> + <code>src/components/KnowledgeBaseManager.tsx</code></div><button class="copy-btn" data-copy="src/lib/vapi-assistant-factory.ts, src/components/AgentTraining.tsx, src/components/KnowledgeBaseManager.tsx">Copy</button></div>
+          <div class="cheat-row"><div class="cheat-symptom">Call does not connect or drops mid-call</div><div class="cheat-target"><code>src/lib/vapi-client.ts</code> + <code>src/routes/vapi-routes.ts</code> &nbsp; then check Vapi dashboard</div><button class="copy-btn" data-copy="src/lib/vapi-client.ts, src/routes/vapi-routes.ts">Copy</button></div>
+          <div class="cheat-row"><div class="cheat-symptom">Call completed but no log appears</div><div class="cheat-target"><code>src/lib/vapi-webhook-queue.ts</code> + <code>src/lib/vapi-handlers.ts</code> &nbsp; then check Sentry for queue errors</div><button class="copy-btn" data-copy="src/lib/vapi-webhook-queue.ts, src/lib/vapi-handlers.ts">Copy</button></div>
+          <div class="cheat-row"><div class="cheat-symptom">Want a new agent voice, accent, or provider</div><div class="cheat-target"><code>src/lib/agent-constants.ts</code> &nbsp; voice catalog + Vapi voice library</div><button class="copy-btn" data-copy="src/lib/agent-constants.ts">Copy</button></div>
+          <div class="cheat-row"><div class="cheat-symptom">Tool call from agent fails (book appt, transfer, etc.)</div><div class="cheat-target"><code>src/lib/vapi-handlers.ts</code> &nbsp; find the specific tool function</div><button class="copy-btn" data-copy="src/lib/vapi-handlers.ts">Copy</button></div>
+        </div>
+
+        <div class="cheat-group">
+          <div class="cheat-group-head"><span class="cheat-dot" style="background:var(--c-auth);color:var(--c-auth)"></span><span class="cheat-group-title">Auth and Users</span></div>
+          <div class="cheat-row"><div class="cheat-symptom">User cannot sign in</div><div class="cheat-target"><code>src/lib/auth-service.ts</code> + <code>src/middleware/auth.ts</code> + <code>src/components/AuthPortal.tsx</code> &nbsp; then Supabase auth logs</div><button class="copy-btn" data-copy="src/lib/auth-service.ts, src/middleware/auth.ts, src/components/AuthPortal.tsx">Copy</button></div>
+          <div class="cheat-row"><div class="cheat-symptom">Password reset flow broken or missing</div><div class="cheat-target"><code>src/routes/auth-routes.ts</code> &nbsp; (Week 1 roadmap item)</div><button class="copy-btn" data-copy="src/routes/auth-routes.ts">Copy</button></div>
+          <div class="cheat-row"><div class="cheat-symptom">Session expires too fast or too slow</div><div class="cheat-target"><code>src/lib/auth-service.ts</code> &nbsp; JWT lifetime config + INTERNAL_JWT_SECRET env</div><button class="copy-btn" data-copy="src/lib/auth-service.ts">Copy</button></div>
+        </div>
+
+        <div class="cheat-group">
+          <div class="cheat-group-head"><span class="cheat-dot" style="background:var(--c-money);color:var(--c-money)"></span><span class="cheat-group-title">Billing and Stripe</span></div>
+          <div class="cheat-row"><div class="cheat-symptom">Customer charged wrong amount</div><div class="cheat-target"><code>src/lib/stripe-helpers.ts</code> + <code>src/routes/billing-routes.ts</code> + <code>src/lib/plan-catalog.ts</code></div><button class="copy-btn" data-copy="src/lib/stripe-helpers.ts, src/routes/billing-routes.ts, src/lib/plan-catalog.ts">Copy</button></div>
+          <div class="cheat-row"><div class="cheat-symptom">Subscription status not updating in app</div><div class="cheat-target"><code>src/routes/webhook-routes.ts</code> (Stripe webhook) + <code>src/lib/spend-guards.ts</code></div><button class="copy-btn" data-copy="src/routes/webhook-routes.ts, src/lib/spend-guards.ts">Copy</button></div>
+          <div class="cheat-row"><div class="cheat-symptom">User hitting plan limits unexpectedly</div><div class="cheat-target"><code>src/lib/tenant-quotas.ts</code> + <code>src/lib/phone-line-entitlements.ts</code></div><button class="copy-btn" data-copy="src/lib/tenant-quotas.ts, src/lib/phone-line-entitlements.ts">Copy</button></div>
+        </div>
+
+        <div class="cheat-group">
+          <div class="cheat-group-head"><span class="cheat-dot" style="background:var(--c-ui);color:var(--c-ui)"></span><span class="cheat-group-title">Dashboard and UI</span></div>
+          <div class="cheat-row"><div class="cheat-symptom">Dashboard shows wrong number or feels stale</div><div class="cheat-target"><code>src/lib/dashboard-stats.ts</code> + <code>src/lib/dashboard-cache.ts</code> &nbsp; 60s TTL — call invalidateDashboard()</div><button class="copy-btn" data-copy="src/lib/dashboard-stats.ts, src/lib/dashboard-cache.ts">Copy</button></div>
+          <div class="cheat-row"><div class="cheat-symptom">A page is broken or blank</div><div class="cheat-target"><code>src/routes/AppRoutes.tsx</code> &nbsp; find the route, then the page file in <code>src/components/</code> or <code>src/pages/</code></div><button class="copy-btn" data-copy="src/routes/AppRoutes.tsx">Copy</button></div>
+          <div class="cheat-row"><div class="cheat-symptom">Need to change a label, button text, or copy</div><div class="cheat-target"><code>src/components/</code> &nbsp; tell Claude Code the exact phrase to search for</div><button class="copy-btn" data-copy="src/components/">Copy</button></div>
+        </div>
+
+        <div class="cheat-group">
+          <div class="cheat-group-head"><span class="cheat-dot" style="background:var(--c-comply);color:var(--c-comply)"></span><span class="cheat-group-title">Compliance and Safety</span></div>
+          <div class="cheat-row"><div class="cheat-symptom">DNC number was called</div><div class="cheat-target"><code>src/lib/compliance.ts</code> + <code>src/routes/compliance-routes.ts</code> + <code>wireline_dnc_list</code> table</div><button class="copy-btn" data-copy="src/lib/compliance.ts, src/routes/compliance-routes.ts">Copy</button></div>
+          <div class="cheat-row"><div class="cheat-symptom">TCPA consent issue</div><div class="cheat-target"><code>src/lib/tcpa-consent.ts</code> + audit log entries</div><button class="copy-btn" data-copy="src/lib/tcpa-consent.ts">Copy</button></div>
+          <div class="cheat-row"><div class="cheat-symptom">Need to investigate a security event</div><div class="cheat-target"><code>src/lib/audit-logger.ts</code> + <code>src/routes/audit-routes.ts</code> &nbsp; then the <code>/audit</code> page</div><button class="copy-btn" data-copy="src/lib/audit-logger.ts, src/routes/audit-routes.ts">Copy</button></div>
+        </div>
+
+        <div class="cheat-group">
+          <div class="cheat-group-head"><span class="cheat-dot" style="background:var(--c-integ);color:var(--c-integ)"></span><span class="cheat-group-title">Integrations</span></div>
+          <div class="cheat-row"><div class="cheat-symptom">CRM sync broken (HubSpot, Salesforce, Apollo)</div><div class="cheat-target"><code>src/lib/crm-service.ts</code> + the provider file e.g. <code>src/lib/hubspot-service.ts</code></div><button class="copy-btn" data-copy="src/lib/crm-service.ts, src/lib/hubspot-service.ts">Copy</button></div>
+          <div class="cheat-row"><div class="cheat-symptom">Webhook not firing</div><div class="cheat-target"><code>src/routes/webhook-routes.ts</code> + <code>src/lib/webhook-helpers.ts</code> + <code>src/lib/webhook-validators.ts</code></div><button class="copy-btn" data-copy="src/routes/webhook-routes.ts, src/lib/webhook-helpers.ts">Copy</button></div>
+          <div class="cheat-row"><div class="cheat-symptom">Email send or receive issue</div><div class="cheat-target"><code>src/routes/email-routes.ts</code> + <code>src/lib/integrations.ts</code></div><button class="copy-btn" data-copy="src/routes/email-routes.ts, src/lib/integrations.ts">Copy</button></div>
+          <div class="cheat-row"><div class="cheat-symptom">Calendar sync (Google) broken</div><div class="cheat-target"><code>src/routes/calendar-routes.ts</code> + check Google OAuth in <code>src/routes/oauth-routes.ts</code></div><button class="copy-btn" data-copy="src/routes/calendar-routes.ts, src/routes/oauth-routes.ts">Copy</button></div>
+        </div>
+
+        <div class="cheat-group">
+          <div class="cheat-group-head"><span class="cheat-dot" style="background:var(--c-data);color:var(--c-data)"></span><span class="cheat-group-title">Data and Schema</span></div>
+          <div class="cheat-row"><div class="cheat-symptom">Need a new field on agent, lead, or any entity</div><div class="cheat-target"><code>src/db/schema.ts</code> &nbsp; then run <code>npx drizzle-kit push</code></div><button class="copy-btn" data-copy="src/db/schema.ts">Copy</button></div>
+          <div class="cheat-row"><div class="cheat-symptom">Wrong data showing on a page</div><div class="cheat-target">Find the route in <code>src/routes/</code> that fetches it, trace to <code>src/db/schema.ts</code></div><button class="copy-btn" data-copy="src/routes/, src/db/schema.ts">Copy</button></div>
+          <div class="cheat-row"><div class="cheat-symptom">Want to run a one-off DB query</div><div class="cheat-target">Supabase SQL editor for prod &nbsp; or <code>npx drizzle-kit studio</code> for local dev</div><button class="copy-btn" data-copy="npx drizzle-kit studio">Copy</button></div>
+        </div>
+
+        <div class="cheat-group">
+          <div class="cheat-group-head"><span class="cheat-dot" style="background:var(--c-perf);color:var(--c-perf)"></span><span class="cheat-group-title">Performance and Errors</span></div>
+          <div class="cheat-row"><div class="cheat-symptom">A page or API is slow</div><div class="cheat-target"><code>src/lib/dashboard-cache.ts</code> + <code>src/middleware/performance.ts</code> &nbsp; check cache hit rates</div><button class="copy-btn" data-copy="src/lib/dashboard-cache.ts, src/middleware/performance.ts">Copy</button></div>
+          <div class="cheat-row"><div class="cheat-symptom">AI cost is too high</div><div class="cheat-target"><code>src/lib/claude-brain.ts</code> &nbsp; tier down Opus calls to Sonnet or Haiku</div><button class="copy-btn" data-copy="src/lib/claude-brain.ts">Copy</button></div>
+          <div class="cheat-row"><div class="cheat-symptom">Error in production</div><div class="cheat-target">Sentry dashboard first &nbsp; then <code>src/lib/sentry.ts</code> + <code>src/lib/sentry-events.ts</code></div><button class="copy-btn" data-copy="src/lib/sentry.ts, src/lib/sentry-events.ts">Copy</button></div>
+          <div class="cheat-row"><div class="cheat-symptom">Rate limit hitting real users</div><div class="cheat-target"><code>src/lib/rate-limit.ts</code> + <code>src/middleware/api-rate-limits.ts</code> + <code>src/middleware/rate-limit-middleware.ts</code></div><button class="copy-btn" data-copy="src/lib/rate-limit.ts, src/middleware/api-rate-limits.ts">Copy</button></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ────────── 06 COMMAND PALETTE ────────── -->
+    <section class="board" id="section-06">
+      <div class="board-head">
+        <span class="board-num">06 ◆ ACT</span>
+        <span class="board-line"></span>
+      </div>
+      <h2>The Command <em>Palette</em></h2>
+      <p class="board-intro">
+        You speak business. Claude Code speaks code. This board is the translator. Pick the thing you want done, copy the ready-made prompt, paste it into Claude Code. Each prompt is calibrated to your exact codebase — file paths, conventions, and the tests Claude Code should run after.
+      </p>
+
+      <div class="palette">
+
+        <div class="palette-card">
+          <div class="palette-card-head"><div class="palette-want">I want to add a new field to my agents.</div><button class="copy-btn" data-copy-target="prompt-1">Copy prompt</button></div>
+          <div class="palette-tag">SCHEMA · MIGRATION · UI</div>
+          <div class="palette-prompt" id="prompt-1">Open src/db/schema.ts. Add a [TYPE] field named [FIELD_NAME] to the wirelineAgents table with an appropriate default. Then run: npx drizzle-kit generate, npx drizzle-kit push (with pooled POSTGRES_URL). Update src/components/AgentTraining.tsx to expose the new field in the agent editor UI. Add the field to the zod schema in src/lib/schemas.ts. Add an API test in src/routes/__tests__ to confirm round-trip persistence. Run npm run verify before stopping.</div>
+        </div>
+
+        <div class="palette-card">
+          <div class="palette-card-head"><div class="palette-want">I want to add a new authenticated page.</div><button class="copy-btn" data-copy-target="prompt-2">Copy prompt</button></div>
+          <div class="palette-tag">ROUTE · COMPONENT · NAV</div>
+          <div class="palette-prompt" id="prompt-2">Create a new component at src/components/[PageName].tsx. Match the style of src/components/DashboardHome.tsx for consistency. Register the route in src/routes/AppRoutes.tsx behind auth gating. Add a navigation entry in src/components/AppShell.tsx and src/components/layout/. Update contracts/page-list.md to document the new route. Run npm run lint and npm run test:run.</div>
+        </div>
+
+        <div class="palette-card">
+          <div class="palette-card-head"><div class="palette-want">I want to connect a new third-party integration.</div><button class="copy-btn" data-copy-target="prompt-3">Copy prompt</button></div>
+          <div class="palette-tag">SERVICE · REGISTRY · OAUTH</div>
+          <div class="palette-prompt" id="prompt-3">Create a new service module at src/lib/[provider]-service.ts. Mirror the structure and error handling of src/lib/hubspot-service.ts. Register it in src/lib/integrations-registry.ts so it appears on the /integrations page. Add the connector card UI in src/components/Integrations.tsx. If the provider needs OAuth, add the redirect handlers in src/routes/oauth-routes.ts and update src/lib/oauth-helpers.ts. Add a unit test alongside the new service file. Run npm run verify.</div>
+        </div>
+
+        <div class="palette-card">
+          <div class="palette-card-head"><div class="palette-want">I want to change a pricing tier or plan limit.</div><button class="copy-btn" data-copy-target="prompt-4">Copy prompt</button></div>
+          <div class="palette-tag">BILLING · QUOTAS · STRIPE</div>
+          <div class="palette-prompt" id="prompt-4">Update plan definitions in src/lib/plan-catalog.ts. Sync corresponding Stripe product and price IDs in src/lib/stripe-helpers.ts. Update quota enforcement in src/lib/tenant-quotas.ts and src/lib/phone-line-entitlements.ts. Verify the spend cap routes in src/lib/spend-guards.ts handle the new tier. Run the Stripe billing tests and the spend-cap-routes.test.ts. Confirm /admin and the pricing page reflect the change.</div>
+        </div>
+
+        <div class="palette-card">
+          <div class="palette-card-head"><div class="palette-want">I want to tune the AI cost down.</div><button class="copy-btn" data-copy-target="prompt-5">Copy prompt</button></div>
+          <div class="palette-tag">CLAUDE-BRAIN · TIERING · CACHE</div>
+          <div class="palette-prompt" id="prompt-5">Open src/lib/claude-brain.ts. Audit every callsite that uses complexity: "complex" — Opus at $15/M tokens. For each, evaluate whether the task can be served by Sonnet (medium, $3/M) or Haiku (simple, $1/M) without quality loss. Where caching is safe, add wrappers using src/lib/dashboard-cache.ts pattern. Update src/lib/claude-brain.test.ts to assert the new tier selections. Report the projected monthly savings.</div>
+        </div>
+
+        <div class="palette-card">
+          <div class="palette-card-head"><div class="palette-want">I want to investigate why a customer's call failed.</div><button class="copy-btn" data-copy-target="prompt-6">Copy prompt</button></div>
+          <div class="palette-tag">FORENSICS · SENTRY · DB</div>
+          <div class="palette-prompt" id="prompt-6">Take the user_id and the rough timestamp. Open Sentry and filter by that user_id. Cross-reference the vapi_call_id in the wireline_call_logs table via Supabase SQL editor. Inspect src/lib/vapi-webhook-queue.ts for any failed end-of-call-report processing. Surface the failure point and the exact error. If you find a code-level fix, draft it but do not commit until I approve.</div>
+        </div>
+
+        <div class="palette-card">
+          <div class="palette-card-head"><div class="palette-want">I want to add a new admin setting.</div><button class="copy-btn" data-copy-target="prompt-7">Copy prompt</button></div>
+          <div class="palette-tag">SETTINGS · SCHEMA · UI</div>
+          <div class="palette-prompt" id="prompt-7">Add a [TYPE] field [SETTING_NAME] to the wirelineSettings table in src/db/schema.ts. Push the migration. Update the AdminSettings UI in src/components/AdminSettings.tsx with the new control. Wire the read/write handlers in src/routes/settings-routes.ts. Add zod validation in src/lib/schemas.ts. Update the dev-context documentation if the setting affects environment variables.</div>
+        </div>
+
+        <div class="palette-card">
+          <div class="palette-card-head"><div class="palette-want">I want to deploy a hotfix.</div><button class="copy-btn" data-copy-target="prompt-8">Copy prompt</button></div>
+          <div class="palette-tag">CI · VERCEL · MONITOR</div>
+          <div class="palette-prompt" id="prompt-8">Run npm run verify locally — it runs lint, full test suite, and build. Confirm green. Commit with a clear, specific message (no "fix stuff"). Push to main — Vercel auto-deploys via vercel.json. After the deploy, monitor Sentry for 15 minutes for any new error types. If anything spikes, walk back to "I want to roll back a deployment."</div>
+        </div>
+
+        <div class="palette-card">
+          <div class="palette-card-head"><div class="palette-want">I want to roll back a bad deployment.</div><button class="copy-btn" data-copy-target="prompt-9">Copy prompt</button></div>
+          <div class="palette-tag">VERCEL · GIT · REVERT</div>
+          <div class="palette-prompt" id="prompt-9">Open the Vercel dashboard. Find the previous good deployment (look at the timestamp before the issue started). Click "Promote to Production." This restores the prior build immediately while we fix forward. Then in git: git revert HEAD; git push. Confirm the revert deploys cleanly and Sentry quiets down.</div>
+        </div>
+
+        <div class="palette-card">
+          <div class="palette-card-head"><div class="palette-want">I want a new agent voice option in the dropdown.</div><button class="copy-btn" data-copy-target="prompt-10">Copy prompt</button></div>
+          <div class="palette-tag">VOICE · CATALOG · VAPI</div>
+          <div class="palette-prompt" id="prompt-10">Pick the voice from Vapi's voice library (note its voice_id and provider). Add it to the catalog in src/lib/agent-constants.ts under the appropriate provider group. Verify it appears in the voice dropdown in src/components/AgentTraining.tsx. Confirm src/lib/vapi-assistant-factory.ts maps the new voice_id correctly. Make one test call to a draft agent before promoting to production.</div>
+        </div>
+
+        <div class="palette-card">
+          <div class="palette-card-head"><div class="palette-want">I want to add a number to the Do Not Call list.</div><button class="copy-btn" data-copy-target="prompt-11">Copy prompt</button></div>
+          <div class="palette-tag">COMPLIANCE · DNC</div>
+          <div class="palette-prompt" id="prompt-11">Use the /dnc UI in the app (preferred). For bulk uploads, insert directly into wireline_dnc_list via Supabase SQL. The compliance checks in src/lib/compliance.ts are wired into src/lib/agent-runtime.ts and will block any outbound dial to a DNC number automatically. Verify with one test outbound to a known DNC entry — it should fail at the runtime guard with a clear audit log entry.</div>
+        </div>
+
+        <div class="palette-card">
+          <div class="palette-card-head"><div class="palette-want">I want to add an A/B test to an agent prompt.</div><button class="copy-btn" data-copy-target="prompt-12">Copy prompt</button></div>
+          <div class="palette-tag">EXPERIMENTS · AGENT TRAINING</div>
+          <div class="palette-prompt" id="prompt-12">Create two agent variants in /agents with different first_message and prompt configurations. Assign each to a different phone number in wireline_phone_numbers. Route a fraction of inbound traffic to each via Vapi number assignment. After 2 weeks, query wireline_call_logs grouped by agent_id and compare avg duration_seconds, lead_score, and intent_label distribution. Adopt the winner; archive the loser.</div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ────────── 07 ROADMAP ────────── -->
+    <section class="board" id="section-07">
+      <div class="board-head">
+        <span class="board-num">07 ◆ ACT</span>
+        <span class="board-line"></span>
+      </div>
+      <h2>The <em>Roadmap</em></h2>
+      <p class="board-intro">
+        What to build next — in what order — based on your own STATE-REPORT plus the natural growth arc of a production voice-agent platform. Hardening is done. The work now is fit, finish, and scale.
+      </p>
+      <div class="diagram-frame">
+<pre class="mermaid">
+gantt
+    title Wireline Roadmap 2026
+    dateFormat YYYY-MM-DD
+    axisFormat %b %d
+
+    section Production Hardening (DONE)
+    Security and SQL injection :done, h1, 2026-04-01, 2026-05-10
+    GDPR data retention :done, h2, 2026-04-15, 2026-05-15
+    Claude model tiering :done, h3, 2026-04-20, 2026-05-15
+    Vapi reliability :done, h4, 2026-05-01, 2026-05-15
+
+    section Week 1
+    Concurrent DB indexes :crit, w1a, 2026-05-18, 7d
+    Password reset flow :w1b, 2026-05-18, 7d
+    Mobile admin responsive :w1c, 2026-05-18, 7d
+
+    section Month 1
+    Notification preferences :m1a, 2026-05-25, 14d
+    Timezone handling :m1b, 2026-05-25, 14d
+    API test coverage 50pct :m1c, 2026-06-01, 21d
+
+    section Quarter 1
+    SOC 2 audit prep :q1a, 2026-06-15, 45d
+    Multi-region scaling :q1b, 2026-07-01, 30d
+    Marketing site refresh :q1c, 2026-06-01, 21d
+    Customer support workflows :q1d, 2026-07-01, 30d
+</pre>
+      </div>
+    </section>
+
+    <!-- ────────── 08 AI COST MAP ────────── -->
+    <section class="board" id="section-08">
+      <div class="board-head">
+        <span class="board-num">08 ◆ FOLLOW THE MONEY</span>
+        <span class="board-line"></span>
+      </div>
+      <h2>The AI <em>Cost Map</em></h2>
+      <p class="board-intro">
+        Where every dollar of model spend goes — and where it is intercepted. You already wired tiering and caching that cut AI costs by 60 to 80 percent. This map shows the choreography so you can defend it, tune it, and explain it to investors in thirty seconds.
+      </p>
+      <div class="diagram-frame">
+<pre class="mermaid">
+flowchart LR
+    classDef cheap fill:#10b981,stroke:#059669,color:#ffffff
+    classDef mid fill:#3b82f6,stroke:#1d4ed8,color:#ffffff
+    classDef pricey fill:#dc2626,stroke:#991b1b,color:#ffffff
+    classDef cache fill:#f59e0b,stroke:#b45309,color:#0a0a0f
+    classDef call fill:#0a0a0f,stroke:#71717a,color:#ffffff
+
+    REQ["Incoming request from /api"]:::call
+
+    CACHE1["Dashboard cache (60s TTL)"]:::cache
+    CACHE2["Insights cache (1h TTL)"]:::cache
+    CACHE3["Rate limit (10k buckets)"]:::cache
+
+    BRAIN["claude-brain.ts router"]:::call
+
+    HAIKU["Haiku $1 per M tokens — classification, extraction, summaries"]:::cheap
+    SONNET["Sonnet $3 per M tokens — analysis, structured output, reasoning"]:::mid
+    OPUS["Opus $15 per M tokens — deep research, multi-step creative"]:::pricey
+
+    POSTCALL["Post-call: summary, lead-score, intent"]:::call
+    DAILYBRIEF["Daily Brief generation"]:::call
+    PERSONA["Persona wizard, training"]:::call
+    AGENTRUN["Live agent reply (via Vapi)"]:::call
+
+    REQ --> CACHE1
+    CACHE1 -->|"miss"| CACHE2
+    CACHE2 -->|"miss"| CACHE3
+    CACHE3 -->|"allowed"| BRAIN
+
+    BRAIN -->|"complexity: simple"| HAIKU
+    BRAIN -->|"complexity: medium"| SONNET
+    BRAIN -->|"complexity: complex"| OPUS
+
+    POSTCALL --> BRAIN
+    DAILYBRIEF --> BRAIN
+    PERSONA --> BRAIN
+    AGENTRUN -->|"streamed by Vapi"| BRAIN
+
+    HAIKU -.->|"60-80pct of calls land here"| SAVINGS["Net savings vs always-Opus baseline"]:::cache
+    SONNET -.-> SAVINGS
+</pre>
+      </div>
+    </section>
+
+    <!-- CLOSER -->
+    <div class="closer">
+      <div class="closer-quote">
+        “A codebase you can see is a maze you can leave whenever you want.”
+      </div>
+      <div class="closer-sig">◆ Wireline Control Room · v1 · 17 May 2026</div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  // ──────────────  MERMAID INIT  ──────────────
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+      background: '#12121a',
+      primaryColor: '#1d4ed8',
+      primaryTextColor: '#ededf0',
+      primaryBorderColor: '#26262f',
+      lineColor: '#7c7c87',
+      secondaryColor: '#14b8a6',
+      tertiaryColor: '#a855f7',
+      mainBkg: '#12121a',
+      secondBkg: '#16161f',
+      tertiaryBkg: '#1b1b25',
+      noteBkgColor: '#1b1b25',
+      noteTextColor: '#ededf0',
+      noteBorderColor: '#f59e0b',
+      fontFamily: 'JetBrains Mono, monospace',
+      fontSize: '13px',
+      sectionBkgColor: '#1b1b25',
+      altSectionBkgColor: '#16161f',
+      sectionBkgColor2: '#1b1b25',
+      taskBkgColor: '#1d4ed8',
+      taskTextColor: '#ededf0',
+      taskTextLightColor: '#ededf0',
+      taskTextOutsideColor: '#ededf0',
+      activeTaskBkgColor: '#f59e0b',
+      activeTaskBorderColor: '#fbbf24',
+      doneTaskBkgColor: '#0d9488',
+      doneTaskBorderColor: '#14b8a6',
+      critBkgColor: '#dc2626',
+      critBorderColor: '#ef4444',
+      gridColor: '#26262f',
+      todayLineColor: '#f59e0b'
+    },
+    sequence: { actorMargin: 60, boxMargin: 8, messageMargin: 36, mirrorActors: false },
+    flowchart: { curve: 'basis', padding: 16 },
+    er: { useMaxWidth: true }
+  });
+
+  // ──────────────  COPY BUTTONS  ──────────────
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const targetId = btn.getAttribute('data-copy-target');
+      const inline = btn.getAttribute('data-copy');
+      const text = targetId
+        ? document.getElementById(targetId).innerText
+        : inline;
+
+      try {
+        await navigator.clipboard.writeText(text);
+        const original = btn.textContent;
+        btn.textContent = '✓ Copied';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = original;
+          btn.classList.remove('copied');
+        }, 1400);
+      } catch (e) {
+        btn.textContent = 'Press Ctrl+C';
+      }
+    });
+  });
+
+  // ──────────────  NAV HIGHLIGHTING  ──────────────
+  const sections = document.querySelectorAll('section.board');
+  const navLinks = document.querySelectorAll('.nav a');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        navLinks.forEach(link => {
+          link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+        });
+      }
+    });
+  }, { rootMargin: '-30% 0px -60% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+
+  // Smooth scroll for sidebar links
+  navLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+      const target = document.querySelector(link.getAttribute('href'));
+      if (target) {
+        e.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+</script>
+
+</body>
+</html>

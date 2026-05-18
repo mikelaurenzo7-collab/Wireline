@@ -31,10 +31,13 @@ import {
   DollarSign,
   Award,
   CalendarClock,
+  Repeat,
+  Kanban,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import Cadences from "./Cadences";
 import Papa from "papaparse";
-import { cn } from "../lib/utils";
+import { cn, logFetchError } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import { formatDate, safeDate } from "../lib/safe-date";
 import { Link } from "react-router-dom";
@@ -42,6 +45,7 @@ import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import CsvExportButton from "./CsvExportButton";
 import PageShell, { Panel } from "./PageShell";
 import HubTabs, { CHANNELS_HUB } from "./HubTabs";
+import EmptyState from "./EmptyState";
 import { useToast } from "../contexts/ToastContext";
 import ConfirmModal from "./ConfirmModal";
 
@@ -119,7 +123,7 @@ export default function OutboundDialer() {
       const data = await res.json();
       setCampaignAnalytics(data);
     } catch (e) {
-      console.error("Failed to fetch campaign analytics:", e);
+      logFetchError("Failed to fetch campaign analytics:", e);
       toastError("Analytics unavailable", "Could not load campaign analytics.");
     }
     setAnalyticsLoading(false);
@@ -391,7 +395,7 @@ export default function OutboundDialer() {
       const data = await res.json();
       setCampaigns(data.campaigns || []);
     } catch (e) {
-      console.error("Failed to fetch campaigns:", e);
+      logFetchError("Failed to fetch campaigns:", e);
       toastError("Campaigns unavailable", "Could not load campaigns.");
     }
     setCampaignLoading(false);
@@ -404,7 +408,7 @@ export default function OutboundDialer() {
       const data = await res.json();
       setCallbacks(data.callbacks || []);
     } catch (e) {
-      console.error("Failed to fetch callbacks:", e);
+      logFetchError("Failed to fetch callbacks:", e);
       toastError("Callbacks unavailable", "Could not load scheduled callbacks.");
     }
     setCallbacksLoading(false);
@@ -417,7 +421,7 @@ export default function OutboundDialer() {
       const data = await res.json();
       setCampaignLeads(data.leads || []);
     } catch (e) {
-      console.error("Failed to fetch campaign leads:", e);
+      logFetchError("Failed to fetch campaign leads:", e);
       toastError("Leads unavailable", "Could not load leads for this campaign.");
     }
     setCampaignLeadsLoading(false);
@@ -686,13 +690,6 @@ export default function OutboundDialer() {
                         onClick={() => fileInputRef.current?.click()}
                         className="w-full rounded-xl glass border border-dashed border-white/15 hover:border-brand/40 hover:bg-brand/5 transition-all py-8 flex flex-col items-center justify-center gap-2 group"
                       >
-                        <input
-                          type="file"
-                          accept=".csv"
-                          className="hidden"
-                          ref={fileInputRef}
-                          onChange={handleFileUpload}
-                        />
                         {isUploading ? (
                           <Loader2 className="w-7 h-7 text-brand animate-spin" />
                         ) : (
@@ -770,19 +767,20 @@ export default function OutboundDialer() {
             >
               <AnimatePresence mode="popLayout">
                 {leads.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center gap-3 py-16 text-center">
-                    <div className="w-14 h-14 rounded-2xl glass border border-white/10 flex items-center justify-center text-muted">
-                      <Phone className="w-6 h-6" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <h3 className="font-display italic lowercase text-2xl text-ink">
-                        queue idle
-                      </h3>
-                      <p className="text-[10px] uppercase tracking-[0.4em] text-muted/70">
-                        No leads in pipeline
-                      </p>
-                    </div>
-                  </div>
+                  <EmptyState
+                    icon={UploadCloud}
+                    title="Queue is idle"
+                    description="Upload a CSV of contacts and your agent will dial through them with full call notes saved to the CRM."
+                    accent="#0AC8D4"
+                    actions={[
+                      {
+                        label: "Upload CSV",
+                        onClick: () => fileInputRef.current?.click(),
+                        primary: true,
+                      },
+                      { label: "Browse templates", to: "/agents" },
+                    ]}
+                  />
                 ) : (
                   <div className="divide-y divide-white/6">
                     {leads.map((lead, idx) => (
@@ -1285,14 +1283,19 @@ export default function OutboundDialer() {
                 <Loader2 className="w-5 h-5 animate-spin text-brand" />
               </div>
             ) : campaignLeads.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
-                <p className="text-[10px] uppercase tracking-[0.4em] text-muted/50">
-                  No leads assigned to this campaign
-                </p>
-                <p className="text-[10px] text-muted/40">
-                  Use the Bulk tab and select this campaign when uploading a CSV.
-                </p>
-              </div>
+              <EmptyState
+                icon={Megaphone}
+                title="No leads in campaign"
+                description="Upload a CSV from the Bulk tab and pick this campaign in the dropdown — assigned leads land here."
+                accent="#9B59F5"
+                actions={[
+                  {
+                    label: "Upload CSV",
+                    onClick: () => fileInputRef.current?.click(),
+                    primary: true,
+                  },
+                ]}
+              />
             ) : (
               <>
                 {/* Retry failed banner */}
@@ -1372,6 +1375,17 @@ export default function OutboundDialer() {
 
   return (
     <>
+      {/* Always-mounted file input — both EmptyState CTAs (single-mode queue
+          and campaign view) trigger it via fileInputRef, so it must live
+          outside the Bulk-mode subtree. Hidden visually; click is fully
+          synthetic. */}
+      <input
+        type="file"
+        accept=".csv"
+        className="hidden"
+        ref={fileInputRef}
+        onChange={handleFileUpload}
+      />
       <div className="h-full flex flex-col min-h-0">
         <HubTabs tabs={CHANNELS_HUB} label="Channels sub-navigation" />
         <div className="flex-1 min-h-0">
@@ -1390,6 +1404,16 @@ export default function OutboundDialer() {
                 content: campaignsTab,
               },
               {
+                id: "sequences",
+                label: "Sequences",
+                icon: Repeat,
+                content: (
+                  <Panel icon={Repeat} hint="Multi-touch cadences" title="" scroll accent="#9B59F5">
+                    <Cadences />
+                  </Panel>
+                ),
+              },
+              {
                 id: "callbacks",
                 label: "Callbacks",
                 icon: CalendarClock,
@@ -1401,6 +1425,31 @@ export default function OutboundDialer() {
                       loading={callbacksLoading}
                       onRefresh={fetchCallbacks}
                     />
+                  </Panel>
+                ),
+              },
+              {
+                id: "pipeline",
+                label: "Pipeline",
+                icon: Kanban,
+                content: (
+                  <Panel icon={Kanban} hint="Stage view" title="" accent="#10B981">
+                    <div className="h-full flex items-center justify-center text-center px-6">
+                      <div>
+                        <Kanban className="w-7 h-7 text-brand mx-auto mb-3" />
+                        <p className="text-[12px] text-ink/80 mb-3 max-w-md leading-relaxed">
+                          The full Kanban view lives at{" "}
+                          <code className="text-brand">/pipeline</code> — drag leads between Cold /
+                          Contacted / Qualified / Demo / Won / Lost.
+                        </p>
+                        <Link
+                          to="/pipeline"
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand text-paper text-[11px] uppercase tracking-[0.28em] hover:bg-brand/90 transition-colors"
+                        >
+                          Open pipeline →
+                        </Link>
+                      </div>
+                    </div>
                   </Panel>
                 ),
               },

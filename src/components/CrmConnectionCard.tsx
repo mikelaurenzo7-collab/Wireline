@@ -24,29 +24,74 @@ interface IntegrationState {
 
 type ProviderKey = keyof IntegrationState;
 
-const PROVIDERS: { key: ProviderKey; label: string; color: string; logo: string; group: string; envHint: string }[] = [
-  { key: "salesforce", label: "Salesforce", color: "sky", logo: "SF", group: "CRM", envHint: "SALESFORCE_CLIENT_ID & SECRET" },
-  { key: "hubspot", label: "HubSpot", color: "orange", logo: "HS", group: "CRM", envHint: "HUBSPOT_CLIENT_ID & SECRET" },
-  { key: "slack", label: "Slack", color: "purple", logo: "SL", group: "Team", envHint: "SLACK_CLIENT_ID & SECRET" },
-  { key: "zoom", label: "Zoom", color: "blue", logo: "ZM", group: "Meetings", envHint: "ZOOM_CLIENT_ID & SECRET" },
+const PROVIDERS: {
+  key: ProviderKey;
+  label: string;
+  color: string;
+  logo: string;
+  group: string;
+  envHint: string;
+  beta?: boolean;
+}[] = [
+  {
+    key: "salesforce",
+    label: "Salesforce",
+    color: "sky",
+    logo: "SF",
+    group: "CRM",
+    envHint: "SALESFORCE_CLIENT_ID & SECRET",
+    beta: true,
+  },
+  {
+    key: "hubspot",
+    label: "HubSpot",
+    color: "orange",
+    logo: "HS",
+    group: "CRM",
+    envHint: "HUBSPOT_CLIENT_ID & SECRET",
+    beta: true,
+  },
+  {
+    key: "slack",
+    label: "Slack",
+    color: "purple",
+    logo: "SL",
+    group: "Team",
+    envHint: "SLACK_CLIENT_ID & SECRET",
+  },
+  {
+    key: "zoom",
+    label: "Zoom",
+    color: "blue",
+    logo: "ZM",
+    group: "Meetings",
+    envHint: "ZOOM_CLIENT_ID & SECRET",
+    beta: true,
+  },
 ];
 
 export default function CrmConnectionCard() {
   const [state, setState] = useState<IntegrationState | null>(null);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState<string | null>(null);
-  const [slackChannels, setSlackChannels] = useState<{ id: string; name: string; is_private?: boolean }[]>([]);
+  const [slackChannels, setSlackChannels] = useState<
+    { id: string; name: string; is_private?: boolean }[]
+  >([]);
   const [slackChannelsLoading, setSlackChannelsLoading] = useState(false);
 
   const fetchStatus = useCallback(async () => {
     try {
       const r = await authFetch("/api/oauth/crm/status");
       if (r.ok) setState(await r.json());
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchStatus(); }, [fetchStatus]);
+  useEffect(() => {
+    fetchStatus();
+  }, [fetchStatus]);
 
   useEffect(() => {
     if (!state?.slack?.connected) {
@@ -66,7 +111,9 @@ export default function CrmConnectionCard() {
         if (!cancelled) setSlackChannelsLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [state?.slack?.connected]);
 
   useEffect(() => {
@@ -96,11 +143,18 @@ export default function CrmConnectionCard() {
   };
 
   const disconnect = (provider: ProviderKey) => async () => {
-    if (!confirm(`Disconnect ${PROVIDERS.find(p => p.key === provider)?.label}? Your agents will lose access to this integration.`)) return;
+    if (
+      !confirm(
+        `Disconnect ${PROVIDERS.find((p) => p.key === provider)?.label}? Your agents will lose access to this integration.`,
+      )
+    )
+      return;
     try {
       await authFetch(`/api/oauth/${provider}/disconnect`, { method: "POST" });
       fetchStatus();
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   };
 
   if (loading) {
@@ -113,21 +167,31 @@ export default function CrmConnectionCard() {
 
   if (!state) return null;
 
-  const groups = [...new Set(PROVIDERS.map(p => p.group))];
+  const groups = [...new Set(PROVIDERS.map((p) => p.group))];
 
   return (
     <div className="space-y-4">
-      {groups.map(group => {
-        const groupProviders = PROVIDERS.filter(p => p.group === group);
+      {groups.map((group) => {
+        const groupProviders = PROVIDERS.filter((p) => p.group === group);
         return (
           <div key={group} className="space-y-3">
-            <div className="text-[9px] uppercase tracking-[0.3em] text-brand/70">{group} Integrations</div>
+            <div className="text-[9px] uppercase tracking-[0.3em] text-brand/70">
+              {group} Integrations
+            </div>
             <AnimatePresence mode="popLayout">
-              {groupProviders.map(({ key, label, color, logo, envHint }) => {
+              {groupProviders.map(({ key, label, color, logo, envHint, beta }) => {
                 const s = state[key];
                 if (!s) return null;
                 const isConnecting = connecting === key;
                 const detail = s.email || s.team || "";
+                const betaPill = beta ? (
+                  <span
+                    className="ml-1 text-[8px] uppercase tracking-[0.22em] px-1.5 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/40 text-amber-600 leading-none"
+                    title="OAuth is live; agent actions (auto-log calls, push deals) are in active development."
+                  >
+                    Beta
+                  </span>
+                ) : null;
 
                 if (!s.connected && !s.configured) {
                   return (
@@ -143,7 +207,10 @@ export default function CrmConnectionCard() {
                           {logo}
                         </div>
                         <div className="flex-1">
-                          <div className="text-[11px] font-semibold text-ink">{label}</div>
+                          <div className="flex items-center gap-2">
+                            <div className="text-[11px] font-semibold text-ink">{label}</div>
+                            {betaPill}
+                          </div>
                           <div className="text-[9px] text-muted leading-snug mt-0.5">
                             Not configured — set {envHint} in environment
                           </div>
@@ -161,31 +228,31 @@ export default function CrmConnectionCard() {
                     animate={{ opacity: 1, y: 0 }}
                     className={cn(
                       "rounded-xl glass border p-4",
-                      s.connected
-                        ? `border-${color}-500/30 bg-${color}-500/5`
-                        : "border-white/8"
+                      s.connected ? `border-${color}-500/30 bg-${color}-500/5` : "border-white/8",
                     )}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={cn(
-                        "w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold border",
-                        s.connected
-                          ? `bg-${color}-500/15 border-${color}-500/30 text-${color}-600`
-                          : "bg-white/5 border-white/10 text-muted"
-                      )}>
+                      <div
+                        className={cn(
+                          "w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold border",
+                          s.connected
+                            ? `bg-${color}-500/15 border-${color}-500/30 text-${color}-600`
+                            : "bg-white/5 border-white/10 text-muted",
+                        )}
+                      >
                         {logo}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <div className="text-[11px] font-semibold text-ink">{label}</div>
-                          {s.connected && (
-                            <CheckCircle2 className={`w-3 h-3 text-${color}-600`} />
-                          )}
+                          {s.connected && <CheckCircle2 className={`w-3 h-3 text-${color}-600`} />}
+                          {betaPill}
                         </div>
                         {s.connected ? (
                           <div className="text-[9px] text-muted leading-snug mt-0.5 truncate">
                             {detail && <span>{detail} · </span>}
-                            Connected {s.connected_at ? new Date(s.connected_at).toLocaleDateString() : ""}
+                            Connected{" "}
+                            {s.connected_at ? new Date(s.connected_at).toLocaleDateString() : ""}
                           </div>
                         ) : (
                           <div className="text-[9px] text-muted leading-snug mt-0.5">
@@ -222,7 +289,7 @@ export default function CrmConnectionCard() {
                             className={cn(
                               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-medium transition-all",
                               "bg-brand/15 border border-brand/30 text-brand hover:bg-brand/25",
-                              isConnecting && "opacity-60 pointer-events-none"
+                              isConnecting && "opacity-60 pointer-events-none",
                             )}
                           >
                             {isConnecting ? (
@@ -237,7 +304,9 @@ export default function CrmConnectionCard() {
                     </div>
                     {key === "slack" && s.connected && (
                       <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
-                        <div className="text-[9px] uppercase tracking-[0.25em] text-muted/90">Default notify channel</div>
+                        <div className="text-[9px] uppercase tracking-[0.25em] text-muted/90">
+                          Default notify channel
+                        </div>
                         {slackChannelsLoading ? (
                           <div className="flex items-center gap-2 text-[10px] text-muted">
                             <Loader2 className="w-3 h-3 animate-spin" /> Loading channels…
@@ -260,7 +329,8 @@ export default function CrmConnectionCard() {
                             <option value="">Select channel…</option>
                             {slackChannels.map((ch) => (
                               <option key={ch.id} value={ch.id}>
-                                {(ch.is_private ? "Private: " : "# ")}{ch.name}
+                                {ch.is_private ? "Private: " : "# "}
+                                {ch.name}
                               </option>
                             ))}
                           </select>

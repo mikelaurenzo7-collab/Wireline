@@ -21,6 +21,11 @@ import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../contexts/AuthContext";
 import IntegrationLogos from "./layout/IntegrationLogos";
+import {
+  WIRELINE_CONTACT_AGENTS,
+  WIRELINE_DEMO_AGENTS,
+  type ContactAgent as AgentCard,
+} from "../data/contact-agents";
 
 const FEATURES = [
   {
@@ -48,6 +53,40 @@ const FEATURES = [
     accent: "#10B981",
   },
 ];
+
+function AgentCardLink({ agent }: { agent: AgentCard }) {
+  return (
+    <a
+      href={`tel:${agent.tel}`}
+      className="group relative block rounded-2xl p-4 overflow-hidden border border-white/12 hover:border-white/28 hover:scale-[1.015] transition-all duration-200"
+      style={{
+        background: `linear-gradient(135deg, ${agent.tint}2c, ${agent.tint}12)`,
+        boxShadow: `0 10px 28px -14px ${agent.tint}88`,
+      }}
+    >
+      <div className="flex items-center gap-3">
+        <div
+          className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+          style={{
+            background: `linear-gradient(135deg, ${agent.tint}, ${agent.tint}cc)`,
+            boxShadow: `0 6px 14px -4px ${agent.tint}aa`,
+          }}
+        >
+          <Phone className="w-4 h-4 text-paper" strokeWidth={2.4} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] uppercase tracking-[0.32em] text-muted/80 leading-none mb-1.5 truncate">
+            {agent.name} · {agent.role}
+          </p>
+          <p className="font-display italic text-lg leading-none text-ink truncate">
+            {agent.display}
+          </p>
+        </div>
+        <ArrowRight className="w-4 h-4 text-ink/40 group-hover:text-ink group-hover:translate-x-1 transition-all shrink-0" />
+      </div>
+    </a>
+  );
+}
 
 type PasswordStrength = { score: 0 | 1 | 2 | 3 | 4; label: string; color: string };
 
@@ -130,7 +169,7 @@ export default function AuthPortal() {
   };
 
   return (
-    <div className="min-h-screen flex relative overflow-hidden">
+    <div className="h-screen flex relative overflow-hidden">
       {/* Global aurora backdrop */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <motion.div
@@ -163,8 +202,13 @@ export default function AuthPortal() {
       </div>
       <div className="scanline" />
 
-      {/* ── LEFT PANEL — brand showcase ─────────────────────────────────────── */}
-      <div className="hidden lg:flex lg:w-[54%] xl:w-[56%] flex-col relative z-10 p-10 xl:p-14 overflow-hidden">
+      {/* ── LEFT PANEL — brand showcase ───────────────────────────────────────
+           h-screen + overflow-y-auto so the agent showcase + integration
+           strip don't push the whole layout taller than the viewport.
+           Without this, the left column at lg+ widths grows to ~1020px,
+           making the Sign In button on the right scroll-required even
+           though it's anchored to the top of its column. */}
+      <div className="hidden lg:flex lg:w-[54%] xl:w-[56%] flex-col relative z-10 p-6 xl:p-10 h-screen overflow-y-auto scrollbar-hide">
         {/* Decorative vertical line on right edge */}
         <div
           className="absolute top-0 right-0 w-px h-full"
@@ -225,112 +269,42 @@ export default function AuthPortal() {
           </p>
         </motion.div>
 
-        {/* Demo call CTA — two distinct agents (male / female) so visitors
-            can hear voice + persona variety in our fleet. Tap-to-call on
-            mobile, click-to-call on macOS / Windows with telephony apps. */}
+        {/* All 10 demo agents in a single dense grid. Top 4 are the LIVE
+            Wireline customer-service team (sales, support, tech, demo
+            booking). Bottom 6 are vertical role-play demos (medical
+            intake, real-estate front desk, bill negotiator, etc.) that
+            answer Wireline questions too. Two labelled sub-sections so
+            visitors can tell which line will actually reach our team
+            vs. which line is a "watch the platform work" demo. */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-          className="mb-6"
+          className="mb-5"
         >
-          <p className="text-[9px] uppercase tracking-[0.42em] text-muted/80 mb-3 text-center">
-            Hear a Wireline agent live · no signup · call from any phone
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <a
-              href="tel:+16305811834"
-              className="group relative block rounded-2xl p-4 overflow-hidden border border-white/12 hover:border-white/24 transition-colors"
-              style={{
-                background: "linear-gradient(135deg, rgba(10,200,212,0.18), rgba(155,89,245,0.10))",
-                boxShadow: "0 12px 32px -16px rgba(10,200,212,0.45)",
-              }}
-            >
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                  style={{
-                    background: "linear-gradient(135deg, #0AC8D4, #9B59F5)",
-                    boxShadow: "0 6px 16px -6px rgba(10,200,212,0.6)",
-                  }}
-                >
-                  <Phone className="w-4 h-4 text-paper" strokeWidth={2.4} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[9px] uppercase tracking-[0.36em] text-muted/70 mb-0.5">
-                    Liam · outbound · male
-                  </p>
-                  <p className="font-display italic text-xl leading-tight text-ink">
-                    (630) 581-1834
-                  </p>
-                </div>
-                <ArrowRight className="w-4 h-4 text-ink/40 group-hover:text-ink group-hover:translate-x-0.5 transition-all shrink-0" />
-              </div>
-            </a>
-            <a
-              href="tel:+16306425661"
-              className="group relative block rounded-2xl p-4 overflow-hidden border border-white/12 hover:border-white/24 transition-colors"
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(224,64,192,0.18), rgba(255,107,217,0.10))",
-                boxShadow: "0 12px 32px -16px rgba(224,64,192,0.45)",
-              }}
-            >
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                  style={{
-                    background: "linear-gradient(135deg, #E040C0, #9B59F5)",
-                    boxShadow: "0 6px 16px -6px rgba(224,64,192,0.6)",
-                  }}
-                >
-                  <Phone className="w-4 h-4 text-paper" strokeWidth={2.4} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[9px] uppercase tracking-[0.36em] text-muted/70 mb-0.5">
-                    Sarah · inbound · female
-                  </p>
-                  <p className="font-display italic text-xl leading-tight text-ink">
-                    (630) 642-5661
-                  </p>
-                </div>
-                <ArrowRight className="w-4 h-4 text-ink/40 group-hover:text-ink group-hover:translate-x-0.5 transition-all shrink-0" />
-              </div>
-            </a>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[9px] uppercase tracking-[0.4em] text-brand/90">
+              Talk to Wireline · 6 live customer-service lines
+            </span>
+            <span className="flex-1 h-px bg-brand/30" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {WIRELINE_CONTACT_AGENTS.map((a) => (
+              <AgentCardLink key={a.tel} agent={a} />
+            ))}
+          </div>
+          <div className="flex items-center gap-2 mt-3 mb-2">
+            <span className="text-[9px] uppercase tracking-[0.4em] text-muted/70">
+              See us in action · 4 vertical demo agents
+            </span>
+            <span className="flex-1 h-px bg-white/10" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {WIRELINE_DEMO_AGENTS.map((a) => (
+              <AgentCardLink key={a.tel} agent={a} />
+            ))}
           </div>
         </motion.div>
-
-        {/* Feature cards */}
-        <div className="grid grid-cols-2 gap-3 mb-12">
-          {FEATURES.map((f, i) => {
-            const Icon = f.icon;
-            return (
-              <motion.div
-                key={f.title}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 + i * 0.08, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className="relative rounded-xl p-4 glass border border-white/8 overflow-hidden"
-              >
-                <div
-                  className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-2xl opacity-20 pointer-events-none"
-                  style={{ background: f.accent }}
-                />
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center mb-3 border border-white/8"
-                  style={{
-                    background: `linear-gradient(135deg, ${f.accent}25, ${f.accent}08)`,
-                    color: f.accent,
-                  }}
-                >
-                  <Icon className="w-4 h-4" />
-                </div>
-                <p className="text-[11px] font-medium text-ink mb-1">{f.title}</p>
-                <p className="text-[10px] text-muted/70 leading-relaxed">{f.desc}</p>
-              </motion.div>
-            );
-          })}
-        </div>
 
         {/* Integration logo strip — trust signal showing the stack we run on */}
         <IntegrationLogos />
@@ -363,10 +337,15 @@ export default function AuthPortal() {
         </motion.div>
       </div>
 
-      {/* ── RIGHT PANEL — auth form ──────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col items-center justify-center relative z-10 p-6 md:p-10">
+      {/* ── RIGHT PANEL — auth form ────────────────────────────────────────────
+           Anchored to the top (not vertically centered) so the Sign In
+           button is reliably above the fold at 1280×800 / 1366×768 laptops.
+           Previously `justify-center` pushed the form to ~440px from the top
+           of an 800px viewport, putting the Sign In button at ~875px —
+           below the fold. */}
+      <div className="flex-1 flex flex-col items-center relative z-10 py-4 px-6 md:py-6 md:px-10 overflow-y-auto">
         {/* Mobile logo */}
-        <div className="lg:hidden mb-10 flex flex-col items-center gap-3">
+        <div className="lg:hidden mb-4 flex flex-col items-center gap-2">
           <div
             className="w-16 h-16 rounded-2xl flex items-center justify-center"
             style={{
@@ -378,41 +357,17 @@ export default function AuthPortal() {
           </div>
           <h1 className="brand-wordmark text-5xl leading-none">WIRELINE</h1>
           <p className="text-[9px] uppercase tracking-[0.5em] text-muted">AI Voice Platform</p>
-
-          {/* Compact mobile-only demo CTA pair (the desktop layout lives on the left brand panel) */}
-          <div className="mt-4 flex flex-col sm:flex-row gap-2 w-full max-w-xs">
-            <a
-              href="tel:+16305811834"
-              className="group flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl glass border border-white/12 hover:border-white/24 transition-colors"
-              style={{ boxShadow: "0 8px 24px -12px rgba(10,200,212,0.4)" }}
-            >
-              <Phone className="w-3 h-3 text-brand shrink-0" strokeWidth={2.4} />
-              <span className="text-[10px] uppercase tracking-[0.28em] text-ink whitespace-nowrap">
-                Liam · 581-1834
-              </span>
-            </a>
-            <a
-              href="tel:+16306425661"
-              className="group flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl glass border border-white/12 hover:border-white/24 transition-colors"
-              style={{ boxShadow: "0 8px 24px -12px rgba(224,64,192,0.4)" }}
-            >
-              <Phone className="w-3 h-3 shrink-0" style={{ color: "#E040C0" }} strokeWidth={2.4} />
-              <span className="text-[10px] uppercase tracking-[0.28em] text-ink whitespace-nowrap">
-                Sarah · 642-5661
-              </span>
-            </a>
-          </div>
         </div>
 
         <motion.div
           initial={{ opacity: 0, y: 20, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full max-w-md"
+          className="w-full max-w-md mt-2 md:mt-8"
         >
           {/* Form card */}
           <div className="relative aurora-ring rounded-3xl">
-            <div className="relative rounded-3xl p-8 md:p-10 glass-strong overflow-hidden">
+            <div className="relative rounded-3xl p-6 md:p-8 glass-strong overflow-hidden">
               {/* Subtle ambient glows inside card */}
               <div
                 className="absolute -top-24 -right-24 w-56 h-56 rounded-full opacity-20 blur-3xl pointer-events-none"
@@ -472,7 +427,7 @@ export default function AuthPortal() {
                 </div>
               )}
 
-              <form onSubmit={handleAuth} className="relative z-10 space-y-5">
+              <form onSubmit={handleAuth} className="relative z-10 space-y-4">
                 {/* Email */}
                 <div className="space-y-2">
                   <label className="text-[10px] uppercase tracking-[0.4em] text-muted/80 flex items-center gap-1.5">
@@ -638,8 +593,47 @@ export default function AuthPortal() {
             </div>
           </div>
 
+          {/* Feature pillars — moved here from the left brand panel so they
+              fill the white space under the sign-in card and reinforce
+              value-props at the moment of conversion (the user is right
+              next to the Sign In button when they read these). */}
+          <div className="grid grid-cols-2 gap-3 mt-5">
+            {FEATURES.map((f, i) => {
+              const Icon = f.icon;
+              return (
+                <motion.div
+                  key={f.title}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    delay: 0.2 + i * 0.08,
+                    duration: 0.5,
+                    ease: [0.16, 1, 0.3, 1],
+                  }}
+                  className="relative rounded-xl p-3 glass border border-white/8 overflow-hidden"
+                >
+                  <div
+                    className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-2xl opacity-20 pointer-events-none"
+                    style={{ background: f.accent }}
+                  />
+                  <div
+                    className="w-7 h-7 rounded-lg flex items-center justify-center mb-2 border border-white/8"
+                    style={{
+                      background: `linear-gradient(135deg, ${f.accent}25, ${f.accent}08)`,
+                      color: f.accent,
+                    }}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                  </div>
+                  <p className="text-[11px] font-medium text-ink mb-0.5 leading-tight">{f.title}</p>
+                  <p className="text-[10px] text-muted/70 leading-snug">{f.desc}</p>
+                </motion.div>
+              );
+            })}
+          </div>
+
           {/* Footer */}
-          <div className="mt-6 flex items-center justify-center gap-4">
+          <div className="mt-5 flex items-center justify-center gap-4">
             <ShieldCheck className="w-3 h-3 text-muted/40" />
             <span className="text-[9px] uppercase tracking-[0.42em] text-muted/50">
               TLS Encrypted · Secured Internal Infrastructure

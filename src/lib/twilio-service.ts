@@ -2,7 +2,7 @@ import twilio from "twilio";
 
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
 
 export type TwilioMessageChannel = "sms" | "whatsapp";
@@ -143,7 +143,10 @@ async function fetchPhoneLookup(phone: string): Promise<TwilioLookupResult> {
   }
 }
 
-export async function lookupTenantPhoneNumber(userId: string, phone: string): Promise<TwilioLookupResult> {
+export async function lookupTenantPhoneNumber(
+  userId: string,
+  phone: string,
+): Promise<TwilioLookupResult> {
   const settings = await getTenantSettings(userId);
 
   if (!settings.lookupEnabled) {
@@ -163,7 +166,7 @@ async function buildMessagePayload(
   params: { to: string; body: string; channel: TwilioMessageChannel },
   options?: { ignoreMessagingToggle?: boolean; settings?: TwilioTenantSettings },
 ): Promise<{ payload?: Record<string, string>; result?: TwilioSendResult }> {
-  const settings = options?.settings || await getTenantSettings(userId);
+  const settings = options?.settings || (await getTenantSettings(userId));
 
   if (!options?.ignoreMessagingToggle && !settings.messagingEnabled) {
     return {
@@ -228,9 +231,7 @@ async function buildMessagePayload(
   };
 
   const sender =
-    params.channel === "whatsapp"
-      ? settings.whatsappFromNumber
-      : settings.smsFromNumber;
+    params.channel === "whatsapp" ? settings.whatsappFromNumber : settings.smsFromNumber;
 
   if (sender) {
     payload.from = formatMessageAddress(sender, params.channel);
@@ -288,6 +289,53 @@ export async function sendTenantMessage(
 
   try {
     const message = await client.messages.create(prepared.payload as any);
+
+    // Mirror the outbound message into the SMS inbox so operators see
+    // the full two-way history alongside replies. Idempotent thread
+    // upsert keyed by (user_id, customer_number). Wrapped in its own
+    // try/catch so a transient DB issue can never block the actual SMS
+    // send return value.
+    try {
+      const recipient = String(prepared.payload.to || params.to || "");
+      if (recipient) {
+        const [existingThread] = await drizzle
+          .select({ id: schema.smsThreads.id })
+          .from(schema.smsThreads)
+          .where(
+            and(
+              eq(schema.smsThreads.userId, userId),
+              eq(schema.smsThreads.customerNumber, recipient),
+            ),
+          )
+          .limit(1);
+        let threadId: string | undefined;
+        if (existingThread) {
+          threadId = existingThread.id as unknown as string;
+          await drizzle
+            .update(schema.smsThreads)
+            .set({ lastMessageAt: new Date(), status: "open" })
+            .where(eq(schema.smsThreads.id, existingThread.id));
+        } else {
+          const [created] = await drizzle
+            .insert(schema.smsThreads)
+            .values({ userId, customerNumber: recipient, unreadCount: 0 })
+            .returning({ id: schema.smsThreads.id });
+          threadId = created?.id as unknown as string;
+        }
+        if (threadId) {
+          await drizzle.insert(schema.smsMessages).values({
+            userId,
+            threadId,
+            direction: "out",
+            body: params.body,
+            twilioSid: message.sid,
+          });
+        }
+      }
+    } catch (e: any) {
+      log.warn("Outbound SMS thread persist skipped", { error: e?.message });
+    }
+
     return {
       ok: true,
       configured: true,
@@ -323,11 +371,7 @@ export async function sendManagerAlert(
     };
   }
 
-  const body = [
-    params.title,
-    params.message,
-    params.callId ? `Call ID: ${params.callId}` : null,
-  ]
+  const body = [params.title, params.message, params.callId ? `Call ID: ${params.callId}` : null]
     .filter(Boolean)
     .join("\n");
 

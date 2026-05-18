@@ -128,7 +128,11 @@ export default function CommandCenter() {
           }
         }
       }
-    } catch (err) {
+    } catch (err: any) {
+      // Aborted / transient fetches are expected (navigation, intervals
+      // racing component unmount) — only log unexpected failures.
+      const msg = String(err?.message || "");
+      if (err?.name === "AbortError" || msg.includes("Failed to fetch")) return;
       log.error("Failed to fetch live presence", { err });
     }
   }, [user, dossiers]);
@@ -168,8 +172,14 @@ export default function CommandCenter() {
         );
         setStats(statsData);
       }
-    } catch (err) {
-      log.error("Command Center data fetch failed", { err });
+    } catch (err: any) {
+      // Suppress aborted-fetch noise — they fire on every page navigation.
+      const msg = String(err?.message || "");
+      if (err?.name === "AbortError" || msg.includes("Failed to fetch")) {
+        // expected when user navigates mid-request
+      } else {
+        log.error("Command Center data fetch failed", { err });
+      }
     } finally {
       if (mountedRef.current) setLoading(false);
     }
@@ -223,34 +233,36 @@ export default function CommandCenter() {
 
   return (
     <PageTransition>
-      <div className="max-w-[1600px] mx-auto space-y-8 pb-12">
-        {/* Elite Command Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-black/5">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="flex h-2 w-2 rounded-full bg-brand animate-pulse" />
-              <span className="text-[10px] uppercase tracking-[0.4em] font-bold text-muted">
+      <div className="max-w-[1600px] mx-auto space-y-5 pb-8">
+        {/* Elite Command Header — tightened so the onboarding card fits
+            above the fold on a 900px viewport. Title/subtitle/stats kept
+            but vertical density compressed ~40px without losing brand. */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 pb-3 border-b border-black/5">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="flex h-1.5 w-1.5 rounded-full bg-brand animate-pulse" />
+              <span className="text-[9px] uppercase tracking-[0.4em] font-bold text-muted">
                 System Active
               </span>
             </div>
-            <h1 className="text-4xl font-black tracking-tighter text-ink flex items-baseline gap-3">
+            <h1 className="text-2xl md:text-3xl font-black tracking-tighter text-ink flex items-baseline gap-2">
               Wireline OS
-              <span className="text-sm font-mono font-medium text-muted/40 tracking-normal">
+              <span className="text-xs font-mono font-medium text-muted/40 tracking-normal">
                 v4.7.2-stable
               </span>
             </h1>
-            <p className="text-sm text-muted max-w-lg leading-relaxed">
+            <p className="text-[12px] text-muted/80 max-w-lg leading-snug">
               Live calls, fleet status, and unit economics for your entire agent operation — one
               screen, real time.
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Hide "Activate Growth" until the user has at least one agent —
-                this CTA fires Apollo prospecting which is meaningless until
-                there's an agent to receive the leads, and on fresh accounts
-                it competes for attention with OnboardingQuickstart below. */}
-            {(stats?.agents?.length ?? 0) > 0 && (
+            {/* Activate Growth — full button when the user has at least one
+                agent, disabled-stub when they don't. Stub still occupies the
+                slot so fresh accounts don't see a blank gap that reads as
+                broken UI. Hover-tooltip routes them to /agents to set up. */}
+            {(stats?.agents?.length ?? 0) > 0 ? (
               <button
                 onClick={async () => {
                   if (activatingGrowth) return;
@@ -292,6 +304,17 @@ export default function CommandCenter() {
                 />
                 <span className="text-xs font-black uppercase tracking-widest">
                   {activatingGrowth ? "Activating…" : "Activate Growth"}
+                </span>
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate("/agents")}
+                title="Create an agent first → /agents"
+                className="flex items-center gap-2 px-6 py-3 rounded-2xl border border-white/10 bg-white/5 text-muted/70 hover:text-ink hover:border-white/25 transition-colors"
+              >
+                <Zap className="w-4 h-4" />
+                <span className="text-xs font-black uppercase tracking-widest">
+                  Create an agent →
                 </span>
               </button>
             )}
@@ -338,148 +361,169 @@ export default function CommandCenter() {
         </div>
 
         {/* Onboarding quickstart — self-hides once all 4 steps complete */}
-        <OnboardingQuickstart />
+        <section className="space-y-3">
+          <span className="text-[10px] uppercase tracking-[0.35em] text-muted font-medium">
+            Get started
+          </span>
+          <OnboardingQuickstart />
+        </section>
 
-        {/* Dashboard Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-          {/* Left Column: Live Monitor (8/12) */}
-          <div className="xl:col-span-8 space-y-8">
-            <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-brand/20 to-brand-2/20 rounded-[2.5rem] blur opacity-25 group-hover:opacity-40 transition duration-1000" />
-              <div className="relative glass border-black/5 rounded-[2rem] p-8 min-h-[400px]">
-                <LiveMonitor calls={calls} />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Analytics: Sentiment */}
-              <div className="glass border-black/5 rounded-[2rem] p-8">
-                <div className="flex items-center justify-between mb-8">
-                  <h3 className="text-[10px] uppercase tracking-[0.4em] font-medium text-muted flex items-center gap-2">
-                    <Globe className="w-3.5 h-3.5 text-brand" />
-                    Market Sentiment
-                  </h3>
+        {/* Dashboard Grid — compressed for 1366×768 laptop viewports.
+            Previously every card was p-8 (32px) min-h-[400px]+, gap-8
+            between, with a right rail at min-h-[600px]. That stacked
+            into ~1200px of dashboard content alone — half a viewport
+            below the fold on a typical demo laptop. Tightened to p-5,
+            min-h-[280px], gap-4. Internal Live Monitor still uses its
+            own card. */}
+        <section className="space-y-3 pt-3 border-t border-black/5">
+          <span className="text-[10px] uppercase tracking-[0.35em] text-muted font-medium block">
+            Live operations
+          </span>
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+            {/* Left Column: Live Monitor (8/12) */}
+            <div className="xl:col-span-8 space-y-4">
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-brand/20 to-brand-2/20 rounded-[2.5rem] blur opacity-25 group-hover:opacity-40 transition duration-1000" />
+                <div className="relative glass border-black/5 rounded-[2rem] p-5 min-h-[280px]">
+                  <LiveMonitor calls={calls} />
                 </div>
+              </div>
 
-                {sentimentData.length === 0 ? (
-                  <div className="h-48 flex flex-col items-center justify-center gap-3 text-center border border-dashed border-black/8 rounded-2xl bg-black/[0.01]">
-                    <Activity className="w-6 h-6 text-muted/20" />
-                    <p className="text-[10px] text-muted uppercase tracking-[0.2em]">
-                      Awaiting Data
-                    </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Analytics: Sentiment */}
+                <div className="glass border-black/5 rounded-[2rem] p-5">
+                  <div className="flex items-center justify-between mb-8">
+                    <h3 className="text-[10px] uppercase tracking-[0.4em] font-medium text-muted flex items-center gap-2">
+                      <Globe className="w-3.5 h-3.5 text-brand" />
+                      Market Sentiment
+                    </h3>
                   </div>
-                ) : (
-                  <div className="flex items-center gap-8">
-                    <div className="w-1/2 h-[160px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={sentimentData}
-                            innerRadius={50}
-                            outerRadius={75}
-                            paddingAngle={5}
-                            dataKey="value"
-                            stroke="none"
-                          >
-                            {sentimentData.map((entry) => (
-                              <Cell key={entry.name} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip
-                            contentStyle={{
-                              background: "#fff",
-                              border: "1px solid rgba(0,0,0,0.05)",
-                              borderRadius: "12px",
-                              boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
-                            }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
+
+                  {sentimentData.length === 0 ? (
+                    <div className="h-48 flex flex-col items-center justify-center gap-2 text-center border border-dashed border-black/8 rounded-2xl bg-black/[0.01] px-6">
+                      <Activity className="w-6 h-6 text-muted/30" />
+                      <p className="text-[11px] text-ink/70 font-medium">No conversations yet</p>
+                      <p className="text-[10px] text-muted/70 leading-relaxed">
+                        Make your first call to{" "}
+                        <a href="tel:+16306425661" className="text-brand hover:underline">
+                          (630) 642-5661
+                        </a>{" "}
+                        to see live sentiment.
+                      </p>
                     </div>
-                    <div className="flex-1 space-y-3">
-                      {sentimentData.map((d) => (
-                        <div key={d.name} className="flex items-center justify-between group">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className="w-2 h-2 rounded-full"
-                              style={{ background: d.color }}
+                  ) : (
+                    <div className="flex items-center gap-8">
+                      <div className="w-1/2 h-[160px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={sentimentData}
+                              innerRadius={50}
+                              outerRadius={75}
+                              paddingAngle={5}
+                              dataKey="value"
+                              stroke="none"
+                            >
+                              {sentimentData.map((entry) => (
+                                <Cell key={entry.name} fill={entry.color} />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              contentStyle={{
+                                background: "#fff",
+                                border: "1px solid rgba(0,0,0,0.05)",
+                                borderRadius: "12px",
+                                boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
+                              }}
                             />
-                            <span className="text-[11px] font-medium text-muted group-hover:text-ink transition-colors">
-                              {d.name}
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="flex-1 space-y-3">
+                        {sentimentData.map((d) => (
+                          <div key={d.name} className="flex items-center justify-between group">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="w-2 h-2 rounded-full"
+                                style={{ background: d.color }}
+                              />
+                              <span className="text-[11px] font-medium text-muted group-hover:text-ink transition-colors">
+                                {d.name}
+                              </span>
+                            </div>
+                            <span className="text-[11px] font-mono font-bold text-ink">
+                              {totalSentiment > 0
+                                ? `${Math.round((d.value / totalSentiment) * 100)}%`
+                                : "—"}
                             </span>
                           </div>
-                          <span className="text-[11px] font-mono font-bold text-ink">
-                            {totalSentiment > 0
-                              ? `${Math.round((d.value / totalSentiment) * 100)}%`
-                              : "—"}
-                          </span>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Analytics: Unit Economics */}
+                <div className="glass border-black/5 rounded-[2rem] p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-[10px] uppercase tracking-[0.4em] font-medium text-muted flex items-center gap-2">
+                      <Zap className="w-3.5 h-3.5 text-brand" />
+                      Unit Economics
+                    </h3>
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-brand/10 border border-brand/20 rounded-full">
+                      <span className="text-[9px] font-bold text-brand uppercase tracking-wider">
+                        Efficiency: {stats?.unitEconomics?.efficiencyScore ?? 0}%
+                      </span>
                     </div>
                   </div>
-                )}
-              </div>
 
-              {/* Analytics: Unit Economics */}
-              <div className="glass border-black/5 rounded-[2rem] p-8">
-                <div className="flex items-center justify-between mb-8">
-                  <h3 className="text-[10px] uppercase tracking-[0.4em] font-medium text-muted flex items-center gap-2">
-                    <Zap className="w-3.5 h-3.5 text-brand" />
-                    Unit Economics
-                  </h3>
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-brand/10 border border-brand/20 rounded-full">
-                    <span className="text-[9px] font-bold text-brand uppercase tracking-wider">
-                      Efficiency: {stats?.unitEconomics?.efficiencyScore ?? 0}%
-                    </span>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/5">
+                      <span className="text-[9px] font-medium text-muted uppercase tracking-wider block mb-1">
+                        Cost / Min
+                      </span>
+                      <span className="text-xl font-bold text-ink">
+                        ${stats?.unitEconomics?.costPerMinute ?? "0.00"}
+                      </span>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/5">
+                      <span className="text-[9px] font-medium text-muted uppercase tracking-wider block mb-1">
+                        Cost / Lead
+                      </span>
+                      <span className="text-xl font-bold text-ink">
+                        ${stats?.unitEconomics?.costPerLead ?? "0.00"}
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/5">
-                    <span className="text-[9px] font-medium text-muted uppercase tracking-wider block mb-1">
-                      Cost / Min
-                    </span>
-                    <span className="text-xl font-bold text-ink">
-                      ${stats?.unitEconomics?.costPerMinute ?? "0.00"}
-                    </span>
-                  </div>
-                  <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/5">
-                    <span className="text-[9px] font-medium text-muted uppercase tracking-wider block mb-1">
-                      Cost / Lead
-                    </span>
-                    <span className="text-xl font-bold text-ink">
-                      ${stats?.unitEconomics?.costPerLead ?? "0.00"}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-6 p-4 rounded-2xl bg-brand/5 border border-brand/10">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-bold text-brand uppercase tracking-wider">
-                      Fleet ROI Projection
-                    </span>
-                    <span className="text-[10px] font-mono font-bold text-brand">EXCELLENT</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-brand/10 rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${stats?.unitEconomics?.efficiencyScore ?? 0}%` }}
-                      className="h-full bg-brand rounded-full"
-                    />
+                  <div className="mt-6 p-4 rounded-2xl bg-brand/5 border border-brand/10">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[10px] font-bold text-brand uppercase tracking-wider">
+                        Fleet ROI Projection
+                      </span>
+                      <span className="text-[10px] font-mono font-bold text-brand">EXCELLENT</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-brand/10 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${stats?.unitEconomics?.efficiencyScore ?? 0}%` }}
+                        className="h-full bg-brand rounded-full"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Right Column: Intelligence & Actions (4/12) */}
-          <div className="xl:col-span-4 space-y-8">
-            {/* Intelligence Hub (Action Feed) */}
-            <div className="glass border-black/5 rounded-[2rem] p-8 h-full min-h-[600px] flex flex-col">
-              <ActionFeed actions={actions} onRefresh={refresh} />
+            {/* Right Column: Intelligence & Actions (4/12) */}
+            <div className="xl:col-span-4 space-y-4">
+              {/* Intelligence Hub (Action Feed) */}
+              <div className="glass border-black/5 rounded-[2rem] p-5 h-full min-h-[280px] flex flex-col">
+                <ActionFeed actions={actions} onRefresh={refresh} />
+              </div>
             </div>
           </div>
-        </div>
+        </section>
       </div>
     </PageTransition>
   );

@@ -1,14 +1,41 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
 import {
-  BarChart3, TrendingUp, Layers, Calendar, Trophy, AlertOctagon, Loader2,
-  RefreshCw, Sparkles, DollarSign, Brain,
-  Receipt, Database, Shield, AlertTriangle, Lock, Save, CheckCircle2 as CheckCircle2Icon,
-  Star, Play,
+  BarChart3,
+  TrendingUp,
+  Layers,
+  Calendar,
+  Trophy,
+  AlertOctagon,
+  Loader2,
+  RefreshCw,
+  Sparkles,
+  DollarSign,
+  Brain,
+  Receipt,
+  Database,
+  Shield,
+  AlertTriangle,
+  Lock,
+  Save,
+  CheckCircle2 as CheckCircle2Icon,
+  Star,
+  Play,
+  Megaphone,
 } from "lucide-react";
 import {
-  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
-  RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
 } from "recharts";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
@@ -24,9 +51,7 @@ export default function InsightsView() {
 
   const wrap = (label: string, node: React.ReactNode) => (
     <WidgetBoundary label={label}>
-      <div className="h-full w-full overflow-y-auto scrollbar-hide pr-1">
-        {node}
-      </div>
+      <div className="h-full w-full overflow-y-auto scrollbar-hide pr-1">{node}</div>
     </WidgetBoundary>
   );
 
@@ -47,14 +72,17 @@ export default function InsightsView() {
                 onClick={() => setDays(d)}
                 className={cn(
                   "h-7 px-3 rounded-full text-[10px] font-medium tracking-wide transition-all",
-                  days === d
-                    ? "text-paper"
-                    : "text-muted hover:text-ink"
+                  days === d ? "text-paper" : "text-muted hover:text-ink",
                 )}
-                style={days === d ? {
-                  background: "linear-gradient(135deg, #0AC8D4 0%, #9B59F5 55%, #E040C0 100%)",
-                  boxShadow: "0 2px 8px -4px rgba(10,200,212,0.50)"
-                } : undefined}
+                style={
+                  days === d
+                    ? {
+                        background:
+                          "linear-gradient(135deg, #0AC8D4 0%, #9B59F5 55%, #E040C0 100%)",
+                        boxShadow: "0 2px 8px -4px rgba(10,200,212,0.50)",
+                      }
+                    : undefined
+                }
               >
                 {d}d
               </button>
@@ -64,13 +92,49 @@ export default function InsightsView() {
         </>
       }
       tabs={[
-        { id: "funnel",      label: "Funnel",      icon: TrendingUp,   content: wrap("Funnel",      <FunnelView      days={days} />) },
-        { id: "topics",      label: "Topics",      icon: Layers,       content: wrap("Topics",      <TopicsView />) },
-        { id: "heatmap",     label: "Heatmap",     icon: Calendar,     content: wrap("Heatmap",     <HeatmapView     days={days} />) },
-        { id: "leaderboard", label: "Leaderboard", icon: Trophy,       content: wrap("Leaderboard", <LeaderboardView days={days} />) },
-        { id: "failures",    label: "Failures",    icon: AlertOctagon, content: wrap("Failures",    <FailureModesView />) },
-        { id: "spend",       label: "AI Spend",    icon: Receipt,      content: wrap("AI Spend",    <AISpendView     days={days} />) },
-        { id: "quality",     label: "Quality",     icon: Star,         content: wrap("Quality",     <QualityView     days={days} />) },
+        {
+          id: "funnel",
+          label: "Funnel",
+          icon: TrendingUp,
+          content: wrap("Funnel", <FunnelView days={days} />),
+        },
+        {
+          id: "attribution",
+          label: "Attribution",
+          icon: Megaphone,
+          content: wrap("Attribution", <AttributionView days={days} />),
+        },
+        { id: "topics", label: "Topics", icon: Layers, content: wrap("Topics", <TopicsView />) },
+        {
+          id: "heatmap",
+          label: "Heatmap",
+          icon: Calendar,
+          content: wrap("Heatmap", <HeatmapView days={days} />),
+        },
+        {
+          id: "leaderboard",
+          label: "Leaderboard",
+          icon: Trophy,
+          content: wrap("Leaderboard", <LeaderboardView days={days} />),
+        },
+        {
+          id: "failures",
+          label: "Failures",
+          icon: AlertOctagon,
+          content: wrap("Failures", <FailureModesView />),
+        },
+        {
+          id: "spend",
+          label: "AI Spend",
+          icon: Receipt,
+          content: wrap("AI Spend", <AISpendView days={days} />),
+        },
+        {
+          id: "quality",
+          label: "Quality",
+          icon: Star,
+          content: wrap("Quality", <QualityView days={days} />),
+        },
       ]}
     />
   );
@@ -85,13 +149,26 @@ function FunnelView({ days }: { days: number }) {
 
   useEffect(() => {
     let active = true;
-    setLoading(true); setErr(null);
+    setLoading(true);
+    setErr(null);
     authFetch(`/api/insights/funnel?days=${days}`)
-      .then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`); return d; })
-      .then((d) => { if (active) setData(d); })
-      .catch((e) => { if (active) setErr(e instanceof Error ? e.message : "Request failed"); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
+      .then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
+        return d;
+      })
+      .then((d) => {
+        if (active) setData(d);
+      })
+      .catch((e) => {
+        if (active) setErr(e instanceof Error ? e.message : "Request failed");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, [days]);
 
   if (loading) return <Spinner />;
@@ -106,13 +183,17 @@ function FunnelView({ days }: { days: number }) {
     return (
       <div className="relative aurora-ring rounded-3xl">
         <div className="relative rounded-3xl glass-strong overflow-hidden p-10 md:p-14 flex flex-col items-center gap-5 text-center">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #0AC8D422, #9B59F522)" }}>
+          <div
+            className="w-16 h-16 rounded-2xl flex items-center justify-center"
+            style={{ background: "linear-gradient(135deg, #0AC8D422, #9B59F522)" }}
+          >
             <TrendingUp className="w-8 h-8 text-brand" />
           </div>
           <div>
             <h3 className="font-display italic text-3xl text-ink mb-2">No calls yet</h3>
             <p className="text-sm text-ink/55 max-w-sm leading-relaxed">
-              Your conversion funnel will populate once agents start handling calls. Run a test call from the Dashboard to see data here.
+              Your conversion funnel will populate once agents start handling calls. Run a test call
+              from the Dashboard to see data here.
             </p>
           </div>
         </div>
@@ -123,11 +204,14 @@ function FunnelView({ days }: { days: number }) {
   return (
     <div className="relative aurora-ring rounded-3xl">
       <div className="relative rounded-3xl glass-strong overflow-hidden p-8 md:p-10 space-y-4">
-        <div className="text-[10px] uppercase tracking-[0.4em] text-brand mb-2">Conversion Funnel · {data.window_days}d</div>
+        <div className="text-[10px] uppercase tracking-[0.4em] text-brand mb-2">
+          Conversion Funnel · {data.window_days}d
+        </div>
         {stages.map((s: any, i: number) => {
           const pct = (s.count / max) * 100;
           const prev = i > 0 ? stages[i - 1].count : null;
-          const drop = prev !== null && prev > 0 ? Math.round(((prev - s.count) / prev) * 100) : null;
+          const drop =
+            prev !== null && prev > 0 ? Math.round(((prev - s.count) / prev) * 100) : null;
           return (
             <motion.div
               key={s.name}
@@ -138,7 +222,9 @@ function FunnelView({ days }: { days: number }) {
             >
               <div className="flex items-baseline justify-between text-sm">
                 <span className="font-display italic text-2xl text-ink">{s.name}</span>
-                <span className="font-display italic text-3xl text-aurora tabular-nums">{s.count.toLocaleString()}</span>
+                <span className="font-display italic text-3xl text-aurora tabular-nums">
+                  {s.count.toLocaleString()}
+                </span>
               </div>
               <div className="relative h-3 rounded-full bg-black/10 overflow-hidden">
                 <motion.div
@@ -165,6 +251,130 @@ function FunnelView({ days }: { days: number }) {
   );
 }
 
+/* ─────────────────────────  Attribution  ─────────────────────────── */
+
+function AttributionView({ days }: { days: number }) {
+  const [rows, setRows] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setErr(null);
+    authFetch(`/api/insights/campaign-attribution?days=${days}`)
+      .then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
+        return d;
+      })
+      .then((d) => {
+        if (active) setRows(d.attribution || []);
+      })
+      .catch((e) => {
+        if (active) setErr(e instanceof Error ? e.message : "Request failed");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [days]);
+
+  if (loading) return <Spinner />;
+  if (err) return <ErrCard error={err} />;
+
+  const totalCalls = rows.reduce((s, r) => s + (Number(r.calls) || 0), 0);
+  const totalBooked = rows.reduce((s, r) => s + (Number(r.booked) || 0), 0);
+
+  if (totalCalls === 0) {
+    return (
+      <div className="p-6 text-center">
+        <Megaphone className="w-10 h-10 text-muted/30 mx-auto mb-3" />
+        <p className="text-[13px] text-ink/85 mb-2">No tagged calls yet</p>
+        <p className="text-[11px] text-muted/70 max-w-md mx-auto leading-relaxed">
+          Tag your phone numbers with a campaign label in{" "}
+          <a href="/admin" className="text-brand hover:underline">
+            Admin → Carrier
+          </a>{" "}
+          (e.g. "Google Ads · Spring '26"). Every call to that number gets the tag and shows up
+          here.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-1 space-y-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-1">
+        <Stat
+          label="Tagged sources"
+          value={rows.filter((r) => r.source !== "(untagged)").length}
+          accent="#0AC8D4"
+        />
+        <Stat label="Total calls" value={totalCalls} accent="#9B59F5" />
+        <Stat label="Booked" value={totalBooked} accent="#10B981" />
+        <Stat
+          label="Conv. rate"
+          value={`${totalCalls > 0 ? ((totalBooked / totalCalls) * 100).toFixed(1) : "0.0"}%`}
+          accent="#E040C0"
+        />
+      </div>
+      <div className="rounded-2xl glass border border-white/8 overflow-hidden">
+        <table className="w-full text-[12px]">
+          <thead className="bg-black/3">
+            <tr className="text-left text-[10px] uppercase tracking-[0.24em] text-muted/80">
+              <th className="px-3 py-2.5 font-medium">Campaign</th>
+              <th className="px-3 py-2.5 font-medium text-right">Calls</th>
+              <th className="px-3 py-2.5 font-medium text-right">Minutes</th>
+              <th className="px-3 py-2.5 font-medium text-right">Booked</th>
+              <th className="px-3 py-2.5 font-medium text-right">Qualified</th>
+              <th className="px-3 py-2.5 font-medium text-right">Conv.</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => {
+              const calls = Number(r.calls) || 0;
+              const booked = Number(r.booked) || 0;
+              const conv = calls > 0 ? ((booked / calls) * 100).toFixed(1) : "0.0";
+              const isUntagged = r.source === "(untagged)";
+              return (
+                <tr
+                  key={`${r.source}-${i}`}
+                  className="border-t border-white/6 hover:bg-white/3 transition-colors"
+                >
+                  <td className="px-3 py-2.5">
+                    <span className={isUntagged ? "text-muted/80 italic" : "text-ink font-medium"}>
+                      {r.source}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-ink/90">{calls}</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-muted/80">
+                    {Math.round((Number(r.total_seconds) || 0) / 60)}
+                  </td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-emerald-600">{booked}</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-brand">
+                    {Number(r.qualified) || 0}
+                  </td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-ink/85">{conv}%</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-[10px] text-muted/60 leading-relaxed px-1">
+        Set the campaign label per phone number under{" "}
+        <a href="/admin" className="text-brand hover:underline">
+          Admin → Carrier
+        </a>
+        . Calls inherit the label automatically.
+      </p>
+    </div>
+  );
+}
+
 /* ─────────────────────────  Topics  ─────────────────────────── */
 
 function TopicsView() {
@@ -173,12 +383,21 @@ function TopicsView() {
   const [err, setErr] = useState<string | null>(null);
 
   const load = (refresh = false) => {
-    setLoading(true); setErr(null);
+    setLoading(true);
+    setErr(null);
     authFetch(`/api/insights/topics${refresh ? "?refresh=1" : ""}`)
-      .then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; })
-      .then(setData).catch((e) => setErr(e.message)).finally(() => setLoading(false));
+      .then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error);
+        return d;
+      })
+      .then(setData)
+      .catch((e) => setErr(e.message))
+      .finally(() => setLoading(false));
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   if (loading && !data) return <Spinner />;
   if (err) return <ErrCard error={err} />;
@@ -223,23 +442,39 @@ function TopicsView() {
                 />
                 <div className="space-y-2">
                   <div className="flex items-baseline justify-between gap-3">
-                    <h4 className="font-display italic text-2xl text-ink leading-tight">{t.name}</h4>
-                    <span className="font-display italic text-3xl text-aurora tabular-nums">{t.count}</span>
+                    <h4 className="font-display italic text-2xl text-ink leading-tight">
+                      {t.name}
+                    </h4>
+                    <span className="font-display italic text-3xl text-aurora tabular-nums">
+                      {t.count}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] bg-brand/15 text-brand border border-brand/30">{t.category}</span>
+                    <span className="px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] bg-brand/15 text-brand border border-brand/30">
+                      {t.category}
+                    </span>
                     {t.trend && (
-                      <span className={cn(
-                        "px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em]",
-                        t.trend === "growing"  && "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30",
-                        t.trend === "new"      && "bg-brand-2/15 text-brand-2 border border-brand-2/30",
-                        t.trend === "steady"   && "bg-zinc-500/15 text-zinc-300 border border-zinc-500/30",
-                        t.trend === "declining" && "bg-rose-500/15 text-rose-500 border border-rose-500/30",
-                      )}>{t.trend}</span>
+                      <span
+                        className={cn(
+                          "px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em]",
+                          t.trend === "growing" &&
+                            "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30",
+                          t.trend === "new" &&
+                            "bg-brand-2/15 text-brand-2 border border-brand-2/30",
+                          t.trend === "steady" &&
+                            "bg-zinc-500/15 text-zinc-300 border border-zinc-500/30",
+                          t.trend === "declining" &&
+                            "bg-rose-500/15 text-rose-500 border border-rose-500/30",
+                        )}
+                      >
+                        {t.trend}
+                      </span>
                     )}
                   </div>
                   {t.example_quote && (
-                    <p className="text-xs text-ink/55 italic leading-relaxed mt-2">"{t.example_quote}"</p>
+                    <p className="text-xs text-ink/55 italic leading-relaxed mt-2">
+                      "{t.example_quote}"
+                    </p>
                   )}
                 </div>
               </div>
@@ -260,13 +495,26 @@ function HeatmapView({ days }: { days: number }) {
 
   useEffect(() => {
     let active = true;
-    setLoading(true); setErr(null);
+    setLoading(true);
+    setErr(null);
     authFetch(`/api/insights/heatmap?days=${days}`)
-      .then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`); return d; })
-      .then((d) => { if (active) setData(d); })
-      .catch((e) => { if (active) setErr(e instanceof Error ? e.message : "Request failed"); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
+      .then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
+        return d;
+      })
+      .then((d) => {
+        if (active) setData(d);
+      })
+      .catch((e) => {
+        if (active) setErr(e instanceof Error ? e.message : "Request failed");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, [days]);
 
   if (loading) return <Spinner />;
@@ -280,14 +528,19 @@ function HeatmapView({ days }: { days: number }) {
   return (
     <div className="relative aurora-ring rounded-3xl">
       <div className="relative rounded-3xl glass-strong overflow-hidden p-7 md:p-10">
-        <div className="text-[10px] uppercase tracking-[0.4em] text-brand mb-6">Calls by Hour × Weekday · {data.window_days}d</div>
+        <div className="text-[10px] uppercase tracking-[0.4em] text-brand mb-6">
+          Calls by Hour × Weekday · {data.window_days}d
+        </div>
         <div className="overflow-x-auto scrollbar-hide">
           <table className="w-full min-w-[700px]">
             <thead>
               <tr>
                 <th className="text-[9px] uppercase tracking-[0.3em] text-muted text-left pb-2 font-normal w-8"></th>
                 {Array.from({ length: 24 }).map((_, h) => (
-                  <th key={h} className="text-[9px] uppercase tracking-[0.3em] text-muted text-center pb-2 font-normal">
+                  <th
+                    key={h}
+                    className="text-[9px] uppercase tracking-[0.3em] text-muted text-center pb-2 font-normal"
+                  >
                     {h % 3 === 0 ? h : ""}
                   </th>
                 ))}
@@ -296,7 +549,9 @@ function HeatmapView({ days }: { days: number }) {
             <tbody>
               {weekdays.map((wd, w) => (
                 <tr key={w}>
-                  <td className="text-[10px] uppercase tracking-[0.3em] text-muted pr-3 py-1">{wd}</td>
+                  <td className="text-[10px] uppercase tracking-[0.3em] text-muted pr-3 py-1">
+                    {wd}
+                  </td>
                   {Array.from({ length: 24 }).map((_, h) => {
                     const cell = grid.find((g: any) => g.weekday === w && g.hour === h);
                     const intensity = cell ? cell.count / max : 0;
@@ -306,10 +561,14 @@ function HeatmapView({ days }: { days: number }) {
                         <div
                           className="aspect-square rounded-md transition-all hover:scale-110 cursor-pointer"
                           style={{
-                            background: cell && cell.count > 0
-                              ? `linear-gradient(135deg, rgba(10,200,212,${opacity}), rgba(197,139,255,${opacity * 0.8}))`
-                              : "rgba(0,0,0,0.03)",
-                            border: cell && cell.count > 0 ? `1px solid rgba(10,200,212,${0.2 + intensity * 0.4})` : "1px solid rgba(0,0,0,0.04)",
+                            background:
+                              cell && cell.count > 0
+                                ? `linear-gradient(135deg, rgba(10,200,212,${opacity}), rgba(197,139,255,${opacity * 0.8}))`
+                                : "rgba(0,0,0,0.03)",
+                            border:
+                              cell && cell.count > 0
+                                ? `1px solid rgba(10,200,212,${0.2 + intensity * 0.4})`
+                                : "1px solid rgba(0,0,0,0.04)",
                           }}
                           title={`${wd} ${h}:00 — ${cell?.count || 0} calls${cell?.avg_score ? `, avg score ${cell.avg_score}` : ""}`}
                         />
@@ -325,7 +584,13 @@ function HeatmapView({ days }: { days: number }) {
           <span>Less</span>
           <div className="flex gap-1">
             {[0.1, 0.3, 0.55, 0.8, 1].map((o, i) => (
-              <div key={i} className="w-4 h-4 rounded" style={{ background: `linear-gradient(135deg, rgba(10,200,212,${o}), rgba(197,139,255,${o * 0.8}))` }} />
+              <div
+                key={i}
+                className="w-4 h-4 rounded"
+                style={{
+                  background: `linear-gradient(135deg, rgba(10,200,212,${o}), rgba(197,139,255,${o * 0.8}))`,
+                }}
+              />
             ))}
           </div>
           <span>More</span>
@@ -338,12 +603,19 @@ function HeatmapView({ days }: { days: number }) {
 /* ─────────────────────────  Leaderboard  ─────────────────────────── */
 
 function RolePill({ role }: { role?: string }) {
-  const meta = AGENT_ROLES.find(r => r.value === role) ?? AGENT_ROLES.find(r => r.value === "customer_service") ?? AGENT_ROLES[0];
+  const meta =
+    AGENT_ROLES.find((r) => r.value === role) ??
+    AGENT_ROLES.find((r) => r.value === "customer_service") ??
+    AGENT_ROLES[0];
   return (
-    <span className={cn(
-      "inline-flex items-center gap-1 font-black uppercase tracking-widest text-[8px] px-2 py-0.5 border-2",
-      meta.tw.bg, meta.tw.text, meta.tw.border,
-    )}>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 font-black uppercase tracking-widest text-[8px] px-2 py-0.5 border-2",
+        meta.tw.bg,
+        meta.tw.text,
+        meta.tw.border,
+      )}
+    >
       <span className={cn("w-1.5 h-1.5 rounded-full", meta.tw.dot)} />
       {meta.label}
     </span>
@@ -357,20 +629,40 @@ function LeaderboardView({ days }: { days: number }) {
 
   useEffect(() => {
     let active = true;
-    setLoading(true); setErr(null);
+    setLoading(true);
+    setErr(null);
     authFetch(`/api/insights/leaderboard?days=${days}`)
-      .then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`); return d; })
-      .then((d) => { if (active) setData(d); })
-      .catch((e) => { if (active) setErr(e instanceof Error ? e.message : "Request failed"); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
+      .then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
+        return d;
+      })
+      .then((d) => {
+        if (active) setData(d);
+      })
+      .catch((e) => {
+        if (active) setErr(e instanceof Error ? e.message : "Request failed");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, [days]);
 
   if (loading) return <Spinner />;
   if (err) return <ErrCard error={err} />;
-  if (!data || !data.agents?.length) return <Empty label="No agents have run calls in this window." />;
+  if (!data || !data.agents?.length)
+    return <Empty label="No agents have run calls in this window." />;
 
-  const RANK_STYLES: Array<{ gradient?: string; ring: string; glow: string; textClass: string; iconBg: boolean }> = [
+  const RANK_STYLES: Array<{
+    gradient?: string;
+    ring: string;
+    glow: string;
+    textClass: string;
+    iconBg: boolean;
+  }> = [
     {
       gradient: "linear-gradient(135deg, #0AC8D4 0%, #9B59F5 55%, #E040C0 100%)",
       ring: "border-brand/40",
@@ -401,7 +693,12 @@ function LeaderboardView({ days }: { days: number }) {
   return (
     <div className="space-y-3">
       {agentRows.map((a: any, i: number) => {
-        const rs = RANK_STYLES[i] ?? { ring: "border-white/8", glow: "transparent", textClass: "text-muted", iconBg: false };
+        const rs = RANK_STYLES[i] ?? {
+          ring: "border-white/8",
+          glow: "transparent",
+          textClass: "text-muted",
+          iconBg: false,
+        };
         return (
           <motion.div
             key={a.agent_id}
@@ -421,25 +718,37 @@ function LeaderboardView({ days }: { days: number }) {
               className="shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center font-display italic text-2xl border border-white/10"
               style={rs.gradient ? { background: rs.gradient } : undefined}
             >
-              {i === 0
-                ? <Trophy className={`w-5 h-5 ${rs.textClass}`} />
-                : <span className={rs.textClass}>{i + 1}</span>}
+              {i === 0 ? (
+                <Trophy className={`w-5 h-5 ${rs.textClass}`} />
+              ) : (
+                <span className={rs.textClass}>{i + 1}</span>
+              )}
             </div>
 
             <div className="flex-1 min-w-0 relative">
               <div className="flex items-center gap-2 flex-wrap mb-2">
-                <h4 className="font-display italic text-2xl text-ink leading-tight">{a.agent_name}</h4>
+                <h4 className="font-display italic text-2xl text-ink leading-tight">
+                  {a.agent_name}
+                </h4>
                 <RolePill role={a.role} />
               </div>
               <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
-                <Stat label="Calls"     value={a.total_calls} />
-                <Stat label="Qualified" value={a.qualified}    accent="#0AC8D4" />
+                <Stat label="Calls" value={a.total_calls} />
+                <Stat label="Qualified" value={a.qualified} accent="#0AC8D4" />
                 <Stat label="Avg Score" value={a.avg_lead_score} />
-                <Stat label="Bookings"  value={a.bookings} />
-                <Stat label="Minutes"   value={a.minutes} />
-                <Stat label="$/Qual"    value={a.cost_per_qualified ? `$${a.cost_per_qualified}` : "—"} accent="#E040C0" />
-                <Stat label="$/Outcome" value={a.cost_per_outcome ? `$${a.cost_per_outcome}` : "—"} accent="#9B59F5" />
-                <Stat label="Total $"   value={a.total_cost ? `$${a.total_cost}` : "—"} />
+                <Stat label="Bookings" value={a.bookings} />
+                <Stat label="Minutes" value={a.minutes} />
+                <Stat
+                  label="$/Qual"
+                  value={a.cost_per_qualified ? `$${a.cost_per_qualified}` : "—"}
+                  accent="#E040C0"
+                />
+                <Stat
+                  label="$/Outcome"
+                  value={a.cost_per_outcome ? `$${a.cost_per_outcome}` : "—"}
+                  accent="#9B59F5"
+                />
+                <Stat label="Total $" value={a.total_cost ? `$${a.total_cost}` : "—"} />
               </div>
             </div>
           </motion.div>
@@ -453,7 +762,12 @@ function Stat({ label, value, accent }: { label: string; value: any; accent?: st
   return (
     <div>
       <div className="text-[9px] uppercase tracking-[0.3em] text-muted">{label}</div>
-      <div className="font-display italic text-xl text-ink mt-0.5" style={accent ? { color: accent } : {}}>{value}</div>
+      <div
+        className="font-display italic text-xl text-ink mt-0.5"
+        style={accent ? { color: accent } : {}}
+      >
+        {value}
+      </div>
     </div>
   );
 }
@@ -466,12 +780,21 @@ function FailureModesView() {
   const [err, setErr] = useState<string | null>(null);
 
   const load = (refresh = false) => {
-    setLoading(true); setErr(null);
+    setLoading(true);
+    setErr(null);
     authFetch(`/api/insights/failure-modes${refresh ? "?refresh=1" : ""}`)
-      .then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; })
-      .then(setData).catch((e) => setErr(e.message)).finally(() => setLoading(false));
+      .then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error);
+        return d;
+      })
+      .then(setData)
+      .catch((e) => setErr(e.message))
+      .finally(() => setLoading(false));
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   if (loading && !data) return <Spinner />;
   if (err) return <ErrCard error={err} />;
@@ -482,7 +805,9 @@ function FailureModesView() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div className="text-[10px] uppercase tracking-[0.4em] text-muted">{data.cached ? "Cached" : "Fresh"} · {modes.length} clusters</div>
+        <div className="text-[10px] uppercase tracking-[0.4em] text-muted">
+          {data.cached ? "Cached" : "Fresh"} · {modes.length} clusters
+        </div>
         <button
           onClick={() => load(true)}
           className="px-3 py-1.5 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5"
@@ -501,15 +826,27 @@ function FailureModesView() {
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <h4 className="font-display italic text-2xl text-ink leading-tight">{m.failure_type}</h4>
-                <span className={cn(
-                  "px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em]",
-                  m.severity === "critical" && "bg-rose-500/15 text-rose-500 border border-rose-500/30",
-                  m.severity === "high"     && "bg-rose-500/15 text-rose-500 border border-rose-500/30",
-                  m.severity === "medium"   && "bg-amber-500/15 text-amber-500 border border-amber-500/30",
-                  m.severity === "low"      && "bg-zinc-500/15 text-zinc-300 border border-zinc-500/30",
-                )}>{m.severity}</span>
-                <span className="px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] bg-brand-2/15 text-brand-2 border border-brand-2/30">{m.fix_target}</span>
+                <h4 className="font-display italic text-2xl text-ink leading-tight">
+                  {m.failure_type}
+                </h4>
+                <span
+                  className={cn(
+                    "px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em]",
+                    m.severity === "critical" &&
+                      "bg-rose-500/15 text-rose-500 border border-rose-500/30",
+                    m.severity === "high" &&
+                      "bg-rose-500/15 text-rose-500 border border-rose-500/30",
+                    m.severity === "medium" &&
+                      "bg-amber-500/15 text-amber-500 border border-amber-500/30",
+                    m.severity === "low" &&
+                      "bg-zinc-500/15 text-zinc-300 border border-zinc-500/30",
+                  )}
+                >
+                  {m.severity}
+                </span>
+                <span className="px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] bg-brand-2/15 text-brand-2 border border-brand-2/30">
+                  {m.fix_target}
+                </span>
               </div>
             </div>
             <div className="font-display italic text-3xl text-aurora">{m.count}</div>
@@ -518,7 +855,9 @@ function FailureModesView() {
           <div className="rounded-xl bg-brand/10 border border-brand/30 p-4 flex items-start gap-3">
             <Sparkles className="w-4 h-4 text-brand shrink-0 mt-0.5" />
             <div>
-              <div className="text-[10px] uppercase tracking-[0.3em] text-brand mb-1">Recommended fix</div>
+              <div className="text-[10px] uppercase tracking-[0.3em] text-brand mb-1">
+                Recommended fix
+              </div>
               <p className="text-sm text-ink/90">{m.recommended_fix}</p>
             </div>
           </div>
@@ -537,13 +876,26 @@ function AISpendView({ days }: { days: number }) {
 
   useEffect(() => {
     let active = true;
-    setLoading(true); setErr(null);
+    setLoading(true);
+    setErr(null);
     authFetch(`/api/audit/summary?days=${days}`)
-      .then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`); return d; })
-      .then((d) => { if (active) setData(d); })
-      .catch((e) => { if (active) setErr(e instanceof Error ? e.message : "Request failed"); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
+      .then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
+        return d;
+      })
+      .then((d) => {
+        if (active) setData(d);
+      })
+      .catch((e) => {
+        if (active) setErr(e instanceof Error ? e.message : "Request failed");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, [days]);
 
   if (loading) return <Spinner />;
@@ -567,110 +919,176 @@ function AISpendView({ days }: { days: number }) {
         <Empty label="No AI usage in this window — try a longer range or run a recipe." />
       )}
 
-      {callsHaveHappened && <>
-      {/* Headline cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <SpendStat label="Total Spend" value={formatMoney(totals?.cost, 2)} icon={DollarSign} accent="#0AC8D4" />
-        <SpendStat label="Claude Calls" value={String(totals.calls)} icon={Brain} accent="#9B59F5" />
-        <SpendStat label="Avg / Call" value={formatMoney(totals?.avg_cost_per_call, 4)} icon={Receipt} accent="#E040C0" />
-        <SpendStat label="Saved by Cache" value={formatMoney(totals?.cache_savings_usd, 2)} icon={Database} accent="#10B981" />
-      </div>
+      {callsHaveHappened && (
+        <>
+          {/* Headline cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <SpendStat
+              label="Total Spend"
+              value={formatMoney(totals?.cost, 2)}
+              icon={DollarSign}
+              accent="#0AC8D4"
+            />
+            <SpendStat
+              label="Claude Calls"
+              value={String(totals.calls)}
+              icon={Brain}
+              accent="#9B59F5"
+            />
+            <SpendStat
+              label="Avg / Call"
+              value={formatMoney(totals?.avg_cost_per_call, 4)}
+              icon={Receipt}
+              accent="#E040C0"
+            />
+            <SpendStat
+              label="Saved by Cache"
+              value={formatMoney(totals?.cache_savings_usd, 2)}
+              icon={Database}
+              accent="#10B981"
+            />
+          </div>
 
-      {/* Spend over time */}
-      <div className="relative aurora-ring rounded-3xl">
-        <div className="relative rounded-3xl glass-strong overflow-hidden p-6 md:p-8">
-          <div className="text-[10px] uppercase tracking-[0.4em] text-brand mb-5">Spend per Day · {data.window_days}d</div>
-          <div className="space-y-2">
-            {by_day.map((d: any, i: number) => {
-              const pct = (Number(d.cost) / maxDay) * 100;
-              return (
-                <motion.div
-                  key={d.day}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.02, duration: 0.4 }}
-                  className="flex items-center gap-3"
-                >
-                  <span className="shrink-0 text-[10px] uppercase tracking-[0.25em] text-muted w-20 font-mono">{d.day.slice(5)}</span>
-                  <div className="flex-1 relative h-7 rounded-lg bg-black/10 overflow-hidden">
+          {/* Spend over time */}
+          <div className="relative aurora-ring rounded-3xl">
+            <div className="relative rounded-3xl glass-strong overflow-hidden p-6 md:p-8">
+              <div className="text-[10px] uppercase tracking-[0.4em] text-brand mb-5">
+                Spend per Day · {data.window_days}d
+              </div>
+              <div className="space-y-2">
+                {by_day.map((d: any, i: number) => {
+                  const pct = (Number(d.cost) / maxDay) * 100;
+                  return (
                     <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${pct}%` }}
-                      transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: i * 0.02 }}
-                      className="absolute inset-y-0 left-0 rounded-lg flex items-center px-3"
-                      style={{ background: "linear-gradient(90deg, #0AC8D4, #9B59F5)" }}
+                      key={d.day}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.02, duration: 0.4 }}
+                      className="flex items-center gap-3"
                     >
-                      <span className="text-[10px] font-mono text-paper font-medium">${safeFixed(d.cost, 2)}</span>
+                      <span className="shrink-0 text-[10px] uppercase tracking-[0.25em] text-muted w-20 font-mono">
+                        {d.day.slice(5)}
+                      </span>
+                      <div className="flex-1 relative h-7 rounded-lg bg-black/10 overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${pct}%` }}
+                          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: i * 0.02 }}
+                          className="absolute inset-y-0 left-0 rounded-lg flex items-center px-3"
+                          style={{ background: "linear-gradient(90deg, #0AC8D4, #9B59F5)" }}
+                        >
+                          <span className="text-[10px] font-mono text-paper font-medium">
+                            ${safeFixed(d.cost, 2)}
+                          </span>
+                        </motion.div>
+                        <span className="absolute inset-y-0 right-3 flex items-center text-[10px] text-muted">
+                          {d.calls} calls
+                        </span>
+                      </div>
                     </motion.div>
-                    <span className="absolute inset-y-0 right-3 flex items-center text-[10px] text-muted">{d.calls} calls</span>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* By action */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="relative aurora-ring rounded-2xl">
-          <div className="relative rounded-2xl glass border border-white/10 p-5 space-y-3">
-            <div className="text-[10px] uppercase tracking-[0.4em] text-brand">Spend by Recipe</div>
-            <div className="space-y-2">
-              {by_action.slice(0, 12).map((a: any, i: number) => {
-                const pct = (Number(a.cost) / maxAction) * 100;
-                return (
-                  <div key={a.action} className="space-y-1">
-                    <div className="flex items-baseline justify-between gap-3">
-                      <span className="text-sm text-ink/85 truncate">{a.action}</span>
-                      <span className="font-display italic text-lg text-aurora tabular-nums shrink-0">${safeFixed(a.cost, 3)}</span>
-                    </div>
-                    <div className="relative h-1.5 rounded-full bg-black/10 overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }} animate={{ width: `${pct}%` }}
-                        transition={{ duration: 0.6, delay: i * 0.03 }}
-                        className="absolute inset-y-0 left-0 rounded-full"
-                        style={{ background: "linear-gradient(90deg, #9B59F5, #E040C0)" }}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.25em] text-muted">
-                      <span>{a.calls} calls</span>
-                      <span>avg {a.avg_latency_ms}ms</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        <div className="relative aurora-ring rounded-2xl">
-          <div className="relative rounded-2xl glass border border-white/10 p-5 space-y-3">
-            <div className="text-[10px] uppercase tracking-[0.4em] text-brand">Spend by Model</div>
-            <div className="space-y-3">
-              {by_model.map((m: any) => (
-                <div key={m.model} className="flex items-baseline justify-between border-b border-white/5 pb-3 last:border-0 last:pb-0">
-                  <div>
-                    <div className="text-sm font-mono text-ink/90">{m.model}</div>
-                    <div className="text-[10px] uppercase tracking-[0.25em] text-muted mt-1">{m.calls} calls</div>
-                  </div>
-                  <div className="font-display italic text-2xl text-aurora">${safeFixed(m.cost, 2)}</div>
-                </div>
-              ))}
-            </div>
-            <div className="pt-3 border-t border-white/5">
-              <div className="text-[10px] uppercase tracking-[0.3em] text-muted mb-1">Tokens (window)</div>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div>Input <span className="text-ink/80 font-mono ml-1">{totals.input.toLocaleString()}</span></div>
-                <div>Output <span className="text-ink/80 font-mono ml-1">{totals.output.toLocaleString()}</span></div>
-                <div>Cache reads <span className="text-emerald-500 font-mono ml-1">{totals.cache_read.toLocaleString()}</span></div>
-                <div>Cache writes <span className="text-brand-2 font-mono ml-1">{totals.cache_create.toLocaleString()}</span></div>
+                  );
+                })}
               </div>
             </div>
           </div>
-        </div>
-      </div>
-      </>}
+
+          {/* By action */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="relative aurora-ring rounded-2xl">
+              <div className="relative rounded-2xl glass border border-white/10 p-5 space-y-3">
+                <div className="text-[10px] uppercase tracking-[0.4em] text-brand">
+                  Spend by Recipe
+                </div>
+                <div className="space-y-2">
+                  {by_action.slice(0, 12).map((a: any, i: number) => {
+                    const pct = (Number(a.cost) / maxAction) * 100;
+                    return (
+                      <div key={a.action} className="space-y-1">
+                        <div className="flex items-baseline justify-between gap-3">
+                          <span className="text-sm text-ink/85 truncate">{a.action}</span>
+                          <span className="font-display italic text-lg text-aurora tabular-nums shrink-0">
+                            ${safeFixed(a.cost, 3)}
+                          </span>
+                        </div>
+                        <div className="relative h-1.5 rounded-full bg-black/10 overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${pct}%` }}
+                            transition={{ duration: 0.6, delay: i * 0.03 }}
+                            className="absolute inset-y-0 left-0 rounded-full"
+                            style={{ background: "linear-gradient(90deg, #9B59F5, #E040C0)" }}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.25em] text-muted">
+                          <span>{a.calls} calls</span>
+                          <span>avg {a.avg_latency_ms}ms</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div className="relative aurora-ring rounded-2xl">
+              <div className="relative rounded-2xl glass border border-white/10 p-5 space-y-3">
+                <div className="text-[10px] uppercase tracking-[0.4em] text-brand">
+                  Spend by Model
+                </div>
+                <div className="space-y-3">
+                  {by_model.map((m: any) => (
+                    <div
+                      key={m.model}
+                      className="flex items-baseline justify-between border-b border-white/5 pb-3 last:border-0 last:pb-0"
+                    >
+                      <div>
+                        <div className="text-sm font-mono text-ink/90">{m.model}</div>
+                        <div className="text-[10px] uppercase tracking-[0.25em] text-muted mt-1">
+                          {m.calls} calls
+                        </div>
+                      </div>
+                      <div className="font-display italic text-2xl text-aurora">
+                        ${safeFixed(m.cost, 2)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="pt-3 border-t border-white/5">
+                  <div className="text-[10px] uppercase tracking-[0.3em] text-muted mb-1">
+                    Tokens (window)
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      Input{" "}
+                      <span className="text-ink/80 font-mono ml-1">
+                        {totals.input.toLocaleString()}
+                      </span>
+                    </div>
+                    <div>
+                      Output{" "}
+                      <span className="text-ink/80 font-mono ml-1">
+                        {totals.output.toLocaleString()}
+                      </span>
+                    </div>
+                    <div>
+                      Cache reads{" "}
+                      <span className="text-emerald-500 font-mono ml-1">
+                        {totals.cache_read.toLocaleString()}
+                      </span>
+                    </div>
+                    <div>
+                      Cache writes{" "}
+                      <span className="text-brand-2 font-mono ml-1">
+                        {totals.cache_create.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -678,7 +1096,12 @@ function AISpendView({ days }: { days: number }) {
 function SpendBudgetCard() {
   const [status, setStatus] = useState<any>(null);
   const [_budget, setBudget] = useState<any>(null);
-  const [draft, setDraft] = useState<{ monthly_limit_usd: string; warn_threshold_pct: number; hard_cap: boolean; enabled: boolean }>({
+  const [draft, setDraft] = useState<{
+    monthly_limit_usd: string;
+    warn_threshold_pct: number;
+    hard_cap: boolean;
+    enabled: boolean;
+  }>({
     monthly_limit_usd: "",
     warn_threshold_pct: 80,
     hard_cap: false,
@@ -693,8 +1116,8 @@ function SpendBudgetCard() {
     setLoading(true);
     try {
       const [s, b] = await Promise.all([
-        authFetch("/api/spend/status").then(r => r.json()),
-        authFetch("/api/spend/budget").then(r => r.json()),
+        authFetch("/api/spend/status").then((r) => r.json()),
+        authFetch("/api/spend/budget").then((r) => r.json()),
       ]);
       setStatus(s);
       setBudget(b.budget);
@@ -709,7 +1132,9 @@ function SpendBudgetCard() {
     }
   };
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => {
+    refresh();
+  }, []);
 
   const save = async () => {
     setSaving(true);
@@ -761,12 +1186,19 @@ function SpendBudgetCard() {
       <div className="relative rounded-3xl glass-strong border border-white/10 p-6 md:p-7 space-y-5 overflow-hidden">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${barColor}22`, border: `1px solid ${barColor}55` }}>
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center"
+              style={{ background: `${barColor}22`, border: `1px solid ${barColor}55` }}
+            >
               <Shield className="w-4 h-4" style={{ color: barColor }} />
             </div>
             <div>
-              <div className="text-[10px] uppercase tracking-[0.4em]" style={{ color: barColor }}>Monthly Budget</div>
-              <div className="text-sm text-ink/70 mt-1">Period <span className="font-mono">{period}</span> · resets on the 1st (UTC)</div>
+              <div className="text-[10px] uppercase tracking-[0.4em]" style={{ color: barColor }}>
+                Monthly Budget
+              </div>
+              <div className="text-sm text-ink/70 mt-1">
+                Period <span className="font-mono">{period}</span> · resets on the 1st (UTC)
+              </div>
             </div>
           </div>
           {status?.hard_capped_now && (
@@ -786,13 +1218,20 @@ function SpendBudgetCard() {
           <div className="space-y-2">
             <div className="flex items-baseline justify-between">
               <div className="font-display italic text-3xl text-ink leading-none">
-                ${safeFixed(used, 2)} <span className="text-ink/50 text-xl">/ ${safeFixed(limit, 2)}</span>
+                ${safeFixed(used, 2)}{" "}
+                <span className="text-ink/50 text-xl">/ ${safeFixed(limit, 2)}</span>
               </div>
-              <div className="text-[10px] uppercase tracking-[0.3em] text-muted">{safeFixed(pct, 1)}% used</div>
+              <div className="text-[10px] uppercase tracking-[0.3em] text-muted">
+                {safeFixed(pct, 1)}% used
+              </div>
             </div>
             <div className="relative h-3 rounded-full bg-black/10 overflow-hidden">
               {/* Warn-threshold tick */}
-              <div className="absolute inset-y-0 w-px bg-black/30" style={{ left: `${warnPct}%` }} title={`Warn threshold ${warnPct}%`} />
+              <div
+                className="absolute inset-y-0 w-px bg-black/30"
+                style={{ left: `${warnPct}%` }}
+                title={`Warn threshold ${warnPct}%`}
+              />
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${Math.min(100, pct)}%` }}
@@ -803,20 +1242,29 @@ function SpendBudgetCard() {
             </div>
             {Array.isArray(status?.alerts_fired) && status.alerts_fired.length > 0 && (
               <div className="text-[10px] uppercase tracking-[0.25em] text-muted pt-1">
-                Alerts fired this period: {status.alerts_fired.map((a: any) => `${a.threshold_pct}%`).join(" · ")}
+                Alerts fired this period:{" "}
+                {status.alerts_fired.map((a: any) => `${a.threshold_pct}%`).join(" · ")}
               </div>
             )}
           </div>
         ) : (
-          <div className="text-sm text-ink/60">No monthly limit set. Configure one below to enable warnings and (optionally) a hard cap.</div>
+          <div className="text-sm text-ink/60">
+            No monthly limit set. Configure one below to enable warnings and (optionally) a hard
+            cap.
+          </div>
         )}
 
         {/* Controls */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
           <label className="space-y-1.5">
-            <span className="text-[10px] uppercase tracking-[0.3em] text-muted">Monthly limit (USD)</span>
+            <span className="text-[10px] uppercase tracking-[0.3em] text-muted">
+              Monthly limit (USD)
+            </span>
             <input
-              type="number" min="0" step="1" inputMode="decimal"
+              type="number"
+              min="0"
+              step="1"
+              inputMode="decimal"
               value={draft.monthly_limit_usd}
               onChange={(e) => setDraft({ ...draft, monthly_limit_usd: e.target.value })}
               placeholder="e.g. 200"
@@ -824,11 +1272,18 @@ function SpendBudgetCard() {
             />
           </label>
           <label className="space-y-1.5">
-            <span className="text-[10px] uppercase tracking-[0.3em] text-muted">Warn at (% of limit)</span>
+            <span className="text-[10px] uppercase tracking-[0.3em] text-muted">
+              Warn at (% of limit)
+            </span>
             <input
-              type="number" min="1" max="99" step="1"
+              type="number"
+              min="1"
+              max="99"
+              step="1"
               value={draft.warn_threshold_pct}
-              onChange={(e) => setDraft({ ...draft, warn_threshold_pct: parseInt(e.target.value || "80") })}
+              onChange={(e) =>
+                setDraft({ ...draft, warn_threshold_pct: parseInt(e.target.value || "80") })
+              }
               className="w-full h-11 px-4 rounded-xl glass border border-white/10 outline-none text-ink text-sm focus:border-brand/60 transition-all font-mono"
             />
           </label>
@@ -850,14 +1305,20 @@ function SpendBudgetCard() {
 
         <div className="flex items-center justify-between gap-4 pt-1">
           <div className="text-[11px] text-ink/50">
-            Threshold crossings fire <span className="font-mono text-ink/75">spend.warning</span> and <span className="font-mono text-ink/75">spend.exceeded</span> webhook events — wire them to Slack/CRM in Admin.
+            Threshold crossings fire <span className="font-mono text-ink/75">spend.warning</span>{" "}
+            and <span className="font-mono text-ink/75">spend.exceeded</span> webhook events — wire
+            them to Slack/CRM in Admin.
           </div>
           <button
             onClick={save}
             disabled={saving}
             className="h-11 px-5 rounded-xl bg-brand text-paper text-xs uppercase tracking-[0.25em] font-medium flex items-center gap-2 disabled:opacity-50 hover:opacity-90 transition-all"
           >
-            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            {saving ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Save className="w-3.5 h-3.5" />
+            )}
             {saving ? "Saving" : "Save budget"}
           </button>
         </div>
@@ -870,11 +1331,24 @@ function SpendBudgetCard() {
   );
 }
 
-function SpendStat({ label, value, icon: Icon, accent }: { label: string; value: string; icon: any; accent: string }) {
+function SpendStat({
+  label,
+  value,
+  icon: Icon,
+  accent,
+}: {
+  label: string;
+  value: string;
+  icon: any;
+  accent: string;
+}) {
   return (
     <div className="relative aurora-ring rounded-2xl">
       <div className="relative rounded-2xl glass border border-white/10 p-5 overflow-hidden">
-        <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-25 blur-3xl pointer-events-none" style={{ background: `radial-gradient(circle, ${accent}, transparent)` }} />
+        <div
+          className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-25 blur-3xl pointer-events-none"
+          style={{ background: `radial-gradient(circle, ${accent}, transparent)` }}
+        />
         <div className="relative z-10">
           <div className="flex items-center justify-between mb-3">
             <p className="text-[10px] uppercase tracking-[0.3em] text-muted">{label}</p>
@@ -905,11 +1379,16 @@ function Spinner() {
         <div className="absolute inset-3 rounded-full glass flex items-center justify-center">
           <div
             className="w-3 h-3 rounded-full"
-            style={{ background: "linear-gradient(135deg, #0AC8D4, #9B59F5)", boxShadow: "0 0 10px #0AC8D4" }}
+            style={{
+              background: "linear-gradient(135deg, #0AC8D4, #9B59F5)",
+              boxShadow: "0 0 10px #0AC8D4",
+            }}
           />
         </div>
       </div>
-      <p className="text-[9px] uppercase tracking-[0.5em] text-muted/60 animate-pulse">Computing…</p>
+      <p className="text-[9px] uppercase tracking-[0.5em] text-muted/60 animate-pulse">
+        Computing…
+      </p>
     </div>
   );
 }
@@ -918,18 +1397,34 @@ function Empty({ label, green }: { label: string; green?: boolean }) {
   return (
     <div className="relative aurora-ring rounded-3xl">
       <div className="relative rounded-3xl glass border border-white/10 p-12 text-center overflow-hidden">
-        <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-64 h-32 rounded-full opacity-20 blur-3xl pointer-events-none"
-          style={{ background: green ? "radial-gradient(circle, #10B981, transparent)" : "radial-gradient(circle, #0AC8D4, transparent)" }} />
-        <div className={cn(
-          "inline-flex items-center justify-center w-12 h-12 rounded-2xl glass border mb-4",
-          green ? "border-emerald-500/30 text-emerald-500" : "border-brand/30 text-brand"
-        )}>
-          {green
-            ? <CheckCircle2Icon className="w-5 h-5" />
-            : <BarChart3 className="w-5 h-5 opacity-60" />
-          }
+        <div
+          className="absolute -top-20 left-1/2 -translate-x-1/2 w-64 h-32 rounded-full opacity-20 blur-3xl pointer-events-none"
+          style={{
+            background: green
+              ? "radial-gradient(circle, #10B981, transparent)"
+              : "radial-gradient(circle, #0AC8D4, transparent)",
+          }}
+        />
+        <div
+          className={cn(
+            "inline-flex items-center justify-center w-12 h-12 rounded-2xl glass border mb-4",
+            green ? "border-emerald-500/30 text-emerald-500" : "border-brand/30 text-brand",
+          )}
+        >
+          {green ? (
+            <CheckCircle2Icon className="w-5 h-5" />
+          ) : (
+            <BarChart3 className="w-5 h-5 opacity-60" />
+          )}
         </div>
-        <p className={cn("text-[11px] uppercase tracking-[0.4em]", green ? "text-emerald-500/80" : "text-muted")}>{label}</p>
+        <p
+          className={cn(
+            "text-[11px] uppercase tracking-[0.4em]",
+            green ? "text-emerald-500/80" : "text-muted",
+          )}
+        >
+          {label}
+        </p>
       </div>
     </div>
   );
@@ -963,12 +1458,14 @@ function QualityView({ days }: { days: number }) {
   const fetchStats = useCallback(() => {
     setLoading(true);
     authFetch(`/api/qa/stats?days=${days}`)
-      .then(r => r.json())
+      .then((r) => r.json())
       .then(setData)
       .finally(() => setLoading(false));
   }, [days]);
 
-  useEffect(() => { fetchStats(); }, [fetchStats]);
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   const handleScoreAll = async () => {
     setScoring(true);
@@ -983,7 +1480,10 @@ function QualityView({ days }: { days: number }) {
       if (d.scored === 0 && d.total === 0) {
         toastSuccess("All caught up", "No unscored calls found in this period.");
       } else if (d.failed > 0) {
-        toastWarning("Batch QA partial", `Scored ${d.scored} call${d.scored === 1 ? "" : "s"}, ${d.failed} failed. Check logs for details.`);
+        toastWarning(
+          "Batch QA partial",
+          `Scored ${d.scored} call${d.scored === 1 ? "" : "s"}, ${d.failed} failed. Check logs for details.`,
+        );
       } else {
         toastSuccess("Batch QA complete", `Scored ${d.scored} call${d.scored === 1 ? "" : "s"}.`);
       }
@@ -1002,13 +1502,18 @@ function QualityView({ days }: { days: number }) {
       <div className="space-y-4">
         <div className="relative aurora-ring rounded-3xl">
           <div className="relative rounded-3xl glass-strong overflow-hidden p-10 md:p-14 flex flex-col items-center gap-5 text-center">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg,#0AC8D422,#9B59F522)" }}>
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center"
+              style={{ background: "linear-gradient(135deg,#0AC8D422,#9B59F522)" }}
+            >
               <Star className="w-8 h-8 text-brand" />
             </div>
             <div>
               <h3 className="font-display italic text-3xl text-ink mb-2">No QA scores yet</h3>
               <p className="text-sm text-ink/55 max-w-sm leading-relaxed">
-                Score an individual call in Call Logs, or use <strong className="text-brand">Score All Unscored</strong> below to batch-evaluate up to 20 calls at once.
+                Score an individual call in Call Logs, or use{" "}
+                <strong className="text-brand">Score All Unscored</strong> below to batch-evaluate
+                up to 20 calls at once.
               </p>
             </div>
             <button
@@ -1016,7 +1521,11 @@ function QualityView({ days }: { days: number }) {
               disabled={scoring}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-brand/15 border border-brand/40 text-brand text-[11px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-colors disabled:opacity-50"
             >
-              {scoring ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+              {scoring ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Play className="w-3.5 h-3.5" />
+              )}
               {scoring ? "Scoring…" : "Score All Unscored"}
             </button>
           </div>
@@ -1027,11 +1536,11 @@ function QualityView({ days }: { days: number }) {
 
   const dims = data.dimensions || {};
   const radarData = [
-    { dimension: "Opening",   score: +(((dims.greeting  ?? 0) / 20) * 100).toFixed(0) },
+    { dimension: "Opening", score: +(((dims.greeting ?? 0) / 20) * 100).toFixed(0) },
     { dimension: "Discovery", score: +(((dims.discovery ?? 0) / 20) * 100).toFixed(0) },
-    { dimension: "Solution",  score: +(((dims.solution  ?? 0) / 20) * 100).toFixed(0) },
-    { dimension: "Objections",score: +(((dims.objection ?? 0) / 20) * 100).toFixed(0) },
-    { dimension: "Closing",   score: +(((dims.closing   ?? 0) / 20) * 100).toFixed(0) },
+    { dimension: "Solution", score: +(((dims.solution ?? 0) / 20) * 100).toFixed(0) },
+    { dimension: "Objections", score: +(((dims.objection ?? 0) / 20) * 100).toFixed(0) },
+    { dimension: "Closing", score: +(((dims.closing ?? 0) / 20) * 100).toFixed(0) },
   ];
 
   const distribution: any[] = data.distribution || [];
@@ -1054,15 +1563,23 @@ function QualityView({ days }: { days: number }) {
       {/* Hero stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "Scored Calls",  value: data.count,     accent: "#0AC8D4" },
+          { label: "Scored Calls", value: data.count, accent: "#0AC8D4" },
           { label: "Average Score", value: `${data.avgScore}/100`, accent: qaColor(data.avgScore) },
-          { label: "Opening",       value: `${dims.greeting ?? 0}/20`,  accent: "#9B59F5" },
-          { label: "Closing",       value: `${dims.closing  ?? 0}/20`,  accent: "#10B981" },
+          { label: "Opening", value: `${dims.greeting ?? 0}/20`, accent: "#9B59F5" },
+          { label: "Closing", value: `${dims.closing ?? 0}/20`, accent: "#10B981" },
         ].map(({ label, value, accent }) => (
-          <div key={label} className="relative rounded-xl glass border border-white/10 p-4 overflow-hidden">
-            <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-25 blur-3xl pointer-events-none" style={{ background: `radial-gradient(circle,${accent},transparent)` }} />
+          <div
+            key={label}
+            className="relative rounded-xl glass border border-white/10 p-4 overflow-hidden"
+          >
+            <div
+              className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-25 blur-3xl pointer-events-none"
+              style={{ background: `radial-gradient(circle,${accent},transparent)` }}
+            />
             <p className="text-[9px] uppercase tracking-[0.32em] text-muted mb-2">{label}</p>
-            <p className="font-display italic text-2xl leading-none" style={{ color: accent }}>{value}</p>
+            <p className="font-display italic text-2xl leading-none" style={{ color: accent }}>
+              {value}
+            </p>
           </div>
         ))}
       </div>
@@ -1087,7 +1604,9 @@ function QualityView({ days }: { days: number }) {
                     style={{ background: bucket.color || "#0AC8D4" }}
                   />
                 </div>
-                <span className="text-[9px] font-mono text-ink w-6 text-right shrink-0">{bucket.count}</span>
+                <span className="text-[9px] font-mono text-ink w-6 text-right shrink-0">
+                  {bucket.count}
+                </span>
               </div>
             ))}
           </div>
@@ -1102,9 +1621,18 @@ function QualityView({ days }: { days: number }) {
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart data={radarData} outerRadius={70}>
                 <PolarGrid stroke="rgba(0,0,0,0.06)" />
-                <PolarAngleAxis dataKey="dimension" tick={{ fill: "#7C7469", fontSize: 9, fontFamily: "Geist" }} />
+                <PolarAngleAxis
+                  dataKey="dimension"
+                  tick={{ fill: "#7C7469", fontSize: 9, fontFamily: "Geist" }}
+                />
                 <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
-                <Radar dataKey="score" stroke="#0AC8D4" fill="#0AC8D4" fillOpacity={0.15} strokeWidth={1.5} />
+                <Radar
+                  dataKey="score"
+                  stroke="#0AC8D4"
+                  fill="#0AC8D4"
+                  fillOpacity={0.15}
+                  strokeWidth={1.5}
+                />
               </RadarChart>
             </ResponsiveContainer>
           </div>
@@ -1127,14 +1655,36 @@ function QualityView({ days }: { days: number }) {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
-                <XAxis dataKey="day" tick={{ fill: "#7C7469", fontSize: 9 }} tickLine={false} axisLine={false} />
-                <YAxis domain={[0, 100]} tick={{ fill: "#7C7469", fontSize: 9 }} tickLine={false} axisLine={false} />
+                <XAxis
+                  dataKey="day"
+                  tick={{ fill: "#7C7469", fontSize: 9 }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  domain={[0, 100]}
+                  tick={{ fill: "#7C7469", fontSize: 9 }}
+                  tickLine={false}
+                  axisLine={false}
+                />
                 <Tooltip
-                  contentStyle={{ background: "#F5F0E8", border: "1px solid rgba(10,200,212,0.2)", borderRadius: 8, fontSize: 11 }}
+                  contentStyle={{
+                    background: "#F5F0E8",
+                    border: "1px solid rgba(10,200,212,0.2)",
+                    borderRadius: 8,
+                    fontSize: 11,
+                  }}
                   labelStyle={{ color: "#7C7469" }}
                   itemStyle={{ color: "#0AC8D4" }}
                 />
-                <Area type="monotone" dataKey="avg" stroke="#0AC8D4" strokeWidth={1.5} fill="url(#qaGrad)" name="Avg QA Score" />
+                <Area
+                  type="monotone"
+                  dataKey="avg"
+                  stroke="#0AC8D4"
+                  strokeWidth={1.5}
+                  fill="url(#qaGrad)"
+                  name="Avg QA Score"
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -1150,11 +1700,31 @@ function QualityView({ days }: { days: number }) {
         </div>
         <div className="divide-y divide-white/5">
           {[
-            { key: "greeting",  label: "Opening & Greeting",   desc: "Professional, warm, identified company/purpose clearly" },
-            { key: "discovery", label: "Problem Discovery",     desc: "Open-ended questions, understood customer's situation" },
-            { key: "solution",  label: "Solution Presentation", desc: "Clear, relevant, addressed actual customer needs" },
-            { key: "objection", label: "Objection Handling",    desc: "Handled pushback calmly, didn't oversell" },
-            { key: "closing",   label: "Closing & Next Steps",  desc: "Strong close, set clear next steps or outcome" },
+            {
+              key: "greeting",
+              label: "Opening & Greeting",
+              desc: "Professional, warm, identified company/purpose clearly",
+            },
+            {
+              key: "discovery",
+              label: "Problem Discovery",
+              desc: "Open-ended questions, understood customer's situation",
+            },
+            {
+              key: "solution",
+              label: "Solution Presentation",
+              desc: "Clear, relevant, addressed actual customer needs",
+            },
+            {
+              key: "objection",
+              label: "Objection Handling",
+              desc: "Handled pushback calmly, didn't oversell",
+            },
+            {
+              key: "closing",
+              label: "Closing & Next Steps",
+              desc: "Strong close, set clear next steps or outcome",
+            },
           ].map(({ key, label, desc }) => {
             const avg = (dims[key] ?? 0) as number;
             const pct = Math.round((avg / 20) * 100);

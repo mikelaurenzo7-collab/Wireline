@@ -1,7 +1,7 @@
-import { randomBytes, scryptSync, createHmac, timingSafeEqual } from "node:crypto";
+import { randomBytes, scryptSync, createHmac, timingSafeEqual, createHash } from "node:crypto";
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq, gte, isNull } from "drizzle-orm";
 
 // Use INTERNAL_JWT_SECRET (preferred) or fall back to SUPABASE_JWT_SECRET for backward compatibility
 const SECRET = process.env.INTERNAL_JWT_SECRET || process.env.SUPABASE_JWT_SECRET;
@@ -123,5 +123,85 @@ export const authService = {
       log.error("Auth: Sign up failed", { email, error: err.message });
       throw err;
     }
+  },
+
+  /**
+   * Issue a single-use password-reset token for the given email. The plaintext
+   * token is returned to the caller (so the route handler can email or log it)
+   * but only the sha256 hash is persisted — a DB leak doesn't allow account
+   * takeover. Returns null when the email isn't in the system so the caller
+   * can no-op silently to prevent enumeration.
+   */
+  async createPasswordResetToken(email: string, requestedIp?: string) {
+    const [user] = await drizzle
+      .select({ id: schema.users.id })
+      .from(schema.users)
+      .where(eq(schema.users.email, email))
+      .limit(1);
+    if (!user) return null;
+
+    const plaintext = randomBytes(32).toString("base64url");
+    const tokenHash = createHash("sha256").update(plaintext).digest("hex");
+    const expiresAt = new Date(Date.now() + 15 * 60_000);
+
+    await drizzle.insert(schema.passwordResetTokens).values({
+      userId: user.id,
+      tokenHash,
+      expiresAt,
+      requestedIp: requestedIp || null,
+    });
+
+    return { token: plaintext, userId: user.id, expiresAt };
+  },
+
+  /**
+   * Consume a password-reset token: verify hash, TTL, and unused status; rehash
+   * the new password; mark the token used. Returns the freshly authenticated
+   * user + JWT on success, null on any failure (expired, used, not found).
+   */
+  async completePasswordReset(token: string, newPassword: string) {
+    if (!token || !newPassword || newPassword.length < 8) return null;
+
+    const tokenHash = createHash("sha256").update(token).digest("hex");
+    const now = new Date();
+
+    const [row] = await drizzle
+      .select()
+      .from(schema.passwordResetTokens)
+      .where(
+        and(
+          eq(schema.passwordResetTokens.tokenHash, tokenHash),
+          gte(schema.passwordResetTokens.expiresAt, now),
+          isNull(schema.passwordResetTokens.usedAt),
+        ),
+      )
+      .limit(1);
+    if (!row) return null;
+
+    const newHash = hashPassword(newPassword);
+    await drizzle
+      .update(schema.users)
+      .set({ passwordHash: newHash, updatedAt: now })
+      .where(eq(schema.users.id, row.userId));
+    await drizzle
+      .update(schema.passwordResetTokens)
+      .set({ usedAt: now })
+      .where(eq(schema.passwordResetTokens.id, row.id));
+
+    const [user] = await drizzle
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.id, row.userId))
+      .limit(1);
+    if (!user) return null;
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        full_name: user.fullName,
+      },
+      token: generateToken({ id: user.id, email: user.email }),
+    };
   },
 };

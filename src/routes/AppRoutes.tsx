@@ -18,11 +18,15 @@ const AdminSettings = lazy(() => import("../components/AdminSettings"));
 const Integrations = lazy(() => import("../components/Integrations"));
 const CallLogs = lazy(() => import("../components/CallLogs"));
 const EmailInbox = lazy(() => import("../components/EmailInbox"));
+const SmsThreads = lazy(() => import("../components/SmsThreads"));
+const SupervisorCockpit = lazy(() => import("../components/SupervisorCockpit"));
 const KnowledgeBaseManager = lazy(() => import("../components/KnowledgeBaseManager"));
 const LiveMonitor = lazy(() => import("../components/LiveMonitor"));
 const DncManager = lazy(() => import("../components/DncManager"));
 const AuditLog = lazy(() => import("../components/AuditLog"));
 const CommandCenter = lazy(() => import("../pages/CommandCenter"));
+const HelpCenter = lazy(() => import("../components/HelpCenter"));
+const Pipeline = lazy(() => import("../components/Pipeline"));
 
 export default function AppRoutes() {
   return (
@@ -98,6 +102,26 @@ export default function AppRoutes() {
               <PageTransition>
                 <ErrorBoundary>
                   <EmailInbox />
+                </ErrorBoundary>
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/sms"
+            element={
+              <PageTransition>
+                <ErrorBoundary>
+                  <SmsThreads />
+                </ErrorBoundary>
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/cockpit"
+            element={
+              <PageTransition>
+                <ErrorBoundary>
+                  <SupervisorCockpit />
                 </ErrorBoundary>
               </PageTransition>
             }
@@ -188,6 +212,26 @@ export default function AppRoutes() {
               <PageTransition>
                 <ErrorBoundary>
                   <AuditLog />
+                </ErrorBoundary>
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/help"
+            element={
+              <PageTransition>
+                <ErrorBoundary>
+                  <HelpCenter />
+                </ErrorBoundary>
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/pipeline"
+            element={
+              <PageTransition>
+                <ErrorBoundary>
+                  <Pipeline />
                 </ErrorBoundary>
               </PageTransition>
             }

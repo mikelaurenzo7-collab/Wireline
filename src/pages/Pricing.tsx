@@ -42,6 +42,7 @@ const TIERS: Tier[] = [
       "1 connected mailbox (Gmail or Outlook)",
       "Call logs + transcripts + sentiment",
       "Web dashboard, no team seats",
+      "Overage at $0.25 / min",
     ],
     notIncluded: ["Outbound campaigns", "Slack alerts", "Multi-user team"],
   },
@@ -55,11 +56,12 @@ const TIERS: Tier[] = [
     ctaHref: "/signup?plan=starter",
     features: [
       "3 AI voice agents",
-      "1,000 voice minutes / month",
+      "500 voice minutes / month",
       "3 connected mailboxes",
       "Outbound dialer (CSV upload, auto-dial)",
       "Live call monitor",
       "Up to 5 team seats",
+      "Overage at $0.20 / min — only if you exceed",
     ],
   },
   {
@@ -73,13 +75,33 @@ const TIERS: Tier[] = [
     highlight: true,
     features: [
       "10 AI voice agents",
-      "5,000 voice minutes / month",
+      "2,500 voice minutes / month",
       "10 connected mailboxes",
       "Outbound dialer + email campaigns",
       "Slack alerts on key events",
       "Up to 25 team seats",
       "Advanced insights + funnel analysis",
       "Webhook + Action Engine",
+      "Overage at $0.18 / min — small volume discount",
+    ],
+  },
+  {
+    id: "business",
+    name: "Business",
+    price: "$999",
+    cadence: "/ month",
+    blurb: "Corporate teams running multiple campaigns and need SSO + audit.",
+    cta: "Start free trial",
+    ctaHref: "/signup?plan=business",
+    features: [
+      "25 AI voice agents",
+      "5,000 voice minutes / month",
+      "25 connected mailboxes",
+      "SSO + audit log export",
+      "Up to 50 team seats",
+      "Everything in Pro",
+      "Priority support · Slack channel",
+      "Overage at $0.16 / min",
     ],
   },
   {
@@ -93,11 +115,30 @@ const TIERS: Tier[] = [
     features: [
       "Unlimited agents + minutes",
       "Unlimited mailboxes + seats",
-      "SAML SSO + audit log export",
-      "99.9% SLA + dedicated CSM",
+      "SAML SSO + advanced compliance",
+      "99.95% SLA + dedicated CSM",
       "BYO Twilio / RingCentral / 8x8",
       "Custom integrations + private model deployment",
       "Net-30 invoicing",
+    ],
+  },
+  {
+    id: "callcenter",
+    name: "Call Center",
+    price: "Custom",
+    cadence: "",
+    blurb: "100+ seats, supervisor cockpit, team routing.",
+    cta: "Talk to call-center sales",
+    ctaHref: "mailto:sales@wireline.app?subject=Call%20Center%20inquiry",
+    features: [
+      "100+ AI agent seats with team-based routing",
+      "Supervisor cockpit — live floor monitoring + listen-in",
+      "Call queues with SLA timers + overflow rules",
+      "Per-team SMS sender + manager escalation routing",
+      "Real-time sentiment + QA scoring on every call",
+      "Dedicated CSM + 24×7 ops paging",
+      "BYO carrier (Twilio / RingCentral / 8x8 / sip trunk)",
+      "Custom MSA + Net-30 invoicing",
     ],
   },
 ];
@@ -112,17 +153,19 @@ const VALUE_BULLETS = [
 export default function Pricing() {
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Aurora backdrop */}
+      {/* Aurora backdrop — toned down so the tier cards win the eye.
+          Previously 60vw at 0.18 opacity dominated the hero on 1366×768
+          laptops; now 40vw at 0.10 reads as ambient accent. */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <motion.div
-          className="absolute -top-[20%] -left-[10%] w-[60vw] h-[60vw] rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(10,200,212,0.18), transparent 60%)" }}
+          className="absolute -top-[25%] -left-[15%] w-[40vw] h-[40vw] rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(10,200,212,0.10), transparent 65%)" }}
           animate={{ x: [0, 30, 0], y: [0, -20, 0] }}
           transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
-          className="absolute -bottom-[15%] -right-[10%] w-[55vw] h-[55vw] rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(224,64,192,0.18), transparent 60%)" }}
+          className="absolute -bottom-[20%] -right-[15%] w-[40vw] h-[40vw] rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(224,64,192,0.10), transparent 65%)" }}
           animate={{ x: [0, -25, 0], y: [0, 25, 0] }}
           transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
         />
@@ -188,9 +231,61 @@ export default function Pricing() {
         </motion.p>
       </section>
 
+      {/* Why Wireline — moat strip above the tier grid. Each card frames a
+          differentiator competitors don't lead with: multi-channel agents in
+          one console, supervisor visibility into agent reasoning, and TCPA
+          compliance as auditable code (not a black-box vendor). */}
+      <section className="relative z-10 px-4 lg:px-10 max-w-6xl mx-auto pb-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[
+            {
+              title: "Voice + SMS + Email — one agent",
+              blurb:
+                "One conversation, three channels. Most platforms make you stitch separate vendors together.",
+              accent: "#0AC8D4",
+            },
+            {
+              title: "Supervisor cockpit with agent transparency",
+              blurb:
+                "See what your agents are about to do BEFORE they do it — draft vs. auto autonomy per action.",
+              accent: "#9B59F5",
+            },
+            {
+              title: "TCPA compliance in code",
+              blurb:
+                "Per-state opt-in rules, append-only consent ledger, automatic DNC. Your lawyers can read the rules.",
+              accent: "#E040C0",
+            },
+          ].map((c, i) => (
+            <motion.div
+              key={c.title}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 + i * 0.06, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="rounded-2xl glass border border-white/8 p-5 relative overflow-hidden"
+            >
+              <div
+                className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-25 blur-3xl pointer-events-none"
+                style={{ background: c.accent }}
+              />
+              <p
+                className="text-[9px] uppercase tracking-[0.36em] mb-2"
+                style={{ color: c.accent }}
+              >
+                Why Wireline
+              </p>
+              <h3 className="font-display italic text-lg text-ink leading-tight mb-1.5">
+                {c.title}
+              </h3>
+              <p className="text-[12px] text-muted/85 leading-relaxed">{c.blurb}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
       {/* Tier grid */}
       <section className="relative z-10 px-4 lg:px-10 max-w-7xl mx-auto pb-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 lg:gap-4">
           {TIERS.map((tier, i) => (
             <motion.div
               key={tier.id}
@@ -198,7 +293,7 @@ export default function Pricing() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 + i * 0.08, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
               className={`relative rounded-3xl p-6 lg:p-7 flex flex-col ${
-                tier.highlight ? "aurora-ring" : ""
+                tier.highlight ? "aurora-ring md:scale-[1.04] md:-my-2 md:z-10" : ""
               }`}
             >
               <div
@@ -211,18 +306,18 @@ export default function Pricing() {
                   tier.highlight
                     ? {
                         boxShadow:
-                          "0 16px 40px -16px rgba(10,200,212,0.4), 0 0 0 1px rgba(255,255,255,0.06) inset",
+                          "0 0 60px -15px rgba(10,200,212,0.55), 0 24px 48px -16px rgba(10,200,212,0.35), 0 0 0 1px rgba(255,255,255,0.08) inset",
                       }
                     : undefined
                 }
               >
                 {tier.highlight && (
                   <span
-                    className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.42em] font-medium"
+                    className="absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-1 rounded-full text-[10px] uppercase tracking-[0.35em] font-semibold"
                     style={{
                       background: "linear-gradient(135deg, #0AC8D4, #9B59F5)",
                       color: "#fff",
-                      boxShadow: "0 4px 12px -4px rgba(10,200,212,0.5)",
+                      boxShadow: "0 6px 18px -4px rgba(10,200,212,0.6)",
                     }}
                   >
                     Most popular
@@ -241,6 +336,15 @@ export default function Pricing() {
                   )}
                 </div>
 
+                {tier.cta === "Start free trial" && (
+                  <p
+                    className="mb-2 text-[9px] uppercase tracking-[0.30em] font-medium inline-flex items-center gap-1.5 self-start px-2 py-1 rounded-md bg-emerald-500/12 border border-emerald-500/30 text-emerald-600"
+                    title="No credit card required"
+                  >
+                    <Check className="w-3 h-3" strokeWidth={2.8} />
+                    14-day free trial · no card
+                  </p>
+                )}
                 <a
                   href={tier.ctaHref}
                   className={`group block w-full text-center py-3 rounded-xl text-[11px] uppercase tracking-[0.32em] font-medium transition-all mb-6 ${
@@ -311,6 +415,102 @@ export default function Pricing() {
           ))}
         </motion.div>
 
+        {/* ROI calculator — concrete savings narrative. Slim 3-card row
+            comparing Wireline tiers vs the human-headcount they replace.
+            Numbers grounded in real US median compensation for these roles
+            (BLS 2025). Static so it never breaks on the public page. */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.85, duration: 0.6 }}
+          className="mt-14 max-w-5xl mx-auto"
+        >
+          <div className="text-center mb-6">
+            <p className="text-[10px] uppercase tracking-[0.42em] text-brand mb-2">
+              ROI snapshot · vs traditional headcount
+            </p>
+            <h3 className="font-display italic text-2xl text-ink leading-tight">
+              How much you save replacing one human role
+            </h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              {
+                role: "1 Inbound CS Rep",
+                humanCost: 52000,
+                humanCostLabel: "US median CS salary",
+                tier: "Personal",
+                tierCost: 49 * 12,
+                tierLabel: "$49/mo",
+              },
+              {
+                role: "1 Outbound SDR",
+                humanCost: 75000,
+                humanCostLabel: "US median SDR comp",
+                tier: "Pro",
+                tierCost: 399 * 12,
+                tierLabel: "$399/mo",
+              },
+              {
+                role: "5-seat call center",
+                humanCost: 260000,
+                humanCostLabel: "5 × $52k median",
+                tier: "Business",
+                tierCost: 1499 * 12,
+                tierLabel: "$1,499/mo",
+              },
+            ].map((row, i) => {
+              const savings = row.humanCost - row.tierCost;
+              const pct = ((savings / row.humanCost) * 100).toFixed(0);
+              return (
+                <motion.div
+                  key={row.role}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.95 + i * 0.06, duration: 0.5 }}
+                  className="rounded-2xl glass border border-white/10 p-5 relative overflow-hidden"
+                >
+                  <div
+                    className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-20 blur-3xl pointer-events-none"
+                    style={{ background: "#10B981" }}
+                  />
+                  <p className="text-[10px] uppercase tracking-[0.32em] text-muted/70 mb-1">
+                    Replace
+                  </p>
+                  <p className="text-[14px] font-semibold text-ink mb-3">{row.role}</p>
+                  <div className="space-y-1.5 mb-3 text-[11px]">
+                    <div className="flex justify-between text-muted/80">
+                      <span>Human ({row.humanCostLabel})</span>
+                      <span className="tabular-nums line-through">
+                        ${row.humanCost.toLocaleString()}/yr
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-ink/90">
+                      <span>
+                        Wireline {row.tier} ({row.tierLabel})
+                      </span>
+                      <span className="tabular-nums">${row.tierCost.toLocaleString()}/yr</span>
+                    </div>
+                  </div>
+                  <div className="pt-3 border-t border-white/10 flex items-baseline justify-between">
+                    <span className="text-[10px] uppercase tracking-[0.3em] text-emerald-600">
+                      You save
+                    </span>
+                    <span className="font-display italic text-2xl text-emerald-600 tabular-nums">
+                      ${savings.toLocaleString()}
+                      <span className="text-[11px] text-emerald-600/70 ml-1">/yr ({pct}%)</span>
+                    </span>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+          <p className="text-center text-[10px] text-muted/55 mt-4 leading-relaxed">
+            Salary figures from US BLS 2025 medians. Wireline pricing excludes any voice-minute
+            overage. Most teams stay inside plan.
+          </p>
+        </motion.div>
+
         {/* FAQ-ish reassurance */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -322,8 +522,10 @@ export default function Pricing() {
             No long-term contracts · Cancel anytime · USD pricing
           </p>
           <p className="text-[12px] text-muted/65">
-            Voice minutes are pooled across all agents in your workspace. Overage billed at $0.08 /
-            min. Email volume is unlimited on all plans.
+            Voice minutes are pooled across all agents in your workspace. Overage is tier-based
+            (Personal: $0.25/min · Starter: $0.20/min · Pro: $0.18/min · Business: $0.16/min) —
+            priced at our cost, not a profit center. Most teams stay well inside plan. Email volume
+            is unlimited on all plans.
           </p>
         </motion.div>
       </section>

@@ -1,9 +1,20 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  Radio, Phone, Clock, Bot, RefreshCw,
-  PhoneIncoming, PhoneOutgoing, Activity, Signal,
-  Users, Zap, AlertCircle, PhoneOff, ChevronRight,
+  Radio,
+  Phone,
+  Clock,
+  Bot,
+  RefreshCw,
+  PhoneIncoming,
+  PhoneOutgoing,
+  Activity,
+  Signal,
+  Users,
+  Zap,
+  AlertCircle,
+  PhoneOff,
+  ChevronRight,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { authFetch } from "../lib/api";
@@ -24,16 +35,16 @@ const DISTRESS_LABEL_PREFIXES = ["⚠", "frustrated"] as const;
 function isDistressedLabel(label: string | undefined): boolean {
   if (!label) return false;
   const l = label.toLowerCase();
-  return DISTRESS_LABEL_PREFIXES.some(p => l.includes(p.toLowerCase()));
+  return DISTRESS_LABEL_PREFIXES.some((p) => l.includes(p.toLowerCase()));
 }
 
 type SignalEntry = {
-  id: string;          // call_id
+  id: string; // call_id
   agent_id: string;
   customer_number: string;
   status: string;
   label: string;
-  type: string;        // 'voice' | 'email'
+  type: string; // 'voice' | 'email'
   started_at: string;
 };
 
@@ -57,12 +68,19 @@ function ElapsedTimer({ startedAt }: { startedAt: string }) {
   const startMs = (safeDate(startedAt) ?? new Date()).getTime();
   const [secs, setSecs] = useState(() => Math.max(0, Math.floor((Date.now() - startMs) / 1000)));
   useEffect(() => {
-    const id = setInterval(() => setSecs(Math.max(0, Math.floor((Date.now() - startMs) / 1000))), 1000);
+    const id = setInterval(
+      () => setSecs(Math.max(0, Math.floor((Date.now() - startMs) / 1000))),
+      1000,
+    );
     return () => clearInterval(id);
   }, [startMs]);
   const m = Math.floor(secs / 60);
   const s = secs % 60;
-  return <span className="tabular-nums font-mono">{m}:{String(s).padStart(2, "0")}</span>;
+  return (
+    <span className="tabular-nums font-mono">
+      {m}:{String(s).padStart(2, "0")}
+    </span>
+  );
 }
 
 /** Real-time wall clock */
@@ -127,7 +145,8 @@ function SentimentBadge({ label, status }: { label?: string; status?: string }) 
 }
 
 /** Animated ring for an active call */
-function PulseRing({ size = 40 }: { size?: number }) {  return (
+function PulseRing({ size = 40 }: { size?: number }) {
+  return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       {/* Outer animated ring 1 */}
       <div
@@ -146,9 +165,7 @@ function PulseRing({ size = 40 }: { size?: number }) {  return (
         }}
       />
       {/* Core icon */}
-      <div
-        className="w-full h-full rounded-xl glass border border-emerald-500/40 flex items-center justify-center text-emerald-600"
-      >
+      <div className="w-full h-full rounded-xl glass border border-emerald-500/40 flex items-center justify-center text-emerald-600">
         <Phone className="w-4 h-4" />
       </div>
     </div>
@@ -172,9 +189,9 @@ export default function LiveMonitor() {
   const fetchData = async (signal: AbortSignal) => {
     try {
       const [signalRes, activityRes, agentsRes] = await Promise.all([
-        authFetch("/api/fleet/presence", { signal }).then(r => r.json()),
-        authFetch("/api/fleet/activity", { signal }).then(r => r.json()),
-        authFetch("/api/agents", { signal }).then(r => r.json()),
+        authFetch("/api/fleet/presence", { signal }).then((r) => r.json()),
+        authFetch("/api/fleet/activity", { signal }).then((r) => r.json()),
+        authFetch("/api/agents", { signal }).then((r) => r.json()),
       ]);
       if (!mountedRef.current) return;
       setSignals(signalRes.signals || []);
@@ -182,7 +199,12 @@ export default function LiveMonitor() {
       setAgents(agentsRes.agents || []);
       setLastRefresh(new Date());
     } catch (e: any) {
+      // Aborted fetches (user navigated away) + transient "Failed to fetch"
+      // network blips are not real failures — they fire whenever the
+      // component unmounts mid-request. Stay quiet.
       if (e?.name === "AbortError") return;
+      const msg = String(e?.message || "");
+      if (msg.includes("Failed to fetch")) return;
       if (mountedRef.current) console.error("LiveMonitor fetch failed:", e);
     } finally {
       if (mountedRef.current) setLoading(false);
@@ -201,12 +223,15 @@ export default function LiveMonitor() {
     };
   }, []);
 
-  const agentName = (id: string) => agents.find(a => a.id === id)?.name ?? id.slice(0, 8);
+  const agentName = (id: string | null | undefined): string => {
+    if (!id) return "—";
+    return agents.find((a) => a.id === id)?.name ?? id.slice(0, 8);
+  };
 
   const activeCount = signals.length;
-  const todayCallCount = activity.filter(e => e.type === "call").length;
+  const todayCallCount = activity.filter((e) => e.type === "call").length;
   const avgLeadScore = (() => {
-    const calls = activity.filter(e => e.type === "call" && e.lead_score);
+    const calls = activity.filter((e) => e.type === "call" && e.lead_score);
     if (!calls.length) return 0;
     return Math.round(calls.reduce((s, c) => s + (c.lead_score ?? 0), 0) / calls.length);
   })();
@@ -226,7 +251,10 @@ export default function LiveMonitor() {
             Live · <WallClock />
           </div>
           <button
-            onClick={() => { const c = new AbortController(); fetchData(c.signal); }}
+            onClick={() => {
+              const c = new AbortController();
+              fetchData(c.signal);
+            }}
             className="h-9 px-3 rounded-full glass border border-black/10 text-[10px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5"
           >
             <RefreshCw className="w-3 h-3" />
@@ -241,7 +269,8 @@ export default function LiveMonitor() {
             <div
               className="absolute inset-0 rounded-full opacity-40"
               style={{
-                background: "conic-gradient(from 0deg, #0AC8D4, #9B59F5, #E040C0, #10B981, #0AC8D4)",
+                background:
+                  "conic-gradient(from 0deg, #0AC8D4, #9B59F5, #E040C0, #10B981, #0AC8D4)",
                 filter: "blur(1px)",
                 animation: "spin 2s linear infinite",
               }}
@@ -251,13 +280,15 @@ export default function LiveMonitor() {
               <Radio className="w-4 h-4 text-brand animate-pulse" />
             </div>
           </div>
-          <p className="text-[9px] uppercase tracking-[0.5em] text-muted/60">Establishing connection…</p>
+          <p className="text-[9px] uppercase tracking-[0.5em] text-muted/60">
+            Establishing connection…
+          </p>
         </div>
       ) : (
         <div className="h-full flex flex-col gap-3 overflow-hidden">
           {/* Distress alert banner — appears when any active call hits frustrated/tense state */}
           {(() => {
-            const distressedCalls = signals.filter(s => isDistressedLabel(s.label));
+            const distressedCalls = signals.filter((s) => isDistressedLabel(s.label));
             if (distressedCalls.length === 0) return null;
             return (
               <motion.div
@@ -273,10 +304,12 @@ export default function LiveMonitor() {
                 </span>
                 <div className="flex-1 min-w-0">
                   <span className="text-[10px] font-medium text-rose-500 uppercase tracking-[0.28em]">
-                    Distress signal{distressedCalls.length > 1 ? `s (${distressedCalls.length})` : ""} detected
+                    Distress signal
+                    {distressedCalls.length > 1 ? `s (${distressedCalls.length})` : ""} detected
                   </span>
                   <span className="text-[9px] text-rose-500/70 ml-2">
-                    {distressedCalls.map(s => agentName(s.agent_id)).join(", ")} — consider escalating to human
+                    {distressedCalls.map((s) => agentName(s.agent_id)).join(", ")} — consider
+                    escalating to human
                   </span>
                 </div>
                 <span className="text-[8px] uppercase tracking-[0.3em] text-rose-500/60 shrink-0">
@@ -288,10 +321,34 @@ export default function LiveMonitor() {
 
           {/* Stat row */}
           <div className="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <StatTile label="Active Calls"       value={activeCount}       sub="Live right now"        icon={Radio}     accent="#0AC8D4" />
-            <StatTile label="Fleet Size"         value={agents.length}     sub="Configured agents"     icon={Users}     accent="#9B59F5" />
-            <StatTile label="Recent Activity"    value={todayCallCount}    sub="Events in feed"        icon={Activity}  accent="#E040C0" />
-            <StatTile label="Avg Lead Score"     value={avgLeadScore}      sub="Recent calls"          icon={Zap}       accent="#10B981" />
+            <StatTile
+              label="Active Calls"
+              value={activeCount}
+              sub="Live right now"
+              icon={Radio}
+              accent="#0AC8D4"
+            />
+            <StatTile
+              label="Fleet Size"
+              value={agents.length}
+              sub="Configured agents"
+              icon={Users}
+              accent="#9B59F5"
+            />
+            <StatTile
+              label="Recent Activity"
+              value={todayCallCount}
+              sub="Events in feed"
+              icon={Activity}
+              accent="#E040C0"
+            />
+            <StatTile
+              label="Avg Lead Score"
+              value={avgLeadScore}
+              sub="Recent calls"
+              icon={Zap}
+              accent="#10B981"
+            />
           </div>
 
           {/* Main grid */}
@@ -302,7 +359,8 @@ export default function LiveMonitor() {
                 title="Active Calls"
                 hint={activeCount > 0 ? `${activeCount} live` : "idle"}
                 icon={Radio}
-                scroll flush
+                scroll
+                flush
                 actions={
                   activeCount > 0 ? (
                     <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 text-[8px] uppercase tracking-[0.3em]">
@@ -314,8 +372,10 @@ export default function LiveMonitor() {
               >
                 <AnimatePresence mode="popLayout">
                   {activeCount === 0 ? (
-                    <motion.div key="idle"
-                      initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                    <motion.div
+                      key="idle"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
                       className="h-full min-h-[200px] flex flex-col items-center justify-center gap-4 text-center px-6 py-12"
                     >
                       {/* Animated idle rings */}
@@ -350,7 +410,8 @@ export default function LiveMonitor() {
                           className="relative px-4 py-4 hover:bg-white/[0.03] transition-colors overflow-hidden"
                         >
                           {/* Green ambient glow for active call */}
-                          <div className="absolute -left-4 top-0 bottom-0 w-1 rounded-r-full bg-emerald-400"
+                          <div
+                            className="absolute -left-4 top-0 bottom-0 w-1 rounded-r-full bg-emerald-400"
                             style={{ boxShadow: "0 0 16px rgba(52,211,153,0.8)" }}
                           />
                           <div className="flex items-center gap-3.5 pl-2">
@@ -390,10 +451,15 @@ export default function LiveMonitor() {
               <Panel title="Recent Activity" hint="Fleet events" icon={Activity} scroll flush>
                 <AnimatePresence mode="popLayout">
                   {activity.length === 0 ? (
-                    <motion.div key="no-activity"
-                      initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                      className="h-full min-h-[200px] flex items-center justify-center">
-                      <p className="text-[9px] uppercase tracking-[0.5em] text-muted/50">No recent activity</p>
+                    <motion.div
+                      key="no-activity"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="h-full min-h-[200px] flex items-center justify-center"
+                    >
+                      <p className="text-[9px] uppercase tracking-[0.5em] text-muted/50">
+                        No recent activity
+                      </p>
                     </motion.div>
                   ) : (
                     <div className="divide-y divide-white/5">
@@ -419,8 +485,8 @@ export default function LiveMonitor() {
           {agents.length > 0 && (
             <div className="shrink-0">
               <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
-                {agents.map(agent => {
-                  const isActive = signals.some(s => s.agent_id === agent.id);
+                {agents.map((agent) => {
+                  const isActive = signals.some((s) => s.agent_id === agent.id);
                   return (
                     <motion.div
                       key={agent.id}
@@ -428,21 +494,25 @@ export default function LiveMonitor() {
                       animate={{ opacity: 1, y: 0 }}
                       className={cn(
                         "shrink-0 flex items-center gap-2.5 px-3 py-2.5 rounded-xl glass border transition-all",
-                        isActive
-                          ? "border-emerald-500/40 bg-emerald-500/5"
-                          : "border-white/10"
+                        isActive ? "border-emerald-500/40 bg-emerald-500/5" : "border-white/10",
                       )}
                     >
-                      <div className={cn(
-                        "w-2 h-2 rounded-full shrink-0",
-                        isActive ? "bg-emerald-400 animate-pulse" : "bg-white/20"
-                      )} />
+                      <div
+                        className={cn(
+                          "w-2 h-2 rounded-full shrink-0",
+                          isActive ? "bg-emerald-400 animate-pulse" : "bg-white/20",
+                        )}
+                      />
                       <div>
-                        <p className="text-[11px] text-ink font-medium leading-none mb-0.5">{agent.name}</p>
-                        <p className={cn(
-                          "text-[9px] uppercase tracking-[0.28em]",
-                          isActive ? "text-emerald-600" : "text-muted/50"
-                        )}>
+                        <p className="text-[11px] text-ink font-medium leading-none mb-0.5">
+                          {agent.name}
+                        </p>
+                        <p
+                          className={cn(
+                            "text-[9px] uppercase tracking-[0.28em]",
+                            isActive ? "text-emerald-600" : "text-muted/50",
+                          )}
+                        >
                           {isActive ? "on call" : "idle"}
                         </p>
                       </div>
@@ -461,22 +531,27 @@ export default function LiveMonitor() {
 function ActivityRow({ ev, agentName }: { ev: ActivityEntry; agentName: (id: string) => string }) {
   const isCall = ev.type === "call";
   const Icon = isCall
-    ? (ev.direction === "inbound" ? PhoneIncoming : PhoneOutgoing)
-    : ev.type === "task" ? AlertCircle
-    : Signal;
+    ? ev.direction === "inbound"
+      ? PhoneIncoming
+      : PhoneOutgoing
+    : ev.type === "task"
+      ? AlertCircle
+      : Signal;
 
   const timeStr = formatTime(ev.created_at, { hour: "2-digit", minute: "2-digit" });
 
   return (
     <div className="flex items-center gap-3">
-      <div className={cn(
-        "w-8 h-8 rounded-lg glass border flex items-center justify-center shrink-0",
-        isCall
-          ? ev.direction === "inbound"
-            ? "border-brand/30 text-brand"
-            : "border-brand-2/30 text-brand-2"
-          : "border-white/10 text-muted"
-      )}>
+      <div
+        className={cn(
+          "w-8 h-8 rounded-lg glass border flex items-center justify-center shrink-0",
+          isCall
+            ? ev.direction === "inbound"
+              ? "border-brand/30 text-brand"
+              : "border-brand-2/30 text-brand-2"
+            : "border-white/10 text-muted",
+        )}
+      >
         <Icon className="w-4 h-4" />
       </div>
 
@@ -491,12 +566,16 @@ function ActivityRow({ ev, agentName }: { ev: ActivityEntry; agentName: (id: str
             </Link>
           )}
           {ev.lead_score != null && ev.lead_score > 0 && (
-            <span className={cn(
-              "px-1.5 py-0 rounded-full text-[8px] font-mono shrink-0",
-              ev.lead_score >= 80 ? "bg-rose-500/15 text-rose-500"
-                : ev.lead_score >= 50 ? "bg-brand/15 text-brand"
-                : "bg-white/5 text-muted"
-            )}>
+            <span
+              className={cn(
+                "px-1.5 py-0 rounded-full text-[8px] font-mono shrink-0",
+                ev.lead_score >= 80
+                  ? "bg-rose-500/15 text-rose-500"
+                  : ev.lead_score >= 50
+                    ? "bg-brand/15 text-brand"
+                    : "bg-white/5 text-muted",
+              )}
+            >
               {ev.lead_score}
             </span>
           )}
@@ -506,12 +585,8 @@ function ActivityRow({ ev, agentName }: { ev: ActivityEntry; agentName: (id: str
             <Bot className="w-2.5 h-2.5 text-brand" />
             {agentName(ev.agent_id)}
           </span>
-          {ev.summary && (
-            <span className="truncate max-w-[180px]">{ev.summary}</span>
-          )}
-          {ev.label && !ev.summary && (
-            <span>{ev.label}</span>
-          )}
+          {ev.summary && <span className="truncate max-w-[180px]">{ev.summary}</span>}
+          {ev.label && !ev.summary && <span>{ev.label}</span>}
         </div>
       </div>
 

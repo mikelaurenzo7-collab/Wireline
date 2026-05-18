@@ -36,21 +36,40 @@ export const { requirePermission, requireRole } = createRbacMiddleware({ drizzle
 export const quotaTracker = new QuotaTracker({
   drizzle,
   getPlanForUser: async (userId: string): Promise<PlanTier> => {
+    // Plan lives in wireline_subscriptions.plan (set by syncSubscriptionFromStripe).
+    // wireline_settings.subscriptionStatus only stores active/past_due/canceled —
+    // it is NOT a plan name. Reading status here would collapse every tier
+    // into "starter" (the prior bug). Join subscriptions for the plan id and
+    // gate on a paying Stripe status before granting paid-tier quotas.
     try {
       const rows = await drizzle
-        .select({ status: schema.settings.subscriptionStatus })
-        .from(schema.settings)
-        .where(eq(schema.settings.userId, userId))
+        .select({
+          plan: schema.subscriptions.plan,
+          stripeStatus: schema.subscriptions.status,
+        })
+        .from(schema.subscriptions)
+        .where(eq(schema.subscriptions.userId, userId))
         .limit(1);
-      const data = rows[0];
+      const sub = rows[0];
+      const stripeActive = sub?.stripeStatus === "active" || sub?.stripeStatus === "trialing";
+      if (!stripeActive) return "free";
 
-      const status = data?.status ?? "free";
-      if (status === "enterprise") return "enterprise";
-      if (status === "pro") return "pro";
-      if (status === "starter" || status === "active") return "starter";
-      return "free";
+      switch (sub?.plan) {
+        case "enterprise":
+          return "enterprise";
+        case "business":
+          return "business";
+        case "pro":
+          return "pro";
+        case "starter":
+          return "starter";
+        case "personal":
+          return "personal";
+        default:
+          return "free";
+      }
     } catch {
-      return "starter";
+      return "free";
     }
   },
 });

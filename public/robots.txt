@@ -1,5 +1,22 @@
 User-agent: *
 Allow: /
 Disallow: /api/
+Disallow: /admin
+Disallow: /agents
+Disallow: /audit
+Disallow: /logs
+Disallow: /outbound
+Disallow: /triage
+Disallow: /inbox
+Disallow: /sms
+Disallow: /cockpit
+Disallow: /dnc
+Disallow: /knowledge
+Disallow: /integrations
+Disallow: /train
+Disallow: /live
+Disallow: /insights
+Disallow: /appointments
 
-Sitemap: https://www.wireline.app/sitemap.xml
+# Sitemap of public marketing surfaces
+Sitemap: https://trywireline.com/sitemap.xml

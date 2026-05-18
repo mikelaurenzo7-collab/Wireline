@@ -8,6 +8,7 @@ import { stripe, stripeAvailable, syncSubscriptionFromStripe } from "../lib/stri
 import { clearBudgetCache, getBudgetSnapshot } from "../lib/spend-guards";
 import { planById, plansForClient } from "../lib/plan-catalog";
 import { getIncludedPhoneLineSlots } from "../lib/phone-line-entitlements";
+import { getVoiceUsageSnapshot } from "../lib/voice-usage";
 import Stripe from "stripe";
 import type { AuthenticatedRequest } from "../types/auth";
 
@@ -232,6 +233,16 @@ router.get("/billing/plans", (_req: Request, res: Response) => {
   res.json({ plans: plansForClient(), stripe_configured: stripeAvailable() });
 });
 
+router.get("/billing/usage", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const snapshot = await getVoiceUsageSnapshot(req.user!.id);
+    res.json(snapshot);
+  } catch (err) {
+    log.error("/billing/usage failed", { error: getErrorMessage(err) });
+    res.status(500).json({ error: "Failed to load usage snapshot" });
+  }
+});
+
 router.get(
   "/billing/status",
   authenticateUser,
@@ -300,6 +311,15 @@ router.post(
       const planId = String(req.body?.plan_id || "").trim();
       const plan = planById(planId);
       if (!plan) return res.status(400).json({ error: "Unknown plan_id." });
+      // Contact-sales tiers (price_usd_monthly === 0) must never go through
+      // self-serve checkout — even if a stale STRIPE_*_PRICE_ID is configured
+      // they'd subscribe at $0/mo against a real Stripe price.
+      if (plan.price_usd_monthly === 0) {
+        return res.status(400).json({
+          error: `Plan '${plan.id}' is contact-sales only. Reach out at sales@wireline.app.`,
+          code: "CONTACT_SALES_PLAN",
+        });
+      }
       const priceId = process.env[plan.priceIdEnv];
       if (!priceId)
         return res

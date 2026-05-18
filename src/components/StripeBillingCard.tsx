@@ -1,18 +1,30 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import {
-  CreditCard, Loader2, Check, Sparkles, Shield, ArrowRight,
-  AlertTriangle, ExternalLink, Crown, Zap, Building2,
+  CreditCard,
+  Loader2,
+  Check,
+  Sparkles,
+  Shield,
+  ArrowRight,
+  AlertTriangle,
+  ExternalLink,
+  Crown,
+  Zap,
+  Building2,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { safeDate, formatDate } from "../lib/safe-date";
+import UsageMeter from "./UsageMeter";
 
 interface Plan {
-  id: "starter" | "pro" | "enterprise";
+  id: "personal" | "starter" | "pro" | "business" | "enterprise";
   name: string;
   price_usd_monthly: number;
   max_agents: number;
+  voice_minutes_monthly?: number;
+  overage_per_min_usd?: number;
   features: string[];
   configured: boolean;
 }
@@ -21,7 +33,7 @@ interface SubscriptionState {
   plan: string | null;
   plan_name: string | null;
   max_agents: number | null;
-  status: string | null;          // Stripe verbatim
+  status: string | null; // Stripe verbatim
   current_period_end: string | null;
   cancel_at_period_end: boolean;
   has_customer: boolean;
@@ -30,14 +42,18 @@ interface SubscriptionState {
 }
 
 const PLAN_ICONS: Record<string, any> = {
+  personal: Sparkles,
   starter: Sparkles,
   pro: Zap,
+  business: Building2,
   enterprise: Crown,
 };
 
 const PLAN_ACCENTS: Record<string, string> = {
+  personal: "#10B981",
   starter: "#0AC8D4",
   pro: "#9B59F5",
+  business: "#E040C0",
   enterprise: "#FFC07D",
 };
 
@@ -55,8 +71,8 @@ export default function StripeBillingCard() {
     setError(null);
     try {
       const [statusRes, plansRes] = await Promise.all([
-        authFetch("/api/billing/status").then(r => r.json()),
-        authFetch("/api/billing/plans").then(r => r.json()),
+        authFetch("/api/billing/status").then((r) => r.json()),
+        authFetch("/api/billing/plans").then((r) => r.json()),
       ]);
       setStripeConfigured(!!statusRes.stripe_configured && !!plansRes.stripe_configured);
       setSub(statusRes.subscription || null);
@@ -64,10 +80,14 @@ export default function StripeBillingCard() {
       setPlans(plansRes.plans || []);
     } catch (e: any) {
       setError(e?.message || "Load failed");
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => {
+    refresh();
+  }, []);
 
   // Reflect Stripe's redirect back to /admin?billing=success — refresh
   // so the card flips from "no sub" to active without needing the user
@@ -89,9 +109,9 @@ export default function StripeBillingCard() {
     // creating a second concurrent subscription. The server enforces
     // this with a 409 ALREADY_SUBSCRIBED, but routing client-side
     // gives a smoother UX (one redirect instead of two).
-    const hasActive = !!sub?.has_subscription &&
-      (sub.status === "active" || sub.status === "trialing" ||
-       sub.status === "past_due");
+    const hasActive =
+      !!sub?.has_subscription &&
+      (sub.status === "active" || sub.status === "trialing" || sub.status === "past_due");
     if (hasActive) {
       return openPortal();
     }
@@ -137,7 +157,9 @@ export default function StripeBillingCard() {
     return (
       <div className="rounded-2xl glass border border-white/10 p-10 flex items-center gap-4">
         <Loader2 className="w-5 h-5 animate-spin text-brand" />
-        <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">Loading billing state…</span>
+        <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">
+          Loading billing state…
+        </span>
       </div>
     );
   }
@@ -153,11 +175,26 @@ export default function StripeBillingCard() {
         </div>
         <p className="text-[11px] text-muted/80 leading-relaxed">
           Set{" "}
-          <code className="font-mono text-brand px-1.5 py-0.5 rounded-md bg-white/5">STRIPE_SECRET_KEY</code>,{" "}
-          <code className="font-mono text-brand px-1.5 py-0.5 rounded-md bg-white/5">STRIPE_WEBHOOK_SECRET</code>, and the
-          per-plan price IDs (<code className="font-mono text-brand px-1.5 py-0.5 rounded-md bg-white/5">STRIPE_STARTER_PRICE_ID</code>,{" "}
-          <code className="font-mono text-brand px-1.5 py-0.5 rounded-md bg-white/5">_PRO_PRICE_ID</code>,{" "}
-          <code className="font-mono text-brand px-1.5 py-0.5 rounded-md bg-white/5">_ENTERPRISE_PRICE_ID</code>) to enable real billing.
+          <code className="font-mono text-brand px-1.5 py-0.5 rounded-md bg-white/5">
+            STRIPE_SECRET_KEY
+          </code>
+          ,{" "}
+          <code className="font-mono text-brand px-1.5 py-0.5 rounded-md bg-white/5">
+            STRIPE_WEBHOOK_SECRET
+          </code>
+          , and the per-plan price IDs (
+          <code className="font-mono text-brand px-1.5 py-0.5 rounded-md bg-white/5">
+            STRIPE_STARTER_PRICE_ID
+          </code>
+          ,{" "}
+          <code className="font-mono text-brand px-1.5 py-0.5 rounded-md bg-white/5">
+            STRIPE_PRO_PRICE_ID
+          </code>
+          ,{" "}
+          <code className="font-mono text-brand px-1.5 py-0.5 rounded-md bg-white/5">
+            STRIPE_ENTERPRISE_PRICE_ID
+          </code>
+          ) to enable real billing.
         </p>
       </div>
     );
@@ -169,8 +206,16 @@ export default function StripeBillingCard() {
     <div className="space-y-8">
       {/* Active subscription card */}
       {sub?.has_subscription && (
-        <ActiveSubCard sub={sub} agentCount={agentCount} busy={busy === "portal"} onPortal={openPortal} />
+        <ActiveSubCard
+          sub={sub}
+          agentCount={agentCount}
+          busy={busy === "portal"}
+          onPortal={openPortal}
+        />
       )}
+
+      {/* Voice-minute usage — only renders when there's an active plan */}
+      {sub?.has_subscription && <UsageMeter />}
 
       {error && (
         <div className="rounded-2xl bg-rose-500/8 border border-rose-500/30 p-4 flex items-center gap-3">
@@ -187,8 +232,8 @@ export default function StripeBillingCard() {
           </h3>
           {!hasActive && (
             <p className="text-[12px] text-muted/70 mt-1.5 leading-relaxed max-w-lg">
-              Each agent replaces hours of human intake, follow-up, and triage work — for a fraction of the cost.
-              No setup fees. Cancel anytime.
+              Each agent replaces hours of human intake, follow-up, and triage work — for a fraction
+              of the cost. No setup fees. Cancel anytime.
             </p>
           )}
           {hasActive && (
@@ -197,8 +242,8 @@ export default function StripeBillingCard() {
             </p>
           )}
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          {plans.map(plan => {
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          {plans.map((plan) => {
             const Icon = PLAN_ICONS[plan.id] || Building2;
             const accent = PLAN_ACCENTS[plan.id] || "#0AC8D4";
             const isCurrent = sub?.plan === plan.id && hasActive;
@@ -215,14 +260,21 @@ export default function StripeBillingCard() {
                 )}
               >
                 {isCurrent && (
-                  <div className="absolute -top-3 right-4 px-3 py-1 rounded-full text-paper text-[9px] uppercase tracking-[0.3em]"
-                    style={{ background: `linear-gradient(135deg, ${accent}, ${accent}99)` }}>
+                  <div
+                    className="absolute -top-3 right-4 px-3 py-1 rounded-full text-paper text-[9px] uppercase tracking-[0.3em]"
+                    style={{ background: `linear-gradient(135deg, ${accent}, ${accent}99)` }}
+                  >
                     Current plan
                   </div>
                 )}
                 {!isCurrent && plan.id === "pro" && (
-                  <div className="absolute -top-3 left-4 px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.3em]"
-                    style={{ background: "linear-gradient(135deg, #9B59F5, #6B3FCF)", color: "#fff" }}>
+                  <div
+                    className="absolute -top-3 left-4 px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.3em]"
+                    style={{
+                      background: "linear-gradient(135deg, #9B59F5, #6B3FCF)",
+                      color: "#fff",
+                    }}
+                  >
                     Most popular
                   </div>
                 )}
@@ -240,14 +292,22 @@ export default function StripeBillingCard() {
                 <div>
                   <h4 className="font-display italic lowercase text-2xl text-ink">{plan.name}</h4>
                   <div className="mt-1.5 flex items-baseline gap-1">
-                    <span className="font-display italic text-4xl text-ink">${plan.price_usd_monthly}</span>
-                    <span className="text-[10px] uppercase tracking-[0.3em] text-muted/70">/mo</span>
+                    <span className="font-display italic text-4xl text-ink">
+                      ${plan.price_usd_monthly}
+                    </span>
+                    <span className="text-[10px] uppercase tracking-[0.3em] text-muted/70">
+                      /mo
+                    </span>
                   </div>
                 </div>
                 <ul className="space-y-2 flex-1">
                   {plan.features.map((f, i) => (
                     <li key={i} className="flex items-start gap-2 text-[11px] text-muted/80">
-                      <Check className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: accent }} strokeWidth={2.5} />
+                      <Check
+                        className="w-3.5 h-3.5 mt-0.5 shrink-0"
+                        style={{ color: accent }}
+                        strokeWidth={2.5}
+                      />
                       <span>{f}</span>
                     </li>
                   ))}
@@ -263,15 +323,20 @@ export default function StripeBillingCard() {
                   )}
                   style={!isCurrent && !isBusy ? { borderColor: `${accent}50` } : {}}
                 >
-                  {isBusy
-                    ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    : isCurrent
-                      ? <>Current</>
-                      : <>{hasActive ? "Switch" : "Subscribe"} <ArrowRight className="w-3 h-3" /></>}
+                  {isBusy ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : isCurrent ? (
+                    <>Current</>
+                  ) : (
+                    <>
+                      {hasActive ? "Switch" : "Subscribe"} <ArrowRight className="w-3 h-3" />
+                    </>
+                  )}
                 </button>
                 {!plan.configured && (
                   <p className="text-[9px] font-mono text-amber-600/80 text-center leading-relaxed">
-                    Set <span className="text-brand">STRIPE_{plan.id.toUpperCase()}_PRICE_ID</span> in Vercel to activate
+                    Set <span className="text-brand">STRIPE_{plan.id.toUpperCase()}_PRICE_ID</span>{" "}
+                    in Vercel to activate
                   </p>
                 )}
               </motion.div>
@@ -284,9 +349,13 @@ export default function StripeBillingCard() {
             Stripe · PCI DSS Level 1 · Cancel anytime
           </div>
           <div className="flex items-center gap-3 text-[9px] text-muted/40 uppercase tracking-[0.2em]">
-            <a href="/privacy" className="hover:text-muted/70 transition-colors">Privacy</a>
+            <a href="/privacy" className="hover:text-muted/70 transition-colors">
+              Privacy
+            </a>
             <span>·</span>
-            <a href="/terms" className="hover:text-muted/70 transition-colors">Terms</a>
+            <a href="/terms" className="hover:text-muted/70 transition-colors">
+              Terms
+            </a>
           </div>
         </div>
       </div>
@@ -295,37 +364,62 @@ export default function StripeBillingCard() {
 }
 
 function ActiveSubCard({
-  sub, agentCount, busy, onPortal,
-}: { sub: SubscriptionState; agentCount: number; busy: boolean; onPortal: () => void }) {
+  sub,
+  agentCount,
+  busy,
+  onPortal,
+}: {
+  sub: SubscriptionState;
+  agentCount: number;
+  busy: boolean;
+  onPortal: () => void;
+}) {
   const accent = PLAN_ACCENTS[sub.plan || ""] || "#0AC8D4";
   const Icon = PLAN_ICONS[sub.plan || ""] || CreditCard;
   const renews = safeDate(sub.current_period_end);
-  const daysLeft = renews ? Math.max(0, Math.ceil((renews.getTime() - Date.now()) / 86_400_000)) : null;
+  const daysLeft = renews
+    ? Math.max(0, Math.ceil((renews.getTime() - Date.now()) / 86_400_000))
+    : null;
 
   const statusBadge =
-    sub.status === "active"   ? { label: "Active",    cls: "bg-emerald-500/15 border-emerald-500/30 text-emerald-600" } :
-    sub.status === "trialing" ? { label: "Trial",     cls: "bg-cyan-500/15 border-cyan-500/30 text-cyan-600" } :
-    sub.status === "past_due" ? { label: "Past Due",  cls: "bg-amber-500/15 border-amber-500/30 text-amber-600" } :
-    sub.status === "canceled" ? { label: "Canceled",  cls: "bg-rose-500/15 border-rose-500/30 text-rose-500" } :
-    { label: (sub.status || "Unknown").toLowerCase(), cls: "bg-white/10 border-white/20 text-muted" };
+    sub.status === "active"
+      ? { label: "Active", cls: "bg-emerald-500/15 border-emerald-500/30 text-emerald-600" }
+      : sub.status === "trialing"
+        ? { label: "Trial", cls: "bg-cyan-500/15 border-cyan-500/30 text-cyan-600" }
+        : sub.status === "past_due"
+          ? { label: "Past Due", cls: "bg-amber-500/15 border-amber-500/30 text-amber-600" }
+          : sub.status === "canceled"
+            ? { label: "Canceled", cls: "bg-rose-500/15 border-rose-500/30 text-rose-500" }
+            : {
+                label: (sub.status || "Unknown").toLowerCase(),
+                cls: "bg-white/10 border-white/20 text-muted",
+              };
 
   return (
     <div className="rounded-2xl glass border border-white/12 p-8 md:p-10 relative overflow-hidden">
-      <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-15 blur-3xl pointer-events-none"
-        style={{ background: accent }} />
+      <div
+        className="absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-15 blur-3xl pointer-events-none"
+        style={{ background: accent }}
+      />
       <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
         <div className="flex items-center gap-5">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0"
-            style={{ background: `${accent}18`, border: `1px solid ${accent}40` }}>
+          <div
+            className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0"
+            style={{ background: `${accent}18`, border: `1px solid ${accent}40` }}
+          >
             <Icon className="w-8 h-8" style={{ color: accent }} />
           </div>
           <div className="space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[9px] uppercase tracking-[0.45em] text-muted/60">Current plan</span>
-              <span className={cn(
-                "inline-flex items-center px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.25em] border",
-                statusBadge.cls,
-              )}>
+              <span className="text-[9px] uppercase tracking-[0.45em] text-muted/60">
+                Current plan
+              </span>
+              <span
+                className={cn(
+                  "inline-flex items-center px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.25em] border",
+                  statusBadge.cls,
+                )}
+              >
                 {statusBadge.label}
               </span>
               {sub.cancel_at_period_end && (
@@ -342,7 +436,9 @@ function ActiveSubCard({
                 <span className={agentCount >= sub.max_agents ? "text-amber-600" : ""}>
                   {agentCount} / {sub.max_agents} agents
                 </span>
-              ) : ""}
+              ) : (
+                ""
+              )}
               {renews && (
                 <>
                   {sub.max_agents ? " · " : ""}
@@ -363,7 +459,11 @@ function ActiveSubCard({
             color: accent,
           }}
         >
-          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <ExternalLink className="w-4 h-4" />}
+          {busy ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <ExternalLink className="w-4 h-4" />
+          )}
           Manage subscription
         </button>
       </div>
