@@ -128,7 +128,11 @@ export default function CommandCenter() {
           }
         }
       }
-    } catch (err) {
+    } catch (err: any) {
+      // Aborted / transient fetches are expected (navigation, intervals
+      // racing component unmount) — only log unexpected failures.
+      const msg = String(err?.message || "");
+      if (err?.name === "AbortError" || msg.includes("Failed to fetch")) return;
       log.error("Failed to fetch live presence", { err });
     }
   }, [user, dossiers]);

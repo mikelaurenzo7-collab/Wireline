@@ -34,7 +34,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Papa from "papaparse";
-import { cn } from "../lib/utils";
+import { cn, logFetchError } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import { formatDate, safeDate } from "../lib/safe-date";
 import { Link } from "react-router-dom";
@@ -120,7 +120,7 @@ export default function OutboundDialer() {
       const data = await res.json();
       setCampaignAnalytics(data);
     } catch (e) {
-      console.error("Failed to fetch campaign analytics:", e);
+      logFetchError("Failed to fetch campaign analytics:", e);
       toastError("Analytics unavailable", "Could not load campaign analytics.");
     }
     setAnalyticsLoading(false);
@@ -392,7 +392,7 @@ export default function OutboundDialer() {
       const data = await res.json();
       setCampaigns(data.campaigns || []);
     } catch (e) {
-      console.error("Failed to fetch campaigns:", e);
+      logFetchError("Failed to fetch campaigns:", e);
       toastError("Campaigns unavailable", "Could not load campaigns.");
     }
     setCampaignLoading(false);
@@ -405,7 +405,7 @@ export default function OutboundDialer() {
       const data = await res.json();
       setCallbacks(data.callbacks || []);
     } catch (e) {
-      console.error("Failed to fetch callbacks:", e);
+      logFetchError("Failed to fetch callbacks:", e);
       toastError("Callbacks unavailable", "Could not load scheduled callbacks.");
     }
     setCallbacksLoading(false);
@@ -418,7 +418,7 @@ export default function OutboundDialer() {
       const data = await res.json();
       setCampaignLeads(data.leads || []);
     } catch (e) {
-      console.error("Failed to fetch campaign leads:", e);
+      logFetchError("Failed to fetch campaign leads:", e);
       toastError("Leads unavailable", "Could not load leads for this campaign.");
     }
     setCampaignLeadsLoading(false);
