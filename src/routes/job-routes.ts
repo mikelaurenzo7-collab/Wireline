@@ -180,7 +180,9 @@ router.post(
           userId: SYSTEM_USER_ID,
           type: "cadence_tick",
           payload: {},
-        }).catch((e: any) => log.warn("cadence_tick enqueue failed", { error: e?.message }));
+        }).catch((e: unknown) =>
+          log.warn("cadence_tick enqueue failed", { error: getErrorMessage(e) }),
+        );
       }
 
       // Daily at 03:15 UTC: janitor sweep for orphaned supervisor
@@ -198,8 +200,10 @@ router.post(
           userId: SYSTEM_USER_ID,
           type: "sweep_orphan_supervisor_subs",
           payload: {},
-        }).catch((e: any) =>
-          log.warn("sweep_orphan_supervisor_subs enqueue failed", { error: e?.message }),
+        }).catch((e: unknown) =>
+          log.warn("sweep_orphan_supervisor_subs enqueue failed", {
+            error: getErrorMessage(e),
+          }),
         );
       }
 
