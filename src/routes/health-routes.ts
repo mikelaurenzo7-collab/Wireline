@@ -50,7 +50,7 @@ setInterval(
     }
   },
   10 * 60 * 1000,
-).unref();
+) as any).unref?.();
 
 function healthRateLimiter(req: Request, res: Response, next: NextFunction) {
   const xff = req.headers["x-forwarded-for"];
@@ -97,7 +97,7 @@ router.get("/internal", healthRateLimiter, authenticateUser, async (_req, res) =
   const status = dbStatus.ok ? "ok" : "degraded";
   res.status(200).json({
     status,
-    uptime_s: Math.round(process.uptime()),
+    uptime_s: Math.round((process as any).uptime?.() || 0),
     db: dbStatus,
     capabilities: getHealthCapabilities(),
     // Distinct identifiers per runtime so operators + monitoring can
