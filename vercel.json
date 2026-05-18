@@ -1,10 +1,5 @@
 {
   "version": 2,
-  "git": {
-    "deploymentEnabled": {
-      "claude/audit-vercel-env-3jCjd": false
-    }
-  },
   "headers": [
     {
       "source": "/(.*)",
