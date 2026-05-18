@@ -56,6 +56,130 @@ const FEATURES = [
   },
 ];
 
+/**
+ * Two-tab agent panel for the landing-page split-screen. Visitors see live
+ * demos by default — that's what they came for. A secondary tab surfaces
+ * Wireline's own 6 customer-service lines for prospects who want to talk
+ * to us about Wireline itself. Two tabs > two stacked sections because it
+ * eliminates the "wait, which of these reaches a real person?" confusion.
+ */
+function AgentsPanel() {
+  const [tab, setTab] = useState<"demos" | "contact">("demos");
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.15, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+      className="mb-6 flex-1"
+    >
+      {/* Big CTA points at the Receptionist demo — most universal scenario.
+        Visitors who tap this hear a routing flow that mimics what their
+        own front-desk agent would sound like. */}
+      <a
+        href="tel:+19733638874"
+        className="flex items-center justify-between mb-4 bg-[#0AC8D4]/10 border border-[#0AC8D4]/30 rounded-xl p-3 hover:bg-[#0AC8D4]/20 transition-colors group"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-[#0AC8D4] flex items-center justify-center shadow-[0_0_15px_rgba(10,200,212,0.4)]">
+            <Phone className="w-4 h-4 text-white" fill="currentColor" />
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-[#0AC8D4] font-medium leading-tight">
+              Hear a live demo
+            </p>
+            <p className="font-display italic text-xl text-ink leading-tight mt-0.5">
+              (973) 363-8874
+            </p>
+          </div>
+        </div>
+        <ArrowRight className="w-5 h-5 text-[#0AC8D4] group-hover:translate-x-1 transition-transform" />
+      </a>
+
+      {/* Segmented control — Demos vs Contact us */}
+      <div className="tab-toggle-surface mb-3" role="tablist" aria-label="Agent selector">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "demos"}
+          onClick={() => setTab("demos")}
+          className={cn(
+            "relative flex-1 px-3 py-1.5 rounded-xl text-[10px] uppercase tracking-[0.28em] font-medium transition-colors",
+            tab === "demos" ? "text-paper" : "text-muted hover:text-ink",
+          )}
+        >
+          {tab === "demos" && (
+            <motion.div
+              layoutId="agents-tab-bg"
+              className="absolute inset-0 rounded-xl bg-brand"
+              transition={{ type: "spring", stiffness: 420, damping: 36 }}
+            />
+          )}
+          <span className="relative z-10">Live demos · 4</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "contact"}
+          onClick={() => setTab("contact")}
+          className={cn(
+            "relative flex-1 px-3 py-1.5 rounded-xl text-[10px] uppercase tracking-[0.28em] font-medium transition-colors",
+            tab === "contact" ? "text-paper" : "text-muted hover:text-ink",
+          )}
+        >
+          {tab === "contact" && (
+            <motion.div
+              layoutId="agents-tab-bg"
+              className="absolute inset-0 rounded-xl bg-brand"
+              transition={{ type: "spring", stiffness: 420, damping: 36 }}
+            />
+          )}
+          <span className="relative z-10">Contact Wireline · 6</span>
+        </button>
+      </div>
+
+      <AnimatePresence mode="wait">
+        {tab === "demos" ? (
+          <motion.div
+            key="demos"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.2 }}
+          >
+            <p className="text-[10px] text-muted/70 leading-relaxed mb-3">
+              Tap a number to hear a real Wireline agent role-play that scenario. Each demo answers
+              Wireline product questions too — just ask.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {WIRELINE_DEMO_AGENTS.map((a) => (
+                <AgentCardLink key={a.tel} agent={a} isDemo={true} />
+              ))}
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="contact"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.2 }}
+          >
+            <p className="text-[10px] text-muted/70 leading-relaxed mb-3">
+              Six live lines staffed by Wireline customer-service agents. Any line answers pricing,
+              product, technical, billing — they triage on the call and route or escalate as needed.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {WIRELINE_CONTACT_AGENTS.map((a) => (
+                <AgentCardLink key={a.tel} agent={a} isDemo={false} />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
 function AgentCardLink({ agent, isDemo }: { agent: AgentCard; isDemo?: boolean }) {
   return (
     <a
@@ -327,62 +451,12 @@ export default function AuthPortal() {
             </div>
           </motion.div>
 
-          {/* All 10 demo agents in a single dense grid. Top 4 are the LIVE
-            Wireline customer-service team (sales, support, tech, demo
-            booking). Bottom 6 are vertical role-play demos (medical
-            intake, real-estate front desk, bill negotiator, etc.) that
-            answer Wireline questions too. Two labelled sub-sections so
-            visitors can tell which line will actually reach our team
-            vs. which line is a "watch the platform work" demo. */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-            className="mb-6 flex-1"
-          >
-            <a
-              href="tel:+16305811834"
-              className="flex items-center justify-between mb-4 bg-[#0AC8D4]/10 border border-[#0AC8D4]/30 rounded-xl p-3 hover:bg-[#0AC8D4]/20 transition-colors group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#0AC8D4] flex items-center justify-center shadow-[0_0_15px_rgba(10,200,212,0.4)]">
-                  <Phone className="w-4 h-4 text-white" fill="currentColor" />
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-[#0AC8D4] font-medium leading-tight">
-                    Call our demo line now
-                  </p>
-                  <p className="font-display italic text-xl text-ink leading-tight mt-0.5">
-                    (630) 581-1834
-                  </p>
-                </div>
-              </div>
-              <ArrowRight className="w-5 h-5 text-[#0AC8D4] group-hover:translate-x-1 transition-transform" />
-            </a>
-
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-[9px] uppercase tracking-[0.4em] text-brand/90 font-medium">
-                Wireline Team
-              </span>
-              <span className="flex-1 h-px bg-brand/30" />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
-              {WIRELINE_CONTACT_AGENTS.map((a) => (
-                <AgentCardLink key={a.tel} agent={a} isDemo={false} />
-              ))}
-            </div>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-[9px] uppercase tracking-[0.4em] text-muted/60">
-                Vertical Role-Plays
-              </span>
-              <span className="flex-1 h-px bg-white/10" />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {WIRELINE_DEMO_AGENTS.map((a) => (
-                <AgentCardLink key={a.tel} agent={a} isDemo={true} />
-              ))}
-            </div>
-          </motion.div>
+          {/* Tabbed agent panel — fixes the "is that number Wireline support or
+            a demo for me to test?" confusion. Tab 1 = 4 live demos role-playing
+            distinct verticals (sales, CS, scheduler, receptionist). Tab 2 =
+            6 lines to reach Wireline's own customer-service team. Default tab
+            is Demos because that's what a first-time visitor wants. */}
+          <AgentsPanel />
 
           {/* Integration logo strip — trust signal showing the stack we run on */}
           <IntegrationLogos />

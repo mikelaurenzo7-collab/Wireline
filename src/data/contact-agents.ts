@@ -2,11 +2,16 @@
  * Single source of truth for the 10 AI agents featured on the landing
  * page + in the in-app /help console.
  *
- * Layout (per Mike's call): 6 Wireline customer-service lines + 4
- * vertical demo agents. CS agents collectively cover every reason a
- * customer would call us — general support, sales, tech, billing,
- * scheduling, success — and route to each other when a call lands on
- * the wrong line.
+ * Structure (per Mike's call):
+ *   - **Wireline Customer Service** — 6 lines that all answer for Wireline
+ *     itself. Same role, same process, same deep Wireline knowledge. Built
+ *     for scale: any caller reaches a real Wireline-trained agent who asks
+ *     the reason for calling and routes the conversation accordingly.
+ *   - **Live Demos** — 4 role-play agents showcasing distinct verticals so
+ *     prospects can hear what their own Wireline agent could sound like
+ *     before they buy. Each one role-plays a different business + agent
+ *     archetype: outbound sales, inbound support, appointment scheduling,
+ *     and front-desk reception.
  *
  * Used in:
  *   1. AuthPortal landing page — public "talk to Wireline" CTAs
@@ -26,137 +31,122 @@ export type ContactAgent = {
   name: string;
   role: string;
   scope: string;
-  /** First-message template the agent opens calls with — keep it short, warm, scope-clear. */
+  /** First-message template the agent opens calls with. */
   firstMessage: string;
-  /** Comma-joined list of bucket labels this agent should handle. Used by routing logic in the CS playbook. */
+  /** Comma-joined intent buckets this agent handles. Used by routing prompts. */
   handles: string;
   tel: string;
   display: string;
   tint: string;
 };
 
+/**
+ * Unified Wireline Customer Service role. All six numbers run the same
+ * persona + process — the differentiator is only the agent's name (and
+ * the voice routed to that number in Vapi). This is intentional: when
+ * the team scales we add capacity to one role, not six.
+ *
+ * Process every CS agent follows (also encoded in the system prompt
+ * via wireline-knowledge.ts → buildWirelineCustomerServiceProcess):
+ *   1. Warm greet + name + open-ended "how can I help you today?"
+ *   2. Listen. One clarifying question only if intent is unclear.
+ *   3. Classify intent: SALES / PRODUCT / TECHNICAL / BILLING /
+ *      PARTNERSHIPS / OTHER.
+ *   4. Answer directly from Wireline knowledge when possible. Offer
+ *      a follow-up email summary + clear next step.
+ *   5. Close: confirm resolved, thank them, end warm.
+ *
+ * Per-line scope wording stays generic so we can route load across
+ * any of the six without surprise.
+ */
+const WIRELINE_CS_ROLE = "Wireline Customer Service";
+const WIRELINE_CS_SCOPE =
+  "Answers any question about Wireline — pricing, features, integrations, troubleshooting, account help. Asks the caller's reason up front and routes specialists in (sales, billing, partnerships) only when the answer can't be given directly.";
+const WIRELINE_CS_HANDLES =
+  "general support, sales, pricing, demos, product questions, integrations, technical help, billing, account, partnerships";
+
+function csAgent(name: string, tel: string, display: string, tint: string): ContactAgent {
+  return {
+    name,
+    role: WIRELINE_CS_ROLE,
+    scope: WIRELINE_CS_SCOPE,
+    firstMessage: `Thanks for calling Wireline, this is ${name}. How can I help you today?`,
+    handles: WIRELINE_CS_HANDLES,
+    tel,
+    display,
+    tint,
+  };
+}
+
 export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
-  {
-    name: "Sarah",
-    role: "General Customer Support",
-    scope:
-      "First line for any Wireline question — answers, account help, how-to, troubleshooting basics. Routes specialized calls to the right teammate.",
-    firstMessage: "Hi, this is Sarah with Wireline support — how can I help you today?",
-    handles: "general, how-to, account, password reset, navigation",
-    tel: "+16306425661",
-    display: "(630) 642-5661",
-    tint: "#0AC8D4",
-  },
-  {
-    name: "Liam",
-    role: "Sales & Plan Comparison",
-    scope:
-      "Pricing, plan comparison, ROI questions, enterprise quotes, custom demos. Owns the deal cycle.",
-    firstMessage:
-      "Hey, this is Liam over at Wireline sales — looking to size up a plan or compare us to something else? Happy to help.",
-    handles: "pricing, plans, demo, comparison, enterprise quote, ROI",
-    tel: "+16305811834",
-    display: "(630) 581-1834",
-    tint: "#0AC8D4",
-  },
-  {
-    name: "Tyler",
-    role: "Technical Support",
-    scope:
-      "Integrations, webhooks, API, voice quality, CRM sync, knowledge ingestion, anything that needs a developer mindset.",
-    firstMessage: "Hi, Tyler here from Wireline technical support — what are we troubleshooting?",
-    handles: "API, webhooks, integration, CRM sync, voice quality, audio, latency",
-    tel: "+15642389455",
-    display: "(564) 238-9455",
-    tint: "#8b5cf6",
-  },
-  {
-    name: "Maya",
-    role: "Book a Demo / Onboarding",
-    scope:
-      "Schedules white-glove onboarding for Business + Enterprise, custom training sessions, demo calls for prospects.",
-    firstMessage:
-      "Hi, this is Maya — I handle onboarding and demo scheduling at Wireline. What time zone are you in so I can find a slot that works?",
-    handles: "demo, onboarding, training, white glove, calendar, scheduling",
-    tel: "+16306425927",
-    display: "(630) 642-5927",
-    tint: "#0AC8D4",
-  },
-  {
-    name: "Devon",
-    role: "Billing & Account Management",
-    scope:
-      "Stripe issues, plan changes, refunds, usage overages, invoice questions, cancellations, downgrades.",
-    firstMessage:
-      "Hi, this is Devon from Wireline billing — got an invoice question or want to make a change to your plan?",
-    handles: "billing, invoice, refund, plan change, downgrade, cancel, Stripe, overage",
-    tel: "+12075935155",
-    display: "(207) 593-5155",
-    tint: "#f43f5e",
-  },
-  {
-    name: "Priya",
-    role: "Customer Success",
-    scope:
-      "Proactive check-ins, quarterly business reviews, usage analysis, expansion ideas, best-practice coaching for existing accounts.",
-    firstMessage:
-      "Hi, this is Priya from Wireline customer success — calling to see how the agents are performing and whether there's anything we can tune. Got a few minutes?",
-    handles: "success, check-in, QBR, expansion, best practice, training, optimization",
-    tel: "+15727269365",
-    display: "(572) 726-9365",
-    tint: "#ec4899",
-  },
+  csAgent("Sarah", "+16306425661", "(630) 642-5661", "#0AC8D4"),
+  csAgent("Liam", "+16305811834", "(630) 581-1834", "#0AC8D4"),
+  csAgent("Tyler", "+15642389455", "(564) 238-9455", "#0AC8D4"),
+  csAgent("Maya", "+16306425927", "(630) 642-5927", "#0AC8D4"),
+  csAgent("Devon", "+12075935155", "(207) 593-5155", "#0AC8D4"),
+  csAgent("Priya", "+15727269365", "(572) 726-9365", "#0AC8D4"),
 ];
 
 export type DemoAgent = ContactAgent;
 
+/**
+ * Four demo agents, each role-playing a distinct business scenario so
+ * prospects can hear the four most common Wireline use cases:
+ *   1. Outbound sales (Apex Software — B2B SaaS SDR)
+ *   2. Inbound customer service (Tidewater Internet — ISP tier-1 support)
+ *   3. Appointment scheduling (Lumen Dental — patient bookings)
+ *   4. Front-desk reception (Sterling & Co — law firm call routing)
+ *
+ * Each demo agent also has deep Wireline knowledge in its system prompt,
+ * so if a caller breaks character and asks "wait, what IS Wireline?",
+ * the agent answers properly + offers to transfer to a real Wireline
+ * line.
+ */
 export const WIRELINE_DEMO_AGENTS: ReadonlyArray<DemoAgent> = [
   {
-    name: "Marcus",
-    role: "Healthcare-Style Demo",
+    name: "Alex",
+    role: "Outbound Sales Agent",
     scope:
-      "Role-plays a clinic front desk — greets patients, captures reason for visit, schedules appointments, handles insurance pre-check. Healthcare-style demo; not currently HIPAA-certified (BAA available on the Enterprise tier roadmap).",
+      "Role-plays a B2B SaaS SDR for 'Apex Software' — calls a lead, qualifies fit (team size, current setup, pain), books a discovery call with a closer, logs the call summary to CRM.",
     firstMessage:
-      "Thanks for calling Wireline Medical, this is Marcus — are you booking an appointment or do you have a question about an existing one?",
-    handles: "medical, healthcare, clinic, patient intake",
+      "Hey, this is Alex from Apex Software — I noticed your team handles a lot of customer calls. Mind if I ask about your current setup?",
+    handles: "outbound, cold call, SDR, prospecting, qualification, B2B sales",
+    tel: "+14692571581",
+    display: "(469) 257-1581",
+    tint: "#F59E0B",
+  },
+  {
+    name: "Maya",
+    role: "Inbound Customer Service Agent",
+    scope:
+      "Role-plays an ISP tier-1 support rep for 'Tidewater Internet' — identifies issue (billing vs. outage vs. technical), runs basic troubleshooting, escalates to a technician or schedules a service call when needed.",
+    firstMessage: "Thanks for calling Tidewater Internet, this is Maya. How can I help you today?",
+    handles: "customer service, support, billing, outage, troubleshooting, ISP",
+    tel: "+19044601596",
+    display: "(904) 460-1596",
+    tint: "#0AC8D4",
+  },
+  {
+    name: "Casey",
+    role: "Appointment Scheduler",
+    scope:
+      "Role-plays a patient-booking agent for 'Lumen Dental' — captures patient name + reason, checks calendar availability, books or reschedules, sends a confirmation, handles last-minute cancels.",
+    firstMessage:
+      "Thanks for calling Lumen Dental, this is Casey. Were you looking to book an appointment or following up on an existing one?",
+    handles: "appointments, scheduling, booking, reschedule, cancellation, healthcare",
     tel: "+16173134469",
     display: "(617) 313-4469",
     tint: "#10B981",
   },
   {
-    name: "Aisha",
-    role: "Real Estate Lead Capture (demo)",
+    name: "River",
+    role: "Front-Desk Receptionist",
     scope:
-      "Role-plays a real-estate front desk — answers listing inquiries, qualifies buyer budget + timeline, books showings.",
-    firstMessage:
-      "Wireline Realty, this is Aisha — calling about a listing or looking to set up a showing?",
-    handles: "real estate, realtor, listing, showing, buyer",
+      "Role-plays a law-firm receptionist for 'Sterling & Company' — greets the caller, identifies whether they need an attorney, paralegal, billing, or scheduling, routes the call (or takes a detailed message if the right person is unavailable), and flags urgent matters.",
+    firstMessage: "Sterling and Company, this is River. How may I direct your call?",
+    handles: "reception, routing, message taking, intake, triage, law firm",
     tel: "+19733638874",
     display: "(973) 363-8874",
-    tint: "#FFC07D",
-  },
-  {
-    name: "Elena",
-    role: "Insurance Claims Intake (demo)",
-    scope:
-      "Role-plays a claims line — walks claimants through first-notice-of-loss, captures incident detail, opens the case file.",
-    firstMessage:
-      "Wireline Insurance claims, this is Elena — are you reporting a new claim or following up on an existing one?",
-    handles: "insurance, claim, loss, FNOL",
-    tel: "+19044601596",
-    display: "(904) 460-1596",
-    tint: "#06b6d4",
-  },
-  {
-    name: "Jake",
-    role: "Outbound SDR (demo)",
-    scope:
-      "Role-plays a cold-call SDR — calls a lead from a CSV, qualifies fit, books discovery calls with closers, logs results to CRM.",
-    firstMessage:
-      "Hey, this is Jake calling from Wireline — quick one, do you handle customer calls at your company today?",
-    handles: "outbound, cold call, SDR, prospecting, qualification",
-    tel: "+14692571581",
-    display: "(469) 257-1581",
-    tint: "#f59e0b",
+    tint: "#8B5CF6",
   },
 ];
