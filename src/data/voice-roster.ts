@@ -41,10 +41,13 @@ export const VOICE_ROSTER: ReadonlyArray<VoiceRosterEntry> = [
   // Existing platform default — kept first so legacy agents that read
   // PLATFORM_DEFAULT_VOICE_ID stay consistent on their first call.
   { voiceId: "bIHbv24MWmeRgasZH58o", label: "Wireline Default", vibe: "warm-female" },
-  // ElevenLabs documented starter voices — safe to use without billing.
+  // ElevenLabs documented starter voices — verified against the public
+  // voice library. Labels match ElevenLabs' canonical display names so
+  // FleetSettings + analytics show the operator the same name the
+  // ElevenLabs dashboard does.
   { voiceId: "21m00Tcm4TlvDq8ikWAM", label: "Rachel · Warm", vibe: "warm-female" },
+  { voiceId: "EXAVITQu4vr4xnSDxMaL", label: "Sarah · Gentle", vibe: "energetic-female" },
   { voiceId: "pNInz6obpgDQGcFmaJgB", label: "Adam · Deep", vibe: "warm-male" },
-  { voiceId: "EXAVITQu4vr4xnSDxMaL", label: "Bella · Energetic", vibe: "energetic-female" },
   { voiceId: "VR6AewLTigWG4xSOukaG", label: "Arnold · Crisp", vibe: "crisp-male" },
 ];
 
@@ -58,6 +61,16 @@ export const VOICE_ROSTER: ReadonlyArray<VoiceRosterEntry> = [
  * sequence of deploys always produces the same voice mix.
  */
 export function pickRotatedVoiceId(existingAgentCount: number): string {
-  const entry = VOICE_ROSTER[existingAgentCount % VOICE_ROSTER.length];
+  // Defense in depth: caller is normally a SQL COUNT() result (always
+  // >= 0), but a bad payload could pass NaN or negative — JS modulo on
+  // a negative produces a negative index → out-of-bounds undefined →
+  // runtime crash on `entry.voiceId`. Validate explicitly and fall
+  // back to the platform default rather than throwing into the
+  // request path.
+  if (!Number.isFinite(existingAgentCount) || existingAgentCount < 0) {
+    return VOICE_ROSTER[0].voiceId;
+  }
+  const idx = Math.floor(existingAgentCount) % VOICE_ROSTER.length;
+  const entry = VOICE_ROSTER[idx];
   return entry.voiceId;
 }

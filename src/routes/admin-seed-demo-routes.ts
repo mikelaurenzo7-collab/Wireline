@@ -16,6 +16,7 @@ import { Router, Response } from "express";
 import { drizzle, log } from "../lib/server-context";
 import { sql, eq, and } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
+import { invalidateDashboard } from "../lib/dashboard-cache";
 import type { AuthenticatedRequest } from "../types/auth";
 import {
   users as usersTable,
@@ -379,26 +380,36 @@ router.delete(
         appointments: 0,
         dnc_list: 0,
       };
-      const r1 = await drizzle
-        .delete(callLogs)
-        .where(and(eq(callLogs.userId, userId), eq(callLogs.demo, true)))
-        .returning({ id: callLogs.id });
-      counts.call_logs = r1.length;
-      const r2 = await drizzle
-        .delete(outboundLeads)
-        .where(and(eq(outboundLeads.userId, userId), eq(outboundLeads.demo, true)))
-        .returning({ id: outboundLeads.id });
-      counts.outbound_leads = r2.length;
-      const r3 = await drizzle
-        .delete(appointments)
-        .where(and(eq(appointments.userId, userId), eq(appointments.demo, true)))
-        .returning({ id: appointments.id });
-      counts.appointments = r3.length;
-      const r4 = await drizzle
-        .delete(dncList)
-        .where(and(eq(dncList.userId, userId), eq(dncList.demo, true)))
-        .returning({ id: dncList.id });
-      counts.dnc_list = r4.length;
+      // Atomic wipe across all four tables. If any DELETE fails the
+      // transaction rolls back so the tenant is never left in a
+      // partial-wipe state.
+      await drizzle.transaction(async (tx) => {
+        const r1 = await tx
+          .delete(callLogs)
+          .where(and(eq(callLogs.userId, userId), eq(callLogs.demo, true)))
+          .returning({ id: callLogs.id });
+        counts.call_logs = r1.length;
+        const r2 = await tx
+          .delete(outboundLeads)
+          .where(and(eq(outboundLeads.userId, userId), eq(outboundLeads.demo, true)))
+          .returning({ id: outboundLeads.id });
+        counts.outbound_leads = r2.length;
+        const r3 = await tx
+          .delete(appointments)
+          .where(and(eq(appointments.userId, userId), eq(appointments.demo, true)))
+          .returning({ id: appointments.id });
+        counts.appointments = r3.length;
+        const r4 = await tx
+          .delete(dncList)
+          .where(and(eq(dncList.userId, userId), eq(dncList.demo, true)))
+          .returning({ id: dncList.id });
+        counts.dnc_list = r4.length;
+      });
+
+      // Dashboard stats (agent counts, call counts, etc.) are cached
+      // per-tenant — bust the cache so the operator's dashboard
+      // immediately reflects the wipe instead of showing stale numbers.
+      invalidateDashboard(userId);
 
       log.info("Demo data wiped", { userId, counts });
       return res.json({ ok: true, deleted: counts });

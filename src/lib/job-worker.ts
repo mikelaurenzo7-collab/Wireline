@@ -737,7 +737,13 @@ export async function handleJob(job: JobRow): Promise<void> {
       const deleted = (result?.rowCount ?? result?.rows?.length ?? 0) | 0;
       log.info("sweep_orphan_supervisor_subs completed", { deleted });
     } catch (err: any) {
+      // Re-throw after logging so the outer claim/fail/retry loop in
+      // job-queue marks the job failed and dead-letters/retries it.
+      // Without the throw, the job silently completes successfully
+      // even when the DELETE crashed, masking real DB issues from the
+      // queue health metrics.
       log.error("sweep_orphan_supervisor_subs failed", { error: err?.message });
+      throw err;
     }
   }
 }

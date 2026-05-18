@@ -338,32 +338,25 @@ router.post(
         ADD COLUMN IF NOT EXISTS demo boolean DEFAULT false NOT NULL;
       `);
 
-      // Backfill: mark prior seeded rows by their telltale signature.
-      // - call_logs: vapi_call_id starts with 'seed-call-'
-      // - outbound_leads: customer_number is one of the SAMPLE_CUSTOMERS
-      //   phones (we use a narrow regex match to avoid false positives)
-      // - appointments + dnc_list: phone in the same SAMPLE_CUSTOMERS set
-      const seedPhones = sql`(
-        '+14155551011','+12125551042','+16175552031','+13105551108','+12065552287',
-        '+13125552233','+19173145555','+14025558810','+12063339090','+15103445454',
-        '+17029990606','+19035552031'
-      )`;
+      // Backfill — call_logs only. The seed script's vapi_call_id starts
+      // with 'seed-call-' which is a unique-to-seed signature, so we can
+      // safely flip demo=true on those.
+      //
+      // We intentionally do NOT backfill outbound_leads / appointments /
+      // dnc_list — those tables only have phone numbers as a signature,
+      // and a real production customer who happens to have one of the
+      // SAMPLE_CUSTOMERS phones would get incorrectly flipped to demo.
+      // Operators who need the existing seeded rows in those tables
+      // marked can call DELETE /api/admin/demo-data + re-seed via
+      // POST /api/admin/seed-demo-account; new inserts now stamp
+      // demo=true at write time.
       const r1 = await drizzle.execute(sql`
         UPDATE wireline_call_logs SET demo = true
         WHERE demo = false AND vapi_call_id LIKE 'seed-call-%';
       `);
-      const r2 = await drizzle.execute(sql`
-        UPDATE wireline_outbound_leads SET demo = true
-        WHERE demo = false AND customer_number IN ${seedPhones};
-      `);
-      const r3 = await drizzle.execute(sql`
-        UPDATE wireline_appointments SET demo = true
-        WHERE demo = false AND phone_number IN ${seedPhones};
-      `);
-      const r4 = await drizzle.execute(sql`
-        UPDATE wireline_dnc_list SET demo = true
-        WHERE demo = false AND phone IN ${seedPhones};
-      `);
+      const r2 = { rowCount: 0 };
+      const r3 = { rowCount: 0 };
+      const r4 = { rowCount: 0 };
 
       // One-shot orphan cleanup: delete supervisor_subscriptions rows
       // whose call_id doesn't reference any wireline_call_logs row. Wipes
