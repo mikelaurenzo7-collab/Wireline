@@ -73,7 +73,9 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
     return;
   }
 
-  const hook = deliveryWithHook.webhook;
+  const hookRaw = deliveryWithHook.webhook;
+  // Drizzle `with` relations may infer as array; normalize to single object.
+  const hook = Array.isArray(hookRaw) ? hookRaw[0] : hookRaw;
   if (!hook?.url) {
     await drizzle.update(schema.webhookDeliveries)
       .set({ status: "failed", nextAttemptAt: null })

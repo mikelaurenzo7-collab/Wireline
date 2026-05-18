@@ -22,14 +22,18 @@ export type KpiFocus =
 export interface CallLogRow {
   id: string;
   lead_score?: number | null;
+  leadScore?: number | null;
   duration_seconds?: number | null;
+  durationSeconds?: number | null;
   sentiment?: string | null;
   intent_label?: string | null;
-  created_at: string;
+  intentLabel?: string | null;
+  created_at?: string;
+  createdAt?: string | Date;
 }
 
-export interface AppointmentRow { id: string; created_at: string }
-export interface FollowUpTaskRow { id: string; source_id?: string | null; created_at: string }
+export interface AppointmentRow { id: string; created_at?: string; createdAt?: string | Date }
+export interface FollowUpTaskRow { id: string; source_id?: string | null; sourceId?: string | null; source_type?: string | null; sourceType?: string | null; created_at?: string; createdAt?: string | Date }
 
 export interface ScorecardInput {
   focus: KpiFocus | string;
@@ -86,7 +90,7 @@ export function buildTrend(
   const bucketMs = windowMs / buckets;
   const trend = Array(buckets).fill(0) as number[];
   for (const r of logs) {
-    const t = Date.parse(r.created_at);
+    const t = Date.parse(r.created_at ?? (typeof r.createdAt === 'string' ? r.createdAt : r.createdAt instanceof Date ? r.createdAt.toISOString() : ''));
     if (!Number.isFinite(t)) continue;
     const idx = Math.min(buckets - 1, Math.max(0, Math.floor((t - (now - windowMs)) / bucketMs)));
     trend[idx]++;
@@ -106,11 +110,11 @@ export function computeScorecard(input: ScorecardInput): ScorecardResult {
   const totalCalls = cur.length;
   const priorTotalCalls = prev.length;
 
-  const totalDurationSec = cur.reduce((s, r) => s + (r.duration_seconds || 0), 0);
+  const totalDurationSec = cur.reduce((s, r) => s + (r.duration_seconds ?? r.durationSeconds ?? 0), 0);
   const avgDurationSec = totalCalls > 0 ? Math.round(totalDurationSec / totalCalls) : 0;
 
-  const scoredValues = cur.filter(r => (r.lead_score ?? 0) > 0).map(r => r.lead_score as number);
-  const priorScoredValues = prev.filter(r => (r.lead_score ?? 0) > 0).map(r => r.lead_score as number);
+  const scoredValues = cur.filter(r => (r.lead_score ?? r.leadScore ?? 0) > 0).map(r => (r.lead_score ?? r.leadScore) as number);
+  const priorScoredValues = prev.filter(r => (r.lead_score ?? r.leadScore ?? 0) > 0).map(r => (r.lead_score ?? r.leadScore) as number);
   const avgLead = avg(scoredValues);
   const priorAvgLead = avg(priorScoredValues);
 
@@ -124,7 +128,10 @@ export function computeScorecard(input: ScorecardInput): ScorecardResult {
 
   const openFollowUpCallIds = new Set(
     (openFollowUps ?? [])
-      .map(t => (typeof t.source_id === 'string' ? t.source_id : null))
+      .map(t => {
+        const sid = t.source_id ?? t.sourceId;
+        return typeof sid === 'string' ? sid : null;
+      })
       .filter(Boolean) as string[],
   );
   const resolved = cur.filter(r => !openFollowUpCallIds.has(r.id)).length;

@@ -57,15 +57,7 @@ export interface DashboardCacheData {
     efficiencyScore: number;
   };
   agents: Array<{ id: string; name: string | null; channel: string | null; role: string | null }>;
-  recentLogs: Array<{
-    id: string;
-    customer_number: string | null;
-    duration_seconds: number | null;
-    lead_score: number | null;
-    intent_label: string | null;
-    coaching_note: string | null;
-    created_at: Date;
-  }>;
+  recentLogs: Array<Record<string, unknown>>;
 }
 
 // Track access order for LRU eviction

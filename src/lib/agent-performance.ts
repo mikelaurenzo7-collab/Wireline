@@ -14,9 +14,12 @@
 
 export interface AgentCallLogRow {
   duration_seconds?: number | null;
+  durationSeconds?: number | null;
   lead_score?: number | null;
+  leadScore?: number | null;
   sentiment?: string | null;
-  created_at: string;
+  created_at?: string;
+  createdAt?: string | Date;
 }
 
 export type SentimentBreakdown = { positive: number; neutral: number; negative: number };
@@ -62,14 +65,14 @@ export function computeAgentPerformance(input: {
 
   const callCount = rows.length;
   const totalMinutes = Math.ceil(
-    rows.reduce((s, r) => s + (r.duration_seconds ?? 0), 0) / 60,
+    rows.reduce((s, r) => s + (r.duration_seconds ?? r.durationSeconds ?? 0), 0) / 60,
   );
 
   // Average lead score is taken over rows that actually got scored —
   // a zero or null score should not drag the average down.
-  const scored = rows.filter(r => (r.lead_score ?? 0) > 0);
+  const scored = rows.filter(r => (r.lead_score ?? r.leadScore ?? 0) > 0);
   const avgScore = scored.length
-    ? Math.round(scored.reduce((s, r) => s + (r.lead_score as number), 0) / scored.length)
+    ? Math.round(scored.reduce((s, r) => s + ((r.lead_score ?? r.leadScore) as number), 0) / scored.length)
     : 0;
 
   const sentiment: SentimentBreakdown = { positive: 0, neutral: 0, negative: 0 };
@@ -87,7 +90,7 @@ export function computeAgentPerformance(input: {
   const byDay: Record<string, number> = {};
   for (const d of last) byDay[d] = 0;
   for (const r of rows) {
-    const k = utcDayKey(r.created_at);
+    const k = utcDayKey(r.created_at ?? (typeof r.createdAt === 'string' ? r.createdAt : r.createdAt instanceof Date ? r.createdAt.toISOString() : ''));
     if (k && k in byDay) byDay[k]++;
   }
   const sparkline = last.map(d => byDay[d]);
