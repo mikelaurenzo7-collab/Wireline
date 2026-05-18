@@ -347,24 +347,30 @@ export default function CommandCenter() {
           <OnboardingQuickstart />
         </section>
 
-        {/* Dashboard Grid */}
-        <section className="space-y-4 pt-4 border-t border-black/5">
+        {/* Dashboard Grid — compressed for 1366×768 laptop viewports.
+            Previously every card was p-8 (32px) min-h-[400px]+, gap-8
+            between, with a right rail at min-h-[600px]. That stacked
+            into ~1200px of dashboard content alone — half a viewport
+            below the fold on a typical demo laptop. Tightened to p-5,
+            min-h-[280px], gap-4. Internal Live Monitor still uses its
+            own card. */}
+        <section className="space-y-3 pt-3 border-t border-black/5">
           <span className="text-[10px] uppercase tracking-[0.35em] text-muted font-medium block">
             Live operations
           </span>
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
             {/* Left Column: Live Monitor (8/12) */}
-            <div className="xl:col-span-8 space-y-8">
+            <div className="xl:col-span-8 space-y-4">
               <div className="relative group">
                 <div className="absolute -inset-1 bg-gradient-to-r from-brand/20 to-brand-2/20 rounded-[2.5rem] blur opacity-25 group-hover:opacity-40 transition duration-1000" />
-                <div className="relative glass border-black/5 rounded-[2rem] p-8 min-h-[400px]">
+                <div className="relative glass border-black/5 rounded-[2rem] p-5 min-h-[280px]">
                   <LiveMonitor calls={calls} />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Analytics: Sentiment */}
-                <div className="glass border-black/5 rounded-[2rem] p-8">
+                <div className="glass border-black/5 rounded-[2rem] p-5">
                   <div className="flex items-center justify-between mb-8">
                     <h3 className="text-[10px] uppercase tracking-[0.4em] font-medium text-muted flex items-center gap-2">
                       <Globe className="w-3.5 h-3.5 text-brand" />
@@ -432,8 +438,8 @@ export default function CommandCenter() {
                 </div>
 
                 {/* Analytics: Unit Economics */}
-                <div className="glass border-black/5 rounded-[2rem] p-8">
-                  <div className="flex items-center justify-between mb-8">
+                <div className="glass border-black/5 rounded-[2rem] p-5">
+                  <div className="flex items-center justify-between mb-4">
                     <h3 className="text-[10px] uppercase tracking-[0.4em] font-medium text-muted flex items-center gap-2">
                       <Zap className="w-3.5 h-3.5 text-brand" />
                       Unit Economics
@@ -484,9 +490,9 @@ export default function CommandCenter() {
             </div>
 
             {/* Right Column: Intelligence & Actions (4/12) */}
-            <div className="xl:col-span-4 space-y-8">
+            <div className="xl:col-span-4 space-y-4">
               {/* Intelligence Hub (Action Feed) */}
-              <div className="glass border-black/5 rounded-[2rem] p-8 h-full min-h-[600px] flex flex-col">
+              <div className="glass border-black/5 rounded-[2rem] p-5 h-full min-h-[280px] flex flex-col">
                 <ActionFeed actions={actions} onRefresh={refresh} />
               </div>
             </div>
