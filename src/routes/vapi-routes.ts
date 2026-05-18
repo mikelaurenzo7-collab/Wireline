@@ -462,6 +462,215 @@ router.post("/api/vapi-webhook", async (req, res) => {
           results.push({ toolCallId: toolCall.id, result: "Lead enrichment error." });
         }
       }
+
+      // CRM Handlers
+      if (toolCall.function.name === "crm_search_contacts") {
+        try {
+          const { query } = toolCall.function.arguments;
+          const service = new IntegrationService(agent?.user_id);
+          const contacts = await service.searchCrmContacts(query);
+          results.push({
+            toolCallId: toolCall.id,
+            result: contacts ? `Found CRM contacts: ${JSON.stringify(contacts)}` : "No contacts found or CRM not connected.",
+          });
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "CRM search error." });
+        }
+      }
+
+      if (toolCall.function.name === "crm_log_call") {
+        try {
+          const { contact_id, subject, notes } = toolCall.function.arguments;
+          const service = new IntegrationService(agent?.user_id);
+          const success = await service.logCrmActivity({ contactId: contact_id, subject, notes });
+          results.push({
+            toolCallId: toolCall.id,
+            result: success ? "Call logged to CRM successfully." : "Failed to log call to CRM.",
+          });
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "CRM logging error." });
+        }
+      }
+
+      if (toolCall.function.name === "crm_create_opportunity") {
+        try {
+          const { name, contact_id, stage, amount } = toolCall.function.arguments;
+          const service = new IntegrationService(agent?.user_id);
+          const success = await service.createCrmOpportunity({ name, contactId: contact_id, stage, amount });
+          results.push({
+            toolCallId: toolCall.id,
+            result: success ? "Opportunity created successfully in CRM." : "Failed to create opportunity.",
+          });
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "CRM opportunity error." });
+        }
+      }
+
+      // Notification Handlers
+      if (toolCall.function.name === "send_slack_notification") {
+        try {
+          const { message: slackMsg } = toolCall.function.arguments;
+          if (agent?.user_id) {
+            const slackCh = await getDefaultChannel(agent.user_id);
+            if (slackCh) {
+              await slackPostMessage(agent.user_id, slackCh, `🤖 *Agent Notification*\n${slackMsg}`);
+              results.push({ toolCallId: toolCall.id, result: "Slack notification sent successfully." });
+            } else {
+              results.push({ toolCallId: toolCall.id, result: "Slack integration not configured." });
+            }
+          }
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Slack notification error." });
+        }
+      }
+
+      // Workflow Handlers
+      if (toolCall.function.name === "generate_zoom_link") {
+        try {
+          const { topic, start_time, duration } = toolCall.function.arguments;
+          const service = new IntegrationService(agent?.user_id);
+          const zoomLink = await service.createZoomMeeting({ topic, startTime: start_time, duration });
+          results.push({
+            toolCallId: toolCall.id,
+            result: zoomLink ? `Zoom meeting created: ${zoomLink}` : "Failed to create Zoom meeting.",
+          });
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Zoom error." });
+        }
+      }
+
+      if (toolCall.function.name === "log_payment_promise") {
+        try {
+          const { amount_promised, payment_date, payment_method } = toolCall.function.arguments;
+          await drizzle.insert(schema.auditLog).values({
+            userId: agent?.user_id,
+            eventType: "payment_promise",
+            details: { amount_promised, payment_date, payment_method },
+          });
+          results.push({ toolCallId: toolCall.id, result: "Payment promise legally recorded in compliance ledger." });
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Failed to record payment promise." });
+        }
+      }
+
+      if (toolCall.function.name === "create_support_ticket") {
+        try {
+          const { issue_summary, error_codes, severity } = toolCall.function.arguments;
+          const [task] = await drizzle
+            .insert(schema.fleetTasks)
+            .values({
+              userId: agent?.user_id,
+              agentId: webhookAgentId,
+              taskType: "ticket",
+              description: `[${severity.toUpperCase()}] ${issue_summary} (Codes: ${error_codes || 'None'})`,
+              priority: severity === "critical" ? "high" : severity === "high" ? "high" : "medium",
+              status: "pending",
+              sourceType: "phone_call",
+              targetChannel: "manual",
+            })
+            .returning({ id: schema.fleetTasks.id });
+          results.push({ toolCallId: toolCall.id, result: `Support ticket #${task.id.split("-")[0]} created.` });
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Failed to create support ticket." });
+        }
+      }
+
+      if (toolCall.function.name === "leave_voicemail") {
+        results.push({ toolCallId: toolCall.id, result: "Voicemail recorded. Please say goodbye and end the call now." });
+      }
+
+      if (toolCall.function.name === "schedule_callback") {
+        try {
+          const { callback_datetime, notes } = toolCall.function.arguments;
+          await drizzle.insert(schema.fleetTasks).values({
+            userId: agent?.user_id,
+            agentId: webhookAgentId,
+            taskType: "callback",
+            description: `Scheduled Callback: ${notes}`,
+            priority: "high",
+            status: "pending",
+            sourceType: "phone_call",
+            targetChannel: "manual",
+            createdAt: new Date(),
+          });
+          results.push({ toolCallId: toolCall.id, result: `Callback securely scheduled for ${callback_datetime}.` });
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Failed to schedule callback." });
+        }
+      }
+
+      if (toolCall.function.name === "capture_customer_profile") {
+        try {
+          await drizzle.insert(schema.fleetTasks).values({
+            userId: agent?.user_id,
+            agentId: webhookAgentId,
+            taskType: "customer_profile_captured",
+            description: JSON.stringify(toolCall.function.arguments),
+            priority: "medium",
+            status: "completed",
+            sourceType: "phone_call",
+            targetChannel: "manual",
+            createdAt: new Date(),
+          });
+          results.push({ toolCallId: toolCall.id, result: "Customer profile structured and saved." });
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Failed to capture profile." });
+        }
+      }
+
+      if (toolCall.function.name === "escalate_to_human") {
+        try {
+          const { reason } = toolCall.function.arguments;
+          if (agent?.user_id) {
+            const notifier = new NotificationService(agent.user_id);
+            await notifier.sendUrgentAlert({
+              title: "Agent Escalate to Human",
+              message: `Reason: ${reason}`,
+              callId: (payload.call as any)?.id || "unknown",
+            });
+          }
+          results.push({ toolCallId: toolCall.id, result: "Escalation signal sent to human supervisors. If you can transfer the call, do it now, otherwise apologize and say a human will call back." });
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Failed to send escalation signal." });
+        }
+      }
+
+      if (toolCall.function.name === "view_recent_interactions") {
+        try {
+          const fallbackNumber =
+            (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
+            (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
+          if (fallbackNumber && agent?.user_id) {
+            const safePhone = sanitizePhone(fallbackNumber);
+            const pastCalls = await drizzle
+              .select({
+                summary: schema.callLogs.summary,
+                intentLabel: schema.callLogs.intentLabel,
+                sentiment: schema.callLogs.sentiment,
+                createdAt: schema.callLogs.createdAt,
+              })
+              .from(schema.callLogs)
+              .where(
+                and(
+                  eq(schema.callLogs.customerNumber, safePhone),
+                  eq(schema.callLogs.userId, agent.user_id)
+                )
+              )
+              .orderBy(sql`${schema.callLogs.createdAt} DESC`)
+              .limit(3);
+            if (pastCalls.length > 0) {
+              const summaries = pastCalls.map((c) => `- ${c.createdAt?.toISOString()}: [${c.intentLabel}] ${c.summary}`).join("\\n");
+              results.push({ toolCallId: toolCall.id, result: `Past 3 interactions:\n${summaries}` });
+            } else {
+              results.push({ toolCallId: toolCall.id, result: "No recent interactions found for this caller." });
+            }
+          } else {
+            results.push({ toolCallId: toolCall.id, result: "Could not identify caller number." });
+          }
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Failed to load recent interactions." });
+        }
+      }
     }
     return res.json({ results });
   }
