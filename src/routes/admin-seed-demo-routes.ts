@@ -18,6 +18,7 @@ import { sql, eq } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import type { AuthenticatedRequest } from "../types/auth";
 import {
+  users as usersTable,
   agents as agentsTable,
   callLogs,
   outboundLeads,
@@ -107,11 +108,12 @@ const SAMPLE_APPOINTMENT_TYPES = [
 ];
 
 async function pickDemoUserId(email: string): Promise<string | null> {
-  const rows: any = await drizzle.execute(
-    sql`SELECT id FROM auth.users WHERE email = ${email} LIMIT 1`,
-  );
-  const data = (rows.rows ?? rows) as Array<{ id: string }>;
-  return data[0]?.id ?? null;
+  const rows = await drizzle
+    .select({ id: usersTable.id })
+    .from(usersTable)
+    .where(eq(usersTable.email, email))
+    .limit(1);
+  return rows[0]?.id ?? null;
 }
 
 async function pickFirstAgentId(userId: string): Promise<string | null> {

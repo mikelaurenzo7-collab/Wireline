@@ -122,7 +122,9 @@ async function syncOneAgent(
       firstMessage: agent.firstMessage,
       model: {
         provider: "anthropic",
-        model: "claude-opus-4-7",
+        // Vapi's allowlist doesn't include claude-opus-4-7 yet; opus-4-6 is
+        // currently the most capable model they accept. Bump when they ship.
+        model: "claude-opus-4-6",
         messages: [{ role: "system", content: systemPrompt }],
       },
       serverUrl: PRODUCTION_WEBHOOK_URL,
