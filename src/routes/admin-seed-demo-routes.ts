@@ -14,7 +14,7 @@
 
 import { Router, Response } from "express";
 import { drizzle, log } from "../lib/server-context";
-import { sql, eq } from "drizzle-orm";
+import { sql, eq, and } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import type { AuthenticatedRequest } from "../types/auth";
 import {
@@ -199,6 +199,7 @@ router.post(
             summary: SAMPLE_SUMMARIES[i % SAMPLE_SUMMARIES.length],
             intentLabel: SAMPLE_INTENTS[i % SAMPLE_INTENTS.length],
             sentiment: SAMPLE_SENTIMENTS[i % SAMPLE_SENTIMENTS.length],
+            demo: true,
             leadScore: 40 + Math.floor(Math.random() * 55),
             qaScore: 70 + Math.floor(Math.random() * 28),
             createdAt: randomCreatedAt(21),
@@ -241,6 +242,7 @@ router.post(
             source: i % 4 === 0 ? "csv-upload" : i % 4 === 1 ? "api" : "manual",
             lastContactSummary: SAMPLE_SUMMARIES[i % SAMPLE_SUMMARIES.length],
             lastCalledAt: randomCreatedAt(14),
+            demo: true,
             createdAt: randomCreatedAt(28),
           });
           inserted++;
@@ -271,6 +273,7 @@ router.post(
             time: ["9:00 AM", "10:30 AM", "1:00 PM", "2:30 PM", "4:00 PM"][i % 5],
             status: "Scheduled",
             notes: SAMPLE_SUMMARIES[(i + 5) % SAMPLE_SUMMARIES.length],
+            demo: true,
             createdAt: randomCreatedAt(7),
           });
           inserted++;
@@ -318,6 +321,7 @@ router.post(
               phone: cust.phone,
               reason: i % 2 === 0 ? "Customer requested STOP via SMS" : "Manual op-add",
               source: i % 2 === 0 ? "sms-stop" : "manual",
+              demo: true,
               createdAt: randomCreatedAt(40),
             });
             inserted++;
@@ -349,6 +353,58 @@ router.post(
     } catch (e: any) {
       log.error("Demo seed failed", { error: e?.message, userId, targetEmail });
       return res.status(500).json({ error: e?.message || "Seed failed", reportSoFar: report });
+    }
+  },
+);
+
+/**
+ * Self-serve wipe of demo rows. Any authenticated user can clear THEIR
+ * OWN demo=true rows across call_logs / outbound_leads / appointments /
+ * dnc_list. Real (demo=false) data is untouched.
+ *
+ * Use case: an operator who got seeded showcase data for their wife's
+ * marketing screenshots wants to clear the deck before onboarding a
+ * real customer.
+ */
+router.delete(
+  "/api/admin/demo-data",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
+    const userId = req.user.id;
+    try {
+      const counts = {
+        call_logs: 0,
+        outbound_leads: 0,
+        appointments: 0,
+        dnc_list: 0,
+      };
+      const r1 = await drizzle
+        .delete(callLogs)
+        .where(and(eq(callLogs.userId, userId), eq(callLogs.demo, true)))
+        .returning({ id: callLogs.id });
+      counts.call_logs = r1.length;
+      const r2 = await drizzle
+        .delete(outboundLeads)
+        .where(and(eq(outboundLeads.userId, userId), eq(outboundLeads.demo, true)))
+        .returning({ id: outboundLeads.id });
+      counts.outbound_leads = r2.length;
+      const r3 = await drizzle
+        .delete(appointments)
+        .where(and(eq(appointments.userId, userId), eq(appointments.demo, true)))
+        .returning({ id: appointments.id });
+      counts.appointments = r3.length;
+      const r4 = await drizzle
+        .delete(dncList)
+        .where(and(eq(dncList.userId, userId), eq(dncList.demo, true)))
+        .returning({ id: dncList.id });
+      counts.dnc_list = r4.length;
+
+      log.info("Demo data wiped", { userId, counts });
+      return res.json({ ok: true, deleted: counts });
+    } catch (e: any) {
+      log.error("Demo data wipe failed", { userId, error: e?.message });
+      return res.status(500).json({ error: e?.message || "Wipe failed" });
     }
   },
 );

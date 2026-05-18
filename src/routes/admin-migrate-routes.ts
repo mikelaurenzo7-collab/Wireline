@@ -306,4 +306,84 @@ router.post(
   },
 );
 
+/**
+ * Audit3 — adds `demo` boolean to four tables so the UI can pill-mark
+ * seeded showcase rows. Idempotent. Backfills demo=true on rows whose
+ * vapiCallId starts with 'seed-call-' (the seed script's signature) so
+ * existing seeded data inherits the flag.
+ */
+router.post(
+  "/api/admin/migrate-audit3",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const ownerEmail = process.env.OWNER_EMAIL;
+    if (!ownerEmail || req.user?.email !== ownerEmail) {
+      return res.status(403).json({ error: "Owner only." });
+    }
+    try {
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_call_logs
+        ADD COLUMN IF NOT EXISTS demo boolean DEFAULT false NOT NULL;
+      `);
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_outbound_leads
+        ADD COLUMN IF NOT EXISTS demo boolean DEFAULT false NOT NULL;
+      `);
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_appointments
+        ADD COLUMN IF NOT EXISTS demo boolean DEFAULT false NOT NULL;
+      `);
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_dnc_list
+        ADD COLUMN IF NOT EXISTS demo boolean DEFAULT false NOT NULL;
+      `);
+
+      // Backfill: mark prior seeded rows by their telltale signature.
+      // - call_logs: vapi_call_id starts with 'seed-call-'
+      // - outbound_leads: customer_number is one of the SAMPLE_CUSTOMERS
+      //   phones (we use a narrow regex match to avoid false positives)
+      // - appointments + dnc_list: phone in the same SAMPLE_CUSTOMERS set
+      const seedPhones = sql`(
+        '+14155551011','+12125551042','+16175552031','+13105551108','+12065552287',
+        '+13125552233','+19173145555','+14025558810','+12063339090','+15103445454',
+        '+17029990606','+19035552031'
+      )`;
+      const r1 = await drizzle.execute(sql`
+        UPDATE wireline_call_logs SET demo = true
+        WHERE demo = false AND vapi_call_id LIKE 'seed-call-%';
+      `);
+      const r2 = await drizzle.execute(sql`
+        UPDATE wireline_outbound_leads SET demo = true
+        WHERE demo = false AND customer_number IN ${seedPhones};
+      `);
+      const r3 = await drizzle.execute(sql`
+        UPDATE wireline_appointments SET demo = true
+        WHERE demo = false AND phone_number IN ${seedPhones};
+      `);
+      const r4 = await drizzle.execute(sql`
+        UPDATE wireline_dnc_list SET demo = true
+        WHERE demo = false AND phone IN ${seedPhones};
+      `);
+
+      log.info("Audit3 migration completed", {
+        userId: req.user.id,
+        backfilled: {
+          call_logs: (r1 as any).rowCount ?? 0,
+          outbound_leads: (r2 as any).rowCount ?? 0,
+          appointments: (r3 as any).rowCount ?? 0,
+          dnc_list: (r4 as any).rowCount ?? 0,
+        },
+      });
+      return res.json({
+        ok: true,
+        message:
+          "demo column added to call_logs / outbound_leads / appointments / dnc_list with backfill.",
+      });
+    } catch (e: any) {
+      log.error("Audit3 migration failed", { error: e?.message });
+      return res.status(500).json({ error: e?.message || "Migration failed" });
+    }
+  },
+);
+
 export default router;

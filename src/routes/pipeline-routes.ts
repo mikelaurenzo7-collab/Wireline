@@ -40,6 +40,7 @@ router.get("/api/pipeline", authenticateUser, async (req: AuthenticatedRequest, 
       lastCalledAt: schema.outboundLeads.lastCalledAt,
       lastContactSummary: schema.outboundLeads.lastContactSummary,
       agentId: schema.outboundLeads.agentId,
+      demo: schema.outboundLeads.demo,
       createdAt: schema.outboundLeads.createdAt,
     })
     .from(schema.outboundLeads)

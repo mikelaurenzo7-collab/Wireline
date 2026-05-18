@@ -228,6 +228,10 @@ export const appointments = pgTable(
     status: text("status").default("Scheduled"),
     notes: text("notes"),
     phoneNumber: text("phone_number"),
+    // True when the row was inserted by /api/admin/seed-demo-account so
+    // the UI can render a "DEMO" pill and operators won't mistake the
+    // seeded showcase rows for real customer activity.
+    demo: boolean("demo").default(false).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   (t) => ({
@@ -265,6 +269,10 @@ export const callLogs = pgTable(
     // Campaign attribution — denormalized from phoneNumbers.campaignLabel at
     // write time so /insights queries don't need a join.
     campaignSource: text("campaign_source"),
+    // True when the row was inserted by /api/admin/seed-demo-account so
+    // the UI can render a "DEMO" pill and operators won't mistake seeded
+    // showcase activity for real call traffic.
+    demo: boolean("demo").default(false).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   (t) => ({
@@ -681,6 +689,11 @@ export const outboundLeads = pgTable(
     metadata: jsonb("metadata"),
     receivedAt: timestamp("received_at", { withTimezone: true }),
     idempotencyKey: text("idempotency_key"),
+    // True when the lead was inserted by /api/admin/seed-demo-account. UI
+    // surfaces a "DEMO" pill on these rows so operators don't mistake the
+    // showcase pipeline for real customer leads. /api/admin/demo-data
+    // (DELETE) wipes every row where demo=true scoped to the tenant.
+    demo: boolean("demo").default(false).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   (t) => ({
@@ -808,6 +821,8 @@ export const dncList = pgTable("wireline_dnc_list", {
   phoneRaw: text("phone_raw"),
   reason: text("reason"),
   source: text("source").default("manual"),
+  // True when the row was inserted by /api/admin/seed-demo-account.
+  demo: boolean("demo").default(false).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
