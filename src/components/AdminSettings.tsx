@@ -424,24 +424,26 @@ export default function AdminSettings() {
           subtitle="API credentials, phone numbers, and platform configuration."
           actions={tabSwitcher}
         >
-          <IntegrationHealthBanner
-            health={integrationHealth}
-            onOpenIntegrations={() => setActiveTab("system")}
-          />
-          {isLoading ? (
-            <div
-              role="status"
-              aria-live="polite"
-              className="h-full flex flex-col items-center justify-center gap-3"
-            >
-              <Loader2 className="w-5 h-5 animate-spin text-brand" aria-hidden="true" />
-              <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">
-                Loading settings
-              </span>
-            </div>
-          ) : (
-            <AnimatePresence mode="wait">
-              {activeTab === "branding" && (
+          <div className="h-full flex flex-col">
+            <IntegrationHealthBanner
+              health={integrationHealth}
+              onOpenIntegrations={() => setActiveTab("system")}
+            />
+            <div className="flex-1 min-h-0">
+              {isLoading ? (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="h-full flex flex-col items-center justify-center gap-3"
+                >
+                  <Loader2 className="w-5 h-5 animate-spin text-brand" aria-hidden="true" />
+                  <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">
+                    Loading settings
+                  </span>
+                </div>
+              ) : (
+                <AnimatePresence mode="wait">
+                  {activeTab === "branding" && (
                 <motion.div
                   key="branding"
                   initial={{ opacity: 0, y: 4 }}
@@ -576,7 +578,9 @@ export default function AdminSettings() {
                 </motion.div>
               )}
             </AnimatePresence>
-          )}
+              )}
+            </div>
+          </div>
         </PageShell>
         <ConfirmModal
           open={confirmState.open}

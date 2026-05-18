@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Plus, Trash2, ArrowRight, Save, Play, Settings2, GripVertical, CheckCircle2, ChevronRight, Workflow, Loader2 } from "lucide-react";
+import { Plus, Trash2, ArrowRight, Save, Settings2, GripVertical, CheckCircle2, Workflow, Loader2 } from "lucide-react";
 import { motion, AnimatePresence, Reorder } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
@@ -84,7 +84,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
     }
   };
 
-  const handleUpdateStep = (id: string, field: keyof FlowStep, value: any) => {
+  const handleUpdateStep = (id: string, field: keyof FlowStep, value: string | boolean) => {
     setSteps(steps.map(s => s.id === id ? { ...s, [field]: value } : s));
   };
 

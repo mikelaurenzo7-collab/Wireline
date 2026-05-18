@@ -88,6 +88,19 @@ router.get("/", healthRateLimiter, async (_req, res) => {
 });
 
 /**
+ * Temporary Migration Route
+ */
+import { sql } from "drizzle-orm";
+router.get("/migrate-temp", async (_req, res) => {
+  try {
+    await drizzle.execute(sql`ALTER TABLE "wireline_agents" ADD COLUMN IF NOT EXISTS "flow_config" jsonb;`);
+    res.status(200).json({ ok: true, message: "Migration complete" });
+  } catch (err: any) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+/**
  * Authenticated detail probe — same data the old public probe returned,
  * now gated behind a valid JWT. Used by the in-app SystemPanel + the
  * monitoring stack (which signs in as a service account).
