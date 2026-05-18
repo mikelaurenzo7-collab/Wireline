@@ -399,6 +399,69 @@ export const smsMessages = pgTable(
   }),
 );
 
+// 3.1c AGENT TEAMS + CALL QUEUES — call-center scaffolding.
+// Distinct from the human-team RBAC concept in wireline_team_members
+// (workspace user invites). These tables group AI AGENTS into teams
+// for call-center routing — one tenant has many agent teams (e.g.
+// "Inbound Support", "Outbound Sales"). Each agent team optionally
+// overrides the platform Twilio sender. Call queues sit one level
+// deeper: when a customer dials a queue's number, we route to the
+// least-busy agent in that queue's team.
+export const agentTeams = pgTable(
+  "wireline_agent_teams",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    name: text("name").notNull(),
+    /** Per-team SMS sender — overrides settings.twilio_sms_from_number for agents in this team. */
+    smsFromNumber: text("sms_from_number"),
+    /** Optional manager email — destination for escalations from this team. */
+    managerEmail: text("manager_email"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_agent_teams_user_id ON wireline_agent_teams (user_id)`,
+  }),
+);
+
+export const agentTeamMembers = pgTable(
+  "wireline_agent_team_members",
+  {
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
+    teamId: uuid("team_id").references(() => agentTeams.id, { onDelete: "cascade" }),
+    agentId: text("agent_id").references(() => agents.id, { onDelete: "cascade" }),
+    /** "member" or "lead" — leads get first routing preference. */
+    role: text("role").default("member"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    teamAgentUnique: sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_agent_team_members_team_agent ON wireline_agent_team_members (team_id, agent_id)`,
+  }),
+);
+
+export const callQueues = pgTable(
+  "wireline_call_queues",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    teamId: uuid("team_id").references(() => agentTeams.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    /** vapi_number_id this queue answers on. */
+    vapiNumberId: text("vapi_number_id"),
+    /** Max seconds before overflow_action triggers. */
+    maxWaitSeconds: integer("max_wait_seconds").default(60),
+    /** "voicemail" | "transfer" | "queue" — what happens when no agent is free. */
+    overflowAction: text("overflow_action").default("voicemail"),
+    /** Phone number to transfer to when overflow_action='transfer'. */
+    overflowTransferTo: text("overflow_transfer_to"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_queues_user_id ON wireline_call_queues (user_id)`,
+    vapiNumberIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_queues_vapi_number ON wireline_call_queues (vapi_number_id)`,
+  }),
+);
+
 // 3.2 FLEET HANDOFF (TASKS)
 export const fleetTasks = pgTable(
   "wireline_fleet_tasks",

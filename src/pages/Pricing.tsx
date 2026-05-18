@@ -122,6 +122,25 @@ const TIERS: Tier[] = [
       "Net-30 invoicing",
     ],
   },
+  {
+    id: "callcenter",
+    name: "Call Center",
+    price: "Custom",
+    cadence: "",
+    blurb: "100+ seats, supervisor cockpit, team routing.",
+    cta: "Talk to call-center sales",
+    ctaHref: "mailto:sales@wireline.app?subject=Call%20Center%20inquiry",
+    features: [
+      "100+ AI agent seats with team-based routing",
+      "Supervisor cockpit — live floor monitoring + listen-in",
+      "Call queues with SLA timers + overflow rules",
+      "Per-team SMS sender + manager escalation routing",
+      "Real-time sentiment + QA scoring on every call",
+      "Dedicated CSM + 24×7 ops paging",
+      "BYO carrier (Twilio / RingCentral / 8x8 / sip trunk)",
+      "Custom MSA + Net-30 invoicing",
+    ],
+  },
 ];
 
 const VALUE_BULLETS = [
