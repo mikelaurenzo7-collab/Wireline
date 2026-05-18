@@ -174,51 +174,60 @@ async function countRows(tableName: string, userId: string): Promise<number> {
 async function backfillTenantDemoRows(userId: string): Promise<void> {
   const seedPhones = SAMPLE_CUSTOMERS.map((c) => c.phone);
   try {
-    // Use drizzle's inArray() builder instead of raw SQL ANY(${array}).
-    // The raw form silently fails (the JS array doesn't serialize as a
-    // pg text[] through drizzle's sql template), the try/catch swallowed
-    // the error, the seed loop counted demo-true at 0 and inserted a
-    // duplicate set of 18/8/5 rows on every call. Use the typed query
-    // builder so pg gets the array literal right.
-    await drizzle
-      .update(schema.outboundLeads)
-      .set({ demo: true })
-      .where(
-        and(
-          eq(schema.outboundLeads.userId, userId),
-          eq(schema.outboundLeads.demo, false),
-          inArray(schema.outboundLeads.customerNumber, seedPhones),
-        ),
-      );
-    await drizzle
-      .update(schema.appointments)
-      .set({ demo: true })
-      .where(
-        and(
-          eq(schema.appointments.userId, userId),
-          eq(schema.appointments.demo, false),
-          inArray(schema.appointments.phoneNumber, seedPhones),
-        ),
-      );
-    await drizzle
-      .update(schema.dncList)
-      .set({ demo: true })
-      .where(
-        and(
-          eq(schema.dncList.userId, userId),
-          eq(schema.dncList.demo, false),
-          inArray(schema.dncList.phone, seedPhones),
-        ),
-      );
-    // call_logs uses a string LIKE on vapi_call_id (unique-to-seed
-    // signature). LIKE is fine in raw SQL — the array binding bug
-    // doesn't apply here. Catch any stragglers the migration missed.
-    await drizzle.execute(sql`
-      UPDATE wireline_call_logs SET demo = true
-      WHERE user_id = ${userId} AND demo = false AND vapi_call_id LIKE 'seed-call-%';
-    `);
+    // Wrap in a single transaction so the four UPDATEs commit together
+    // or roll back together. Without this, a mid-loop failure can leave
+    // some tables backfilled and others not — countRows() would then
+    // undercount demo=true on the un-flipped tables and the seed loop
+    // would re-insert duplicates (the same failure mode the PR #138
+    // hotfix just closed via inArray binding, surfacing here as a
+    // defense-in-depth question).
+    await drizzle.transaction(async (tx) => {
+      await tx
+        .update(schema.outboundLeads)
+        .set({ demo: true })
+        .where(
+          and(
+            eq(schema.outboundLeads.userId, userId),
+            eq(schema.outboundLeads.demo, false),
+            inArray(schema.outboundLeads.customerNumber, seedPhones),
+          ),
+        );
+      await tx
+        .update(schema.appointments)
+        .set({ demo: true })
+        .where(
+          and(
+            eq(schema.appointments.userId, userId),
+            eq(schema.appointments.demo, false),
+            inArray(schema.appointments.phoneNumber, seedPhones),
+          ),
+        );
+      await tx
+        .update(schema.dncList)
+        .set({ demo: true })
+        .where(
+          and(
+            eq(schema.dncList.userId, userId),
+            eq(schema.dncList.demo, false),
+            inArray(schema.dncList.phone, seedPhones),
+          ),
+        );
+      // call_logs uses LIKE on the vapi_call_id seed signature — no
+      // array binding bug applies, and the predicate is narrow enough
+      // to stay raw SQL.
+      await tx.execute(sql`
+        UPDATE wireline_call_logs SET demo = true
+        WHERE user_id = ${userId} AND demo = false AND vapi_call_id LIKE 'seed-call-%';
+      `);
+    });
   } catch (err: any) {
+    // Log and re-throw. Swallowing here would let the seed loop proceed
+    // with stale countRows() values and re-insert duplicate demo rows
+    // on every call — exactly the failure mode PR #138 fixed. Failing
+    // fast surfaces the bug to the operator (500 response from the seed
+    // endpoint) instead of silently corrupting the demo footprint.
     log.warn("Seed tenant backfill failed", { userId, error: err?.message });
+    throw err;
   }
 }
 
