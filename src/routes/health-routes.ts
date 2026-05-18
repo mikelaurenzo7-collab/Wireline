@@ -1,4 +1,5 @@
 import express, { Request, Response, NextFunction } from "express";
+import * as Sentry from "@sentry/node";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
@@ -153,5 +154,56 @@ router.get(
     }
   },
 );
+
+/**
+ * GET /api/health/error (owner-only)
+ *
+ * Sentry release-tracking validator. Captures a controlled exception
+ * tagged with a known signature so the operator can verify, post-
+ * deploy, that:
+ *   1. Errors are reaching Sentry at all (DSN configured + reachable)
+ *   2. The Vercel commit SHA flows through to Sentry's release field
+ *      so regressions can be filtered by deploy
+ *   3. The release tag matches the one the @sentry/vite-plugin uploaded
+ *      sourcemaps for, so future symbolication works.
+ *
+ * Gated on OWNER_EMAIL so randomly hitting the endpoint can't pollute
+ * Sentry quota. The endpoint always returns 200 (with the captured
+ * release in the body) — it doesn't 500 because that would imply the
+ * error escaped, when in reality it was deliberately surfaced. The
+ * server logs the same release for operators tailing Vercel logs.
+ */
+router.get("/error", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
+  const ownerEmail = process.env.OWNER_EMAIL;
+  if (!ownerEmail || req.user?.email !== ownerEmail) {
+    return res.status(403).json({ error: "Owner only." });
+  }
+
+  const release = process.env.VERCEL_GIT_COMMIT_SHA || "unknown";
+  const probeId = `sentry-release-probe-${Date.now()}`;
+  const err = new Error(
+    `Wireline Sentry release-tracking probe ${probeId} (release=${release.slice(0, 12)})`,
+  );
+  // Tag so the operator can grep this specific event out of the
+  // Sentry stream without it looking like a real crash.
+  Sentry.captureException(err, {
+    tags: { sentry_release_probe: "true", probe_id: probeId, release_short: release.slice(0, 12) },
+    extra: { probeId, release, env: process.env.NODE_ENV },
+  });
+
+  log.warn("Sentry release-tracking probe fired", {
+    probeId,
+    release,
+    requestedBy: req.user?.email,
+  });
+
+  return res.json({
+    ok: true,
+    message: "Deliberate Sentry probe sent. Check Sentry issues + releases tab.",
+    probeId,
+    release,
+    release_short: release.slice(0, 12),
+  });
+});
 
 export default router;
