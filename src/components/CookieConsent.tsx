@@ -37,53 +37,48 @@ export default function CookieConsent() {
     <AnimatePresence>
       {visible && (
         <motion.div
-          initial={{ y: 80, opacity: 0 }}
+          initial={{ y: 64, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 80, opacity: 0 }}
-          transition={{ type: "spring", stiffness: 380, damping: 32 }}
-          className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[9999] w-full max-w-lg px-4"
+          exit={{ y: 64, opacity: 0 }}
+          transition={{ type: "spring", stiffness: 400, damping: 36 }}
+          className="fixed bottom-0 left-0 right-0 z-[9999]"
           role="dialog"
           aria-label="Cookie notice"
         >
-          <div className="rounded-2xl glass-strong border border-black/8 backdrop-blur-xl shadow-2xl px-5 py-4 flex items-start gap-4">
+          {/* Slim bottom bar — full width, never overlaps content columns */}
+          <div
+            className="border-t border-black/8 backdrop-blur-xl px-4 py-3 flex items-center gap-3"
+            style={{ background: "rgba(245,240,232,0.92)" }}
+          >
+            {/* Icon */}
             <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
+              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
               style={{
-                background: "linear-gradient(135deg, rgba(10,200,212,0.15), rgba(155,89,245,0.15))",
-                border: "1px solid rgba(10,200,212,0.20)",
+                background: "linear-gradient(135deg, rgba(10,200,212,0.12), rgba(155,89,245,0.12))",
+                border: "1px solid rgba(10,200,212,0.22)",
               }}
             >
-              <Cookie className="w-4 h-4 text-brand" />
+              <Cookie className="w-3.5 h-3.5 text-brand" />
             </div>
 
-            <div className="flex-1 min-w-0">
-              <p className="text-[12px] font-medium text-ink mb-0.5">Cookies &amp; Privacy</p>
-              <p className="text-[11px] text-muted/80 leading-relaxed">
-                We use only essential cookies required to keep you signed in — no advertising or
-                cross-site tracking.{" "}
-                <Link
-                  to="/privacy"
-                  className="text-brand hover:text-brand/80 underline"
-                  onClick={dismiss}
-                >
-                  Privacy policy
-                </Link>
-                {" · "}
-                <Link
-                  to="/terms"
-                  className="text-brand hover:text-brand/80 underline"
-                  onClick={dismiss}
-                >
-                  Terms
-                </Link>
-              </p>
-            </div>
+            {/* Copy */}
+            <p className="text-[11px] text-muted/80 leading-relaxed flex-1 min-w-0">
+              We use only essential cookies to keep you signed in — no advertising or cross-site tracking.{" "}
+              <Link to="/privacy" className="text-brand hover:text-brand/80 underline" onClick={dismiss}>
+                Privacy policy
+              </Link>
+              {" · "}
+              <Link to="/terms" className="text-brand hover:text-brand/80 underline" onClick={dismiss}>
+                Terms
+              </Link>
+            </p>
 
+            {/* Dismiss */}
             <button
               type="button"
               onClick={dismiss}
               aria-label="Dismiss cookie notice"
-              className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center hover:bg-black/5 transition-colors text-muted hover:text-ink mt-0.5"
+              className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center hover:bg-black/8 transition-colors text-muted hover:text-ink"
             >
               <X className="w-3.5 h-3.5" />
             </button>
