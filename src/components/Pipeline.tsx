@@ -11,8 +11,8 @@ type Stage = "cold" | "contacted" | "qualified" | "demo" | "won" | "lost";
 const STAGES: { id: Stage; label: string; tint: string; help: string }[] = [
   { id: "cold", label: "Cold", tint: "#94a3b8", help: "Not contacted yet" },
   { id: "contacted", label: "Contacted", tint: "#0AC8D4", help: "Reached at least once" },
-  { id: "qualified", label: "Qualified", tint: "#9B59F5", help: "Fit confirmed" },
-  { id: "demo", label: "Demo Booked", tint: "#E040C0", help: "Meeting on the calendar" },
+  { id: "qualified", label: "Qualified", tint: "#0AC8D4", help: "Fit confirmed" },
+  { id: "demo", label: "Demo Booked", tint: "#0AC8D4", help: "Meeting on the calendar" },
   { id: "won", label: "Won", tint: "#10B981", help: "Closed-won" },
   { id: "lost", label: "Lost", tint: "#f43f5e", help: "Closed-lost" },
 ];

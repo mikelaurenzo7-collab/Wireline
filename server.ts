@@ -24,18 +24,6 @@ if (typeof (BigInt.prototype as unknown as { toJSON?: () => string }).toJSON !==
   });
 }
 
-// Sentry must be imported and initialized BEFORE other modules so its
-// instrumentation can wrap http/express. Graceful no-op when SENTRY_DSN is unset.
-import * as Sentry from "@sentry/node";
-if (process.env.SENTRY_DSN) {
-  Sentry.init({
-    dsn: process.env.SENTRY_DSN,
-    environment: process.env.NODE_ENV || "development",
-    tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE ?? 1.0),
-    release: process.env.VERCEL_GIT_COMMIT_SHA || undefined,
-  });
-}
-
 import express from "express";
 import cors from "cors";
 import path from "path";
@@ -169,10 +157,6 @@ app.use((req: express.Request, res: express.Response, next: express.NextFunction
 const CSP_CONNECT_SRCS = buildConnectSrcs(!IS_PROD);
 
 app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
-  Sentry.setTag("http.method", req.method);
-  Sentry.setTag("http.path", req.path);
-  res.on("finish", () => Sentry.setTag("http.status_code", res.statusCode));
-
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
@@ -285,11 +269,6 @@ app.use(
       error: getErrorMessage(err),
       stack: errObj?.stack,
     });
-    if (process.env.SENTRY_DSN) {
-      Sentry.captureException(err, {
-        tags: { requestId: res.locals?.requestId, path: req.path, method: req.method },
-      });
-    }
     res.status(500).json({ error: "Internal Server Error", requestId: res.locals?.requestId });
   },
 );

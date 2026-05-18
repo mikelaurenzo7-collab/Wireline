@@ -73,10 +73,10 @@ router.post(
       return res.status(404).json({ error: "Call not found" });
     }
 
-    const [row] = await drizzle
+    const [row] = (await drizzle
       .insert(schema.supervisorSubscriptions)
       .values({ userId: req.user.id, callId, mode, note })
-      .returning();
+      .returning()) as any[];
 
     log.info("Supervisor subscribed", { userId: req.user.id, callId, mode });
 

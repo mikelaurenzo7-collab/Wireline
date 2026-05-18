@@ -2,9 +2,21 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  Sparkles, Loader2, RefreshCw, AlertTriangle, Sun, Brain,
-  TrendingUp, TrendingDown, ChevronRight, Zap, Mail,
-  Send, Check, X as XIcon, Clock,
+  Sparkles,
+  Loader2,
+  RefreshCw,
+  AlertTriangle,
+  Sun,
+  Brain,
+  TrendingUp,
+  TrendingDown,
+  ChevronRight,
+  Zap,
+  Mail,
+  Send,
+  Check,
+  X as XIcon,
+  Clock,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
@@ -48,16 +60,24 @@ export default function DailyBrief() {
   const mountedRef = useRef(true);
   useEffect(() => {
     mountedRef.current = true;
-    return () => { mountedRef.current = false; };
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
   const load = async (refresh = false) => {
-    if (mountedRef.current) { setLoading(true); setErr(null); }
+    if (mountedRef.current) {
+      setLoading(true);
+      setErr(null);
+    }
     try {
       const r = await authFetch(`/api/insights/daily-brief${refresh ? "?refresh=1" : ""}`);
       const d = await r.json();
       if (!mountedRef.current) return;
-      if (r.status === 503) { setNeedsKey(true); return; }
+      if (r.status === 503) {
+        setNeedsKey(true);
+        return;
+      }
       if (!r.ok) throw new Error(d.error);
       setData(d);
     } catch (e: any) {
@@ -67,35 +87,49 @@ export default function DailyBrief() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
-  if (needsKey) return (
-    <div className="relative aurora-ring rounded-3xl">
-      <div className="relative p-7 rounded-3xl glass overflow-hidden flex items-center gap-5">
-        <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #9B59F5, #E040C0)" }}>
-          <Brain className="w-7 h-7 text-paper" />
-        </div>
-        <div className="flex-1">
-          <h3 className="font-display italic text-2xl text-ink leading-tight">Daily Brief is offline</h3>
-          <p className="text-sm text-ink/55">Contact your administrator to enable the Wireline Daily Brief.</p>
+  if (needsKey)
+    return (
+      <div className="relative aurora-ring rounded-3xl">
+        <div className="relative p-7 rounded-3xl glass overflow-hidden flex items-center gap-5">
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center"
+            style={{ background: "#0AC8D4" }}
+          >
+            <Brain className="w-7 h-7 text-paper" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-display italic text-2xl text-ink leading-tight">
+              Daily Brief is offline
+            </h3>
+            <p className="text-sm text-ink/55">
+              Contact your administrator to enable the Wireline Daily Brief.
+            </p>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
 
-  if (loading && !data) return (
-    <div className="rounded-3xl glass border border-white/10 p-8 flex items-center gap-4">
-      <Loader2 className="w-5 h-5 animate-spin text-brand" />
-      <span className="text-[11px] uppercase tracking-[0.4em] text-muted">Wireline is analyzing your day…</span>
-    </div>
-  );
+  if (loading && !data)
+    return (
+      <div className="rounded-3xl glass border border-white/10 p-8 flex items-center gap-4">
+        <Loader2 className="w-5 h-5 animate-spin text-brand" />
+        <span className="text-[11px] uppercase tracking-[0.4em] text-muted">
+          Wireline is analyzing your day…
+        </span>
+      </div>
+    );
 
-  if (err && !data) return (
-    <div className="rounded-2xl bg-rose-500/10 border border-rose-500/30 p-5 flex items-start gap-3">
-      <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-      <span className="text-sm text-rose-500">{err}</span>
-    </div>
-  );
+  if (err && !data)
+    return (
+      <div className="rounded-2xl bg-rose-500/10 border border-rose-500/30 p-5 flex items-start gap-3">
+        <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+        <span className="text-sm text-rose-500">{err}</span>
+      </div>
+    );
 
   if (!data) return null;
 
@@ -121,39 +155,66 @@ export default function DailyBrief() {
   const weekDelta = {
     calls_pct: Number.isFinite(data.week_delta?.calls_pct) ? data.week_delta!.calls_pct : 0,
     score_pct: Number.isFinite(data.week_delta?.score_pct) ? data.week_delta!.score_pct : 0,
-    cost_pct:  Number.isFinite(data.week_delta?.cost_pct)  ? data.week_delta!.cost_pct  : 0,
+    cost_pct: Number.isFinite(data.week_delta?.cost_pct) ? data.week_delta!.cost_pct : 0,
   };
 
-  const moodAccent = brief.mood === "green" ? "#10B981" : brief.mood === "yellow" ? "#FFC07D" : "#E040C0";
-  const moodLabel = brief.mood === "green" ? "All systems go" : brief.mood === "yellow" ? "Watch closely" : "Needs attention";
+  const moodAccent =
+    brief.mood === "green" ? "#10B981" : brief.mood === "yellow" ? "#FFC07D" : "#0AC8D4";
+  const moodLabel =
+    brief.mood === "green"
+      ? "All systems go"
+      : brief.mood === "yellow"
+        ? "Watch closely"
+        : "Needs attention";
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
       className="relative aurora-ring rounded-3xl"
     >
       <div className="relative rounded-3xl glass-strong overflow-hidden">
-        <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-30 blur-3xl pointer-events-none" style={{ background: `radial-gradient(circle, ${moodAccent}, transparent)` }} />
-        <div className="absolute -bottom-32 -left-32 w-72 h-72 rounded-full opacity-25 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #9B59F5, transparent)" }} />
+        <div
+          className="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-30 blur-3xl pointer-events-none"
+          style={{ background: `radial-gradient(circle, ${moodAccent}, transparent)` }}
+        />
+        <div
+          className="absolute -bottom-32 -left-32 w-72 h-72 rounded-full opacity-25 blur-3xl pointer-events-none"
+          style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }}
+        />
 
         <div className="relative z-10 px-7 py-5 border-b border-white/8 flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${moodAccent}, ${moodAccent}aa)` }}>
+            <div
+              className="w-10 h-10 rounded-2xl flex items-center justify-center"
+              style={{ background: `linear-gradient(135deg, ${moodAccent}, ${moodAccent}aa)` }}
+            >
               <Sun className="w-5 h-5 text-paper" />
             </div>
             <div>
               <div className="text-[10px] uppercase tracking-[0.4em] text-brand flex items-center gap-2">
-                <Brain className="w-3 h-3" /> Daily Brief · {formatDate(new Date(), { weekday: 'long', month: 'long', day: 'numeric' }, "Today", 'en-US')}
+                <Brain className="w-3 h-3" /> Daily Brief ·{" "}
+                {formatDate(
+                  new Date(),
+                  { weekday: "long", month: "long", day: "numeric" },
+                  "Today",
+                  "en-US",
+                )}
               </div>
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="w-2 h-2 rounded-full" style={{ background: moodAccent, boxShadow: `0 0 12px ${moodAccent}` }} />
-                <span className="text-[10px] uppercase tracking-[0.3em] text-ink/70">{moodLabel}</span>
+                <span
+                  className="w-2 h-2 rounded-full"
+                  style={{ background: moodAccent, boxShadow: `0 0 12px ${moodAccent}` }}
+                />
+                <span className="text-[10px] uppercase tracking-[0.3em] text-ink/70">
+                  {moodLabel}
+                </span>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setShowSchedule(s => !s)}
+              onClick={() => setShowSchedule((s) => !s)}
               className={cn(
                 "px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] transition-all flex items-center gap-1.5",
                 showSchedule
@@ -168,7 +229,11 @@ export default function DailyBrief() {
               disabled={loading}
               className="px-3 py-1.5 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-1.5 disabled:opacity-50"
             >
-              {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+              {loading ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <RefreshCw className="w-3 h-3" />
+              )}
               {data.cached ? "Refresh" : "Cached"}
             </button>
           </div>
@@ -177,7 +242,9 @@ export default function DailyBrief() {
         <AnimatePresence>
           {showSchedule && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
               className="relative z-10 overflow-hidden"
             >
               <DailyBriefSchedule onClose={() => setShowSchedule(false)} />
@@ -188,28 +255,41 @@ export default function DailyBrief() {
         <div className="relative z-10 p-7 space-y-7">
           {/* Headline */}
           <div className="space-y-3">
-            <h2 className="font-display italic text-3xl md:text-5xl text-ink leading-tight">{brief.headline}</h2>
-            <p className="text-ink/60 text-sm md:text-base leading-relaxed max-w-3xl">{brief.key_metrics_takeaway}</p>
+            <h2 className="font-display italic text-3xl md:text-5xl text-ink leading-tight">
+              {brief.headline}
+            </h2>
+            <p className="text-ink/60 text-sm md:text-base leading-relaxed max-w-3xl">
+              {brief.key_metrics_takeaway}
+            </p>
           </div>
 
           {/* Quick stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Quick label="Calls"        value={stats.total_calls}        delta={weekDelta.calls_pct} />
-            <Quick label="Avg Score"    value={stats.avg_lead_score}     delta={weekDelta.score_pct} />
-            <Quick label="High Intent"  value={stats.high_intent_count} />
-            <Quick label="Spend"        value={`$${stats.cost.toFixed(2)}`} delta={weekDelta.cost_pct} invertDelta />
+            <Quick label="Calls" value={stats.total_calls} delta={weekDelta.calls_pct} />
+            <Quick label="Avg Score" value={stats.avg_lead_score} delta={weekDelta.score_pct} />
+            <Quick label="High Intent" value={stats.high_intent_count} />
+            <Quick
+              label="Spend"
+              value={`$${stats.cost.toFixed(2)}`}
+              delta={weekDelta.cost_pct}
+              invertDelta
+            />
           </div>
 
           {/* Highlights & Concerns */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {brief.highlights.length > 0 && (
               <Section title="Highlights" icon={Sparkles} accent="#10B981">
-                {brief.highlights.map((h, i) => <li key={i}>{h}</li>)}
+                {brief.highlights.map((h, i) => (
+                  <li key={i}>{h}</li>
+                ))}
               </Section>
             )}
             {brief.concerns.length > 0 && (
-              <Section title="Concerns" icon={AlertTriangle} accent="#E040C0">
-                {brief.concerns.map((c, i) => <li key={i}>{c}</li>)}
+              <Section title="Concerns" icon={AlertTriangle} accent="#0AC8D4">
+                {brief.concerns.map((c, i) => (
+                  <li key={i}>{c}</li>
+                ))}
               </Section>
             )}
           </div>
@@ -222,13 +302,22 @@ export default function DailyBrief() {
               </h4>
               <div className="space-y-2">
                 {brief.action_items.map((a, i) => (
-                  <div key={i} className="rounded-xl glass border border-white/10 p-4 flex items-start gap-3">
-                    <span className={cn(
-                      "shrink-0 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] mt-0.5",
-                      a.urgency === "high"   && "bg-rose-500/15 text-rose-500 border border-rose-500/30",
-                      a.urgency === "medium" && "bg-brand/15 text-brand border border-brand/30",
-                      a.urgency === "low"    && "bg-zinc-500/15 text-zinc-300 border border-zinc-500/30",
-                    )}>{a.urgency}</span>
+                  <div
+                    key={i}
+                    className="rounded-xl glass border border-white/10 p-4 flex items-start gap-3"
+                  >
+                    <span
+                      className={cn(
+                        "shrink-0 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] mt-0.5",
+                        a.urgency === "high" &&
+                          "bg-rose-500/15 text-rose-500 border border-rose-500/30",
+                        a.urgency === "medium" && "bg-brand/15 text-brand border border-brand/30",
+                        a.urgency === "low" &&
+                          "bg-zinc-500/15 text-zinc-300 border border-zinc-500/30",
+                      )}
+                    >
+                      {a.urgency}
+                    </span>
                     <p className="text-sm text-ink/90 flex-1">{a.description}</p>
                   </div>
                 ))}
@@ -236,7 +325,10 @@ export default function DailyBrief() {
             </div>
           )}
 
-          <Link to="/triage" className="inline-flex items-center gap-2 px-5 py-3 rounded-full glass border border-brand/30 hover:bg-brand/10 transition-all text-[11px] uppercase tracking-[0.3em] text-brand">
+          <Link
+            to="/triage"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-full glass border border-brand/30 hover:bg-brand/10 transition-all text-[11px] uppercase tracking-[0.3em] text-brand"
+          >
             Open Triage Inbox <ChevronRight className="w-3.5 h-3.5" />
           </Link>
         </div>
@@ -245,7 +337,17 @@ export default function DailyBrief() {
   );
 }
 
-function Quick({ label, value, delta, invertDelta }: { label: string; value: any; delta?: number; invertDelta?: boolean }) {
+function Quick({
+  label,
+  value,
+  delta,
+  invertDelta,
+}: {
+  label: string;
+  value: any;
+  delta?: number;
+  invertDelta?: boolean;
+}) {
   const showDelta = delta !== undefined && Math.abs(delta) >= 0.5;
   const isUp = (delta ?? 0) > 0;
   // For "spend", going up is bad — invert the color sense.
@@ -256,10 +358,12 @@ function Quick({ label, value, delta, invertDelta }: { label: string; value: any
       <div className="flex items-baseline justify-between gap-2">
         <span className="font-display italic text-3xl text-ink">{value}</span>
         {showDelta && (
-          <span className={cn(
-            "text-[10px] uppercase tracking-[0.2em] flex items-center gap-1",
-            isGood ? "text-emerald-500" : "text-rose-500",
-          )}>
+          <span
+            className={cn(
+              "text-[10px] uppercase tracking-[0.2em] flex items-center gap-1",
+              isGood ? "text-emerald-500" : "text-rose-500",
+            )}
+          >
             {isUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
             {Math.abs(Math.round(delta!))}%
           </span>
@@ -269,10 +373,23 @@ function Quick({ label, value, delta, invertDelta }: { label: string; value: any
   );
 }
 
-function Section({ title, icon: Icon, accent, children }: { title: string; icon: any; accent: string; children: React.ReactNode }) {
+function Section({
+  title,
+  icon: Icon,
+  accent,
+  children,
+}: {
+  title: string;
+  icon: any;
+  accent: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="rounded-2xl glass border border-white/10 p-5">
-      <h4 className="text-[10px] uppercase tracking-[0.4em] mb-3 flex items-center gap-2" style={{ color: accent }}>
+      <h4
+        className="text-[10px] uppercase tracking-[0.4em] mb-3 flex items-center gap-2"
+        style={{ color: accent }}
+      >
         <Icon className="w-3 h-3" /> {title}
       </h4>
       <ul className="space-y-1.5 text-sm text-ink/85 list-disc list-inside marker:text-brand/50">
@@ -309,10 +426,14 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
         setGmailConnected(!!d.gmail_connected);
         setGmailAddress(d.gmail_address);
       }
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => {
+    refresh();
+  }, []);
 
   const save = async () => {
     const trimmed = recipient.trim();
@@ -320,7 +441,8 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
       setFeedback({ kind: "err", text: "Enter a valid email address." });
       return;
     }
-    setSaving(true); setFeedback(null);
+    setSaving(true);
+    setFeedback(null);
     try {
       const r = await authFetch("/api/daily-brief/settings", {
         method: "PUT",
@@ -333,11 +455,14 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
       refresh();
     } catch (e: any) {
       setFeedback({ kind: "err", text: e?.message || "Save failed" });
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   };
 
   const sendNow = async () => {
-    setSending(true); setFeedback(null);
+    setSending(true);
+    setFeedback(null);
     try {
       const r = await authFetch("/api/daily-brief/send-now", { method: "POST" });
       const d = await r.json();
@@ -345,7 +470,9 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
       setFeedback({ kind: "ok", text: `Sent to ${d.recipient}.` });
     } catch (e: any) {
       setFeedback({ kind: "err", text: e?.message || "Send failed" });
-    } finally { setSending(false); }
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -354,25 +481,34 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
         <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-brand-2">
           <Mail className="w-3 h-3" /> Email this brief on a schedule
         </div>
-        <button onClick={onClose} className="w-7 h-7 rounded-full glass border border-white/10 hover:border-white/30 flex items-center justify-center text-ink/60 hover:text-ink">
+        <button
+          onClick={onClose}
+          className="w-7 h-7 rounded-full glass border border-white/10 hover:border-white/30 flex items-center justify-center text-ink/60 hover:text-ink"
+        >
           <XIcon className="w-3.5 h-3.5" />
         </button>
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 text-muted text-xs"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…</div>
+        <div className="flex items-center gap-2 text-muted text-xs">
+          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…
+        </div>
       ) : (
         <>
           {!gmailConnected && (
             <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2 text-amber-600 text-xs flex items-center gap-2">
               <AlertTriangle className="w-3.5 h-3.5" />
-              Connect a Gmail account in <Link to="/integrations" className="underline">Carrier Bridge</Link> first — emails are sent through your own Gmail OAuth.
+              Connect a Gmail account in{" "}
+              <Link to="/integrations" className="underline">
+                Carrier Bridge
+              </Link>{" "}
+              first — emails are sent through your own Gmail OAuth.
             </div>
           )}
 
           <button
             type="button"
-            onClick={() => setEnabled(e => !e)}
+            onClick={() => setEnabled((e) => !e)}
             disabled={!gmailConnected}
             className={cn(
               "w-full px-4 py-3 rounded-xl border flex items-start gap-3 text-left transition-all",
@@ -383,16 +519,28 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
                   : "bg-black/5 border-black/10 text-ink/80 hover:border-black/20",
             )}
           >
-            <div className={cn(
-              "shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center mt-0.5",
-              enabled && gmailConnected ? "bg-brand-2 border-brand-2 text-paper" : "border-white/30",
-            )}>
+            <div
+              className={cn(
+                "shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center mt-0.5",
+                enabled && gmailConnected
+                  ? "bg-brand-2 border-brand-2 text-paper"
+                  : "border-white/30",
+              )}
+            >
               {enabled && gmailConnected && <Check className="w-2.5 h-2.5" strokeWidth={4} />}
             </div>
             <div className="min-w-0">
-              <div className="text-xs font-medium">Send the daily brief by email at the time below (UTC)</div>
+              <div className="text-xs font-medium">
+                Send the daily brief by email at the time below (UTC)
+              </div>
               <div className="text-[10px] leading-snug mt-0.5 text-ink/55">
-                Background scheduler ticks every 5 minutes. Emails are sent through {gmailAddress ? <span className="font-mono text-ink/75">{gmailAddress}</span> : "your connected Gmail account"}.
+                Background scheduler ticks every 5 minutes. Emails are sent through{" "}
+                {gmailAddress ? (
+                  <span className="font-mono text-ink/75">{gmailAddress}</span>
+                ) : (
+                  "your connected Gmail account"
+                )}
+                .
               </div>
             </div>
           </button>
@@ -443,12 +591,21 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
               disabled={sending || !gmailConnected || !recipient}
               className="h-10 px-4 rounded-lg glass border border-brand-2/30 text-brand-2 hover:bg-brand-2/10 text-[11px] uppercase tracking-[0.25em] flex items-center gap-2 disabled:opacity-50"
             >
-              {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+              {sending ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Send className="w-3.5 h-3.5" />
+              )}
               Send preview now
             </button>
             <div className="flex items-center gap-3">
               {feedback && (
-                <span className={cn("text-[11px]", feedback.kind === "ok" ? "text-emerald-500" : "text-rose-500")}>
+                <span
+                  className={cn(
+                    "text-[11px]",
+                    feedback.kind === "ok" ? "text-emerald-500" : "text-rose-500",
+                  )}
+                >
                   {feedback.text}
                 </span>
               )}
@@ -457,7 +614,11 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
                 disabled={saving}
                 className="h-10 px-4 rounded-lg bg-brand text-paper text-[11px] uppercase tracking-[0.25em] flex items-center gap-2 disabled:opacity-50 hover:opacity-90"
               >
-                {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                {saving ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Check className="w-3.5 h-3.5" />
+                )}
                 Save
               </button>
             </div>

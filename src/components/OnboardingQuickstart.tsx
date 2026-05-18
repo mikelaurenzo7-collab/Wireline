@@ -19,6 +19,7 @@ import {
   Zap,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
+import WirelineMark from "./WirelineMark";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 
 interface ProgressData {
@@ -42,7 +43,7 @@ const STEPS = [
     title: "Teach it about your business",
     body: "Paste your website URL and we'll pull in your services, pricing, hours, and policies automatically — ready in one click.",
     icon: Globe,
-    accent: "#9B59F5",
+    accent: "#0AC8D4",
     badge: "Instant",
   },
   {
@@ -50,7 +51,7 @@ const STEPS = [
     title: "Connect a phone number",
     body: "Hook up a phone number so callers can reach your agent 24/7. Bring your own or get a new one.",
     icon: Phone,
-    accent: "#E040C0",
+    accent: "#0AC8D4",
     badge: "1 minute",
   },
   {
@@ -126,13 +127,13 @@ export default function OnboardingQuickstart() {
           />
           <div
             className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full opacity-25 blur-3xl pointer-events-none"
-            style={{ background: "radial-gradient(circle, #E040C0, transparent)" }}
+            style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }}
           />
           <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
             <div className="flex items-start gap-4 flex-1 min-w-0">
               <div
                 className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-                style={{ background: "linear-gradient(135deg, #0AC8D4, #9B59F5, #E040C0)" }}
+                style={{ background: "linear-gradient(135deg, #0AC8D4, #0AC8D4, #0AC8D4)" }}
               >
                 <Sparkles className="w-5 h-5 text-paper" strokeWidth={2.5} />
               </div>
@@ -218,7 +219,7 @@ export default function OnboardingQuickstart() {
         />
         <div
           className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full opacity-25 blur-3xl pointer-events-none"
-          style={{ background: "radial-gradient(circle, #E040C0, transparent)" }}
+          style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }}
         />
 
         {/* Header — tightened so the 4 step cards land above the fold
@@ -230,9 +231,9 @@ export default function OnboardingQuickstart() {
             <div className="flex items-center gap-3">
               <div
                 className="w-9 h-9 rounded-xl flex items-center justify-center"
-                style={{ background: "linear-gradient(135deg, #0AC8D4, #9B59F5, #E040C0)" }}
+                style={{ background: "linear-gradient(135deg, #0AC8D4, #0AC8D4, #0AC8D4)" }}
               >
-                <Waves className="w-4 h-4 text-paper" strokeWidth={2.5} />
+                <WirelineMark className="w-4 h-4 text-paper" strokeWidth={130} />
               </div>
               <div>
                 <div className="text-[9px] uppercase tracking-[0.4em] text-brand flex items-center gap-1.5">
@@ -253,7 +254,7 @@ export default function OnboardingQuickstart() {
                   animate={{ width: `${completionPct}%` }}
                   transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
                   className="h-full rounded-full"
-                  style={{ background: "linear-gradient(90deg, #0AC8D4, #9B59F5, #E040C0)" }}
+                  style={{ background: "linear-gradient(90deg, #0AC8D4, #0AC8D4, #0AC8D4)" }}
                 />
               </div>
             </div>
@@ -314,14 +315,14 @@ export default function OnboardingQuickstart() {
                 label="Connect Email"
                 desc="Link Gmail or Outlook for email agents."
                 to="/admin"
-                accent="#9B59F5"
+                accent="#0AC8D4"
               />
               <PowerUpCard
                 icon={BarChart3}
                 label="Connect CRM"
                 desc="Salesforce or HubSpot — sync calls and deals."
                 to="/admin"
-                accent="#E040C0"
+                accent="#0AC8D4"
               />
               <PowerUpCard
                 icon={Waves}
@@ -486,7 +487,7 @@ function AllSetCard() {
         <div className="relative w-16 h-16">
           <motion.div
             className="absolute inset-0 rounded-full"
-            style={{ background: "conic-gradient(from 0deg, #0AC8D4, #9B59F5, #10B981, #0AC8D4)" }}
+            style={{ background: "conic-gradient(from 0deg, #0AC8D4, #0AC8D4, #10B981, #0AC8D4)" }}
             animate={{ rotate: 360 }}
             transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
           />

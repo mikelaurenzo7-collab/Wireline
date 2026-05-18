@@ -421,7 +421,7 @@ router.post(
         if (!agent) return res.status(404).json({ error: "Agent not found" });
       }
 
-      const [data] = await drizzle
+      const [data] = (await drizzle
         .insert(schema.appointments)
         .values({
           userId: req.user.id,
@@ -435,7 +435,7 @@ router.post(
           agentId: agent_id || null,
           status: APPOINTMENT_STATUSES.includes(status) ? status : "Scheduled",
         })
-        .returning();
+        .returning()) as any[];
 
       res.json({ appointment: data });
     } catch (error: any) {
@@ -504,7 +504,7 @@ router.patch(
       if (bodyUpdates.phone_number !== undefined) updates.phoneNumber = bodyUpdates.phone_number;
       if (bodyUpdates.agent_id !== undefined) updates.agentId = bodyUpdates.agent_id;
 
-      const [data] = await drizzle
+      const [data] = (await drizzle
         .update(schema.appointments)
         .set(updates)
         .where(
@@ -513,7 +513,7 @@ router.patch(
             eq(schema.appointments.userId, req.user.id),
           ),
         )
-        .returning();
+        .returning()) as any[];
 
       res.json({ appointment: data });
     } catch (error: any) {

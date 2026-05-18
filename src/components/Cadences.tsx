@@ -98,8 +98,8 @@ function stepIcon(t: StepType) {
 }
 function stepTint(t: StepType) {
   if (t === "call") return "#0AC8D4";
-  if (t === "sms") return "#9B59F5";
-  return "#E040C0";
+  if (t === "sms") return "#0AC8D4";
+  return "#0AC8D4";
 }
 
 export default function Cadences() {

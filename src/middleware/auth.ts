@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/node";
 import type { Request, Response, NextFunction } from "express";
 import type { User } from "../types/auth";
 import { log, auditLogger } from "../lib/server-context";
@@ -24,33 +23,35 @@ export async function authenticateUser(req: Request, res: Response, next: NextFu
 
   const authHeader = req.headers.authorization;
   const cookieToken = (req as any).cookies?.["wireline_session"];
-  const token = authHeader?.split(' ')[1] || cookieToken;
+  const token = authHeader?.split(" ")[1] || cookieToken;
 
   if (!token) {
-     return res.status(401).json({ error: "No authorization token provided" });
+    return res.status(401).json({ error: "No authorization token provided" });
   }
 
   const secret = process.env.INTERNAL_JWT_SECRET || process.env.SUPABASE_JWT_SECRET || "";
   const payload = await verifyInternalJwt(token, secret);
 
   if (!payload) {
-     // Audit log: invalid/expired token (non-blocking)
-     void auditLogger.logAuth('failed_login', {
-       email: req.body?.email,
-       ip: req.ip,
-       userAgent: req.get('user-agent'),
-       reason: !token ? 'missing_token' : 'invalid_token',
-       requestId: res.locals?.requestId,
-     }).catch((err: unknown) => log.warn('audit log failed', { error: getErrorMessage(err) }));
-     
-     return res.status(401).json({ error: "Invalid or expired session" });
+    // Audit log: invalid/expired token (non-blocking)
+    void auditLogger
+      .logAuth("failed_login", {
+        email: req.body?.email,
+        ip: req.ip,
+        userAgent: req.get("user-agent"),
+        reason: !token ? "missing_token" : "invalid_token",
+        requestId: res.locals?.requestId,
+      })
+      .catch((err: unknown) => log.warn("audit log failed", { error: getErrorMessage(err) }));
+
+    return res.status(401).json({ error: "Invalid or expired session" });
   }
 
   // Map JWT payload to a compatible User object
   const user = {
     id: payload.sub,
     email: payload.email,
-    role: payload.role || 'authenticated',
+    role: payload.role || "authenticated",
     aud: payload.aud,
     app_metadata: {},
     user_metadata: {},
@@ -58,12 +59,6 @@ export async function authenticateUser(req: Request, res: Response, next: NextFu
   } as any;
 
   authedReq.user = user;
-
-  // Attach user context to Sentry
-  Sentry.setUser({
-    id: user.id,
-    email: user.email,
-  });
 
   // NOTE: We deliberately do NOT emit a logAuth('login') here.
   // authenticateUser runs on every authenticated API request — logging

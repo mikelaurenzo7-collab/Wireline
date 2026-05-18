@@ -1,9 +1,26 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  BookOpen, Search, Loader2, Filter, Save, Trash2, X, Check, Pencil,
-  Database, Users, AlertOctagon, RefreshCw, FileText, Sparkles,
-  Plus, Brain, Copy, AlertTriangle, GitMerge,
+  BookOpen,
+  Search,
+  Loader2,
+  Filter,
+  Save,
+  Trash2,
+  X,
+  Check,
+  Pencil,
+  Database,
+  Users,
+  AlertOctagon,
+  RefreshCw,
+  FileText,
+  Sparkles,
+  Plus,
+  Brain,
+  Copy,
+  AlertTriangle,
+  GitMerge,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import HubTabs, { TRAINING_HUB } from "./HubTabs";
@@ -70,44 +87,50 @@ export default function KnowledgeBaseManager() {
       setAgents(d.agents || []);
     } catch (e: any) {
       setError(e?.message || "Load failed");
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => {
+    refresh();
+  }, []);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return rows.filter(r => {
+    return rows.filter((r) => {
       if (agentFilter && r.agent_id !== agentFilter) return false;
-      if (q && !r.content.toLowerCase().includes(q) && !r.agent_name.toLowerCase().includes(q)) return false;
+      if (q && !r.content.toLowerCase().includes(q) && !r.agent_name.toLowerCase().includes(q))
+        return false;
       return true;
     });
   }, [rows, search, agentFilter]);
 
   const counts = useMemo(() => {
     const m = new Map<string, number>();
-    rows.forEach(r => m.set(r.agent_id, (m.get(r.agent_id) || 0) + 1));
+    rows.forEach((r) => m.set(r.agent_id, (m.get(r.agent_id) || 0) + 1));
     return m;
   }, [rows]);
 
-  const allFilteredSelected = filtered.length > 0 && filtered.every(r => selected.has(r.id));
+  const allFilteredSelected = filtered.length > 0 && filtered.every((r) => selected.has(r.id));
 
   const toggleSelect = (id: number) => {
-    setSelected(prev => {
+    setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   };
   const toggleSelectAll = () => {
     if (allFilteredSelected) {
-      setSelected(prev => {
+      setSelected((prev) => {
         const next = new Set(prev);
-        filtered.forEach(r => next.delete(r.id));
+        filtered.forEach((r) => next.delete(r.id));
         return next;
       });
     } else {
-      setSelected(prev => new Set([...prev, ...filtered.map(r => r.id)]));
+      setSelected((prev) => new Set([...prev, ...filtered.map((r) => r.id)]));
     }
   };
 
@@ -128,21 +151,31 @@ export default function KnowledgeBaseManager() {
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Save failed");
-      setRows(prev => prev.map(p => p.id === editing.id ? { ...p, content: editing.draft } : p));
+      setRows((prev) =>
+        prev.map((p) => (p.id === editing.id ? { ...p, content: editing.draft } : p)),
+      );
       setEditing(null);
     } catch (e: any) {
       setError(e?.message || "Save failed");
-    } finally { setSavingId(null); }
+    } finally {
+      setSavingId(null);
+    }
   };
 
   const removeOne = async (id: number) => {
     setSavingId(id);
     try {
       await authFetch(`/api/knowledge/${id}`, { method: "DELETE" });
-      setRows(prev => prev.filter(p => p.id !== id));
-      setSelected(prev => { const next = new Set(prev); next.delete(id); return next; });
+      setRows((prev) => prev.filter((p) => p.id !== id));
+      setSelected((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
       setConfirmDelete(null);
-    } finally { setSavingId(null); }
+    } finally {
+      setSavingId(null);
+    }
   };
 
   const removeBulk = async () => {
@@ -150,16 +183,19 @@ export default function KnowledgeBaseManager() {
     setBulkBusy(true);
     try {
       const ids = Array.from(selected);
-      await Promise.all(ids.map(id => authFetch(`/api/knowledge/${id}`, { method: "DELETE" })));
-      setRows(prev => prev.filter(p => !selected.has(p.id)));
+      await Promise.all(ids.map((id) => authFetch(`/api/knowledge/${id}`, { method: "DELETE" })));
+      setRows((prev) => prev.filter((p) => !selected.has(p.id)));
       setSelected(new Set());
-    } finally { setBulkBusy(false); }
+    } finally {
+      setBulkBusy(false);
+    }
   };
 
   const addFact = async () => {
     const content = addContent.trim();
     if (!content || !addAgent) return;
-    setAdding(true); setError(null);
+    setAdding(true);
+    setError(null);
     try {
       const r = await authFetch("/api/knowledge", {
         method: "POST",
@@ -168,15 +204,18 @@ export default function KnowledgeBaseManager() {
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Add failed");
-      setRows(prev => [d.knowledge, ...prev]);
+      setRows((prev) => [d.knowledge, ...prev]);
       setAddContent("");
     } catch (e: any) {
       setError(e?.message || "Add failed");
-    } finally { setAdding(false); }
+    } finally {
+      setAdding(false);
+    }
   };
 
   const runDedupe = async () => {
-    setDeduping(true); setError(null);
+    setDeduping(true);
+    setError(null);
     setClusters(null);
     setClusterDecisions(new Map());
     try {
@@ -191,12 +230,15 @@ export default function KnowledgeBaseManager() {
       setClusterDecisions(m);
     } catch (e: any) {
       setError(e?.message || "Dedupe failed");
-    } finally { setDeduping(false); }
+    } finally {
+      setDeduping(false);
+    }
   };
 
   const applyClusterDecisions = async () => {
     if (!clusters || clusters.length === 0) return;
-    setApplying(true); setError(null);
+    setApplying(true);
+    setError(null);
     try {
       const toDelete: number[] = [];
       for (let i = 0; i < clusters.length; i++) {
@@ -215,13 +257,15 @@ export default function KnowledgeBaseManager() {
       // De-dupe the deletion list (a single id can't be in two clusters
       // per the schema, but be defensive).
       const uniq = Array.from(new Set(toDelete));
-      await Promise.all(uniq.map(id => authFetch(`/api/knowledge/${id}`, { method: "DELETE" })));
-      setRows(prev => prev.filter(p => !uniq.includes(p.id)));
+      await Promise.all(uniq.map((id) => authFetch(`/api/knowledge/${id}`, { method: "DELETE" })));
+      setRows((prev) => prev.filter((p) => !uniq.includes(p.id)));
       setClusters(null);
       setClusterDecisions(new Map());
     } catch (e: any) {
       setError(e?.message || "Apply failed");
-    } finally { setApplying(false); }
+    } finally {
+      setApplying(false);
+    }
   };
 
   return (
@@ -237,27 +281,34 @@ export default function KnowledgeBaseManager() {
           <div className="flex flex-wrap items-center gap-2.5">
             <div className="px-3 py-1.5 rounded-full glass border border-white/8 flex items-center gap-2">
               <Database className="w-3.5 h-3.5 text-brand" />
-              <span className="text-[10px] uppercase tracking-[0.3em] text-ink/80">Knowledge Base</span>
+              <span className="text-[10px] uppercase tracking-[0.3em] text-ink/80">
+                Knowledge Base
+              </span>
             </div>
             <div className="px-3 py-1.5 rounded-full glass border border-white/8 flex items-center gap-2">
               <Users className="w-3 h-3 text-brand-2" />
-              <span className="text-[10px] uppercase tracking-[0.3em] text-ink/80">{agents.length} agents · {rows.length} facts</span>
+              <span className="text-[10px] uppercase tracking-[0.3em] text-ink/80">
+                {agents.length} agents · {rows.length} facts
+              </span>
             </div>
           </div>
           <div className="space-y-2">
-            <p className="text-[10px] uppercase tracking-[0.6em] text-muted">Cross-Agent Intelligence</p>
+            <p className="text-[10px] uppercase tracking-[0.6em] text-muted">
+              Cross-Agent Intelligence
+            </p>
             <h1 className="font-display italic text-3xl md:text-4xl leading-[0.95] tracking-tight">
               <span className="text-aurora">Knowledge</span>{" "}
               <span className="text-ink/90">Atlas</span>
             </h1>
             <p className="text-ink/55 max-w-2xl text-sm md:text-base leading-relaxed">
-              Every fact your agents know — searchable, editable, prunable. Catch duplicates, fix errors, retire stale info.
+              Every fact your agents know — searchable, editable, prunable. Catch duplicates, fix
+              errors, retire stale info.
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <button
-            onClick={() => setShowAdd(s => !s)}
+            onClick={() => setShowAdd((s) => !s)}
             className={cn(
               "px-4 py-2.5 rounded-full text-[11px] uppercase tracking-[0.3em] transition-all flex items-center gap-2",
               showAdd
@@ -273,7 +324,11 @@ export default function KnowledgeBaseManager() {
             disabled={deduping || rows.length < 2}
             className="px-4 py-2.5 rounded-full text-[11px] uppercase tracking-[0.3em] bg-brand-2/15 border border-brand-2/40 text-brand-2 hover:bg-brand-2/25 transition-all flex items-center gap-2 disabled:opacity-40"
           >
-            {deduping ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Brain className="w-3.5 h-3.5" />}
+            {deduping ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Brain className="w-3.5 h-3.5" />
+            )}
             {deduping ? "Scanning…" : "Find Duplicates"}
           </button>
           <button
@@ -281,7 +336,11 @@ export default function KnowledgeBaseManager() {
             disabled={loading}
             className="px-4 py-2.5 rounded-full glass border border-white/10 text-[11px] uppercase tracking-[0.3em] text-muted hover:text-brand hover:border-brand/40 transition-all flex items-center gap-2 disabled:opacity-50"
           >
-            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+            {loading ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <RefreshCw className="w-3.5 h-3.5" />
+            )}
             Refresh
           </button>
         </div>
@@ -291,7 +350,9 @@ export default function KnowledgeBaseManager() {
       <AnimatePresence>
         {showAdd && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
             <div className="rounded-2xl glass border border-white/10 p-5 space-y-3">
@@ -304,7 +365,11 @@ export default function KnowledgeBaseManager() {
                     className="w-full h-11 px-3 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
                   >
                     <option value="">— Pick an agent —</option>
-                    {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                    {agents.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.name}
+                      </option>
+                    ))}
                   </select>
                 </label>
                 <label className="space-y-1.5">
@@ -313,7 +378,7 @@ export default function KnowledgeBaseManager() {
                     value={addContent}
                     onChange={(e) => setAddContent(e.target.value)}
                     rows={3}
-                    placeholder="One atomic fact the agent should know — e.g. &quot;We open at 9 AM Monday–Friday and 10 AM on weekends.&quot;"
+                    placeholder='One atomic fact the agent should know — e.g. "We open at 9 AM Monday–Friday and 10 AM on weekends."'
                     className="w-full px-4 py-3 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all resize-y"
                   />
                 </label>
@@ -322,7 +387,11 @@ export default function KnowledgeBaseManager() {
                   disabled={adding || !addContent.trim() || !addAgent}
                   className="h-11 px-5 rounded-xl bg-brand text-paper text-[11px] uppercase tracking-[0.25em] flex items-center gap-2 disabled:opacity-50 hover:opacity-90 self-end"
                 >
-                  {adding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  {adding ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Save className="w-3.5 h-3.5" />
+                  )}
                   Save
                 </button>
               </div>
@@ -335,7 +404,9 @@ export default function KnowledgeBaseManager() {
       <AnimatePresence>
         {clusters && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
             <DedupePanel
@@ -345,7 +416,10 @@ export default function KnowledgeBaseManager() {
               rows={rows}
               applying={applying}
               onApply={applyClusterDecisions}
-              onClose={() => { setClusters(null); setClusterDecisions(new Map()); }}
+              onClose={() => {
+                setClusters(null);
+                setClusterDecisions(new Map());
+              }}
             />
           </motion.div>
         )}
@@ -374,7 +448,7 @@ export default function KnowledgeBaseManager() {
           >
             <Filter className="w-3 h-3" /> All agents · {rows.length}
           </button>
-          {agents.map(a => {
+          {agents.map((a) => {
             const c = counts.get(a.id) || 0;
             if (c === 0) return null;
             const active = agentFilter === a.id;
@@ -400,7 +474,9 @@ export default function KnowledgeBaseManager() {
       <AnimatePresence>
         {selected.size > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
             className="rounded-2xl bg-amber-500/10 border border-amber-500/30 px-5 py-3 flex items-center justify-between flex-wrap gap-3"
           >
             <div className="text-xs text-amber-600 flex items-center gap-2">
@@ -418,7 +494,11 @@ export default function KnowledgeBaseManager() {
                 disabled={bulkBusy}
                 className="px-3 h-9 rounded-lg bg-rose-500/15 border border-rose-500/40 text-rose-600 hover:bg-rose-500/25 text-[10px] uppercase tracking-[0.25em] flex items-center gap-1.5 disabled:opacity-50"
               >
-                {bulkBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                {bulkBusy ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="w-3.5 h-3.5" />
+                )}
                 Delete {selected.size}
               </button>
             </div>
@@ -444,7 +524,9 @@ export default function KnowledgeBaseManager() {
               disabled={filtered.length === 0}
               className={cn(
                 "w-4 h-4 rounded border-2 flex items-center justify-center transition-all",
-                allFilteredSelected ? "bg-brand border-brand text-paper" : "border-white/30 hover:border-white/50",
+                allFilteredSelected
+                  ? "bg-brand border-brand text-paper"
+                  : "border-white/30 hover:border-white/50",
               )}
             >
               {allFilteredSelected && <Check className="w-2.5 h-2.5" strokeWidth={4} />}
@@ -462,13 +544,14 @@ export default function KnowledgeBaseManager() {
             </div>
           )}
 
-          {!loading && filtered.length === 0 && (
-            rows.length === 0 ? (
+          {!loading &&
+            filtered.length === 0 &&
+            (rows.length === 0 ? (
               <EmptyState
                 icon={Database}
                 title="Knowledge base is empty"
                 description="Add facts, policies, FAQs, and product details so your agents can answer customer questions accurately."
-                accent="#9B59F5"
+                accent="#0AC8D4"
                 actions={[
                   { label: "Add Knowledge", onClick: () => setShowAdd(true), primary: true },
                   { label: "Ingest from URL", onClick: () => {} },
@@ -482,24 +565,28 @@ export default function KnowledgeBaseManager() {
                   No matches for this filter
                 </p>
               </div>
-            )
-          )}
+            ))}
 
           <div className="divide-y divide-white/5">
             {filtered.map((row) => {
               const isEditing = editing?.id === row.id;
               const isSelected = selected.has(row.id);
               return (
-                <div key={row.id} className={cn(
-                  "px-6 py-4 flex items-start gap-4 transition-all group",
-                  isSelected ? "bg-brand/5 border-l-2 border-brand/40" : "hover:bg-white/3",
-                )}>
+                <div
+                  key={row.id}
+                  className={cn(
+                    "px-6 py-4 flex items-start gap-4 transition-all group",
+                    isSelected ? "bg-brand/5 border-l-2 border-brand/40" : "hover:bg-white/3",
+                  )}
+                >
                   {/* Checkbox */}
                   <button
                     onClick={() => toggleSelect(row.id)}
                     className={cn(
                       "shrink-0 mt-1 w-4 h-4 rounded border-2 flex items-center justify-center transition-all",
-                      isSelected ? "bg-brand border-brand text-paper" : "border-white/20 hover:border-white/50",
+                      isSelected
+                        ? "bg-brand border-brand text-paper"
+                        : "border-white/20 hover:border-white/50",
                     )}
                   >
                     {isSelected && <Check className="w-2.5 h-2.5" strokeWidth={4} />}
@@ -512,7 +599,9 @@ export default function KnowledgeBaseManager() {
                         <Sparkles className="w-2.5 h-2.5" /> {row.agent_name}
                       </span>
                       {row.agent_archetype && (
-                        <span className="text-[8px] uppercase tracking-[0.3em] text-muted/60">{row.agent_archetype}</span>
+                        <span className="text-[8px] uppercase tracking-[0.3em] text-muted/60">
+                          {row.agent_archetype}
+                        </span>
                       )}
                       <span className="text-[8px] uppercase tracking-[0.28em] text-muted/50 ml-auto">
                         {formatDate(row.created_at)}
@@ -528,8 +617,10 @@ export default function KnowledgeBaseManager() {
                         className="w-full px-4 py-3 rounded-xl bg-black/5 border border-brand/40 outline-none text-ink text-sm leading-relaxed focus:border-brand resize-y font-mono"
                       />
                     ) : (
-                      <p className="text-ink/80 text-sm leading-relaxed whitespace-pre-wrap
-                                   group-hover:text-ink/90 transition-colors">
+                      <p
+                        className="text-ink/80 text-sm leading-relaxed whitespace-pre-wrap
+                                   group-hover:text-ink/90 transition-colors"
+                      >
                         {row.content}
                       </p>
                     )}
@@ -544,7 +635,11 @@ export default function KnowledgeBaseManager() {
                           disabled={savingId === editing!.id || !editing!.draft.trim()}
                           className="h-8 px-3 rounded-lg bg-brand text-paper text-[9px] uppercase tracking-[0.25em] flex items-center gap-1.5 disabled:opacity-50 hover:opacity-90"
                         >
-                          {savingId === editing!.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                          {savingId === editing!.id ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <Save className="w-3 h-3" />
+                          )}
                           Save
                         </button>
                         <button
@@ -569,7 +664,11 @@ export default function KnowledgeBaseManager() {
                               disabled={savingId === row.id}
                               className="h-8 px-3 rounded-lg bg-rose-500/15 border border-rose-500/35 text-rose-500 text-[9px] uppercase tracking-[0.25em] flex items-center gap-1.5 disabled:opacity-50"
                             >
-                              {savingId === row.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                              {savingId === row.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-3 h-3" />
+                              )}
                               Confirm
                             </button>
                             <button
@@ -607,7 +706,13 @@ export default function KnowledgeBaseManager() {
 }
 
 function DedupePanel({
-  clusters, decisions, setDecisions, rows, applying, onApply, onClose,
+  clusters,
+  decisions,
+  setDecisions,
+  rows,
+  applying,
+  onApply,
+  onClose,
 }: {
   clusters: DedupeCluster[];
   decisions: Map<number, number>;
@@ -619,7 +724,7 @@ function DedupePanel({
 }) {
   const factById = useMemo(() => {
     const m = new Map<number, KnowledgeRow>();
-    rows.forEach(r => m.set(r.id, r));
+    rows.forEach((r) => m.set(r.id, r));
     return m;
   }, [rows]);
 
@@ -627,8 +732,13 @@ function DedupePanel({
     return (
       <div className="rounded-3xl bg-emerald-500/10 border border-emerald-500/30 p-8 text-center space-y-3">
         <Sparkles className="w-8 h-8 mx-auto text-emerald-600" />
-        <p className="text-emerald-600 text-sm">Knowledge base looks clean — no near-duplicates or contradictions found.</p>
-        <button onClick={onClose} className="px-5 h-10 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.3em] text-ink/70">
+        <p className="text-emerald-600 text-sm">
+          Knowledge base looks clean — no near-duplicates or contradictions found.
+        </p>
+        <button
+          onClick={onClose}
+          className="px-5 h-10 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.3em] text-ink/70"
+        >
           Dismiss
         </button>
       </div>
@@ -645,11 +755,11 @@ function DedupePanel({
   const totalToDelete = clusters.reduce((s, c, i) => {
     const keep = decisions.get(i);
     if (!keep) return s;
-    return s + c.members.filter(m => m.id !== keep).length;
+    return s + c.members.filter((m) => m.id !== keep).length;
   }, 0);
 
   const kindAccent = (k: DedupeCluster["kind"]) =>
-    k === "duplicate" ? "#E040C0" : k === "contradiction" ? "#FFC07D" : "#0AC8D4";
+    k === "duplicate" ? "#0AC8D4" : k === "contradiction" ? "#FFC07D" : "#0AC8D4";
   const kindIcon = (k: DedupeCluster["kind"]) =>
     k === "contradiction" ? AlertTriangle : k === "duplicate" ? Copy : GitMerge;
 
@@ -658,15 +768,25 @@ function DedupePanel({
       <div className="relative rounded-3xl glass-strong border border-white/10 p-6 md:p-7 space-y-5 overflow-hidden">
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #9B59F5, #E040C0)" }}>
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ background: "#0AC8D4" }}
+            >
               <Brain className="w-5 h-5 text-paper" />
             </div>
             <div>
-              <div className="text-[10px] uppercase tracking-[0.4em] text-brand-2">Wireline AI found {clusters.length} {clusters.length === 1 ? "cluster" : "clusters"}</div>
-              <div className="text-sm text-ink/70 mt-1">Pick which fact to keep in each cluster. The rest will be deleted.</div>
+              <div className="text-[10px] uppercase tracking-[0.4em] text-brand-2">
+                Wireline AI found {clusters.length} {clusters.length === 1 ? "cluster" : "clusters"}
+              </div>
+              <div className="text-sm text-ink/70 mt-1">
+                Pick which fact to keep in each cluster. The rest will be deleted.
+              </div>
             </div>
           </div>
-          <button onClick={onClose} className="w-9 h-9 rounded-full glass border border-white/10 hover:border-white/30 flex items-center justify-center text-ink/60 hover:text-ink">
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-full glass border border-white/10 hover:border-white/30 flex items-center justify-center text-ink/60 hover:text-ink"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -677,16 +797,31 @@ function DedupePanel({
             const Icon = kindIcon(c.kind);
             const keepId = decisions.get(idx);
             return (
-              <div key={idx} className="rounded-2xl bg-black/20 border border-white/10 p-4 space-y-3" style={{ borderLeft: `3px solid ${accent}` }}>
+              <div
+                key={idx}
+                className="rounded-2xl bg-black/20 border border-white/10 p-4 space-y-3"
+                style={{ borderLeft: `3px solid ${accent}` }}
+              >
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] flex items-center gap-1 border" style={{ color: accent, borderColor: `${accent}55`, background: `${accent}1A` }}>
+                    <span
+                      className="px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] flex items-center gap-1 border"
+                      style={{
+                        color: accent,
+                        borderColor: `${accent}55`,
+                        background: `${accent}1A`,
+                      }}
+                    >
                       <Icon className="w-3 h-3" /> {c.kind.replace("_", " ")}
                     </span>
-                    <span className="text-[10px] uppercase tracking-[0.25em] text-muted">{c.members.length} facts</span>
+                    <span className="text-[10px] uppercase tracking-[0.25em] text-muted">
+                      {c.members.length} facts
+                    </span>
                   </div>
                   <button
-                    onClick={() => setKeep(idx, keepId === undefined ? c.recommended_keep_id : null)}
+                    onClick={() =>
+                      setKeep(idx, keepId === undefined ? c.recommended_keep_id : null)
+                    }
                     className="text-[10px] uppercase tracking-[0.25em] text-muted hover:text-ink"
                     title="Skip this cluster (no deletes)"
                   >
@@ -715,10 +850,12 @@ function DedupePanel({
                               : "bg-black/5 border-black/10 hover:border-black/20",
                         )}
                       >
-                        <div className={cn(
-                          "shrink-0 mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center",
-                          isKeep ? "bg-emerald-500 border-emerald-500" : "border-white/30",
-                        )}>
+                        <div
+                          className={cn(
+                            "shrink-0 mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center",
+                            isKeep ? "bg-emerald-500 border-emerald-500" : "border-white/30",
+                          )}
+                        >
                           {isKeep && <Check className="w-2.5 h-2.5 text-paper" strokeWidth={4} />}
                         </div>
                         <div className="flex-1 min-w-0 space-y-1">
@@ -733,9 +870,13 @@ function DedupePanel({
                                 <Sparkles className="w-2.5 h-2.5" /> AI pick
                               </span>
                             )}
-                            {m.note && <span className="text-[10px] text-muted/70 italic">{m.note}</span>}
+                            {m.note && (
+                              <span className="text-[10px] text-muted/70 italic">{m.note}</span>
+                            )}
                           </div>
-                          <p className="text-sm text-ink/85 leading-relaxed">{fact?.content || `(fact ${m.id} not found)`}</p>
+                          <p className="text-sm text-ink/85 leading-relaxed">
+                            {fact?.content || `(fact ${m.id} not found)`}
+                          </p>
                         </div>
                       </button>
                     );
@@ -757,9 +898,14 @@ function DedupePanel({
 
         <div className="flex items-center justify-between gap-3 pt-2 border-t border-white/10">
           <div className="text-[11px] text-ink/60">
-            {totalToDelete > 0
-              ? <>Will delete <span className="text-rose-500 font-medium">{totalToDelete}</span> {totalToDelete === 1 ? "fact" : "facts"}, keep one per active cluster.</>
-              : "Pick which fact to keep in each cluster, or skip the cluster."}
+            {totalToDelete > 0 ? (
+              <>
+                Will delete <span className="text-rose-500 font-medium">{totalToDelete}</span>{" "}
+                {totalToDelete === 1 ? "fact" : "facts"}, keep one per active cluster.
+              </>
+            ) : (
+              "Pick which fact to keep in each cluster, or skip the cluster."
+            )}
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -773,7 +919,11 @@ function DedupePanel({
               disabled={applying || totalToDelete === 0}
               className="h-10 px-4 rounded-lg bg-rose-500 text-paper text-[10px] uppercase tracking-[0.25em] flex items-center gap-2 disabled:opacity-40 hover:opacity-90"
             >
-              {applying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+              {applying ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Trash2 className="w-3.5 h-3.5" />
+              )}
               {applying ? "Applying" : `Apply (delete ${totalToDelete})`}
             </button>
           </div>

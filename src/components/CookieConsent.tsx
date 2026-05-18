@@ -47,14 +47,15 @@ export default function CookieConsent() {
         >
           {/* Slim bottom bar — full width, never overlaps content columns */}
           <div
-            className="border-t border-black/8 backdrop-blur-xl px-4 py-3 flex items-center gap-3"
+            className="border-t border-black/8 backdrop-blur-xl px-3 sm:px-4 py-3 flex items-center gap-3"
             style={{ background: "rgba(245,240,232,0.92)" }}
           >
             {/* Icon */}
             <div
               className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
               style={{
-                background: "linear-gradient(135deg, rgba(10,200,212,0.12), rgba(155,89,245,0.12))",
+                background:
+                  "linear-gradient(135deg, rgba(10,200,212,0.12), rgba(10, 200, 212,0.12))",
                 border: "1px solid rgba(10,200,212,0.22)",
               }}
             >
@@ -63,12 +64,21 @@ export default function CookieConsent() {
 
             {/* Copy */}
             <p className="text-[11px] text-muted/80 leading-relaxed flex-1 min-w-0">
-              We use only essential cookies to keep you signed in — no advertising or cross-site tracking.{" "}
-              <Link to="/privacy" className="text-brand hover:text-brand/80 underline" onClick={dismiss}>
+              We use only essential cookies to keep you signed in — no advertising or cross-site
+              tracking.{" "}
+              <Link
+                to="/privacy"
+                className="text-brand hover:text-brand/80 underline"
+                onClick={dismiss}
+              >
                 Privacy policy
               </Link>
               {" · "}
-              <Link to="/terms" className="text-brand hover:text-brand/80 underline" onClick={dismiss}>
+              <Link
+                to="/terms"
+                className="text-brand hover:text-brand/80 underline"
+                onClick={dismiss}
+              >
                 Terms
               </Link>
             </p>
@@ -78,9 +88,9 @@ export default function CookieConsent() {
               type="button"
               onClick={dismiss}
               aria-label="Dismiss cookie notice"
-              className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center hover:bg-black/8 transition-colors text-muted hover:text-ink"
+              className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center hover:bg-black/8 transition-colors text-muted hover:text-ink"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         </motion.div>

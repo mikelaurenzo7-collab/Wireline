@@ -456,12 +456,12 @@ export default function Integrations() {
               <div className="rounded-2xl glass border border-white/10 p-4 relative overflow-hidden">
                 <div
                   className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
-                  style={{ background: "radial-gradient(circle, #9B59F5, transparent)" }}
+                  style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }}
                 />
                 <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center gap-4">
                   <div
                     className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ background: "linear-gradient(135deg, #9B59F5, #E040C0)" }}
+                    style={{ background: "#0AC8D4" }}
                   >
                     <Webhook className="w-5 h-5 text-paper" />
                   </div>

@@ -164,7 +164,7 @@ router.put("/spend/budget", authenticateUser, async (req: AuthenticatedRequest, 
     if (!Number.isInteger(warn) || warn < 1 || warn > 99)
       return res.status(400).json({ error: "warn_threshold_pct must be 1–99" });
 
-    const [data] = await drizzle
+    const [data] = (await drizzle
       .insert(schema.spendBudgets)
       .values({
         userId: req.user.id,
@@ -184,7 +184,7 @@ router.put("/spend/budget", authenticateUser, async (req: AuthenticatedRequest, 
           updatedAt: new Date(),
         },
       })
-      .returning();
+      .returning()) as any[];
 
     clearBudgetCache(req.user.id);
     res.json({ budget: data });

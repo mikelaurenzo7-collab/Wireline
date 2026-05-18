@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { PageMeta } from "../lib/page-meta";
+import WirelineMark from "../components/WirelineMark";
 import {
   Check,
   Waves,
@@ -170,7 +171,9 @@ export default function Pricing() {
         />
         <motion.div
           className="absolute -bottom-[20%] -right-[15%] w-[40vw] h-[40vw] rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(224,64,192,0.10), transparent 65%)" }}
+          style={{
+            background: "radial-gradient(circle, rgba(10, 200, 212,0.10), transparent 65%)",
+          }}
           animate={{ x: [0, -25, 0], y: [0, 25, 0] }}
           transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
         />
@@ -182,12 +185,12 @@ export default function Pricing() {
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center"
             style={{
-              background: "linear-gradient(135deg, #0AC8D4 0%, #9B59F5 50%, #E040C0 100%)",
+              background: "#0AC8D4",
               boxShadow:
                 "0 4px 14px -4px rgba(10,200,212,0.55), 0 0 0 1px rgba(255,255,255,0.22) inset",
             }}
           >
-            <Waves className="w-4 h-4 text-paper" strokeWidth={2.5} />
+            <WirelineMark className="w-4 h-4 text-paper" strokeWidth={130} />
           </div>
           <span className="brand-wordmark text-[16px] leading-none">WIRELINE</span>
         </Link>
@@ -217,7 +220,7 @@ export default function Pricing() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="font-display italic text-4xl md:text-5xl lg:text-6xl leading-[0.92] tracking-tight mb-4"
+          className="font-display italic text-4xl sm:text-5xl lg:text-6xl leading-[1.05] sm:leading-[0.95] tracking-tight mb-4 text-balance"
         >
           <span className="text-aurora">Plans that scale</span>
           <br />
@@ -253,13 +256,13 @@ export default function Pricing() {
               title: "Supervisor cockpit with agent transparency",
               blurb:
                 "See what your agents are about to do BEFORE they do it — draft vs. auto autonomy per action.",
-              accent: "#9B59F5",
+              accent: "#0AC8D4",
             },
             {
               title: "TCPA compliance in code",
               blurb:
                 "Per-state opt-in rules, append-only consent ledger, automatic DNC. Your lawyers can read the rules.",
-              accent: "#E040C0",
+              accent: "#0AC8D4",
             },
           ].map((c, i) => (
             <motion.div
@@ -289,8 +292,8 @@ export default function Pricing() {
       </section>
 
       {/* Tier grid */}
-      <section className="relative z-10 px-4 lg:px-10 max-w-7xl mx-auto pb-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 lg:gap-4">
+      <section className="relative z-10 px-4 sm:px-6 lg:px-10 max-w-7xl mx-auto pb-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {TIERS.map((tier, i) => (
             <motion.div
               key={tier.id}
@@ -320,7 +323,7 @@ export default function Pricing() {
                   <span
                     className="absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-1 rounded-full text-[10px] uppercase tracking-[0.35em] font-semibold z-10"
                     style={{
-                      background: "linear-gradient(135deg, #0AC8D4, #9B59F5)",
+                      background: "#0AC8D4",
                       color: "#fff",
                       boxShadow: "0 6px 18px -4px rgba(10,200,212,0.6)",
                     }}
@@ -360,7 +363,7 @@ export default function Pricing() {
                   style={
                     tier.highlight
                       ? {
-                          background: "linear-gradient(135deg, #0AC8D4, #9B59F5)",
+                          background: "#0AC8D4",
                           boxShadow: "0 6px 20px -6px rgba(10,200,212,0.55)",
                         }
                       : undefined
@@ -399,7 +402,7 @@ export default function Pricing() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7, duration: 0.6 }}
-          className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto"
+          className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 max-w-5xl mx-auto"
         >
           {VALUE_BULLETS.map(({ icon: Icon, text }) => (
             <div
@@ -410,7 +413,7 @@ export default function Pricing() {
                 className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-white/8"
                 style={{
                   background:
-                    "linear-gradient(135deg, rgba(10,200,212,0.18), rgba(155,89,245,0.12))",
+                    "linear-gradient(135deg, rgba(10,200,212,0.18), rgba(10, 200, 212,0.12))",
                 }}
               >
                 <Icon className="w-4 h-4 text-brand" strokeWidth={2.2} />

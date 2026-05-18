@@ -76,7 +76,7 @@ export async function trackVoiceMinutes(opts: {
 
   try {
     // Atomic upsert returning the post-increment total.
-    const [row] = await drizzle
+    const upsertRows = (await drizzle
       .insert(schema.quotaUsage)
       .values({
         userId,
@@ -96,7 +96,8 @@ export async function trackVoiceMinutes(opts: {
           updatedAt: new Date(),
         },
       })
-      .returning();
+      .returning()) as Array<{ used: bigint | number | null }>;
+    const row = upsertRows[0];
 
     const newUsed = Number(row?.used ?? minutes);
     const previousUsed = newUsed - minutes;

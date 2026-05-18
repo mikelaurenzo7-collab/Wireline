@@ -134,16 +134,6 @@ declare module "vite" {
   export const createServer: any;
 }
 
-declare module "@sentry/node" {
-  export const init: any;
-  export const captureException: any;
-  export const captureMessage: any;
-  export const Handlers: any;
-  export const setTag: any;
-  export const setUser: any;
-  export type CaptureContext = any;
-}
-
 declare module "@google/generative-ai" {
   export class GoogleGenerativeAI {
     constructor(apiKey: string);

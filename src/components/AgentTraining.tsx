@@ -246,12 +246,12 @@ export default function AgentTraining() {
             <div className="relative rounded-2xl glass p-3 flex flex-wrap items-center gap-2 overflow-hidden">
               <div
                 className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-25 blur-3xl pointer-events-none"
-                style={{ background: "radial-gradient(circle, #9B59F5, transparent)" }}
+                style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }}
               />
               <div className="relative z-10 flex items-center gap-2 mr-1">
                 <div
                   className="w-7 h-7 rounded-lg flex items-center justify-center"
-                  style={{ background: "linear-gradient(135deg, #0AC8D4, #9B59F5)" }}
+                  style={{ background: "#0AC8D4" }}
                 >
                   <Sparkles className="w-3.5 h-3.5 text-paper" strokeWidth={2.5} />
                 </div>
@@ -554,7 +554,7 @@ export default function AgentTraining() {
               <section className="rounded-2xl glass border border-white/10 p-4 relative overflow-hidden">
                 <div
                   className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
-                  style={{ background: "radial-gradient(circle, #9B59F5, transparent)" }}
+                  style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }}
                 />
                 <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
                   <div className="flex items-center gap-2.5">
@@ -868,7 +868,7 @@ export default function AgentTraining() {
                   <div className="flex items-center gap-2.5 mb-4">
                     <div
                       className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                      style={{ background: "linear-gradient(135deg, #0AC8D4, #9B59F5)" }}
+                      style={{ background: "#0AC8D4" }}
                     >
                       <Sparkles className="w-3.5 h-3.5 text-paper" strokeWidth={2.5} />
                     </div>

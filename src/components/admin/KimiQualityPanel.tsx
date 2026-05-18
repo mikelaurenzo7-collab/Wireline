@@ -1,13 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Sparkles, ShieldCheck, Zap, Activity, 
-  ChevronRight, RefreshCw, AlertCircle, 
-  CheckCircle2, Terminal, Code, Cpu
-} from 'lucide-react';
-import { clsx } from 'clsx';
-import { authFetch } from '../../lib/api';
-import { useToast } from '../../contexts/ToastContext';
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import {
+  Sparkles,
+  ShieldCheck,
+  Zap,
+  Activity,
+  ChevronRight,
+  RefreshCw,
+  AlertCircle,
+  CheckCircle2,
+  Terminal,
+  Code,
+  Cpu,
+} from "lucide-react";
+import { clsx } from "clsx";
+import { authFetch } from "../../lib/api";
+import { useToast } from "../../contexts/ToastContext";
 
 interface KimiStatus {
   score: number;
@@ -16,11 +24,11 @@ interface KimiStatus {
 }
 
 const PRINCIPLES = [
-  { id: 'p1', title: 'Decide, Don\'t Ask', desc: 'Autonomous execution of high-leverage tasks.' },
-  { id: 'p2', title: 'Vertical TDD', desc: 'Ship working slices with zero placeholders.' },
-  { id: 'p3', title: 'Production Data', desc: 'Real state over mock-driven development.' },
-  { id: 'p4', title: 'Rich Aesthetics', desc: 'Premium, glassmorphic visual excellence.' },
-  { id: 'p5', title: 'Deep Discovery', desc: 'Exhaustive auditing before implementation.' }
+  { id: "p1", title: "Decide, Don't Ask", desc: "Autonomous execution of high-leverage tasks." },
+  { id: "p2", title: "Vertical TDD", desc: "Ship working slices with zero placeholders." },
+  { id: "p3", title: "Production Data", desc: "Real state over mock-driven development." },
+  { id: "p4", title: "Rich Aesthetics", desc: "Premium, glassmorphic visual excellence." },
+  { id: "p5", title: "Deep Discovery", desc: "Exhaustive auditing before implementation." },
 ];
 
 export function KimiQualityPanel() {
@@ -31,10 +39,10 @@ export function KimiQualityPanel() {
 
   const fetchStatus = async () => {
     try {
-      const res = await authFetch('/api/kimi/status');
+      const res = await authFetch("/api/kimi/status");
       if (res.ok) setStatus(await res.json());
     } catch (e) {
-      console.error('Failed to fetch Kimi status', e);
+      console.error("Failed to fetch Kimi status", e);
     }
   };
 
@@ -45,21 +53,21 @@ export function KimiQualityPanel() {
   const runAudit = async () => {
     setIsAuditing(true);
     try {
-      const res = await authFetch('/api/kimi/audit', { method: 'POST' });
+      const res = await authFetch("/api/kimi/audit", { method: "POST" });
       if (res.ok) {
         const data = await res.json();
         setStatus({
           score: data.score,
-          status: data.score >= 9 ? 'Hardened' : 'Beta',
-          lastAudit: data.timestamp
+          status: data.score >= 9 ? "Hardened" : "Beta",
+          lastAudit: data.timestamp,
         });
         setReport(data.report);
-        toastSuccess('Audit Complete', `Maturity Score: ${data.score}/10`);
+        toastSuccess("Audit Complete", `Maturity Score: ${data.score}/10`);
       } else {
-        throw new Error('Audit failed');
+        throw new Error("Audit failed");
       }
     } catch (e: any) {
-      toastError('Audit Failed', e.message);
+      toastError("Audit Failed", e.message);
     } finally {
       setIsAuditing(false);
     }
@@ -74,13 +82,16 @@ export function KimiQualityPanel() {
           <div className="space-y-2 text-center md:text-left">
             <div className="flex items-center justify-center md:justify-start gap-2">
               <Sparkles className="w-4 h-4 text-brand" />
-              <span className="text-[10px] uppercase tracking-[0.4em] font-bold text-muted">Kimi Maturity Index</span>
+              <span className="text-[10px] uppercase tracking-[0.4em] font-bold text-muted">
+                Kimi Maturity Index
+              </span>
             </div>
             <h2 className="text-4xl font-black tracking-tighter text-ink italic">
-              {status?.status || 'Calculating...'}
+              {status?.status || "Calculating..."}
             </h2>
             <p className="text-xs text-muted max-w-sm">
-              Your system is evaluated against the 15 Non-Negotiable Principles of the Unstoppable Engineer's Playbook.
+              Your system is evaluated against the 15 Non-Negotiable Principles of the Unstoppable
+              Engineer's Playbook.
             </p>
           </div>
 
@@ -112,13 +123,15 @@ export function KimiQualityPanel() {
               <defs>
                 <linearGradient id="kimi-grad" x1="0%" y1="0%" x2="100%" y2="100%">
                   <stop offset="0%" stopColor="#0AC8D4" />
-                  <stop offset="100%" stopColor="#9B59F5" />
+                  <stop offset="100%" stopColor="#0AC8D4" />
                 </linearGradient>
               </defs>
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <span className="text-3xl font-black text-ink">{status?.score || 0}</span>
-              <span className="text-[8px] uppercase tracking-widest text-muted font-bold">/ 10</span>
+              <span className="text-[8px] uppercase tracking-widest text-muted font-bold">
+                / 10
+              </span>
             </div>
           </div>
 
@@ -127,7 +140,11 @@ export function KimiQualityPanel() {
             disabled={isAuditing}
             className="brutal-btn !rounded-2xl !px-8 !py-4 flex items-center gap-3 active:scale-95 transition-all shadow-xl shadow-brand/20"
           >
-            {isAuditing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+            {isAuditing ? (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            ) : (
+              <ShieldCheck className="w-4 h-4" />
+            )}
             <span className="text-xs font-black uppercase tracking-[0.2em]">Run Deep Audit</span>
           </button>
         </div>
@@ -142,7 +159,10 @@ export function KimiQualityPanel() {
           </h3>
           <div className="space-y-4">
             {PRINCIPLES.map((p) => (
-              <div key={p.id} className="flex items-start gap-4 p-4 rounded-2xl bg-black/[0.02] border border-black/5 hover:border-brand/20 transition-all group">
+              <div
+                key={p.id}
+                className="flex items-start gap-4 p-4 rounded-2xl bg-black/[0.02] border border-black/5 hover:border-brand/20 transition-all group"
+              >
                 <div className="w-8 h-8 rounded-xl bg-white border border-black/5 flex items-center justify-center shrink-0">
                   <CheckCircle2 className="w-4 h-4 text-brand" />
                 </div>
@@ -161,12 +181,10 @@ export function KimiQualityPanel() {
             <Activity className="w-3.5 h-3.5 text-brand" />
             Latest Audit Log
           </h3>
-          
+
           <div className="flex-1 rounded-2xl bg-black/5 p-6 font-mono text-[10px] overflow-y-auto custom-scrollbar border border-black/5">
             {report ? (
-              <pre className="whitespace-pre-wrap text-ink/70 leading-relaxed">
-                {report}
-              </pre>
+              <pre className="whitespace-pre-wrap text-ink/70 leading-relaxed">{report}</pre>
             ) : (
               <div className="h-full flex flex-col items-center justify-center gap-4 text-muted/40">
                 <Cpu className="w-8 h-8 opacity-20" />

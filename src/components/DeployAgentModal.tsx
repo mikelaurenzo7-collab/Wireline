@@ -134,7 +134,7 @@ export default function DeployAgentModal({
                 className="absolute -top-16 -right-16 w-64 h-64 rounded-full blur-3xl opacity-30 pointer-events-none"
                 style={{
                   background:
-                    "radial-gradient(circle, rgba(10,200,212,0.35), rgba(155,89,245,0.18) 60%, transparent)",
+                    "radial-gradient(circle, rgba(10,200,212,0.35), rgba(10, 200, 212,0.18) 60%, transparent)",
                 }}
               />
 
@@ -302,11 +302,7 @@ export default function DeployAgentModal({
                       ? "text-paper shadow-lg shadow-brand/30 hover:shadow-brand/40 active:scale-[0.98]"
                       : "text-muted/40 bg-black/8 cursor-not-allowed",
                   )}
-                  style={
-                    canSubmit
-                      ? { background: "linear-gradient(135deg, #0AC8D4, #9B59F5)" }
-                      : undefined
-                  }
+                  style={canSubmit ? { background: "#0AC8D4" } : undefined}
                 >
                   {deploying ? (
                     <>
@@ -359,7 +355,7 @@ function GenderTile({
           aria-hidden="true"
           className="absolute inset-0 rounded-xl pointer-events-none"
           style={{
-            background: "linear-gradient(135deg, rgba(10,200,212,0.16), rgba(155,89,245,0.10))",
+            background: "linear-gradient(135deg, rgba(10,200,212,0.16), rgba(10, 200, 212,0.10))",
           }}
           transition={{ type: "spring", stiffness: 380, damping: 32 }}
         />

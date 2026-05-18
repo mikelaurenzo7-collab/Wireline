@@ -1,8 +1,18 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  KeyRound, Plus, Loader2, X, Trash2, Copy, Check, Eye, EyeOff, Inbox,
-  PhoneOutgoing, Zap,
+  KeyRound,
+  Plus,
+  Loader2,
+  X,
+  Trash2,
+  Copy,
+  Check,
+  Eye,
+  EyeOff,
+  Inbox,
+  PhoneOutgoing,
+  Zap,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
@@ -39,15 +49,21 @@ export default function IntakeKeysManager() {
     setLoading(true);
     try {
       const [keysRes, agentsRes] = await Promise.all([
-        authFetch("/api/intake/keys").then(r => r.json()),
-        authFetch("/api/agents").then(r => r.json()).catch(() => ({ agents: [] })),
+        authFetch("/api/intake/keys").then((r) => r.json()),
+        authFetch("/api/agents")
+          .then((r) => r.json())
+          .catch(() => ({ agents: [] })),
       ]);
       setKeys(keysRes.keys || []);
       setAgents(agentsRes.agents || []);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => {
+    refresh();
+  }, []);
 
   const create = async () => {
     if (!name.trim()) return;
@@ -111,27 +127,47 @@ export default function IntakeKeysManager() {
       await navigator.clipboard.writeText(justCreated.plaintext);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-    } catch { /* clipboard API may be unavailable; user can copy manually */ }
+    } catch {
+      /* clipboard API may be unavailable; user can copy manually */
+    }
   };
 
   return (
     <div className="relative aurora-ring rounded-2xl mt-8">
       <div className="relative rounded-2xl glass border border-white/10 p-6 space-y-5 overflow-hidden">
-        <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-25 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #9B59F5, transparent)" }} />
+        <div
+          className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-25 blur-3xl pointer-events-none"
+          style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }}
+        />
 
         <div className="relative z-10 flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #9B59F5, #E040C0)" }}>
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ background: "#0AC8D4" }}
+            >
               <Inbox className="w-5 h-5 text-paper" />
             </div>
             <div>
-              <div className="text-[10px] uppercase tracking-[0.4em] text-brand-2">Inbound Intake API</div>
-              <h4 className="font-display italic text-2xl text-ink leading-tight mt-1">Capture leads from anywhere</h4>
-              <p className="text-[11px] text-ink/55 mt-1">Issue an API key, point your form / CRM / Zapier at <span className="font-mono text-ink/80">POST /api/intake/lead</span>, and leads land straight in Outbound + Triage. Fires <span className="font-mono text-ink/80">lead.received</span> webhook events.</p>
+              <div className="text-[10px] uppercase tracking-[0.4em] text-brand-2">
+                Inbound Intake API
+              </div>
+              <h4 className="font-display italic text-2xl text-ink leading-tight mt-1">
+                Capture leads from anywhere
+              </h4>
+              <p className="text-[11px] text-ink/55 mt-1">
+                Issue an API key, point your form / CRM / Zapier at{" "}
+                <span className="font-mono text-ink/80">POST /api/intake/lead</span>, and leads land
+                straight in Outbound + Triage. Fires{" "}
+                <span className="font-mono text-ink/80">lead.received</span> webhook events.
+              </p>
             </div>
           </div>
           <button
-            onClick={() => { setShowForm(!showForm); setCreateError(null); }}
+            onClick={() => {
+              setShowForm(!showForm);
+              setCreateError(null);
+            }}
             className="brutal-btn !py-2.5 !px-5 !text-[11px] !tracking-[0.3em]"
           >
             {showForm ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
@@ -143,25 +179,32 @@ export default function IntakeKeysManager() {
         <AnimatePresence>
           {justCreated && (
             <motion.div
-              initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
               className="relative z-10 rounded-xl bg-emerald-500/10 border border-emerald-500/40 p-4 space-y-3"
             >
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="text-[10px] uppercase tracking-[0.3em] text-emerald-600 flex items-center gap-2">
                   <Check className="w-3.5 h-3.5" /> Save this key now — it will not be shown again
                 </div>
-                <button onClick={() => setJustCreated(null)} className="text-emerald-600/70 hover:text-emerald-600">
+                <button
+                  onClick={() => setJustCreated(null)}
+                  className="text-emerald-600/70 hover:text-emerald-600"
+                >
                   <X className="w-4 h-4" />
                 </button>
               </div>
               <div className="flex items-center gap-2">
                 <input
                   readOnly
-                  value={revealed ? justCreated.plaintext : "•".repeat(justCreated.plaintext.length)}
+                  value={
+                    revealed ? justCreated.plaintext : "•".repeat(justCreated.plaintext.length)
+                  }
                   className="flex-1 h-10 px-3 rounded-lg bg-black/40 border border-emerald-500/30 outline-none text-ink text-xs font-mono select-all"
                 />
                 <button
-                  onClick={() => setRevealed(r => !r)}
+                  onClick={() => setRevealed((r) => !r)}
                   title={revealed ? "Hide" : "Show"}
                   className="h-10 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-600"
                 >
@@ -183,13 +226,17 @@ export default function IntakeKeysManager() {
         <AnimatePresence>
           {showForm && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
               className="relative z-10 overflow-hidden"
             >
               <div className="rounded-xl bg-black/5 border border-black/10 p-4 space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <label className="space-y-1.5">
-                    <span className="text-[10px] uppercase tracking-[0.3em] text-muted">Key name</span>
+                    <span className="text-[10px] uppercase tracking-[0.3em] text-muted">
+                      Key name
+                    </span>
                     <input
                       value={name}
                       onChange={(e) => setName(e.target.value)}
@@ -198,14 +245,23 @@ export default function IntakeKeysManager() {
                     />
                   </label>
                   <label className="space-y-1.5">
-                    <span className="text-[10px] uppercase tracking-[0.3em] text-muted">Default agent (optional)</span>
+                    <span className="text-[10px] uppercase tracking-[0.3em] text-muted">
+                      Default agent (optional)
+                    </span>
                     <select
                       value={defaultAgentId}
-                      onChange={(e) => { setDefaultAgentId(e.target.value); if (!e.target.value) setAutoDial(false); }}
+                      onChange={(e) => {
+                        setDefaultAgentId(e.target.value);
+                        if (!e.target.value) setAutoDial(false);
+                      }}
                       className="w-full h-11 px-3 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
                     >
                       <option value="">— None —</option>
-                      {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                      {agents.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name}
+                        </option>
+                      ))}
                     </select>
                   </label>
                 </div>
@@ -222,11 +278,17 @@ export default function IntakeKeysManager() {
                         : "bg-black/5 border-black/10 text-ink/80 hover:border-black/20",
                   )}
                 >
-                  <div className={cn(
-                    "shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center mt-0.5",
-                    autoDial && defaultAgentId ? "bg-brand-2 border-brand-2 text-paper" : "border-white/30",
-                  )}>
-                    {autoDial && defaultAgentId && <Check className="w-2.5 h-2.5" strokeWidth={4} />}
+                  <div
+                    className={cn(
+                      "shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center mt-0.5",
+                      autoDial && defaultAgentId
+                        ? "bg-brand-2 border-brand-2 text-paper"
+                        : "border-white/30",
+                    )}
+                  >
+                    {autoDial && defaultAgentId && (
+                      <Check className="w-2.5 h-2.5" strokeWidth={4} />
+                    )}
                   </div>
                   <div className="min-w-0">
                     <div className="text-xs font-medium flex items-center gap-2">
@@ -246,7 +308,11 @@ export default function IntakeKeysManager() {
                     disabled={creating || !name.trim()}
                     className="h-11 px-5 rounded-xl bg-brand text-paper text-xs uppercase tracking-[0.25em] font-medium flex items-center gap-2 disabled:opacity-50 hover:opacity-90 transition-all"
                   >
-                    {creating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
+                    {creating ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <KeyRound className="w-3.5 h-3.5" />
+                    )}
                     {creating ? "Creating" : "Create key"}
                   </button>
                 </div>
@@ -257,21 +323,37 @@ export default function IntakeKeysManager() {
 
         {/* Key list */}
         <div className="relative z-10 space-y-2">
-          {loading && <div className="flex items-center gap-2 text-muted text-xs"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…</div>}
+          {loading && (
+            <div className="flex items-center gap-2 text-muted text-xs">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…
+            </div>
+          )}
           {!loading && keys.length === 0 && (
-            <div className="text-xs text-ink/50 italic">No keys yet. Create one to start accepting inbound leads.</div>
+            <div className="text-xs text-ink/50 italic">
+              No keys yet. Create one to start accepting inbound leads.
+            </div>
           )}
           {keys.map((k) => {
-            const agent = agents.find(a => a.id === k.default_agent_id);
+            const agent = agents.find((a) => a.id === k.default_agent_id);
             return (
-              <div key={k.id} className={cn("rounded-xl border p-4 flex items-center justify-between gap-4 flex-wrap", k.active ? "glass border-black/8" : "bg-black/3 border-black/5 opacity-60")}>
+              <div
+                key={k.id}
+                className={cn(
+                  "rounded-xl border p-4 flex items-center justify-between gap-4 flex-wrap",
+                  k.active ? "glass border-black/8" : "bg-black/3 border-black/5 opacity-60",
+                )}
+              >
                 <div className="flex-1 min-w-0 space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <div className="text-sm text-ink font-medium">{k.name}</div>
-                    <span className={cn(
-                      "text-[9px] uppercase tracking-[0.3em] px-2 py-0.5 rounded-full border",
-                      k.active ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-600" : "bg-black/5 border-black/8 text-muted",
-                    )}>
+                    <span
+                      className={cn(
+                        "text-[9px] uppercase tracking-[0.3em] px-2 py-0.5 rounded-full border",
+                        k.active
+                          ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-600"
+                          : "bg-black/5 border-black/8 text-muted",
+                      )}
+                    >
                       {k.active ? "Active" : "Paused"}
                     </span>
                     {agent && (
@@ -295,7 +377,11 @@ export default function IntakeKeysManager() {
                   <button
                     onClick={() => toggleAutoDial(k)}
                     disabled={!k.default_agent_id}
-                    title={k.default_agent_id ? "Toggle auto-dial" : "Set a default agent before enabling auto-dial."}
+                    title={
+                      k.default_agent_id
+                        ? "Toggle auto-dial"
+                        : "Set a default agent before enabling auto-dial."
+                    }
                     className={cn(
                       "h-9 px-3 rounded-lg text-[10px] uppercase tracking-[0.25em] flex items-center gap-1.5 transition-all",
                       !k.default_agent_id
@@ -316,10 +402,16 @@ export default function IntakeKeysManager() {
                   </button>
                   {confirmDelete === k.id ? (
                     <>
-                      <button onClick={() => remove(k.id)} className="h-9 px-3 rounded-lg bg-rose-500/15 border border-rose-500/40 text-rose-600 text-[10px] uppercase tracking-[0.25em] flex items-center gap-1">
+                      <button
+                        onClick={() => remove(k.id)}
+                        className="h-9 px-3 rounded-lg bg-rose-500/15 border border-rose-500/40 text-rose-600 text-[10px] uppercase tracking-[0.25em] flex items-center gap-1"
+                      >
                         <Trash2 className="w-3.5 h-3.5" /> Confirm
                       </button>
-                      <button onClick={() => setConfirmDelete(null)} className="h-9 px-3 rounded-lg glass border border-black/8 text-[10px] uppercase tracking-[0.25em] text-ink/70">
+                      <button
+                        onClick={() => setConfirmDelete(null)}
+                        className="h-9 px-3 rounded-lg glass border border-black/8 text-[10px] uppercase tracking-[0.25em] text-ink/70"
+                      >
                         Cancel
                       </button>
                     </>
@@ -340,7 +432,9 @@ export default function IntakeKeysManager() {
         {/* Quick-start example */}
         <div className="relative z-10 rounded-xl bg-black/40 border border-white/10 p-4 text-[11px] text-ink/70 font-mono leading-relaxed overflow-x-auto space-y-3">
           <div>
-            <div className="text-[9px] uppercase tracking-[0.3em] text-brand-2 mb-2">Quick start · curl</div>
+            <div className="text-[9px] uppercase tracking-[0.3em] text-brand-2 mb-2">
+              Quick start · curl
+            </div>
             <pre className="whitespace-pre-wrap break-all">{`curl -X POST $WIRELINE_URL/api/intake/lead \\
   -H "Content-Type: application/json" \\
   -H "X-Wireline-Key: wlk_..." \\
@@ -348,9 +442,29 @@ export default function IntakeKeysManager() {
   -d '{"customer_name":"Jane Doe","customer_number":"+15551234567","context":"Filled out demo form","metadata":{"utm_source":"newsletter"}}'`}</pre>
           </div>
           <div className="text-[10px] text-ink/55 leading-relaxed font-sans space-y-1.5">
-            <div><span className="text-brand-2 font-mono uppercase tracking-wider">Idempotency-Key</span> — optional, any string ≤ 255 chars. Same key + same operator returns the original <code className="text-ink/80">lead_id</code> with <code className="text-ink/80">idempotent_replay: true</code>. Safe for form-submission retries.</div>
-            <div><span className="text-brand-2 font-mono uppercase tracking-wider">Rate limit</span> — 60 requests / minute per intake key. Excess returns <code className="text-ink/80">HTTP 429</code> with <code className="text-ink/80">Retry-After</code>.</div>
-            <div><span className="text-brand-2 font-mono uppercase tracking-wider">Auto-dial</span> — when on, the response includes <code className="text-ink/80">auto_dial_initiated: true</code> and the call is dispatched in the background; the lead row gets <code className="text-ink/80">call_id</code> + <code className="text-ink/80">status: "Dialing"</code> on success.</div>
+            <div>
+              <span className="text-brand-2 font-mono uppercase tracking-wider">
+                Idempotency-Key
+              </span>{" "}
+              — optional, any string ≤ 255 chars. Same key + same operator returns the original{" "}
+              <code className="text-ink/80">lead_id</code> with{" "}
+              <code className="text-ink/80">idempotent_replay: true</code>. Safe for form-submission
+              retries.
+            </div>
+            <div>
+              <span className="text-brand-2 font-mono uppercase tracking-wider">Rate limit</span> —
+              60 requests / minute per intake key. Excess returns{" "}
+              <code className="text-ink/80">HTTP 429</code> with{" "}
+              <code className="text-ink/80">Retry-After</code>.
+            </div>
+            <div>
+              <span className="text-brand-2 font-mono uppercase tracking-wider">Auto-dial</span> —
+              when on, the response includes{" "}
+              <code className="text-ink/80">auto_dial_initiated: true</code> and the call is
+              dispatched in the background; the lead row gets{" "}
+              <code className="text-ink/80">call_id</code> +{" "}
+              <code className="text-ink/80">status: "Dialing"</code> on success.
+            </div>
           </div>
         </div>
       </div>

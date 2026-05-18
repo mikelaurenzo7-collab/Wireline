@@ -145,7 +145,7 @@ export default function SmsThreads() {
               icon={MessageSquare}
               title="No SMS yet"
               description="Conversations land here when an agent sends a text or a customer replies to your number."
-              accent="#9B59F5"
+              accent="#0AC8D4"
             />
           ) : (
             <div className="space-y-1.5">
@@ -167,12 +167,17 @@ export default function SmsThreads() {
                       <div className="min-w-0 flex-1">
                         <p className="font-mono text-sm text-ink truncate">{t.customer_number}</p>
                         <p className="text-[10px] text-muted/70 mt-0.5">
-                          {formatDate(t.last_message_at, "en-US", {
-                            month: "short",
-                            day: "numeric",
-                            hour: "numeric",
-                            minute: "2-digit",
-                          })}
+                          {formatDate(
+                            t.last_message_at,
+                            {
+                              month: "short",
+                              day: "numeric",
+                              hour: "numeric",
+                              minute: "2-digit",
+                            },
+                            "—",
+                            "en-US",
+                          )}
                         </p>
                       </div>
                       {t.unread_count > 0 && (
@@ -223,10 +228,12 @@ export default function SmsThreads() {
                       </p>
                       <p className="text-[9px] uppercase tracking-[0.25em] text-muted/60 mt-1.5">
                         {m.direction === "out" ? "You" : "Caller"} ·{" "}
-                        {formatDate(m.created_at, "en-US", {
-                          hour: "numeric",
-                          minute: "2-digit",
-                        })}
+                        {formatDate(
+                          m.created_at,
+                          { hour: "numeric", minute: "2-digit" },
+                          "—",
+                          "en-US",
+                        )}
                       </p>
                     </div>
                   ))

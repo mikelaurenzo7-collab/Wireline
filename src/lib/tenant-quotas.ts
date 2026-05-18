@@ -296,7 +296,7 @@ export class QuotaTracker {
 
     // Atomic increment using ON CONFLICT ... UPDATE
     try {
-      const [row] = await this.deps.drizzle
+      const [row] = (await this.deps.drizzle
         .insert(schema.quotaUsage)
         .values({
           userId,
@@ -316,7 +316,7 @@ export class QuotaTracker {
             updatedAt: new Date(),
           },
         })
-        .returning();
+        .returning()) as any[];
 
       const used = Number(row.used);
       const allowed = used <= limit;

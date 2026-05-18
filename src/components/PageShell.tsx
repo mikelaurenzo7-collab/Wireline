@@ -109,7 +109,7 @@ export default function PageShell({
           className="h-px"
           style={{
             background:
-              "linear-gradient(90deg, rgba(10,200,212,0.20) 0%, rgba(155,89,245,0.15) 40%, rgba(224,64,192,0.10) 70%, transparent 100%)",
+              "linear-gradient(90deg, rgba(10,200,212,0.20) 0%, rgba(10, 200, 212,0.15) 40%, rgba(10, 200, 212,0.10) 70%, transparent 100%)",
           }}
         />
       </motion.header>
@@ -136,8 +136,7 @@ export default function PageShell({
                       layoutId="tab-active-bg"
                       className="absolute inset-0 rounded-xl"
                       style={{
-                        background:
-                          "linear-gradient(135deg, #0AC8D4 0%, #9B59F5 55%, #E040C0 100%)",
+                        background: "#0AC8D4",
                         boxShadow:
                           "0 3px 12px -6px rgba(10,200,212,0.50), 0 0 0 1px rgba(255,255,255,0.18) inset",
                       }}

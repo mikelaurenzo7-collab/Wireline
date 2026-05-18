@@ -15,8 +15,8 @@ interface SkeletonProps {
 }
 
 const ACCENT_SHIMMER: Record<string, string> = {
-  cyan:    "from-brand/0 via-brand/20 to-brand/0",
-  violet:  "from-brand-2/0 via-brand-2/20 to-brand-2/0",
+  cyan: "from-brand/0 via-brand/20 to-brand/0",
+  violet: "from-brand-2/0 via-brand-2/20 to-brand-2/0",
   magenta: "from-brand-3/0 via-brand-3/20 to-brand-3/0",
   emerald: "from-emerald-500/0 via-emerald-500/20 to-emerald-500/0",
 };
@@ -31,13 +31,13 @@ export function Skeleton({ className, accent = "cyan" }: SkeletonProps) {
       aria-label="Loading…"
       className={cn(
         "relative overflow-hidden rounded-lg bg-black/[0.07] border border-black/[0.05]",
-        className
+        className,
       )}
     >
       <div
         className={cn(
           "skeleton-shimmer absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r",
-          ACCENT_SHIMMER[accent]
+          ACCENT_SHIMMER[accent],
         )}
       />
     </div>
@@ -104,7 +104,10 @@ export function CardGridSkeleton({ count = 4 }: { count?: number }) {
   return (
     <div className="grid grid-cols-2 gap-3 h-full">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="rounded-2xl glass border border-black/8 p-5 space-y-3 overflow-hidden">
+        <div
+          key={i}
+          className="rounded-2xl glass border border-black/8 p-5 space-y-3 overflow-hidden"
+        >
           <div className="flex items-center justify-between">
             <Skeleton className="h-2 w-16" accent={i % 2 === 0 ? "cyan" : "violet"} />
             <Skeleton className="w-5 h-5 rounded-full" accent="magenta" />
@@ -127,14 +130,14 @@ export function ChartSkeleton({ className }: { className?: string }) {
         <div
           key={i}
           className={cn(
-            "relative overflow-hidden flex-1 rounded-t-md bg-black/[0.07] border border-black/[0.05]"
+            "relative overflow-hidden flex-1 rounded-t-md bg-black/[0.07] border border-black/[0.05]",
           )}
           style={{ height: `${h}%` }}
         >
           <div
             className={cn(
               "skeleton-shimmer absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r",
-              ACCENT_SHIMMER[i % 3 === 0 ? "cyan" : i % 3 === 1 ? "violet" : "magenta"]
+              ACCENT_SHIMMER[i % 3 === 0 ? "cyan" : i % 3 === 1 ? "violet" : "magenta"],
             )}
           />
         </div>
@@ -152,7 +155,7 @@ export function PageSpinner() {
         <div
           className="absolute inset-0 rounded-full opacity-40"
           style={{
-            background: "conic-gradient(from 0deg, #0AC8D4, #9B59F5, #E040C0, #10B981, #0AC8D4)",
+            background: "conic-gradient(from 0deg, #0AC8D4, #0AC8D4, #0AC8D4, #10B981, #0AC8D4)",
             filter: "blur(1px)",
             animation: "spin 2.4s linear infinite",
           }}
@@ -161,7 +164,7 @@ export function PageSpinner() {
         <div className="absolute inset-3 rounded-full glass flex items-center justify-center">
           <div
             className="w-3 h-3 rounded-full"
-            style={{ background: "linear-gradient(135deg, #0AC8D4, #9B59F5)", boxShadow: "0 0 12px #0AC8D4" }}
+            style={{ background: "#0AC8D4", boxShadow: "0 0 12px #0AC8D4" }}
           />
         </div>
       </div>

@@ -29,7 +29,6 @@ export default class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    // Console for engineering visibility + Sentry (no-ops when DSN unset).
     console.error("ErrorBoundary caught:", error, info);
     captureException(error, { componentStack: info.componentStack });
   }
@@ -49,20 +48,26 @@ export default class ErrorBoundary extends Component<Props, State> {
       <div className="min-h-[70vh] flex items-center justify-center p-6">
         <div className="relative aurora-ring rounded-3xl max-w-xl w-full">
           <div className="relative rounded-3xl glass-strong overflow-hidden p-8 md:p-10 space-y-6">
-            <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full opacity-30 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #E040C0, transparent)" }} />
+            <div
+              className="absolute -top-20 -right-20 w-64 h-64 rounded-full opacity-30 blur-3xl pointer-events-none"
+              style={{ background: "radial-gradient(circle, #E8466A, transparent)" }}
+            />
             <div className="relative z-10 flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #E040C0, #9B59F5)" }}>
-                <AlertOctagon className="w-7 h-7 text-paper" />
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-rose-500/15 border border-rose-500/30">
+                <AlertOctagon className="w-7 h-7 text-rose-500" />
               </div>
               <div>
-                <div className="text-[10px] uppercase tracking-[0.4em] text-rose-500">Something broke</div>
+                <div className="text-[10px] uppercase tracking-[0.4em] text-rose-500">
+                  Something broke
+                </div>
                 <h2 className="font-display italic text-3xl text-ink leading-tight mt-1">
                   This view crashed
                 </h2>
               </div>
             </div>
             <p className="relative z-10 text-sm text-ink/65 leading-relaxed">
-              The rest of the app is fine — only this view failed. Reload the page or head back to the dashboard.
+              The rest of the app is fine — only this view failed. Reload the page or head back to
+              the dashboard.
             </p>
             <details className="relative z-10 rounded-xl bg-black/30 border border-white/8 p-4 text-xs text-ink/60 font-mono overflow-x-auto">
               <summary className="cursor-pointer text-[10px] uppercase tracking-[0.3em] text-muted hover:text-ink transition-colors">

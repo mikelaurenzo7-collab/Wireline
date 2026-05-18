@@ -5,26 +5,26 @@ import { formatTime } from "../lib/safe-date";
 
 type ActivityItem = {
   id: string;
-  type: 'SIGNAL_ANALYZED' | 'MISSION_INJECTED' | 'NEURAL_OPTIMIZATION' | 'DIGITAL_RELAY';
+  type: "SIGNAL_ANALYZED" | "MISSION_INJECTED" | "NEURAL_OPTIMIZATION" | "DIGITAL_RELAY";
   trigger: string;
   action: string;
   meta: string;
   timestamp: string;
-  importance: 'critical' | 'high' | 'medium' | 'low';
-}
+  importance: "critical" | "high" | "medium" | "low";
+};
 
 const TYPE_META: Record<string, { icon: typeof Signal; color: string }> = {
-  SIGNAL_ANALYZED:    { icon: Signal,   color: "#0AC8D4" },
-  MISSION_INJECTED:   { icon: Zap,      color: "#9B59F5" },
-  NEURAL_OPTIMIZATION:{ icon: Cpu,      color: "#10B981" },
-  DIGITAL_RELAY:      { icon: Radio,    color: "#E040C0" },
+  SIGNAL_ANALYZED: { icon: Signal, color: "#0AC8D4" },
+  MISSION_INJECTED: { icon: Zap, color: "#0AC8D4" },
+  NEURAL_OPTIMIZATION: { icon: Cpu, color: "#10B981" },
+  DIGITAL_RELAY: { icon: Radio, color: "#0AC8D4" },
 };
 
 const IMPORTANCE_RING: Record<string, string> = {
   critical: "border-rose-500/60 text-rose-500",
-  high:     "border-brand/50 text-brand",
-  medium:   "border-brand-2/40 text-brand-2",
-  low:      "border-white/15 text-muted",
+  high: "border-brand/50 text-brand",
+  medium: "border-brand-2/40 text-brand-2",
+  low: "border-white/15 text-muted",
 };
 
 export default function TriggerIntelligenceFeed({ activity }: { activity: ActivityItem[] }) {
@@ -64,7 +64,7 @@ export default function TriggerIntelligenceFeed({ activity }: { activity: Activi
                   <div
                     className={cn(
                       "shrink-0 w-8 h-8 rounded-xl glass border flex items-center justify-center mt-0.5",
-                      ringCls
+                      ringCls,
                     )}
                   >
                     <IconComp className="w-3.5 h-3.5" />
@@ -79,7 +79,11 @@ export default function TriggerIntelligenceFeed({ activity }: { activity: Activi
                         {item.trigger}
                       </span>
                       <span className="text-[8px] font-mono text-muted/50 shrink-0 tabular-nums">
-                        {formatTime(item.timestamp, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                        {formatTime(item.timestamp, {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
+                        })}
                       </span>
                     </div>
                     <p className="text-[11px] text-ink/90 leading-snug truncate">{item.action}</p>

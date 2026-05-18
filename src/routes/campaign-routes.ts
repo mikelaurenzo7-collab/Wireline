@@ -100,7 +100,7 @@ router.post(
         if (!agent) return res.status(404).json({ error: "Agent not found" });
       }
 
-      const [data] = await drizzle
+      const [data] = (await drizzle
         .insert(schema.outboundCampaigns)
         .values({
           userId: req.user.id,
@@ -112,7 +112,7 @@ router.post(
           maxAttempts: Number(max_attempts) || 3,
           status: "draft",
         })
-        .returning();
+        .returning()) as any[];
 
       res.json({ campaign: data });
     } catch (error: any) {
@@ -158,7 +158,7 @@ router.patch(
       if (validation.data?.max_attempts !== undefined)
         updates.maxAttempts = validation.data.max_attempts;
 
-      const [data] = await drizzle
+      const [data] = (await drizzle
         .update(schema.outboundCampaigns)
         .set(updates)
         .where(
@@ -167,7 +167,7 @@ router.patch(
             eq(schema.outboundCampaigns.userId, req.user.id),
           ),
         )
-        .returning();
+        .returning()) as any[];
 
       res.json({ campaign: data });
     } catch (error: any) {

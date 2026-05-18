@@ -23,7 +23,7 @@ import { pickRotatedVoiceId } from "../data/voice-roster";
 import * as claudeBrain from "../lib/claude-brain";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { computeAgentPerformance, emptyAgentPerformance } from "../lib/agent-performance";
-import { computeScorecard } from "../lib/agent-scorecard";
+import { computeScorecard, type CallLogRow } from "../lib/agent-scorecard";
 import { SentryEvents } from "../lib/sentry-events";
 import { normalizeEnabledTools } from "../lib/agent-capabilities";
 import { claudeErr } from "../lib/claude-response-helpers";
@@ -1138,8 +1138,8 @@ router.get(
         focus,
         windowDays: days,
         now,
-        currentLogs: currentLogs || [],
-        priorLogs: priorLogs || [],
+        currentLogs: (currentLogs || []) as CallLogRow[],
+        priorLogs: (priorLogs || []) as CallLogRow[],
         appointments: appts || [],
         openFollowUps: openTasks || [],
       });

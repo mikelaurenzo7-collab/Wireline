@@ -122,7 +122,9 @@ export default function ProductTour() {
         }
       })
       .catch(() => {});
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   const dismiss = useCallback(async () => {
@@ -186,18 +188,9 @@ export default function ProductTour() {
       <AnimatePresence mode="wait">
         <motion.div
           key={step.id}
-          initial={isCentered
-            ? { opacity: 0, scale: 0.94, y: 20 }
-            : { opacity: 0, y: 40 }
-          }
-          animate={isCentered
-            ? { opacity: 1, scale: 1, y: 0 }
-            : { opacity: 1, y: 0 }
-          }
-          exit={isCentered
-            ? { opacity: 0, scale: 0.94, y: -10 }
-            : { opacity: 0, y: 20 }
-          }
+          initial={isCentered ? { opacity: 0, scale: 0.94, y: 20 } : { opacity: 0, y: 40 }}
+          animate={isCentered ? { opacity: 1, scale: 1, y: 0 } : { opacity: 1, y: 0 }}
+          exit={isCentered ? { opacity: 0, scale: 0.94, y: -10 } : { opacity: 0, y: 20 }}
           transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
           className={
             isCentered
@@ -209,7 +202,8 @@ export default function ProductTour() {
             className="glass-elevated rounded-2xl border p-5 shadow-2xl"
             style={{
               borderColor: "rgba(10, 200, 212, 0.18)",
-              boxShadow: "0 1px 0 rgba(255,255,255,0.9) inset, 0 24px 64px rgba(0,0,0,0.12), 0 0 0 1px rgba(10,200,212,0.06)",
+              boxShadow:
+                "0 1px 0 rgba(255,255,255,0.9) inset, 0 24px 64px rgba(0,0,0,0.12), 0 0 0 1px rgba(10,200,212,0.06)",
             }}
           >
             {/* Header row */}
@@ -234,14 +228,15 @@ export default function ProductTour() {
                 {TOUR_STEPS.map((_, i) => (
                   <motion.span
                     key={i}
-                    animate={{ opacity: i === stepIndex ? 1 : 0.3, scale: i === stepIndex ? 1 : 0.75 }}
+                    animate={{
+                      opacity: i === stepIndex ? 1 : 0.3,
+                      scale: i === stepIndex ? 1 : 0.75,
+                    }}
                     className="rounded-full"
                     style={{
                       width: i === stepIndex ? 16 : 6,
                       height: 6,
-                      background: i === stepIndex
-                        ? "linear-gradient(90deg, #0AC8D4, #9B59F5)"
-                        : "rgba(0,0,0,0.15)",
+                      background: i === stepIndex ? "#0AC8D4" : "rgba(0,0,0,0.15)",
                       transition: "width 0.3s ease",
                     }}
                   />
