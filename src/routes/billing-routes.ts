@@ -243,6 +243,53 @@ router.get("/billing/usage", authenticateUser, async (req: AuthenticatedRequest,
   }
 });
 
+/**
+ * Verify a Stripe customer actually exists in the current Stripe account.
+ * Mirrors the preflight that /billing/portal does implicitly (via
+ * billingPortal.sessions.create) so /billing/status can surface the
+ * same STRIPE_CUSTOMER_MISSING signal instead of optimistically
+ * reporting has_customer=true based on a stale DB column.
+ *
+ * Returns:
+ *   "present"  — customer exists and isn't deleted
+ *   "deleted"  — customer exists but is marked deleted in Stripe
+ *   "missing"  — Stripe says "No such customer" (test/live mismatch,
+ *                or the customer was wiped from the Dashboard)
+ *   "unknown"  — Stripe API failed for some other reason; don't lie
+ *                about presence, surface the uncertainty.
+ *
+ * This adds one Stripe API round-trip (~150–300ms) per /billing/status
+ * call. The admin dashboard hits /status on mount, not on every render,
+ * so the cost is bounded. Caching can come later if Sentry shows the
+ * Stripe latency dominating dashboard time-to-interactive.
+ */
+async function verifyStripeCustomer(
+  customerId: string,
+): Promise<"present" | "deleted" | "missing" | "unknown"> {
+  try {
+    const cust = await stripe.customers.retrieve(customerId);
+    // The retrieve() return type is Customer | DeletedCustomer — the
+    // discriminator is `deleted: true` on the deleted variant.
+    if ((cust as Stripe.DeletedCustomer).deleted) return "deleted";
+    return "present";
+  } catch (e: any) {
+    if (
+      e?.code === "resource_missing" ||
+      e?.type === "StripeInvalidRequestError" ||
+      /No such customer/i.test(e?.message || "")
+    ) {
+      return "missing";
+    }
+    log.warn("Stripe customer verify failed", {
+      customerId,
+      code: e?.code,
+      type: e?.type,
+      message: getErrorMessage(e),
+    });
+    return "unknown";
+  }
+}
+
 router.get(
   "/billing/status",
   authenticateUser,
@@ -276,6 +323,18 @@ router.get(
       const agentCount = Number(agentCounts[0]?.val || 0);
       const phoneLineCount = Number(phoneCounts[0]?.val || 0);
       const planMeta = sub?.plan ? planById(sub.plan) : null;
+
+      // Reconcile has_customer with the same reality /billing/portal sees.
+      // Without this, a row whose stripe_customer_id points at a customer
+      // that's been deleted (or lives in the other Stripe mode) reports
+      // has_customer=true here and STRIPE_CUSTOMER_MISSING at /portal —
+      // confusing dead-end UX. Phase 3 fix.
+      let customerState: "present" | "deleted" | "missing" | "unknown" | "none" = "none";
+      if (sub?.stripeCustomerId && stripeAvailable()) {
+        customerState = await verifyStripeCustomer(sub.stripeCustomerId);
+      }
+      const hasCustomer = customerState === "present";
+
       res.json({
         stripe_configured: stripeAvailable(),
         agent_count: agentCount ?? 0,
@@ -289,7 +348,8 @@ router.get(
               status: sub.status,
               current_period_end: sub.currentPeriodEnd,
               cancel_at_period_end: !!sub.cancelAtPeriodEnd,
-              has_customer: !!sub.stripeCustomerId,
+              has_customer: hasCustomer,
+              customer_state: customerState,
               has_subscription: !!sub.stripeSubscriptionId,
               updated_at: sub.updatedAt,
             }
@@ -298,6 +358,75 @@ router.get(
     } catch (e: any) {
       log.error("Failed to load status", { error: getErrorMessage(e) });
       res.status(500).json({ error: "Failed to load status" });
+    }
+  },
+);
+
+/**
+ * GET /api/admin/stripe-customer-audit (owner-only)
+ *
+ * One-shot diagnostic that walks every wireline_subscriptions row with
+ * a stripe_customer_id and asks Stripe whether that customer exists.
+ * Reports counts only — does NOT auto-fix anything, so the founder can
+ * decide whether to reach out to affected accounts or wait for them to
+ * surface organically through /billing/portal failures.
+ *
+ * Output shape:
+ *   { total_with_customer_id, present, deleted, missing, unknown,
+ *     missing_sample: [{ user_id, stripe_customer_id }, ...] }
+ *
+ * `missing_sample` is capped at 10 rows so the response stays small
+ * even if the disagreement is widespread (e.g., whole-mode flip).
+ */
+router.get(
+  "/admin/stripe-customer-audit",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const ownerEmail = process.env.OWNER_EMAIL;
+    if (!ownerEmail || req.user?.email !== ownerEmail) {
+      return res.status(403).json({ error: "Owner only." });
+    }
+    if (!stripeAvailable()) {
+      return res.status(503).json({ error: "Stripe not configured." });
+    }
+    try {
+      const rows = await drizzle
+        .select({
+          userId: schema.subscriptions.userId,
+          stripeCustomerId: schema.subscriptions.stripeCustomerId,
+        })
+        .from(schema.subscriptions);
+
+      const withId = rows.filter((r) => r.stripeCustomerId);
+      const tally = { present: 0, deleted: 0, missing: 0, unknown: 0 };
+      const missingSample: { user_id: string; stripe_customer_id: string }[] = [];
+
+      // Serialize the Stripe calls so we don't burst against the API
+      // rate limit. The audit is owner-triggered and infrequent so
+      // total wall-clock is fine; rate-limit safety beats parallelism.
+      for (const row of withId) {
+        const state = await verifyStripeCustomer(row.stripeCustomerId!);
+        tally[state] += 1;
+        if (state === "missing" && missingSample.length < 10) {
+          missingSample.push({
+            user_id: row.userId,
+            stripe_customer_id: row.stripeCustomerId!,
+          });
+        }
+      }
+
+      return res.json({
+        total_with_customer_id: withId.length,
+        ...tally,
+        missing_sample: missingSample,
+        note:
+          "missing = stripe_customer_id in our DB references a Stripe customer that no longer exists in the current Stripe account. " +
+          "Common causes: test/live key mismatch, customer deleted via Stripe Dashboard. " +
+          "Affected accounts will see STRIPE_CUSTOMER_MISSING from /billing/portal and (post Phase 3) has_customer=false in /billing/status.",
+      });
+    } catch (e: any) {
+      log.error("Stripe customer audit failed", { error: getErrorMessage(e) });
+      return res.status(500).json({ error: "Audit failed" });
     }
   },
 );
