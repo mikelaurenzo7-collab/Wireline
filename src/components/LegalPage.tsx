@@ -29,7 +29,7 @@ function LegalLayout({
         <div className="flex items-center gap-3 mb-2">
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, #0AC8D4, #9B59F5)" }}
+            style={{ background: "#0AC8D4" }}
           >
             <Icon className="w-5 h-5 text-paper" />
           </div>
@@ -86,7 +86,7 @@ export function PrivacyPolicy() {
     <LegalLayout title="Privacy Policy" icon={Shield}>
       <PageMeta
         title="Privacy Policy"
-        description="Wireline's privacy policy — how we collect, use, and protect your data. Sub-processors: Supabase, Vapi, Anthropic, Stripe, Sentry, and Vercel. Last updated May 9, 2026."
+        description="Wireline's privacy policy — how we collect, use, and protect your data. Sub-processors: Supabase, Vapi, Anthropic, Stripe, and Vercel. Last updated May 9, 2026."
       />
 
       <Section title="1. Who We Are">
@@ -121,8 +121,8 @@ export function PrivacyPolicy() {
           Stripe billing information. We do not store full payment card numbers.
         </p>
         <p>
-          <strong>Log and diagnostic data</strong> — Server logs, error reports (via Sentry), and
-          performance metrics used to operate and improve the service.
+          <strong>Log and diagnostic data</strong> — Server logs, error reports, and performance
+          metrics used to operate and improve the service.
         </p>
       </Section>
 
@@ -153,9 +153,6 @@ export function PrivacyPolicy() {
           </li>
           <li>
             <strong>Stripe</strong> (stripe.com) — Payment processing and billing
-          </li>
-          <li>
-            <strong>Sentry</strong> (sentry.io) — Error monitoring and diagnostics
           </li>
           <li>
             <strong>Vercel</strong> (vercel.com) — Platform hosting and edge delivery

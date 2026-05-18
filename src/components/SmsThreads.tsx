@@ -145,7 +145,7 @@ export default function SmsThreads() {
               icon={MessageSquare}
               title="No SMS yet"
               description="Conversations land here when an agent sends a text or a customer replies to your number."
-              accent="#9B59F5"
+              accent="#0AC8D4"
             />
           ) : (
             <div className="space-y-1.5">

@@ -15,10 +15,13 @@
   --font-display: "Instrument Serif", "Times New Roman", serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
-  /* Core palette — Aurora Cream */
+  /* Core palette — single brand teal. The legacy --color-brand-2/3
+   * tokens were the purple/magenta points of the aurora gradient;
+   * they're now aliased to the brand teal so any stray references
+   * resolve to the canonical hue instead of breaking the build. */
   --color-brand: #0AC8D4;          /* Deeper teal — readable on cream */
-  --color-brand-2: #9B59F5;        /* Aurora violet */
-  --color-brand-3: #E040C0;        /* Plasma magenta */
+  --color-brand-2: #0AC8D4;        /* deprecated — alias of --color-brand */
+  --color-brand-3: #0AC8D4;        /* deprecated — alias of --color-brand */
   --color-ink: #1C1917;            /* Warm near-black text */
   --color-paper: #F5F0E8;          /* Warm cream base */
   --color-muted: #7C7469;          /* Warm gray muted text */
@@ -63,9 +66,7 @@
     @apply font-sans bg-paper text-ink selection:bg-brand/20 selection:text-ink antialiased overflow-x-hidden;
     background:
       radial-gradient(70rem 55rem at 5% -5%, rgba(10, 200, 212, 0.08), transparent 55%),
-      radial-gradient(60rem 50rem at 100% 5%, rgba(155, 89, 245, 0.07), transparent 55%),
-      radial-gradient(80rem 65rem at 55% 110%, rgba(224, 64, 192, 0.05), transparent 55%),
-      radial-gradient(45rem 35rem at 85% 55%, rgba(16, 185, 129, 0.04), transparent 55%),
+      radial-gradient(60rem 50rem at 100% 5%, rgba(10, 200, 212, 0.04), transparent 55%),
       #F5F0E8;
     background-attachment: fixed;
   }
@@ -107,14 +108,14 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, rgba(10, 200, 212, 0.35), rgba(155, 89, 245, 0.35));
+    background: rgba(10, 200, 212, 0.35);
     border-radius: 999px;
     border: 2px solid transparent;
     background-clip: padding-box;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, rgba(10, 200, 212, 0.60), rgba(224, 64, 192, 0.60));
+    background: rgba(10, 200, 212, 0.60);
     border-radius: 999px;
     border: 2px solid transparent;
     background-clip: padding-box;
@@ -145,7 +146,7 @@
   @apply border border-black/9 rounded-3xl;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.70) inset,
-    0 0 0 1px rgba(155, 89, 245, 0.06),
+    0 0 0 1px rgba(10, 200, 212, 0.06),
     0 20px 60px -20px rgba(0, 0, 0, 0.12),
     0 8px 28px -8px rgba(10, 200, 212, 0.10);
 }
@@ -153,23 +154,20 @@
 @utility brutal-btn {
   @apply relative inline-flex items-center justify-center gap-3 px-9 py-4 font-medium tracking-[0.18em] uppercase text-xs rounded-full transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:grayscale disabled:pointer-events-none overflow-hidden;
   color: #FAF8F4;
-  background: linear-gradient(135deg, #0AC8D4 0%, #9B59F5 50%, #E040C0 100%);
-  background-size: 200% 200%;
-  background-position: 0% 0%;
+  background: #0AC8D4;
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.25) inset,
     0 6px 20px -6px rgba(10, 200, 212, 0.40),
-    0 14px 36px -10px rgba(155, 89, 245, 0.30);
+    0 14px 36px -10px rgba(10, 200, 212, 0.25);
 }
 
-/* When a button is the brutal-btn (gradient), ensure icons + spans inherit ink color */
 .brutal-btn:hover {
-  background-position: 100% 100%;
+  background: #1FD4E0;
   transform: translateY(-1px);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.30) inset,
-    0 12px 28px -8px rgba(10, 200, 212, 0.45),
-    0 20px 48px -12px rgba(155, 89, 245, 0.35);
+    0 12px 28px -8px rgba(10, 200, 212, 0.50),
+    0 20px 48px -12px rgba(10, 200, 212, 0.30);
 }
 
 .brutal-btn:active {
@@ -194,7 +192,7 @@
 @utility indicator-glow {
   box-shadow:
     0 0 16px rgba(10, 200, 212, 0.40),
-    0 0 32px rgba(155, 89, 245, 0.25);
+    0 0 32px rgba(10, 200, 212, 0.18);
 }
 
 @utility scanline {
@@ -222,45 +220,33 @@
   box-shadow:
     0 0 0 1px rgba(10, 200, 212, 0.25) inset,
     0 8px 24px -6px rgba(10, 200, 212, 0.30),
-    0 14px 40px -10px rgba(155, 89, 245, 0.25);
+    0 14px 40px -10px rgba(10, 200, 212, 0.18);
 }
 
-/* Iridescent gradient text (used as drop-in for `text-stroke`) */
-.text-stroke {
-  background: linear-gradient(135deg, #0AC8D4 0%, #9B59F5 50%, #E040C0 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-  filter: drop-shadow(0 0 16px rgba(10, 200, 212, 0.20));
-}
-
-/* Aurora gradient text helper */
+/* Display headline accent — solid brand teal on the editorial italic
+ * face. Used to live as a rainbow gradient; flattened pre-launch so the
+ * operator console no longer looks like every other "AI startup". */
 .text-aurora {
-  background: linear-gradient(120deg, #0AC8D4 0%, #9B59F5 45%, #E040C0 100%);
-  background-size: 200% 200%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-  animation: aurora-pan 14s ease-in-out infinite;
+  @apply font-display italic;
+  color: #0AC8D4;
+}
+
+/* Legacy alias — same treatment. */
+.text-stroke {
+  color: #0AC8D4;
+  filter: drop-shadow(0 0 16px rgba(10, 200, 212, 0.20));
 }
 
 .brand-wordmark {
   @apply font-display uppercase font-normal;
   letter-spacing: 0.14em;
   text-rendering: geometricPrecision;
-  background: linear-gradient(120deg, #0AC8D4 0%, #9B59F5 45%, #E040C0 100%);
-  background-size: 220% 220%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-  animation: aurora-pan 12s ease-in-out infinite;
+  color: #0AC8D4;
   filter: drop-shadow(0 0 10px rgba(10, 200, 212, 0.18));
 }
 
-/* Iridescent border via mask trick */
+/* Subtle brand-tinted ring for emphasized surfaces. Previously a 3-stop
+ * cyan→violet→magenta gradient; now a single soft teal hairline. */
 .aurora-ring {
   position: relative;
   isolation: isolate;
@@ -271,7 +257,7 @@
   inset: 0;
   padding: 1px;
   border-radius: inherit;
-  background: linear-gradient(135deg, rgba(10, 200, 212, 0.50), rgba(155, 89, 245, 0.35) 50%, rgba(224, 64, 192, 0.50));
+  background: rgba(10, 200, 212, 0.45);
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
     linear-gradient(#000 0 0);
@@ -388,7 +374,7 @@
   box-shadow:
     0 0 0 1px rgba(10, 200, 212, 0.50),
     0 0 20px rgba(10, 200, 212, 0.25),
-    0 0 40px rgba(155, 89, 245, 0.15);
+    0 0 40px rgba(10, 200, 212, 0.10);
 }
 
 .font-display {
@@ -516,10 +502,10 @@ select:focus {
          focus:border-brand/45 focus:bg-white/55 resize-none leading-relaxed;
 }
 
-/* Section separator — decorative gradient line */
+/* Section separator — soft brand line */
 .section-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(10, 200, 212, 0.25) 30%, rgba(155, 89, 245, 0.25) 70%, transparent);
+  background: linear-gradient(90deg, transparent, rgba(10, 200, 212, 0.30) 50%, transparent);
 }
 
 /* Compact metric display */
@@ -564,9 +550,9 @@ select:focus {
   border-color: rgba(10, 200, 212, 0.20);
 }
 
-/* Gradient badge */
+/* Brand badge — soft teal pill */
 .badge-aurora {
-  background: linear-gradient(135deg, rgba(10,200,212,0.14), rgba(155,89,245,0.14));
+  background: rgba(10, 200, 212, 0.10);
   border: 1px solid rgba(10, 200, 212, 0.30);
   color: #0AC8D4;
   @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-medium uppercase tracking-[0.22em] leading-none;
@@ -577,9 +563,9 @@ select:focus {
 .badge-medium { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.2em] leading-none bg-amber-500/10 border border-amber-500/30 text-amber-700; }
 .badge-low    { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.2em] leading-none bg-black/5 border border-black/10 text-muted; }
 
-/* Sidebar nav item — active gradient pill */
+/* Sidebar nav item — active solid pill */
 .nav-active-bg {
-  background: linear-gradient(135deg, #0AC8D4 0%, #9B59F5 60%, #E040C0 100%);
+  background: #0AC8D4;
   box-shadow:
     0 4px 14px -6px rgba(10,200,212,0.45),
     0 0 0 1px rgba(255,255,255,0.18) inset;
@@ -590,7 +576,7 @@ select:focus {
   height: 3px;
   width: 48px;
   border-radius: 999px;
-  background: linear-gradient(90deg, #0AC8D4, #9B59F5, #E040C0);
+  background: #0AC8D4;
   box-shadow: 0 0 10px rgba(10, 200, 212, 0.40);
 }
 
@@ -642,21 +628,15 @@ select:focus {
 
 /* ─────────────────────────  PAGE TITLE GLOW  ────────────────────────── */
 
-/* Large display headings with the aurora gradient */
+/* Large display headings — solid warm ink, editorial weight. */
 .page-title-aurora {
-  background: linear-gradient(120deg, #1C1917 0%, #9B59F5 50%, #0AC8D4 100%);
-  background-size: 200% 200%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-  animation: aurora-pan 16s ease-in-out infinite;
+  color: #1C1917;
 }
 
-/* Panel header gradient decoration bar */
+/* Panel header decoration bar — soft brand fade */
 .panel-header-rule {
   height: 1px;
-  background: linear-gradient(90deg, rgba(10,200,212,0.35) 0%, rgba(155,89,245,0.35) 50%, transparent 100%);
+  background: linear-gradient(90deg, rgba(10,200,212,0.45) 0%, transparent 100%);
 }
 
 /* Auth form input — tall, light, branded */
@@ -681,10 +661,10 @@ select:focus {
   border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-/* Gradient accent chip / tag */
+/* Brand accent chip / tag */
 .chip-brand {
-  background: linear-gradient(135deg, rgba(10,200,212,0.12), rgba(155,89,245,0.12));
-  border: 1px solid rgba(10,200,212,0.25);
+  background: rgba(10, 200, 212, 0.10);
+  border: 1px solid rgba(10, 200, 212, 0.30);
   color: #0AC8D4;
   @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.32em] leading-none font-medium;
 }

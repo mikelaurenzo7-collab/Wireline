@@ -22,23 +22,78 @@ interface OptionCard {
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
 const PERSONA_OPTIONS: OptionCard[] = [
-  { id: "solo", icon: "🧑‍💼", label: "Solo Operator", description: "I run my business and want AI agents doing the heavy lifting" },
-  { id: "power", icon: "🏢", label: "Team Lead / Agency", description: "I manage multiple clients or have a team using Wireline" },
-  { id: "technical", icon: "🛠️", label: "Developer / Technical", description: "I'm integrating Wireline into a custom workflow or product" },
-  { id: "non_technical", icon: "✨", label: "Business Owner", description: "I'm new to AI agents and want simple, guided setup" },
+  {
+    id: "solo",
+    icon: "🧑‍💼",
+    label: "Solo Operator",
+    description: "I run my business and want AI agents doing the heavy lifting",
+  },
+  {
+    id: "power",
+    icon: "🏢",
+    label: "Team Lead / Agency",
+    description: "I manage multiple clients or have a team using Wireline",
+  },
+  {
+    id: "technical",
+    icon: "🛠️",
+    label: "Developer / Technical",
+    description: "I'm integrating Wireline into a custom workflow or product",
+  },
+  {
+    id: "non_technical",
+    icon: "✨",
+    label: "Business Owner",
+    description: "I'm new to AI agents and want simple, guided setup",
+  },
 ];
 
 const GOAL_OPTIONS: OptionCard[] = [
-  { id: "convert_leads", icon: "🎯", label: "Convert more leads", description: "I want agents handling inbound inquiries and booking demos" },
-  { id: "support_customers", icon: "🤝", label: "Support my customers 24/7", description: "My customers need help outside business hours" },
-  { id: "automate_scheduling", icon: "📅", label: "Automate scheduling", description: "I want AI booking appointments so I don't play phone tag" },
-  { id: "collect_payments", icon: "💰", label: "Recover revenue", description: "Follow up on unpaid invoices and re-engage dormant customers" },
+  {
+    id: "convert_leads",
+    icon: "🎯",
+    label: "Convert more leads",
+    description: "I want agents handling inbound inquiries and booking demos",
+  },
+  {
+    id: "support_customers",
+    icon: "🤝",
+    label: "Support my customers 24/7",
+    description: "My customers need help outside business hours",
+  },
+  {
+    id: "automate_scheduling",
+    icon: "📅",
+    label: "Automate scheduling",
+    description: "I want AI booking appointments so I don't play phone tag",
+  },
+  {
+    id: "collect_payments",
+    icon: "💰",
+    label: "Recover revenue",
+    description: "Follow up on unpaid invoices and re-engage dormant customers",
+  },
 ];
 
 const SITUATION_OPTIONS: OptionCard[] = [
-  { id: "brand_new", icon: "🚀", label: "Starting fresh", description: "No agents yet, need to set everything up" },
-  { id: "has_some_setup", icon: "⚡", label: "Partially set up", description: "I have an account but haven't fully configured things" },
-  { id: "migrating", icon: "🔄", label: "Moving from another tool", description: "Replacing an existing system with Wireline" },
+  {
+    id: "brand_new",
+    icon: "🚀",
+    label: "Starting fresh",
+    description: "No agents yet, need to set everything up",
+  },
+  {
+    id: "has_some_setup",
+    icon: "⚡",
+    label: "Partially set up",
+    description: "I have an account but haven't fully configured things",
+  },
+  {
+    id: "migrating",
+    icon: "🔄",
+    label: "Moving from another tool",
+    description: "Replacing an existing system with Wireline",
+  },
 ];
 
 interface Recommendation {
@@ -106,8 +161,11 @@ function SelectCard({ option, selected, onSelect, cols = 2 }: SelectCardProps) {
       ].join(" ")}
     >
       {selected && (
-        <div className="absolute inset-0 rounded-2xl pointer-events-none"
-          style={{ background: "linear-gradient(135deg, rgba(10,200,212,0.08), rgba(197,139,255,0.06))" }}
+        <div
+          className="absolute inset-0 rounded-2xl pointer-events-none"
+          style={{
+            background: "linear-gradient(135deg, rgba(10,200,212,0.08), rgba(10, 200, 212,0.06))",
+          }}
         />
       )}
       <div className="relative z-10">
@@ -116,10 +174,17 @@ function SelectCard({ option, selected, onSelect, cols = 2 }: SelectCardProps) {
         <p className="text-xs text-ink/60 leading-relaxed">{option.description}</p>
       </div>
       {selected && (
-        <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full flex items-center justify-center"
-          style={{ background: "linear-gradient(135deg, #0AC8D4, #9B59F5)" }}
+        <div
+          className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full flex items-center justify-center"
+          style={{ background: "#0AC8D4" }}
         >
-          <svg className="w-3 h-3 text-black" fill="none" viewBox="0 0 12 12" stroke="currentColor" strokeWidth={2.5}>
+          <svg
+            className="w-3 h-3 text-black"
+            fill="none"
+            viewBox="0 0 12 12"
+            stroke="currentColor"
+            strokeWidth={2.5}
+          >
             <path strokeLinecap="round" strokeLinejoin="round" d="M2 6l3 3 5-5" />
           </svg>
         </div>
@@ -152,7 +217,10 @@ export default function PersonaWizard() {
     authFetch("/api/user-preferences")
       .then(async (res) => {
         if (!res.ok || cancelled) return;
-        const data = await res.json() as { persona?: string | null; onboarding_completed?: boolean };
+        const data = (await res.json()) as {
+          persona?: string | null;
+          onboarding_completed?: boolean;
+        };
         if (!cancelled) {
           // Show wizard only when persona is null/undefined AND onboarding not completed
           const shouldShow = !data.persona && !data.onboarding_completed;
@@ -164,7 +232,9 @@ export default function PersonaWizard() {
         if (!cancelled) setLoading(false);
       });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   if (loading || !visible) return null;
@@ -247,13 +317,24 @@ export default function PersonaWizard() {
         className="relative w-full max-w-2xl"
       >
         {/* Aurora glow ring */}
-        <div className="absolute -inset-px rounded-3xl pointer-events-none z-0"
-          style={{ background: "linear-gradient(135deg, rgba(10,200,212,0.4), rgba(197,139,255,0.3), rgba(255,107,217,0.25))", borderRadius: "24px" }}
+        <div
+          className="absolute -inset-px rounded-3xl pointer-events-none z-0"
+          style={{
+            background:
+              "linear-gradient(135deg, rgba(10,200,212,0.4), rgba(10, 200, 212,0.3), rgba(10, 200, 212,0.25))",
+            borderRadius: "24px",
+          }}
         />
 
         <div className="relative z-10 rounded-3xl overflow-hidden glass-strong border border-white/10">
           {/* Header accent bar */}
-          <div className="h-px w-full" style={{ background: "linear-gradient(90deg, transparent, #0AC8D4, #9B59F5, #E040C0, transparent)" }} />
+          <div
+            className="h-px w-full"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent, #0AC8D4, #0AC8D4, #0AC8D4, transparent)",
+            }}
+          />
 
           <div className="p-8">
             {/* Progress dots */}
@@ -265,9 +346,7 @@ export default function PersonaWizard() {
                     className="h-1.5 rounded-full transition-all duration-300"
                     style={{
                       width: i === step ? 32 : 8,
-                      background: i <= step
-                        ? "linear-gradient(90deg, #0AC8D4, #9B59F5)"
-                        : "rgba(255,255,255,0.15)",
+                      background: i <= step ? "#0AC8D4" : "rgba(255,255,255,0.15)",
                     }}
                   />
                 ))}
@@ -290,7 +369,9 @@ export default function PersonaWizard() {
                     transition={{ duration: 0.3, ease: "easeInOut" }}
                   >
                     <div className="mb-6">
-                      <h2 className="text-2xl font-bold text-ink mb-2">Let's personalize your experience</h2>
+                      <h2 className="text-2xl font-bold text-ink mb-2">
+                        Let's personalize your experience
+                      </h2>
                       <p className="text-ink/60 text-sm">3 quick questions — takes 20 seconds</p>
                     </div>
                     <div className="grid grid-cols-2 gap-3 mb-8">
@@ -333,8 +414,12 @@ export default function PersonaWizard() {
                     transition={{ duration: 0.3, ease: "easeInOut" }}
                   >
                     <div className="mb-6">
-                      <h2 className="text-2xl font-bold text-ink mb-2">What matters most to you right now?</h2>
-                      <p className="text-ink/60 text-sm">We'll tailor your starting point to match.</p>
+                      <h2 className="text-2xl font-bold text-ink mb-2">
+                        What matters most to you right now?
+                      </h2>
+                      <p className="text-ink/60 text-sm">
+                        We'll tailor your starting point to match.
+                      </p>
                     </div>
                     <div className="grid grid-cols-2 gap-3 mb-8">
                       {GOAL_OPTIONS.map((opt) => (
@@ -347,7 +432,10 @@ export default function PersonaWizard() {
                       ))}
                     </div>
                     <div className="flex items-center justify-between">
-                      <button onClick={goBack} className="flex items-center gap-1.5 text-sm text-ink/50 hover:text-ink/80 transition-colors">
+                      <button
+                        onClick={goBack}
+                        className="flex items-center gap-1.5 text-sm text-ink/50 hover:text-ink/80 transition-colors"
+                      >
                         <ChevronLeft className="w-4 h-4" /> Back
                       </button>
                       <button
@@ -373,8 +461,12 @@ export default function PersonaWizard() {
                     transition={{ duration: 0.3, ease: "easeInOut" }}
                   >
                     <div className="mb-6">
-                      <h2 className="text-2xl font-bold text-ink mb-2">How would you describe where you're starting?</h2>
-                      <p className="text-ink/60 text-sm">This helps us show you the right first steps.</p>
+                      <h2 className="text-2xl font-bold text-ink mb-2">
+                        How would you describe where you're starting?
+                      </h2>
+                      <p className="text-ink/60 text-sm">
+                        This helps us show you the right first steps.
+                      </p>
                     </div>
                     <div className="grid grid-cols-3 gap-3 mb-8">
                       {SITUATION_OPTIONS.map((opt) => (
@@ -388,7 +480,10 @@ export default function PersonaWizard() {
                       ))}
                     </div>
                     <div className="flex items-center justify-between">
-                      <button onClick={goBack} className="flex items-center gap-1.5 text-sm text-ink/50 hover:text-ink/80 transition-colors">
+                      <button
+                        onClick={goBack}
+                        className="flex items-center gap-1.5 text-sm text-ink/50 hover:text-ink/80 transition-colors"
+                      >
                         <ChevronLeft className="w-4 h-4" /> Back
                       </button>
                       <button
@@ -414,33 +509,48 @@ export default function PersonaWizard() {
                     transition={{ duration: 0.3, ease: "easeInOut" }}
                   >
                     <div className="mb-6 text-center">
-                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium mb-4"
-                        style={{ background: "linear-gradient(135deg, rgba(10,200,212,0.15), rgba(197,139,255,0.15))", border: "1px solid rgba(10,200,212,0.3)" }}
+                      <div
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium mb-4"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, rgba(10,200,212,0.15), rgba(10, 200, 212,0.15))",
+                          border: "1px solid rgba(10,200,212,0.3)",
+                        }}
                       >
                         <Sparkles className="w-3.5 h-3.5 text-cyan-600" />
-                        <span className="text-cyan-600">Personalized for {PERSONA_LABELS[persona]}</span>
+                        <span className="text-cyan-600">
+                          Personalized for {PERSONA_LABELS[persona]}
+                        </span>
                       </div>
                       <h2 className="text-2xl font-bold text-ink mb-3">Your recommended path</h2>
                     </div>
 
                     {/* Recommendation card */}
-                    <div className="relative rounded-2xl p-6 mb-8 overflow-hidden"
+                    <div
+                      className="relative rounded-2xl p-6 mb-8 overflow-hidden"
                       style={{
-                        background: "linear-gradient(135deg, rgba(10,200,212,0.08), rgba(197,139,255,0.06))",
+                        background:
+                          "linear-gradient(135deg, rgba(10,200,212,0.08), rgba(10, 200, 212,0.06))",
                         border: "1px solid rgba(10,200,212,0.25)",
                       }}
                     >
-                      <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
+                      <div
+                        className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
                         style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }}
                       />
                       <div className="relative z-10">
-                        <h3 className="text-lg font-bold text-ink mb-2">{recommendation.headline}</h3>
+                        <h3 className="text-lg font-bold text-ink mb-2">
+                          {recommendation.headline}
+                        </h3>
                         <p className="text-sm text-ink/70 leading-relaxed">{recommendation.body}</p>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <button onClick={goBack} className="flex items-center gap-1.5 text-sm text-ink/50 hover:text-ink/80 transition-colors">
+                      <button
+                        onClick={goBack}
+                        className="flex items-center gap-1.5 text-sm text-ink/50 hover:text-ink/80 transition-colors"
+                      >
                         <ChevronLeft className="w-4 h-4" /> Back
                       </button>
                       <button

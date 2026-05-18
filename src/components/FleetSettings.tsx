@@ -68,7 +68,7 @@ function Sparkline({
       <defs>
         <linearGradient id="sp-grad" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stopColor="#0AC8D4" stopOpacity="0.8" />
-          <stop offset="100%" stopColor="#9B59F5" stopOpacity="0.8" />
+          <stop offset="100%" stopColor="#0AC8D4" stopOpacity="0.8" />
         </linearGradient>
       </defs>
       <path
@@ -702,7 +702,7 @@ export default function FleetSettings() {
                             selectedAgent?.id === agent.id
                               ? {
                                   background:
-                                    "linear-gradient(135deg, rgba(10,200,212,0.08), rgba(197,139,255,0.05))",
+                                    "linear-gradient(135deg, rgba(10,200,212,0.08), rgba(10, 200, 212,0.05))",
                                 }
                               : undefined
                           }
@@ -711,7 +711,7 @@ export default function FleetSettings() {
                           {selectedAgent?.id === agent.id && (
                             <div
                               className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full"
-                              style={{ background: "linear-gradient(to bottom, #0AC8D4, #9B59F5)" }}
+                              style={{ background: "linear-gradient(to bottom, #0AC8D4, #0AC8D4)" }}
                             />
                           )}
 
@@ -951,7 +951,7 @@ export default function FleetSettings() {
                             <div
                               className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
                               style={{
-                                background: "radial-gradient(circle, #9B59F5, transparent)",
+                                background: "radial-gradient(circle, #0AC8D4, transparent)",
                               }}
                             />
 

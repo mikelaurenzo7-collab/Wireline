@@ -45,7 +45,7 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     handles: "general, how-to, account, password reset, navigation",
     tel: "+16306425661",
     display: "(630) 642-5661",
-    tint: "#E040C0",
+    tint: "#0AC8D4",
   },
   {
     name: "Liam",
@@ -80,7 +80,7 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     handles: "demo, onboarding, training, white glove, calendar, scheduling",
     tel: "+16306425927",
     display: "(630) 642-5927",
-    tint: "#9B59F5",
+    tint: "#0AC8D4",
   },
   {
     name: "Devon",

@@ -16,8 +16,15 @@ interface Props {
 }
 
 export default function ConfirmModal({
-  open, title, message, confirmLabel = "Confirm", cancelLabel = "Cancel",
-  danger = false, loading = false, onConfirm, onCancel,
+  open,
+  title,
+  message,
+  confirmLabel = "Confirm",
+  cancelLabel = "Cancel",
+  danger = false,
+  loading = false,
+  onConfirm,
+  onCancel,
 }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const confirmBtnRef = useRef<HTMLButtonElement>(null);
@@ -38,22 +45,31 @@ export default function ConfirmModal({
   useEffect(() => {
     if (!open) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { onCancel(); return; }
+      if (e.key === "Escape") {
+        onCancel();
+        return;
+      }
       if (e.key !== "Tab") return;
       const dialog = dialogRef.current;
       if (!dialog) return;
       const focusable = Array.from(
         dialog.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        )
-      ).filter(el => el.offsetParent !== null);
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => el.offsetParent !== null);
       if (!focusable.length) return;
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
       if (e.shiftKey) {
-        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
       } else {
-        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     };
     document.addEventListener("keydown", handleKeyDown);
@@ -89,19 +105,39 @@ export default function ConfirmModal({
             className="relative w-full max-w-sm aurora-ring rounded-2xl z-10"
           >
             <div className="relative rounded-2xl glass-strong p-6 overflow-hidden">
-              <div className="absolute -top-16 -right-16 w-32 h-32 rounded-full blur-3xl opacity-30 pointer-events-none"
-                style={{ background: danger ? "radial-gradient(circle, #E040C0, transparent)" : "radial-gradient(circle, #0AC8D4, transparent)" }} />
+              <div
+                className="absolute -top-16 -right-16 w-32 h-32 rounded-full blur-3xl opacity-30 pointer-events-none"
+                style={{
+                  background: danger
+                    ? "radial-gradient(circle, #E8466A, transparent)"
+                    : "radial-gradient(circle, #0AC8D4, transparent)",
+                }}
+              />
 
               <div className="relative z-10 flex items-start gap-4 mb-5">
-                <div className={cn(
-                  "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
-                  danger ? "bg-rose-500/15 border border-rose-500/30" : "bg-amber-500/15 border border-amber-500/30"
-                )}>
-                  <AlertTriangle className={cn("w-5 h-5", danger ? "text-rose-500" : "text-amber-500")} aria-hidden="true" />
+                <div
+                  className={cn(
+                    "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+                    danger
+                      ? "bg-rose-500/15 border border-rose-500/30"
+                      : "bg-amber-500/15 border border-amber-500/30",
+                  )}
+                >
+                  <AlertTriangle
+                    className={cn("w-5 h-5", danger ? "text-rose-500" : "text-amber-500")}
+                    aria-hidden="true"
+                  />
                 </div>
                 <div>
-                  <h3 id="confirm-modal-title" className="font-display italic text-xl text-ink mb-1">{title}</h3>
-                  <p id="confirm-modal-desc" className="text-xs text-muted leading-relaxed">{message}</p>
+                  <h3
+                    id="confirm-modal-title"
+                    className="font-display italic text-xl text-ink mb-1"
+                  >
+                    {title}
+                  </h3>
+                  <p id="confirm-modal-desc" className="text-xs text-muted leading-relaxed">
+                    {message}
+                  </p>
                 </div>
                 <button
                   onClick={onCancel}
@@ -128,7 +164,7 @@ export default function ConfirmModal({
                     "flex-1 h-11 rounded-xl text-[11px] uppercase tracking-[0.25em] flex items-center justify-center gap-1.5 transition-all active:scale-95",
                     danger
                       ? "bg-rose-500/20 border border-rose-500/40 text-rose-500 hover:bg-rose-500/30"
-                      : "brutal-btn !py-0 !h-11"
+                      : "brutal-btn !py-0 !h-11",
                   )}
                 >
                   {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />}

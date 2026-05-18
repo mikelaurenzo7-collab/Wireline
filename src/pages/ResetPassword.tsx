@@ -86,7 +86,9 @@ export default function ResetPassword() {
         />
         <div
           className="absolute -bottom-[20%] -right-[15%] w-[65vw] h-[65vw] rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(255,107,217,0.16), transparent 60%)" }}
+          style={{
+            background: "radial-gradient(circle, rgba(10, 200, 212,0.16), transparent 60%)",
+          }}
         />
       </div>
 
@@ -95,7 +97,7 @@ export default function ResetPassword() {
           <div
             className="relative w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
             style={{
-              background: "linear-gradient(135deg, #0AC8D4 0%, #9B59F5 50%, #E040C0 100%)",
+              background: "#0AC8D4",
               boxShadow:
                 "0 8px 24px -8px rgba(10,200,212,0.60), 0 0 0 1px rgba(255,255,255,0.22) inset",
             }}
@@ -183,7 +185,7 @@ export default function ResetPassword() {
               disabled={loading || !password || password !== confirm}
               className="w-full px-5 py-3 rounded-xl text-sm font-medium text-paper transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
-                background: "linear-gradient(135deg, #0AC8D4 0%, #9B59F5 100%)",
+                background: "#0AC8D4",
                 boxShadow: "0 8px 24px -8px rgba(10,200,212,0.50)",
               }}
             >

@@ -27,10 +27,13 @@ export default function HubTabs({ tabs, label, className }: HubTabsProps) {
   return (
     <nav
       aria-label={label || "Section navigation"}
-      className={cn("shrink-0 mb-4 flex items-center gap-1 overflow-x-auto scrollbar-hide", className)}
+      className={cn(
+        "shrink-0 mb-4 flex items-center gap-1 overflow-x-auto scrollbar-hide",
+        className,
+      )}
     >
       <div className="flex items-center gap-1 p-1 rounded-2xl glass border border-black/8">
-        {tabs.map(t => {
+        {tabs.map((t) => {
           const Icon = t.icon;
           const active = pathname === t.path || pathname.startsWith(`${t.path}/`);
           return (
@@ -40,14 +43,17 @@ export default function HubTabs({ tabs, label, className }: HubTabsProps) {
               aria-current={active ? "page" : undefined}
               className={cn(
                 "relative shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all text-[10px] uppercase tracking-[0.22em] font-medium",
-                active
-                  ? "text-white"
-                  : "text-muted hover:text-ink hover:bg-black/5"
+                active ? "text-white" : "text-muted hover:text-ink hover:bg-black/5",
               )}
-              style={active ? {
-                background: "linear-gradient(135deg, #0AC8D4 0%, #9B59F5 55%, #E040C0 100%)",
-                boxShadow: "0 3px 12px -6px rgba(10,200,212,0.50), 0 0 0 1px rgba(255,255,255,0.18) inset",
-              } : undefined}
+              style={
+                active
+                  ? {
+                      background: "#0AC8D4",
+                      boxShadow:
+                        "0 3px 12px -6px rgba(10,200,212,0.50), 0 0 0 1px rgba(255,255,255,0.18) inset",
+                    }
+                  : undefined
+              }
             >
               <Icon className="w-3 h-3" />
               <span>{t.label}</span>
@@ -64,22 +70,32 @@ export default function HubTabs({ tabs, label, className }: HubTabsProps) {
 // the same strip without drifting.
 // ──────────────────────────────────────────────────────────────────────────
 
-import { MessageSquare, Database, History, PhoneOutgoing, Mail, Calendar, ServerCog, Ban, ScrollText } from "lucide-react";
+import {
+  MessageSquare,
+  Database,
+  History,
+  PhoneOutgoing,
+  Mail,
+  Calendar,
+  ServerCog,
+  Ban,
+  ScrollText,
+} from "lucide-react";
 
 export const TRAINING_HUB: HubTabDef[] = [
-  { label: "Lessons",   path: "/train",     icon: MessageSquare },
+  { label: "Lessons", path: "/train", icon: MessageSquare },
   { label: "Knowledge", path: "/knowledge", icon: Database },
 ];
 
 export const CHANNELS_HUB: HubTabDef[] = [
-  { label: "Logs",         path: "/logs",         icon: History },
-  { label: "Outbound",     path: "/outbound",     icon: PhoneOutgoing },
-  { label: "Email",        path: "/inbox",        icon: Mail },
+  { label: "Logs", path: "/logs", icon: History },
+  { label: "Outbound", path: "/outbound", icon: PhoneOutgoing },
+  { label: "Email", path: "/inbox", icon: Mail },
   { label: "Appointments", path: "/appointments", icon: Calendar },
 ];
 
 export const SYSTEM_HUB: HubTabDef[] = [
-  { label: "Settings",  path: "/admin", icon: ServerCog },
-  { label: "DNC List",  path: "/dnc",   icon: Ban },
+  { label: "Settings", path: "/admin", icon: ServerCog },
+  { label: "DNC List", path: "/dnc", icon: Ban },
   { label: "Audit Log", path: "/audit", icon: ScrollText },
 ];

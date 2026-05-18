@@ -87,7 +87,7 @@ export default function AppShell() {
           <div
             className="absolute inset-0 rounded-full"
             style={{
-              background: "conic-gradient(from 0deg, #0AC8D4, #9B59F5, #E040C0, #10B981, #0AC8D4)",
+              background: "conic-gradient(from 0deg, #0AC8D4, #0AC8D4, #0AC8D4, #10B981, #0AC8D4)",
               filter: "blur(2px)",
             }}
           />

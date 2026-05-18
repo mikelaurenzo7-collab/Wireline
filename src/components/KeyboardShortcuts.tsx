@@ -55,20 +55,29 @@ export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsPr
     // Move focus to close button when modal opens
     closeRef.current?.focus();
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { onClose(); return; }
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
       if (e.key === "Tab" && dialogRef.current) {
         const focusables = Array.from(
           dialogRef.current.querySelectorAll<HTMLElement>(
-            'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
-          )
+            'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+          ),
         );
         if (!focusables.length) return;
         const first = focusables[0];
         const last = focusables[focusables.length - 1];
         if (e.shiftKey) {
-          if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
         } else {
-          if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
         }
       }
     };
@@ -108,13 +117,15 @@ export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsPr
                 <div className="flex items-center gap-3">
                   <div
                     className="w-8 h-8 rounded-lg flex items-center justify-center"
-                    style={{ background: "linear-gradient(135deg, #0AC8D422, #9B59F522)" }}
+                    style={{ background: "linear-gradient(135deg, #0AC8D422, #0AC8D422)" }}
                   >
                     <Keyboard className="w-4 h-4 text-brand" />
                   </div>
                   <div>
                     <h2 className="text-sm font-medium text-ink">Keyboard shortcuts</h2>
-                    <p className="text-[10px] uppercase tracking-[0.3em] text-muted">Quick navigation & actions</p>
+                    <p className="text-[10px] uppercase tracking-[0.3em] text-muted">
+                      Quick navigation & actions
+                    </p>
                   </div>
                 </div>
                 <button
@@ -157,7 +168,9 @@ export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsPr
               {/* Footer */}
               <div className="px-6 py-3 border-t border-white/8 flex items-center justify-center gap-2 text-[10px] text-muted">
                 <Kbd>?</Kbd>
-                <span>Press <strong className="text-ink/60">?</strong> anytime to show this panel</span>
+                <span>
+                  Press <strong className="text-ink/60">?</strong> anytime to show this panel
+                </span>
               </div>
             </div>
           </motion.div>

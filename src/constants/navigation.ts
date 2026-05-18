@@ -94,27 +94,27 @@ export const PAGE_TITLES: Record<string, string> = {
 };
 
 export const ROUTE_ACCENTS: Record<string, [string, string]> = {
-  "/": ["#0AC8D4", "#9B59F5"],
-  "/triage": ["#FFC07D", "#E040C0"],
+  "/": ["#0AC8D4", "#0AC8D4"],
+  "/triage": ["#FFC07D", "#0AC8D4"],
   "/live": ["#0AC8D4", "#10B981"],
-  "/insights": ["#9B59F5", "#E040C0"],
-  "/logs": ["#0AC8D4", "#9B59F5"],
-  "/inbox": ["#9B59F5", "#0AC8D4"],
-  "/outbound": ["#E040C0", "#FFC07D"],
+  "/insights": ["#0AC8D4", "#0AC8D4"],
+  "/logs": ["#0AC8D4", "#0AC8D4"],
+  "/inbox": ["#0AC8D4", "#0AC8D4"],
+  "/outbound": ["#0AC8D4", "#FFC07D"],
   "/appointments": ["#10B981", "#0AC8D4"],
-  "/agents": ["#0AC8D4", "#9B59F5"],
-  "/train": ["#9B59F5", "#0AC8D4"],
-  "/knowledge": ["#10B981", "#9B59F5"],
+  "/agents": ["#0AC8D4", "#0AC8D4"],
+  "/train": ["#0AC8D4", "#0AC8D4"],
+  "/knowledge": ["#10B981", "#0AC8D4"],
   "/integrations": ["#0AC8D4", "#10B981"],
-  "/admin": ["#9B59F5", "#0AC8D4"],
-  "/dnc": ["#E040C0", "#FF6B6B"],
-  "/audit": ["#9B59F5", "#FFC07D"],
+  "/admin": ["#0AC8D4", "#0AC8D4"],
+  "/dnc": ["#0AC8D4", "#FF6B6B"],
+  "/audit": ["#0AC8D4", "#FFC07D"],
   "/help": ["#10B981", "#0AC8D4"],
-  "/pipeline": ["#9B59F5", "#10B981"],
+  "/pipeline": ["#0AC8D4", "#10B981"],
 };
 
 export function getRouteAccent(pathname: string): [string, string] {
   if (ROUTE_ACCENTS[pathname]) return ROUTE_ACCENTS[pathname];
   const prefix = "/" + pathname.split("/")[1];
-  return ROUTE_ACCENTS[prefix] ?? ["#0AC8D4", "#E040C0"];
+  return ROUTE_ACCENTS[prefix] ?? ["#0AC8D4", "#0AC8D4"];
 }

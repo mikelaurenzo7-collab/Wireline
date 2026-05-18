@@ -207,7 +207,7 @@ export default function CallLogs() {
                             <div
                               className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full"
                               style={{
-                                background: "linear-gradient(to bottom, #0AC8D4, #9B59F5, #E040C0)",
+                                background: "linear-gradient(to bottom, #0AC8D4, #0AC8D4, #0AC8D4)",
                               }}
                             />
                           )}
@@ -382,8 +382,8 @@ function CallDetail({
 
   const QA_DIMS = [
     { key: "greeting", label: "Opening", color: "#0AC8D4" },
-    { key: "discovery", label: "Discovery", color: "#9B59F5" },
-    { key: "solution", label: "Solution", color: "#E040C0" },
+    { key: "discovery", label: "Discovery", color: "#0AC8D4" },
+    { key: "solution", label: "Solution", color: "#0AC8D4" },
     { key: "objection", label: "Objections", color: "#10B981" },
     { key: "closing", label: "Closing", color: "#FFD166" },
   ];
@@ -397,7 +397,7 @@ function CallDetail({
           ? "#FFD166"
           : score >= 40
             ? "#FF9A5C"
-            : "#E040C0";
+            : "#0AC8D4";
 
   return (
     <Panel
@@ -521,9 +521,9 @@ function CallDetail({
                   <Stat
                     label="Cost"
                     value={`$${Number(call.cost ?? 0).toFixed(4)}`}
-                    accent="#E040C0"
+                    accent="#0AC8D4"
                   />
-                  <Stat label="Lead score" value={`${call.lead_score ?? 0}`} accent="#9B59F5" />
+                  <Stat label="Lead score" value={`${call.lead_score ?? 0}`} accent="#0AC8D4" />
                   <Stat
                     label="Sentiment"
                     value={

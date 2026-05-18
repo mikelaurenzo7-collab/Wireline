@@ -190,13 +190,13 @@ export default function ContactProfile() {
           label="Minutes"
           value={String(data.stats.total_minutes)}
           icon={Clock}
-          accent="#9B59F5"
+          accent="#0AC8D4"
         />
         <StatCard
           label="Avg Score"
           value={String(data.stats.avg_lead_score)}
           icon={Target}
-          accent="#E040C0"
+          accent="#0AC8D4"
         />
         <StatCard
           label="Spend"

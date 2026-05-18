@@ -1122,7 +1122,7 @@ export default function OutboundDialer() {
                       }}
                       transition={{ duration: 0.6, ease: "easeOut" }}
                       className="h-full rounded-full"
-                      style={{ background: "linear-gradient(90deg,#0AC8D4,#9B59F5)" }}
+                      style={{ background: "linear-gradient(90deg,#0AC8D4,#0AC8D4)" }}
                     />
                   </div>
                   <div className="flex items-center gap-1 mt-1.5">
@@ -1174,7 +1174,7 @@ export default function OutboundDialer() {
                               label: "Total Cost",
                               value: `$${(campaignAnalytics.call_stats?.total_cost_usd ?? 0).toFixed(3)}`,
                               icon: DollarSign,
-                              accent: "#9B59F5",
+                              accent: "#0AC8D4",
                             },
                             {
                               label: "Avg Score",
@@ -1183,7 +1183,7 @@ export default function OutboundDialer() {
                                   ? campaignAnalytics.call_stats.avg_lead_score
                                   : "—",
                               icon: Award,
-                              accent: "#E040C0",
+                              accent: "#0AC8D4",
                             },
                           ].map(({ label, value, icon: Icon, accent }) => (
                             <div key={label} className="rounded-xl glass border border-white/8 p-3">
@@ -1214,7 +1214,7 @@ export default function OutboundDialer() {
                                   o.status === "Completed"
                                     ? "#10B981"
                                     : o.status === "Failed" || o.status?.includes("Fail")
-                                      ? "#E040C0"
+                                      ? "#0AC8D4"
                                       : o.status === "Queued"
                                         ? "#0AC8D4"
                                         : o.status?.includes("Blocked")
@@ -1257,12 +1257,12 @@ export default function OutboundDialer() {
             <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-2 border-b border-white/8">
               {[
                 { label: "Leads", value: selectedCampaign.leads_count, accent: "#0AC8D4" },
-                { label: "Dialed", value: selectedCampaign.dialed_count, accent: "#9B59F5" },
+                { label: "Dialed", value: selectedCampaign.dialed_count, accent: "#0AC8D4" },
                 { label: "Connected", value: selectedCampaign.connected_count, accent: "#10B981" },
                 {
                   label: "Window",
                   value: `${selectedCampaign.call_window_start}–${selectedCampaign.call_window_end}`,
-                  accent: "#E040C0",
+                  accent: "#0AC8D4",
                 },
               ].map((s) => (
                 <div key={s.label} className="rounded-lg glass border border-white/8 p-2.5">
@@ -1287,7 +1287,7 @@ export default function OutboundDialer() {
                 icon={Megaphone}
                 title="No leads in campaign"
                 description="Upload a CSV from the Bulk tab and pick this campaign in the dropdown — assigned leads land here."
-                accent="#9B59F5"
+                accent="#0AC8D4"
                 actions={[
                   {
                     label: "Upload CSV",
@@ -1408,7 +1408,7 @@ export default function OutboundDialer() {
                 label: "Sequences",
                 icon: Repeat,
                 content: (
-                  <Panel icon={Repeat} hint="Multi-touch cadences" title="" scroll accent="#9B59F5">
+                  <Panel icon={Repeat} hint="Multi-touch cadences" title="" scroll accent="#0AC8D4">
                     <Cadences />
                   </Panel>
                 ),

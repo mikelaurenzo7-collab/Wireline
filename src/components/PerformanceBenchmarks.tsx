@@ -35,10 +35,28 @@ function getStatus(item: BenchmarkItem): Status {
   return "red";
 }
 
-const statusConfig: Record<Status, { icon: string; color: string; bgColor: string; borderColor: string }> = {
-  green: { icon: "✓", color: "text-emerald-600", bgColor: "bg-emerald-500/10", borderColor: "border-emerald-500/30" },
-  yellow: { icon: "~", color: "text-amber-600", bgColor: "bg-amber-500/10", borderColor: "border-amber-500/30" },
-  red: { icon: "↑", color: "text-rose-500", bgColor: "bg-rose-500/10", borderColor: "border-rose-500/30" },
+const statusConfig: Record<
+  Status,
+  { icon: string; color: string; bgColor: string; borderColor: string }
+> = {
+  green: {
+    icon: "✓",
+    color: "text-emerald-600",
+    bgColor: "bg-emerald-500/10",
+    borderColor: "border-emerald-500/30",
+  },
+  yellow: {
+    icon: "~",
+    color: "text-amber-600",
+    bgColor: "bg-amber-500/10",
+    borderColor: "border-amber-500/30",
+  },
+  red: {
+    icon: "↑",
+    color: "text-rose-500",
+    bgColor: "bg-rose-500/10",
+    borderColor: "border-rose-500/30",
+  },
 };
 
 function BenchmarkRow({ item }: { item: BenchmarkItem }) {
@@ -68,7 +86,9 @@ function BenchmarkRow({ item }: { item: BenchmarkItem }) {
           {/* Label + bar */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[10px] uppercase tracking-[0.25em] text-ink/70">{item.label}</span>
+              <span className="text-[10px] uppercase tracking-[0.25em] text-ink/70">
+                {item.label}
+              </span>
               <div className="flex items-center gap-2 shrink-0 ml-3">
                 <span className="font-mono text-[11px] text-brand">
                   {item.user}
@@ -90,7 +110,7 @@ function BenchmarkRow({ item }: { item: BenchmarkItem }) {
                 animate={{ width: `${userPct}%` }}
                 transition={{ duration: 1, ease: "easeOut" }}
                 className="absolute top-0 left-0 h-full rounded-full"
-                style={{ background: "linear-gradient(90deg, #0AC8D4, #9B59F5)" }}
+                style={{ background: "#0AC8D4" }}
               />
               {/* Benchmark marker */}
               <div
@@ -102,7 +122,11 @@ function BenchmarkRow({ item }: { item: BenchmarkItem }) {
 
           {/* Expand chevron */}
           <div className="shrink-0 text-muted/40 group-hover:text-muted/70 transition-colors">
-            {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            {expanded ? (
+              <ChevronUp className="w-3.5 h-3.5" />
+            ) : (
+              <ChevronDown className="w-3.5 h-3.5" />
+            )}
           </div>
         </div>
       </button>
@@ -116,7 +140,9 @@ function BenchmarkRow({ item }: { item: BenchmarkItem }) {
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className={`mx-4 mb-3 px-3 py-2.5 rounded-lg glass border text-[11px] text-ink/60 leading-relaxed ${cfg.borderColor}`}>
+            <div
+              className={`mx-4 mb-3 px-3 py-2.5 rounded-lg glass border text-[11px] text-ink/60 leading-relaxed ${cfg.borderColor}`}
+            >
               💡 {item.tip}
             </div>
           </motion.div>
@@ -167,7 +193,10 @@ export default function PerformanceBenchmarks() {
         setError("Failed to load benchmarks");
         setLoading(false);
       });
-    return () => { cancelled = true; controller.abort(); };
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   }, []);
 
   if (loading) {
@@ -183,7 +212,9 @@ export default function PerformanceBenchmarks() {
   if (error || !data) {
     return (
       <div className="h-full flex items-center justify-center">
-        <p className="text-[9px] uppercase tracking-[0.5em] text-rose-500/60">{error || "No data"}</p>
+        <p className="text-[9px] uppercase tracking-[0.5em] text-rose-500/60">
+          {error || "No data"}
+        </p>
       </div>
     );
   }
@@ -192,7 +223,9 @@ export default function PerformanceBenchmarks() {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-3 py-8">
         <TrendingUp className="w-8 h-8 text-muted/30" />
-        <p className="text-[9px] uppercase tracking-[0.5em] text-muted/50">No call data in the last 30 days</p>
+        <p className="text-[9px] uppercase tracking-[0.5em] text-muted/50">
+          No call data in the last 30 days
+        </p>
         <Link
           to="/outbound"
           className="px-3 py-1.5 rounded-full glass border border-brand/30 text-brand text-[9px] uppercase tracking-[0.25em] hover:bg-brand/10 transition-all"

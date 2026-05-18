@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   Flame,
   ShieldAlert,
@@ -15,16 +15,16 @@ import {
   Inbox,
   Check,
   Trash2,
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-import { authFetch } from '../lib/api';
-import { cn } from '../lib/utils';
-import { formatDate, formatDateTime } from '../lib/safe-date';
-import { ClaudeRecipeButton } from './ClaudeRecipes';
-import CsvExportButton from './CsvExportButton';
-import PageShell, { Panel } from './PageShell';
-import EmptyState from './EmptyState';
-import WidgetBoundary from './WidgetBoundary';
+} from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { authFetch } from "../lib/api";
+import { cn } from "../lib/utils";
+import { formatDate, formatDateTime } from "../lib/safe-date";
+import { ClaudeRecipeButton } from "./ClaudeRecipes";
+import CsvExportButton from "./CsvExportButton";
+import PageShell, { Panel } from "./PageShell";
+import EmptyState from "./EmptyState";
+import WidgetBoundary from "./WidgetBoundary";
 
 interface HotLead {
   id: string;
@@ -42,7 +42,7 @@ interface FleetTask {
   id: string;
   agent_id: string | null;
   description: string | null;
-  priority: 'high' | 'medium' | 'low';
+  priority: "high" | "medium" | "low";
   task_type: string;
   target_channel: string | null;
   status: string;
@@ -82,7 +82,7 @@ export default function TriageInbox() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const r = await authFetch('/api/triage');
+      const r = await authFetch("/api/triage");
       const d = await r.json();
       setData(d);
     } finally {
@@ -115,8 +115,8 @@ export default function TriageInbox() {
           description="No items need attention right now. Triage surfaces follow-ups, hot leads, and escalations from your agent activity."
           accent="#10B981"
           actions={[
-            { label: 'View Call Logs', to: '/logs' },
-            { label: 'View Dashboard', to: '/' },
+            { label: "View Call Logs", to: "/logs" },
+            { label: "View Dashboard", to: "/" },
           ]}
           className="h-full py-10"
         />
@@ -180,39 +180,39 @@ export default function TriageInbox() {
       }
       tabs={[
         {
-          id: 'hot',
-          label: 'Hot Leads',
+          id: "hot",
+          label: "Hot Leads",
           icon: Flame,
           badge: counts.hot_leads,
           content: wrap(
             Flame,
-            'Hot intent',
+            "Hot intent",
             <WidgetBoundary label="Hot Leads">
               <HotLeads items={data?.hot_leads || []} />
             </WidgetBoundary>,
           ),
         },
         {
-          id: 'compliance',
-          label: 'Compliance',
+          id: "compliance",
+          label: "Compliance",
           icon: ShieldAlert,
           badge: counts.compliance,
           content: wrap(
             ShieldAlert,
-            'Flags',
+            "Flags",
             <WidgetBoundary label="Compliance">
               <ComplianceList items={data?.compliance || []} />
             </WidgetBoundary>,
           ),
         },
         {
-          id: 'knowledge',
-          label: 'Gaps',
+          id: "knowledge",
+          label: "Gaps",
           icon: BookOpen,
           badge: counts.knowledge_gaps,
           content: wrap(
             BookOpen,
-            'Capture',
+            "Capture",
             <WidgetBoundary label="Knowledge Gaps">
               <KnowledgeGaps
                 items={data?.knowledge_gaps || []}
@@ -223,13 +223,13 @@ export default function TriageInbox() {
           ),
         },
         {
-          id: 'tasks',
-          label: 'Tasks',
+          id: "tasks",
+          label: "Tasks",
           icon: ListTodo,
           badge: counts.pending_tasks,
           content: wrap(
             ListTodo,
-            'Open',
+            "Open",
             <WidgetBoundary label="Open Tasks">
               <OpenTasks
                 items={data?.pending_tasks || []}
@@ -240,13 +240,13 @@ export default function TriageInbox() {
           ),
         },
         {
-          id: 'escalations',
-          label: 'Escalations',
+          id: "escalations",
+          label: "Escalations",
           icon: AlertOctagon,
           badge: counts.escalations,
           content: wrap(
             AlertOctagon,
-            'Critical',
+            "Critical",
             <WidgetBoundary label="Escalations">
               <Escalations items={data?.escalations || []} />
             </WidgetBoundary>,
@@ -272,9 +272,10 @@ function HotLeads({ items }: { items: HotLead[] }) {
           <div
             className="shrink-0 w-11 h-11 rounded-xl flex flex-col items-center justify-center"
             style={{
-              background: 'linear-gradient(135deg, rgba(255,107,217,0.25), rgba(197,139,255,0.20))',
-              border: '1px solid rgba(255,107,217,0.30)',
-              boxShadow: '0 0 16px rgba(255,107,217,0.20)',
+              background:
+                "linear-gradient(135deg, rgba(10, 200, 212,0.25), rgba(10, 200, 212,0.20))",
+              border: "1px solid rgba(10, 200, 212,0.30)",
+              boxShadow: "0 0 16px rgba(10, 200, 212,0.20)",
             }}
           >
             <span className="font-display italic text-lg text-ink leading-none">
@@ -287,10 +288,10 @@ function HotLeads({ items }: { items: HotLead[] }) {
 
           <div className="min-w-0 flex-1">
             <Link
-              to={`/contact/${encodeURIComponent(c.customer_number || 'unknown')}`}
+              to={`/contact/${encodeURIComponent(c.customer_number || "unknown")}`}
               className="font-display italic text-base text-ink leading-tight hover:text-brand transition-colors block truncate"
             >
-              {c.customer_number || 'Unknown caller'}
+              {c.customer_number || "Unknown caller"}
             </Link>
             <p className="text-[11px] text-muted/70 truncate">{c.summary}</p>
             <div className="flex items-center gap-2 mt-1 text-[8px] uppercase tracking-[0.26em] text-muted/50">
@@ -298,7 +299,7 @@ function HotLeads({ items }: { items: HotLead[] }) {
               <span className="w-1 h-1 rounded-full bg-white/15" />
               <span
                 className="text-brand/80"
-                style={{ textShadow: '0 0 10px rgba(10,200,212,0.5)' }}
+                style={{ textShadow: "0 0 10px rgba(10,200,212,0.5)" }}
               >
                 {c.intent_label} intent
               </span>
@@ -325,8 +326,8 @@ function HotLeads({ items }: { items: HotLead[] }) {
               label="Enrich"
             />
             <Link
-              to={`/contact/${encodeURIComponent(c.customer_number || 'unknown')}`}
-              aria-label={`View contact profile for ${c.customer_number || 'unknown caller'}`}
+              to={`/contact/${encodeURIComponent(c.customer_number || "unknown")}`}
+              aria-label={`View contact profile for ${c.customer_number || "unknown caller"}`}
               className="w-8 h-8 rounded-xl glass border border-white/8 flex items-center justify-center text-ink/50 hover:text-brand hover:border-brand/40 transition-all group-hover:border-white/15"
             >
               <ChevronRight className="w-3.5 h-3.5" />
@@ -398,7 +399,7 @@ const KnowledgeGapRow: React.FC<{
   onPromoted: () => void;
   onDiscard: (id: string) => void;
 }> = ({ gap, onPromoted, onDiscard }) => {
-  const cleaned = gap.lesson.replace(/^\[KNOWLEDGE GAP\]\s*/, '');
+  const cleaned = gap.lesson.replace(/^\[KNOWLEDGE GAP\]\s*/, "");
   const [editing, setEditing] = useState(false);
   const [content, setContent] = useState(cleaned);
   const [busy, setBusy] = useState(false);
@@ -408,8 +409,8 @@ const KnowledgeGapRow: React.FC<{
     setBusy(true);
     try {
       const r = await authFetch(`/api/knowledge-gaps/${gap.id}/promote`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ customContent: editing ? content : undefined }),
       });
       if (r.ok) onPromoted();
@@ -422,7 +423,7 @@ const KnowledgeGapRow: React.FC<{
     setDiscarding(true);
     try {
       const r = await authFetch(`/api/agents/${gap.agent_id}/lessons/${gap.id}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
       if (r.ok) {
         onDiscard(gap.id);
@@ -437,7 +438,7 @@ const KnowledgeGapRow: React.FC<{
   return (
     <motion.li
       layout
-      exit={{ opacity: 0, height: 0, overflow: 'hidden' }}
+      exit={{ opacity: 0, height: 0, overflow: "hidden" }}
       transition={{ duration: 0.18 }}
       className="px-4 py-3"
     >
@@ -458,7 +459,7 @@ const KnowledgeGapRow: React.FC<{
             <p className="text-[12px] text-ink/90 leading-snug">{cleaned}</p>
           )}
           <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-1">
-            Agent · <span className="font-mono">{gap.agent_id?.substring(0, 12)}</span> ·{' '}
+            Agent · <span className="font-mono">{gap.agent_id?.substring(0, 12)}</span> ·{" "}
             {formatDate(gap.created_at)}
           </div>
         </div>
@@ -469,8 +470,8 @@ const KnowledgeGapRow: React.FC<{
               setContent(cleaned);
             }}
             className="w-7 h-7 rounded-full text-muted hover:text-ink transition-colors flex items-center justify-center"
-            title={editing ? 'Cancel' : 'Edit before promoting'}
-            aria-label={editing ? 'Cancel edit' : 'Edit gap content'}
+            title={editing ? "Cancel" : "Edit before promoting"}
+            aria-label={editing ? "Cancel edit" : "Edit gap content"}
           >
             {editing ? <X className="w-3 h-3" /> : <Pencil className="w-3 h-3" />}
           </button>
@@ -543,9 +544,9 @@ const OpenTaskRow: React.FC<{
     onCompleted(task.id);
     try {
       const r = await authFetch(`/api/fleet/tasks/${task.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'completed' }),
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "completed" }),
       });
       if (!r.ok) {
         // Roll back on failure by re-fetching.
@@ -559,7 +560,7 @@ const OpenTaskRow: React.FC<{
   return (
     <motion.li
       layout
-      exit={{ opacity: 0, height: 0, overflow: 'hidden' }}
+      exit={{ opacity: 0, height: 0, overflow: "hidden" }}
       transition={{ duration: 0.18 }}
       className="px-4 py-3 flex items-start gap-3 group"
     >
@@ -568,10 +569,10 @@ const OpenTaskRow: React.FC<{
         onClick={complete}
         disabled={completing}
         className={cn(
-          'shrink-0 w-5 h-5 rounded-full border transition-all mt-0.5 flex items-center justify-center',
+          "shrink-0 w-5 h-5 rounded-full border transition-all mt-0.5 flex items-center justify-center",
           completing
-            ? 'border-emerald-500/60 bg-emerald-500/20'
-            : 'border-white/20 hover:border-emerald-500/60 hover:bg-emerald-500/10 group-hover:border-white/35',
+            ? "border-emerald-500/60 bg-emerald-500/20"
+            : "border-white/20 hover:border-emerald-500/60 hover:bg-emerald-500/10 group-hover:border-white/35",
         )}
         aria-label="Mark task complete"
         title="Mark complete"
@@ -587,10 +588,10 @@ const OpenTaskRow: React.FC<{
         <div className="flex items-center gap-2 mb-0.5">
           <span
             className={cn(
-              'shrink-0 px-1.5 py-0.5 rounded-full text-[8px] uppercase tracking-[0.28em] border leading-none',
-              task.priority === 'high' && 'bg-rose-500/15 text-rose-500 border-rose-500/30',
-              task.priority === 'medium' && 'bg-brand/15 text-brand border-brand/30',
-              task.priority === 'low' && 'bg-zinc-500/15 text-zinc-300 border-zinc-500/30',
+              "shrink-0 px-1.5 py-0.5 rounded-full text-[8px] uppercase tracking-[0.28em] border leading-none",
+              task.priority === "high" && "bg-rose-500/15 text-rose-500 border-rose-500/30",
+              task.priority === "medium" && "bg-brand/15 text-brand border-brand/30",
+              task.priority === "low" && "bg-zinc-500/15 text-zinc-300 border-zinc-500/30",
             )}
           >
             {task.priority}
@@ -598,7 +599,7 @@ const OpenTaskRow: React.FC<{
         </div>
         <p className="text-[12px] text-ink/90 leading-snug">{task.description}</p>
         <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-1 flex items-center gap-2">
-          <span>{task.target_channel || 'manual'}</span>
+          <span>{task.target_channel || "manual"}</span>
           <span>·</span>
           <span>{formatDateTime(task.created_at)}</span>
         </div>
@@ -619,10 +620,10 @@ function Escalations({ items }: { items: EscalationCall[] }) {
           <AlertOctagon className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
             <Link
-              to={`/contact/${encodeURIComponent(c.customer_number || 'unknown')}`}
+              to={`/contact/${encodeURIComponent(c.customer_number || "unknown")}`}
               className="font-display italic text-base text-ink hover:text-brand transition-colors block truncate"
             >
-              {c.customer_number || 'Unknown caller'}
+              {c.customer_number || "Unknown caller"}
             </Link>
             <p className="text-[11px] text-ink/70 truncate">{c.summary}</p>
             <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-0.5">
@@ -652,11 +653,11 @@ function Empty({
 }) {
   return (
     <div className="h-full flex flex-col items-center justify-center gap-3 px-6 text-center">
-      <Icon className={cn('w-10 h-10', green ? 'text-emerald-500/60' : 'text-muted/50')} />
+      <Icon className={cn("w-10 h-10", green ? "text-emerald-500/60" : "text-muted/50")} />
       <p
         className={cn(
-          'text-[10px] uppercase tracking-[0.4em]',
-          green ? 'text-emerald-500/80' : 'text-muted',
+          "text-[10px] uppercase tracking-[0.4em]",
+          green ? "text-emerald-500/80" : "text-muted",
         )}
       >
         {label}

@@ -54,7 +54,8 @@ export default function CookieConsent() {
             <div
               className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
               style={{
-                background: "linear-gradient(135deg, rgba(10,200,212,0.12), rgba(155,89,245,0.12))",
+                background:
+                  "linear-gradient(135deg, rgba(10,200,212,0.12), rgba(10, 200, 212,0.12))",
                 border: "1px solid rgba(10,200,212,0.22)",
               }}
             >
@@ -63,12 +64,21 @@ export default function CookieConsent() {
 
             {/* Copy */}
             <p className="text-[11px] text-muted/80 leading-relaxed flex-1 min-w-0">
-              We use only essential cookies to keep you signed in — no advertising or cross-site tracking.{" "}
-              <Link to="/privacy" className="text-brand hover:text-brand/80 underline" onClick={dismiss}>
+              We use only essential cookies to keep you signed in — no advertising or cross-site
+              tracking.{" "}
+              <Link
+                to="/privacy"
+                className="text-brand hover:text-brand/80 underline"
+                onClick={dismiss}
+              >
                 Privacy policy
               </Link>
               {" · "}
-              <Link to="/terms" className="text-brand hover:text-brand/80 underline" onClick={dismiss}>
+              <Link
+                to="/terms"
+                className="text-brand hover:text-brand/80 underline"
+                onClick={dismiss}
+              >
                 Terms
               </Link>
             </p>

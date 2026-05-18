@@ -52,8 +52,8 @@ const PLAN_ICONS: Record<string, any> = {
 const PLAN_ACCENTS: Record<string, string> = {
   personal: "#10B981",
   starter: "#0AC8D4",
-  pro: "#9B59F5",
-  business: "#E040C0",
+  pro: "#0AC8D4",
+  business: "#0AC8D4",
   enterprise: "#FFC07D",
 };
 
@@ -271,7 +271,7 @@ export default function StripeBillingCard() {
                   <div
                     className="absolute -top-3 left-4 px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.3em]"
                     style={{
-                      background: "linear-gradient(135deg, #9B59F5, #6B3FCF)",
+                      background: "#0AC8D4",
                       color: "#fff",
                     }}
                   >

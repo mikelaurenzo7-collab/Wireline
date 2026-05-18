@@ -44,7 +44,7 @@ const AGENT_TEMPLATES = [
     role: "sales",
     channel: "voice" as const,
     icon: Target,
-    accent: "#E040C0",
+    accent: "#0AC8D4",
     badge: "Most popular",
     firstMessage:
       "Hi, this is Alex from [Company]. I saw you were interested in [Product] — got 2 minutes to see if we'd be a fit?",
@@ -58,7 +58,7 @@ const AGENT_TEMPLATES = [
     role: "sales",
     channel: "voice" as const,
     icon: Zap,
-    accent: "#E040C0",
+    accent: "#0AC8D4",
     badge: null,
     firstMessage:
       "Hey [Name], following up on our conversation — happy to answer any final questions and get you started today.",
@@ -72,7 +72,7 @@ const AGENT_TEMPLATES = [
     role: "lead_qualifier",
     channel: "voice" as const,
     icon: Filter,
-    accent: "#E040C0",
+    accent: "#0AC8D4",
     badge: "Inbound",
     firstMessage:
       "Thanks for calling! Before I connect you with our team, let me gather a bit of information to make sure we're the right fit for you.",
@@ -188,7 +188,7 @@ const AGENT_TEMPLATES = [
     role: "marketing",
     channel: "voice" as const,
     icon: RefreshCw,
-    accent: "#9B59F5",
+    accent: "#0AC8D4",
     badge: null,
     firstMessage:
       "Hi [Name], it's been a while! I'm reaching out with something special for our loyal customers — do you have 60 seconds?",
@@ -202,7 +202,7 @@ const AGENT_TEMPLATES = [
     role: "marketing",
     channel: "voice" as const,
     icon: BarChart3,
-    accent: "#9B59F5",
+    accent: "#0AC8D4",
     badge: null,
     firstMessage:
       "Hi! I'm calling on behalf of [Company] — we'd love your feedback on your recent experience. This takes under 2 minutes.",

@@ -170,7 +170,9 @@ export default function Pricing() {
         />
         <motion.div
           className="absolute -bottom-[20%] -right-[15%] w-[40vw] h-[40vw] rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(224,64,192,0.10), transparent 65%)" }}
+          style={{
+            background: "radial-gradient(circle, rgba(10, 200, 212,0.10), transparent 65%)",
+          }}
           animate={{ x: [0, -25, 0], y: [0, 25, 0] }}
           transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
         />
@@ -182,7 +184,7 @@ export default function Pricing() {
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center"
             style={{
-              background: "linear-gradient(135deg, #0AC8D4 0%, #9B59F5 50%, #E040C0 100%)",
+              background: "#0AC8D4",
               boxShadow:
                 "0 4px 14px -4px rgba(10,200,212,0.55), 0 0 0 1px rgba(255,255,255,0.22) inset",
             }}
@@ -253,13 +255,13 @@ export default function Pricing() {
               title: "Supervisor cockpit with agent transparency",
               blurb:
                 "See what your agents are about to do BEFORE they do it — draft vs. auto autonomy per action.",
-              accent: "#9B59F5",
+              accent: "#0AC8D4",
             },
             {
               title: "TCPA compliance in code",
               blurb:
                 "Per-state opt-in rules, append-only consent ledger, automatic DNC. Your lawyers can read the rules.",
-              accent: "#E040C0",
+              accent: "#0AC8D4",
             },
           ].map((c, i) => (
             <motion.div
@@ -320,7 +322,7 @@ export default function Pricing() {
                   <span
                     className="absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-1 rounded-full text-[10px] uppercase tracking-[0.35em] font-semibold z-10"
                     style={{
-                      background: "linear-gradient(135deg, #0AC8D4, #9B59F5)",
+                      background: "#0AC8D4",
                       color: "#fff",
                       boxShadow: "0 6px 18px -4px rgba(10,200,212,0.6)",
                     }}
@@ -360,7 +362,7 @@ export default function Pricing() {
                   style={
                     tier.highlight
                       ? {
-                          background: "linear-gradient(135deg, #0AC8D4, #9B59F5)",
+                          background: "#0AC8D4",
                           boxShadow: "0 6px 20px -6px rgba(10,200,212,0.55)",
                         }
                       : undefined
@@ -410,7 +412,7 @@ export default function Pricing() {
                 className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-white/8"
                 style={{
                   background:
-                    "linear-gradient(135deg, rgba(10,200,212,0.18), rgba(155,89,245,0.12))",
+                    "linear-gradient(135deg, rgba(10,200,212,0.18), rgba(10, 200, 212,0.12))",
                 }}
               >
                 <Icon className="w-4 h-4 text-brand" strokeWidth={2.2} />

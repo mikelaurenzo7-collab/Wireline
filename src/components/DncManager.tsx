@@ -246,9 +246,9 @@ export default function DncManager() {
             {/* Stat bar */}
             <div className="col-span-12 grid grid-cols-2 sm:grid-cols-4 gap-3 h-fit">
               {[
-                { label: "Total Blocked", value: stats.total, accent: "#E040C0", icon: Shield },
+                { label: "Total Blocked", value: stats.total, accent: "#0AC8D4", icon: Shield },
                 { label: "Manual Entries", value: stats.manual, accent: "#0AC8D4", icon: Plus },
-                { label: "CSV Imported", value: stats.csv, accent: "#9B59F5", icon: FileText },
+                { label: "CSV Imported", value: stats.csv, accent: "#0AC8D4", icon: FileText },
                 { label: "Opt-Out", value: stats.optOut, accent: "#10B981", icon: CheckCircle2 },
               ].map(({ label, value, accent, icon: Icon }) => (
                 <div
@@ -301,7 +301,7 @@ export default function DncManager() {
                       className="w-14 h-14 rounded-2xl flex items-center justify-center"
                       style={{
                         background:
-                          "linear-gradient(135deg,rgba(255,107,217,0.15),rgba(10,200,212,0.15))",
+                          "linear-gradient(135deg,rgba(10, 200, 212,0.15),rgba(10,200,212,0.15))",
                       }}
                     >
                       <Shield className="w-7 h-7 text-rose-500" />
@@ -338,8 +338,8 @@ export default function DncManager() {
                           <div
                             className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                             style={{
-                              background: "rgba(255,107,217,0.10)",
-                              border: "1px solid rgba(255,107,217,0.20)",
+                              background: "rgba(10, 200, 212,0.10)",
+                              border: "1px solid rgba(10, 200, 212,0.20)",
                             }}
                           >
                             <Phone className="w-3.5 h-3.5 text-rose-500" />

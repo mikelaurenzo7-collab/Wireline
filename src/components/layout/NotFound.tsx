@@ -27,7 +27,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
           className="w-[55vw] h-[55vw] max-w-[700px] max-h-[700px] rounded-full opacity-40 blur-3xl"
           style={{
             background:
-              "radial-gradient(circle, rgba(10,200,212,0.25), rgba(155,89,245,0.18) 50%, transparent 70%)",
+              "radial-gradient(circle, rgba(10,200,212,0.25), rgba(10, 200, 212,0.18) 50%, transparent 70%)",
           }}
         />
       </div>
@@ -87,7 +87,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               <div
                 className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                 style={{
-                  background: "linear-gradient(135deg, #0AC8D4, #9B59F5)",
+                  background: "#0AC8D4",
                   boxShadow: "0 4px 12px -4px rgba(10,200,212,0.55)",
                 }}
               >
@@ -103,7 +103,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               icon={Compass}
               label="Pricing"
               hint="4 plans, free trial"
-              accent="#E040C0"
+              accent="#0AC8D4"
             />
           </>
         ) : (
@@ -120,14 +120,14 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               icon={MessageSquare}
               label="Agents"
               hint="Manage your fleet"
-              accent="#9B59F5"
+              accent="#0AC8D4"
             />
             <NotFoundCard
               to="/inbox"
               icon={Mail}
               label="Email"
               hint="Inbox + threads"
-              accent="#E040C0"
+              accent="#0AC8D4"
             />
           </>
         )}

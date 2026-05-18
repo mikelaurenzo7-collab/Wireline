@@ -90,14 +90,14 @@ const RECIPE_META: Record<Recipe, RecipeMeta> = {
     title: "Lead Qualification",
     tagline: "BANT-scored evidence, not vibes.",
     icon: Target,
-    accent: "#9B59F5",
+    accent: "#0AC8D4",
     thinking: true,
   },
   "objection-drill": {
     title: "Objection Drills",
     tagline: "Realistic scenarios with scripted rebuttals.",
     icon: ShieldAlert,
-    accent: "#E040C0",
+    accent: "#0AC8D4",
     thinking: false,
   },
   "cold-email": {
@@ -125,14 +125,14 @@ const RECIPE_META: Record<Recipe, RecipeMeta> = {
     title: "Performance Review",
     tagline: "Deep audit of your last N calls.",
     icon: BarChart3,
-    accent: "#9B59F5",
+    accent: "#0AC8D4",
     thinking: true,
   },
   coach: {
     title: "Live Call Coach",
     tagline: "Real-time take on a transcript — what to say next.",
     icon: Headphones,
-    accent: "#E040C0",
+    accent: "#0AC8D4",
     thinking: false,
   },
   "knowledge-from-url": {
@@ -1329,7 +1329,7 @@ function EnrichLeadForm({ initial, disabled }: { initial?: any; disabled: boolea
       ? "#10B981"
       : enrichment?.research_confidence === "medium"
         ? "#FFC07D"
-        : "#E040C0";
+        : "#0AC8D4";
 
   return (
     <FormShell>

@@ -132,7 +132,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
               transition={{ type: "spring", stiffness: 400, damping: 20 }}
               className="relative w-7 h-7 rounded-xl flex items-center justify-center overflow-hidden shrink-0"
               style={{
-                background: "linear-gradient(135deg, #0AC8D4 0%, #9B59F5 50%, #E040C0 100%)",
+                background: "#0AC8D4",
                 boxShadow:
                   "0 4px 14px -4px rgba(10,200,212,0.55), 0 0 0 1px rgba(255,255,255,0.22) inset",
               }}
@@ -179,7 +179,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
             <div className="hidden md:flex items-center gap-2 rounded-lg border border-black/8 glass px-2 py-1">
               <div
                 className="w-6 h-6 rounded-full flex items-center justify-center text-white font-medium text-[10px]"
-                style={{ background: "linear-gradient(135deg, #0AC8D4, #9B59F5)" }}
+                style={{ background: "#0AC8D4" }}
                 aria-hidden="true"
               >
                 {user?.email?.slice(0, 1).toUpperCase() ?? "?"}
@@ -243,7 +243,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
                   <div
                     className="w-9 h-9 rounded-xl flex items-center justify-center"
                     style={{
-                      background: "linear-gradient(135deg, #0AC8D4 0%, #9B59F5 50%, #E040C0 100%)",
+                      background: "#0AC8D4",
                     }}
                   >
                     <Waves className="w-4 h-4 text-paper" strokeWidth={2.5} />
@@ -279,7 +279,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
                 <div className="flex items-center gap-2 rounded-lg border border-black/8 glass px-2 py-2">
                   <div
                     className="w-8 h-8 rounded-full flex items-center justify-center text-white font-medium text-sm"
-                    style={{ background: "linear-gradient(135deg, #0AC8D4, #9B59F5)" }}
+                    style={{ background: "#0AC8D4" }}
                   >
                     {user?.email?.slice(0, 1).toUpperCase() ?? "?"}
                   </div>
