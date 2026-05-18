@@ -356,6 +356,49 @@ export const emailMessages = pgTable("wireline_email_messages", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
+// 3.1b SMS THREADS + MESSAGES — two-way text conversations.
+// Mirrors the email_threads/email_messages shape so the SmsThreads UI
+// can reuse the same inbox layout. One thread per (user, customer phone)
+// pair; messages append in time order. Inbound writes from the Twilio
+// webhook; outbound writes from twilio-service.sendTenantMessage.
+export const smsThreads = pgTable(
+  "wireline_sms_threads",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    agentId: text("agent_id").references(() => agents.id, { onDelete: "set null" }),
+    customerNumber: text("customer_number").notNull(),
+    status: text("status").default("open"),
+    summary: text("summary"),
+    unreadCount: integer("unread_count").default(0).notNull(),
+    lastMessageAt: timestamp("last_message_at", { withTimezone: true }).defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    userCustomerUnique: sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_sms_threads_user_customer ON wireline_sms_threads (user_id, customer_number)`,
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_sms_threads_user_id ON wireline_sms_threads (user_id)`,
+    lastMessageIdx: sql`CREATE INDEX IF NOT EXISTS idx_sms_threads_last_message ON wireline_sms_threads (last_message_at DESC)`,
+  }),
+);
+
+export const smsMessages = pgTable(
+  "wireline_sms_messages",
+  {
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
+    userId: uuid("user_id").notNull(),
+    threadId: uuid("thread_id").references(() => smsThreads.id, { onDelete: "cascade" }),
+    direction: text("direction").notNull(), // 'in' or 'out'
+    body: text("body").notNull(),
+    twilioSid: text("twilio_sid"),
+    /** Optional agent that authored an outbound message. Null for inbound + operator replies. */
+    agentId: text("agent_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    threadCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_sms_messages_thread_created ON wireline_sms_messages (thread_id, created_at)`,
+  }),
+);
+
 // 3.2 FLEET HANDOFF (TASKS)
 export const fleetTasks = pgTable(
   "wireline_fleet_tasks",

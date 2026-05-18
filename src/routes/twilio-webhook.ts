@@ -185,9 +185,61 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
     return res.status(200).send(twimlReply("You have been resubscribed. Welcome back."));
   }
 
-  // ─── PASS-THROUGH ──────────────────────────────────────────────
-  // Any other inbound SMS — just log it, no auto-reply. Future work:
-  // route to an agent for two-way SMS conversations.
+  // ─── TWO-WAY THREAD STORAGE ────────────────────────────────────
+  // Persist the inbound message into the SMS inbox so operators can
+  // see + reply from /inbox. Idempotent thread upsert keyed by
+  // (user_id, customer_number). If the sms tables haven't been
+  // migrated yet, the catch just logs and we still return 200 to
+  // Twilio so the network doesn't retry.
+  try {
+    const [existingThread] = await drizzle
+      .select({ id: schema.smsThreads.id, unreadCount: schema.smsThreads.unreadCount })
+      .from(schema.smsThreads)
+      .where(
+        and(
+          eq(schema.smsThreads.userId, tenantUserId),
+          eq(schema.smsThreads.customerNumber, fromNormalized),
+        ),
+      )
+      .limit(1);
+
+    let threadId: string;
+    if (existingThread) {
+      threadId = existingThread.id as unknown as string;
+      await drizzle
+        .update(schema.smsThreads)
+        .set({
+          lastMessageAt: new Date(),
+          unreadCount: (existingThread.unreadCount ?? 0) + 1,
+          status: "open",
+        })
+        .where(eq(schema.smsThreads.id, existingThread.id));
+    } else {
+      const [created] = await drizzle
+        .insert(schema.smsThreads)
+        .values({
+          userId: tenantUserId,
+          customerNumber: fromNormalized,
+          unreadCount: 1,
+        })
+        .returning({ id: schema.smsThreads.id });
+      threadId = (created?.id as unknown as string) || "";
+    }
+
+    if (threadId) {
+      await drizzle.insert(schema.smsMessages).values({
+        userId: tenantUserId,
+        threadId,
+        direction: "in",
+        body,
+        twilioSid: messageSid || null,
+      });
+    }
+  } catch (e: any) {
+    log.warn("SMS thread persist skipped (migration may be pending)", { error: e?.message });
+  }
+
+  // No auto-reply for non-keyword messages — operator answers via /inbox.
   return res.status(200).send(twimlEmpty());
 });
 

@@ -18,6 +18,7 @@ const AdminSettings = lazy(() => import("../components/AdminSettings"));
 const Integrations = lazy(() => import("../components/Integrations"));
 const CallLogs = lazy(() => import("../components/CallLogs"));
 const EmailInbox = lazy(() => import("../components/EmailInbox"));
+const SmsThreads = lazy(() => import("../components/SmsThreads"));
 const KnowledgeBaseManager = lazy(() => import("../components/KnowledgeBaseManager"));
 const LiveMonitor = lazy(() => import("../components/LiveMonitor"));
 const DncManager = lazy(() => import("../components/DncManager"));
@@ -98,6 +99,16 @@ export default function AppRoutes() {
               <PageTransition>
                 <ErrorBoundary>
                   <EmailInbox />
+                </ErrorBoundary>
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/sms"
+            element={
+              <PageTransition>
+                <ErrorBoundary>
+                  <SmsThreads />
                 </ErrorBoundary>
               </PageTransition>
             }
