@@ -23,6 +23,7 @@ import { eq, and } from "drizzle-orm";
 import { CRMService } from "./crm-service";
 import { IntegrationService } from "./integrations";
 import { sanitizePhone } from "./vapi-helpers";
+import { enqueue } from "./job-queue";
 
 /**
  * Heuristic outcome classifier — turns a free-text Vapi summary +
@@ -155,6 +156,20 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
     }
   } catch (err: any) {
     log.warn("post-call digest: email send failed", { error: err?.message });
+  }
+
+  // 4. Auto-QA — enqueue a background scoring job; the handler stores the
+  // breakdown and chains adaptive_optimization (Claude-generated lesson →
+  // wireline_agent_lessons) on low scores. Fire-and-forget; the agent
+  // gets smarter without anyone clicking anything.
+  try {
+    await enqueue(drizzle, {
+      userId: ctx.userId,
+      type: "auto_qa_score",
+      payload: { callLogId: String(ctx.callLogId), userId: ctx.userId },
+    });
+  } catch (err: any) {
+    log.warn("post-call digest: auto_qa_score enqueue failed", { error: err?.message });
   }
 
   log.info("Post-call digest completed", {

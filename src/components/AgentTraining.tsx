@@ -114,7 +114,8 @@ export default function AgentTraining() {
           ...prev,
           {
             role: "assistant",
-            content: data.error || "ERROR: PARSING FAILURE. RELAY INTERRUPTED.",
+            content:
+              data.error || "Couldn't parse the response — try rephrasing your training input.",
           },
         ]);
       }

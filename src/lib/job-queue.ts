@@ -47,7 +47,8 @@ export type JobType =
   | "calendar_sync" // Sync Google/Outlook calendars
   | "proactive_lead_enrichment" // Async lead enrichment
   | "autonomous_prospecting" // AI-driven lead discovery
-  | "cadence_tick"; // Multi-touch outbound cadence step processor
+  | "cadence_tick" // Multi-touch outbound cadence step processor
+  | "auto_qa_score"; // Auto-QA every completed call → chains adaptive_optimization on low score
 
 export interface JobPayload extends Record<string, unknown> {}
 

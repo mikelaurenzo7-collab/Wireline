@@ -307,6 +307,28 @@ export function CarrierPanel({
                       {pt.vapi_number_id?.substring(0, 16)}…
                     </div>
                   </div>
+                  <input
+                    type="text"
+                    defaultValue={pt.campaign_label || ""}
+                    placeholder="Campaign tag (e.g. Google Ads · Spring '26)"
+                    title="Optional campaign label for attribution. Calls answered on this number get tagged so /insights can break down ROI by source."
+                    onBlur={async (e) => {
+                      const next = e.target.value.trim();
+                      if (next === (pt.campaign_label || "")) return;
+                      try {
+                        const { authFetch } = await import("../../lib/api");
+                        await authFetch(`/api/phone-numbers/${pt.id}`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ campaign_label: next }),
+                        });
+                        pt.campaign_label = next;
+                      } catch {
+                        /* silent — operator will see no save indicator */
+                      }
+                    }}
+                    className="text-[11px] bg-black/5 border border-black/10 rounded-lg px-2.5 py-1.5 outline-none focus:border-brand/50 text-ink min-w-[200px] placeholder:text-muted/50"
+                  />
                   <div className="flex items-center gap-2 shrink-0">
                     <LinkIcon className="w-3 h-3 text-brand" />
                     <div className="relative">

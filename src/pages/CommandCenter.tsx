@@ -308,7 +308,7 @@ export default function CommandCenter() {
               </button>
             ) : (
               <button
-                onClick={() => (window.location.href = "/agents")}
+                onClick={() => navigate("/agents")}
                 title="Create an agent first → /agents"
                 className="flex items-center gap-2 px-6 py-3 rounded-2xl border border-white/10 bg-white/5 text-muted/70 hover:text-ink hover:border-white/25 transition-colors"
               >

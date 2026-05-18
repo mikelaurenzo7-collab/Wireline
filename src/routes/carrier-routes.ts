@@ -67,7 +67,7 @@ router.patch(
   rateLimiters.phoneNumberRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { agent_id } = req.body;
+      const { agent_id, campaign_label } = req.body;
 
       if (agent_id) {
         const [agent] = await drizzle
@@ -78,9 +78,24 @@ router.patch(
         if (!agent) return res.status(404).json({ error: "Agent not found" });
       }
 
+      // Build patch object — accept agent_id and/or campaign_label so the
+      // same PATCH endpoint serves both Carrier-panel assign-agent and the
+      // new campaign-attribution label editor.
+      const patch: Record<string, any> = {};
+      if (agent_id !== undefined) patch.agentId = agent_id;
+      if (campaign_label !== undefined) {
+        const label = typeof campaign_label === "string" ? campaign_label.trim() : null;
+        patch.campaignLabel = label && label.length > 0 ? label : null;
+      }
+      if (Object.keys(patch).length === 0) {
+        return res
+          .status(400)
+          .json({ error: "Nothing to update — pass agent_id or campaign_label." });
+      }
+
       await drizzle
         .update(schema.phoneNumbers)
-        .set({ agentId: agent_id })
+        .set(patch)
         .where(
           and(
             eq(schema.phoneNumbers.id, BigInt(req.params.id)),
@@ -90,8 +105,8 @@ router.patch(
 
       res.json({ success: true });
     } catch (error: any) {
-      log.error("Failed to update phone number assignment", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to update phone number assignment" });
+      log.error("Failed to update phone number", { error: getErrorMessage(error) });
+      res.status(500).json({ error: "Failed to update phone number" });
     }
   },
 );

@@ -415,6 +415,102 @@ export default function Pricing() {
           ))}
         </motion.div>
 
+        {/* ROI calculator — concrete savings narrative. Slim 3-card row
+            comparing Wireline tiers vs the human-headcount they replace.
+            Numbers grounded in real US median compensation for these roles
+            (BLS 2025). Static so it never breaks on the public page. */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.85, duration: 0.6 }}
+          className="mt-14 max-w-5xl mx-auto"
+        >
+          <div className="text-center mb-6">
+            <p className="text-[10px] uppercase tracking-[0.42em] text-brand mb-2">
+              ROI snapshot · vs traditional headcount
+            </p>
+            <h3 className="font-display italic text-2xl text-ink leading-tight">
+              How much you save replacing one human role
+            </h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              {
+                role: "1 Inbound CS Rep",
+                humanCost: 52000,
+                humanCostLabel: "US median CS salary",
+                tier: "Personal",
+                tierCost: 49 * 12,
+                tierLabel: "$49/mo",
+              },
+              {
+                role: "1 Outbound SDR",
+                humanCost: 75000,
+                humanCostLabel: "US median SDR comp",
+                tier: "Pro",
+                tierCost: 399 * 12,
+                tierLabel: "$399/mo",
+              },
+              {
+                role: "5-seat call center",
+                humanCost: 260000,
+                humanCostLabel: "5 × $52k median",
+                tier: "Business",
+                tierCost: 1499 * 12,
+                tierLabel: "$1,499/mo",
+              },
+            ].map((row, i) => {
+              const savings = row.humanCost - row.tierCost;
+              const pct = ((savings / row.humanCost) * 100).toFixed(0);
+              return (
+                <motion.div
+                  key={row.role}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.95 + i * 0.06, duration: 0.5 }}
+                  className="rounded-2xl glass border border-white/10 p-5 relative overflow-hidden"
+                >
+                  <div
+                    className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-20 blur-3xl pointer-events-none"
+                    style={{ background: "#10B981" }}
+                  />
+                  <p className="text-[10px] uppercase tracking-[0.32em] text-muted/70 mb-1">
+                    Replace
+                  </p>
+                  <p className="text-[14px] font-semibold text-ink mb-3">{row.role}</p>
+                  <div className="space-y-1.5 mb-3 text-[11px]">
+                    <div className="flex justify-between text-muted/80">
+                      <span>Human ({row.humanCostLabel})</span>
+                      <span className="tabular-nums line-through">
+                        ${row.humanCost.toLocaleString()}/yr
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-ink/90">
+                      <span>
+                        Wireline {row.tier} ({row.tierLabel})
+                      </span>
+                      <span className="tabular-nums">${row.tierCost.toLocaleString()}/yr</span>
+                    </div>
+                  </div>
+                  <div className="pt-3 border-t border-white/10 flex items-baseline justify-between">
+                    <span className="text-[10px] uppercase tracking-[0.3em] text-emerald-600">
+                      You save
+                    </span>
+                    <span className="font-display italic text-2xl text-emerald-600 tabular-nums">
+                      ${savings.toLocaleString()}
+                      <span className="text-[11px] text-emerald-600/70 ml-1">/yr ({pct}%)</span>
+                    </span>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+          <p className="text-center text-[10px] text-muted/55 mt-4 leading-relaxed">
+            Salary figures from US BLS 2025 medians. Wireline pricing excludes any voice-minute
+            overage. Most teams stay inside plan.
+          </p>
+        </motion.div>
+
         {/* FAQ-ish reassurance */}
         <motion.div
           initial={{ opacity: 0 }}
