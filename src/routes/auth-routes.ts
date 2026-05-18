@@ -76,10 +76,17 @@ function appBaseUrl(req: Request): string {
  * /forgot-password. createPasswordResetToken does real work (DB lookup
  * + scrypt-free insert + tokens) for registered emails and returns null
  * fast for unregistered ones. Without an equalizer, an attacker can
- * enumerate accounts by timing the response. 300ms is a comfortable
- * floor above the registered-path average without making the UX laggy.
+ * enumerate accounts by timing the response.
+ *
+ * Floor was empirically tuned from the PR #141 preview smoke test:
+ * registered-path median ~700ms with outliers to 1025ms; unregistered
+ * ~620ms with the prior 300ms floor. The 100-150ms median gap (plus
+ * variance) was a usable timing oracle for an attacker willing to
+ * sample. Floor at 1000ms forces both paths to converge at ≈1s — the
+ * registered path's outliers are at the floor, unregistered is held
+ * there too. ≤1s is acceptable UX for a once-per-recovery action.
  */
-const FORGOT_PASSWORD_MIN_DURATION_MS = 300;
+const FORGOT_PASSWORD_MIN_DURATION_MS = 1000;
 async function equalizedDuration<T>(promise: Promise<T>): Promise<T> {
   // Promise.all enforces a minimum wall-clock by racing the work
   // against a fixed-delay timer. Long DB latency on the registered
