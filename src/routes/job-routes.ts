@@ -128,137 +128,142 @@ const cronOrAdminAuth = (req: SweepRequest, res: Response, next: NextFunction) =
   });
 };
 
-router.post(
-  "/sweep",
-  cronOrAdminAuth,
-  jobsSweepRateLimit,
-  async (req: SweepRequest, res: Response) => {
-    try {
-      const {
-        claimJob: claim,
-        completeJob: complete,
-        failJob: fail,
-        enqueue,
-      } = await import("../lib/job-queue");
+// Vercel Cron sends GET; admin tooling that posts a body uses POST.
+// Register the SAME handler under both verbs — gating happens inside
+// cronOrAdminAuth (cron secret vs bearer JWT + role). Without the GET
+// route the cron has been hitting Express's 404 every 5 minutes since
+// audit3 shipped, meaning cadence_tick / orphan-supervisor janitor /
+// due-deletion sweep never enqueue or process. The route's payload is
+// already idempotent — duplicate verbs can't cause duplicate work.
+const sweepHandler = async (req: SweepRequest, res: Response) => {
+  try {
+    const {
+      claimJob: claim,
+      completeJob: complete,
+      failJob: fail,
+      enqueue,
+    } = await import("../lib/job-queue");
 
-      const now = new Date();
-      if (
-        now.getUTCHours() === 2 &&
-        now.getUTCMinutes() === 0 &&
-        (req._sweepMode === "cron" || !req._sweepMode)
-      ) {
-        const tenants = await drizzle
-          .select({ userId: schema.settings.userId, retentionDays: schema.settings.retentionDays })
-          .from(schema.settings);
+    const now = new Date();
+    if (
+      now.getUTCHours() === 2 &&
+      now.getUTCMinutes() === 0 &&
+      (req._sweepMode === "cron" || !req._sweepMode)
+    ) {
+      const tenants = await drizzle
+        .select({ userId: schema.settings.userId, retentionDays: schema.settings.retentionDays })
+        .from(schema.settings);
 
-        if (tenants) {
-          for (const t of tenants) {
-            await enqueue(drizzle, {
-              userId: t.userId,
-              type: "purge_old_data",
-              payload: { user_id: t.userId, retention_days: t.retentionDays },
-            });
-          }
+      if (tenants) {
+        for (const t of tenants) {
+          await enqueue(drizzle, {
+            userId: t.userId,
+            type: "purge_old_data",
+            payload: { user_id: t.userId, retention_days: t.retentionDays },
+          });
         }
       }
-
-      // Sentinel user_id for tenant-agnostic system jobs. wireline_jobs.user_id
-      // is NOT NULL (Codex review caught the prior null-insert bug), so global
-      // jobs (cadence_tick, sweep_orphan_supervisor_subs) need an explicit
-      // non-null owner. We use the all-zero UUID as a system sentinel — it
-      // can never collide with a real tenant UUID, and the job handlers for
-      // these types iterate every tenant's due rows anyway, so they don't
-      // read job.user_id.
-      const SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000000";
-
-      // Always enqueue a single cadence tick per sweep — the tick is
-      // cluster-safe (each worker pulls one batch up to limit and updates
-      // rows transactionally). One every 5 minutes is enough resolution
-      // for cadence delays measured in hours.
-      if (req._sweepMode === "cron" || !req._sweepMode) {
-        await enqueue(drizzle, {
-          userId: SYSTEM_USER_ID,
-          type: "cadence_tick",
-          payload: {},
-        }).catch((e: unknown) =>
-          log.warn("cadence_tick enqueue failed", { error: getErrorMessage(e) }),
-        );
-      }
-
-      // Daily at 03:15 UTC: janitor sweep for orphaned supervisor
-      // subscriptions whose callId no longer matches any call_log row.
-      // Defense in depth — the route already validates existence at
-      // write time, but a separate cleanup catches anything inserted
-      // before the validation landed (audit probe leftovers, dev
-      // testing) and keeps the table tidy at scale.
-      if (
-        now.getUTCHours() === 3 &&
-        now.getUTCMinutes() === 15 &&
-        (req._sweepMode === "cron" || !req._sweepMode)
-      ) {
-        await enqueue(drizzle, {
-          userId: SYSTEM_USER_ID,
-          type: "sweep_orphan_supervisor_subs",
-          payload: {},
-        }).catch((e: unknown) =>
-          log.warn("sweep_orphan_supervisor_subs enqueue failed", {
-            error: getErrorMessage(e),
-          }),
-        );
-      }
-
-      if (req._sweepMode === "cron" || !req._sweepMode) {
-        const dueDeletions = await drizzle
-          .select({ id: schema.deletionQueue.id, userId: schema.deletionQueue.userId })
-          .from(schema.deletionQueue)
-          .where(
-            and(
-              eq(schema.deletionQueue.status, "pending"),
-              lte(schema.deletionQueue.scheduledPurgeAt, new Date()),
-            ),
-          )
-          .limit(50);
-
-        if (dueDeletions) {
-          for (const row of dueDeletions) {
-            await enqueue(drizzle, {
-              userId: row.userId,
-              type: "purge_deleted_account",
-              payload: { user_id: row.userId, queue_id: String(row.id) },
-              maxAttempts: 3,
-            });
-          }
-        }
-      }
-      let processed = 0;
-      for (let i = 0; i < 10; i++) {
-        const job = await claim(drizzle);
-        if (!job) break;
-        try {
-          await handleJob(job);
-          await complete(drizzle, job.id);
-          processed++;
-        } catch (sweepErr: any) {
-          await fail(drizzle, job, getErrorMessage(sweepErr));
-        }
-      }
-      const mode = req._sweepMode || "cron";
-      res.json({ processed, mode });
-      if (processed > 0) {
-        void auditLogger
-          .logJobSweep("completed", {
-            userId: req.user?.id,
-            mode: mode as "cron" | "manual",
-            processed,
-            ip: req.ip,
-          })
-          .catch(() => {});
-      }
-    } catch (err) {
-      log.error("POST /api/jobs/sweep failed", { error: getErrorMessage(err) });
-      res.status(500).json({ error: "Sweep failed" });
     }
-  },
-);
+
+    // Sentinel user_id for tenant-agnostic system jobs. wireline_jobs.user_id
+    // is NOT NULL (Codex review caught the prior null-insert bug), so global
+    // jobs (cadence_tick, sweep_orphan_supervisor_subs) need an explicit
+    // non-null owner. We use the all-zero UUID as a system sentinel — it
+    // can never collide with a real tenant UUID, and the job handlers for
+    // these types iterate every tenant's due rows anyway, so they don't
+    // read job.user_id.
+    const SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000000";
+
+    // Always enqueue a single cadence tick per sweep — the tick is
+    // cluster-safe (each worker pulls one batch up to limit and updates
+    // rows transactionally). One every 5 minutes is enough resolution
+    // for cadence delays measured in hours.
+    if (req._sweepMode === "cron" || !req._sweepMode) {
+      await enqueue(drizzle, {
+        userId: SYSTEM_USER_ID,
+        type: "cadence_tick",
+        payload: {},
+      }).catch((e: unknown) =>
+        log.warn("cadence_tick enqueue failed", { error: getErrorMessage(e) }),
+      );
+    }
+
+    // Daily at 03:15 UTC: janitor sweep for orphaned supervisor
+    // subscriptions whose callId no longer matches any call_log row.
+    // Defense in depth — the route already validates existence at
+    // write time, but a separate cleanup catches anything inserted
+    // before the validation landed (audit probe leftovers, dev
+    // testing) and keeps the table tidy at scale.
+    if (
+      now.getUTCHours() === 3 &&
+      now.getUTCMinutes() === 15 &&
+      (req._sweepMode === "cron" || !req._sweepMode)
+    ) {
+      await enqueue(drizzle, {
+        userId: SYSTEM_USER_ID,
+        type: "sweep_orphan_supervisor_subs",
+        payload: {},
+      }).catch((e: unknown) =>
+        log.warn("sweep_orphan_supervisor_subs enqueue failed", {
+          error: getErrorMessage(e),
+        }),
+      );
+    }
+
+    if (req._sweepMode === "cron" || !req._sweepMode) {
+      const dueDeletions = await drizzle
+        .select({ id: schema.deletionQueue.id, userId: schema.deletionQueue.userId })
+        .from(schema.deletionQueue)
+        .where(
+          and(
+            eq(schema.deletionQueue.status, "pending"),
+            lte(schema.deletionQueue.scheduledPurgeAt, new Date()),
+          ),
+        )
+        .limit(50);
+
+      if (dueDeletions) {
+        for (const row of dueDeletions) {
+          await enqueue(drizzle, {
+            userId: row.userId,
+            type: "purge_deleted_account",
+            payload: { user_id: row.userId, queue_id: String(row.id) },
+            maxAttempts: 3,
+          });
+        }
+      }
+    }
+    let processed = 0;
+    for (let i = 0; i < 10; i++) {
+      const job = await claim(drizzle);
+      if (!job) break;
+      try {
+        await handleJob(job);
+        await complete(drizzle, job.id);
+        processed++;
+      } catch (sweepErr: any) {
+        await fail(drizzle, job, getErrorMessage(sweepErr));
+      }
+    }
+    const mode = req._sweepMode || "cron";
+    res.json({ processed, mode });
+    if (processed > 0) {
+      void auditLogger
+        .logJobSweep("completed", {
+          userId: req.user?.id,
+          mode: mode as "cron" | "manual",
+          processed,
+          ip: req.ip,
+        })
+        .catch(() => {});
+    }
+  } catch (err) {
+    log.error("/api/jobs/sweep failed", { error: getErrorMessage(err) });
+    res.status(500).json({ error: "Sweep failed" });
+  }
+};
+
+router.get("/sweep", cronOrAdminAuth, jobsSweepRateLimit, sweepHandler);
+router.post("/sweep", cronOrAdminAuth, jobsSweepRateLimit, sweepHandler);
 
 export default router;
