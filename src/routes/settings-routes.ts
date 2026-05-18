@@ -39,11 +39,11 @@ router.post(
       delete update.userId;
       delete update.createdAt;
 
-      const [data] = await drizzle
+      const [data] = (await drizzle
         .update(settings)
         .set(update)
         .where(eq(settings.userId, req.user.id))
-        .returning();
+        .returning()) as any[];
 
       res.json({ settings: data });
     } catch (error) {
@@ -113,7 +113,7 @@ router.post(
         return res.status(400).json({ error: "No valid preference fields supplied." });
       }
 
-      const [data] = await drizzle
+      const [data] = (await drizzle
         .insert(userPreferences)
         .values({
           ...update,
@@ -124,7 +124,7 @@ router.post(
           target: userPreferences.userId,
           set: { ...update, updatedAt: new Date() },
         })
-        .returning();
+        .returning()) as any[];
 
       res.json({
         preferences: {
@@ -402,7 +402,7 @@ router.delete(
       if (existing) {
         queueRow = existing;
       } else {
-        const [inserted] = await drizzle
+        const [inserted] = (await drizzle
           .insert(deletionQueue)
           .values({
             userId: uid,
@@ -412,7 +412,7 @@ router.delete(
             ip: req.ip ?? null,
             userAgent: req.headers?.["user-agent"] ?? null,
           })
-          .returning();
+          .returning()) as any[];
 
         if (!inserted) {
           log.error("account deletion: enqueue failed", { uid });

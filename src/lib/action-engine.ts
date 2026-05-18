@@ -246,7 +246,7 @@ async function handleSendTextMessage(
   context: { sourceId: string },
 ) {
   const gate = await agentMaySendSms(userId, action.agentId);
-  if (!gate.allowed) {
+  if (gate.allowed === false) {
     log.info("SMS blocked by per-agent tool gate", { userId, agentId: action.agentId });
     return { success: false, error: gate.reason };
   }

@@ -102,14 +102,15 @@ export const authService = {
     const passwordHash = hashPassword(password);
 
     try {
-      const [user] = await drizzle
+      const inserted = (await drizzle
         .insert(schema.users)
         .values({
           email,
           passwordHash,
           fullName,
         })
-        .returning();
+        .returning()) as Array<{ id: string; email: string; fullName: string | null }>;
+      const user = inserted[0];
 
       return {
         user: {

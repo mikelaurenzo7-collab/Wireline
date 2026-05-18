@@ -51,7 +51,7 @@ describe("CarrierPanel", () => {
 
   it("renders the carrier network and phone numbers sections", () => {
     render(<CarrierPanel {...defaultProps} />);
-    
+
     expect(screen.getByText(/Wireline Voice Network/i)).toBeInTheDocument();
     expect(screen.getByText(/Wireline Phone Numbers/i)).toBeInTheDocument();
     expect(screen.getByText("+15551234567")).toBeInTheDocument();
@@ -59,35 +59,41 @@ describe("CarrierPanel", () => {
 
   it("calls onUpdateSettings when phone number ID changes", () => {
     render(<CarrierPanel {...defaultProps} />);
-    
+
     const input = screen.getByLabelText(/Default Wireline phone number ID/i);
     fireEvent.change(input, { target: { value: "new-id" } });
-    
-    expect(defaultProps.onUpdateSettings).toHaveBeenCalledWith(expect.objectContaining({
-      vapi_phone_number_id: "new-id"
-    }));
+
+    expect(defaultProps.onUpdateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        vapi_phone_number_id: "new-id",
+      }),
+    );
   });
 
   it("calls onSyncNumbers when sync button is clicked", () => {
     render(<CarrierPanel {...defaultProps} />);
-    
+
     const syncBtn = screen.getByText(/Sync numbers/i);
     fireEvent.click(syncBtn);
-    
+
     expect(defaultProps.onSyncNumbers).toHaveBeenCalled();
   });
 
   it("calls onAddNumber when register button is clicked", () => {
     render(<CarrierPanel {...defaultProps} />);
-    
-    const numInput = screen.getByPlaceholderText("+1 800 555 0100");
+
+    // The page now has two inputs with the +1 800 555 0100 placeholder
+    // (Voice register form + SMS-from setting). Disambiguate by picking
+    // the tel input that is NOT the twilio-sms-from row.
+    const telInputs = screen.getAllByPlaceholderText("+1 800 555 0100");
+    const numInput = telInputs.find((el) => el.id !== "twilio-sms-from")!;
     const idInput = screen.getByPlaceholderText("Wireline voice number ID");
     const registerBtn = screen.getByText(/Register number/i);
-    
+
     fireEvent.change(numInput, { target: { value: "+1234567890" } });
     fireEvent.change(idInput, { target: { value: "vapi-new" } });
     fireEvent.click(registerBtn);
-    
+
     expect(defaultProps.onAddNumber).toHaveBeenCalledWith("+1234567890", "vapi-new");
   });
 });

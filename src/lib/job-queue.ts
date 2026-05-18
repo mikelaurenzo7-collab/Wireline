@@ -161,7 +161,7 @@ export async function claimJob(db: DrizzleDB, typeFilter?: JobType[]): Promise<a
 
     if (!job) return null;
 
-    const [updated] = await tx
+    const updatedRows = (await tx
       .update(schema.jobs)
       .set({
         status: "running" as JobStatus,
@@ -170,7 +170,8 @@ export async function claimJob(db: DrizzleDB, typeFilter?: JobType[]): Promise<a
         updatedAt: new Date(),
       })
       .where(eq(schema.jobs.id, job.id))
-      .returning();
+      .returning()) as Array<typeof job>;
+    const updated = updatedRows[0];
 
     return updated;
   });

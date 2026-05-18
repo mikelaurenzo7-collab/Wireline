@@ -72,7 +72,7 @@ router.post("/api/cadences", authenticateUser, async (req: AuthenticatedRequest,
     const name = (req.body?.name || "").toString().trim();
     if (!name) return res.status(400).json({ error: "name is required" });
     const steps = validateSteps(req.body?.steps);
-    const [row] = await drizzle
+    const [row] = (await drizzle
       .insert(schema.cadences)
       .values({
         userId: req.user.id,
@@ -82,7 +82,7 @@ router.post("/api/cadences", authenticateUser, async (req: AuthenticatedRequest,
         steps,
         active: req.body?.active !== false,
       })
-      .returning();
+      .returning()) as any[];
     res.json({ cadence: row });
   } catch (e: any) {
     res.status(400).json({ error: e?.message || "Invalid cadence" });
@@ -106,11 +106,11 @@ router.patch(
         return res.status(400).json({ error: e?.message || "Invalid steps" });
       }
     }
-    const [row] = await drizzle
+    const [row] = (await drizzle
       .update(schema.cadences)
       .set(patch)
       .where(and(eq(schema.cadences.id, req.params.id), eq(schema.cadences.userId, req.user.id)))
-      .returning();
+      .returning()) as any[];
     if (!row) return res.status(404).json({ error: "Cadence not found" });
     res.json({ cadence: row });
   },
@@ -184,7 +184,7 @@ router.post(
     const nextDueAt = new Date(Date.now() + firstDelay * 3_600_000);
 
     try {
-      const [run] = await drizzle
+      const [run] = (await drizzle
         .insert(schema.cadenceRuns)
         .values({
           userId: req.user.id,
@@ -194,7 +194,7 @@ router.post(
           nextDueAt,
           status: "active",
         })
-        .returning();
+        .returning()) as any[];
       return res.json({ run });
     } catch (e: any) {
       if (e?.code === "23505" || /duplicate key/i.test(e?.message || "")) {
@@ -211,13 +211,13 @@ router.post(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
-    const [row] = await drizzle
+    const [row] = (await drizzle
       .update(schema.cadenceRuns)
       .set({ status: "paused", updatedAt: new Date() })
       .where(
         and(eq(schema.cadenceRuns.id, req.params.id), eq(schema.cadenceRuns.userId, req.user.id)),
       )
-      .returning();
+      .returning()) as any[];
     if (!row) return res.status(404).json({ error: "Run not found" });
     res.json({ run: row });
   },
