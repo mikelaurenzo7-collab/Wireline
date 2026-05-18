@@ -358,15 +358,19 @@ router.post(
       const r3 = { rowCount: 0 };
       const r4 = { rowCount: 0 };
 
-      // One-shot orphan cleanup: delete supervisor_subscriptions rows
-      // whose call_id doesn't reference any wireline_call_logs row. Wipes
-      // the audit-probe leftovers and anything else inserted before the
-      // route-level existence check shipped. The daily janitor handles
-      // future inserts.
+      // One-shot orphan cleanup: delete every supervisor_subscriptions
+      // row that violates the route's same-tenant ownership invariant —
+      // either no matching call_log at all OR the call_log belongs to
+      // a different tenant (cross-tenant snoop probes the route now
+      // refuses). Mirrors the daily janitor's NOT EXISTS predicate so
+      // both paths produce the same result.
       const r5 = await drizzle.execute(sql`
-        DELETE FROM wireline_supervisor_subscriptions
-        WHERE call_id NOT IN (
-          SELECT vapi_call_id FROM wireline_call_logs WHERE vapi_call_id IS NOT NULL
+        DELETE FROM wireline_supervisor_subscriptions s
+        WHERE NOT EXISTS (
+          SELECT 1
+          FROM wireline_call_logs c
+          WHERE c.vapi_call_id = s.call_id
+            AND c.user_id = s.user_id
         )
       `);
 

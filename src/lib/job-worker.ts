@@ -722,17 +722,26 @@ export async function handleJob(job: JobRow): Promise<void> {
   }
 
   if (job.type === "sweep_orphan_supervisor_subs") {
-    // Delete any supervisor_subscriptions row whose callId no longer
-    // matches a call_log row. Defense in depth — the supervisor route
-    // already validates existence at write time; this catches anything
-    // inserted before the validation shipped + any test/probe rows.
+    // Delete any supervisor_subscriptions row that violates the
+    // ownership invariant the route enforces at insert time: the
+    // subscription's user_id MUST match the user_id of the call_log row
+    // the call_id points at. Catches both:
+    //   - rows whose call_id doesn't reference any call at all
+    //     (audit probes, dev testing)
+    //   - rows whose call_id points at ANOTHER tenant's call (the
+    //     cross-tenant snoop case the route now blocks)
+    // The NOT EXISTS subquery requires both call_id match AND user_id
+    // match — single-table same-row check.
     try {
       const result: any = await drizzle.execute(sql`
-        DELETE FROM wireline_supervisor_subscriptions
-        WHERE call_id NOT IN (
-          SELECT vapi_call_id FROM wireline_call_logs WHERE vapi_call_id IS NOT NULL
+        DELETE FROM wireline_supervisor_subscriptions s
+        WHERE NOT EXISTS (
+          SELECT 1
+          FROM wireline_call_logs c
+          WHERE c.vapi_call_id = s.call_id
+            AND c.user_id = s.user_id
         )
-        RETURNING id
+        RETURNING s.id
       `);
       const deleted = (result?.rowCount ?? result?.rows?.length ?? 0) | 0;
       log.info("sweep_orphan_supervisor_subs completed", { deleted });
