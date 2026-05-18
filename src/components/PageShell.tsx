@@ -70,7 +70,7 @@ export default function PageShell({
         initial={{ y: -10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="shrink-0 pb-3 sm:pb-5 mb-3"
+        className="shrink-0 pb-2 sm:pb-3 mb-2"
       >
         {/* eyebrow + actions row — stacks on mobile so action buttons
             don't get squeezed against the title or fall off-canvas. */}
@@ -88,7 +88,7 @@ export default function PageShell({
               className="font-display italic leading-[0.88] tracking-tight text-ink truncate"
               // Smaller floor on phones; the original 2rem was too tall to
               // share a line with mobile-header buttons on narrow screens.
-              style={{ fontSize: "clamp(1.6rem, 6vw, 3.25rem)" }}
+              style={{ fontSize: "clamp(1.4rem, 4vw, 2.25rem)" }}
             >
               <span className="text-aurora">{title}</span>
             </h1>
@@ -116,7 +116,7 @@ export default function PageShell({
 
       {/* Tab strip */}
       {tabs && tabs.length > 0 && (
-        <div className="shrink-0 flex items-center gap-1 mb-4 overflow-x-auto scrollbar-hide">
+        <div className="shrink-0 flex items-center gap-1 mb-3 overflow-x-auto scrollbar-hide">
           <div className="flex items-center gap-1 p-1 rounded-2xl glass border border-black/8">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -340,7 +340,7 @@ export function StatTile({
           )}
         </div>
 
-        <div className="font-display italic text-3xl md:text-4xl text-ink leading-none tracking-tight truncate mb-2">
+        <div className="font-display italic text-2xl md:text-3xl text-ink leading-none tracking-tight truncate mb-2">
           {value}
         </div>
 

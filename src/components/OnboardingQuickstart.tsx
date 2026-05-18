@@ -225,7 +225,7 @@ export default function OnboardingQuickstart() {
             even at 900px viewport heights. Previously px-7 + pt-8 + pb-6
             + 12x12 logo + text-4xl heading pushed the steps down ~150px;
             this trims ~60px without losing the welcome moment. */}
-        <div className="relative z-10 px-5 md:px-7 pt-5 pb-4 border-b border-white/8">
+        <div className="relative z-10 px-4 md:px-5 pt-4 pb-3 border-b border-white/8">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
               <div
@@ -238,7 +238,7 @@ export default function OnboardingQuickstart() {
                 <div className="text-[9px] uppercase tracking-[0.4em] text-brand flex items-center gap-1.5">
                   <Sparkles className="w-3 h-3" /> Get started in 4 steps
                 </div>
-                <h2 className="font-display italic text-xl md:text-2xl text-ink leading-tight mt-0.5">
+                <h2 className="font-display italic text-lg md:text-xl text-ink leading-tight mt-0.5">
                   Welcome to WIRELINE
                 </h2>
               </div>
@@ -262,7 +262,7 @@ export default function OnboardingQuickstart() {
 
         {/* Steps — 4 columns on lg so all four 'Get Started' cards fit
             in a single row above the fold. 2 cols on tablet, 1 on mobile. */}
-        <div className="relative z-10 p-4 md:p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="relative z-10 p-3 md:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
           {STEPS.map((s, i) => (
             <Step
               key={s.id}
@@ -308,7 +308,7 @@ export default function OnboardingQuickstart() {
             <div className="text-[10px] uppercase tracking-[0.4em] text-muted mb-3 flex items-center gap-2">
               <Link2 className="w-3 h-3" /> Power up your fleet
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <PowerUpCard
                 icon={Mail}
                 label="Connect Email"
