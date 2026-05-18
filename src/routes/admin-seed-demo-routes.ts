@@ -14,10 +14,11 @@
 
 import { Router, Response } from "express";
 import { drizzle, log } from "../lib/server-context";
-import { sql, eq, and } from "drizzle-orm";
+import { sql, eq, and, inArray } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { invalidateDashboard } from "../lib/dashboard-cache";
 import type { AuthenticatedRequest } from "../types/auth";
+import * as schema from "../db/schema";
 import {
   users as usersTable,
   agents as agentsTable,
@@ -173,21 +174,45 @@ async function countRows(tableName: string, userId: string): Promise<number> {
 async function backfillTenantDemoRows(userId: string): Promise<void> {
   const seedPhones = SAMPLE_CUSTOMERS.map((c) => c.phone);
   try {
-    await drizzle.execute(sql`
-      UPDATE wireline_outbound_leads SET demo = true
-      WHERE user_id = ${userId} AND demo = false AND customer_number = ANY(${seedPhones});
-    `);
-    await drizzle.execute(sql`
-      UPDATE wireline_appointments SET demo = true
-      WHERE user_id = ${userId} AND demo = false AND phone_number = ANY(${seedPhones});
-    `);
-    await drizzle.execute(sql`
-      UPDATE wireline_dnc_list SET demo = true
-      WHERE user_id = ${userId} AND demo = false AND phone = ANY(${seedPhones});
-    `);
-    // call_logs were backfilled by the migration via vapi_call_id LIKE
-    // 'seed-call-%' (unique-to-seed signature). Catch any stragglers
-    // here for symmetry.
+    // Use drizzle's inArray() builder instead of raw SQL ANY(${array}).
+    // The raw form silently fails (the JS array doesn't serialize as a
+    // pg text[] through drizzle's sql template), the try/catch swallowed
+    // the error, the seed loop counted demo-true at 0 and inserted a
+    // duplicate set of 18/8/5 rows on every call. Use the typed query
+    // builder so pg gets the array literal right.
+    await drizzle
+      .update(schema.outboundLeads)
+      .set({ demo: true })
+      .where(
+        and(
+          eq(schema.outboundLeads.userId, userId),
+          eq(schema.outboundLeads.demo, false),
+          inArray(schema.outboundLeads.customerNumber, seedPhones),
+        ),
+      );
+    await drizzle
+      .update(schema.appointments)
+      .set({ demo: true })
+      .where(
+        and(
+          eq(schema.appointments.userId, userId),
+          eq(schema.appointments.demo, false),
+          inArray(schema.appointments.phoneNumber, seedPhones),
+        ),
+      );
+    await drizzle
+      .update(schema.dncList)
+      .set({ demo: true })
+      .where(
+        and(
+          eq(schema.dncList.userId, userId),
+          eq(schema.dncList.demo, false),
+          inArray(schema.dncList.phone, seedPhones),
+        ),
+      );
+    // call_logs uses a string LIKE on vapi_call_id (unique-to-seed
+    // signature). LIKE is fine in raw SQL — the array binding bug
+    // doesn't apply here. Catch any stragglers the migration missed.
     await drizzle.execute(sql`
       UPDATE wireline_call_logs SET demo = true
       WHERE user_id = ${userId} AND demo = false AND vapi_call_id LIKE 'seed-call-%';
