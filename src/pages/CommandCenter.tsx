@@ -233,7 +233,7 @@ export default function CommandCenter() {
 
   return (
     <PageTransition>
-      <div className="max-w-[1600px] mx-auto space-y-5 pb-8">
+      <div className="max-w-[1600px] mx-auto space-y-4 pb-4">
         {/* Elite Command Header — tightened so the onboarding card fits
             above the fold on a 900px viewport. Title/subtitle/stats kept
             but vertical density compressed ~40px without losing brand. */}
@@ -245,7 +245,7 @@ export default function CommandCenter() {
                 System Active
               </span>
             </div>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tighter text-ink flex items-baseline gap-2">
+            <h1 className="text-xl md:text-2xl font-black tracking-tighter text-ink flex items-baseline gap-2">
               Wireline OS
               <span className="text-xs font-mono font-medium text-muted/40 tracking-normal">
                 v4.7.2-stable
@@ -379,20 +379,20 @@ export default function CommandCenter() {
           <span className="text-[10px] uppercase tracking-[0.35em] text-muted font-medium block">
             Live operations
           </span>
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-3">
             {/* Left Column: Live Monitor (8/12) */}
-            <div className="xl:col-span-8 space-y-4">
+            <div className="xl:col-span-8 space-y-3">
               <div className="relative group">
                 <div className="absolute -inset-1 bg-gradient-to-r from-brand/20 to-brand-2/20 rounded-[2.5rem] blur opacity-25 group-hover:opacity-40 transition duration-1000" />
-                <div className="relative glass border-black/5 rounded-[2rem] p-5 min-h-[280px]">
+                <div className="relative glass border-black/5 rounded-[2rem] p-4 min-h-[240px]">
                   <LiveMonitor calls={calls} />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {/* Analytics: Sentiment */}
-                <div className="glass border-black/5 rounded-[2rem] p-5">
-                  <div className="flex items-center justify-between mb-8">
+                <div className="glass border-black/5 rounded-[2rem] p-4">
+                  <div className="flex items-center justify-between mb-4">
                     <h3 className="text-[10px] uppercase tracking-[0.4em] font-medium text-muted flex items-center gap-2">
                       <Globe className="w-3.5 h-3.5 text-brand" />
                       Market Sentiment
@@ -464,8 +464,8 @@ export default function CommandCenter() {
                 </div>
 
                 {/* Analytics: Unit Economics */}
-                <div className="glass border-black/5 rounded-[2rem] p-5">
-                  <div className="flex items-center justify-between mb-4">
+                <div className="glass border-black/5 rounded-[2rem] p-4">
+                  <div className="flex items-center justify-between mb-3">
                     <h3 className="text-[10px] uppercase tracking-[0.4em] font-medium text-muted flex items-center gap-2">
                       <Zap className="w-3.5 h-3.5 text-brand" />
                       Unit Economics
@@ -496,7 +496,7 @@ export default function CommandCenter() {
                     </div>
                   </div>
 
-                  <div className="mt-6 p-4 rounded-2xl bg-brand/5 border border-brand/10">
+                  <div className="mt-4 p-4 rounded-2xl bg-brand/5 border border-brand/10">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-[10px] font-bold text-brand uppercase tracking-wider">
                         Fleet ROI Projection
@@ -516,9 +516,9 @@ export default function CommandCenter() {
             </div>
 
             {/* Right Column: Intelligence & Actions (4/12) */}
-            <div className="xl:col-span-4 space-y-4">
+            <div className="xl:col-span-4 space-y-3">
               {/* Intelligence Hub (Action Feed) */}
-              <div className="glass border-black/5 rounded-[2rem] p-5 h-full min-h-[280px] flex flex-col">
+              <div className="glass border-black/5 rounded-[2rem] p-4 h-full min-h-[240px] flex flex-col">
                 <ActionFeed actions={actions} onRefresh={refresh} />
               </div>
             </div>
