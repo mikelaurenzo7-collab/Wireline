@@ -365,6 +365,18 @@ router.post(
         WHERE demo = false AND phone IN ${seedPhones};
       `);
 
+      // One-shot orphan cleanup: delete supervisor_subscriptions rows
+      // whose call_id doesn't reference any wireline_call_logs row. Wipes
+      // the audit-probe leftovers and anything else inserted before the
+      // route-level existence check shipped. The daily janitor handles
+      // future inserts.
+      const r5 = await drizzle.execute(sql`
+        DELETE FROM wireline_supervisor_subscriptions
+        WHERE call_id NOT IN (
+          SELECT vapi_call_id FROM wireline_call_logs WHERE vapi_call_id IS NOT NULL
+        )
+      `);
+
       log.info("Audit3 migration completed", {
         userId: req.user.id,
         backfilled: {
@@ -372,12 +384,13 @@ router.post(
           outbound_leads: (r2 as any).rowCount ?? 0,
           appointments: (r3 as any).rowCount ?? 0,
           dnc_list: (r4 as any).rowCount ?? 0,
+          orphan_subs_deleted: (r5 as any).rowCount ?? 0,
         },
       });
       return res.json({
         ok: true,
         message:
-          "demo column added to call_logs / outbound_leads / appointments / dnc_list with backfill.",
+          "demo column added to call_logs / outbound_leads / appointments / dnc_list with backfill; orphaned supervisor_subscriptions cleaned.",
       });
     } catch (e: any) {
       log.error("Audit3 migration failed", { error: e?.message });

@@ -174,6 +174,24 @@ router.post(
         }).catch(() => {});
       }
 
+      // Daily at 03:15 UTC: janitor sweep for orphaned supervisor
+      // subscriptions whose callId no longer matches any call_log row.
+      // Defense in depth — the route already validates existence at
+      // write time, but a separate cleanup catches anything inserted
+      // before the validation landed (audit probe leftovers, dev
+      // testing) and keeps the table tidy at scale.
+      if (
+        now.getUTCHours() === 3 &&
+        now.getUTCMinutes() === 15 &&
+        (req._sweepMode === "cron" || !req._sweepMode)
+      ) {
+        await enqueue(drizzle, {
+          userId: null as any,
+          type: "sweep_orphan_supervisor_subs",
+          payload: {},
+        }).catch(() => {});
+      }
+
       if (req._sweepMode === "cron" || !req._sweepMode) {
         const dueDeletions = await drizzle
           .select({ id: schema.deletionQueue.id, userId: schema.deletionQueue.userId })

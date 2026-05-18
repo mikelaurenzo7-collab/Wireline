@@ -32,6 +32,7 @@ import {
 } from "../data/contact-agents";
 import { buildWirelineKnowledgeBlock } from "../data/wireline-knowledge";
 import { sanitizePhone } from "../lib/vapi-helpers";
+import { VAPI_PREMIUM_MODEL } from "../lib/claude-brain";
 
 const router = Router();
 
@@ -138,9 +139,9 @@ async function syncOneAgent(
       firstMessage: agent.firstMessage,
       model: {
         provider: "anthropic",
-        // Vapi's allowlist doesn't include claude-opus-4-7 yet; opus-4-6 is
-        // currently the most capable model they accept. Bump when they ship.
-        model: "claude-opus-4-6",
+        // Source of truth: VAPI_PREMIUM_MODEL in claude-brain.ts. Bump
+        // there when the allowlist catches up to Anthropic's latest.
+        model: VAPI_PREMIUM_MODEL,
         messages: [{ role: "system", content: systemPrompt }],
       },
       serverUrl: PRODUCTION_WEBHOOK_URL,

@@ -19,6 +19,7 @@ import {
 } from "../lib/form-validators";
 import { ROLE_PERSONALITY_TEMPLATES, DEFAULT_AGENT_ROLE } from "../lib/agent-constants";
 import { composeAgentPersonality } from "../lib/template-overlays";
+import { pickRotatedVoiceId } from "../data/voice-roster";
 import * as claudeBrain from "../lib/claude-brain";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { computeAgentPerformance, emptyAgentPerformance } from "../lib/agent-performance";
@@ -718,11 +719,17 @@ router.post("/api/agents", authenticateUser, async (req: AuthenticatedRequest, r
     const agentRole = rest.role || DEFAULT_AGENT_ROLE;
 
     try {
+      // Voice rotation: when the operator didn't pick a voice (template
+      // deploys typically don't), assign one from the curated roster by
+      // current agent count so the first 3 agents end up with 3 distinct
+      // voices instead of all sharing the platform default. Operator can
+      // override later in FleetSettings → Voice.
+      const rotatedVoice = pickRotatedVoiceId(agentCount);
       const agentValues = {
         ...mapObjectToCamel(rest),
         id: agentId,
         userId: req.user.id,
-        voiceId: rest.voice_id || "bIHbv24MWmeRgasZH58o",
+        voiceId: rest.voice_id || rotatedVoice,
         channel: rest.channel || "voice",
         role: agentRole,
       };

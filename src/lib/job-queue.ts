@@ -48,7 +48,8 @@ export type JobType =
   | "proactive_lead_enrichment" // Async lead enrichment
   | "autonomous_prospecting" // AI-driven lead discovery
   | "cadence_tick" // Multi-touch outbound cadence step processor
-  | "auto_qa_score"; // Auto-QA every completed call → chains adaptive_optimization on low score
+  | "auto_qa_score" // Auto-QA every completed call → chains adaptive_optimization on low score
+  | "sweep_orphan_supervisor_subs"; // Daily janitor: delete subscription rows whose callId no longer references a call_log row
 
 export interface JobPayload extends Record<string, unknown> {}
 

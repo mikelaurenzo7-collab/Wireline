@@ -32,6 +32,23 @@ export const CLAUDE_MODELS = {
   OPUS: "claude-opus-4-7",
 } as const;
 
+/**
+ * The model identifier Vapi accepts in its assistant allowlist for the
+ * voice-agent runtime. Vapi's allowlist lags the Anthropic SDK by a
+ * release, so the in-app brain (claude-opus-4-7) and the voice-agent
+ * brain (claude-opus-4-6) are intentionally different. Surfaced on
+ * /api/health/internal so operators + monitoring know which runtime
+ * uses which version.
+ */
+export const VAPI_PREMIUM_MODEL = "claude-opus-4-6";
+
+/**
+ * The default model used by tenant-deployed voice agents created via
+ * the agent-routes deploy path. Lower-cost tier for everyday tenant
+ * agents; the 10 landing-page showcase agents use VAPI_PREMIUM_MODEL.
+ */
+export const VAPI_TENANT_DEFAULT_MODEL = CLAUDE_MODELS.SONNET;
+
 /** Task complexity tiers for automatic model selection */
 export type TaskComplexity = "simple" | "medium" | "complex";
 

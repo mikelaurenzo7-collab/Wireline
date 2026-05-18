@@ -720,6 +720,26 @@ export async function handleJob(job: JobRow): Promise<void> {
       log.error("auto_qa_score failed", { callLogId: p.callLogId, error: err?.message });
     }
   }
+
+  if (job.type === "sweep_orphan_supervisor_subs") {
+    // Delete any supervisor_subscriptions row whose callId no longer
+    // matches a call_log row. Defense in depth — the supervisor route
+    // already validates existence at write time; this catches anything
+    // inserted before the validation shipped + any test/probe rows.
+    try {
+      const result: any = await drizzle.execute(sql`
+        DELETE FROM wireline_supervisor_subscriptions
+        WHERE call_id NOT IN (
+          SELECT vapi_call_id FROM wireline_call_logs WHERE vapi_call_id IS NOT NULL
+        )
+        RETURNING id
+      `);
+      const deleted = (result?.rowCount ?? result?.rows?.length ?? 0) | 0;
+      log.info("sweep_orphan_supervisor_subs completed", { deleted });
+    } catch (err: any) {
+      log.error("sweep_orphan_supervisor_subs failed", { error: err?.message });
+    }
+  }
 }
 
 /**
