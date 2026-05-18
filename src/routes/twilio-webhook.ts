@@ -263,25 +263,26 @@ router.post("/api/twilio-webhook/voice-fallback", async (req: Request, res: Resp
   let fallbackNumber = null;
   if (tenantUserId) {
     const [settings] = await drizzle
-      .select({ humanFallbackNumber: schema.settings.twilioSmsFromNumber }) // Simplified for now
+      .select({ humanFallbackNumber: schema.settings.twilioManagerAlertNumber })
       .from(schema.settings)
       .where(eq(schema.settings.userId, tenantUserId))
       .limit(1);
-    // In a real scenario we would add a specific humanFallbackNumber to schema
-    // but we can just use Twilio XML to record voicemail if none exists.
+    fallbackNumber = settings?.humanFallbackNumber;
   }
 
   // Generate TwiML for a professional offline experience
-  const twiml = `<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Say voice="Polly.Matthew-Neural">Hello, you have reached our AI assistant line. We are currently experiencing an unexpectedly high volume of calls and our cognitive systems are temporarily offline.</Say>
-  <Say voice="Polly.Matthew-Neural">Please leave your name, number, and a brief message, and a human agent will return your call as soon as possible. Thank you.</Say>
-  <Record 
-    maxLength="120" 
-    action="/api/twilio-webhook/voicemail-complete" 
-    transcribe="true"
-  />
-</Response>`;
+  let twiml = `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n`;
+  twiml += `  <Say voice="Polly.Matthew-Neural">Hello, you have reached our AI assistant line. We are currently experiencing an unexpectedly high volume of calls and our cognitive systems are temporarily offline.</Say>\n`;
+
+  if (fallbackNumber) {
+    twiml += `  <Say voice="Polly.Matthew-Neural">Please hold while we transfer you to an available team member.</Say>\n`;
+    twiml += `  <Dial>${fallbackNumber}</Dial>\n`;
+  } else {
+    twiml += `  <Say voice="Polly.Matthew-Neural">Please leave your name, number, and a brief message, and a human agent will return your call as soon as possible. Thank you.</Say>\n`;
+    twiml += `  <Record \n    maxLength="120" \n    action="/api/twilio-webhook/voicemail-complete" \n    transcribe="true"\n  />\n`;
+  }
+  
+  twiml += `</Response>`;
 
   return res.status(200).send(twiml);
 });

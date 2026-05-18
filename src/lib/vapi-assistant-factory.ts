@@ -270,6 +270,10 @@ Today is ${currentDateTime}.
   const silenceTimeoutSeconds =
     (agentConfigRow as any)?.silenceTimeoutSeconds ?? archetypeSilenceDefault[archetype] ?? 5;
 
+  // Deduplicate and resolve fallback models based on what the primary model is
+  const defaultFallbacks = ["gpt-4o", "claude-3-5-sonnet-20241022", "gemini-1.5-pro", "gpt-4-turbo"];
+  const resolvedFallbacks = defaultFallbacks.filter(m => m !== voiceLlmModel).slice(0, 3);
+
   return {
     name: agentConfigRow?.name || "Wireline Agent",
     firstMessage: firstMessage,
@@ -278,7 +282,7 @@ Today is ${currentDateTime}.
     model: {
       provider: voiceLlmProvider,
       model: voiceLlmModel,
-      fallbackModels: ["gpt-4o", "gemini-1.5-pro", "gpt-4-turbo"],
+      fallbackModels: resolvedFallbacks,
       systemPrompt: runtime.prompt,
       temperature: llmTemp,
     },
