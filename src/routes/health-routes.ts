@@ -39,7 +39,7 @@ const HEALTH_RATE_MAX = 30;
 // Purge stale IP entries every 10 minutes to prevent unbounded Map growth
 // in long-running (Docker) deployments. Skip when the Map is small to avoid
 // unnecessary iteration overhead.
-setInterval(
+(setInterval(
   () => {
     if (healthRateLimit.size < 100) return;
     const now = Date.now();
