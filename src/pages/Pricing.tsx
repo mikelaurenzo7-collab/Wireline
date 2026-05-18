@@ -153,17 +153,19 @@ const VALUE_BULLETS = [
 export default function Pricing() {
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Aurora backdrop */}
+      {/* Aurora backdrop — toned down so the tier cards win the eye.
+          Previously 60vw at 0.18 opacity dominated the hero on 1366×768
+          laptops; now 40vw at 0.10 reads as ambient accent. */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <motion.div
-          className="absolute -top-[20%] -left-[10%] w-[60vw] h-[60vw] rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(10,200,212,0.18), transparent 60%)" }}
+          className="absolute -top-[25%] -left-[15%] w-[40vw] h-[40vw] rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(10,200,212,0.10), transparent 65%)" }}
           animate={{ x: [0, 30, 0], y: [0, -20, 0] }}
           transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
-          className="absolute -bottom-[15%] -right-[10%] w-[55vw] h-[55vw] rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(224,64,192,0.18), transparent 60%)" }}
+          className="absolute -bottom-[20%] -right-[15%] w-[40vw] h-[40vw] rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(224,64,192,0.10), transparent 65%)" }}
           animate={{ x: [0, -25, 0], y: [0, 25, 0] }}
           transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
         />
@@ -229,6 +231,58 @@ export default function Pricing() {
         </motion.p>
       </section>
 
+      {/* Why Wireline — moat strip above the tier grid. Each card frames a
+          differentiator competitors don't lead with: multi-channel agents in
+          one console, supervisor visibility into agent reasoning, and TCPA
+          compliance as auditable code (not a black-box vendor). */}
+      <section className="relative z-10 px-4 lg:px-10 max-w-6xl mx-auto pb-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[
+            {
+              title: "Voice + SMS + Email — one agent",
+              blurb:
+                "One conversation, three channels. Most platforms make you stitch separate vendors together.",
+              accent: "#0AC8D4",
+            },
+            {
+              title: "Supervisor cockpit with agent transparency",
+              blurb:
+                "See what your agents are about to do BEFORE they do it — draft vs. auto autonomy per action.",
+              accent: "#9B59F5",
+            },
+            {
+              title: "TCPA compliance in code",
+              blurb:
+                "Per-state opt-in rules, append-only consent ledger, automatic DNC. Your lawyers can read the rules.",
+              accent: "#E040C0",
+            },
+          ].map((c, i) => (
+            <motion.div
+              key={c.title}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 + i * 0.06, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="rounded-2xl glass border border-white/8 p-5 relative overflow-hidden"
+            >
+              <div
+                className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-25 blur-3xl pointer-events-none"
+                style={{ background: c.accent }}
+              />
+              <p
+                className="text-[9px] uppercase tracking-[0.36em] mb-2"
+                style={{ color: c.accent }}
+              >
+                Why Wireline
+              </p>
+              <h3 className="font-display italic text-lg text-ink leading-tight mb-1.5">
+                {c.title}
+              </h3>
+              <p className="text-[12px] text-muted/85 leading-relaxed">{c.blurb}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
       {/* Tier grid */}
       <section className="relative z-10 px-4 lg:px-10 max-w-7xl mx-auto pb-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 lg:gap-4">
@@ -282,6 +336,15 @@ export default function Pricing() {
                   )}
                 </div>
 
+                {tier.cta === "Start free trial" && (
+                  <p
+                    className="mb-2 text-[9px] uppercase tracking-[0.30em] font-medium inline-flex items-center gap-1.5 self-start px-2 py-1 rounded-md bg-emerald-500/12 border border-emerald-500/30 text-emerald-600"
+                    title="No credit card required"
+                  >
+                    <Check className="w-3 h-3" strokeWidth={2.8} />
+                    14-day free trial · no card
+                  </p>
+                )}
                 <a
                   href={tier.ctaHref}
                   className={`group block w-full text-center py-3 rounded-xl text-[11px] uppercase tracking-[0.32em] font-medium transition-all mb-6 ${

@@ -258,11 +258,11 @@ export default function CommandCenter() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Hide "Activate Growth" until the user has at least one agent —
-                this CTA fires Apollo prospecting which is meaningless until
-                there's an agent to receive the leads, and on fresh accounts
-                it competes for attention with OnboardingQuickstart below. */}
-            {(stats?.agents?.length ?? 0) > 0 && (
+            {/* Activate Growth — full button when the user has at least one
+                agent, disabled-stub when they don't. Stub still occupies the
+                slot so fresh accounts don't see a blank gap that reads as
+                broken UI. Hover-tooltip routes them to /agents to set up. */}
+            {(stats?.agents?.length ?? 0) > 0 ? (
               <button
                 onClick={async () => {
                   if (activatingGrowth) return;
@@ -304,6 +304,17 @@ export default function CommandCenter() {
                 />
                 <span className="text-xs font-black uppercase tracking-widest">
                   {activatingGrowth ? "Activating…" : "Activate Growth"}
+                </span>
+              </button>
+            ) : (
+              <button
+                onClick={() => (window.location.href = "/agents")}
+                title="Create an agent first → /agents"
+                className="flex items-center gap-2 px-6 py-3 rounded-2xl border border-white/10 bg-white/5 text-muted/70 hover:text-ink hover:border-white/25 transition-colors"
+              >
+                <Zap className="w-4 h-4" />
+                <span className="text-xs font-black uppercase tracking-widest">
+                  Create an agent →
                 </span>
               </button>
             )}
@@ -389,10 +400,15 @@ export default function CommandCenter() {
                   </div>
 
                   {sentimentData.length === 0 ? (
-                    <div className="h-48 flex flex-col items-center justify-center gap-3 text-center border border-dashed border-black/8 rounded-2xl bg-black/[0.01]">
-                      <Activity className="w-6 h-6 text-muted/20" />
-                      <p className="text-[10px] text-muted uppercase tracking-[0.2em]">
-                        awaiting data
+                    <div className="h-48 flex flex-col items-center justify-center gap-2 text-center border border-dashed border-black/8 rounded-2xl bg-black/[0.01] px-6">
+                      <Activity className="w-6 h-6 text-muted/30" />
+                      <p className="text-[11px] text-ink/70 font-medium">No conversations yet</p>
+                      <p className="text-[10px] text-muted/70 leading-relaxed">
+                        Make your first call to{" "}
+                        <a href="tel:+16306425661" className="text-brand hover:underline">
+                          (630) 642-5661
+                        </a>{" "}
+                        to see live sentiment.
                       </p>
                     </div>
                   ) : (

@@ -26,8 +26,10 @@
 import { Router, Request, Response } from "express";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
+import { eq } from "drizzle-orm";
 import twilio from "twilio";
 import { timingSafeEq, VAPI_WEBHOOK_SECRET } from "../lib/vapi-helpers";
+import { postMessage as slackPostMessage, getDefaultChannel } from "../lib/slack-service";
 
 const router = Router();
 
@@ -115,6 +117,39 @@ router.post("/api/escalate", async (req: Request, res: Response) => {
     }
   }
 
+  // 1b. Slack handoff — post to the configured channel for the originating
+  //     agent (or the tenant's default channel) so the human team gets a
+  //     real-time ping with a deep link to /triage. Best-effort; never
+  //     breaks the call.
+  let slackPosted = false;
+  if (tenantUserId) {
+    try {
+      let channelId: string | null = null;
+      if (sourceNumber) {
+        const [matchAgent] = await drizzle
+          .select({ slackChannelId: schema.agents.slackChannelId })
+          .from(schema.agents)
+          .where(eq(schema.agents.userId, tenantUserId))
+          .limit(1);
+        channelId = matchAgent?.slackChannelId || null;
+      }
+      if (!channelId) channelId = await getDefaultChannel(tenantUserId);
+      if (channelId) {
+        const urgencyEmoji = urgency === "urgent" ? "🚨" : "📞";
+        const text = [
+          `${urgencyEmoji} *Wireline escalation — ${urgency.toUpperCase()}*`,
+          `*Agent:* ${agentName}${sourceNumber ? ` on ${sourceNumber}` : ""}`,
+          `*Caller:* ${callerName} (${callerPhone})${callerEmail ? ` · ${callerEmail}` : ""}`,
+          `*Summary:* ${summary}`,
+          `<https://trywireline.com/triage|Open in Triage →>`,
+        ].join("\n");
+        slackPosted = await slackPostMessage(tenantUserId, channelId, text);
+      }
+    } catch (e: any) {
+      log.warn("Escalation Slack post failed", { error: e?.message });
+    }
+  }
+
   // 2. Real-time SMS to the platform owner — only for urgent
   let smsDispatched = false;
   if (urgency === "urgent" && process.env.OWNER_PHONE) {
@@ -136,6 +171,7 @@ router.post("/api/escalate", async (req: Request, res: Response) => {
   return res.json({
     ok: true,
     smsDispatched,
+    slackPosted,
     tracked: !!tenantUserId,
     sla: "4 business hours",
   });

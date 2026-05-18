@@ -14,16 +14,37 @@ import {
   WIRELINE_INTEGRATIONS,
 } from "../data/wireline-knowledge";
 
-function AgentCard({ agent, large }: { agent: ContactAgent; large?: boolean }) {
+function AgentCard({
+  agent,
+  large,
+  isDemo,
+}: {
+  agent: ContactAgent;
+  large?: boolean;
+  isDemo?: boolean;
+}) {
   return (
     <a
       href={`tel:${agent.tel}`}
-      className="group relative block rounded-2xl p-4 overflow-hidden border border-white/12 hover:border-white/28 hover:scale-[1.015] transition-all duration-200"
+      className={
+        "group relative block rounded-2xl p-4 overflow-hidden hover:scale-[1.015] transition-all duration-200 " +
+        (isDemo
+          ? "border-2 border-dashed border-amber-500/40 hover:border-amber-500/70"
+          : "border border-white/12 hover:border-white/28")
+      }
       style={{
         background: `linear-gradient(135deg, ${agent.tint}2c, ${agent.tint}10)`,
         boxShadow: `0 10px 28px -14px ${agent.tint}88`,
       }}
     >
+      {isDemo && (
+        <span
+          className="absolute top-2 right-2 z-10 text-[8px] uppercase tracking-[0.32em] px-2 py-0.5 rounded-md bg-amber-500/20 border border-amber-500/40 text-amber-700 leading-none"
+          title="Role-play demo line — not a real customer service number"
+        >
+          Demo
+        </span>
+      )}
       <div className="flex items-start gap-3">
         <div
           className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
@@ -111,7 +132,7 @@ export default function HelpCenter() {
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {WIRELINE_DEMO_AGENTS.map((a) => (
-                  <AgentCard key={a.tel} agent={a} />
+                  <AgentCard key={a.tel} agent={a} isDemo />
                 ))}
               </div>
               <p className="text-[10px] text-muted/60 mt-3 leading-relaxed">
