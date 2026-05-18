@@ -25,6 +25,7 @@ const LiveMonitor = lazy(() => import("../components/LiveMonitor"));
 const DncManager = lazy(() => import("../components/DncManager"));
 const AuditLog = lazy(() => import("../components/AuditLog"));
 const CommandCenter = lazy(() => import("../pages/CommandCenter"));
+const HelpCenter = lazy(() => import("../components/HelpCenter"));
 
 export default function AppRoutes() {
   return (
@@ -210,6 +211,16 @@ export default function AppRoutes() {
               <PageTransition>
                 <ErrorBoundary>
                   <AuditLog />
+                </ErrorBoundary>
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/help"
+            element={
+              <PageTransition>
+                <ErrorBoundary>
+                  <HelpCenter />
                 </ErrorBoundary>
               </PageTransition>
             }

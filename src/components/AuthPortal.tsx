@@ -21,102 +21,11 @@ import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../contexts/AuthContext";
 import IntegrationLogos from "./layout/IntegrationLogos";
-
-/**
- * 4 live Wireline customer-service agents — these are the real way to
- * reach the Wireline team. Each handles a different scope (sales,
- * support, tech, scheduling) and can escalate to a human via the
- * escalate_to_human Vapi tool which hits /api/escalate.
- */
-type AgentCard = {
-  name: string;
-  role: string;
-  tel: string;
-  display: string;
-  tint: string;
-};
-
-const CONTACT_AGENTS: ReadonlyArray<AgentCard> = [
-  {
-    name: "Sarah",
-    role: "Customer Support",
-    tel: "+16306425661",
-    display: "(630) 642-5661",
-    tint: "#E040C0",
-  },
-  {
-    name: "Liam",
-    role: "Sales & Demos",
-    tel: "+16305811834",
-    display: "(630) 581-1834",
-    tint: "#0AC8D4",
-  },
-  {
-    name: "Tyler",
-    role: "Technical Support",
-    tel: "+15642389455",
-    display: "(564) 238-9455",
-    tint: "#8b5cf6",
-  },
-  {
-    name: "Maya",
-    role: "Book a Demo",
-    tel: "+16306425927",
-    display: "(630) 642-5927",
-    tint: "#9B59F5",
-  },
-];
-
-/**
- * 6 vertical demo agents — these aren't customer service. They're
- * proof points showing the platform's range. Each role-plays a real
- * business use case (medical clinic intake, real-estate front desk,
- * bill negotiator, etc.) and pitches Wireline when asked.
- */
-const DEMO_AGENTS: ReadonlyArray<AgentCard> = [
-  {
-    name: "Marcus",
-    role: "Medical Office Intake",
-    tel: "+16173134469",
-    display: "(617) 313-4469",
-    tint: "#10B981",
-  },
-  {
-    name: "Aisha",
-    role: "Real Estate Lead Capture",
-    tel: "+19733638874",
-    display: "(973) 363-8874",
-    tint: "#FFC07D",
-  },
-  {
-    name: "Devon",
-    role: "Bill Negotiator",
-    tel: "+12075935155",
-    display: "(207) 593-5155",
-    tint: "#f43f5e",
-  },
-  {
-    name: "Elena",
-    role: "Insurance Claims Intake",
-    tel: "+19044601596",
-    display: "(904) 460-1596",
-    tint: "#06b6d4",
-  },
-  {
-    name: "Priya",
-    role: "Executive Assistant",
-    tel: "+15727269365",
-    display: "(572) 726-9365",
-    tint: "#ec4899",
-  },
-  {
-    name: "Jake",
-    role: "Outbound SDR",
-    tel: "+14692571581",
-    display: "(469) 257-1581",
-    tint: "#f59e0b",
-  },
-];
+import {
+  WIRELINE_CONTACT_AGENTS,
+  WIRELINE_DEMO_AGENTS,
+  type ContactAgent as AgentCard,
+} from "../data/contact-agents";
 
 const FEATURES = [
   {
@@ -360,35 +269,38 @@ export default function AuthPortal() {
           </p>
         </motion.div>
 
-        {/* All 10 demo agents in a single dense grid — 4 contact lines
-            up top, 6 vertical demos below, separated by a thin divider
-            line instead of two separate sections + double headers. Saves
-            ~70px of vertical vs. the two-grid layout and lets the entire
-            agent showcase + sign-in fit above the 768px fold on stock
-            laptops. */}
+        {/* All 10 demo agents in a single dense grid. Top 4 are the LIVE
+            Wireline customer-service team (sales, support, tech, demo
+            booking). Bottom 6 are vertical role-play demos (medical
+            intake, real-estate front desk, bill negotiator, etc.) that
+            answer Wireline questions too. Two labelled sub-sections so
+            visitors can tell which line will actually reach our team
+            vs. which line is a "watch the platform work" demo. */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
           className="mb-5"
         >
-          <p className="text-[9px] uppercase tracking-[0.42em] text-brand/90 mb-2 text-center">
-            Call any of these 10 live AI agents · tap to dial
-          </p>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[9px] uppercase tracking-[0.4em] text-brand/90">
+              Talk to Wireline · 6 live customer-service lines
+            </span>
+            <span className="flex-1 h-px bg-brand/30" />
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {CONTACT_AGENTS.map((a) => (
+            {WIRELINE_CONTACT_AGENTS.map((a) => (
               <AgentCardLink key={a.tel} agent={a} />
             ))}
           </div>
-          <div className="my-2 flex items-center gap-2">
-            <span className="flex-1 h-px bg-white/8" />
-            <span className="text-[8px] uppercase tracking-[0.4em] text-muted/60">
-              6 vertical demos
+          <div className="flex items-center gap-2 mt-3 mb-2">
+            <span className="text-[9px] uppercase tracking-[0.4em] text-muted/70">
+              See us in action · 4 vertical demo agents
             </span>
-            <span className="flex-1 h-px bg-white/8" />
+            <span className="flex-1 h-px bg-white/10" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {DEMO_AGENTS.map((a) => (
+            {WIRELINE_DEMO_AGENTS.map((a) => (
               <AgentCardLink key={a.tel} agent={a} />
             ))}
           </div>
