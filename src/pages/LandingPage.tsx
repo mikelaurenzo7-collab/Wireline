@@ -274,14 +274,14 @@ export default function LandingPage() {
           <div className="flex flex-wrap items-center gap-3">
             <Link
               to="/signup"
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-all"
+              className="inline-flex items-center gap-2 px-5 py-3.5 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-all"
             >
               Start 14-day free trial
               <ArrowRight className="w-4 h-4" />
             </Link>
             <a
               href="tel:+16305811834"
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-full glass border border-black/12 text-ink text-[11px] uppercase tracking-[0.3em] font-medium hover:border-brand/40 transition-all"
+              className="inline-flex items-center gap-2 px-5 py-3.5 rounded-full glass border border-black/12 text-ink text-[11px] uppercase tracking-[0.3em] font-medium hover:border-brand/40 transition-all"
             >
               <Phone className="w-4 h-4" />
               Call our demo line
@@ -625,14 +625,14 @@ export default function LandingPage() {
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Link
             to="/pricing"
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-all"
+            className="inline-flex items-center gap-2 px-5 py-3.5 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-all"
           >
             See plans
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
             to="/signup"
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-full glass border border-black/12 text-ink text-[11px] uppercase tracking-[0.3em] font-medium hover:border-brand/40 transition-all"
+            className="inline-flex items-center gap-2 px-5 py-3.5 rounded-full glass border border-black/12 text-ink text-[11px] uppercase tracking-[0.3em] font-medium hover:border-brand/40 transition-all"
           >
             Start free trial
           </Link>
@@ -651,7 +651,7 @@ export default function LandingPage() {
         <div className="flex flex-wrap items-center justify-center gap-3 mb-3">
           <Link
             to="/signup"
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-all"
+            className="inline-flex items-center gap-2 px-5 py-3.5 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-all"
           >
             Start 14-day free trial
             <ArrowRight className="w-4 h-4" />

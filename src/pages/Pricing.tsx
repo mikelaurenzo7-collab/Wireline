@@ -398,7 +398,7 @@ export default function Pricing() {
                 )}
                 <a
                   href={tier.ctaHref}
-                  className={`group block w-full text-center py-3 rounded-xl text-[11px] uppercase tracking-[0.32em] font-medium transition-all mb-6 ${
+                  className={`group block w-full text-center py-3.5 rounded-xl text-[11px] uppercase tracking-[0.32em] font-medium transition-all mb-6 ${
                     tier.highlight
                       ? "text-on-brand hover:opacity-90"
                       : "border border-white/15 text-ink hover:border-white/30 hover:bg-white/5"

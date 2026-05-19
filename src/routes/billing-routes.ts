@@ -31,7 +31,17 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
     // express.raw populated req.body as a Buffer
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err: any) {
-    log.warn("Stripe webhook signature verification failed", { error: getErrorMessage(err) });
+    // Include ip + signature prefix so abuse patterns (probing, replay)
+    // are detectable from log aggregation. Full signature isn't logged
+    // since it's a HMAC of the body — bounded leak risk if logs are
+    // shared with third-party SIEMs, and the prefix is enough to
+    // correlate repeated rejections from the same attacker.
+    log.warn("Stripe webhook signature verification failed", {
+      error: getErrorMessage(err),
+      ip: req.ip,
+      sig_prefix: typeof sig === "string" ? sig.slice(0, 12) : null,
+      ts: Date.now(),
+    });
     return res.status(400).json({ error: "Webhook signature verification failed." });
   }
 

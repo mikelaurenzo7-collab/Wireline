@@ -240,7 +240,23 @@ export function PrivacyPolicy() {
         </p>
       </Section>
 
-      <Section title="10. Changes to This Policy">
+      <Section title="10. Healthcare Data (HIPAA)">
+        <p>
+          <strong>Wireline is not HIPAA-certified at this time.</strong> Do not use Wireline to
+          process or transmit Protected Health Information (PHI) as defined by the Health Insurance
+          Portability and Accountability Act. Healthcare-adjacent use cases (appointment booking,
+          intake forms, general scheduling) are supported, but any conversation that would expose
+          patient diagnoses, treatments, or other PHI is out of scope for the platform until our
+          HIPAA certification is in place.
+        </p>
+        <p>
+          We will publicly announce HIPAA certification on this page and in our changelog once
+          complete. Until then, healthcare operators should treat Wireline as a general-purpose AI
+          calling tool and limit conversations to non-PHI topics.
+        </p>
+      </Section>
+
+      <Section title="11. Changes to This Policy">
         <p>
           We will post any material changes on this page with a new "Last updated" date and, where
           appropriate, notify you by email. Your continued use after the effective date constitutes
@@ -248,7 +264,7 @@ export function PrivacyPolicy() {
         </p>
       </Section>
 
-      <Section title="11. Contact">
+      <Section title="12. Contact">
         <p>
           Privacy questions or requests: <strong>legal@wireline.app</strong>
         </p>

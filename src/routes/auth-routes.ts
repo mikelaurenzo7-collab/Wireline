@@ -3,7 +3,11 @@ import { authService } from "../lib/auth-service";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
-import { signinRateLimiter, forgotPasswordRateLimiter } from "../middleware/rate-limit-middleware";
+import {
+  signinRateLimiter,
+  signupRateLimiter,
+  forgotPasswordRateLimiter,
+} from "../middleware/rate-limit-middleware";
 import { sendPasswordResetEmail } from "../lib/email-service";
 import { authenticateUser } from "../middleware/auth";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -39,7 +43,7 @@ router.post("/api/auth/signin", signinRateLimiter, async (req: Request, res: Res
  * POST /api/auth/signup
  * Register a new user and return a JWT.
  */
-router.post("/api/auth/signup", async (req: Request, res: Response) => {
+router.post("/api/auth/signup", signupRateLimiter, async (req: Request, res: Response) => {
   try {
     const { email, password, fullName } = req.body;
     if (!email || !password) {

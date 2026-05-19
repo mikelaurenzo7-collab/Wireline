@@ -74,7 +74,14 @@ router.post("/api/vapi-webhook", async (req, res) => {
       _warnedAboutVapiSecret = true;
     }
   } else if (!timingSafeEq(provided, VAPI_WEBHOOK_SECRET)) {
-    log.warn("Rejected Vapi webhook with bad/missing signature");
+    // Include ip + signature prefix for abuse pattern detection
+    // (volume probing, replay attacks). Bounded leak — the prefix
+    // alone is not enough to reconstruct the secret.
+    log.warn("Rejected Vapi webhook with bad/missing signature", {
+      ip: req.ip,
+      sig_prefix: provided ? provided.slice(0, 8) : null,
+      ts: Date.now(),
+    });
     return res.status(401).json({ error: "Invalid webhook signature." });
   }
 

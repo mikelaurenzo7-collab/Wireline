@@ -51,6 +51,15 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
   //    idempotency boundary for the whole handler — duplicate Vapi retries
   //    fail-fast here, and the rest of the pipeline (usage tracking, Stripe
   //    overage, webhooks) is gated on `insertedFresh` to avoid double-counting.
+  // Concurrency note: callLogs.vapiCallId has a UNIQUE index. Postgres
+  // serializes concurrent INSERTs to the same key via that index — one
+  // succeeds, the other throws 23505 unique_violation. So the duplicate-
+  // protection here is atomic even when the async-queue path AND the
+  // sync-fallback path (vapi-routes.ts:965) both fire `handleEndOfCallReport`
+  // for the same call (e.g., Vapi retried before the first handler returned
+  // success). No row-level SELECT FOR UPDATE needed — the unique index is
+  // the lock. `insertedFresh` only flips true when this INSERT genuinely
+  // wrote a new row, so post-call LLM analysis (line 84+) runs exactly once.
   let insertedFresh = false;
   let insertedCallLogId: bigint | null = null;
   try {
