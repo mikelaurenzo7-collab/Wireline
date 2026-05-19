@@ -15,6 +15,8 @@ const Pricing = lazy(() => import("./pages/Pricing"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const OAuthComplete = lazy(() => import("./pages/OAuthComplete"));
 const VerticalLanding = lazy(() => import("./pages/VerticalLanding"));
+const Compare = lazy(() => import("./pages/Compare"));
+const About = lazy(() => import("./pages/About"));
 
 function AppContent() {
   const { user } = useAuth();
@@ -52,6 +54,20 @@ function AppContent() {
     return (
       <Suspense fallback={<div className="min-h-screen" />}>
         <Pricing />
+      </Suspense>
+    );
+  }
+  if (location.pathname === "/compare") {
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-paper" />}>
+        <Compare />
+      </Suspense>
+    );
+  }
+  if (location.pathname === "/about") {
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-paper" />}>
+        <About />
       </Suspense>
     );
   }
