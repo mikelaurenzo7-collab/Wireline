@@ -38,7 +38,7 @@
   ],
   "functions": {
     "api/index.ts": {
-      "maxDuration": 300,
+      "maxDuration": 600,
       "includeFiles": "dist/server.cjs"
     }
   },
