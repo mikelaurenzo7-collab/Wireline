@@ -11,7 +11,7 @@ type BrandingSettings = {
 const DEFAULT_BRANDING: BrandingSettings = {
   brand_name: "Wireline",
   brand_logo_url: "",
-  primary_color: "#0AC8D4",
+  primary_color: "#D97752",
 };
 
 type BrandingContextType = {
