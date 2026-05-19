@@ -165,36 +165,28 @@ export default function StripeBillingCard() {
   }
 
   if (!stripeConfigured) {
+    // White-label posture: customers never see operator env-var names.
+    // If Stripe isn't ready on the backend, show a generic "in setup"
+    // message and a contact path. Operator notifications happen via
+    // Vercel logs + /api/health/integrations (owner-gated).
     return (
-      <div className="rounded-2xl glass border border-amber-500/30 bg-amber-500/5 p-8 md:p-10 space-y-4">
+      <div className="rounded-2xl glass border border-amber-500/25 bg-amber-500/[0.04] p-8 md:p-10 space-y-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0">
             <AlertTriangle className="w-5 h-5 text-amber-500" />
           </div>
-          <h3 className="font-display italic lowercase text-2xl text-ink">stripe not configured</h3>
+          <h3 className="font-display italic lowercase text-2xl text-ink">
+            billing is finishing setup
+          </h3>
         </div>
-        <p className="text-[11px] text-muted/80 leading-relaxed">
-          Set{" "}
-          <code className="font-mono text-brand px-1.5 py-0.5 rounded-md bg-white/5">
-            STRIPE_SECRET_KEY
-          </code>
-          ,{" "}
-          <code className="font-mono text-brand px-1.5 py-0.5 rounded-md bg-white/5">
-            STRIPE_WEBHOOK_SECRET
-          </code>
-          , and the per-plan price IDs (
-          <code className="font-mono text-brand px-1.5 py-0.5 rounded-md bg-white/5">
-            STRIPE_STARTER_PRICE_ID
-          </code>
-          ,{" "}
-          <code className="font-mono text-brand px-1.5 py-0.5 rounded-md bg-white/5">
-            STRIPE_PRO_PRICE_ID
-          </code>
-          ,{" "}
-          <code className="font-mono text-brand px-1.5 py-0.5 rounded-md bg-white/5">
-            STRIPE_ENTERPRISE_PRICE_ID
-          </code>
-          ) to enable real billing.
+        <p className="text-[12px] text-ink/75 leading-relaxed">
+          Your account is active. The billing portal is being provisioned and will be live shortly.
+          You can keep using Wireline — we'll email you the moment self-serve plan changes are
+          available, or write to{" "}
+          <a href="mailto:billing@wireline.app" className="text-brand hover:underline">
+            billing@wireline.app
+          </a>{" "}
+          if you'd like to talk to us about a plan today.
         </p>
       </div>
     );
@@ -334,9 +326,8 @@ export default function StripeBillingCard() {
                   )}
                 </button>
                 {!plan.configured && (
-                  <p className="text-[9px] font-mono text-amber-600/80 text-center leading-relaxed">
-                    Set <span className="text-brand">STRIPE_{plan.id.toUpperCase()}_PRICE_ID</span>{" "}
-                    in Vercel to activate
+                  <p className="text-[9px] uppercase tracking-[0.28em] text-muted/60 text-center leading-relaxed">
+                    Available soon — contact us to start on this tier
                   </p>
                 )}
               </motion.div>

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import {
   Activity,
   PhoneCall,
+  Phone,
   Mic,
   Square,
   Loader2,
@@ -22,6 +23,7 @@ import {
   Users,
   AlertTriangle,
 } from "lucide-react";
+import { WIRELINE_DEMO_AGENTS } from "../data/contact-agents";
 import { motion } from "motion/react";
 import { cn } from "../lib/utils";
 import FleetTaskBridge from "./FleetTaskBridge";
@@ -953,6 +955,48 @@ export default function DashboardHome() {
         <Panel title="How am I doing?" hint="Performance · 30-day window" icon={TrendingUp} scroll>
           <WidgetBoundary label="Performance Benchmarks">
             <PerformanceBenchmarks />
+          </WidgetBoundary>
+        </Panel>
+      </div>
+      {/* Live demo agents — operators show prospects what a real Wireline
+        agent sounds like without leaving the dashboard. Same 4 demo
+        numbers the landing page uses (Apex sales, Tidewater CS, Lumen
+        scheduler, Sterling receptionist). */}
+      <div className="col-span-12 h-full overflow-hidden">
+        <Panel
+          title="Live demo agents"
+          hint="Tap to dial · share with your team"
+          icon={Phone}
+          scroll
+        >
+          <WidgetBoundary label="Live demo agents">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {WIRELINE_DEMO_AGENTS.map((agent) => (
+                <a
+                  key={agent.tel}
+                  href={`tel:${agent.tel}`}
+                  className="group relative block rounded-xl p-3 overflow-hidden border border-white/10 hover:border-brand/40 hover:bg-brand/[0.04] transition-all duration-200 glass"
+                >
+                  <div className="flex items-start gap-3">
+                    <div
+                      className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 border border-white/10"
+                      style={{ background: `${agent.tint}1a`, color: agent.tint }}
+                    >
+                      <Phone className="w-4 h-4" strokeWidth={2.4} />
+                    </div>
+                    <div className="flex-1 min-w-0 pr-2">
+                      <p className="text-[9px] uppercase tracking-[0.2em] text-muted/70 leading-none mb-1 truncate">
+                        DEMO · {agent.name}
+                      </p>
+                      <p className="font-display italic text-sm leading-snug text-ink/90 group-hover:text-ink transition-colors line-clamp-2 text-balance">
+                        {agent.role}
+                      </p>
+                      <p className="text-[11px] font-mono text-muted/70 mt-1">{agent.display}</p>
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </div>
           </WidgetBoundary>
         </Panel>
       </div>

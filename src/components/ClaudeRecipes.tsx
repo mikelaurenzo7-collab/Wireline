@@ -254,16 +254,32 @@ function RecipeModal({
   useEffect(() => {
     (async () => {
       try {
-        const [s, a] = await Promise.all([
-          authFetch("/api/claude/status").then((r) => r.json()),
-          authFetch("/api/agents").then((r) => r.json()),
+        const [statusRes, agentsRes] = await Promise.all([
+          authFetch("/api/claude/status"),
+          authFetch("/api/agents"),
         ]);
-        setAvailable(!!s.available);
+        // Only flip `available = false` on an actual 200 that explicitly
+        // reports `available: false`. A 401 means the user's token hasn't
+        // landed yet (or expired) — that's NOT an AI outage and we
+        // shouldn't scare the user with a red "Wireline AI unavailable"
+        // banner. Stay in the loading null-state and let the next render
+        // retry once auth catches up.
+        if (statusRes.ok) {
+          const s = await statusRes.json();
+          setAvailable(!!s.available);
+        } else if (statusRes.status === 401) {
+          // Auth not ready — treat as "still loading", not "down".
+          setAvailable(null);
+        } else {
+          setAvailable(false);
+        }
+        const a = await agentsRes.json();
         setAgents(
           (a.agents ?? []).map((x: any) => ({ id: x.id, name: x.name, archetype: x.archetype })),
         );
       } catch {
-        setAvailable(false);
+        // Network errors — stay in loading state, don't show "AI unavailable".
+        setAvailable(null);
       }
     })();
   }, []);
@@ -405,11 +421,15 @@ function RecipeModal({
 }
 
 function NoKeyInline() {
+  // White-label posture: customers never see "missing API key" copy.
+  // If our Anthropic key isn't reachable from the server, that's our
+  // problem to fix on the backend (alerted via Vercel logs +
+  // /api/health/integrations). UI just shows a soft "warming up" state.
   return (
-    <div className="px-7 py-4 bg-rose-500/10 border-y border-rose-500/30 flex items-center gap-3">
-      <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
-      <p className="text-xs text-rose-500 leading-relaxed">
-        Wireline AI is currently unavailable. Contact your administrator to enable this feature.
+    <div className="px-7 py-4 bg-amber-500/10 border-y border-amber-500/30 flex items-center gap-3">
+      <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+      <p className="text-xs text-ink/80 leading-relaxed">
+        Wireline AI is warming up — try again in a moment. If this persists, our team is on it.
       </p>
     </div>
   );

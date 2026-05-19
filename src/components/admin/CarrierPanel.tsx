@@ -413,42 +413,44 @@ export function CarrierPanel({
         </div>
       </Panel>
 
-      {/* SMS / text messaging — backend already wired to Twilio via
-          send_text_message action. This panel surfaces the per-tenant
-          sender configuration so operators can actually enable it. */}
-      <Panel title="SMS &amp; text messaging" hint="OUTBOUND TEXTS · OPT-OUT TRACKED" icon={Phone} scroll>
+      {/* SMS / text messaging — white-label posture: SMS reply
+          handling is wired to OUR Twilio account by default. Customers
+          never paste a webhook URL anywhere. The Inbound-Webhook panel
+          only renders for BYOC (bring-your-own-carrier) tenants. */}
+      <Panel
+        title="SMS &amp; text messaging"
+        hint="OUTBOUND TEXTS · OPT-OUT TRACKED"
+        icon={Phone}
+        scroll
+      >
         <div className="space-y-3">
-          {/* Inbound webhook URL — operators paste this into Twilio's
-              Messaging webhook field on each of their numbers. Without
-              this wired, STOP / UNSUBSCRIBE keywords from customers
-              never make it to our DNC list. */}
-          <div className="rounded-xl border border-brand/30 bg-brand/[0.06] p-3 space-y-2">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm text-ink leading-none">Inbound webhook URL</p>
-                <p className="text-[10px] text-muted/80 mt-1 leading-relaxed">
-                  In Twilio Console → Phone Numbers → your number → Messaging, paste this as the "A
-                  Message Comes In" webhook (HTTP POST).
-                </p>
+          {settings?.byoc_enabled && (
+            <div className="rounded-xl border border-brand/30 bg-brand/[0.06] p-3 space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm text-ink leading-none">Bring-your-own-carrier webhook</p>
+                  <p className="text-[10px] text-muted/80 mt-1 leading-relaxed">
+                    You're on a BYOC plan — paste this URL as the "A Message Comes In" webhook on
+                    each of your carrier numbers.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(
+                      "https://trywireline.com/api/twilio-webhook/sms",
+                    );
+                  }}
+                  className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.3em] hover:bg-brand/25 transition-colors"
+                >
+                  Copy URL
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  navigator.clipboard?.writeText("https://trywireline.com/api/twilio-webhook/sms");
-                }}
-                className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.3em] hover:bg-brand/25 transition-colors"
-              >
-                Copy URL
-              </button>
+              <code className="block text-[11px] font-mono text-ink/90 bg-black/15 px-2.5 py-1.5 rounded select-all break-all">
+                https://trywireline.com/api/twilio-webhook/sms
+              </code>
             </div>
-            <code className="block text-[11px] font-mono text-ink/90 bg-black/15 px-2.5 py-1.5 rounded select-all break-all">
-              https://trywireline.com/api/twilio-webhook/sms
-            </code>
-            <p className="text-[10px] text-muted/70 leading-relaxed">
-              Handles STOP / UNSUBSCRIBE → adds to your DNC list automatically. START / YES →
-              opt-back-in. Other replies → routed to the SMS Inbox.
-            </p>
-          </div>
+          )}
 
           <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] p-3">
             <div>
