@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   ShieldCheck,
@@ -62,6 +62,38 @@ const FEATURES = [
  * dance for them is a meaningful conversion lift. Buttons start the
  * server-side OAuth flow which round-trips back to /auth/oauth-complete.
  */
+/**
+ * Tiny live-stats pill that fetches /api/public/stats and renders
+ * a "Live: N agents online · M calls this month" caption next to
+ * the marketing stats strip. Hidden entirely below a credibility
+ * threshold — at <5 agents the live ticker would read as
+ * pre-revenue and tank trust. Once there are 5+ agents on the
+ * platform it surfaces automatically.
+ */
+function LiveStatsTicker() {
+  const [stats, setStats] = useState<{ agents_online: number; calls_this_month: number } | null>(
+    null,
+  );
+  useEffect(() => {
+    fetch("/api/public/stats")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => setStats(data))
+      .catch(() => {});
+  }, []);
+  if (!stats || stats.agents_online < 5) return null;
+  return (
+    <>
+      <div className="w-px h-6 bg-white/10" />
+      <div className="flex flex-col">
+        <span className="font-display italic text-2xl text-ink">
+          {stats.agents_online.toLocaleString()}
+        </span>
+        <span className="text-[9px] uppercase tracking-[0.2em] text-muted/60">Agents Live Now</span>
+      </div>
+    </>
+  );
+}
+
 function OAuthSignInButtons({ disabled }: { disabled?: boolean }) {
   const [pending, setPending] = useState<"google" | "microsoft" | "yahoo" | null>(null);
   const start = async (provider: "google" | "microsoft" | "yahoo") => {
@@ -402,6 +434,7 @@ export default function AuthPortal() {
                   Avg CSAT
                 </span>
               </div>
+              <LiveStatsTicker />
             </div>
           </motion.div>
 

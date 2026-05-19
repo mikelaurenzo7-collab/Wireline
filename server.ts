@@ -41,6 +41,7 @@ import { timeoutMiddleware } from "./src/middleware/timeout";
 // Routers
 import oauthRouter from "./src/routes/oauth-routes";
 import metaWebhookRouter from "./src/routes/meta-webhook-routes";
+import publicStatsRouter from "./src/routes/public-stats-routes";
 import vapiRouter from "./src/routes/vapi-routes";
 import agentRouter from "./src/routes/agent-routes";
 import campaignRouter from "./src/routes/campaign-routes";
@@ -253,6 +254,7 @@ app.use("/api/webhooks", webhookRouter);
 app.use(soc2Router);
 app.use(oauthRouter);
 app.use(metaWebhookRouter);
+app.use(publicStatsRouter);
 app.use(teamRouter);
 app.use("/api/kimi", kimiRouter);
 app.use(authRouter);
