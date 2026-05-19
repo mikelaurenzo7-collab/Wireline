@@ -199,43 +199,9 @@ export default function AuthPortal() {
             : "Sign in to your Wireline operator console to manage your AI voice agents, call logs, and outbound campaigns."
         }
       />
-      <div className="h-screen flex relative overflow-hidden">
-        {/* Global aurora backdrop */}
-        <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-          <motion.div
-            className="absolute -top-[25%] -left-[15%] w-[70vw] h-[70vw] max-w-[720px] max-h-[720px] rounded-full"
-            style={{
-              background: "radial-gradient(circle, rgba(10,200,212,0.22), transparent 60%)",
-            }}
-            animate={{ x: [0, 40, 0], y: [0, -30, 0] }}
-            transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <motion.div
-            className="absolute -bottom-[20%] -right-[15%] w-[65vw] h-[65vw] max-w-[680px] max-h-[680px] rounded-full"
-            style={{
-              background: "radial-gradient(circle, rgba(10, 200, 212,0.22), transparent 60%)",
-            }}
-            animate={{ x: [0, -35, 0], y: [0, 30, 0] }}
-            transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <motion.div
-            className="absolute top-[35%] left-[30%] w-[50vw] h-[50vw] max-w-[520px] max-h-[520px] rounded-full hidden md:block"
-            style={{
-              background: "radial-gradient(circle, rgba(10, 200, 212,0.18), transparent 60%)",
-            }}
-            animate={{ x: [0, -40, 20, 0], y: [0, 35, -15, 0] }}
-            transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
-          />
-          {/* Grid overlay */}
-          <div
-            className="absolute inset-0 opacity-[0.04]"
-            style={{
-              backgroundImage:
-                "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
-              backgroundSize: "64px 64px",
-            }}
-          />
-        </div>
+      <div className="h-screen flex relative overflow-hidden bg-[#FAF9F5]">
+        {/* Global parchment backdrop matching Claude.ai */}
+        <div className="pointer-events-none fixed inset-0 z-0 bg-[#FAF9F5]" />
         <div className="scanline" />
 
         {/* ── LEFT PANEL — brand showcase ───────────────────────────────────────
@@ -250,7 +216,7 @@ export default function AuthPortal() {
             className="absolute top-0 right-0 w-px h-full"
             style={{
               background:
-                "linear-gradient(to bottom, transparent, rgba(10,200,212,0.35) 30%, rgba(10, 200, 212,0.35) 70%, transparent)",
+                "linear-gradient(to bottom, transparent, rgba(217,119,82,0.2) 30%, rgba(217,119,82,0.2) 70%, transparent)",
             }}
           />
 
@@ -264,15 +230,15 @@ export default function AuthPortal() {
             <div
               className="relative w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
               style={{
-                background: "#0AC8D4",
+                background: "#D97752",
                 boxShadow:
-                  "0 8px 24px -8px rgba(10,200,212,0.60), 0 0 0 1px rgba(255,255,255,0.22) inset",
+                  "0 8px 24px -8px rgba(217,119,82,0.4), 0 0 0 1px rgba(255,255,255,0.22) inset",
               }}
             >
-              <WirelineMark className="w-4 h-4 text-paper" strokeWidth={130} />
+              <WirelineMark className="w-4 h-4 text-[#FAF9F5]" strokeWidth={130} />
             </div>
             <div>
-              <span className="brand-wordmark text-xl leading-none">WIRELINE</span>
+              <span className="brand-wordmark text-xl leading-none !text-[#D97752] !filter-none">WIRELINE</span>
               <p className="text-[7px] tracking-[0.42em] uppercase text-muted mt-0.5">
                 AI Voice Platform
               </p>
@@ -287,13 +253,13 @@ export default function AuthPortal() {
             className="mb-8"
           >
             <div className="flex items-center gap-2 mb-3">
-              <span className="hero-accent-line" />
+              <span className="hero-accent-line" style={{ background: "#D97752" }} />
               <span className="text-[8px] uppercase tracking-[0.5em] text-muted/70">
                 One fleet, every channel
               </span>
             </div>
             <h2 className="font-display italic text-4xl xl:text-5xl leading-[1.0] xl:leading-[0.92] tracking-tight mb-4 text-balance">
-              <span className="text-aurora">AI agents for every</span>
+              <span className="text-[#D97752]">AI agents for every</span>
               <br />
               <span className="text-ink">customer conversation</span>
             </h2>
@@ -342,14 +308,14 @@ export default function AuthPortal() {
           >
             <a
               href="tel:+16305811834"
-              className="flex items-center justify-between mb-4 bg-[#0AC8D4]/10 border border-[#0AC8D4]/30 rounded-xl p-3 hover:bg-[#0AC8D4]/20 transition-colors group"
+              className="flex items-center justify-between mb-4 bg-[#D97752]/10 border border-[#D97752]/30 rounded-xl p-3 hover:bg-[#D97752]/20 transition-colors group"
             >
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#0AC8D4] flex items-center justify-center shadow-[0_0_15px_rgba(10,200,212,0.4)]">
+                <div className="w-8 h-8 rounded-full bg-[#D97752] flex items-center justify-center shadow-[0_0_15px_rgba(217,119,82,0.3)]">
                   <Phone className="w-4 h-4 text-white" fill="currentColor" />
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-[#0AC8D4] font-medium leading-tight">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-[#D97752] font-medium leading-tight">
                     Call our demo line now
                   </p>
                   <p className="font-display italic text-xl text-ink leading-tight mt-0.5">
@@ -357,14 +323,14 @@ export default function AuthPortal() {
                   </p>
                 </div>
               </div>
-              <ArrowRight className="w-5 h-5 text-[#0AC8D4] group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="w-5 h-5 text-[#D97752] group-hover:translate-x-1 transition-transform" />
             </a>
 
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-[9px] uppercase tracking-[0.4em] text-brand/90 font-medium">
+              <span className="text-[9px] uppercase tracking-[0.4em] text-[#D97752] font-medium">
                 Wireline Team
               </span>
-              <span className="flex-1 h-px bg-brand/30" />
+              <span className="flex-1 h-px bg-[#D97752]/20" />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
               {WIRELINE_CONTACT_AGENTS.map((a) => (
@@ -422,21 +388,20 @@ export default function AuthPortal() {
            of an 800px viewport, putting the Sign In button at ~875px —
            below the fold. */}
         <div className="flex-1 flex flex-col items-center relative z-10 py-4 px-6 md:py-6 md:px-10 overflow-y-auto">
-          {/* ── Mobile marketing hero — lg:hidden so it only renders below the desktop breakpoint ── */}
           <div className="lg:hidden w-full max-w-md mb-6 pt-4">
             {/* Logo + wordmark row */}
             <div className="flex items-center gap-3 mb-5">
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                 style={{
-                  background: "#0AC8D4",
-                  boxShadow: "0 8px 24px -8px rgba(10,200,212,0.60)",
+                  background: "#D97752",
+                  boxShadow: "0 8px 24px -8px rgba(217,119,82,0.4)",
                 }}
               >
                 <WirelineMark className="w-5 h-5 text-paper" strokeWidth={130} />
               </div>
               <div>
-                <span className="brand-wordmark text-2xl leading-none">WIRELINE</span>
+                <span className="brand-wordmark text-2xl leading-none !text-[#D97752] !filter-none">WIRELINE</span>
                 <p className="text-[8px] tracking-[0.42em] uppercase text-muted mt-0.5">
                   AI Voice Platform
                 </p>
@@ -444,7 +409,7 @@ export default function AuthPortal() {
             </div>
             {/* Hero copy */}
             <h2 className="font-display italic text-2xl sm:text-3xl leading-snug tracking-tight mb-3 text-balance">
-              <span className="text-aurora">AI agents for every</span>{" "}
+              <span className="text-[#D97752]">AI agents for every</span>{" "}
               <span className="text-ink">customer conversation</span>
             </h2>
             <p className="text-[12px] text-muted/80 leading-relaxed mb-5">
@@ -458,10 +423,10 @@ export default function AuthPortal() {
                 return (
                   <div
                     key={f.title}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full glass border text-[10px] text-ink/80"
-                    style={{ borderColor: `${f.accent}35` }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[10px] text-ink/80 bg-[#FAF8F5]"
+                    style={{ borderColor: `rgba(217,119,82,0.2)` }}
                   >
-                    <Icon className="w-3 h-3 shrink-0" style={{ color: f.accent }} />
+                    <Icon className="w-3 h-3 shrink-0 text-[#D97752]" />
                     {f.title}
                   </div>
                 );
@@ -472,7 +437,7 @@ export default function AuthPortal() {
               className="mt-6 h-px w-full"
               style={{
                 background:
-                  "linear-gradient(to right, transparent, rgba(10,200,212,0.3), rgba(10, 200, 212,0.3), transparent)",
+                  "linear-gradient(to right, transparent, rgba(217,119,82,0.25), rgba(217,119,82,0.25), transparent)",
               }}
             />
           </div>
@@ -499,18 +464,8 @@ export default function AuthPortal() {
             className="w-full max-w-md"
           >
             {/* Form card */}
-            <div className="relative aurora-ring rounded-3xl">
-              <div className="relative rounded-3xl p-6 md:p-8 glass-strong overflow-hidden">
-                {/* Subtle ambient glows inside card */}
-                <div
-                  className="absolute -top-24 -right-24 w-56 h-56 rounded-full opacity-20 blur-3xl pointer-events-none"
-                  style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }}
-                />
-                <div
-                  className="absolute -bottom-24 -left-24 w-56 h-56 rounded-full opacity-20 blur-3xl pointer-events-none"
-                  style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }}
-                />
-
+            <div className="relative rounded-3xl border border-black/8 bg-[#FAF8F5] shadow-lg overflow-hidden">
+              <div className="relative p-6 md:p-8">
                 {/* Header */}
                 <div className="relative z-10 mb-8">
                   <h2 className="font-display italic text-3xl text-ink leading-tight mb-1">
@@ -528,16 +483,15 @@ export default function AuthPortal() {
                 {/* Tab toggle — hidden in reset mode */}
                 {!isReset && (
                   <div className="relative z-10 mb-7">
-                    <div className="relative flex p-1 rounded-2xl bg-black/8 border border-black/10">
+                    <div className="relative flex p-1 rounded-2xl bg-black/5 border border-black/5">
                       <motion.div
                         layout
                         className="absolute inset-y-1 w-[calc(50%-4px)] rounded-xl"
                         style={{
-                          background:
-                            "linear-gradient(135deg, rgba(10,200,212,0.20), rgba(10, 200, 212,0.20))",
-                          border: "1px solid rgba(10,200,212,0.35)",
+                          background: "rgba(217, 119, 82, 0.12)",
+                          border: "1px solid rgba(217, 119, 82, 0.25)",
                           left: isSignUp ? "calc(50% + 2px)" : "4px",
-                          boxShadow: "0 6px 20px -8px rgba(10,200,212,0.5)",
+                          boxShadow: "0 4px 12px -4px rgba(217, 119, 82, 0.2)",
                         }}
                         transition={{ type: "spring", stiffness: 400, damping: 34 }}
                       />
@@ -564,7 +518,7 @@ export default function AuthPortal() {
                   {/* Email */}
                   <div className="space-y-2">
                     <label className="text-[10px] uppercase tracking-[0.4em] text-muted/80 flex items-center gap-1.5">
-                      <Mail className="w-3 h-3 text-brand" />
+                      <Mail className="w-3 h-3 text-[#D97752]" />
                       Email
                     </label>
                     <div className="relative group">
@@ -580,7 +534,7 @@ export default function AuthPortal() {
                         className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity"
                         style={{
                           boxShadow:
-                            "0 0 0 1px rgba(10,200,212,0.4), 0 0 20px rgba(10,200,212,0.18)",
+                            "0 0 0 1px rgba(217,119,82,0.45), 0 0 20px rgba(217,119,82,0.15)",
                         }}
                       />
                     </div>
@@ -591,7 +545,7 @@ export default function AuthPortal() {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <label className="text-[10px] uppercase tracking-[0.4em] text-muted/80 flex items-center gap-1.5">
-                          <Lock className="w-3 h-3 text-brand" />
+                          <Lock className="w-3 h-3 text-[#D97752]" />
                           Password
                         </label>
                         {!isSignUp && (
@@ -602,7 +556,7 @@ export default function AuthPortal() {
                               setError(null);
                               setMessage(null);
                             }}
-                            className="text-[9px] uppercase tracking-[0.3em] text-muted/60 hover:text-brand transition-colors"
+                            className="text-[9px] uppercase tracking-[0.3em] text-muted/60 hover:text-[#D97752] transition-colors"
                           >
                             Forgot?
                           </button>
@@ -622,7 +576,7 @@ export default function AuthPortal() {
                           className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity"
                           style={{
                             boxShadow:
-                              "0 0 0 1px rgba(10,200,212,0.4), 0 0 20px rgba(10,200,212,0.18)",
+                              "0 0 0 1px rgba(217,119,82,0.45), 0 0 20px rgba(217,119,82,0.15)",
                           }}
                         />
                       </div>
@@ -638,7 +592,7 @@ export default function AuthPortal() {
                                   background:
                                     i <= pwStrength.score
                                       ? pwStrength.color
-                                      : "rgba(255,255,255,0.08)",
+                                      : "rgba(0,0,0,0.06)",
                                 }}
                               />
                             ))}
@@ -663,7 +617,7 @@ export default function AuthPortal() {
                         setError(null);
                         setMessage(null);
                       }}
-                      className="text-[10px] uppercase tracking-[0.3em] text-muted/60 hover:text-brand transition-colors"
+                      className="text-[10px] uppercase tracking-[0.3em] text-muted/60 hover:text-[#D97752] transition-colors"
                     >
                       ← Back to sign in
                     </button>
@@ -701,7 +655,10 @@ export default function AuthPortal() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="brutal-btn w-full !py-4 !px-6 !text-[12px] !tracking-[0.3em]"
+                    className="w-full flex items-center justify-center gap-2 py-4 px-6 text-[12px] tracking-[0.3em] uppercase font-medium rounded-full cursor-pointer text-white bg-[#D97752] hover:bg-[#E28561] active:translate-y-0 hover:-translate-y-[1px] transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
+                    style={{
+                      boxShadow: "0 4px 12px -2px rgba(217,119,82,0.3)"
+                    }}
                   >
                     {loading ? (
                       <>
@@ -744,18 +701,10 @@ export default function AuthPortal() {
                       duration: 0.5,
                       ease: [0.16, 1, 0.3, 1],
                     }}
-                    className="relative rounded-xl p-3 glass border border-white/8 overflow-hidden"
+                    className="relative rounded-xl p-3 border border-black/5 bg-[#FAF8F5] overflow-hidden"
                   >
                     <div
-                      className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-2xl opacity-20 pointer-events-none"
-                      style={{ background: f.accent }}
-                    />
-                    <div
-                      className="w-7 h-7 rounded-lg flex items-center justify-center mb-2 border border-white/8"
-                      style={{
-                        background: `linear-gradient(135deg, ${f.accent}25, ${f.accent}08)`,
-                        color: f.accent,
-                      }}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center mb-2 border border-black/5 bg-[#D97752]/10 text-[#D97752]"
                     >
                       <Icon className="w-3.5 h-3.5" />
                     </div>
