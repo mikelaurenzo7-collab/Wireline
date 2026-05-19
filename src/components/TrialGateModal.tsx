@@ -153,17 +153,21 @@ export default function TrialGateModal() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center px-4 py-6 bg-black/55 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:px-4 sm:py-6 bg-black/55 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-labelledby="trial-gate-title"
         >
           <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 12 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 12 }}
-            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className="relative w-full max-w-3xl rounded-3xl bg-paper border border-black/10 shadow-2xl overflow-hidden"
+            // Bottom-sheet on mobile (slides up from bottom edge,
+            // rounded only on top), centered card on desktop. Same
+            // pattern ConfirmModal uses for consistency across the
+            // app's modal surface.
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 24 }}
+            transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+            className="relative w-full max-w-3xl rounded-t-3xl sm:rounded-3xl bg-paper border border-black/10 shadow-2xl overflow-hidden"
           >
             <button
               onClick={() => setDetail(null)}

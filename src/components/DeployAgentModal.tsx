@@ -125,13 +125,19 @@ export default function DeployAgentModal({
             role="dialog"
             aria-label="Deploy agent"
             aria-modal="true"
-            initial={{ opacity: 0, y: 24, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 18, scale: 0.97 }}
-            transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed left-1/2 top-[50%] -translate-x-1/2 -translate-y-1/2 z-[81] w-[min(540px,calc(100vw-32px))]"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 24 }}
+            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+            // Bottom-sheet on mobile (anchored to bottom edge,
+            // full-width, rounded top), centered card on desktop.
+            // Matches ConfirmModal + TrialGateModal patterns so
+            // every dialog in the app feels like one family.
+            className="fixed z-[81]
+              left-0 right-0 bottom-0 w-full
+              sm:left-1/2 sm:bottom-auto sm:top-[50%] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:right-auto sm:w-[min(540px,calc(100vw-32px))]"
           >
-            <div className="relative rounded-3xl overflow-hidden glass-strong border border-white/12 shadow-2xl">
+            <div className="relative rounded-t-3xl sm:rounded-3xl overflow-hidden glass-strong border border-white/12 shadow-2xl">
               {/* Aurora glow */}
               <div
                 aria-hidden="true"
