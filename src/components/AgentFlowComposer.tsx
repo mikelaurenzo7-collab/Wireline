@@ -1,5 +1,5 @@
 // AgentFlowComposer — neural-aligned linear stage progression editor.
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Plus,
   Trash2,
@@ -251,6 +251,14 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [showSnippets, setShowSnippets] = useState(false);
+  // Dirty-tracking lets us warn on navigation + drive the autosave
+  // debounce. `lastSavedSnapshot` is the JSON the server has on file.
+  // Comparing the current `steps` JSON against this snapshot tells us
+  // whether the operator has unsaved work. Cleaner than a boolean
+  // because it correctly handles "operator edited then reverted" —
+  // those don't count as dirty.
+  const [lastSavedSnapshot, setLastSavedSnapshot] = useState<string>("");
+  const [autosaving, setAutosaving] = useState(false);
 
   // Append a reusable snippet to the active step's instructions. If no
   // step is active, append to the first step. Updates instructions
@@ -281,6 +289,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
         if (data.flowConfig && Array.isArray(data.flowConfig)) {
           setSteps(data.flowConfig);
           setActiveStepId(data.flowConfig[0]?.id || "");
+          setLastSavedSnapshot(JSON.stringify(data.flowConfig));
         } else {
           // Default empty or starter state (only if null/undefined)
           const initialSteps = [
@@ -295,6 +304,11 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
           ];
           setSteps(initialSteps);
           setActiveStepId(initialSteps[0].id);
+          // Starter content is not "the server's view" — it's an
+          // unsaved local default. Snapshot stays empty so the
+          // operator's first edit (or just letting autosave fire)
+          // counts as dirty and gets pushed up.
+          setLastSavedSnapshot("");
         }
       } catch (err) {
         if (active) toastError("Failed to load agent flow configuration");
@@ -411,37 +425,92 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
   // when to advance — operator MUST fix before save lands.
   const blockingIssues = useMemo(() => validationIssues.filter((i) => true), [validationIssues]);
 
-  const handleSave = async () => {
-    if (blockingIssues.length > 0) {
-      toastError(
-        "Fix flow issues first",
-        `${blockingIssues.length} step${blockingIssues.length === 1 ? "" : "s"} need attention before save.`,
-      );
-      return;
-    }
-    setIsSaving(true);
-    setSaveSuccess(false);
+  /**
+   * Persist the current step list. Pulled out as a callback so the
+   * autosave effect below can fire it without duplicating the POST.
+   * `silent` mode suppresses success toasts (used by autosave so the
+   * operator doesn't see a toast every 3 seconds of editing).
+   */
+  const saveFlow = useCallback(
+    async (silent = false): Promise<boolean> => {
+      if (blockingIssues.length > 0) {
+        if (!silent) {
+          toastError(
+            "Fix flow issues first",
+            `${blockingIssues.length} step${blockingIssues.length === 1 ? "" : "s"} need attention before save.`,
+          );
+        }
+        return false;
+      }
+      if (silent) setAutosaving(true);
+      else {
+        setIsSaving(true);
+        setSaveSuccess(false);
+      }
+      try {
+        const res = await authFetch(`/api/agent-config/${agentId}/manual`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "flow", content: steps }),
+        });
+        if (!res.ok) throw new Error("Save failed");
+        // Update the snapshot — the server now matches `steps`, so the
+        // dirty indicator goes quiet until the next edit.
+        setLastSavedSnapshot(JSON.stringify(steps));
+        if (!silent) {
+          setSaveSuccess(true);
+          toastSuccess("Flow configuration saved");
+          setTimeout(() => setSaveSuccess(false), 2500);
+        }
+        return true;
+      } catch (err) {
+        if (!silent) toastError("Failed to save flow configuration");
+        return false;
+      } finally {
+        if (silent) setAutosaving(false);
+        else setIsSaving(false);
+      }
+    },
+    [agentId, blockingIssues.length, steps, toastError, toastSuccess],
+  );
 
-    try {
-      const res = await authFetch(`/api/agent-config/${agentId}/manual`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "flow",
-          content: steps,
-        }),
-      });
-      if (!res.ok) throw new Error("Save failed");
+  const handleSave = () => saveFlow(false);
 
-      setSaveSuccess(true);
-      toastSuccess("Flow configuration saved");
-      setTimeout(() => setSaveSuccess(false), 2500);
-    } catch (err) {
-      toastError("Failed to save flow configuration");
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  // Dirty-state computation. JSON-compare against the snapshot so
+  // "edit then undo back to identical" doesn't false-fire warnings.
+  const currentSnapshot = useMemo(() => JSON.stringify(steps), [steps]);
+  const isDirty = !isLoading && currentSnapshot !== lastSavedSnapshot;
+
+  // Autosave: 3-second idle debounce. Only fires when:
+  //   - the flow is dirty
+  //   - validation passes (no half-built flow gets pushed)
+  //   - we're not already mid-save
+  // Silent mode — no toast spam during normal editing flow.
+  useEffect(() => {
+    if (isLoading) return;
+    if (!isDirty) return;
+    if (blockingIssues.length > 0) return;
+    if (isSaving || autosaving) return;
+    const t = setTimeout(() => {
+      void saveFlow(true);
+    }, 3_000);
+    return () => clearTimeout(t);
+  }, [currentSnapshot, isDirty, isLoading, blockingIssues.length, isSaving, autosaving, saveFlow]);
+
+  // beforeunload warning when the operator tries to leave with
+  // unsaved edits. Browser-native dialog; chrome owns the copy.
+  // No-op when clean so we don't false-warn on every tab close.
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      // Modern browsers ignore the message but still show a dialog
+      // as long as returnValue is set or default is prevented.
+      e.returnValue = "You have unsaved flow changes. Leave anyway?";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
 
   if (isLoading) {
     return (
@@ -696,6 +765,25 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                     </span>
                   </label>
 
+                  {/* Dirty / autosave indicator — sits to the left of
+                      the Save button so the operator sees state at a
+                      glance. Three states:
+                        autosaving   → "Saving…" with spinner
+                        dirty        → "Unsaved" amber chip
+                        clean        → silent (no chip)
+                      We deliberately don't show "Saved ✓" here — the
+                      Save button itself already does that. */}
+                  {autosaving ? (
+                    <span className="inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.25em] text-muted">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Saving
+                    </span>
+                  ) : isDirty ? (
+                    <span className="inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.25em] text-amber-600">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                      Unsaved
+                    </span>
+                  ) : null}
                   <button
                     onClick={handleSave}
                     disabled={isSaving}

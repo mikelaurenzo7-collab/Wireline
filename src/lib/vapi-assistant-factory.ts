@@ -76,11 +76,41 @@ export async function buildVapiAssistant({
       .where(eq(schema.personality.agentId, webhookAgentId))
       .limit(1)
       .then((r) => r[0] || null),
+    // Lesson injection — QA-filtered. Previously took the latest 5
+    // lessons regardless of source-call quality, which meant a bad
+    // call's "lesson" got equal weight as a great call's. Now we
+    // LEFT JOIN call_logs and prefer lessons sourced from calls
+    // with qa_score >= 70 (4-star equivalent) and a positive
+    // outcome intent (booked / qualified > info > escalated).
+    //
+    // Lessons with no source call attached (e.g. operator-injected
+    // playbook lessons or adaptive_tuning syntheses) pass through
+    // unfiltered — we trust those by default since they didn't come
+    // from a regrettable call.
     drizzle
       .select({ lesson: schema.agentLessons.lesson })
       .from(schema.agentLessons)
-      .where(eq(schema.agentLessons.agentId, webhookAgentId))
-      .orderBy(desc(schema.agentLessons.createdAt))
+      .leftJoin(schema.callLogs, eq(schema.agentLessons.sourceCallId, schema.callLogs.id))
+      .where(
+        and(
+          eq(schema.agentLessons.agentId, webhookAgentId),
+          // Either no source call (synthetic / operator lesson),
+          // OR a source call with qa_score >= 70.
+          sql`(${schema.agentLessons.sourceCallId} IS NULL OR ${schema.callLogs.qaScore} >= 70)`,
+        ),
+      )
+      .orderBy(
+        // Ranked: outcome quality first, then recency. "booked" +
+        // "qualified" intents lift to the top; "escalated" drops.
+        sql`CASE
+          WHEN ${schema.callLogs.intentLabel} = 'booked' THEN 0
+          WHEN ${schema.callLogs.intentLabel} = 'qualified' THEN 1
+          WHEN ${schema.callLogs.intentLabel} = 'info' THEN 2
+          WHEN ${schema.callLogs.intentLabel} = 'escalated' THEN 3
+          ELSE 4
+        END`,
+        desc(schema.agentLessons.createdAt),
+      )
       .limit(MAX_RUNTIME_LESSONS),
     safeCallerPhone
       ? drizzle
@@ -173,6 +203,27 @@ export async function buildVapiAssistant({
 
   const callerProfile = buildCallerProfileBlock(pastCallHistory || [], false);
 
+  /**
+   * Sentiment-driven vibe shift — caller-history continuity.
+   * If the LAST call with this same caller ended on a negative
+   * sentiment note, inject an empathy directive ahead of the
+   * normal vibe block. The agent will be SOFTER on this call:
+   * no playfulness, acknowledge the prior issue, lead with
+   * "I see we spoke before — how can I make this right?"
+   *
+   * Doesn't override the operator's chosen vibe entirely — it
+   * sits as a one-call override layer. On the call AFTER this
+   * one (assuming sentiment recovers), the agent returns to
+   * the configured vibe.
+   *
+   * Pure additive — emits empty string when no signal exists.
+   */
+  let sentimentShift = "";
+  const lastCall = (pastCallHistory || [])[0] as { sentiment?: string | null } | undefined;
+  if (lastCall?.sentiment === "negative") {
+    sentimentShift = `\n## CALLER CONTINUITY — TONE OVERRIDE\nThis caller's PREVIOUS call ended on a negative note. Drop ALL playfulness on this call, regardless of your configured vibe. Open by acknowledging you remember them ("I see we connected before — how can I make this right?") and lead with empathy + speed. No jokes. No filler. If they reopen the prior issue, take it seriously immediately. Recovery is the only goal for the first 60 seconds; everything else is secondary.\n`;
+  }
+
   const rawProfileDesc = capturedProfileRow?.description || "";
   const customerIntelBlock = buildCustomerIntelBlock(rawProfileDesc, false);
 
@@ -225,7 +276,7 @@ You are ${agentConfigRow?.name || "Wireline Agent"}, a ${agentRole.replace(/_/g,
 
 ${callerProfile}
 ${customerIntelBlock}
-
+${sentimentShift}
 ${archetypeRules}
 ${leadContext}
 ${roleProtocol}
