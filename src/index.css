@@ -315,10 +315,18 @@
  * a backdrop-filter blur. blur(28px) was the GPU bottleneck on lower-end
  * laptops â€” paint cost was driving 60â†’30fps on /home and /agents. Cut to
  * 16px (still visually rich, just less expensive) and respect reduced
- * motion by dropping the blur entirely when requested. */
+ * motion by dropping the blur entirely when requested.
+ *
+ * Color note (Mike feedback): the top gradient used to be near-pure
+ * white rgba(255,255,255,X). On signed-in pages dominated by glass
+ * cards, that pushed the WHOLE viewport toward white and broke the
+ * warm-terracotta brand feel that AuthPortal nails. Switched the
+ * gradient stops to derive from --color-paper (#FAF9F5) so every
+ * glass surface inherits the same warm cream — auth'd console and
+ * AuthPortal now read as the same brand canvas. */
 .glass {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.52)),
+    linear-gradient(180deg, rgba(250, 249, 245, 0.78), rgba(250, 249, 245, 0.58)),
     rgba(245, 240, 232, 0.6);
   backdrop-filter: blur(16px) saturate(140%);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
@@ -327,7 +335,7 @@
 
 .glass-strong {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.74)),
+    linear-gradient(180deg, rgba(250, 249, 245, 0.92), rgba(250, 249, 245, 0.78)),
     rgba(245, 240, 232, 0.9);
   backdrop-filter: blur(24px) saturate(160%);
   -webkit-backdrop-filter: blur(24px) saturate(160%);
@@ -472,8 +480,9 @@ select:focus {
 
 /* Elevated glass â€” one step above glass-strong, for modals / popovers */
 .glass-elevated {
+  /* Same warm-paper shift as .glass + .glass-strong (Mike feedback). */
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.84)),
+    linear-gradient(180deg, rgba(250, 249, 245, 0.97), rgba(250, 249, 245, 0.86)),
     rgba(245, 240, 232, 0.98);
   backdrop-filter: blur(56px) saturate(180%);
   -webkit-backdrop-filter: blur(56px) saturate(180%);
