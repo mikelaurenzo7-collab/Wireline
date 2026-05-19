@@ -115,8 +115,8 @@ export default function OnboardingQuickstart({
    * Business / Enterprise customers don't onboard themselves. Show a
    * white-glove card pointing them at human-led onboarding instead of
    * the 4-step self-serve flow. The CTAs route to Maya (our scheduling
-   * agent) and Mike's email — both already live on (630) 642-5927 and
-   * mikelaurenzo7@gmail.com.
+   * agent) and the company support inbox — (630) 642-5927 and
+   * trywireline@yahoo.com.
    */
   if (planId === "business" || planId === "enterprise") {
     return (
@@ -166,7 +166,7 @@ export default function OnboardingQuickstart({
                 Call Maya — (630) 642-5927
               </a>
               <a
-                href="mailto:mikelaurenzo7@gmail.com?subject=Wireline%20kickoff"
+                href="mailto:trywireline@yahoo.com?subject=Wireline%20kickoff"
                 className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full glass border border-white/12 text-ink text-[11px] uppercase tracking-[0.3em] hover:border-white/24 transition-colors"
               >
                 <Mail className="w-3.5 h-3.5" />

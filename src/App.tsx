@@ -13,6 +13,7 @@ import { MotionConfig } from "motion/react";
 
 const Pricing = lazy(() => import("./pages/Pricing"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const OAuthComplete = lazy(() => import("./pages/OAuthComplete"));
 
 function AppContent() {
   const { user } = useAuth();
@@ -42,6 +43,17 @@ function AppContent() {
     return (
       <Suspense fallback={<div className="min-h-screen" />}>
         <ResetPassword />
+      </Suspense>
+    );
+  }
+  // OAuth bridge — Google / Microsoft sign-in lands here with token in
+  // the query string. The page reads the params, calls signIn(), and
+  // redirects to /. Renders BEFORE the auth guard so an unauthenticated
+  // user can complete the handshake.
+  if (location.pathname === "/auth/oauth-complete") {
+    return (
+      <Suspense fallback={<div className="min-h-screen" />}>
+        <OAuthComplete />
       </Suspense>
     );
   }

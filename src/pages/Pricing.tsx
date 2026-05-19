@@ -113,7 +113,7 @@ const TIERS: Tier[] = [
     cadence: "",
     blurb: "Custom volume, dedicated CSM, SLA-backed uptime.",
     cta: "Talk to sales",
-    ctaHref: "mailto:sales@wireline.app?subject=Enterprise%20inquiry",
+    ctaHref: "mailto:trywireline@yahoo.com?subject=Enterprise%20inquiry",
     features: [
       "Unlimited agents + minutes",
       "Unlimited mailboxes + seats",
@@ -131,7 +131,7 @@ const TIERS: Tier[] = [
     cadence: "",
     blurb: "100+ seats, supervisor cockpit, team routing.",
     cta: "Talk to call-center sales",
-    ctaHref: "mailto:sales@wireline.app?subject=Call%20Center%20inquiry",
+    ctaHref: "mailto:trywireline@yahoo.com?subject=Call%20Center%20inquiry",
     features: [
       "100+ AI agent seats with team-based routing",
       "Supervisor cockpit — live floor monitoring + listen-in",

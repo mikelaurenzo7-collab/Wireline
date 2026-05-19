@@ -445,7 +445,7 @@ router.post(
       // they'd subscribe at $0/mo against a real Stripe price.
       if (plan.price_usd_monthly === 0) {
         return res.status(400).json({
-          error: `Plan '${plan.id}' is contact-sales only. Reach out at sales@wireline.app.`,
+          error: `Plan '${plan.id}' is contact-sales only. Reach out at trywireline@yahoo.com.`,
           code: "CONTACT_SALES_PLAN",
         });
       }

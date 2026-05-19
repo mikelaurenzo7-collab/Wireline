@@ -13,7 +13,7 @@
  */
 
 export const WIRELINE_URL = "https://trywireline.com";
-export const WIRELINE_SUPPORT_EMAIL = "mikelaurenzo7@gmail.com";
+export const WIRELINE_SUPPORT_EMAIL = "trywireline@yahoo.com";
 
 /** Tagline used on the landing page + agent self-introductions. */
 export const WIRELINE_TAGLINE = "AI agents for every customer conversation";
