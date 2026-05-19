@@ -949,7 +949,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                             toastError("Coach unavailable", data.error || "Try again in a moment");
                           }
                         } catch {
-                          toastError("Coach failed", "Couldn't reach Claude — try again");
+                          toastError("Coach failed", "Couldn't reach Wireline AI — try again");
                         } finally {
                           setCoachingStepId(null);
                         }
@@ -959,14 +959,14 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                       {coachingStepId === activeStep.id ? (
                         <>
                           <Loader2 className="w-3 h-3 animate-spin" />
-                          Claude is reviewing…
+                          Wireline AI is reviewing…
                         </>
                       ) : (
                         <>
                           <MessageSquareQuote className="w-3 h-3" />
                           {stepCritiques[activeStep.id]
                             ? "Re-coach this stage"
-                            : "Ask Claude to coach this stage"}
+                            : "Ask Wireline AI to coach this stage"}
                         </>
                       )}
                     </button>

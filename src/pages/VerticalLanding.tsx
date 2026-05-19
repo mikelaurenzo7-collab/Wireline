@@ -108,13 +108,16 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
     ],
     scriptPreview: `"Hey, this is Sarah from [Your Company] — sounds like you've got water coming through the ceiling. Let me get you on the schedule right now. Are you home in the next 90 minutes or would after 5 work better?"`,
-    statValue: "$2,400+",
+    // Honest capability statement, not a fabricated dollar figure.
+    // Real case-study numbers go here once we have customers willing
+    // to be quoted by name.
+    statValue: "24 / 7",
     statLabel:
-      "Average monthly revenue recovered from after-hours calls (per the median paying customer)",
+      "Always answers — including the 6pm pipe-burst that books a $500 emergency job your competitor missed.",
     primaryCta: { label: "Start 14-day free trial", href: "/signup?wedge=home-services" },
     secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
     trustLine:
-      "Built on Twilio carrier infrastructure. White-labeled — customers hear your business name, not ours.",
+      "Built on enterprise-grade carrier infrastructure. White-labeled — customers hear your business name, not ours.",
     faqs: [
       {
         q: "Will customers know they're talking to an AI?",
@@ -167,13 +170,13 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
     ],
     scriptPreview: `"Thanks for calling Dr. Chen's office — I can help schedule your visit. Was this for a cleaning, a specific concern, or something else? Got it. Our next opening for that is Thursday at 2:15 or Friday at 9 — which works?"`,
-    statValue: "31%",
+    statValue: "First ring",
     statLabel:
-      "Reduction in no-shows when patients receive SMS confirmations within 60 seconds of booking",
+      "Patients on hold drop calls. Wireline picks up before the first ring — every call, every hour.",
     primaryCta: { label: "Start 14-day free trial", href: "/signup?wedge=medical" },
     secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
     trustLine:
-      "Built on Twilio + Vapi. White-labeled — patients hear your practice name. HIPAA BAA on Enterprise tier.",
+      "Built on enterprise voice infrastructure. White-labeled — patients hear your practice name. HIPAA BAA on Enterprise tier when certified.",
     faqs: [
       {
         q: "Is Wireline HIPAA-compliant?",
@@ -226,8 +229,9 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
     ],
     scriptPreview: `"Thank you for calling Henderson Law — this call may be confidential under attorney-client privilege. To get you the right attorney quickly, can you briefly describe what brings you in today?"`,
-    statValue: "67%",
-    statLabel: "Of new-matter calls converted to booked consults when answered within 15 seconds",
+    statValue: "Conflict-checked",
+    statLabel:
+      "Captures the prospective client + the opposing party name; pings your paralegal in Slack before the consult lands on the attorney's calendar.",
     primaryCta: { label: "Start 14-day free trial", href: "/signup?wedge=legal" },
     secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
     trustLine:
@@ -284,8 +288,9 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
     ],
     scriptPreview: `"Hi, you called about the listing at 1247 Maple — great property. Quick question: are you working with a buyer's agent already, or are we starting fresh? And ballpark, where do you need to be on price?"`,
-    statValue: "4.3×",
-    statLabel: "Lift in showing conversion when listing calls are answered live vs. voicemail",
+    statValue: "Same day",
+    statLabel:
+      "Pre-qualified buyers get a same-day showing slot. Cold leads get nurtured via text until they're warm — your top agents only see the ready ones.",
     primaryCta: { label: "Start 14-day free trial", href: "/signup?wedge=real-estate" },
     secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
     trustLine:
@@ -351,8 +356,9 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     ],
     scriptPreview:
       "Hi, this is Alex calling on behalf of Mike Laurenzo regarding account ending in 4421. Mike is offering $1,200 as a one-time settlement, payable Friday, in exchange for the account being marked paid-in-full and removed from his credit report. Can your team accept those terms today, or do you need to escalate?",
-    statValue: "$340",
-    statLabel: "average saved per call when an AI agent negotiates a bill or debt on your behalf",
+    statValue: "Yours",
+    statLabel:
+      "Your AI, calling on your behalf. You text it what you need; it dials, talks, and reports back. You stay off the call.",
     primaryCta: { label: "Start 14-day free trial", href: "/signup?wedge=personal" },
     secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
     trustLine:
@@ -364,7 +370,7 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "Can it really negotiate debt? Won't the collector just hang up on a robot?",
-        a: "Two things. First, the agent doesn't sound like a robot — Vapi's voice quality is indistinguishable from human in most calls. Second, collectors are required by law to negotiate in good faith with authorized representatives. Your agent IS an authorized representative. If they hang up, your agent calls back with the next escalation script. Most settlements take 1-3 calls.",
+        a: "Two things. First, the agent doesn't sound like a robot — Wireline's voice quality is indistinguishable from human in most calls. Second, collectors are required by law to negotiate in good faith with authorized representatives. Your agent IS an authorized representative. If they hang up, your agent calls back with the next escalation script. Most settlements take 1-3 calls.",
       },
       {
         q: "What about voicemail / hold music / phone trees? Doesn't that break it?",

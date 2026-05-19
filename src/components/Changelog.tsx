@@ -50,7 +50,7 @@ const ENTRIES: Entry[] = [
     date: "May 19, 2026",
     tag: "fix",
     title: 'Showcase agents no longer say "S-M-S" letter by letter',
-    body: 'Vapi\'s TTS reads uppercase acronyms phonetically. Every caller-facing reference to "SMS" in the agent prompts → "text message". Sounds human. All 10 showcase agents (Sarah, Liam, Tyler, Maya, Devon, Priya, Marcus, Aisha, Elena, Jake) re-synced.',
+    body: 'Our voice engine was reading "SMS" as letters (S-M-S) which sounded choppy on calls. Every caller-facing reference to "SMS" in the agent prompts → "text message". Sounds human. All 10 showcase agents (Sarah, Liam, Tyler, Maya, Devon, Priya, Marcus, Aisha, Elena, Jake) re-synced.',
   },
   {
     date: "May 19, 2026",
@@ -68,7 +68,7 @@ const ENTRIES: Entry[] = [
     date: "May 19, 2026",
     tag: "polish",
     title: 'Showcase demo agents — "off" background sound, clean studio line',
-    body: 'Vapi\'s default "office" ambient track was outing the agent as not-quite-human at current voice quality. Switched all 10 demo agents to a quiet studio line. Sounds like a real headset call, not a fake bullpen.',
+    body: 'The default "office" ambient track on showcase agents was outing them as not-quite-human at current voice quality. Switched all 10 demo agents to a quiet studio line. Sounds like a real headset call, not a fake bullpen.',
   },
   {
     date: "May 19, 2026",

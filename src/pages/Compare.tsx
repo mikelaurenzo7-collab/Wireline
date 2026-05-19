@@ -78,7 +78,7 @@ const ROWS: Row[] = [
   {
     feature: "White-label phone numbers included",
     detail:
-      "Every plan includes a dedicated voice number with no separate Twilio bill. Customer never sees infra.",
+      "Every plan includes a dedicated voice number with no separate carrier bill. Customer never sees infra.",
     wireline: true,
     air: "partial",
     synthflow: "partial",

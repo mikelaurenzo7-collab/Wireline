@@ -125,7 +125,7 @@ const TIERS: Tier[] = [
       "Call queues with SLA timers + overflow rules",
       "Real-time sentiment + QA scoring on every call",
       "SAML SSO + audit + advanced compliance",
-      "BYO carrier (Twilio / RingCentral / 8x8 / SIP trunk)",
+      "BYO carrier (any SIP-compatible provider)",
       "Custom integrations + private model deployment",
       "Dedicated CSM, 99.95% SLA, 24×7 ops paging",
       "Custom MSA + Net-30 invoicing",

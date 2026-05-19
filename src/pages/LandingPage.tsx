@@ -165,10 +165,15 @@ function LiveTrustStrip() {
 
   return (
     <div className="flex flex-wrap items-center gap-x-6 sm:gap-x-8 gap-y-2 mb-5">
+      {/* Real live counts from /api/public/stats. NO hardcoded vanity
+          metrics — what's shown is what's actually true at the moment
+          the page loaded. Early-stage numbers look small; that's
+          honest. The capability cell on the right adds the qualitative
+          signal that doesn't depend on scale. */}
       <Cell value={stats.agents_online.toLocaleString()} label="agents live" pulse />
       <Cell value={stats.calls_this_month.toLocaleString()} label="calls this month" />
       <Cell value={stats.tenants.toLocaleString()} label="businesses on Wireline" />
-      <Cell value="~200ms" label="avg response" />
+      <Cell value="24 / 7" label="agents never sleep" />
     </div>
   );
 }
@@ -537,7 +542,7 @@ export default function LandingPage() {
             to="/compare"
             className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-brand hover:text-brand/80 transition-colors"
           >
-            See the side-by-side vs Air, Synthflow, Vapi
+            See the side-by-side vs other AI voice platforms
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
@@ -571,7 +576,7 @@ export default function LandingPage() {
           {[
             {
               q: "Does it actually sound human on the phone?",
-              a: "Yes — but listen, don't take our word. Call (630) 581-1834 right now. That's Liam, one of our showcase agents, running the same engine your tenants get. He uses ElevenLabs Flash for voice, Claude Sonnet 4.6 for reasoning, and a ~200ms end-to-turn latency budget. If he doesn't sound human within the first 10 seconds, send us the recording and we'll refund whatever plan you're on.",
+              a: "Yes — but listen, don't take our word. Call (630) 581-1834 right now. That's Liam, one of our showcase agents, running Wireline's full production engine — same setup your tenants get. If he doesn't sound human within the first 10 seconds, send us the recording and we'll refund whatever plan you're on.",
             },
             {
               q: "How long does it take to go live?",
@@ -590,7 +595,7 @@ export default function LandingPage() {
               a: "Three fallbacks, in order: (1) the agent reads from your knowledge base if there's a match, (2) it offers a clean handoff to a human you designate (warm transfer, SMS, or scheduled callback), (3) it captures the question, logs it, and sends you a summary so the next caller gets a better answer. Never fabricates.",
             },
             {
-              q: "Can I switch from Air / Synthflow / Vapi?",
+              q: "Can I switch from another AI voice platform?",
               a: "Yes — and we'll do it for you on Enterprise. Bring your existing prompt, your knowledge base, your phone numbers, and your CRM mapping. Our migration team rebuilds your fleet on Wireline in a parallel environment, lets you A/B test against your current platform, then ports your numbers when you're satisfied. Average switch time: 4 business days.",
             },
           ].map((item, i, arr) => (
@@ -624,7 +629,7 @@ export default function LandingPage() {
           tier.
         </h2>
         <p className="text-sm sm:text-base text-ink/70 max-w-xl mx-auto mb-6 leading-relaxed">
-          No separate Twilio bill. No hidden minutes overage at low volume. 14-day free trial, no
+          No separate carrier bill. No hidden minutes overage at low volume. 14-day free trial, no
           credit card to start.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3">
@@ -698,7 +703,7 @@ export default function LandingPage() {
           </Link>
         </div>
         <p className="text-[9px] text-muted/45 text-center mt-3 leading-relaxed">
-          TLS encrypted · Carrier-grade Twilio infrastructure · TCPA compliance ledger · GDPR & CCPA
+          TLS encrypted · Carrier-grade voice infrastructure · TCPA compliance ledger · GDPR & CCPA
           aware
         </p>
       </footer>
