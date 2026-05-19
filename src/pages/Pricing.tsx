@@ -5,7 +5,6 @@ import { PageMeta } from "../lib/page-meta";
 import WirelineMark from "../components/WirelineMark";
 import {
   Check,
-  Waves,
   ArrowRight,
   Phone,
   Bot,
@@ -146,7 +145,7 @@ const TIERS: Tier[] = [
 ];
 
 const VALUE_BULLETS = [
-  { icon: Phone, text: "Call our demo line — (630) 581-1834 — Liam picks up 24/7" },
+  { icon: Phone, text: "Hear a live agent — call (973) 363-8874 and route your own call" },
   { icon: ShieldCheck, text: "SOC 2-ready architecture, encrypted secrets at rest" },
   { icon: Sparkles, text: "Powered by Wireline's premium AI brain + studio-grade voices" },
   { icon: Zap, text: "Setup in under 10 minutes — no devs required" },

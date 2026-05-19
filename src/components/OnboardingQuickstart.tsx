@@ -383,7 +383,7 @@ export default function OnboardingQuickstart() {
                 accent="#0AC8D4"
               />
               <PowerUpCard
-                icon={Waves}
+                icon={Link2}
                 label="Webhooks & SLOs"
                 desc="Push events to Slack, CRM, or Zapier."
                 to="/admin"

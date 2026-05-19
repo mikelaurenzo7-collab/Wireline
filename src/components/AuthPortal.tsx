@@ -9,7 +9,6 @@ import {
   UserPlus,
   LogIn,
   AlertTriangle,
-  Waves,
   Check,
   PhoneIncoming,
   PhoneOutgoing,
