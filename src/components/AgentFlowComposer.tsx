@@ -259,6 +259,13 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
   // those don't count as dirty.
   const [lastSavedSnapshot, setLastSavedSnapshot] = useState<string>("");
   const [autosaving, setAutosaving] = useState(false);
+  // Mobile-only panel toggle. On <xl viewports the steps list +
+  // editor panels would otherwise stack vertically — operator has
+  // to scroll past the full step list every time they click a row.
+  // We hide the inactive panel and surface a small tab toggle so
+  // mobile feels like a real two-pane app. Desktop ignores this
+  // state entirely (both panels show side-by-side).
+  const [mobilePanel, setMobilePanel] = useState<"steps" | "editor">("steps");
 
   // Append a reusable snippet to the active step's instructions. If no
   // step is active, append to the first step. Updates instructions
@@ -525,8 +532,41 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
 
   return (
     <div className="h-full flex flex-col xl:flex-row gap-4 p-4 lg:p-6 overflow-hidden">
+      {/* Mobile-only panel toggle (hidden on xl+ where both panes
+          are visible side-by-side). Sticky tab pill that switches
+          between the Steps list and the Editor. Highlights the
+          active panel + shows the step count for context. */}
+      <div className="xl:hidden flex items-center gap-1 p-1 rounded-xl glass border border-white/10 self-start">
+        <button
+          type="button"
+          onClick={() => setMobilePanel("steps")}
+          className={cn(
+            "px-3 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.2em] font-medium transition-all",
+            mobilePanel === "steps" ? "bg-brand text-on-brand" : "text-muted hover:text-ink",
+          )}
+        >
+          Steps · {steps.length}
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobilePanel("editor")}
+          className={cn(
+            "px-3 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.2em] font-medium transition-all",
+            mobilePanel === "editor" ? "bg-brand text-on-brand" : "text-muted hover:text-ink",
+          )}
+        >
+          Editor
+        </button>
+      </div>
+
       {/* Left Column: Linear Visualizer / List */}
-      <div className="w-full xl:w-1/3 flex flex-col gap-3 min-h-0">
+      <div
+        className={cn(
+          "w-full xl:w-1/3 flex flex-col gap-3 min-h-0",
+          // On <xl, hide when the editor pane is active. xl+ always shows both.
+          mobilePanel === "editor" ? "hidden xl:flex" : "flex",
+        )}
+      >
         <div className="glass border border-white/10 rounded-2xl p-4 shrink-0 space-y-3">
           <div className="flex items-center justify-between">
             <div>
@@ -652,7 +692,14 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                     )}
 
                     <div
-                      onClick={() => setActiveStepId(step.id)}
+                      onClick={() => {
+                        setActiveStepId(step.id);
+                        // On mobile, clicking a step should jump
+                        // straight into the editor pane instead of
+                        // leaving the operator stuck on the list.
+                        // Desktop ignores this (both panes visible).
+                        setMobilePanel("editor");
+                      }}
                       className={cn(
                         "relative z-10 flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer group",
                         activeStepId === step.id
@@ -717,7 +764,13 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
       </div>
 
       {/* Right Column: Stage Editor */}
-      <div className="w-full xl:w-2/3 flex flex-col min-h-0">
+      <div
+        className={cn(
+          "w-full xl:w-2/3 flex flex-col min-h-0",
+          // Hide editor on mobile when steps tab is active. xl+ ignores.
+          mobilePanel === "steps" ? "hidden xl:flex" : "flex",
+        )}
+      >
         <div className="flex-1 glass border border-white/10 rounded-2xl flex flex-col overflow-hidden">
           {activeStep ? (
             <div className="flex-1 flex flex-col h-full overflow-y-auto scrollbar-hide">

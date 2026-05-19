@@ -845,10 +845,17 @@ function AppointmentRow({
             <AnimatePresence>
               {showStatusMenu && (
                 <motion.div
-                  initial={{ opacity: 0, y: -4 }}
+                  initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  className="absolute right-0 top-full mt-1 z-20 w-36 rounded-xl glass-strong border border-white/15 shadow-2xl overflow-hidden"
+                  exit={{ opacity: 0, y: 4 }}
+                  // Open UPWARD (`bottom-full mb-1`) instead of downward
+                  // (`top-full mt-1`). The Appointments scroll container
+                  // has `overflow-y-auto` which clips ANY child whose
+                  // top-half overflow extends past it — so a downward
+                  // menu on the bottom row gets cut off mid-list. Open
+                  // up and the menu always renders inside the scroll
+                  // viewport regardless of row position.
+                  className="absolute right-0 bottom-full mb-1 z-20 w-36 rounded-xl glass-strong border border-white/15 shadow-2xl overflow-hidden"
                 >
                   {Object.keys(STATUS_META).map((s) => (
                     <button
