@@ -3,6 +3,7 @@ import { BrowserRouter, useLocation, useNavigate } from "react-router-dom";
 import AuthPortal from "./components/AuthPortal";
 import { PrivacyPolicy, TermsOfService, DataDeletion, ZoomDocs } from "./components/LegalPage";
 import { ChangelogPage } from "./components/Changelog";
+import { SupportPage } from "./components/SupportPage";
 import CookieConsent from "./components/CookieConsent";
 import ToastStack from "./components/Toast";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -47,6 +48,7 @@ function AppContent() {
   // Public changelog — pre-launch trust signal and post-launch
   // transparency: every prospect can verify "yes they ship."
   if (location.pathname === "/changelog") return <ChangelogPage />;
+  if (location.pathname === "/support") return <SupportPage />;
 
   // Vertical wedge pages — outbound DMs target these directly with
   // industry-specific copy, but the product behind them is the same

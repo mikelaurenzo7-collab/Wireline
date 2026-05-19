@@ -481,6 +481,21 @@ router.post("/api/vapi-webhook", async (req, res) => {
                 `📅 *Appointment booked*\n${title}\n${new Date(startTime).toLocaleString()} → ${new Date(endTime).toLocaleString()}`,
               );
             }
+            // Operator SMS alert — positive event. Fires only when the
+            // operator opted in (twilio_manager_alerts_enabled = true
+            // + twilio_manager_alert_number set). Keeps the operator
+            // in the loop on wins, not just escalations.
+            try {
+              const { NotificationService } = await import("../lib/notifications");
+              const notif = new NotificationService(agent.user_id);
+              void notif.sendUrgentAlert({
+                title: "📅 Meeting booked",
+                message: `${customer_name} · ${service_type} · ${new Date(startTime).toLocaleString()}`,
+                callId: (message.call as { id?: string } | undefined)?.id,
+              });
+            } catch {
+              /* best-effort; never block the tool response */
+            }
           }
           results.push({
             toolCallId: toolCall.id,

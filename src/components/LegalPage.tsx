@@ -338,8 +338,20 @@ export function TermsOfService() {
         <p>
           Paid features are billed monthly via Stripe. Subscriptions renew automatically unless
           cancelled before the renewal date. You may cancel at any time via the Billing section in
-          Settings; cancellation takes effect at the end of the current billing period. No refunds
-          are issued for partial periods.
+          Settings; cancellation takes effect at the end of the current billing period.
+        </p>
+        <p>
+          <strong>30-day money-back guarantee.</strong> If Wireline isn't working for your business
+          for any reason within 30 days of your first paid invoice, email{" "}
+          <strong>trywireline@yahoo.com</strong> with the subject "Refund request" and we'll refund
+          that month's charge in full — no forms, no escalation, no questions about your reason. The
+          30-day window starts on the date of your first paid invoice (not the trial start).
+          Outbound call minutes consumed prior to the refund request are not separately deducted —
+          the refund is on the subscription line item.
+        </p>
+        <p>
+          After the 30-day window, no refunds are issued for partial periods, but you can cancel
+          renewal at any time (effective at the end of the current period) so future charges stop.
         </p>
         <p>
           We reserve the right to change pricing with 30 days' notice. Your continued use after the

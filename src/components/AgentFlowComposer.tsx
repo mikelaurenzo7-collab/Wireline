@@ -13,6 +13,7 @@ import {
   Copy,
   Sparkles,
   AlertTriangle,
+  MessageSquareQuote,
 } from "lucide-react";
 import { motion, AnimatePresence, Reorder } from "motion/react";
 import { cn } from "../lib/utils";
@@ -248,6 +249,11 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
   const [steps, setSteps] = useState<FlowStep[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeStepId, setActiveStepId] = useState<string>("");
+  // Per-step Claude critique cache. Keyed by stepId so flipping
+  // between stages doesn't drop the critique you already pulled.
+  // Cleared on save (the critique might no longer apply).
+  const [stepCritiques, setStepCritiques] = useState<Record<string, string>>({});
+  const [coachingStepId, setCoachingStepId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [showSnippets, setShowSnippets] = useState(false);
@@ -905,6 +911,71 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                       </div>
                     );
                   })()}
+                  {/* Per-step Claude critique — operator clicks the
+                      button, we POST the stage to /api/claude/coach-step,
+                      Claude returns 4-5 bullets covering clarity / edge
+                      cases / transition / tone / suggested rewrite.
+                      Result is cached per stepId until next save. */}
+                  <div className="space-y-2 pt-2">
+                    <button
+                      type="button"
+                      disabled={
+                        coachingStepId === activeStep.id ||
+                        activeStep.instructions.trim().length < 10
+                      }
+                      onClick={async () => {
+                        setCoachingStepId(activeStep.id);
+                        try {
+                          const r = await authFetch("/api/claude/coach-step", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              name: activeStep.name,
+                              instructions: activeStep.instructions,
+                              transitionCondition: activeStep.transitionCondition,
+                              isEndNode: activeStep.isEndNode,
+                            }),
+                          });
+                          const data = await r.json();
+                          if (r.ok && data.critique) {
+                            setStepCritiques((prev) => ({
+                              ...prev,
+                              [activeStep.id]: data.critique,
+                            }));
+                            if (typeof window !== "undefined" && (window as any).plausible) {
+                              (window as any).plausible("StepCoachUsed");
+                            }
+                          } else {
+                            toastError("Coach unavailable", data.error || "Try again in a moment");
+                          }
+                        } catch {
+                          toastError("Coach failed", "Couldn't reach Claude — try again");
+                        } finally {
+                          setCoachingStepId(null);
+                        }
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full glass border border-brand/30 text-[10px] uppercase tracking-[0.22em] text-brand hover:bg-brand/8 transition-all disabled:opacity-40"
+                    >
+                      {coachingStepId === activeStep.id ? (
+                        <>
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          Claude is reviewing…
+                        </>
+                      ) : (
+                        <>
+                          <MessageSquareQuote className="w-3 h-3" />
+                          {stepCritiques[activeStep.id]
+                            ? "Re-coach this stage"
+                            : "Ask Claude to coach this stage"}
+                        </>
+                      )}
+                    </button>
+                    {stepCritiques[activeStep.id] && (
+                      <div className="rounded-xl glass border border-brand/15 p-3 text-[12px] text-ink/85 leading-relaxed whitespace-pre-wrap">
+                        {stepCritiques[activeStep.id]}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="h-px bg-white/5 w-full" />

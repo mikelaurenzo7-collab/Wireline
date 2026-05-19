@@ -244,6 +244,24 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
       lead_score: score,
       customer_number: baseOutcome.customer_number,
     });
+    // Operator SMS alert — hot lead detected. Same opt-in plumbing
+    // as the escalation alerts. We only alert ≥80 (vs the webhook
+    // ≥70 threshold) so the SMS pager doesn't fire on borderline
+    // warm leads; the webhook is fine-grained, the SMS should be
+    // can't-miss only.
+    if (score >= 80) {
+      try {
+        const { NotificationService } = await import("./notifications");
+        const notif = new NotificationService(userId);
+        void notif.sendUrgentAlert({
+          title: "🔥 Hot lead",
+          message: `Score ${score} · ${baseOutcome.customer_number || "unknown caller"} · ${enrichment?.intent_label || "lead detected"}`,
+          callId: call?.id,
+        });
+      } catch {
+        /* best-effort */
+      }
+    }
   }
 
   const intent = (enrichment?.intent_label || "").toLowerCase();

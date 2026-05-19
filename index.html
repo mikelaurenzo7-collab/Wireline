@@ -21,6 +21,19 @@
          Keeping this in sync with the served domain prevents SEO juice fragmentation. -->
     <link rel="canonical" href="https://trywireline.com/" />
 
+    <!-- Plausible Analytics — privacy-first, no cookies, GDPR-clean
+         out of the box. defer keeps it off the critical render path;
+         data-domain matches whatever's configured in the Plausible
+         dashboard. Sign up at plausible.io, add `trywireline.com`,
+         done. If we ever switch hosts (self-host, fly.io, PostHog),
+         just swap src + leave the existing custom events firing. -->
+    <script defer data-domain="trywireline.com" src="https://plausible.io/js/script.tagged-events.js"></script>
+    <!-- Custom event helper. Calling plausible('SignupComplete') from
+         anywhere in the app fires a tagged event so we can see funnel
+         steps in the dashboard. Falls through silently if Plausible
+         is blocked (some users have privacy extensions on). -->
+    <script>window.plausible = window.plausible || function() { (window.plausible.q = window.plausible.q || []).push(arguments) }</script>
+
     <!-- Open Graph — how the site appears when shared on LinkedIn, Slack, FB, iMessage, etc. -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://trywireline.com/" />

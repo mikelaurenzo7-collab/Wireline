@@ -279,9 +279,29 @@ export default function DeployAgentModal({
                     </AnimatePresence>
 
                     {selectedVoice && !showVoiceList && (
-                      <p className="text-[10px] text-muted/65">
-                        Picked: <span className="text-ink/75">{selectedVoice.name}</span>
-                      </p>
+                      <div className="space-y-1.5">
+                        <p className="text-[10px] text-muted/65">
+                          Picked: <span className="text-ink/75">{selectedVoice.name}</span>
+                        </p>
+                        {/* Voice preview affordance. Real in-app per-voice
+                            samples need an ElevenLabs API key (separate ship);
+                            for now we point operators to the demo line where
+                            our agent Liam uses the same voice catalog. Builds
+                            demo line traffic + sets honest expectations. */}
+                        <a
+                          href="tel:+16305811834"
+                          onClick={() => {
+                            if (typeof window !== "undefined" && (window as any).plausible) {
+                              (window as any).plausible("DeployModalVoicePreviewClick", {
+                                props: { voice: selectedVoice.name },
+                              });
+                            }
+                          }}
+                          className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.22em] text-brand hover:text-brand/80 transition-colors"
+                        >
+                          ▶ Hear voices live on (630) 581-1834
+                        </a>
+                      </div>
                     )}
                   </div>
                 ) : (
