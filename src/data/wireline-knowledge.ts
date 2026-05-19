@@ -287,7 +287,7 @@ export function buildWirelineKnowledgeBlock(mode: "cs" | "demo" | "client" = "de
   base.push("      \"That's actually [Name]'s wheelhouse — they handle [bucket].");
   base.push('       Want me to text you their number now, or transfer you live?"');
   base.push("    The 6 CS lines and their buckets:");
-  base.push("      Sam · (630) 642-5661 · general support, how-to, account");
+  base.push("      Sarah · (630) 642-5661 · general support, how-to, account");
   base.push("      Liam · (630) 581-1834 · sales, pricing, demos");
   base.push("      Tyler · (564) 238-9455 · technical, API, integrations");
   base.push("      Maya · (630) 642-5927 · demo / onboarding scheduling");
