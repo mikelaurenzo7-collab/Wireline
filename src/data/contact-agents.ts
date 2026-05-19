@@ -37,11 +37,11 @@ export type ContactAgent = {
 
 export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
   {
-    name: "Sarah",
+    name: "Sam",
     role: "General Customer Support",
     scope:
       "First line for any Wireline question — answers, account help, how-to, troubleshooting basics. Routes specialized calls to the right teammate.",
-    firstMessage: "Hi, this is Sarah with Wireline support — how can I help you today?",
+    firstMessage: "Hi, this is Sam with Wireline support — how can I help you today?",
     handles: "general, how-to, account, password reset, navigation",
     tel: "+16306425661",
     display: "(630) 642-5661",

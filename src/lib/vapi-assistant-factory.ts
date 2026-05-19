@@ -141,19 +141,25 @@ export async function buildVapiAssistant({
   ]);
 
   let flowConfigBlock = "";
-  if (agentConfigRow?.flowConfig && Array.isArray(agentConfigRow.flowConfig) && agentConfigRow.flowConfig.length > 0) {
+  if (
+    agentConfigRow?.flowConfig &&
+    Array.isArray(agentConfigRow.flowConfig) &&
+    agentConfigRow.flowConfig.length > 0
+  ) {
     const steps = agentConfigRow.flowConfig;
-    let formattedSteps = steps.map((s: any, i: number) => {
-      let stepStr = `[STAGE ${i + 1}: ${s.name}]\n- INSTRUCTIONS: ${s.instructions}`;
-      if (s.transitionCondition && !s.isEndNode) {
-        stepStr += `\n- TRANSITION CRITERIA: Proceed to stage ${i + 2} only when: ${s.transitionCondition}`;
-      }
-      if (s.isEndNode) {
-        stepStr += `\n- END NODE: Gracefully end the call after completing these instructions.`;
-      }
-      return stepStr;
-    }).join("\n\n");
-    
+    let formattedSteps = steps
+      .map((s: any, i: number) => {
+        let stepStr = `[STAGE ${i + 1}: ${s.name}]\n- INSTRUCTIONS: ${s.instructions}`;
+        if (s.transitionCondition && !s.isEndNode) {
+          stepStr += `\n- TRANSITION CRITERIA: Proceed to stage ${i + 2} only when: ${s.transitionCondition}`;
+        }
+        if (s.isEndNode) {
+          stepStr += `\n- END NODE: Gracefully end the call after completing these instructions.`;
+        }
+        return stepStr;
+      })
+      .join("\n\n");
+
     flowConfigBlock = `\n## CRITICAL CONVERSATION FLOW (MANDATORY)\nYou must progress through the following stages strictly in order. Do not skip stages unless explicitly forced by the caller. Start at STAGE 1.\n\n${formattedSteps}\n`;
   }
 
@@ -213,7 +219,7 @@ export async function buildVapiAssistant({
 
   const roleProtocol = ROLE_SPECIFIC_PROTOCOLS[agentRole] || "";
 
-const systemPrompt = `
+  const systemPrompt = `
 ## IDENTITY & MISSION
 You are ${agentConfigRow?.name || "Wireline Agent"}, a ${agentRole.replace(/_/g, " ")} specialist.
 
@@ -248,7 +254,13 @@ Today is ${currentDateTime}.
   // Settings — silent override of their config. Direction-specific override:
   // voiceIdOutbound for outbound dial, voiceIdInbound for inbound, voiceId as
   // the shared fallback, and the platform default only if nothing is set.
-  const PLATFORM_DEFAULT_VOICE_ID = "bIHbv24MWmeRgasZH58o";
+  // Platform default voice — 11labs "Adam · Deep" (warm-male). Broad
+  // fit across home services / medical / legal / real estate / SaaS.
+  // Operators can override via FleetSettings → Voice per-agent.
+  // History: prior default was bIHbv24MWmeRgasZH58o (warm-female).
+  // Switched after live A/B feedback that warm-male voices read as
+  // more trustworthy + authoritative on B2B service calls.
+  const PLATFORM_DEFAULT_VOICE_ID = "pNInz6obpgDQGcFmaJgB";
   const directionalVoiceId = isOutbound
     ? agentConfigRow?.voiceIdOutbound
     : agentConfigRow?.voiceIdInbound;
@@ -271,14 +283,33 @@ Today is ${currentDateTime}.
     (agentConfigRow as any)?.silenceTimeoutSeconds ?? archetypeSilenceDefault[archetype] ?? 5;
 
   // Deduplicate and resolve fallback models based on what the primary model is
-  const defaultFallbacks = ["gpt-4o", "claude-3-5-sonnet-20241022", "gemini-1.5-pro", "gpt-4-turbo"];
-  const resolvedFallbacks = defaultFallbacks.filter(m => m !== voiceLlmModel).slice(0, 3);
+  const defaultFallbacks = [
+    "gpt-4o",
+    "claude-3-5-sonnet-20241022",
+    "gemini-1.5-pro",
+    "gpt-4-turbo",
+  ];
+  const resolvedFallbacks = defaultFallbacks.filter((m) => m !== voiceLlmModel).slice(0, 3);
 
   return {
     name: agentConfigRow?.name || "Wireline Agent",
     firstMessage: firstMessage,
     serverUrlSecret: VAPI_WEBHOOK_SECRET,
     silenceTimeoutSeconds,
+    // Latency tuning — these collectively shave ~600-900ms off the
+    // perceived "agent felt slow" gap. Three knobs:
+    //   1. responseDelaySeconds: 0 — Vapi waits this long after the
+    //      caller stops talking before starting to speak. Default is
+    //      ~0.4s, which lets the LLM stream first-token. With 11labs
+    //      streaming on the TTS side we can go straight to 0.
+    //   2. numWordsToInterruptAssistant: 2 — caller can barge in after
+    //      saying just 2 words. Default 3 felt like the agent was
+    //      steamrolling.
+    //   3. backgroundDenoisingEnabled: false — adds latency to the
+    //      audio pipeline; usually unnecessary on modern handsets.
+    responseDelaySeconds: 0,
+    numWordsToInterruptAssistant: 2,
+    backgroundDenoisingEnabled: false,
     model: {
       provider: voiceLlmProvider,
       model: voiceLlmModel,
@@ -289,6 +320,10 @@ Today is ${currentDateTime}.
     voice: {
       provider: resolvedVoiceProvider,
       voiceId: resolvedVoiceId,
+      // 11labs-specific streaming optimization. 4 is the max — slight
+      // quality trade for fastest first-audio-out. Most call quality
+      // differences are imperceptible vs the latency win.
+      optimizeStreamingLatency: 4,
     },
     functions: buildRoleToolDefs(agentRole, enabledToolNames),
   };
