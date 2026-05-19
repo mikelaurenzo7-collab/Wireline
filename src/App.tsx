@@ -2,6 +2,7 @@ import React, { useEffect, lazy, Suspense } from "react";
 import { BrowserRouter, useLocation, useNavigate } from "react-router-dom";
 import AuthPortal from "./components/AuthPortal";
 import { PrivacyPolicy, TermsOfService, DataDeletion, ZoomDocs } from "./components/LegalPage";
+import { ChangelogPage } from "./components/Changelog";
 import CookieConsent from "./components/CookieConsent";
 import ToastStack from "./components/Toast";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -43,6 +44,9 @@ function AppContent() {
   // Integration-specific docs pages — required for marketplace review on
   // platforms like Zoom that demand a vendor-hosted setup guide.
   if (location.pathname === "/docs/zoom") return <ZoomDocs />;
+  // Public changelog — pre-launch trust signal and post-launch
+  // transparency: every prospect can verify "yes they ship."
+  if (location.pathname === "/changelog") return <ChangelogPage />;
 
   // Vertical wedge pages — outbound DMs target these directly with
   // industry-specific copy, but the product behind them is the same
