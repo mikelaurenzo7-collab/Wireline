@@ -555,6 +555,41 @@ router.post(
   },
 );
 
+// Per-tenant cloned-voice catalog (ElevenLabs voice IDs).
+// Idempotent — IF NOT EXISTS on table + index.
+router.post(
+  "/api/admin/migrate-cloned-voices",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const ownerEmail = process.env.OWNER_EMAIL;
+    if (!ownerEmail || req.user?.email !== ownerEmail) {
+      return res.status(403).json({ error: "Owner only." });
+    }
+    try {
+      await drizzle.execute(sql`
+        CREATE TABLE IF NOT EXISTS wireline_cloned_voices (
+          voice_id    TEXT PRIMARY KEY,
+          user_id     UUID NOT NULL,
+          name        TEXT NOT NULL,
+          status      TEXT NOT NULL DEFAULT 'completed'
+                      CHECK (status IN ('processing', 'completed', 'failed')),
+          preview_url TEXT,
+          created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+      `);
+      await drizzle.execute(sql`
+        CREATE INDEX IF NOT EXISTS idx_cloned_voices_user_created
+          ON wireline_cloned_voices (user_id, created_at DESC);
+      `);
+      log.info("migrate-cloned-voices completed", { userId: req.user.id });
+      res.json({ ok: true });
+    } catch (err: any) {
+      log.error("migrate-cloned-voices failed", { error: err?.message });
+      res.status(500).json({ error: err?.message || "Migration failed" });
+    }
+  },
+);
+
 // Per-agent operator-chat workspace table.
 // Idempotent — safe to re-run. Owner-only.
 router.post(

@@ -16,6 +16,7 @@ import { useBranding } from "../contexts/BrandingContext";
 // Modularized Panels
 import { BrandingPanel } from "./admin/BrandingPanel";
 import { CarrierPanel } from "./admin/CarrierPanel";
+import VoiceLibraryPanel from "./admin/VoiceLibraryPanel";
 import { SubscriptionPanel } from "./admin/SubscriptionPanel";
 import { SystemPanel } from "./admin/SystemPanel";
 import { TeamPanel } from "./admin/TeamPanel";
@@ -83,6 +84,7 @@ export default function AdminSettings() {
   type AdminTab =
     | "branding"
     | "carrier"
+    | "voices"
     | "subscription"
     | "team"
     | "flywheel"
@@ -92,6 +94,7 @@ export default function AdminSettings() {
   const VALID_TABS: AdminTab[] = [
     "branding",
     "carrier",
+    "voices",
     "subscription",
     "team",
     "flywheel",
@@ -397,6 +400,7 @@ export default function AdminSettings() {
         [
           "branding",
           "carrier",
+          "voices",
           "subscription",
           "team",
           "flywheel",
@@ -420,17 +424,19 @@ export default function AdminSettings() {
             ? "Branding"
             : t === "carrier"
               ? "Carrier"
-              : t === "subscription"
-                ? "Billing"
-                : t === "team"
-                  ? "Team"
-                  : t === "flywheel"
-                    ? "Growth"
-                    : t === "system"
-                      ? "System"
-                      : t === "quality"
-                        ? "Quality"
-                        : "Activity"}
+              : t === "voices"
+                ? "Voices"
+                : t === "subscription"
+                  ? "Billing"
+                  : t === "team"
+                    ? "Team"
+                    : t === "flywheel"
+                      ? "Growth"
+                      : t === "system"
+                        ? "System"
+                        : t === "quality"
+                          ? "Quality"
+                          : "Activity"}
         </button>
       ))}
     </div>
@@ -504,6 +510,18 @@ export default function AdminSettings() {
                         onDeleteNumber={deletePhoneNumber}
                         onUpdateNumberAgent={updateNumberAgent}
                       />
+                    </motion.div>
+                  )}
+
+                  {activeTab === "voices" && (
+                    <motion.div
+                      key="voices"
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="h-full"
+                    >
+                      <VoiceLibraryPanel />
                     </motion.div>
                   )}
 

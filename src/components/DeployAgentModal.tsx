@@ -1,9 +1,77 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Loader2, ArrowRight, User2, Users2 } from "lucide-react";
+import { X, Loader2, ArrowRight, User2, Users2, Play, Pause } from "lucide-react";
 import { cn } from "../lib/utils";
 import { PREMIUM_VOICES, DEFAULT_VOICE_BY_GENDER } from "./FleetSettings";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
+
+/**
+ * Inline voice preview button — fetches /api/voices/:id/preview
+ * (which 302-redirects to the public ElevenLabs preview MP3) and
+ * plays it. Self-contained: handles its own audio ref + play state.
+ */
+function VoicePreviewButton({ voiceId, voiceName }: { voiceId: string; voiceName: string }) {
+  const [playing, setPlaying] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    // When the parent swaps voiceId, kill any in-flight playback so
+    // we don't have two voices overlapping.
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    setPlaying(false);
+  }, [voiceId]);
+
+  async function toggle() {
+    if (playing) {
+      audioRef.current?.pause();
+      setPlaying(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      const audio = new Audio(`/api/voices/${encodeURIComponent(voiceId)}/preview`);
+      audio.onended = () => setPlaying(false);
+      audio.onerror = () => {
+        setPlaying(false);
+        setLoading(false);
+      };
+      audioRef.current = audio;
+      await audio.play();
+      setPlaying(true);
+      if (typeof window !== "undefined" && (window as any).plausible) {
+        (window as any).plausible("DeployModalVoicePreviewClick", {
+          props: { voice: voiceName },
+        });
+      }
+    } catch {
+      setPlaying(false);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      disabled={loading}
+      className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.22em] text-brand hover:text-brand/80 transition-colors disabled:opacity-50"
+    >
+      {loading ? (
+        <Loader2 className="w-3 h-3 animate-spin" />
+      ) : playing ? (
+        <Pause className="w-3 h-3" />
+      ) : (
+        <Play className="w-3 h-3" />
+      )}
+      {playing ? "Stop preview" : "Hear this voice"}
+    </button>
+  );
+}
 
 export type DeployTemplate = {
   id: string;
@@ -283,24 +351,16 @@ export default function DeployAgentModal({
                         <p className="text-[10px] text-muted/65">
                           Picked: <span className="text-ink/75">{selectedVoice.name}</span>
                         </p>
-                        {/* Voice preview affordance. Real in-app per-voice
-                            samples need an ElevenLabs API key (separate ship);
-                            for now we point operators to the demo line where
-                            our agent Liam uses the same voice catalog. Builds
-                            demo line traffic + sets honest expectations. */}
-                        <a
-                          href="tel:+16305811834"
-                          onClick={() => {
-                            if (typeof window !== "undefined" && (window as any).plausible) {
-                              (window as any).plausible("DeployModalVoicePreviewClick", {
-                                props: { voice: selectedVoice.name },
-                              });
-                            }
-                          }}
-                          className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.22em] text-brand hover:text-brand/80 transition-colors"
-                        >
-                          ▶ Hear voices live on (630) 581-1834
-                        </a>
+                        {/* Real per-voice audio preview via the
+                            ElevenLabs-backed /api/voices/:id/preview
+                            route. Plays a public preview MP3 directly
+                            in the browser. Falls back gracefully if the
+                            voice has no preview (the audio's onerror
+                            handler logs + the button stays clickable). */}
+                        <VoicePreviewButton
+                          voiceId={selectedVoice.id}
+                          voiceName={selectedVoice.name}
+                        />
                       </div>
                     )}
                   </div>

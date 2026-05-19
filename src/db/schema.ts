@@ -288,6 +288,26 @@ export const agentLessons = pgTable(
   }),
 );
 
+// Per-tenant cloned voices — voice_id is the ElevenLabs UUID, name
+// is the operator-given label, preview_url is the ElevenLabs-hosted
+// MP3 sample. Pluggable directly into Vapi assistant configs (Vapi
+// accepts any ElevenLabs voice_id when the API key on file has
+// access to it).
+export const clonedVoices = pgTable(
+  "wireline_cloned_voices",
+  {
+    voiceId: text("voice_id").primaryKey(),
+    userId: uuid("user_id").notNull(),
+    name: text("name").notNull(),
+    status: text("status").default("completed").notNull(), // 'processing' | 'completed' | 'failed'
+    previewUrl: text("preview_url"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    userCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_cloned_voices_user_created ON wireline_cloned_voices USING btree (user_id, created_at DESC)`,
+  }),
+);
+
 // Per-agent operator chat thread. Persistent, ongoing — distinct from
 // /train which is structural agent configuration. Think of this as the
 // private DM channel the operator has with each AI agent: ongoing
