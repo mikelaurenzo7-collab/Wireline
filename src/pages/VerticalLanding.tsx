@@ -66,6 +66,13 @@ interface VerticalConfig {
   secondaryCta: { label: string; href: string };
   /** Compliance / trust-signal footer line. */
   trustLine: string;
+  /**
+   * Vertical-specific FAQ — 3-4 entries handling the most common
+   * objection or curiosity for THIS industry. Drops in below the
+   * pain points; converts visitors who weren't ready to click
+   * the CTA without one more nudge.
+   */
+  faqs: { q: string; a: string }[];
 }
 
 const WEDGES: Record<VerticalKey, VerticalConfig> = {
@@ -108,6 +115,24 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
     trustLine:
       "Built on Twilio carrier infrastructure. White-labeled — customers hear your business name, not ours.",
+    faqs: [
+      {
+        q: "Will customers know they're talking to an AI?",
+        a: 'Only if you choose to disclose. Wireline agents introduce themselves with your business name and the persona you configure — most home-services tenants run them as a named receptionist (e.g. "Sarah from Premier HVAC"). Disclosure is your call; TCPA compliance is logged either way.',
+      },
+      {
+        q: "What happens if the agent doesn't know the answer?",
+        a: "The agent says it doesn't have that detail handy and offers to either text/email the customer once it's looked up, or transfer to you live. Configure the escalation number per shift in Settings. No guessing, no hallucinations — refuses gracefully when uncertain.",
+      },
+      {
+        q: "Can it actually dispatch me on an emergency?",
+        a: 'Yes. Configure on-call rotations and the agent triages by urgency keyword ("water," "smoke," "sparks," "no heat") — pages you via SMS/call, schedules a same-day arrival window, and texts the customer the ETA. Optional: auto-add to the Jobber/ServiceTitan calendar.',
+      },
+      {
+        q: "How much does it cost vs. an answering service?",
+        a: "Most after-hours answering services charge $1-2 per minute or $200-400/month per business. Wireline starts at $49/month with the number + 400 minutes included — and the agent actually books jobs instead of just taking messages.",
+      },
+    ],
   },
 
   medical: {
@@ -149,6 +174,24 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
     trustLine:
       "Built on Twilio + Vapi. White-labeled — patients hear your practice name. HIPAA BAA on Enterprise tier.",
+    faqs: [
+      {
+        q: "Is Wireline HIPAA-compliant?",
+        a: "Wireline runs healthcare-style intake flows today — TCPA disclosure logging, opt-out enforcement, no PHI in transcripts by default. A full HIPAA BAA is available on the Enterprise tier with ~30-day onboarding. We're honest: don't claim certified until certified.",
+      },
+      {
+        q: "Can it actually book to my existing schedule?",
+        a: "Yes. Connect Google Calendar or Outlook in Settings — the agent reads real availability, respects buffer time you set, books the patient, and sends an SMS confirmation. Reschedules and cancellations flow back to the calendar automatically.",
+      },
+      {
+        q: "What about insurance verification?",
+        a: "The agent captures insurance carrier + member ID during intake and writes it to the appointment record. Live eligibility checks via Change Healthcare / Availity are on the roadmap for the Enterprise tier — for now, your front desk verifies before the visit using captured data.",
+      },
+      {
+        q: "Will patients accept an AI receptionist?",
+        a: "Patient response data so far: when the agent is warm, uses your practice name, and resolves the call in under 60 seconds, satisfaction matches or beats live front-desk. The win is no-hold-time. Disclosure is your call — many practices run undisclosed for routine scheduling.",
+      },
+    ],
   },
 
   legal: {
@@ -189,6 +232,24 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
     trustLine:
       "Audit log preserves every disclosure and opt-out. Not a substitute for legal counsel — Wireline is the intake layer, your attorneys deliver the advice.",
+    faqs: [
+      {
+        q: "Does the agent give legal advice?",
+        a: "No. The agent is an intake specialist — captures the matter, schedules the consult, hands off to an attorney. It explicitly tells callers it can't provide legal advice and that anything substantive needs the attorney. Refusal is hard-coded in the directive layer.",
+      },
+      {
+        q: "How does it handle conflict checks?",
+        a: "The agent captures the prospective client name, opposing party name, and matter type during intake. On submission it pings your paralegal in Slack (or your conflict-check tool) with the data. Consult is only added to the attorney calendar after the paralegal clears it.",
+      },
+      {
+        q: "What about attorney-client privilege?",
+        a: 'Every call opens with the privilege disclosure ("this call may be confidential under attorney-client privilege"). The disclosure is logged with timestamp + state + caller phone for the audit trail. Transcripts are encrypted at rest and accessible only to the firm\'s authorized users.',
+      },
+      {
+        q: "Can it qualify by case type before booking?",
+        a: "Yes. Configure your firm's qualification gates (e.g. PI cases require minimum medical bills, family law requires jurisdiction match) and the agent walks through them conversationally. Unqualified callers get a polite referral elsewhere instead of clogging your consult calendar.",
+      },
+    ],
   },
 
   "real-estate": {
@@ -229,6 +290,24 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
     secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
     trustLine:
       "Connects to HubSpot, Salesforce, Google Calendar, Outlook. White-labeled — buyers hear your brokerage name.",
+    faqs: [
+      {
+        q: "Will it know my listings?",
+        a: "Yes. Connect your MLS feed or paste listing URLs into the agent's knowledge base. The agent answers price, beds/baths, square footage, neighborhood basics from real data — and pivots to scheduling a showing when the caller shows real interest.",
+      },
+      {
+        q: "Does it work for a single agent or full brokerage?",
+        a: "Both. Solo agents get one Wireline number + one persona on the Personal tier ($49/mo). Brokerages on Pro/Business assign different numbers to different listing agents, with a brokerage-level fallback when the listing agent is in a showing.",
+      },
+      {
+        q: "How does it qualify the buyer?",
+        a: 'Configurable per-firm: pre-approval status, timeline ("buying in 30 days" vs "just browsing"), price band, working with another agent? Buyers who match your criteria get a same-day showing slot. Cold leads get nurtured via SMS until they\'re ready.',
+      },
+      {
+        q: "Can it follow up on the cold leads I haven't touched?",
+        a: "Yes. Upload your cold-lead CSV from your CRM, set a cadence (weekly, biweekly), and the agent calls them with vertical-specific re-engagement scripts. The lead's original criteria (price, neighborhood) get referenced in the call — feels personal, not robotic.",
+      },
+    ],
   },
 };
 
@@ -396,6 +475,47 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
           Wireline composes this script from your business name, role, calendar, and CRM. You
           customize tone + flow in 5 minutes — no developer required.
         </p>
+      </section>
+
+      {/* FAQ — vertical-specific objection handling. Renders inline
+          accordion-style so the visitor doesn't have to scroll past
+          to the CTA. Each Q&A is the answer to the most common
+          conversion blocker in THIS vertical. */}
+      <section className="relative z-10 max-w-3xl mx-auto px-6 lg:px-10 pb-20">
+        <p className="text-[10px] uppercase tracking-[0.4em] text-brand mb-3 font-medium">
+          Frequently asked
+        </p>
+        <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-8 text-balance">
+          The things {cfg.eyebrow.toLowerCase().replace(/^for /, "")} ask before they sign up.
+        </h2>
+        <div className="space-y-3">
+          {cfg.faqs.map((faq, i) => (
+            <motion.details
+              key={faq.q}
+              initial={{ opacity: 0, y: 8 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: i * 0.05 }}
+              className="group rounded-2xl glass border border-white/10 overflow-hidden"
+            >
+              <summary className="cursor-pointer list-none px-5 py-4 flex items-start gap-3 hover:bg-white/3 transition-colors">
+                <span className="text-[10px] uppercase tracking-[0.3em] text-brand/70 mt-1 shrink-0 font-mono">
+                  Q{i + 1}
+                </span>
+                <span className="flex-1 text-sm sm:text-base text-ink font-medium leading-snug">
+                  {faq.q}
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="text-muted/50 transition-transform group-open:rotate-45 text-xl leading-none mt-0.5"
+                >
+                  +
+                </span>
+              </summary>
+              <div className="px-5 pb-4 pl-[58px] text-sm text-ink/75 leading-relaxed">{faq.a}</div>
+            </motion.details>
+          ))}
+        </div>
       </section>
 
       {/* Bottom CTA */}

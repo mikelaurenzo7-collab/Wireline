@@ -14,10 +14,24 @@ import { Router, Request, Response } from "express";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { sql, gte } from "drizzle-orm";
+import { rateLimit } from "../lib/rate-limit";
 
 const router = Router();
 
-router.get("/api/public/stats", async (_req: Request, res: Response) => {
+router.get("/api/public/stats", async (req: Request, res: Response) => {
+  // 30/min per IP. The endpoint is public + uncached on first hit;
+  // someone hammering it could push DB load and run up Supabase
+  // egress. Honest visitors hit it once on AuthPortal mount.
+  const ip = (
+    req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
+    req.ip ||
+    "unknown"
+  ).trim();
+  const rl = await rateLimit(ip, { bucket: "public_stats", windowMs: 60_000, max: 30 });
+  if (!rl.allowed) {
+    res.setHeader("Retry-After", String(Math.ceil(rl.resetMs / 1000)));
+    return res.status(429).json({ error: "Rate limit exceeded." });
+  }
   try {
     const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 

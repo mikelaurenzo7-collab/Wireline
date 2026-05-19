@@ -65,9 +65,9 @@ const ROWS: Row[] = [
     retell: false,
   },
   {
-    feature: "Claude (Opus 4.7) backbone",
+    feature: "Frontier reasoning model on every agent",
     detail:
-      "Frontier reasoning quality on every agent. Most competitors default to GPT-4 / Llama / Gemini Flash for cost.",
+      "Best-in-class LLM stack tuned for high-stakes conversation. Competitors default to mid-tier models for cost; Wireline doesn't compromise on reasoning quality.",
     wireline: true,
     air: false,
     synthflow: false,
@@ -156,7 +156,7 @@ export default function Compare() {
     <div className="min-h-screen relative bg-paper text-ink">
       <PageMeta
         title="Wireline vs Air / Synthflow / Bland / Vapi / Retell — Feature Comparison"
-        description="Side-by-side comparison of Wireline against the leading AI voice agent platforms. Wireline is the only horizontal platform with voice + email + SMS, supervisor cockpit, Claude backbone, and bundled phone numbers."
+        description="Side-by-side comparison of Wireline against the leading AI voice agent platforms. Wireline is the only horizontal platform with voice + email + SMS, supervisor cockpit, frontier reasoning, and bundled phone numbers."
       />
 
       {/* Aurora backdrop — same restrained palette as the wedge pages. */}
@@ -225,9 +225,9 @@ export default function Compare() {
           </h1>
           <p className="text-base sm:text-lg text-ink/75 max-w-2xl leading-relaxed">
             Wireline is the only horizontal platform that runs voice + SMS + email in one console
-            with supervisor cockpit, Claude backbone, white-label numbers, and a real TCPA ledger.
-            Competitors win on niches — Air is cheaper for pure outbound, Vapi gives developers
-            lower-level control. Here's the full picture.
+            with supervisor cockpit, frontier reasoning, white-label numbers, and a real TCPA
+            ledger. Competitors win on niches — Air is cheaper for pure outbound, Vapi gives
+            developers lower-level control. Here's the full picture.
           </p>
         </motion.div>
       </section>
