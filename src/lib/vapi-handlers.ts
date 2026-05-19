@@ -145,6 +145,40 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
       );
       const result = cap.result;
 
+      // QA score: agent-quality assessment (vs leadScore which is
+      // customer-intent). Derived from the analysis output so we don't
+      // burn another LLM round-trip per call. Surfaced on CallLogs as
+      // a colored score badge so operators see at a glance which calls
+      // need coaching review.
+      //
+      //   baseScore = 60 (neutral)
+      //   +20 if positive sentiment, -20 if negative
+      //   +10 if intent was high (agent moved the customer forward)
+      //   -10 if coaching_note flags a miss
+      //   clamp 0..100
+      const baseScore = 60;
+      const sentimentDelta =
+        result.sentiment === "positive" ? 20 : result.sentiment === "negative" ? -20 : 0;
+      const intentDelta = result.intent_label === "high" ? 10 : 0;
+      const coachingHint = (result.coaching_note || "").toLowerCase();
+      const missDelta = /\bmiss(ed|ing)?\b|\bshould have\b|\bdid not\b|\bfailed to\b/.test(
+        coachingHint,
+      )
+        ? -10
+        : 0;
+      const qaScore = Math.max(
+        0,
+        Math.min(100, baseScore + sentimentDelta + intentDelta + missDelta),
+      );
+      const qaBreakdown = {
+        base: baseScore,
+        sentiment_delta: sentimentDelta,
+        intent_delta: intentDelta,
+        miss_delta: missDelta,
+        rationale: result.coaching_note || "Routine call — no specific coaching note.",
+        scored_at: new Date().toISOString(),
+      };
+
       await drizzle
         .update(schema.callLogs)
         .set({
@@ -152,6 +186,8 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
           intentLabel: result.intent_label,
           sentiment: result.sentiment,
           coachingNote: result.coaching_note,
+          qaScore,
+          qaBreakdown,
         })
         .where(eq(schema.callLogs.vapiCallId, call?.id));
 
