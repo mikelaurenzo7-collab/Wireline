@@ -858,6 +858,16 @@ router.get(
         ),
       );
 
+      const metaMetadata = {
+        page_ids: pageIds,
+        page_names: pages.map((p) => p.name),
+        // Stored so the Data Deletion Callback can map an incoming
+        // revocation event (signed_request.user_id) back to this
+        // tenant. Without this, the callback can ack Meta but can't
+        // disconnect the right account.
+        facebook_user_id: info?.id || null,
+      };
+
       await drizzle
         .insert(schema.crmConnections)
         .values({
@@ -866,7 +876,7 @@ router.get(
           accessToken: accessTokenM,
           expiresAt: expiresAtM,
           connectedEmail: info?.email || info?.name || null,
-          metadata: { page_ids: pageIds, page_names: pages.map((p) => p.name) },
+          metadata: metaMetadata,
         })
         .onConflictDoUpdate({
           target: [schema.crmConnections.userId, schema.crmConnections.provider],
@@ -874,7 +884,7 @@ router.get(
             accessToken: accessTokenM,
             expiresAt: expiresAtM,
             connectedEmail: info?.email || info?.name || null,
-            metadata: { page_ids: pageIds, page_names: pages.map((p) => p.name) },
+            metadata: metaMetadata,
             updatedAt: new Date(),
             active: true,
           },

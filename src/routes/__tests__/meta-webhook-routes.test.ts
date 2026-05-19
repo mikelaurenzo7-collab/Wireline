@@ -103,4 +103,57 @@ describe("Meta Lead Ads webhook", () => {
       .send(body);
     expect(res.status).toBe(200);
   });
+
+  describe("Data Deletion Callback", () => {
+    function buildSignedRequest(payload: object, secret: string) {
+      // Facebook's signed_request format:
+      //   base64url(HMAC-SHA256(encoded_payload)) + "." + encoded_payload
+      const b64url = (b: Buffer): string =>
+        b.toString("base64").replace(/=+$/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+      const encodedPayload = b64url(Buffer.from(JSON.stringify(payload)));
+      const sig = createHmac("sha256", secret).update(encodedPayload).digest();
+      return `${b64url(sig)}.${encodedPayload}`;
+    }
+
+    it("returns 503 when META_APP_SECRET is missing", async () => {
+      delete process.env.META_APP_SECRET;
+      const app = await makeApp();
+      const res = await request(app)
+        .post("/api/webhooks/meta/deletion")
+        .type("form")
+        .send({ signed_request: "anything.anything" });
+      expect(res.status).toBe(503);
+    });
+
+    it("rejects POST with missing signed_request body", async () => {
+      const app = await makeApp();
+      const res = await request(app).post("/api/webhooks/meta/deletion").type("form").send({});
+      expect(res.status).toBe(400);
+    });
+
+    it("rejects POST with bad signature", async () => {
+      const app = await makeApp();
+      const res = await request(app)
+        .post("/api/webhooks/meta/deletion")
+        .type("form")
+        .send({ signed_request: "deadbeef.eyJ1c2VyX2lkIjoiMTIzIn0" });
+      expect(res.status).toBe(400);
+    });
+
+    it("returns valid {url, confirmation_code} for a correctly signed request", async () => {
+      const app = await makeApp();
+      const signed = buildSignedRequest(
+        { user_id: "1234567890", algorithm: "HMAC-SHA256", issued_at: 1700000000 },
+        process.env.META_APP_SECRET!,
+      );
+      const res = await request(app)
+        .post("/api/webhooks/meta/deletion")
+        .type("form")
+        .send({ signed_request: signed });
+      expect(res.status).toBe(200);
+      expect(res.body.url).toMatch(/^https?:\/\//);
+      expect(res.body.url).toContain("fbid=1234567890");
+      expect(res.body.confirmation_code).toMatch(/^WLN-[A-Z0-9]{8}$/);
+    });
+  });
 });

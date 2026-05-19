@@ -243,4 +243,158 @@ router.post(
   },
 );
 
+// ────────────────────────────────────────────────────────────────────
+//  POST — Data Deletion Callback
+//
+//  Facebook POSTs here when a user removes Wireline from their
+//  Facebook account ("Apps & Websites → Remove"). Spec:
+//  https://developers.facebook.com/docs/development/create-an-app/app-dashboard/data-deletion-callback/
+//
+//  Request body:  signed_request=<base64-url(sig).base64-url(json)>
+//  Response (JSON, MUST be 200):
+//    { "url": "<status URL>", "confirmation_code": "<short code>" }
+//
+//  The user is shown the URL + code so they can come back and verify
+//  the deletion completed. We use the confirmation_code as the
+//  primary key for a deletion_requests table (future), but for v1
+//  we generate a short random code, log the request, and mark any
+//  matching meta crm_connections inactive so the integration stops
+//  working immediately.
+// ────────────────────────────────────────────────────────────────────
+
+function parseSignedRequest(
+  signedRequest: string,
+  appSecret: string,
+): { user_id?: string; algorithm?: string } | null {
+  const parts = signedRequest.split(".");
+  if (parts.length !== 2) return null;
+  const [encodedSig, encodedPayload] = parts;
+
+  // base64url decode (replace -_ with +/ then base64 decode)
+  const fromB64Url = (s: string): Buffer =>
+    Buffer.from(s.replace(/-/g, "+").replace(/_/g, "/"), "base64");
+
+  const sig = fromB64Url(encodedSig);
+  const payloadJson = fromB64Url(encodedPayload).toString("utf8");
+
+  // HMAC-SHA256 of the encoded payload (NOT the decoded JSON) using
+  // app secret as the key. Facebook signs the base64url-encoded
+  // string, so we hash that exact string.
+  const expected = createHmac("sha256", appSecret).update(encodedPayload).digest();
+
+  if (sig.length !== expected.length) return null;
+  if (!timingSafeEqual(sig, expected)) return null;
+
+  try {
+    return JSON.parse(payloadJson);
+  } catch {
+    return null;
+  }
+}
+
+router.post(
+  "/api/webhooks/meta/deletion",
+  express.raw({ type: "*/*" }),
+  async (req: Request, res: Response) => {
+    const appSecret = process.env.META_APP_SECRET;
+    if (!appSecret) {
+      log.warn("Meta deletion callback: META_APP_SECRET not set");
+      return res.status(503).json({ error: "deletion service unavailable" });
+    }
+
+    // Body is either application/x-www-form-urlencoded (signed_request=...)
+    // or raw JSON if Facebook ever changes the format. Parse either —
+    // both end up surfacing `signed_request` as the single field we need.
+    const rawBody = (req.body as Buffer | undefined)?.toString("utf8") || "";
+    let signedRequest = "";
+    if (rawBody.startsWith("signed_request=")) {
+      signedRequest = decodeURIComponent(rawBody.slice("signed_request=".length));
+    } else {
+      try {
+        const parsed = JSON.parse(rawBody) as { signed_request?: string };
+        signedRequest = parsed.signed_request || "";
+      } catch {
+        // Form-urlencoded with signed_request not at start — fall back
+        // to manual split. URLSearchParams handles + → space, %xx decoding.
+        const params = new URLSearchParams(rawBody);
+        signedRequest = params.get("signed_request") || "";
+      }
+    }
+    if (!signedRequest) {
+      return res.status(400).json({ error: "missing signed_request" });
+    }
+
+    const payload = parseSignedRequest(signedRequest, appSecret);
+    if (!payload || !payload.user_id) {
+      log.warn("Meta deletion callback: invalid signed_request");
+      return res.status(400).json({ error: "invalid signed_request" });
+    }
+
+    const facebookUserId = String(payload.user_id);
+    // Short code shown to the end user. URL-safe alphabet, 10 chars
+    // — collision risk is negligible at our scale and the code is
+    // only meaningful when paired with the user's facebook_user_id
+    // anyway.
+    const confirmationCode =
+      "WLN-" +
+      Array.from({ length: 8 })
+        .map(() => "ABCDEFGHJKMNPQRSTUVWXYZ23456789"[Math.floor(Math.random() * 31)])
+        .join("");
+
+    // Mark every Meta connection with this Facebook user_id as
+    // inactive. We store the FB user_id in metadata.facebook_user_id
+    // at OAuth time so this lookup is exact-match.
+    try {
+      const matching = await drizzle
+        .select({
+          id: schema.crmConnections.id,
+          userId: schema.crmConnections.userId,
+          metadata: schema.crmConnections.metadata,
+        })
+        .from(schema.crmConnections)
+        .where(
+          and(
+            eq(schema.crmConnections.provider, "meta"),
+            sql`(${schema.crmConnections.metadata}->>'facebook_user_id') = ${facebookUserId}`,
+          ),
+        );
+
+      for (const row of matching || []) {
+        await drizzle
+          .update(schema.crmConnections)
+          .set({
+            active: false,
+            metadata: {
+              ...((row.metadata as Record<string, unknown>) || {}),
+              deletion_requested_at: new Date().toISOString(),
+              deletion_confirmation_code: confirmationCode,
+            },
+            updatedAt: new Date(),
+          })
+          .where(eq(schema.crmConnections.id, row.id));
+
+        log.info("Meta deletion callback honored — connection deactivated", {
+          userId: row.userId,
+          facebookUserId,
+          confirmationCode,
+        });
+      }
+    } catch (err) {
+      log.error("Meta deletion callback DB write failed", {
+        facebookUserId,
+        error: getErrorMessage(err),
+      });
+      // Still return 200 with the code — Facebook will retry on 5xx
+      // and we don't want to fail their UX over a transient DB blip.
+    }
+
+    const baseUrl =
+      (process.env.APP_URL && new URL(process.env.APP_URL).origin) || "https://trywireline.com";
+    return res.status(200).json({
+      url: `${baseUrl}/legal/data-deletion?fbid=${encodeURIComponent(facebookUserId)}&code=${confirmationCode}`,
+      confirmation_code: confirmationCode,
+    });
+  },
+);
+
 export default router;

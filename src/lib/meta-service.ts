@@ -76,20 +76,23 @@ export async function exchangeMetaCode(
 
 /**
  * Probe the connection by fetching the authenticated user's
- * email + name from the Graph API. Used to confirm and label
- * the connection in the UI.
+ * id + email + name from the Graph API. Used to confirm and
+ * label the connection in the UI AND to store the Facebook
+ * user_id in connection metadata so the data deletion callback
+ * (POST /api/webhooks/meta/deletion) can match a revocation
+ * event back to the right tenant.
  */
 export async function getMetaUserInfo(
   accessToken: string,
-): Promise<{ email?: string; name?: string } | null> {
+): Promise<{ id?: string; email?: string; name?: string } | null> {
   try {
     const r = await fetchWithTimeout(
-      `${META_GRAPH}/me?fields=email,name&access_token=${encodeURIComponent(accessToken)}`,
+      `${META_GRAPH}/me?fields=id,email,name&access_token=${encodeURIComponent(accessToken)}`,
       { method: "GET" },
       10_000,
     );
     if (!r.ok) return null;
-    return (await r.json()) as { email?: string; name?: string };
+    return (await r.json()) as { id?: string; email?: string; name?: string };
   } catch (err) {
     log.warn("Meta user info fetch failed", { error: getErrorMessage(err) });
     return null;
