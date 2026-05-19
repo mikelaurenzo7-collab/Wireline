@@ -112,6 +112,11 @@ export const authService = {
         .returning()) as Array<{ id: string; email: string; fullName: string | null }>;
       const user = inserted[0];
 
+      // Soft 14-day trial starts here. Failures don't block signup —
+      // the sweep job will fix up any stragglers.
+      const { startTrialForUser } = await import("./trial-gate");
+      await startTrialForUser(user.id);
+
       return {
         user: {
           id: user.id,

@@ -47,6 +47,24 @@ export const settings = pgTable("wireline_settings", {
     .unique()
     .references(() => users.id, { onDelete: "cascade" }),
   subscriptionStatus: text("subscription_status").default("active"),
+  /**
+   * Wall-clock end of the 14-day soft trial that fires at signup.
+   * NULL on grandfathered accounts created before the trial gate
+   * shipped — those tenants stay on "active" forever.
+   *
+   * When subscriptionStatus = "trialing" and now() > trialEndsAt,
+   * the daily sweep flips status to "trial_expired" and routes that
+   * cost real money (outbound dial, new agent creation) return 402
+   * with an upgrade payload.
+   */
+  trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
+  /**
+   * Outbound-call counter scoped to the trial window. Increments on
+   * every successful POST /api/outbound/dial + /bulk during
+   * subscriptionStatus = "trialing". Capped at 25 by the trial-gate
+   * middleware. Reset to 0 when status flips to "active" via Stripe.
+   */
+  trialOutboundCount: integer("trial_outbound_count").default(0),
   maxAgents: integer("max_agents").default(3),
   vapiPrivateKey: text("vapi_private_key"),
   vapiPhoneNumberId: text("vapi_phone_number_id"),

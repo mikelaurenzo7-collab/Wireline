@@ -24,6 +24,7 @@ import * as claudeBrain from "../lib/claude-brain";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { computeAgentPerformance, emptyAgentPerformance } from "../lib/agent-performance";
 import { computeScorecard, type CallLogRow } from "../lib/agent-scorecard";
+import { enforceTrialAgentCap } from "../lib/trial-gate";
 import { SentryEvents } from "../lib/sentry-events";
 import { normalizeEnabledTools } from "../lib/agent-capabilities";
 import { claudeErr } from "../lib/claude-response-helpers";
@@ -677,182 +678,187 @@ router.post(
   },
 );
 
-router.post("/api/agents", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    // Validate input using Zod schema
-    const validation = parseFormData(AgentFormSchema, {
-      name: req.body.name,
-      role: req.body.role,
-      personality: req.body.personality,
-    });
-
-    if (!validation.success) {
-      return res.status(400).json({ error: "Validation failed", errors: validation.errors });
-    }
-
-    // SECURITY ENFORCEMENT: Check Subscription Status for this specific user.
-    // Also pull business-profile fields so the role + template overlays can
-    // substitute {{businessName}} etc. into the agent's system prompt at
-    // create-time — no manual personalization step needed.
-    const [userSettings] = await drizzle
-      .select({
-        subscriptionStatus: schema.settings.subscriptionStatus,
-        maxAgents: schema.settings.maxAgents,
-        businessName: schema.settings.businessName,
-      })
-      .from(schema.settings)
-      .where(eq(schema.settings.userId, req.user.id))
-      .limit(1);
-
-    // Gating mechanism: Prevent agent creation if the account is unpaid
-    const subscriptionStatus = userSettings?.subscriptionStatus || "active";
-    if (subscriptionStatus !== "active") {
-      return res.status(403).json({ error: "Access Denied: Please upgrade your billing plan." });
-    }
-
-    // Agent Limit Check
-    const maxAgents = userSettings?.maxAgents || 3;
-    const [{ count }] = await drizzle
-      .select({ count: sql`count(*)` })
-      .from(schema.agents)
-      .where(eq(schema.agents.userId, req.user.id));
-
-    const agentCount = Number(count);
-
-    if (agentCount >= maxAgents) {
-      return res
-        .status(403)
-        .json({ error: `Quota Exceeded: Your plan only allows ${maxAgents} agents.` });
-    }
-
-    const { id, personality, templateId, firstMessage, ...rest } = req.body;
-    const agentId = id || `agent-${Date.now()}`;
-    const agentRole = rest.role || DEFAULT_AGENT_ROLE;
-
+router.post(
+  "/api/agents",
+  authenticateUser,
+  enforceTrialAgentCap,
+  async (req: AuthenticatedRequest, res: Response) => {
     try {
-      // Voice rotation: when the operator didn't pick a voice (template
-      // deploys typically don't), assign one from the curated roster by
-      // current agent count so the first 3 agents end up with 3 distinct
-      // voices instead of all sharing the platform default. Operator can
-      // override later in FleetSettings → Voice.
-      const rotatedVoice = pickRotatedVoiceId(agentCount);
-      const agentValues = {
-        ...mapObjectToCamel(rest),
-        id: agentId,
-        userId: req.user.id,
-        voiceId: rest.voice_id || rotatedVoice,
-        channel: rest.channel || "voice",
-        role: agentRole,
-      };
-      // Remove any fields that don't belong in the agents table
-      delete (agentValues as any).personality;
-
-      await drizzle.insert(schema.agents).values(agentValues);
-    } catch (error: any) {
-      log.error("Agent row insert failed", {
-        userId: req.user.id,
-        agentId,
-        error: error.message,
+      // Validate input using Zod schema
+      const validation = parseFormData(AgentFormSchema, {
+        name: req.body.name,
+        role: req.body.role,
+        personality: req.body.personality,
       });
-      return res.status(500).json({ error: "Failed to create agent" });
-    }
 
-    // Phone number is INCLUDED in every monthly tier — auto-provision a
-    // Wireline number from our Twilio pool on the tenant's first agent
-    // creation so they never wire Twilio themselves. Subsequent agents
-    // on the same tier either reuse an unassigned number or refuse if
-    // the tier's number cap is hit (operator sees a clear upgrade
-    // prompt).
-    //
-    // Fire-and-forget: number provisioning takes ~1-2s end-to-end and
-    // the agent-create response shouldn't block on Twilio. The agent
-    // is fully functional without a number (voice falls back to the
-    // Wireline Demo Line); the new number lands within 2s of the
-    // tenant landing on the dashboard.
-    void import("../lib/phone-provisioning")
-      .then(({ provisionTenantNumber }) =>
-        provisionTenantNumber(req.user.id, {
-          agentId,
-          campaignLabel: "auto-on-agent-create",
-        }),
-      )
-      .then((result) => {
-        if (!result.ok) {
-          log.warn("Auto phone provisioning skipped", {
-            userId: req.user.id,
-            agentId,
-            error: result.error,
-          });
-        }
-      })
-      .catch((err) =>
-        log.warn("Auto phone provisioning errored", {
+      if (!validation.success) {
+        return res.status(400).json({ error: "Validation failed", errors: validation.errors });
+      }
+
+      // SECURITY ENFORCEMENT: Check Subscription Status for this specific user.
+      // Also pull business-profile fields so the role + template overlays can
+      // substitute {{businessName}} etc. into the agent's system prompt at
+      // create-time — no manual personalization step needed.
+      const [userSettings] = await drizzle
+        .select({
+          subscriptionStatus: schema.settings.subscriptionStatus,
+          maxAgents: schema.settings.maxAgents,
+          businessName: schema.settings.businessName,
+        })
+        .from(schema.settings)
+        .where(eq(schema.settings.userId, req.user.id))
+        .limit(1);
+
+      // Gating mechanism: Prevent agent creation if the account is unpaid
+      const subscriptionStatus = userSettings?.subscriptionStatus || "active";
+      if (subscriptionStatus !== "active") {
+        return res.status(403).json({ error: "Access Denied: Please upgrade your billing plan." });
+      }
+
+      // Agent Limit Check
+      const maxAgents = userSettings?.maxAgents || 3;
+      const [{ count }] = await drizzle
+        .select({ count: sql`count(*)` })
+        .from(schema.agents)
+        .where(eq(schema.agents.userId, req.user.id));
+
+      const agentCount = Number(count);
+
+      if (agentCount >= maxAgents) {
+        return res
+          .status(403)
+          .json({ error: `Quota Exceeded: Your plan only allows ${maxAgents} agents.` });
+      }
+
+      const { id, personality, templateId, firstMessage, ...rest } = req.body;
+      const agentId = id || `agent-${Date.now()}`;
+      const agentRole = rest.role || DEFAULT_AGENT_ROLE;
+
+      try {
+        // Voice rotation: when the operator didn't pick a voice (template
+        // deploys typically don't), assign one from the curated roster by
+        // current agent count so the first 3 agents end up with 3 distinct
+        // voices instead of all sharing the platform default. Operator can
+        // override later in FleetSettings → Voice.
+        const rotatedVoice = pickRotatedVoiceId(agentCount);
+        const agentValues = {
+          ...mapObjectToCamel(rest),
+          id: agentId,
+          userId: req.user.id,
+          voiceId: rest.voice_id || rotatedVoice,
+          channel: rest.channel || "voice",
+          role: agentRole,
+        };
+        // Remove any fields that don't belong in the agents table
+        delete (agentValues as any).personality;
+
+        await drizzle.insert(schema.agents).values(agentValues);
+      } catch (error: any) {
+        log.error("Agent row insert failed", {
           userId: req.user.id,
           agentId,
-          error: err?.message,
-        }),
-      );
+          error: error.message,
+        });
+        return res.status(500).json({ error: "Failed to create agent" });
+      }
 
-    // Compose personality from layered templates + operator overrides:
-    //   role base (deep methodology) + template overlay (tactic specifics)
-    //   + operator custom (highest priority), with {{businessName}} etc.
-    //   substituted from the operator's settings row.
-    const rolePersonality =
-      ROLE_PERSONALITY_TEMPLATES[agentRole as keyof typeof ROLE_PERSONALITY_TEMPLATES] ||
-      (rest.channel === "email"
-        ? "You are a professional email agent specialized in clear, efficient communication."
-        : "You are a helpful assistant serving as a phone agent.");
+      // Phone number is INCLUDED in every monthly tier — auto-provision a
+      // Wireline number from our Twilio pool on the tenant's first agent
+      // creation so they never wire Twilio themselves. Subsequent agents
+      // on the same tier either reuse an unassigned number or refuse if
+      // the tier's number cap is hit (operator sees a clear upgrade
+      // prompt).
+      //
+      // Fire-and-forget: number provisioning takes ~1-2s end-to-end and
+      // the agent-create response shouldn't block on Twilio. The agent
+      // is fully functional without a number (voice falls back to the
+      // Wireline Demo Line); the new number lands within 2s of the
+      // tenant landing on the dashboard.
+      void import("../lib/phone-provisioning")
+        .then(({ provisionTenantNumber }) =>
+          provisionTenantNumber(req.user.id, {
+            agentId,
+            campaignLabel: "auto-on-agent-create",
+          }),
+        )
+        .then((result) => {
+          if (!result.ok) {
+            log.warn("Auto phone provisioning skipped", {
+              userId: req.user.id,
+              agentId,
+              error: result.error,
+            });
+          }
+        })
+        .catch((err) =>
+          log.warn("Auto phone provisioning errored", {
+            userId: req.user.id,
+            agentId,
+            error: err?.message,
+          }),
+        );
 
-    const businessContext = {
-      businessName: (userSettings as any)?.businessName,
-      businessType: (userSettings as any)?.businessType,
-      operatingHours: (userSettings as any)?.businessHours,
-      escalationContact: (userSettings as any)?.escalationContact,
-      primaryProduct: (userSettings as any)?.primaryProduct,
-    };
+      // Compose personality from layered templates + operator overrides:
+      //   role base (deep methodology) + template overlay (tactic specifics)
+      //   + operator custom (highest priority), with {{businessName}} etc.
+      //   substituted from the operator's settings row.
+      const rolePersonality =
+        ROLE_PERSONALITY_TEMPLATES[agentRole as keyof typeof ROLE_PERSONALITY_TEMPLATES] ||
+        (rest.channel === "email"
+          ? "You are a professional email agent specialized in clear, efficient communication."
+          : "You are a helpful assistant serving as a phone agent.");
 
-    const personalityContent = composeAgentPersonality({
-      rolePersonality,
-      templateId: typeof templateId === "string" ? templateId : null,
-      operatorCustom: typeof personality === "string" ? personality : null,
-      businessContext,
-    });
+      const businessContext = {
+        businessName: (userSettings as any)?.businessName,
+        businessType: (userSettings as any)?.businessType,
+        operatingHours: (userSettings as any)?.businessHours,
+        escalationContact: (userSettings as any)?.escalationContact,
+        primaryProduct: (userSettings as any)?.primaryProduct,
+      };
 
-    try {
-      await drizzle.insert(schema.personality).values({
-        agentId: agentId,
-        userId: req.user.id,
-        content: personalityContent,
+      const personalityContent = composeAgentPersonality({
+        rolePersonality,
+        templateId: typeof templateId === "string" ? templateId : null,
+        operatorCustom: typeof personality === "string" ? personality : null,
+        businessContext,
       });
-    } catch (error: any) {
-      log.error("Agent personality insert failed", {
-        userId: req.user.id,
-        agentId,
-        error: error.message,
-      });
-      await drizzle
-        .delete(schema.agents)
-        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)));
-      return res.status(500).json({ error: "Failed to create agent" });
+
+      try {
+        await drizzle.insert(schema.personality).values({
+          agentId: agentId,
+          userId: req.user.id,
+          content: personalityContent,
+        });
+      } catch (error: any) {
+        log.error("Agent personality insert failed", {
+          userId: req.user.id,
+          agentId,
+          error: error.message,
+        });
+        await drizzle
+          .delete(schema.agents)
+          .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)));
+        return res.status(500).json({ error: "Failed to create agent" });
+      }
+
+      // Audit log: agent creation
+      void auditLogger
+        .logAgentOperation("created", {
+          userId: req.user.id,
+          agentId,
+          agentName: rest.name,
+          metadata: { channel: rest.channel || "voice", archetype: agentRole },
+          ip: req.ip,
+        })
+        .catch((err: unknown) => log.warn("audit log failed", { error: getErrorMessage(err) }));
+
+      res.json({ success: true, id: agentId });
+    } catch (error) {
+      log.error("Agent creation failed", { error: getErrorMessage(error) });
+      res.status(500).json({ error: "Failed to create agent" });
     }
-
-    // Audit log: agent creation
-    void auditLogger
-      .logAgentOperation("created", {
-        userId: req.user.id,
-        agentId,
-        agentName: rest.name,
-        metadata: { channel: rest.channel || "voice", archetype: agentRole },
-        ip: req.ip,
-      })
-      .catch((err: unknown) => log.warn("audit log failed", { error: getErrorMessage(err) }));
-
-    res.json({ success: true, id: agentId });
-  } catch (error) {
-    log.error("Agent creation failed", { error: getErrorMessage(error) });
-    res.status(500).json({ error: "Failed to create agent" });
-  }
-});
+  },
+);
 
 router.put(
   "/api/agents/:id",

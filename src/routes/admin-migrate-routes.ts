@@ -188,11 +188,26 @@ router.post(
         ADD COLUMN IF NOT EXISTS personality_vibe text DEFAULT 'warm';
       `);
 
+      // Trial-gate columns on settings. trialEndsAt = wall-clock end
+      // of the 14-day soft trial; trialOutboundCount = call-counter
+      // capped at 25 during trial. Existing tenants stay grandfathered
+      // (subscriptionStatus = 'active', trialEndsAt = NULL) and never
+      // hit a paywall. Brand-new signups land in 'trialing' state via
+      // startTrialForUser() in auth-service.ts.
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_settings
+        ADD COLUMN IF NOT EXISTS trial_ends_at timestamptz;
+      `);
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_settings
+        ADD COLUMN IF NOT EXISTS trial_outbound_count integer DEFAULT 0;
+      `);
+
       log.info("Auth/agent extras migration completed", { userId: req.user.id });
       return res.json({
         ok: true,
         message:
-          "wireline_password_reset_tokens + agents.silence_timeout_seconds + agents.personality_vibe ensured.",
+          "wireline_password_reset_tokens + agents.silence_timeout_seconds + agents.personality_vibe + settings.trial_ends_at + settings.trial_outbound_count ensured.",
       });
     } catch (e: any) {
       log.error("Auth/agent migration failed", { error: e?.message });
@@ -482,5 +497,56 @@ router.post(
     }
   },
 );
+
+/**
+ * One-shot endpoint to land the trial-gate columns on
+ * wireline_settings. Gated on the Supabase service-role key so it
+ * can run from any container with the secret. Idempotent: every
+ * ALTER uses IF NOT EXISTS. REMOVE after one-shot verification.
+ */
+router.post("/api/admin/run-trial-migration", async (req: Request, res: Response) => {
+  const expected = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const provided = req.headers.authorization?.replace(/^Bearer\s+/i, "").trim();
+  if (!expected || !provided || provided !== expected) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  try {
+    await drizzle.execute(sql`
+      ALTER TABLE wireline_settings
+      ADD COLUMN IF NOT EXISTS trial_ends_at timestamptz;
+    `);
+    await drizzle.execute(sql`
+      ALTER TABLE wireline_settings
+      ADD COLUMN IF NOT EXISTS trial_outbound_count integer DEFAULT 0;
+    `);
+
+    const colsRes = await drizzle.execute(sql`
+      SELECT column_name, data_type, column_default
+        FROM information_schema.columns
+       WHERE table_name = 'wireline_settings'
+         AND column_name IN ('trial_ends_at', 'trial_outbound_count')
+       ORDER BY column_name
+    `);
+    const cols = (colsRes as any).rows ?? [];
+
+    const countsRes = await drizzle.execute(sql`
+      SELECT
+        COUNT(*)::int AS total,
+        COUNT(*) FILTER (WHERE subscription_status = 'active')::int AS active,
+        COUNT(*) FILTER (WHERE subscription_status = 'trialing')::int AS trialing,
+        COUNT(*) FILTER (WHERE subscription_status = 'trial_expired')::int AS trial_expired,
+        COUNT(*) FILTER (WHERE trial_ends_at IS NOT NULL)::int AS with_trial_dates
+      FROM wireline_settings
+    `);
+    const counts = (countsRes as any).rows?.[0] ?? null;
+
+    log.info("trial migration ran", { cols, counts });
+    return res.json({ ok: true, columns: cols, counts });
+  } catch (err: any) {
+    log.error("run-trial-migration failed", { error: err?.message });
+    return res.status(500).json({ error: err?.message || "Migration failed" });
+  }
+});
 
 export default router;

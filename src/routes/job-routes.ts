@@ -259,8 +259,18 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
         await fail(drizzle, job, getErrorMessage(sweepErr));
       }
     }
+    // Flip any trial accounts that have aged out of their 14-day
+    // window. Independent of job-queue processing, fires on every
+    // sweep tick. Idempotent — only updates rows where the flip is
+    // actually needed.
+    let trialsExpired = 0;
+    if (req._sweepMode === "cron" || !req._sweepMode) {
+      const { sweepExpiredTrials } = await import("../lib/trial-gate");
+      trialsExpired = await sweepExpiredTrials();
+    }
+
     const mode = req._sweepMode || "cron";
-    res.json({ processed, mode });
+    res.json({ processed, mode, trials_expired: trialsExpired });
     if (processed > 0) {
       void auditLogger
         .logJobSweep("completed", {
