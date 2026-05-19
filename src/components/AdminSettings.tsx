@@ -370,7 +370,10 @@ export default function AdminSettings() {
   };
 
   const tabSwitcher = (
-    <div className="flex p-1 rounded-full glass border border-white/10" role="tablist">
+    <div
+      className="flex p-1 rounded-full glass border border-white/10 overflow-x-auto snap-x snap-mandatory scrollbar-hide max-w-full"
+      role="tablist"
+    >
       {(
         [
           "branding",
@@ -390,7 +393,7 @@ export default function AdminSettings() {
           aria-controls={`admin-panel-${t}`}
           onClick={() => setActiveTab(t)}
           className={cn(
-            "px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.25em] transition-colors",
+            "shrink-0 snap-start px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.25em] transition-colors whitespace-nowrap",
             activeTab === t ? "bg-brand/20 text-brand" : "text-muted hover:text-ink",
           )}
         >

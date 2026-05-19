@@ -306,7 +306,7 @@ function AttributionView({ days }: { days: number }) {
 
   return (
     <div className="p-1 space-y-3">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-1">
         <Stat
           label="Tagged sources"
           value={rows.filter((r) => r.source !== "(untagged)").length}
@@ -731,7 +731,7 @@ function LeaderboardView({ days }: { days: number }) {
                 </h4>
                 <RolePill role={a.role} />
               </div>
-              <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
                 <Stat label="Calls" value={a.total_calls} />
                 <Stat label="Qualified" value={a.qualified} accent="#4F1E7B" />
                 <Stat label="Avg Score" value={a.avg_lead_score} />
@@ -921,7 +921,7 @@ function AISpendView({ days }: { days: number }) {
       {callsHaveHappened && (
         <>
           {/* Headline cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <SpendStat
               label="Total Spend"
               value={formatMoney(totals?.cost, 2)}
@@ -1560,7 +1560,7 @@ function QualityView({ days }: { days: number }) {
       </div>
 
       {/* Hero stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { label: "Scored Calls", value: data.count, accent: "#4F1E7B" },
           { label: "Average Score", value: `${data.avgScore}/100`, accent: qaColor(data.avgScore) },

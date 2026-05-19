@@ -181,7 +181,7 @@ export default function SmsThreads() {
                         </p>
                       </div>
                       {t.unread_count > 0 && (
-                        <span className="shrink-0 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full bg-brand text-on-brand text-[10px] font-bold">
+                        <span className="shrink-0 inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-brand text-on-brand text-[10px] font-bold">
                           {t.unread_count}
                         </span>
                       )}
