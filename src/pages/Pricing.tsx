@@ -239,6 +239,43 @@ export default function Pricing() {
           Wireline Demo Line for testing. Pick the agent + minute volume you need today; upgrade or
           downgrade any time.
         </motion.p>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.22, duration: 0.6 }}
+          className="text-[11px] uppercase tracking-[0.3em] text-brand/85 mt-5 mb-1"
+        >
+          Built for every service business
+        </motion.p>
+        {/* Industry strip — every wedge page lives at /for/<slug>; this row
+            also acts as a directory for visitors who land on /pricing
+            without industry context. Keeps the platform positioning loud
+            (any vertical works) while still surfacing the wedge URLs that
+            DMs use for narrow outbound. */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.28, duration: 0.6 }}
+          className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[10px] uppercase tracking-[0.28em] text-muted/70"
+        >
+          <Link to="/for/home-services" className="hover:text-brand transition-colors">
+            Home Services
+          </Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/for/medical" className="hover:text-brand transition-colors">
+            Medical
+          </Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/for/legal" className="hover:text-brand transition-colors">
+            Legal
+          </Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/for/real-estate" className="hover:text-brand transition-colors">
+            Real Estate
+          </Link>
+          <span aria-hidden="true">·</span>
+          <span className="text-muted/55">+ every other vertical</span>
+        </motion.div>
       </section>
 
       {/* Why Wireline — moat strip above the tier grid. Each card frames a

@@ -14,6 +14,7 @@ import { MotionConfig } from "motion/react";
 const Pricing = lazy(() => import("./pages/Pricing"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const OAuthComplete = lazy(() => import("./pages/OAuthComplete"));
+const VerticalLanding = lazy(() => import("./pages/VerticalLanding"));
 
 function AppContent() {
   const { user } = useAuth();
@@ -31,6 +32,22 @@ function AppContent() {
   if (location.pathname === "/privacy") return <PrivacyPolicy />;
   if (location.pathname === "/terms") return <TermsOfService />;
   if (location.pathname === "/legal/data-deletion") return <DataDeletion />;
+
+  // Vertical wedge pages — outbound DMs target these directly with
+  // industry-specific copy, but the product behind them is the same
+  // horizontal platform. /for/<slug> maps 1:1 to the WEDGES record
+  // in VerticalLanding.tsx; new wedges land by adding a config entry.
+  const verticalMatch = location.pathname.match(/^\/for\/([a-z-]+)$/);
+  if (verticalMatch) {
+    const slug = verticalMatch[1] as "home-services" | "medical" | "legal" | "real-estate";
+    if (["home-services", "medical", "legal", "real-estate"].includes(slug)) {
+      return (
+        <Suspense fallback={<div className="min-h-screen bg-paper" />}>
+          <VerticalLanding slug={slug} />
+        </Suspense>
+      );
+    }
+  }
   if (location.pathname === "/pricing") {
     return (
       <Suspense fallback={<div className="min-h-screen" />}>
