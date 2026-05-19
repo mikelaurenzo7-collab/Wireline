@@ -17,12 +17,14 @@ import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { Mail, Loader2, Check, AlertTriangle } from "lucide-react";
 import { authFetch } from "../../lib/api";
+import { useToast } from "../../contexts/ToastContext";
 
 type SendOutcome = "idle" | "pending" | "sent" | "no-transport" | "error";
 
 export default function EmailVerifyBanner() {
   const [verified, setVerified] = useState<boolean | null>(null);
   const [outcome, setOutcome] = useState<SendOutcome>("idle");
+  const { success } = useToast();
 
   useEffect(() => {
     authFetch("/api/billing/status")
@@ -38,10 +40,33 @@ export default function EmailVerifyBanner() {
     // redirects to so the banner immediately disappears without
     // needing a page reload after the user clicks the magic link.
     const params = new URLSearchParams(window.location.search);
-    if (params.get("verified") === "1") {
+    const verifiedParam = params.get("verified");
+    if (verifiedParam === "1") {
       setVerified(true);
+      // Celebratory moment for the "I just clicked the magic link"
+      // user. Brand the trial start so they know what they unlocked.
+      // Fires once; the dedupe in ToastContext catches accidental
+      // double-fires from React StrictMode double-render in dev.
+      success(
+        "Email verified — trial started",
+        "14 days · 1 agent · 25 outbound calls included. Pick a template to deploy your first agent.",
+      );
+      // Strip the query param so refreshing the page doesn't re-fire
+      // the toast. History API replace keeps scroll + state intact.
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("verified");
+        window.history.replaceState({}, "", url.toString());
+      } catch {
+        // Ignore — non-browser context (SSR / tests) doesn't need this.
+      }
+    } else if (verifiedParam === "expired") {
+      // Magic link was stale (>24h) or already used. Don't toast — banner
+      // already says "transport down" if relevant; here the user just
+      // needs to resend. Avoid a "Link expired" warning since it's
+      // ambiguous (could mean phishing concern).
     }
-  }, []);
+  }, [success]);
 
   if (verified !== false) return null;
 
