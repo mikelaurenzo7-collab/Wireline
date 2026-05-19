@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Keyboard, LogOut } from "lucide-react";
+import { Menu, X, Keyboard, LogOut, Settings, CreditCard, ChevronDown } from "lucide-react";
 import WirelineMark from "../WirelineMark";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../../contexts/AuthContext";
@@ -15,6 +15,29 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
   const { user, signOut } = useAuth();
   const { branding } = useBranding();
   const [mobileOpen, setMobileOpen] = useState(false);
+  // Avatar-menu open state — replaces the always-visible user pill +
+  // logout icon that ate ~190px of TopBar width and pushed itself
+  // off-screen on narrower laptop viewports (≤1300px ThinkPads).
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement | null>(null);
+  // Close the menu on outside click + Escape.
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setUserMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [userMenuOpen]);
 
   const isActive = (item: NavItem) => {
     if (location.pathname === item.path) return true;
@@ -76,6 +99,9 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
         key={item.label}
         to={item.path}
         {...(item.dataTour ? { "data-tour": item.dataTour } : {})}
+        // title gives icon-only hover tooltip at <xl viewports where
+        // the visible text label is hidden via responsive utility.
+        title={isDrawer ? undefined : item.label}
         aria-label={`Go to ${item.label}`}
         aria-current={active ? "page" : undefined}
         className={cn(
@@ -125,7 +151,12 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
         {withLabel && (
           <span
             className={cn(
+              // Hide labels at narrower laptop widths (<xl = <1280px)
+              // so the TopBar fits on ThinkPads + small MacBooks. Icons
+              // remain visible (tooltip via title attribute) and labels
+              // come back at xl+. Drawer variant always shows the label.
               "relative z-10 whitespace-nowrap transition-all duration-300",
+              isDrawer ? "inline" : "hidden xl:inline",
               active ? "font-semibold" : "font-normal",
             )}
             style={active ? { color: activeTextColor } : undefined}
@@ -217,30 +248,92 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
               </kbd>
             </button>
 
-            <div className="hidden md:flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-2 py-1">
-              <div
-                className="w-6 h-6 rounded-full flex items-center justify-center text-[#3B154C] font-medium text-[10px]"
-                style={{ background: "#FAF9F5" }}
-                aria-hidden="true"
-              >
-                {user?.email?.slice(0, 1).toUpperCase() ?? "?"}
-              </div>
-              <div className="min-w-0 max-w-[140px]">
-                <p className="text-[11px] font-medium text-white truncate leading-none mb-0.5">
-                  {user?.email?.split("@")[0]}
-                </p>
-                <p className="text-[8px] tracking-[0.28em] uppercase text-[#FAF9F5]/50 truncate">
-                  {user?.email?.split("@")[1]}
-                </p>
-              </div>
+            {/* Avatar dropdown — single compact button (~36px) replaces
+                the prior 190px-wide user pill that was getting pushed
+                off-screen on ≤1300px laptop viewports. Click reveals
+                a popover with email + Settings + Billing + Sign out.
+                Standard SaaS UX pattern (Linear / Notion / Stripe). */}
+            <div ref={userMenuRef} className="hidden md:block relative">
               <button
-                onClick={() => signOut()}
-                title="Sign out"
-                aria-label="Sign out"
-                className="shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-[#FAF9F5]/40 hover:text-rose-400 hover:bg-rose-500/20 border border-white/10 hover:border-rose-500/35 transition-colors"
+                onClick={() => setUserMenuOpen((v) => !v)}
+                className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 transition-colors px-1.5 py-1"
+                aria-label="Account menu"
+                aria-expanded={userMenuOpen}
+                aria-haspopup="menu"
+                title={user?.email || "Account"}
               >
-                <LogOut className="w-3 h-3" />
+                <div
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-[#3B154C] font-medium text-[10px]"
+                  style={{ background: "#FAF9F5" }}
+                  aria-hidden="true"
+                >
+                  {user?.email?.slice(0, 1).toUpperCase() ?? "?"}
+                </div>
+                <ChevronDown
+                  className={cn(
+                    "w-3 h-3 text-[#FAF9F5]/60 transition-transform",
+                    userMenuOpen && "rotate-180",
+                  )}
+                />
               </button>
+              <AnimatePresence>
+                {userMenuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -4, scale: 0.97 }}
+                    transition={{ duration: 0.14, ease: [0.16, 1, 0.3, 1] }}
+                    role="menu"
+                    aria-label="Account menu"
+                    className="absolute right-0 top-full mt-2 w-64 rounded-xl glass-strong border border-black/8 shadow-xl overflow-hidden z-50"
+                  >
+                    {/* Email header */}
+                    <div className="px-4 py-3 border-b border-black/8">
+                      <p className="text-[10px] uppercase tracking-[0.22em] text-muted mb-1">
+                        Signed in as
+                      </p>
+                      <p className="text-[12px] font-medium text-ink truncate">
+                        {user?.email || "—"}
+                      </p>
+                    </div>
+                    {/* Menu items */}
+                    <div className="py-1">
+                      <Link
+                        to="/admin?tab=subscription"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-[12px] text-ink/80 hover:bg-black/[0.04] hover:text-ink transition-colors"
+                        role="menuitem"
+                      >
+                        <CreditCard className="w-3.5 h-3.5 text-muted" />
+                        Billing &amp; subscription
+                      </Link>
+                      <Link
+                        to="/admin"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-[12px] text-ink/80 hover:bg-black/[0.04] hover:text-ink transition-colors"
+                        role="menuitem"
+                      >
+                        <Settings className="w-3.5 h-3.5 text-muted" />
+                        Settings
+                      </Link>
+                    </div>
+                    {/* Sign out */}
+                    <div className="border-t border-black/8 py-1">
+                      <button
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          signOut();
+                        }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2 text-[12px] text-rose-600 hover:bg-rose-500/8 transition-colors"
+                        role="menuitem"
+                      >
+                        <LogOut className="w-3.5 h-3.5" />
+                        Sign out
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Mobile hamburger */}
