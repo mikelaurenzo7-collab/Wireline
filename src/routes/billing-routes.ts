@@ -335,6 +335,58 @@ router.get(
       }
       const hasCustomer = customerState === "present";
 
+      // Trial state lives on wireline_settings (separate from Stripe
+      // subscription state above). New tenants land here directly via
+      // authService.signUp → startTrialForUser. Stripe-converted
+      // tenants stay in 'active' here forever; the subscription block
+      // above is the source of truth for paid state. The two blocks
+      // are intentionally independent so the modal and banner can
+      // surface trial countdown / soft-cap warnings BEFORE any
+      // subscription exists.
+      const [settingsRow] = await drizzle
+        .select({
+          status: schema.settings.subscriptionStatus,
+          trialEndsAt: schema.settings.trialEndsAt,
+          trialOutboundCount: schema.settings.trialOutboundCount,
+        })
+        .from(schema.settings)
+        .where(eq(schema.settings.userId, req.user.id))
+        .limit(1);
+
+      let trial: {
+        status: string;
+        days_left: number | null;
+        ends_at: string | null;
+        outbound_used: number;
+        outbound_cap: number;
+        agents_cap: number;
+        agents_used: number;
+      } | null = null;
+      if (settingsRow?.status === "trialing" || settingsRow?.status === "trial_expired") {
+        const { TRIAL_MAX_AGENTS, TRIAL_MAX_OUTBOUND } = await import("../lib/trial-gate");
+        const endsAt = settingsRow.trialEndsAt as Date | string | null | undefined;
+        const endsDate = endsAt instanceof Date ? endsAt : endsAt ? new Date(endsAt as any) : null;
+        const daysLeft = endsDate
+          ? Math.max(0, Math.ceil((endsDate.getTime() - Date.now()) / 86_400_000))
+          : null;
+        // Lazy-expire mirroring the trial-gate middleware: if endsAt
+        // is in the past but the sweep hasn't flipped status yet, show
+        // expired here so the banner / modal copy agrees with reality.
+        const effectiveStatus =
+          settingsRow.status === "trialing" && endsDate && endsDate.getTime() < Date.now()
+            ? "trial_expired"
+            : settingsRow.status;
+        trial = {
+          status: effectiveStatus,
+          days_left: daysLeft,
+          ends_at: endsDate ? endsDate.toISOString() : null,
+          outbound_used: settingsRow.trialOutboundCount ?? 0,
+          outbound_cap: TRIAL_MAX_OUTBOUND,
+          agents_cap: TRIAL_MAX_AGENTS,
+          agents_used: agentCount,
+        };
+      }
+
       res.json({
         stripe_configured: stripeAvailable(),
         agent_count: agentCount ?? 0,
@@ -354,6 +406,7 @@ router.get(
               updated_at: sub.updatedAt,
             }
           : null,
+        trial,
       });
     } catch (e: any) {
       log.error("Failed to load status", { error: getErrorMessage(e) });
