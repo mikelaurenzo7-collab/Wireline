@@ -88,7 +88,9 @@ function LiveStatsTicker() {
         <span className="font-display italic text-2xl text-ink">
           {stats.agents_online.toLocaleString()}
         </span>
-        <span className="text-[9px] uppercase tracking-[0.2em] text-muted/60">Agents Live Now</span>
+        <span className="text-[9px] uppercase tracking-[0.2em] text-muted/60">
+          Agents on Wireline
+        </span>
       </div>
     </>
   );

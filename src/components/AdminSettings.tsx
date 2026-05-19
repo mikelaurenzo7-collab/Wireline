@@ -80,7 +80,7 @@ export default function AdminSettings() {
   const [operationalSlos, setOperationalSlos] = useState<Record<string, unknown> | null>(null);
   const [integrationHealth, setIntegrationHealth] = useState<IntegrationHealthPayload | null>(null);
 
-  const [activeTab, setActiveTab] = useState<
+  type AdminTab =
     | "branding"
     | "carrier"
     | "subscription"
@@ -88,8 +88,27 @@ export default function AdminSettings() {
     | "flywheel"
     | "system"
     | "activity"
-    | "quality"
-  >("branding");
+    | "quality";
+  const VALID_TABS: AdminTab[] = [
+    "branding",
+    "carrier",
+    "subscription",
+    "team",
+    "flywheel",
+    "system",
+    "activity",
+    "quality",
+  ];
+  // Honor ?tab=<name> in the URL so deep links (e.g. the TrialBanner
+  // "Upgrade now" CTA pointing at /admin?tab=subscription) land on
+  // the correct tab instead of bouncing to the default. Falls back
+  // to "branding" for unknown or missing values.
+  const initialTab: AdminTab = (() => {
+    if (typeof window === "undefined") return "branding";
+    const qs = new URLSearchParams(window.location.search).get("tab");
+    return VALID_TABS.includes(qs as AdminTab) ? (qs as AdminTab) : "branding";
+  })();
+  const [activeTab, setActiveTab] = useState<AdminTab>(initialTab);
 
   const [carrierNumbers, setCarrierNumbers] = useState<any[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);

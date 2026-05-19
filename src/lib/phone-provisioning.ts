@@ -29,6 +29,31 @@ import { getErrorMessage } from "./server-utils";
 import { getTwilioClient } from "./twilio-service";
 import { STRIPE_PLANS, planById, type StripePlanId } from "./plan-catalog";
 
+/**
+ * Production-only gate. Auto-provisioning spends real Twilio dollars
+ * per number (~$1.15/mo each), so it must never run in dev/CI/preview
+ * by accident — a developer with prod Twilio creds in their .env who
+ * pokes the create-agent endpoint would burn money on numbers no
+ * tenant will ever use.
+ *
+ * Default behavior:
+ *   - Prod (NODE_ENV=production OR VERCEL=1): provisioning ON
+ *   - Anywhere else: provisioning OFF (returns ok:false silently)
+ *
+ * Operator override (rare):
+ *   - WIRELINE_AUTO_PROVISION_NUMBERS=false → disables even in prod
+ *     (use when Twilio balance is dry to prevent failed-purchase noise)
+ *   - WIRELINE_AUTO_PROVISION_NUMBERS=true  → enables in non-prod
+ *     (use for end-to-end testing in staging with real Twilio creds)
+ */
+function isAutoProvisioningEnabled(): boolean {
+  const flag = process.env.WIRELINE_AUTO_PROVISION_NUMBERS?.toLowerCase().trim();
+  if (flag === "false" || flag === "0" || flag === "off") return false;
+  if (flag === "true" || flag === "1" || flag === "on") return true;
+  // Unset → use prod default
+  return process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
+}
+
 interface ProvisionOpts {
   /** If passed, the new number is assigned to this agent. */
   agentId?: string;
@@ -97,6 +122,16 @@ export async function provisionTenantNumber(
   userId: string,
   opts: ProvisionOpts = {},
 ): Promise<ProvisionResult> {
+  // First gate: env-based safety. Auto-provisioning is OFF in any
+  // non-prod environment by default — see isAutoProvisioningEnabled
+  // above. This stops a developer's dev-environment test of agent
+  // creation from racking up real Twilio bills.
+  if (!isAutoProvisioningEnabled()) {
+    return {
+      ok: false,
+      error: "Auto-provisioning disabled (non-prod or WIRELINE_AUTO_PROVISION_NUMBERS=false).",
+    };
+  }
   const client = getTwilioClient();
   if (!client) {
     return { ok: false, error: "Twilio not configured on platform." };
@@ -128,14 +163,18 @@ export async function provisionTenantNumber(
     };
   }
 
-  // Build the voice/SMS webhook URL the new number will route to.
-  // Same /api/vapi-webhook the manual carrier-onboarding flow uses.
+  // Voice webhook only — same /api/vapi-webhook the existing
+  // vapi-client.ts:397 uses. Inbound SMS is intentionally NOT
+  // wired here: there is no /api/sms/inbound handler yet, and
+  // pointing Twilio at a 404 would generate noise. Twilio
+  // gracefully drops inbound SMS when smsUrl is unset, which is
+  // the correct v1 behavior. When the inbound-SMS handler ships,
+  // back-fill via `incomingPhoneNumbers(sid).update({smsUrl})`.
   const baseUrl =
     process.env.APP_URL && process.env.APP_URL.length > 0
       ? process.env.APP_URL.replace(/\/+$/, "")
       : "https://trywireline.com";
   const voiceUrl = `${baseUrl}/api/vapi-webhook?agentId=${encodeURIComponent(opts.agentId || "")}`;
-  const smsUrl = `${baseUrl}/api/sms/inbound`;
 
   try {
     // Search for a US local number with both voice + SMS support.
@@ -167,8 +206,6 @@ export async function provisionTenantNumber(
       phoneNumber: chosen.phoneNumber,
       voiceUrl,
       voiceMethod: "POST",
-      smsUrl,
-      smsMethod: "POST",
       friendlyName: `Wireline · tenant ${userId.slice(0, 8)}`,
     });
 
