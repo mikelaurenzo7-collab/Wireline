@@ -51,12 +51,26 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
     setMobileOpen(false);
   }, [location.pathname]);
 
-  const renderNavItem = (item: NavItem, opts: { withLabel?: boolean } = {}) => {
+  const renderNavItem = (
+    item: NavItem,
+    opts: { withLabel?: boolean; variant?: "topbar" | "drawer" } = {},
+  ) => {
     const active = isActive(item);
     const badge =
       (navBadges[item.path] ?? 0) +
       (item.matches?.reduce((sum, m) => sum + (navBadges[m] ?? 0), 0) ?? 0);
     const withLabel = opts.withLabel ?? true;
+    const variant = opts.variant ?? "topbar";
+    // Color tokens shift entirely between contexts:
+    //   topbar  → dark silky-purple bar; inactive text is cream, active sits
+    //             on a cream pill with dark-purple text.
+    //   drawer  → cream-paper sheet; inactive text is dark ink, active sits
+    //             on a silky-purple pill with cream text. Without this split
+    //             the mobile drawer rendered cream-on-cream and the nav was
+    //             invisible (only the active item showed through).
+    const isDrawer = variant === "drawer";
+    const activeBg = isDrawer ? "#4F1E7B" : "#FAF9F5";
+    const activeTextColor = isDrawer ? "#FAF9F5" : "#3B154C";
     return (
       <Link
         key={item.label}
@@ -66,33 +80,50 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
         aria-current={active ? "page" : undefined}
         className={cn(
           "group relative flex items-center gap-2 h-8 px-3.5 rounded-xl transition-all text-[12px] font-medium tracking-wide",
-          active ? "text-[#3B154C] shadow-md shadow-[#3B154C]/10" : "text-[#FAF9F5]/75 hover:text-[#FAF9F5] hover:bg-white/8 hover:shadow-sm",
+          isDrawer
+            ? active
+              ? "shadow-md shadow-[#4F1E7B]/20"
+              : "text-ink/70 hover:text-ink hover:bg-black/5"
+            : active
+              ? "shadow-md shadow-[#3B154C]/10"
+              : "text-[#FAF9F5]/75 hover:text-[#FAF9F5] hover:bg-white/8 hover:shadow-sm",
         )}
+        style={active ? { color: activeTextColor } : undefined}
       >
         {active && (
           <motion.div
-            layoutId="topnav-active"
-            className="absolute inset-0 rounded-xl nav-active-bg"
+            layoutId={isDrawer ? "drawernav-active" : "topnav-active"}
+            className="absolute inset-0 rounded-xl"
             transition={{ type: "spring", stiffness: 420, damping: 36 }}
             style={{
-              background: "#FAF9F5",
-              boxShadow: "0 4px 14px -4px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.2) inset",
+              background: activeBg,
+              boxShadow: isDrawer
+                ? "0 6px 18px -6px rgba(79,30,123,0.45), 0 0 0 1px rgba(255,255,255,0.18) inset"
+                : "0 4px 14px -4px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.2) inset",
             }}
           />
         )}
         <item.icon
           className={cn(
             "relative z-10 w-4 h-4 shrink-0 transition-transform duration-300 group-hover:scale-110",
-            active ? "text-[#3B154C]" : "text-[#FAF9F5]/60 group-hover:text-[#FAF9F5]",
+            isDrawer
+              ? active
+                ? ""
+                : "text-ink/55 group-hover:text-ink"
+              : active
+                ? ""
+                : "text-[#FAF9F5]/60 group-hover:text-[#FAF9F5]",
           )}
+          style={active ? { color: activeTextColor } : undefined}
           strokeWidth={active ? 2.5 : 1.75}
         />
         {withLabel && (
           <span
             className={cn(
               "relative z-10 whitespace-nowrap transition-all duration-300",
-              active ? "font-semibold text-[#3B154C]" : "font-normal",
+              active ? "font-semibold" : "font-normal",
             )}
+            style={active ? { color: activeTextColor } : undefined}
           >
             {item.label}
           </span>
@@ -273,7 +304,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
                       {group.label}
                     </div>
                     <div className="space-y-0.5">
-                      {group.items.map((item) => renderNavItem(item))}
+                      {group.items.map((item) => renderNavItem(item, { variant: "drawer" }))}
                     </div>
                   </div>
                 ))}
