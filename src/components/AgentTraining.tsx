@@ -393,7 +393,7 @@ export default function AgentTraining() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute inset-0 overflow-y-auto scrollbar-hide"
+              className="absolute inset-0 overflow-y-auto"
             >
               <AgentActionEngine agentId={selectedAgentId} />
             </motion.div>
@@ -409,7 +409,7 @@ export default function AgentTraining() {
               className="flex flex-col h-full"
             >
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-hide">
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {messages.map((msg, i) => (
                   <motion.div
                     initial={{ opacity: 0, y: 6 }}
@@ -518,7 +518,7 @@ export default function AgentTraining() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="h-full overflow-y-auto scrollbar-hide p-4 space-y-4"
+              className="h-full overflow-y-auto p-4 space-y-4"
             >
               {selectedAgentId !== "default-agent" && (
                 <SupervisedAgentTuner agentId={selectedAgentId} />

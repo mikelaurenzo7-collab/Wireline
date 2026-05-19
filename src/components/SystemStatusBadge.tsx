@@ -73,7 +73,15 @@ export default function SystemStatusBadge() {
       <button
         onClick={() => setOpen((v) => !v)}
         className="flex items-center gap-2 h-9 px-2.5 rounded-lg glass border border-white/8 hover:border-white/20 transition-all whitespace-nowrap"
-        title="System status"
+        title={`System status: ${
+          overall === "ok"
+            ? "Live"
+            : overall === "degraded"
+              ? "Degraded"
+              : overall === "error"
+                ? "Offline"
+                : "Loading"
+        }`}
       >
         <span
           className={cn(
@@ -82,7 +90,11 @@ export default function SystemStatusBadge() {
             overall === "ok" && "animate-pulse",
           )}
         />
-        <span className="text-[10px] uppercase tracking-[0.28em] text-ink/60">
+        {/* Hide the status text at narrow laptop widths — the colored
+            dot alone communicates status, and the title attribute
+            provides the full label on hover. Frees ~90px of TopBar
+            width which Mike's ThinkPad needed back. */}
+        <span className="hidden xl:inline text-[10px] uppercase tracking-[0.28em] text-ink/60">
           {overall === "ok"
             ? "Live"
             : overall === "degraded"

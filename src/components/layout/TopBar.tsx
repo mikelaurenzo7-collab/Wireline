@@ -151,12 +151,13 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
         {withLabel && (
           <span
             className={cn(
-              // Hide labels at narrower laptop widths (<xl = <1280px)
-              // so the TopBar fits on ThinkPads + small MacBooks. Icons
-              // remain visible (tooltip via title attribute) and labels
-              // come back at xl+. Drawer variant always shows the label.
+              // Hide labels at all laptop widths (<2xl = <1536px).
+              // ThinkPad 1366, MacBook Air 1440 — all icon-only.
+              // 1536px+ desktops get the labels back. Icons keep their
+              // hover tooltip via title attribute. Drawer variant always
+              // shows the label.
               "relative z-10 whitespace-nowrap transition-all duration-300",
-              isDrawer ? "inline" : "hidden xl:inline",
+              isDrawer ? "inline" : "hidden 2xl:inline",
               active ? "font-semibold" : "font-normal",
             )}
             style={active ? { color: activeTextColor } : undefined}
