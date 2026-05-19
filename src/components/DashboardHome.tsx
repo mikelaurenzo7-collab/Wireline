@@ -354,11 +354,11 @@ export default function DashboardHome() {
         <div className="shrink-0 relative aurora-ring rounded-2xl">
           <div className="relative rounded-2xl glass-strong overflow-hidden px-6 py-5 flex flex-col md:flex-row md:items-center gap-4">
             <div
-              className="absolute -top-20 -right-20 w-64 h-64 rounded-full opacity-25 blur-3xl pointer-events-none"
+              className="absolute -top-20 -right-20 w-64 h-64 rounded-full max-w-[50vw] max-h-[50vw] sm:max-w-none sm:max-h-none opacity-25 blur-3xl pointer-events-none"
               style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
             />
             <div
-              className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full opacity-20 blur-3xl pointer-events-none"
+              className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full max-w-[50vw] max-h-[50vw] sm:max-w-none sm:max-h-none opacity-20 blur-3xl pointer-events-none"
               style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
             />
             <div className="relative flex items-center gap-4 flex-1 min-w-0">
@@ -442,7 +442,7 @@ export default function DashboardHome() {
         </div>
       )}
       {/* ── Hero stat row ─────────────────────────────────────── */}
-      <div className="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="shrink-0 grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatTile
           label="Total Calls"
           value={stats?.totalCalls ?? 0}
@@ -970,7 +970,7 @@ export default function DashboardHome() {
           scroll
         >
           <WidgetBoundary label="Live demo agents">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
               {WIRELINE_DEMO_AGENTS.map((agent) => (
                 <a
                   key={agent.tel}

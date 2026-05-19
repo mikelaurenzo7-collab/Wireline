@@ -127,11 +127,11 @@ export default function OnboardingQuickstart({
       >
         <div className="relative rounded-3xl glass-strong overflow-hidden p-6 md:p-8">
           <div
-            className="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-30 blur-3xl pointer-events-none"
+            className="absolute -top-32 -right-32 w-96 h-96 rounded-full max-w-[60vw] max-h-[60vw] sm:max-w-none sm:max-h-none opacity-30 blur-3xl pointer-events-none"
             style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
           />
           <div
-            className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full opacity-25 blur-3xl pointer-events-none"
+            className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full max-w-[60vw] max-h-[60vw] sm:max-w-none sm:max-h-none opacity-25 blur-3xl pointer-events-none"
             style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
           />
           <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
@@ -219,11 +219,11 @@ export default function OnboardingQuickstart({
     >
       <div className="relative rounded-3xl glass-strong overflow-hidden">
         <div
-          className="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-30 blur-3xl pointer-events-none"
+          className="absolute -top-32 -right-32 w-96 h-96 rounded-full max-w-[60vw] max-h-[60vw] sm:max-w-none sm:max-h-none opacity-30 blur-3xl pointer-events-none"
           style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
         />
         <div
-          className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full opacity-25 blur-3xl pointer-events-none"
+          className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full max-w-[60vw] max-h-[60vw] sm:max-w-none sm:max-h-none opacity-25 blur-3xl pointer-events-none"
           style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
         />
 
@@ -501,11 +501,11 @@ function AllSetCard() {
     >
       {/* Aurora glow */}
       <div
-        className="absolute -top-20 -right-20 w-64 h-64 rounded-full opacity-20 blur-3xl pointer-events-none"
+        className="absolute -top-20 -right-20 w-64 h-64 rounded-full max-w-[50vw] max-h-[50vw] sm:max-w-none sm:max-h-none opacity-20 blur-3xl pointer-events-none"
         style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
       />
       <div
-        className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full opacity-15 blur-3xl pointer-events-none"
+        className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full max-w-[50vw] max-h-[50vw] sm:max-w-none sm:max-h-none opacity-15 blur-3xl pointer-events-none"
         style={{ background: "radial-gradient(circle, #10B981, transparent)" }}
       />
 

@@ -49,7 +49,7 @@ export default class ErrorBoundary extends Component<Props, State> {
         <div className="relative aurora-ring rounded-3xl max-w-xl w-full">
           <div className="relative rounded-3xl glass-strong overflow-hidden p-8 md:p-10 space-y-6">
             <div
-              className="absolute -top-20 -right-20 w-64 h-64 rounded-full opacity-30 blur-3xl pointer-events-none"
+              className="absolute -top-20 -right-20 w-64 h-64 rounded-full max-w-[50vw] max-h-[50vw] sm:max-w-none sm:max-h-none opacity-30 blur-3xl pointer-events-none"
               style={{ background: "radial-gradient(circle, #E8466A, transparent)" }}
             />
             <div className="relative z-10 flex items-center gap-4">

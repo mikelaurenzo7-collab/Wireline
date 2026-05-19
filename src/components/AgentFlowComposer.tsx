@@ -1,5 +1,5 @@
 // AgentFlowComposer — neural-aligned linear stage progression editor.
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Plus,
   Trash2,
@@ -10,6 +10,9 @@ import {
   CheckCircle2,
   Workflow,
   Loader2,
+  Copy,
+  Sparkles,
+  AlertTriangle,
 } from "lucide-react";
 import { motion, AnimatePresence, Reorder } from "motion/react";
 import { cn } from "../lib/utils";
@@ -28,6 +31,154 @@ export interface FlowStep {
 interface AgentFlowComposerProps {
   agentId: string;
 }
+
+/**
+ * Starter templates — operators pick one to skip the blank-slate barrier.
+ * Each template models a real conversation arc the four demo agents on the
+ * landing page follow. Customizable after load — these are starting points
+ * not constraints. Templates compose into the same FlowStep[] shape the
+ * editor saves, so picking a template just seeds the steps array.
+ */
+const FLOW_TEMPLATES: Record<
+  string,
+  { label: string; description: string; steps: Omit<FlowStep, "id">[] }
+> = {
+  sales: {
+    label: "Outbound Sales",
+    description:
+      "Cold-call SDR flow: open, qualify fit, handle the first objection, book a discovery call.",
+    steps: [
+      {
+        name: "Open & Disarm",
+        instructions:
+          'Open warm and confident. Name yourself + the company in the first sentence. Earn the next 30 seconds with a permission-based ask: "Mind if I take 30 seconds to explain why I\'m calling?"',
+        transitionCondition: "The prospect grants permission to continue OR pushes back politely.",
+      },
+      {
+        name: "Qualify Fit",
+        instructions:
+          "Three quick discovery questions in plain English: team size, how they handle this today, biggest pain. Listen for pain signals. Don't pitch yet.",
+        transitionCondition:
+          "You have a clear read on team size + current setup + at least one pain point.",
+      },
+      {
+        name: "Handle First Objection",
+        instructions:
+          "When the prospect raises a concern (timing, budget, status quo) — acknowledge it, reframe with a real customer parallel, then redirect to the next-step ask. Never argue.",
+        transitionCondition:
+          "Objection acknowledged and reframed. Prospect is open to a follow-up or has firmly declined.",
+      },
+      {
+        name: "Book the Discovery Call",
+        instructions:
+          "Offer two specific time slots in their timezone. Confirm email for the calendar invite. Tell them what to expect (15 minutes, no slides, just their stack).",
+        transitionCondition: "",
+        isEndNode: true,
+      },
+    ],
+  },
+  cs: {
+    label: "Inbound Customer Service",
+    description:
+      "Tier-1 support flow: greet, identify issue, triage to fix-now vs. escalate, confirm resolution.",
+    steps: [
+      {
+        name: "Greet & Listen",
+        instructions:
+          'Open with the company name + your name. Ask the open-ended question: "How can I help you today?" Then shut up and listen.',
+        transitionCondition: "The caller has stated their reason for calling in their own words.",
+      },
+      {
+        name: "Identify & Triage",
+        instructions:
+          "Classify the issue internally: billing / outage / how-to / refund / escalation. Ask ONE clarifying question if intent is unclear, no more. Confirm understanding back to the caller.",
+        transitionCondition: "You've classified the bucket and confirmed back to the caller.",
+      },
+      {
+        name: "Resolve or Escalate",
+        instructions:
+          'If you can answer from the knowledge base — do it. If it needs a human or a record lookup, set the expectation: "I\'m going to hand this to [team] who can pull your account up in real time." Use escalate_to_human if needed.',
+        transitionCondition:
+          "Either you've delivered the answer OR you've handed off to a human / scheduled callback.",
+      },
+      {
+        name: "Confirm & Close",
+        instructions:
+          'Recap what was decided in one sentence. Offer to send the recap by email or text. Thank them. End warm: "Anything else before I let you go?"',
+        transitionCondition: "",
+        isEndNode: true,
+      },
+    ],
+  },
+  scheduler: {
+    label: "Appointment Scheduler",
+    description:
+      "Patient / customer booking flow: identify caller, find a fit slot, confirm, send reminder.",
+    steps: [
+      {
+        name: "Identify Caller",
+        instructions:
+          'Open with the business name + your name. Ask "Are you booking a new appointment or following up on an existing one?" Capture full name + phone if booking new.',
+        transitionCondition:
+          "You have caller's name + know whether this is a new or existing appointment.",
+      },
+      {
+        name: "Capture Need",
+        instructions:
+          'Ask what they\'re booking for (the service type) and any time-of-day preference. Note any urgency cues ("I\'m in pain", "this is for tomorrow").',
+        transitionCondition: "You have the service type + time preference.",
+      },
+      {
+        name: "Offer Slots & Book",
+        instructions:
+          "Use the calendar tool to find 2-3 available slots that match their preference. Offer the soonest match first. Book with book_calendar_event once they pick.",
+        transitionCondition:
+          "An appointment has been booked OR they've declined every offered slot.",
+      },
+      {
+        name: "Confirm & Send Reminder",
+        instructions:
+          "Recap the appointment: date, time, location, what to bring. Send the confirmation via send_text_message or send_email per their preference.",
+        transitionCondition: "",
+        isEndNode: true,
+      },
+    ],
+  },
+  receptionist: {
+    label: "Front-Desk Receptionist",
+    description:
+      "Call routing flow: greet, identify who they need, route or take a message, log everything.",
+    steps: [
+      {
+        name: "Greet & Direct",
+        instructions:
+          'Answer with the company name + your name + "How may I direct your call?" Listen for the person they\'re asking for OR the type of help they need.',
+        transitionCondition: "Caller has told you who or what they're trying to reach.",
+      },
+      {
+        name: "Route or Take a Message",
+        instructions:
+          "If the right person is available, transfer the call. If they're not, offer to take a detailed message OR schedule a callback. Capture full name, phone, reason for call, and urgency.",
+        transitionCondition: "Call was transferred OR a message was captured with all four fields.",
+      },
+      {
+        name: "Flag Urgent Items",
+        instructions:
+          "If the caller indicated urgency (legal, medical, billing-overdue, opportunity-loss), use escalate_to_human to notify the on-call person via Slack immediately, then continue.",
+        transitionCondition: "Urgency has been assessed and escalated if warranted.",
+      },
+      {
+        name: "Close",
+        instructions:
+          "Confirm what will happen next: \"I've left [name] a detailed message with your number, and they'll be in touch by [time].\" Thank them warmly.",
+        transitionCondition: "",
+        isEndNode: true,
+      },
+    ],
+  },
+};
+
+type TemplateKey = keyof typeof FLOW_TEMPLATES;
 
 export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
   const { error: toastError, success: toastSuccess } = useToast();
@@ -93,6 +244,73 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
     setActiveStepId(newId);
   };
 
+  /**
+   * Duplicate an existing step — copies the full config (instructions,
+   * transition, terminal flag) and inserts the clone right after the
+   * source. Common pattern: build a "qualify" stage, then duplicate for
+   * a second-round qualifying call with slightly different prompts.
+   */
+  const handleDuplicateStep = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const source = steps.find((s) => s.id === id);
+    if (!source) return;
+    const idx = steps.findIndex((s) => s.id === id);
+    const clone: FlowStep = {
+      ...source,
+      id: `step-${Date.now()}`,
+      name: `${source.name} (copy)`,
+    };
+    const next = [...steps.slice(0, idx + 1), clone, ...steps.slice(idx + 1)];
+    setSteps(next);
+    setActiveStepId(clone.id);
+  };
+
+  /**
+   * Seed the editor from one of the four starter templates. Idempotent
+   * if steps already exist — guard against accidental overwrite by
+   * confirming when there's existing content.
+   */
+  const handleApplyTemplate = (key: TemplateKey) => {
+    const t = FLOW_TEMPLATES[key];
+    if (!t) return;
+    if (
+      steps.length > 0 &&
+      !window.confirm(
+        `Replace ${steps.length} existing stage${steps.length === 1 ? "" : "s"} with the ${t.label} template?`,
+      )
+    ) {
+      return;
+    }
+    const seeded = t.steps.map((s, i) => ({
+      ...s,
+      id: `step-${Date.now()}-${i}`,
+    }));
+    setSteps(seeded);
+    setActiveStepId(seeded[0]?.id ?? "");
+    toastSuccess(`${t.label} template applied`);
+  };
+
+  /**
+   * Surface-level validation surfaced as a non-blocking banner. We don't
+   * stop the save — operators may genuinely want to draft a half-finished
+   * flow and come back — but we tell them what's incomplete so they can
+   * fix it before going live.
+   */
+  const validationIssues = useMemo(() => {
+    const issues: { stepId: string; message: string }[] = [];
+    for (const s of steps) {
+      if (!s.name.trim()) issues.push({ stepId: s.id, message: "stage is missing a name" });
+      if (!s.instructions.trim())
+        issues.push({ stepId: s.id, message: `${s.name || "stage"}: instructions are empty` });
+      if (!s.isEndNode && !s.transitionCondition.trim())
+        issues.push({
+          stepId: s.id,
+          message: `${s.name || "stage"}: needs a transition condition or terminal flag`,
+        });
+    }
+    return issues;
+  }, [steps]);
+
   const handleRemoveStep = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     const newSteps = steps.filter((s) => s.id !== id);
@@ -146,23 +364,70 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
     <div className="h-full flex flex-col xl:flex-row gap-4 p-4 lg:p-6 overflow-hidden">
       {/* Left Column: Linear Visualizer / List */}
       <div className="w-full xl:w-1/3 flex flex-col gap-3 min-h-0">
-        <div className="glass border border-white/10 rounded-2xl p-4 shrink-0 flex items-center justify-between">
-          <div>
-            <h3 className="font-display italic text-xl text-ink flex items-center gap-2">
-              <Workflow className="w-5 h-5 text-brand" />
-              Conversation Flow
-            </h3>
-            <p className="text-[10px] uppercase tracking-[0.3em] text-muted/70 mt-1">
-              Linear stage progression
-            </p>
+        <div className="glass border border-white/10 rounded-2xl p-4 shrink-0 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-display italic text-xl text-ink flex items-center gap-2">
+                <Workflow className="w-5 h-5 text-brand" />
+                Conversation Flow
+              </h3>
+              <p className="text-[10px] uppercase tracking-[0.3em] text-muted/70 mt-1">
+                Linear stage progression
+              </p>
+            </div>
+            <button
+              onClick={handleAddStep}
+              aria-label="Add stage"
+              className="w-9 h-9 rounded-full glass border border-brand/30 text-brand flex items-center justify-center hover:bg-brand/10 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
           </div>
-          <button
-            onClick={handleAddStep}
-            className="w-8 h-8 rounded-full glass border border-brand/30 text-brand flex items-center justify-center hover:bg-brand/10 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
+
+          {/* Template picker — operators rarely want a blank slate.
+            Seeded flows for the 4 demo agent archetypes get them to a
+            working draft in one click, then they customize. */}
+          <div className="pt-3 border-t border-white/8 space-y-2">
+            <div className="flex items-center gap-1.5 text-[9px] uppercase tracking-[0.32em] text-muted/70">
+              <Sparkles className="w-3 h-3 text-brand" /> Start from a template
+            </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              {(Object.keys(FLOW_TEMPLATES) as TemplateKey[]).map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => handleApplyTemplate(key)}
+                  title={FLOW_TEMPLATES[key].description}
+                  className="text-left rounded-lg glass border border-white/10 px-2.5 py-1.5 text-[10px] text-ink/85 hover:border-brand/40 hover:text-brand transition-colors truncate"
+                >
+                  {FLOW_TEMPLATES[key].label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
+
+        {/* Validation banner — non-blocking. Shows operators what's
+          incomplete without preventing them from saving a draft. */}
+        {validationIssues.length > 0 && (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 space-y-1.5 shrink-0">
+            <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.28em] text-amber-600">
+              <AlertTriangle className="w-3 h-3" />
+              {validationIssues.length} item{validationIssues.length === 1 ? "" : "s"} to finish
+            </div>
+            <ul className="text-[11px] text-ink/70 leading-snug space-y-0.5 max-h-24 overflow-y-auto">
+              {validationIssues.slice(0, 6).map((v, i) => (
+                <li key={i} className="flex items-start gap-1.5">
+                  <span className="text-amber-500 shrink-0">·</span>
+                  <span>{v.message}</span>
+                </li>
+              ))}
+              {validationIssues.length > 6 && (
+                <li className="text-muted/60 text-[10px]">+{validationIssues.length - 6} more</li>
+              )}
+            </ul>
+          </div>
+        )}
 
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide rounded-2xl border border-white/5 bg-black/10 p-2">
           {steps.length === 0 ? (
@@ -221,8 +486,18 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                       </div>
 
                       <button
+                        onClick={(e) => handleDuplicateStep(step.id, e)}
+                        aria-label="Duplicate stage"
+                        title="Duplicate stage"
+                        className="w-7 h-7 rounded-md flex items-center justify-center text-muted/40 hover:text-brand hover:bg-brand/10 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                      <button
                         onClick={(e) => handleRemoveStep(step.id, e)}
-                        className="w-6 h-6 rounded-md flex items-center justify-center text-muted/40 hover:text-rose-500 hover:bg-rose-500/10 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                        aria-label="Delete stage"
+                        title="Delete stage"
+                        className="w-7 h-7 rounded-md flex items-center justify-center text-muted/40 hover:text-rose-500 hover:bg-rose-500/10 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>

@@ -175,7 +175,7 @@ export default function DailyBrief() {
     >
       <div className="relative rounded-3xl glass-strong overflow-hidden">
         <div
-          className="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-30 blur-3xl pointer-events-none"
+          className="absolute -top-32 -right-32 w-96 h-96 rounded-full max-w-[60vw] max-h-[60vw] sm:max-w-none sm:max-h-none opacity-30 blur-3xl pointer-events-none"
           style={{ background: `radial-gradient(circle, ${moodAccent}, transparent)` }}
         />
         <div

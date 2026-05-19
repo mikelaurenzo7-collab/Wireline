@@ -131,7 +131,7 @@ export default function DeployAgentModal({
               {/* Aurora glow */}
               <div
                 aria-hidden="true"
-                className="absolute -top-16 -right-16 w-64 h-64 rounded-full blur-3xl opacity-30 pointer-events-none"
+                className="absolute -top-16 -right-16 w-64 h-64 rounded-full max-w-[50vw] max-h-[50vw] sm:max-w-none sm:max-h-none blur-3xl opacity-30 pointer-events-none"
                 style={{
                   background:
                     "radial-gradient(circle, rgba(79, 30, 123 ,0.35), rgba(79, 30, 123 ,0.18) 60%, transparent)",

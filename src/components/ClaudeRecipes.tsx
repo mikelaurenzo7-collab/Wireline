@@ -307,7 +307,7 @@ function RecipeModal({
       >
         <div className="relative rounded-3xl glass-strong overflow-hidden flex flex-col flex-1 min-h-0">
           <div
-            className="absolute -top-32 -right-32 w-64 h-64 rounded-full opacity-25 blur-3xl pointer-events-none"
+            className="absolute -top-32 -right-32 w-64 h-64 rounded-full max-w-[50vw] max-h-[50vw] sm:max-w-none sm:max-h-none opacity-25 blur-3xl pointer-events-none"
             style={{ background: `radial-gradient(circle, ${meta.accent}, transparent)` }}
           />
 
