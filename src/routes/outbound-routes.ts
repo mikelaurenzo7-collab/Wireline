@@ -6,6 +6,7 @@ import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import { parseFormData } from "../lib/form-validators";
 import { OutboundBulkSchema } from "../lib/form-validators";
+import { enforceSpendCap, enforce24hSpendCap } from "../lib/spend-guards";
 import { isDncBlocked } from "../lib/compliance";
 import { evaluateOutboundConsent } from "../lib/tcpa-consent";
 import { quotaRejectionHeaders } from "../lib/tenant-quotas";
@@ -122,6 +123,15 @@ router.delete(
 router.post(
   "/api/outbound/dial",
   authenticateUser,
+  // Pre-call spend gate — return 402 BEFORE we kick a Vapi call (which
+  // bills per-minute) when the tenant has hit their monthly hard cap
+  // or the platform's 24h Claude budget. Previously these guards were
+  // mounted only on /api/insights/* — meaning a runaway outbound dial
+  // could rack up unlimited Vapi/Anthropic spend without hitting the
+  // brakes. Adding both layers (per-tenant monthly + platform daily)
+  // closes that gap.
+  enforce24hSpendCap,
+  enforceSpendCap,
   dialRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -211,6 +221,12 @@ router.post(
 router.post(
   "/api/outbound/bulk",
   authenticateUser,
+  // Same spend gate as /api/outbound/dial. Bulk endpoint is the
+  // single highest-risk surface for runaway spend — a CSV with 1k
+  // rows triggers 1k Vapi calls. Block at the door, not after we're
+  // 200 calls into a burned card.
+  enforce24hSpendCap,
+  enforceSpendCap,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const validation = parseFormData(OutboundBulkSchema, {
