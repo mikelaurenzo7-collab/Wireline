@@ -398,13 +398,16 @@ async function handleProspectLeads(
   action: ActionItem,
   _context: { sourceId: string },
 ) {
-  const leads = await searchLeads({
-    titles: action.payload.titles,
-    industries: action.payload.industries,
-    states: action.payload.states,
-    employee_ranges: action.payload.employee_ranges,
-    limit: action.payload.limit || 25,
-  });
+  const leads = await searchLeads(
+    {
+      titles: action.payload.titles,
+      industries: action.payload.industries,
+      states: action.payload.states,
+      employee_ranges: action.payload.employee_ranges,
+      limit: action.payload.limit || 25,
+    },
+    userId,
+  );
 
   if (leads.length === 0) {
     log.info("Apollo prospect search returned 0 results", { userId });

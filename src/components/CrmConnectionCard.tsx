@@ -20,6 +20,8 @@ interface IntegrationState {
   hubspot: IntegrationStatus;
   slack: IntegrationStatus;
   zoom: IntegrationStatus;
+  apollo: IntegrationStatus;
+  meta: IntegrationStatus;
 }
 
 type ProviderKey = keyof IntegrationState;
@@ -61,6 +63,21 @@ const PROVIDERS: {
     color: "blue",
     logo: "ZM",
     group: "Meetings",
+    beta: true,
+  },
+  {
+    key: "apollo",
+    label: "Apollo",
+    color: "indigo",
+    logo: "AP",
+    group: "Prospecting",
+  },
+  {
+    key: "meta",
+    label: "Meta (Lead Ads)",
+    color: "fuchsia",
+    logo: "M",
+    group: "Ads",
     beta: true,
   },
 ];

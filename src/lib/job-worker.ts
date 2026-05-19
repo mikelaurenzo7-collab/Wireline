@@ -486,7 +486,7 @@ export async function handleJob(job: JobRow): Promise<void> {
 
     try {
       const [enrichment, calls, emails] = await Promise.all([
-        apolloEnrich(p.customerNumber),
+        apolloEnrich(p.customerNumber, p.userId),
         drizzle
           .select({ summary: schema.callLogs.summary, createdAt: schema.callLogs.createdAt })
           .from(schema.callLogs)
@@ -575,13 +575,16 @@ export async function handleJob(job: JobRow): Promise<void> {
     });
 
     try {
-      const leads = await apolloSearch({
-        titles: settings.targetTitles || [],
-        industries: settings.targetIndustries || [],
-        states: settings.targetStates || [],
-        employee_ranges: settings.targetEmployeeRanges || [],
-        limit: 10,
-      });
+      const leads = await apolloSearch(
+        {
+          titles: settings.targetTitles || [],
+          industries: settings.targetIndustries || [],
+          states: settings.targetStates || [],
+          employee_ranges: settings.targetEmployeeRanges || [],
+          limit: 10,
+        },
+        p.userId,
+      );
 
       let added = 0;
       for (const lead of leads) {

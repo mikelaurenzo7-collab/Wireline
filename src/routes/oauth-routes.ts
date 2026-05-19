@@ -43,6 +43,21 @@ import {
   exchangeZoomCode,
   disconnectZoom,
 } from "../lib/zoom-service";
+import {
+  apolloOAuthConfigured,
+  getApolloAuthUrl,
+  exchangeApolloCode,
+  getApolloUserInfo,
+  disconnectApollo,
+} from "../lib/apollo-service";
+import {
+  metaOAuthConfigured,
+  getMetaAuthUrl,
+  exchangeMetaCode,
+  getMetaUserInfo,
+  subscribePageToLeadgen,
+  disconnectMeta,
+} from "../lib/meta-service";
 import { computeIntegrationHealth } from "../lib/integration-health";
 
 const router = express.Router();
@@ -57,11 +72,9 @@ router.get(
   authenticateUser,
   (req: express.Request, res: express.Response) => {
     if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-      return res
-        .status(500)
-        .json({
-          error: "Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET in environment variables.",
-        });
+      return res.status(500).json({
+        error: "Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET in environment variables.",
+      });
     }
 
     const uid = req.user?.id as string | undefined;
@@ -364,12 +377,9 @@ router.get(
   authenticateUser,
   (req: express.Request, res: express.Response) => {
     if (!sfOAuthConfigured()) {
-      return res
-        .status(500)
-        .json({
-          error:
-            "Missing SALESFORCE_CLIENT_ID or SALESFORCE_CLIENT_SECRET in environment variables.",
-        });
+      return res.status(500).json({
+        error: "Missing SALESFORCE_CLIENT_ID or SALESFORCE_CLIENT_SECRET in environment variables.",
+      });
     }
 
     const baseUrl =
@@ -506,11 +516,9 @@ router.get(
   authenticateUser,
   (req: express.Request, res: express.Response) => {
     if (!hsOAuthConfigured()) {
-      return res
-        .status(500)
-        .json({
-          error: "Missing HUBSPOT_CLIENT_ID or HUBSPOT_CLIENT_SECRET in environment variables.",
-        });
+      return res.status(500).json({
+        error: "Missing HUBSPOT_CLIENT_ID or HUBSPOT_CLIENT_SECRET in environment variables.",
+      });
     }
 
     const baseUrl =
@@ -641,6 +649,274 @@ router.post(
 );
 
 // ────────────────────────────────────────────────────────────────────
+//  Apollo OAuth
+// ────────────────────────────────────────────────────────────────────
+
+router.get(
+  "/api/oauth/apollo/url",
+  oauthRateLimiter,
+  authenticateUser,
+  (req: express.Request, res: express.Response) => {
+    if (!apolloOAuthConfigured()) {
+      return res
+        .status(503)
+        .json({ error: "Apollo integration is finishing setup. Try again shortly." });
+    }
+    const baseUrl =
+      (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+      `${req.protocol}://${req.get("host")}`;
+    const redirectUri = `${baseUrl}/api/oauth/apollo/callback`;
+    const uid = req.user?.id as string | undefined;
+    const authUrl = getApolloAuthUrl(
+      redirectUri,
+      generateOAuthState(uid ? { userId: uid } : undefined),
+    );
+    res.json({ url: authUrl });
+  },
+);
+
+router.get(
+  "/api/oauth/apollo/callback",
+  oauthRateLimiter,
+  async (req: express.Request, res: express.Response) => {
+    const { code, state, error, error_description } = req.query;
+    if (error) {
+      log.warn("Apollo OAuth error from provider", { error, error_description });
+      return res.status(400).send(`Apollo OAuth error: ${error_description}`);
+    }
+    const vs = verifyOAuthState(state as string | undefined);
+    if (!vs.ok) {
+      return res
+        .status(400)
+        .send("Invalid or expired OAuth state. Please restart the sign-in flow.");
+    }
+    if (!code || typeof code !== "string") {
+      return res.status(400).send("No code provided by Apollo.");
+    }
+    try {
+      const baseUrl =
+        (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+        `${req.protocol}://${req.get("host")}`;
+      const redirectUri = `${baseUrl}/api/oauth/apollo/callback`;
+      const tokens = await exchangeApolloCode(code, redirectUri);
+
+      const userId: string | null = vs.userId ?? (await resolveUserIdFromOAuthSession(req));
+      if (!userId) {
+        return res.status(401).send("Could not identify user. Please reconnect from the app.");
+      }
+
+      const info = await getApolloUserInfo(tokens.access_token);
+      const accessTokenA = encryptSecret(tokens.access_token);
+      const refreshTokenA = tokens.refresh_token ? encryptSecret(tokens.refresh_token) : null;
+      const expiresAtA = new Date(Date.now() + tokens.expires_in * 1000);
+
+      await drizzle
+        .insert(schema.crmConnections)
+        .values({
+          userId,
+          provider: "apollo",
+          accessToken: accessTokenA,
+          refreshToken: refreshTokenA,
+          expiresAt: expiresAtA,
+          connectedEmail: info?.email || info?.team || null,
+        })
+        .onConflictDoUpdate({
+          target: [schema.crmConnections.userId, schema.crmConnections.provider],
+          set: {
+            accessToken: accessTokenA,
+            refreshToken: refreshTokenA,
+            expiresAt: expiresAtA,
+            connectedEmail: info?.email || info?.team || null,
+            updatedAt: new Date(),
+            active: true,
+          },
+        });
+
+      const targetOrigin =
+        (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+        `${req.protocol}://${req.get("host")}`;
+      const cspNonce = generateCspNonce();
+      res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, cspNonce));
+      res.send(`
+      <html><body><script nonce="${cspNonce}">
+        if (window.opener) {
+          window.opener.postMessage({ type: 'CRM_OAUTH_SUCCESS', provider: 'apollo' }, ${JSON.stringify(targetOrigin)});
+          window.close();
+        } else { window.location.href = '/'; }
+      </script><p>Apollo connected successfully. You can close this window.</p></body></html>
+    `);
+    } catch (e: any) {
+      log.error("Apollo OAuth callback failed", { error: e?.message || String(e) });
+      res.status(500).send("Apollo authentication failed. Please try again.");
+    }
+  },
+);
+
+router.post(
+  "/api/oauth/apollo/disconnect",
+  authenticateUser,
+  async (req: express.Request, res: express.Response) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    try {
+      await disconnectApollo(userId);
+      res.json({ ok: true });
+    } catch (e: any) {
+      log.error("Apollo disconnect failed", { error: e?.message });
+      res.status(500).json({ error: "Failed to disconnect Apollo" });
+    }
+  },
+);
+
+// ────────────────────────────────────────────────────────────────────
+//  Meta OAuth (placeholder — connect button shows, data flows are
+//  future work). Routes return 503 until META_APP_ID + META_APP_SECRET
+//  land in env. When configured, the OAuth dance + token storage work
+//  end-to-end; the Lead Ads webhook + CAPI export ship in a later
+//  phase, at which point the stored token is already there to use.
+// ────────────────────────────────────────────────────────────────────
+
+router.get(
+  "/api/oauth/meta/url",
+  oauthRateLimiter,
+  authenticateUser,
+  (req: express.Request, res: express.Response) => {
+    if (!metaOAuthConfigured()) {
+      return res
+        .status(503)
+        .json({ error: "Meta integration is finishing setup. Try again shortly." });
+    }
+    const baseUrl =
+      (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+      `${req.protocol}://${req.get("host")}`;
+    const redirectUri = `${baseUrl}/api/oauth/meta/callback`;
+    const uid = req.user?.id as string | undefined;
+    const authUrl = getMetaAuthUrl(
+      redirectUri,
+      generateOAuthState(uid ? { userId: uid } : undefined),
+    );
+    res.json({ url: authUrl });
+  },
+);
+
+router.get(
+  "/api/oauth/meta/callback",
+  oauthRateLimiter,
+  async (req: express.Request, res: express.Response) => {
+    const { code, state, error, error_description } = req.query;
+    if (error) {
+      log.warn("Meta OAuth error from provider", { error, error_description });
+      return res.status(400).send(`Meta OAuth error: ${error_description}`);
+    }
+    const vs = verifyOAuthState(state as string | undefined);
+    if (!vs.ok) {
+      return res
+        .status(400)
+        .send("Invalid or expired OAuth state. Please restart the sign-in flow.");
+    }
+    if (!code || typeof code !== "string") {
+      return res.status(400).send("No code provided by Meta.");
+    }
+    try {
+      const baseUrl =
+        (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+        `${req.protocol}://${req.get("host")}`;
+      const redirectUri = `${baseUrl}/api/oauth/meta/callback`;
+      const tokens = await exchangeMetaCode(code, redirectUri);
+
+      const userId: string | null = vs.userId ?? (await resolveUserIdFromOAuthSession(req));
+      if (!userId) {
+        return res.status(401).send("Could not identify user. Please reconnect from the app.");
+      }
+
+      const info = await getMetaUserInfo(tokens.access_token);
+      const accessTokenM = encryptSecret(tokens.access_token);
+      const expiresAtM = tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000) : null;
+
+      // Pull the pages the user manages so the Lead Ads webhook can
+      // route incoming events to this tenant. The /me/accounts call
+      // returns each page's own access_token (needed to subscribe
+      // that page to leadgen events). We use a quick refetch with
+      // access_token in the field selector to keep both calls under
+      // a single roundtrip cost.
+      const pageRows = await fetch(
+        `https://graph.facebook.com/v18.0/me/accounts?fields=id,name,access_token&access_token=${encodeURIComponent(tokens.access_token)}`,
+      )
+        .then((r) => (r.ok ? r.json() : { data: [] }))
+        .catch(() => ({ data: [] }));
+      const pages: { id: string; name: string; access_token?: string }[] = pageRows.data || [];
+      const pageIds = pages.map((p) => p.id);
+
+      // Best-effort: subscribe every managed page to leadgen events.
+      // Failures don't block the OAuth flow — operator can re-trigger
+      // later via a reconnect.
+      await Promise.all(
+        pages.map((p) =>
+          p.access_token
+            ? subscribePageToLeadgen(p.id, p.access_token).catch(() => false)
+            : Promise.resolve(false),
+        ),
+      );
+
+      await drizzle
+        .insert(schema.crmConnections)
+        .values({
+          userId,
+          provider: "meta",
+          accessToken: accessTokenM,
+          expiresAt: expiresAtM,
+          connectedEmail: info?.email || info?.name || null,
+          metadata: { page_ids: pageIds, page_names: pages.map((p) => p.name) },
+        })
+        .onConflictDoUpdate({
+          target: [schema.crmConnections.userId, schema.crmConnections.provider],
+          set: {
+            accessToken: accessTokenM,
+            expiresAt: expiresAtM,
+            connectedEmail: info?.email || info?.name || null,
+            metadata: { page_ids: pageIds, page_names: pages.map((p) => p.name) },
+            updatedAt: new Date(),
+            active: true,
+          },
+        });
+
+      const targetOrigin =
+        (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+        `${req.protocol}://${req.get("host")}`;
+      const cspNonce = generateCspNonce();
+      res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, cspNonce));
+      res.send(`
+      <html><body><script nonce="${cspNonce}">
+        if (window.opener) {
+          window.opener.postMessage({ type: 'CRM_OAUTH_SUCCESS', provider: 'meta' }, ${JSON.stringify(targetOrigin)});
+          window.close();
+        } else { window.location.href = '/'; }
+      </script><p>Meta connected successfully. You can close this window.</p></body></html>
+    `);
+    } catch (e: any) {
+      log.error("Meta OAuth callback failed", { error: e?.message || String(e) });
+      res.status(500).send("Meta authentication failed. Please try again.");
+    }
+  },
+);
+
+router.post(
+  "/api/oauth/meta/disconnect",
+  authenticateUser,
+  async (req: express.Request, res: express.Response) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    try {
+      await disconnectMeta(userId);
+      res.json({ ok: true });
+    } catch (e: any) {
+      log.error("Meta disconnect failed", { error: e?.message });
+      res.status(500).json({ error: "Failed to disconnect Meta" });
+    }
+  },
+);
+
+// ────────────────────────────────────────────────────────────────────
 //  CRM Connection Status (shared endpoint)
 // ────────────────────────────────────────────────────────────────────
 
@@ -673,6 +949,8 @@ router.get(
       const hsConn = findBy("hubspot");
       const slackConn = findBy("slack");
       const zoomConn = findBy("zoom");
+      const apolloConn = findBy("apollo");
+      const metaConn = findBy("meta");
 
       res.json({
         salesforce: sfConn
@@ -709,6 +987,20 @@ router.get(
               connected_at: zoomConn.createdAt,
             }
           : { connected: false, configured: zoomOAuthConfigured() },
+        apollo: apolloConn
+          ? {
+              connected: true,
+              email: apolloConn.connectedEmail,
+              connected_at: apolloConn.createdAt,
+            }
+          : { connected: false, configured: apolloOAuthConfigured() },
+        meta: metaConn
+          ? {
+              connected: true,
+              email: metaConn.connectedEmail,
+              connected_at: metaConn.createdAt,
+            }
+          : { connected: false, configured: metaOAuthConfigured() },
       });
     } catch (e: any) {
       log.error("CRM status check failed", { error: e?.message });
@@ -727,11 +1019,9 @@ router.get(
   authenticateUser,
   (req: express.Request, res: express.Response) => {
     if (!slackOAuthConfigured()) {
-      return res
-        .status(500)
-        .json({
-          error: "Missing SLACK_CLIENT_ID or SLACK_CLIENT_SECRET in environment variables.",
-        });
+      return res.status(500).json({
+        error: "Missing SLACK_CLIENT_ID or SLACK_CLIENT_SECRET in environment variables.",
+      });
     }
     const baseUrl =
       (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||

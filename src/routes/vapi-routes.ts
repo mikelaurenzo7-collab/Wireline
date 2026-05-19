@@ -451,7 +451,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
         try {
           const { phone_number } = toolCall.function.arguments;
           const { enrichLead } = await import("../lib/apollo-service");
-          const profile = await enrichLead(phone_number);
+          const profile = await enrichLead(phone_number, agent?.user_id);
           if (profile) {
             results.push({
               toolCallId: toolCall.id,
@@ -473,7 +473,10 @@ router.post("/api/vapi-webhook", async (req, res) => {
           const { contacts } = await service.searchContacts(query);
           results.push({
             toolCallId: toolCall.id,
-            result: contacts && contacts.length > 0 ? `Found CRM contacts: ${JSON.stringify(contacts)}` : "No contacts found or CRM not connected.",
+            result:
+              contacts && contacts.length > 0
+                ? `Found CRM contacts: ${JSON.stringify(contacts)}`
+                : "No contacts found or CRM not connected.",
           });
         } catch {
           results.push({ toolCallId: toolCall.id, result: "CRM search error." });
@@ -516,7 +519,9 @@ router.post("/api/vapi-webhook", async (req, res) => {
           });
           results.push({
             toolCallId: toolCall.id,
-            result: success ? "Opportunity created successfully in CRM." : "Failed to create opportunity.",
+            result: success
+              ? "Opportunity created successfully in CRM."
+              : "Failed to create opportunity.",
           });
         } catch {
           results.push({ toolCallId: toolCall.id, result: "CRM opportunity error." });
@@ -530,10 +535,20 @@ router.post("/api/vapi-webhook", async (req, res) => {
           if (agent?.user_id) {
             const slackCh = await getDefaultChannel(agent.user_id);
             if (slackCh) {
-              await slackPostMessage(agent.user_id, slackCh, `🤖 *Agent Notification*\n${slackMsg}`);
-              results.push({ toolCallId: toolCall.id, result: "Slack notification sent successfully." });
+              await slackPostMessage(
+                agent.user_id,
+                slackCh,
+                `🤖 *Agent Notification*\n${slackMsg}`,
+              );
+              results.push({
+                toolCallId: toolCall.id,
+                result: "Slack notification sent successfully.",
+              });
             } else {
-              results.push({ toolCallId: toolCall.id, result: "Slack integration not configured." });
+              results.push({
+                toolCallId: toolCall.id,
+                result: "Slack integration not configured.",
+              });
             }
           }
         } catch {
@@ -552,7 +567,9 @@ router.post("/api/vapi-webhook", async (req, res) => {
           });
           results.push({
             toolCallId: toolCall.id,
-            result: zoomMeeting ? `Zoom meeting created: ${zoomMeeting.join_url}` : "Failed to create Zoom meeting.",
+            result: zoomMeeting
+              ? `Zoom meeting created: ${zoomMeeting.join_url}`
+              : "Failed to create Zoom meeting.",
           });
         } catch {
           results.push({ toolCallId: toolCall.id, result: "Zoom error." });
@@ -567,7 +584,10 @@ router.post("/api/vapi-webhook", async (req, res) => {
             action: "payment_promise",
             metadata: { amount_promised, payment_date, payment_method },
           });
-          results.push({ toolCallId: toolCall.id, result: "Payment promise legally recorded in compliance ledger." });
+          results.push({
+            toolCallId: toolCall.id,
+            result: "Payment promise legally recorded in compliance ledger.",
+          });
         } catch {
           results.push({ toolCallId: toolCall.id, result: "Failed to record payment promise." });
         }
@@ -582,21 +602,27 @@ router.post("/api/vapi-webhook", async (req, res) => {
               userId: agent?.user_id,
               agentId: webhookAgentId,
               taskType: "ticket",
-              description: `[${severity.toUpperCase()}] ${issue_summary} (Codes: ${error_codes || 'None'})`,
+              description: `[${severity.toUpperCase()}] ${issue_summary} (Codes: ${error_codes || "None"})`,
               priority: severity === "critical" ? "high" : severity === "high" ? "high" : "medium",
               status: "pending",
               sourceType: "phone_call",
               targetChannel: "manual",
             })
             .returning({ id: schema.fleetTasks.id });
-          results.push({ toolCallId: toolCall.id, result: `Support ticket #${task.id.split("-")[0]} created.` });
+          results.push({
+            toolCallId: toolCall.id,
+            result: `Support ticket #${task.id.split("-")[0]} created.`,
+          });
         } catch {
           results.push({ toolCallId: toolCall.id, result: "Failed to create support ticket." });
         }
       }
 
       if (toolCall.function.name === "leave_voicemail") {
-        results.push({ toolCallId: toolCall.id, result: "Voicemail recorded. Please say goodbye and end the call now." });
+        results.push({
+          toolCallId: toolCall.id,
+          result: "Voicemail recorded. Please say goodbye and end the call now.",
+        });
       }
 
       if (toolCall.function.name === "schedule_callback") {
@@ -613,7 +639,10 @@ router.post("/api/vapi-webhook", async (req, res) => {
             targetChannel: "manual",
             createdAt: new Date(),
           });
-          results.push({ toolCallId: toolCall.id, result: `Callback securely scheduled for ${callback_datetime}.` });
+          results.push({
+            toolCallId: toolCall.id,
+            result: `Callback securely scheduled for ${callback_datetime}.`,
+          });
         } catch {
           results.push({ toolCallId: toolCall.id, result: "Failed to schedule callback." });
         }
@@ -632,7 +661,10 @@ router.post("/api/vapi-webhook", async (req, res) => {
             targetChannel: "manual",
             createdAt: new Date(),
           });
-          results.push({ toolCallId: toolCall.id, result: "Customer profile structured and saved." });
+          results.push({
+            toolCallId: toolCall.id,
+            result: "Customer profile structured and saved.",
+          });
         } catch {
           results.push({ toolCallId: toolCall.id, result: "Failed to capture profile." });
         }
@@ -649,7 +681,11 @@ router.post("/api/vapi-webhook", async (req, res) => {
               callId: (payload.call as any)?.id || "unknown",
             });
           }
-          results.push({ toolCallId: toolCall.id, result: "Escalation signal sent to human supervisors. If you can transfer the call, do it now, otherwise apologize and say a human will call back." });
+          results.push({
+            toolCallId: toolCall.id,
+            result:
+              "Escalation signal sent to human supervisors. If you can transfer the call, do it now, otherwise apologize and say a human will call back.",
+          });
         } catch {
           results.push({ toolCallId: toolCall.id, result: "Failed to send escalation signal." });
         }
@@ -673,16 +709,24 @@ router.post("/api/vapi-webhook", async (req, res) => {
               .where(
                 and(
                   eq(schema.callLogs.customerNumber, safePhone),
-                  eq(schema.callLogs.userId, agent.user_id)
-                )
+                  eq(schema.callLogs.userId, agent.user_id),
+                ),
               )
               .orderBy(sql`${schema.callLogs.createdAt} DESC`)
               .limit(3);
             if (pastCalls.length > 0) {
-              const summaries = pastCalls.map((c) => `- ${c.createdAt?.toISOString()}: [${c.intentLabel}] ${c.summary}`).join("\\n");
-              results.push({ toolCallId: toolCall.id, result: `Past 3 interactions:\n${summaries}` });
+              const summaries = pastCalls
+                .map((c) => `- ${c.createdAt?.toISOString()}: [${c.intentLabel}] ${c.summary}`)
+                .join("\\n");
+              results.push({
+                toolCallId: toolCall.id,
+                result: `Past 3 interactions:\n${summaries}`,
+              });
             } else {
-              results.push({ toolCallId: toolCall.id, result: "No recent interactions found for this caller." });
+              results.push({
+                toolCallId: toolCall.id,
+                result: "No recent interactions found for this caller.",
+              });
             }
           } else {
             results.push({ toolCallId: toolCall.id, result: "Could not identify caller number." });
