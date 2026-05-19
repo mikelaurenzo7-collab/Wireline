@@ -87,9 +87,10 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
 
   return (
     <motion.section
-      initial={{ opacity: 0, y: 6 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative rounded-2xl glass border border-white/10 p-4 overflow-hidden"
+      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      className="relative rounded-2xl premium-glass card-interactive-premium p-5 overflow-hidden"
     >
       <div
         aria-hidden="true"
@@ -99,32 +100,32 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
 
       <header className="relative flex items-start gap-3 mb-4">
         <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border border-white/10"
+          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border border-white/10 shadow-lg shadow-brand/10"
           style={{
             background: "linear-gradient(135deg, rgba(10,200,212,0.20), rgba(10,200,212,0.05))",
             color: "#0AC8D4",
           }}
         >
-          <Target className="w-4 h-4" />
+          <Target className="w-4.5 h-4.5" />
         </div>
         <div className="min-w-0 flex-1">
           <h3 className="font-display italic text-lg text-ink leading-tight">
             {title ?? `Performance · ${data.window_days}d`}
           </h3>
           <p className="text-[10px] text-muted/70 leading-relaxed mt-0.5 inline-flex items-center gap-1.5">
-            <Sparkles className="w-2.5 h-2.5" />
+            <Sparkles className="w-2.5 h-2.5 text-brand" />
             Optimizing for <span className="text-ink/80 font-medium">{data.kpi_focus}</span>
             {" · "}
-            {formatInt(data.sample_size)} {data.sample_size === 1 ? "call" : "calls"} sampled
+            <span className="text-brand font-semibold">{formatInt(data.sample_size)}</span> {data.sample_size === 1 ? "call" : "calls"} sampled
           </p>
         </div>
       </header>
 
       <div className="relative grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-4 sm:items-end">
         <div className="min-w-0">
-          <div className="text-[9px] uppercase tracking-[0.4em] text-brand mb-1">{data.primary.label}</div>
-          <div className="flex items-baseline gap-2">
-            <span className="font-display italic text-3xl md:text-4xl text-ink leading-none tabular-nums">
+          <div className="text-[9px] uppercase tracking-[0.4em] text-brand mb-1 font-semibold">{data.primary.label}</div>
+          <div className="flex items-center gap-2.5">
+            <span className="font-display italic text-3.5xl md:text-4xl text-ink leading-none tabular-nums font-bold">
               {formatMetricValue(data.primary.value, data.primary.format)}
             </span>
             <DeltaPill pct={data.primary.delta_pct} />
@@ -135,11 +136,11 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
 
       {/* Secondary row */}
       {data.secondary?.length > 0 && (
-        <div className="relative mt-5 pt-4 border-t border-white/8 grid grid-cols-3 gap-3">
+        <div className="relative mt-5 pt-4 border-t border-brand/10 grid grid-cols-3 gap-4">
           {data.secondary.map((s, i) => (
-            <div key={`${s.label}-${i}`} className="min-w-0">
-              <div className="text-[9px] uppercase tracking-[0.32em] text-muted/65 mb-1 truncate">{s.label}</div>
-              <div className="font-display italic text-lg text-ink/85 leading-none tabular-nums truncate">
+            <div key={`${s.label}-${i}`} className="min-w-0 flex flex-col gap-1">
+              <div className="text-[9px] uppercase tracking-[0.25em] font-semibold text-muted/60 truncate">{s.label}</div>
+              <div className="font-display italic text-xl font-bold text-ink leading-none tabular-nums truncate">
                 {formatMetricValue(s.value, s.format)}
               </div>
             </div>
@@ -153,7 +154,7 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
 function DeltaPill({ pct }: { pct: number }) {
   if (!Number.isFinite(pct) || pct === 0) {
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.2em] text-muted/55">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-mono font-medium bg-white/5 border border-white/10 text-muted/60">
         flat
       </span>
     );
@@ -161,11 +162,13 @@ function DeltaPill({ pct }: { pct: number }) {
   const up = pct > 0;
   return (
     <span className={cn(
-      "inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.2em]",
-      up ? "text-emerald-600" : "text-rose-500",
+      "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-mono font-medium shadow-sm",
+      up 
+        ? "bg-emerald-500/12 border border-emerald-500/25 text-emerald-400 shadow-emerald-500/5" 
+        : "bg-rose-500/12 border border-rose-500/25 text-rose-400 shadow-rose-500/5",
     )}>
-      {up ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-      {Math.abs(pct)}%
+      {up ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
+      {up ? "+" : ""}{pct}%
     </span>
   );
 }
@@ -188,20 +191,25 @@ function Sparkline({ values }: { values: number[] }) {
   }).join(" ");
   return (
     <div className="relative ml-auto h-11 w-full max-w-[220px]">
-      <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="w-full h-full">
+      <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="w-full h-full overflow-visible">
         <defs>
           <linearGradient id="sparkfill" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#0AC8D4" stopOpacity="0.35" />
+            <stop offset="0%" stopColor="#0AC8D4" stopOpacity="0.25" />
             <stop offset="100%" stopColor="#0AC8D4" stopOpacity="0" />
+          </linearGradient>
+          <linearGradient id="sparkstroke" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0%" stopColor="#0AC8D4" />
+            <stop offset="100%" stopColor="#10B981" />
           </linearGradient>
         </defs>
         <polyline
           fill="none"
-          stroke="#0AC8D4"
-          strokeWidth="1.5"
+          stroke="url(#sparkstroke)"
+          strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
           points={points}
+          className="drop-shadow-[0_2px_8px_rgba(10,200,212,0.4)]"
         />
         <polygon
           fill="url(#sparkfill)"

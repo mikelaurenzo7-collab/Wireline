@@ -140,6 +140,8 @@ export default function Pipeline() {
                         layout
                         initial={{ opacity: 0, y: 4 }}
                         animate={{ opacity: 1, y: 0 }}
+                        whileHover={{ y: -3, scale: 1.01 }}
+                        whileTap={{ scale: 0.98 }}
                         draggable
                         onDragStart={(e: any) => {
                           setDraggingId(String(lead.id));
@@ -147,13 +149,13 @@ export default function Pipeline() {
                           e.dataTransfer.setData("text/plain", String(lead.id));
                         }}
                         onDragEnd={() => setDraggingId(null)}
-                        className={`group rounded-xl p-3 cursor-grab active:cursor-grabbing border ${
+                        className={`group rounded-xl p-3 cursor-grab active:cursor-grabbing border card-interactive-premium transition-all duration-300 ${
                           draggingId === String(lead.id)
-                            ? "border-brand/50 opacity-50"
-                            : "border-white/8 hover:border-white/20"
+                            ? "border-brand/60 opacity-40 shadow-xl shadow-brand/10 scale-95"
+                            : "border-black/5 hover:border-brand/20 hover:shadow-lg hover:shadow-brand/5"
                         }`}
                         style={{
-                          background: `linear-gradient(135deg, ${stage.tint}10, transparent 70%)`,
+                          background: `linear-gradient(135deg, ${stage.tint}0f, transparent 75%)`,
                         }}
                       >
                         <p className="text-[12px] font-semibold text-ink truncate flex items-center gap-1.5">

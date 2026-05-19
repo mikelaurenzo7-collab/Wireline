@@ -1,3 +1,4 @@
+// AgentFlowComposer — neural-aligned linear stage progression editor.
 import React, { useState, useEffect } from "react";
 import { Plus, Trash2, ArrowRight, Save, Settings2, GripVertical, CheckCircle2, Workflow, Loader2 } from "lucide-react";
 import { motion, AnimatePresence, Reorder } from "motion/react";

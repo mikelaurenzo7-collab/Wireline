@@ -261,8 +261,11 @@
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
     linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
-          mask-composite: exclude;
+  mask-composite: exclude;
   pointer-events: none;
   z-index: 1;
 }
@@ -669,6 +672,77 @@ select:focus {
   @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.32em] leading-none font-medium;
 }
 
+/* ─────────────────────────  PREMIUM ENTERPRISE GLOWS  ───────────────── */
+
+.premium-glass {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(10, 200, 212, 0.08);
+}
+
+.card-interactive-premium {
+  transition: all 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+.card-interactive-premium::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(10, 200, 212, 0.25) 0%, transparent 60%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.3;
+  transition: opacity 400ms ease;
+}
+.card-interactive-premium:hover {
+  transform: translateY(-3px) scale(1.01);
+  box-shadow: 
+    0 20px 40px -15px rgba(10, 200, 212, 0.08),
+    0 0 0 1px rgba(10, 200, 212, 0.18);
+}
+.card-interactive-premium:hover::before {
+  opacity: 1;
+}
+
+.neon-glow-teal {
+  text-shadow: 0 0 8px rgba(10, 200, 212, 0.35);
+}
+
+/* Futuristic Recharts Custom Tooltip Glassmorphic component */
+.recharts-tooltip-custom-glass {
+  background: rgba(28, 25, 23, 0.92) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(10, 200, 212, 0.3) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
+  padding: 12px !important;
+}
+
+/* Neon animated checkbox styling */
+.neon-checkbox {
+  @apply relative flex items-center justify-center w-5 h-5 rounded-md border border-black/12 transition-all cursor-pointer;
+}
+.neon-checkbox.active {
+  background: linear-gradient(135deg, #0AC8D4, #10B981);
+  border-color: #0AC8D4;
+  box-shadow: 0 0 10px rgba(10, 200, 212, 0.45);
+}
+
+/* Animated Neural Synapse connection pulses */
+@keyframes synapse-glow {
+  0%, 100% { opacity: 0.2; transform: scale(0.95); filter: drop-shadow(0 0 0 transparent); }
+  50% { opacity: 1; transform: scale(1.05); filter: drop-shadow(0 0 6px rgba(10, 200, 212, 0.8)); }
+}
+.synapse-pulse {
+  animation: synapse-glow 2.5s infinite ease-in-out;
+}
 
 /* ─────────────────────────────────────────────────────────────────────
  * Reduced motion — respect operator OS-level preference.

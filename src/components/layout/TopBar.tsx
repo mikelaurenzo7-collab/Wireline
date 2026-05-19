@@ -65,20 +65,24 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
         aria-label={`Go to ${item.label}`}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "group relative flex items-center gap-2 h-8 px-2 rounded-lg transition-colors text-[12px] font-medium tracking-wide",
-          active ? "text-paper" : "text-ink/65 hover:text-ink hover:bg-white/8",
+          "group relative flex items-center gap-2 h-8 px-3.5 rounded-xl transition-all text-[12px] font-medium tracking-wide",
+          active ? "text-paper shadow-md shadow-brand/10" : "text-ink/65 hover:text-ink hover:bg-white/8 hover:shadow-sm",
         )}
       >
         {active && (
           <motion.div
             layoutId="topnav-active"
-            className="absolute inset-0 rounded-lg nav-active-bg"
+            className="absolute inset-0 rounded-xl nav-active-bg"
             transition={{ type: "spring", stiffness: 420, damping: 36 }}
+            style={{
+              background: "linear-gradient(135deg, #0AC8D4, #08A9B4)",
+              boxShadow: "0 4px 14px -4px rgba(10,200,212,0.45), 0 0 0 1px rgba(255,255,255,0.2) inset",
+            }}
           />
         )}
         <item.icon
           className={cn(
-            "relative z-10 w-4 h-4 shrink-0",
+            "relative z-10 w-4 h-4 shrink-0 transition-transform duration-300 group-hover:scale-110",
             active ? "text-paper" : "text-ink/55 group-hover:text-ink",
           )}
           strokeWidth={active ? 2.5 : 1.75}
@@ -86,8 +90,8 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
         {withLabel && (
           <span
             className={cn(
-              "relative z-10 whitespace-nowrap",
-              active ? "font-semibold" : "font-normal",
+              "relative z-10 whitespace-nowrap transition-all duration-300",
+              active ? "font-semibold neon-glow-teal" : "font-normal",
             )}
           >
             {item.label}
@@ -97,7 +101,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
           <span
             aria-label={`${badge} item${badge === 1 ? "" : "s"} need attention in ${item.label}`}
             className={cn(
-              "relative z-10 shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full text-[9px] font-mono leading-none flex items-center justify-center",
+              "relative z-10 shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full text-[9px] font-mono leading-none flex items-center justify-center transition-all duration-300 group-hover:scale-105",
               active
                 ? "bg-white/25 text-paper"
                 : "bg-rose-500/20 text-rose-400 border border-rose-500/30",

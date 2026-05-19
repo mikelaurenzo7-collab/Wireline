@@ -351,11 +351,18 @@ const Step: React.FC<{
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -4, scale: 1.02 }}
       transition={{ delay: 0.05 * index }}
       className="relative aurora-ring rounded-2xl"
     >
       <div
-        className={`relative rounded-xl glass border p-3.5 overflow-hidden h-full flex flex-col gap-2.5 transition-all ${done ? "border-emerald-500/40" : isActive ? "border-brand/30" : "border-white/10"}`}
+        className={`relative rounded-xl glass border p-3.5 overflow-hidden h-full flex flex-col gap-2.5 transition-all duration-300 ${
+          done
+            ? "border-emerald-500/40 shadow-sm shadow-emerald-500/5 bg-emerald-500/[0.02]"
+            : isActive
+              ? "border-brand/40 shadow-md shadow-brand/10 bg-brand/[0.01] active-neon-card"
+              : "border-black/5 hover:border-black/15 hover:bg-black/[0.01]"
+        }`}
       >
         <div
           className="absolute -top-10 -right-10 w-24 h-24 rounded-full opacity-20 blur-3xl pointer-events-none"
@@ -363,14 +370,30 @@ const Step: React.FC<{
         />
         <div className="relative z-10 flex items-start justify-between">
           <div
-            className={`w-9 h-9 rounded-xl glass border flex items-center justify-center transition-all ${done ? "border-emerald-500/40 text-emerald-500" : isActive ? "border-brand/40" : "border-white/10"}`}
+            className={`w-9 h-9 rounded-xl glass border flex items-center justify-center transition-all duration-300 ${
+              done
+                ? "border-emerald-500/40 text-emerald-500 shadow-sm shadow-emerald-500/10"
+                : isActive
+                  ? "border-brand/40 text-brand shadow-sm shadow-brand/10"
+                  : "border-black/10 text-muted"
+            }`}
             style={!done ? { color: step.accent } : {}}
           >
-            {done ? <Check className="w-4 h-4" strokeWidth={2.5} /> : <Icon className="w-4 h-4" />}
+            {done ? (
+              <motion.div
+                initial={{ scale: 0, rotate: -45 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              >
+                <Check className="w-4 h-4" strokeWidth={2.5} />
+              </motion.div>
+            ) : (
+              <Icon className="w-4 h-4" />
+            )}
           </div>
           <div className="flex items-center gap-1.5">
             {!done && isActive && (
-              <span className="text-[8px] uppercase tracking-[0.3em] text-brand bg-brand/10 border border-brand/20 px-1.5 py-0.5 rounded-full">
+              <span className="text-[8px] uppercase tracking-[0.3em] text-brand bg-brand/10 border border-brand/20 px-1.5 py-0.5 rounded-full animate-pulse">
                 Next
               </span>
             )}

@@ -417,10 +417,10 @@ export default function AgentTraining() {
                   >
                     <div
                       className={cn(
-                        "w-9 h-9 rounded-xl border flex items-center justify-center shrink-0",
+                        "w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 transition-transform duration-300 hover:scale-110",
                         msg.role === "user"
                           ? "glass border-white/10 text-ink/70"
-                          : "glass border-brand/30 text-brand",
+                          : "glass border-brand/30 text-brand shadow-sm shadow-brand/20",
                       )}
                     >
                       {msg.role === "user" ? (
@@ -431,18 +431,27 @@ export default function AgentTraining() {
                     </div>
                     <div
                       className={cn(
-                        "max-w-[80%] p-3 rounded-xl border text-[13px] leading-relaxed",
+                        "max-w-[80%] p-3.5 rounded-2xl border text-[13px] leading-relaxed shadow-sm transition-all duration-300",
                         msg.role === "user"
-                          ? "glass border-white/8 text-ink"
-                          : "bg-brand/8 border-brand/20 text-ink font-display italic",
+                          ? "glass border-white/8 text-ink hover:border-white/20"
+                          : "bg-brand/8 border-brand/20 text-ink font-display italic hover:border-brand/40 shadow-brand/5",
                       )}
+                      style={
+                        msg.role === "assistant"
+                          ? {
+                              boxShadow: "0 0 16px -4px rgba(10,200,212,0.15), 0 1px 0 rgba(255,255,255,0.4) inset",
+                            }
+                          : {
+                              boxShadow: "0 1px 0 rgba(255,255,255,0.6) inset",
+                            }
+                      }
                     >
                       {(msg.content ?? "").split("\n").map((line, lIdx) => (
                         <p
                           key={lIdx}
                           className={cn(
                             lIdx > 0 && "mt-1.5",
-                            (line.startsWith(">") || line.startsWith("**")) && "text-brand",
+                            (line.startsWith(">") || line.startsWith("**")) && "text-brand neon-glow-teal font-semibold",
                           )}
                         >
                           {line.replace(/^\*\*/g, "").replace(/^>\s?/, "")}

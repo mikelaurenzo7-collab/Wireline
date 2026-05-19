@@ -314,6 +314,7 @@ function TemplateCard({
   deploying,
   deployedCount,
 }: {
+  key?: any;
   template: Template;
   onDeploy: (t: Template) => void;
   deploying: boolean;
@@ -329,9 +330,10 @@ function TemplateCard({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.96 }}
+      whileHover={{ y: -4, scale: 1.01 }}
       className={cn(
-        "relative rounded-2xl glass border transition-all duration-200 flex flex-col group overflow-hidden",
-        hovered ? "aurora-ring border-transparent" : "border-white/10",
+        "relative rounded-2xl glass border transition-all duration-300 flex flex-col group overflow-hidden card-interactive-premium",
+        hovered ? "aurora-ring border-transparent shadow-xl shadow-brand/10" : "border-white/10 shadow-sm",
       )}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}

@@ -1668,12 +1668,13 @@ function QualityView({ days }: { days: number }) {
                 />
                 <Tooltip
                   contentStyle={{
-                    background: "#F5F0E8",
-                    border: "1px solid rgba(10,200,212,0.2)",
-                    borderRadius: 8,
-                    fontSize: 11,
+                    background: "rgba(28, 25, 23, 0.95)",
+                    border: "1px solid rgba(10, 200, 212, 0.3)",
+                    borderRadius: "12px",
+                    boxShadow: "0 10px 30px rgba(0, 0, 0, 0.25)",
+                    fontSize: "11px",
                   }}
-                  labelStyle={{ color: "#7C7469" }}
+                  labelStyle={{ color: "#7C7469", fontWeight: "bold" }}
                   itemStyle={{ color: "#0AC8D4" }}
                 />
                 <Area
