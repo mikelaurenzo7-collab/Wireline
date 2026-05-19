@@ -158,6 +158,14 @@ async function syncOneAgent(
         messages: [{ role: "system", content: systemPrompt }],
       },
       serverUrl: PRODUCTION_WEBHOOK_URL,
+      // Latency tuning — same knobs the factory uses for new tenant
+      // agents. Without these the showcase assistants stay on Vapi's
+      // sluggish defaults (~400ms reply delay, 3-word interrupt
+      // threshold, background denoising on). With these, the demo
+      // calls feel as snappy as a top-end human receptionist.
+      responseDelaySeconds: 0,
+      numWordsToInterruptAssistant: 2,
+      backgroundDenoisingEnabled: false,
     };
     // Carry the webhook secret if it's set — Vapi requires it for signature checks.
     if (process.env.VAPI_WEBHOOK_SECRET) {
