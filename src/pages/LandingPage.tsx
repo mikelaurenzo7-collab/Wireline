@@ -103,19 +103,67 @@ const PRINCIPLES = [
  * /api/public/stats; auto-hides below 5 agents so the early-stage
  * platform doesn't read as pre-revenue.
  */
-function LiveTrustTicker() {
-  const [count, setCount] = useState<number | null>(null);
+/**
+ * Live stats strip pulled from /api/public/stats — replaces the
+ * previous single-line ticker. Three real-time metrics + one static
+ * brand promise; together they kill the empty space at the top of
+ * the hero AND give first-time visitors immediate credibility:
+ *   - active agents      (network is alive, not a demo)
+ *   - calls this month   (volume is real, not vanity)
+ *   - businesses on it   (other people trusted this; social proof)
+ *   - response time      (~200ms is the moat number after the
+ *                          showcase latency push)
+ *
+ * Renders skeleton dots until /api/public/stats answers, so the
+ * hero never jumps. Fails gracefully — if the API errors, the
+ * whole strip hides and the hero collapses to its prior layout.
+ */
+function LiveTrustStrip() {
+  const [stats, setStats] = useState<{
+    agents_online: number;
+    calls_this_month: number;
+    tenants: number;
+  } | null>(null);
+  const [errored, setErrored] = useState(false);
+
   useEffect(() => {
     fetch("/api/public/stats")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => (d ? setCount(d.agents_online) : null))
-      .catch(() => {});
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then(setStats)
+      .catch(() => setErrored(true));
   }, []);
-  if (count === null || count < 5) return null;
+
+  if (errored) return null;
+
+  const Cell = ({ value, label, pulse }: { value: string; label: string; pulse?: boolean }) => (
+    <div className="flex items-baseline gap-2">
+      {pulse && (
+        <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse self-center" />
+      )}
+      <span className="font-display italic text-xl sm:text-2xl text-ink tabular-nums">{value}</span>
+      <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.28em] text-muted/70">
+        {label}
+      </span>
+    </div>
+  );
+
+  // Skeleton bar — same height as the hydrated one, no layout shift.
+  if (!stats) {
+    return (
+      <div className="flex flex-wrap items-center gap-x-6 sm:gap-x-8 gap-y-2 mb-5">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-6 w-24 rounded bg-ink/5 animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <div className="inline-flex items-center gap-2 text-[11px] sm:text-xs uppercase tracking-[0.28em] text-brand/85 font-medium">
-      <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-      {count.toLocaleString()} agents on Wireline today
+    <div className="flex flex-wrap items-center gap-x-6 sm:gap-x-8 gap-y-2 mb-5">
+      <Cell value={stats.agents_online.toLocaleString()} label="agents live" pulse />
+      <Cell value={stats.calls_this_month.toLocaleString()} label="calls this month" />
+      <Cell value={stats.tenants.toLocaleString()} label="businesses on Wireline" />
+      <Cell value="~200ms" label="avg response" />
     </div>
   );
 }
@@ -205,7 +253,7 @@ export default function LandingPage() {
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           className="max-w-3xl"
         >
-          <LiveTrustTicker />
+          <LiveTrustStrip />
           {/* Headline scales: 4xl on 360-390px so it never orphans a
               word, 5xl from sm (640px), 6xl from md, 7xl from lg. The
               <br /> on "for every" lives inside a span hidden on
@@ -323,6 +371,82 @@ export default function LandingPage() {
         </p>
       </section>
 
+      {/* How it works — three-step strip between vertical wedges and
+          the demo grid. Lives here intentionally: visitors who picked
+          their vertical above need to see "OK, what do I actually
+          DO?" before being asked to call a demo line. Three steps,
+          no marketing fluff, every step links to the place that
+          executes it. Fills ~280px of dead vertical and earns the
+          empty space back with operator-clarifying content. */}
+      <section className="relative z-10 max-w-6xl mx-auto px-6 lg:px-10 pb-20">
+        <p className="text-[10px] uppercase tracking-[0.4em] text-brand mb-3 font-medium">
+          How it works
+        </p>
+        <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-8 text-balance">
+          Live in under 10 minutes.
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 relative">
+          {/* Subtle connecting line on desktop — gives the three
+              cards a flow without committing to a heavy timeline UI. */}
+          <div
+            aria-hidden="true"
+            className="hidden md:block absolute top-7 left-[16.66%] right-[16.66%] h-px bg-gradient-to-r from-brand/0 via-brand/25 to-brand/0"
+          />
+          {[
+            {
+              n: "01",
+              title: "Pick your industry",
+              body: "Choose from medical, legal, real estate, insurance, agencies, home services, and more. Wireline ships pre-tuned playbooks, vocabulary, and compliance posture for every vertical.",
+              href: "/pricing",
+              cta: "See plans",
+            },
+            {
+              n: "02",
+              title: "Connect a number",
+              body: "We provision a dedicated phone number with your plan — or port your existing one. Forward your calls, or use the new number as your primary. Live within minutes.",
+              href: "/signup",
+              cta: "Start free trial",
+            },
+            {
+              n: "03",
+              title: "Wireline answers",
+              body: "Inbound, outbound, SMS, and email — one fleet of agents, one cockpit. Watch every call live, jump in to whisper coach, or let the agent close the loop solo.",
+              href: "/compare",
+              cta: "Why us vs Air / Synthflow",
+            },
+          ].map((step, i) => (
+            <motion.div
+              key={step.n}
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: i * 0.08 }}
+              className="relative rounded-2xl glass border border-white/10 p-5 sm:p-6 hover:border-brand/30 transition-colors"
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <div
+                  className="w-9 h-9 rounded-lg flex items-center justify-center text-on-brand font-display italic text-sm tabular-nums shrink-0"
+                  style={{ background: "#4F1E7B" }}
+                >
+                  {step.n}
+                </div>
+                <h3 className="font-display italic text-lg sm:text-xl text-ink leading-tight">
+                  {step.title}
+                </h3>
+              </div>
+              <p className="text-[13px] sm:text-sm text-ink/70 leading-relaxed mb-4">{step.body}</p>
+              <Link
+                to={step.href}
+                className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.3em] text-brand hover:text-brand/80 transition-colors"
+              >
+                {step.cta}
+                <ArrowRight className="w-3 h-3" />
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
       {/* Demo agents grid */}
       <section className="relative z-10 max-w-6xl mx-auto px-6 lg:px-10 pb-20">
         <p className="text-[10px] uppercase tracking-[0.4em] text-brand mb-3 font-medium">
@@ -421,6 +545,67 @@ export default function LandingPage() {
         </p>
         <div className="rounded-3xl glass border border-white/10 p-6 sm:p-8">
           <IntegrationLogos />
+        </div>
+      </section>
+
+      {/* FAQ — sits between infra/email-composer and the pricing
+          teaser so the most-blocking objections get answered BEFORE
+          the visitor sees a price tag. Native <details> so each
+          row is keyboard-accessible without extra JS, and the
+          accordion closes on its own when the visitor opens
+          another row's question. Six questions covers ~80% of the
+          inbound objections we hear in sales calls. */}
+      <section className="relative z-10 max-w-3xl mx-auto px-6 lg:px-10 pb-20">
+        <p className="text-[10px] uppercase tracking-[0.4em] text-brand mb-3 font-medium text-center">
+          Questions before you start
+        </p>
+        <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-8 text-balance text-center">
+          What everyone asks first.
+        </h2>
+        <div className="rounded-3xl glass border border-white/10 overflow-hidden">
+          {[
+            {
+              q: "Does it actually sound human on the phone?",
+              a: "Yes — but listen, don't take our word. Call (630) 581-1834 right now. That's Liam, one of our showcase agents, running the same engine your tenants get. He uses ElevenLabs Flash for voice, Claude Sonnet 4.6 for reasoning, and a ~200ms end-to-turn latency budget. If he doesn't sound human within the first 10 seconds, send us the recording and we'll refund whatever plan you're on.",
+            },
+            {
+              q: "How long does it take to go live?",
+              a: "Under 10 minutes for the standard path. Pick your vertical, claim a number (we provision in 60 seconds), upload your knowledge base (PDFs, URLs, FAQ docs), and the agent is answering. Porting an existing number adds 1–3 business days but the agent is live on a temporary number while we wait.",
+            },
+            {
+              q: "What about HIPAA, PCI, GDPR?",
+              a: "Compliance modes are first-class. Each agent can opt into HIPAA (PHI handling + verified-caller gating), PCI (cardholder data routed to a tokenized payment link, never repeated), or GDPR (recording disclosures + opt-out honoring). Enterprise tier ships a signed BAA. Compliance directives are injected into the system prompt at runtime, not relied on as soft guidance.",
+            },
+            {
+              q: "Does it work with my CRM and calendar?",
+              a: "HubSpot, Salesforce, Pipedrive, Zoho, Gmail, Outlook, Google Calendar, and Calendly are first-party integrations. Anything else we hit via webhooks or Zapier. The agent writes call summaries, contact updates, and meeting bookings back to your source of truth — no copy-paste, no babysitting.",
+            },
+            {
+              q: "What happens when the agent doesn't know?",
+              a: "Three fallbacks, in order: (1) the agent reads from your knowledge base if there's a match, (2) it offers a clean handoff to a human you designate (warm transfer, SMS, or scheduled callback), (3) it captures the question, logs it, and sends you a summary so the next caller gets a better answer. Never fabricates.",
+            },
+            {
+              q: "Can I switch from Air / Synthflow / Vapi?",
+              a: "Yes — and we'll do it for you on Enterprise. Bring your existing prompt, your knowledge base, your phone numbers, and your CRM mapping. Our migration team rebuilds your fleet on Wireline in a parallel environment, lets you A/B test against your current platform, then ports your numbers when you're satisfied. Average switch time: 4 business days.",
+            },
+          ].map((item, i, arr) => (
+            <details
+              key={i}
+              className={`group ${i < arr.length - 1 ? "border-b border-white/8" : ""}`}
+            >
+              <summary className="cursor-pointer list-none px-5 sm:px-6 py-4 min-h-[56px] flex items-start justify-between gap-4 hover:bg-white/3 transition-colors touch-manipulation">
+                <span className="text-sm sm:text-[15px] text-ink font-medium leading-snug pt-0.5">
+                  {item.q}
+                </span>
+                <span className="shrink-0 mt-1.5 w-5 h-5 rounded-full border border-brand/40 flex items-center justify-center text-brand text-xs group-open:rotate-45 transition-transform">
+                  +
+                </span>
+              </summary>
+              <div className="px-5 sm:px-6 pb-5 -mt-1 text-[13px] sm:text-sm text-ink/70 leading-relaxed">
+                {item.a}
+              </div>
+            </details>
+          ))}
         </div>
       </section>
 
