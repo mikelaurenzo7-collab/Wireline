@@ -146,6 +146,98 @@ export async function subscribePageToLeadgen(
   }
 }
 
+/**
+ * Send a Conversions API event to Meta. Used when a Wireline call
+ * converts (booked appointment, won deal) — fires a server-side
+ * Pixel event so the Meta Ads attribution flywheel can credit the
+ * ad that originated the lead.
+ *
+ * Fire-and-forget on the caller's side: any failure is logged but
+ * doesn't propagate. The call site continues whether CAPI succeeds
+ * or not.
+ *
+ * v1 uses a single platform-wide META_PIXEL_ID + META_CAPI_ACCESS_TOKEN
+ * for the first paying clients. Per-tenant pixel/token storage is
+ * phase 2 — operators paste their own pixel ID into Settings.
+ *
+ * Per Meta's spec, every user identifier (email, phone) must be
+ * SHA-256 hashed (lowercase, trimmed) before transmission.
+ */
+export async function sendMetaConversion(params: {
+  eventName: "Lead" | "Schedule" | "Purchase" | "CompleteRegistration" | string;
+  /** Stable per-event ID so repeated webhook deliveries dedupe. */
+  eventId?: string;
+  /** Caller's email — will be SHA-256 hashed before send. */
+  email?: string;
+  /** Caller's phone — will be SHA-256 hashed before send (E.164 ideal). */
+  phone?: string;
+  /** Source URL where the conversion happened (the agent's call page). */
+  sourceUrl?: string;
+  /** Optional dollar value of the conversion (deal size, etc). */
+  value?: number;
+  /** ISO currency code; default USD. */
+  currency?: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  const pixelId = process.env.META_PIXEL_ID;
+  const accessToken = process.env.META_CAPI_ACCESS_TOKEN;
+  if (!pixelId || !accessToken) {
+    // Not an error — CAPI is opt-in via env. Log at debug so the
+    // operator sees we noticed but didn't fire.
+    return { ok: false, error: "CAPI not configured (META_PIXEL_ID / META_CAPI_ACCESS_TOKEN)" };
+  }
+
+  // Hash PII before send. Meta deduplicates events by event_id +
+  // event_name + the hashed user_data.
+  const { createHash } = await import("node:crypto");
+  const sha256 = (s: string) => createHash("sha256").update(s.trim().toLowerCase()).digest("hex");
+
+  const user_data: Record<string, string> = {};
+  if (params.email) user_data.em = sha256(params.email);
+  if (params.phone) user_data.ph = sha256(params.phone.replace(/\D/g, ""));
+
+  const body = {
+    data: [
+      {
+        event_name: params.eventName,
+        event_time: Math.floor(Date.now() / 1000),
+        event_id: params.eventId,
+        action_source: "system_generated",
+        event_source_url: params.sourceUrl,
+        user_data,
+        ...(params.value != null
+          ? {
+              custom_data: {
+                value: params.value,
+                currency: params.currency || "USD",
+              },
+            }
+          : {}),
+      },
+    ],
+  };
+
+  try {
+    const r = await fetchWithTimeout(
+      `${META_GRAPH}/${pixelId}/events?access_token=${encodeURIComponent(accessToken)}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      },
+      10_000,
+    );
+    if (!r.ok) {
+      const txt = await r.text().catch(() => "");
+      log.warn("Meta CAPI send failed", { status: r.status, body: txt.slice(0, 240) });
+      return { ok: false, error: `Meta CAPI returned ${r.status}` };
+    }
+    return { ok: true };
+  } catch (err) {
+    log.warn("Meta CAPI fetch error", { error: getErrorMessage(err) });
+    return { ok: false, error: getErrorMessage(err) };
+  }
+}
+
 export async function disconnectMeta(userId: string): Promise<void> {
   await drizzle
     .update(schema.crmConnections)

@@ -10,6 +10,7 @@ import { searchLeads } from "./apollo-service";
 import { sendTenantMessage } from "./twilio-service";
 import { postMessage as slackPostMessage, getDefaultChannel } from "./slack-service";
 import { resolveAgentTools } from "./agent-capabilities";
+import { sendMetaConversion } from "./meta-service";
 
 /**
  * The Action Engine is responsible for executing tasks extracted by the AI
@@ -107,6 +108,19 @@ export async function executeAction(
             endTime,
             agentId: action.agentId,
           });
+          // Fire Meta CAPI "Schedule" conversion when configured. Lets
+          // marketers attribute booked meetings back to the Meta ad that
+          // sourced the lead. Non-blocking — if CAPI isn't set up, the
+          // call returns { ok: false } without throwing.
+          if (calOk) {
+            void sendMetaConversion({
+              eventName: "Schedule",
+              eventId: `schedule:${context.sourceId}:${startTime}`,
+              email: action.payload.customer_email,
+              phone: action.payload.customer_number,
+              sourceUrl: `https://trywireline.com/calls/${context.sourceId}`,
+            }).catch(() => {});
+          }
           return { success: calOk };
         }
         case "update_crm_lead":
@@ -264,7 +278,7 @@ async function handleSendTextMessage(
   return { success: true, actionId: outcome.sid };
 }
 
-async function handleUpdateCRM(userId: string, action: ActionItem, _context: { sourceId: string }) {
+async function handleUpdateCRM(userId: string, action: ActionItem, context: { sourceId: string }) {
   // 1. Update internal Wireline leads table
   try {
     await drizzle
@@ -312,6 +326,22 @@ async function handleUpdateCRM(userId: string, action: ActionItem, _context: { s
       log.warn("External CRM sync failed", { userId, crmType, error: err?.message });
       crmSynced = false;
     }
+  }
+
+  // Fire Meta CAPI "Purchase" conversion when a lead transitions to a
+  // won state. Status strings vary by CRM convention — handle the
+  // common cases ("won", "closed-won", "qualified", "converted").
+  const status = (action.payload.status || "").toLowerCase();
+  const wonSignals = ["won", "closed_won", "closed-won", "converted", "qualified"];
+  if (wonSignals.some((s) => status.includes(s))) {
+    void sendMetaConversion({
+      eventName: "Purchase",
+      eventId: `won:${context.sourceId}:${action.payload.customer_number}`,
+      phone: action.payload.customer_number,
+      email: action.payload.customer_email,
+      value: action.payload.value,
+      sourceUrl: `https://trywireline.com/calls/${context.sourceId}`,
+    }).catch(() => {});
   }
 
   return {
