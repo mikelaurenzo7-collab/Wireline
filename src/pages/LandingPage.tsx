@@ -238,7 +238,7 @@ export default function LandingPage() {
           </Link>
           <Link
             to="/signup"
-            className="px-4 py-2 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.28em] hover:opacity-90 transition-opacity"
+            className="px-4 py-2.5 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.28em] hover:opacity-90 transition-opacity min-h-[44px] inline-flex items-center"
           >
             Start free
           </Link>
