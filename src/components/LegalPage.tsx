@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Shield, FileText, ArrowLeft } from "lucide-react";
+import { Shield, FileText, Trash2, ArrowLeft } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 
 const LAST_UPDATED = "May 9, 2026";
@@ -399,6 +399,67 @@ export function TermsOfService() {
       <Section title="13. Contact">
         <p>
           Legal notices: <strong>legal@wireline.app</strong>
+        </p>
+      </Section>
+    </LegalLayout>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Data Deletion Instructions — required by Meta / Facebook for any app that
+// accesses user data. Linked from the Meta App Settings → User Data Deletion
+// field. Mirrors the GDPR / soft-delete flow already wired into the app at
+// Admin → Account → Delete Account.
+// ─────────────────────────────────────────────────────────────────────────────
+export function DataDeletion() {
+  return (
+    <LegalLayout title="Data Deletion" icon={Trash2}>
+      <PageMeta
+        title="Data Deletion — Wireline"
+        description="How to delete your Wireline account and all associated personal data."
+      />
+      <Section title="Delete your account from the app">
+        <p>
+          The fastest path is to sign in and head to{" "}
+          <strong>Admin → Account → Delete Account</strong>. Confirm the deletion in the modal and
+          your account enters a 30-day soft-delete window. After that window, every row tied to your
+          user is purged from our database: call logs, recordings, agent configurations, OAuth
+          connections (Google, Microsoft, Yahoo, Apollo, HubSpot, Salesforce, Slack, Zoom, Meta),
+          email accounts, lead records, billing history, audit trail. Hard delete is irreversible.
+        </p>
+      </Section>
+      <Section title="Don't have access to your account?">
+        <p>
+          Email <strong>trywireline@yahoo.com</strong> from the address tied to the account with the
+          subject line <em>"Data deletion request"</em>. We verify the request out of band (text or
+          call to a phone number on file) and then run the same deletion job manually. We confirm by
+          email when the purge completes; SLA is 7 business days.
+        </p>
+      </Section>
+      <Section title="What's deleted">
+        <ul className="list-disc pl-5 space-y-1">
+          <li>User profile (email, name, password hash)</li>
+          <li>All agent configurations + uploaded knowledge documents</li>
+          <li>Call logs, transcripts, recordings, sentiment scores</li>
+          <li>Email threads, SMS threads, draft messages</li>
+          <li>OAuth connections + encrypted access tokens</li>
+          <li>Meta Lead Ads submissions ingested via webhook</li>
+          <li>Apollo lead enrichment cache scoped to your account</li>
+          <li>Billing history beyond what tax law requires us to retain</li>
+        </ul>
+      </Section>
+      <Section title="What's retained">
+        <p>
+          Anonymized, aggregated metrics (total calls per day across all tenants, no identifiers)
+          used for capacity planning. Tax records required by US law (invoices, payment receipts)
+          for the statutory retention window. Audit log entries with your user ID redacted to a
+          stable hash for legitimate security investigation purposes.
+        </p>
+      </Section>
+      <Section title="Questions">
+        <p>
+          Reach us at <strong>trywireline@yahoo.com</strong> with any data deletion question and
+          we'll respond within 2 business days.
         </p>
       </Section>
     </LegalLayout>
