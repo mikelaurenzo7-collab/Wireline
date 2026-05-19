@@ -757,6 +757,42 @@ router.post("/api/agents", authenticateUser, async (req: AuthenticatedRequest, r
       return res.status(500).json({ error: "Failed to create agent" });
     }
 
+    // Phone number is INCLUDED in every monthly tier — auto-provision a
+    // Wireline number from our Twilio pool on the tenant's first agent
+    // creation so they never wire Twilio themselves. Subsequent agents
+    // on the same tier either reuse an unassigned number or refuse if
+    // the tier's number cap is hit (operator sees a clear upgrade
+    // prompt).
+    //
+    // Fire-and-forget: number provisioning takes ~1-2s end-to-end and
+    // the agent-create response shouldn't block on Twilio. The agent
+    // is fully functional without a number (voice falls back to the
+    // Wireline Demo Line); the new number lands within 2s of the
+    // tenant landing on the dashboard.
+    void import("../lib/phone-provisioning")
+      .then(({ provisionTenantNumber }) =>
+        provisionTenantNumber(req.user.id, {
+          agentId,
+          campaignLabel: "auto-on-agent-create",
+        }),
+      )
+      .then((result) => {
+        if (!result.ok) {
+          log.warn("Auto phone provisioning skipped", {
+            userId: req.user.id,
+            agentId,
+            error: result.error,
+          });
+        }
+      })
+      .catch((err) =>
+        log.warn("Auto phone provisioning errored", {
+          userId: req.user.id,
+          agentId,
+          error: err?.message,
+        }),
+      );
+
     // Compose personality from layered templates + operator overrides:
     //   role base (deep methodology) + template overlay (tactic specifics)
     //   + operator custom (highest priority), with {{businessName}} etc.

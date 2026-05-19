@@ -46,7 +46,7 @@ function env(name: string): string {
   return typeof process.env[name] === "string" ? process.env[name]!.trim() : "";
 }
 
-function getTwilioClient() {
+export function getTwilioClient() {
   if (cachedClient !== undefined) return cachedClient;
 
   const accountSid = env("TWILIO_ACCOUNT_SID");

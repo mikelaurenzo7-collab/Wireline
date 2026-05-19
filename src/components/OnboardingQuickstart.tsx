@@ -48,11 +48,11 @@ const STEPS = [
   },
   {
     id: "number",
-    title: "Connect a phone number",
-    body: "Hook up a phone number so callers can reach your agent 24/7. Bring your own or get a new one.",
+    title: "Your phone number is live",
+    body: "Every Wireline plan includes a dedicated voice number — no Twilio bill, no separate setup. It's already provisioned for you and routed to your agent.",
     icon: Phone,
     accent: "#4F1E7B",
-    badge: "1 minute",
+    badge: "Auto",
   },
   {
     id: "call",
