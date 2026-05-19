@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+﻿import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Plus,
@@ -42,32 +42,32 @@ interface CadenceRun {
 const STARTER_TEMPLATES: { name: string; description: string; steps: Step[] }[] = [
   {
     name: "Standard 3-touch",
-    description: "Call · wait 24h · SMS · wait 48h · Call",
+    description: "Call Â· wait 24h Â· SMS Â· wait 48h Â· Call",
     steps: [
       { type: "call", delayHours: 0 },
       {
         type: "sms",
         delayHours: 24,
-        template: "Hi {{name}}, following up on our call — got a minute later today?",
+        template: "Hi {{name}}, following up on our call â€” got a minute later today?",
       },
       { type: "call", delayHours: 48 },
     ],
   },
   {
     name: "Warm intro week",
-    description: "Email · call · SMS · call",
+    description: "Email Â· call Â· SMS Â· call",
     steps: [
       {
         type: "email",
         delayHours: 0,
         template:
-          "Hi {{name}},\n\nReaching out from Wireline — would love a quick conversation this week. Reply with a time that works?",
+          "Hi {{name}},\n\nReaching out from Wireline â€” would love a quick conversation this week. Reply with a time that works?",
       },
       { type: "call", delayHours: 24 },
       {
         type: "sms",
         delayHours: 48,
-        template: "Hey {{name}}, sent you a note — happy to jump on a call whenever's good.",
+        template: "Hey {{name}}, sent you a note â€” happy to jump on a call whenever's good.",
       },
       { type: "call", delayHours: 96 },
     ],
@@ -97,9 +97,9 @@ function stepIcon(t: StepType) {
   return <Mail className="w-3 h-3" />;
 }
 function stepTint(t: StepType) {
-  if (t === "call") return "#0AC8D4";
-  if (t === "sms") return "#0AC8D4";
-  return "#0AC8D4";
+  if (t === "call") return "#4F1E7B";
+  if (t === "sms") return "#4F1E7B";
+  return "#4F1E7B";
 }
 
 export default function Cadences() {
@@ -223,13 +223,13 @@ export default function Cadences() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <p className="text-[10px] uppercase tracking-[0.4em] text-brand mb-1">
-            Outbound · Sequences
+            Outbound Â· Sequences
           </p>
           <h3 className="font-display italic text-xl text-ink leading-none">
             Multi-touch cadences
           </h3>
           <p className="text-[11px] text-muted/70 mt-1.5 max-w-xl leading-relaxed">
-            Define a sequence of call → SMS → email steps with delays. Enroll any lead from
+            Define a sequence of call â†’ SMS â†’ email steps with delays. Enroll any lead from
             /pipeline or the API. The job-worker ticks each step automatically.
           </p>
         </div>
@@ -248,7 +248,7 @@ export default function Cadences() {
             Start from a template
           </p>
           <p className="text-[12px] text-muted/80 mb-4 max-w-xl leading-relaxed">
-            No sequences yet. Pick a proven cadence to start with — you can edit it after.
+            No sequences yet. Pick a proven cadence to start with â€” you can edit it after.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {STARTER_TEMPLATES.map((t) => (
@@ -425,7 +425,7 @@ export default function Cadences() {
                         placeholder={
                           s.type === "sms"
                             ? "Hi {{name}}, ..."
-                            : "Subject + body — vars: {{name}}, {{email}}"
+                            : "Subject + body â€” vars: {{name}}, {{email}}"
                         }
                         className="px-2 py-1.5 rounded-md bg-white/5 border border-white/10 text-ink text-[11px]"
                       />

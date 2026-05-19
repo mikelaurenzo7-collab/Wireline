@@ -1,27 +1,27 @@
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
 @import "tailwindcss";
 
-/* ────────────────────────────────────────────────────────────────────────
-   AURORA CREAM — a warm, editorial light system.
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   AURORA CREAM â€” a warm, editorial light system.
    Inspired by the parchment warmth of Claude/Anthropic's palette.
    Soft cream backgrounds with luminous aurora gradients as accents,
    frosted cream glass surfaces, and dark warm-ink typography on an
    editorial Instrument Serif italic display face.
    Existing utility class names continue to work automatically.
-   ──────────────────────────────────────────────────────────────────── */
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 @theme {
   --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Instrument Serif", "Times New Roman", serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
-  /* Core palette — single brand teal. The legacy --color-brand-2/3
+  /* Core palette â€” single brand teal. The legacy --color-brand-2/3
    * tokens were the purple/magenta points of the aurora gradient;
    * they're now aliased to the brand teal so any stray references
    * resolve to the canonical hue instead of breaking the build. */
-  --color-brand: #4F1E7B;          /* Silky Purple — matches new aesthetic */
-  --color-brand-2: #4F1E7B;        /* deprecated — alias of --color-brand */
-  --color-brand-3: #4F1E7B;        /* deprecated — alias of --color-brand */
+  --color-brand: #4F1E7B;          /* Silky Purple â€” matches new aesthetic */
+  --color-brand-2: #4F1E7B;        /* deprecated â€” alias of --color-brand */
+  --color-brand-3: #4F1E7B;        /* deprecated â€” alias of --color-brand */
   --color-ink: #1C1917;            /* Warm near-black text */
   --color-paper: #FAF9F5;          /* Claude signature warm paper base */
   --color-muted: #7C7469;          /* Warm gray muted text */
@@ -30,7 +30,7 @@
      --color-white drives border-white/*, bg-white/* etc.
      Set to a dark warm value so those utilities produce
      subtle dark borders / tints on the cream background.     */
-  --color-white: #2A2520;          /* border-white/8 → rgba(42,37,32,0.08) */
+  --color-white: #2A2520;          /* border-white/8 â†’ rgba(42,37,32,0.08) */
   --color-black: #0D0B09;          /* bg-black/* stays dark for code blocks */
 
   /* Zinc warm-cream scale (50 = lightest, 950 = darkest) */
@@ -127,7 +127,7 @@
   }
 }
 
-/* ─────────────────────────  AURORA UTILITIES  ───────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  AURORA UTILITIES  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 @utility brutal-border {
   @apply border border-black/8 rounded-2xl;
@@ -204,7 +204,7 @@
   mix-blend-mode: screen;
 }
 
-/* ─────────────────────────  Brutal-shadow legacy aliases  ─────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Brutal-shadow legacy aliases  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .brutal-shadow {
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.80) inset,
@@ -219,7 +219,7 @@
     0 14px 40px -10px rgba(79, 30, 123, 0.18);
 }
 
-/* Display headline accent — solid brand teal on the editorial italic
+/* Display headline accent â€” solid brand teal on the editorial italic
  * face. Used to live as a rainbow gradient; flattened pre-launch so the
  * operator console no longer looks like every other "AI startup". */
 .text-aurora {
@@ -227,7 +227,7 @@
   color: #4F1E7B;
 }
 
-/* Legacy alias — same treatment. */
+/* Legacy alias â€” same treatment. */
 .text-stroke {
   color: #4F1E7B;
   filter: drop-shadow(0 0 16px rgba(79, 30, 123, 0.20));
@@ -242,7 +242,7 @@
 }
 
 /* Subtle brand-tinted ring for emphasized surfaces. Previously a 3-stop
- * cyan→violet→magenta gradient; now a single soft teal hairline. */
+ * cyanâ†’violetâ†’magenta gradient; now a single soft teal hairline. */
 .aurora-ring {
   position: relative;
   isolation: isolate;
@@ -266,10 +266,10 @@
   z-index: 1;
 }
 
-/* Glass surface helper — cream translucent.
+/* Glass surface helper â€” cream translucent.
  * Performance note: hundreds of elements get .glass applied, each with
  * a backdrop-filter blur. blur(28px) was the GPU bottleneck on lower-end
- * laptops — paint cost was driving 60→30fps on /home and /agents. Cut to
+ * laptops â€” paint cost was driving 60â†’30fps on /home and /agents. Cut to
  * 16px (still visually rich, just less expensive) and respect reduced
  * motion by dropping the blur entirely when requested. */
 .glass {
@@ -330,12 +330,12 @@
 }
 
 .shimmer-line {
-  background: linear-gradient(90deg, transparent 0%, rgba(10, 200, 212, 0.45) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(79, 30, 123 , 0.45) 50%, transparent 100%);
   background-size: 200% 100%;
   animation: shimmer 2.4s linear infinite;
 }
 
-/* Skeleton sweep — translates a bright stripe across the element */
+/* Skeleton sweep â€” translates a bright stripe across the element */
 @keyframes skeleton-sweep {
   0%   { transform: translateX(-100%); }
   100% { transform: translateX(250%);  }
@@ -345,7 +345,7 @@
   animation: skeleton-sweep 1.8s ease-in-out infinite;
 }
 
-/* Route-load progress sweep — used by the lazy-route fallback strip. The
+/* Route-load progress sweep â€” used by the lazy-route fallback strip. The
    sweep hits 100% well before the typical chunk parse/eval finishes so
    the user sees motion immediately on navigate, even on fast networks. */
 @keyframes route-progress-sweep {
@@ -371,9 +371,9 @@
 /* Soft glow ring for focused / selected items */
 .ring-aurora {
   box-shadow:
-    0 0 0 1px rgba(10, 200, 212, 0.50),
-    0 0 20px rgba(10, 200, 212, 0.25),
-    0 0 40px rgba(10, 200, 212, 0.10);
+    0 0 0 1px rgba(79, 30, 123 , 0.50),
+    0 0 20px rgba(79, 30, 123 , 0.25),
+    0 0 40px rgba(79, 30, 123 , 0.10);
 }
 
 .font-display {
@@ -419,14 +419,14 @@ textarea:focus,
 select:focus {
   outline: none;
   box-shadow:
-    0 0 0 2px rgba(10, 200, 212, 0.28),
-    0 0 14px rgba(10, 200, 212, 0.12);
-  border-color: rgba(10, 200, 212, 0.45);
+    0 0 0 2px rgba(79, 30, 123 , 0.28),
+    0 0 14px rgba(79, 30, 123 , 0.12);
+  border-color: rgba(79, 30, 123 , 0.45);
 }
 
-/* ─────────────────────────  EXTENDED DESIGN SYSTEM  ─────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  EXTENDED DESIGN SYSTEM  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
-/* Elevated glass — one step above glass-strong, for modals / popovers */
+/* Elevated glass â€” one step above glass-strong, for modals / popovers */
 .glass-elevated {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.84)),
@@ -446,7 +446,7 @@ select:focus {
   background: rgba(0, 0, 0, 0.048);
 }
 
-/* Ghost button — no background, subtle border */
+/* Ghost button â€” no background, subtle border */
 .btn-ghost {
   @apply relative inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl
          border border-black/10 text-ink/65 text-[11px] font-medium transition-all
@@ -482,7 +482,7 @@ select:focus {
 }
 
 /* Compact input variants used by the AgentBusinessProfile editor.
-   Slimmer than .input-field — designed to live alongside chips,
+   Slimmer than .input-field â€” designed to live alongside chips,
    time pickers, and key/value rows in dense settings panels. */
 .input-base {
   @apply h-9 px-2.5 rounded-lg bg-black/5 border border-black/10 text-ink
@@ -501,7 +501,7 @@ select:focus {
          focus:border-brand/45 focus:bg-white/55 resize-none leading-relaxed;
 }
 
-/* Section separator — soft brand line */
+/* Section separator â€” soft brand line */
 .section-divider {
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(79, 30, 123, 0.30) 50%, transparent);
@@ -549,7 +549,7 @@ select:focus {
   border-color: rgba(79, 30, 123, 0.20);
 }
 
-/* Brand badge — soft teal pill */
+/* Brand badge â€” soft teal pill */
 .badge-aurora {
   background: rgba(79, 30, 123, 0.10);
   border: 1px solid rgba(79, 30, 123, 0.30);
@@ -562,7 +562,7 @@ select:focus {
 .badge-medium { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.2em] leading-none bg-amber-500/10 border border-amber-500/30 text-amber-700; }
 .badge-low    { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.2em] leading-none bg-black/5 border border-black/10 text-muted; }
 
-/* Sidebar nav item — active solid pill */
+/* Sidebar nav item â€” active solid pill */
 .nav-active-bg {
   background: #4F1E7B;
   box-shadow:
@@ -598,7 +598,7 @@ select:focus {
   scrollbar-color: rgba(79, 30, 123, 0.20) transparent;
 }
 
-/* ─────────────────────────  ADDITIONAL ANIMATIONS  ──────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  ADDITIONAL ANIMATIONS  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 @keyframes float-up {
   0% { transform: translateY(0); }
@@ -625,20 +625,20 @@ select:focus {
 }
 .animate-count-up { animation: count-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
-/* ─────────────────────────  PAGE TITLE GLOW  ────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  PAGE TITLE GLOW  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
-/* Large display headings — solid warm ink, editorial weight. */
+/* Large display headings â€” solid warm ink, editorial weight. */
 .page-title-aurora {
   color: #1C1917;
 }
 
-/* Panel header decoration bar — soft brand fade */
+/* Panel header decoration bar â€” soft brand fade */
 .panel-header-rule {
   height: 1px;
   background: linear-gradient(90deg, rgba(79,30,123,0.45) 0%, transparent 100%);
 }
 
-/* Auth form input — tall, light, branded */
+/* Auth form input â€” tall, light, branded */
 .auth-input {
   @apply w-full px-5 rounded-xl bg-black/5 border border-black/12 outline-none
          text-ink text-sm placeholder:text-muted/50 focus:border-brand/50
@@ -668,7 +668,7 @@ select:focus {
   @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.32em] leading-none font-medium;
 }
 
-/* ─────────────────────────  PREMIUM ENTERPRISE GLOWS  ───────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  PREMIUM ENTERPRISE GLOWS  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .premium-glass {
   background: rgba(255, 255, 255, 0.55);
@@ -740,13 +740,13 @@ select:focus {
   animation: synapse-glow 2.5s infinite ease-in-out;
 }
 
-/* ─────────────────────────────────────────────────────────────────────
- * Reduced motion — respect operator OS-level preference.
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+ * Reduced motion â€” respect operator OS-level preference.
  * Wireline leans on aurora gradients, scanlines, and motion/react
  * animations everywhere. For users with prefers-reduced-motion set,
  * collapse animations to a near-zero duration so they don't induce
  * vestibular distress, but keep static styling intact.
- * ─────────────────────────────────────────────────────────────────────*/
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€*/
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -754,6 +754,6 @@ select:focus {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  /* Aurora orbs and scanlines are decorative-only — hide entirely. */
+  /* Aurora orbs and scanlines are decorative-only â€” hide entirely. */
   .scanline { display: none !important; }
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Webhook, Plus, Loader2, Check, X, Trash2, Send, AlertTriangle,
@@ -26,10 +26,10 @@ interface WebhookRow {
 }
 
 const EVENT_DESCRIPTIONS: Record<string, string> = {
-  "call.completed":       "After each voice call — includes lead scores, extracted data, and CRM-ready payload",
+  "call.completed":       "After each voice call â€” includes lead scores, extracted data, and CRM-ready payload",
   "call.escalated":       "Call flagged as angry or requiring human escalation",
   "lead.received":        "New lead pushed via your inbound intake API key",
-  "lead.hot":             "Lead score crossed 70 — high intent detected",
+  "lead.hot":             "Lead score crossed 70 â€” high intent detected",
   "email.received":       "Inbound email synced from a connected Gmail or Outlook account",
   "appointment.booked":   "New appointment booked by an agent or via API",
   "slack.message_sent":   "A notification was posted to your connected Slack workspace (includes booking alerts when configured)",
@@ -69,7 +69,7 @@ export default function WebhooksManager() {
 
         <div className="relative z-10 flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #10B981, #0AC8D4)" }}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #10B981, #4F1E7B)" }}>
               <Webhook className="w-5 h-5 text-paper" />
             </div>
             <div>
@@ -200,7 +200,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
 
       <div className="space-y-1.5">
         <label className="text-[10px] uppercase tracking-[0.4em] text-muted">
-          Signing Secret <span className="text-muted/60">(optional — when set, body is signed as X-Wireline-Signature: sha256=&lt;hex&gt;)</span>
+          Signing Secret <span className="text-muted/60">(optional â€” when set, body is signed as X-Wireline-Signature: sha256=&lt;hex&gt;)</span>
         </label>
         <input
           value={secret} onChange={(e) => setSecret(e.target.value)}
@@ -219,7 +219,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
         disabled={busy || !name || !url || picked.size === 0}
         className="brutal-btn w-full !py-3 !text-[11px] !tracking-[0.3em]"
       >
-        {busy ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving…</> :
+        {busy ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Savingâ€¦</> :
                 <><Sparkles className="w-3.5 h-3.5" /> Create Webhook</>}
       </button>
     </div>
@@ -340,15 +340,15 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
           {hook.last_triggered_at && (
             <div className="text-[10px] uppercase tracking-[0.3em] text-muted mt-2 flex items-center gap-2">
               <span>Last fired: {formatDateTime(hook.last_triggered_at)}</span>
-              {hook.delivery_count !== null && hook.delivery_count > 0 && <span>· {hook.delivery_count} deliveries</span>}
-              {hook.last_error && <span className="text-rose-500">· {hook.last_error}</span>}
+              {hook.delivery_count !== null && hook.delivery_count > 0 && <span>Â· {hook.delivery_count} deliveries</span>}
+              {hook.last_error && <span className="text-rose-500">Â· {hook.last_error}</span>}
             </div>
           )}
           {hook.secret_last_four && (
             <div className="flex items-center gap-2 mt-2 text-[10px] text-muted">
               <span className="uppercase tracking-[0.3em]">Secret</span>
-              <code className="font-mono text-ink/70">{"•".repeat(12)}{hook.secret_last_four}</code>
-              <span className="uppercase tracking-[0.3em] text-muted/60">· last 4</span>
+              <code className="font-mono text-ink/70">{"â€¢".repeat(12)}{hook.secret_last_four}</code>
+              <span className="uppercase tracking-[0.3em] text-muted/60">Â· last 4</span>
             </div>
           )}
         </div>
@@ -404,7 +404,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                 </button>
               </div>
               {loadingDeliveries && !deliveries && (
-                <div className="text-[10px] text-muted italic py-3">Loading deliveries…</div>
+                <div className="text-[10px] text-muted italic py-3">Loading deliveriesâ€¦</div>
               )}
               {deliveries && deliveries.length === 0 && (
                 <div className="text-[10px] text-ink/40 italic py-3">No deliveries yet. Hit Test or trigger an event.</div>

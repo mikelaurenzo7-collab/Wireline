@@ -6,7 +6,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { authFetch } from "../lib/api";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 type Persona = "solo" | "power" | "technical" | "non_technical";
 type Goal = "convert_leads" | "support_customers" | "automate_scheduling" | "collect_payments";
@@ -19,30 +19,30 @@ interface OptionCard {
   description: string;
 }
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const PERSONA_OPTIONS: OptionCard[] = [
   {
     id: "solo",
-    icon: "🧑‍💼",
+    icon: "ðŸ§‘â€ðŸ’¼",
     label: "Solo Operator",
     description: "I run my business and want AI agents doing the heavy lifting",
   },
   {
     id: "power",
-    icon: "🏢",
+    icon: "ðŸ¢",
     label: "Team Lead / Agency",
     description: "I manage multiple clients or have a team using Wireline",
   },
   {
     id: "technical",
-    icon: "🛠️",
+    icon: "ðŸ› ï¸",
     label: "Developer / Technical",
     description: "I'm integrating Wireline into a custom workflow or product",
   },
   {
     id: "non_technical",
-    icon: "✨",
+    icon: "âœ¨",
     label: "Business Owner",
     description: "I'm new to AI agents and want simple, guided setup",
   },
@@ -51,25 +51,25 @@ const PERSONA_OPTIONS: OptionCard[] = [
 const GOAL_OPTIONS: OptionCard[] = [
   {
     id: "convert_leads",
-    icon: "🎯",
+    icon: "ðŸŽ¯",
     label: "Convert more leads",
     description: "I want agents handling inbound inquiries and booking demos",
   },
   {
     id: "support_customers",
-    icon: "🤝",
+    icon: "ðŸ¤",
     label: "Support my customers 24/7",
     description: "My customers need help outside business hours",
   },
   {
     id: "automate_scheduling",
-    icon: "📅",
+    icon: "ðŸ“…",
     label: "Automate scheduling",
     description: "I want AI booking appointments so I don't play phone tag",
   },
   {
     id: "collect_payments",
-    icon: "💰",
+    icon: "ðŸ’°",
     label: "Recover revenue",
     description: "Follow up on unpaid invoices and re-engage dormant customers",
   },
@@ -78,19 +78,19 @@ const GOAL_OPTIONS: OptionCard[] = [
 const SITUATION_OPTIONS: OptionCard[] = [
   {
     id: "brand_new",
-    icon: "🚀",
+    icon: "ðŸš€",
     label: "Starting fresh",
     description: "No agents yet, need to set everything up",
   },
   {
     id: "has_some_setup",
-    icon: "⚡",
+    icon: "âš¡",
     label: "Partially set up",
     description: "I have an account but haven't fully configured things",
   },
   {
     id: "migrating",
-    icon: "🔄",
+    icon: "ðŸ”„",
     label: "Moving from another tool",
     description: "Replacing an existing system with Wireline",
   },
@@ -106,19 +106,19 @@ interface Recommendation {
 const RECOMMENDATIONS: Record<Goal, Recommendation> = {
   convert_leads: {
     headline: "Deploy your first Sales SDR agent",
-    body: "Start with the SDR Outbound Prospecting template — it handles qualification and books demos automatically.",
+    body: "Start with the SDR Outbound Prospecting template â€” it handles qualification and books demos automatically.",
     cta: "Go to Agent Templates",
     route: "/agents",
   },
   support_customers: {
     headline: "Set up a 24/7 support agent",
-    body: "The Tier 1 Support template answers FAQs, handles complaints, and escalates when needed — all while you sleep.",
+    body: "The Tier 1 Support template answers FAQs, handles complaints, and escalates when needed â€” all while you sleep.",
     cta: "Go to Agent Templates",
     route: "/agents",
   },
   automate_scheduling: {
     headline: "Deploy a scheduling agent",
-    body: "Pick from Medical Scheduler, Salon Receptionist, or Real Estate Tour Booker — all pre-configured for your industry.",
+    body: "Pick from Medical Scheduler, Salon Receptionist, or Real Estate Tour Booker â€” all pre-configured for your industry.",
     cta: "Go to Agent Templates",
     route: "/agents",
   },
@@ -137,7 +137,7 @@ const PERSONA_LABELS: Record<Persona, string> = {
   non_technical: "Business Owner",
 };
 
-// ─── Sub-components ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface SelectCardProps {
   option: OptionCard;
@@ -156,7 +156,7 @@ function SelectCard({ option, selected, onSelect, cols = 2 }: SelectCardProps) {
         "relative text-left rounded-2xl p-4 border transition-all duration-200 cursor-pointer",
         cols === 3 ? "p-4" : "p-5",
         selected
-          ? "border-cyan-400/70 bg-cyan-400/10 aurora-ring"
+          ? "border-brand/40 bg-brand/10 aurora-ring"
           : "border-white/10 bg-white/4 hover:border-white/20 hover:bg-white/8",
       ].join(" ")}
     >
@@ -164,7 +164,7 @@ function SelectCard({ option, selected, onSelect, cols = 2 }: SelectCardProps) {
         <div
           className="absolute inset-0 rounded-2xl pointer-events-none"
           style={{
-            background: "linear-gradient(135deg, rgba(10,200,212,0.08), rgba(10, 200, 212,0.06))",
+            background: "linear-gradient(135deg, rgba(79, 30, 123 ,0.08), rgba(79, 30, 123 ,0.06))",
           }}
         />
       )}
@@ -176,7 +176,7 @@ function SelectCard({ option, selected, onSelect, cols = 2 }: SelectCardProps) {
       {selected && (
         <div
           className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full flex items-center justify-center"
-          style={{ background: "#0AC8D4" }}
+          style={{ background: "#4F1E7B" }}
         >
           <svg
             className="w-3 h-3 text-black"
@@ -193,7 +193,7 @@ function SelectCard({ option, selected, onSelect, cols = 2 }: SelectCardProps) {
   );
 }
 
-// ─── Main Component ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Main Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function PersonaWizard() {
   const { user } = useAuth();
@@ -239,7 +239,7 @@ export default function PersonaWizard() {
 
   if (loading || !visible) return null;
 
-  // ── Helpers ──────────────────────────────────────────────────────────────────
+  // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const goForward = () => {
     setDirection(1);
@@ -293,7 +293,7 @@ export default function PersonaWizard() {
     }
   };
 
-  // ── Slide animation variants ─────────────────────────────────────────────────
+  // â”€â”€ Slide animation variants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const variants = {
     enter: (dir: number) => ({ x: dir * 60, opacity: 0 }),
@@ -303,7 +303,7 @@ export default function PersonaWizard() {
 
   const recommendation = goal ? RECOMMENDATIONS[goal] : null;
 
-  // ── Render ───────────────────────────────────────────────────────────────────
+  // â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   return (
     <div
@@ -321,7 +321,7 @@ export default function PersonaWizard() {
           className="absolute -inset-px rounded-3xl pointer-events-none z-0"
           style={{
             background:
-              "linear-gradient(135deg, rgba(10,200,212,0.4), rgba(10, 200, 212,0.3), rgba(10, 200, 212,0.25))",
+              "linear-gradient(135deg, rgba(79, 30, 123 ,0.4), rgba(79, 30, 123 ,0.3), rgba(79, 30, 123 ,0.25))",
             borderRadius: "24px",
           }}
         />
@@ -332,7 +332,7 @@ export default function PersonaWizard() {
             className="h-px w-full"
             style={{
               background:
-                "linear-gradient(90deg, transparent, #0AC8D4, #0AC8D4, #0AC8D4, transparent)",
+                "linear-gradient(90deg, transparent, #4F1E7B, #4F1E7B, #4F1E7B, transparent)",
             }}
           />
 
@@ -346,7 +346,7 @@ export default function PersonaWizard() {
                     className="h-1.5 rounded-full transition-all duration-300"
                     style={{
                       width: i === step ? 32 : 8,
-                      background: i <= step ? "#0AC8D4" : "rgba(255,255,255,0.15)",
+                      background: i <= step ? "#4F1E7B" : "rgba(255,255,255,0.15)",
                     }}
                   />
                 ))}
@@ -357,7 +357,7 @@ export default function PersonaWizard() {
             {/* Animated step content */}
             <div className="overflow-hidden">
               <AnimatePresence mode="wait" custom={direction}>
-                {/* ── Step 1: Persona ── */}
+                {/* â”€â”€ Step 1: Persona â”€â”€ */}
                 {step === 0 && (
                   <motion.div
                     key="step-0"
@@ -372,7 +372,7 @@ export default function PersonaWizard() {
                       <h2 className="text-2xl font-bold text-ink mb-2">
                         Let's personalize your experience
                       </h2>
-                      <p className="text-ink/60 text-sm">3 quick questions — takes 20 seconds</p>
+                      <p className="text-ink/60 text-sm">3 quick questions â€” takes 20 seconds</p>
                     </div>
                     <div className="grid grid-cols-2 gap-3 mb-8">
                       {PERSONA_OPTIONS.map((opt) => (
@@ -396,13 +396,13 @@ export default function PersonaWizard() {
                         disabled={!persona}
                         className="brutal-btn px-6 py-2.5 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
                       >
-                        Continue →
+                        Continue â†’
                       </button>
                     </div>
                   </motion.div>
                 )}
 
-                {/* ── Step 2: Goal ── */}
+                {/* â”€â”€ Step 2: Goal â”€â”€ */}
                 {step === 1 && (
                   <motion.div
                     key="step-1"
@@ -443,13 +443,13 @@ export default function PersonaWizard() {
                         disabled={!goal}
                         className="brutal-btn px-6 py-2.5 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
                       >
-                        Continue →
+                        Continue â†’
                       </button>
                     </div>
                   </motion.div>
                 )}
 
-                {/* ── Step 3: Situation ── */}
+                {/* â”€â”€ Step 3: Situation â”€â”€ */}
                 {step === 2 && (
                   <motion.div
                     key="step-2"
@@ -491,13 +491,13 @@ export default function PersonaWizard() {
                         disabled={!situation}
                         className="brutal-btn px-6 py-2.5 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
                       >
-                        See my path →
+                        See my path â†’
                       </button>
                     </div>
                   </motion.div>
                 )}
 
-                {/* ── Step 4: Recommendation ── */}
+                {/* â”€â”€ Step 4: Recommendation â”€â”€ */}
                 {step === 3 && recommendation && persona && goal && (
                   <motion.div
                     key="step-3"
@@ -513,12 +513,12 @@ export default function PersonaWizard() {
                         className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium mb-4"
                         style={{
                           background:
-                            "linear-gradient(135deg, rgba(10,200,212,0.15), rgba(10, 200, 212,0.15))",
-                          border: "1px solid rgba(10,200,212,0.3)",
+                            "linear-gradient(135deg, rgba(79, 30, 123 ,0.15), rgba(79, 30, 123 ,0.15))",
+                          border: "1px solid rgba(79, 30, 123 ,0.3)",
                         }}
                       >
-                        <Sparkles className="w-3.5 h-3.5 text-cyan-600" />
-                        <span className="text-cyan-600">
+                        <Sparkles className="w-3.5 h-3.5 text-brand" />
+                        <span className="text-brand">
                           Personalized for {PERSONA_LABELS[persona]}
                         </span>
                       </div>
@@ -530,13 +530,13 @@ export default function PersonaWizard() {
                       className="relative rounded-2xl p-6 mb-8 overflow-hidden"
                       style={{
                         background:
-                          "linear-gradient(135deg, rgba(10,200,212,0.08), rgba(10, 200, 212,0.06))",
-                        border: "1px solid rgba(10,200,212,0.25)",
+                          "linear-gradient(135deg, rgba(79, 30, 123 ,0.08), rgba(79, 30, 123 ,0.06))",
+                        border: "1px solid rgba(79, 30, 123 ,0.25)",
                       }}
                     >
                       <div
                         className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
-                        style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }}
+                        style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
                       />
                       <div className="relative z-10">
                         <h3 className="text-lg font-bold text-ink mb-2">
@@ -561,10 +561,10 @@ export default function PersonaWizard() {
                         {saving ? (
                           <>
                             <div className="w-3.5 h-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />
-                            Saving…
+                            Savingâ€¦
                           </>
                         ) : (
-                          <>{recommendation.cta} →</>
+                          <>{recommendation.cta} â†’</>
                         )}
                       </button>
                     </div>

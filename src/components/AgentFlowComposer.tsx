@@ -1,4 +1,4 @@
-// AgentFlowComposer — neural-aligned linear stage progression editor.
+﻿// AgentFlowComposer â€” neural-aligned linear stage progression editor.
 import React, { useState, useEffect } from "react";
 import { Plus, Trash2, ArrowRight, Save, Settings2, GripVertical, CheckCircle2, Workflow, Loader2 } from "lucide-react";
 import { motion, AnimatePresence, Reorder } from "motion/react";
@@ -177,7 +177,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                       className={cn(
                         "relative z-10 flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer group",
                         activeStepId === step.id 
-                          ? "bg-brand/10 border-brand/40 shadow-[0_0_15px_rgba(10,200,212,0.1)]" 
+                          ? "bg-brand/10 border-brand/40 shadow-[0_0_15px_rgba(79, 30, 123 ,0.1)]" 
                           : "glass border-white/10 hover:border-white/30"
                       )}
                     >

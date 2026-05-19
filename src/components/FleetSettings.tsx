@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import {
   Plus,
   Phone,
@@ -39,7 +39,7 @@ import {
   type AgentToolName,
 } from "../lib/agent-capabilities";
 
-/** Tiny SVG sparkline — renders a 7-value array as a smooth path. */
+/** Tiny SVG sparkline â€” renders a 7-value array as a smooth path. */
 function Sparkline({
   data,
   width = 64,
@@ -67,8 +67,8 @@ function Sparkline({
     >
       <defs>
         <linearGradient id="sp-grad" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#0AC8D4" stopOpacity="0.8" />
-          <stop offset="100%" stopColor="#0AC8D4" stopOpacity="0.8" />
+          <stop offset="0%" stopColor="#4F1E7B" stopOpacity="0.8" />
+          <stop offset="100%" stopColor="#4F1E7B" stopOpacity="0.8" />
         </linearGradient>
       </defs>
       <path
@@ -87,7 +87,7 @@ function Sparkline({
 }
 
 const PREMIUM_VOICES = [
-  // 11labs — female
+  // 11labs â€” female
   {
     id: "bIHbv24MWmeRgasZH58o",
     provider: "11labs",
@@ -112,7 +112,7 @@ const PREMIUM_VOICES = [
     name: "Charlotte (British, Refined)",
     gender: "female",
   },
-  // 11labs — male
+  // 11labs â€” male
   {
     id: "TX3LPaxmHKxFdv7VOQHJ",
     provider: "11labs",
@@ -140,13 +140,13 @@ const PREMIUM_VOICES = [
 
 // Default voice id per gender for the quick deploy modal
 export const DEFAULT_VOICE_BY_GENDER = {
-  female: "EXAVITQu4vr4xnSDxMaL", // 11labs Sarah Soft — warm + approachable, broad fit
-  male: "TX3LPaxmHKxFdv7VOQHJ", // 11labs Liam — confident + energetic, broad fit
+  female: "EXAVITQu4vr4xnSDxMaL", // 11labs Sarah Soft â€” warm + approachable, broad fit
+  male: "TX3LPaxmHKxFdv7VOQHJ", // 11labs Liam â€” confident + energetic, broad fit
 } as const;
 
 export { PREMIUM_VOICES };
 
-// Role metadata — mirrors ROLE_PERSONALITY_TEMPLATES on the server.
+// Role metadata â€” mirrors ROLE_PERSONALITY_TEMPLATES on the server.
 // color is a Tailwind color stem (without bg-/text- prefix).
 export const AGENT_ROLES = [
   {
@@ -489,7 +489,7 @@ export default function FleetSettings() {
         toastError("Save failed", "Could not update the behavioral engine.");
       }
     } catch {
-      toastError("Save failed", "Network error — please try again.");
+      toastError("Save failed", "Network error â€” please try again.");
     }
   };
 
@@ -520,7 +520,7 @@ export default function FleetSettings() {
         toastError("Save failed", `Could not save ${type}. Please try again.`);
       }
     } catch {
-      toastError("Save failed", "Network error — please try again.");
+      toastError("Save failed", "Network error â€” please try again.");
     }
     setIsSavingEntry(false);
   };
@@ -536,7 +536,7 @@ export default function FleetSettings() {
         toastError("Delete failed", "Could not remove the entry. Please try again.");
       }
     } catch {
-      toastError("Delete failed", "Network error — please try again.");
+      toastError("Delete failed", "Network error â€” please try again.");
     }
   };
 
@@ -638,7 +638,7 @@ export default function FleetSettings() {
               tabIndex={0}
               className="h-full flex flex-col md:flex-row"
             >
-              {/* Sidebar: Agents List — full-width on mobile; collapses when an
+              {/* Sidebar: Agents List â€” full-width on mobile; collapses when an
           agent is selected so the detail editor gets the full viewport. */}
               <aside
                 className={cn(
@@ -649,7 +649,7 @@ export default function FleetSettings() {
                 <div className="px-4 py-3 border-b border-white/8 flex items-center justify-between gap-3 shrink-0">
                   <div className="min-w-0">
                     <div className="text-[10px] uppercase tracking-[0.45em] text-brand/80">
-                      Fleet · Agents
+                      Fleet Â· Agents
                     </div>
                     <h2 className="font-display italic lowercase text-2xl text-ink leading-none mt-0.5 flex items-center gap-2">
                       <Shield className="w-4 h-4 text-brand" />
@@ -681,7 +681,7 @@ export default function FleetSettings() {
                           no agents yet
                         </p>
                         <p className="text-[11px] text-muted/80 mt-2 leading-relaxed">
-                          Create your first AI agent below — it will answer calls, book
+                          Create your first AI agent below â€” it will answer calls, book
                           appointments, and follow up for you.
                         </p>
                       </div>
@@ -702,7 +702,7 @@ export default function FleetSettings() {
                             selectedAgent?.id === agent.id
                               ? {
                                   background:
-                                    "linear-gradient(135deg, rgba(10,200,212,0.08), rgba(10, 200, 212,0.05))",
+                                    "linear-gradient(135deg, rgba(79, 30, 123 ,0.08), rgba(79, 30, 123 ,0.05))",
                                 }
                               : undefined
                           }
@@ -711,7 +711,7 @@ export default function FleetSettings() {
                           {selectedAgent?.id === agent.id && (
                             <div
                               className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full"
-                              style={{ background: "linear-gradient(to bottom, #0AC8D4, #0AC8D4)" }}
+                              style={{ background: "linear-gradient(to bottom, #4F1E7B, #4F1E7B)" }}
                             />
                           )}
 
@@ -893,7 +893,7 @@ export default function FleetSettings() {
                 </div>
               </aside>
 
-              {/* Main Panel: Agent Configuration — hidden on mobile when nothing
+              {/* Main Panel: Agent Configuration â€” hidden on mobile when nothing
           is selected (the list takes the full viewport in that state). */}
               <main
                 className={cn(
@@ -901,7 +901,7 @@ export default function FleetSettings() {
                   !selectedAgent && "hidden md:block",
                 )}
               >
-                {/* Mobile-only back button — clears selectedAgent so the list
+                {/* Mobile-only back button â€” clears selectedAgent so the list
             reappears. Hidden on md+ where both panes coexist. */}
                 {selectedAgent && (
                   <button
@@ -951,7 +951,7 @@ export default function FleetSettings() {
                             <div
                               className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
                               style={{
-                                background: "radial-gradient(circle, #0AC8D4, transparent)",
+                                background: "radial-gradient(circle, #4F1E7B, transparent)",
                               }}
                             />
 
@@ -1074,7 +1074,7 @@ export default function FleetSettings() {
                                               s.avgScore
                                             ) : (
                                               <span className="text-muted/60 text-sm not-italic">
-                                                —
+                                                â€”
                                               </span>
                                             )}
                                           </div>
@@ -1343,7 +1343,7 @@ export default function FleetSettings() {
                                           onChange={(e) =>
                                             updateAgentMeta({ email_signature: e.target.value })
                                           }
-                                          placeholder="— Best, Agent"
+                                          placeholder="â€” Best, Agent"
                                           className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-emerald-400/50 text-ink placeholder:text-muted/50"
                                         />
                                       </div>
@@ -1398,7 +1398,7 @@ export default function FleetSettings() {
                                   and number checks run through your Wireline messaging network.
                                 </p>
 
-                                {/* ── Channel & Autonomy Controls ── */}
+                                {/* â”€â”€ Channel & Autonomy Controls â”€â”€ */}
                                 <div className="rounded-lg border border-white/8 bg-white/3 p-3 space-y-3">
                                   <div className="text-[9px] uppercase tracking-[0.3em] text-brand/70">
                                     Channels
@@ -1562,7 +1562,7 @@ export default function FleetSettings() {
                             <div
                               className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
                               style={{
-                                background: "radial-gradient(circle, #0AC8D4, transparent)",
+                                background: "radial-gradient(circle, #4F1E7B, transparent)",
                               }}
                             />
                             <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
@@ -1597,11 +1597,11 @@ export default function FleetSettings() {
                                 setAgentConfig({ ...agentConfig, personality: e.target.value })
                               }
                               className="relative z-10 w-full h-48 px-4 py-3 rounded-xl bg-black/5 border border-black/10 text-ink outline-none focus:border-brand/50 transition-all resize-none text-sm leading-relaxed placeholder:text-muted/50"
-                              placeholder="Define the agent's identity, tone, and behavioral patterns…"
+                              placeholder="Define the agent's identity, tone, and behavioral patternsâ€¦"
                             />
                           </section>
 
-                          {/* Business profile — hours / compliance / guardrails / variables / KPI focus.
+                          {/* Business profile â€” hours / compliance / guardrails / variables / KPI focus.
                        Each change saves immediately via updateAgentMeta, matching the
                        inline-save pattern used by name / website / first_message above. */}
                           <AgentBusinessProfile
@@ -1618,14 +1618,14 @@ export default function FleetSettings() {
                             onChange={(profile) => updateAgentMeta(profile)}
                           />
 
-                          {/* Outcome-aligned scorecard — re-keys on the kpi_focus
+                          {/* Outcome-aligned scorecard â€” re-keys on the kpi_focus
                        change so editing the focus refreshes the metric
                        definition without a hard reload. */}
                           <AgentScorecard
                             key={`${selectedAgent.id}:${selectedAgent.kpi_focus || "general"}`}
                             agentId={selectedAgent.id}
                             days={30}
-                            title={`Performance · 30d · ${selectedAgent.kpi_focus || "general"}`}
+                            title={`Performance Â· 30d Â· ${selectedAgent.kpi_focus || "general"}`}
                           />
 
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
@@ -1689,7 +1689,7 @@ export default function FleetSettings() {
                                                 disabled={isSavingEntry}
                                                 className="px-2.5 py-1 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 disabled:opacity-50"
                                               >
-                                                {isSavingEntry ? "Saving…" : "Save"}
+                                                {isSavingEntry ? "Savingâ€¦" : "Save"}
                                               </button>
                                             </div>
                                           </div>
@@ -1741,7 +1741,7 @@ export default function FleetSettings() {
                                       e.key === "Enter" &&
                                       saveManualEntry("directive", newDirective)
                                     }
-                                    placeholder="e.g. Always verify date of birth…"
+                                    placeholder="e.g. Always verify date of birthâ€¦"
                                     className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-rose-400/50 text-ink placeholder:text-muted/50"
                                   />
                                   <button
@@ -1815,7 +1815,7 @@ export default function FleetSettings() {
                                                 disabled={isSavingEntry}
                                                 className="px-2.5 py-1 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 disabled:opacity-50"
                                               >
-                                                {isSavingEntry ? "Saving…" : "Save"}
+                                                {isSavingEntry ? "Savingâ€¦" : "Save"}
                                               </button>
                                             </div>
                                           </div>
@@ -1867,7 +1867,7 @@ export default function FleetSettings() {
                                       e.key === "Enter" &&
                                       saveManualEntry("knowledge", newKnowledge)
                                     }
-                                    placeholder="e.g. Office closes at 5pm…"
+                                    placeholder="e.g. Office closes at 5pmâ€¦"
                                     className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-blue-400/50 text-ink placeholder:text-muted/50"
                                   />
                                   <button

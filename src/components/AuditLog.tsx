@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+﻿import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Shield,
@@ -46,7 +46,7 @@ const SEVERITY_OPTIONS: AuditSeverity[] = ["info", "warning", "error", "critical
 
 // Category chips map to event-type *prefixes*. The server's
 // /api/audit/events endpoint treats any value without a dot as a
-// prefix (`auth` → `event_type ilike 'auth.%'`), so the chips here
+// prefix (`auth` â†’ `event_type ilike 'auth.%'`), so the chips here
 // match every event in that namespace without having to enumerate
 // each concrete type. Keep this list in sync with AuditEventType in
 // ../types/audit.ts.
@@ -116,7 +116,7 @@ const EventRow = React.memo(
     const timestamp = formatDateTime(
       event.created_at,
       { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" },
-      "—",
+      "â€”",
       "en-US",
     );
 
@@ -147,7 +147,7 @@ const EventRow = React.memo(
             </div>
             <div>
               <p className="text-xs text-muted">Resource</p>
-              <p className="text-sm text-ink">{event.resource_id || "—"}</p>
+              <p className="text-sm text-ink">{event.resource_id || "â€”"}</p>
             </div>
             <div>
               <p className="text-xs text-muted">Time</p>
@@ -197,7 +197,7 @@ const EventRow = React.memo(
                         <Cpu className="w-3 h-3" /> Provider
                       </p>
                       <p className="text-ink">
-                        {event.provider} / {event.model || "—"}
+                        {event.provider} / {event.model || "â€”"}
                       </p>
                     </div>
                   )}
@@ -385,7 +385,7 @@ export default function AuditLog() {
         <PageShell
           title="Audit Log"
           subtitle="System activity monitoring & compliance"
-          eyebrow="Security · Activity"
+          eyebrow="Security Â· Activity"
           actions={
             <button
               onClick={handleExport}
@@ -417,19 +417,19 @@ export default function AuditLog() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard
                 label="Total Events"
-                value={stats?.total.toLocaleString() || "—"}
+                value={stats?.total.toLocaleString() || "â€”"}
                 icon={Activity}
                 color="bg-cyan-400"
               />
               <StatCard
                 label="API Calls"
-                value={stats?.api_calls.toLocaleString() || "—"}
+                value={stats?.api_calls.toLocaleString() || "â€”"}
                 icon={Cpu}
                 color="bg-purple-400"
               />
               <StatCard
                 label="Total Cost"
-                value={stats ? `$${stats.total_cost.toFixed(2)}` : "—"}
+                value={stats ? `$${stats.total_cost.toFixed(2)}` : "â€”"}
                 icon={DollarSign}
                 color="bg-emerald-400"
               />
@@ -568,14 +568,14 @@ export default function AuditLog() {
                     icon={Shield}
                     title="No matches"
                     description="Try a different search term or widen the time range filter."
-                    accent="#0AC8D4"
+                    accent="#4F1E7B"
                   />
                 ) : (
                   <EmptyState
                     icon={Shield}
                     title="Audit trail is quiet"
                     description="Every agent action, escalation, and policy check writes here. Deploy an agent to start the feed."
-                    accent="#0AC8D4"
+                    accent="#4F1E7B"
                     actions={[{ label: "Deploy an agent", to: "/agents", primary: true }]}
                   />
                 )

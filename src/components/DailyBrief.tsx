@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+﻿import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -55,7 +55,7 @@ export default function DailyBrief() {
   const [showSchedule, setShowSchedule] = useState(false);
   // Mounted guard: load() runs both on mount and on the operator's
   // "Refresh" click. The latter is always in-mount, but the mount path
-  // can resolve after navigation away — without this, late responses
+  // can resolve after navigation away â€” without this, late responses
   // would call setState on an unmounted DailyBrief.
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -97,7 +97,7 @@ export default function DailyBrief() {
         <div className="relative p-7 rounded-3xl glass overflow-hidden flex items-center gap-5">
           <div
             className="w-14 h-14 rounded-2xl flex items-center justify-center"
-            style={{ background: "#0AC8D4" }}
+            style={{ background: "#4F1E7B" }}
           >
             <Brain className="w-7 h-7 text-paper" />
           </div>
@@ -118,7 +118,7 @@ export default function DailyBrief() {
       <div className="rounded-3xl glass border border-white/10 p-8 flex items-center gap-4">
         <Loader2 className="w-5 h-5 animate-spin text-brand" />
         <span className="text-[11px] uppercase tracking-[0.4em] text-muted">
-          Wireline is analyzing your day…
+          Wireline is analyzing your dayâ€¦
         </span>
       </div>
     );
@@ -133,7 +133,7 @@ export default function DailyBrief() {
 
   if (!data) return null;
 
-  // Defensive defaults — Claude's structured-output sometimes returns
+  // Defensive defaults â€” Claude's structured-output sometimes returns
   // partial shapes (missing fields, null arrays). Don't let a thin API
   // response crash the render with "Cannot read property X of undefined".
   const brief = {
@@ -159,7 +159,7 @@ export default function DailyBrief() {
   };
 
   const moodAccent =
-    brief.mood === "green" ? "#10B981" : brief.mood === "yellow" ? "#FFC07D" : "#0AC8D4";
+    brief.mood === "green" ? "#10B981" : brief.mood === "yellow" ? "#FFC07D" : "#4F1E7B";
   const moodLabel =
     brief.mood === "green"
       ? "All systems go"
@@ -180,7 +180,7 @@ export default function DailyBrief() {
         />
         <div
           className="absolute -bottom-32 -left-32 w-72 h-72 rounded-full opacity-25 blur-3xl pointer-events-none"
-          style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }}
+          style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
         />
 
         <div className="relative z-10 px-7 py-5 border-b border-white/8 flex items-center justify-between flex-wrap gap-3">
@@ -193,7 +193,7 @@ export default function DailyBrief() {
             </div>
             <div>
               <div className="text-[10px] uppercase tracking-[0.4em] text-brand flex items-center gap-2">
-                <Brain className="w-3 h-3" /> Daily Brief ·{" "}
+                <Brain className="w-3 h-3" /> Daily Brief Â·{" "}
                 {formatDate(
                   new Date(),
                   { weekday: "long", month: "long", day: "numeric" },
@@ -286,7 +286,7 @@ export default function DailyBrief() {
               </Section>
             )}
             {brief.concerns.length > 0 && (
-              <Section title="Concerns" icon={AlertTriangle} accent="#0AC8D4">
+              <Section title="Concerns" icon={AlertTriangle} accent="#4F1E7B">
                 {brief.concerns.map((c, i) => (
                   <li key={i}>{c}</li>
                 ))}
@@ -350,7 +350,7 @@ function Quick({
 }) {
   const showDelta = delta !== undefined && Math.abs(delta) >= 0.5;
   const isUp = (delta ?? 0) > 0;
-  // For "spend", going up is bad — invert the color sense.
+  // For "spend", going up is bad â€” invert the color sense.
   const isGood = invertDelta ? !isUp : isUp;
   return (
     <div className="rounded-2xl glass border border-white/10 p-4">
@@ -491,7 +491,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
 
       {loading ? (
         <div className="flex items-center gap-2 text-muted text-xs">
-          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…
+          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loadingâ€¦
         </div>
       ) : (
         <>
@@ -502,7 +502,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
               <Link to="/integrations" className="underline">
                 Carrier Bridge
               </Link>{" "}
-              first — emails are sent through your own Gmail OAuth.
+              first â€” emails are sent through your own Gmail OAuth.
             </div>
           )}
 
@@ -557,7 +557,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
                 className="w-full h-11 px-4 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all font-mono"
               />
               <span className="text-[10px] text-ink/40 leading-snug">
-                13:00 UTC ≈ 9 AM ET / 6 AM PT. Convert your local time before saving.
+                13:00 UTC â‰ˆ 9 AM ET / 6 AM PT. Convert your local time before saving.
               </span>
             </label>
             <label className="space-y-1.5">
@@ -575,7 +575,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
 
           {lastSentAt && (
             <div className="text-[10px] uppercase tracking-[0.3em] text-emerald-500/70">
-              Last sent {formatDateTime(lastSentAt, undefined, "—")}
+              Last sent {formatDateTime(lastSentAt, undefined, "â€”")}
             </div>
           )}
           {lastError && (

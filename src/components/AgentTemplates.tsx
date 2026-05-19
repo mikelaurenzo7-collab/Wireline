@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import DeployAgentModal, { DeployValues } from "./DeployAgentModal";
 import {
@@ -29,39 +29,39 @@ import { cn } from "../lib/utils";
 import { useToast } from "../contexts/ToastContext";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Template definitions
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const AGENT_TEMPLATES = [
   // === SALES & REVENUE ===
   {
     id: "sales-sdr",
     category: "Sales & Revenue",
-    name: "SDR — Outbound Prospecting",
+    name: "SDR â€” Outbound Prospecting",
     description:
       "Qualifies inbound leads with BANT, books demos, handles objections, and passes hot leads to your CRM.",
     role: "sales",
     channel: "voice" as const,
     icon: Target,
-    accent: "#0AC8D4",
+    accent: "#4F1E7B",
     badge: "Most popular",
     firstMessage:
-      "Hi, this is Alex from [Company]. I saw you were interested in [Product] — got 2 minutes to see if we'd be a fit?",
+      "Hi, this is Alex from [Company]. I saw you were interested in [Product] â€” got 2 minutes to see if we'd be a fit?",
   },
   {
     id: "sales-closer",
     category: "Sales & Revenue",
-    name: "Closer — Late Stage Deals",
+    name: "Closer â€” Late Stage Deals",
     description:
       "Handles warm follow-ups, pricing discussions, and closing calls with empathy and authority.",
     role: "sales",
     channel: "voice" as const,
     icon: Zap,
-    accent: "#0AC8D4",
+    accent: "#4F1E7B",
     badge: null,
     firstMessage:
-      "Hey [Name], following up on our conversation — happy to answer any final questions and get you started today.",
+      "Hey [Name], following up on our conversation â€” happy to answer any final questions and get you started today.",
   },
   {
     id: "lead-qualifier-inbound",
@@ -72,7 +72,7 @@ const AGENT_TEMPLATES = [
     role: "lead_qualifier",
     channel: "voice" as const,
     icon: Filter,
-    accent: "#0AC8D4",
+    accent: "#4F1E7B",
     badge: "Inbound",
     firstMessage:
       "Thanks for calling! Before I connect you with our team, let me gather a bit of information to make sure we're the right fit for you.",
@@ -81,7 +81,7 @@ const AGENT_TEMPLATES = [
   {
     id: "support-tier1",
     category: "Customer Support",
-    name: "Tier 1 — General Support",
+    name: "Tier 1 â€” General Support",
     description:
       "Handles FAQs, account questions, and basic troubleshooting. Escalates to human when needed.",
     role: "customer_service",
@@ -90,7 +90,7 @@ const AGENT_TEMPLATES = [
     accent: "#10B981",
     badge: null,
     firstMessage:
-      "Thank you for calling support. I'm your AI assistant — how can I help you today?",
+      "Thank you for calling support. I'm your AI assistant â€” how can I help you today?",
   },
   {
     id: "support-email",
@@ -116,10 +116,10 @@ const AGENT_TEMPLATES = [
     role: "scheduler",
     channel: "voice" as const,
     icon: Calendar,
-    accent: "#0AC8D4",
+    accent: "#4F1E7B",
     badge: "Healthcare",
     firstMessage:
-      "Hello, thank you for calling. I can help schedule or reschedule your appointment — what works best for you?",
+      "Hello, thank you for calling. I can help schedule or reschedule your appointment â€” what works best for you?",
   },
   {
     id: "scheduler-salon",
@@ -130,7 +130,7 @@ const AGENT_TEMPLATES = [
     role: "receptionist",
     channel: "voice" as const,
     icon: Sparkles,
-    accent: "#0AC8D4",
+    accent: "#4F1E7B",
     badge: null,
     firstMessage:
       "Welcome to [Salon Name]! I'm your virtual receptionist. Would you like to book an appointment or ask about our services?",
@@ -144,16 +144,16 @@ const AGENT_TEMPLATES = [
     role: "lead_qualifier",
     channel: "voice" as const,
     icon: Building2,
-    accent: "#0AC8D4",
+    accent: "#4F1E7B",
     badge: "Real Estate",
     firstMessage:
-      "Hi! I'm calling about [Property Address] — are you still interested in scheduling a showing?",
+      "Hi! I'm calling about [Property Address] â€” are you still interested in scheduling a showing?",
   },
   // === COLLECTIONS & FINANCE ===
   {
     id: "collections-soft",
     category: "Collections & Finance",
-    name: "Soft Collections — Payment Reminders",
+    name: "Soft Collections â€” Payment Reminders",
     description:
       "Friendly payment reminder calls with empathy. Offers payment plans and avoids escalation.",
     role: "collections",
@@ -167,7 +167,7 @@ const AGENT_TEMPLATES = [
   {
     id: "collections-hard",
     category: "Collections & Finance",
-    name: "Hard Collections — Recovery",
+    name: "Hard Collections â€” Recovery",
     description:
       "Direct payment recovery calls. Compliant with FDCPA guidelines. Structured call flow with objection handling.",
     role: "collections",
@@ -188,10 +188,10 @@ const AGENT_TEMPLATES = [
     role: "marketing",
     channel: "voice" as const,
     icon: RefreshCw,
-    accent: "#0AC8D4",
+    accent: "#4F1E7B",
     badge: null,
     firstMessage:
-      "Hi [Name], it's been a while! I'm reaching out with something special for our loyal customers — do you have 60 seconds?",
+      "Hi [Name], it's been a while! I'm reaching out with something special for our loyal customers â€” do you have 60 seconds?",
   },
   {
     id: "marketing-survey",
@@ -202,13 +202,13 @@ const AGENT_TEMPLATES = [
     role: "marketing",
     channel: "voice" as const,
     icon: BarChart3,
-    accent: "#0AC8D4",
+    accent: "#4F1E7B",
     badge: null,
     firstMessage:
-      "Hi! I'm calling on behalf of [Company] — we'd love your feedback on your recent experience. This takes under 2 minutes.",
+      "Hi! I'm calling on behalf of [Company] â€” we'd love your feedback on your recent experience. This takes under 2 minutes.",
   },
   // === PERSONAL & LIFESTYLE ===
-  // For individuals on the Personal tier ($29/mo, 1 agent) — agents
+  // For individuals on the Personal tier ($29/mo, 1 agent) â€” agents
   // represent a single human rather than a business. Versatile concierge
   // by default plus three specialty sub-types for high-value individual
   // use cases (call screening, errand-running, bill negotiation).
@@ -217,12 +217,12 @@ const AGENT_TEMPLATES = [
     category: "Personal & Lifestyle",
     name: "Personal Concierge",
     description:
-      "Super-versatile personal assistant. Books appointments, handles follow-ups, screens calls, and takes messages — on your behalf.",
+      "Super-versatile personal assistant. Books appointments, handles follow-ups, screens calls, and takes messages â€” on your behalf.",
     role: "personal_assistant",
     channel: "voice" as const,
     icon: User,
     accent: "#4DFFC4",
-    badge: "Personal · most versatile",
+    badge: "Personal Â· most versatile",
     firstMessage: "Hi, this is [Your Name]'s assistant. How can I help you today?",
   },
   {
@@ -235,9 +235,9 @@ const AGENT_TEMPLATES = [
     channel: "voice" as const,
     icon: PhoneIncoming,
     accent: "#4DFFC4",
-    badge: "Personal · inbound",
+    badge: "Personal Â· inbound",
     firstMessage:
-      "Hi, you've reached [Your Name]'s line — I'm their assistant. Can I take a quick message or let them know what this is about?",
+      "Hi, you've reached [Your Name]'s line â€” I'm their assistant. Can I take a quick message or let them know what this is about?",
   },
   {
     id: "personal-errand",
@@ -249,9 +249,9 @@ const AGENT_TEMPLATES = [
     channel: "voice" as const,
     icon: ClipboardList,
     accent: "#4DFFC4",
-    badge: "Personal · outbound",
+    badge: "Personal Â· outbound",
     firstMessage:
-      "Hi, I'm calling on behalf of [Your Name] — they asked me to [book / reschedule / confirm] [appointment type]. Is now a good time?",
+      "Hi, I'm calling on behalf of [Your Name] â€” they asked me to [book / reschedule / confirm] [appointment type]. Is now a good time?",
   },
   {
     id: "personal-negotiator",
@@ -263,9 +263,9 @@ const AGENT_TEMPLATES = [
     channel: "voice" as const,
     icon: Receipt,
     accent: "#4DFFC4",
-    badge: "Personal · saves $$",
+    badge: "Personal Â· saves $$",
     firstMessage:
-      "Hi, I'm calling on behalf of [Your Name], account [Account #] — they've asked me to discuss their current plan and pricing.",
+      "Hi, I'm calling on behalf of [Your Name], account [Account #] â€” they've asked me to discuss their current plan and pricing.",
   },
 ] as const;
 
@@ -282,7 +282,7 @@ const CATEGORIES = [
 ] as const;
 
 // Recommended default voice gender per template. Operator can override in
-// the deploy modal — this is just a smart starting point so the toggle
+// the deploy modal â€” this is just a smart starting point so the toggle
 // lands on a sensible default for the use case (e.g. assertive collections
 // reads better as male, salon receptionist as female).
 const DEFAULT_GENDER_BY_TEMPLATE: Record<string, "female" | "male"> = {
@@ -304,9 +304,9 @@ const DEFAULT_GENDER_BY_TEMPLATE: Record<string, "female" | "male"> = {
   "personal-negotiator": "male",
 };
 
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Template Card
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function TemplateCard({
   template,
@@ -355,7 +355,7 @@ function TemplateCard({
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap justify-end">
-            {/* Deployed-in-fleet badge — surfaces when this tenant already
+            {/* Deployed-in-fleet badge â€” surfaces when this tenant already
                 has one or more agents instantiated from this template, so
                 operators don't accidentally double-deploy. */}
             {alreadyDeployed && (
@@ -366,7 +366,7 @@ function TemplateCard({
                 }
               >
                 <Check className="w-2.5 h-2.5" />
-                {deployedCount === 1 ? "Deployed" : `Deployed ×${deployedCount}`}
+                {deployedCount === 1 ? "Deployed" : `Deployed Ã—${deployedCount}`}
               </span>
             )}
             {/* Channel badge */}
@@ -418,7 +418,7 @@ function TemplateCard({
         </AnimatePresence>
       </div>
 
-      {/* Deploy button — label changes when the template is already in
+      {/* Deploy button â€” label changes when the template is already in
           the fleet so operators don't double-deploy without realizing it. */}
       <div className="relative z-10 px-4 pb-4">
         <button
@@ -434,9 +434,9 @@ function TemplateCard({
   );
 }
 
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Custom Agent card
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function CustomAgentCard() {
   return (
@@ -460,9 +460,9 @@ function CustomAgentCard() {
   );
 }
 
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Main component
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function AgentTemplates() {
   const navigate = useNavigate();
@@ -484,7 +484,7 @@ export default function AgentTemplates() {
       const data = (await r.json()) as { agents?: Array<{ name?: string | null }> };
       setDeployedNames((data.agents ?? []).map((a) => (a.name ?? "").toLowerCase()));
     } catch {
-      /* non-critical — gallery still works without the badge */
+      /* non-critical â€” gallery still works without the badge */
     }
   };
 
@@ -534,7 +534,7 @@ export default function AgentTemplates() {
           name: values.name,
           channel: modalTemplate.channel,
           role: modalTemplate.role,
-          // Operator-chosen voice — 11labs/OpenAI id selected by gender
+          // Operator-chosen voice â€” 11labs/OpenAI id selected by gender
           // toggle + optional specific voice picker in the modal.
           voice_id: values.voiceId,
           // templateId drives the server-side personality overlay; firstMessage
@@ -567,7 +567,7 @@ export default function AgentTemplates() {
       <div className="px-4 py-3 border-b border-white/8 flex flex-col gap-3 shrink-0">
         <div>
           <div className="text-[10px] uppercase tracking-[0.45em] text-brand/80">
-            Fleet · Templates
+            Fleet Â· Templates
           </div>
           <h2 className="font-display italic lowercase text-2xl text-ink leading-none mt-0.5">
             agent gallery
@@ -579,7 +579,7 @@ export default function AgentTemplates() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted/60 pointer-events-none" />
           <input
             type="text"
-            placeholder="Search templates…"
+            placeholder="Search templatesâ€¦"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2 text-sm bg-black/5 border border-black/10 rounded-xl outline-none focus:border-brand/50 text-ink placeholder:text-muted/50"
@@ -649,7 +649,7 @@ export default function AgentTemplates() {
                 role: modalTemplate.role,
                 channel: modalTemplate.channel,
                 firstMessage: modalTemplate.firstMessage,
-                // Recommend a default gender per template — operator can override
+                // Recommend a default gender per template â€” operator can override
                 defaultGender: DEFAULT_GENDER_BY_TEMPLATE[modalTemplate.id] ?? "female",
               }
             : null

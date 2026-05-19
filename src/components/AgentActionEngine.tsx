@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { Save, Blocks, Link as LinkIcon, AlertCircle, CheckCircle2, Webhook, Loader2, Workflow } from "lucide-react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
@@ -165,7 +165,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
                     className={cn(
                       "relative p-5 rounded-2xl border transition-all cursor-pointer overflow-hidden group",
                       isEnabled && !isMissingIntegration
-                        ? "bg-brand/5 border-brand/30 shadow-[0_0_15px_rgba(10,200,212,0.05)]" 
+                        ? "bg-brand/5 border-brand/30 shadow-[0_0_15px_rgba(79, 30, 123 ,0.05)]" 
                         : "glass border-white/10 hover:border-white/30",
                       isMissingIntegration && "opacity-75 cursor-not-allowed grayscale"
                     )}

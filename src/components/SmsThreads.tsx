@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+﻿import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { MessageSquare, Send, Loader2, RefreshCw, Inbox, Phone } from "lucide-react";
 import { authFetch } from "../lib/api";
@@ -32,7 +32,7 @@ interface SmsMessage {
  * agent action engine, so opt-out enforcement applies automatically.
  *
  * Mounted at /inbox under a "SMS" tab alongside the existing email
- * inbox — see AppRoutes.tsx + EmailInbox.tsx for the surrounding
+ * inbox â€” see AppRoutes.tsx + EmailInbox.tsx for the surrounding
  * tab layout.
  */
 export default function SmsThreads() {
@@ -116,9 +116,9 @@ export default function SmsThreads() {
 
   return (
     <PageShell
-      eyebrow="Channels · Messaging"
+      eyebrow="Channels Â· Messaging"
       title="SMS Inbox"
-      subtitle="Two-way text conversations with customers — outbound from your agents, inbound replies routed here."
+      subtitle="Two-way text conversations with customers â€” outbound from your agents, inbound replies routed here."
       actions={
         <button
           onClick={fetchThreads}
@@ -145,7 +145,7 @@ export default function SmsThreads() {
               icon={MessageSquare}
               title="No SMS yet"
               description="Conversations land here when an agent sends a text or a customer replies to your number."
-              accent="#0AC8D4"
+              accent="#4F1E7B"
             />
           ) : (
             <div className="space-y-1.5">
@@ -175,7 +175,7 @@ export default function SmsThreads() {
                               hour: "numeric",
                               minute: "2-digit",
                             },
-                            "—",
+                            "â€”",
                             "en-US",
                           )}
                         </p>
@@ -195,7 +195,7 @@ export default function SmsThreads() {
 
         <Panel
           title={activeThread ? activeThread.customer_number : "Select a thread"}
-          hint={activeThread ? "SMS · TWO-WAY" : ""}
+          hint={activeThread ? "SMS Â· TWO-WAY" : ""}
           icon={Phone}
         >
           {!activeThread ? (
@@ -203,7 +203,7 @@ export default function SmsThreads() {
               icon={MessageSquare}
               title="Pick a conversation"
               description="Select a thread on the left to see the full SMS history and reply."
-              accent="#0AC8D4"
+              accent="#4F1E7B"
             />
           ) : (
             <div className="h-full flex flex-col">
@@ -227,11 +227,11 @@ export default function SmsThreads() {
                         {m.body}
                       </p>
                       <p className="text-[9px] uppercase tracking-[0.25em] text-muted/60 mt-1.5">
-                        {m.direction === "out" ? "You" : "Caller"} ·{" "}
+                        {m.direction === "out" ? "You" : "Caller"} Â·{" "}
                         {formatDate(
                           m.created_at,
                           { hour: "numeric", minute: "2-digit" },
-                          "—",
+                          "â€”",
                           "en-US",
                         )}
                       </p>
@@ -253,7 +253,7 @@ export default function SmsThreads() {
                         handleSend();
                       }
                     }}
-                    placeholder="Type a reply…"
+                    placeholder="Type a replyâ€¦"
                     disabled={sending}
                     className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2.5 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 disabled:opacity-50"
                   />
@@ -271,7 +271,7 @@ export default function SmsThreads() {
                   </button>
                 </div>
                 <p className="text-[10px] text-muted/60 mt-1.5 leading-relaxed">
-                  Sent from your Twilio sender · TCPA opt-out applies · STOP keyword auto-honored.
+                  Sent from your Twilio sender Â· TCPA opt-out applies Â· STOP keyword auto-honored.
                 </p>
               </div>
             </div>

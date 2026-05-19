@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from "motion/react";
+﻿import { AnimatePresence, motion } from "motion/react";
 import { CheckCircle2, XCircle, AlertTriangle, Info, X } from "lucide-react";
 import { useToast, type Toast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
@@ -17,7 +17,7 @@ const META = {
     border: "border-amber-500/30",
     bg: "bg-amber-500/10",
   },
-  info: { icon: Info, color: "#0AC8D4", border: "border-brand/30", bg: "bg-brand/10" },
+  info: { icon: Info, color: "#4F1E7B", border: "border-brand/30", bg: "bg-brand/10" },
 };
 
 function ToastItem({ toast }: { toast: Toast }) {

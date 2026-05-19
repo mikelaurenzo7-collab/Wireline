@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "motion/react";
 import {
@@ -105,7 +105,7 @@ export default function ContactProfile() {
           {err || "Contact not found"}
         </p>
         <Link to="/" className="text-[11px] uppercase tracking-[0.3em] text-muted hover:text-brand">
-          ← Back to Atlas
+          â† Back to Atlas
         </Link>
       </div>
     );
@@ -150,7 +150,7 @@ export default function ContactProfile() {
           <h1 className="font-display italic text-6xl md:text-7xl lg:text-[6.5rem] leading-[0.9] tracking-tight text-ink">
             {displayName}
           </h1>
-          <p className="text-ink/55 text-sm">Last touch · {lastTouch}</p>
+          <p className="text-ink/55 text-sm">Last touch Â· {lastTouch}</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <ClaudeRecipeButton
@@ -164,7 +164,7 @@ export default function ContactProfile() {
                 .slice(0, 3)
                 .map((e) => e.summary)
                 .filter(Boolean)
-                .join(" · "),
+                .join(" Â· "),
             }}
             label="Pre-Call Brief"
           />
@@ -184,19 +184,19 @@ export default function ContactProfile() {
           label="Calls"
           value={String(data.stats.total_calls)}
           icon={Phone}
-          accent="#0AC8D4"
+          accent="#4F1E7B"
         />
         <StatCard
           label="Minutes"
           value={String(data.stats.total_minutes)}
           icon={Clock}
-          accent="#0AC8D4"
+          accent="#4F1E7B"
         />
         <StatCard
           label="Avg Score"
           value={String(data.stats.avg_lead_score)}
           icon={Target}
-          accent="#0AC8D4"
+          accent="#4F1E7B"
         />
         <StatCard
           label="Spend"
@@ -332,19 +332,19 @@ const TimelineRow: React.FC<{ event: ContactData["timeline"][number] }> = ({ eve
               )}
               {event.cost !== undefined && event.cost > 0 && (
                 <>
-                  <span>·</span>
+                  <span>Â·</span>
                   <span>${safeFixed(event.cost, 3)}</span>
                 </>
               )}
               {event.intent_label && (
                 <>
-                  <span>·</span>
+                  <span>Â·</span>
                   <span>{event.intent_label} intent</span>
                 </>
               )}
               {event.sentiment && (
                 <>
-                  <span>·</span>
+                  <span>Â·</span>
                   <span>{event.sentiment}</span>
                 </>
               )}

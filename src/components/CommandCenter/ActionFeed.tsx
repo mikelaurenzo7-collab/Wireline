@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { 
   CheckCircle2, Clock, AlertCircle, Mail, Calendar, 
   UserPlus, ListTodo, ChevronDown, ChevronUp, 
@@ -81,7 +81,7 @@ export function ActionFeed({ actions, onRefresh }: { actions: ActionItem[], onRe
       <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-3 custom-scrollbar">
         {actions.length === 0 ? (
           <div className="h-64 flex flex-col items-center justify-center gap-4 text-center border border-dashed border-black/8 rounded-[2rem] bg-black/[0.01] relative overflow-hidden">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(10,200,212,0.03),transparent)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(79, 30, 123 ,0.03),transparent)]" />
             <div className="w-12 h-12 rounded-2xl bg-white brutal-border flex items-center justify-center relative">
                <Sparkles className="w-5 h-5 text-brand" />
                <motion.div 
@@ -219,7 +219,7 @@ export function ActionFeed({ actions, onRefresh }: { actions: ActionItem[], onRe
                               <div className="space-y-3">
                                 <div className="flex items-center gap-2 pb-2 border-bottom border-black/5">
                                   <span className="text-[10px] font-mono text-muted">TO:</span>
-                                  <span className="text-[11px] font-medium text-ink">{action.payload?.to || '—'}</span>
+                                  <span className="text-[11px] font-medium text-ink">{action.payload?.to || 'â€”'}</span>
                                 </div>
                                 <div className="text-[11px] text-ink/80 leading-relaxed whitespace-pre-wrap font-sans">
                                   {action.payload?.body || 'No content drafted.'}

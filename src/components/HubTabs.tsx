@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+﻿import { Link, useLocation } from "react-router-dom";
 import type { ComponentType, SVGProps } from "react";
 import { cn } from "../lib/utils";
 
@@ -17,7 +17,7 @@ interface HubTabsProps {
 
 /**
  * Sub-navigation strip for grouped pages. Each tab is a Link to its own
- * route, so existing deep-links keep working — the strip just gives the
+ * route, so existing deep-links keep working â€” the strip just gives the
  * operator one-click access to siblings within the same hub (Training,
  * Channels, System). Active-state matches by current pathname so the
  * strip stays correct on direct navigation.
@@ -48,9 +48,9 @@ export default function HubTabs({ tabs, label, className }: HubTabsProps) {
               style={
                 active
                   ? {
-                      background: "#0AC8D4",
+                      background: "#4F1E7B",
                       boxShadow:
-                        "0 3px 12px -6px rgba(10,200,212,0.50), 0 0 0 1px rgba(255,255,255,0.18) inset",
+                        "0 3px 12px -6px rgba(79, 30, 123 ,0.50), 0 0 0 1px rgba(255,255,255,0.18) inset",
                     }
                   : undefined
               }
@@ -65,10 +65,10 @@ export default function HubTabs({ tabs, label, className }: HubTabsProps) {
   );
 }
 
-// ──────────────────────────────────────────────────────────────────────────
-// Hub definitions — a single source of truth so each member page renders
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Hub definitions â€” a single source of truth so each member page renders
 // the same strip without drifting.
-// ──────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 import {
   MessageSquare,

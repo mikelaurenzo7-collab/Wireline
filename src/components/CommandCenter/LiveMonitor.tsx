@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Activity, ShieldAlert, Zap, Phone, Sparkles, MessageSquareText } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx } from 'clsx';
@@ -130,7 +130,7 @@ export function LiveMonitor({ calls }: { calls: LiveCall[] }) {
                         "h-full rounded-full transition-colors duration-500",
                         call.urgency > 7 ? "bg-rose-500" : "bg-gradient-to-r from-brand to-brand-2"
                       )}
-                      style={{ boxShadow: call.urgency > 7 ? '0 0 10px rgba(244,63,94,0.4)' : '0 0 10px rgba(10,200,212,0.3)' }}
+                      style={{ boxShadow: call.urgency > 7 ? '0 0 10px rgba(244,63,94,0.4)' : '0 0 10px rgba(79, 30, 123 ,0.3)' }}
                     />
                   </div>
                 </div>

@@ -1,13 +1,13 @@
-/**
- * Transactional email helper — the single abstraction layer for
+﻿/**
+ * Transactional email helper â€” the single abstraction layer for
  * system-originated emails (password reset, account notifications,
  * security alerts). Route code MUST go through here instead of calling
  * Resend / SMTP / Mailgun directly so swapping providers later is a
  * one-file change.
  *
  * Transport selection:
- *   - If RESEND_API_KEY is set → POST to https://api.resend.com/emails.
- *   - Otherwise → log.warn the rendered link so dev/support can copy it
+ *   - If RESEND_API_KEY is set â†’ POST to https://api.resend.com/emails.
+ *   - Otherwise â†’ log.warn the rendered link so dev/support can copy it
  *     out of runtime logs while production email transport is wired up.
  *     This is the documented stop-gap from the launch plan; the password
  *     reset flow stays usable in pre-launch tenants without a transport.
@@ -88,18 +88,18 @@ export async function sendPasswordResetEmail(opts: PasswordResetEmailOpts): Prom
     "",
     opts.resetUrl,
     "",
-    "If you did not request this, you can ignore this email — your password stays unchanged.",
+    "If you did not request this, you can ignore this email â€” your password stays unchanged.",
     "",
-    "— Wireline",
+    "â€” Wireline",
   ].join("\n");
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #1A1A23;">
       <h2 style="margin: 0 0 16px; font-weight: 600;">Reset your Wireline password</h2>
       <p style="margin: 0 0 16px; line-height: 1.55;">Someone (hopefully you) requested a password reset for your Wireline account.</p>
       <p style="margin: 0 0 24px; line-height: 1.55;">Click the button below to set a new password. The link expires in <strong>${expiresHuman}</strong>.</p>
-      <p style="margin: 0 0 24px;"><a href="${opts.resetUrl}" style="display: inline-block; background: #0AC8D4; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Reset password</a></p>
+      <p style="margin: 0 0 24px;"><a href="${opts.resetUrl}" style="display: inline-block; background: #4F1E7B; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Reset password</a></p>
       <p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Or paste this link into your browser:<br><span style="word-break: break-all;">${opts.resetUrl}</span></p>
-      <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you did not request this, you can ignore this email — your password stays unchanged.</p>
+      <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you did not request this, you can ignore this email â€” your password stays unchanged.</p>
     </div>
   `;
 

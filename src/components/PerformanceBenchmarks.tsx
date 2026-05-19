@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ChevronDown, ChevronUp, TrendingUp } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -40,7 +40,7 @@ const statusConfig: Record<
   { icon: string; color: string; bgColor: string; borderColor: string }
 > = {
   green: {
-    icon: "✓",
+    icon: "âœ“",
     color: "text-emerald-600",
     bgColor: "bg-emerald-500/10",
     borderColor: "border-emerald-500/30",
@@ -52,7 +52,7 @@ const statusConfig: Record<
     borderColor: "border-amber-500/30",
   },
   red: {
-    icon: "↑",
+    icon: "â†‘",
     color: "text-rose-500",
     bgColor: "bg-rose-500/10",
     borderColor: "border-rose-500/30",
@@ -110,7 +110,7 @@ function BenchmarkRow({ item }: { item: BenchmarkItem }) {
                 animate={{ width: `${userPct}%` }}
                 transition={{ duration: 1, ease: "easeOut" }}
                 className="absolute top-0 left-0 h-full rounded-full"
-                style={{ background: "#0AC8D4" }}
+                style={{ background: "#4F1E7B" }}
               />
               {/* Benchmark marker */}
               <div
@@ -143,7 +143,7 @@ function BenchmarkRow({ item }: { item: BenchmarkItem }) {
             <div
               className={`mx-4 mb-3 px-3 py-2.5 rounded-lg glass border text-[11px] text-ink/60 leading-relaxed ${cfg.borderColor}`}
             >
-              💡 {item.tip}
+              ðŸ’¡ {item.tip}
             </div>
           </motion.div>
         )}
@@ -230,7 +230,7 @@ export default function PerformanceBenchmarks() {
           to="/outbound"
           className="px-3 py-1.5 rounded-full glass border border-brand/30 text-brand text-[9px] uppercase tracking-[0.25em] hover:bg-brand/10 transition-all"
         >
-          Start Outbound Campaign →
+          Start Outbound Campaign â†’
         </Link>
       </div>
     );

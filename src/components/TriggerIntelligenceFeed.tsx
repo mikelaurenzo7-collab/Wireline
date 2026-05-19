@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from "motion/react";
+﻿import { motion, AnimatePresence } from "motion/react";
 import { Activity, Zap, Cpu, Signal, Radio, Waves } from "lucide-react";
 import { cn } from "../lib/utils";
 import { formatTime } from "../lib/safe-date";
@@ -14,10 +14,10 @@ type ActivityItem = {
 };
 
 const TYPE_META: Record<string, { icon: typeof Signal; color: string }> = {
-  SIGNAL_ANALYZED: { icon: Signal, color: "#0AC8D4" },
-  MISSION_INJECTED: { icon: Zap, color: "#0AC8D4" },
+  SIGNAL_ANALYZED: { icon: Signal, color: "#4F1E7B" },
+  MISSION_INJECTED: { icon: Zap, color: "#4F1E7B" },
   NEURAL_OPTIMIZATION: { icon: Cpu, color: "#10B981" },
-  DIGITAL_RELAY: { icon: Radio, color: "#0AC8D4" },
+  DIGITAL_RELAY: { icon: Radio, color: "#4F1E7B" },
 };
 
 const IMPORTANCE_RING: Record<string, string> = {
@@ -35,13 +35,13 @@ export default function TriggerIntelligenceFeed({ activity }: { activity: Activi
           <div className="relative w-12 h-12">
             <div
               className="absolute inset-0 rounded-full opacity-30 animate-ping"
-              style={{ background: "radial-gradient(circle, rgba(10,200,212,0.5), transparent)" }}
+              style={{ background: "radial-gradient(circle, rgba(79, 30, 123 ,0.5), transparent)" }}
             />
             <div className="absolute inset-0 rounded-full glass border border-brand/30 flex items-center justify-center">
               <Waves className="w-5 h-5 text-brand/60" />
             </div>
           </div>
-          <p className="text-[9px] uppercase tracking-[0.5em] text-muted/50">Awaiting signals…</p>
+          <p className="text-[9px] uppercase tracking-[0.5em] text-muted/50">Awaiting signalsâ€¦</p>
         </div>
       ) : (
         <ul className="flex-1 divide-y divide-white/5 overflow-y-auto scrollbar-hide">

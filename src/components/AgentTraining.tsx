@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import {
   Send,
   Bot,
@@ -94,7 +94,7 @@ export default function AgentTraining() {
       setPersonalityDraft(data.personality || "");
       setLessons(data.lessons || []);
     } catch {
-      /* training fetch failures are non-fatal — UI shows empty state */
+      /* training fetch failures are non-fatal â€” UI shows empty state */
     }
   };
 
@@ -124,7 +124,7 @@ export default function AgentTraining() {
           {
             role: "assistant",
             content:
-              data.error || "Couldn't parse the response — try rephrasing your training input.",
+              data.error || "Couldn't parse the response â€” try rephrasing your training input.",
           },
         ]);
       }
@@ -134,7 +134,7 @@ export default function AgentTraining() {
         {
           role: "assistant",
           content:
-            "Couldn't reach the training service. Check your input and try again — if it keeps failing, ping Tyler at (564) 238-9455.",
+            "Couldn't reach the training service. Check your input and try again â€” if it keeps failing, ping Tyler at (564) 238-9455.",
         },
       ]);
     } finally {
@@ -147,7 +147,7 @@ export default function AgentTraining() {
       await authFetch(`/api/agent-config/${selectedAgentId}/${type}/${id}`, { method: "DELETE" });
       fetchKnowledge();
     } catch {
-      /* swallow — UI will reflect server state on next fetch */
+      /* swallow â€” UI will reflect server state on next fetch */
     }
   };
 
@@ -219,7 +219,7 @@ export default function AgentTraining() {
           <div className="flex items-center gap-3 min-w-0">
             <div>
               <div className="text-[10px] uppercase tracking-[0.45em] text-brand/80 mb-1">
-                Studio · Training
+                Studio Â· Training
               </div>
               <h1 className="font-display italic lowercase text-3xl md:text-4xl text-ink leading-none">
                 <span className="text-aurora">agent training</span>
@@ -249,18 +249,18 @@ export default function AgentTraining() {
           </div>
         </div>
 
-        {/* Claude Brain rail — recipes scoped to the selected agent */}
+        {/* Claude Brain rail â€” recipes scoped to the selected agent */}
         <div className="max-w-[1400px] mx-auto w-full mt-3">
           <div className="relative aurora-ring rounded-2xl">
             <div className="relative rounded-2xl glass p-3 flex flex-wrap items-center gap-2 overflow-hidden">
               <div
                 className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-25 blur-3xl pointer-events-none"
-                style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }}
+                style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
               />
               <div className="relative z-10 flex items-center gap-2 mr-1">
                 <div
                   className="w-7 h-7 rounded-lg flex items-center justify-center"
-                  style={{ background: "#0AC8D4" }}
+                  style={{ background: "#4F1E7B" }}
                 >
                   <Sparkles className="w-3.5 h-3.5 text-paper" strokeWidth={2.5} />
                 </div>
@@ -439,7 +439,7 @@ export default function AgentTraining() {
                       style={
                         msg.role === "assistant"
                           ? {
-                              boxShadow: "0 0 16px -4px rgba(10,200,212,0.15), 0 1px 0 rgba(255,255,255,0.4) inset",
+                              boxShadow: "0 0 16px -4px rgba(79, 30, 123 ,0.15), 0 1px 0 rgba(255,255,255,0.4) inset",
                             }
                           : {
                               boxShadow: "0 1px 0 rgba(255,255,255,0.6) inset",
@@ -472,7 +472,7 @@ export default function AgentTraining() {
                     <div className="p-3 bg-brand/8 border border-brand/20 rounded-xl flex items-center gap-2.5">
                       <Loader2 className="w-4 h-4 animate-spin text-brand" />
                       <span className="text-[10px] uppercase tracking-[0.4em] text-brand">
-                        Extracting…
+                        Extractingâ€¦
                       </span>
                     </div>
                   </motion.div>
@@ -486,7 +486,7 @@ export default function AgentTraining() {
                   <input
                     type="text"
                     className="flex-1 bg-transparent py-2.5 outline-none text-sm text-ink placeholder:text-muted/50"
-                    placeholder="Enter training protocols…"
+                    placeholder="Enter training protocolsâ€¦"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSend()}
@@ -546,7 +546,7 @@ export default function AgentTraining() {
                     ) : (
                       <Activity className="w-3.5 h-3.5" />
                     )}
-                    {isOptimizing ? "Analyzing…" : "Initiate analysis"}
+                    {isOptimizing ? "Analyzingâ€¦" : "Initiate analysis"}
                   </button>
                 </div>
                 {optSuggestions && (
@@ -597,7 +597,7 @@ export default function AgentTraining() {
               <section className="rounded-2xl glass border border-white/10 p-4 relative overflow-hidden">
                 <div
                   className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
-                  style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }}
+                  style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
                 />
                 <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
                   <div className="flex items-center gap-2.5">
@@ -646,7 +646,7 @@ export default function AgentTraining() {
                       value={personalityDraft}
                       onChange={(e) => setPersonalityDraft(e.target.value)}
                       className="w-full min-h-[180px] p-3 rounded-xl bg-black/5 border border-black/10 text-sm text-ink outline-none focus:border-brand/50 resize-none leading-relaxed placeholder:text-muted/50"
-                      placeholder="Define the core identity heuristics…"
+                      placeholder="Define the core identity heuristicsâ€¦"
                     />
                   ) : (
                     <div className="p-4 rounded-xl bg-black/20 border border-white/8">
@@ -722,7 +722,7 @@ export default function AgentTraining() {
                                     disabled={isSavingEntry}
                                     className="px-2.5 py-1 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 disabled:opacity-50"
                                   >
-                                    {isSavingEntry ? "Saving…" : "Save"}
+                                    {isSavingEntry ? "Savingâ€¦" : "Save"}
                                   </button>
                                 </div>
                               </div>
@@ -771,7 +771,7 @@ export default function AgentTraining() {
                         onKeyDown={(e) =>
                           e.key === "Enter" && saveManualEntry("directive", newDirective)
                         }
-                        placeholder="Inject new operational directive…"
+                        placeholder="Inject new operational directiveâ€¦"
                         className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-rose-400/50 text-ink placeholder:text-muted/50"
                       />
                       <button
@@ -804,7 +804,7 @@ export default function AgentTraining() {
                     <AnimatePresence mode="popLayout">
                       {knowledge.length === 0 ? (
                         <div className="py-8 text-center text-muted/70 text-[11px] leading-relaxed px-4">
-                          No knowledge entries yet — add a doc snippet, FAQ, or policy below so your
+                          No knowledge entries yet â€” add a doc snippet, FAQ, or policy below so your
                           agent answers consistently.
                         </div>
                       ) : (
@@ -842,7 +842,7 @@ export default function AgentTraining() {
                                     disabled={isSavingEntry}
                                     className="px-2.5 py-1 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 disabled:opacity-50"
                                   >
-                                    {isSavingEntry ? "Saving…" : "Save"}
+                                    {isSavingEntry ? "Savingâ€¦" : "Save"}
                                   </button>
                                 </div>
                               </div>
@@ -886,7 +886,7 @@ export default function AgentTraining() {
                         onKeyDown={(e) =>
                           e.key === "Enter" && saveManualEntry("knowledge", newKnowledge)
                         }
-                        placeholder="Sync new intelligence data…"
+                        placeholder="Sync new intelligence dataâ€¦"
                         className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-blue-400/50 text-ink placeholder:text-muted/50"
                       />
                       <button
@@ -911,7 +911,7 @@ export default function AgentTraining() {
                   <div className="flex items-center gap-2.5 mb-4">
                     <div
                       className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                      style={{ background: "#0AC8D4" }}
+                      style={{ background: "#4F1E7B" }}
                     >
                       <Sparkles className="w-3.5 h-3.5 text-paper" strokeWidth={2.5} />
                     </div>
@@ -974,7 +974,7 @@ export default function AgentTraining() {
                 <div className="relative w-24 h-24 rounded-3xl glass border border-white/10 flex items-center justify-center mx-auto">
                   <div
                     className="absolute inset-0 rounded-3xl opacity-20 blur-xl"
-                    style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }}
+                    style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
                   />
                   <PlayCircle className="w-12 h-12 text-brand relative z-10" strokeWidth={1.25} />
                 </div>
@@ -1010,7 +1010,7 @@ export default function AgentTraining() {
                       </h4>
                       <p className="text-[11px] text-muted/70 leading-relaxed">{sim.desc}</p>
                       <div className="mt-3 text-[9px] uppercase tracking-[0.3em] text-muted/50">
-                        Dormant · Offline
+                        Dormant Â· Offline
                       </div>
                     </div>
                   ))}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Loader2, ChevronRight, AlertTriangle } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
@@ -52,7 +52,7 @@ export default function AdminSettings() {
     target_employee_ranges: ["1,10", "11,50"] as string[],
     brand_name: "",
     brand_logo_url: "",
-    primary_color: "#0AC8D4",
+    primary_color: "#4F1E7B",
   });
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [agents, setAgents] = useState<any[]>([]);
@@ -168,7 +168,7 @@ export default function AdminSettings() {
       if (!r.ok) {
         toastError(
           "Export unavailable",
-          "Requires audit.read permission — owner, admin, or auditor roles.",
+          "Requires audit.read permission â€” owner, admin, or auditor roles.",
         );
         return;
       }
@@ -219,7 +219,7 @@ export default function AdminSettings() {
           target_employee_ranges: settingsRes.target_employee_ranges || ["1,10", "11,50"],
           brand_name: settingsRes.brand_name || "",
           brand_logo_url: settingsRes.brand_logo_url || "",
-          primary_color: settingsRes.primary_color || "#0AC8D4",
+          primary_color: settingsRes.primary_color || "#4F1E7B",
         });
       }
       setAgents(agentsRes.agents || []);
@@ -420,7 +420,7 @@ export default function AdminSettings() {
       <div className="flex-1 min-h-0">
         <PageShell
           title="Settings"
-          eyebrow="Admin · Configuration"
+          eyebrow="Admin Â· Configuration"
           subtitle="API credentials, phone numbers, and platform configuration."
           actions={tabSwitcher}
         >

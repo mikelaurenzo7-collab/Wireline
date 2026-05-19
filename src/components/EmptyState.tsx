@@ -1,4 +1,4 @@
-import { motion } from "motion/react";
+﻿import { motion } from "motion/react";
 import { Link } from "react-router-dom";
 import { LucideIcon } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -24,7 +24,7 @@ export default function EmptyState({
   title,
   description,
   actions = [],
-  accent = "#0AC8D4",
+  accent = "#4F1E7B",
   className,
 }: Props) {
   return (

@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { PageMeta } from "../lib/page-meta";
@@ -63,7 +63,7 @@ const TIERS: Tier[] = [
       "Outbound dialer (CSV upload, auto-dial)",
       "Live call monitor",
       "Up to 5 team seats",
-      "Overage at $0.20 / min — only if you exceed",
+      "Overage at $0.20 / min â€” only if you exceed",
     ],
   },
   {
@@ -84,7 +84,7 @@ const TIERS: Tier[] = [
       "Up to 25 team seats",
       "Advanced insights + funnel analysis",
       "Webhook + Action Engine",
-      "Overage at $0.18 / min — small volume discount",
+      "Overage at $0.18 / min â€” small volume discount",
     ],
   },
   {
@@ -102,7 +102,7 @@ const TIERS: Tier[] = [
       "SSO + audit log export",
       "Up to 50 team seats",
       "Everything in Pro",
-      "Priority support · Slack channel",
+      "Priority support Â· Slack channel",
       "Overage at $0.16 / min",
     ],
   },
@@ -134,11 +134,11 @@ const TIERS: Tier[] = [
     ctaHref: "mailto:sales@wireline.app?subject=Call%20Center%20inquiry",
     features: [
       "100+ AI agent seats with team-based routing",
-      "Supervisor cockpit — live floor monitoring + listen-in",
+      "Supervisor cockpit â€” live floor monitoring + listen-in",
       "Call queues with SLA timers + overflow rules",
       "Per-team SMS sender + manager escalation routing",
       "Real-time sentiment + QA scoring on every call",
-      "Dedicated CSM + 24×7 ops paging",
+      "Dedicated CSM + 24Ã—7 ops paging",
       "BYO carrier (Twilio / RingCentral / 8x8 / sip trunk)",
       "Custom MSA + Net-30 invoicing",
     ],
@@ -146,10 +146,10 @@ const TIERS: Tier[] = [
 ];
 
 const VALUE_BULLETS = [
-  { icon: Phone, text: "Call our demo line — (630) 581-1834 — Liam picks up 24/7" },
+  { icon: Phone, text: "Call our demo line â€” (630) 581-1834 â€” Liam picks up 24/7" },
   { icon: ShieldCheck, text: "SOC 2-ready architecture, encrypted secrets at rest" },
   { icon: Sparkles, text: "Powered by Wireline's premium AI brain + studio-grade voices" },
-  { icon: Zap, text: "Setup in under 10 minutes — no devs required" },
+  { icon: Zap, text: "Setup in under 10 minutes â€” no devs required" },
 ];
 
 export default function Pricing() {
@@ -159,35 +159,35 @@ export default function Pricing() {
         title="Plans & Pricing"
         description="Wireline pricing plans from $29/month Personal to Enterprise custom. Every plan includes AI voice agents, real-time call logs, sentiment scoring, and the Wireline Demo Line. 14-day free trial, no credit card required."
       />
-      {/* Aurora backdrop — toned down so the tier cards win the eye.
-          Previously 60vw at 0.18 opacity dominated the hero on 1366×768
+      {/* Aurora backdrop â€” toned down so the tier cards win the eye.
+          Previously 60vw at 0.18 opacity dominated the hero on 1366Ã—768
           laptops; now 40vw at 0.10 reads as ambient accent. */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <motion.div
           className="absolute -top-[25%] -left-[15%] w-[40vw] h-[40vw] rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(10,200,212,0.10), transparent 65%)" }}
+          style={{ background: "radial-gradient(circle, rgba(79, 30, 123 ,0.10), transparent 65%)" }}
           animate={{ x: [0, 30, 0], y: [0, -20, 0] }}
           transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
           className="absolute -bottom-[20%] -right-[15%] w-[40vw] h-[40vw] rounded-full"
           style={{
-            background: "radial-gradient(circle, rgba(10, 200, 212,0.10), transparent 65%)",
+            background: "radial-gradient(circle, rgba(79, 30, 123 ,0.10), transparent 65%)",
           }}
           animate={{ x: [0, -25, 0], y: [0, 25, 0] }}
           transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
         />
       </div>
 
-      {/* Top brand bar (minimal — public page, no app nav) */}
+      {/* Top brand bar (minimal â€” public page, no app nav) */}
       <header className="relative z-10 px-6 lg:px-10 py-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center"
             style={{
-              background: "#0AC8D4",
+              background: "#4F1E7B",
               boxShadow:
-                "0 4px 14px -4px rgba(10,200,212,0.55), 0 0 0 1px rgba(255,255,255,0.22) inset",
+                "0 4px 14px -4px rgba(79, 30, 123 ,0.55), 0 0 0 1px rgba(255,255,255,0.22) inset",
             }}
           >
             <WirelineMark className="w-4 h-4 text-paper" strokeWidth={130} />
@@ -198,7 +198,7 @@ export default function Pricing() {
           to="/"
           className="text-[11px] uppercase tracking-[0.32em] text-muted hover:text-ink transition-colors"
         >
-          Sign in →
+          Sign in â†’
         </Link>
       </header>
 
@@ -212,7 +212,7 @@ export default function Pricing() {
         >
           <span className="w-2 h-2 rounded-full bg-emerald-500" />
           <span className="text-[10px] uppercase tracking-[0.42em] text-muted">
-            Pricing · Start free, upgrade when ready
+            Pricing Â· Start free, upgrade when ready
           </span>
         </motion.div>
 
@@ -239,7 +239,7 @@ export default function Pricing() {
         </motion.p>
       </section>
 
-      {/* Why Wireline — moat strip above the tier grid. Each card frames a
+      {/* Why Wireline â€” moat strip above the tier grid. Each card frames a
           differentiator competitors don't lead with: multi-channel agents in
           one console, supervisor visibility into agent reasoning, and TCPA
           compliance as auditable code (not a black-box vendor). */}
@@ -247,22 +247,22 @@ export default function Pricing() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[
             {
-              title: "Voice + SMS + Email — one agent",
+              title: "Voice + SMS + Email â€” one agent",
               blurb:
                 "One conversation, three channels. Most platforms make you stitch separate vendors together.",
-              accent: "#0AC8D4",
+              accent: "#4F1E7B",
             },
             {
               title: "Supervisor cockpit with agent transparency",
               blurb:
-                "See what your agents are about to do BEFORE they do it — draft vs. auto autonomy per action.",
-              accent: "#0AC8D4",
+                "See what your agents are about to do BEFORE they do it â€” draft vs. auto autonomy per action.",
+              accent: "#4F1E7B",
             },
             {
               title: "TCPA compliance in code",
               blurb:
                 "Per-state opt-in rules, append-only consent ledger, automatic DNC. Your lawyers can read the rules.",
-              accent: "#0AC8D4",
+              accent: "#4F1E7B",
             },
           ].map((c, i) => (
             <motion.div
@@ -314,7 +314,7 @@ export default function Pricing() {
                   tier.highlight
                     ? {
                         boxShadow:
-                          "0 0 60px -15px rgba(10,200,212,0.55), 0 24px 48px -16px rgba(10,200,212,0.35), 0 0 0 1px rgba(255,255,255,0.08) inset",
+                          "0 0 60px -15px rgba(79, 30, 123 ,0.55), 0 24px 48px -16px rgba(79, 30, 123 ,0.35), 0 0 0 1px rgba(255,255,255,0.08) inset",
                       }
                     : undefined
                 }
@@ -323,9 +323,9 @@ export default function Pricing() {
                   <span
                     className="absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-1 rounded-full text-[10px] uppercase tracking-[0.35em] font-semibold z-10"
                     style={{
-                      background: "#0AC8D4",
+                      background: "#4F1E7B",
                       color: "#fff",
-                      boxShadow: "0 6px 18px -4px rgba(10,200,212,0.6)",
+                      boxShadow: "0 6px 18px -4px rgba(79, 30, 123 ,0.6)",
                     }}
                   >
                     Most popular
@@ -350,7 +350,7 @@ export default function Pricing() {
                     title="No credit card required"
                   >
                     <Check className="w-3 h-3" strokeWidth={2.8} />
-                    14-day free trial · no card
+                    14-day free trial Â· no card
                   </p>
                 )}
                 <a
@@ -363,8 +363,8 @@ export default function Pricing() {
                   style={
                     tier.highlight
                       ? {
-                          background: "#0AC8D4",
-                          boxShadow: "0 6px 20px -6px rgba(10,200,212,0.55)",
+                          background: "#4F1E7B",
+                          boxShadow: "0 6px 20px -6px rgba(79, 30, 123 ,0.55)",
                         }
                       : undefined
                   }
@@ -387,7 +387,7 @@ export default function Pricing() {
                   ))}
                   {tier.notIncluded?.map((f) => (
                     <li key={f} className="flex items-start gap-2 opacity-40">
-                      <span className="w-3.5 h-3.5 mt-0.5 shrink-0 text-muted">—</span>
+                      <span className="w-3.5 h-3.5 mt-0.5 shrink-0 text-muted">â€”</span>
                       <span className="line-through">{f}</span>
                     </li>
                   ))}
@@ -413,7 +413,7 @@ export default function Pricing() {
                 className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-white/8"
                 style={{
                   background:
-                    "linear-gradient(135deg, rgba(10,200,212,0.18), rgba(10, 200, 212,0.12))",
+                    "linear-gradient(135deg, rgba(79, 30, 123 ,0.18), rgba(79, 30, 123 ,0.12))",
                 }}
               >
                 <Icon className="w-4 h-4 text-brand" strokeWidth={2.2} />
@@ -423,7 +423,7 @@ export default function Pricing() {
           ))}
         </motion.div>
 
-        {/* ROI calculator — concrete savings narrative. Slim 3-card row
+        {/* ROI calculator â€” concrete savings narrative. Slim 3-card row
             comparing Wireline tiers vs the human-headcount they replace.
             Numbers grounded in real US median compensation for these roles
             (BLS 2025). Static so it never breaks on the public page. */}
@@ -435,7 +435,7 @@ export default function Pricing() {
         >
           <div className="text-center mb-6">
             <p className="text-[10px] uppercase tracking-[0.42em] text-brand mb-2">
-              ROI snapshot · vs traditional headcount
+              ROI snapshot Â· vs traditional headcount
             </p>
             <h3 className="font-display italic text-2xl text-ink leading-tight">
               How much you save replacing one human role
@@ -462,7 +462,7 @@ export default function Pricing() {
               {
                 role: "5-seat call center",
                 humanCost: 260000,
-                humanCostLabel: "5 × $52k median",
+                humanCostLabel: "5 Ã— $52k median",
                 tier: "Business",
                 tierCost: 1499 * 12,
                 tierLabel: "$1,499/mo",
@@ -527,11 +527,11 @@ export default function Pricing() {
           className="mt-14 max-w-3xl mx-auto text-center space-y-3"
         >
           <p className="text-[10px] uppercase tracking-[0.42em] text-muted/70">
-            No long-term contracts · Cancel anytime · USD pricing
+            No long-term contracts Â· Cancel anytime Â· USD pricing
           </p>
           <p className="text-[12px] text-muted/65">
             Voice minutes are pooled across all agents in your workspace. Overage is tier-based
-            (Personal: $0.25/min · Starter: $0.20/min · Pro: $0.18/min · Business: $0.16/min) —
+            (Personal: $0.25/min Â· Starter: $0.20/min Â· Pro: $0.18/min Â· Business: $0.16/min) â€”
             priced at our cost, not a profit center. Most teams stay well inside plan. Email volume
             is unlimited on all plans.
           </p>

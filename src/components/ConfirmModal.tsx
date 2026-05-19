@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from "motion/react";
+﻿import { motion, AnimatePresence } from "motion/react";
 import { AlertTriangle, Loader2, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { cn } from "../lib/utils";
@@ -110,7 +110,7 @@ export default function ConfirmModal({
                 style={{
                   background: danger
                     ? "radial-gradient(circle, #E8466A, transparent)"
-                    : "radial-gradient(circle, #0AC8D4, transparent)",
+                    : "radial-gradient(circle, #4F1E7B, transparent)",
                 }}
               />
 

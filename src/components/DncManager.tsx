@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Shield,
@@ -196,9 +196,9 @@ export default function DncManager() {
       <HubTabs tabs={SYSTEM_HUB} label="System sub-navigation" />
       <div className="flex-1 min-h-0">
         <PageShell
-          eyebrow="Compliance · Outbound Protection"
+          eyebrow="Compliance Â· Outbound Protection"
           title="DNC List"
-          subtitle="Numbers on this list will never be dialed — by any agent or campaign. TCPA-safe outbound operations."
+          subtitle="Numbers on this list will never be dialed â€” by any agent or campaign. TCPA-safe outbound operations."
           actions={
             <div className="flex items-center gap-2">
               <button
@@ -246,9 +246,9 @@ export default function DncManager() {
             {/* Stat bar */}
             <div className="col-span-12 grid grid-cols-2 sm:grid-cols-4 gap-3 h-fit">
               {[
-                { label: "Total Blocked", value: stats.total, accent: "#0AC8D4", icon: Shield },
-                { label: "Manual Entries", value: stats.manual, accent: "#0AC8D4", icon: Plus },
-                { label: "CSV Imported", value: stats.csv, accent: "#0AC8D4", icon: FileText },
+                { label: "Total Blocked", value: stats.total, accent: "#4F1E7B", icon: Shield },
+                { label: "Manual Entries", value: stats.manual, accent: "#4F1E7B", icon: Plus },
+                { label: "CSV Imported", value: stats.csv, accent: "#4F1E7B", icon: FileText },
                 { label: "Opt-Out", value: stats.optOut, accent: "#10B981", icon: CheckCircle2 },
               ].map(({ label, value, accent, icon: Icon }) => (
                 <div
@@ -280,7 +280,7 @@ export default function DncManager() {
                     <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
                     <input
                       type="text"
-                      placeholder="Search numbers…"
+                      placeholder="Search numbersâ€¦"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       className="h-8 w-44 pl-8 pr-3 rounded-full glass border border-white/10 text-[11px] text-ink placeholder:text-muted/60 focus:border-brand/40 focus:outline-none transition-all"
@@ -292,7 +292,7 @@ export default function DncManager() {
                   <div className="h-full flex flex-col items-center justify-center gap-3">
                     <Loader2 className="w-6 h-6 animate-spin text-brand" />
                     <p className="text-[9px] uppercase tracking-[0.4em] text-muted">
-                      Loading DNC list…
+                      Loading DNC listâ€¦
                     </p>
                   </div>
                 ) : filtered.length === 0 ? (
@@ -301,7 +301,7 @@ export default function DncManager() {
                       className="w-14 h-14 rounded-2xl flex items-center justify-center"
                       style={{
                         background:
-                          "linear-gradient(135deg,rgba(10, 200, 212,0.15),rgba(10,200,212,0.15))",
+                          "linear-gradient(135deg,rgba(79, 30, 123 ,0.15),rgba(79, 30, 123 ,0.15))",
                       }}
                     >
                       <Shield className="w-7 h-7 text-rose-500" />
@@ -338,8 +338,8 @@ export default function DncManager() {
                           <div
                             className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                             style={{
-                              background: "rgba(10, 200, 212,0.10)",
-                              border: "1px solid rgba(10, 200, 212,0.20)",
+                              background: "rgba(79, 30, 123 ,0.10)",
+                              border: "1px solid rgba(79, 30, 123 ,0.20)",
                             }}
                           >
                             <Phone className="w-3.5 h-3.5 text-rose-500" />

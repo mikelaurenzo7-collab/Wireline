@@ -1,5 +1,5 @@
-/**
- * Post-call digest — what fires after every Vapi call ends.
+﻿/**
+ * Post-call digest â€” what fires after every Vapi call ends.
  *
  * Triggered by vapi-webhook-queue's end-of-call-report handler. We:
  *   1. Classify the outcome (book / qualify / followup / dnc / unreachable
@@ -7,13 +7,13 @@
  *   2. Denormalize the campaign attribution from the dialed phone number
  *      into the call log so /insights queries stay single-table.
  *   3. Auto-log the call to a connected CRM (HubSpot / Salesforce) via
- *      CRMService — silently no-ops when no CRM is connected.
+ *      CRMService â€” silently no-ops when no CRM is connected.
  *   4. If the tenant has a connected Gmail/Outlook account, send a 3-line
  *      digest email to themselves so they get post-call awareness without
- *      logging in. Best-effort — never throws back into the webhook queue.
+ *      logging in. Best-effort â€” never throws back into the webhook queue.
  *
  * The point of this file: turn "the call ended" into "I know exactly what
- * happened and what I should do about it" — without making the operator
+ * happened and what I should do about it" â€” without making the operator
  * open the dashboard.
  */
 
@@ -26,7 +26,7 @@ import { sanitizePhone } from "./vapi-helpers";
 import { enqueue } from "./job-queue";
 
 /**
- * Heuristic outcome classifier — turns a free-text Vapi summary +
+ * Heuristic outcome classifier â€” turns a free-text Vapi summary +
  * sentiment + intent label into one of 7 buckets used everywhere
  * downstream (Insights breakdown, digest email subject, pipeline stage).
  */
@@ -85,7 +85,7 @@ interface CallContext {
 }
 
 /**
- * The single entry point — call this from the end-of-call-report handler
+ * The single entry point â€” call this from the end-of-call-report handler
  * with the freshly-stored call log. Returns the outcome tag so the
  * caller can also update related rows (lead status, etc.).
  */
@@ -104,12 +104,12 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
   const campaignSource = await resolveCampaignSource(ctx.userId, ctx.dialedNumber);
 
   // Safe-parse the callLogId. The digest is fire-and-forget from the
-  // webhook handler, so a parse failure must not throw — log + bail.
+  // webhook handler, so a parse failure must not throw â€” log + bail.
   let callLogIdBig: bigint;
   try {
     callLogIdBig = BigInt(ctx.callLogId as any);
   } catch {
-    log.warn("post-call digest: unparseable callLogId — skipping", {
+    log.warn("post-call digest: unparseable callLogId â€” skipping", {
       callLogId: String(ctx.callLogId),
     });
     return { outcomeTag, campaignSource, crmLogged: false, emailSent: false };
@@ -125,7 +125,7 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
     log.warn("post-call digest: callLog update failed", { error: err?.message });
   }
 
-  // 2. CRM auto-log — best effort
+  // 2. CRM auto-log â€” best effort
   let crmLogged = false;
   try {
     const [settings] = await drizzle
@@ -137,7 +137,7 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
       const crm = new CRMService(ctx.userId);
       const logId = await crm.logCall({
         crmType: settings.crmType,
-        subject: `${ctx.direction === "outbound" ? "Outbound" : "Inbound"} call — ${outcomeTag}`,
+        subject: `${ctx.direction === "outbound" ? "Outbound" : "Inbound"} call â€” ${outcomeTag}`,
         description: ctx.summary || "(no summary)",
         to_number: ctx.customerNumber || "",
         duration_minutes: Math.round((ctx.durationSeconds || 0) / 60),
@@ -149,11 +149,11 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
     log.warn("post-call digest: CRM log failed", { error: err?.message });
   }
 
-  // 3. Digest email — best effort, never blocks
+  // 3. Digest email â€” best effort, never blocks
   let emailSent = false;
   try {
     const integ = new IntegrationService(ctx.userId);
-    const subject = `[Wireline · ${outcomeTag.toUpperCase()}] ${ctx.agentName || "Agent"} → ${ctx.customerName || ctx.customerNumber || "caller"}`;
+    const subject = `[Wireline Â· ${outcomeTag.toUpperCase()}] ${ctx.agentName || "Agent"} â†’ ${ctx.customerName || ctx.customerNumber || "caller"}`;
     const body = renderDigestEmail({
       ...ctx,
       outcomeTag,
@@ -161,7 +161,7 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
       crmLogged,
     });
     // Send to the operator's own connected mailbox address (first one we find).
-    // If they have no mailbox connected we skip — log only.
+    // If they have no mailbox connected we skip â€” log only.
     const operatorEmail = await pickOperatorEmail(ctx.userId);
     if (operatorEmail) {
       emailSent = await integ.sendEmail({ to: operatorEmail, subject, body });
@@ -170,8 +170,8 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
     log.warn("post-call digest: email send failed", { error: err?.message });
   }
 
-  // 4. Auto-QA — enqueue a background scoring job; the handler stores the
-  // breakdown and chains adaptive_optimization (Claude-generated lesson →
+  // 4. Auto-QA â€” enqueue a background scoring job; the handler stores the
+  // breakdown and chains adaptive_optimization (Claude-generated lesson â†’
   // wireline_agent_lessons) on low scores. Fire-and-forget; the agent
   // gets smarter without anyone clicking anything.
   try {
@@ -225,13 +225,13 @@ function renderDigestEmail(d: {
   const next = nextActionFromOutcome(d.outcomeTag);
   return [
     `<div style="font-family: -apple-system, system-ui, sans-serif; max-width: 560px; line-height: 1.55; color: #1a1a1a;">`,
-    `<p style="font-size:11px;text-transform:uppercase;letter-spacing:.3em;color:#0AC8D4;margin:0 0 4px;">Wireline · Post-call digest</p>`,
-    `<h2 style="margin:0 0 8px;font-size:22px;font-style:italic;font-weight:500;">${d.outcomeTag.toUpperCase()} — ${d.agentName || "Agent"} → ${d.customerName || d.customerNumber || "caller"}</h2>`,
-    `<p style="margin:0 0 16px;font-size:13px;color:#666;">${d.direction || "Call"} · ${dur} min · ${d.sentiment || "neutral"} sentiment${d.campaignSource ? ` · Campaign: <strong>${d.campaignSource}</strong>` : ""}</p>`,
+    `<p style="font-size:11px;text-transform:uppercase;letter-spacing:.3em;color:#4F1E7B;margin:0 0 4px;">Wireline Â· Post-call digest</p>`,
+    `<h2 style="margin:0 0 8px;font-size:22px;font-style:italic;font-weight:500;">${d.outcomeTag.toUpperCase()} â€” ${d.agentName || "Agent"} â†’ ${d.customerName || d.customerNumber || "caller"}</h2>`,
+    `<p style="margin:0 0 16px;font-size:13px;color:#666;">${d.direction || "Call"} Â· ${dur} min Â· ${d.sentiment || "neutral"} sentiment${d.campaignSource ? ` Â· Campaign: <strong>${d.campaignSource}</strong>` : ""}</p>`,
     `<div style="background:#f7f7f9;border-radius:12px;padding:14px 16px;margin:0 0 16px;font-size:14px;">${(d.summary || "(no summary captured)").replace(/\n/g, "<br/>")}</div>`,
     `<p style="margin:0 0 6px;font-size:13px;"><strong>Next action:</strong> ${next}</p>`,
-    `<p style="margin:0 0 16px;font-size:12px;color:#666;">${d.crmLogged ? "✅ Logged to your CRM." : "ℹ︎ No CRM connected — connect HubSpot or Salesforce in /integrations to auto-log."}</p>`,
-    `<p style="margin:24px 0 0;font-size:12px;color:#888;">Open the call <a href="https://trywireline.com/logs" style="color:#0AC8D4;text-decoration:none;">in Wireline →</a></p>`,
+    `<p style="margin:0 0 16px;font-size:12px;color:#666;">${d.crmLogged ? "âœ… Logged to your CRM." : "â„¹ï¸Ž No CRM connected â€” connect HubSpot or Salesforce in /integrations to auto-log."}</p>`,
+    `<p style="margin:24px 0 0;font-size:12px;color:#888;">Open the call <a href="https://trywireline.com/logs" style="color:#4F1E7B;text-decoration:none;">in Wireline â†’</a></p>`,
     `</div>`,
   ].join("");
 }
@@ -239,17 +239,17 @@ function renderDigestEmail(d: {
 function nextActionFromOutcome(tag: string): string {
   switch (tag) {
     case "booked":
-      return "Confirmation sent — calendar invite landed. Review the prep notes before the meeting.";
+      return "Confirmation sent â€” calendar invite landed. Review the prep notes before the meeting.";
     case "qualified":
       return "Move to your closer or schedule a demo within 48 hours while interest is hot.";
     case "followup":
-      return "Callback scheduled — Wireline will dial again at the agreed time.";
+      return "Callback scheduled â€” Wireline will dial again at the agreed time.";
     case "dnc":
       return "Added to your DNC list automatically. No further outreach to this number.";
     case "unreachable":
       return "Retry queued. Voicemail dropped if enabled.";
     case "info":
-      return "Knowledge gap captured — review and add to your agent's playbook at /train.";
+      return "Knowledge gap captured â€” review and add to your agent's playbook at /train.";
     default:
       return "Review the full transcript at /logs and label the outcome if you want this in funnel reporting.";
   }

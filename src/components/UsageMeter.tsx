@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { Activity, AlertTriangle, Loader2, TrendingUp } from "lucide-react";
 import { authFetch } from "../lib/api";
@@ -58,7 +58,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
   }
 
   if (!snap || !snap.plan_id) {
-    return null; // no active plan — nothing to display
+    return null; // no active plan â€” nothing to display
   }
 
   const used = snap.voice_minutes_used;
@@ -67,7 +67,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
   const isOver = snap.overage_minutes > 0;
   const isWarn = !isOver && pct >= 80;
 
-  const barAccent = isOver ? "#f43f5e" : isWarn ? "#f59e0b" : "#0AC8D4";
+  const barAccent = isOver ? "#f43f5e" : isWarn ? "#f59e0b" : "#4F1E7B";
   const resetDate = new Date(snap.reset_at);
   const resetLabel = resetDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
@@ -75,7 +75,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
     return (
       <div
         className="flex items-center gap-2 py-1.5 px-3.5 rounded-full premium-glass border border-white/8 text-[10px] font-mono shadow-sm hover:shadow-brand/10 hover:border-brand/30 transition-all duration-300 cursor-help"
-        title={`${used} of ${included} voice minutes used this month — resets ${resetLabel}`}
+        title={`${used} of ${included} voice minutes used this month â€” resets ${resetLabel}`}
       >
         <span
           className="w-2 h-2 rounded-full animate-pulse"
@@ -111,7 +111,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
           <div>
             <h4 className="font-display italic text-lg text-ink leading-tight font-bold">Voice minutes</h4>
             <p className="text-[10px] uppercase tracking-[0.3em] text-muted/65 font-medium">
-              This month · resets {resetLabel}
+              This month Â· resets {resetLabel}
             </p>
           </div>
         </div>
@@ -157,10 +157,10 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
               {snap.overage_minutes.toLocaleString()} min over plan
             </span>
             <span className="text-muted/80 ml-1">
-              {`— billed at $${snap.overage_per_min_usd.toFixed(2)}/min (`}
+              {`â€” billed at $${snap.overage_per_min_usd.toFixed(2)}/min (`}
               <span className="text-ink font-semibold">
                 {snap.stripe_metered
-                  ? `≈ $${snap.overage_cost_usd.toFixed(2)} this period`
+                  ? `â‰ˆ $${snap.overage_cost_usd.toFixed(2)} this period`
                   : "metered billing pending Stripe setup"}
               </span>
               {")"}
@@ -173,7 +173,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
         <div className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-500/8 border border-amber-500/20 text-[11px] text-amber-500 font-medium">
           <TrendingUp className="w-3.5 h-3.5" />
           <span>
-            Approaching plan limit — overage rate kicks in at {included.toLocaleString()} min.
+            Approaching plan limit â€” overage rate kicks in at {included.toLocaleString()} min.
           </span>
         </div>
       )}

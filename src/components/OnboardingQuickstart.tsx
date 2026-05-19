@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import {
@@ -35,15 +35,15 @@ const STEPS = [
     title: "Create your first agent",
     body: "Describe what your agent should do in one sentence. We'll generate the name, personality, instructions, and starter knowledge for you.",
     icon: Hammer,
-    accent: "#0AC8D4",
+    accent: "#4F1E7B",
     badge: "~30 seconds",
   },
   {
     id: "knowledge",
     title: "Teach it about your business",
-    body: "Paste your website URL and we'll pull in your services, pricing, hours, and policies automatically — ready in one click.",
+    body: "Paste your website URL and we'll pull in your services, pricing, hours, and policies automatically â€” ready in one click.",
     icon: Globe,
-    accent: "#0AC8D4",
+    accent: "#4F1E7B",
     badge: "Instant",
   },
   {
@@ -51,13 +51,13 @@ const STEPS = [
     title: "Connect a phone number",
     body: "Hook up a phone number so callers can reach your agent 24/7. Bring your own or get a new one.",
     icon: Phone,
-    accent: "#0AC8D4",
+    accent: "#4F1E7B",
     badge: "1 minute",
   },
   {
     id: "call",
     title: "Run a live test call",
-    body: "Talk to your agent live from your browser — no phone needed. Make sure it sounds the way you want.",
+    body: "Talk to your agent live from your browser â€” no phone needed. Make sure it sounds the way you want.",
     icon: Mic,
     accent: "#10B981",
     badge: "Try it now",
@@ -70,7 +70,7 @@ export default function OnboardingQuickstart({ onComplete }: { onComplete?: (com
   // Tier drives whether we show the 4-step self-serve flow or a
   // white-glove onboarding card (Business / Enterprise tier). Without
   // this gate, a 500-seat call center buyer lands on the same setup
-  // screen as a $29 solo operator — sets the wrong expectations.
+  // screen as a $29 solo operator â€” sets the wrong expectations.
   const [planId, setPlanId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -111,7 +111,7 @@ export default function OnboardingQuickstart({ onComplete }: { onComplete?: (com
    * Business / Enterprise customers don't onboard themselves. Show a
    * white-glove card pointing them at human-led onboarding instead of
    * the 4-step self-serve flow. The CTAs route to Maya (our scheduling
-   * agent) and Mike's email — both already live on (630) 642-5927 and
+   * agent) and Mike's email â€” both already live on (630) 642-5927 and
    * mikelaurenzo7@gmail.com.
    */
   if (planId === "business" || planId === "enterprise") {
@@ -124,29 +124,29 @@ export default function OnboardingQuickstart({ onComplete }: { onComplete?: (com
         <div className="relative rounded-3xl glass-strong overflow-hidden p-6 md:p-8">
           <div
             className="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-30 blur-3xl pointer-events-none"
-            style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }}
+            style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
           />
           <div
             className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full opacity-25 blur-3xl pointer-events-none"
-            style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }}
+            style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
           />
           <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
             <div className="flex items-start gap-4 flex-1 min-w-0">
               <div
                 className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-                style={{ background: "linear-gradient(135deg, #0AC8D4, #0AC8D4, #0AC8D4)" }}
+                style={{ background: "linear-gradient(135deg, #4F1E7B, #4F1E7B, #4F1E7B)" }}
               >
                 <Sparkles className="w-5 h-5 text-paper" strokeWidth={2.5} />
               </div>
               <div className="min-w-0">
                 <div className="text-[10px] uppercase tracking-[0.4em] text-brand flex items-center gap-1.5 mb-1">
-                  White-glove onboarding · {planId === "enterprise" ? "Enterprise" : "Business"}
+                  White-glove onboarding Â· {planId === "enterprise" ? "Enterprise" : "Business"}
                 </div>
                 <h2 className="font-display italic text-2xl md:text-3xl text-ink leading-tight">
                   Let's get your fleet live
                 </h2>
                 <p className="text-sm text-muted/80 mt-1.5 leading-relaxed max-w-xl">
-                  Your account includes a dedicated onboarding session — voice cloning,
+                  Your account includes a dedicated onboarding session â€” voice cloning,
                   integrations, team setup, and the first 100 calls reviewed together. Book a 30-min
                   kickoff with our scheduling lead and we'll have your first agent live within 48
                   hours.
@@ -159,7 +159,7 @@ export default function OnboardingQuickstart({ onComplete }: { onComplete?: (com
                 className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-brand text-paper text-[11px] uppercase tracking-[0.3em] hover:bg-brand/90 transition-colors"
               >
                 <Phone className="w-3.5 h-3.5" />
-                Call Maya — (630) 642-5927
+                Call Maya â€” (630) 642-5927
               </a>
               <a
                 href="mailto:mikelaurenzo7@gmail.com?subject=Wireline%20kickoff"
@@ -216,14 +216,14 @@ export default function OnboardingQuickstart({ onComplete }: { onComplete?: (com
       <div className="relative rounded-3xl glass-strong overflow-hidden">
         <div
           className="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-30 blur-3xl pointer-events-none"
-          style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }}
+          style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
         />
         <div
           className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full opacity-25 blur-3xl pointer-events-none"
-          style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }}
+          style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
         />
 
-        {/* Header — tightened so the 4 step cards land above the fold
+        {/* Header â€” tightened so the 4 step cards land above the fold
             even at 900px viewport heights. Previously px-7 + pt-8 + pb-6
             + 12x12 logo + text-4xl heading pushed the steps down ~150px;
             this trims ~60px without losing the welcome moment. */}
@@ -232,7 +232,7 @@ export default function OnboardingQuickstart({ onComplete }: { onComplete?: (com
             <div className="flex items-center gap-3">
               <div
                 className="w-9 h-9 rounded-xl flex items-center justify-center"
-                style={{ background: "linear-gradient(135deg, #0AC8D4, #0AC8D4, #0AC8D4)" }}
+                style={{ background: "linear-gradient(135deg, #4F1E7B, #4F1E7B, #4F1E7B)" }}
               >
                 <WirelineMark className="w-4 h-4 text-paper" strokeWidth={130} />
               </div>
@@ -255,14 +255,14 @@ export default function OnboardingQuickstart({ onComplete }: { onComplete?: (com
                   animate={{ width: `${completionPct}%` }}
                   transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
                   className="h-full rounded-full"
-                  style={{ background: "linear-gradient(90deg, #0AC8D4, #0AC8D4, #0AC8D4)" }}
+                  style={{ background: "linear-gradient(90deg, #4F1E7B, #4F1E7B, #4F1E7B)" }}
                 />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Steps — 4 columns on lg so all four 'Get Started' cards fit
+        {/* Steps â€” 4 columns on lg so all four 'Get Started' cards fit
             in a single row above the fold. 2 cols on tablet, 1 on mobile. */}
         <div className="relative z-10 p-3 md:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
           {STEPS.map((s, i) => (
@@ -304,7 +304,7 @@ export default function OnboardingQuickstart({ onComplete }: { onComplete?: (com
           </div>
         )}
 
-        {/* Power Up: integration connect cards — shown once at least 2 core steps are done */}
+        {/* Power Up: integration connect cards â€” shown once at least 2 core steps are done */}
         {completedCount >= 2 && (
           <div className="relative z-10 px-7 md:px-10 pb-7 pt-0">
             <div className="text-[10px] uppercase tracking-[0.4em] text-muted mb-3 flex items-center gap-2">
@@ -316,21 +316,21 @@ export default function OnboardingQuickstart({ onComplete }: { onComplete?: (com
                 label="Connect Email"
                 desc="Link Gmail or Outlook for email agents."
                 to="/admin"
-                accent="#0AC8D4"
+                accent="#4F1E7B"
               />
               <PowerUpCard
                 icon={BarChart3}
                 label="Connect CRM"
-                desc="Salesforce or HubSpot — sync calls and deals."
+                desc="Salesforce or HubSpot â€” sync calls and deals."
                 to="/admin"
-                accent="#0AC8D4"
+                accent="#4F1E7B"
               />
               <PowerUpCard
                 icon={Waves}
                 label="Webhooks & SLOs"
                 desc="Push events to Slack, CRM, or Zapier."
                 to="/admin"
-                accent="#0AC8D4"
+                accent="#4F1E7B"
               />
             </div>
           </div>
@@ -479,7 +479,7 @@ function PowerUpCard({
   );
 }
 
-/* ──────────────  Completion card (shown when all 4 steps are done)  ──── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Completion card (shown when all 4 steps are done)  â”€â”€â”€â”€ */
 
 const POWER_LINKS = [
   { to: "/triage", icon: Zap, label: "Triage Inbox", hint: "Review hot leads" },
@@ -498,7 +498,7 @@ function AllSetCard() {
       {/* Aurora glow */}
       <div
         className="absolute -top-20 -right-20 w-64 h-64 rounded-full opacity-20 blur-3xl pointer-events-none"
-        style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }}
+        style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
       />
       <div
         className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full opacity-15 blur-3xl pointer-events-none"
@@ -511,7 +511,7 @@ function AllSetCard() {
         <div className="relative w-16 h-16">
           <motion.div
             className="absolute inset-0 rounded-full"
-            style={{ background: "conic-gradient(from 0deg, #0AC8D4, #0AC8D4, #10B981, #0AC8D4)" }}
+            style={{ background: "conic-gradient(from 0deg, #4F1E7B, #4F1E7B, #10B981, #4F1E7B)" }}
             animate={{ rotate: 360 }}
             transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
           />

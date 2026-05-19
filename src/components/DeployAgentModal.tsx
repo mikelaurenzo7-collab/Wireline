@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Loader2, ArrowRight, User2, Users2 } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -33,19 +33,19 @@ interface DeployAgentModalProps {
 }
 
 /**
- * Quick Deploy modal — opens when an operator clicks "Deploy Agent" on a
+ * Quick Deploy modal â€” opens when an operator clicks "Deploy Agent" on a
  * template card. Lets them set the two things they almost always want to
  * customize before the agent goes live:
  *
- *   1. Name      — pre-filled with the template name, editable to anything
+ *   1. Name      â€” pre-filled with the template name, editable to anything
  *                  ("Sarah", "Front Desk", "Closer #2", etc.)
- *   2. Voice     — male / female toggle, with a per-gender default voice
+ *   2. Voice     â€” male / female toggle, with a per-gender default voice
  *                  and an expand-to-pick-specific control. Email-channel
  *                  templates skip the voice picker entirely.
  *
  * Everything else (role personality, template overlay, business variable
  * substitution, capabilities) is handled server-side at /api/agents POST.
- * Operators can further refine in /agents → Personality / Capabilities.
+ * Operators can further refine in /agents â†’ Personality / Capabilities.
  */
 export default function DeployAgentModal({
   open,
@@ -134,7 +134,7 @@ export default function DeployAgentModal({
                 className="absolute -top-16 -right-16 w-64 h-64 rounded-full blur-3xl opacity-30 pointer-events-none"
                 style={{
                   background:
-                    "radial-gradient(circle, rgba(10,200,212,0.35), rgba(10, 200, 212,0.18) 60%, transparent)",
+                    "radial-gradient(circle, rgba(79, 30, 123 ,0.35), rgba(79, 30, 123 ,0.18) 60%, transparent)",
                 }}
               />
 
@@ -142,7 +142,7 @@ export default function DeployAgentModal({
               <div className="relative z-10 flex items-start justify-between gap-4 px-7 pt-6 pb-3 border-b border-white/8">
                 <div className="space-y-1.5 min-w-0">
                   <p className="text-[9px] uppercase tracking-[0.42em] text-muted/70">
-                    Deploy · {template.category}
+                    Deploy Â· {template.category}
                   </p>
                   <h2 className="font-display italic text-2xl text-ink leading-tight">
                     {template.name}
@@ -276,8 +276,8 @@ export default function DeployAgentModal({
                   </div>
                 ) : (
                   <div className="rounded-xl border border-white/10 bg-black/5 px-4 py-3 text-[12px] text-ink/65">
-                    Email agent — no voice picker. The agent's writing tone is configured in{" "}
-                    <span className="text-ink/80">/agents → Personality</span> after deploy.
+                    Email agent â€” no voice picker. The agent's writing tone is configured in{" "}
+                    <span className="text-ink/80">/agents â†’ Personality</span> after deploy.
                   </div>
                 )}
               </div>
@@ -302,12 +302,12 @@ export default function DeployAgentModal({
                       ? "text-paper shadow-lg shadow-brand/30 hover:shadow-brand/40 active:scale-[0.98]"
                       : "text-muted/40 bg-black/8 cursor-not-allowed",
                   )}
-                  style={canSubmit ? { background: "#0AC8D4" } : undefined}
+                  style={canSubmit ? { background: "#4F1E7B" } : undefined}
                 >
                   {deploying ? (
                     <>
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      Deploying…
+                      Deployingâ€¦
                     </>
                   ) : (
                     <>
@@ -355,7 +355,7 @@ function GenderTile({
           aria-hidden="true"
           className="absolute inset-0 rounded-xl pointer-events-none"
           style={{
-            background: "linear-gradient(135deg, rgba(10,200,212,0.16), rgba(10, 200, 212,0.10))",
+            background: "linear-gradient(135deg, rgba(79, 30, 123 ,0.16), rgba(79, 30, 123 ,0.10))",
           }}
           transition={{ type: "spring", stiffness: 380, damping: 32 }}
         />

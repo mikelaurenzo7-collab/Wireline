@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { Bot, Zap, CheckCircle2, Save, Loader2 } from "lucide-react";
 
 interface BrandingPanelProps {
@@ -44,13 +44,13 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
                 <input 
                   type="color" 
                   className="w-12 h-12 rounded-xl bg-transparent border-none cursor-pointer"
-                  value={settings.primary_color || "#0AC8D4"}
+                  value={settings.primary_color || "#4F1E7B"}
                   onChange={e => onUpdate({ ...settings, primary_color: e.target.value })}
                 />
                 <input 
                   type="text" 
                   className="flex-1 input-field font-mono"
-                  value={settings.primary_color || "#0AC8D4"}
+                  value={settings.primary_color || "#4F1E7B"}
                   onChange={e => onUpdate({ ...settings, primary_color: e.target.value })}
                 />
               </div>

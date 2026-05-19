@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+﻿import React, { useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
 import {
   BarChart3,
@@ -59,12 +59,12 @@ export default function InsightsView() {
 
   return (
     <PageShell
-      eyebrow="Analytics · Business Intelligence"
+      eyebrow="Analytics Â· Business Intelligence"
       title="Insights"
       subtitle="Funnel analysis, topic clusters, heatmaps, leaderboards, and failure modes."
       actions={
         <>
-          {/* Styled segmented control — matches the Aurora Cream design system */}
+          {/* Styled segmented control â€” matches the Aurora Cream design system */}
           <div className="flex items-center gap-px p-1 rounded-full glass border border-black/8">
             {DAY_OPTIONS.map((d) => (
               <button
@@ -77,8 +77,8 @@ export default function InsightsView() {
                 style={
                   days === d
                     ? {
-                        background: "#0AC8D4",
-                        boxShadow: "0 2px 8px -4px rgba(10,200,212,0.50)",
+                        background: "#4F1E7B",
+                        boxShadow: "0 2px 8px -4px rgba(79, 30, 123 ,0.50)",
                       }
                     : undefined
                 }
@@ -139,7 +139,7 @@ export default function InsightsView() {
   );
 }
 
-/* ─────────────────────────  Funnel  ─────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Funnel  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function FunnelView({ days }: { days: number }) {
   const [data, setData] = useState<any>(null);
@@ -177,14 +177,14 @@ function FunnelView({ days }: { days: number }) {
   const stages = data.stages || [];
   const max = Math.max(1, ...stages.map((s: any) => s.count));
 
-  // No calls yet — give operators a clear nudge rather than a blank panel.
+  // No calls yet â€” give operators a clear nudge rather than a blank panel.
   if (stages.length === 0 || stages.every((s: any) => s.count === 0)) {
     return (
       <div className="relative aurora-ring rounded-3xl">
         <div className="relative rounded-3xl glass-strong overflow-hidden p-10 md:p-14 flex flex-col items-center gap-5 text-center">
           <div
             className="w-16 h-16 rounded-2xl flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, #0AC8D422, #0AC8D422)" }}
+            style={{ background: "linear-gradient(135deg, #4F1E7B22, #4F1E7B22)" }}
           >
             <TrendingUp className="w-8 h-8 text-brand" />
           </div>
@@ -204,7 +204,7 @@ function FunnelView({ days }: { days: number }) {
     <div className="relative aurora-ring rounded-3xl">
       <div className="relative rounded-3xl glass-strong overflow-hidden p-8 md:p-10 space-y-4">
         <div className="text-[10px] uppercase tracking-[0.4em] text-brand mb-2">
-          Conversion Funnel · {data.window_days}d
+          Conversion Funnel Â· {data.window_days}d
         </div>
         {stages.map((s: any, i: number) => {
           const pct = (s.count / max) * 100;
@@ -232,14 +232,14 @@ function FunnelView({ days }: { days: number }) {
                   transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: i * 0.06 }}
                   className="absolute inset-y-0 left-0 rounded-full"
                   style={{
-                    background: `linear-gradient(90deg, #0AC8D4, #0AC8D4, #0AC8D4)`,
+                    background: `linear-gradient(90deg, #4F1E7B, #4F1E7B, #4F1E7B)`,
                     backgroundSize: "200% 100%",
                   }}
                 />
               </div>
               {drop !== null && drop > 0 && (
                 <div className="text-[10px] uppercase tracking-[0.3em] text-muted text-right">
-                  ↓ {drop}% from previous stage
+                  â†“ {drop}% from previous stage
                 </div>
               )}
             </motion.div>
@@ -250,7 +250,7 @@ function FunnelView({ days }: { days: number }) {
   );
 }
 
-/* ─────────────────────────  Attribution  ─────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Attribution  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function AttributionView({ days }: { days: number }) {
   const [rows, setRows] = useState<any[]>([]);
@@ -295,9 +295,9 @@ function AttributionView({ days }: { days: number }) {
         <p className="text-[11px] text-muted/70 max-w-md mx-auto leading-relaxed">
           Tag your phone numbers with a campaign label in{" "}
           <a href="/admin" className="text-brand hover:underline">
-            Admin → Carrier
+            Admin â†’ Carrier
           </a>{" "}
-          (e.g. "Google Ads · Spring '26"). Every call to that number gets the tag and shows up
+          (e.g. "Google Ads Â· Spring '26"). Every call to that number gets the tag and shows up
           here.
         </p>
       </div>
@@ -310,14 +310,14 @@ function AttributionView({ days }: { days: number }) {
         <Stat
           label="Tagged sources"
           value={rows.filter((r) => r.source !== "(untagged)").length}
-          accent="#0AC8D4"
+          accent="#4F1E7B"
         />
-        <Stat label="Total calls" value={totalCalls} accent="#0AC8D4" />
+        <Stat label="Total calls" value={totalCalls} accent="#4F1E7B" />
         <Stat label="Booked" value={totalBooked} accent="#10B981" />
         <Stat
           label="Conv. rate"
           value={`${totalCalls > 0 ? ((totalBooked / totalCalls) * 100).toFixed(1) : "0.0"}%`}
-          accent="#0AC8D4"
+          accent="#4F1E7B"
         />
       </div>
       <div className="rounded-2xl glass border border-white/8 overflow-hidden">
@@ -366,7 +366,7 @@ function AttributionView({ days }: { days: number }) {
       <p className="text-[10px] text-muted/60 leading-relaxed px-1">
         Set the campaign label per phone number under{" "}
         <a href="/admin" className="text-brand hover:underline">
-          Admin → Carrier
+          Admin â†’ Carrier
         </a>
         . Calls inherit the label automatically.
       </p>
@@ -374,7 +374,7 @@ function AttributionView({ days }: { days: number }) {
   );
 }
 
-/* ─────────────────────────  Topics  ─────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Topics  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function TopicsView() {
   const [data, setData] = useState<any>(null);
@@ -410,7 +410,7 @@ function TopicsView() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div className="text-[10px] uppercase tracking-[0.4em] text-muted">
-          {data.cached ? "Cached" : "Fresh"} · {data.total_analyzed} signals analyzed
+          {data.cached ? "Cached" : "Fresh"} Â· {data.total_analyzed} signals analyzed
         </div>
         <button
           onClick={() => load(true)}
@@ -437,7 +437,7 @@ function TopicsView() {
                   animate={{ width: `${pct}%` }}
                   transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: i * 0.05 }}
                   className="absolute inset-x-0 bottom-0 h-1"
-                  style={{ background: "#0AC8D4" }}
+                  style={{ background: "#4F1E7B" }}
                 />
                 <div className="space-y-2">
                   <div className="flex items-baseline justify-between gap-3">
@@ -485,7 +485,7 @@ function TopicsView() {
   );
 }
 
-/* ─────────────────────────  Heatmap  ─────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Heatmap  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function HeatmapView({ days }: { days: number }) {
   const [data, setData] = useState<any>(null);
@@ -528,7 +528,7 @@ function HeatmapView({ days }: { days: number }) {
     <div className="relative aurora-ring rounded-3xl">
       <div className="relative rounded-3xl glass-strong overflow-hidden p-7 md:p-10">
         <div className="text-[10px] uppercase tracking-[0.4em] text-brand mb-6">
-          Calls by Hour × Weekday · {data.window_days}d
+          Calls by Hour Ã— Weekday Â· {data.window_days}d
         </div>
         <div className="overflow-x-auto scrollbar-hide">
           <table className="w-full min-w-[700px]">
@@ -562,14 +562,14 @@ function HeatmapView({ days }: { days: number }) {
                           style={{
                             background:
                               cell && cell.count > 0
-                                ? `linear-gradient(135deg, rgba(10,200,212,${opacity}), rgba(10, 200, 212,${opacity * 0.8}))`
+                                ? `linear-gradient(135deg, rgba(79, 30, 123 ,${opacity}), rgba(79, 30, 123 ,${opacity * 0.8}))`
                                 : "rgba(0,0,0,0.03)",
                             border:
                               cell && cell.count > 0
-                                ? `1px solid rgba(10,200,212,${0.2 + intensity * 0.4})`
+                                ? `1px solid rgba(79, 30, 123 ,${0.2 + intensity * 0.4})`
                                 : "1px solid rgba(0,0,0,0.04)",
                           }}
-                          title={`${wd} ${h}:00 — ${cell?.count || 0} calls${cell?.avg_score ? `, avg score ${cell.avg_score}` : ""}`}
+                          title={`${wd} ${h}:00 â€” ${cell?.count || 0} calls${cell?.avg_score ? `, avg score ${cell.avg_score}` : ""}`}
                         />
                       </td>
                     );
@@ -587,7 +587,7 @@ function HeatmapView({ days }: { days: number }) {
                 key={i}
                 className="w-4 h-4 rounded"
                 style={{
-                  background: `linear-gradient(135deg, rgba(10,200,212,${o}), rgba(10, 200, 212,${o * 0.8}))`,
+                  background: `linear-gradient(135deg, rgba(79, 30, 123 ,${o}), rgba(79, 30, 123 ,${o * 0.8}))`,
                 }}
               />
             ))}
@@ -599,7 +599,7 @@ function HeatmapView({ days }: { days: number }) {
   );
 }
 
-/* ─────────────────────────  Leaderboard  ─────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Leaderboard  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function RolePill({ role }: { role?: string }) {
   const meta =
@@ -663,23 +663,23 @@ function LeaderboardView({ days }: { days: number }) {
     iconBg: boolean;
   }> = [
     {
-      gradient: "#0AC8D4",
+      gradient: "#4F1E7B",
       ring: "border-brand/40",
-      glow: "rgba(10,200,212,0.25)",
+      glow: "rgba(79, 30, 123 ,0.25)",
       textClass: "text-paper",
       iconBg: true,
     },
     {
-      gradient: "linear-gradient(135deg, rgba(10, 200, 212,0.20), rgba(10,200,212,0.10))",
+      gradient: "linear-gradient(135deg, rgba(79, 30, 123 ,0.20), rgba(79, 30, 123 ,0.10))",
       ring: "border-brand-2/30",
-      glow: "rgba(10, 200, 212,0.15)",
+      glow: "rgba(79, 30, 123 ,0.15)",
       textClass: "text-brand-2",
       iconBg: false,
     },
     {
-      gradient: "linear-gradient(135deg, rgba(10, 200, 212,0.15), rgba(10, 200, 212,0.08))",
+      gradient: "linear-gradient(135deg, rgba(79, 30, 123 ,0.15), rgba(79, 30, 123 ,0.08))",
       ring: "border-brand-3/25",
-      glow: "rgba(10, 200, 212,0.12)",
+      glow: "rgba(79, 30, 123 ,0.12)",
       textClass: "text-brand-3",
       iconBg: false,
     },
@@ -733,21 +733,21 @@ function LeaderboardView({ days }: { days: number }) {
               </div>
               <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
                 <Stat label="Calls" value={a.total_calls} />
-                <Stat label="Qualified" value={a.qualified} accent="#0AC8D4" />
+                <Stat label="Qualified" value={a.qualified} accent="#4F1E7B" />
                 <Stat label="Avg Score" value={a.avg_lead_score} />
                 <Stat label="Bookings" value={a.bookings} />
                 <Stat label="Minutes" value={a.minutes} />
                 <Stat
                   label="$/Qual"
-                  value={a.cost_per_qualified ? `$${a.cost_per_qualified}` : "—"}
-                  accent="#0AC8D4"
+                  value={a.cost_per_qualified ? `$${a.cost_per_qualified}` : "â€”"}
+                  accent="#4F1E7B"
                 />
                 <Stat
                   label="$/Outcome"
-                  value={a.cost_per_outcome ? `$${a.cost_per_outcome}` : "—"}
-                  accent="#0AC8D4"
+                  value={a.cost_per_outcome ? `$${a.cost_per_outcome}` : "â€”"}
+                  accent="#4F1E7B"
                 />
-                <Stat label="Total $" value={a.total_cost ? `$${a.total_cost}` : "—"} />
+                <Stat label="Total $" value={a.total_cost ? `$${a.total_cost}` : "â€”"} />
               </div>
             </div>
           </motion.div>
@@ -771,7 +771,7 @@ function Stat({ label, value, accent }: { label: string; value: any; accent?: st
   );
 }
 
-/* ─────────────────────────  Failure modes  ─────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Failure modes  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function FailureModesView() {
   const [data, setData] = useState<any>(null);
@@ -805,7 +805,7 @@ function FailureModesView() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="text-[10px] uppercase tracking-[0.4em] text-muted">
-          {data.cached ? "Cached" : "Fresh"} · {modes.length} clusters
+          {data.cached ? "Cached" : "Fresh"} Â· {modes.length} clusters
         </div>
         <button
           onClick={() => load(true)}
@@ -866,7 +866,7 @@ function FailureModesView() {
   );
 }
 
-/* ─────────────────────────  AI Spend  ─────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  AI Spend  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function AISpendView({ days }: { days: number }) {
   const [data, setData] = useState<any>(null);
@@ -910,12 +910,12 @@ function AISpendView({ days }: { days: number }) {
 
   return (
     <div className="space-y-5">
-      {/* Monthly budget — always rendered so operators can set a cap
+      {/* Monthly budget â€” always rendered so operators can set a cap
           before any calls happen. */}
       <SpendBudgetCard />
 
       {!callsHaveHappened && (
-        <Empty label="No AI usage in this window — try a longer range or run a recipe." />
+        <Empty label="No AI usage in this window â€” try a longer range or run a recipe." />
       )}
 
       {callsHaveHappened && (
@@ -926,19 +926,19 @@ function AISpendView({ days }: { days: number }) {
               label="Total Spend"
               value={formatMoney(totals?.cost, 2)}
               icon={DollarSign}
-              accent="#0AC8D4"
+              accent="#4F1E7B"
             />
             <SpendStat
               label="AI Calls"
               value={String(totals.calls)}
               icon={Brain}
-              accent="#0AC8D4"
+              accent="#4F1E7B"
             />
             <SpendStat
               label="Avg / Call"
               value={formatMoney(totals?.avg_cost_per_call, 4)}
               icon={Receipt}
-              accent="#0AC8D4"
+              accent="#4F1E7B"
             />
             <SpendStat
               label="Saved by Cache"
@@ -952,7 +952,7 @@ function AISpendView({ days }: { days: number }) {
           <div className="relative aurora-ring rounded-3xl">
             <div className="relative rounded-3xl glass-strong overflow-hidden p-6 md:p-8">
               <div className="text-[10px] uppercase tracking-[0.4em] text-brand mb-5">
-                Spend per Day · {data.window_days}d
+                Spend per Day Â· {data.window_days}d
               </div>
               <div className="space-y-2">
                 {by_day.map((d: any, i: number) => {
@@ -974,7 +974,7 @@ function AISpendView({ days }: { days: number }) {
                           animate={{ width: `${pct}%` }}
                           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: i * 0.02 }}
                           className="absolute inset-y-0 left-0 rounded-lg flex items-center px-3"
-                          style={{ background: "#0AC8D4" }}
+                          style={{ background: "#4F1E7B" }}
                         >
                           <span className="text-[10px] font-mono text-paper font-medium">
                             ${safeFixed(d.cost, 2)}
@@ -1015,7 +1015,7 @@ function AISpendView({ days }: { days: number }) {
                             animate={{ width: `${pct}%` }}
                             transition={{ duration: 0.6, delay: i * 0.03 }}
                             className="absolute inset-y-0 left-0 rounded-full"
-                            style={{ background: "#0AC8D4" }}
+                            style={{ background: "#4F1E7B" }}
                           />
                         </div>
                         <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.25em] text-muted">
@@ -1166,7 +1166,7 @@ function SpendBudgetCard() {
   if (loading && !status) {
     return (
       <div className="rounded-3xl glass border border-white/10 p-6 flex items-center gap-3 text-muted text-sm">
-        <Loader2 className="w-4 h-4 animate-spin" /> Loading budget…
+        <Loader2 className="w-4 h-4 animate-spin" /> Loading budgetâ€¦
       </div>
     );
   }
@@ -1178,7 +1178,7 @@ function SpendBudgetCard() {
   const isOver = limit > 0 && used >= limit;
   const isWarn = limit > 0 && pct >= warnPct && !isOver;
   const barColor = isOver ? "#FF6B6B" : isWarn ? "#FFC07D" : "#10B981";
-  const period = status?.period || "—";
+  const period = status?.period || "â€”";
 
   return (
     <div className="relative aurora-ring rounded-3xl">
@@ -1196,13 +1196,13 @@ function SpendBudgetCard() {
                 Monthly Budget
               </div>
               <div className="text-sm text-ink/70 mt-1">
-                Period <span className="font-mono">{period}</span> · resets on the 1st (UTC)
+                Period <span className="font-mono">{period}</span> Â· resets on the 1st (UTC)
               </div>
             </div>
           </div>
           {status?.hard_capped_now && (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs">
-              <Lock className="w-3.5 h-3.5" /> Hard cap active — AI calls are blocked
+              <Lock className="w-3.5 h-3.5" /> Hard cap active â€” AI calls are blocked
             </div>
           )}
           {!status?.hard_capped_now && isWarn && (
@@ -1242,7 +1242,7 @@ function SpendBudgetCard() {
             {Array.isArray(status?.alerts_fired) && status.alerts_fired.length > 0 && (
               <div className="text-[10px] uppercase tracking-[0.25em] text-muted pt-1">
                 Alerts fired this period:{" "}
-                {status.alerts_fired.map((a: any) => `${a.threshold_pct}%`).join(" · ")}
+                {status.alerts_fired.map((a: any) => `${a.threshold_pct}%`).join(" Â· ")}
               </div>
             )}
           </div>
@@ -1305,7 +1305,7 @@ function SpendBudgetCard() {
         <div className="flex items-center justify-between gap-4 pt-1">
           <div className="text-[11px] text-ink/50">
             Threshold crossings fire <span className="font-mono text-ink/75">spend.warning</span>{" "}
-            and <span className="font-mono text-ink/75">spend.exceeded</span> webhook events — wire
+            and <span className="font-mono text-ink/75">spend.exceeded</span> webhook events â€” wire
             them to Slack/CRM in Admin.
           </div>
           <button
@@ -1360,7 +1360,7 @@ function SpendStat({
   );
 }
 
-/* ─────────────────────────  Helpers  ─────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Helpers  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function Spinner() {
   return (
@@ -1369,7 +1369,7 @@ function Spinner() {
         <div
           className="absolute inset-0 rounded-full opacity-40"
           style={{
-            background: "conic-gradient(from 0deg, #0AC8D4, #0AC8D4, #0AC8D4, #10B981, #0AC8D4)",
+            background: "conic-gradient(from 0deg, #4F1E7B, #4F1E7B, #4F1E7B, #10B981, #4F1E7B)",
             filter: "blur(1px)",
             animation: "spin 2s linear infinite",
           }}
@@ -1379,14 +1379,14 @@ function Spinner() {
           <div
             className="w-3 h-3 rounded-full"
             style={{
-              background: "#0AC8D4",
-              boxShadow: "0 0 10px #0AC8D4",
+              background: "#4F1E7B",
+              boxShadow: "0 0 10px #4F1E7B",
             }}
           />
         </div>
       </div>
       <p className="text-[9px] uppercase tracking-[0.5em] text-muted/60 animate-pulse">
-        Computing…
+        Computingâ€¦
       </p>
     </div>
   );
@@ -1401,7 +1401,7 @@ function Empty({ label, green }: { label: string; green?: boolean }) {
           style={{
             background: green
               ? "radial-gradient(circle, #10B981, transparent)"
-              : "radial-gradient(circle, #0AC8D4, transparent)",
+              : "radial-gradient(circle, #4F1E7B, transparent)",
           }}
         />
         <div
@@ -1438,14 +1438,14 @@ function ErrCard({ error }: { error: string }) {
   );
 }
 
-/* ─────────────────────────  Quality (QA Scorecard)  ─────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Quality (QA Scorecard)  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function qaColor(score: number) {
-  if (score >= 90) return "#0AC8D4";
+  if (score >= 90) return "#4F1E7B";
   if (score >= 75) return "#10B981";
   if (score >= 60) return "#FFD166";
   if (score >= 40) return "#FF9A5C";
-  return "#0AC8D4";
+  return "#4F1E7B";
 }
 
 function QualityView({ days }: { days: number }) {
@@ -1503,7 +1503,7 @@ function QualityView({ days }: { days: number }) {
           <div className="relative rounded-3xl glass-strong overflow-hidden p-10 md:p-14 flex flex-col items-center gap-5 text-center">
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg,#0AC8D422,#0AC8D422)" }}
+              style={{ background: "linear-gradient(135deg,#4F1E7B22,#4F1E7B22)" }}
             >
               <Star className="w-8 h-8 text-brand" />
             </div>
@@ -1525,7 +1525,7 @@ function QualityView({ days }: { days: number }) {
               ) : (
                 <Play className="w-3.5 h-3.5" />
               )}
-              {scoring ? "Scoring…" : "Score All Unscored"}
+              {scoring ? "Scoringâ€¦" : "Score All Unscored"}
             </button>
           </div>
         </div>
@@ -1555,16 +1555,16 @@ function QualityView({ days }: { days: number }) {
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-colors disabled:opacity-50"
         >
           {scoring ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
-          {scoring ? "Scoring…" : "Score All Unscored"}
+          {scoring ? "Scoringâ€¦" : "Score All Unscored"}
         </button>
       </div>
 
       {/* Hero stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "Scored Calls", value: data.count, accent: "#0AC8D4" },
+          { label: "Scored Calls", value: data.count, accent: "#4F1E7B" },
           { label: "Average Score", value: `${data.avgScore}/100`, accent: qaColor(data.avgScore) },
-          { label: "Opening", value: `${dims.greeting ?? 0}/20`, accent: "#0AC8D4" },
+          { label: "Opening", value: `${dims.greeting ?? 0}/20`, accent: "#4F1E7B" },
           { label: "Closing", value: `${dims.closing ?? 0}/20`, accent: "#10B981" },
         ].map(({ label, value, accent }) => (
           <div
@@ -1600,7 +1600,7 @@ function QualityView({ days }: { days: number }) {
                     animate={{ width: `${(bucket.count / maxDist) * 100}%` }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
                     className="h-full rounded-full"
-                    style={{ background: bucket.color || "#0AC8D4" }}
+                    style={{ background: bucket.color || "#4F1E7B" }}
                   />
                 </div>
                 <span className="text-[9px] font-mono text-ink w-6 text-right shrink-0">
@@ -1627,8 +1627,8 @@ function QualityView({ days }: { days: number }) {
                 <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
                 <Radar
                   dataKey="score"
-                  stroke="#0AC8D4"
-                  fill="#0AC8D4"
+                  stroke="#4F1E7B"
+                  fill="#4F1E7B"
                   fillOpacity={0.15}
                   strokeWidth={1.5}
                 />
@@ -1649,8 +1649,8 @@ function QualityView({ days }: { days: number }) {
               <AreaChart data={data.trend} margin={{ top: 4, right: 0, left: -28, bottom: 0 }}>
                 <defs>
                   <linearGradient id="qaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0AC8D4" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#0AC8D4" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#4F1E7B" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#4F1E7B" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
@@ -1669,18 +1669,18 @@ function QualityView({ days }: { days: number }) {
                 <Tooltip
                   contentStyle={{
                     background: "rgba(28, 25, 23, 0.95)",
-                    border: "1px solid rgba(10, 200, 212, 0.3)",
+                    border: "1px solid rgba(79, 30, 123 , 0.3)",
                     borderRadius: "12px",
                     boxShadow: "0 10px 30px rgba(0, 0, 0, 0.25)",
                     fontSize: "11px",
                   }}
                   labelStyle={{ color: "#7C7469", fontWeight: "bold" }}
-                  itemStyle={{ color: "#0AC8D4" }}
+                  itemStyle={{ color: "#4F1E7B" }}
                 />
                 <Area
                   type="monotone"
                   dataKey="avg"
-                  stroke="#0AC8D4"
+                  stroke="#4F1E7B"
                   strokeWidth={1.5}
                   fill="url(#qaGrad)"
                   name="Avg QA Score"

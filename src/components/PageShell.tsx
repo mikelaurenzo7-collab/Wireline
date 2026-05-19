@@ -1,15 +1,15 @@
-import React, { ReactNode, useState } from "react";
+﻿import React, { ReactNode, useState } from "react";
 import { motion } from "motion/react";
 import { cn } from "../lib/utils";
 
-/* ──────────────────────────────────────────────────────────────────────────
-   PageShell — viewport-fit page primitive.
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   PageShell â€” viewport-fit page primitive.
 
    Every route slots into this. The shell guarantees:
-     • outer container is exactly the height of the content viewport,
-     • the page itself NEVER scrolls,
-     • optional tab bar splits content into sub-views,
-     • a single bounded scroll region is allowed inside Panel children
+     â€¢ outer container is exactly the height of the content viewport,
+     â€¢ the page itself NEVER scrolls,
+     â€¢ optional tab bar splits content into sub-views,
+     â€¢ a single bounded scroll region is allowed inside Panel children
        (the only place a scrollbar may legitimately appear).
 
    Use it like:
@@ -17,14 +17,14 @@ import { cn } from "../lib/utils";
      <PageShell
        title="Voice Archive"
        subtitle="Carrier signal threads"
-       eyebrow="Signal · Archive"
-       actions={<button>…</button>}
+       eyebrow="Signal Â· Archive"
+       actions={<button>â€¦</button>}
        tabs={[
          { id: "live",  label: "Live",     content: <LivePanel /> },
          { id: "past",  label: "Archive",  content: <ArchivePanel /> },
        ]}
      />
-   ────────────────────────────────────────────────────────────────────────── */
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 export type PageShellTab = {
   id: string;
@@ -72,7 +72,7 @@ export default function PageShell({
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
         className="shrink-0 pb-1 sm:pb-1 mb-1"
       >
-        {/* eyebrow + actions row — stacks on mobile so action buttons
+        {/* eyebrow + actions row â€” stacks on mobile so action buttons
             don't get squeezed against the title or fall off-canvas. */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-1">
           <div className="min-w-0 flex-1">
@@ -109,7 +109,7 @@ export default function PageShell({
           className="h-px"
           style={{
             background:
-              "linear-gradient(90deg, rgba(10,200,212,0.20) 0%, rgba(10, 200, 212,0.15) 40%, rgba(10, 200, 212,0.10) 70%, transparent 100%)",
+              "linear-gradient(90deg, rgba(79, 30, 123 ,0.20) 0%, rgba(79, 30, 123 ,0.15) 40%, rgba(79, 30, 123 ,0.10) 70%, transparent 100%)",
           }}
         />
       </motion.header>
@@ -136,9 +136,9 @@ export default function PageShell({
                       layoutId="tab-active-bg"
                       className="absolute inset-0 rounded-xl"
                       style={{
-                        background: "#0AC8D4",
+                        background: "#4F1E7B",
                         boxShadow:
-                          "0 3px 12px -6px rgba(10,200,212,0.50), 0 0 0 1px rgba(255,255,255,0.18) inset",
+                          "0 3px 12px -6px rgba(79, 30, 123 ,0.50), 0 0 0 1px rgba(255,255,255,0.18) inset",
                       }}
                       transition={{ type: "spring", stiffness: 420, damping: 36 }}
                     />
@@ -164,7 +164,7 @@ export default function PageShell({
         </div>
       )}
 
-      {/* Body — bounded, never scrolls itself */}
+      {/* Body â€” bounded, never scrolls itself */}
       <div className={cn("flex-1 min-h-0 overflow-hidden", bodyClassName)}>
         {tabs && activeTab ? (
           <motion.div
@@ -184,10 +184,10 @@ export default function PageShell({
   );
 }
 
-/* ──────────────────────────────────────────────────────────────────────────
-   Panel — a bounded card for use inside PageShell. Optional internal scroll.
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   Panel â€” a bounded card for use inside PageShell. Optional internal scroll.
    Scrolling inside Panel is the ONLY permitted scroll surface in the app.
-   ────────────────────────────────────────────────────────────────────────── */
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 interface PanelProps {
   title?: ReactNode;
@@ -215,7 +215,7 @@ export function Panel({
   className,
   bodyClassName,
   flush = false,
-  accent = "#0AC8D4",
+  accent = "#4F1E7B",
 }: PanelProps) {
   return (
     <section
@@ -225,7 +225,7 @@ export function Panel({
       )}
       style={{
         boxShadow:
-          "0 1px 0 rgba(255,255,255,0.80) inset, 0 0 0 1px rgba(10,200,212,0.03), 0 8px 32px -10px rgba(0,0,0,0.10), 0 3px 12px -4px rgba(10,200,212,0.06)",
+          "0 1px 0 rgba(255,255,255,0.80) inset, 0 0 0 1px rgba(79, 30, 123 ,0.03), 0 8px 32px -10px rgba(0,0,0,0.10), 0 3px 12px -4px rgba(79, 30, 123 ,0.06)",
       }}
     >
       {/* Subtle ambient glow behind header */}
@@ -291,13 +291,13 @@ export function Panel({
   );
 }
 
-/* Compact stat tile — drop-in for hero metric grids.  */
+/* Compact stat tile â€” drop-in for hero metric grids.  */
 export function StatTile({
   label,
   value,
   sub,
   icon: Icon,
-  accent = "#0AC8D4",
+  accent = "#4F1E7B",
   trend,
 }: {
   label: string;
@@ -356,7 +356,7 @@ export function StatTile({
                 trendPositive ? "text-emerald-600" : "text-rose-500",
               )}
             >
-              {trendPositive ? "↑" : "↓"} {Math.abs(trend.value)}%
+              {trendPositive ? "â†‘" : "â†“"} {Math.abs(trend.value)}%
             </span>
           )}
         </div>

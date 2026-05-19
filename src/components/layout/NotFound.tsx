@@ -1,10 +1,10 @@
-import React from "react";
+﻿import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "motion/react";
 import { ChevronRight, Home, Phone, MessageSquare, Compass, Mail } from "lucide-react";
 
 /**
- * NotFound — context-aware 404. Detects whether the visitor is signed-in
+ * NotFound â€” context-aware 404. Detects whether the visitor is signed-in
  * (App.tsx renders this through AppShell with TopBar) or public (App.tsx
  * checks /not-found path explicitly so an unauth user hitting a typo URL
  * doesn't get bounced into the sign-in form).
@@ -27,7 +27,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
           className="w-[55vw] h-[55vw] max-w-[700px] max-h-[700px] sm:opacity-40 opacity-25 rounded-full blur-3xl"
           style={{
             background:
-              "radial-gradient(circle, rgba(10,200,212,0.25), rgba(10, 200, 212,0.18) 50%, transparent 70%)",
+              "radial-gradient(circle, rgba(79, 30, 123 ,0.25), rgba(79, 30, 123 ,0.18) 50%, transparent 70%)",
           }}
         />
       </div>
@@ -57,7 +57,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               We couldn't find{" "}
               <code className="px-1.5 py-0.5 rounded bg-black/[0.04] text-[12px] font-mono text-ink/70">
                 {location.pathname.length > 32
-                  ? location.pathname.slice(0, 32) + "…"
+                  ? location.pathname.slice(0, 32) + "â€¦"
                   : location.pathname}
               </code>
               .{" "}
@@ -68,14 +68,14 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
           ) : (
             <>
               The page may have moved.{" "}
-              <span className="hidden sm:inline">Use ⌘K to jump anywhere, or pick</span>
+              <span className="hidden sm:inline">Use âŒ˜K to jump anywhere, or pick</span>
               <span className="sm:hidden">Pick</span> a starting point below.
             </>
           )}
         </p>
       </motion.div>
 
-      {/* Action cards — context-aware */}
+      {/* Action cards â€” context-aware */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -84,17 +84,17 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
       >
         {isPublic ? (
           <>
-            <NotFoundCard to="/" icon={Home} label="Home" hint="Back to landing" accent="#0AC8D4" />
+            <NotFoundCard to="/" icon={Home} label="Home" hint="Back to landing" accent="#4F1E7B" />
             <a
               href="tel:+16305811834"
               className="group relative flex items-center gap-3 p-4 rounded-2xl glass border border-white/12 hover:border-white/24 transition-colors"
-              style={{ boxShadow: "0 8px 24px -12px rgba(10,200,212,0.35)" }}
+              style={{ boxShadow: "0 8px 24px -12px rgba(79, 30, 123 ,0.35)" }}
             >
               <div
                 className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                 style={{
-                  background: "#0AC8D4",
-                  boxShadow: "0 4px 12px -4px rgba(10,200,212,0.55)",
+                  background: "#4F1E7B",
+                  boxShadow: "0 4px 12px -4px rgba(79, 30, 123 ,0.55)",
                 }}
               >
                 <Phone className="w-4 h-4 text-paper" strokeWidth={2.4} />
@@ -109,7 +109,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               icon={Compass}
               label="Pricing"
               hint="4 plans, free trial"
-              accent="#0AC8D4"
+              accent="#4F1E7B"
             />
           </>
         ) : (
@@ -119,21 +119,21 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               icon={Home}
               label="Home"
               hint="Operations overview"
-              accent="#0AC8D4"
+              accent="#4F1E7B"
             />
             <NotFoundCard
               to="/agents"
               icon={MessageSquare}
               label="Agents"
               hint="Manage your fleet"
-              accent="#0AC8D4"
+              accent="#4F1E7B"
             />
             <NotFoundCard
               to="/inbox"
               icon={Mail}
               label="Email"
               hint="Inbox + threads"
-              accent="#0AC8D4"
+              accent="#4F1E7B"
             />
           </>
         )}
@@ -148,7 +148,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
         >
           Already have an account?{" "}
           <Link to="/" className="text-brand hover:opacity-80 transition-opacity">
-            Sign in →
+            Sign in â†’
           </Link>
         </motion.p>
       )}

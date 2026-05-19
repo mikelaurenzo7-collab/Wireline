@@ -1,4 +1,4 @@
-// AgentScorecard — outcome-aligned per-agent reporting card.
+﻿// AgentScorecard â€” outcome-aligned per-agent reporting card.
 //
 // Hits GET /api/agents/:id/scorecard?days=N which returns the metric
 // definition that matches the agent's kpi_focus (set in
@@ -41,7 +41,7 @@ interface Props {
   agentId: string;
   /** Window length in days; default 30. */
   days?: number;
-  /** Optional title override; defaults to "Performance · {N}d". */
+  /** Optional title override; defaults to "Performance Â· {N}d". */
   title?: string;
 }
 
@@ -95,27 +95,27 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
       <div
         aria-hidden="true"
         className="absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-20 blur-3xl pointer-events-none"
-        style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }}
+        style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
       />
 
       <header className="relative flex items-start gap-3 mb-4">
         <div
           className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border border-white/10 shadow-lg shadow-brand/10"
           style={{
-            background: "linear-gradient(135deg, rgba(10,200,212,0.20), rgba(10,200,212,0.05))",
-            color: "#0AC8D4",
+            background: "linear-gradient(135deg, rgba(79, 30, 123 ,0.20), rgba(79, 30, 123 ,0.05))",
+            color: "#4F1E7B",
           }}
         >
           <Target className="w-4.5 h-4.5" />
         </div>
         <div className="min-w-0 flex-1">
           <h3 className="font-display italic text-lg text-ink leading-tight">
-            {title ?? `Performance · ${data.window_days}d`}
+            {title ?? `Performance Â· ${data.window_days}d`}
           </h3>
           <p className="text-[10px] text-muted/70 leading-relaxed mt-0.5 inline-flex items-center gap-1.5">
             <Sparkles className="w-2.5 h-2.5 text-brand" />
             Optimizing for <span className="text-ink/80 font-medium">{data.kpi_focus}</span>
-            {" · "}
+            {" Â· "}
             <span className="text-brand font-semibold">{formatInt(data.sample_size)}</span> {data.sample_size === 1 ? "call" : "calls"} sampled
           </p>
         </div>
@@ -194,11 +194,11 @@ function Sparkline({ values }: { values: number[] }) {
       <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="w-full h-full overflow-visible">
         <defs>
           <linearGradient id="sparkfill" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#0AC8D4" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#0AC8D4" stopOpacity="0" />
+            <stop offset="0%" stopColor="#4F1E7B" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="#4F1E7B" stopOpacity="0" />
           </linearGradient>
           <linearGradient id="sparkstroke" x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0%" stopColor="#0AC8D4" />
+            <stop offset="0%" stopColor="#4F1E7B" />
             <stop offset="100%" stopColor="#10B981" />
           </linearGradient>
         </defs>
@@ -209,7 +209,7 @@ function Sparkline({ values }: { values: number[] }) {
           strokeLinecap="round"
           strokeLinejoin="round"
           points={points}
-          className="drop-shadow-[0_2px_8px_rgba(10,200,212,0.4)]"
+          className="drop-shadow-[0_2px_8px_rgba(79, 30, 123 ,0.4)]"
         />
         <polygon
           fill="url(#sparkfill)"
@@ -221,7 +221,7 @@ function Sparkline({ values }: { values: number[] }) {
 }
 
 function formatMetricValue(v: number, format: MetricFormat): string {
-  if (!Number.isFinite(v)) return "—";
+  if (!Number.isFinite(v)) return "â€”";
   switch (format) {
     case "percent":
       // Inputs are 0..1 fractions from computeScorecard.

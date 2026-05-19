@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Sparkles,
@@ -122,8 +122,8 @@ export function KimiQualityPanel() {
               />
               <defs>
                 <linearGradient id="kimi-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#0AC8D4" />
-                  <stop offset="100%" stopColor="#0AC8D4" />
+                  <stop offset="0%" stopColor="#4F1E7B" />
+                  <stop offset="100%" stopColor="#4F1E7B" />
                 </linearGradient>
               </defs>
             </svg>

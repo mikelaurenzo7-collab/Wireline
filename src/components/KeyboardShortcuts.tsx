@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+﻿import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Keyboard } from "lucide-react";
 
@@ -24,7 +24,7 @@ const SHORTCUTS = [
   {
     category: "Actions",
     items: [
-      { keys: ["⌘", "K"], description: "Open command bar" },
+      { keys: ["âŒ˜", "K"], description: "Open command bar" },
       { keys: ["?"], description: "Show keyboard shortcuts" },
       { keys: ["Esc"], description: "Close modal / panel" },
     ],
@@ -32,8 +32,8 @@ const SHORTCUTS = [
   {
     category: "Call Logs",
     items: [
-      { keys: ["⌘", "F"], description: "Focus search" },
-      { keys: ["⌘", "E"], description: "Export to CSV" },
+      { keys: ["âŒ˜", "F"], description: "Focus search" },
+      { keys: ["âŒ˜", "E"], description: "Export to CSV" },
     ],
   },
 ];
@@ -117,7 +117,7 @@ export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsPr
                 <div className="flex items-center gap-3">
                   <div
                     className="w-8 h-8 rounded-lg flex items-center justify-center"
-                    style={{ background: "linear-gradient(135deg, #0AC8D422, #0AC8D422)" }}
+                    style={{ background: "linear-gradient(135deg, #4F1E7B22, #4F1E7B22)" }}
                   >
                     <Keyboard className="w-4 h-4 text-brand" />
                   </div>

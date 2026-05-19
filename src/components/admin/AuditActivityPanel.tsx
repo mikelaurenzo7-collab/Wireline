@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { Loader2, DollarSign, Activity, BarChart3, Clock, Cpu } from "lucide-react";
 import { motion } from "motion/react";
@@ -59,7 +59,7 @@ export function AuditActivityPanel() {
     <div className="h-full flex flex-col gap-3 overflow-y-auto scrollbar-hide pb-6">
       {/* Window selector */}
       <div className="flex items-center justify-between shrink-0">
-        <h3 className="text-[9px] uppercase tracking-[0.4em] text-muted">AI Usage · Last</h3>
+        <h3 className="text-[9px] uppercase tracking-[0.4em] text-muted">AI Usage Â· Last</h3>
         <div className="flex p-0.5 rounded-full glass border border-white/10">
           {windowOpts.map(d => (
             <button
@@ -136,8 +136,8 @@ export function AuditActivityPanel() {
                   <AreaChart data={byDay}>
                     <defs>
                       <linearGradient id="costGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#0AC8D4" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#0AC8D4" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#4F1E7B" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#4F1E7B" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
                     <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
@@ -156,7 +156,7 @@ export function AuditActivityPanel() {
                       contentStyle={{ background: '#fff', border: 'none', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', fontSize: '10px' }}
                       formatter={(val: number) => [`$${val.toFixed(4)}`, 'Cost']}
                     />
-                    <Area type="monotone" dataKey="cost" stroke="#0AC8D4" strokeWidth={2} fillOpacity={1} fill="url(#costGrad)" />
+                    <Area type="monotone" dataKey="cost" stroke="#4F1E7B" strokeWidth={2} fillOpacity={1} fill="url(#costGrad)" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -185,7 +185,7 @@ export function AuditActivityPanel() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[11px] font-medium text-ink truncate uppercase tracking-wider">{formatActionName(entry.action)}</p>
-                      <p className="text-[9px] text-muted truncate">{entry.metadata?.agent_name || "System"} · {entry.model || entry.model_id}</p>
+                      <p className="text-[9px] text-muted truncate">{entry.metadata?.agent_name || "System"} Â· {entry.model || entry.model_id}</p>
                     </div>
                     <div className="flex flex-col items-end gap-1">
                       {(entry.latencyMs || entry.latency_ms) && (
@@ -194,7 +194,7 @@ export function AuditActivityPanel() {
                         </span>
                       )}
                       <span className="text-[9px] font-mono text-ink/70 tabular-nums w-16 text-right">
-                        {(entry.costUsd ?? entry.cost_usd) != null ? `$${Number(entry.costUsd ?? entry.cost_usd).toFixed(5)}` : "—"}
+                        {(entry.costUsd ?? entry.cost_usd) != null ? `$${Number(entry.costUsd ?? entry.cost_usd).toFixed(5)}` : "â€”"}
                       </span>
                       <span className="text-[8px] text-muted/50 tabular-nums w-24 text-right">
                         {formatDateTime(entry.createdAt ?? entry.created_at, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }, "")}

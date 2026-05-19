@@ -1,12 +1,12 @@
-import { Link } from "react-router-dom";
+﻿import { Link } from "react-router-dom";
 import { Shield, FileText, ArrowLeft } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 
 const LAST_UPDATED = "May 9, 2026";
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Shared layout wrapper for legal pages
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function LegalLayout({
   title,
   icon: Icon,
@@ -29,7 +29,7 @@ function LegalLayout({
         <div className="flex items-center gap-3 mb-2">
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: "#0AC8D4" }}
+            style={{ background: "#4F1E7B" }}
           >
             <Icon className="w-5 h-5 text-paper" />
           </div>
@@ -45,11 +45,11 @@ function LegalLayout({
           <Link to="/privacy" className="hover:text-muted transition-colors py-1">
             Privacy Policy
           </Link>
-          <span aria-hidden="true">·</span>
+          <span aria-hidden="true">Â·</span>
           <Link to="/terms" className="hover:text-muted transition-colors py-1">
             Terms of Service
           </Link>
-          <span aria-hidden="true">·</span>
+          <span aria-hidden="true">Â·</span>
           <Link to="/privacy#ccpa" className="hover:text-muted transition-colors py-1">
             Do Not Sell My Information
           </Link>
@@ -78,20 +78,20 @@ function Section({
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Privacy Policy
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function PrivacyPolicy() {
   return (
     <LegalLayout title="Privacy Policy" icon={Shield}>
       <PageMeta
         title="Privacy Policy"
-        description="Wireline's privacy policy — how we collect, use, and protect your data. Sub-processors: Supabase, Vapi, Anthropic, Stripe, and Vercel. Last updated May 9, 2026."
+        description="Wireline's privacy policy â€” how we collect, use, and protect your data. Sub-processors: Supabase, Vapi, Anthropic, Stripe, and Vercel. Last updated May 9, 2026."
       />
 
       <Section title="1. Who We Are">
         <p>
-          <strong>Wireline</strong> ("we", "our", or "us") operates the Wireline platform — an
+          <strong>Wireline</strong> ("we", "our", or "us") operates the Wireline platform â€” an
           AI-powered omnichannel agent fleet for businesses. Questions about this policy can be sent
           to <strong>legal@wireline.app</strong>. This policy explains what data we collect, why,
           and your rights over it.
@@ -100,28 +100,28 @@ export function PrivacyPolicy() {
 
       <Section title="2. Data We Collect">
         <p>
-          <strong>Account data</strong> — Email address, authentication tokens, and account
+          <strong>Account data</strong> â€” Email address, authentication tokens, and account
           preferences provided during sign-up and use of the platform.
         </p>
         <p>
-          <strong>Agent configuration</strong> — Names, personas, directives, knowledge base
+          <strong>Agent configuration</strong> â€” Names, personas, directives, knowledge base
           entries, and voice settings you create for your AI agents.
         </p>
         <p>
-          <strong>Call data</strong> — Phone numbers, call recordings, transcripts, summaries, and
+          <strong>Call data</strong> â€” Phone numbers, call recordings, transcripts, summaries, and
           metadata for calls handled by your agents. Voice calls are routed through Vapi (vapi.ai);
           transcripts are stored in our database.
         </p>
         <p>
-          <strong>Email data</strong> — If you connect a Gmail or Microsoft account, we access email
+          <strong>Email data</strong> â€” If you connect a Gmail or Microsoft account, we access email
           threads and messages you explicitly assign to agents for triage and drafting.
         </p>
         <p>
-          <strong>Usage and billing data</strong> — Feature usage, AI model token consumption, and
+          <strong>Usage and billing data</strong> â€” Feature usage, AI model token consumption, and
           Stripe billing information. We do not store full payment card numbers.
         </p>
         <p>
-          <strong>Log and diagnostic data</strong> — Server logs, error reports, and performance
+          <strong>Log and diagnostic data</strong> â€” Server logs, error reports, and performance
           metrics used to operate and improve the service.
         </p>
       </Section>
@@ -135,7 +135,7 @@ export function PrivacyPolicy() {
         <p>
           We do <strong>not</strong> sell or share your personal information with third parties for
           advertising or cross-context behavioral advertising. We do not use your agent
-          configurations or call transcripts to train AI models — ours or any third party's.
+          configurations or call transcripts to train AI models â€” ours or any third party's.
         </p>
       </Section>
 
@@ -143,19 +143,19 @@ export function PrivacyPolicy() {
         <p>We rely on the following sub-processors to deliver the service:</p>
         <ul className="list-disc list-inside space-y-1.5 ml-2">
           <li>
-            <strong>Supabase</strong> (supabase.com) — Database, authentication, and file storage
+            <strong>Supabase</strong> (supabase.com) â€” Database, authentication, and file storage
           </li>
           <li>
-            <strong>Vapi</strong> (vapi.ai) — Voice AI infrastructure and call routing
+            <strong>Vapi</strong> (vapi.ai) â€” Voice AI infrastructure and call routing
           </li>
           <li>
-            <strong>Anthropic</strong> (anthropic.com) — AI model inference (Claude)
+            <strong>Anthropic</strong> (anthropic.com) â€” AI model inference (Claude)
           </li>
           <li>
-            <strong>Stripe</strong> (stripe.com) — Payment processing and billing
+            <strong>Stripe</strong> (stripe.com) â€” Payment processing and billing
           </li>
           <li>
-            <strong>Vercel</strong> (vercel.com) — Platform hosting and edge delivery
+            <strong>Vercel</strong> (vercel.com) â€” Platform hosting and edge delivery
           </li>
         </ul>
       </Section>
@@ -190,24 +190,24 @@ export function PrivacyPolicy() {
         </p>
         <ul className="list-disc list-inside space-y-1.5 ml-2">
           <li>
-            <strong>Right to know</strong> — what personal information we collect, use, and disclose
+            <strong>Right to know</strong> â€” what personal information we collect, use, and disclose
           </li>
           <li>
-            <strong>Right to delete</strong> — request deletion of your personal information
+            <strong>Right to delete</strong> â€” request deletion of your personal information
           </li>
           <li>
-            <strong>Right to correct</strong> — request correction of inaccurate personal
+            <strong>Right to correct</strong> â€” request correction of inaccurate personal
             information
           </li>
           <li>
-            <strong>Right to opt-out</strong> — opt out of the sale or sharing of personal
+            <strong>Right to opt-out</strong> â€” opt out of the sale or sharing of personal
             information
           </li>
           <li>
-            <strong>Right to limit use</strong> — limit use of sensitive personal information
+            <strong>Right to limit use</strong> â€” limit use of sensitive personal information
           </li>
           <li>
-            <strong>Right to non-discrimination</strong> — we will not discriminate for exercising
+            <strong>Right to non-discrimination</strong> â€” we will not discriminate for exercising
             these rights
           </li>
         </ul>
@@ -257,15 +257,15 @@ export function PrivacyPolicy() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Terms of Service
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function TermsOfService() {
   return (
     <LegalLayout title="Terms of Service" icon={FileText}>
       <PageMeta
         title="Terms of Service"
-        description="Wireline's terms of service — acceptable use, billing, telemarketing compliance (TCPA), limitation of liability, and governing law (Delaware). Last updated May 9, 2026."
+        description="Wireline's terms of service â€” acceptable use, billing, telemarketing compliance (TCPA), limitation of liability, and governing law (Delaware). Last updated May 9, 2026."
       />
 
       <Section title="1. Acceptance">

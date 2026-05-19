@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import {
   Mail,
   Send,
@@ -98,7 +98,7 @@ export default function EmailInbox() {
   }, []);
 
   // Guarded against the rapid-thread-switch race: if the user clicks
-  // thread A → B before A's response lands, A's late resolve must not
+  // thread A â†’ B before A's response lands, A's late resolve must not
   // overwrite B's messages. AbortController cancels in-flight fetches
   // for switched-away threads, and the post-resolve guard ignores any
   // response whose threadId no longer matches the selection.
@@ -146,7 +146,7 @@ export default function EmailInbox() {
   const handleDraftAI = async () => {
     if (!selectedThread) return;
     setIsDrafting(true);
-    toastInfo("Drafting reply", "Wireline AI is composing your response…");
+    toastInfo("Drafting reply", "Wireline AI is composing your responseâ€¦");
     try {
       const claudeRes = await authFetch(`/api/claude/email-draft`, {
         method: "POST",
@@ -268,12 +268,12 @@ export default function EmailInbox() {
       <div className="flex-1 min-h-0">
         <PageShell
           title="Email"
-          eyebrow="Communications · Email"
+          eyebrow="Communications Â· Email"
           subtitle={`${threads.length} thread${threads.length === 1 ? "" : "s"} in your inbox.`}
           actions={syncAction}
         >
           <div className="h-full flex flex-col lg:flex-row gap-3 min-h-0">
-            {/* Thread list — full-width on mobile; hides when a thread is
+            {/* Thread list â€” full-width on mobile; hides when a thread is
             selected so the reader gets the full viewport. */}
             <Panel
               title="Threads"
@@ -296,7 +296,7 @@ export default function EmailInbox() {
                     icon={Mail}
                     title="No threads yet"
                     description="Connect a Gmail or Outlook account in Carrier Bridge so agents can receive and reply to emails."
-                    accent="#0AC8D4"
+                    accent="#4F1E7B"
                     actions={[{ label: "Connect Email", to: "/integrations", primary: true }]}
                     className="h-full py-10"
                   />
@@ -327,7 +327,7 @@ export default function EmailInbox() {
                           {active && (
                             <div
                               className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full"
-                              style={{ background: "linear-gradient(to bottom, #0AC8D4, #0AC8D4)" }}
+                              style={{ background: "linear-gradient(to bottom, #4F1E7B, #4F1E7B)" }}
                             />
                           )}
 
@@ -358,7 +358,7 @@ export default function EmailInbox() {
                             </h4>
                             <div className="flex items-center gap-2">
                               <p className="text-[10px] text-muted/70 truncate flex-1">
-                                {thread.summary || "Pending analysis…"}
+                                {thread.summary || "Pending analysisâ€¦"}
                               </p>
                               <span
                                 className={cn(
@@ -544,7 +544,7 @@ export default function EmailInbox() {
                         <textarea
                           value={replyText}
                           onChange={(e) => setReplyText(e.target.value)}
-                          placeholder="Type a reply or ask the agent to draft one…"
+                          placeholder="Type a reply or ask the agent to draft oneâ€¦"
                           className="w-full px-3 pb-3 min-h-[100px] outline-none text-ink text-sm leading-relaxed resize-none bg-transparent placeholder:text-muted/50"
                         />
                       </div>

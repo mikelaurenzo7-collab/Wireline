@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   Activity,
@@ -103,7 +103,7 @@ export default function DashboardHome() {
     return () => {
       mountedRef.current = false;
       clearInterval(signalPulse);
-      // If the operator never started a call, vapi was never loaded —
+      // If the operator never started a call, vapi was never loaded â€”
       // nothing to detach. Otherwise remove the listeners we attached,
       // best-effort stop any in-flight call, and clear pending timers.
       if (vapiRef.current) {
@@ -206,7 +206,7 @@ export default function DashboardHome() {
     if (!import.meta.env.VITE_VAPI_PUBLIC_KEY) {
       toastError(
         "Voice not configured",
-        "The Wireline voice network key is not set — add the voice environment variables and redeploy.",
+        "The Wireline voice network key is not set â€” add the voice environment variables and redeploy.",
       );
       return;
     }
@@ -231,7 +231,7 @@ export default function DashboardHome() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: { type: "assistant-request" } }),
       });
-      // The webhook fetch can outlast the dashboard too — bail before
+      // The webhook fetch can outlast the dashboard too â€” bail before
       // committing to a real call from a dead component.
       if (!mountedRef.current) return;
       const data = await res.json();
@@ -239,7 +239,7 @@ export default function DashboardHome() {
       if (data.assistant) {
         await vapi.start(data.assistant);
         // Guard: if call-start hasn't fired within 20 s, clear the spinner
-        // so the button doesn't stay locked in "Connecting…" indefinitely.
+        // so the button doesn't stay locked in "Connectingâ€¦" indefinitely.
         const t = setTimeout(() => {
           if (mountedRef.current && !vapiRef.current) return;
           setIsConnecting((prev) => {
@@ -325,7 +325,7 @@ export default function DashboardHome() {
               className="absolute inset-0 rounded-full"
               style={{
                 background:
-                  "conic-gradient(from 0deg, #0AC8D4, #0AC8D4, #0AC8D4, #10B981, #0AC8D4)",
+                  "conic-gradient(from 0deg, #4F1E7B, #4F1E7B, #4F1E7B, #10B981, #4F1E7B)",
                 filter: "blur(2px)",
                 animation: "spin 8s linear infinite",
               }}
@@ -335,34 +335,34 @@ export default function DashboardHome() {
               <Target className="w-7 h-7 text-aurora" strokeWidth={1.5} />
             </div>
           </div>
-          <p className="text-aurora text-[10px] uppercase tracking-[0.5em]">Loading…</p>
+          <p className="text-aurora text-[10px] uppercase tracking-[0.5em]">Loadingâ€¦</p>
         </div>
       </PageShell>
     );
   }
 
-  /* ─── Tab content builders ──────────────────────────────────────────── */
+  /* â”€â”€â”€ Tab content builders â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
   const delta = stats?.week_delta ?? {};
 
   const Pulse = (
     <div className="h-full flex flex-col gap-3 overflow-hidden">
-      {/* ── First-run hero: shown when the owner has no agents yet ── */}
+      {/* â”€â”€ First-run hero: shown when the owner has no agents yet â”€â”€ */}
       {!stats?.agents?.length && !isLoading && (
         <div className="shrink-0 relative aurora-ring rounded-2xl">
           <div className="relative rounded-2xl glass-strong overflow-hidden px-6 py-5 flex flex-col md:flex-row md:items-center gap-4">
             <div
               className="absolute -top-20 -right-20 w-64 h-64 rounded-full opacity-25 blur-3xl pointer-events-none"
-              style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }}
+              style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
             />
             <div
               className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full opacity-20 blur-3xl pointer-events-none"
-              style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }}
+              style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
             />
             <div className="relative flex items-center gap-4 flex-1 min-w-0">
               <div
                 className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
-                style={{ background: "linear-gradient(135deg, #0AC8D4, #0AC8D4, #0AC8D4)" }}
+                style={{ background: "linear-gradient(135deg, #4F1E7B, #4F1E7B, #4F1E7B)" }}
               >
                 <Sparkles className="w-6 h-6 text-paper" strokeWidth={2.5} />
               </div>
@@ -374,7 +374,7 @@ export default function DashboardHome() {
                   Let&rsquo;s create your first agent
                 </h2>
                 <p className="text-[12px] text-muted/90 mt-1.5 leading-relaxed">
-                  An AI agent will answer your phone, book appointments, and follow up by email —
+                  An AI agent will answer your phone, book appointments, and follow up by email â€”
                   all on autopilot.
                 </p>
               </div>
@@ -389,7 +389,7 @@ export default function DashboardHome() {
           </div>
         </div>
       )}
-      {/* ── SLO health banner (only when degraded/critical) ──── */}
+      {/* â”€â”€ SLO health banner (only when degraded/critical) â”€â”€â”€â”€ */}
       {sloBanner && (
         <div
           className={cn(
@@ -435,28 +435,28 @@ export default function DashboardHome() {
             to="/admin"
             className="shrink-0 text-[9px] uppercase tracking-[0.3em] text-muted hover:text-brand transition-colors mt-1"
           >
-            Details →
+            Details â†’
           </Link>
         </div>
       )}
-      {/* ── Hero stat row ─────────────────────────────────────── */}
+      {/* â”€â”€ Hero stat row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div className="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatTile
           label="Total Calls"
           value={stats?.totalCalls ?? 0}
           sub="All time"
           icon={PhoneCall}
-          accent="#0AC8D4"
+          accent="#4F1E7B"
           trend={
             delta.calls_pct != null ? { value: delta.calls_pct, label: "vs last 7d" } : undefined
           }
         />
         <StatTile
           label="Avg Lead Score"
-          value={stats?.avgLeadScore ? `${stats.avgLeadScore}/100` : "—"}
+          value={stats?.avgLeadScore ? `${stats.avgLeadScore}/100` : "â€”"}
           sub="BANT quality"
           icon={TrendingUp}
-          accent="#0AC8D4"
+          accent="#4F1E7B"
           trend={
             delta.score_pct != null ? { value: delta.score_pct, label: "vs last 7d" } : undefined
           }
@@ -466,7 +466,7 @@ export default function DashboardHome() {
           value={`${stats?.conversionRate ?? 0}%`}
           sub="Appointments / calls"
           icon={Target}
-          accent="#0AC8D4"
+          accent="#4F1E7B"
         />
         <StatTile
           label="AI Spend"
@@ -480,7 +480,7 @@ export default function DashboardHome() {
         />
       </div>
 
-      {/* ── Main grid ────────────────────────────────────────── */}
+      {/* â”€â”€ Main grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div className="flex-1 min-h-0 grid grid-cols-12 gap-3">
         {/* Recent calls */}
         <div className="col-span-12 lg:col-span-4 h-full">
@@ -488,7 +488,7 @@ export default function DashboardHome() {
             title="Recent Calls"
             hint="latest outcomes"
             icon={HistoryIcon}
-            accent="#0AC8D4"
+            accent="#4F1E7B"
             scroll
             actions={
               <Link
@@ -556,7 +556,7 @@ export default function DashboardHome() {
 
         {/* Agent status */}
         <div className="col-span-12 lg:col-span-4 h-full">
-          <Panel title="Agent Status" hint="fleet · live" icon={Signal} accent="#0AC8D4">
+          <Panel title="Agent Status" hint="fleet Â· live" icon={Signal} accent="#4F1E7B">
             <div className="space-y-3 h-full">
               {/* Live call indicator */}
               <div
@@ -587,7 +587,7 @@ export default function DashboardHome() {
                       : "Your agents are ready"}
                   </div>
                   <div className="text-[9px] uppercase tracking-[0.24em] text-muted mt-0.5">
-                    {stats?.inboundCount ?? 0} in · {stats?.outboundCount ?? 0} out total
+                    {stats?.inboundCount ?? 0} in Â· {stats?.outboundCount ?? 0} out total
                   </div>
                 </div>
                 <Link
@@ -630,11 +630,11 @@ export default function DashboardHome() {
                     {isConnected
                       ? "Browser call active"
                       : isConnecting
-                        ? "Connecting…"
+                        ? "Connectingâ€¦"
                         : "Test call idle"}
                   </div>
                   <div className="text-[9px] uppercase tracking-[0.24em] text-muted mt-0.5">
-                    Browser → Agent
+                    Browser â†’ Agent
                   </div>
                 </div>
               </div>
@@ -727,7 +727,7 @@ export default function DashboardHome() {
         {/* Quick actions + chart */}
         <div className="col-span-12 lg:col-span-4 h-full flex flex-col gap-3">
           {/* Quick actions */}
-          <Panel title="Quick Launch" hint="one-click" icon={Zap} accent="#0AC8D4">
+          <Panel title="Quick Launch" hint="one-click" icon={Zap} accent="#4F1E7B">
             <div className="space-y-2.5">
               {/* Test call */}
               <div className="rounded-xl p-3.5 border border-brand/20 bg-brand/5">
@@ -736,7 +736,7 @@ export default function DashboardHome() {
                 </p>
                 {voiceAgents.length > 0 ? (
                   <div className="space-y-2">
-                    {/* Styled agent selector — pill buttons instead of a native <select> */}
+                    {/* Styled agent selector â€” pill buttons instead of a native <select> */}
                     {voiceAgents.length <= 4 ? (
                       <div className="flex flex-wrap gap-1.5">
                         {voiceAgents.map((a) => (
@@ -752,8 +752,8 @@ export default function DashboardHome() {
                             style={
                               selectedDialAgentId === a.id
                                 ? {
-                                    background: "#0AC8D4",
-                                    boxShadow: "0 2px 8px -4px rgba(10,200,212,0.50)",
+                                    background: "#4F1E7B",
+                                    boxShadow: "0 2px 8px -4px rgba(79, 30, 123 ,0.50)",
                                   }
                                 : undefined
                             }
@@ -789,7 +789,7 @@ export default function DashboardHome() {
                     >
                       {isConnecting ? (
                         <>
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Connecting…
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Connectingâ€¦
                         </>
                       ) : isConnected ? (
                         <>
@@ -819,14 +819,14 @@ export default function DashboardHome() {
                   icon: PhoneCall,
                   label: "Outbound Campaign",
                   sub: "Upload & auto-dial",
-                  accent: "#0AC8D4",
+                  accent: "#4F1E7B",
                 },
                 {
                   to: "/inbox",
                   icon: Mail,
                   label: "Email Inbox",
                   sub: "Review queued emails",
-                  accent: "#0AC8D4",
+                  accent: "#4F1E7B",
                 },
                 {
                   to: "/triage",
@@ -836,7 +836,7 @@ export default function DashboardHome() {
                     hotLeads.length > 0
                       ? `${hotLeads.length} hot lead${hotLeads.length > 1 ? "s" : ""} waiting`
                       : "Review hot leads",
-                  accent: "#0AC8D4",
+                  accent: "#4F1E7B",
                   badge: hotLeads.length || undefined,
                 },
               ].map((action) => {
@@ -895,9 +895,9 @@ export default function DashboardHome() {
                   </div>
                   <div className="flex-1 space-y-2">
                     {[
-                      { label: "Pos", pct: positivePct, color: "#0AC8D4" },
-                      { label: "Neu", pct: neutralPct, color: "#0AC8D4" },
-                      { label: "Neg", pct: negativePct, color: "#0AC8D4" },
+                      { label: "Pos", pct: positivePct, color: "#4F1E7B" },
+                      { label: "Neu", pct: neutralPct, color: "#4F1E7B" },
+                      { label: "Neg", pct: negativePct, color: "#4F1E7B" },
                     ].map(({ label, pct, color }) => (
                       <div key={label} className="flex items-center gap-2">
                         <span className="text-[8px] uppercase tracking-[0.2em] text-muted w-6 shrink-0">
@@ -945,7 +945,7 @@ export default function DashboardHome() {
         </div>
       )}
       <div className="col-span-12 h-full overflow-hidden">
-        <Panel title="How am I doing?" hint="Performance · 30-day window" icon={TrendingUp} scroll>
+        <Panel title="How am I doing?" hint="Performance Â· 30-day window" icon={TrendingUp} scroll>
           <WidgetBoundary label="Performance Benchmarks">
             <PerformanceBenchmarks />
           </WidgetBoundary>
@@ -981,8 +981,8 @@ export default function DashboardHome() {
                   score >= HOT_LEAD_THRESHOLD
                     ? "#10B981"
                     : score >= WARM_LEAD_THRESHOLD
-                      ? "#0AC8D4"
-                      : "#0AC8D4";
+                      ? "#4F1E7B"
+                      : "#4F1E7B";
                 return (
                   <li key={lead.id}>
                     <Link
@@ -1182,7 +1182,7 @@ export default function DashboardHome() {
 
   return (
     <PageShell
-      eyebrow={`Today · ${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}`}
+      eyebrow={`Today Â· ${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}`}
       title="Dashboard"
       subtitle="Live overview of your agents and activity"
       actions={

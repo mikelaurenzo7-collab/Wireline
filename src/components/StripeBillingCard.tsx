@@ -51,9 +51,9 @@ const PLAN_ICONS: Record<string, any> = {
 
 const PLAN_ACCENTS: Record<string, string> = {
   personal: "#10B981",
-  starter: "#0AC8D4",
-  pro: "#0AC8D4",
-  business: "#0AC8D4",
+  starter: "#4F1E7B",
+  pro: "#4F1E7B",
+  business: "#4F1E7B",
   enterprise: "#FFC07D",
 };
 
@@ -89,7 +89,7 @@ export default function StripeBillingCard() {
     refresh();
   }, []);
 
-  // Reflect Stripe's redirect back to /admin?billing=success — refresh
+  // Reflect Stripe's redirect back to /admin?billing=success â€” refresh
   // so the card flips from "no sub" to active without needing the user
   // to reload by hand.
   useEffect(() => {
@@ -105,7 +105,7 @@ export default function StripeBillingCard() {
 
   const startCheckout = async (planId: string) => {
     // Plan changes for an existing subscriber go through the Customer
-    // Portal — Stripe handles proration cleanly there and we avoid
+    // Portal â€” Stripe handles proration cleanly there and we avoid
     // creating a second concurrent subscription. The server enforces
     // this with a 409 ALREADY_SUBSCRIBED, but routing client-side
     // gives a smoother UX (one redirect instead of two).
@@ -158,7 +158,7 @@ export default function StripeBillingCard() {
       <div className="rounded-2xl glass border border-white/10 p-10 flex items-center gap-4">
         <Loader2 className="w-5 h-5 animate-spin text-brand" />
         <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">
-          Loading billing state…
+          Loading billing stateâ€¦
         </span>
       </div>
     );
@@ -214,7 +214,7 @@ export default function StripeBillingCard() {
         />
       )}
 
-      {/* Voice-minute usage — only renders when there's an active plan */}
+      {/* Voice-minute usage â€” only renders when there's an active plan */}
       {sub?.has_subscription && <UsageMeter />}
 
       {error && (
@@ -232,7 +232,7 @@ export default function StripeBillingCard() {
           </h3>
           {!hasActive && (
             <p className="text-[12px] text-muted/70 mt-1.5 leading-relaxed max-w-lg">
-              Each agent replaces hours of human intake, follow-up, and triage work — for a fraction
+              Each agent replaces hours of human intake, follow-up, and triage work â€” for a fraction
               of the cost. No setup fees. Cancel anytime.
             </p>
           )}
@@ -245,7 +245,7 @@ export default function StripeBillingCard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {plans.map((plan) => {
             const Icon = PLAN_ICONS[plan.id] || Building2;
-            const accent = PLAN_ACCENTS[plan.id] || "#0AC8D4";
+            const accent = PLAN_ACCENTS[plan.id] || "#4F1E7B";
             const isCurrent = sub?.plan === plan.id && hasActive;
             const isBusy = busy === plan.id;
             return (
@@ -271,7 +271,7 @@ export default function StripeBillingCard() {
                   <div
                     className="absolute -top-3 left-4 px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.3em]"
                     style={{
-                      background: "#0AC8D4",
+                      background: "#4F1E7B",
                       color: "#fff",
                     }}
                   >
@@ -346,13 +346,13 @@ export default function StripeBillingCard() {
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/6 pt-6">
           <div className="text-[10px] uppercase tracking-[0.35em] text-muted/50 flex items-center gap-2">
             <Shield className="w-3 h-3" />
-            Stripe · PCI DSS Level 1 · Cancel anytime
+            Stripe Â· PCI DSS Level 1 Â· Cancel anytime
           </div>
           <div className="flex items-center gap-3 text-[9px] text-muted/40 uppercase tracking-[0.2em]">
             <a href="/privacy" className="hover:text-muted/70 transition-colors">
               Privacy
             </a>
-            <span>·</span>
+            <span>Â·</span>
             <a href="/terms" className="hover:text-muted/70 transition-colors">
               Terms
             </a>
@@ -374,7 +374,7 @@ function ActiveSubCard({
   busy: boolean;
   onPortal: () => void;
 }) {
-  const accent = PLAN_ACCENTS[sub.plan || ""] || "#0AC8D4";
+  const accent = PLAN_ACCENTS[sub.plan || ""] || "#4F1E7B";
   const Icon = PLAN_ICONS[sub.plan || ""] || CreditCard;
   const renews = safeDate(sub.current_period_end);
   const daysLeft = renews
@@ -385,7 +385,7 @@ function ActiveSubCard({
     sub.status === "active"
       ? { label: "Active", cls: "bg-emerald-500/15 border-emerald-500/30 text-emerald-600" }
       : sub.status === "trialing"
-        ? { label: "Trial", cls: "bg-cyan-500/15 border-cyan-500/30 text-cyan-600" }
+        ? { label: "Trial", cls: "bg-brand/15 border-brand/30 text-brand" }
         : sub.status === "past_due"
           ? { label: "Past Due", cls: "bg-amber-500/15 border-amber-500/30 text-amber-600" }
           : sub.status === "canceled"
@@ -429,7 +429,7 @@ function ActiveSubCard({
               )}
             </div>
             <h3 className="font-display italic lowercase text-3xl md:text-4xl text-ink">
-              {sub.plan_name || sub.plan || "—"}
+              {sub.plan_name || sub.plan || "â€”"}
             </h3>
             <p className="text-[10px] uppercase tracking-[0.35em] text-muted/60">
               {sub.max_agents ? (
@@ -441,9 +441,9 @@ function ActiveSubCard({
               )}
               {renews && (
                 <>
-                  {sub.max_agents ? " · " : ""}
+                  {sub.max_agents ? " Â· " : ""}
                   renews {formatDate(renews)}
-                  {daysLeft !== null ? ` · ${daysLeft}d` : ""}
+                  {daysLeft !== null ? ` Â· ${daysLeft}d` : ""}
                 </>
               )}
             </p>

@@ -29,7 +29,7 @@ const POLL_INTERVAL_MS = 10_000;
  * indicate a call is in distress. Must stay in sync with the label strings
  * set in server.ts around the negativeHits/liveSentimentLabel logic.
  */
-const DISTRESS_LABEL_PREFIXES = ["⚠", "frustrated"] as const;
+const DISTRESS_LABEL_PREFIXES = ["âš ", "frustrated"] as const;
 
 /** Returns true when a live signal label indicates a distressed call. */
 function isDistressedLabel(label: string | undefined): boolean {
@@ -134,8 +134,8 @@ function SentimentBadge({ label, status }: { label?: string; status?: string }) 
   }
   if (text.includes("Engaged")) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] uppercase tracking-[0.25em] bg-cyan-500/15 border border-cyan-500/30 text-cyan-600">
-        <span className="w-1 h-1 rounded-full bg-cyan-500" />
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] uppercase tracking-[0.25em] bg-brand/15 border border-brand/30 text-brand">
+        <span className="w-1 h-1 rounded-full bg-brand" />
         {text}
       </span>
     );
@@ -200,7 +200,7 @@ export default function LiveMonitor() {
       setLastRefresh(new Date());
     } catch (e: any) {
       // Aborted fetches (user navigated away) + transient "Failed to fetch"
-      // network blips are not real failures — they fire whenever the
+      // network blips are not real failures â€” they fire whenever the
       // component unmounts mid-request. Stay quiet.
       if (e?.name === "AbortError") return;
       const msg = String(e?.message || "");
@@ -224,7 +224,7 @@ export default function LiveMonitor() {
   }, []);
 
   const agentName = (id: string | null | undefined): string => {
-    if (!id) return "—";
+    if (!id) return "â€”";
     return agents.find((a) => a.id === id)?.name ?? id.slice(0, 8);
   };
 
@@ -239,8 +239,8 @@ export default function LiveMonitor() {
   return (
     <PageShell
       title="Live Monitor"
-      eyebrow="Fleet · Real-time"
-      subtitle="Active calls and recent fleet activity — refreshing every 10 seconds"
+      eyebrow="Fleet Â· Real-time"
+      subtitle="Active calls and recent fleet activity â€” refreshing every 10 seconds"
       actions={
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full glass border border-black/10 text-[9px] uppercase tracking-[0.3em] text-muted/70">
@@ -248,7 +248,7 @@ export default function LiveMonitor() {
               <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
             </span>
-            Live · <WallClock />
+            Live Â· <WallClock />
           </div>
           <button
             onClick={() => {
@@ -270,7 +270,7 @@ export default function LiveMonitor() {
               className="absolute inset-0 rounded-full opacity-40"
               style={{
                 background:
-                  "conic-gradient(from 0deg, #0AC8D4, #0AC8D4, #0AC8D4, #10B981, #0AC8D4)",
+                  "conic-gradient(from 0deg, #4F1E7B, #4F1E7B, #4F1E7B, #10B981, #4F1E7B)",
                 filter: "blur(1px)",
                 animation: "spin 2s linear infinite",
               }}
@@ -281,12 +281,12 @@ export default function LiveMonitor() {
             </div>
           </div>
           <p className="text-[9px] uppercase tracking-[0.5em] text-muted/60">
-            Establishing connection…
+            Establishing connectionâ€¦
           </p>
         </div>
       ) : (
         <div className="h-full flex flex-col gap-2 overflow-hidden">
-          {/* Distress alert banner — appears when any active call hits frustrated/tense state */}
+          {/* Distress alert banner â€” appears when any active call hits frustrated/tense state */}
           {(() => {
             const distressedCalls = signals.filter((s) => isDistressedLabel(s.label));
             if (distressedCalls.length === 0) return null;
@@ -308,12 +308,12 @@ export default function LiveMonitor() {
                     {distressedCalls.length > 1 ? `s (${distressedCalls.length})` : ""} detected
                   </span>
                   <span className="text-[9px] text-rose-500/70 ml-2">
-                    {distressedCalls.map((s) => agentName(s.agent_id)).join(", ")} — consider
+                    {distressedCalls.map((s) => agentName(s.agent_id)).join(", ")} â€” consider
                     escalating to human
                   </span>
                 </div>
                 <span className="text-[8px] uppercase tracking-[0.3em] text-rose-500/60 shrink-0">
-                  De-escalate → Acknowledge → Escalate
+                  De-escalate â†’ Acknowledge â†’ Escalate
                 </span>
               </motion.div>
             );
@@ -326,21 +326,21 @@ export default function LiveMonitor() {
               value={activeCount}
               sub="Live right now"
               icon={Radio}
-              accent="#0AC8D4"
+              accent="#4F1E7B"
             />
             <StatTile
               label="Fleet Size"
               value={agents.length}
               sub="Configured agents"
               icon={Users}
-              accent="#0AC8D4"
+              accent="#4F1E7B"
             />
             <StatTile
               label="Recent Activity"
               value={todayCallCount}
               sub="Events in feed"
               icon={Activity}
-              accent="#0AC8D4"
+              accent="#4F1E7B"
             />
             <StatTile
               label="Avg Lead Score"
@@ -383,7 +383,7 @@ export default function LiveMonitor() {
                         <div
                           className="absolute inset-0 rounded-2xl opacity-15"
                           style={{
-                            background: "#0AC8D4",
+                            background: "#4F1E7B",
                             animation: "pulse 3s ease-in-out infinite",
                           }}
                         />

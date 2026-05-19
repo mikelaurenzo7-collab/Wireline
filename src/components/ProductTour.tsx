@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+﻿import React, { useState, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
@@ -45,7 +45,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     id: "insights",
     title: "AI-Powered Insights",
-    body: "After calls, Wireline AI scores leads, clusters topics, and identifies what's working vs. what to fix — automatically.",
+    body: "After calls, Wireline AI scores leads, clusters topics, and identifies what's working vs. what to fix â€” automatically.",
     anchor: '[data-tour="insights"]',
     cta: "Next",
   },
@@ -54,7 +54,7 @@ const TOUR_STEPS: TourStep[] = [
     title: "You're ready!",
     body: "Start by creating your first agent and giving it a 30-second test call. We'll walk you through it step by step.",
     anchor: null,
-    cta: "Build my first agent →",
+    cta: "Build my first agent â†’",
   },
 ];
 
@@ -164,8 +164,8 @@ export default function ProductTour() {
               left: anchorRect.left - 4,
               width: anchorRect.width + 8,
               height: anchorRect.height + 8,
-              boxShadow: "0 0 0 2px rgba(10,200,212,0.7), 0 0 16px rgba(10,200,212,0.35)",
-              border: "2px solid rgba(10,200,212,0.8)",
+              boxShadow: "0 0 0 2px rgba(79, 30, 123 ,0.7), 0 0 16px rgba(79, 30, 123 ,0.35)",
+              border: "2px solid rgba(79, 30, 123 ,0.8)",
             }}
           />
         )}
@@ -201,9 +201,9 @@ export default function ProductTour() {
           <div
             className="glass-elevated rounded-2xl border p-5 shadow-2xl"
             style={{
-              borderColor: "rgba(10, 200, 212, 0.18)",
+              borderColor: "rgba(79, 30, 123 , 0.18)",
               boxShadow:
-                "0 1px 0 rgba(255,255,255,0.9) inset, 0 24px 64px rgba(0,0,0,0.12), 0 0 0 1px rgba(10,200,212,0.06)",
+                "0 1px 0 rgba(255,255,255,0.9) inset, 0 24px 64px rgba(0,0,0,0.12), 0 0 0 1px rgba(79, 30, 123 ,0.06)",
             }}
           >
             {/* Header row */}
@@ -236,7 +236,7 @@ export default function ProductTour() {
                     style={{
                       width: i === stepIndex ? 16 : 6,
                       height: 6,
-                      background: i === stepIndex ? "#0AC8D4" : "rgba(0,0,0,0.15)",
+                      background: i === stepIndex ? "#4F1E7B" : "rgba(0,0,0,0.15)",
                       transition: "width 0.3s ease",
                     }}
                   />

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+﻿import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   BookOpen,
@@ -288,7 +288,7 @@ export default function KnowledgeBaseManager() {
             <div className="px-3 py-1.5 rounded-full glass border border-white/8 flex items-center gap-2">
               <Users className="w-3 h-3 text-brand-2" />
               <span className="text-[10px] uppercase tracking-[0.3em] text-ink/80">
-                {agents.length} agents · {rows.length} facts
+                {agents.length} agents Â· {rows.length} facts
               </span>
             </div>
           </div>
@@ -301,7 +301,7 @@ export default function KnowledgeBaseManager() {
               <span className="text-ink/90">Atlas</span>
             </h1>
             <p className="text-ink/55 max-w-2xl text-sm md:text-base leading-relaxed">
-              Every fact your agents know — searchable, editable, prunable. Catch duplicates, fix
+              Every fact your agents know â€” searchable, editable, prunable. Catch duplicates, fix
               errors, retire stale info.
             </p>
           </div>
@@ -329,7 +329,7 @@ export default function KnowledgeBaseManager() {
             ) : (
               <Brain className="w-3.5 h-3.5" />
             )}
-            {deduping ? "Scanning…" : "Find Duplicates"}
+            {deduping ? "Scanningâ€¦" : "Find Duplicates"}
           </button>
           <button
             onClick={refresh}
@@ -364,7 +364,7 @@ export default function KnowledgeBaseManager() {
                     onChange={(e) => setAddAgent(e.target.value)}
                     className="w-full h-11 px-3 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
                   >
-                    <option value="">— Pick an agent —</option>
+                    <option value="">â€” Pick an agent â€”</option>
                     {agents.map((a) => (
                       <option key={a.id} value={a.id}>
                         {a.name}
@@ -378,7 +378,7 @@ export default function KnowledgeBaseManager() {
                     value={addContent}
                     onChange={(e) => setAddContent(e.target.value)}
                     rows={3}
-                    placeholder='One atomic fact the agent should know — e.g. "We open at 9 AM Monday–Friday and 10 AM on weekends."'
+                    placeholder='One atomic fact the agent should know â€” e.g. "We open at 9 AM Mondayâ€“Friday and 10 AM on weekends."'
                     className="w-full px-4 py-3 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all resize-y"
                   />
                 </label>
@@ -432,7 +432,7 @@ export default function KnowledgeBaseManager() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search content or agent name…"
+            placeholder="Search content or agent nameâ€¦"
             className="w-full h-12 pl-11 pr-4 rounded-full glass border border-white/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
           />
         </div>
@@ -446,7 +446,7 @@ export default function KnowledgeBaseManager() {
                 : "glass border border-white/10 text-ink/70 hover:text-ink hover:border-white/30",
             )}
           >
-            <Filter className="w-3 h-3" /> All agents · {rows.length}
+            <Filter className="w-3 h-3" /> All agents Â· {rows.length}
           </button>
           {agents.map((a) => {
             const c = counts.get(a.id) || 0;
@@ -463,7 +463,7 @@ export default function KnowledgeBaseManager() {
                     : "glass border border-white/10 text-ink/70 hover:text-ink hover:border-white/30",
                 )}
               >
-                {a.name} · {c}
+                {a.name} Â· {c}
               </button>
             );
           })}
@@ -551,7 +551,7 @@ export default function KnowledgeBaseManager() {
                 icon={Database}
                 title="Knowledge base is empty"
                 description="Add facts, policies, FAQs, and product details so your agents can answer customer questions accurately."
-                accent="#0AC8D4"
+                accent="#4F1E7B"
                 actions={[
                   { label: "Add Knowledge", onClick: () => setShowAdd(true), primary: true },
                   { label: "Ingest from URL", onClick: () => {} },
@@ -733,7 +733,7 @@ function DedupePanel({
       <div className="rounded-3xl bg-emerald-500/10 border border-emerald-500/30 p-8 text-center space-y-3">
         <Sparkles className="w-8 h-8 mx-auto text-emerald-600" />
         <p className="text-emerald-600 text-sm">
-          Knowledge base looks clean — no near-duplicates or contradictions found.
+          Knowledge base looks clean â€” no near-duplicates or contradictions found.
         </p>
         <button
           onClick={onClose}
@@ -759,7 +759,7 @@ function DedupePanel({
   }, 0);
 
   const kindAccent = (k: DedupeCluster["kind"]) =>
-    k === "duplicate" ? "#0AC8D4" : k === "contradiction" ? "#FFC07D" : "#0AC8D4";
+    k === "duplicate" ? "#4F1E7B" : k === "contradiction" ? "#FFC07D" : "#4F1E7B";
   const kindIcon = (k: DedupeCluster["kind"]) =>
     k === "contradiction" ? AlertTriangle : k === "duplicate" ? Copy : GitMerge;
 
@@ -770,7 +770,7 @@ function DedupePanel({
           <div className="flex items-center gap-3">
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ background: "#0AC8D4" }}
+              style={{ background: "#4F1E7B" }}
             >
               <Brain className="w-5 h-5 text-paper" />
             </div>

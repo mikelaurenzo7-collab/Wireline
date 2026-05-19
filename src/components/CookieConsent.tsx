@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Cookie, X } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -22,7 +22,7 @@ export default function CookieConsent() {
     setVisible(false);
   };
 
-  // Escape dismisses the cookie notice — gives keyboard-only users a way out
+  // Escape dismisses the cookie notice â€” gives keyboard-only users a way out
   // without having to tab through the page to reach the X button.
   useEffect(() => {
     if (!visible) return;
@@ -45,7 +45,7 @@ export default function CookieConsent() {
           role="dialog"
           aria-label="Cookie notice"
         >
-          {/* Slim bottom bar — full width, never overlaps content columns */}
+          {/* Slim bottom bar â€” full width, never overlaps content columns */}
           <div
             className="border-t border-black/8 backdrop-blur-xl px-3 sm:px-4 py-3 flex items-center gap-3"
             style={{ background: "rgba(245,240,232,0.92)" }}
@@ -55,8 +55,8 @@ export default function CookieConsent() {
               className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
               style={{
                 background:
-                  "linear-gradient(135deg, rgba(10,200,212,0.12), rgba(10, 200, 212,0.12))",
-                border: "1px solid rgba(10,200,212,0.22)",
+                  "linear-gradient(135deg, rgba(79, 30, 123 ,0.12), rgba(79, 30, 123 ,0.12))",
+                border: "1px solid rgba(79, 30, 123 ,0.22)",
               }}
             >
               <Cookie className="w-3.5 h-3.5 text-brand" />
@@ -64,7 +64,7 @@ export default function CookieConsent() {
 
             {/* Copy */}
             <p className="text-[11px] text-muted/80 leading-relaxed flex-1 min-w-0">
-              We use only essential cookies to keep you signed in — no advertising or cross-site
+              We use only essential cookies to keep you signed in â€” no advertising or cross-site
               tracking.{" "}
               <Link
                 to="/privacy"
@@ -73,7 +73,7 @@ export default function CookieConsent() {
               >
                 Privacy policy
               </Link>
-              {" · "}
+              {" Â· "}
               <Link
                 to="/terms"
                 className="text-brand hover:text-brand/80 underline"
