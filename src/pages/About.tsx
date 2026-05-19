@@ -125,10 +125,10 @@ export default function About() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="rounded-3xl glass border border-brand/25 p-6 sm:p-8 flex flex-col sm:flex-row items-start gap-6"
+          className="rounded-3xl glass border border-brand/25 p-5 sm:p-8 flex flex-col sm:flex-row items-start gap-4 sm:gap-6"
         >
           <div
-            className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center shrink-0"
+            className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center shrink-0"
             style={{
               background: "#4F1E7B",
               boxShadow: "0 8px 24px -8px rgba(79,30,123,0.4)",

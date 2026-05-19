@@ -242,6 +242,7 @@ Today is ${currentDateTime}.
     business_variables: agentConfigRow?.businessVariables,
     out_of_hours_message: agentConfigRow?.outOfHoursMessage,
     kpi_focus: agentConfigRow?.kpiFocus,
+    personality_vibe: (agentConfigRow as any)?.personalityVibe,
   };
   const runtime = buildAgentRuntimeContext(systemPrompt, runtimeProfile);
   const firstMessage =

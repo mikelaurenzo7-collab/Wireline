@@ -9,15 +9,9 @@
 //  Every helper is tested in src/lib/agent-runtime.test.ts.
 // ────────────────────────────────────────────────────────────────────────
 
-export type ComplianceMode =
-  | 'none'
-  | 'hipaa'
-  | 'pci'
-  | 'gdpr'
-  | 'financial'
-  | 'legal';
+export type ComplianceMode = "none" | "hipaa" | "pci" | "gdpr" | "financial" | "legal";
 
-export type DayOfWeek = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+export type DayOfWeek = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 
 /**
  * A single day's open/close window. Both fields are 24h "HH:MM" strings.
@@ -44,10 +38,24 @@ export interface AgentRuntimeProfile {
   business_variables?: Record<string, string | number> | null;
   out_of_hours_message?: string | null;
   kpi_focus?: string | null;
+  /**
+   * Personality vibe — drives the moat directive injected into the
+   * system prompt. "warm" (default), "playful", "authoritative".
+   * Source: agents.personalityVibe column.
+   */
+  personality_vibe?: string | null;
 }
 
+import { buildVibeBlock } from "./personality-vibes";
+
 const DAY_INDEX: Record<DayOfWeek, number> = {
-  sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6,
+  sun: 0,
+  mon: 1,
+  tue: 2,
+  wed: 3,
+  thu: 4,
+  fri: 5,
+  sat: 6,
 };
 const DAY_KEYS = Object.keys(DAY_INDEX) as DayOfWeek[];
 
@@ -58,12 +66,13 @@ const DAY_KEYS = Object.keys(DAY_INDEX) as DayOfWeek[];
  * silent rejection).
  */
 function parseHHMM(s?: string): number | null {
-  if (!s || typeof s !== 'string') return null;
+  if (!s || typeof s !== "string") return null;
   const m = /^(\d{1,2}):(\d{2})$/.exec(s);
   if (!m) return null;
   const h = Number(m[1]);
   const min = Number(m[2]);
-  if (!Number.isFinite(h) || !Number.isFinite(min) || h < 0 || h > 23 || min < 0 || min > 59) return null;
+  if (!Number.isFinite(h) || !Number.isFinite(min) || h < 0 || h > 23 || min < 0 || min > 59)
+    return null;
   return h * 60 + min;
 }
 
@@ -75,35 +84,35 @@ function parseHHMM(s?: string): number | null {
 function localizeNow(now: Date, timeZone: string): { day: DayOfWeek; minutes: number } {
   let parts: Intl.DateTimeFormatPart[];
   try {
-    const fmt = new Intl.DateTimeFormat('en-US', {
+    const fmt = new Intl.DateTimeFormat("en-US", {
       timeZone,
-      hour: '2-digit',
-      minute: '2-digit',
+      hour: "2-digit",
+      minute: "2-digit",
       hour12: false,
-      weekday: 'short',
+      weekday: "short",
     });
     parts = fmt.formatToParts(now);
   } catch {
     // Bad timezone string — fall back to UTC so we still produce *some*
     // gating signal rather than crashing the call path.
-    const fmt = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'UTC',
-      hour: '2-digit',
-      minute: '2-digit',
+    const fmt = new Intl.DateTimeFormat("en-US", {
+      timeZone: "UTC",
+      hour: "2-digit",
+      minute: "2-digit",
       hour12: false,
-      weekday: 'short',
+      weekday: "short",
     });
     parts = fmt.formatToParts(now);
   }
-  const wkdy = parts.find(p => p.type === 'weekday')?.value || 'Mon';
-  const hh = parts.find(p => p.type === 'hour')?.value || '00';
-  const mm = parts.find(p => p.type === 'minute')?.value || '00';
+  const wkdy = parts.find((p) => p.type === "weekday")?.value || "Mon";
+  const hh = parts.find((p) => p.type === "hour")?.value || "00";
+  const mm = parts.find((p) => p.type === "minute")?.value || "00";
   // Intl 'short' weekday in en-US → Mon, Tue, Wed, Thu, Fri, Sat, Sun
   const wkLower = wkdy.toLowerCase().slice(0, 3) as DayOfWeek;
-  const day = DAY_KEYS.includes(wkLower) ? wkLower : 'mon';
+  const day = DAY_KEYS.includes(wkLower) ? wkLower : "mon";
   // 24:00 sometimes appears for midnight in Intl en-US — normalize.
-  const hour = (Number(hh) % 24) | 0;
-  const minute = (Number(mm) % 60) | 0;
+  const hour = Number(hh) % 24 | 0;
+  const minute = Number(mm) % 60 | 0;
   return { day, minutes: hour * 60 + minute };
 }
 
@@ -121,9 +130,9 @@ export function isWithinBusinessHours(
   now: Date = new Date(),
 ): boolean {
   const hours = profile?.business_hours;
-  if (!hours || typeof hours !== 'object' || Object.keys(hours).length === 0) return true;
+  if (!hours || typeof hours !== "object" || Object.keys(hours).length === 0) return true;
 
-  const tz = profile?.timezone || 'America/New_York';
+  const tz = profile?.timezone || "America/New_York";
   const { day, minutes } = localizeNow(now, tz);
   const today = hours[day];
   if (!today) return true; // no rule for today → don't gate
@@ -151,48 +160,48 @@ export function isWithinBusinessHours(
  */
 export function complianceDisclosure(mode: ComplianceMode | string | null | undefined): string {
   switch (mode) {
-    case 'hipaa':
+    case "hipaa":
       return [
-        '## COMPLIANCE — HIPAA',
-        'Treat all caller-provided health information as PHI:',
-        '- Verify identity (full name + date of birth + one secondary identifier) before discussing any account or health detail.',
-        '- Never repeat or summarize PHI to anyone other than the verified caller or a documented authorized representative.',
-        '- If a caller asks for medical advice, decline and offer to schedule a clinician consult.',
-      ].join('\n');
-    case 'pci':
+        "## COMPLIANCE — HIPAA",
+        "Treat all caller-provided health information as PHI:",
+        "- Verify identity (full name + date of birth + one secondary identifier) before discussing any account or health detail.",
+        "- Never repeat or summarize PHI to anyone other than the verified caller or a documented authorized representative.",
+        "- If a caller asks for medical advice, decline and offer to schedule a clinician consult.",
+      ].join("\n");
+    case "pci":
       return [
-        '## COMPLIANCE — PCI DSS',
-        'Cardholder data handling:',
-        '- Do not record, repeat, or write down card numbers, expiry dates, or CVVs.',
-        '- For payment, route the caller to the secure IVR or send a tokenized payment link.',
+        "## COMPLIANCE — PCI DSS",
+        "Cardholder data handling:",
+        "- Do not record, repeat, or write down card numbers, expiry dates, or CVVs.",
+        "- For payment, route the caller to the secure IVR or send a tokenized payment link.",
         '- Acknowledge receipt without restating the value: "I have your card details — processing now."',
-      ].join('\n');
-    case 'gdpr':
+      ].join("\n");
+    case "gdpr":
       return [
-        '## COMPLIANCE — GDPR',
-        'Personal data handling:',
-        '- Disclose at the start of the call that the conversation is recorded for service quality, retained for the operator-specified period, and that the caller has rights of access, rectification, and erasure.',
+        "## COMPLIANCE — GDPR",
+        "Personal data handling:",
+        "- Disclose at the start of the call that the conversation is recorded for service quality, retained for the operator-specified period, and that the caller has rights of access, rectification, and erasure.",
         '- Honor opt-out, deletion, and "speak to a human" requests immediately.',
-      ].join('\n');
-    case 'financial':
+      ].join("\n");
+    case "financial":
       return [
-        '## COMPLIANCE — Financial services',
-        'Regulated-conduct guardrails:',
-        '- Do not provide tax, investment, or specific financial advice. Offer to schedule a licensed advisor.',
-        '- Quote products and rates only when explicitly stored in your knowledge base; never improvise figures.',
+        "## COMPLIANCE — Financial services",
+        "Regulated-conduct guardrails:",
+        "- Do not provide tax, investment, or specific financial advice. Offer to schedule a licensed advisor.",
+        "- Quote products and rates only when explicitly stored in your knowledge base; never improvise figures.",
         '- Disclose any required statements (e.g. "Calls may be recorded for quality and compliance.") at the start of the call.',
-      ].join('\n');
-    case 'legal':
+      ].join("\n");
+    case "legal":
       return [
-        '## COMPLIANCE — Legal services',
-        'Unauthorized-practice guardrails:',
-        '- Do not provide legal advice. You may share general public information only.',
-        '- Schedule consultations with the attorney rather than answering jurisdictional questions.',
+        "## COMPLIANCE — Legal services",
+        "Unauthorized-practice guardrails:",
+        "- Do not provide legal advice. You may share general public information only.",
+        "- Schedule consultations with the attorney rather than answering jurisdictional questions.",
         '- State on the first interaction: "This conversation does not establish an attorney-client relationship."',
-      ].join('\n');
-    case 'none':
+      ].join("\n");
+    case "none":
     default:
-      return '';
+      return "";
   }
 }
 
@@ -202,17 +211,17 @@ export function complianceDisclosure(mode: ComplianceMode | string | null | unde
  * input returns an empty string.
  */
 export function disallowedTopicsBlock(topics: string[] | null | undefined): string {
-  if (!Array.isArray(topics) || topics.length === 0) return '';
+  if (!Array.isArray(topics) || topics.length === 0) return "";
   const safe = topics
-    .map(t => (typeof t === 'string' ? t.trim() : ''))
+    .map((t) => (typeof t === "string" ? t.trim() : ""))
     .filter(Boolean)
     .slice(0, 24); // upper bound to keep the prompt budget in line
-  if (safe.length === 0) return '';
+  if (safe.length === 0) return "";
   return [
-    '## DO-NOT-DISCUSS TOPICS',
-    'You must not discuss the following topics. If a caller raises one, briefly acknowledge that you are not the right channel and offer to route them to the appropriate team:',
-    safe.map(t => `- ${t}`).join('\n'),
-  ].join('\n');
+    "## DO-NOT-DISCUSS TOPICS",
+    "You must not discuss the following topics. If a caller raises one, briefly acknowledge that you are not the right channel and offer to route them to the appropriate team:",
+    safe.map((t) => `- ${t}`).join("\n"),
+  ].join("\n");
 }
 
 /**
@@ -223,17 +232,17 @@ export function disallowedTopicsBlock(topics: string[] | null | undefined): stri
  * webhook flow), not in this string.
  */
 export function escalationKeywordsBlock(keywords: string[] | null | undefined): string {
-  if (!Array.isArray(keywords) || keywords.length === 0) return '';
+  if (!Array.isArray(keywords) || keywords.length === 0) return "";
   const safe = keywords
-    .map(k => (typeof k === 'string' ? k.trim() : ''))
+    .map((k) => (typeof k === "string" ? k.trim() : ""))
     .filter(Boolean)
     .slice(0, 24);
-  if (safe.length === 0) return '';
+  if (safe.length === 0) return "";
   return [
-    '## IMMEDIATE-ESCALATION TRIGGERS',
-    'If the caller uses any of these phrases or asks about any of these topics, escalate to a human IMMEDIATELY using the escalate_to_human tool — do not attempt to resolve yourself:',
-    safe.map(k => `- ${k}`).join('\n'),
-  ].join('\n');
+    "## IMMEDIATE-ESCALATION TRIGGERS",
+    "If the caller uses any of these phrases or asks about any of these topics, escalate to a human IMMEDIATELY using the escalate_to_human tool — do not attempt to resolve yourself:",
+    safe.map((k) => `- ${k}`).join("\n"),
+  ].join("\n");
 }
 
 /**
@@ -252,7 +261,7 @@ export function applyBusinessVariables(
     const v = vars[key];
     if (v == null) return full;
     const s = String(v);
-    return s.length > 500 ? s.slice(0, 500) + '…' : s;
+    return s.length > 500 ? s.slice(0, 500) + "…" : s;
   });
 }
 
@@ -264,17 +273,17 @@ export function applyBusinessVariables(
  */
 export function kpiFocusLine(focus: string | null | undefined): string {
   switch (focus) {
-    case 'conversions':
-      return 'PRIMARY OUTCOME: every call should advance toward a concrete commitment (booked appointment, signed agreement, paid order).';
-    case 'qualifications':
-      return 'PRIMARY OUTCOME: every call should produce a clean BANT/MEDDIC qualification record. Pipeline quality over volume.';
-    case 'resolutions':
-      return 'PRIMARY OUTCOME: every call should resolve the caller\'s issue end-to-end. Aim for first-contact resolution; never punt.';
-    case 'satisfaction':
-      return 'PRIMARY OUTCOME: every call should leave the caller feeling heard, respected, and better than when they started.';
-    case 'general':
+    case "conversions":
+      return "PRIMARY OUTCOME: every call should advance toward a concrete commitment (booked appointment, signed agreement, paid order).";
+    case "qualifications":
+      return "PRIMARY OUTCOME: every call should produce a clean BANT/MEDDIC qualification record. Pipeline quality over volume.";
+    case "resolutions":
+      return "PRIMARY OUTCOME: every call should resolve the caller's issue end-to-end. Aim for first-contact resolution; never punt.";
+    case "satisfaction":
+      return "PRIMARY OUTCOME: every call should leave the caller feeling heard, respected, and better than when they started.";
+    case "general":
     default:
-      return '';
+      return "";
   }
 }
 
@@ -309,7 +318,7 @@ export function buildAgentRuntimeContext(
 
   // Sections only get appended if they have content — keeps the prompt
   // tight when the operator hasn't configured anything.
-  const compliance = complianceDisclosure(profile?.compliance_mode ?? 'none');
+  const compliance = complianceDisclosure(profile?.compliance_mode ?? "none");
   if (compliance) sections.push(compliance);
 
   const disallowed = disallowedTopicsBlock(profile?.disallowed_topics);
@@ -321,9 +330,13 @@ export function buildAgentRuntimeContext(
   const kpi = kpiFocusLine(profile?.kpi_focus);
   if (kpi) sections.push(kpi);
 
-  const composed = sections.length > 0
-    ? `${basePrompt}\n\n${sections.join('\n\n')}`
-    : basePrompt;
+  // Personality vibe — the agent moat. Injected as its own section so
+  // the LLM treats it as first-class guidance, not optional flavor.
+  // Empty when vibe is unset / unknown so legacy agents stay unaffected.
+  const vibeBlock = buildVibeBlock(profile?.personality_vibe);
+  if (vibeBlock) sections.push(vibeBlock.trim());
+
+  const composed = sections.length > 0 ? `${basePrompt}\n\n${sections.join("\n\n")}` : basePrompt;
 
   // Apply variable substitution as the FINAL step so it can fill
   // placeholders in BOTH the base prompt and any compliance / guardrail
@@ -332,9 +345,9 @@ export function buildAgentRuntimeContext(
 
   const outOfHoursMessage = inHours
     ? null
-    : (typeof profile?.out_of_hours_message === 'string' && profile.out_of_hours_message.trim()
-        ? applyBusinessVariables(profile.out_of_hours_message.trim(), profile?.business_variables)
-        : null);
+    : typeof profile?.out_of_hours_message === "string" && profile.out_of_hours_message.trim()
+      ? applyBusinessVariables(profile.out_of_hours_message.trim(), profile?.business_variables)
+      : null;
 
   return { prompt, inHours, outOfHoursMessage };
 }

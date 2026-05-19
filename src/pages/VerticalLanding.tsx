@@ -498,7 +498,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
               transition={{ duration: 0.4, delay: i * 0.05 }}
               className="group rounded-2xl glass border border-white/10 overflow-hidden"
             >
-              <summary className="cursor-pointer list-none px-5 py-4 flex items-start gap-3 hover:bg-white/3 transition-colors">
+              <summary className="cursor-pointer list-none px-5 py-4 sm:py-4 min-h-[56px] flex items-start gap-3 hover:bg-white/3 transition-colors touch-manipulation">
                 <span className="text-[10px] uppercase tracking-[0.3em] text-brand/70 mt-1 shrink-0 font-mono">
                   Q{i + 1}
                 </span>

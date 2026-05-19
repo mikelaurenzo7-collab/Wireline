@@ -113,7 +113,7 @@ function LiveTrustTicker() {
   }, []);
   if (count === null || count < 5) return null;
   return (
-    <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-brand/80">
+    <div className="inline-flex items-center gap-2 text-[11px] sm:text-xs uppercase tracking-[0.28em] text-brand/85 font-medium">
       <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
       {count.toLocaleString()} agents on Wireline today
     </div>
@@ -206,9 +206,16 @@ export default function LandingPage() {
           className="max-w-3xl"
         >
           <LiveTrustTicker />
-          <h1 className="font-display italic text-5xl sm:text-6xl lg:text-7xl leading-[1.02] tracking-tight text-ink text-balance mt-4 mb-6">
+          {/* Headline scales: 4xl on 360-390px so it never orphans a
+              word, 5xl from sm (640px), 6xl from md, 7xl from lg. The
+              <br /> on "for every" lives inside a span hidden on
+              mobile — phones flow it naturally, desktop gets the
+              two-line poetry. */}
+          <h1 className="font-display italic text-4xl sm:text-5xl md:text-6xl lg:text-7xl leading-[1.04] sm:leading-[1.02] tracking-tight text-ink text-balance mt-4 mb-6">
             <span className="text-brand">AI agents</span> for every
-            <br />
+            <span className="hidden sm:inline">
+              <br />
+            </span>{" "}
             customer conversation.
           </h1>
           <p className="text-base sm:text-lg text-ink/75 max-w-2xl leading-relaxed mb-8">

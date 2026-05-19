@@ -179,10 +179,20 @@ router.post(
         ADD COLUMN IF NOT EXISTS silence_timeout_seconds integer;
       `);
 
+      // Personality vibe — the agent moat. "warm" (default), "playful",
+      // "authoritative". Idempotent — existing rows pick up "warm" via
+      // the column default; new rows the same. Operators bump per-agent
+      // in FleetSettings.
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_agents
+        ADD COLUMN IF NOT EXISTS personality_vibe text DEFAULT 'warm';
+      `);
+
       log.info("Auth/agent extras migration completed", { userId: req.user.id });
       return res.json({
         ok: true,
-        message: "wireline_password_reset_tokens + agents.silence_timeout_seconds ensured.",
+        message:
+          "wireline_password_reset_tokens + agents.silence_timeout_seconds + agents.personality_vibe ensured.",
       });
     } catch (e: any) {
       log.error("Auth/agent migration failed", { error: e?.message });

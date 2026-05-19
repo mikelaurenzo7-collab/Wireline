@@ -234,7 +234,16 @@ export default function Compare() {
 
       {/* Matrix */}
       <section className="relative z-10 max-w-6xl mx-auto px-6 lg:px-10 pb-16">
-        <div className="overflow-x-auto rounded-3xl glass border border-white/12 snap-x snap-mandatory">
+        {/* Mobile scroll affordance — the table is wider than 360-390px
+            viewports by design (6 competitor columns need readable
+            widths). Without this hint, mobile visitors think the table
+            is broken instead of pannable. */}
+        <p className="md:hidden text-[10px] uppercase tracking-[0.3em] text-muted/55 mb-2 flex items-center gap-1.5">
+          <span aria-hidden="true">←</span>
+          Pan to compare
+          <span aria-hidden="true">→</span>
+        </p>
+        <div className="overflow-x-auto rounded-3xl glass border border-white/12 snap-x snap-mandatory scrollbar-hide">
           <table className="w-full min-w-[720px]">
             <thead>
               <tr className="border-b border-white/10">

@@ -163,6 +163,18 @@ export const agents = pgTable(
     autoZoomLink: boolean("auto_zoom_link").default(false),
     businessHours: jsonb("business_hours"),
     timezone: text("timezone").default("UTC"),
+    /**
+     * Personality vibe layered on top of the agent's role + archetype.
+     * Drives a single short directive block injected into the system
+     * prompt at runtime. Defaults to "warm" — the trustworthy + warm
+     * receptionist tone every vertical can wear. Operators bump to
+     * "playful" for retail / agencies / SaaS where memorability beats
+     * formality, or to "authoritative" for medical / legal / financial
+     * intake where the caller needs to feel they're in capable hands.
+     * Voice (Adam · Deep) stays consistent across vibes — vibe shifts
+     * the SCRIPT, not the voice.
+     */
+    personalityVibe: text("personality_vibe").default("warm"),
     complianceMode: text("compliance_mode").default("standard"),
     disallowedTopics: text("disallowed_topics").array(),
     escalationKeywords: text("escalation_keywords").array(),

@@ -173,7 +173,11 @@ function OAuthSignInButtons({ disabled }: { disabled?: boolean }) {
 
   return (
     <div className="relative z-10 space-y-3 mb-5">
-      <div className="grid grid-cols-3 gap-2">
+      {/* OAuth row — on 360-390px the prior 3-col gap-2 squeezed each
+          tile to ~85px width with sub-44px touch comfort. Bumping gap
+          and slightly more vertical padding keeps the three providers
+          balanced AND iOS-tap-target compliant. */}
+      <div className="grid grid-cols-3 gap-3">
         {providers.map((p) => (
           <button
             key={p.id}
@@ -182,7 +186,7 @@ function OAuthSignInButtons({ disabled }: { disabled?: boolean }) {
             disabled={disabled || !!pending}
             aria-label={`Continue with ${p.label}`}
             title={`Continue with ${p.label}`}
-            className="h-14 inline-flex flex-col items-center justify-center gap-1 rounded-xl border border-black/10 bg-white/70 text-ink text-[10px] uppercase tracking-[0.18em] font-medium hover:border-[#4F1E7B]/40 hover:bg-white hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="min-h-[60px] py-3 inline-flex flex-col items-center justify-center gap-1.5 rounded-xl border border-black/10 bg-white/70 text-ink text-[10px] uppercase tracking-[0.18em] font-medium hover:border-[#4F1E7B]/40 hover:bg-white hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             {pending === p.id ? <Loader2 className="w-5 h-5 animate-spin" /> : p.icon}
             <span>{p.label}</span>
