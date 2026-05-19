@@ -66,7 +66,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
         aria-current={active ? "page" : undefined}
         className={cn(
           "group relative flex items-center gap-2 h-8 px-3.5 rounded-xl transition-all text-[12px] font-medium tracking-wide",
-          active ? "text-paper shadow-md shadow-brand/10" : "text-ink/65 hover:text-ink hover:bg-white/8 hover:shadow-sm",
+          active ? "text-[#3B154C] shadow-md shadow-[#3B154C]/10" : "text-[#FAF9F5]/75 hover:text-[#FAF9F5] hover:bg-white/8 hover:shadow-sm",
         )}
       >
         {active && (
@@ -75,15 +75,15 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
             className="absolute inset-0 rounded-xl nav-active-bg"
             transition={{ type: "spring", stiffness: 420, damping: 36 }}
             style={{
-              background: "linear-gradient(135deg, #0AC8D4, #08A9B4)",
-              boxShadow: "0 4px 14px -4px rgba(10,200,212,0.45), 0 0 0 1px rgba(255,255,255,0.2) inset",
+              background: "#FAF9F5",
+              boxShadow: "0 4px 14px -4px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.2) inset",
             }}
           />
         )}
         <item.icon
           className={cn(
             "relative z-10 w-4 h-4 shrink-0 transition-transform duration-300 group-hover:scale-110",
-            active ? "text-paper" : "text-ink/55 group-hover:text-ink",
+            active ? "text-[#3B154C]" : "text-[#FAF9F5]/60 group-hover:text-[#FAF9F5]",
           )}
           strokeWidth={active ? 2.5 : 1.75}
         />
@@ -91,7 +91,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
           <span
             className={cn(
               "relative z-10 whitespace-nowrap transition-all duration-300",
-              active ? "font-semibold neon-glow-teal" : "font-normal",
+              active ? "font-semibold text-[#3B154C]" : "font-normal",
             )}
           >
             {item.label}
@@ -118,9 +118,9 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
     <>
       <header
         aria-label="Main navigation"
-        className="shrink-0 sticky top-0 z-50 glass-strong border-b border-black/8"
+        className="shrink-0 sticky top-0 z-50 bg-[#3B154C] border-b border-[#FAF9F5]/10 text-white"
         style={{
-          boxShadow: "0 1px 0 rgba(255,255,255,0.6) inset, 0 8px 24px -16px rgba(10,200,212,0.10)",
+          boxShadow: "0 8px 24px -16px rgba(79, 30, 123, 0.15)",
           paddingTop: "max(0px, env(safe-area-inset-top, 0))",
         }}
       >
@@ -137,15 +137,15 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
               transition={{ type: "spring", stiffness: 400, damping: 20 }}
               className="relative w-7 h-7 rounded-xl flex items-center justify-center overflow-hidden shrink-0"
               style={{
-                background: "#0AC8D4",
+                background: "#FAF9F5",
                 boxShadow:
-                  "0 4px 14px -4px rgba(10,200,212,0.55), 0 0 0 1px rgba(255,255,255,0.22) inset",
+                  "0 4px 14px -4px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.22) inset",
               }}
             >
-              <WirelineMark className="w-4 h-4 text-paper relative z-10" strokeWidth={130} />
+              <WirelineMark className="w-4 h-4 text-[#3B154C] relative z-10" strokeWidth={130} />
               <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent" />
             </motion.div>
-            <span className="brand-wordmark text-[16px] leading-none hidden sm:inline">
+            <span className="brand-wordmark text-[16px] leading-none hidden sm:inline !text-[#FAF9F5] !filter-none">
               {branding.brand_name.toUpperCase()}
             </span>
           </Link>
@@ -155,7 +155,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
           <nav className="hidden lg:flex items-center gap-1 ml-3 shrink-0">
             {NAV_GROUPS.map((group, gIdx) => (
               <React.Fragment key={group.label}>
-                {gIdx > 0 && <span aria-hidden="true" className="mx-1 h-5 w-px bg-black/12" />}
+                {gIdx > 0 && <span aria-hidden="true" className="mx-1 h-5 w-px bg-white/12" />}
                 {group.items.map((item) => renderNavItem(item))}
               </React.Fragment>
             ))}
@@ -171,29 +171,29 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
             </div>
             <button
               onClick={onShowShortcuts}
-              className="hidden md:flex items-center gap-1.5 h-7 px-2 rounded-lg text-muted/65 hover:text-ink hover:bg-white/5 transition-colors"
+              className="hidden md:flex items-center gap-1.5 h-7 px-2 rounded-lg text-[#FAF9F5]/65 hover:text-[#FAF9F5] hover:bg-white/10 transition-colors"
               aria-label="Show keyboard shortcuts"
               title="Keyboard shortcuts"
             >
               <Keyboard className="w-4 h-4" />
-              <kbd className="text-[9px] glass border border-black/10 px-1.5 py-0.5 rounded font-mono text-muted/70">
+              <kbd className="text-[9px] bg-white/10 border border-white/15 px-1.5 py-0.5 rounded font-mono text-[#FAF9F5]/70">
                 ?
               </kbd>
             </button>
 
-            <div className="hidden md:flex items-center gap-2 rounded-lg border border-black/8 glass px-2 py-1">
+            <div className="hidden md:flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-2 py-1">
               <div
-                className="w-6 h-6 rounded-full flex items-center justify-center text-white font-medium text-[10px]"
-                style={{ background: "#0AC8D4" }}
+                className="w-6 h-6 rounded-full flex items-center justify-center text-[#3B154C] font-medium text-[10px]"
+                style={{ background: "#FAF9F5" }}
                 aria-hidden="true"
               >
                 {user?.email?.slice(0, 1).toUpperCase() ?? "?"}
               </div>
               <div className="min-w-0 max-w-[140px]">
-                <p className="text-[11px] font-medium text-ink truncate leading-none mb-0.5">
+                <p className="text-[11px] font-medium text-white truncate leading-none mb-0.5">
                   {user?.email?.split("@")[0]}
                 </p>
-                <p className="text-[8px] tracking-[0.28em] uppercase text-muted truncate">
+                <p className="text-[8px] tracking-[0.28em] uppercase text-[#FAF9F5]/50 truncate">
                   {user?.email?.split("@")[1]}
                 </p>
               </div>
@@ -201,7 +201,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
                 onClick={() => signOut()}
                 title="Sign out"
                 aria-label="Sign out"
-                className="shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-ink/40 hover:text-rose-600 hover:bg-rose-500/8 border border-black/7 hover:border-rose-500/35 transition-colors"
+                className="shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-[#FAF9F5]/40 hover:text-rose-400 hover:bg-rose-500/20 border border-white/10 hover:border-rose-500/35 transition-colors"
               >
                 <LogOut className="w-3 h-3" />
               </button>
@@ -213,7 +213,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
               className="lg:hidden w-10 h-10 rounded-lg flex items-center justify-center hover:bg-white/5 active:scale-95 transition-all"
               aria-label="Open navigation"
             >
-              <Menu className="w-5 h-5 text-ink" />
+              <Menu className="w-5 h-5 text-[#FAF9F5]" />
             </button>
           </div>
         </div>
@@ -248,10 +248,10 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
                   <div
                     className="w-9 h-9 rounded-xl flex items-center justify-center"
                     style={{
-                      background: "#0AC8D4",
+                      background: "#4F1E7B",
                     }}
                   >
-                    <WirelineMark className="w-4 h-4 text-paper" strokeWidth={130} />
+                    <WirelineMark className="w-4 h-4 text-[#FAF9F5]" strokeWidth={130} />
                   </div>
                   <span className="brand-wordmark text-[16px] leading-none">
                     {branding.brand_name.toUpperCase()}
@@ -284,7 +284,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
                 <div className="flex items-center gap-2 rounded-lg border border-black/8 glass px-2 py-2">
                   <div
                     className="w-8 h-8 rounded-full flex items-center justify-center text-white font-medium text-sm"
-                    style={{ background: "#0AC8D4" }}
+                    style={{ background: "#4F1E7B" }}
                   >
                     {user?.email?.slice(0, 1).toUpperCase() ?? "?"}
                   </div>
