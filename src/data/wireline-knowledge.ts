@@ -29,7 +29,7 @@ export const WIRELINE_PLANS = [
     includes: [
       "1 AI agent",
       "1 phone number",
-      "300 voice minutes/mo (overage $0.20/min)",
+      "400 voice minutes/mo (overage $0.20/min — rarely triggered)",
       "Email triage on a connected inbox",
     ],
   },
@@ -41,20 +41,20 @@ export const WIRELINE_PLANS = [
     includes: [
       "3 AI agents",
       "3 phone numbers",
-      "1,500 voice minutes/mo",
+      "1,500 voice minutes/mo (overage $0.15/min)",
       "CRM sync (HubSpot or Salesforce)",
       "Two-way SMS",
     ],
   },
   {
     name: "Pro",
-    price: "$399/mo",
+    price: "$499/mo",
     bestFor:
       "Growing operators running multiple playbooks side by side — sales, support, and outbound.",
     includes: [
       "10 AI agents",
       "10 phone numbers",
-      "6,000 voice minutes/mo",
+      "6,000 voice minutes/mo (overage $0.12/min)",
       "All CRM integrations (HubSpot, Salesforce, Pipedrive, Apollo)",
       "Slack handoff for human escalations",
       "Custom playbooks + knowledge ingestion",
@@ -65,9 +65,9 @@ export const WIRELINE_PLANS = [
     price: "$1,499/mo",
     bestFor: "Multi-team operators who need supervisor visibility + call-center routing.",
     includes: [
-      "Unlimited agents",
-      "Unlimited numbers",
-      "25,000 voice minutes/mo",
+      "25 AI agents",
+      "25 phone numbers",
+      "15,000 voice minutes/mo (overage $0.10/min)",
       "Supervisor cockpit with live call monitor",
       "Team-level routing + per-team SMS sender",
       "DocuSign + custom integrations",

@@ -3,10 +3,16 @@
  * match the same cap), pricing surface, voice-minute caps + overage rate,
  * and price-id → plan resolution at runtime.
  *
+ * Pricing philosophy (Mike's call): overages should be RARE, not the default.
+ * Each tier ships with ~3x the minutes a typical customer in that segment
+ * actually burns per month, so hitting overage is a clear signal to upgrade
+ * — not a monthly tax. Overage rates also drop with tier to make the
+ * upgrade math obvious.
+ *
  * Unit economics: variable cost per voice minute lands around $0.13
  * (Vapi infra + 11labs synthesis + Claude reasoning + Twilio per-call).
- * Plan limits + overage rates are tuned so every tier stays cash-positive
- * at full utilization. Pricing.tsx renders the same numbers; keep them
+ * Plan limits + overage rates are still tuned to stay cash-positive at
+ * full utilization. Pricing.tsx renders the same numbers; keep them
  * in sync.
  */
 
@@ -30,75 +36,75 @@ export const STRIPE_PLANS: StripePlan[] = [
   {
     id: "personal",
     name: "Personal",
-    price_usd_monthly: 29,
+    price_usd_monthly: 49,
     max_agents: 1,
-    voice_minutes_monthly: 100,
-    overage_per_min_usd: 0.25,
+    voice_minutes_monthly: 400,
+    overage_per_min_usd: 0.2,
     priceIdEnv: "STRIPE_PERSONAL_PRICE_ID",
     features: [
       "1 AI voice agent (voice + email)",
       "One dedicated Wireline voice number",
-      "100 voice minutes / month",
+      "400 voice minutes / month (covers most solo operators)",
       "Unlimited inbound email",
       "Call logs + transcripts + sentiment",
-      "Overage billed at $0.25 / min",
+      "Overage billed at $0.20 / min (rare on this volume)",
     ],
   },
   {
     id: "starter",
     name: "Starter",
-    price_usd_monthly: 99,
+    price_usd_monthly: 149,
     max_agents: 3,
-    voice_minutes_monthly: 500,
-    overage_per_min_usd: 0.2,
+    voice_minutes_monthly: 1_500,
+    overage_per_min_usd: 0.15,
     priceIdEnv: "STRIPE_STARTER_PRICE_ID",
     features: [
       "3 AI agents (voice + email)",
       "Dedicated voice number per agent",
-      "500 voice minutes / month",
+      "1,500 voice minutes / month",
       "Outbound dialer (CSV + auto-dial)",
       "Live call monitor + sentiment",
       "Up to 5 team seats",
-      "Overage billed at $0.20 / min",
+      "Overage billed at $0.15 / min",
     ],
   },
   {
     id: "pro",
     name: "Pro",
-    price_usd_monthly: 399,
+    price_usd_monthly: 499,
     max_agents: 10,
-    voice_minutes_monthly: 2_500,
-    overage_per_min_usd: 0.18,
+    voice_minutes_monthly: 6_000,
+    overage_per_min_usd: 0.12,
     priceIdEnv: "STRIPE_PRO_PRICE_ID",
     features: [
       "10 AI agents (voice + email)",
       "Dedicated voice number per agent",
-      "2,500 voice minutes / month",
+      "6,000 voice minutes / month",
       "Outbound dialer + email campaigns",
       "Slack alerts on key events",
       "Up to 25 team seats",
       "Webhook + Action Engine",
-      "Overage billed at $0.18 / min",
+      "Overage billed at $0.12 / min",
       "Priority support",
     ],
   },
   {
     id: "business",
     name: "Business",
-    price_usd_monthly: 999,
+    price_usd_monthly: 1_499,
     max_agents: 25,
-    voice_minutes_monthly: 5_000,
-    overage_per_min_usd: 0.16,
+    voice_minutes_monthly: 15_000,
+    overage_per_min_usd: 0.1,
     priceIdEnv: "STRIPE_BUSINESS_PRICE_ID",
     features: [
       "25 AI agents (voice + email)",
       "Dedicated voice number per agent",
-      "5,000 voice minutes / month",
+      "15,000 voice minutes / month",
       "Everything in Pro",
       "SSO + audit log export",
       "Up to 50 team seats",
       "Priority support · Slack channel",
-      "Overage billed at $0.16 / min",
+      "Overage billed at $0.10 / min",
     ],
   },
   {
@@ -107,7 +113,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     price_usd_monthly: 0, // contact sales
     max_agents: 100,
     voice_minutes_monthly: 50_000,
-    overage_per_min_usd: 0.15,
+    overage_per_min_usd: 0.08,
     priceIdEnv: "STRIPE_ENTERPRISE_PRICE_ID",
     features: [
       "Up to 100 agents (custom bundles)",
