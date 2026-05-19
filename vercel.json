@@ -48,7 +48,11 @@
       "destination": "/api/index.ts"
     },
     {
-      "source": "/((?!api/|assets/|.+\\.[A-Za-z0-9]+$).*)",
+      "source": "/legal/data-deletion",
+      "destination": "/legal/data-deletion.html"
+    },
+    {
+      "source": "/((?!api/|assets/|legal/|.+\\.[A-Za-z0-9]+$).*)",
       "destination": "/index.html"
     }
   ]
