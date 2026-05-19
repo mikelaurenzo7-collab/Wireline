@@ -201,6 +201,40 @@ async function syncOneAgent(
       },
     };
 
+    // Showcase agents get a single platform-level tool so they can
+    // actually DELIVER the signup link the playful sales line keeps
+    // promising. Other tenant-scoped tools (send_email via tenant
+    // OAuth, search_leads, etc.) come from the standard Vapi webhook
+    // handler — they're not advertised here because showcase agents
+    // have no tenant context. See vapi-routes.ts:248-320 for the
+    // server-side dispatch.
+    assistantPayload.model.tools = [
+      {
+        type: "function",
+        function: {
+          name: "send_signup_link",
+          description:
+            "Send the caller a Wireline 14-day trial sign-up link via email. Use this immediately when a caller says any of: 'send me the link', 'email me the signup', 'text me details', 'how do I try this', 'can I get more info'. Capture the email by asking 'What's the best email?' if you don't have it. Confirm the address back to the caller before sending. ALWAYS use this tool — never claim to send anything by mouth without invoking it.",
+          parameters: {
+            type: "object",
+            properties: {
+              to_email: {
+                type: "string",
+                description:
+                  "The caller's email address, parsed from the conversation. Must be a valid RFC-5322 email (foo@bar.com). If the caller spelled it letter-by-letter, reconstruct it before passing.",
+              },
+              caller_name: {
+                type: "string",
+                description:
+                  "The caller's first name if you have it (used in the email greeting). Optional — pass undefined if you didn't catch it.",
+              },
+            },
+            required: ["to_email"],
+          },
+        },
+      },
+    ];
+
     // Only include the voice block if we successfully fetched the
     // existing voiceId — Vapi PATCH would otherwise wipe it.
     if (existingVoiceId) {

@@ -120,3 +120,66 @@ export async function sendPasswordResetEmail(opts: PasswordResetEmailOpts): Prom
   );
   return { ok: true, provider: "log-fallback" };
 }
+
+/**
+ * Send a Wireline sign-up link via platform Resend. Used by the
+ * `send_signup_link` Vapi tool that the 10 showcase demo agents call
+ * when a caller asks for an email with the signup link.
+ *
+ * Distinct from sendEmail() in IntegrationService — that one routes
+ * through the TENANT's connected Google/Microsoft OAuth account.
+ * Showcase agents have no tenant; they use the platform Resend key.
+ *
+ *   to          recipient inbox (validated upstream as RFC-5322-shape)
+ *   callerName  optional; if provided, used in the greeting
+ *   agentName   the agent who's sending it (Sarah / Liam / Marcus / …)
+ */
+export async function sendSignupLinkEmail(opts: {
+  to: string;
+  callerName?: string;
+  agentName?: string;
+}): Promise<SendResult> {
+  const signupUrl = `${(process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "")}/signup`;
+  const greeting = opts.callerName ? `Hi ${opts.callerName.split(/\s+/)[0]},` : "Hi,";
+  const fromAgent = opts.agentName ? ` — ${opts.agentName}` : "";
+
+  const subject = "Your Wireline sign-up link";
+  const text = [
+    greeting,
+    "",
+    "Thanks for the call. Here's the link to start your 14-day Wireline trial — no credit card, dedicated phone number included, deploy your first AI agent in under 10 minutes:",
+    "",
+    signupUrl,
+    "",
+    "If you have any follow-up questions, just call back — same number you reached me on. Looking forward to hearing how the trial goes.",
+    "",
+    `— Wireline${fromAgent}`,
+  ].join("\n");
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #1a1a2e;">
+      <p style="margin: 0 0 16px; line-height: 1.55;">${greeting}</p>
+      <p style="margin: 0 0 16px; line-height: 1.55;">Thanks for the call. Here's the link to start your <strong>14-day Wireline trial</strong> — no credit card, dedicated phone number included, deploy your first AI agent in under 10 minutes.</p>
+      <p style="margin: 0 0 24px;"><a href="${signupUrl}" style="display: inline-block; background: #4F1E7B; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Start your trial</a></p>
+      <p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Or paste this link into your browser:<br><span style="word-break: break-all;">${signupUrl}</span></p>
+      <p style="margin: 24px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you have any follow-up questions, just call back — same number you reached me on.</p>
+      <p style="margin: 24px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">— Wireline${fromAgent}</p>
+    </div>
+  `;
+
+  if (process.env.RESEND_API_KEY) {
+    return await sendViaResend({ to: opts.to, subject, html, text });
+  }
+
+  // Same dev/no-transport pattern as sendPasswordResetEmail.
+  log.warn(
+    "Signup-link email transport not configured (RESEND_API_KEY missing). " +
+      "Emitting URL to runtime log so support can deliver it manually.",
+    {
+      to: opts.to,
+      signupUrl,
+      agentName: opts.agentName,
+    },
+  );
+  return { ok: true, provider: "log-fallback" };
+}

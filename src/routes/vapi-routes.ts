@@ -259,6 +259,57 @@ router.post("/api/vapi-webhook", async (req, res) => {
         }
       }
 
+      // Platform-Resend signup-link tool — the showcase + demo agents
+      // (Sarah, Liam, Marcus, etc.) call this when a caller asks for a
+      // Wireline trial signup link. Distinct from `send_email` above,
+      // which routes through the TENANT'S connected Google/Microsoft
+      // OAuth account — showcase agents have no tenant so they need a
+      // platform-level transport. Closes the "agent promised an email
+      // but never sent it" gap Mike caught on the demo line.
+      if (toolCall.function.name === "send_signup_link") {
+        try {
+          const { to_email, caller_name } = toolCall.function.arguments as {
+            to_email?: string;
+            caller_name?: string;
+          };
+          const looksLikeEmail =
+            typeof to_email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to_email);
+          if (!looksLikeEmail) {
+            results.push({
+              toolCallId: toolCall.id,
+              result: "I couldn't parse the email — could you spell it out, letter by letter?",
+            });
+          } else {
+            const { sendSignupLinkEmail } = await import("../lib/email-service");
+            const agentNameRow = await drizzle
+              .select({ name: schema.agents.name })
+              .from(schema.agents)
+              .where(eq(schema.agents.id, webhookAgentId))
+              .limit(1);
+            const result = await sendSignupLinkEmail({
+              to: to_email!,
+              callerName: caller_name,
+              agentName: agentNameRow[0]?.name ?? undefined,
+            });
+            results.push({
+              toolCallId: toolCall.id,
+              result: result.ok
+                ? `Sign-up link sent to ${to_email}. Should arrive in under a minute.`
+                : `Could not send to ${to_email} (${result.error ?? "unknown error"}). Try a different address?`,
+            });
+          }
+        } catch (err: any) {
+          log.error("send_signup_link tool failed", {
+            error: err?.message ?? String(err),
+          });
+          results.push({
+            toolCallId: toolCall.id,
+            result:
+              "Hit an error sending — please call back or try the link at trywireline.com/signup",
+          });
+        }
+      }
+
       if (toolCall.function.name === "send_text_message") {
         try {
           const { to_number, channel, message_body } = toolCall.function.arguments;

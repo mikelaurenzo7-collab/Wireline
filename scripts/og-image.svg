@@ -38,25 +38,63 @@
   <!-- Editorial hero -->
   <text x="80" y="330" fill="#4F1E7B"
         font-family="Georgia, 'Times New Roman', serif"
-        font-style="italic" font-size="76" font-weight="400">AI agents that</text>
+        font-style="italic" font-size="76" font-weight="400">AI agents for every</text>
   <text x="80" y="420" fill="#1C1917"
         font-family="Georgia, 'Times New Roman', serif"
-        font-style="italic" font-size="76" font-weight="400">close deals for you.</text>
+        font-style="italic" font-size="76" font-weight="400">customer conversation.</text>
 
-  <!-- Subhead -->
+  <!-- Subhead — pure product framing, no partner verbiage -->
   <text x="80" y="485" fill="#5C5248"
         font-family="Inter, system-ui, sans-serif"
-        font-size="22">Voice + email autonomous agents · Powered by Claude Opus 4.7</text>
+        font-size="22">14-day free trial · dedicated phone number included · cancel anytime</text>
 
   <!-- Footer hairline -->
   <rect x="80" y="540" width="1040" height="1.5" fill="#4F1E7B" opacity="0.35"/>
 
-  <!-- Footer chips -->
-  <g font-family="Inter, system-ui, sans-serif" font-size="16" letter-spacing="4">
-    <text x="80"  y="585" fill="#4F1E7B">VOICE</text>
-    <text x="200" y="585" fill="#4F1E7B">EMAIL</text>
-    <text x="320" y="585" fill="#4F1E7B">INSIGHTS</text>
-    <text x="490" y="585" fill="#10B981">TRIAGE</text>
-    <text x="640" y="585" fill="#7C7469">trywireline.com</text>
+  <!-- Partner logo strip — replaces the prior VOICE/EMAIL/INSIGHTS/TRIAGE chips
+       AND the "Powered by Claude Opus 4.7" verbiage. Same marks the AuthPortal
+       trust row carries: Anthropic · Vapi · ElevenLabs · Supabase · Vercel.
+       Spaced evenly across the bottom, all in muted silky-purple so they
+       read as a credibility strip not an ad. -->
+  <g fill="#4F1E7B" opacity="0.55">
+    <!-- Anthropic mark — A glyph -->
+    <g transform="translate(120, 570) scale(0.16)">
+      <path d="M147.42 0h44.34l63.5 176h-44.34l-12.99-37.07h-65.5L119.43 176H75.09Zm-2.49 105.07h36.81l-18.4-52.45ZM0 176 63.5 0h44.34l-63.5 176Z"/>
+    </g>
+    <text x="190" y="595" font-family="Inter, system-ui, sans-serif" font-size="14"
+          font-weight="600" letter-spacing="3">Anthropic</text>
+
+    <!-- Vapi mark — bar-and-V combo -->
+    <g transform="translate(370, 575) scale(1.3)">
+      <rect x="0" y="4" width="3" height="16" rx="1"/>
+      <rect x="6" y="8" width="3" height="12" rx="1"/>
+      <rect x="12" y="2" width="3" height="20" rx="1"/>
+      <rect x="18" y="6" width="3" height="14" rx="1"/>
+    </g>
+    <text x="408" y="595" font-family="Inter, system-ui, sans-serif" font-size="14"
+          font-weight="600" letter-spacing="3">Vapi</text>
+
+    <!-- ElevenLabs mark — two bars -->
+    <g transform="translate(550, 575) scale(0.22)">
+      <rect x="22" y="12" width="22" height="76" rx="2"/>
+      <rect x="56" y="12" width="22" height="76" rx="2"/>
+    </g>
+    <text x="585" y="595" font-family="Inter, system-ui, sans-serif" font-size="14"
+          font-weight="600" letter-spacing="3">ElevenLabs</text>
+
+    <!-- Supabase mark — lightning bolt -->
+    <g transform="translate(770, 572) scale(0.24)">
+      <path d="M63.7 110.3c-2.8 3.6-8.7 1.6-8.6-3l1-69h47c8.6 0 13.3 9.8 8 16.5l-47.4 55.5Z"/>
+      <path d="M45.3 2.6c2.9-3.6 8.7-1.6 8.7 3l-.4 69H7.1c-8.5 0-13.3-9.8-8-16.5L45.3 2.6Z"/>
+    </g>
+    <text x="804" y="595" font-family="Inter, system-ui, sans-serif" font-size="14"
+          font-weight="600" letter-spacing="3">Supabase</text>
+
+    <!-- Vercel mark — triangle -->
+    <g transform="translate(990, 580) scale(0.12)">
+      <path d="M113 0 226 200H0Z"/>
+    </g>
+    <text x="1024" y="595" font-family="Inter, system-ui, sans-serif" font-size="14"
+          font-weight="600" letter-spacing="3">Vercel</text>
   </g>
 </svg>
