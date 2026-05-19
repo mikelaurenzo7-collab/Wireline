@@ -291,6 +291,43 @@ export default function FleetSettings() {
   const [isApplyingTemplate, setIsApplyingTemplate] = useState(false);
 
   const [isConfigLoading, setIsConfigLoading] = useState(false);
+  // Tenant-level connection status for the integration scoping panel.
+  // Populated once on mount and refreshed when the OAuth popup posts
+  // CRM_OAUTH_SUCCESS; powers the "Required integrations" chips so the
+  // operator can see which of the agent's tools have a live connection
+  // backing them.
+  const [integrationStatus, setIntegrationStatus] = useState<Record<
+    string,
+    { connected: boolean }
+  > | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await authFetch("/api/oauth/crm/status");
+        if (!r.ok || cancelled) return;
+        const data = await r.json();
+        if (!cancelled) setIntegrationStatus(data);
+      } catch {
+        /* ignore — chips just won't show connection state */
+      }
+    })();
+    const onMessage = (e: MessageEvent) => {
+      if (e.data?.type === "CRM_OAUTH_SUCCESS") {
+        authFetch("/api/oauth/crm/status")
+          .then((r) => (r.ok ? r.json() : null))
+          .then((data) => {
+            if (data) setIntegrationStatus(data);
+          })
+          .catch(() => {});
+      }
+    };
+    window.addEventListener("message", onMessage);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("message", onMessage);
+    };
+  }, []);
   const [agentConfig, setAgentConfig] = useState<any>({
     personality: "",
     directives: [],
@@ -1398,6 +1435,109 @@ export default function FleetSettings() {
                                   and number checks run through your Wireline messaging network.
                                 </p>
 
+                                {/* ── Required integrations summary ──
+                                    Surfaces which third-party services this agent
+                                    depends on based on the currently-enabled tools.
+                                    Green chip = connected and ready. Amber chip
+                                    with "Connect →" link = the agent has tools
+                                    that require this integration but it's not
+                                    connected yet, so those tools will silently
+                                    no-op until the operator connects it. */}
+                                {(() => {
+                                  const requiredIntegrations = new Set<string>();
+                                  for (const toolName of selectedToolNames) {
+                                    const def = AGENT_TOOL_CATALOG.find((t) => t.name === toolName);
+                                    if (def?.integration) requiredIntegrations.add(def.integration);
+                                  }
+                                  if (requiredIntegrations.size === 0) return null;
+
+                                  // Map our internal integration keys to the
+                                  // /api/oauth/crm/status response keys. "calendar"
+                                  // is satisfied by either Google or Microsoft;
+                                  // "crm" by either HubSpot or Salesforce; "twilio"
+                                  // is always-on for paid tenants (we own the
+                                  // carrier relationship).
+                                  const checkConnected = (key: string): boolean => {
+                                    if (!integrationStatus) return false;
+                                    if (key === "twilio") return true;
+                                    if (key === "calendar") {
+                                      return !!(
+                                        integrationStatus.google?.connected ||
+                                        integrationStatus.microsoft?.connected
+                                      );
+                                    }
+                                    if (key === "crm") {
+                                      return !!(
+                                        integrationStatus.hubspot?.connected ||
+                                        integrationStatus.salesforce?.connected
+                                      );
+                                    }
+                                    if (key === "gemini") {
+                                      // Gemini grounding uses platform key
+                                      // (operator-owned); always available.
+                                      return true;
+                                    }
+                                    return !!integrationStatus[key]?.connected;
+                                  };
+                                  const labelFor = (k: string) =>
+                                    ({
+                                      twilio: "Messaging (Twilio)",
+                                      calendar: "Calendar",
+                                      crm: "CRM",
+                                      slack: "Slack",
+                                      zoom: "Zoom",
+                                      docusign: "DocuSign",
+                                      apollo: "Apollo",
+                                      meta: "Meta",
+                                      gemini: "Gemini grounding",
+                                    })[k] || k;
+
+                                  return (
+                                    <div className="rounded-lg border border-white/8 bg-white/3 p-3 space-y-2">
+                                      <div className="flex items-center justify-between">
+                                        <div className="text-[9px] uppercase tracking-[0.3em] text-brand/70">
+                                          Required integrations
+                                        </div>
+                                        <div className="text-[9px] text-muted/60">
+                                          Scoped to this agent's tools
+                                        </div>
+                                      </div>
+                                      <div className="flex flex-wrap gap-1.5">
+                                        {Array.from(requiredIntegrations).map((key) => {
+                                          const connected = checkConnected(key);
+                                          return (
+                                            <span
+                                              key={key}
+                                              className={cn(
+                                                "inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-medium border",
+                                                connected
+                                                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700"
+                                                  : "bg-amber-500/10 border-amber-500/35 text-amber-700",
+                                              )}
+                                            >
+                                              <span
+                                                className={cn(
+                                                  "w-1.5 h-1.5 rounded-full",
+                                                  connected ? "bg-emerald-500" : "bg-amber-500",
+                                                )}
+                                              />
+                                              {labelFor(key)}
+                                              {!connected && (
+                                                <a
+                                                  href="/integrations"
+                                                  className="ml-0.5 underline underline-offset-2 hover:text-amber-900"
+                                                >
+                                                  Connect →
+                                                </a>
+                                              )}
+                                            </span>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+
                                 {/* ── Channel & Autonomy Controls ── */}
                                 <div className="rounded-lg border border-white/8 bg-white/3 p-3 space-y-3">
                                   <div className="text-[9px] uppercase tracking-[0.3em] text-brand/70">
@@ -1474,18 +1614,30 @@ export default function FleetSettings() {
                                   {AGENT_TOOL_CATALOG.map((tool) => {
                                     const enabled = selectedToolNames.includes(tool.name);
                                     const roleDefault = roleDefaultTools.includes(tool.name);
-                                    const badgeLabel =
-                                      tool.integration === "twilio"
-                                        ? "Messaging"
-                                        : tool.integration === "calendar"
-                                          ? "Calendar"
-                                          : tool.integration === "crm"
-                                            ? "CRM"
-                                            : tool.integration === "slack"
-                                              ? "Slack"
-                                              : tool.integration === "zoom"
-                                                ? "Zoom"
-                                                : null;
+                                    const badgeLabel = ((): string | null => {
+                                      switch (tool.integration) {
+                                        case "twilio":
+                                          return "Messaging";
+                                        case "calendar":
+                                          return "Calendar";
+                                        case "crm":
+                                          return "CRM";
+                                        case "slack":
+                                          return "Slack";
+                                        case "zoom":
+                                          return "Zoom";
+                                        case "docusign":
+                                          return "DocuSign";
+                                        case "apollo":
+                                          return "Apollo";
+                                        case "meta":
+                                          return "Meta";
+                                        case "gemini":
+                                          return "Gemini";
+                                        default:
+                                          return null;
+                                      }
+                                    })();
                                     return (
                                       <button
                                         key={tool.name}
