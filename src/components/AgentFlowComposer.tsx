@@ -39,6 +39,69 @@ interface AgentFlowComposerProps {
  * not constraints. Templates compose into the same FlowStep[] shape the
  * editor saves, so picking a template just seeds the steps array.
  */
+/**
+ * Reusable snippets the operator can paste into a stage's instructions.
+ * Smaller-grained than FLOW_TEMPLATES (which seed an entire flow) —
+ * these are individual building blocks: an objection handler, a
+ * discovery question, a soft close. Click → append to active step.
+ */
+const FLOW_SNIPPETS: { id: string; label: string; category: string; text: string }[] = [
+  {
+    id: "objection-price",
+    category: "Objections",
+    label: "Price pushback",
+    text: "If the caller pushes back on price, ask one question to understand the comparison: 'What's the alternative you're weighing us against?' Then anchor on outcome value before discussing the number. NEVER lead with a discount.",
+  },
+  {
+    id: "objection-busy",
+    category: "Objections",
+    label: "Not a good time",
+    text: "If the caller says it's not a good time, ask: 'What time tomorrow works better — morning or afternoon?' Offer two specific windows. If still resistant, schedule a callback at their preferred time and confirm by SMS.",
+  },
+  {
+    id: "discovery-pain",
+    category: "Discovery",
+    label: "Pain-point question",
+    text: "Ask one open-ended question to surface the pain: 'Walk me through what's not working with [their current solution] today — where do you feel the friction most?' Listen for cost, time, or quality words; reflect back what you heard before proposing next steps.",
+  },
+  {
+    id: "discovery-budget",
+    category: "Discovery",
+    label: "Budget probe",
+    text: "Probe budget without asking directly. 'When companies your size solve this, they typically invest somewhere between $X and $Y per month — does that frame match what you've planned for?' Capture the response into customer_profile.",
+  },
+  {
+    id: "close-soft",
+    category: "Closing",
+    label: "Soft close to next step",
+    text: "Soft close: 'Based on what you shared, the natural next step is a 20-minute walkthrough with one of our specialists. I can book it for tomorrow morning or Thursday afternoon — which works?' Use book_appointment immediately on yes.",
+  },
+  {
+    id: "close-trial",
+    category: "Closing",
+    label: "Free-trial offer",
+    text: "Offer the 14-day free trial: 'No card needed, full access — you can see whether it fits your team and walk away if it doesn't.' Send the signup link via SMS while still on the call. Confirm receipt.",
+  },
+  {
+    id: "compliance-tcpa",
+    category: "Compliance",
+    label: "TCPA opt-out reminder",
+    text: "If the caller asks to be removed: thank them, confirm 'I'll add you to our Do Not Call list immediately,' then use add_to_dnc. Do not attempt to retain. End the call respectfully within 30 seconds.",
+  },
+  {
+    id: "compliance-payment",
+    category: "Compliance",
+    label: "Payment-promise line",
+    text: "When the caller commits to a payment date, repeat it back verbatim: 'Just to confirm — you're committing to pay $X by [date], correct?' Wait for explicit 'yes' before using log_payment_promise. Tell them they'll receive a confirmation SMS within 2 minutes.",
+  },
+  {
+    id: "transfer-frustrated",
+    category: "Escalation",
+    label: "Escalate angry caller",
+    text: "If sentiment turns negative or the caller raises voice: 'I hear you, and I want to make sure this gets handled by a human teammate right now.' Use escalate_to_human immediately. Do NOT try to defuse or re-pitch — escalate first, defuse later via the supervisor.",
+  },
+];
+
 const FLOW_TEMPLATES: Record<
   string,
   { label: string; description: string; steps: Omit<FlowStep, "id">[] }
@@ -187,6 +250,24 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
   const [activeStepId, setActiveStepId] = useState<string>("");
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [showSnippets, setShowSnippets] = useState(false);
+
+  // Append a reusable snippet to the active step's instructions. If no
+  // step is active, append to the first step. Updates instructions
+  // (not transitions) — snippets are content blocks the LLM uses
+  // mid-stage.
+  const insertSnippet = (snippetText: string) => {
+    const targetId = activeStepId || steps[0]?.id;
+    if (!targetId) return;
+    setSteps((prev) =>
+      prev.map((s) => {
+        if (s.id !== targetId) return s;
+        const sep = s.instructions.trim().length ? "\n\n" : "";
+        return { ...s, instructions: `${s.instructions}${sep}${snippetText}` };
+      }),
+    );
+    setShowSnippets(false);
+  };
 
   useEffect(() => {
     let active = true;
@@ -324,7 +405,20 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
     setSteps(steps.map((s) => (s.id === id ? { ...s, [field]: value } : s)));
   };
 
+  // Blocking validation: empty stage name, missing instructions on any
+  // step, or a non-terminal step with no transition condition. These
+  // make the saved flow useless at runtime because the LLM won't know
+  // when to advance — operator MUST fix before save lands.
+  const blockingIssues = useMemo(() => validationIssues.filter((i) => true), [validationIssues]);
+
   const handleSave = async () => {
+    if (blockingIssues.length > 0) {
+      toastError(
+        "Fix flow issues first",
+        `${blockingIssues.length} step${blockingIssues.length === 1 ? "" : "s"} need attention before save.`,
+      );
+      return;
+    }
     setIsSaving(true);
     setSaveSuccess(false);
 
@@ -404,6 +498,49 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Snippet drawer — paste building-block prose into the active
+              stage's instructions. Smaller-grained than templates: an
+              objection handler, a discovery question, a compliance line.
+              Groups by category so operators can scan for the pattern
+              they need. */}
+          <div className="pt-3 border-t border-white/8 space-y-2">
+            <button
+              type="button"
+              onClick={() => setShowSnippets((v) => !v)}
+              className="w-full flex items-center justify-between gap-2 text-[9px] uppercase tracking-[0.32em] text-muted/70 hover:text-ink transition-colors"
+            >
+              <span className="flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3 text-brand" />
+                Insert a snippet
+              </span>
+              <span className="text-muted/50">{showSnippets ? "−" : "+"}</span>
+            </button>
+            {showSnippets && (
+              <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                {Array.from(new Set(FLOW_SNIPPETS.map((s) => s.category))).map((cat) => (
+                  <div key={cat} className="space-y-1">
+                    <div className="text-[8px] uppercase tracking-[0.4em] text-brand/70">{cat}</div>
+                    {FLOW_SNIPPETS.filter((s) => s.category === cat).map((snip) => (
+                      <button
+                        key={snip.id}
+                        type="button"
+                        onClick={() => insertSnippet(snip.text)}
+                        title={snip.text}
+                        className="w-full text-left rounded-lg glass border border-white/8 px-2.5 py-1.5 text-[10px] text-ink/85 hover:border-brand/40 hover:text-brand transition-colors"
+                      >
+                        {snip.label}
+                      </button>
+                    ))}
+                  </div>
+                ))}
+                <p className="text-[9px] text-muted/55 leading-relaxed pt-2 border-t border-white/8">
+                  Adds the snippet to the currently selected stage's instructions. Edit after
+                  pasting.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
