@@ -195,3 +195,61 @@ export async function sendSignupLinkEmail(opts: {
     error: "Email transport not configured (RESEND_API_KEY missing)",
   };
 }
+
+/**
+ * Send the email-verification link at signup (and on resend). Single-
+ * use token built by auth-service.startEmailVerification() and emailed
+ * here in plaintext. Mirrors sendPasswordResetEmail's structure +
+ * styling. Returns ok:false if no transport is configured — caller
+ * MUST NOT fabricate "sent" UX on a no-transport result; surface the
+ * failure cleanly to the user so they can retry once mail is up.
+ */
+export async function sendEmailVerification(opts: {
+  to: string;
+  verifyUrl: string;
+  fullName?: string | null;
+}): Promise<SendResult> {
+  const greeting = opts.fullName ? `Hi ${opts.fullName.split(/\s+/)[0]},` : "Hi,";
+
+  const subject = "Verify your Wireline email";
+  const text = [
+    greeting,
+    "",
+    "Welcome to Wireline. Click the link below to verify your email and unlock your 14-day trial:",
+    "",
+    opts.verifyUrl,
+    "",
+    "The link expires in 24 hours. If you didn't sign up, you can ignore this email.",
+    "",
+    "— Wireline",
+  ].join("\n");
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #1a1a2e;">
+      <p style="margin: 0 0 16px; line-height: 1.55;">${greeting}</p>
+      <p style="margin: 0 0 16px; line-height: 1.55;">Welcome to Wireline. Click the button below to verify your email and unlock your 14-day trial.</p>
+      <p style="margin: 0 0 24px;"><a href="${opts.verifyUrl}" style="display: inline-block; background: #4F1E7B; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Verify email</a></p>
+      <p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Or paste this link into your browser:<br><span style="word-break: break-all;">${opts.verifyUrl}</span></p>
+      <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">The link expires in 24 hours. If you didn't sign up, you can ignore this email.</p>
+    </div>
+  `;
+
+  if (process.env.RESEND_API_KEY) {
+    return await sendViaResend({ to: opts.to, subject, html, text });
+  }
+
+  // Same fail-loud pattern as sendSignupLinkEmail. We MUST NOT return
+  // ok:true here — the caller (signup endpoint) will tell the user
+  // "check your email" but no email actually goes out. Bad UX, worse
+  // brand. Better to surface the transport failure so the user can
+  // see "verification email transport down — try again in a few".
+  log.warn("sendEmailVerification called but RESEND_API_KEY is not set — failing loud.", {
+    to: opts.to,
+    verifyUrl: opts.verifyUrl,
+  });
+  return {
+    ok: false,
+    provider: "no-transport",
+    error: "Email transport not configured (RESEND_API_KEY missing)",
+  };
+}

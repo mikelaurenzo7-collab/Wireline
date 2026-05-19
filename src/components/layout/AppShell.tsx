@@ -7,6 +7,7 @@ import AuroraBackdrop from "./AuroraBackdrop";
 import TopBar from "./TopBar";
 import RouteAccentStrip from "./RouteAccentStrip";
 import TrialBanner from "./TrialBanner";
+import EmailVerifyBanner from "./EmailVerifyBanner";
 import AppRoutes from "../../routes/AppRoutes";
 import { PAGE_TITLES } from "../../constants/navigation";
 import { useBranding } from "../../contexts/BrandingContext";
@@ -146,6 +147,7 @@ export default function AppShell() {
 
       <main className="flex-1 overflow-hidden relative flex flex-col z-10">
         <RouteAccentStrip />
+        <EmailVerifyBanner />
         <TrialBanner />
 
         <div className="flex-1 relative flex flex-col min-h-0 overflow-hidden">

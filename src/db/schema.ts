@@ -21,6 +21,15 @@ export const users = pgTable("wireline_users", {
   fullName: text("full_name"),
   avatarUrl: text("avatar_url"),
   isAdmin: boolean("is_admin").default(false),
+  /**
+   * Set when the user clicks the verification link we email them at
+   * signup. NULL means "unverified" — the trial gate refuses spend
+   * actions (outbound dial, new agent creation, Stripe checkout)
+   * until this is set. Existing users from before the verification
+   * gate shipped are backfilled to their createdAt (auto-verified)
+   * by the migration so they don't suddenly hit a paywall.
+   */
+  emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
@@ -34,6 +43,26 @@ export const passwordResetTokens = pgTable("wireline_password_reset_tokens", {
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   usedAt: timestamp("used_at", { withTimezone: true }),
   requestedIp: text("requested_ip"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
+/**
+ * Single-use email-verification tokens with 24-hour TTL. Same hashed-
+ * storage pattern as password-reset tokens. Owned by a user; the
+ * email-service generates the plaintext token, stores only the sha256,
+ * and emails the plaintext to the user. They click the link, we look
+ * up by hash, verify expiry + usedAt, then set users.emailVerifiedAt
+ * and mark the token as used.
+ *
+ * Resend is rate-limited (1 token per minute per user) at the route
+ * layer to prevent abuse.
+ */
+export const emailVerificationTokens = pgTable("wireline_email_verification_tokens", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull(),
+  tokenHash: text("token_hash").notNull().unique(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 

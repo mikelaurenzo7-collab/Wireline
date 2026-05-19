@@ -387,11 +387,28 @@ router.get(
         };
       }
 
+      // Email-verification state — surfaces to EmailVerifyBanner so
+      // it can show/hide without a separate /api/me call.
+      let emailVerified = true;
+      try {
+        const [u] = await drizzle
+          .select({ verifiedAt: schema.users.emailVerifiedAt })
+          .from(schema.users)
+          .where(eq(schema.users.id, req.user.id))
+          .limit(1);
+        emailVerified = !!u?.verifiedAt;
+      } catch {
+        // Fail-open in the banner: if the DB lookup hiccups, assume
+        // verified so we don't false-flag a real user.
+        emailVerified = true;
+      }
+
       res.json({
         stripe_configured: stripeAvailable(),
         agent_count: agentCount ?? 0,
         phone_lines_used: phoneLineCount ?? 0,
         phone_lines_included: entitlementSlots,
+        email_verified: emailVerified,
         subscription: sub
           ? {
               plan: sub.plan,

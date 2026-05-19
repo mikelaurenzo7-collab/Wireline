@@ -132,6 +132,64 @@ export const authService = {
   },
 
   /**
+   * Mint a single-use email-verification token for the given user.
+   * Mirrors createPasswordResetToken's hashed-storage pattern — only
+   * the sha256 hash hits the DB; the plaintext is returned to the
+   * caller so the route handler can email it. 24-hour TTL.
+   */
+  async createEmailVerificationToken(userId: string) {
+    const plaintext = randomBytes(32).toString("base64url");
+    const tokenHash = createHash("sha256").update(plaintext).digest("hex");
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60_000);
+    await drizzle.insert(schema.emailVerificationTokens).values({
+      userId,
+      tokenHash,
+      expiresAt,
+    });
+    return { token: plaintext, expiresAt };
+  },
+
+  /**
+   * Consume an email-verification token. Validates hash, TTL, and
+   * unused state in a single round-trip, then marks the user as
+   * verified and the token as used. Returns the user id on success
+   * so the route can issue a fresh session JWT. Null on any failure
+   * (bad hash, expired, already used) so the route returns a generic
+   * "this link is no longer valid" error without leaking which case.
+   */
+  async completeEmailVerification(token: string) {
+    if (!token) return null;
+    const tokenHash = createHash("sha256").update(token).digest("hex");
+    const [row] = await drizzle
+      .select({
+        id: schema.emailVerificationTokens.id,
+        userId: schema.emailVerificationTokens.userId,
+        expiresAt: schema.emailVerificationTokens.expiresAt,
+        usedAt: schema.emailVerificationTokens.usedAt,
+      })
+      .from(schema.emailVerificationTokens)
+      .where(eq(schema.emailVerificationTokens.tokenHash, tokenHash))
+      .limit(1);
+    if (!row || row.usedAt || row.expiresAt < new Date()) return null;
+
+    await drizzle
+      .update(schema.users)
+      .set({ emailVerifiedAt: new Date(), updatedAt: new Date() })
+      .where(eq(schema.users.id, row.userId));
+    await drizzle
+      .update(schema.emailVerificationTokens)
+      .set({ usedAt: new Date() })
+      .where(eq(schema.emailVerificationTokens.id, row.id));
+
+    const [user] = await drizzle
+      .select({ id: schema.users.id, email: schema.users.email, fullName: schema.users.fullName })
+      .from(schema.users)
+      .where(eq(schema.users.id, row.userId))
+      .limit(1);
+    return user;
+  },
+
+  /**
    * Issue a single-use password-reset token for the given email. The plaintext
    * token is returned to the caller (so the route handler can email or log it)
    * but only the sha256 hash is persisted — a DB leak doesn't allow account

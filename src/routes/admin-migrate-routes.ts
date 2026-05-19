@@ -203,6 +203,39 @@ router.post(
         ADD COLUMN IF NOT EXISTS trial_outbound_count integer DEFAULT 0;
       `);
 
+      // Email-verification gate. emailVerifiedAt on users + a token
+      // table for the magic-link flow. Existing pre-gate users are
+      // backfilled to their createdAt (auto-verified) so they don't
+      // suddenly get blocked. New signups land NULL → must click
+      // the link before they can dial or create more agents.
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_users
+        ADD COLUMN IF NOT EXISTS email_verified_at timestamptz;
+      `);
+      await drizzle.execute(sql`
+        UPDATE wireline_users
+        SET email_verified_at = created_at
+        WHERE email_verified_at IS NULL;
+      `);
+      await drizzle.execute(sql`
+        CREATE TABLE IF NOT EXISTS wireline_email_verification_tokens (
+          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          user_id uuid NOT NULL,
+          token_hash text NOT NULL UNIQUE,
+          expires_at timestamptz NOT NULL,
+          used_at timestamptz,
+          created_at timestamptz DEFAULT now()
+        );
+      `);
+      await drizzle.execute(sql`
+        CREATE INDEX IF NOT EXISTS idx_email_verification_tokens_user_id
+        ON wireline_email_verification_tokens (user_id);
+      `);
+      await drizzle.execute(sql`
+        CREATE INDEX IF NOT EXISTS idx_email_verification_tokens_expires
+        ON wireline_email_verification_tokens (expires_at);
+      `);
+
       log.info("Auth/agent extras migration completed", { userId: req.user.id });
       return res.json({
         ok: true,
@@ -497,5 +530,71 @@ router.post(
     }
   },
 );
+
+/**
+ * One-shot endpoint to land the email-verification schema. Gated on
+ * SUPABASE_SERVICE_ROLE_KEY so any container holding the secret can
+ * trigger it. Idempotent. Backfills existing users to auto-verified
+ * so they don't surprise-paywall on the migration. REMOVE after use.
+ */
+router.post("/api/admin/run-verify-migration", async (req: Request, res: Response) => {
+  const expected = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const provided = req.headers.authorization?.replace(/^Bearer\s+/i, "").trim();
+  if (!expected || !provided || provided !== expected) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  try {
+    await drizzle.execute(sql`
+      ALTER TABLE wireline_users
+      ADD COLUMN IF NOT EXISTS email_verified_at timestamptz;
+    `);
+    const backfillRes = await drizzle.execute(sql`
+      UPDATE wireline_users
+      SET email_verified_at = created_at
+      WHERE email_verified_at IS NULL;
+    `);
+    await drizzle.execute(sql`
+      CREATE TABLE IF NOT EXISTS wireline_email_verification_tokens (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id uuid NOT NULL,
+        token_hash text NOT NULL UNIQUE,
+        expires_at timestamptz NOT NULL,
+        used_at timestamptz,
+        created_at timestamptz DEFAULT now()
+      );
+    `);
+    await drizzle.execute(sql`
+      CREATE INDEX IF NOT EXISTS idx_email_verification_tokens_user_id
+      ON wireline_email_verification_tokens (user_id);
+    `);
+    await drizzle.execute(sql`
+      CREATE INDEX IF NOT EXISTS idx_email_verification_tokens_expires
+      ON wireline_email_verification_tokens (expires_at);
+    `);
+
+    const countsRes = await drizzle.execute(sql`
+      SELECT
+        COUNT(*)::int AS total_users,
+        COUNT(*) FILTER (WHERE email_verified_at IS NOT NULL)::int AS verified,
+        COUNT(*) FILTER (WHERE email_verified_at IS NULL)::int AS unverified
+      FROM wireline_users
+    `);
+    const counts = (countsRes as any).rows?.[0] ?? null;
+
+    log.info("verify migration ran", {
+      backfilled: (backfillRes as any)?.rowCount ?? 0,
+      counts,
+    });
+    return res.json({
+      ok: true,
+      backfilled: (backfillRes as any)?.rowCount ?? 0,
+      counts,
+    });
+  } catch (err: any) {
+    log.error("run-verify-migration failed", { error: err?.message });
+    return res.status(500).json({ error: err?.message || "Migration failed" });
+  }
+});
 
 export default router;

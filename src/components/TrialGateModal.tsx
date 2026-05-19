@@ -53,6 +53,11 @@ const SELF_SERVE_TIERS = [
 
 function headlineForCode(detail: TrialGateBlockDetail): { title: string; body: string } {
   switch (detail.code) {
+    case "EMAIL_UNVERIFIED":
+      return {
+        title: "Verify your email first",
+        body: "We sent you a link from Wireline — click it to unlock outbound dialing and create more agents. Check your inbox and spam folder; you can resend from the banner at the top.",
+      };
     case "TRIAL_LIMIT_HIT":
       return {
         title: "Trial limit reached",

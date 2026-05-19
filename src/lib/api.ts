@@ -58,7 +58,12 @@ function combineSignals(...signals: AbortSignal[]): AbortSignal {
  * any mounted upgrade modal can pop without each caller having to
  * handle the 402 manually.
  */
-const TRIAL_GATE_CODES = new Set(["TRIAL_EXPIRED", "TRIAL_LIMIT_HIT", "SUBSCRIPTION_REQUIRED"]);
+const TRIAL_GATE_CODES = new Set([
+  "TRIAL_EXPIRED",
+  "TRIAL_LIMIT_HIT",
+  "SUBSCRIPTION_REQUIRED",
+  "EMAIL_UNVERIFIED",
+]);
 
 /**
  * Custom event name. Listened to by <TrialGateModal/> mounted in the
@@ -67,7 +72,7 @@ const TRIAL_GATE_CODES = new Set(["TRIAL_EXPIRED", "TRIAL_LIMIT_HIT", "SUBSCRIPT
 export const TRIAL_GATE_EVENT = "wireline:trial-gate-block";
 
 export interface TrialGateBlockDetail {
-  code: "TRIAL_EXPIRED" | "TRIAL_LIMIT_HIT" | "SUBSCRIPTION_REQUIRED";
+  code: "TRIAL_EXPIRED" | "TRIAL_LIMIT_HIT" | "SUBSCRIPTION_REQUIRED" | "EMAIL_UNVERIFIED";
   error: string;
   /** Present on TRIAL_LIMIT_HIT */
   limit?: number;

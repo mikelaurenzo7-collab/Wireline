@@ -146,11 +146,39 @@ async function getTrialState(userId: string): Promise<TrialCheck> {
 
 function trialBlock(
   res: Response,
-  code: "TRIAL_EXPIRED" | "TRIAL_LIMIT_HIT" | "SUBSCRIPTION_REQUIRED",
+  code: "TRIAL_EXPIRED" | "TRIAL_LIMIT_HIT" | "SUBSCRIPTION_REQUIRED" | "EMAIL_UNVERIFIED",
   reason: string,
   detail: Record<string, unknown>,
 ) {
   return res.status(402).json({ error: reason, code, ...detail });
+}
+
+/**
+ * Look up whether the caller has confirmed their email. Returns true
+ * when verified, false when not. NULL emailVerifiedAt means "not yet
+ * verified"; any non-null timestamp counts as verified (we don't
+ * re-validate by re-sending the link).
+ *
+ * Existing tenants from before the verification gate shipped are
+ * backfilled to their createdAt in the migration so they stay green.
+ * Never throws — fails open on DB hiccup so a transient Supabase
+ * outage doesn't lock out paying tenants.
+ */
+async function isEmailVerified(userId: string): Promise<boolean> {
+  try {
+    const [row] = await drizzle
+      .select({ verifiedAt: schema.users.emailVerifiedAt })
+      .from(schema.users)
+      .where(eq(schema.users.id, userId))
+      .limit(1);
+    return !!row?.verifiedAt;
+  } catch (err: any) {
+    log.warn("isEmailVerified check failed — allowing request through", {
+      userId,
+      error: err?.message ?? String(err),
+    });
+    return true; // fail open
+  }
 }
 
 /**
@@ -161,6 +189,19 @@ function trialBlock(
 export async function enforceTrialAgentCap(req: Request, res: Response, next: NextFunction) {
   const userId = (req as any)?.user?.id as string | undefined;
   if (!userId) return next();
+
+  // Email-verification gate runs FIRST. An unverified caller can poke
+  // the product but can't add agents — same 402 pattern as trial
+  // limits so the existing upgrade modal handles the EMAIL_UNVERIFIED
+  // code branch.
+  if (!(await isEmailVerified(userId))) {
+    return trialBlock(
+      res,
+      "EMAIL_UNVERIFIED",
+      "Verify your email to continue — check your inbox for a link from Wireline.",
+      {},
+    );
+  }
 
   const t = await getTrialState(userId);
 
@@ -222,6 +263,19 @@ export async function enforceTrialAgentCap(req: Request, res: Response, next: Ne
 export async function enforceTrialOutboundCap(req: Request, res: Response, next: NextFunction) {
   const userId = (req as any)?.user?.id as string | undefined;
   if (!userId) return next();
+
+  // Email-verification gate first. An unverified caller can't burn
+  // Vapi minutes — both the trial gate and the spend gate would fire
+  // 402 downstream anyway, but EMAIL_UNVERIFIED is the more
+  // actionable error message for the upgrade modal.
+  if (!(await isEmailVerified(userId))) {
+    return trialBlock(
+      res,
+      "EMAIL_UNVERIFIED",
+      "Verify your email to keep dialing — check your inbox for a link from Wireline.",
+      {},
+    );
+  }
 
   const t = await getTrialState(userId);
 

@@ -30,17 +30,24 @@ import type { Request, Response, NextFunction } from "express";
 type AnyFn = (...args: any[]) => any;
 const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() };
 
-// Two distinct chain "exit values":
-//   selectRows         — what a `select(...).from(...).where(...).limit(1)` resolves to
-//   agentCountRow      — what a `select({n}).from(agents).where(...)` resolves to (first row)
-//   updateRowCount     — what an `update(...).set(...).where(...)` resolves to
-// Tests reassign these per-scenario via the helper below.
+// Fixtures:
+//   selectQueue        — FIFO of result arrays. Each `.limit(N)` chain
+//                        pops the head. Tests describe multi-select
+//                        flows (e.g. isEmailVerified → getTrialState)
+//                        explicitly so order matters.
+//   selectRows         — legacy single-value fallback used when the
+//                        queue is empty (backward-compat with the
+//                        original test bodies).
+//   agentCountRow      — first row for the `.select({n: ...})` aggregate.
+//   updateRowCount     — `.update(...).set(...).where(...)` result.
 const fixtures: {
+  selectQueue: any[][];
   selectRows: any[];
   agentCountRow: { n: number } | null;
   updateRowCount: number;
   insertThrow: Error | null;
 } = {
+  selectQueue: [],
   selectRows: [],
   agentCountRow: { n: 0 },
   updateRowCount: 0,
@@ -48,15 +55,13 @@ const fixtures: {
 };
 
 function buildSelectChain() {
-  // Two-call shape: first .select() chain returns settings row (limit 1);
-  // when called with {n: ...} agg signature, returns agentCountRow.
-  // We detect by the second call to .select() recording its arg.
   const selectCalls: any[] = [];
+  const popOrFallback = () =>
+    fixtures.selectQueue.length > 0 ? fixtures.selectQueue.shift()! : fixtures.selectRows;
   const chain = {
     from: (_t: any) => chain,
     where: (_w: any) => chain,
-    limit: (_n: number) => fixtures.selectRows,
-    // Used by enforceTrialAgentCap COUNT(*) — awaited directly without limit.
+    limit: (_n: number) => popOrFallback(),
     then: (onFulfilled: AnyFn) => {
       const last = selectCalls[selectCalls.length - 1];
       const isCountQuery = last && typeof last === "object" && "n" in last;
@@ -64,7 +69,7 @@ function buildSelectChain() {
         ? fixtures.agentCountRow
           ? [fixtures.agentCountRow]
           : []
-        : fixtures.selectRows;
+        : popOrFallback();
       return Promise.resolve(value).then(onFulfilled);
     },
   };
@@ -110,7 +115,32 @@ vi.mock("../db/schema", () => ({
   agents: {
     userId: "agents.userId",
   },
+  users: {
+    id: "users.id",
+    emailVerifiedAt: "users.emailVerifiedAt",
+  },
 }));
+
+/**
+ * Helper to assemble the multi-row fixture sequence the middleware
+ * needs. trial-gate.ts now performs TWO selects per request:
+ *   1. isEmailVerified  → users.emailVerifiedAt
+ *   2. getTrialState    → settings row
+ * Tests describe both rows so we can exercise EMAIL_UNVERIFIED and
+ * status branches independently. Default: verified + active.
+ */
+function setUserState(opts: { verified?: boolean; settingsRow?: any; agentCount?: number }) {
+  const now = new Date();
+  fixtures.selectQueue = [
+    // 1. isEmailVerified
+    opts.verified === false ? [] : [{ verifiedAt: now }],
+    // 2. getTrialState
+    opts.settingsRow ? [opts.settingsRow] : [],
+  ];
+  if (typeof opts.agentCount === "number") {
+    fixtures.agentCountRow = { n: opts.agentCount };
+  }
+}
 
 // Lazy import AFTER mocks are in place.
 const trialGate = await import("./trial-gate");
@@ -122,10 +152,15 @@ beforeEach(() => {
   drizzle.select.mockClear();
   drizzle.update.mockClear();
   drizzle.insert.mockClear();
+  fixtures.selectQueue = [];
   fixtures.selectRows = [];
   fixtures.agentCountRow = { n: 0 };
   fixtures.updateRowCount = 0;
   fixtures.insertThrow = null;
+  // Default for ALL existing tests that only know about trial state:
+  // primed as "email verified" so the new email-gate check passes
+  // and the trial-specific branches under test still fire.
+  fixtures.selectQueue = [[{ verifiedAt: new Date() }]];
 });
 
 function mockResAndNext() {
@@ -360,5 +395,68 @@ describe("sweepExpiredTrials", () => {
     const n = await trialGate.sweepExpiredTrials();
     expect(n).toBe(0);
     expect(log.error).toHaveBeenCalled();
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────
+//  Email-verification gate — runs BEFORE the trial-state checks in
+//  both middlewares. Unverified callers can poke the product but
+//  can't burn money (outbound dial) or scale up (new agents).
+// ────────────────────────────────────────────────────────────────────
+describe("email-verification gate", () => {
+  it("enforceTrialAgentCap returns 402 EMAIL_UNVERIFIED when the user has no verifiedAt", async () => {
+    setUserState({ verified: false });
+    const { res, next } = mockResAndNext();
+    await trialGate.enforceTrialAgentCap(reqWithUser("user-1"), res, next);
+    expect(next).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(402);
+    const body = (res.json as any).mock.calls[0][0];
+    expect(body.code).toBe("EMAIL_UNVERIFIED");
+  });
+
+  it("enforceTrialOutboundCap returns 402 EMAIL_UNVERIFIED when the user has no verifiedAt", async () => {
+    setUserState({ verified: false });
+    const { res, next } = mockResAndNext();
+    await trialGate.enforceTrialOutboundCap(reqWithUser("user-1"), res, next);
+    expect(next).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(402);
+    const body = (res.json as any).mock.calls[0][0];
+    expect(body.code).toBe("EMAIL_UNVERIFIED");
+  });
+
+  it("verified user with active subscription passes both middlewares", async () => {
+    setUserState({
+      verified: true,
+      settingsRow: { status: "active", trialEndsAt: null, trialOutboundCount: 0 },
+      agentCount: 0,
+    });
+    const r1 = mockResAndNext();
+    await trialGate.enforceTrialAgentCap(reqWithUser("user-1"), r1.res, r1.next);
+    expect(r1.next).toHaveBeenCalledTimes(1);
+    expect(r1.res.status).not.toHaveBeenCalled();
+
+    setUserState({
+      verified: true,
+      settingsRow: { status: "active", trialEndsAt: null, trialOutboundCount: 0 },
+    });
+    const r2 = mockResAndNext();
+    await trialGate.enforceTrialOutboundCap(reqWithUser("user-1"), r2.res, r2.next);
+    expect(r2.next).toHaveBeenCalledTimes(1);
+    expect(r2.res.status).not.toHaveBeenCalled();
+  });
+
+  it("email gate runs BEFORE trial-status — unverified caller with an active sub still hits 402", async () => {
+    // If somehow a tenant has subscription_status='active' but email
+    // unverified (e.g. an admin manually flipped status), email gate
+    // should still block — verification is independent.
+    setUserState({
+      verified: false,
+      settingsRow: { status: "active", trialEndsAt: null, trialOutboundCount: 0 },
+    });
+    const { res, next } = mockResAndNext();
+    await trialGate.enforceTrialAgentCap(reqWithUser("user-1"), res, next);
+    expect(next).not.toHaveBeenCalled();
+    const body = (res.json as any).mock.calls[0][0];
+    expect(body.code).toBe("EMAIL_UNVERIFIED");
   });
 });
