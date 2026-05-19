@@ -189,6 +189,15 @@ async function syncOneAgent(
       responseDelaySeconds: 0,
       numWordsToInterruptAssistant: 2,
       backgroundDenoisingEnabled: false,
+      // Strip the fake call-center ambience. Vapi's default is
+      // "office" (typing + chatter loop) which is great when your
+      // agent is good enough to pass for a human staffer — at our
+      // current quality the ambient noise just outs the agent as
+      // AI MORE clearly than silence would. Demo-line feedback from
+      // Mike was unambiguous: "why are we pretending to be in a
+      // human environment?" Setting "off" puts the caller on a
+      // clean studio line — quieter, more clearly AI, more honest.
+      backgroundSound: "off",
       startSpeakingPlan: {
         waitSeconds: 0.1,
         smartEndpointingPlan: { provider: "livekit", waitFunction: "20 + 8000 * x" },

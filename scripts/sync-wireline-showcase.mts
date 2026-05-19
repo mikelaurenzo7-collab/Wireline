@@ -130,6 +130,9 @@ async function main() {
       responseDelaySeconds: 0,
       numWordsToInterruptAssistant: 2,
       backgroundDenoisingEnabled: false,
+      // Kill Vapi's default "office" ambient track. We'd rather sound
+      // like a clean studio line than fake a call-center we're not in.
+      backgroundSound: "off",
       startSpeakingPlan: {
         waitSeconds: 0.1,
         smartEndpointingPlan: { provider: "livekit", waitFunction: "20 + 8000 * x" },
