@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { MessageSquare, Send, Loader2, RefreshCw, Inbox, Phone } from "lucide-react";
 import { authFetch } from "../lib/api";
@@ -32,7 +32,7 @@ interface SmsMessage {
  * agent action engine, so opt-out enforcement applies automatically.
  *
  * Mounted at /inbox under a "SMS" tab alongside the existing email
- * inbox â€” see AppRoutes.tsx + EmailInbox.tsx for the surrounding
+ * inbox — see AppRoutes.tsx + EmailInbox.tsx for the surrounding
  * tab layout.
  */
 export default function SmsThreads() {
@@ -116,9 +116,9 @@ export default function SmsThreads() {
 
   return (
     <PageShell
-      eyebrow="Channels Â· Messaging"
+      eyebrow="Channels · Messaging"
       title="SMS Inbox"
-      subtitle="Two-way text conversations with customers â€” outbound from your agents, inbound replies routed here."
+      subtitle="Two-way text conversations with customers — outbound from your agents, inbound replies routed here."
       actions={
         <button
           onClick={fetchThreads}
@@ -175,7 +175,7 @@ export default function SmsThreads() {
                               hour: "numeric",
                               minute: "2-digit",
                             },
-                            "â€”",
+                            "—",
                             "en-US",
                           )}
                         </p>
@@ -195,7 +195,7 @@ export default function SmsThreads() {
 
         <Panel
           title={activeThread ? activeThread.customer_number : "Select a thread"}
-          hint={activeThread ? "SMS Â· TWO-WAY" : ""}
+          hint={activeThread ? "SMS · TWO-WAY" : ""}
           icon={Phone}
         >
           {!activeThread ? (
@@ -227,11 +227,11 @@ export default function SmsThreads() {
                         {m.body}
                       </p>
                       <p className="text-[9px] uppercase tracking-[0.25em] text-muted/60 mt-1.5">
-                        {m.direction === "out" ? "You" : "Caller"} Â·{" "}
+                        {m.direction === "out" ? "You" : "Caller"} ·{" "}
                         {formatDate(
                           m.created_at,
                           { hour: "numeric", minute: "2-digit" },
-                          "â€”",
+                          "—",
                           "en-US",
                         )}
                       </p>
@@ -253,7 +253,7 @@ export default function SmsThreads() {
                         handleSend();
                       }
                     }}
-                    placeholder="Type a replyâ€¦"
+                    placeholder="Type a reply…"
                     disabled={sending}
                     className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2.5 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 disabled:opacity-50"
                   />
@@ -271,7 +271,7 @@ export default function SmsThreads() {
                   </button>
                 </div>
                 <p className="text-[10px] text-muted/60 mt-1.5 leading-relaxed">
-                  Sent from your Twilio sender Â· TCPA opt-out applies Â· STOP keyword auto-honored.
+                  Sent from your Twilio sender · TCPA opt-out applies · STOP keyword auto-honored.
                 </p>
               </div>
             </div>

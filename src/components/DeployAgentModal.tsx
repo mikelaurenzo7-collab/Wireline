@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Loader2, ArrowRight, User2, Users2 } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -33,19 +33,19 @@ interface DeployAgentModalProps {
 }
 
 /**
- * Quick Deploy modal â€” opens when an operator clicks "Deploy Agent" on a
+ * Quick Deploy modal — opens when an operator clicks "Deploy Agent" on a
  * template card. Lets them set the two things they almost always want to
  * customize before the agent goes live:
  *
- *   1. Name      â€” pre-filled with the template name, editable to anything
+ *   1. Name      — pre-filled with the template name, editable to anything
  *                  ("Sarah", "Front Desk", "Closer #2", etc.)
- *   2. Voice     â€” male / female toggle, with a per-gender default voice
+ *   2. Voice     — male / female toggle, with a per-gender default voice
  *                  and an expand-to-pick-specific control. Email-channel
  *                  templates skip the voice picker entirely.
  *
  * Everything else (role personality, template overlay, business variable
  * substitution, capabilities) is handled server-side at /api/agents POST.
- * Operators can further refine in /agents â†’ Personality / Capabilities.
+ * Operators can further refine in /agents → Personality / Capabilities.
  */
 export default function DeployAgentModal({
   open,
@@ -142,7 +142,7 @@ export default function DeployAgentModal({
               <div className="relative z-10 flex items-start justify-between gap-4 px-7 pt-6 pb-3 border-b border-white/8">
                 <div className="space-y-1.5 min-w-0">
                   <p className="text-[9px] uppercase tracking-[0.42em] text-muted/70">
-                    Deploy Â· {template.category}
+                    Deploy · {template.category}
                   </p>
                   <h2 className="font-display italic text-2xl text-ink leading-tight">
                     {template.name}
@@ -276,8 +276,8 @@ export default function DeployAgentModal({
                   </div>
                 ) : (
                   <div className="rounded-xl border border-white/10 bg-black/5 px-4 py-3 text-[12px] text-ink/65">
-                    Email agent â€” no voice picker. The agent's writing tone is configured in{" "}
-                    <span className="text-ink/80">/agents â†’ Personality</span> after deploy.
+                    Email agent — no voice picker. The agent's writing tone is configured in{" "}
+                    <span className="text-ink/80">/agents → Personality</span> after deploy.
                   </div>
                 )}
               </div>
@@ -307,7 +307,7 @@ export default function DeployAgentModal({
                   {deploying ? (
                     <>
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      Deployingâ€¦
+                      Deploying…
                     </>
                   ) : (
                     <>

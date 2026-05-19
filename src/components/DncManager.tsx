@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Shield,
@@ -196,9 +196,9 @@ export default function DncManager() {
       <HubTabs tabs={SYSTEM_HUB} label="System sub-navigation" />
       <div className="flex-1 min-h-0">
         <PageShell
-          eyebrow="Compliance Â· Outbound Protection"
+          eyebrow="Compliance · Outbound Protection"
           title="DNC List"
-          subtitle="Numbers on this list will never be dialed â€” by any agent or campaign. TCPA-safe outbound operations."
+          subtitle="Numbers on this list will never be dialed — by any agent or campaign. TCPA-safe outbound operations."
           actions={
             <div className="flex items-center gap-2">
               <button
@@ -280,7 +280,7 @@ export default function DncManager() {
                     <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
                     <input
                       type="text"
-                      placeholder="Search numbersâ€¦"
+                      placeholder="Search numbers…"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       className="h-8 w-44 pl-8 pr-3 rounded-full glass border border-white/10 text-[11px] text-ink placeholder:text-muted/60 focus:border-brand/40 focus:outline-none transition-all"
@@ -292,7 +292,7 @@ export default function DncManager() {
                   <div className="h-full flex flex-col items-center justify-center gap-3">
                     <Loader2 className="w-6 h-6 animate-spin text-brand" />
                     <p className="text-[9px] uppercase tracking-[0.4em] text-muted">
-                      Loading DNC listâ€¦
+                      Loading DNC list…
                     </p>
                   </div>
                 ) : filtered.length === 0 ? (

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Aurora Cream Skeleton System
  * Animated placeholder components that match the frosted-glass design language.
  * Use these instead of spinners for any data-loading state.
@@ -6,11 +6,11 @@
 
 import { cn } from "../lib/utils";
 
-/* â”€â”€ Base pulse animation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Base pulse animation ──────────────────────────────────────────── */
 
 interface SkeletonProps {
   className?: string;
-  /** Accent color for the shimmer â€” defaults to the brand cyan */
+  /** Accent color for the shimmer — defaults to the brand cyan */
   accent?: "cyan" | "violet" | "magenta" | "emerald";
 }
 
@@ -21,14 +21,14 @@ const ACCENT_SHIMMER: Record<string, string> = {
   emerald: "from-emerald-500/0 via-emerald-500/20 to-emerald-500/0",
 };
 
-/** Single skeleton line / block â€” the atom of the system. */
+/** Single skeleton line / block — the atom of the system. */
 export function Skeleton({ className, accent = "cyan" }: SkeletonProps) {
   return (
     <div
       role="status"
       aria-busy="true"
       aria-live="polite"
-      aria-label="Loadingâ€¦"
+      aria-label="Loading…"
       className={cn(
         "relative overflow-hidden rounded-lg bg-black/[0.07] border border-black/[0.05]",
         className,
@@ -44,7 +44,7 @@ export function Skeleton({ className, accent = "cyan" }: SkeletonProps) {
   );
 }
 
-/* â”€â”€ Stat tile skeleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Stat tile skeleton ───────────────────────────────────────────── */
 
 export function StatTileSkeleton() {
   return (
@@ -59,7 +59,7 @@ export function StatTileSkeleton() {
   );
 }
 
-/* â”€â”€ Row skeleton (for lists) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Row skeleton (for lists) ─────────────────────────────────────── */
 
 interface RowSkeletonProps {
   /** Show an icon slot on the left. Default true. */
@@ -81,7 +81,7 @@ export function RowSkeleton({ showIcon = true, showValue = true }: RowSkeletonPr
   );
 }
 
-/* â”€â”€ Panel skeleton (the whole panel body) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Panel skeleton (the whole panel body) ───────────────────────── */
 
 interface PanelSkeletonProps {
   rows?: number;
@@ -98,7 +98,7 @@ export function PanelSkeleton({ rows = 4, className }: PanelSkeletonProps) {
   );
 }
 
-/* â”€â”€ Card grid skeleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Card grid skeleton ───────────────────────────────────────────── */
 
 export function CardGridSkeleton({ count = 4 }: { count?: number }) {
   return (
@@ -120,7 +120,7 @@ export function CardGridSkeleton({ count = 4 }: { count?: number }) {
   );
 }
 
-/* â”€â”€ Chart skeleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Chart skeleton ───────────────────────────────────────────────── */
 
 export function ChartSkeleton({ className }: { className?: string }) {
   const bars = [40, 65, 45, 80, 70, 55, 35];
@@ -146,7 +146,7 @@ export function ChartSkeleton({ className }: { className?: string }) {
   );
 }
 
-/* â”€â”€ Full-page centered spinner fallback â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Full-page centered spinner fallback ─────────────────────────── */
 
 export function PageSpinner() {
   return (
@@ -168,7 +168,7 @@ export function PageSpinner() {
           />
         </div>
       </div>
-      <p className="text-[9px] uppercase tracking-[0.5em] text-muted/60 animate-pulse">Loadingâ€¦</p>
+      <p className="text-[9px] uppercase tracking-[0.5em] text-muted/60 animate-pulse">Loading…</p>
     </div>
   );
 }

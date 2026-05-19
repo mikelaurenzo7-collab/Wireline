@@ -1,4 +1,4 @@
-﻿import { motion } from "motion/react";
+import { motion } from "motion/react";
 import { Link } from "react-router-dom";
 import { LucideIcon } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -31,7 +31,10 @@ export default function EmptyState({
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className={cn("flex flex-col items-center justify-center gap-5 py-16 px-6 text-center", className)}
+      className={cn(
+        "flex flex-col items-center justify-center gap-5 py-16 px-6 text-center",
+        className,
+      )}
     >
       <div
         className="w-16 h-16 rounded-2xl flex items-center justify-center"
@@ -54,7 +57,7 @@ export default function EmptyState({
                   "px-4 py-2 rounded-full text-[11px] uppercase tracking-[0.25em] transition-all",
                   action.primary
                     ? "brutal-btn !py-2"
-                    : "glass border border-white/10 text-muted hover:text-ink hover:border-brand/30"
+                    : "glass border border-white/10 text-muted hover:text-ink hover:border-brand/30",
                 )}
               >
                 {action.label}
@@ -67,12 +70,12 @@ export default function EmptyState({
                   "px-4 py-2 rounded-full text-[11px] uppercase tracking-[0.25em] transition-all",
                   action.primary
                     ? "brutal-btn !py-2"
-                    : "glass border border-white/10 text-muted hover:text-ink hover:border-brand/30"
+                    : "glass border border-white/10 text-muted hover:text-ink hover:border-brand/30",
                 )}
               >
                 {action.label}
               </button>
-            )
+            ),
           )}
         </div>
       )}

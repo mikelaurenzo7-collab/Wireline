@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   PhoneIncoming,
   PhoneOutgoing,
@@ -73,7 +73,7 @@ export default function CallLogs() {
     fetchCalls(0, false);
   }, []);
 
-  // Auto-select first call on initial load only â€” preserve user deselection.
+  // Auto-select first call on initial load only — preserve user deselection.
   const initialSelectionDone = React.useRef(false);
   useEffect(() => {
     if (!initialSelectionDone.current && calls.length > 0 && !selectedCall) {
@@ -107,7 +107,7 @@ export default function CallLogs() {
         <input
           type="text"
           aria-label="Search calls"
-          placeholder="Search signalsâ€¦"
+          placeholder="Search signals…"
           className="h-9 w-44 lg:w-60 pl-8 pr-3 rounded-full glass border border-black/10 text-[11px] text-ink placeholder:text-muted/60 focus:border-brand/40 focus:outline-none transition-all"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -136,13 +136,13 @@ export default function CallLogs() {
       <HubTabs tabs={CHANNELS_HUB} label="Channels sub-navigation" />
       <div className="flex-1 min-h-0">
         <PageShell
-          eyebrow="Communications Â· Voice"
+          eyebrow="Communications · Voice"
           title="Call Logs"
           subtitle="Recorded calls and agent responses"
           actions={actions}
         >
           <div className="h-full grid grid-cols-12 gap-3">
-            {/* List pane â€” hidden on mobile when a call is selected so the
+            {/* List pane — hidden on mobile when a call is selected so the
             detail pane gets the full viewport. The detail's "Back" affordance
             (rendered below in the empty-detail branch + inside CallDetail)
             clears selectedCall to bring the list back. */}
@@ -154,7 +154,7 @@ export default function CallLogs() {
             >
               <Panel
                 title={`${filteredCalls.length} calls`}
-                hint={loading ? "Loadingâ€¦" : "All calls"}
+                hint={loading ? "Loading…" : "All calls"}
                 icon={Database}
                 scroll
                 flush
@@ -260,13 +260,13 @@ export default function CallLogs() {
                                         : "bg-rose-500/8 text-rose-500 border-rose-500/20",
                                   )}
                                 >
-                                  â˜…{call.qa_score}
+                                  ★{call.qa_score}
                                 </span>
                               )}
                               <SentimentDot sentiment={call.sentiment} />
                             </div>
                             <p className="text-[10px] text-muted/70 truncate leading-tight">
-                              {call.summary || "Decodingâ€¦"}
+                              {call.summary || "Decoding…"}
                             </p>
                           </div>
 
@@ -287,7 +287,7 @@ export default function CallLogs() {
               </Panel>
             </div>
 
-            {/* Detail pane â€” hidden on mobile when nothing is selected so the
+            {/* Detail pane — hidden on mobile when nothing is selected so the
             list takes the full viewport. */}
             <div
               className={cn(
@@ -508,7 +508,7 @@ function CallDetail({
                     <FileText className="w-3 h-3" /> Mission summary
                   </div>
                   <p className="text-ink/90 font-display italic text-lg md:text-xl leading-snug">
-                    {call.summary || "Pending inferenceâ€¦"}
+                    {call.summary || "Pending inference…"}
                   </p>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -615,7 +615,7 @@ function CallDetail({
                     </div>
                     <div className="text-left min-w-0">
                       <p className="text-[10px] uppercase tracking-[0.28em] text-brand">
-                        {scoring ? "Scoringâ€¦" : "Run QA Scoring"}
+                        {scoring ? "Scoring…" : "Run QA Scoring"}
                       </p>
                       <p className="text-[9px] text-muted/70 mt-0.5">
                         Wireline AI evaluates this call across 5 quality dimensions
@@ -643,7 +643,7 @@ function CallDetail({
                   </p>
                 ) : (
                   transcriptLines.map((line: string, i: number) => {
-                    // Parse "Speaker: content" â€” real Vapi transcripts use the
+                    // Parse "Speaker: content" — real Vapi transcripts use the
                     // actual agent name (e.g. "Liam:") not the canonical "AI:".
                     // Match any leading "Word:" and bucket by known patterns so
                     // every line shows a meaningful label instead of "System".

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Mail,
   CheckCircle2,
@@ -55,7 +55,7 @@ export default function Integrations() {
   const [loading, setLoading] = useState(true);
   const [showTechnical, setShowTechnical] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  // Subscription tier â€” drives the plan-gated UI on each connector card.
+  // Subscription tier — drives the plan-gated UI on each connector card.
   // Falls back to "personal" so locked cards render even before the
   // billing/status round-trip completes.
   const [planId, setPlanId] = useState<string | null>(null);
@@ -190,7 +190,7 @@ export default function Integrations() {
       };
 
       if (!res.ok || data.ok === false) {
-        // No-account case is informational â€” point the operator at the
+        // No-account case is informational — point the operator at the
         // OAuth buttons immediately below this banner.
         if (data.code === "EMAIL_ACCOUNT_NOT_CONNECTED") {
           toastError(
@@ -222,7 +222,7 @@ export default function Integrations() {
       className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full glass border border-white/10 text-ink text-[11px] uppercase tracking-[0.22em] hover:border-brand/40 transition-colors disabled:opacity-50"
     >
       <RotateCw className={`w-3 h-3 text-brand ${syncing ? "animate-spin" : ""}`} />
-      {syncing ? "Syncingâ€¦" : "Sync all"}
+      {syncing ? "Syncing…" : "Sync all"}
     </button>
   );
 
@@ -231,13 +231,13 @@ export default function Integrations() {
       <PageShell
         title="Integration Hub"
         eyebrow="Connections"
-        subtitle="Connect your CRM, calendar, inbox, carrier, and Slack â€” your agents act through them in real time."
+        subtitle="Connect your CRM, calendar, inbox, carrier, and Slack — your agents act through them in real time."
         actions={syncAction}
       >
         <div className="h-full flex flex-col gap-2 min-h-0">
           <Panel
             title="email carriers"
-            hint="GMAIL Â· OUTLOOK"
+            hint="GMAIL · OUTLOOK"
             icon={Mail}
             scroll
             flush
@@ -399,7 +399,7 @@ export default function Integrations() {
                         {window.location.origin}/api/oauth/google/callback
                       </code>
                       <p className="text-[10px] text-muted/80 leading-relaxed">
-                        Add this to your Google Cloud Console â†’ OAuth credentials â†’ Authorized
+                        Add this to your Google Cloud Console → OAuth credentials → Authorized
                         redirect URIs.
                       </p>
                     </div>
@@ -416,7 +416,7 @@ export default function Integrations() {
                         {window.location.origin}/api/oauth/microsoft/callback
                       </code>
                       <p className="text-[10px] text-muted/80 leading-relaxed">
-                        Add this to Azure portal â†’ App registrations â†’ Authentication â†’ Redirect
+                        Add this to Azure portal → App registrations → Authentication → Redirect
                         URIs.
                       </p>
                     </div>
@@ -425,7 +425,7 @@ export default function Integrations() {
                       {[
                         { label: "Encryption", value: "Bearer tokens over TLS 1.2+" },
                         { label: "Rotation", value: "Auto-refresh before expiry" },
-                        { label: "Scopes", value: "read Â· send Â· modify" },
+                        { label: "Scopes", value: "read · send · modify" },
                       ].map((item) => (
                         <div
                           key={item.label}
@@ -444,10 +444,10 @@ export default function Integrations() {
             </AnimatePresence>
           </div>
 
-          {/* CRM & messaging â€” HubSpot, Salesforce, Slack â€” surfaced here
+          {/* CRM & messaging — HubSpot, Salesforce, Slack — surfaced here
               alongside email so operators find every external connector in
-              one place instead of having to dig into Admin â†’ Integrations.
-              Plan-gated to Pro+ â€” Personal / Starter see an upgrade card
+              one place instead of having to dig into Admin → Integrations.
+              Plan-gated to Pro+ — Personal / Starter see an upgrade card
               instead of the live connectors. */}
           <div className="mt-3">
             {planMeetsRequirement(planId, "pro") ? (
@@ -473,7 +473,7 @@ export default function Integrations() {
                       CRM &amp; messaging connectors
                     </h3>
                     <p className="text-sm text-muted/80 mt-1 leading-relaxed">
-                      HubSpot, Salesforce, and Slack sync â€” keep call notes, deals, and team alerts
+                      HubSpot, Salesforce, and Slack sync — keep call notes, deals, and team alerts
                       in lockstep with every conversation.
                     </p>
                   </div>

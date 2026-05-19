@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Phone, MapPin, Search, Loader2, Check, AlertCircle, RefreshCw } from "lucide-react";
 import { authFetch } from "../lib/api";
@@ -17,7 +17,7 @@ interface AreaCode {
 }
 
 interface PhoneNumberPickerProps {
-  /** Optional agent id â€” when set, the claimed number gets attached to this agent. */
+  /** Optional agent id — when set, the claimed number gets attached to this agent. */
   agentId?: string;
   /** Callback after a number is successfully claimed. */
   onClaim?: (phoneNumber: string) => void;
@@ -26,7 +26,7 @@ interface PhoneNumberPickerProps {
 }
 
 function formatE164(e164: string): string {
-  // +15551234567 â†’ (555) 123-4567
+  // +15551234567 → (555) 123-4567
   const m = e164.match(/^\+1(\d{3})(\d{3})(\d{4})$/);
   return m ? `(${m[1]}) ${m[2]}-${m[3]}` : e164;
 }
@@ -99,7 +99,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
       if (!res.ok) {
         throw new Error(data.error || "No numbers in that area code");
       }
-      // Newly-bought number is now in the pool â€” refresh + auto-claim it
+      // Newly-bought number is now in the pool — refresh + auto-claim it
       await refresh();
       await claim(data.phone_number);
       setSearchAreaCode("");
@@ -188,7 +188,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
                 </div>
                 {claiming === n.phone_number && (
                   <span className="text-[9px] uppercase tracking-[0.3em] text-brand">
-                    Claimingâ€¦
+                    Claiming…
                   </span>
                 )}
               </motion.button>

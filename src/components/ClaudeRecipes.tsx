@@ -1,17 +1,17 @@
-﻿/**
- * Claude Recipes â€” inline buttons + modal drawer.
+/**
+ * Claude Recipes — inline buttons + modal drawer.
  *
  * Drop <ClaudeRecipeButton recipe="..." agentId="..."/> anywhere in the app
  * and it opens the matching recipe in a modal, pre-filled with context.
  *
  * Recipes:
- *   brief             â†’ Pre-call tactical briefing
- *   qualify           â†’ BANT lead qualification (post-call)
- *   objection-drill   â†’ Practice scenarios + scripted responses
- *   cold-email        â†’ Cold email composer
- *   persona-clone     â†’ Distill persona from sample messages
- *   summarize-thread  â†’ Email thread summary + action items
- *   agent-review      â†’ Deep performance review w/ one-click directive apply
+ *   brief             → Pre-call tactical briefing
+ *   qualify           → BANT lead qualification (post-call)
+ *   objection-drill   → Practice scenarios + scripted responses
+ *   cold-email        → Cold email composer
+ *   persona-clone     → Distill persona from sample messages
+ *   summarize-thread  → Email thread summary + action items
+ *   agent-review      → Deep performance review w/ one-click directive apply
  */
 
 import React, { useState, useEffect, ReactNode } from "react";
@@ -81,7 +81,7 @@ const RECIPE_META: Record<Recipe, RecipeMeta> = {
   },
   "enrich-lead": {
     title: "Enrich Lead",
-    tagline: "Wireline AI searches the web â€” identity, employer, hooks.",
+    tagline: "Wireline AI searches the web — identity, employer, hooks.",
     icon: Search,
     accent: "#10B981",
     thinking: false,
@@ -130,7 +130,7 @@ const RECIPE_META: Record<Recipe, RecipeMeta> = {
   },
   coach: {
     title: "Live Call Coach",
-    tagline: "Real-time take on a transcript â€” what to say next.",
+    tagline: "Real-time take on a transcript — what to say next.",
     icon: Headphones,
     accent: "#4F1E7B",
     thinking: false,
@@ -144,7 +144,7 @@ const RECIPE_META: Record<Recipe, RecipeMeta> = {
   },
   "knowledge-from-document": {
     title: "Ingest from PDF",
-    tagline: "Upload a brochure, menu, or policy doc â€” Wireline AI reads it.",
+    tagline: "Upload a brochure, menu, or policy doc — Wireline AI reads it.",
     icon: FileUp,
     accent: "#FFC07D",
     thinking: false,
@@ -158,7 +158,7 @@ const RECIPE_META: Record<Recipe, RecipeMeta> = {
   },
   "call-playbook": {
     title: "Call Playbook",
-    tagline: "Full script â€” opener, discovery, objections, close, voicemail.",
+    tagline: "Full script — opener, discovery, objections, close, voicemail.",
     icon: ScrollText,
     accent: "#FFC07D",
     thinking: true,
@@ -171,7 +171,7 @@ interface AgentLite {
   archetype: string;
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Public component  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ────────────────────  Public component  ────────────────────────── */
 
 export function ClaudeRecipeButton({
   recipe,
@@ -230,7 +230,7 @@ export function ClaudeRecipeButton({
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Modal shell  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ────────────────────  Modal shell  ─────────────────────────────── */
 
 function RecipeModal({
   recipe,
@@ -415,7 +415,7 @@ function NoKeyInline() {
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Form primitives  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ────────────────────  Form primitives  ─────────────────────────── */
 
 function FormShell({ children }: { children: ReactNode }) {
   return <div className="p-7 space-y-6">{children}</div>;
@@ -487,7 +487,7 @@ function RunButton({ onClick, loading, disabled, label = "Generate" }: any) {
     >
       {loading ? (
         <>
-          <Loader2 className="w-4 h-4 animate-spin" /> Thinkingâ€¦
+          <Loader2 className="w-4 h-4 animate-spin" /> Thinking…
         </>
       ) : (
         <>
@@ -543,7 +543,7 @@ function ErrCard({ error }: { error: string }) {
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Live coach  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ────────────────────  Live coach  ──────────────────────────────── */
 
 function CoachForm({
   callId,
@@ -583,7 +583,7 @@ function CoachForm({
   return (
     <FormShell>
       {!callId && (
-        <Field label="Transcript" hint="Paste a transcript â€” partial (live coaching) or complete.">
+        <Field label="Transcript" hint="Paste a transcript — partial (live coaching) or complete.">
           <TextArea
             value={transcript}
             onChange={setTranscript}
@@ -595,7 +595,7 @@ function CoachForm({
       {callId && (
         <p className="text-[11px] uppercase tracking-[0.3em] text-muted">
           Coaching call{" "}
-          <span className="text-brand font-mono">{callId.toString().slice(0, 8)}â€¦</span>
+          <span className="text-brand font-mono">{callId.toString().slice(0, 8)}…</span>
         </p>
       )}
       <label className="flex items-center gap-3 cursor-pointer text-sm text-ink/80">
@@ -707,7 +707,7 @@ function CoachForm({
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Knowledge from URL  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ────────────────────  Knowledge from URL  ──────────────────────── */
 
 function KnowledgeFromUrlForm({
   agents,
@@ -791,8 +791,8 @@ function KnowledgeFromUrlForm({
         label="URL"
         hint={
           crawl
-            ? "Root URL â€” Wireline AI follows nav links from here."
-            : "A homepage, services page, FAQ, pricing page â€” anything customer-facing."
+            ? "Root URL — Wireline AI follows nav links from here."
+            : "A homepage, services page, FAQ, pricing page — anything customer-facing."
         }
       >
         <TextInput
@@ -810,7 +810,7 @@ function KnowledgeFromUrlForm({
             <div>
               <div className="text-sm text-ink">Crawl whole site</div>
               <div className="text-[10px] uppercase tracking-[0.3em] text-muted">
-                {crawl ? `Follow nav links Â· up to ${maxPages} pages` : "Single page only"}
+                {crawl ? `Follow nav links · up to ${maxPages} pages` : "Single page only"}
               </div>
             </div>
           </div>
@@ -882,7 +882,7 @@ function KnowledgeFromUrlForm({
           <div className="rounded-2xl glass border border-white/10 p-5 space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="text-[10px] uppercase tracking-[0.4em] text-brand">
-                Extracted Â· {selected.size}/{result.entries.length} selected
+                Extracted · {selected.size}/{result.entries.length} selected
               </h4>
               <button
                 onClick={toggleAll}
@@ -945,7 +945,7 @@ function KnowledgeFromUrlForm({
           >
             {applying ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" /> Applyingâ€¦
+                <Loader2 className="w-4 h-4 animate-spin" /> Applying…
               </>
             ) : applied ? (
               <>
@@ -964,7 +964,7 @@ function KnowledgeFromUrlForm({
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Agent Forge  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ────────────────────  Agent Forge  ─────────────────────────────── */
 
 function AgentForgeForm({ initial, disabled }: { initial?: any; disabled: boolean }) {
   const [goal, setGoal] = useState(initial?.goal ?? "");
@@ -1076,7 +1076,7 @@ function AgentForgeForm({ initial, disabled }: { initial?: any; disabled: boolea
             <p className="text-ink/80 text-sm italic">"{design.first_message}"</p>
             {design.suggested_voice_tone && (
               <p className="text-[11px] uppercase tracking-[0.3em] text-muted">
-                Voice tone Â· {design.suggested_voice_tone}
+                Voice tone · {design.suggested_voice_tone}
               </p>
             )}
           </div>
@@ -1125,7 +1125,7 @@ function AgentForgeForm({ initial, disabled }: { initial?: any; disabled: boolea
             >
               {creating ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Creating Agentâ€¦
+                  <Loader2 className="w-4 h-4 animate-spin" /> Creating Agent…
                 </>
               ) : (
                 <>
@@ -1140,7 +1140,7 @@ function AgentForgeForm({ initial, disabled }: { initial?: any; disabled: boolea
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Brief  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ────────────────────  Brief  ───────────────────────────────────── */
 
 function BriefForm({
   agents,
@@ -1199,8 +1199,8 @@ function BriefForm({
           value={agentId}
           onChange={setAgentId}
           options={[
-            { value: "", label: "(no agent â€” generic brief)" },
-            ...agents.map((a) => ({ value: a.id, label: `${a.name} Â· ${a.archetype}` })),
+            { value: "", label: "(no agent — generic brief)" },
+            ...agents.map((a) => ({ value: a.id, label: `${a.name} · ${a.archetype}` })),
           ]}
         />
       </Field>
@@ -1220,7 +1220,7 @@ function BriefForm({
           rows={3}
         />
       </Field>
-      <Field label="Past Interaction" hint="Optional â€” paste the last interaction or notes.">
+      <Field label="Past Interaction" hint="Optional — paste the last interaction or notes.">
         <TextArea
           value={past}
           onChange={setPast}
@@ -1258,7 +1258,7 @@ function BriefForm({
                   <div className="text-rose-500 text-[11px] uppercase tracking-[0.25em]">
                     "{o.objection}"
                   </div>
-                  <div className="text-ink/85">â†’ {o.response}</div>
+                  <div className="text-ink/85">→ {o.response}</div>
                 </li>
               ))}
             </ul>
@@ -1288,7 +1288,7 @@ function BriefForm({
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Enrich Lead (web search)  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ────────────────────  Enrich Lead (web search)  ────────────────── */
 
 function EnrichLeadForm({ initial, disabled }: { initial?: any; disabled: boolean }) {
   const [name, setName] = useState(initial?.customerName ?? "");
@@ -1335,7 +1335,7 @@ function EnrichLeadForm({ initial, disabled }: { initial?: any; disabled: boolea
     <FormShell>
       <p className="text-[11px] text-ink/55 leading-relaxed">
         Wireline AI runs up to 5 web searches to identify who's calling and where they work. Use the
-        operator context to narrow the search â€” names + companies on a phone are usually too generic
+        operator context to narrow the search — names + companies on a phone are usually too generic
         alone.
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1361,7 +1361,7 @@ function EnrichLeadForm({ initial, disabled }: { initial?: any; disabled: boolea
         <TextInput
           value={industryHint}
           onChange={setIndustryHint}
-          placeholder="B2B SaaS Â· Healthcare Â· Real estate"
+          placeholder="B2B SaaS · Healthcare · Real estate"
         />
       </Field>
       <RunButton
@@ -1477,7 +1477,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Qualify  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ────────────────────  Qualify  ─────────────────────────────────── */
 
 function QualifyForm({
   callId,
@@ -1535,7 +1535,7 @@ function QualifyForm({
       {callId && (
         <p className="text-[11px] uppercase tracking-[0.3em] text-muted">
           Qualifying call{" "}
-          <span className="text-brand font-mono">{callId.toString().slice(0, 8)}â€¦</span> from log
+          <span className="text-brand font-mono">{callId.toString().slice(0, 8)}…</span> from log
         </p>
       )}
       <RunButton
@@ -1602,7 +1602,7 @@ function QualifyForm({
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Objection drill  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ────────────────────  Objection drill  ─────────────────────────── */
 
 function ObjectionDrillForm({
   agents,
@@ -1725,7 +1725,7 @@ function ObjectionDrillForm({
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Cold email  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ────────────────────  Cold email  ──────────────────────────────── */
 
 function ColdEmailForm({
   agents,
@@ -1776,13 +1776,13 @@ function ColdEmailForm({
 
   return (
     <FormShell>
-      <Field label="Sending Agent" hint="Optional â€” applies the agent's role lens to the email.">
+      <Field label="Sending Agent" hint="Optional — applies the agent's role lens to the email.">
         <Select
           value={agentId}
           onChange={setAgentId}
           options={[
-            { value: "", label: "(no agent â€” generic copy)" },
-            ...agents.map((a) => ({ value: a.id, label: `${a.name} Â· ${a.archetype}` })),
+            { value: "", label: "(no agent — generic copy)" },
+            ...agents.map((a) => ({ value: a.id, label: `${a.name} · ${a.archetype}` })),
           ]}
         />
       </Field>
@@ -1823,7 +1823,7 @@ function ColdEmailForm({
       </div>
       <Field
         label="Lead Hook"
-        hint="Specific reason to reach out â€” recent news, mutual contact, etc."
+        hint="Specific reason to reach out — recent news, mutual contact, etc."
       >
         <TextArea
           value={form.leadHook}
@@ -1890,7 +1890,7 @@ function ColdEmailForm({
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Persona clone  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ────────────────────  Persona clone  ───────────────────────────── */
 
 function PersonaCloneForm({
   agents,
@@ -1937,12 +1937,12 @@ function PersonaCloneForm({
           value={description}
           onChange={setDescription}
           rows={2}
-          placeholder="Senior account exec â€” direct, witty, secretly very kind."
+          placeholder="Senior account exec — direct, witty, secretly very kind."
         />
       </Field>
       <Field
         label="Sample Messages"
-        hint="Paste 2â€“5 actual messages, calls, or emails from this person."
+        hint="Paste 2–5 actual messages, calls, or emails from this person."
       >
         <div className="space-y-2">
           {samples.map((s, i) => (
@@ -1979,7 +1979,7 @@ function PersonaCloneForm({
           value={agentId}
           onChange={setAgentId}
           options={[
-            { value: "", label: "(don't apply â€” preview only)" },
+            { value: "", label: "(don't apply — preview only)" },
             ...agents.map((a) => ({ value: a.id, label: a.name })),
           ]}
         />
@@ -2008,7 +2008,7 @@ function PersonaCloneForm({
         <div className="space-y-3 pt-3">
           {result.applied && (
             <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/30 p-3 text-emerald-500 text-xs flex items-center gap-2">
-              <Check className="w-3.5 h-3.5" /> Persona saved to agent â€” voice + email replies will
+              <Check className="w-3.5 h-3.5" /> Persona saved to agent — voice + email replies will
               use it on next call.
             </div>
           )}
@@ -2053,7 +2053,7 @@ function PersonaCloneForm({
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Thread summary  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ────────────────────  Thread summary  ──────────────────────────── */
 
 function ThreadSummaryForm({ threadId, disabled }: { threadId?: string; disabled: boolean }) {
   const [loading, setLoading] = useState(false);
@@ -2089,7 +2089,7 @@ function ThreadSummaryForm({ threadId, disabled }: { threadId?: string; disabled
       {!threadId && <ErrCard error="Open a thread to summarize it." />}
       {threadId && (
         <p className="text-[11px] uppercase tracking-[0.3em] text-muted">
-          Summarizing thread <span className="text-brand font-mono">{threadId.slice(0, 8)}â€¦</span>
+          Summarizing thread <span className="text-brand font-mono">{threadId.slice(0, 8)}…</span>
         </p>
       )}
       <RunButton
@@ -2165,7 +2165,7 @@ function ThreadSummaryForm({ threadId, disabled }: { threadId?: string; disabled
                   <span>
                     {a.description}
                     {a.due_hint ? (
-                      <span className="text-muted ml-2 italic text-xs">â€” {a.due_hint}</span>
+                      <span className="text-muted ml-2 italic text-xs">— {a.due_hint}</span>
                     ) : null}
                   </span>
                 </li>
@@ -2181,7 +2181,7 @@ function ThreadSummaryForm({ threadId, disabled }: { threadId?: string; disabled
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Agent review  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ────────────────────  Agent review  ────────────────────────────── */
 
 function AgentReviewForm({
   agents,
@@ -2246,7 +2246,7 @@ function AgentReviewForm({
           <Select
             value={agentId}
             onChange={setAgentId}
-            options={agents.map((a) => ({ value: a.id, label: `${a.name} Â· ${a.archetype}` }))}
+            options={agents.map((a) => ({ value: a.id, label: `${a.name} · ${a.archetype}` }))}
           />
         </Field>
         <Field label="Lookback (calls)">
@@ -2299,7 +2299,7 @@ function AgentReviewForm({
           </div>
           <div className="space-y-2.5">
             <h4 className="text-[10px] uppercase tracking-[0.4em] text-brand">
-              Suggested Directives â€” One-Click Apply
+              Suggested Directives — One-Click Apply
             </h4>
             {review.suggested_directives.map((d: any, i: number) => (
               <div
@@ -2374,7 +2374,7 @@ function AgentReviewForm({
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Knowledge from Document (PDF)  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ────────────────────  Knowledge from Document (PDF)  ───────────── */
 
 function KnowledgeFromDocumentForm({
   agents,
@@ -2407,7 +2407,7 @@ function KnowledgeFromDocumentForm({
       return;
     }
     if (f.size > 32 * 1024 * 1024) {
-      setErr(`PDF is ${(f.size / 1024 / 1024).toFixed(1)} MB â€” the per-file limit is 32 MB.`);
+      setErr(`PDF is ${(f.size / 1024 / 1024).toFixed(1)} MB — the per-file limit is 32 MB.`);
       return;
     }
     setErr(null);
@@ -2493,7 +2493,7 @@ function KnowledgeFromDocumentForm({
         <>
           <Field
             label="Document"
-            hint="PDF up to 32 MB. Brochures, menus, FAQ docs, policies, price sheets â€” anything customer-facing."
+            hint="PDF up to 32 MB. Brochures, menus, FAQ docs, policies, price sheets — anything customer-facing."
           >
             <label
               onDragOver={(e) => e.preventDefault()}
@@ -2514,7 +2514,7 @@ function KnowledgeFromDocumentForm({
                   <div className="space-y-1">
                     <p className="text-sm text-ink leading-tight">{file.name}</p>
                     <p className="text-[10px] uppercase tracking-[0.3em] text-muted">
-                      {(file.size / 1024 / 1024).toFixed(2)} MB Â· ready
+                      {(file.size / 1024 / 1024).toFixed(2)} MB · ready
                     </p>
                   </div>
                   <button
@@ -2538,7 +2538,7 @@ function KnowledgeFromDocumentForm({
                   <div className="space-y-1">
                     <p className="text-sm text-ink/85">Drop a PDF here, or click to choose</p>
                     <p className="text-[10px] uppercase tracking-[0.3em] text-muted">
-                      Up to 32 MB Â· Wireline AI reads it natively
+                      Up to 32 MB · Wireline AI reads it natively
                     </p>
                   </div>
                 </>
@@ -2571,7 +2571,7 @@ function KnowledgeFromDocumentForm({
             }}
             className="text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand transition-colors flex items-center gap-1.5"
           >
-            â† Back to Upload
+            ← Back to Upload
           </button>
         </div>
       )}
@@ -2585,7 +2585,7 @@ function KnowledgeFromDocumentForm({
           <div className="rounded-2xl glass border border-white/10 p-5 space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="text-[10px] uppercase tracking-[0.4em] text-brand">
-                Extracted Â· {selected.size}/{result.entries.length} selected
+                Extracted · {selected.size}/{result.entries.length} selected
               </h4>
               <button
                 onClick={toggleAll}
@@ -2648,7 +2648,7 @@ function KnowledgeFromDocumentForm({
           >
             {applying ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" /> Applyingâ€¦
+                <Loader2 className="w-4 h-4 animate-spin" /> Applying…
               </>
             ) : applied ? (
               <>
@@ -2667,7 +2667,7 @@ function KnowledgeFromDocumentForm({
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Call Playbook  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ────────────────────  Call Playbook  ──────────────────────────── */
 
 const TECHNIQUE_LABEL: Record<string, string> = {
   acknowledge_redirect: "Acknowledge & Redirect",

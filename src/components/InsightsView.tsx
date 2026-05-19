@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
 import {
   BarChart3,
@@ -59,12 +59,12 @@ export default function InsightsView() {
 
   return (
     <PageShell
-      eyebrow="Analytics Â· Business Intelligence"
+      eyebrow="Analytics · Business Intelligence"
       title="Insights"
       subtitle="Funnel analysis, topic clusters, heatmaps, leaderboards, and failure modes."
       actions={
         <>
-          {/* Styled segmented control â€” matches the Aurora Cream design system */}
+          {/* Styled segmented control — matches the Aurora Cream design system */}
           <div className="flex items-center gap-px p-1 rounded-full glass border border-black/8">
             {DAY_OPTIONS.map((d) => (
               <button
@@ -139,7 +139,7 @@ export default function InsightsView() {
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Funnel  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─────────────────────────  Funnel  ─────────────────────────── */
 
 function FunnelView({ days }: { days: number }) {
   const [data, setData] = useState<any>(null);
@@ -177,7 +177,7 @@ function FunnelView({ days }: { days: number }) {
   const stages = data.stages || [];
   const max = Math.max(1, ...stages.map((s: any) => s.count));
 
-  // No calls yet â€” give operators a clear nudge rather than a blank panel.
+  // No calls yet — give operators a clear nudge rather than a blank panel.
   if (stages.length === 0 || stages.every((s: any) => s.count === 0)) {
     return (
       <div className="relative aurora-ring rounded-3xl">
@@ -204,7 +204,7 @@ function FunnelView({ days }: { days: number }) {
     <div className="relative aurora-ring rounded-3xl">
       <div className="relative rounded-3xl glass-strong overflow-hidden p-8 md:p-10 space-y-4">
         <div className="text-[10px] uppercase tracking-[0.4em] text-brand mb-2">
-          Conversion Funnel Â· {data.window_days}d
+          Conversion Funnel · {data.window_days}d
         </div>
         {stages.map((s: any, i: number) => {
           const pct = (s.count / max) * 100;
@@ -239,7 +239,7 @@ function FunnelView({ days }: { days: number }) {
               </div>
               {drop !== null && drop > 0 && (
                 <div className="text-[10px] uppercase tracking-[0.3em] text-muted text-right">
-                  â†“ {drop}% from previous stage
+                  ↓ {drop}% from previous stage
                 </div>
               )}
             </motion.div>
@@ -250,7 +250,7 @@ function FunnelView({ days }: { days: number }) {
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Attribution  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─────────────────────────  Attribution  ─────────────────────────── */
 
 function AttributionView({ days }: { days: number }) {
   const [rows, setRows] = useState<any[]>([]);
@@ -295,9 +295,9 @@ function AttributionView({ days }: { days: number }) {
         <p className="text-[11px] text-muted/70 max-w-md mx-auto leading-relaxed">
           Tag your phone numbers with a campaign label in{" "}
           <a href="/admin" className="text-brand hover:underline">
-            Admin â†’ Carrier
+            Admin → Carrier
           </a>{" "}
-          (e.g. "Google Ads Â· Spring '26"). Every call to that number gets the tag and shows up
+          (e.g. "Google Ads · Spring '26"). Every call to that number gets the tag and shows up
           here.
         </p>
       </div>
@@ -366,7 +366,7 @@ function AttributionView({ days }: { days: number }) {
       <p className="text-[10px] text-muted/60 leading-relaxed px-1">
         Set the campaign label per phone number under{" "}
         <a href="/admin" className="text-brand hover:underline">
-          Admin â†’ Carrier
+          Admin → Carrier
         </a>
         . Calls inherit the label automatically.
       </p>
@@ -374,7 +374,7 @@ function AttributionView({ days }: { days: number }) {
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Topics  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─────────────────────────  Topics  ─────────────────────────── */
 
 function TopicsView() {
   const [data, setData] = useState<any>(null);
@@ -410,7 +410,7 @@ function TopicsView() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div className="text-[10px] uppercase tracking-[0.4em] text-muted">
-          {data.cached ? "Cached" : "Fresh"} Â· {data.total_analyzed} signals analyzed
+          {data.cached ? "Cached" : "Fresh"} · {data.total_analyzed} signals analyzed
         </div>
         <button
           onClick={() => load(true)}
@@ -485,7 +485,7 @@ function TopicsView() {
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Heatmap  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─────────────────────────  Heatmap  ─────────────────────────── */
 
 function HeatmapView({ days }: { days: number }) {
   const [data, setData] = useState<any>(null);
@@ -528,7 +528,7 @@ function HeatmapView({ days }: { days: number }) {
     <div className="relative aurora-ring rounded-3xl">
       <div className="relative rounded-3xl glass-strong overflow-hidden p-7 md:p-10">
         <div className="text-[10px] uppercase tracking-[0.4em] text-brand mb-6">
-          Calls by Hour Ã— Weekday Â· {data.window_days}d
+          Calls by Hour × Weekday · {data.window_days}d
         </div>
         <div className="overflow-x-auto scrollbar-hide">
           <table className="w-full min-w-[700px]">
@@ -569,7 +569,7 @@ function HeatmapView({ days }: { days: number }) {
                                 ? `1px solid rgba(79, 30, 123 ,${0.2 + intensity * 0.4})`
                                 : "1px solid rgba(0,0,0,0.04)",
                           }}
-                          title={`${wd} ${h}:00 â€” ${cell?.count || 0} calls${cell?.avg_score ? `, avg score ${cell.avg_score}` : ""}`}
+                          title={`${wd} ${h}:00 — ${cell?.count || 0} calls${cell?.avg_score ? `, avg score ${cell.avg_score}` : ""}`}
                         />
                       </td>
                     );
@@ -599,7 +599,7 @@ function HeatmapView({ days }: { days: number }) {
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Leaderboard  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─────────────────────────  Leaderboard  ─────────────────────────── */
 
 function RolePill({ role }: { role?: string }) {
   const meta =
@@ -739,15 +739,15 @@ function LeaderboardView({ days }: { days: number }) {
                 <Stat label="Minutes" value={a.minutes} />
                 <Stat
                   label="$/Qual"
-                  value={a.cost_per_qualified ? `$${a.cost_per_qualified}` : "â€”"}
+                  value={a.cost_per_qualified ? `$${a.cost_per_qualified}` : "—"}
                   accent="#4F1E7B"
                 />
                 <Stat
                   label="$/Outcome"
-                  value={a.cost_per_outcome ? `$${a.cost_per_outcome}` : "â€”"}
+                  value={a.cost_per_outcome ? `$${a.cost_per_outcome}` : "—"}
                   accent="#4F1E7B"
                 />
-                <Stat label="Total $" value={a.total_cost ? `$${a.total_cost}` : "â€”"} />
+                <Stat label="Total $" value={a.total_cost ? `$${a.total_cost}` : "—"} />
               </div>
             </div>
           </motion.div>
@@ -771,7 +771,7 @@ function Stat({ label, value, accent }: { label: string; value: any; accent?: st
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Failure modes  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─────────────────────────  Failure modes  ─────────────────────────── */
 
 function FailureModesView() {
   const [data, setData] = useState<any>(null);
@@ -805,7 +805,7 @@ function FailureModesView() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="text-[10px] uppercase tracking-[0.4em] text-muted">
-          {data.cached ? "Cached" : "Fresh"} Â· {modes.length} clusters
+          {data.cached ? "Cached" : "Fresh"} · {modes.length} clusters
         </div>
         <button
           onClick={() => load(true)}
@@ -866,7 +866,7 @@ function FailureModesView() {
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  AI Spend  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─────────────────────────  AI Spend  ─────────────────────────── */
 
 function AISpendView({ days }: { days: number }) {
   const [data, setData] = useState<any>(null);
@@ -910,12 +910,12 @@ function AISpendView({ days }: { days: number }) {
 
   return (
     <div className="space-y-5">
-      {/* Monthly budget â€” always rendered so operators can set a cap
+      {/* Monthly budget — always rendered so operators can set a cap
           before any calls happen. */}
       <SpendBudgetCard />
 
       {!callsHaveHappened && (
-        <Empty label="No AI usage in this window â€” try a longer range or run a recipe." />
+        <Empty label="No AI usage in this window — try a longer range or run a recipe." />
       )}
 
       {callsHaveHappened && (
@@ -952,7 +952,7 @@ function AISpendView({ days }: { days: number }) {
           <div className="relative aurora-ring rounded-3xl">
             <div className="relative rounded-3xl glass-strong overflow-hidden p-6 md:p-8">
               <div className="text-[10px] uppercase tracking-[0.4em] text-brand mb-5">
-                Spend per Day Â· {data.window_days}d
+                Spend per Day · {data.window_days}d
               </div>
               <div className="space-y-2">
                 {by_day.map((d: any, i: number) => {
@@ -1166,7 +1166,7 @@ function SpendBudgetCard() {
   if (loading && !status) {
     return (
       <div className="rounded-3xl glass border border-white/10 p-6 flex items-center gap-3 text-muted text-sm">
-        <Loader2 className="w-4 h-4 animate-spin" /> Loading budgetâ€¦
+        <Loader2 className="w-4 h-4 animate-spin" /> Loading budget…
       </div>
     );
   }
@@ -1178,7 +1178,7 @@ function SpendBudgetCard() {
   const isOver = limit > 0 && used >= limit;
   const isWarn = limit > 0 && pct >= warnPct && !isOver;
   const barColor = isOver ? "#FF6B6B" : isWarn ? "#FFC07D" : "#10B981";
-  const period = status?.period || "â€”";
+  const period = status?.period || "—";
 
   return (
     <div className="relative aurora-ring rounded-3xl">
@@ -1196,13 +1196,13 @@ function SpendBudgetCard() {
                 Monthly Budget
               </div>
               <div className="text-sm text-ink/70 mt-1">
-                Period <span className="font-mono">{period}</span> Â· resets on the 1st (UTC)
+                Period <span className="font-mono">{period}</span> · resets on the 1st (UTC)
               </div>
             </div>
           </div>
           {status?.hard_capped_now && (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs">
-              <Lock className="w-3.5 h-3.5" /> Hard cap active â€” AI calls are blocked
+              <Lock className="w-3.5 h-3.5" /> Hard cap active — AI calls are blocked
             </div>
           )}
           {!status?.hard_capped_now && isWarn && (
@@ -1242,7 +1242,7 @@ function SpendBudgetCard() {
             {Array.isArray(status?.alerts_fired) && status.alerts_fired.length > 0 && (
               <div className="text-[10px] uppercase tracking-[0.25em] text-muted pt-1">
                 Alerts fired this period:{" "}
-                {status.alerts_fired.map((a: any) => `${a.threshold_pct}%`).join(" Â· ")}
+                {status.alerts_fired.map((a: any) => `${a.threshold_pct}%`).join(" · ")}
               </div>
             )}
           </div>
@@ -1305,7 +1305,7 @@ function SpendBudgetCard() {
         <div className="flex items-center justify-between gap-4 pt-1">
           <div className="text-[11px] text-ink/50">
             Threshold crossings fire <span className="font-mono text-ink/75">spend.warning</span>{" "}
-            and <span className="font-mono text-ink/75">spend.exceeded</span> webhook events â€” wire
+            and <span className="font-mono text-ink/75">spend.exceeded</span> webhook events — wire
             them to Slack/CRM in Admin.
           </div>
           <button
@@ -1360,7 +1360,7 @@ function SpendStat({
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Helpers  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─────────────────────────  Helpers  ─────────────────────────── */
 
 function Spinner() {
   return (
@@ -1386,7 +1386,7 @@ function Spinner() {
         </div>
       </div>
       <p className="text-[9px] uppercase tracking-[0.5em] text-muted/60 animate-pulse">
-        Computingâ€¦
+        Computing…
       </p>
     </div>
   );
@@ -1438,7 +1438,7 @@ function ErrCard({ error }: { error: string }) {
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Quality (QA Scorecard)  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─────────────────────────  Quality (QA Scorecard)  ─────────────────── */
 
 function qaColor(score: number) {
   if (score >= 90) return "#4F1E7B";
@@ -1525,7 +1525,7 @@ function QualityView({ days }: { days: number }) {
               ) : (
                 <Play className="w-3.5 h-3.5" />
               )}
-              {scoring ? "Scoringâ€¦" : "Score All Unscored"}
+              {scoring ? "Scoring…" : "Score All Unscored"}
             </button>
           </div>
         </div>
@@ -1555,7 +1555,7 @@ function QualityView({ days }: { days: number }) {
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-colors disabled:opacity-50"
         >
           {scoring ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
-          {scoring ? "Scoringâ€¦" : "Score All Unscored"}
+          {scoring ? "Scoring…" : "Score All Unscored"}
         </button>
       </div>
 

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   LayoutGrid,
   Activity,
@@ -34,7 +34,7 @@ import PageTransition from "../components/layout/PageTransition";
 import { clsx } from "clsx";
 import { motion } from "motion/react";
 
-// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Types ───────────────────────────────────────────────────────────────────
 
 type SignalPresence = {
   id: string;
@@ -74,7 +74,7 @@ type LeadDossier = {
   linked_in_url?: string;
 };
 
-// â”€â”€â”€ Data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Data ─────────────────────────────────────────────────────────────────────
 
 const SENTIMENT_COLORS = {
   positive: "#10b981", // emerald-500
@@ -82,7 +82,7 @@ const SENTIMENT_COLORS = {
   negative: "#f43f5e", // rose-500
 };
 
-// â”€â”€â”€ Main Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Main Component ────────────────────────────────────────────────────────────
 
 export default function CommandCenter() {
   const { user } = useAuth();
@@ -130,7 +130,7 @@ export default function CommandCenter() {
       }
     } catch (err: any) {
       // Aborted / transient fetches are expected (navigation, intervals
-      // racing component unmount) â€” only log unexpected failures.
+      // racing component unmount) — only log unexpected failures.
       const msg = String(err?.message || "");
       if (err?.name === "AbortError" || msg.includes("Failed to fetch")) return;
       log.error("Failed to fetch live presence", { err });
@@ -140,10 +140,10 @@ export default function CommandCenter() {
   const fetchAll = useCallback(async () => {
     if (!user) return;
     try {
-      // `/api/fleet/stats` was a phantom endpoint â€” it was never declared
+      // `/api/fleet/stats` was a phantom endpoint — it was never declared
       // on the server, so the Command Center showed perpetual "Awaiting
       // data" with 404s in the Network tab. `/api/dashboard/stats` returns
-      // the same shape (sentimentBreakdown / unitEconomics / agents â€¦).
+      // the same shape (sentimentBreakdown / unitEconomics / agents …).
       const [actionsRes, statsRes] = await Promise.all([
         authFetch("/api/fleet/tasks"),
         authFetch("/api/dashboard/stats"),
@@ -173,7 +173,7 @@ export default function CommandCenter() {
         setStats(statsData);
       }
     } catch (err: any) {
-      // Suppress aborted-fetch noise â€” they fire on every page navigation.
+      // Suppress aborted-fetch noise — they fire on every page navigation.
       const msg = String(err?.message || "");
       if (err?.name === "AbortError" || msg.includes("Failed to fetch")) {
         // expected when user navigates mid-request
@@ -234,7 +234,7 @@ export default function CommandCenter() {
   return (
     <PageTransition>
       <div className="max-w-[1600px] mx-auto space-y-2 pb-2">
-        {/* Elite Command Header â€” tightened so the onboarding card fits
+        {/* Elite Command Header — tightened so the onboarding card fits
             above the fold on a 900px viewport. Title/subtitle/stats kept
             but vertical density compressed ~40px without losing brand. */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 pb-3 border-b border-black/5">
@@ -243,13 +243,13 @@ export default function CommandCenter() {
               Wireline OS
             </h1>
             <p className="text-[12px] text-muted/80 max-w-lg leading-snug">
-              Live calls, fleet status, and unit economics for your entire agent operation â€” one
+              Live calls, fleet status, and unit economics for your entire agent operation — one
               screen, real time.
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Activate Growth â€” full button when the user has at least one
+            {/* Activate Growth — full button when the user has at least one
                 agent, disabled-stub when they don't. Stub still occupies the
                 slot so fresh accounts don't see a blank gap that reads as
                 broken UI. Hover-tooltip routes them to /agents to set up. */}
@@ -270,7 +270,7 @@ export default function CommandCenter() {
                     if (body.prospectingEnabled === false) {
                       toastInfo(
                         "Prospecting is disabled",
-                        "Open Settings â†’ Growth to enable autonomous prospecting and configure targeting.",
+                        "Open Settings → Growth to enable autonomous prospecting and configure targeting.",
                       );
                     } else {
                       toastSuccess(
@@ -294,23 +294,23 @@ export default function CommandCenter() {
                   className={clsx("w-4 h-4 fill-current", activatingGrowth && "animate-pulse")}
                 />
                 <span className="text-xs font-black uppercase tracking-widest">
-                  {activatingGrowth ? "Activatingâ€¦" : "Activate Growth"}
+                  {activatingGrowth ? "Activating…" : "Activate Growth"}
                 </span>
               </button>
             ) : (
               <button
                 onClick={() => navigate("/agents")}
-                title="Create an agent first â†’ /agents"
+                title="Create an agent first → /agents"
                 className="flex items-center gap-2 px-6 py-3 rounded-2xl border border-white/10 bg-white/5 text-muted/70 hover:text-ink hover:border-white/25 transition-colors"
               >
                 <Zap className="w-4 h-4" />
                 <span className="text-xs font-black uppercase tracking-widest">
-                  Create an agent â†’
+                  Create an agent →
                 </span>
               </button>
             )}
 
-            {/* Live telemetry strip â€” bound to real fleet/presence state.
+            {/* Live telemetry strip — bound to real fleet/presence state.
                 Previously this rendered hardcoded "0.02ms Latency" / "12 Online"
                 placeholders that violated the no-mocks rule and confused
                 operators who couldn't reconcile the numbers with their
@@ -351,7 +351,7 @@ export default function CommandCenter() {
           </div>
         </div>
 
-        {/* Onboarding quickstart â€” self-hides once all 4 steps complete */}
+        {/* Onboarding quickstart — self-hides once all 4 steps complete */}
         <section className="space-y-3">
           <span className="text-[10px] uppercase tracking-[0.35em] text-muted font-medium">
             Get started
@@ -359,10 +359,10 @@ export default function CommandCenter() {
           <OnboardingQuickstart />
         </section>
 
-        {/* Dashboard Grid â€” compressed for 1366Ã—768 laptop viewports.
+        {/* Dashboard Grid — compressed for 1366×768 laptop viewports.
             Previously every card was p-8 (32px) min-h-[400px]+, gap-8
             between, with a right rail at min-h-[600px]. That stacked
-            into ~1200px of dashboard content alone â€” half a viewport
+            into ~1200px of dashboard content alone — half a viewport
             below the fold on a typical demo laptop. Tightened to p-5,
             min-h-[280px], gap-4. Internal Live Monitor still uses its
             own card. */}
@@ -446,7 +446,7 @@ export default function CommandCenter() {
                             <span className="text-[11px] font-mono font-bold text-ink">
                               {totalSentiment > 0
                                 ? `${Math.round((d.value / totalSentiment) * 100)}%`
-                                : "â€”"}
+                                : "—"}
                             </span>
                           </div>
                         ))}

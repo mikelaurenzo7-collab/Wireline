@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
@@ -45,7 +45,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     id: "insights",
     title: "AI-Powered Insights",
-    body: "After calls, Wireline AI scores leads, clusters topics, and identifies what's working vs. what to fix â€” automatically.",
+    body: "After calls, Wireline AI scores leads, clusters topics, and identifies what's working vs. what to fix — automatically.",
     anchor: '[data-tour="insights"]',
     cta: "Next",
   },
@@ -54,7 +54,7 @@ const TOUR_STEPS: TourStep[] = [
     title: "You're ready!",
     body: "Start by creating your first agent and giving it a 30-second test call. We'll walk you through it step by step.",
     anchor: null,
-    cta: "Build my first agent â†’",
+    cta: "Build my first agent →",
   },
 ];
 

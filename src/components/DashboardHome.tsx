@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   Activity,
@@ -103,7 +103,7 @@ export default function DashboardHome() {
     return () => {
       mountedRef.current = false;
       clearInterval(signalPulse);
-      // If the operator never started a call, vapi was never loaded â€”
+      // If the operator never started a call, vapi was never loaded —
       // nothing to detach. Otherwise remove the listeners we attached,
       // best-effort stop any in-flight call, and clear pending timers.
       if (vapiRef.current) {
@@ -206,7 +206,7 @@ export default function DashboardHome() {
     if (!import.meta.env.VITE_VAPI_PUBLIC_KEY) {
       toastError(
         "Voice not configured",
-        "The Wireline voice network key is not set â€” add the voice environment variables and redeploy.",
+        "The Wireline voice network key is not set — add the voice environment variables and redeploy.",
       );
       return;
     }
@@ -231,7 +231,7 @@ export default function DashboardHome() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: { type: "assistant-request" } }),
       });
-      // The webhook fetch can outlast the dashboard too â€” bail before
+      // The webhook fetch can outlast the dashboard too — bail before
       // committing to a real call from a dead component.
       if (!mountedRef.current) return;
       const data = await res.json();
@@ -239,7 +239,7 @@ export default function DashboardHome() {
       if (data.assistant) {
         await vapi.start(data.assistant);
         // Guard: if call-start hasn't fired within 20 s, clear the spinner
-        // so the button doesn't stay locked in "Connectingâ€¦" indefinitely.
+        // so the button doesn't stay locked in "Connecting…" indefinitely.
         const t = setTimeout(() => {
           if (mountedRef.current && !vapiRef.current) return;
           setIsConnecting((prev) => {
@@ -335,19 +335,19 @@ export default function DashboardHome() {
               <Target className="w-7 h-7 text-aurora" strokeWidth={1.5} />
             </div>
           </div>
-          <p className="text-aurora text-[10px] uppercase tracking-[0.5em]">Loadingâ€¦</p>
+          <p className="text-aurora text-[10px] uppercase tracking-[0.5em]">Loading…</p>
         </div>
       </PageShell>
     );
   }
 
-  /* â”€â”€â”€ Tab content builders â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ─── Tab content builders ──────────────────────────────────────────── */
 
   const delta = stats?.week_delta ?? {};
 
   const Pulse = (
     <div className="h-full flex flex-col gap-3 overflow-hidden">
-      {/* â”€â”€ First-run hero: shown when the owner has no agents yet â”€â”€ */}
+      {/* ── First-run hero: shown when the owner has no agents yet ── */}
       {!stats?.agents?.length && !isLoading && (
         <div className="shrink-0 relative aurora-ring rounded-2xl">
           <div className="relative rounded-2xl glass-strong overflow-hidden px-6 py-5 flex flex-col md:flex-row md:items-center gap-4">
@@ -374,7 +374,7 @@ export default function DashboardHome() {
                   Let&rsquo;s create your first agent
                 </h2>
                 <p className="text-[12px] text-muted/90 mt-1.5 leading-relaxed">
-                  An AI agent will answer your phone, book appointments, and follow up by email â€”
+                  An AI agent will answer your phone, book appointments, and follow up by email —
                   all on autopilot.
                 </p>
               </div>
@@ -389,7 +389,7 @@ export default function DashboardHome() {
           </div>
         </div>
       )}
-      {/* â”€â”€ SLO health banner (only when degraded/critical) â”€â”€â”€â”€ */}
+      {/* ── SLO health banner (only when degraded/critical) ──── */}
       {sloBanner && (
         <div
           className={cn(
@@ -435,11 +435,11 @@ export default function DashboardHome() {
             to="/admin"
             className="shrink-0 text-[9px] uppercase tracking-[0.3em] text-muted hover:text-brand transition-colors mt-1"
           >
-            Details â†’
+            Details →
           </Link>
         </div>
       )}
-      {/* â”€â”€ Hero stat row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Hero stat row ─────────────────────────────────────── */}
       <div className="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatTile
           label="Total Calls"
@@ -453,7 +453,7 @@ export default function DashboardHome() {
         />
         <StatTile
           label="Avg Lead Score"
-          value={stats?.avgLeadScore ? `${stats.avgLeadScore}/100` : "â€”"}
+          value={stats?.avgLeadScore ? `${stats.avgLeadScore}/100` : "—"}
           sub="BANT quality"
           icon={TrendingUp}
           accent="#4F1E7B"
@@ -480,7 +480,7 @@ export default function DashboardHome() {
         />
       </div>
 
-      {/* â”€â”€ Main grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Main grid ────────────────────────────────────────── */}
       <div className="flex-1 min-h-0 grid grid-cols-12 gap-3">
         {/* Recent calls */}
         <div className="col-span-12 lg:col-span-4 h-full">
@@ -556,7 +556,7 @@ export default function DashboardHome() {
 
         {/* Agent status */}
         <div className="col-span-12 lg:col-span-4 h-full">
-          <Panel title="Agent Status" hint="fleet Â· live" icon={Signal} accent="#4F1E7B">
+          <Panel title="Agent Status" hint="fleet · live" icon={Signal} accent="#4F1E7B">
             <div className="space-y-3 h-full">
               {/* Live call indicator */}
               <div
@@ -587,7 +587,7 @@ export default function DashboardHome() {
                       : "Your agents are ready"}
                   </div>
                   <div className="text-[9px] uppercase tracking-[0.24em] text-muted mt-0.5">
-                    {stats?.inboundCount ?? 0} in Â· {stats?.outboundCount ?? 0} out total
+                    {stats?.inboundCount ?? 0} in · {stats?.outboundCount ?? 0} out total
                   </div>
                 </div>
                 <Link
@@ -630,11 +630,11 @@ export default function DashboardHome() {
                     {isConnected
                       ? "Browser call active"
                       : isConnecting
-                        ? "Connectingâ€¦"
+                        ? "Connecting…"
                         : "Test call idle"}
                   </div>
                   <div className="text-[9px] uppercase tracking-[0.24em] text-muted mt-0.5">
-                    Browser â†’ Agent
+                    Browser → Agent
                   </div>
                 </div>
               </div>
@@ -736,7 +736,7 @@ export default function DashboardHome() {
                 </p>
                 {voiceAgents.length > 0 ? (
                   <div className="space-y-2">
-                    {/* Styled agent selector â€” pill buttons instead of a native <select> */}
+                    {/* Styled agent selector — pill buttons instead of a native <select> */}
                     {voiceAgents.length <= 4 ? (
                       <div className="flex flex-wrap gap-1.5">
                         {voiceAgents.map((a) => (
@@ -789,7 +789,7 @@ export default function DashboardHome() {
                     >
                       {isConnecting ? (
                         <>
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Connectingâ€¦
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Connecting…
                         </>
                       ) : isConnected ? (
                         <>
@@ -928,7 +928,12 @@ export default function DashboardHome() {
   );
   const Brief = (
     <div className="h-full grid grid-cols-12 gap-3">
-      <div className={cn("col-span-12 h-full overflow-hidden", onboardingComplete ? "" : "lg:col-span-7")}>
+      <div
+        className={cn(
+          "col-span-12 h-full overflow-hidden",
+          onboardingComplete ? "" : "lg:col-span-7",
+        )}
+      >
         <Panel title="Daily Brief" hint="AI Summary" icon={Sparkles} scroll>
           <WidgetBoundary label="Daily Brief">
             <DailyBrief />
@@ -945,7 +950,7 @@ export default function DashboardHome() {
         </div>
       )}
       <div className="col-span-12 h-full overflow-hidden">
-        <Panel title="How am I doing?" hint="Performance Â· 30-day window" icon={TrendingUp} scroll>
+        <Panel title="How am I doing?" hint="Performance · 30-day window" icon={TrendingUp} scroll>
           <WidgetBoundary label="Performance Benchmarks">
             <PerformanceBenchmarks />
           </WidgetBoundary>
@@ -1182,7 +1187,7 @@ export default function DashboardHome() {
 
   return (
     <PageShell
-      eyebrow={`Today Â· ${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}`}
+      eyebrow={`Today · ${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}`}
       title="Dashboard"
       subtitle="Live overview of your agents and activity"
       actions={

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import {
@@ -41,7 +41,7 @@ const STEPS = [
   {
     id: "knowledge",
     title: "Teach it about your business",
-    body: "Paste your website URL and we'll pull in your services, pricing, hours, and policies automatically â€” ready in one click.",
+    body: "Paste your website URL and we'll pull in your services, pricing, hours, and policies automatically — ready in one click.",
     icon: Globe,
     accent: "#4F1E7B",
     badge: "Instant",
@@ -57,20 +57,24 @@ const STEPS = [
   {
     id: "call",
     title: "Run a live test call",
-    body: "Talk to your agent live from your browser â€” no phone needed. Make sure it sounds the way you want.",
+    body: "Talk to your agent live from your browser — no phone needed. Make sure it sounds the way you want.",
     icon: Mic,
     accent: "#10B981",
     badge: "Try it now",
   },
 ] as const;
 
-export default function OnboardingQuickstart({ onComplete }: { onComplete?: (completed: boolean) => void }) {
+export default function OnboardingQuickstart({
+  onComplete,
+}: {
+  onComplete?: (completed: boolean) => void;
+}) {
   const [progress, setProgress] = useState<ProgressData | null>(null);
   const [loading, setLoading] = useState(true);
   // Tier drives whether we show the 4-step self-serve flow or a
   // white-glove onboarding card (Business / Enterprise tier). Without
   // this gate, a 500-seat call center buyer lands on the same setup
-  // screen as a $29 solo operator â€” sets the wrong expectations.
+  // screen as a $29 solo operator — sets the wrong expectations.
   const [planId, setPlanId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -111,7 +115,7 @@ export default function OnboardingQuickstart({ onComplete }: { onComplete?: (com
    * Business / Enterprise customers don't onboard themselves. Show a
    * white-glove card pointing them at human-led onboarding instead of
    * the 4-step self-serve flow. The CTAs route to Maya (our scheduling
-   * agent) and Mike's email â€” both already live on (630) 642-5927 and
+   * agent) and Mike's email — both already live on (630) 642-5927 and
    * mikelaurenzo7@gmail.com.
    */
   if (planId === "business" || planId === "enterprise") {
@@ -140,13 +144,13 @@ export default function OnboardingQuickstart({ onComplete }: { onComplete?: (com
               </div>
               <div className="min-w-0">
                 <div className="text-[10px] uppercase tracking-[0.4em] text-brand flex items-center gap-1.5 mb-1">
-                  White-glove onboarding Â· {planId === "enterprise" ? "Enterprise" : "Business"}
+                  White-glove onboarding · {planId === "enterprise" ? "Enterprise" : "Business"}
                 </div>
                 <h2 className="font-display italic text-2xl md:text-3xl text-ink leading-tight">
                   Let's get your fleet live
                 </h2>
                 <p className="text-sm text-muted/80 mt-1.5 leading-relaxed max-w-xl">
-                  Your account includes a dedicated onboarding session â€” voice cloning,
+                  Your account includes a dedicated onboarding session — voice cloning,
                   integrations, team setup, and the first 100 calls reviewed together. Book a 30-min
                   kickoff with our scheduling lead and we'll have your first agent live within 48
                   hours.
@@ -159,7 +163,7 @@ export default function OnboardingQuickstart({ onComplete }: { onComplete?: (com
                 className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-brand text-paper text-[11px] uppercase tracking-[0.3em] hover:bg-brand/90 transition-colors"
               >
                 <Phone className="w-3.5 h-3.5" />
-                Call Maya â€” (630) 642-5927
+                Call Maya — (630) 642-5927
               </a>
               <a
                 href="mailto:mikelaurenzo7@gmail.com?subject=Wireline%20kickoff"
@@ -223,7 +227,7 @@ export default function OnboardingQuickstart({ onComplete }: { onComplete?: (com
           style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
         />
 
-        {/* Header â€” tightened so the 4 step cards land above the fold
+        {/* Header — tightened so the 4 step cards land above the fold
             even at 900px viewport heights. Previously px-7 + pt-8 + pb-6
             + 12x12 logo + text-4xl heading pushed the steps down ~150px;
             this trims ~60px without losing the welcome moment. */}
@@ -262,7 +266,7 @@ export default function OnboardingQuickstart({ onComplete }: { onComplete?: (com
           </div>
         </div>
 
-        {/* Steps â€” 4 columns on lg so all four 'Get Started' cards fit
+        {/* Steps — 4 columns on lg so all four 'Get Started' cards fit
             in a single row above the fold. 2 cols on tablet, 1 on mobile. */}
         <div className="relative z-10 p-3 md:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
           {STEPS.map((s, i) => (
@@ -304,7 +308,7 @@ export default function OnboardingQuickstart({ onComplete }: { onComplete?: (com
           </div>
         )}
 
-        {/* Power Up: integration connect cards â€” shown once at least 2 core steps are done */}
+        {/* Power Up: integration connect cards — shown once at least 2 core steps are done */}
         {completedCount >= 2 && (
           <div className="relative z-10 px-7 md:px-10 pb-7 pt-0">
             <div className="text-[10px] uppercase tracking-[0.4em] text-muted mb-3 flex items-center gap-2">
@@ -321,7 +325,7 @@ export default function OnboardingQuickstart({ onComplete }: { onComplete?: (com
               <PowerUpCard
                 icon={BarChart3}
                 label="Connect CRM"
-                desc="Salesforce or HubSpot â€” sync calls and deals."
+                desc="Salesforce or HubSpot — sync calls and deals."
                 to="/admin"
                 accent="#4F1E7B"
               />
@@ -479,7 +483,7 @@ function PowerUpCard({
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Completion card (shown when all 4 steps are done)  â”€â”€â”€â”€ */
+/* ──────────────  Completion card (shown when all 4 steps are done)  ──── */
 
 const POWER_LINKS = [
   { to: "/triage", icon: Zap, label: "Triage Inbox", hint: "Review hot leads" },

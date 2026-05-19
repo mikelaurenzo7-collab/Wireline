@@ -45,7 +45,7 @@ const OPT_IN_KEYWORDS = new Set(["start", "unstop", "yes", "optin", "opt-in", "o
 function twimlReply(body: string): string {
   // Minimal TwiML — escape XML special chars in the body.
   const escaped = body
-    .replace(/&/g, "&amp;")
+    .replace(/&/g, "&")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
@@ -257,7 +257,7 @@ router.post("/api/twilio-webhook/voice-fallback", async (req: Request, res: Resp
   res.setHeader("Content-Type", "text/xml");
 
   const tenantUserId = await lookupTenant(to);
-  
+
   // If we can't find the tenant or they don't have a human fallback number,
   // we just take a voicemail.
   let fallbackNumber = null;
@@ -281,7 +281,7 @@ router.post("/api/twilio-webhook/voice-fallback", async (req: Request, res: Resp
     twiml += `  <Say voice="Polly.Matthew-Neural">Please leave your name, number, and a brief message, and a human agent will return your call as soon as possible. Thank you.</Say>\n`;
     twiml += `  <Record \n    maxLength="120" \n    action="/api/twilio-webhook/voicemail-complete" \n    transcribe="true"\n  />\n`;
   }
-  
+
   twiml += `</Response>`;
 
   return res.status(200).send(twiml);
@@ -290,7 +290,9 @@ router.post("/api/twilio-webhook/voice-fallback", async (req: Request, res: Resp
 router.post("/api/twilio-webhook/voicemail-complete", (req: Request, res: Response) => {
   log.info("Voicemail recorded during Vapi failover", { url: req.body?.RecordingUrl });
   res.setHeader("Content-Type", "text/xml");
-  return res.status(200).send(`<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>`);
+  return res
+    .status(200)
+    .send(`<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>`);
 });
 
 export default router;

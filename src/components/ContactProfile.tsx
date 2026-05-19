@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "motion/react";
 import {
@@ -105,7 +105,7 @@ export default function ContactProfile() {
           {err || "Contact not found"}
         </p>
         <Link to="/" className="text-[11px] uppercase tracking-[0.3em] text-muted hover:text-brand">
-          â† Back to Atlas
+          ← Back to Atlas
         </Link>
       </div>
     );
@@ -150,7 +150,7 @@ export default function ContactProfile() {
           <h1 className="font-display italic text-6xl md:text-7xl lg:text-[6.5rem] leading-[0.9] tracking-tight text-ink">
             {displayName}
           </h1>
-          <p className="text-ink/55 text-sm">Last touch Â· {lastTouch}</p>
+          <p className="text-ink/55 text-sm">Last touch · {lastTouch}</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <ClaudeRecipeButton
@@ -164,7 +164,7 @@ export default function ContactProfile() {
                 .slice(0, 3)
                 .map((e) => e.summary)
                 .filter(Boolean)
-                .join(" Â· "),
+                .join(" · "),
             }}
             label="Pre-Call Brief"
           />
@@ -332,19 +332,19 @@ const TimelineRow: React.FC<{ event: ContactData["timeline"][number] }> = ({ eve
               )}
               {event.cost !== undefined && event.cost > 0 && (
                 <>
-                  <span>Â·</span>
+                  <span>·</span>
                   <span>${safeFixed(event.cost, 3)}</span>
                 </>
               )}
               {event.intent_label && (
                 <>
-                  <span>Â·</span>
+                  <span>·</span>
                   <span>{event.intent_label} intent</span>
                 </>
               )}
               {event.sentiment && (
                 <>
-                  <span>Â·</span>
+                  <span>·</span>
                   <span>{event.sentiment}</span>
                 </>
               )}

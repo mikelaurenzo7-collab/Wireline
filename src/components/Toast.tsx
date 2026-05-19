@@ -1,4 +1,4 @@
-﻿import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { CheckCircle2, XCircle, AlertTriangle, Info, X } from "lucide-react";
 import { useToast, type Toast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";

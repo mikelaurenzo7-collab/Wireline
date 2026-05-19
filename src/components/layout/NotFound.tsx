@@ -1,10 +1,10 @@
-﻿import React from "react";
+import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "motion/react";
 import { ChevronRight, Home, Phone, MessageSquare, Compass, Mail } from "lucide-react";
 
 /**
- * NotFound â€” context-aware 404. Detects whether the visitor is signed-in
+ * NotFound — context-aware 404. Detects whether the visitor is signed-in
  * (App.tsx renders this through AppShell with TopBar) or public (App.tsx
  * checks /not-found path explicitly so an unauth user hitting a typo URL
  * doesn't get bounced into the sign-in form).
@@ -57,7 +57,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               We couldn't find{" "}
               <code className="px-1.5 py-0.5 rounded bg-black/[0.04] text-[12px] font-mono text-ink/70">
                 {location.pathname.length > 32
-                  ? location.pathname.slice(0, 32) + "â€¦"
+                  ? location.pathname.slice(0, 32) + "…"
                   : location.pathname}
               </code>
               .{" "}
@@ -68,14 +68,14 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
           ) : (
             <>
               The page may have moved.{" "}
-              <span className="hidden sm:inline">Use âŒ˜K to jump anywhere, or pick</span>
+              <span className="hidden sm:inline">Use ⌘K to jump anywhere, or pick</span>
               <span className="sm:hidden">Pick</span> a starting point below.
             </>
           )}
         </p>
       </motion.div>
 
-      {/* Action cards â€” context-aware */}
+      {/* Action cards — context-aware */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -148,7 +148,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
         >
           Already have an account?{" "}
           <Link to="/" className="text-brand hover:opacity-80 transition-opacity">
-            Sign in â†’
+            Sign in →
           </Link>
         </motion.p>
       )}

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Loader2,
   PlayCircle,
@@ -201,7 +201,7 @@ export default function OutboundDialer() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      toastSuccess("Call dispatched", `Dialing ${customerNumber}â€¦`);
+      toastSuccess("Call dispatched", `Dialing ${customerNumber}…`);
       setCustomerName("");
       setCustomerNumber("");
       setContext("");
@@ -261,7 +261,7 @@ export default function OutboundDialer() {
       if (!res.ok) throw new Error(data.error);
       toastSuccess(
         "Leads reset",
-        `${data.reset} failed lead${data.reset === 1 ? "" : "s"} re-queued â€” launch again to retry`,
+        `${data.reset} failed lead${data.reset === 1 ? "" : "s"} re-queued — launch again to retry`,
       );
       if (selectedCampaign?.id === campaignId) {
         const leads = await authFetch(`/api/campaigns/${campaignId}/leads`).then((r) => r.json());
@@ -353,8 +353,8 @@ export default function OutboundDialer() {
 
   const runQueue = async (queued: any[]) => {
     setIsDialing(true);
-    setUploadStats(`Dispatching ${queued.length} call${queued.length === 1 ? "" : "s"}â€¦`);
-    toastInfo("Queue launched", `Dispatching ${queued.length} calls sequentiallyâ€¦`);
+    setUploadStats(`Dispatching ${queued.length} call${queued.length === 1 ? "" : "s"}…`);
+    toastInfo("Queue launched", `Dispatching ${queued.length} calls sequentially…`);
     setDialError("");
 
     for (const lead of queued) {
@@ -527,17 +527,17 @@ export default function OutboundDialer() {
                     >
                       {/* When the operator hasn't picked an agent (or the
                           tenant hasn't created one yet) the dropdown used
-                          to render empty with no prompt â€” the field looked
+                          to render empty with no prompt — the field looked
                           broken. Show explicit copy in both states. */}
                       {agents.length === 0 ? (
                         <option value="" disabled>
-                          No agents â€” create one in Fleet &gt; Agents
+                          No agents — create one in Fleet &gt; Agents
                         </option>
                       ) : (
                         <>
                           {!selectedAgentId && (
                             <option value="" disabled>
-                              Select an agentâ€¦
+                              Select an agent…
                             </option>
                           )}
                           {agents.map((a) => (
@@ -1023,7 +1023,7 @@ export default function OutboundDialer() {
                 >
                   <TrendingUp className="w-3 h-3" /> Analytics
                 </button>
-                {/* Launch button â€” dials all queued leads via server fire-and-forget */}
+                {/* Launch button — dials all queued leads via server fire-and-forget */}
                 {selectedCampaign.status !== "running" &&
                   selectedCampaign.status !== "completed" && (
                     <button
@@ -1039,7 +1039,7 @@ export default function OutboundDialer() {
                       Launch
                     </button>
                   )}
-                {/* Stop button â€” halts a running campaign after the current lead finishes */}
+                {/* Stop button — halts a running campaign after the current lead finishes */}
                 {selectedCampaign.status === "running" && (
                   <button
                     onClick={() => stopCampaign(selectedCampaign.id)}
@@ -1108,7 +1108,7 @@ export default function OutboundDialer() {
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-brand" />
                       </span>
                       <span className="text-[9px] uppercase tracking-[0.3em] text-brand">
-                        Live Â· Dialing in progress
+                        Live · Dialing in progress
                       </span>
                     </div>
                     <span className="text-[9px] font-mono text-muted tabular-nums">
@@ -1181,7 +1181,7 @@ export default function OutboundDialer() {
                               value:
                                 campaignAnalytics.call_stats?.avg_lead_score != null
                                   ? campaignAnalytics.call_stats.avg_lead_score
-                                  : "â€”",
+                                  : "—",
                               icon: Award,
                               accent: "#4F1E7B",
                             },
@@ -1261,7 +1261,7 @@ export default function OutboundDialer() {
                 { label: "Connected", value: selectedCampaign.connected_count, accent: "#10B981" },
                 {
                   label: "Window",
-                  value: `${selectedCampaign.call_window_start}â€“${selectedCampaign.call_window_end}`,
+                  value: `${selectedCampaign.call_window_start}–${selectedCampaign.call_window_end}`,
                   accent: "#4F1E7B",
                 },
               ].map((s) => (
@@ -1286,7 +1286,7 @@ export default function OutboundDialer() {
               <EmptyState
                 icon={Megaphone}
                 title="No leads in campaign"
-                description="Upload a CSV from the Bulk tab and pick this campaign in the dropdown â€” assigned leads land here."
+                description="Upload a CSV from the Bulk tab and pick this campaign in the dropdown — assigned leads land here."
                 accent="#4F1E7B"
                 actions={[
                   {
@@ -1375,7 +1375,7 @@ export default function OutboundDialer() {
 
   return (
     <>
-      {/* Always-mounted file input â€” both EmptyState CTAs (single-mode queue
+      {/* Always-mounted file input — both EmptyState CTAs (single-mode queue
           and campaign view) trigger it via fileInputRef, so it must live
           outside the Bulk-mode subtree. Hidden visually; click is fully
           synthetic. */}
@@ -1391,7 +1391,7 @@ export default function OutboundDialer() {
         <div className="flex-1 min-h-0">
           <PageShell
             title="Outbound"
-            eyebrow="Communications Â· Outbound"
+            eyebrow="Communications · Outbound"
             subtitle="Run outbound calling campaigns for lead qualification and follow-up."
             actions={<CsvExportButton type="leads" label="Export" />}
             tabs={[
@@ -1439,14 +1439,14 @@ export default function OutboundDialer() {
                         <Kanban className="w-7 h-7 text-brand mx-auto mb-3" />
                         <p className="text-[12px] text-ink/80 mb-3 max-w-md leading-relaxed">
                           The full Kanban view lives at{" "}
-                          <code className="text-brand">/pipeline</code> â€” drag leads between Cold /
+                          <code className="text-brand">/pipeline</code> — drag leads between Cold /
                           Contacted / Qualified / Demo / Won / Lost.
                         </p>
                         <Link
                           to="/pipeline"
                           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand text-paper text-[11px] uppercase tracking-[0.28em] hover:bg-brand/90 transition-colors"
                         >
-                          Open pipeline â†’
+                          Open pipeline →
                         </Link>
                       </div>
                     </div>
@@ -1512,7 +1512,7 @@ const CAMPAIGN_STATUS: Record<
   },
 };
 
-/* â”€â”€â”€ Callbacks List â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Callbacks List ─────────────────────────────────────────────── */
 function CallbacksList({
   callbacks,
   loading,
@@ -1556,7 +1556,7 @@ function CallbacksList({
     <div className="h-full flex flex-col min-h-0">
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
         <span className="text-[9px] uppercase tracking-[0.35em] text-muted">
-          {callbacks.length} scheduled Â· auto-dialed at due time
+          {callbacks.length} scheduled · auto-dialed at due time
         </span>
         <button
           onClick={onRefresh}
@@ -1568,7 +1568,7 @@ function CallbacksList({
       <ul className="flex-1 overflow-y-auto divide-y divide-white/5 scrollbar-hide">
         {callbacks.map((cb) => {
           const scheduledAt = safeDate(cb.callback_scheduled_at);
-          // Skip rows with unparsable timestamps â€” render a placeholder
+          // Skip rows with unparsable timestamps — render a placeholder
           // instead of crashing the list with "The string did not match
           // the expected pattern" on Safari.
           if (!scheduledAt) return null;
@@ -1578,7 +1578,7 @@ function CallbacksList({
             Math.round((scheduledAt.getTime() - now.getTime()) / 60_000),
           );
           const relativeLabel = isPast
-            ? "Dialing soonâ€¦"
+            ? "Dialing soon…"
             : minutesUntil < 60
               ? `in ${minutesUntil}m`
               : minutesUntil < 1440
@@ -1640,7 +1640,7 @@ function CallbacksList({
   );
 }
 
-/* â”€â”€â”€ Create Campaign Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Create Campaign Modal ──────────────────────────────────────── */
 function CreateCampaignModal({
   agents,
   onClose,
@@ -1706,7 +1706,7 @@ function CreateCampaignModal({
         <header className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
           <div>
             <p className="text-[9px] uppercase tracking-[0.4em] text-brand mb-0.5">
-              Signal Â· Campaigns
+              Signal · Campaigns
             </p>
             <h2 className="font-display italic lowercase text-2xl text-ink">new campaign</h2>
           </div>

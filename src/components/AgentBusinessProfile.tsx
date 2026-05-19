@@ -1,10 +1,10 @@
-﻿// AgentBusinessProfile â€” operator-facing editor for the business-context
+// AgentBusinessProfile — operator-facing editor for the business-context
 // fields that gate every call: hours, compliance mode, guardrails,
 // variables, KPI focus. Pure presentation; the parent owns persistence.
 //
 // Shape mirrors AgentBusinessProfileSchema (src/lib/form-validators.ts).
 // Validation re-runs server-side on save, so we keep the client UI
-// permissive (don't surface every error inline) â€” it's a workspace, not
+// permissive (don't surface every error inline) — it's a workspace, not
 // a gate.
 
 import { useEffect, useMemo, useState } from "react";
@@ -22,7 +22,7 @@ import {
 import { motion } from "motion/react";
 import { cn } from "../lib/utils";
 
-// â”€â”€ Types (kept in lockstep with src/lib/agent-runtime.ts) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Types (kept in lockstep with src/lib/agent-runtime.ts) ─────────────
 
 type ComplianceMode = "none" | "hipaa" | "pci" | "gdpr" | "financial" | "legal";
 type KpiFocus = "general" | "conversions" | "qualifications" | "resolutions" | "satisfaction";
@@ -50,7 +50,7 @@ interface Props {
   onChange: (next: BusinessProfile) => void;
 }
 
-// â”€â”€ Static catalog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Static catalog ─────────────────────────────────────────────────────
 
 const DAYS: { key: DayKey; label: string }[] = [
   { key: "mon", label: "Monday" },
@@ -63,18 +63,18 @@ const DAYS: { key: DayKey; label: string }[] = [
 ];
 
 const COMPLIANCE_OPTIONS: { value: ComplianceMode; label: string; hint: string }[] = [
-  { value: "none", label: "None", hint: "Default â€” no extra disclosures" },
+  { value: "none", label: "None", hint: "Default — no extra disclosures" },
   {
     value: "hipaa",
     label: "HIPAA",
-    hint: "Healthcare â€” PHI handling rules + identity verification",
+    hint: "Healthcare — PHI handling rules + identity verification",
   },
   {
     value: "pci",
     label: "PCI DSS",
-    hint: "Payments â€” never repeat card data; route to secure IVR",
+    hint: "Payments — never repeat card data; route to secure IVR",
   },
-  { value: "gdpr", label: "GDPR", hint: "EU â€” recording disclosure + data-subject rights" },
+  { value: "gdpr", label: "GDPR", hint: "EU — recording disclosure + data-subject rights" },
   {
     value: "financial",
     label: "Financial Services",
@@ -88,7 +88,7 @@ const COMPLIANCE_OPTIONS: { value: ComplianceMode; label: string; hint: string }
 ];
 
 const KPI_OPTIONS: { value: KpiFocus; label: string; hint: string }[] = [
-  { value: "general", label: "General", hint: "No specific outcome focus â€” balanced agent" },
+  { value: "general", label: "General", hint: "No specific outcome focus — balanced agent" },
   {
     value: "conversions",
     label: "Conversions",
@@ -107,7 +107,7 @@ const KPI_OPTIONS: { value: KpiFocus; label: string; hint: string }[] = [
   { value: "satisfaction", label: "Satisfaction", hint: "Optimize for caller experience and CSAT" },
 ];
 
-// Common timezones â€” the most-likely-needed subset. Operators with
+// Common timezones — the most-likely-needed subset. Operators with
 // unusual zones can paste any IANA string into the input.
 const COMMON_TZS = [
   "America/New_York",
@@ -143,7 +143,7 @@ const COMMON_TZS = [
   "UTC",
 ];
 
-// â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Component ──────────────────────────────────────────────────────────
 
 export default function AgentBusinessProfile({ value, onChange }: Props) {
   // Local mirrors so chip inputs / variable rows can have transient
@@ -264,7 +264,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
 
   return (
     <div className="space-y-5">
-      {/* â”€â”€ Hours â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Hours ──────────────────────────────────────────────────── */}
       <Section
         icon={Clock}
         title="Business hours"
@@ -272,8 +272,8 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
         hint="When this agent should engage. Outbound dials outside these hours are refused; inbound calls hear the out-of-hours message."
       >
         <div className="flex flex-wrap items-center gap-2 mb-3">
-          <PresetButton onClick={() => presetCopy("mf-9-5")} label="Monâ€“Fri 9â€“5" />
-          <PresetButton onClick={() => presetCopy("business")} label="Monâ€“Sat 8â€“6 / 10â€“2" />
+          <PresetButton onClick={() => presetCopy("mf-9-5")} label="Mon–Fri 9–5" />
+          <PresetButton onClick={() => presetCopy("business")} label="Mon–Sat 8–6 / 10–2" />
           <PresetButton onClick={() => presetCopy("always")} label="24/7" />
           <PresetButton onClick={() => presetCopy("closed")} label="All closed" />
         </div>
@@ -343,7 +343,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
               onChange={(e) => setField("out_of_hours_message", e.target.value || null)}
               maxLength={500}
               rows={2}
-              placeholder="Thanks for calling {business_name} â€” we're closed right now and will be back at 9 AM."
+              placeholder="Thanks for calling {business_name} — we're closed right now and will be back at 9 AM."
               className="textarea-base"
             />
             <CharCount value={value.out_of_hours_message ?? ""} max={500} />
@@ -351,7 +351,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
         </div>
       </Section>
 
-      {/* â”€â”€ Compliance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Compliance ─────────────────────────────────────────────── */}
       <Section
         icon={ShieldCheck}
         title="Compliance preset"
@@ -388,7 +388,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
         </div>
       </Section>
 
-      {/* â”€â”€ KPI focus â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── KPI focus ──────────────────────────────────────────────── */}
       <Section
         icon={Target}
         title="Optimization target"
@@ -425,7 +425,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
         </div>
       </Section>
 
-      {/* â”€â”€ Disallowed topics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Disallowed topics ──────────────────────────────────────── */}
       <Section
         icon={MessageSquareWarning}
         title="Do-not-discuss topics"
@@ -442,7 +442,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
         />
       </Section>
 
-      {/* â”€â”€ Escalation keywords â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Escalation keywords ─────────────────────────────────────── */}
       <Section
         icon={AlertOctagon}
         title="Immediate-escalation triggers"
@@ -459,7 +459,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
         />
       </Section>
 
-      {/* â”€â”€ Variables â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Variables ───────────────────────────────────────────────── */}
       <Section
         icon={Type}
         title="Business variables"
@@ -542,7 +542,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
   );
 }
 
-// â”€â”€ Sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Sub-components ─────────────────────────────────────────────────────
 
 function Section({
   icon: Icon,

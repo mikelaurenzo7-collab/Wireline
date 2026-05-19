@@ -1,5 +1,14 @@
-﻿import React, { useState, useEffect } from "react";
-import { Save, Blocks, Link as LinkIcon, AlertCircle, CheckCircle2, Webhook, Loader2, Workflow } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import {
+  Save,
+  Blocks,
+  Link as LinkIcon,
+  AlertCircle,
+  CheckCircle2,
+  Webhook,
+  Loader2,
+  Workflow,
+} from "lucide-react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
@@ -25,7 +34,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
       try {
         const [agentRes, intRes] = await Promise.all([
           authFetch(`/api/agents`), // To find this specific agent's config
-          authFetch(`/api/health/integrations`)
+          authFetch(`/api/health/integrations`),
         ]);
 
         if (!active) return;
@@ -55,13 +64,15 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
       }
     };
     loadData();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [agentId, toastError]);
 
   const handleToggleTool = (toolName: AgentToolName) => {
-    setEnabledTools(prev => {
+    setEnabledTools((prev) => {
       if (prev.includes(toolName)) {
-        return prev.filter(t => t !== toolName);
+        return prev.filter((t) => t !== toolName);
       }
       return [...prev, toolName];
     });
@@ -70,7 +81,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
   const handleSave = async () => {
     setIsSaving(true);
     setSaveSuccess(false);
-    
+
     try {
       const res = await authFetch(`/api/agents/${agentId}`, {
         method: "PATCH",
@@ -78,7 +89,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
         body: JSON.stringify({ enabledTools }),
       });
       if (!res.ok) throw new Error("Save failed");
-      
+
       setSaveSuccess(true);
       toastSuccess("Action Engine saved", "Agent capabilities updated.");
       setTimeout(() => setSaveSuccess(false), 2500);
@@ -91,7 +102,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
 
   const getIntegrationStatus = (integrationName?: string) => {
     if (!integrationName) return "configured"; // Core tools require no integration
-    const int = globalIntegrations.find(i => i.id === integrationName);
+    const int = globalIntegrations.find((i) => i.id === integrationName);
     return int?.status || "missing";
   };
 
@@ -107,11 +118,14 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
   }
 
   // Group tools by category
-  const groupedTools = AGENT_TOOL_CATALOG.reduce((acc, tool) => {
-    if (!acc[tool.group]) acc[tool.group] = [];
-    acc[tool.group].push(tool);
-    return acc;
-  }, {} as Record<string, typeof AGENT_TOOL_CATALOG[number][]>);
+  const groupedTools = AGENT_TOOL_CATALOG.reduce(
+    (acc, tool) => {
+      if (!acc[tool.group]) acc[tool.group] = [];
+      acc[tool.group].push(tool);
+      return acc;
+    },
+    {} as Record<string, (typeof AGENT_TOOL_CATALOG)[number][]>,
+  );
 
   return (
     <div className="h-full flex flex-col p-4 md:p-6 overflow-hidden max-w-[1400px] mx-auto w-full">
@@ -122,10 +136,11 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
             Action Engine
           </h3>
           <p className="text-sm text-muted mt-1 max-w-2xl">
-            Empower your agent with autonomous capabilities. Select which integrations and actions this agent is authorized to execute during a live interaction.
+            Empower your agent with autonomous capabilities. Select which integrations and actions
+            this agent is authorized to execute during a live interaction.
           </p>
         </div>
-        
+
         <button
           onClick={handleSave}
           disabled={isSaving}
@@ -154,20 +169,20 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {tools.map(tool => {
+              {tools.map((tool) => {
                 const isEnabled = enabledTools.includes(tool.name);
                 const status = getIntegrationStatus(tool.integration);
                 const isMissingIntegration = status === "missing";
 
                 return (
-                  <div 
+                  <div
                     key={tool.name}
                     className={cn(
                       "relative p-5 rounded-2xl border transition-all cursor-pointer overflow-hidden group",
                       isEnabled && !isMissingIntegration
-                        ? "bg-brand/5 border-brand/30 shadow-[0_0_15px_rgba(79, 30, 123 ,0.05)]" 
+                        ? "bg-brand/5 border-brand/30 shadow-[0_0_15px_rgba(79, 30, 123 ,0.05)]"
                         : "glass border-white/10 hover:border-white/30",
-                      isMissingIntegration && "opacity-75 cursor-not-allowed grayscale"
+                      isMissingIntegration && "opacity-75 cursor-not-allowed grayscale",
                     )}
                     onClick={() => {
                       if (!isMissingIntegration) handleToggleTool(tool.name);
@@ -180,31 +195,35 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
 
                     <div className="relative z-10 flex items-start gap-4">
                       <div className="mt-1">
-                        <div className={cn(
-                          "w-5 h-5 rounded flex items-center justify-center border transition-colors",
-                          isEnabled 
-                            ? "bg-brand border-brand text-paper" 
-                            : "bg-black/10 border-white/20 text-transparent"
-                        )}>
+                        <div
+                          className={cn(
+                            "w-5 h-5 rounded flex items-center justify-center border transition-colors",
+                            isEnabled
+                              ? "bg-brand border-brand text-paper"
+                              : "bg-black/10 border-white/20 text-transparent",
+                          )}
+                        >
                           <CheckCircle2 className="w-3.5 h-3.5" />
                         </div>
                       </div>
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2 mb-1">
-                          <h5 className="font-medium text-ink truncate text-sm">
-                            {tool.label}
-                          </h5>
+                          <h5 className="font-medium text-ink truncate text-sm">{tool.label}</h5>
                           {tool.integration && (
-                            <span className={cn(
-                              "text-[8px] uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border",
-                              isMissingIntegration ? "border-amber-500/30 text-amber-600 bg-amber-500/10" : "border-brand/20 text-brand bg-brand/10"
-                            )}>
+                            <span
+                              className={cn(
+                                "text-[8px] uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border",
+                                isMissingIntegration
+                                  ? "border-amber-500/30 text-amber-600 bg-amber-500/10"
+                                  : "border-brand/20 text-brand bg-brand/10",
+                              )}
+                            >
                               {tool.integration}
                             </span>
                           )}
                         </div>
-                        
+
                         <p className="text-[11px] text-muted/80 leading-relaxed">
                           {tool.description}
                         </p>

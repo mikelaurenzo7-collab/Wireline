@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Flame,
@@ -158,7 +158,7 @@ export default function TriageInbox() {
 
   return (
     <PageShell
-      eyebrow={`Today's Inbox Â· ${totalAttention} items`}
+      eyebrow={`Today's Inbox · ${totalAttention} items`}
       title="Triage"
       subtitle="Hot leads, compliance flags, knowledge gaps, open tasks, and escalations."
       actions={
@@ -257,11 +257,11 @@ export default function TriageInbox() {
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Hot leads  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─────────────────────────  Hot leads  ─────────────────────────── */
 
 function HotLeads({ items }: { items: HotLead[] }) {
   if (items.length === 0)
-    return <Empty icon={Flame} label="No hot leads right now â€” keep dialing." />;
+    return <Empty icon={Flame} label="No hot leads right now — keep dialing." />;
   return (
     <ul className="divide-y divide-white/5">
       {items.map((c) => (
@@ -339,11 +339,11 @@ function HotLeads({ items }: { items: HotLead[] }) {
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Compliance flags  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ───────────────────────  Compliance flags  ────────────────────── */
 
 function ComplianceList({ items }: { items: FleetTask[] }) {
   if (items.length === 0)
-    return <Empty icon={ShieldAlert} label="All clear â€” no compliance flags." green />;
+    return <Empty icon={ShieldAlert} label="All clear — no compliance flags." green />;
   return (
     <ul className="divide-y divide-white/5">
       {items.map((t) => (
@@ -351,7 +351,7 @@ function ComplianceList({ items }: { items: FleetTask[] }) {
           <ShieldAlert className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
             <div className="text-[8px] uppercase tracking-[0.28em] text-rose-500 mb-0.5">
-              Compliance Â· {t.priority}
+              Compliance · {t.priority}
             </div>
             <p className="text-[12px] text-ink/90 leading-snug">{t.description}</p>
             <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-1">
@@ -364,7 +364,7 @@ function ComplianceList({ items }: { items: FleetTask[] }) {
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Knowledge gaps  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ───────────────────────  Knowledge gaps  ──────────────────────── */
 
 function KnowledgeGaps({
   items,
@@ -459,7 +459,7 @@ const KnowledgeGapRow: React.FC<{
             <p className="text-[12px] text-ink/90 leading-snug">{cleaned}</p>
           )}
           <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-1">
-            Agent Â· <span className="font-mono">{gap.agent_id?.substring(0, 12)}</span> Â·{" "}
+            Agent · <span className="font-mono">{gap.agent_id?.substring(0, 12)}</span> ·{" "}
             {formatDate(gap.created_at)}
           </div>
         </div>
@@ -502,7 +502,7 @@ const KnowledgeGapRow: React.FC<{
   );
 };
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Open tasks  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ────────────────────────  Open tasks  ─────────────────────────── */
 
 function OpenTasks({
   items,
@@ -540,7 +540,7 @@ const OpenTaskRow: React.FC<{
 
   const complete = async () => {
     setCompleting(true);
-    // Optimistic remove first â€” feels instant.
+    // Optimistic remove first — feels instant.
     onCompleted(task.id);
     try {
       const r = await authFetch(`/api/fleet/tasks/${task.id}`, {
@@ -564,7 +564,7 @@ const OpenTaskRow: React.FC<{
       transition={{ duration: 0.18 }}
       className="px-4 py-3 flex items-start gap-3 group"
     >
-      {/* Mark complete button â€” replaces the static priority badge */}
+      {/* Mark complete button — replaces the static priority badge */}
       <button
         onClick={complete}
         disabled={completing}
@@ -600,7 +600,7 @@ const OpenTaskRow: React.FC<{
         <p className="text-[12px] text-ink/90 leading-snug">{task.description}</p>
         <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-1 flex items-center gap-2">
           <span>{task.target_channel || "manual"}</span>
-          <span>Â·</span>
+          <span>·</span>
           <span>{formatDateTime(task.created_at)}</span>
         </div>
       </div>
@@ -608,7 +608,7 @@ const OpenTaskRow: React.FC<{
   );
 };
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  Escalations  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ───────────────────────  Escalations  ─────────────────────────── */
 
 function Escalations({ items }: { items: EscalationCall[] }) {
   if (items.length === 0)

@@ -1,9 +1,21 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  Webhook, Plus, Loader2, Check, X, Trash2, Send, AlertTriangle,
-  CircleAlert, CheckCircle2, Sparkles, History,
-  ChevronDown, RotateCcw, Skull
+  Webhook,
+  Plus,
+  Loader2,
+  Check,
+  X,
+  Trash2,
+  Send,
+  AlertTriangle,
+  CircleAlert,
+  CheckCircle2,
+  Sparkles,
+  History,
+  ChevronDown,
+  RotateCcw,
+  Skull,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
@@ -26,22 +38,24 @@ interface WebhookRow {
 }
 
 const EVENT_DESCRIPTIONS: Record<string, string> = {
-  "call.completed":       "After each voice call â€” includes lead scores, extracted data, and CRM-ready payload",
-  "call.escalated":       "Call flagged as angry or requiring human escalation",
-  "lead.received":        "New lead pushed via your inbound intake API key",
-  "lead.hot":             "Lead score crossed 70 â€” high intent detected",
-  "email.received":       "Inbound email synced from a connected Gmail or Outlook account",
-  "appointment.booked":   "New appointment booked by an agent or via API",
-  "slack.message_sent":   "A notification was posted to your connected Slack workspace (includes booking alerts when configured)",
-  "task.created":         "Fleet task created (follow-up, outreach, compliance, etc.)",
-  "compliance.flagged":   "Call flagged for human compliance review",
-  "knowledge_updated":    "Knowledge base entry created, updated, or deleted",
-  "spend.warning":        "Month-to-date AI spend crossed your warning threshold",
-  "spend.exceeded":       "Month-to-date AI spend hit 100% of monthly limit",
+  "call.completed":
+    "After each voice call — includes lead scores, extracted data, and CRM-ready payload",
+  "call.escalated": "Call flagged as angry or requiring human escalation",
+  "lead.received": "New lead pushed via your inbound intake API key",
+  "lead.hot": "Lead score crossed 70 — high intent detected",
+  "email.received": "Inbound email synced from a connected Gmail or Outlook account",
+  "appointment.booked": "New appointment booked by an agent or via API",
+  "slack.message_sent":
+    "A notification was posted to your connected Slack workspace (includes booking alerts when configured)",
+  "task.created": "Fleet task created (follow-up, outreach, compliance, etc.)",
+  "compliance.flagged": "Call flagged for human compliance review",
+  knowledge_updated: "Knowledge base entry created, updated, or deleted",
+  "spend.warning": "Month-to-date AI spend crossed your warning threshold",
+  "spend.exceeded": "Month-to-date AI spend hit 100% of monthly limit",
   "subscription.changed": "Subscription status, plan, or renewal date changed",
-  "slo.jobs.critical":    "Job queue backlog exceeded critical threshold (>200 pending)",
+  "slo.jobs.critical": "Job queue backlog exceeded critical threshold (>200 pending)",
   "slo.webhooks.degraded": "Webhook delivery success rate dropped below target",
-  "slo.enrichment.dead":  "Post-call enrichment jobs reached dead-letter status",
+  "slo.enrichment.dead": "Post-call enrichment jobs reached dead-letter status",
 };
 
 export default function WebhooksManager() {
@@ -57,25 +71,42 @@ export default function WebhooksManager() {
       const d = await r.json();
       setHooks(d.webhooks || []);
       setAvailableEvents(d.available_events || []);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => {
+    refresh();
+  }, []);
 
   return (
     <div className="relative aurora-ring rounded-2xl mt-8">
       <div className="relative rounded-2xl glass border border-white/10 p-6 space-y-5 overflow-hidden">
-        <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-25 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #10B981, transparent)" }} />
+        <div
+          className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-25 blur-3xl pointer-events-none"
+          style={{ background: "radial-gradient(circle, #10B981, transparent)" }}
+        />
 
         <div className="relative z-10 flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #10B981, #4F1E7B)" }}>
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ background: "linear-gradient(135deg, #10B981, #4F1E7B)" }}
+            >
               <Webhook className="w-5 h-5 text-paper" />
             </div>
             <div>
-              <div className="text-[10px] uppercase tracking-[0.4em] text-brand">Outbound Webhooks</div>
-              <h4 className="font-display italic text-2xl text-ink leading-tight mt-1">Push events anywhere</h4>
-              <p className="text-[11px] text-ink/55 mt-1">Connect Wireline to Slack, Discord, your CRM, Zapier, n8n, or any HTTPS endpoint. Signed with HMAC-SHA256.</p>
+              <div className="text-[10px] uppercase tracking-[0.4em] text-brand">
+                Outbound Webhooks
+              </div>
+              <h4 className="font-display italic text-2xl text-ink leading-tight mt-1">
+                Push events anywhere
+              </h4>
+              <p className="text-[11px] text-ink/55 mt-1">
+                Connect Wireline to Slack, Discord, your CRM, Zapier, n8n, or any HTTPS endpoint.
+                Signed with HMAC-SHA256.
+              </p>
             </div>
           </div>
           <button
@@ -97,7 +128,10 @@ export default function WebhooksManager() {
             >
               <CreateForm
                 events={availableEvents}
-                onCreated={() => { setShowForm(false); refresh(); }}
+                onCreated={() => {
+                  setShowForm(false);
+                  refresh();
+                }}
               />
             </motion.div>
           )}
@@ -109,8 +143,13 @@ export default function WebhooksManager() {
           ) : hooks.length === 0 ? (
             <div className="rounded-xl bg-black/20 border border-dashed border-white/10 p-6 text-center space-y-2">
               <Webhook className="w-8 h-8 text-muted/40 mx-auto" />
-              <p className="text-[11px] uppercase tracking-[0.4em] text-muted">No webhooks configured</p>
-              <p className="text-xs text-ink/55">Click <span className="text-brand">Add Webhook</span> to push events to Slack, CRM, or Zapier.</p>
+              <p className="text-[11px] uppercase tracking-[0.4em] text-muted">
+                No webhooks configured
+              </p>
+              <p className="text-xs text-ink/55">
+                Click <span className="text-brand">Add Webhook</span> to push events to Slack, CRM,
+                or Zapier.
+              </p>
             </div>
           ) : (
             hooks.map((h) => <HookRow key={h.id} hook={h} onChanged={refresh} />)
@@ -130,7 +169,8 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
   const [err, setErr] = useState<string | null>(null);
 
   const submit = async () => {
-    setBusy(true); setErr(null);
+    setBusy(true);
+    setErr(null);
     try {
       const r = await authFetch("/api/webhooks", {
         method: "POST",
@@ -140,7 +180,11 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
       const d = await r.json();
       if (!r.ok) throw new Error(d.error);
       onCreated();
-    } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+    } catch (e: any) {
+      setErr(e.message);
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -149,7 +193,8 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
         <div className="space-y-1.5">
           <label className="text-[10px] uppercase tracking-[0.4em] text-muted">Name</label>
           <input
-            value={name} onChange={(e) => setName(e.target.value)}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             placeholder="Slack #sales channel"
             className="w-full h-11 px-3 rounded-lg bg-black/5 border border-black/10 text-ink text-sm outline-none focus:border-brand/60"
           />
@@ -157,7 +202,8 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
         <div className="space-y-1.5">
           <label className="text-[10px] uppercase tracking-[0.4em] text-muted">URL</label>
           <input
-            value={url} onChange={(e) => setUrl(e.target.value)}
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
             placeholder="https://hooks.slack.com/services/..."
             className="w-full h-11 px-3 rounded-lg bg-black/5 border border-black/10 text-ink text-sm font-mono outline-none focus:border-brand/60"
           />
@@ -171,26 +217,36 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
             const on = picked.has(e);
             return (
               <button
-                key={e} type="button"
-                onClick={() => setPicked((s) => {
-                  const ns = new Set(s);
-                  if (ns.has(e)) ns.delete(e); else ns.add(e);
-                  return ns;
-                })}
+                key={e}
+                type="button"
+                onClick={() =>
+                  setPicked((s) => {
+                    const ns = new Set(s);
+                    if (ns.has(e)) ns.delete(e);
+                    else ns.add(e);
+                    return ns;
+                  })
+                }
                 className={cn(
                   "text-left rounded-lg p-2.5 border transition-all flex items-start gap-2",
-                  on ? "bg-brand/10 border-brand/40" : "bg-black/20 border-white/8 hover:border-white/20",
+                  on
+                    ? "bg-brand/10 border-brand/40"
+                    : "bg-black/20 border-white/8 hover:border-white/20",
                 )}
               >
-                <div className={cn(
-                  "shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center mt-0.5 transition-all",
-                  on ? "bg-brand border-brand text-paper" : "border-white/30",
-                )}>
+                <div
+                  className={cn(
+                    "shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center mt-0.5 transition-all",
+                    on ? "bg-brand border-brand text-paper" : "border-white/30",
+                  )}
+                >
                   {on && <Check className="w-2.5 h-2.5" strokeWidth={4} />}
                 </div>
                 <div className="min-w-0">
                   <div className="text-xs font-mono text-ink/90">{e}</div>
-                  <div className="text-[10px] text-ink/55 leading-snug">{EVENT_DESCRIPTIONS[e]}</div>
+                  <div className="text-[10px] text-ink/55 leading-snug">
+                    {EVENT_DESCRIPTIONS[e]}
+                  </div>
                 </div>
               </button>
             );
@@ -200,10 +256,14 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
 
       <div className="space-y-1.5">
         <label className="text-[10px] uppercase tracking-[0.4em] text-muted">
-          Signing Secret <span className="text-muted/60">(optional â€” when set, body is signed as X-Wireline-Signature: sha256=&lt;hex&gt;)</span>
+          Signing Secret{" "}
+          <span className="text-muted/60">
+            (optional — when set, body is signed as X-Wireline-Signature: sha256=&lt;hex&gt;)
+          </span>
         </label>
         <input
-          value={secret} onChange={(e) => setSecret(e.target.value)}
+          value={secret}
+          onChange={(e) => setSecret(e.target.value)}
           placeholder="long-random-string-only-you-and-the-receiver-know"
           className="w-full h-11 px-3 rounded-lg bg-black/5 border border-black/10 text-ink text-sm font-mono outline-none focus:border-brand/60"
         />
@@ -211,7 +271,8 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
 
       {err && (
         <div className="rounded-lg bg-rose-500/10 border border-rose-500/30 p-3 text-rose-500 text-xs flex items-center gap-2">
-          <AlertTriangle className="w-3.5 h-3.5" />{err}
+          <AlertTriangle className="w-3.5 h-3.5" />
+          {err}
         </div>
       )}
       <button
@@ -219,8 +280,15 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
         disabled={busy || !name || !url || picked.size === 0}
         className="brutal-btn w-full !py-3 !text-[11px] !tracking-[0.3em]"
       >
-        {busy ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Savingâ€¦</> :
-                <><Sparkles className="w-3.5 h-3.5" /> Create Webhook</>}
+        {busy ? (
+          <>
+            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving…
+          </>
+        ) : (
+          <>
+            <Sparkles className="w-3.5 h-3.5" /> Create Webhook
+          </>
+        )}
       </button>
     </div>
   );
@@ -253,7 +321,9 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
       const r = await authFetch(`/api/webhooks/${hook.id}/deliveries`);
       const d = await r.json();
       setDeliveries(d.deliveries || []);
-    } finally { setLoadingDeliveries(false); }
+    } finally {
+      setLoadingDeliveries(false);
+    }
   };
 
   const toggleDeliveries = async () => {
@@ -268,15 +338,19 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
       await authFetch(`/api/webhooks/deliveries/${id}/retry`, { method: "POST" });
       // Give the inline attempt a moment, then refresh.
       setTimeout(() => loadDeliveries(), 600);
-    } finally { setDeliveryBusy(null); }
+    } finally {
+      setDeliveryBusy(null);
+    }
   };
 
   const discardDelivery = async (id: number) => {
     setDeliveryBusy(id);
     try {
       await authFetch(`/api/webhooks/deliveries/${id}`, { method: "DELETE" });
-      setDeliveries(prev => prev ? prev.filter(d => d.id !== id) : prev);
-    } finally { setDeliveryBusy(null); }
+      setDeliveries((prev) => (prev ? prev.filter((d) => d.id !== id) : prev));
+    } finally {
+      setDeliveryBusy(null);
+    }
   };
 
   const test = async () => {
@@ -285,27 +359,35 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
       await authFetch(`/api/webhooks/${hook.id}/test`, { method: "POST" });
       onChanged();
       if (showDeliveries) setTimeout(() => loadDeliveries(), 600);
+    } finally {
+      setBusy(null);
     }
-    finally { setBusy(null); }
   };
   const remove = async () => {
     setBusy("delete");
-    try { await authFetch(`/api/webhooks/${hook.id}`, { method: "DELETE" }); onChanged(); }
-    finally { setBusy(null); }
+    try {
+      await authFetch(`/api/webhooks/${hook.id}`, { method: "DELETE" });
+      onChanged();
+    } finally {
+      setBusy(null);
+    }
   };
   const toggleActive = async () => {
     await authFetch(`/api/webhooks/${hook.id}`, {
-      method: "PATCH", headers: { "Content-Type": "application/json" },
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ active: !hook.active }),
     });
     onChanged();
   };
 
   return (
-    <div className={cn(
-      "rounded-xl glass border p-4 transition-all",
-      hook.active ? "border-white/10" : "border-white/5 opacity-60",
-    )}>
+    <div
+      className={cn(
+        "rounded-xl glass border p-4 transition-all",
+        hook.active ? "border-white/10" : "border-white/5 opacity-60",
+      )}
+    >
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-0.5 flex-wrap">
@@ -318,15 +400,23 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                   ? "bg-emerald-500/15 text-emerald-500 border-emerald-500/30"
                   : "bg-zinc-500/15 text-zinc-300 border-zinc-500/30",
               )}
-            >{hook.active ? "Active" : "Paused"}</button>
+            >
+              {hook.active ? "Active" : "Paused"}
+            </button>
             {hook.last_status !== null && (
-              <span className={cn(
-                "px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] border flex items-center gap-1",
-                hook.last_status >= 200 && hook.last_status < 300
-                  ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                  : "bg-rose-500/10 text-rose-500 border-rose-500/20",
-              )}>
-                {hook.last_status >= 200 && hook.last_status < 300 ? <CheckCircle2 className="w-2.5 h-2.5" /> : <CircleAlert className="w-2.5 h-2.5" />}
+              <span
+                className={cn(
+                  "px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] border flex items-center gap-1",
+                  hook.last_status >= 200 && hook.last_status < 300
+                    ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                    : "bg-rose-500/10 text-rose-500 border-rose-500/20",
+                )}
+              >
+                {hook.last_status >= 200 && hook.last_status < 300 ? (
+                  <CheckCircle2 className="w-2.5 h-2.5" />
+                ) : (
+                  <CircleAlert className="w-2.5 h-2.5" />
+                )}
                 {hook.last_status === 0 ? "ERR" : hook.last_status}
               </span>
             )}
@@ -334,21 +424,31 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
           <div className="text-xs font-mono text-ink/60 truncate">{hook.url}</div>
           <div className="flex items-center gap-2 flex-wrap mt-2">
             {hook.events.map((e) => (
-              <span key={e} className="px-1.5 py-0.5 rounded text-[9px] uppercase tracking-[0.2em] bg-brand/10 text-brand border border-brand/20 font-mono">{e}</span>
+              <span
+                key={e}
+                className="px-1.5 py-0.5 rounded text-[9px] uppercase tracking-[0.2em] bg-brand/10 text-brand border border-brand/20 font-mono"
+              >
+                {e}
+              </span>
             ))}
           </div>
           {hook.last_triggered_at && (
             <div className="text-[10px] uppercase tracking-[0.3em] text-muted mt-2 flex items-center gap-2">
               <span>Last fired: {formatDateTime(hook.last_triggered_at)}</span>
-              {hook.delivery_count !== null && hook.delivery_count > 0 && <span>Â· {hook.delivery_count} deliveries</span>}
-              {hook.last_error && <span className="text-rose-500">Â· {hook.last_error}</span>}
+              {hook.delivery_count !== null && hook.delivery_count > 0 && (
+                <span>· {hook.delivery_count} deliveries</span>
+              )}
+              {hook.last_error && <span className="text-rose-500">· {hook.last_error}</span>}
             </div>
           )}
           {hook.secret_last_four && (
             <div className="flex items-center gap-2 mt-2 text-[10px] text-muted">
               <span className="uppercase tracking-[0.3em]">Secret</span>
-              <code className="font-mono text-ink/70">{"â€¢".repeat(12)}{hook.secret_last_four}</code>
-              <span className="uppercase tracking-[0.3em] text-muted/60">Â· last 4</span>
+              <code className="font-mono text-ink/70">
+                {"•".repeat(12)}
+                {hook.secret_last_four}
+              </code>
+              <span className="uppercase tracking-[0.3em] text-muted/60">· last 4</span>
             </div>
           )}
         </div>
@@ -363,26 +463,43 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
             )}
           >
             <History className="w-3 h-3" /> Deliveries
-            <ChevronDown className={cn("w-3 h-3 transition-transform", showDeliveries && "rotate-180")} />
+            <ChevronDown
+              className={cn("w-3 h-3 transition-transform", showDeliveries && "rotate-180")}
+            />
           </button>
           <button
-            onClick={test} disabled={busy !== null}
+            onClick={test}
+            disabled={busy !== null}
             className="px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] glass border border-white/10 hover:border-brand/40 hover:text-brand transition-all flex items-center gap-1.5 disabled:opacity-50"
           >
-            {busy === "test" ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+            {busy === "test" ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <Send className="w-3 h-3" />
+            )}
             Test
           </button>
           {confirmDelete ? (
             <>
-              <button onClick={remove} disabled={busy !== null} className="px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] bg-rose-500 text-paper hover:bg-rose-500/80 transition-all">
+              <button
+                onClick={remove}
+                disabled={busy !== null}
+                className="px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] bg-rose-500 text-paper hover:bg-rose-500/80 transition-all"
+              >
                 {busy === "delete" ? <Loader2 className="w-3 h-3 animate-spin" /> : "Confirm"}
               </button>
-              <button onClick={() => setConfirmDelete(false)} className="px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] glass border border-white/10 hover:text-ink transition-all">
+              <button
+                onClick={() => setConfirmDelete(false)}
+                className="px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] glass border border-white/10 hover:text-ink transition-all"
+              >
                 Cancel
               </button>
             </>
           ) : (
-            <button onClick={() => setConfirmDelete(true)} className="w-8 h-8 rounded-full glass border border-white/10 hover:border-rose-500/40 hover:text-rose-500 flex items-center justify-center transition-all">
+            <button
+              onClick={() => setConfirmDelete(true)}
+              className="w-8 h-8 rounded-full glass border border-white/10 hover:border-rose-500/40 hover:text-rose-500 flex items-center justify-center transition-all"
+            >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           )}
@@ -392,22 +509,36 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
       <AnimatePresence>
         {showDeliveries && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
             <div className="mt-4 pt-4 border-t border-white/10 space-y-2">
               <div className="flex items-center justify-between">
-                <div className="text-[10px] uppercase tracking-[0.3em] text-muted">Recent deliveries</div>
-                <button onClick={loadDeliveries} disabled={loadingDeliveries} className="text-[10px] uppercase tracking-[0.3em] text-muted hover:text-ink flex items-center gap-1.5">
-                  {loadingDeliveries ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
+                <div className="text-[10px] uppercase tracking-[0.3em] text-muted">
+                  Recent deliveries
+                </div>
+                <button
+                  onClick={loadDeliveries}
+                  disabled={loadingDeliveries}
+                  className="text-[10px] uppercase tracking-[0.3em] text-muted hover:text-ink flex items-center gap-1.5"
+                >
+                  {loadingDeliveries ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <RotateCcw className="w-3 h-3" />
+                  )}
                   Refresh
                 </button>
               </div>
               {loadingDeliveries && !deliveries && (
-                <div className="text-[10px] text-muted italic py-3">Loading deliveriesâ€¦</div>
+                <div className="text-[10px] text-muted italic py-3">Loading deliveries…</div>
               )}
               {deliveries && deliveries.length === 0 && (
-                <div className="text-[10px] text-ink/40 italic py-3">No deliveries yet. Hit Test or trigger an event.</div>
+                <div className="text-[10px] text-ink/40 italic py-3">
+                  No deliveries yet. Hit Test or trigger an event.
+                </div>
               )}
               <div className="space-y-1.5">
                 {(deliveries || []).map((d) => {
@@ -419,22 +550,45 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                       ? "bg-rose-500/15 text-rose-400 border-rose-500/30"
                       : "bg-amber-500/15 text-amber-400 border-amber-500/30";
                   return (
-                    <div key={d.id} className="rounded-lg bg-black/20 border border-white/5 px-3 py-2 flex items-center gap-3 flex-wrap text-[11px]">
-                      <span className={cn("px-1.5 py-0.5 rounded text-[9px] uppercase tracking-[0.25em] border flex items-center gap-1", pillClass)}>
-                        {isSuccess ? <CheckCircle2 className="w-2.5 h-2.5" /> : isDead ? <Skull className="w-2.5 h-2.5" /> : <Loader2 className="w-2.5 h-2.5 animate-spin" />}
+                    <div
+                      key={d.id}
+                      className="rounded-lg bg-black/20 border border-white/5 px-3 py-2 flex items-center gap-3 flex-wrap text-[11px]"
+                    >
+                      <span
+                        className={cn(
+                          "px-1.5 py-0.5 rounded text-[9px] uppercase tracking-[0.25em] border flex items-center gap-1",
+                          pillClass,
+                        )}
+                      >
+                        {isSuccess ? (
+                          <CheckCircle2 className="w-2.5 h-2.5" />
+                        ) : isDead ? (
+                          <Skull className="w-2.5 h-2.5" />
+                        ) : (
+                          <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                        )}
                         {d.status}
                       </span>
                       <span className="font-mono text-ink/80">{d.event}</span>
-                      <span className="text-muted">try {d.attempts}/{d.max_attempts}</span>
+                      <span className="text-muted">
+                        try {d.attempts}/{d.max_attempts}
+                      </span>
                       {d.last_status_code !== null && d.last_status_code > 0 && (
                         <span className="font-mono text-muted">HTTP {d.last_status_code}</span>
                       )}
                       <span className="text-muted">{formatDateTime(d.created_at)}</span>
                       {d.last_error && (
-                        <span className="text-rose-400/80 font-mono truncate max-w-[40ch]" title={d.last_error}>{d.last_error}</span>
+                        <span
+                          className="text-rose-400/80 font-mono truncate max-w-[40ch]"
+                          title={d.last_error}
+                        >
+                          {d.last_error}
+                        </span>
                       )}
                       {d.next_attempt_at && d.status === "pending" && (
-                        <span className="text-amber-400/80">next {formatTime(d.next_attempt_at)}</span>
+                        <span className="text-amber-400/80">
+                          next {formatTime(d.next_attempt_at)}
+                        </span>
                       )}
                       <div className="ml-auto flex items-center gap-1">
                         {!isSuccess && (
@@ -443,7 +597,11 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                             disabled={deliveryBusy === d.id}
                             className="px-2 py-0.5 rounded text-[9px] uppercase tracking-[0.25em] bg-brand/15 border border-brand/40 text-brand hover:bg-brand/25 flex items-center gap-1 disabled:opacity-50"
                           >
-                            {deliveryBusy === d.id ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <RotateCcw className="w-2.5 h-2.5" />}
+                            {deliveryBusy === d.id ? (
+                              <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                            ) : (
+                              <RotateCcw className="w-2.5 h-2.5" />
+                            )}
                             Retry
                           </button>
                         )}
@@ -466,4 +624,4 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
       </AnimatePresence>
     </div>
   );
-}
+};

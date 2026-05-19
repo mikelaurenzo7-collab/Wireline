@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Brain, ArrowUpCircle, Trash2, CheckCircle2, Zap, Terminal, Loader2 } from "lucide-react";
 import { authFetch } from "../lib/api";
@@ -20,7 +20,7 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
 
   // agentId-keyed effect with a cancel guard. Parent (FleetSettings)
   // currently force-remounts via key={selectedAgent.id}, which masks the
-  // race today â€” but defense in depth: if a future caller mounts this
+  // race today — but defense in depth: if a future caller mounts this
   // long-lived and just changes agentId, A's lessons must not land
   // under B's header.
   useEffect(() => {
@@ -61,7 +61,7 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
         toastError("Promotion failed", "Could not promote this observation.");
       }
     } catch {
-      toastError("Promotion failed", "Network error â€” please try again.");
+      toastError("Promotion failed", "Network error — please try again.");
     } finally {
       setIsPromoting(null);
     }
@@ -77,7 +77,7 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
         toastError("Delete failed", "Could not discard this observation.");
       }
     } catch {
-      toastError("Delete failed", "Network error â€” please try again.");
+      toastError("Delete failed", "Network error — please try again.");
     } finally {
       setIsDeleting(null);
     }
@@ -100,7 +100,7 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
             <Brain className="w-3 h-3 text-brand" />
           </div>
         </div>
-        <p className="text-[9px] uppercase tracking-[0.5em] text-muted/60">Loading observationsâ€¦</p>
+        <p className="text-[9px] uppercase tracking-[0.5em] text-muted/60">Loading observations…</p>
       </div>
     );
   }
@@ -165,7 +165,7 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
                     <div className="flex-1 min-w-0 space-y-2">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-[8px] uppercase tracking-[0.3em] text-muted/60">
-                          Observation Â· {formatDate(lesson.created_at)}
+                          Observation · {formatDate(lesson.created_at)}
                         </span>
                         <div className="flex items-center gap-1.5">
                           <button

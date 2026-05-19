@@ -15,7 +15,11 @@ import {
 export type NavItem = {
   label: string;
   path: string;
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  icon: React.ComponentType<{
+    className?: string;
+    strokeWidth?: number;
+    style?: React.CSSProperties;
+  }>;
   badge?: number;
   dataTour?: string;
   matches?: string[];

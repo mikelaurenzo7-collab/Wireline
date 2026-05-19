@@ -1,4 +1,4 @@
-﻿import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { Activity, Zap, Cpu, Signal, Radio, Waves } from "lucide-react";
 import { cn } from "../lib/utils";
 import { formatTime } from "../lib/safe-date";
@@ -41,7 +41,7 @@ export default function TriggerIntelligenceFeed({ activity }: { activity: Activi
               <Waves className="w-5 h-5 text-brand/60" />
             </div>
           </div>
-          <p className="text-[9px] uppercase tracking-[0.5em] text-muted/50">Awaiting signalsâ€¦</p>
+          <p className="text-[9px] uppercase tracking-[0.5em] text-muted/50">Awaiting signals…</p>
         </div>
       ) : (
         <ul className="flex-1 divide-y divide-white/5 overflow-y-auto scrollbar-hide">

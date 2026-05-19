@@ -89,7 +89,7 @@ export default function StripeBillingCard() {
     refresh();
   }, []);
 
-  // Reflect Stripe's redirect back to /admin?billing=success â€” refresh
+  // Reflect Stripe's redirect back to /admin?billing=success — refresh
   // so the card flips from "no sub" to active without needing the user
   // to reload by hand.
   useEffect(() => {
@@ -105,7 +105,7 @@ export default function StripeBillingCard() {
 
   const startCheckout = async (planId: string) => {
     // Plan changes for an existing subscriber go through the Customer
-    // Portal â€” Stripe handles proration cleanly there and we avoid
+    // Portal — Stripe handles proration cleanly there and we avoid
     // creating a second concurrent subscription. The server enforces
     // this with a 409 ALREADY_SUBSCRIBED, but routing client-side
     // gives a smoother UX (one redirect instead of two).
@@ -158,7 +158,7 @@ export default function StripeBillingCard() {
       <div className="rounded-2xl glass border border-white/10 p-10 flex items-center gap-4">
         <Loader2 className="w-5 h-5 animate-spin text-brand" />
         <span className="text-[10px] uppercase tracking-[0.4em] text-muted/70">
-          Loading billing stateâ€¦
+          Loading billing state…
         </span>
       </div>
     );
@@ -214,7 +214,7 @@ export default function StripeBillingCard() {
         />
       )}
 
-      {/* Voice-minute usage â€” only renders when there's an active plan */}
+      {/* Voice-minute usage — only renders when there's an active plan */}
       {sub?.has_subscription && <UsageMeter />}
 
       {error && (
@@ -232,7 +232,7 @@ export default function StripeBillingCard() {
           </h3>
           {!hasActive && (
             <p className="text-[12px] text-muted/70 mt-1.5 leading-relaxed max-w-lg">
-              Each agent replaces hours of human intake, follow-up, and triage work â€” for a fraction
+              Each agent replaces hours of human intake, follow-up, and triage work — for a fraction
               of the cost. No setup fees. Cancel anytime.
             </p>
           )}
@@ -346,13 +346,13 @@ export default function StripeBillingCard() {
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/6 pt-6">
           <div className="text-[10px] uppercase tracking-[0.35em] text-muted/50 flex items-center gap-2">
             <Shield className="w-3 h-3" />
-            Stripe Â· PCI DSS Level 1 Â· Cancel anytime
+            Stripe · PCI DSS Level 1 · Cancel anytime
           </div>
           <div className="flex items-center gap-3 text-[9px] text-muted/40 uppercase tracking-[0.2em]">
             <a href="/privacy" className="hover:text-muted/70 transition-colors">
               Privacy
             </a>
-            <span>Â·</span>
+            <span>·</span>
             <a href="/terms" className="hover:text-muted/70 transition-colors">
               Terms
             </a>
@@ -429,7 +429,7 @@ function ActiveSubCard({
               )}
             </div>
             <h3 className="font-display italic lowercase text-3xl md:text-4xl text-ink">
-              {sub.plan_name || sub.plan || "â€”"}
+              {sub.plan_name || sub.plan || "—"}
             </h3>
             <p className="text-[10px] uppercase tracking-[0.35em] text-muted/60">
               {sub.max_agents ? (
@@ -441,9 +441,9 @@ function ActiveSubCard({
               )}
               {renews && (
                 <>
-                  {sub.max_agents ? " Â· " : ""}
+                  {sub.max_agents ? " · " : ""}
                   renews {formatDate(renews)}
-                  {daysLeft !== null ? ` Â· ${daysLeft}d` : ""}
+                  {daysLeft !== null ? ` · ${daysLeft}d` : ""}
                 </>
               )}
             </p>

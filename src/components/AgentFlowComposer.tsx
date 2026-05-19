@@ -1,6 +1,16 @@
-﻿// AgentFlowComposer â€” neural-aligned linear stage progression editor.
+// AgentFlowComposer — neural-aligned linear stage progression editor.
 import React, { useState, useEffect } from "react";
-import { Plus, Trash2, ArrowRight, Save, Settings2, GripVertical, CheckCircle2, Workflow, Loader2 } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  ArrowRight,
+  Save,
+  Settings2,
+  GripVertical,
+  CheckCircle2,
+  Workflow,
+  Loader2,
+} from "lucide-react";
 import { motion, AnimatePresence, Reorder } from "motion/react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
@@ -35,7 +45,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
         const res = await authFetch(`/api/agent-config/${agentId}`);
         const data = await res.json();
         if (!active) return;
-        
+
         if (data.flowConfig && Array.isArray(data.flowConfig)) {
           setSteps(data.flowConfig);
           setActiveStepId(data.flowConfig[0]?.id || "");
@@ -45,9 +55,11 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
             {
               id: "step-1",
               name: "Greeting & Verification",
-              instructions: "Greet the user warmly. Verify you are speaking with the decision maker. Introduce the reason for the call.",
-              transitionCondition: "User confirms their identity and expresses willingness to continue.",
-            }
+              instructions:
+                "Greet the user warmly. Verify you are speaking with the decision maker. Introduce the reason for the call.",
+              transitionCondition:
+                "User confirms their identity and expresses willingness to continue.",
+            },
           ];
           setSteps(initialSteps);
           setActiveStepId(initialSteps[0].id);
@@ -59,26 +71,31 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
       }
     };
     fetchFlow();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [agentId, toastError]);
 
-  const activeStepIndex = steps.findIndex(s => s.id === activeStepId);
+  const activeStepIndex = steps.findIndex((s) => s.id === activeStepId);
   const activeStep = steps[activeStepIndex];
 
   const handleAddStep = () => {
     const newId = `step-${Date.now()}`;
-    setSteps([...steps, {
-      id: newId,
-      name: "New Stage",
-      instructions: "",
-      transitionCondition: "",
-    }]);
+    setSteps([
+      ...steps,
+      {
+        id: newId,
+        name: "New Stage",
+        instructions: "",
+        transitionCondition: "",
+      },
+    ]);
     setActiveStepId(newId);
   };
 
   const handleRemoveStep = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const newSteps = steps.filter(s => s.id !== id);
+    const newSteps = steps.filter((s) => s.id !== id);
     setSteps(newSteps);
     if (activeStepId === id && newSteps.length > 0) {
       setActiveStepId(newSteps[0].id);
@@ -86,13 +103,13 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
   };
 
   const handleUpdateStep = (id: string, field: keyof FlowStep, value: string | boolean) => {
-    setSteps(steps.map(s => s.id === id ? { ...s, [field]: value } : s));
+    setSteps(steps.map((s) => (s.id === id ? { ...s, [field]: value } : s)));
   };
 
   const handleSave = async () => {
     setIsSaving(true);
     setSaveSuccess(false);
-    
+
     try {
       const res = await authFetch(`/api/agent-config/${agentId}/manual`, {
         method: "POST",
@@ -103,7 +120,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
         }),
       });
       if (!res.ok) throw new Error("Save failed");
-      
+
       setSaveSuccess(true);
       toastSuccess("Flow configuration saved");
       setTimeout(() => setSaveSuccess(false), 2500);
@@ -139,7 +156,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
               Linear stage progression
             </p>
           </div>
-          <button 
+          <button
             onClick={handleAddStep}
             className="w-8 h-8 rounded-full glass border border-brand/30 text-brand flex items-center justify-center hover:bg-brand/10 transition-colors"
           >
@@ -154,51 +171,46 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
               <p className="text-sm text-muted">No stages defined.</p>
             </div>
           ) : (
-            <Reorder.Group 
-              axis="y" 
-              values={steps} 
-              onReorder={setSteps} 
-              className="space-y-2"
-            >
+            <Reorder.Group axis="y" values={steps} onReorder={setSteps} className="space-y-2">
               <AnimatePresence>
                 {steps.map((step, index) => (
-                  <Reorder.Item
-                    key={step.id}
-                    value={step}
-                    className="relative"
-                  >
+                  <Reorder.Item key={step.id} value={step} className="relative">
                     {/* Connecting line */}
                     {index < steps.length - 1 && (
                       <div className="absolute left-6 top-10 bottom-[-16px] w-0.5 bg-brand/20 z-0" />
                     )}
 
-                    <div 
+                    <div
                       onClick={() => setActiveStepId(step.id)}
                       className={cn(
                         "relative z-10 flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer group",
-                        activeStepId === step.id 
-                          ? "bg-brand/10 border-brand/40 shadow-[0_0_15px_rgba(79, 30, 123 ,0.1)]" 
-                          : "glass border-white/10 hover:border-white/30"
+                        activeStepId === step.id
+                          ? "bg-brand/10 border-brand/40 shadow-[0_0_15px_rgba(79, 30, 123 ,0.1)]"
+                          : "glass border-white/10 hover:border-white/30",
                       )}
                     >
                       <div className="cursor-grab active:cursor-grabbing text-muted/40 hover:text-ink/60 transition-colors shrink-0">
                         <GripVertical className="w-4 h-4" />
                       </div>
-                      
-                      <div className={cn(
-                        "w-6 h-6 rounded-full flex items-center justify-center shrink-0 border text-[10px] font-mono",
-                        activeStepId === step.id 
-                          ? "bg-brand text-paper border-brand" 
-                          : "bg-black/20 text-muted border-white/20"
-                      )}>
+
+                      <div
+                        className={cn(
+                          "w-6 h-6 rounded-full flex items-center justify-center shrink-0 border text-[10px] font-mono",
+                          activeStepId === step.id
+                            ? "bg-brand text-paper border-brand"
+                            : "bg-black/20 text-muted border-white/20",
+                        )}
+                      >
                         {index + 1}
                       </div>
-                      
+
                       <div className="flex-1 min-w-0">
-                        <div className={cn(
-                          "text-sm font-medium truncate",
-                          activeStepId === step.id ? "text-brand" : "text-ink/80"
-                        )}>
+                        <div
+                          className={cn(
+                            "text-sm font-medium truncate",
+                            activeStepId === step.id ? "text-brand" : "text-ink/80",
+                          )}
+                        >
                           {step.name || "Unnamed Stage"}
                         </div>
                         {step.isEndNode && (
@@ -207,7 +219,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                           </div>
                         )}
                       </div>
-                      
+
                       <button
                         onClick={(e) => handleRemoveStep(step.id, e)}
                         className="w-6 h-6 rounded-md flex items-center justify-center text-muted/40 hover:text-rose-500 hover:bg-rose-500/10 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
@@ -246,26 +258,32 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-3">
                   <label className="flex items-center gap-2 cursor-pointer group">
-                    <input 
+                    <input
                       type="checkbox"
                       checked={!!activeStep.isEndNode}
-                      onChange={(e) => handleUpdateStep(activeStep.id, "isEndNode", e.target.checked)}
+                      onChange={(e) =>
+                        handleUpdateStep(activeStep.id, "isEndNode", e.target.checked)
+                      }
                       className="sr-only"
                     />
-                    <div className={cn(
-                      "w-4 h-4 rounded border flex items-center justify-center transition-colors",
-                      activeStep.isEndNode ? "bg-rose-500 border-rose-500" : "glass border-white/20 group-hover:border-rose-500/50"
-                    )}>
+                    <div
+                      className={cn(
+                        "w-4 h-4 rounded border flex items-center justify-center transition-colors",
+                        activeStep.isEndNode
+                          ? "bg-rose-500 border-rose-500"
+                          : "glass border-white/20 group-hover:border-rose-500/50",
+                      )}
+                    >
                       {activeStep.isEndNode && <CheckCircle2 className="w-3 h-3 text-white" />}
                     </div>
                     <span className="text-[10px] uppercase tracking-[0.2em] text-muted group-hover:text-ink transition-colors">
                       Terminal stage (Ends call)
                     </span>
                   </label>
-                  
+
                   <button
                     onClick={handleSave}
                     disabled={isSaving}
@@ -291,11 +309,14 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                     <h4 className="text-[11px] uppercase tracking-[0.3em]">Agent Instructions</h4>
                   </div>
                   <p className="text-[11px] text-muted/70 leading-relaxed max-w-2xl">
-                    What should the agent say and do while in this stage? Be specific about the goals, questions to ask, and tone to maintain.
+                    What should the agent say and do while in this stage? Be specific about the
+                    goals, questions to ask, and tone to maintain.
                   </p>
                   <textarea
                     value={activeStep.instructions}
-                    onChange={(e) => handleUpdateStep(activeStep.id, "instructions", e.target.value)}
+                    onChange={(e) =>
+                      handleUpdateStep(activeStep.id, "instructions", e.target.value)
+                    }
                     placeholder="e.g. You are now qualifying the lead. Ask about their budget and timeline. Do not mention specific pricing yet."
                     className="w-full h-40 bg-black/10 border border-white/10 rounded-xl p-4 text-sm text-ink leading-relaxed resize-none focus:outline-none focus:border-brand/40 transition-colors placeholder:text-muted/30"
                   />
@@ -308,29 +329,35 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 text-emerald-500">
                       <ArrowRight className="w-4 h-4" />
-                      <h4 className="text-[11px] uppercase tracking-[0.3em]">Transition Condition</h4>
+                      <h4 className="text-[11px] uppercase tracking-[0.3em]">
+                        Transition Condition
+                      </h4>
                     </div>
                     <p className="text-[11px] text-muted/70 leading-relaxed max-w-2xl">
-                      When should the agent naturally progress to the next stage? The LLM evaluates this condition continuously.
+                      When should the agent naturally progress to the next stage? The LLM evaluates
+                      this condition continuously.
                     </p>
                     <div className="relative">
-                      <div className="absolute left-4 top-4 text-emerald-500/50">
-                        IF:
-                      </div>
+                      <div className="absolute left-4 top-4 text-emerald-500/50">IF:</div>
                       <textarea
                         value={activeStep.transitionCondition}
-                        onChange={(e) => handleUpdateStep(activeStep.id, "transitionCondition", e.target.value)}
+                        onChange={(e) =>
+                          handleUpdateStep(activeStep.id, "transitionCondition", e.target.value)
+                        }
                         placeholder="e.g. The user has provided their email address and expressed interest in a demo."
                         className="w-full h-24 bg-black/10 border border-emerald-500/20 rounded-xl pl-12 pr-4 py-4 text-sm text-ink leading-relaxed resize-none focus:outline-none focus:border-emerald-500/50 transition-colors placeholder:text-muted/30"
                       />
                     </div>
-                    
+
                     {/* Visual indicator of next step */}
                     {activeStepIndex < steps.length - 1 && (
                       <div className="flex items-center gap-3 mt-4 opacity-70">
                         <div className="h-px flex-1 bg-white/10" />
                         <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-muted">
-                          Proceeds to: <span className="text-ink font-medium">{steps[activeStepIndex + 1].name}</span>
+                          Proceeds to:{" "}
+                          <span className="text-ink font-medium">
+                            {steps[activeStepIndex + 1].name}
+                          </span>
                         </div>
                         <div className="h-px flex-1 bg-white/10" />
                       </div>
@@ -343,8 +370,8 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                     </div>
                     <h4 className="text-sm font-medium text-ink mb-1">Terminal Stage</h4>
                     <p className="text-[11px] text-muted/70 max-w-md mx-auto">
-                      The call will gracefully end when the instructions in this stage have been fulfilled. 
-                      No transition condition is required.
+                      The call will gracefully end when the instructions in this stage have been
+                      fulfilled. No transition condition is required.
                     </p>
                   </div>
                 )}
@@ -357,7 +384,8 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
               </div>
               <h3 className="font-display italic text-2xl text-ink/80 mb-2">Select a Stage</h3>
               <p className="text-sm text-muted max-w-md">
-                Click on a stage from the flow on the left to edit its instructions and transition logic.
+                Click on a stage from the flow on the left to edit its instructions and transition
+                logic.
               </p>
             </div>
           )}

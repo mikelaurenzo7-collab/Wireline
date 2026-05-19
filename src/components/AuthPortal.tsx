@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ShieldCheck,
@@ -33,7 +33,7 @@ const FEATURES = [
   {
     icon: PhoneIncoming,
     title: "Inbound Support",
-    desc: "Agents pick up 24/7 â€” answer questions, route urgent calls, schedule appointments, and capture intent.",
+    desc: "Agents pick up 24/7 — answer questions, route urgent calls, schedule appointments, and capture intent.",
     accent: "#4F1E7B",
   },
   {
@@ -51,7 +51,7 @@ const FEATURES = [
   {
     icon: Radio,
     title: "Live Monitor & Insights",
-    desc: "Watch every conversation in real time. Sentiment, funnels, topic clusters, leaderboards â€” one dashboard.",
+    desc: "Watch every conversation in real time. Sentiment, funnels, topic clusters, leaderboards — one dashboard.",
     accent: "#10B981",
   },
 ];
@@ -75,7 +75,7 @@ function AgentCardLink({ agent, isDemo }: { agent: AgentCard; isDemo?: boolean }
         </div>
         <div className="flex-1 min-w-0 pr-2">
           <p className="text-[9px] uppercase tracking-[0.2em] text-muted/70 leading-none mb-1 truncate">
-            {isDemo ? "DEMO" : "LIVE"} Â· {agent.name}
+            {isDemo ? "DEMO" : "LIVE"} · {agent.name}
           </p>
           <p className="font-display italic text-sm leading-snug text-ink/90 group-hover:text-ink transition-colors line-clamp-2 text-balance">
             {agent.role}
@@ -141,7 +141,7 @@ export default function AuthPortal() {
       setError("Email is required.");
       return;
     }
-    // RFC-5322-ish â€” good enough for client-side; server is authoritative.
+    // RFC-5322-ish — good enough for client-side; server is authoritative.
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
       setError("Enter a valid email address.");
       return;
@@ -195,7 +195,7 @@ export default function AuthPortal() {
         title={isReset ? "Reset Password" : isSignUp ? "Create Account" : "Sign In"}
         description={
           isSignUp
-            ? "Start your 14-day free Wireline trial â€” deploy an AI voice agent in under 10 minutes. No credit card required."
+            ? "Start your 14-day free Wireline trial — deploy an AI voice agent in under 10 minutes. No credit card required."
             : "Sign in to your Wireline operator console to manage your AI voice agents, call logs, and outbound campaigns."
         }
       />
@@ -204,7 +204,7 @@ export default function AuthPortal() {
         <div className="pointer-events-none fixed inset-0 z-0 bg-[#FAF9F5]" />
         <div className="scanline" />
 
-        {/* â”€â”€ LEFT PANEL â€” brand showcase â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        {/* ── LEFT PANEL — brand showcase ───────────────────────────────────────
            h-screen + overflow-y-auto so the agent showcase + integration
            strip don't push the whole layout taller than the viewport.
            Without this, the left column at lg+ widths grows to ~1020px,
@@ -238,7 +238,9 @@ export default function AuthPortal() {
               <WirelineMark className="w-4 h-4 text-[#FAF9F5]" strokeWidth={130} />
             </div>
             <div>
-              <span className="brand-wordmark text-xl leading-none !text-[#4F1E7B] !filter-none">WIRELINE</span>
+              <span className="brand-wordmark text-xl leading-none !text-[#4F1E7B] !filter-none">
+                WIRELINE
+              </span>
               <p className="text-[7px] tracking-[0.42em] uppercase text-muted mt-0.5">
                 AI Voice Platform
               </p>
@@ -266,7 +268,7 @@ export default function AuthPortal() {
             <p className="text-[13px] text-muted/80 leading-relaxed max-w-md mb-5">
               Wireline runs your <span className="text-ink/90">inbound support</span>,{" "}
               <span className="text-ink/90">outbound sales</span>, and{" "}
-              <span className="text-ink/90">email follow-ups</span> across one fleet of AI agents â€”
+              <span className="text-ink/90">email follow-ups</span> across one fleet of AI agents —
               trained on your playbook, available 24/7, improving with every interaction.
             </p>
             <div className="flex items-center gap-5">
@@ -350,7 +352,7 @@ export default function AuthPortal() {
             </div>
           </motion.div>
 
-          {/* Integration logo strip â€” trust signal showing the stack we run on */}
+          {/* Integration logo strip — trust signal showing the stack we run on */}
           <IntegrationLogos />
 
           {/* Trust row */}
@@ -376,16 +378,16 @@ export default function AuthPortal() {
               to="/pricing"
               className="text-[9px] uppercase tracking-[0.38em] text-muted/60 hover:text-ink transition-colors"
             >
-              Pricing â†’
+              Pricing →
             </Link>
           </motion.div>
         </div>
 
-        {/* â”€â”€ RIGHT PANEL â€” auth form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        {/* ── RIGHT PANEL — auth form ────────────────────────────────────────────
            Anchored to the top (not vertically centered) so the Sign In
-           button is reliably above the fold at 1280Ã—800 / 1366Ã—768 laptops.
+           button is reliably above the fold at 1280×800 / 1366×768 laptops.
            Previously `justify-center` pushed the form to ~440px from the top
-           of an 800px viewport, putting the Sign In button at ~875px â€”
+           of an 800px viewport, putting the Sign In button at ~875px —
            below the fold. */}
         <div className="flex-1 flex flex-col items-center relative z-10 py-4 px-6 md:py-6 md:px-10 overflow-y-auto">
           <div className="lg:hidden w-full max-w-md mb-6 pt-4">
@@ -401,7 +403,9 @@ export default function AuthPortal() {
                 <WirelineMark className="w-5 h-5 text-paper" strokeWidth={130} />
               </div>
               <div>
-                <span className="brand-wordmark text-2xl leading-none !text-[#4F1E7B] !filter-none">WIRELINE</span>
+                <span className="brand-wordmark text-2xl leading-none !text-[#4F1E7B] !filter-none">
+                  WIRELINE
+                </span>
                 <p className="text-[8px] tracking-[0.42em] uppercase text-muted mt-0.5">
                   AI Voice Platform
                 </p>
@@ -414,7 +418,7 @@ export default function AuthPortal() {
             </h2>
             <p className="text-[12px] text-muted/80 leading-relaxed mb-5">
               Wireline runs your inbound support, outbound sales, and email follow-ups across one
-              fleet of AI agents â€” trained on your playbook, available 24/7.
+              fleet of AI agents — trained on your playbook, available 24/7.
             </p>
             {/* Feature pill badges */}
             <div className="flex flex-wrap gap-2">
@@ -442,7 +446,7 @@ export default function AuthPortal() {
             />
           </div>
 
-          {/* Mobile logo â€” retained for the form-card width reference, hidden visually below hero */}
+          {/* Mobile logo — retained for the form-card width reference, hidden visually below hero */}
           <div className="hidden">
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center"
@@ -480,7 +484,7 @@ export default function AuthPortal() {
                   </p>
                 </div>
 
-                {/* Tab toggle â€” hidden in reset mode */}
+                {/* Tab toggle — hidden in reset mode */}
                 {!isReset && (
                   <div className="relative z-10 mb-7">
                     <div className="relative flex p-1 rounded-2xl bg-black/5 border border-black/5">
@@ -540,7 +544,7 @@ export default function AuthPortal() {
                     </div>
                   </div>
 
-                  {/* Password â€” hidden in reset mode */}
+                  {/* Password — hidden in reset mode */}
                   {!isReset && (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
@@ -570,7 +574,7 @@ export default function AuthPortal() {
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           className="auth-input tracking-[0.32em]"
-                          placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                          placeholder="••••••••••••"
                         />
                         <div
                           className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity"
@@ -580,7 +584,7 @@ export default function AuthPortal() {
                           }}
                         />
                       </div>
-                      {/* Password strength meter â€” sign-up only */}
+                      {/* Password strength meter — sign-up only */}
                       {isSignUp && password.length > 0 && pwStrength && (
                         <div className="space-y-1.5">
                           <div className="flex gap-1">
@@ -590,9 +594,7 @@ export default function AuthPortal() {
                                 className="h-1 flex-1 rounded-full transition-all duration-300"
                                 style={{
                                   background:
-                                    i <= pwStrength.score
-                                      ? pwStrength.color
-                                      : "rgba(0,0,0,0.06)",
+                                    i <= pwStrength.score ? pwStrength.color : "rgba(0,0,0,0.06)",
                                 }}
                               />
                             ))}
@@ -608,7 +610,7 @@ export default function AuthPortal() {
                     </div>
                   )}
 
-                  {/* Reset-mode footer â€” link back to sign-in */}
+                  {/* Reset-mode footer — link back to sign-in */}
                   {isReset && (
                     <button
                       type="button"
@@ -619,7 +621,7 @@ export default function AuthPortal() {
                       }}
                       className="text-[10px] uppercase tracking-[0.3em] text-muted/60 hover:text-[#4F1E7B] transition-colors"
                     >
-                      â† Back to sign in
+                      ← Back to sign in
                     </button>
                   )}
 
@@ -657,12 +659,12 @@ export default function AuthPortal() {
                     disabled={loading}
                     className="w-full flex items-center justify-center gap-2 py-4 px-6 text-[12px] tracking-[0.3em] uppercase font-medium rounded-full cursor-pointer text-white bg-[#4F1E7B] hover:bg-[#6A25A3] active:translate-y-0 hover:-translate-y-[1px] transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
                     style={{
-                      boxShadow: "0 4px 12px -2px rgba(79,30,123,0.3)"
+                      boxShadow: "0 4px 12px -2px rgba(79,30,123,0.3)",
                     }}
                   >
                     {loading ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin" /> Connectingâ€¦
+                        <Loader2 className="w-4 h-4 animate-spin" /> Connecting…
                       </>
                     ) : isReset ? (
                       <>
@@ -684,7 +686,7 @@ export default function AuthPortal() {
               </div>
             </div>
 
-            {/* Feature pillars â€” moved here from the left brand panel so they
+            {/* Feature pillars — moved here from the left brand panel so they
               fill the white space under the sign-in card and reinforce
               value-props at the moment of conversion (the user is right
               next to the Sign In button when they read these). */}
@@ -703,9 +705,7 @@ export default function AuthPortal() {
                     }}
                     className="relative rounded-xl p-3 border border-black/5 bg-[#FAF8F5] overflow-hidden"
                   >
-                    <div
-                      className="w-7 h-7 rounded-lg flex items-center justify-center mb-2 border border-black/5 bg-[#4F1E7B]/10 text-[#4F1E7B]"
-                    >
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center mb-2 border border-black/5 bg-[#4F1E7B]/10 text-[#4F1E7B]">
                       <Icon className="w-3.5 h-3.5" />
                     </div>
                     <p className="text-[11px] font-medium text-ink mb-0.5 leading-tight">
@@ -721,7 +721,7 @@ export default function AuthPortal() {
             <div className="mt-5 flex items-center justify-center gap-4">
               <ShieldCheck className="w-3 h-3 text-muted/40" />
               <span className="text-[9px] uppercase tracking-[0.42em] text-muted/50">
-                TLS Encrypted Â· Secured Internal Infrastructure
+                TLS Encrypted · Secured Internal Infrastructure
               </span>
             </div>
           </motion.div>

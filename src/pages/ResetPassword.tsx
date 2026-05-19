@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Lock, AlertTriangle, Check } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
@@ -15,7 +15,7 @@ import WirelineMark from "../components/WirelineMark";
  *
  * The page must render even when the user is unauthenticated, so
  * App.tsx routes to this BEFORE the auth guard. We don't navigate
- * away when the user already has a session â€” they might still want
+ * away when the user already has a session — they might still want
  * to reset on a shared device.
  */
 export default function ResetPassword() {
@@ -64,7 +64,7 @@ export default function ResetPassword() {
       setSuccess(true);
 
       if (data.token && data.user) {
-        // Backend returns a fresh JWT â€” sign the user straight in and
+        // Backend returns a fresh JWT — sign the user straight in and
         // route to the dashboard. The brief "Password updated"
         // confirmation animates for ~1s before the redirect so the
         // success state isn't ambiguous.
@@ -83,7 +83,9 @@ export default function ResetPassword() {
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div
           className="absolute -top-[25%] -left-[15%] w-[70vw] h-[70vw] max-w-[640px] max-h-[640px] rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(79, 30, 123 ,0.16), transparent 60%)" }}
+          style={{
+            background: "radial-gradient(circle, rgba(79, 30, 123 ,0.16), transparent 60%)",
+          }}
         />
         <div
           className="absolute -bottom-[20%] -right-[15%] w-[65vw] h-[65vw] max-w-[600px] max-h-[600px] rounded-full"
@@ -117,7 +119,7 @@ export default function ResetPassword() {
           <div className="space-y-4 p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/30">
             <div className="flex items-center gap-3 text-emerald-500">
               <Check className="w-5 h-5" />
-              <span className="text-sm font-medium">Password updated. Signing you inâ€¦</span>
+              <span className="text-sm font-medium">Password updated. Signing you in…</span>
             </div>
           </div>
         ) : !token ? (
@@ -152,7 +154,7 @@ export default function ResetPassword() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="auth-input tracking-[0.32em]"
-                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                placeholder="••••••••••••"
                 autoComplete="new-password"
               />
             </div>
@@ -169,7 +171,7 @@ export default function ResetPassword() {
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
                 className="auth-input tracking-[0.32em]"
-                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                placeholder="••••••••••••"
                 autoComplete="new-password"
               />
             </div>
@@ -190,7 +192,7 @@ export default function ResetPassword() {
                 boxShadow: "0 8px 24px -8px rgba(79, 30, 123 ,0.50)",
               }}
             >
-              {loading ? "Updatingâ€¦" : "Reset password"}
+              {loading ? "Updating…" : "Reset password"}
             </button>
 
             <div className="text-center pt-2">
@@ -198,7 +200,7 @@ export default function ResetPassword() {
                 href="/"
                 className="text-[10px] uppercase tracking-[0.3em] text-muted/60 hover:text-brand transition-colors"
               >
-                â† Back to sign in
+                ← Back to sign in
               </a>
             </div>
           </form>

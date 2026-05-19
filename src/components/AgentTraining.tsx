@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Send,
   Bot,
@@ -44,7 +44,9 @@ type Message = { role: "user" | "assistant"; content: string };
 
 export default function AgentTraining() {
   const { error: toastError } = useToast();
-  const [activeTab, setActiveTab] = useState<"admin" | "simulator" | "database" | "flow" | "actions">("flow");
+  const [activeTab, setActiveTab] = useState<
+    "admin" | "simulator" | "database" | "flow" | "actions"
+  >("flow");
   const [agents, setAgents] = useState<any[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState("default-agent");
   const [messages, setMessages] = useState<Message[]>([
@@ -94,7 +96,7 @@ export default function AgentTraining() {
       setPersonalityDraft(data.personality || "");
       setLessons(data.lessons || []);
     } catch {
-      /* training fetch failures are non-fatal â€” UI shows empty state */
+      /* training fetch failures are non-fatal — UI shows empty state */
     }
   };
 
@@ -124,7 +126,7 @@ export default function AgentTraining() {
           {
             role: "assistant",
             content:
-              data.error || "Couldn't parse the response â€” try rephrasing your training input.",
+              data.error || "Couldn't parse the response — try rephrasing your training input.",
           },
         ]);
       }
@@ -134,7 +136,7 @@ export default function AgentTraining() {
         {
           role: "assistant",
           content:
-            "Couldn't reach the training service. Check your input and try again â€” if it keeps failing, ping Tyler at (564) 238-9455.",
+            "Couldn't reach the training service. Check your input and try again — if it keeps failing, ping Tyler at (564) 238-9455.",
         },
       ]);
     } finally {
@@ -147,7 +149,7 @@ export default function AgentTraining() {
       await authFetch(`/api/agent-config/${selectedAgentId}/${type}/${id}`, { method: "DELETE" });
       fetchKnowledge();
     } catch {
-      /* swallow â€” UI will reflect server state on next fetch */
+      /* swallow — UI will reflect server state on next fetch */
     }
   };
 
@@ -219,7 +221,7 @@ export default function AgentTraining() {
           <div className="flex items-center gap-3 min-w-0">
             <div>
               <div className="text-[10px] uppercase tracking-[0.45em] text-brand/80 mb-1">
-                Studio Â· Training
+                Studio · Training
               </div>
               <h1 className="font-display italic lowercase text-3xl md:text-4xl text-ink leading-none">
                 <span className="text-aurora">agent training</span>
@@ -249,7 +251,7 @@ export default function AgentTraining() {
           </div>
         </div>
 
-        {/* Claude Brain rail â€” recipes scoped to the selected agent */}
+        {/* Claude Brain rail — recipes scoped to the selected agent */}
         <div className="max-w-[1400px] mx-auto w-full mt-3">
           <div className="relative aurora-ring rounded-2xl">
             <div className="relative rounded-2xl glass p-3 flex flex-wrap items-center gap-2 overflow-hidden">
@@ -439,7 +441,8 @@ export default function AgentTraining() {
                       style={
                         msg.role === "assistant"
                           ? {
-                              boxShadow: "0 0 16px -4px rgba(79, 30, 123 ,0.15), 0 1px 0 rgba(255,255,255,0.4) inset",
+                              boxShadow:
+                                "0 0 16px -4px rgba(79, 30, 123 ,0.15), 0 1px 0 rgba(255,255,255,0.4) inset",
                             }
                           : {
                               boxShadow: "0 1px 0 rgba(255,255,255,0.6) inset",
@@ -451,7 +454,8 @@ export default function AgentTraining() {
                           key={lIdx}
                           className={cn(
                             lIdx > 0 && "mt-1.5",
-                            (line.startsWith(">") || line.startsWith("**")) && "text-brand neon-glow-teal font-semibold",
+                            (line.startsWith(">") || line.startsWith("**")) &&
+                              "text-brand neon-glow-teal font-semibold",
                           )}
                         >
                           {line.replace(/^\*\*/g, "").replace(/^>\s?/, "")}
@@ -472,7 +476,7 @@ export default function AgentTraining() {
                     <div className="p-3 bg-brand/8 border border-brand/20 rounded-xl flex items-center gap-2.5">
                       <Loader2 className="w-4 h-4 animate-spin text-brand" />
                       <span className="text-[10px] uppercase tracking-[0.4em] text-brand">
-                        Extractingâ€¦
+                        Extracting…
                       </span>
                     </div>
                   </motion.div>
@@ -486,7 +490,7 @@ export default function AgentTraining() {
                   <input
                     type="text"
                     className="flex-1 bg-transparent py-2.5 outline-none text-sm text-ink placeholder:text-muted/50"
-                    placeholder="Enter training protocolsâ€¦"
+                    placeholder="Enter training protocols…"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSend()}
@@ -546,7 +550,7 @@ export default function AgentTraining() {
                     ) : (
                       <Activity className="w-3.5 h-3.5" />
                     )}
-                    {isOptimizing ? "Analyzingâ€¦" : "Initiate analysis"}
+                    {isOptimizing ? "Analyzing…" : "Initiate analysis"}
                   </button>
                 </div>
                 {optSuggestions && (
@@ -646,7 +650,7 @@ export default function AgentTraining() {
                       value={personalityDraft}
                       onChange={(e) => setPersonalityDraft(e.target.value)}
                       className="w-full min-h-[180px] p-3 rounded-xl bg-black/5 border border-black/10 text-sm text-ink outline-none focus:border-brand/50 resize-none leading-relaxed placeholder:text-muted/50"
-                      placeholder="Define the core identity heuristicsâ€¦"
+                      placeholder="Define the core identity heuristics…"
                     />
                   ) : (
                     <div className="p-4 rounded-xl bg-black/20 border border-white/8">
@@ -722,7 +726,7 @@ export default function AgentTraining() {
                                     disabled={isSavingEntry}
                                     className="px-2.5 py-1 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 disabled:opacity-50"
                                   >
-                                    {isSavingEntry ? "Savingâ€¦" : "Save"}
+                                    {isSavingEntry ? "Saving…" : "Save"}
                                   </button>
                                 </div>
                               </div>
@@ -771,7 +775,7 @@ export default function AgentTraining() {
                         onKeyDown={(e) =>
                           e.key === "Enter" && saveManualEntry("directive", newDirective)
                         }
-                        placeholder="Inject new operational directiveâ€¦"
+                        placeholder="Inject new operational directive…"
                         className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-rose-400/50 text-ink placeholder:text-muted/50"
                       />
                       <button
@@ -804,7 +808,7 @@ export default function AgentTraining() {
                     <AnimatePresence mode="popLayout">
                       {knowledge.length === 0 ? (
                         <div className="py-8 text-center text-muted/70 text-[11px] leading-relaxed px-4">
-                          No knowledge entries yet â€” add a doc snippet, FAQ, or policy below so your
+                          No knowledge entries yet — add a doc snippet, FAQ, or policy below so your
                           agent answers consistently.
                         </div>
                       ) : (
@@ -842,7 +846,7 @@ export default function AgentTraining() {
                                     disabled={isSavingEntry}
                                     className="px-2.5 py-1 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 disabled:opacity-50"
                                   >
-                                    {isSavingEntry ? "Savingâ€¦" : "Save"}
+                                    {isSavingEntry ? "Saving…" : "Save"}
                                   </button>
                                 </div>
                               </div>
@@ -886,7 +890,7 @@ export default function AgentTraining() {
                         onKeyDown={(e) =>
                           e.key === "Enter" && saveManualEntry("knowledge", newKnowledge)
                         }
-                        placeholder="Sync new intelligence dataâ€¦"
+                        placeholder="Sync new intelligence data…"
                         className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-blue-400/50 text-ink placeholder:text-muted/50"
                       />
                       <button
@@ -1010,7 +1014,7 @@ export default function AgentTraining() {
                       </h4>
                       <p className="text-[11px] text-muted/70 leading-relaxed">{sim.desc}</p>
                       <div className="mt-3 text-[9px] uppercase tracking-[0.3em] text-muted/50">
-                        Dormant Â· Offline
+                        Dormant · Offline
                       </div>
                     </div>
                   ))}

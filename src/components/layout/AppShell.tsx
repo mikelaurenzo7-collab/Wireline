@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, lazy, Suspense } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import WirelineMark from "../WirelineMark";
@@ -74,7 +74,7 @@ export default function AppShell() {
     const label =
       PAGE_TITLES[location.pathname] ??
       (location.pathname.startsWith("/contact/") ? "Contact Profile" : null);
-    document.title = label ? `${label} â€” ${branding.brand_name}` : branding.brand_name;
+    document.title = label ? `${label} — ${branding.brand_name}` : branding.brand_name;
   }, [location.pathname, branding.brand_name]);
 
   if (loading) {

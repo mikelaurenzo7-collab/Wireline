@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { Activity, AlertTriangle, Loader2, TrendingUp } from "lucide-react";
 import { authFetch } from "../lib/api";
@@ -58,7 +58,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
   }
 
   if (!snap || !snap.plan_id) {
-    return null; // no active plan â€” nothing to display
+    return null; // no active plan — nothing to display
   }
 
   const used = snap.voice_minutes_used;
@@ -75,7 +75,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
     return (
       <div
         className="flex items-center gap-2 py-1.5 px-3.5 rounded-full premium-glass border border-white/8 text-[10px] font-mono shadow-sm hover:shadow-brand/10 hover:border-brand/30 transition-all duration-300 cursor-help"
-        title={`${used} of ${included} voice minutes used this month â€” resets ${resetLabel}`}
+        title={`${used} of ${included} voice minutes used this month — resets ${resetLabel}`}
       >
         <span
           className="w-2 h-2 rounded-full animate-pulse"
@@ -100,18 +100,20 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
         <div className="flex items-center gap-2.5">
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg"
-            style={{ 
-              background: `${barAccent}1a`, 
+            style={{
+              background: `${barAccent}1a`,
               border: `1px solid ${barAccent}33`,
-              boxShadow: `0 4px 10px -2px ${barAccent}22` 
+              boxShadow: `0 4px 10px -2px ${barAccent}22`,
             }}
           >
             <Activity className="w-4.5 h-4.5" style={{ color: barAccent }} />
           </div>
           <div>
-            <h4 className="font-display italic text-lg text-ink leading-tight font-bold">Voice minutes</h4>
+            <h4 className="font-display italic text-lg text-ink leading-tight font-bold">
+              Voice minutes
+            </h4>
             <p className="text-[10px] uppercase tracking-[0.3em] text-muted/65 font-medium">
-              This month Â· resets {resetLabel}
+              This month · resets {resetLabel}
             </p>
           </div>
         </div>
@@ -122,7 +124,9 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
             </span>
             <span className="text-muted/50"> / {included.toLocaleString()}</span>
           </div>
-          <p className="text-[9px] uppercase tracking-[0.3em] text-brand font-semibold mt-0.5">{pct}% used</p>
+          <p className="text-[9px] uppercase tracking-[0.3em] text-brand font-semibold mt-0.5">
+            {pct}% used
+          </p>
         </div>
       </div>
 
@@ -157,10 +161,10 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
               {snap.overage_minutes.toLocaleString()} min over plan
             </span>
             <span className="text-muted/80 ml-1">
-              {`â€” billed at $${snap.overage_per_min_usd.toFixed(2)}/min (`}
+              {`— billed at $${snap.overage_per_min_usd.toFixed(2)}/min (`}
               <span className="text-ink font-semibold">
                 {snap.stripe_metered
-                  ? `â‰ˆ $${snap.overage_cost_usd.toFixed(2)} this period`
+                  ? `≈ $${snap.overage_cost_usd.toFixed(2)} this period`
                   : "metered billing pending Stripe setup"}
               </span>
               {")"}
@@ -173,7 +177,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
         <div className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-500/8 border border-amber-500/20 text-[11px] text-amber-500 font-medium">
           <TrendingUp className="w-3.5 h-3.5" />
           <span>
-            Approaching plan limit â€” overage rate kicks in at {included.toLocaleString()} min.
+            Approaching plan limit — overage rate kicks in at {included.toLocaleString()} min.
           </span>
         </div>
       )}

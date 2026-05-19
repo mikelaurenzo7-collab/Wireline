@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Shield,
@@ -46,7 +46,7 @@ const SEVERITY_OPTIONS: AuditSeverity[] = ["info", "warning", "error", "critical
 
 // Category chips map to event-type *prefixes*. The server's
 // /api/audit/events endpoint treats any value without a dot as a
-// prefix (`auth` â†’ `event_type ilike 'auth.%'`), so the chips here
+// prefix (`auth` → `event_type ilike 'auth.%'`), so the chips here
 // match every event in that namespace without having to enumerate
 // each concrete type. Keep this list in sync with AuditEventType in
 // ../types/audit.ts.
@@ -116,7 +116,7 @@ const EventRow = React.memo(
     const timestamp = formatDateTime(
       event.created_at,
       { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" },
-      "â€”",
+      "—",
       "en-US",
     );
 
@@ -140,14 +140,12 @@ const EventRow = React.memo(
           <SeverityIcon severity={event.severity} />
           <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-5 gap-3">
             <div className="md:col-span-2">
-              <p className="text-sm text-ink font-medium">
-                {event.event_type || event.action}
-              </p>
+              <p className="text-sm text-ink font-medium">{event.event_type || event.action}</p>
               <p className="text-xs text-muted">{event.actor_email || "System"}</p>
             </div>
             <div>
               <p className="text-xs text-muted">Resource</p>
-              <p className="text-sm text-ink">{event.resource_id || "â€”"}</p>
+              <p className="text-sm text-ink">{event.resource_id || "—"}</p>
             </div>
             <div>
               <p className="text-xs text-muted">Time</p>
@@ -197,7 +195,7 @@ const EventRow = React.memo(
                         <Cpu className="w-3 h-3" /> Provider
                       </p>
                       <p className="text-ink">
-                        {event.provider} / {event.model || "â€”"}
+                        {event.provider} / {event.model || "—"}
                       </p>
                     </div>
                   )}
@@ -385,7 +383,7 @@ export default function AuditLog() {
         <PageShell
           title="Audit Log"
           subtitle="System activity monitoring & compliance"
-          eyebrow="Security Â· Activity"
+          eyebrow="Security · Activity"
           actions={
             <button
               onClick={handleExport}
@@ -417,19 +415,19 @@ export default function AuditLog() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard
                 label="Total Events"
-                value={stats?.total.toLocaleString() || "â€”"}
+                value={stats?.total.toLocaleString() || "—"}
                 icon={Activity}
                 color="bg-cyan-400"
               />
               <StatCard
                 label="API Calls"
-                value={stats?.api_calls.toLocaleString() || "â€”"}
+                value={stats?.api_calls.toLocaleString() || "—"}
                 icon={Cpu}
                 color="bg-purple-400"
               />
               <StatCard
                 label="Total Cost"
-                value={stats ? `$${stats.total_cost.toFixed(2)}` : "â€”"}
+                value={stats ? `$${stats.total_cost.toFixed(2)}` : "—"}
                 icon={DollarSign}
                 color="bg-emerald-400"
               />

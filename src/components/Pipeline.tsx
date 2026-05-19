@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "motion/react";
 import { Phone, Mail, ChevronRight, Loader2, RefreshCw } from "lucide-react";
 import PageShell, { Panel } from "./PageShell";
@@ -85,9 +85,9 @@ export default function Pipeline() {
 
   return (
     <PageShell
-      eyebrow="Sales Â· Pipeline"
+      eyebrow="Sales · Pipeline"
       title="Pipeline"
-      subtitle={`${totalLeads} leads across the funnel Â· ${conversionRate}% closed-won`}
+      subtitle={`${totalLeads} leads across the funnel · ${conversionRate}% closed-won`}
       actions={
         <button
           onClick={load}
@@ -123,7 +123,7 @@ export default function Pipeline() {
               >
                 <Panel
                   title={stage.label}
-                  hint={`${leads.length} Â· ${stage.help}`}
+                  hint={`${leads.length} · ${stage.help}`}
                   accent={stage.tint}
                   scroll
                   icon={Phone}
@@ -163,7 +163,7 @@ export default function Pipeline() {
                           {lead.demo && (
                             <span
                               className="text-[8px] uppercase tracking-[0.32em] px-1.5 py-0.5 rounded-md bg-amber-500/15 border border-dashed border-amber-500/50 text-amber-700 leading-none shrink-0"
-                              title="Seeded showcase record â€” not a real lead"
+                              title="Seeded showcase record — not a real lead"
                             >
                               Demo
                             </span>
@@ -207,7 +207,7 @@ export default function Pipeline() {
                                   title={`Move to ${s.label}`}
                                   className="text-[8px] uppercase tracking-[0.2em] px-1.5 py-0.5 rounded border border-white/10 text-muted hover:text-ink hover:border-white/30 transition-colors"
                                 >
-                                  â†’ {s.label}
+                                  → {s.label}
                                 </button>
                               ))}
                             <ChevronRight className="w-3 h-3 text-muted/40" />

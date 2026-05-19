@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Keyboard } from "lucide-react";
 
@@ -24,7 +24,7 @@ const SHORTCUTS = [
   {
     category: "Actions",
     items: [
-      { keys: ["âŒ˜", "K"], description: "Open command bar" },
+      { keys: ["⌘", "K"], description: "Open command bar" },
       { keys: ["?"], description: "Show keyboard shortcuts" },
       { keys: ["Esc"], description: "Close modal / panel" },
     ],
@@ -32,8 +32,8 @@ const SHORTCUTS = [
   {
     category: "Call Logs",
     items: [
-      { keys: ["âŒ˜", "F"], description: "Focus search" },
-      { keys: ["âŒ˜", "E"], description: "Export to CSV" },
+      { keys: ["⌘", "F"], description: "Focus search" },
+      { keys: ["⌘", "E"], description: "Export to CSV" },
     ],
   },
 ];

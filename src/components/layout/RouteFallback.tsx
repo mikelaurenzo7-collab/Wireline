@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 
 export default function RouteFallback() {
   return (
@@ -70,7 +70,7 @@ export default function RouteFallback() {
         ))}
       </div>
 
-      <span className="sr-only">Loading pageâ€¦</span>
+      <span className="sr-only">Loading page…</span>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback, KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useState, useEffect, useCallback, KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
   Search,
   Bot,
@@ -40,7 +40,7 @@ export default function CommandBar() {
   const navigate = useNavigate();
 
   const commands: CommandItem[] = [
-    // â”€â”€ Navigation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Navigation ─────────────────────────────────────────
     {
       id: "dash",
       label: "Dashboard",
@@ -145,7 +145,7 @@ export default function CommandBar() {
       action: () => navigate("/admin"),
     },
 
-    // â”€â”€ Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Actions ────────────────────────────────────────────
     {
       id: "forge-agent",
       label: "Design Agent with Wireline AI",
@@ -265,7 +265,7 @@ export default function CommandBar() {
               <input
                 autoFocus
                 aria-label="Command search input"
-                placeholder="Jump anywhere or take an actionâ€¦"
+                placeholder="Jump anywhere or take an action…"
                 className="flex-1 bg-transparent border-none outline-none text-[14px] text-ink placeholder:text-muted/50 font-normal"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -381,7 +381,7 @@ export default function CommandBar() {
                       className="px-1 py-0.5 rounded glass border border-white/12 text-[7px]"
                       aria-label="Arrow keys to navigate"
                     >
-                      â†‘â†“
+                      ↑↓
                     </kbd>
                     Navigate
                   </span>
@@ -390,7 +390,7 @@ export default function CommandBar() {
                       className="px-1 py-0.5 rounded glass border border-white/12 text-[7px]"
                       aria-label="Enter key to execute"
                     >
-                      â†µ
+                      ↵
                     </kbd>
                     Execute
                   </span>

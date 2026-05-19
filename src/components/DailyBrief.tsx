@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -55,7 +55,7 @@ export default function DailyBrief() {
   const [showSchedule, setShowSchedule] = useState(false);
   // Mounted guard: load() runs both on mount and on the operator's
   // "Refresh" click. The latter is always in-mount, but the mount path
-  // can resolve after navigation away â€” without this, late responses
+  // can resolve after navigation away — without this, late responses
   // would call setState on an unmounted DailyBrief.
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -118,7 +118,7 @@ export default function DailyBrief() {
       <div className="rounded-3xl glass border border-white/10 p-8 flex items-center gap-4">
         <Loader2 className="w-5 h-5 animate-spin text-brand" />
         <span className="text-[11px] uppercase tracking-[0.4em] text-muted">
-          Wireline is analyzing your dayâ€¦
+          Wireline is analyzing your day…
         </span>
       </div>
     );
@@ -133,7 +133,7 @@ export default function DailyBrief() {
 
   if (!data) return null;
 
-  // Defensive defaults â€” Claude's structured-output sometimes returns
+  // Defensive defaults — Claude's structured-output sometimes returns
   // partial shapes (missing fields, null arrays). Don't let a thin API
   // response crash the render with "Cannot read property X of undefined".
   const brief = {
@@ -193,7 +193,7 @@ export default function DailyBrief() {
             </div>
             <div>
               <div className="text-[10px] uppercase tracking-[0.4em] text-brand flex items-center gap-2">
-                <Brain className="w-3 h-3" /> Daily Brief Â·{" "}
+                <Brain className="w-3 h-3" /> Daily Brief ·{" "}
                 {formatDate(
                   new Date(),
                   { weekday: "long", month: "long", day: "numeric" },
@@ -350,7 +350,7 @@ function Quick({
 }) {
   const showDelta = delta !== undefined && Math.abs(delta) >= 0.5;
   const isUp = (delta ?? 0) > 0;
-  // For "spend", going up is bad â€” invert the color sense.
+  // For "spend", going up is bad — invert the color sense.
   const isGood = invertDelta ? !isUp : isUp;
   return (
     <div className="rounded-2xl glass border border-white/10 p-4">
@@ -491,7 +491,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
 
       {loading ? (
         <div className="flex items-center gap-2 text-muted text-xs">
-          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loadingâ€¦
+          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…
         </div>
       ) : (
         <>
@@ -502,7 +502,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
               <Link to="/integrations" className="underline">
                 Carrier Bridge
               </Link>{" "}
-              first â€” emails are sent through your own Gmail OAuth.
+              first — emails are sent through your own Gmail OAuth.
             </div>
           )}
 
@@ -557,7 +557,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
                 className="w-full h-11 px-4 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all font-mono"
               />
               <span className="text-[10px] text-ink/40 leading-snug">
-                13:00 UTC â‰ˆ 9 AM ET / 6 AM PT. Convert your local time before saving.
+                13:00 UTC ≈ 9 AM ET / 6 AM PT. Convert your local time before saving.
               </span>
             </label>
             <label className="space-y-1.5">
@@ -575,7 +575,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
 
           {lastSentAt && (
             <div className="text-[10px] uppercase tracking-[0.3em] text-emerald-500/70">
-              Last sent {formatDateTime(lastSentAt, undefined, "â€”")}
+              Last sent {formatDateTime(lastSentAt, undefined, "—")}
             </div>
           )}
           {lastError && (

@@ -1,15 +1,15 @@
-﻿import React, { ReactNode, useState } from "react";
+import React, { ReactNode, useState } from "react";
 import { motion } from "motion/react";
 import { cn } from "../lib/utils";
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   PageShell â€” viewport-fit page primitive.
+/* ──────────────────────────────────────────────────────────────────────────
+   PageShell — viewport-fit page primitive.
 
    Every route slots into this. The shell guarantees:
-     â€¢ outer container is exactly the height of the content viewport,
-     â€¢ the page itself NEVER scrolls,
-     â€¢ optional tab bar splits content into sub-views,
-     â€¢ a single bounded scroll region is allowed inside Panel children
+     • outer container is exactly the height of the content viewport,
+     • the page itself NEVER scrolls,
+     • optional tab bar splits content into sub-views,
+     • a single bounded scroll region is allowed inside Panel children
        (the only place a scrollbar may legitimately appear).
 
    Use it like:
@@ -17,14 +17,14 @@ import { cn } from "../lib/utils";
      <PageShell
        title="Voice Archive"
        subtitle="Carrier signal threads"
-       eyebrow="Signal Â· Archive"
-       actions={<button>â€¦</button>}
+       eyebrow="Signal · Archive"
+       actions={<button>…</button>}
        tabs={[
          { id: "live",  label: "Live",     content: <LivePanel /> },
          { id: "past",  label: "Archive",  content: <ArchivePanel /> },
        ]}
      />
-   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+   ────────────────────────────────────────────────────────────────────────── */
 
 export type PageShellTab = {
   id: string;
@@ -72,7 +72,7 @@ export default function PageShell({
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
         className="shrink-0 pb-1 sm:pb-1 mb-1"
       >
-        {/* eyebrow + actions row â€” stacks on mobile so action buttons
+        {/* eyebrow + actions row — stacks on mobile so action buttons
             don't get squeezed against the title or fall off-canvas. */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-1">
           <div className="min-w-0 flex-1">
@@ -164,7 +164,7 @@ export default function PageShell({
         </div>
       )}
 
-      {/* Body â€” bounded, never scrolls itself */}
+      {/* Body — bounded, never scrolls itself */}
       <div className={cn("flex-1 min-h-0 overflow-hidden", bodyClassName)}>
         {tabs && activeTab ? (
           <motion.div
@@ -184,10 +184,10 @@ export default function PageShell({
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   Panel â€” a bounded card for use inside PageShell. Optional internal scroll.
+/* ──────────────────────────────────────────────────────────────────────────
+   Panel — a bounded card for use inside PageShell. Optional internal scroll.
    Scrolling inside Panel is the ONLY permitted scroll surface in the app.
-   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+   ────────────────────────────────────────────────────────────────────────── */
 
 interface PanelProps {
   title?: ReactNode;
@@ -252,9 +252,7 @@ export function Panel({
               </div>
             )}
             {title && (
-              <h3 className="font-display italic text-base text-ink leading-tight">
-                {title}
-              </h3>
+              <h3 className="font-display italic text-base text-ink leading-tight">{title}</h3>
             )}
             {hint && (
               <span className="text-[9px] uppercase tracking-[0.30em] text-muted/60 ml-1">
@@ -291,7 +289,7 @@ export function Panel({
   );
 }
 
-/* Compact stat tile â€” drop-in for hero metric grids.  */
+/* Compact stat tile — drop-in for hero metric grids.  */
 export function StatTile({
   label,
   value,
@@ -356,7 +354,7 @@ export function StatTile({
                 trendPositive ? "text-emerald-600" : "text-rose-500",
               )}
             >
-              {trendPositive ? "â†‘" : "â†“"} {Math.abs(trend.value)}%
+              {trendPositive ? "↑" : "↓"} {Math.abs(trend.value)}%
             </span>
           )}
         </div>

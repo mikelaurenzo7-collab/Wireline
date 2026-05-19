@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   KeyRound,
@@ -186,7 +186,7 @@ export default function IntakeKeysManager() {
             >
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="text-[10px] uppercase tracking-[0.3em] text-emerald-600 flex items-center gap-2">
-                  <Check className="w-3.5 h-3.5" /> Save this key now â€” it will not be shown again
+                  <Check className="w-3.5 h-3.5" /> Save this key now — it will not be shown again
                 </div>
                 <button
                   onClick={() => setJustCreated(null)}
@@ -199,7 +199,7 @@ export default function IntakeKeysManager() {
                 <input
                   readOnly
                   value={
-                    revealed ? justCreated.plaintext : "â€¢".repeat(justCreated.plaintext.length)
+                    revealed ? justCreated.plaintext : "•".repeat(justCreated.plaintext.length)
                   }
                   className="flex-1 h-10 px-3 rounded-lg bg-black/40 border border-emerald-500/30 outline-none text-ink text-xs font-mono select-all"
                 />
@@ -256,7 +256,7 @@ export default function IntakeKeysManager() {
                       }}
                       className="w-full h-11 px-3 rounded-xl bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
                     >
-                      <option value="">â€” None â€”</option>
+                      <option value="">— None —</option>
                       {agents.map((a) => (
                         <option key={a.id} value={a.id}>
                           {a.name}
@@ -325,7 +325,7 @@ export default function IntakeKeysManager() {
         <div className="relative z-10 space-y-2">
           {loading && (
             <div className="flex items-center gap-2 text-muted text-xs">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loadingâ€¦
+              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…
             </div>
           )}
           {!loading && keys.length === 0 && (
@@ -358,7 +358,7 @@ export default function IntakeKeysManager() {
                     </span>
                     {agent && (
                       <span className="text-[9px] uppercase tracking-[0.3em] px-2 py-0.5 rounded-full bg-brand-2/10 border border-brand-2/30 text-brand-2">
-                        Agent Â· {agent.name}
+                        Agent · {agent.name}
                       </span>
                     )}
                     {k.auto_dial && k.default_agent_id && (
@@ -368,7 +368,7 @@ export default function IntakeKeysManager() {
                     )}
                   </div>
                   <div className="flex items-center gap-3 flex-wrap text-[11px] text-muted">
-                    <span className="font-mono">{k.key_prefix}â€¦</span>
+                    <span className="font-mono">{k.key_prefix}…</span>
                     <span>{k.use_count || 0} uses</span>
                     {k.last_used_at && <span>last {formatDateTime(k.last_used_at)}</span>}
                   </div>
@@ -433,7 +433,7 @@ export default function IntakeKeysManager() {
         <div className="relative z-10 rounded-xl bg-black/40 border border-white/10 p-4 text-[11px] text-ink/70 font-mono leading-relaxed overflow-x-auto space-y-3">
           <div>
             <div className="text-[9px] uppercase tracking-[0.3em] text-brand-2 mb-2">
-              Quick start Â· curl
+              Quick start · curl
             </div>
             <pre className="whitespace-pre-wrap break-all">{`curl -X POST $WIRELINE_URL/api/intake/lead \\
   -H "Content-Type: application/json" \\
@@ -446,19 +446,19 @@ export default function IntakeKeysManager() {
               <span className="text-brand-2 font-mono uppercase tracking-wider">
                 Idempotency-Key
               </span>{" "}
-              â€” optional, any string â‰¤ 255 chars. Same key + same operator returns the original{" "}
+              — optional, any string ≤ 255 chars. Same key + same operator returns the original{" "}
               <code className="text-ink/80">lead_id</code> with{" "}
               <code className="text-ink/80">idempotent_replay: true</code>. Safe for form-submission
               retries.
             </div>
             <div>
-              <span className="text-brand-2 font-mono uppercase tracking-wider">Rate limit</span> â€”
+              <span className="text-brand-2 font-mono uppercase tracking-wider">Rate limit</span> —
               60 requests / minute per intake key. Excess returns{" "}
               <code className="text-ink/80">HTTP 429</code> with{" "}
               <code className="text-ink/80">Retry-After</code>.
             </div>
             <div>
-              <span className="text-brand-2 font-mono uppercase tracking-wider">Auto-dial</span> â€”
+              <span className="text-brand-2 font-mono uppercase tracking-wider">Auto-dial</span> —
               when on, the response includes{" "}
               <code className="text-ink/80">auto_dial_initiated: true</code> and the call is
               dispatched in the background; the lead row gets{" "}
