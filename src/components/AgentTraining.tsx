@@ -436,7 +436,7 @@ export default function AgentTraining() {
                         "max-w-[80%] p-3.5 rounded-2xl border text-[13px] leading-relaxed shadow-sm transition-all duration-300",
                         msg.role === "user"
                           ? "glass border-white/8 text-ink hover:border-white/20"
-                          : "bg-brand/8 border-brand/20 text-ink font-display italic hover:border-brand/40 shadow-brand/5",
+                          : "bg-brand/8 border-brand/20 text-brand font-display italic hover:border-brand/40 shadow-brand/5",
                       )}
                       style={
                         msg.role === "assistant"

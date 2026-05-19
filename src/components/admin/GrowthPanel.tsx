@@ -142,7 +142,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                     {(settings.target_titles || []).map((t: string) => (
                       <span
                         key={t}
-                        className="px-2.5 py-1 glass border border-brand/20 bg-brand/5 rounded-lg text-[10px] font-bold text-ink flex items-center gap-2 hover:border-brand/40 transition-all"
+                        className="px-2.5 py-1 glass border border-brand/20 bg-brand/5 rounded-lg text-[10px] font-bold text-brand flex items-center gap-2 hover:border-brand/40 transition-all"
                       >
                         {t}
                         <button
@@ -192,7 +192,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                     {(settings.target_industries || []).map((t: string) => (
                       <span
                         key={t}
-                        className="px-2.5 py-1 glass border border-brand-3/20 bg-brand-3/5 rounded-lg text-[10px] font-bold text-ink flex items-center gap-2 hover:border-brand-3/40 transition-all"
+                        className="px-2.5 py-1 glass border border-brand-3/20 bg-brand-3/5 rounded-lg text-[10px] font-bold text-brand-3 flex items-center gap-2 hover:border-brand-3/40 transition-all"
                       >
                         {t}
                         <button

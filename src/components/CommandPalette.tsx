@@ -145,7 +145,7 @@ export default function CommandPalette() {
                           <div className="flex-1 min-w-0">
                             <p className={cn(
                               "text-sm font-medium transition-colors",
-                              active ? "text-ink" : "text-ink/80"
+                              active ? "text-brand" : "text-ink/80"
                             )}>
                               {cmd.title}
                             </p>

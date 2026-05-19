@@ -681,7 +681,7 @@ function CallDetail({
                           isAI
                             ? "bg-black/[0.03] border-black/8 text-ink mr-auto"
                             : isUser
-                              ? "bg-brand/8 border-brand/20 text-ink ml-auto"
+                              ? "bg-brand/8 border-brand/20 text-brand ml-auto"
                               : "bg-black/[0.05] border-black/8 text-muted text-center mx-auto",
                         )}
                       >

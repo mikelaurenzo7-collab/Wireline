@@ -1517,7 +1517,14 @@ export default function FleetSettings() {
                                           </div>
                                           <div className="min-w-0 flex-1">
                                             <div className="flex flex-wrap items-center gap-1.5">
-                                              <span className="text-sm text-ink">{tool.label}</span>
+                                              <span
+                                                className={cn(
+                                                  "text-sm",
+                                                  enabled ? "text-brand" : "text-ink",
+                                                )}
+                                              >
+                                                {tool.label}
+                                              </span>
                                               {badgeLabel && (
                                                 <span className="text-[8px] uppercase tracking-[0.22em] px-1.5 py-0.5 rounded-full border border-violet-500/30 bg-violet-500/10 text-violet-600">
                                                   {badgeLabel}

@@ -219,7 +219,7 @@ export default function SmsThreads() {
                       className={cn(
                         "max-w-[78%] rounded-2xl px-3.5 py-2.5 border",
                         m.direction === "out"
-                          ? "ml-auto bg-brand/12 border-brand/30 text-ink"
+                          ? "ml-auto bg-brand/12 border-brand/30 text-brand"
                           : "mr-auto bg-white/[0.04] border-white/10 text-ink",
                       )}
                     >

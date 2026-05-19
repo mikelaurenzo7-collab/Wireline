@@ -525,7 +525,7 @@ export default function EmailInbox() {
                                     key={i}
                                     onClick={() => setReplyText(r.body)}
                                     title={r.body}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full glass border border-black/10 text-ink/70 text-[10px] tracking-wide hover:border-brand/40 hover:text-ink hover:bg-brand/5 transition-all"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full glass border border-black/10 text-ink/70 text-[10px] tracking-wide hover:border-brand/40 hover:text-brand hover:bg-brand/5 transition-all"
                                   >
                                     <span>{r.label}</span>
                                   </button>

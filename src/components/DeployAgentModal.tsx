@@ -253,7 +253,7 @@ export default function DeployAgentModal({
                                 className={cn(
                                   "w-full text-left rounded-xl px-3 py-2.5 text-[12px] flex items-center justify-between gap-3 transition-colors border",
                                   isSelected
-                                    ? "bg-brand/12 border-brand/35 text-ink"
+                                    ? "bg-brand/12 border-brand/35 text-brand"
                                     : "bg-black/5 border-black/8 text-ink/75 hover:bg-black/8 hover:text-ink",
                                 )}
                               >
@@ -345,7 +345,7 @@ function GenderTile({
       className={cn(
         "relative rounded-xl border px-3 py-3 text-left transition-all overflow-hidden",
         active
-          ? "border-brand/40 bg-brand/8 text-ink"
+          ? "border-brand/40 bg-brand/8 text-brand"
           : "border-black/10 bg-black/4 text-ink/70 hover:bg-black/8 hover:text-ink",
       )}
     >
