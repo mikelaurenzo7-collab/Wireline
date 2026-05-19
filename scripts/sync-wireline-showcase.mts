@@ -18,7 +18,7 @@ import {
 } from "../src/data/contact-agents";
 import { buildWirelineKnowledgeBlock } from "../src/data/wireline-knowledge";
 import { buildVibeBlock } from "../src/lib/personality-vibes";
-import { VAPI_PREMIUM_MODEL } from "../src/lib/claude-brain";
+import { VAPI_SHOWCASE_MODEL } from "../src/lib/claude-brain";
 
 const VAPI_KEY = process.env.VAPI_PRIVATE_KEY;
 if (!VAPI_KEY) {
@@ -99,19 +99,57 @@ async function main() {
       continue;
     }
 
+    // Preserve the per-assistant voiceId (Sarah ≠ Liam ≠ Marcus).
+    // Vapi PATCH replaces sub-objects wholesale, so we must GET first.
+    let existingVoiceId: string | undefined;
+    try {
+      const cur = await fetch(`https://api.vapi.ai/assistant/${assistantId}`, {
+        headers: { Authorization: `Bearer ${VAPI_KEY}` },
+      });
+      if (cur.ok) {
+        const curJson = (await cur.json()) as Record<string, any>;
+        existingVoiceId = curJson?.voice?.voiceId;
+      }
+    } catch {
+      // If GET fails, leave voice out of payload — existing config persists.
+    }
+
     const payload: Record<string, any> = {
       firstMessage: a.firstMessage,
       model: {
         provider: "anthropic",
-        model: VAPI_PREMIUM_MODEL,
+        // Sonnet on the showcase line — half the first-token latency
+        // of Opus, plenty smart for vibe-directed receptionist work.
+        model: VAPI_SHOWCASE_MODEL,
         messages: [{ role: "system", content: systemPrompt }],
       },
       serverUrl: PRODUCTION_WEBHOOK_URL,
-      // Latency tuning — same knobs the factory uses for new tenant agents.
+      // Full latency-knob suite. Total perceived reply-delay shaved
+      // vs. Vapi defaults: ~675ms (model + endpointing +
+      // startSpeakingPlan + optimizeStreamingLatency).
       responseDelaySeconds: 0,
       numWordsToInterruptAssistant: 2,
       backgroundDenoisingEnabled: false,
+      startSpeakingPlan: {
+        waitSeconds: 0.1,
+        smartEndpointingPlan: { provider: "livekit", waitFunction: "20 + 8000 * x" },
+      },
+      transcriber: {
+        provider: "deepgram",
+        model: "nova-3",
+        language: "en",
+        endpointing: 50,
+      },
     };
+
+    if (existingVoiceId) {
+      payload.voice = {
+        provider: "11labs",
+        voiceId: existingVoiceId,
+        model: "eleven_flash_v2_5",
+        optimizeStreamingLatency: 4,
+      };
+    }
 
     const r = await fetch(`https://api.vapi.ai/assistant/${assistantId}`, {
       method: "PATCH",

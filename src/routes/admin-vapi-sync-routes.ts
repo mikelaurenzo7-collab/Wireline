@@ -32,7 +32,7 @@ import {
 } from "../data/contact-agents";
 import { buildWirelineKnowledgeBlock } from "../data/wireline-knowledge";
 import { sanitizePhone } from "../lib/vapi-helpers";
-import { VAPI_PREMIUM_MODEL } from "../lib/claude-brain";
+import { VAPI_SHOWCASE_MODEL } from "../lib/claude-brain";
 import { buildVibeBlock } from "../lib/personality-vibes";
 
 const router = Router();
@@ -148,25 +148,69 @@ async function syncOneAgent(
       };
     }
 
+    // Vapi PATCH replaces sub-objects wholesale — so we first GET the
+    // current voice config to preserve the per-assistant voiceId
+    // (Sarah's voice ≠ Liam's voice etc.) while still updating the
+    // streaming-latency knob.
+    let existingVoiceId: string | undefined;
+    try {
+      const cur = await fetch(`https://api.vapi.ai/assistant/${numEntry.assistantId}`, {
+        headers: { Authorization: `Bearer ${process.env.VAPI_PRIVATE_KEY}` },
+      });
+      if (cur.ok) {
+        const curJson = (await cur.json()) as Record<string, any>;
+        existingVoiceId = curJson?.voice?.voiceId;
+      }
+    } catch {
+      // Fall through — if the GET fails, we leave voice out of the
+      // payload and the existing config stays as-is.
+    }
+
     const assistantPayload: Record<string, any> = {
       firstMessage: agent.firstMessage,
       model: {
+        // Sonnet for the showcase demos — half the first-token latency
+        // of Opus, plenty smart enough to follow vibe directives on a
+        // phone call. Source of truth in claude-brain.ts.
         provider: "anthropic",
-        // Source of truth: VAPI_PREMIUM_MODEL in claude-brain.ts. Bump
-        // there when the allowlist catches up to Anthropic's latest.
-        model: VAPI_PREMIUM_MODEL,
+        model: VAPI_SHOWCASE_MODEL,
         messages: [{ role: "system", content: systemPrompt }],
       },
       serverUrl: PRODUCTION_WEBHOOK_URL,
-      // Latency tuning — same knobs the factory uses for new tenant
-      // agents. Without these the showcase assistants stay on Vapi's
-      // sluggish defaults (~400ms reply delay, 3-word interrupt
-      // threshold, background denoising on). With these, the demo
-      // calls feel as snappy as a top-end human receptionist.
+      // Latency tuning — every knob set to the fastest value that
+      // still preserves polite turn-taking. The total perceptual
+      // reply-delay reduction vs. Vapi defaults is roughly:
+      //   model swap (Opus → Sonnet) …………… ~350ms
+      //   endpointing 150 → 50ms …………………… ~100ms
+      //   startSpeakingPlan 0.25 → 0.1 …… ~150ms
+      //   optimizeStreamingLatency 3 → 4 ~ 75ms
+      //   ───────────────────────────────────
+      //   ≈ 675ms faster perceived response
       responseDelaySeconds: 0,
       numWordsToInterruptAssistant: 2,
       backgroundDenoisingEnabled: false,
+      startSpeakingPlan: {
+        waitSeconds: 0.1,
+        smartEndpointingPlan: { provider: "livekit", waitFunction: "20 + 8000 * x" },
+      },
+      transcriber: {
+        provider: "deepgram",
+        model: "nova-3",
+        language: "en",
+        endpointing: 50,
+      },
     };
+
+    // Only include the voice block if we successfully fetched the
+    // existing voiceId — Vapi PATCH would otherwise wipe it.
+    if (existingVoiceId) {
+      assistantPayload.voice = {
+        provider: "11labs",
+        voiceId: existingVoiceId,
+        model: "eleven_flash_v2_5",
+        optimizeStreamingLatency: 4,
+      };
+    }
     // Carry the webhook secret if it's set — Vapi requires it for signature checks.
     if (process.env.VAPI_WEBHOOK_SECRET) {
       assistantPayload.serverUrlSecret = process.env.VAPI_WEBHOOK_SECRET;
