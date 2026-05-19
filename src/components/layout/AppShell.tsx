@@ -14,6 +14,7 @@ import { useBranding } from "../../contexts/BrandingContext";
 const CommandBar = lazy(() => import("../CommandBar"));
 const PersonaWizard = lazy(() => import("../PersonaWizard"));
 const ProductTour = lazy(() => import("../ProductTour"));
+const TrialGateModal = lazy(() => import("../TrialGateModal"));
 const KeyboardShortcuts = lazy(() => import("../KeyboardShortcuts"));
 
 export default function AppShell() {
@@ -130,6 +131,11 @@ export default function AppShell() {
           <CommandBar />
           <PersonaWizard />
           <ProductTour />
+          {/* Listens for the global trial-gate 402 event from authFetch
+              and renders the upgrade tier picker. Mounted once for the
+              lifetime of the shell so it works regardless of which page
+              fired the 402. */}
+          <TrialGateModal />
           {showShortcuts && (
             <KeyboardShortcuts open={showShortcuts} onClose={() => setShowShortcuts(false)} />
           )}
