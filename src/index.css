@@ -23,7 +23,7 @@
   --color-brand-2: #0AC8D4;        /* deprecated — alias of --color-brand */
   --color-brand-3: #0AC8D4;        /* deprecated — alias of --color-brand */
   --color-ink: #1C1917;            /* Warm near-black text */
-  --color-paper: #F9F8F6;          /* Clean light tan base */
+  --color-paper: #F7F4ED;          /* Claude signature warm tan base */
   --color-muted: #7C7469;          /* Warm gray muted text */
 
   /* Tailwind base palette overrides
@@ -65,8 +65,8 @@
   body {
     @apply font-sans bg-paper text-ink selection:bg-brand/20 selection:text-ink antialiased overflow-x-hidden;
     background:
-      radial-gradient(70rem 55rem at 5% -5%, rgba(10, 200, 212, 0.04), transparent 55%),
-      radial-gradient(60rem 50rem at 100% 5%, rgba(10, 200, 212, 0.02), transparent 55%),
+      radial-gradient(70rem 55rem at 5% -5%, rgba(240, 235, 224, 0.45), transparent 60%),
+      radial-gradient(60rem 50rem at 100% 5%, rgba(235, 230, 218, 0.35), transparent 60%),
       var(--color-paper);
     background-attachment: fixed;
   }
