@@ -38,6 +38,23 @@ export type StripePlan = {
   features: string[];
   /** Env var holding the Stripe price_… id for this tier. */
   priceIdEnv: string;
+  /**
+   * Per-agent overage pricing. Operators who exceed max_agents can
+   * purchase additional agents as a subscription line-item add-on
+   * instead of being forced to upgrade to the next tier. This is the
+   * "à la carte agents" promise on the Pricing page.
+   *
+   * USD per extra agent per month.
+   */
+  extra_agent_price_usd?: number;
+  /**
+   * Env var holding the Stripe price_… id for the per-agent
+   * subscription line item (recurring, monthly). Operator creates this
+   * Price in the Stripe dashboard with `recurring: { usage_type: "licensed" }`
+   * so Stripe bills `quantity × unit_price` each cycle. Quantity is
+   * adjusted via the wireline_extra_agents column on settings.
+   */
+  extraAgentPriceIdEnv?: string;
 };
 
 export const STRIPE_PLANS: StripePlan[] = [
@@ -50,6 +67,8 @@ export const STRIPE_PLANS: StripePlan[] = [
     overage_per_min_usd: 0.2,
     included_phone_numbers: 1,
     priceIdEnv: "STRIPE_PERSONAL_PRICE_ID",
+    extra_agent_price_usd: 39,
+    extraAgentPriceIdEnv: "STRIPE_PERSONAL_EXTRA_AGENT_PRICE_ID",
     features: [
       "1 AI voice agent (voice + email)",
       "Dedicated voice number INCLUDED — no Twilio bill",
@@ -57,6 +76,7 @@ export const STRIPE_PLANS: StripePlan[] = [
       "Unlimited inbound email",
       "Call logs + transcripts + sentiment",
       "Overage billed at $0.20 / min (rare on this volume)",
+      "Add more agents: $39/each/month",
     ],
   },
   {
@@ -68,6 +88,8 @@ export const STRIPE_PLANS: StripePlan[] = [
     overage_per_min_usd: 0.15,
     included_phone_numbers: 2,
     priceIdEnv: "STRIPE_STARTER_PRICE_ID",
+    extra_agent_price_usd: 35,
+    extraAgentPriceIdEnv: "STRIPE_STARTER_EXTRA_AGENT_PRICE_ID",
     features: [
       "3 AI agents (voice + email)",
       "2 dedicated voice numbers INCLUDED — no Twilio bill",
@@ -76,6 +98,7 @@ export const STRIPE_PLANS: StripePlan[] = [
       "Live call monitor + sentiment",
       "Up to 5 team seats",
       "Overage billed at $0.15 / min",
+      "Add more agents: $35/each/month",
     ],
   },
   {
@@ -87,6 +110,8 @@ export const STRIPE_PLANS: StripePlan[] = [
     overage_per_min_usd: 0.12,
     included_phone_numbers: 5,
     priceIdEnv: "STRIPE_PRO_PRICE_ID",
+    extra_agent_price_usd: 30,
+    extraAgentPriceIdEnv: "STRIPE_PRO_EXTRA_AGENT_PRICE_ID",
     features: [
       "10 AI agents (voice + email)",
       "5 dedicated voice numbers INCLUDED — no Twilio bill",
@@ -97,6 +122,7 @@ export const STRIPE_PLANS: StripePlan[] = [
       "Webhook + Action Engine",
       "Overage billed at $0.12 / min",
       "Priority support",
+      "Add more agents: $30/each/month",
     ],
   },
   {
@@ -108,6 +134,8 @@ export const STRIPE_PLANS: StripePlan[] = [
     overage_per_min_usd: 0.1,
     included_phone_numbers: 10,
     priceIdEnv: "STRIPE_BUSINESS_PRICE_ID",
+    extra_agent_price_usd: 25,
+    extraAgentPriceIdEnv: "STRIPE_BUSINESS_EXTRA_AGENT_PRICE_ID",
     features: [
       "25 AI agents (voice + email)",
       "10 dedicated voice numbers INCLUDED — no Twilio bill",
@@ -117,6 +145,7 @@ export const STRIPE_PLANS: StripePlan[] = [
       "Up to 50 team seats",
       "Priority support · Slack channel",
       "Overage billed at $0.10 / min",
+      "Add more agents: $25/each/month (best per-agent rate)",
     ],
   },
   {

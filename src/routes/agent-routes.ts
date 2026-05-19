@@ -703,6 +703,7 @@ router.post(
         .select({
           subscriptionStatus: schema.settings.subscriptionStatus,
           maxAgents: schema.settings.maxAgents,
+          extraAgents: schema.settings.extraAgents,
           businessName: schema.settings.businessName,
         })
         .from(schema.settings)
@@ -715,8 +716,11 @@ router.post(
         return res.status(403).json({ error: "Access Denied: Please upgrade your billing plan." });
       }
 
-      // Agent Limit Check
-      const maxAgents = userSettings?.maxAgents || 3;
+      // Agent Limit Check — includes purchased extras.
+      // Effective cap = plan.max_agents + extra_agents (paid line items).
+      const planAgents = userSettings?.maxAgents || 3;
+      const purchasedExtras = userSettings?.extraAgents || 0;
+      const effectiveCap = planAgents + purchasedExtras;
       const [{ count }] = await drizzle
         .select({ count: sql`count(*)` })
         .from(schema.agents)
@@ -724,10 +728,15 @@ router.post(
 
       const agentCount = Number(count);
 
-      if (agentCount >= maxAgents) {
-        return res
-          .status(403)
-          .json({ error: `Quota Exceeded: Your plan only allows ${maxAgents} agents.` });
+      if (agentCount >= effectiveCap) {
+        return res.status(403).json({
+          error: `Quota Exceeded: Your plan covers ${planAgents} agents${
+            purchasedExtras > 0 ? ` + ${purchasedExtras} purchased extras` : ""
+          }. Add another extra agent in Admin → Billing to deploy more.`,
+          code: "AGENT_CAP_HIT",
+          plan_included: planAgents,
+          extras_purchased: purchasedExtras,
+        });
       }
 
       const { id, personality, templateId, firstMessage, ...rest } = req.body;

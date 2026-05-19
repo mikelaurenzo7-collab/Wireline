@@ -13,7 +13,7 @@
  */
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Send, Loader2, Trash2, MessageSquare, Sparkles } from "lucide-react";
+import { Send, Loader2, Trash2, MessageSquare, Sparkles, Paperclip } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
@@ -38,6 +38,8 @@ export default function AgentWorkspace({ agentId, agentName = "agent" }: AgentWo
   const [isSending, setIsSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const loadMessages = useCallback(async () => {
     if (!agentId) return;
@@ -116,6 +118,46 @@ export default function AgentWorkspace({ agentId, agentName = "agent" }: AgentWo
       toastError("Couldn't clear thread");
     }
   }, [agentId, toastError, toastSuccess]);
+
+  // PDF upload — read as base64 client-side, POST to the workspace
+  // /files endpoint, then re-load messages so the agent's
+  // acknowledgement appears in the thread.
+  const onFilePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      toastError("PDF only for now", "Other file types coming soon");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > 30 * 1024 * 1024) {
+      toastError("File too large", "Keep PDFs under 30MB");
+      e.target.value = "";
+      return;
+    }
+    setIsUploading(true);
+    try {
+      const buf = await file.arrayBuffer();
+      const base64 = btoa(new Uint8Array(buf).reduce((acc, b) => acc + String.fromCharCode(b), ""));
+      const r = await authFetch(`/api/agents/${encodeURIComponent(agentId)}/workspace/files`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pdfBase64: base64, fileName: file.name }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "Upload failed");
+      await loadMessages();
+      toastSuccess(
+        `Ingested ${data.inserted} item${data.inserted === 1 ? "" : "s"}`,
+        `${agentName} will reference them on future calls`,
+      );
+    } catch (err) {
+      toastError("Upload failed", err instanceof Error ? err.message : "Try again");
+    } finally {
+      setIsUploading(false);
+      e.target.value = "";
+    }
+  };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // Cmd/Ctrl+Enter sends; plain Enter inserts newline. Mirrors Slack /
@@ -242,6 +284,27 @@ export default function AgentWorkspace({ agentId, agentName = "agent" }: AgentWo
       {/* Composer */}
       <div className="shrink-0 px-4 py-3 border-t border-black/8 bg-paper/50">
         <div className="flex items-end gap-2 max-w-3xl mx-auto">
+          {/* Hidden file input — paperclip button triggers it */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf,.pdf"
+            onChange={onFilePick}
+            className="hidden"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading || isSending}
+            className="shrink-0 w-10 h-10 rounded-2xl glass border border-black/10 flex items-center justify-center text-muted hover:text-ink hover:border-brand/40 transition-all disabled:opacity-40"
+            aria-label="Attach PDF"
+            title="Attach a PDF — the agent will read it and add to its knowledge"
+          >
+            {isUploading ? (
+              <Loader2 className="w-4 h-4 animate-spin text-brand" />
+            ) : (
+              <Paperclip className="w-4 h-4" />
+            )}
+          </button>
           <textarea
             ref={inputRef}
             value={input}
@@ -249,12 +312,12 @@ export default function AgentWorkspace({ agentId, agentName = "agent" }: AgentWo
             onKeyDown={onKeyDown}
             placeholder={`Message ${agentName}…  (⌘+Enter to send)`}
             rows={2}
-            disabled={isSending}
+            disabled={isSending || isUploading}
             className="flex-1 resize-none rounded-2xl glass border border-black/10 px-3 py-2.5 text-[13px] text-ink placeholder:text-muted/50 outline-none focus:border-brand/40 transition-colors disabled:opacity-60 leading-relaxed"
           />
           <button
             onClick={send}
-            disabled={!input.trim() || isSending}
+            disabled={!input.trim() || isSending || isUploading}
             className="shrink-0 w-10 h-10 rounded-2xl bg-brand text-on-brand flex items-center justify-center hover:opacity-90 transition-opacity disabled:opacity-30"
             aria-label="Send message"
           >
@@ -266,7 +329,7 @@ export default function AgentWorkspace({ agentId, agentName = "agent" }: AgentWo
           </button>
         </div>
         <p className="text-[9px] uppercase tracking-[0.22em] text-muted/55 mt-2 text-center">
-          Messages persist · agent uses thread + last 5 calls as context
+          Messages persist · agent uses thread + last 5 calls + uploaded files as context
         </p>
       </div>
     </div>

@@ -703,4 +703,151 @@ router.post(
   },
 );
 
+/**
+ * Per-agent overage purchase — GET reports current count + per-tier price,
+ * POST adjusts the count up or down. Adjusts the Stripe subscription item
+ * quantity in lockstep with the DB column.
+ *
+ * Operator flow:
+ *   1. Pricing page promises "add extra agents at $X/each"
+ *   2. Admin → Billing surfaces the current count + price + add/remove buttons
+ *   3. Posting here updates `extra_agents` column + Stripe subscription item
+ *   4. Agent deploy gate reads (plan.max_agents + extra_agents) as the cap
+ *
+ * Required env setup (per tier): STRIPE_<TIER>_EXTRA_AGENT_PRICE_ID set
+ * to a Price ID with recurring.usage_type = "licensed" and amount equal
+ * to extra_agent_price_usd × 100 cents. Without it, the endpoint returns
+ * a clear "extra-agent billing not configured for your tier" error.
+ */
+router.get(
+  "/billing/extra-agents",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const [settingsRow] = await drizzle
+        .select({
+          plan_id: schema.settings.planId,
+          extra_agents: schema.settings.extraAgents,
+        })
+        .from(schema.settings)
+        .where(eq(schema.settings.userId, req.user!.id))
+        .limit(1);
+      const plan = planById(settingsRow?.plan_id || "personal");
+      res.json({
+        plan_id: plan?.id || "personal",
+        plan_name: plan?.name || "Personal",
+        included_agents: plan?.max_agents ?? 1,
+        extra_agents: settingsRow?.extra_agents ?? 0,
+        extra_agent_price_usd: plan?.extra_agent_price_usd ?? null,
+        configured: !!plan?.extraAgentPriceIdEnv && !!process.env[plan.extraAgentPriceIdEnv],
+      });
+    } catch (err) {
+      log.error("/billing/extra-agents GET failed", { error: getErrorMessage(err) });
+      res.status(500).json({ error: "Failed to load extra-agent state" });
+    }
+  },
+);
+
+router.post(
+  "/billing/extra-agents",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const raw = req.body?.count;
+      const target = Number(raw);
+      if (!Number.isInteger(target) || target < 0 || target > 100) {
+        return res.status(400).json({ error: "count must be an integer 0-100" });
+      }
+
+      // Look up the tenant's current settings + subscription.
+      const [settingsRow] = await drizzle
+        .select({
+          plan_id: schema.settings.planId,
+          extra_agents: schema.settings.extraAgents,
+        })
+        .from(schema.settings)
+        .where(eq(schema.settings.userId, req.user!.id))
+        .limit(1);
+      const plan = planById(settingsRow?.plan_id || "personal");
+      if (!plan) return res.status(400).json({ error: "Plan not found" });
+
+      const priceIdEnv = plan.extraAgentPriceIdEnv;
+      const priceId = priceIdEnv ? process.env[priceIdEnv] : undefined;
+      if (!priceIdEnv || !priceId) {
+        return res.status(503).json({
+          error: `Extra-agent billing not configured for the ${plan.name} tier. Owner needs to set ${priceIdEnv || "STRIPE_<TIER>_EXTRA_AGENT_PRICE_ID"} in environment variables and link it to a Stripe Price.`,
+        });
+      }
+
+      // If Stripe is configured, adjust the subscription item quantity
+      // to match. If not configured (dev), just persist the DB column.
+      if (stripeAvailable() && target > 0) {
+        const [subRow] = await drizzle
+          .select({ stripe_subscription_id: schema.subscriptions.stripeSubscriptionId })
+          .from(schema.subscriptions)
+          .where(eq(schema.subscriptions.userId, req.user!.id))
+          .limit(1);
+        const subscriptionId = subRow?.stripe_subscription_id;
+        if (!subscriptionId) {
+          return res.status(400).json({
+            error:
+              "No active subscription found. Upgrade to a paid plan first to purchase extra agents.",
+          });
+        }
+        try {
+          // Find existing extra-agent line item (if any).
+          const sub = await stripe.subscriptions.retrieve(subscriptionId);
+          const existing = sub.items.data.find((i) => i.price?.id === priceId);
+          if (existing) {
+            if (target === 0) {
+              await stripe.subscriptionItems.del(existing.id);
+            } else {
+              await stripe.subscriptionItems.update(existing.id, { quantity: target });
+            }
+          } else if (target > 0) {
+            await stripe.subscriptionItems.create({
+              subscription: subscriptionId,
+              price: priceId,
+              quantity: target,
+            });
+          }
+        } catch (e) {
+          log.error("Stripe subscription item adjust failed", {
+            error: getErrorMessage(e),
+            userId: req.user!.id,
+          });
+          return res.status(502).json({
+            error: "Couldn't update Stripe subscription. Try again or contact support.",
+          });
+        }
+      }
+
+      // Persist the DB column.
+      await drizzle
+        .update(schema.settings)
+        .set({ extraAgents: target })
+        .where(eq(schema.settings.userId, req.user!.id));
+
+      // Audit log so the change is queryable later. Uses
+      // subscription_updated as the closest existing event type since
+      // this is technically a subscription-item quantity change.
+      void auditLogger
+        .logBilling("subscription_updated", {
+          userId: req.user!.id,
+          metadata: { reason: "extra_agents_changed", target, plan_id: plan.id },
+        })
+        .catch(() => {});
+
+      res.json({
+        ok: true,
+        extra_agents: target,
+        agents_total: (plan.max_agents || 1) + target,
+      });
+    } catch (err) {
+      log.error("/billing/extra-agents POST failed", { error: getErrorMessage(err) });
+      res.status(500).json({ error: "Failed to update extra agents" });
+    }
+  },
+);
+
 export default router;

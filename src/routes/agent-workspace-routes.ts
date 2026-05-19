@@ -253,6 +253,96 @@ router.post(
   },
 );
 
+// POST /api/agents/:id/workspace/files — upload a PDF, extract knowledge,
+// add it to the agent's knowledge base, and acknowledge in the workspace thread.
+//
+// Reuses claudeBrain.knowledgeFromDocument (Claude's native PDF block).
+// File arrives as base64 in the body — matches the existing
+// /api/claude/knowledge-from-document contract. Keeps the upload path
+// simple (no multer / multipart). 30MB ceiling.
+router.post(
+  "/api/agents/:id/workspace/files",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const agentId = req.params.id;
+      const { pdfBase64, fileName } = req.body ?? {};
+      if (!pdfBase64 || typeof pdfBase64 !== "string") {
+        return res.status(400).json({ error: "pdfBase64 required" });
+      }
+      if (pdfBase64.length > 40 * 1024 * 1024) {
+        return res.status(413).json({ error: "File exceeds 30MB. Split it up." });
+      }
+      // Magic-number sanity check — bail on obvious non-PDFs.
+      try {
+        const head = Buffer.from(pdfBase64.slice(0, 16), "base64").toString("utf8", 0, 5);
+        if (!head.startsWith("%PDF")) {
+          return res.status(400).json({ error: "File does not look like a valid PDF." });
+        }
+      } catch {
+        return res.status(400).json({ error: "Malformed base64 payload." });
+      }
+
+      const [agent] = await drizzle
+        .select({ id: schema.agents.id, name: schema.agents.name })
+        .from(schema.agents)
+        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
+        .limit(1);
+      if (!agent) return res.status(404).json({ error: "Agent not found" });
+
+      // Extract knowledge entries via Claude. Defer the heavy import so
+      // cold-start cost isn't paid on every workspace message.
+      const { knowledgeFromDocument } = await import("../lib/claude-brain");
+      const result = await knowledgeFromDocument({
+        pdfBase64,
+        fileName: typeof fileName === "string" ? fileName.slice(0, 255) : undefined,
+        maxEntries: 12,
+      });
+
+      // result.entries is an array of { content, tags? } per the
+      // existing contract. Insert them into the agent's knowledge base
+      // (deduped by content per the existing unique constraint).
+      const entries: Array<{ content: string }> = Array.isArray((result as any).entries)
+        ? (result as any).entries
+        : [];
+      let inserted = 0;
+      for (const e of entries) {
+        if (!e?.content) continue;
+        try {
+          await drizzle
+            .insert(schema.knowledge)
+            .values({
+              userId: req.user.id,
+              agentId,
+              content: e.content,
+              source: fileName ? `Workspace upload: ${fileName}` : "Workspace upload",
+            } as any)
+            .onConflictDoNothing();
+          inserted++;
+        } catch {
+          // Continue inserting the rest even if one row conflicts.
+        }
+      }
+
+      // Append an "agent" message to the workspace thread acknowledging
+      // the file. Operator sees this immediately as if the agent
+      // reviewed the upload. Keeps the chat surface coherent.
+      const ack = `Got it — I read **${fileName || "the file"}** and pulled out ${inserted} knowledge ${inserted === 1 ? "item" : "items"} I'll reference on future calls. Want me to summarize what stood out?`;
+      await drizzle.insert(schema.agentConversationMessages).values({
+        userId: req.user.id,
+        agentId,
+        role: "agent",
+        content: ack,
+      });
+
+      res.json({ inserted, total: entries.length });
+    } catch (e) {
+      log.error("workspace file upload failed", { error: getErrorMessage(e) });
+      res.status(500).json({ error: "Couldn't process the file" });
+    }
+  },
+);
+
 // DELETE /api/agents/:id/workspace/messages — clear the thread.
 // Operators sometimes want a fresh start (new product launch, new vertical).
 router.delete(

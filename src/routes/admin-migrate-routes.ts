@@ -531,6 +531,30 @@ router.post(
   },
 );
 
+// Adds extra_agents column to wireline_settings for the
+// per-agent overage subscription quantity. Idempotent.
+router.post(
+  "/api/admin/migrate-extra-agents",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const ownerEmail = process.env.OWNER_EMAIL;
+    if (!ownerEmail || req.user?.email !== ownerEmail) {
+      return res.status(403).json({ error: "Owner only." });
+    }
+    try {
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_settings
+          ADD COLUMN IF NOT EXISTS extra_agents INTEGER NOT NULL DEFAULT 0;
+      `);
+      log.info("migrate-extra-agents completed", { userId: req.user.id });
+      res.json({ ok: true });
+    } catch (err: any) {
+      log.error("migrate-extra-agents failed", { error: err?.message });
+      res.status(500).json({ error: err?.message || "Migration failed" });
+    }
+  },
+);
+
 // Per-agent operator-chat workspace table.
 // Idempotent — safe to re-run. Owner-only.
 router.post(

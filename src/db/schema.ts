@@ -95,6 +95,12 @@ export const settings = pgTable("wireline_settings", {
    */
   trialOutboundCount: integer("trial_outbound_count").default(0),
   maxAgents: integer("max_agents").default(3),
+  // Additional agents purchased à la carte beyond the plan's included
+  // max_agents. When this is N, the operator can deploy
+  // (plan.max_agents + N) agents. Mutated only via the
+  // /api/billing/extra-agents endpoint which also adjusts the Stripe
+  // subscription item quantity for billing. Defaults to 0.
+  extraAgents: integer("extra_agents").default(0).notNull(),
   vapiPrivateKey: text("vapi_private_key"),
   vapiPhoneNumberId: text("vapi_phone_number_id"),
   retentionDays: integer("retention_days").default(365),
