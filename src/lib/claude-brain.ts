@@ -407,6 +407,93 @@ export async function runCompletion(opts: CompletionOptions): Promise<{
   };
 }
 
+/**
+ * Resilient text-completion wrapper.
+ *
+ *   1. Try Claude (runCompletion above).
+ *   2. On transient failure — 529 overloaded, 503 service unavailable,
+ *      or a network/fetch error — retry once after a short jittered
+ *      backoff. Most "Claude is down" reports are these 1-3 minute blips.
+ *   3. On persistent failure AND if Gemini is configured (GEMINI_API_KEY
+ *      present), fall back to Gemini Flash. The text portion of the
+ *      response is preserved; cache counters are zeroed because Gemini
+ *      doesn't expose Anthropic-style prompt caching.
+ *   4. If Gemini is also unavailable, re-throw the original Claude error
+ *      so callers see the real failure (not a silent empty response).
+ *
+ * Tool-use (`runStructured`) is NOT covered — Gemini's schema differs
+ * enough that a clean swap risks bad payloads. Callers that need
+ * structured output should treat structured failures as user-visible
+ * errors and prompt a retry.
+ *
+ * Wire this into any caller where:
+ *   - Plain text is enough (digests, summaries, briefs, descriptions)
+ *   - The blast radius of a Claude outage is a real user-facing failure
+ *
+ * Leave callers on raw `runCompletion` when the output must be Claude-
+ * specific (high-stakes negotiation, complex tool-chain reasoning).
+ */
+export async function runCompletionResilient(
+  opts: CompletionOptions,
+): Promise<{
+  text: string;
+  cacheRead: number;
+  cacheCreate: number;
+  provider: "claude" | "gemini";
+}> {
+  const isTransient = (err: unknown): boolean => {
+    const e = err as { status?: number; message?: string };
+    if (e?.status === 529 || e?.status === 503 || e?.status === 502) return true;
+    const msg = (e?.message ?? "").toLowerCase();
+    return /overloaded|temporarily|fetch failed|econnreset|etimedout/.test(msg);
+  };
+
+  // Attempt 1 + 1 retry on transient errors.
+  let claudeErr: unknown = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const result = await runCompletion(opts);
+      return { ...result, provider: "claude" };
+    } catch (err) {
+      claudeErr = err;
+      if (!isTransient(err)) break;
+      if (attempt === 0) {
+        const jitter = 250 + Math.random() * 250;
+        await new Promise((r) => setTimeout(r, jitter));
+        continue;
+      }
+    }
+  }
+
+  // Gemini fallback path — only run if explicitly available.
+  if (process.env.GEMINI_API_KEY) {
+    try {
+      const { GoogleGenerativeAI } = await import("@google/generative-ai");
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+      const fallbackModel = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+      const prompt = `${opts.system}\n\n${opts.user}`;
+      const result = await fallbackModel.generateContent(prompt);
+      const text = result.response.text();
+      // Don't swallow the Claude error — log it for ops visibility.
+      try {
+        const { log } = await import("./server-context");
+        log.warn("Claude unavailable, served via Gemini fallback", {
+          claude_error: (claudeErr as { message?: string })?.message,
+        });
+      } catch {
+        /* ignore */
+      }
+      return { text, cacheRead: 0, cacheCreate: 0, provider: "gemini" };
+    } catch {
+      // Gemini also failed — throw the original Claude error so the
+      // caller's error handling sees the actual root cause, not the
+      // secondary symptom.
+    }
+  }
+
+  throw claudeErr;
+}
+
 /* ────────────────────────────────────────────────────────────────────────
  *  Pre-built tool schemas — one per recipe.
  * ──────────────────────────────────────────────────────────────────── */
