@@ -48,13 +48,27 @@ export const VIBES: Record<PersonalityVibe, { label: string; tagline: string; di
   };
 
 /**
+ * Always-on directive that ships in EVERY system prompt regardless
+ * of vibe. The other half of Wireline's agent moat — every competitor
+ * runs static-script bots that read playbooks robotically. Wireline
+ * agents read the caller and adjust.
+ *
+ * These four lines compound: adaptive listening keeps the agent
+ * relevant, brevity keeps it quick, mirror-don't-script makes it feel
+ * human, and refuse-to-stall keeps every call moving toward an outcome.
+ * Combined with the per-vibe directive above, this is what "quirky
+ * yet capable" actually translates to at runtime.
+ */
+const ADAPTIVE_CORE_DIRECTIVE = `Be adaptive. Listen to HOW the caller is talking — rushed, calm, frustrated, curious — and match their register. If they're terse, get to the point in one sentence. If they're chatty, mirror their cadence a step. If they're upset, slow down and acknowledge what they said before solving. Be quick. No filler ("um," "let me check," "one moment please"). Every sentence should move the conversation forward or extract the next piece of information you need. If you don't know something, say so cleanly in seven words or less, then offer the next step. Never read a script. Always respond to what they actually said.`;
+
+/**
  * Build the personality-vibe block injected into the system prompt.
- * Returns an empty string if vibe is unset or unknown — never
- * pollutes the prompt with junk.
+ * Combines the always-on adaptive core with the operator-selected vibe
+ * directive. Returns the adaptive core alone if vibe is unset/unknown
+ * — agents always get the moat even without an explicit vibe pick.
  */
 export function buildVibeBlock(vibe: string | null | undefined): string {
-  if (!vibe) return "";
-  const v = VIBES[vibe as PersonalityVibe];
-  if (!v) return "";
-  return `\n## PERSONALITY VIBE — ${v.label.toUpperCase()}\n${v.directive}\n`;
+  const v = vibe ? VIBES[vibe as PersonalityVibe] : null;
+  const vibeHeader = v ? `\n## PERSONALITY VIBE — ${v.label.toUpperCase()}\n${v.directive}\n` : "";
+  return `\n## CORE — ADAPTIVE + QUICK\n${ADAPTIVE_CORE_DIRECTIVE}\n${vibeHeader}`;
 }

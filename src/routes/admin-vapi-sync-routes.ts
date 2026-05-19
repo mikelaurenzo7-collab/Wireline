@@ -33,6 +33,7 @@ import {
 import { buildWirelineKnowledgeBlock } from "../data/wireline-knowledge";
 import { sanitizePhone } from "../lib/vapi-helpers";
 import { VAPI_PREMIUM_MODEL } from "../lib/claude-brain";
+import { buildVibeBlock } from "../lib/personality-vibes";
 
 const router = Router();
 
@@ -84,9 +85,21 @@ function buildSystemPromptForAgent(agent: ContactAgent, kind: "cs" | "demo"): st
       ? `You are ${agent.name}, a Wireline customer-service agent. Your scope: ${agent.scope}`
       : `You are ${agent.name}, a Wireline demo agent role-playing: ${agent.role}. Scope: ${agent.scope}. When the caller asks about Wireline (the platform you're built on), answer using the WIRELINE KNOWLEDGE block below.`;
 
-  return [heading, "", `You handle calls for these topics: ${agent.handles}.`, "", knowledge].join(
-    "\n",
-  );
+  // Vibe block — the moat. Every showcase agent ships with its
+  // assigned vibe (Sarah/Tyler/Devon/Priya = warm, Liam/Maya/Aisha/
+  // Jake = playful, Marcus/Elena = authoritative). The block also
+  // injects the always-on adaptive+quick core, so the showcase
+  // agents are demonstrably more dynamic than competitor demos.
+  const vibe = buildVibeBlock(agent.defaultVibe);
+
+  return [
+    heading,
+    "",
+    `You handle calls for these topics: ${agent.handles}.`,
+    vibe,
+    "",
+    knowledge,
+  ].join("\n");
 }
 
 async function syncOneAgent(

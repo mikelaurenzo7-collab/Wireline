@@ -1284,6 +1284,56 @@ export default function FleetSettings() {
                                       </div>
                                     </div>
 
+                                    {/* Personality vibe — the agent moat. Three
+                                        levels, one voice. Voice (Adam · Deep) stays
+                                        consistent across vibes — vibe shifts the
+                                        SCRIPT, not the audio. Default "warm"
+                                        works for any vertical; "playful" makes
+                                        the agent memorable for retail/agencies/
+                                        home services; "authoritative" gives the
+                                        gravity medical/legal/financial intake
+                                        needs. */}
+                                    <div className="space-y-1.5">
+                                      <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
+                                        Personality vibe
+                                      </label>
+                                      <div className="grid grid-cols-3 gap-1.5">
+                                        {(["warm", "playful", "authoritative"] as const).map(
+                                          (v) => {
+                                            const current =
+                                              (selectedAgent as any).personality_vibe || "warm";
+                                            const isActive = current === v;
+                                            const labels: Record<typeof v, string> = {
+                                              warm: "Warm",
+                                              playful: "Playful",
+                                              authoritative: "Crisp",
+                                            };
+                                            return (
+                                              <button
+                                                key={v}
+                                                type="button"
+                                                onClick={() =>
+                                                  updateAgentMeta({ personality_vibe: v })
+                                                }
+                                                className={cn(
+                                                  "px-2 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.2em] font-medium transition-all",
+                                                  isActive
+                                                    ? "bg-brand/15 border border-brand/40 text-brand"
+                                                    : "bg-black/5 border border-black/10 text-muted hover:text-ink hover:border-brand/20",
+                                                )}
+                                              >
+                                                {labels[v]}
+                                              </button>
+                                            );
+                                          },
+                                        )}
+                                      </div>
+                                      <p className="text-[9px] text-muted/60 leading-relaxed">
+                                        Voice stays consistent. Vibe shifts the script — same agent,
+                                        different tonal register per use case.
+                                      </p>
+                                    </div>
+
                                     <div className="space-y-1.5">
                                       <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
                                         Ambient atmosphere

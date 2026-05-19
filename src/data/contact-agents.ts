@@ -33,6 +33,17 @@ export type ContactAgent = {
   tel: string;
   display: string;
   tint: string;
+  /**
+   * Default personality vibe for this showcase agent. Used by
+   * /api/admin/sync-vapi-knowledge when pushing the system prompt
+   * to each Vapi assistant — the right vibe per agent role.
+   * "warm" for general CS / billing / success / tech (trustworthy
+   * default), "playful" for sales / onboarding / outbound /
+   * customer-facing-retail (memorable, differentiating),
+   * "authoritative" for healthcare / insurance / legal-style
+   * intake (gravity when it matters).
+   */
+  defaultVibe: "warm" | "playful" | "authoritative";
 };
 
 export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
@@ -46,6 +57,7 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     tel: "+16306425661",
     display: "(630) 642-5661",
     tint: "#4F1E7B",
+    defaultVibe: "warm",
   },
   {
     name: "Liam",
@@ -58,6 +70,7 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     tel: "+16305811834",
     display: "(630) 581-1834",
     tint: "#4F1E7B",
+    defaultVibe: "playful",
   },
   {
     name: "Tyler",
@@ -69,6 +82,7 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     tel: "+15642389455",
     display: "(564) 238-9455",
     tint: "#8b5cf6",
+    defaultVibe: "warm",
   },
   {
     name: "Maya",
@@ -81,6 +95,7 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     tel: "+16306425927",
     display: "(630) 642-5927",
     tint: "#4F1E7B",
+    defaultVibe: "playful",
   },
   {
     name: "Devon",
@@ -93,6 +108,7 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     tel: "+12075935155",
     display: "(207) 593-5155",
     tint: "#f43f5e",
+    defaultVibe: "warm",
   },
   {
     name: "Priya",
@@ -105,6 +121,7 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     tel: "+15727269365",
     display: "(572) 726-9365",
     tint: "#ec4899",
+    defaultVibe: "warm",
   },
 ];
 
@@ -122,6 +139,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<DemoAgent> = [
     tel: "+16173134469",
     display: "(617) 313-4469",
     tint: "#10B981",
+    defaultVibe: "authoritative",
   },
   {
     name: "Aisha",
@@ -134,6 +152,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<DemoAgent> = [
     tel: "+19733638874",
     display: "(973) 363-8874",
     tint: "#FFC07D",
+    defaultVibe: "playful",
   },
   {
     name: "Elena",
@@ -146,6 +165,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<DemoAgent> = [
     tel: "+19044601596",
     display: "(904) 460-1596",
     tint: "#06b6d4",
+    defaultVibe: "authoritative",
   },
   {
     name: "Jake",
@@ -158,5 +178,6 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<DemoAgent> = [
     tel: "+14692571581",
     display: "(469) 257-1581",
     tint: "#f59e0b",
+    defaultVibe: "playful",
   },
 ];
