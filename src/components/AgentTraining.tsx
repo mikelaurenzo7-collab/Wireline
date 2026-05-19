@@ -36,6 +36,7 @@ import SupervisedAgentTuner from "./SupervisedAgentTuner";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import { HelpTooltip } from "./HelpTooltip";
 import HubTabs, { TRAINING_HUB } from "./HubTabs";
+import AgentWorkspace from "./AgentWorkspace";
 import { useToast } from "../contexts/ToastContext";
 import AgentFlowComposer from "./AgentFlowComposer";
 import AgentActionEngine from "./AgentActionEngine";
@@ -45,8 +46,8 @@ type Message = { role: "user" | "assistant"; content: string };
 export default function AgentTraining() {
   const { error: toastError } = useToast();
   const [activeTab, setActiveTab] = useState<
-    "admin" | "simulator" | "database" | "flow" | "actions"
-  >("flow");
+    "admin" | "simulator" | "database" | "flow" | "actions" | "workspace"
+  >("workspace");
   const [agents, setAgents] = useState<any[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState("default-agent");
   const [messages, setMessages] = useState<Message[]>([
@@ -348,6 +349,12 @@ export default function AgentTraining() {
               label: "Directive registry",
               icon: Database,
               help: "View and edit all training data stored for this agent",
+            },
+            {
+              id: "workspace",
+              label: "Workspace",
+              icon: MessageSquare,
+              help: "Ongoing private chat with this agent — coach, give context, ask how calls went",
             },
             {
               id: "simulator",
@@ -962,6 +969,22 @@ export default function AgentTraining() {
               className="h-full"
             >
               <AgentFlowComposer agentId={selectedAgentId} />
+            </motion.div>
+          )}
+
+          {activeTab === "workspace" && (
+            <motion.div
+              key="workspace"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute inset-0"
+            >
+              <AgentWorkspace
+                agentId={selectedAgentId}
+                agentName={agents.find((a) => a.id === selectedAgentId)?.name || "your agent"}
+              />
             </motion.div>
           )}
 

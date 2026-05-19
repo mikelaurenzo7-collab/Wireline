@@ -45,6 +45,7 @@ const TIERS: Tier[] = [
       "Call logs + transcripts + sentiment",
       "Web dashboard, no team seats",
       "Overage at $0.20 / min — rarely triggered",
+      "Add extra agents at $39/each",
     ],
     notIncluded: ["Outbound campaigns", "Slack alerts", "Multi-user team"],
   },
@@ -64,6 +65,7 @@ const TIERS: Tier[] = [
       "Live call monitor",
       "Up to 5 team seats",
       "Overage at $0.15 / min — only if you exceed",
+      "Add extra agents at $35/each",
     ],
   },
   {
@@ -85,6 +87,7 @@ const TIERS: Tier[] = [
       "Advanced insights + funnel analysis",
       "Webhook + Action Engine",
       "Overage at $0.12 / min — best per-minute rate before Business",
+      "Add extra agents at $30/each",
     ],
   },
   {
@@ -104,6 +107,7 @@ const TIERS: Tier[] = [
       "Everything in Pro",
       "Priority support · Slack channel",
       "Overage at $0.10 / min — lowest on platform outside Enterprise",
+      "Add extra agents at $25/each",
     ],
   },
   {
@@ -236,8 +240,8 @@ export default function Pricing() {
           className="text-muted/80 text-base max-w-xl mx-auto"
         >
           Every plan includes the dashboard, real-time call logs, sentiment scoring, and the
-          Wireline Demo Line for testing. Pick the agent + minute volume you need today; upgrade or
-          downgrade any time.
+          Wireline Demo Line for testing. Pick the agent + minute volume you need today; add more
+          agents à la carte if you outgrow your tier — no forced upgrade to the next bracket.
         </motion.p>
         <motion.p
           initial={{ opacity: 0 }}

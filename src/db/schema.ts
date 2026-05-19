@@ -282,6 +282,36 @@ export const agentLessons = pgTable(
   }),
 );
 
+// Per-agent operator chat thread. Persistent, ongoing — distinct from
+// /train which is structural agent configuration. Think of this as the
+// private DM channel the operator has with each AI agent: ongoing
+// direction, coaching, "how did the calls go this week?", file-attached
+// context. Memory is the thread itself plus the agent's flow + recent
+// call summaries injected as context at LLM time.
+//
+// One thread per (userId, agentId). When the operator sends, we store
+// a row with role="operator". Claude reads thread history + agent
+// config + recent calls, replies, and we store the reply with
+// role="agent". Soft-delete on agent delete via cascade.
+export const agentConversationMessages = pgTable(
+  "wireline_agent_conversation_messages",
+  {
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
+    userId: uuid("user_id").notNull(),
+    agentId: text("agent_id")
+      .references(() => agents.id, { onDelete: "cascade" })
+      .notNull(),
+    // role is one of "operator" | "agent" — DB-level CHECK constraint
+    // lives in the migration (this Drizzle version doesn't expose .$type()).
+    role: text("role").notNull(),
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    userAgentIdx: sql`CREATE INDEX IF NOT EXISTS idx_agent_conv_user_agent ON wireline_agent_conversation_messages USING btree (user_id, agent_id, created_at DESC)`,
+  }),
+);
+
 // 2.2 COMMITMENTS & LOGISTICS
 export const appointments = pgTable(
   "wireline_appointments",
