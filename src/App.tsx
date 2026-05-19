@@ -1,7 +1,7 @@
 import React, { useEffect, lazy, Suspense } from "react";
 import { BrowserRouter, useLocation, useNavigate } from "react-router-dom";
 import AuthPortal from "./components/AuthPortal";
-import { PrivacyPolicy, TermsOfService, DataDeletion } from "./components/LegalPage";
+import { PrivacyPolicy, TermsOfService, DataDeletion, ZoomDocs } from "./components/LegalPage";
 import CookieConsent from "./components/CookieConsent";
 import ToastStack from "./components/Toast";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -40,6 +40,9 @@ function AppContent() {
   if (location.pathname === "/privacy") return <PrivacyPolicy />;
   if (location.pathname === "/terms") return <TermsOfService />;
   if (location.pathname === "/legal/data-deletion") return <DataDeletion />;
+  // Integration-specific docs pages — required for marketplace review on
+  // platforms like Zoom that demand a vendor-hosted setup guide.
+  if (location.pathname === "/docs/zoom") return <ZoomDocs />;
 
   // Vertical wedge pages — outbound DMs target these directly with
   // industry-specific copy, but the product behind them is the same

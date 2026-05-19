@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Shield, FileText, Trash2, ArrowLeft } from "lucide-react";
+import { Shield, FileText, Trash2, ArrowLeft, Video } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 
 const LAST_UPDATED = "May 9, 2026";
@@ -460,6 +460,236 @@ export function DataDeletion() {
         <p>
           Reach us at <strong>trywireline@yahoo.com</strong> with any data deletion question and
           we'll respond within 2 business days.
+        </p>
+      </Section>
+    </LegalLayout>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Zoom Integration Documentation
+// Required by Zoom Marketplace review — "must be a Zoom-specific guide hosted
+// on your domain that includes detailed instructions on adding, using and
+// removing the app". Linked from the Zoom app dashboard Documentation URL
+// field. Reviewers visit this page during approval to confirm the integration
+// is what we claim it is.
+// ─────────────────────────────────────────────────────────────────────────────
+export function ZoomDocs() {
+  return (
+    <LegalLayout title="Zoom Integration" icon={Video}>
+      <PageMeta
+        title="Zoom Integration Guide — Wireline"
+        description="How to add, use, and remove the Wireline Zoom integration. AI voice agents that book Zoom meetings during phone calls."
+      />
+
+      <Section title="Overview">
+        <p>
+          Wireline is a 24/7 AI calling fleet. When a caller asks to schedule a meeting, your
+          Wireline agent creates a Zoom meeting on your connected Zoom account in real time,
+          confirms the date and time with the caller verbally, and sends the meeting invite via
+          email or SMS before the call ends.
+        </p>
+        <p>
+          This integration is per-tenant — each Wireline customer connects their own Zoom account.
+          No shared credentials. No admin-pushed installs.
+        </p>
+      </Section>
+
+      <Section title="Adding the Wireline app">
+        <p>To connect your Zoom account to Wireline:</p>
+        <ol className="list-decimal pl-5 space-y-2">
+          <li>
+            Sign in to Wireline at{" "}
+            <a
+              href="https://trywireline.com"
+              className="text-brand hover:underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              trywireline.com
+            </a>
+            . If you don't have an account yet, sign up — the first 14 days are free.
+          </li>
+          <li>
+            Open the <strong>Integrations</strong> page from the main navigation, or visit{" "}
+            <a
+              href="https://trywireline.com/integrations"
+              className="text-brand hover:underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              trywireline.com/integrations
+            </a>{" "}
+            directly.
+          </li>
+          <li>
+            Find the <strong>Zoom</strong> card and click <strong>Connect Zoom</strong>.
+          </li>
+          <li>
+            You'll be redirected to Zoom's consent screen. Review the two requested permissions:
+            <ul className="list-disc pl-5 mt-1 space-y-1">
+              <li>
+                <code>meeting:write:meeting</code> — Wireline uses this to create new Zoom meetings
+                on your account when your AI agent books one during a call.
+              </li>
+              <li>
+                <code>user:read:user</code> — Wireline reads your account email and display name
+                once at connection so we can show "Connected as you@yourcompany.com" in our settings
+                page.
+              </li>
+            </ul>
+          </li>
+          <li>
+            Click <strong>Allow</strong>. Zoom will redirect you back to Wireline's Integrations
+            page, which will now show a green "Connected" indicator on the Zoom card with your Zoom
+            account email.
+          </li>
+        </ol>
+      </Section>
+
+      <Section title="Using the integration">
+        <p>
+          Once connected, your Wireline AI agents can book Zoom meetings automatically. No
+          additional configuration is required — Wireline detects the connected Zoom account and
+          uses it whenever an agent needs to schedule a meeting.
+        </p>
+        <p>Typical flow:</p>
+        <ol className="list-decimal pl-5 space-y-2">
+          <li>
+            A caller phones one of your Wireline-managed numbers (inbound) or your Wireline agent
+            dials out (outbound).
+          </li>
+          <li>
+            During the conversation, the caller asks to schedule a meeting — for example, "Can we
+            set up a 30-minute call next Tuesday at 2pm?"
+          </li>
+          <li>
+            Your Wireline agent confirms the time, then calls Zoom's{" "}
+            <code>POST /v2/users/me/meetings</code> API on your behalf to create the meeting on your
+            connected Zoom account.
+          </li>
+          <li>
+            The agent reads back the confirmed time and tells the caller they'll receive the invite
+            shortly.
+          </li>
+          <li>
+            Wireline sends the Zoom meeting invite to the caller via email or SMS (configurable per
+            agent).
+          </li>
+          <li>
+            The meeting appears immediately on your Zoom calendar and the connected email account.
+          </li>
+        </ol>
+        <p>
+          You can review every meeting booked by your AI agents on the <strong>Call Logs</strong>{" "}
+          page in Wireline. Each call that booked a meeting links to the corresponding Zoom meeting
+          record so you can review the conversation that led to the booking.
+        </p>
+      </Section>
+
+      <Section title="What data Wireline accesses">
+        <p>The Zoom integration uses only two scopes:</p>
+        <ul className="list-disc pl-5 space-y-2">
+          <li>
+            <strong>
+              <code>meeting:write:meeting</code>
+            </strong>{" "}
+            — Wireline calls this scope only to <em>create</em> new meetings on your account when
+            your AI agent books one during a phone call. We do not read, update, or delete meetings
+            that were not created by Wireline.
+          </li>
+          <li>
+            <strong>
+              <code>user:read:user</code>
+            </strong>{" "}
+            — Wireline reads your Zoom email and display name once at connection time so we can show
+            which Zoom account is linked. We do not store your billing information, account plan, or
+            other profile fields returned by the API.
+          </li>
+        </ul>
+        <p>
+          We do <strong>not</strong> request scopes for: meeting chat, meeting recordings,
+          transcripts, participant data, your existing meeting list, in-meeting controls, or any
+          administrative data. We do not share Zoom data with third parties.
+        </p>
+        <p>
+          Meeting IDs and join URLs returned by Zoom are stored encrypted (AES-256) in Wireline's
+          PostgreSQL database, attached to the call log they originated from, and visible only to
+          the Wireline tenant who owns the account.
+        </p>
+      </Section>
+
+      <Section title="Removing the Wireline app">
+        <p>You can disconnect Wireline from your Zoom account at any time:</p>
+        <ol className="list-decimal pl-5 space-y-2">
+          <li>
+            <strong>From Wireline:</strong> Visit{" "}
+            <a
+              href="https://trywireline.com/integrations"
+              className="text-brand hover:underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              trywireline.com/integrations
+            </a>
+            , find the Zoom card, click the gear icon, and select <strong>Disconnect</strong>. This
+            calls Zoom's <code>POST /oauth/revoke</code> endpoint to invalidate the access token
+            immediately and removes the stored OAuth credentials from our database.
+          </li>
+          <li>
+            <strong>From Zoom:</strong> Sign in to{" "}
+            <a
+              href="https://marketplace.zoom.us"
+              className="text-brand hover:underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              marketplace.zoom.us
+            </a>
+            , go to <strong>Manage → Added Apps</strong>, find Wireline, and click{" "}
+            <strong>Remove</strong>. Zoom will notify Wireline of the revocation via webhook, and
+            we'll mark your Zoom integration as disconnected.
+          </li>
+        </ol>
+        <p>
+          After disconnection, your AI agents will no longer be able to book Zoom meetings until you
+          reconnect. Existing meetings already created remain on your Zoom calendar — Wireline does
+          not delete them.
+        </p>
+      </Section>
+
+      <Section title="Troubleshooting">
+        <p>
+          <strong>"redirect_uri_mismatch" during connection.</strong> This is a server-side
+          configuration issue on our end — please contact support (below) and we'll fix it
+          immediately.
+        </p>
+        <p>
+          <strong>"unauthorized_client" during connection.</strong> Your Zoom account may have
+          administrator restrictions on third-party apps. Ask your Zoom admin to allow the Wireline
+          app, or contact our support team for help.
+        </p>
+        <p>
+          <strong>Agent didn't book a meeting that was requested on a call.</strong> Check the call
+          log on Wireline's <strong>Logs</strong> page — the agent may have logged a follow-up task
+          instead if the time wasn't clear. If you confirm the request was clear and the booking
+          should have happened, contact support so we can review the transcript.
+        </p>
+      </Section>
+
+      <Section title="Support">
+        <p>
+          For any issue with the Zoom integration, contact <strong>trywireline@yahoo.com</strong> or
+          visit{" "}
+          <a
+            href="https://trywireline.com/support"
+            className="text-brand hover:underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            trywireline.com/support
+          </a>
+          . We respond within 1 business day.
         </p>
       </Section>
     </LegalLayout>
