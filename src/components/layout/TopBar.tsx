@@ -100,6 +100,11 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
               boxShadow: isDrawer
                 ? "0 6px 18px -6px rgba(79,30,123,0.45), 0 0 0 1px rgba(255,255,255,0.18) inset"
                 : "0 4px 14px -4px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.2) inset",
+              // GPU-promote so the layoutId pill cross-fades smoothly
+              // between nav buttons on route change. Without this,
+              // some lower-spec laptops show ~50ms of layout-thrash
+              // when the layout animation kicks in.
+              willChange: "transform, background-color",
             }}
           />
         )}

@@ -17,6 +17,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { X, Loader2, CreditCard, AlertTriangle, Sparkles } from "lucide-react";
 import { authFetch, safeJson, TRIAL_GATE_EVENT, type TrialGateBlockDetail } from "../lib/api";
 import { cn } from "../lib/utils";
+import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 
 /**
  * Self-serve tiers we surface in the picker. Enterprise is intentionally
@@ -85,6 +86,9 @@ export default function TrialGateModal() {
   const [detail, setDetail] = useState<TrialGateBlockDetail | null>(null);
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Pin the page underneath while the upgrade modal is open.
+  useBodyScrollLock(detail !== null);
 
   // Subscribe to the global trial-gate event. Single listener mounted
   // for the lifetime of the AppShell. Reentry-safe: the most recent

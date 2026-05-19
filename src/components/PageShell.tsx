@@ -139,6 +139,7 @@ export default function PageShell({
                         background: "#4F1E7B",
                         boxShadow:
                           "0 3px 12px -6px rgba(79, 30, 123 ,0.50), 0 0 0 1px rgba(255,255,255,0.18) inset",
+                        willChange: "transform, background-color",
                       }}
                       transition={{ type: "spring", stiffness: 420, damping: 36 }}
                     />

@@ -424,7 +424,7 @@ function TopicsView() {
           const pct = (t.count / max) * 100;
           return (
             <motion.div
-              key={i}
+              key={t.label ?? t.topic ?? t.id ?? `topic-${i}`}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
@@ -816,7 +816,7 @@ function FailureModesView() {
       </div>
       {modes.map((m: any, i: number) => (
         <motion.div
-          key={i}
+          key={m.label ?? m.failure ?? m.id ?? `mode-${i}`}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: i * 0.05 }}

@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { AlertTriangle, Loader2, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { cn } from "../lib/utils";
+import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 
 interface Props {
   open: boolean;
@@ -28,6 +29,10 @@ export default function ConfirmModal({
 }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const confirmBtnRef = useRef<HTMLButtonElement>(null);
+
+  // Pin the page underneath so the background can't creep while the
+  // dialog is open. Restores scroll position cleanly on close.
+  useBodyScrollLock(open);
 
   // Focus the confirm button when the modal opens; restore focus on close.
   useEffect(() => {

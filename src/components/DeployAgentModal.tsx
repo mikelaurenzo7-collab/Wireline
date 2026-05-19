@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { X, Loader2, ArrowRight, User2, Users2 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { PREMIUM_VOICES, DEFAULT_VOICE_BY_GENDER } from "./FleetSettings";
+import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 
 export type DeployTemplate = {
   id: string;
@@ -59,6 +60,9 @@ export default function DeployAgentModal({
   const [voiceId, setVoiceId] = useState<string>(DEFAULT_VOICE_BY_GENDER.female);
   const [showVoiceList, setShowVoiceList] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
+
+  // Pin the page underneath while the deploy modal is open.
+  useBodyScrollLock(open);
 
   // Reset state whenever a new template is selected, autofocus the name field.
   useEffect(() => {
