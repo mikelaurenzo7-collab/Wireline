@@ -125,7 +125,13 @@ export default function Pipeline() {
                   const id = e.dataTransfer.getData("text/plain");
                   if (id) moveLead(id, stage.id);
                 }}
-                className="w-full md:min-w-[200px] md:flex-1 md:snap-start flex flex-col md:h-full max-h-80 md:max-h-none"
+                // min-w-[180px] (was 200) so 6 columns + gaps fit
+                // comfortably at 1280px ThinkPad widths without the
+                // rightmost stage getting clipped at the page edge.
+                // Still scrolls horizontally on narrower laptops via
+                // the parent overflow-x-auto, just with much less
+                // chance of triggering it on the operator's main viewport.
+                className="w-full md:min-w-[180px] md:flex-1 md:snap-start flex flex-col md:h-full max-h-80 md:max-h-none"
               >
                 <Panel
                   title={stage.label}

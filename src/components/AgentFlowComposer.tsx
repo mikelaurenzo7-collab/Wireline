@@ -873,6 +873,38 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                     placeholder="e.g. You are now qualifying the lead. Ask about their budget and timeline. Do not mention specific pricing yet."
                     className="w-full h-40 bg-black/10 border border-white/10 rounded-xl p-4 text-sm text-ink leading-relaxed resize-none focus:outline-none focus:border-brand/40 transition-colors placeholder:text-muted/30"
                   />
+                  {/* Pacing / length hints — operators tend to write
+                      either too terse ("be friendly") or too verbose
+                      (paragraphs). Surfacing word count + estimated
+                      read-aloud time + a soft cap keeps stages in the
+                      sweet spot. ~150 words / 60 sec is plenty for
+                      most stages; over that and the agent starts to
+                      monologue. */}
+                  {(() => {
+                    const words = activeStep.instructions
+                      .trim()
+                      .split(/\s+/)
+                      .filter(Boolean).length;
+                    // ~155 words per minute average TTS rate at
+                    // Vapi's default speed; ~12 words ≈ 5 seconds.
+                    const seconds = Math.max(0, Math.round((words / 155) * 60));
+                    const tooLong = words > 200;
+                    const tooShort = words > 0 && words < 8;
+                    return (
+                      <div className="flex items-center justify-between text-[10px] text-muted/60 -mt-1 px-1">
+                        <span
+                          className={cn(tooLong && "text-amber-500", tooShort && "text-rose-500")}
+                        >
+                          {words === 0
+                            ? "Write what the agent should say in this stage"
+                            : `${words} word${words === 1 ? "" : "s"} · ~${seconds}s read-aloud`}
+                          {tooLong && " · too long for one stage, consider splitting"}
+                          {tooShort && " · too vague, agent will need more guidance"}
+                        </span>
+                        {words > 0 && <span className="text-muted/40">target 30–150 words</span>}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 <div className="h-px bg-white/5 w-full" />

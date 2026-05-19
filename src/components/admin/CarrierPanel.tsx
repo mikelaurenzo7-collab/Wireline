@@ -538,6 +538,89 @@ export function CarrierPanel({
             )}
             Save messaging config
           </button>
+
+          {/* ─── Operator alert routing ─────────────────────────────
+              Surfaces the existing settings columns that have been in
+              the DB + the NotificationService backend the whole time
+              but had no UI. When ON, Wireline texts the operator's
+              phone when an agent does something interesting:
+                - Caller asked to escalate to a human
+                - Agent booked an appointment (positive signal)
+                - Hot lead detected (high-intent score)
+                - Trial usage hit 80%
+                - Webhook delivery failed
+              The wireline_settings table has had `twilio_manager_alerts_enabled`
+              + `twilio_manager_alert_number` columns since the schema
+              was set up — this just exposes them to operators. */}
+          <div className="mt-6 pt-5 border-t border-black/10 space-y-3">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.3em] text-muted/70 mb-1">
+                Alerts to you
+              </p>
+              <p className="text-[11px] text-muted leading-relaxed">
+                Have Wireline text YOU when your agents do something worth knowing about — booked
+                meetings, escalations, hot leads, trial milestones.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] p-3">
+              <div className="min-w-0">
+                <p className="text-sm text-ink leading-none">Operator alerts</p>
+                <p className="text-[10px] text-muted/70 mt-1 leading-relaxed">
+                  We'll text the number below when notable events happen.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  onUpdateSettings({
+                    ...settings,
+                    twilio_manager_alerts_enabled: !settings.twilio_manager_alerts_enabled,
+                  })
+                }
+                aria-pressed={!!settings.twilio_manager_alerts_enabled}
+                className={cn(
+                  "shrink-0 w-11 h-6 rounded-full transition-colors relative",
+                  settings.twilio_manager_alerts_enabled ? "bg-brand" : "bg-black/15",
+                )}
+              >
+                <span
+                  className={cn(
+                    "absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all shadow",
+                    settings.twilio_manager_alerts_enabled ? "left-5" : "left-0.5",
+                  )}
+                />
+              </button>
+            </div>
+
+            {settings.twilio_manager_alerts_enabled && (
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="manager-alert-number"
+                  className="text-[9px] uppercase tracking-[0.3em] text-muted/70"
+                >
+                  Your phone number
+                </label>
+                <input
+                  id="manager-alert-number"
+                  type="tel"
+                  value={settings.twilio_manager_alert_number || ""}
+                  onChange={(e) =>
+                    onUpdateSettings({
+                      ...settings,
+                      twilio_manager_alert_number: e.target.value,
+                    })
+                  }
+                  placeholder="+1 555 555 0100"
+                  className="w-full text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-muted/50 font-mono"
+                />
+                <p className="text-[10px] text-muted/60 leading-relaxed">
+                  Standard messaging rates apply. We send no more than ~5 alerts per day per agent
+                  under normal use.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </Panel>
     </div>

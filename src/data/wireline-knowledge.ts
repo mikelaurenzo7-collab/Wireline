@@ -43,7 +43,7 @@ export const WIRELINE_PLANS = [
       "3 phone numbers",
       "1,500 voice minutes/mo (overage $0.15/min)",
       "CRM sync (HubSpot or Salesforce)",
-      "Two-way SMS",
+      "Two-way texting",
     ],
   },
   {
@@ -69,7 +69,7 @@ export const WIRELINE_PLANS = [
       "25 phone numbers",
       "15,000 voice minutes/mo (overage $0.10/min)",
       "Supervisor cockpit with live call monitor",
-      "Team-level routing + per-team SMS sender",
+      "Team-level routing + per-team text-message sender",
       "DocuSign + custom integrations",
       "SSO + audit log",
       "Dedicated onboarding call",
@@ -96,7 +96,7 @@ export const WIRELINE_PLANS = [
       "Everything in Enterprise",
       "Supervisor cockpit with team-level filters",
       "Call queues with overflow routing",
-      "Per-team SMS sender numbers",
+      "Per-team text-message sender numbers",
       "SLA dashboard",
       "Dedicated CSM + 24/7 priority support",
     ],
@@ -120,7 +120,7 @@ export const WIRELINE_FEATURES = [
       "Agents triage your inbox, reply on-brand, follow up, and escalate the ones you need to see personally.",
   },
   {
-    title: "Two-way SMS",
+    title: "Two-way texting",
     blurb:
       "Agents text customers and reply in-thread when customers text back. TCPA-clean with STOP/UNSUBSCRIBE handling.",
   },
@@ -177,11 +177,11 @@ export const WIRELINE_COMPLIANCE_STATUS = {
  * just clarify what each does best.
  */
 export const WIRELINE_COMPETITOR_NOTES = {
-  Air: "Cheaper if you only need outbound voice. We win when you need two-way SMS + email + supervisor cockpit in one console.",
+  Air: "Cheaper if you only need outbound voice. We win when you need two-way texting + email + supervisor cockpit in one console.",
   Synthflow:
     "Strong workflow builder. We're stronger on the ops side — supervisor cockpit, call queues, audit trail.",
   Bland:
-    "Great voice quality. We add the surrounding console — SMS threads, email inbox, CRM sync, autonomy controls.",
+    "Great voice quality. We add the surrounding console — text threads, email inbox, CRM sync, autonomy controls.",
   CallRail:
     "Call tracking + attribution with AI bolted on. We're the agent layer itself — your agents handle the call, not just track it.",
   Twilio:
@@ -217,7 +217,7 @@ export function buildWirelineKnowledgeBlock(mode: "cs" | "demo" | "client" = "de
   const base = [
     "## WIRELINE KNOWLEDGE — answer Wireline product questions using this.",
     "",
-    `Wireline (${WIRELINE_URL}) is an AI voice + email + SMS platform.`,
+    `Wireline (${WIRELINE_URL}) is an AI voice + email + texting platform.`,
     WIRELINE_ONE_LINER,
     "",
     "PRICING TIERS:",

@@ -243,7 +243,10 @@ export const VAPI_TOOL_DEFS = {
   send_text_message: {
     name: "send_text_message",
     description:
-      "Sends an SMS or WhatsApp follow-up. Only use this when the customer explicitly asked for a text or has already consented to that channel. Good for links, confirmations, appointment details, or next steps.",
+      // "SMS" → "text message" because Vapi TTS reads "SMS" letter-by-letter
+      // (S-M-S) which sounds choppy on the call. "text message" reads
+      // naturally and is the term real callers use anyway.
+      "Sends a text message or WhatsApp follow-up. Only use this when the customer explicitly asked for a text or has already consented to that channel. Good for links, confirmations, appointment details, or next steps.",
     parameters: {
       type: "object",
       properties: {
