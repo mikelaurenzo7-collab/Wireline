@@ -25,6 +25,7 @@ const CLOSED_CONFIRM: ConfirmState = { open: false, onConfirm: () => {} };
 const PROVIDER_META: Record<string, { label: string; color: string }> = {
   google: { label: "Google Workspace", color: "text-brand" },
   microsoft: { label: "Microsoft / Outlook", color: "text-blue-600" },
+  yahoo: { label: "Yahoo Mail", color: "text-purple-600" },
 };
 
 /**
@@ -147,6 +148,17 @@ export default function Integrations() {
     }
   };
 
+  const handleConnectYahoo = async () => {
+    try {
+      const res = await authFetch("/api/oauth/yahoo/url");
+      const { url, error } = await res.json();
+      if (error) throw new Error(error);
+      openOAuthPopup(url);
+    } catch (e: any) {
+      toastError("Yahoo Mail connection failed", e?.message || "Could not start Yahoo OAuth.");
+    }
+  };
+
   const handleDisconnect = (id: string) => {
     setConfirmState({
       open: true,
@@ -257,6 +269,13 @@ export default function Integrations() {
                   <Plus className="w-3 h-3" />
                   Outlook
                 </button>
+                <button
+                  onClick={handleConnectYahoo}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-500 text-[10px] uppercase tracking-[0.25em] hover:bg-purple-500/20 transition-colors"
+                >
+                  <Plus className="w-3 h-3" />
+                  Yahoo
+                </button>
               </div>
             }
           >
@@ -277,10 +296,10 @@ export default function Integrations() {
                     no carriers linked
                   </h3>
                   <p className="text-[10px] uppercase tracking-[0.4em] text-muted/70 max-w-sm">
-                    Connect Gmail or Outlook to route inbound conversations to fleet agents.
+                    Connect Gmail, Outlook, or Yahoo to route inbound conversations to fleet agents.
                   </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap justify-center">
                   <button
                     onClick={handleConnectGmail}
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-colors"
@@ -292,6 +311,12 @@ export default function Integrations() {
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] uppercase tracking-[0.25em] hover:bg-blue-500/20 transition-colors"
                   >
                     <Plus className="w-3 h-3" /> Connect Outlook
+                  </button>
+                  <button
+                    onClick={handleConnectYahoo}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-500 text-[10px] uppercase tracking-[0.25em] hover:bg-purple-500/20 transition-colors"
+                  >
+                    <Plus className="w-3 h-3" /> Connect Yahoo
                   </button>
                 </div>
               </div>
