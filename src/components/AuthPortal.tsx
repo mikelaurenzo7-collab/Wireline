@@ -258,7 +258,15 @@ type AuthMode = "signin" | "signup" | "reset";
 
 export default function AuthPortal() {
   const { signIn } = useAuth();
-  const [mode, setMode] = useState<AuthMode>("signin");
+  // Default mode matches the URL the user landed on. /signup → signup
+  // form, /signin or anything else → signin form. The LandingPage's
+  // "Start free trial" CTA points at /signup, so the form should be
+  // ready for them when they arrive.
+  const initialMode: AuthMode = (() => {
+    if (typeof window === "undefined") return "signin";
+    return window.location.pathname === "/signup" ? "signup" : "signin";
+  })();
+  const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);

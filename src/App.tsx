@@ -17,6 +17,7 @@ const OAuthComplete = lazy(() => import("./pages/OAuthComplete"));
 const VerticalLanding = lazy(() => import("./pages/VerticalLanding"));
 const Compare = lazy(() => import("./pages/Compare"));
 const About = lazy(() => import("./pages/About"));
+const LandingPage = lazy(() => import("./pages/LandingPage"));
 
 function AppContent() {
   const { user } = useAuth();
@@ -25,7 +26,12 @@ function AppContent() {
 
   // Redirect authenticated users away from auth-only pages to dashboard
   useEffect(() => {
-    if (user && (location.pathname === "/login" || location.pathname === "/signup")) {
+    if (
+      user &&
+      (location.pathname === "/login" ||
+        location.pathname === "/signin" ||
+        location.pathname === "/signup")
+    ) {
       navigate("/", { replace: true });
     }
   }, [user, location.pathname, navigate]);
@@ -103,6 +109,18 @@ function AppContent() {
   }
 
   if (!user) {
+    // Unauthenticated home is the marketing landing page — dedicated
+    // surface, not crammed in with the auth form. AuthPortal is now
+    // the auth-only target reachable from explicit /signin or /signup
+    // CTAs, plus anyone deep-linking to a protected route falls back
+    // to AuthPortal so they can sign in then continue.
+    if (location.pathname === "/" || location.pathname === "") {
+      return (
+        <Suspense fallback={<div className="min-h-screen bg-paper" />}>
+          <LandingPage />
+        </Suspense>
+      );
+    }
     return <AuthPortal />;
   }
 
