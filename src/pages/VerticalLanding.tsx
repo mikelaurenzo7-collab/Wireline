@@ -33,7 +33,7 @@ import {
 import { PageMeta } from "../lib/page-meta";
 import WirelineMark from "../components/WirelineMark";
 
-export type VerticalKey = "home-services" | "medical" | "legal" | "real-estate";
+export type VerticalKey = "home-services" | "medical" | "legal" | "real-estate" | "personal";
 
 interface PainPoint {
   icon: LucideIcon;
@@ -306,6 +306,77 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         q: "Can it follow up on the cold leads I haven't touched?",
         a: "Yes. Upload your cold-lead CSV from your CRM, set a cadence (weekly, biweekly), and the agent calls them with vertical-specific re-engagement scripts. The lead's original criteria (price, neighborhood) get referenced in the call — feels personal, not robotic.",
+      },
+    ],
+  },
+  // ─── Personal use (consumer wedge) ──────────────────────────────────
+  // The TAM-expanding bet from Mike: not every Wireline user is a
+  // business owner. Plenty of people would pay $20-50/mo to never make
+  // another awkward phone call themselves — debt collectors,
+  // doctor/dentist scheduling, cable company billing disputes, restaurant
+  // reservations. The pitch here is different from the SMB wedges: not
+  // "your business misses calls" — it's "you hate making calls, let
+  // your AI do it." Phone-anxious, neurodivergent, and time-strapped
+  // adults are an enormous underserved market.
+  personal: {
+    slug: "personal",
+    metaTitle: "Wireline for Everyone — Your AI Handles the Calls You Hate",
+    metaDescription:
+      "Personal AI assistant that makes the phone calls you don't want to make. Debt negotiation, appointment booking, customer service disputes, returns — your AI handles it. Starts at $49/mo.",
+    eyebrow: "For everyone who hates the phone",
+    headline: "Never make an awkward call again.",
+    subhead:
+      "Your personal AI calls the debt collector, books the dentist, disputes the cable bill, schedules the appointment, and handles the conversation you've been avoiding for three weeks. You text it what you need; it dials, talks, and reports back.",
+    pains: [
+      {
+        icon: Clock,
+        title: "Debt negotiation calls",
+        body: "Past-due collector keeps calling? Tell your agent the amount, the offer you can afford, and the verbiage you want to use. The agent dials, negotiates within your bounds, gets the agreement in writing — and you never have to hear the collector's voice.",
+      },
+      {
+        icon: Calendar,
+        title: "Appointment booking you keep putting off",
+        body: "Doctor's appointment three weeks overdue. Dentist cleaning. Salon. Auto shop. Veterinarian. Restaurant reservation for Saturday. Tell your agent the window that works and the office to call — it handles the back-and-forth and texts you the confirmation.",
+      },
+      {
+        icon: DollarSign,
+        title: "Returns, billing disputes, customer service",
+        body: "Cable bill suddenly jumped $40. Online order arrived broken. Insurance won't approve the claim. These are the calls that take an hour on hold and end with you frustrated. Your agent waits on hold, escalates politely, and gets the credit/refund/approval logged.",
+      },
+      {
+        icon: Shield,
+        title: "Phone anxiety, social avoidance, neurodivergence",
+        body: "Phone calls are uniquely hard for a lot of people — autistic adults, ADHD'ers, people with social anxiety, hearing-impaired users. Wireline is the accessibility tool that doesn't pretend to be one. The agent does the call; you keep your day.",
+      },
+    ],
+    scriptPreview:
+      "Hi, this is Alex calling on behalf of Mike Laurenzo regarding account ending in 4421. Mike is offering $1,200 as a one-time settlement, payable Friday, in exchange for the account being marked paid-in-full and removed from his credit report. Can your team accept those terms today, or do you need to escalate?",
+    statValue: "$340",
+    statLabel: "average saved per call when an AI agent negotiates a bill or debt on your behalf",
+    primaryCta: { label: "Start 14-day free trial", href: "/signup?wedge=personal" },
+    secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
+    trustLine:
+      "Your agent only does what you authorize. Every call is recorded, transcribed, and visible to you in your dashboard before, during, and after. You can hang it up, override mid-call, or take over yourself at any time.",
+    faqs: [
+      {
+        q: "Is it actually legal for an AI to make calls on my behalf?",
+        a: "Yes — you're the principal, the AI is your agent. Wireline introduces itself with your authorization (\"I'm calling on behalf of Mike Laurenzo regarding…\") and operates within the limits you set. TCPA and state-level robocall laws apply only to calls without the recipient's prior consent — calls you're making to YOUR creditors, providers, and accounts are fully permitted.",
+      },
+      {
+        q: "Can it really negotiate debt? Won't the collector just hang up on a robot?",
+        a: "Two things. First, the agent doesn't sound like a robot — Vapi's voice quality is indistinguishable from human in most calls. Second, collectors are required by law to negotiate in good faith with authorized representatives. Your agent IS an authorized representative. If they hang up, your agent calls back with the next escalation script. Most settlements take 1-3 calls.",
+      },
+      {
+        q: "What about voicemail / hold music / phone trees? Doesn't that break it?",
+        a: 'Your agent handles all of it. Navigates IVR menus by saying "agent" or pressing the right digits. Stays on hold without complaining for 45+ minutes if needed. Leaves voicemails using your script. Re-dials missed calls. This is exactly what AI is good at — the boring, infinite-patience parts of a phone call.',
+      },
+      {
+        q: "How is this different from just having a friend or family member call for me?",
+        a: "Available 24/7. Doesn't owe you a favor afterwards. Never gets tired or annoyed. Records everything so you have evidence if needed. Costs $49/mo total — same call from a real human assistant would cost $25-50 per call. Privacy: nobody in your life knows you avoid these calls. The agent is also better at scripts than most humans because it can be coached precisely.",
+      },
+      {
+        q: "What can't it do?",
+        a: "Calls requiring identity verification beyond what you authorize (your bank's security questions, IRS interactions involving SSN, anything requiring legal in-person presence). Anything illegal or fraudulent. Calls to emergency services. The agent will tell you upfront if your request is out of scope.",
       },
     ],
   },

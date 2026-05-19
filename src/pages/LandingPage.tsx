@@ -73,6 +73,11 @@ const VERTICALS = [
   { slug: "medical", label: "Medical Practices", blurb: "Dental · Chiro · Med Spa · Primary Care" },
   { slug: "legal", label: "Law Firms", blurb: "Plaintiff · Family · Criminal · Business" },
   { slug: "real-estate", label: "Real Estate", blurb: "Brokerages · Teams · Independent Agents" },
+  {
+    slug: "personal",
+    label: "Personal use",
+    blurb: "Debt negotiation · Appointments · Returns · Customer service",
+  },
 ];
 
 const PRINCIPLES = [
@@ -334,17 +339,17 @@ export default function LandingPage() {
       {/* Vertical wedges */}
       <section className="relative z-10 max-w-6xl mx-auto px-6 lg:px-10 pb-20">
         <p className="text-[10px] uppercase tracking-[0.4em] text-brand mb-3 font-medium">
-          Built for every service business
+          Built for every business — and for you
         </p>
         <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-2 text-balance">
-          Lead with your industry — keep the platform.
+          Pick how you'll use it.
         </h2>
         <p className="text-sm sm:text-base text-ink/70 max-w-2xl mb-8 leading-relaxed">
-          Wireline runs the same way for clinics, contractors, agencies, retail, insurance, finance,
-          hospitality, and SaaS. We lead each industry with copy and flows tuned to their dollar
-          pain — but the platform underneath is horizontal by design.
+          Wireline runs the same way for clinics, contractors, brokerages, law firms — and for
+          everyday humans who just don't want to make another awkward phone call. Lead with your
+          context; the platform underneath is horizontal by design.
         </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {VERTICALS.map((v, i) => (
             <motion.div
               key={v.slug}

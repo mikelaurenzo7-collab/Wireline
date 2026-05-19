@@ -50,8 +50,13 @@ function AppContent() {
   // in VerticalLanding.tsx; new wedges land by adding a config entry.
   const verticalMatch = location.pathname.match(/^\/for\/([a-z-]+)$/);
   if (verticalMatch) {
-    const slug = verticalMatch[1] as "home-services" | "medical" | "legal" | "real-estate";
-    if (["home-services", "medical", "legal", "real-estate"].includes(slug)) {
+    const slug = verticalMatch[1] as
+      | "home-services"
+      | "medical"
+      | "legal"
+      | "real-estate"
+      | "personal";
+    if (["home-services", "medical", "legal", "real-estate", "personal"].includes(slug)) {
       return (
         <Suspense fallback={<div className="min-h-screen bg-paper" />}>
           <VerticalLanding slug={slug} />
