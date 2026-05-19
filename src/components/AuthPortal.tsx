@@ -417,25 +417,47 @@ export default function AuthPortal() {
               <span className="text-ink">customer conversation</span>
             </h2>
             <p className="text-[12px] text-muted/80 leading-relaxed mb-5">
-              Wireline runs your inbound support, outbound sales, and email follow-ups across one
-              fleet of AI agents — trained on your playbook, available 24/7.
+              Tap any number below to hear a Wireline agent live — no signup needed.
             </p>
-            {/* Feature pill badges */}
-            <div className="flex flex-wrap gap-2">
-              {FEATURES.map((f) => {
-                const Icon = f.icon;
-                return (
-                  <div
-                    key={f.title}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[10px] text-ink/80 bg-[#FAF8F5]"
-                    style={{ borderColor: `rgba(79,30,123,0.2)` }}
-                  >
-                    <Icon className="w-3 h-3 shrink-0 text-[#4F1E7B]" />
-                    {f.title}
-                  </div>
-                );
-              })}
+
+            {/* Primary CTA — call Wireline directly. Different from the
+              4 demos: this one reaches our actual customer-service team
+              (any of the 6 unified CS lines; Sarah is the first). */}
+            <a
+              href={`tel:${WIRELINE_CONTACT_AGENTS[0].tel}`}
+              className="flex items-center justify-between mb-3 bg-[#4F1E7B]/8 border border-[#4F1E7B]/30 rounded-xl p-3 hover:bg-[#4F1E7B]/14 transition-colors group"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-full bg-[#4F1E7B] flex items-center justify-center shadow-[0_0_15px_rgba(79,30,123,0.35)] shrink-0">
+                  <Phone className="w-4 h-4 text-white" fill="currentColor" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[9px] uppercase tracking-[0.28em] text-[#4F1E7B] font-medium leading-tight">
+                    Talk to Wireline
+                  </p>
+                  <p className="font-display italic text-lg text-ink leading-tight mt-0.5 truncate">
+                    {WIRELINE_CONTACT_AGENTS[0].display}
+                  </p>
+                </div>
+              </div>
+              <ArrowRight className="w-5 h-5 text-[#4F1E7B] shrink-0 group-hover:translate-x-1 transition-transform" />
+            </a>
+
+            {/* Section label */}
+            <div className="flex items-center gap-2 mt-4 mb-2">
+              <span className="text-[9px] uppercase tracking-[0.4em] text-muted/70 font-medium">
+                Live demo agents · {WIRELINE_DEMO_AGENTS.length} roles
+              </span>
+              <span className="flex-1 h-px bg-[#4F1E7B]/15" />
             </div>
+
+            {/* All 4 demo agents — 2-col grid stays readable down to 320px */}
+            <div className="grid grid-cols-2 gap-2">
+              {WIRELINE_DEMO_AGENTS.map((a) => (
+                <AgentCardLink key={a.tel} agent={a} isDemo />
+              ))}
+            </div>
+
             {/* Subtle divider */}
             <div
               className="mt-6 h-px w-full"
