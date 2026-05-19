@@ -603,6 +603,22 @@ export const VAPI_TOOL_DEFS = {
       required: [],
     },
   },
+  gemini_ground: {
+    name: "gemini_ground",
+    description:
+      "Looks up fresh public information via Gemini's grounded web search. Use ONLY when the caller asks something that isn't in your knowledge base AND requires current public info — competitor pricing, news headlines, today's weather, business hours, regulatory updates. Returns a concise grounded answer with citations. Do NOT use for internal customer data — that's what search_leads / crm_search_contacts / view_recent_interactions are for.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description:
+            "The search query. Phrase as a self-contained question — e.g. 'current AWS S3 standard storage pricing per GB' or 'restaurant Chicago Lou Malnati closing time Thursday'.",
+        },
+      },
+      required: ["query"],
+    },
+  },
 } as const;
 
 export type VapiToolName = keyof typeof VAPI_TOOL_DEFS;

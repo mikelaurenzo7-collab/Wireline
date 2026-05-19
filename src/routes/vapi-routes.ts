@@ -465,6 +465,35 @@ router.post("/api/vapi-webhook", async (req, res) => {
         }
       }
 
+      if (toolCall.function.name === "gemini_ground") {
+        try {
+          const { query } = toolCall.function.arguments || {};
+          if (!query || typeof query !== "string") {
+            results.push({
+              toolCallId: toolCall.id,
+              result: "Missing search query.",
+            });
+          } else {
+            const { groundedSearch } = await import("../lib/gemini-brain");
+            const grounded = await groundedSearch(query);
+            const sourceTail =
+              grounded.sources.length > 0
+                ? ` (sources: ${grounded.sources
+                    .slice(0, 3)
+                    .map((s) => s.title || s.uri || "")
+                    .filter(Boolean)
+                    .join("; ")})`
+                : "";
+            results.push({
+              toolCallId: toolCall.id,
+              result: grounded.answer + sourceTail,
+            });
+          }
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Grounded search error." });
+        }
+      }
+
       // CRM Handlers
       if (toolCall.function.name === "crm_search_contacts") {
         try {
