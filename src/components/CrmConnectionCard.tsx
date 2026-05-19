@@ -30,7 +30,6 @@ const PROVIDERS: {
   color: string;
   logo: string;
   group: string;
-  envHint: string;
   beta?: boolean;
 }[] = [
   {
@@ -39,7 +38,6 @@ const PROVIDERS: {
     color: "sky",
     logo: "SF",
     group: "CRM",
-    envHint: "SALESFORCE_CLIENT_ID & SECRET",
     beta: true,
   },
   {
@@ -48,7 +46,6 @@ const PROVIDERS: {
     color: "orange",
     logo: "HS",
     group: "CRM",
-    envHint: "HUBSPOT_CLIENT_ID & SECRET",
     beta: true,
   },
   {
@@ -57,7 +54,6 @@ const PROVIDERS: {
     color: "purple",
     logo: "SL",
     group: "Team",
-    envHint: "SLACK_CLIENT_ID & SECRET",
   },
   {
     key: "zoom",
@@ -65,7 +61,6 @@ const PROVIDERS: {
     color: "blue",
     logo: "ZM",
     group: "Meetings",
-    envHint: "ZOOM_CLIENT_ID & SECRET",
     beta: true,
   },
 ];
@@ -179,7 +174,7 @@ export default function CrmConnectionCard() {
               {group} Integrations
             </div>
             <AnimatePresence mode="popLayout">
-              {groupProviders.map(({ key, label, color, logo, envHint, beta }) => {
+              {groupProviders.map(({ key, label, color, logo, beta }) => {
                 const s = state[key];
                 if (!s) return null;
                 const isConnecting = connecting === key;
@@ -212,7 +207,7 @@ export default function CrmConnectionCard() {
                             {betaPill}
                           </div>
                           <div className="text-[9px] text-muted leading-snug mt-0.5">
-                            Not configured — set {envHint} in environment
+                            Finishing setup — write to trywireline@yahoo.com to enable
                           </div>
                         </div>
                       </div>

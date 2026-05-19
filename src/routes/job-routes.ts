@@ -155,7 +155,21 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
         .from(schema.settings);
 
       if (tenants) {
+        // Idempotency: skip tenants that already have a pending or
+        // recently-completed purge_old_data job in the last 23 hours.
+        // Vercel may retry the same 2:00 UTC tick on transient failure;
+        // without this guard each retry would duplicate the per-tenant
+        // enqueue. 23h not 24h so the next day's sweep still fires even
+        // if today's ran a hair late.
+        const since = new Date(Date.now() - 23 * 60 * 60 * 1000);
+        const recent = await drizzle
+          .select({ userId: schema.jobs.userId })
+          .from(schema.jobs)
+          .where(and(eq(schema.jobs.type, "purge_old_data"), gte(schema.jobs.createdAt, since)));
+        const alreadyQueued = new Set((recent || []).map((r) => r.userId));
+
         for (const t of tenants) {
+          if (alreadyQueued.has(t.userId)) continue;
           await enqueue(drizzle, {
             userId: t.userId,
             type: "purge_old_data",
