@@ -149,7 +149,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
     <>
       <header
         aria-label="Main navigation"
-        className="shrink-0 sticky top-0 z-50 bg-[#3B154C] border-b border-[#FAF9F5]/10 text-white"
+        className="shrink-0 sticky top-0 z-50 bg-[#3B154C] border-b border-[#FAF9F5]/10 text-on-brand"
         style={{
           boxShadow: "0 8px 24px -16px rgba(79, 30, 123, 0.15)",
           paddingTop: "max(0px, env(safe-area-inset-top, 0))",

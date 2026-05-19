@@ -179,7 +179,7 @@ function SelectCard({ option, selected, onSelect, cols = 2 }: SelectCardProps) {
           style={{ background: "#4F1E7B" }}
         >
           <svg
-            className="w-3 h-3 text-black"
+            className="w-3 h-3 text-on-brand"
             fill="none"
             viewBox="0 0 12 12"
             stroke="currentColor"

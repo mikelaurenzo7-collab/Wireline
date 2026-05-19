@@ -340,7 +340,7 @@ export default function AuthPortal() {
                   "0 8px 24px -8px rgba(79,30,123,0.4), 0 0 0 1px rgba(255,255,255,0.22) inset",
               }}
             >
-              <WirelineMark className="w-4 h-4 text-[#FAF9F5]" strokeWidth={130} />
+              <WirelineMark className="w-4 h-4 text-on-brand" strokeWidth={130} />
             </div>
             <div>
               <span className="brand-wordmark text-xl leading-none !text-[#4F1E7B] !filter-none">
