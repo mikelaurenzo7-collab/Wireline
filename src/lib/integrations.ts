@@ -39,7 +39,10 @@ export class IntegrationService {
       if (busySlots.length === 0) return "The whole day is currently free.";
       return `Busy slots found:\n${busySlots.join("\n")}`;
     } catch (err) {
-      log.error("Calendar availability check failed", { userId: this.userId, error: getErrorMessage(err) });
+      log.error("Calendar availability check failed", {
+        userId: this.userId,
+        error: getErrorMessage(err),
+      });
       return "Failed to check calendar availability.";
     }
   }
@@ -72,7 +75,9 @@ export class IntegrationService {
           const meeting = await createZoomMeeting(this.userId, {
             topic: params.title,
             startTime: params.startTime,
-            duration: Math.round((new Date(params.endTime).getTime() - new Date(params.startTime).getTime()) / 60_000),
+            duration: Math.round(
+              (new Date(params.endTime).getTime() - new Date(params.startTime).getTime()) / 60_000,
+            ),
           });
           if (meeting) {
             zoomUrl = meeting.join_url;
@@ -105,16 +110,183 @@ export class IntegrationService {
   /**
    * Mail: Send an email.
    */
-  async sendEmail(params: {
-    to: string;
-    subject: string;
-    body: string;
-  }): Promise<boolean> {
+  /**
+   * Pull the most recent inbox messages for the tenant's connected
+   * mail account. Used by the action engine's `triage_inbox` flow
+   * and the manual "Sync inbox" button. Returns a unified shape
+   * regardless of provider so callers don't branch.
+   *
+   * Yahoo is intentionally a no-op for now — Yahoo killed their
+   * REST mail API and the modern path is XOAUTH2 over IMAP, which
+   * is touchier and lands in a follow-up phase. The connection
+   * token is already stored from the Yahoo mailbox-connect OAuth
+   * flow, so phase 2 just adds the IMAP client.
+   */
+  async fetchInboxMessages(
+    opts: {
+      limit?: number;
+      /** Only return messages received after this ISO timestamp. */
+      sinceIso?: string;
+    } = {},
+  ): Promise<
+    {
+      messageId: string;
+      threadId?: string;
+      from: string;
+      subject: string;
+      snippet: string;
+      receivedAt: Date;
+      provider: "google" | "microsoft" | "yahoo";
+    }[]
+  > {
+    const limit = Math.min(Math.max(opts.limit ?? 25, 1), 100);
+    try {
+      const accounts = await this.getAccounts("mail");
+      const mailAccounts = accounts.length > 0 ? accounts : await this.getAccounts("calendar");
+      if (mailAccounts.length === 0) return [];
+
+      // Fan out across every connected mail account the tenant has.
+      // Most tenants have 1 mailbox; some have one per channel.
+      const perAccount = await Promise.all(
+        mailAccounts.map((account: any) =>
+          this.fetchFromAccount(account, { limit, sinceIso: opts.sinceIso }).catch((err) => {
+            log.warn("fetchInboxMessages failed for one account", {
+              provider: account.provider,
+              error: getErrorMessage(err),
+            });
+            return [];
+          }),
+        ),
+      );
+
+      // Merge + sort newest-first, then cap to the caller's limit.
+      const merged = perAccount.flat();
+      merged.sort((a, b) => b.receivedAt.getTime() - a.receivedAt.getTime());
+      return merged.slice(0, limit);
+    } catch (err) {
+      log.error("fetchInboxMessages failed", {
+        userId: this.userId,
+        error: getErrorMessage(err),
+      });
+      return [];
+    }
+  }
+
+  private async fetchFromAccount(
+    account: any,
+    opts: { limit: number; sinceIso?: string },
+  ): Promise<
+    {
+      messageId: string;
+      threadId?: string;
+      from: string;
+      subject: string;
+      snippet: string;
+      receivedAt: Date;
+      provider: "google" | "microsoft" | "yahoo";
+    }[]
+  > {
+    if (account.provider === "google") {
+      return this.fetchGoogleInbox(account, opts);
+    }
+    if (account.provider === "microsoft") {
+      return this.fetchMicrosoftInbox(account, opts);
+    }
+    if (account.provider === "yahoo") {
+      // Phase 2 — XOAUTH2 over IMAP. For now, log so the operator can
+      // see we received the call and know it's not silently broken.
+      log.info("Yahoo inbox fetch skipped — XOAUTH2 IMAP not yet wired", {
+        accountId: account.id,
+      });
+      return [];
+    }
+    return [];
+  }
+
+  private async fetchGoogleInbox(account: any, opts: { limit: number; sinceIso?: string }) {
+    const auth = await this.getGoogleClient(account);
+    const gmail = google.gmail({ version: "v1", auth });
+    // `q` filters by Gmail search syntax. We always exclude category:promotions
+    // and category:social so agent inboxes aren't flooded with newsletters.
+    const qParts = ["in:inbox", "-category:promotions", "-category:social"];
+    if (opts.sinceIso) {
+      const since = Math.floor(new Date(opts.sinceIso).getTime() / 1000);
+      qParts.push(`after:${since}`);
+    }
+    const listRes = await gmail.users.messages.list({
+      userId: "me",
+      maxResults: opts.limit,
+      q: qParts.join(" "),
+    });
+    const ids = listRes.data.messages?.map((m) => m.id).filter(Boolean) ?? [];
+    if (ids.length === 0) return [];
+
+    // metadata format → just headers + snippet, no body. Cheap.
+    const details = await Promise.all(
+      ids.map((id) =>
+        gmail.users.messages.get({
+          userId: "me",
+          id: id!,
+          format: "metadata",
+          metadataHeaders: ["From", "Subject", "Date"],
+        }),
+      ),
+    );
+    return details
+      .map((d) => {
+        const headers = d.data.payload?.headers ?? [];
+        const get = (n: string) =>
+          headers.find((h) => h.name?.toLowerCase() === n.toLowerCase())?.value ?? "";
+        const internalDate = d.data.internalDate
+          ? new Date(Number(d.data.internalDate))
+          : new Date();
+        return {
+          messageId: d.data.id ?? "",
+          threadId: d.data.threadId ?? undefined,
+          from: get("From"),
+          subject: get("Subject"),
+          snippet: d.data.snippet ?? "",
+          receivedAt: internalDate,
+          provider: "google" as const,
+        };
+      })
+      .filter((m) => m.messageId);
+  }
+
+  private async fetchMicrosoftInbox(account: any, opts: { limit: number; sinceIso?: string }) {
+    const token = await this.getMicrosoftToken(account);
+    const params = new URLSearchParams({
+      $top: String(opts.limit),
+      $select: "id,conversationId,from,subject,bodyPreview,receivedDateTime",
+      $orderby: "receivedDateTime DESC",
+    });
+    if (opts.sinceIso) {
+      params.set("$filter", `receivedDateTime ge ${opts.sinceIso}`);
+    }
+    const url = `https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?${params.toString()}`;
+    const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (!r.ok) {
+      log.warn("Microsoft inbox fetch non-200", { status: r.status });
+      return [];
+    }
+    const data = (await r.json()) as any;
+    return (data.value || []).map((m: any) => ({
+      messageId: m.id as string,
+      threadId: m.conversationId,
+      from: m.from?.emailAddress?.address || "",
+      subject: m.subject || "",
+      snippet: m.bodyPreview || "",
+      receivedAt: m.receivedDateTime ? new Date(m.receivedDateTime) : new Date(),
+      provider: "microsoft" as const,
+    }));
+  }
+
+  async sendEmail(params: { to: string; subject: string; body: string }): Promise<boolean> {
     try {
       const accounts = await this.getAccounts("mail");
       // Fallback: If no mail account, try calendar accounts (many have mail too)
       const mailAccounts = accounts.length > 0 ? accounts : await this.getAccounts("calendar");
-      
+
       if (mailAccounts.length === 0) return false;
 
       const account = mailAccounts[0];
@@ -149,7 +321,7 @@ export class IntegrationService {
   private async getGoogleClient(account: any) {
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET
+      process.env.GOOGLE_CLIENT_SECRET,
     );
     oauth2Client.setCredentials({
       access_token: decryptSecret(account.accessToken),
@@ -168,7 +340,10 @@ export class IntegrationService {
       timeMax: end.toISOString(),
       singleEvents: true,
     });
-    return (res.data.items || []).map(e => `${new Date(e.start?.dateTime || "").toLocaleTimeString()} - ${new Date(e.end?.dateTime || "").toLocaleTimeString()}: ${e.summary || "Busy"}`);
+    return (res.data.items || []).map(
+      (e) =>
+        `${new Date(e.start?.dateTime || "").toLocaleTimeString()} - ${new Date(e.end?.dateTime || "").toLocaleTimeString()}: ${e.summary || "Busy"}`,
+    );
   }
 
   private async createGoogleEvent(account: any, params: any): Promise<boolean> {
@@ -190,23 +365,23 @@ export class IntegrationService {
   private async sendGoogleEmail(account: any, params: any): Promise<boolean> {
     const auth = await this.getGoogleClient(account);
     const gmail = google.gmail({ version: "v1", auth });
-    const utf8Subject = `=?utf-8?B?${Buffer.from(params.subject).toString('base64')}?=`;
+    const utf8Subject = `=?utf-8?B?${Buffer.from(params.subject).toString("base64")}?=`;
     const messageParts = [
       `To: ${params.to}`,
-      'Content-Type: text/html; charset=utf-8',
-      'MIME-Version: 1.0',
+      "Content-Type: text/html; charset=utf-8",
+      "MIME-Version: 1.0",
       `Subject: ${utf8Subject}`,
-      '',
+      "",
       params.body,
     ];
-    const message = messageParts.join('\n');
+    const message = messageParts.join("\n");
     const encodedMessage = Buffer.from(message)
-      .toString('base64')
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
+      .toString("base64")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
     await gmail.users.messages.send({
-      userId: 'me',
+      userId: "me",
       requestBody: { raw: encodedMessage },
     });
     return true;
@@ -216,8 +391,11 @@ export class IntegrationService {
     const token = await this.getMicrosoftToken(account);
     const url = `https://graph.microsoft.com/v1.0/me/calendarView?startDateTime=${start.toISOString()}&endDateTime=${end.toISOString()}`;
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-    const data = await res.json() as any;
-    return (data.value || []).map((e: any) => `${new Date(e.start.dateTime + 'Z').toLocaleTimeString()} - ${new Date(e.end.dateTime + 'Z').toLocaleTimeString()}: ${e.subject || "Busy"}`);
+    const data = (await res.json()) as any;
+    return (data.value || []).map(
+      (e: any) =>
+        `${new Date(e.start.dateTime + "Z").toLocaleTimeString()} - ${new Date(e.end.dateTime + "Z").toLocaleTimeString()}: ${e.subject || "Busy"}`,
+    );
   }
 
   private async createMicrosoftEvent(account: any, params: any): Promise<boolean> {
@@ -230,7 +408,10 @@ export class IntegrationService {
         body: { contentType: "HTML", content: params.description },
         start: { dateTime: params.startTime, timeZone: "UTC" },
         end: { dateTime: params.endTime, timeZone: "UTC" },
-        attendees: params.attendees?.map((email: string) => ({ emailAddress: { address: email }, type: "required" })),
+        attendees: params.attendees?.map((email: string) => ({
+          emailAddress: { address: email },
+          type: "required",
+        })),
       }),
     });
     return res.ok;
@@ -267,8 +448,8 @@ export class IntegrationService {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: params.toString(),
     });
-    const d = await r.json() as any;
-    
+    const d = (await r.json()) as any;
+
     const table = account.emailAddress ? schema.emailAccounts : schema.calendarAccounts;
     await drizzle
       .update(table as any)
