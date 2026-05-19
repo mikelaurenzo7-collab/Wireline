@@ -168,72 +168,169 @@ router.post(
 
     if (payload?.object !== "page" || !Array.isArray(payload.entry)) return;
 
+    // Field router: each Page webhook field gets a dedicated processor.
+    // We strategically handle the highest-value events (leadgen, messages,
+    // ratings, feed, mention) and turn them into actionable AI agent tasks.
+    // The rest get logged at debug level so we have a trail but don't
+    // spam every Page profile update through to fleet_tasks.
+    const HANDLED_FIELDS = new Set([
+      "leadgen",
+      "leadgen_update",
+      "messages",
+      "ratings",
+      "feed",
+      "mention",
+    ]);
+
     for (const entry of payload.entry) {
       const pageId = entry.id;
       if (!Array.isArray(entry.changes)) continue;
       for (const change of entry.changes) {
-        if (change.field !== "leadgen") continue;
+        const field: string = change.field || "";
         const v = change.value || {};
-        const leadgenId: string | undefined = v.leadgen_id;
-        if (!leadgenId) continue;
+
+        if (!HANDLED_FIELDS.has(field)) {
+          // Logged but not processed — covers profile attribute updates,
+          // Messenger-internal events, marketing message echoes etc.
+          // We subscribe to everything to keep options open; the
+          // processor stays surgical.
+          continue;
+        }
+
+        // Resolve the tenant once per change — all handled fields need it.
+        const tenant = await resolveTenantForPage(pageId);
+        if (!tenant) {
+          log.info("Meta event for unsubscribed page", { pageId, field });
+          continue;
+        }
 
         try {
-          const tenant = await resolveTenantForPage(pageId);
-          if (!tenant) {
-            log.info("Meta leadgen for unsubscribed page", { pageId, leadgenId });
-            continue;
-          }
+          if (field === "leadgen" || field === "leadgen_update") {
+            const leadgenId: string | undefined = v.leadgen_id;
+            if (!leadgenId) continue;
 
-          const detail = await fetchMetaLead(leadgenId, tenant.accessToken);
-          if (!detail) continue;
+            const detail = await fetchMetaLead(leadgenId, tenant.accessToken);
+            if (!detail) continue;
 
-          const fields = detail.field_data || [];
-          const phone = pickField(fields, ["phone_number", "phone"]);
-          const email = pickField(fields, ["email"]);
-          const fullName =
-            pickField(fields, ["full_name"]) ||
-            [pickField(fields, ["first_name"]), pickField(fields, ["last_name"])]
-              .filter(Boolean)
-              .join(" ");
+            const fields = detail.field_data || [];
+            const phone = pickField(fields, ["phone_number", "phone"]);
+            const email = pickField(fields, ["email"]);
+            const fullName =
+              pickField(fields, ["full_name"]) ||
+              [pickField(fields, ["first_name"]), pickField(fields, ["last_name"])]
+                .filter(Boolean)
+                .join(" ");
 
-          if (!phone && !email) {
-            log.info("Meta leadgen had no phone or email", { leadgenId });
-            continue;
-          }
+            if (!phone && !email) {
+              log.info("Meta leadgen had no phone or email", { leadgenId });
+              continue;
+            }
 
-          await drizzle
-            .insert(schema.outboundLeads)
-            .values({
+            await drizzle
+              .insert(schema.outboundLeads)
+              .values({
+                userId: tenant.userId,
+                phoneNumber: null,
+                customerNumber: phone,
+                customerName: fullName || null,
+                email: email || null,
+                context: `Meta Lead Ad submission${v.form_id ? ` (form ${v.form_id})` : ""}`,
+                status: "Queued",
+                source: "meta",
+                campaignSource: v.ad_id ? `ad:${v.ad_id}` : "meta_lead_ad",
+                idempotencyKey: leadgenId,
+                metadata: {
+                  meta_leadgen_id: leadgenId,
+                  page_id: pageId,
+                  form_id: v.form_id,
+                  ad_id: v.ad_id,
+                  created_time: detail.created_time,
+                  event_type: field,
+                },
+                receivedAt: new Date(),
+              })
+              .onConflictDoNothing();
+
+            log.info("Meta lead ingested", {
               userId: tenant.userId,
-              phoneNumber: null,
-              customerNumber: phone,
-              customerName: fullName || null,
-              email: email || null,
-              context: `Meta Lead Ad submission${v.form_id ? ` (form ${v.form_id})` : ""}`,
-              status: "Queued",
-              source: "meta",
-              campaignSource: v.ad_id ? `ad:${v.ad_id}` : "meta_lead_ad",
-              idempotencyKey: leadgenId,
-              metadata: {
-                meta_leadgen_id: leadgenId,
-                page_id: pageId,
-                form_id: v.form_id,
-                ad_id: v.ad_id,
-                created_time: detail.created_time,
-              },
-              receivedAt: new Date(),
-            })
-            .onConflictDoNothing();
+              leadgenId,
+              field,
+              hasPhone: !!phone,
+              hasEmail: !!email,
+            });
+            continue;
+          }
 
-          log.info("Meta lead ingested", {
-            userId: tenant.userId,
-            leadgenId,
-            hasPhone: !!phone,
-            hasEmail: !!email,
-          });
+          // Customer messaged the Page → route to fleet tasks so the
+          // CS agent can draft a response. We don't have a Messenger
+          // OAuth flow yet (would need pages_messaging permission) but
+          // logging the inbound is the right call so operators see
+          // something landed and we can wire reply later.
+          if (field === "messages") {
+            const msg = v.message || {};
+            const senderId = v.sender?.id || "unknown";
+            const text = msg.text || "(non-text message)";
+            await drizzle.insert(schema.fleetTasks).values({
+              userId: tenant.userId,
+              taskType: "messenger_inbound",
+              description: `Facebook message from ${senderId}: ${text.slice(0, 240)}`,
+              priority: "medium",
+              status: "pending",
+              sourceType: "meta_webhook",
+              sourceId: `${pageId}:${msg.mid || senderId}`,
+              payload: { sender_id: senderId, message: msg, page_id: pageId },
+              targetChannel: "manual",
+            });
+            log.info("Meta inbound message routed to fleet tasks", {
+              userId: tenant.userId,
+              senderId,
+            });
+            continue;
+          }
+
+          // 1-3 star Page review → escalate. 4-5 star → just log.
+          if (field === "ratings") {
+            const rating = Number(v.rating || 0);
+            const reviewerId = v.reviewer_id || "unknown";
+            const reviewText = v.review_text || "";
+            if (rating > 0 && rating <= 3) {
+              await drizzle.insert(schema.fleetTasks).values({
+                userId: tenant.userId,
+                taskType: "review_escalation",
+                description: `${rating}-star Facebook review from ${reviewerId}: ${reviewText.slice(0, 240)}`,
+                priority: rating <= 2 ? "high" : "medium",
+                status: "pending",
+                sourceType: "meta_webhook",
+                sourceId: `${pageId}:${reviewerId}`,
+                payload: { rating, review_text: reviewText, page_id: pageId },
+                targetChannel: "manual",
+              });
+            }
+            log.info("Meta rating processed", {
+              userId: tenant.userId,
+              rating,
+              escalated: rating > 0 && rating <= 3,
+            });
+            continue;
+          }
+
+          // Comment on a Page post or @mention. Quick log for the
+          // operator's awareness — full triage is a future feature.
+          if (field === "feed" || field === "mention") {
+            const item = v.item || field;
+            const verb = v.verb || "update";
+            log.info("Meta feed/mention event", {
+              userId: tenant.userId,
+              field,
+              item,
+              verb,
+              from: v.from?.id,
+            });
+            continue;
+          }
         } catch (err) {
-          log.error("Meta leadgen processing failed", {
-            leadgenId,
+          log.error("Meta webhook processing failed", {
+            field,
             pageId,
             error: getErrorMessage(err),
           });

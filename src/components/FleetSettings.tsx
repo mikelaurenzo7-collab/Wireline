@@ -512,6 +512,25 @@ export default function FleetSettings() {
     await updateAgentMeta({ enabled_tools: null });
   };
 
+  // Per-integration master toggle. Flips every tool tied to the given
+  // integration on or off as a group — operator can say "Sarah uses
+  // Apollo + Slack but not Zoom" in two clicks instead of toggling six
+  // individual tools. The "core" group (no integration) is excluded
+  // because it's always useful — every agent needs escalate_to_human,
+  // create_fleet_task, etc. regardless of which third parties they wire.
+  const toggleIntegrationGroup = async (integration: string, enable: boolean) => {
+    if (!selectedAgent) return;
+    const currentTools = resolveAgentTools(selectedAgent.role, selectedAgent.enabled_tools);
+    const toolsInGroup = AGENT_TOOL_CATALOG.filter((t) => t.integration === integration).map(
+      (t) => t.name,
+    );
+    if (toolsInGroup.length === 0) return;
+    const nextTools = enable
+      ? Array.from(new Set([...currentTools, ...toolsInGroup]))
+      : currentTools.filter((name) => !toolsInGroup.includes(name));
+    await updateAgentMeta({ enabled_tools: nextTools });
+  };
+
   const updatePersonality = async (val: string) => {
     setAgentConfig({ ...agentConfig, personality: val });
     try {
@@ -1492,48 +1511,126 @@ export default function FleetSettings() {
                                       gemini: "Gemini grounding",
                                     })[k] || k;
 
+                                  // List of every integration available
+                                  // (not just the ones currently in use) so
+                                  // the operator sees the full menu and can
+                                  // expand the agent's scope in one click.
+                                  const allIntegrationKeys = [
+                                    "calendar",
+                                    "crm",
+                                    "slack",
+                                    "zoom",
+                                    "docusign",
+                                    "apollo",
+                                    "meta",
+                                    "twilio",
+                                    "gemini",
+                                  ];
+
                                   return (
-                                    <div className="rounded-lg border border-white/8 bg-white/3 p-3 space-y-2">
+                                    <div className="rounded-lg border border-white/8 bg-white/3 p-3 space-y-3">
                                       <div className="flex items-center justify-between">
                                         <div className="text-[9px] uppercase tracking-[0.3em] text-brand/70">
-                                          Required integrations
+                                          Integration scope
                                         </div>
                                         <div className="text-[9px] text-muted/60">
-                                          Scoped to this agent's tools
+                                          Toggle whole integrations for this agent
                                         </div>
                                       </div>
-                                      <div className="flex flex-wrap gap-1.5">
-                                        {Array.from(requiredIntegrations).map((key) => {
+
+                                      {/* Per-integration master toggles —
+                                          one row per integration. Connected
+                                          state on the left, group toggle on
+                                          the right. Flipping the toggle
+                                          enables/disables every tool tied
+                                          to that integration in one click. */}
+                                      <div className="space-y-1.5">
+                                        {allIntegrationKeys.map((key) => {
+                                          const toolsInGroup = AGENT_TOOL_CATALOG.filter(
+                                            (t) => t.integration === key,
+                                          );
+                                          if (toolsInGroup.length === 0) return null;
+                                          const enabledInGroup = toolsInGroup.filter((t) =>
+                                            selectedToolNames.includes(t.name),
+                                          ).length;
+                                          const allEnabled = enabledInGroup === toolsInGroup.length;
+                                          const someEnabled = enabledInGroup > 0 && !allEnabled;
                                           const connected = checkConnected(key);
                                           return (
-                                            <span
+                                            <div
                                               key={key}
-                                              className={cn(
-                                                "inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-medium border",
-                                                connected
-                                                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700"
-                                                  : "bg-amber-500/10 border-amber-500/35 text-amber-700",
-                                              )}
+                                              className="flex items-center justify-between gap-3 rounded-lg border border-white/8 bg-black/10 px-2.5 py-1.5"
                                             >
-                                              <span
-                                                className={cn(
-                                                  "w-1.5 h-1.5 rounded-full",
-                                                  connected ? "bg-emerald-500" : "bg-amber-500",
+                                              <div className="flex items-center gap-2 min-w-0">
+                                                <span
+                                                  className={cn(
+                                                    "w-1.5 h-1.5 rounded-full shrink-0",
+                                                    connected ? "bg-emerald-500" : "bg-amber-500",
+                                                  )}
+                                                  title={
+                                                    connected
+                                                      ? "Connected"
+                                                      : "Not connected — connect first or this agent's tools will silently no-op"
+                                                  }
+                                                />
+                                                <span className="text-[11px] text-ink truncate">
+                                                  {labelFor(key)}
+                                                </span>
+                                                {!connected && (
+                                                  <a
+                                                    href="/integrations"
+                                                    className="text-[9px] underline underline-offset-2 text-amber-700 hover:text-amber-900 shrink-0"
+                                                  >
+                                                    Connect →
+                                                  </a>
                                                 )}
-                                              />
-                                              {labelFor(key)}
-                                              {!connected && (
-                                                <a
-                                                  href="/integrations"
-                                                  className="ml-0.5 underline underline-offset-2 hover:text-amber-900"
-                                                >
-                                                  Connect →
-                                                </a>
-                                              )}
-                                            </span>
+                                                <span className="text-[9px] text-muted/60 shrink-0">
+                                                  {enabledInGroup}/{toolsInGroup.length} tools
+                                                </span>
+                                              </div>
+                                              <button
+                                                type="button"
+                                                onClick={() =>
+                                                  toggleIntegrationGroup(key, !allEnabled)
+                                                }
+                                                className={cn(
+                                                  "w-9 h-5 rounded-full border flex items-center px-0.5 transition-colors shrink-0",
+                                                  allEnabled
+                                                    ? "bg-brand/25 border-brand/40"
+                                                    : someEnabled
+                                                      ? "bg-amber-500/20 border-amber-500/40"
+                                                      : "bg-white/5 border-white/12",
+                                                )}
+                                                title={
+                                                  allEnabled
+                                                    ? "All tools in this integration are enabled — click to disable all"
+                                                    : someEnabled
+                                                      ? "Some tools enabled — click to enable all"
+                                                      : "Click to enable this entire integration"
+                                                }
+                                              >
+                                                <motion.div
+                                                  animate={{
+                                                    x: allEnabled ? 16 : someEnabled ? 8 : 0,
+                                                  }}
+                                                  className={cn(
+                                                    "w-4 h-4 rounded-full",
+                                                    allEnabled
+                                                      ? "bg-brand"
+                                                      : someEnabled
+                                                        ? "bg-amber-500"
+                                                        : "bg-muted/60",
+                                                  )}
+                                                />
+                                              </button>
+                                            </div>
                                           );
                                         })}
                                       </div>
+                                      <p className="text-[9px] text-muted/60 leading-relaxed pt-1 border-t border-white/8">
+                                        Tip — fine-grained per-tool toggles for each integration are
+                                        in the tool grid below.
+                                      </p>
                                     </div>
                                   );
                                 })()}
