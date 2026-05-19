@@ -31,7 +31,7 @@ function LegalLayout({
             className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
             style={{ background: "#4F1E7B" }}
           >
-            <Icon className="w-5 h-5 text-paper" />
+            <Icon className="w-5 h-5 text-on-brand" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">{title}</h1>
         </div>

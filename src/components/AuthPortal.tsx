@@ -419,7 +419,7 @@ export default function AuthPortal() {
             >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-[#4F1E7B] flex items-center justify-center shadow-[0_0_15px_rgba(79,30,123,0.3)]">
-                  <Phone className="w-4 h-4 text-white" fill="currentColor" />
+                  <Phone className="w-4 h-4 text-on-brand" fill="currentColor" />
                 </div>
                 <div>
                   <p className="text-[10px] uppercase tracking-[0.2em] text-[#4F1E7B] font-medium leading-tight">
@@ -505,7 +505,7 @@ export default function AuthPortal() {
                   boxShadow: "0 8px 24px -8px rgba(79,30,123,0.4)",
                 }}
               >
-                <WirelineMark className="w-5 h-5 text-paper" strokeWidth={130} />
+                <WirelineMark className="w-5 h-5 text-on-brand" strokeWidth={130} />
               </div>
               <div>
                 <span className="brand-wordmark text-2xl leading-none !text-[#4F1E7B] !filter-none">
@@ -534,7 +534,7 @@ export default function AuthPortal() {
             >
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-9 h-9 rounded-full bg-[#4F1E7B] flex items-center justify-center shadow-[0_0_15px_rgba(79,30,123,0.35)] shrink-0">
-                  <Phone className="w-4 h-4 text-white" fill="currentColor" />
+                  <Phone className="w-4 h-4 text-on-brand" fill="currentColor" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-[9px] uppercase tracking-[0.28em] text-[#4F1E7B] font-medium leading-tight">
@@ -582,7 +582,7 @@ export default function AuthPortal() {
                 boxShadow: "0 16px 40px -10px rgba(79, 30, 123 ,0.55)",
               }}
             >
-              <WirelineMark className="w-8 h-8 text-paper" strokeWidth={120} />
+              <WirelineMark className="w-8 h-8 text-on-brand" strokeWidth={120} />
             </div>
             <h1 className="brand-wordmark text-5xl leading-none">WIRELINE</h1>
             <p className="text-[9px] uppercase tracking-[0.5em] text-muted">AI Voice Platform</p>
@@ -792,7 +792,7 @@ export default function AuthPortal() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full flex items-center justify-center gap-2 py-4 px-6 text-[12px] tracking-[0.3em] uppercase font-medium rounded-full cursor-pointer text-white bg-[#4F1E7B] hover:bg-[#6A25A3] active:translate-y-0 hover:-translate-y-[1px] transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
+                    className="w-full flex items-center justify-center gap-2 py-4 px-6 text-[12px] tracking-[0.3em] uppercase font-medium rounded-full cursor-pointer text-on-brand bg-[#4F1E7B] hover:bg-[#6A25A3] active:translate-y-0 hover:-translate-y-[1px] transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
                     style={{
                       boxShadow: "0 4px 12px -2px rgba(79,30,123,0.3)",
                     }}

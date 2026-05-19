@@ -976,7 +976,7 @@ function AISpendView({ days }: { days: number }) {
                           className="absolute inset-y-0 left-0 rounded-lg flex items-center px-3"
                           style={{ background: "#4F1E7B" }}
                         >
-                          <span className="text-[10px] font-mono text-paper font-medium">
+                          <span className="text-[10px] font-mono text-on-brand font-medium">
                             ${safeFixed(d.cost, 2)}
                           </span>
                         </motion.div>
@@ -1311,7 +1311,7 @@ function SpendBudgetCard() {
           <button
             onClick={save}
             disabled={saving}
-            className="h-11 px-5 rounded-xl bg-brand text-paper text-xs uppercase tracking-[0.25em] font-medium flex items-center gap-2 disabled:opacity-50 hover:opacity-90 transition-all"
+            className="h-11 px-5 rounded-xl bg-brand text-on-brand text-xs uppercase tracking-[0.25em] font-medium flex items-center gap-2 disabled:opacity-50 hover:opacity-90 transition-all"
           >
             {saving ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />

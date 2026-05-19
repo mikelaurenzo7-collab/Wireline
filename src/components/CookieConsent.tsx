@@ -44,6 +44,11 @@ export default function CookieConsent() {
           className="fixed bottom-0 left-0 right-0 z-[9999]"
           role="dialog"
           aria-label="Cookie notice"
+          style={{
+            // iOS home-bar / dynamic island clearance — push the
+            // banner up above the bottom safe area on iPhone X+.
+            paddingBottom: "env(safe-area-inset-bottom, 0)",
+          }}
         >
           {/* Slim bottom bar — full width, never overlaps content columns */}
           <div

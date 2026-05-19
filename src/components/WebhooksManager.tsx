@@ -237,7 +237,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
                 <div
                   className={cn(
                     "shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center mt-0.5 transition-all",
-                    on ? "bg-brand border-brand text-paper" : "border-white/30",
+                    on ? "bg-brand border-brand text-on-brand" : "border-white/30",
                   )}
                 >
                   {on && <Check className="w-2.5 h-2.5" strokeWidth={4} />}

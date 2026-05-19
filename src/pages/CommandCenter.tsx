@@ -288,7 +288,7 @@ export default function CommandCenter() {
                   }
                 }}
                 disabled={activatingGrowth}
-                className="flex items-center gap-2 px-6 py-3 bg-brand text-white rounded-2xl hover:bg-brand-2 transition-all shadow-xl shadow-brand/20 active:scale-95 disabled:opacity-60 disabled:cursor-wait"
+                className="flex items-center gap-2 px-6 py-3 bg-brand text-on-brand rounded-2xl hover:bg-brand-2 transition-all shadow-xl shadow-brand/20 active:scale-95 disabled:opacity-60 disabled:cursor-wait"
               >
                 <Zap
                   className={clsx("w-4 h-4 fill-current", activatingGrowth && "animate-pulse")}

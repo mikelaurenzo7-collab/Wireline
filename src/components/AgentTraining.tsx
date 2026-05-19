@@ -264,7 +264,7 @@ export default function AgentTraining() {
                   className="w-7 h-7 rounded-lg flex items-center justify-center"
                   style={{ background: "#4F1E7B" }}
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-paper" strokeWidth={2.5} />
+                  <Sparkles className="w-3.5 h-3.5 text-on-brand" strokeWidth={2.5} />
                 </div>
                 <div>
                   <div className="text-[9px] uppercase tracking-[0.35em] text-brand">
@@ -917,7 +917,7 @@ export default function AgentTraining() {
                       className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
                       style={{ background: "#4F1E7B" }}
                     >
-                      <Sparkles className="w-3.5 h-3.5 text-paper" strokeWidth={2.5} />
+                      <Sparkles className="w-3.5 h-3.5 text-on-brand" strokeWidth={2.5} />
                     </div>
                     <div>
                       <h3 className="font-display italic lowercase text-lg text-ink leading-none">

@@ -1444,7 +1444,7 @@ export default function OutboundDialer() {
                         </p>
                         <Link
                           to="/pipeline"
-                          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand text-paper text-[11px] uppercase tracking-[0.28em] hover:bg-brand/90 transition-colors"
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand text-on-brand text-[11px] uppercase tracking-[0.28em] hover:bg-brand/90 transition-colors"
                         >
                           Open pipeline →
                         </Link>

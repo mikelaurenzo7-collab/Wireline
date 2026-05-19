@@ -268,6 +268,14 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
               exit={{ x: "-100%" }}
               transition={{ type: "spring", stiffness: 360, damping: 32 }}
               className="fixed top-0 bottom-0 left-0 w-[280px] z-[85] glass-strong border-r border-black/8 flex flex-col p-4 lg:hidden"
+              style={{
+                /* Push the drawer content below the iOS notch / Dynamic
+                 * Island so the logo + close button don't disappear
+                 * under the cutout on iPhone X+. Bottom inset is for
+                 * iPhone home-bar clearance. */
+                paddingTop: "max(1rem, env(safe-area-inset-top))",
+                paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
+              }}
               aria-label="Main navigation"
             >
               <div className="flex items-center justify-between mb-4">

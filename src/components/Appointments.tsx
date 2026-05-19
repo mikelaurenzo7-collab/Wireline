@@ -445,7 +445,7 @@ function CalendarGrid({
                     <div
                       className={cn(
                         "w-6 h-6 rounded-full flex items-center justify-center mb-1 text-[11px] ml-auto",
-                        isToday ? "bg-brand text-paper font-bold" : "text-muted/70",
+                        isToday ? "bg-brand text-on-brand font-bold" : "text-muted/70",
                       )}
                     >
                       {cell.day}

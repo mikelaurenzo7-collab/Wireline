@@ -83,7 +83,12 @@ export default function ConfirmModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+          /* iOS sheet feel on mobile: anchored to the bottom of the viewport
+           * with safe-area-inset-bottom padding so the modal clears the
+           * home indicator. Pops to center on tablet+ where the screen
+           * has enough room to treat it as a dialog. */
+          className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center sm:p-4"
+          style={{ paddingBottom: "env(safe-area-inset-bottom, 0)" }}
           aria-modal="true"
           role="dialog"
           aria-labelledby="confirm-modal-title"
@@ -98,13 +103,24 @@ export default function ConfirmModal({
           />
           <motion.div
             ref={dialogRef}
-            initial={{ opacity: 0, scale: 0.94, y: 16 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.94, y: 16 }}
-            transition={{ type: "spring", damping: 28, stiffness: 260 }}
-            className="relative w-full max-w-sm aurora-ring rounded-2xl z-10"
+            /* Slide up from below on mobile (y: 100 ≈ "off-screen bottom"),
+             * pop into center on tablet+ via the bg layout — both look
+             * native by using a spring transition rather than a linear
+             * fade. Scale stays at 1 so the modal doesn't visibly shrink
+             * during a slide. */
+            initial={{ opacity: 0, y: 100 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 100 }}
+            transition={{ type: "spring", damping: 30, stiffness: 280 }}
+            className="relative w-full max-w-md sm:max-w-sm aurora-ring rounded-t-2xl sm:rounded-2xl z-10"
           >
-            <div className="relative rounded-2xl glass-strong p-6 overflow-hidden">
+            <div className="relative rounded-t-2xl sm:rounded-2xl glass-strong p-6 overflow-hidden">
+              {/* iOS-style sheet grabber — only visible on mobile, gives
+               * the modal a "swipeable" affordance even though we don't
+               * actually wire swipe-to-dismiss (the backdrop tap closes). */}
+              <div className="sm:hidden flex justify-center -mt-1 mb-3">
+                <div className="w-9 h-1 rounded-full bg-ink/15" aria-hidden="true" />
+              </div>
               <div
                 className="absolute -top-16 -right-16 w-32 h-32 rounded-full blur-3xl opacity-30 pointer-events-none"
                 style={{

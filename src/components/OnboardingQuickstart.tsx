@@ -160,7 +160,7 @@ export default function OnboardingQuickstart({
             <div className="flex flex-col gap-2 shrink-0 w-full md:w-auto">
               <a
                 href="tel:+16306425927"
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-brand text-paper text-[11px] uppercase tracking-[0.3em] hover:bg-brand/90 transition-colors"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.3em] hover:bg-brand/90 transition-colors"
               >
                 <Phone className="w-3.5 h-3.5" />
                 Call Maya — (630) 642-5927

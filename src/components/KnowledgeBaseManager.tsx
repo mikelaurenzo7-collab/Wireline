@@ -312,7 +312,7 @@ export default function KnowledgeBaseManager() {
             className={cn(
               "px-4 py-2.5 rounded-full text-[11px] uppercase tracking-[0.3em] transition-all flex items-center gap-2",
               showAdd
-                ? "bg-brand text-paper"
+                ? "bg-brand text-on-brand"
                 : "glass border border-white/10 text-muted hover:text-brand hover:border-brand/40",
             )}
           >
@@ -385,7 +385,7 @@ export default function KnowledgeBaseManager() {
                 <button
                   onClick={addFact}
                   disabled={adding || !addContent.trim() || !addAgent}
-                  className="h-11 px-5 rounded-xl bg-brand text-paper text-[11px] uppercase tracking-[0.25em] flex items-center gap-2 disabled:opacity-50 hover:opacity-90 self-end"
+                  className="h-11 px-5 rounded-xl bg-brand text-on-brand text-[11px] uppercase tracking-[0.25em] flex items-center gap-2 disabled:opacity-50 hover:opacity-90 self-end"
                 >
                   {adding ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -442,7 +442,7 @@ export default function KnowledgeBaseManager() {
             className={cn(
               "px-4 h-10 rounded-full text-[11px] uppercase tracking-[0.25em] flex items-center gap-2 transition-all",
               !agentFilter
-                ? "bg-brand text-paper"
+                ? "bg-brand text-on-brand"
                 : "glass border border-white/10 text-ink/70 hover:text-ink hover:border-white/30",
             )}
           >
@@ -459,7 +459,7 @@ export default function KnowledgeBaseManager() {
                 className={cn(
                   "px-4 h-10 rounded-full text-[11px] uppercase tracking-[0.25em] flex items-center gap-2 transition-all",
                   active
-                    ? "bg-brand-2 text-paper"
+                    ? "bg-brand-2 text-on-brand"
                     : "glass border border-white/10 text-ink/70 hover:text-ink hover:border-white/30",
                 )}
               >
@@ -525,7 +525,7 @@ export default function KnowledgeBaseManager() {
               className={cn(
                 "w-4 h-4 rounded border-2 flex items-center justify-center transition-all",
                 allFilteredSelected
-                  ? "bg-brand border-brand text-paper"
+                  ? "bg-brand border-brand text-on-brand"
                   : "border-white/30 hover:border-white/50",
               )}
             >
@@ -585,7 +585,7 @@ export default function KnowledgeBaseManager() {
                     className={cn(
                       "shrink-0 mt-1 w-4 h-4 rounded border-2 flex items-center justify-center transition-all",
                       isSelected
-                        ? "bg-brand border-brand text-paper"
+                        ? "bg-brand border-brand text-on-brand"
                         : "border-white/20 hover:border-white/50",
                     )}
                   >
@@ -633,7 +633,7 @@ export default function KnowledgeBaseManager() {
                         <button
                           onClick={saveEdit}
                           disabled={savingId === editing!.id || !editing!.draft.trim()}
-                          className="h-8 px-3 rounded-lg bg-brand text-paper text-[9px] uppercase tracking-[0.25em] flex items-center gap-1.5 disabled:opacity-50 hover:opacity-90"
+                          className="h-8 px-3 rounded-lg bg-brand text-on-brand text-[9px] uppercase tracking-[0.25em] flex items-center gap-1.5 disabled:opacity-50 hover:opacity-90"
                         >
                           {savingId === editing!.id ? (
                             <Loader2 className="w-3 h-3 animate-spin" />
@@ -772,7 +772,7 @@ function DedupePanel({
               className="w-10 h-10 rounded-xl flex items-center justify-center"
               style={{ background: "#4F1E7B" }}
             >
-              <Brain className="w-5 h-5 text-paper" />
+              <Brain className="w-5 h-5 text-on-brand" />
             </div>
             <div>
               <div className="text-[10px] uppercase tracking-[0.4em] text-brand-2">

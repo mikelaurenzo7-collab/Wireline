@@ -25,6 +25,13 @@
   --color-ink: #1C1917;            /* Warm near-black text */
   --color-paper: #FAF9F5;          /* Claude signature warm paper base */
   --color-muted: #7C7469;          /* Warm gray muted text */
+  /* Pure white for text/icons rendered ON solid brand-color surfaces
+   * (purple buttons, gradient pills, etc.). We can't use text-white
+   * for these because --color-white is intentionally remapped to a
+   * dark warm value so border-white/* and bg-white/* utilities
+   * produce subtle dark tints on the cream background. Anything that
+   * sits ON the brand-color surface uses --color-on-brand instead. */
+  --color-on-brand: #FFFFFF;
 
   /* Tailwind base palette overrides
      --color-white drives border-white/*, bg-white/* etc.
@@ -60,11 +67,39 @@
 @layer base {
   html {
     color-scheme: light;
+    /* iOS auto-resizes text in landscape rotation by default — pin to 100%
+     * so our type scale stays consistent across orientations. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   body {
     @apply font-sans bg-paper text-ink selection:bg-brand/20 selection:text-ink antialiased overflow-x-hidden;
     background: var(--color-paper);
+    /* iOS Safari paints a translucent blue rectangle over any tap. We
+     * have our own hover/active states (motion + scale) — kill the
+     * default flash so taps feel like a native app. */
+    -webkit-tap-highlight-color: transparent;
+    /* Overscroll bounce on the body root scrolls a blank gap into view
+     * on iOS. Contain it. */
+    overscroll-behavior-y: none;
+  }
+
+  /* iOS Safari zooms the viewport when a form field has font-size < 16px.
+   * Forcing 16px on every input/textarea/select prevents that zoom
+   * disruption — the rendered visual size stays whatever the component
+   * sets via Tailwind, but the underlying font-size satisfies iOS. */
+  input,
+  textarea,
+  select {
+    font-size: max(16px, 1em);
+  }
+  @media (min-width: 768px) {
+    input,
+    textarea,
+    select {
+      font-size: inherit;
+    }
   }
 
   body::before {

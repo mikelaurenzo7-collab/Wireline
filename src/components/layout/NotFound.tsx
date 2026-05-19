@@ -97,7 +97,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
                   boxShadow: "0 4px 12px -4px rgba(79, 30, 123 ,0.55)",
                 }}
               >
-                <Phone className="w-4 h-4 text-paper" strokeWidth={2.4} />
+                <Phone className="w-4 h-4 text-on-brand" strokeWidth={2.4} />
               </div>
               <div className="text-left flex-1 min-w-0">
                 <p className="text-[10px] uppercase tracking-[0.32em] text-muted">Try the demo</p>

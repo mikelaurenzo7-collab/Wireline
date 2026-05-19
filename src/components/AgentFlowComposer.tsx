@@ -462,7 +462,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                         className={cn(
                           "w-6 h-6 rounded-full flex items-center justify-center shrink-0 border text-[10px] font-mono",
                           activeStepId === step.id
-                            ? "bg-brand text-paper border-brand"
+                            ? "bg-brand text-on-brand border-brand"
                             : "bg-black/20 text-muted border-white/20",
                         )}
                       >

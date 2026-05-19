@@ -463,7 +463,7 @@ export default function Integrations() {
                     className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
                     style={{ background: "#4F1E7B" }}
                   >
-                    <Webhook className="w-5 h-5 text-paper" />
+                    <Webhook className="w-5 h-5 text-on-brand" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[9px] uppercase tracking-[0.32em] text-brand mb-1">
@@ -479,7 +479,7 @@ export default function Integrations() {
                   </div>
                   <a
                     href="/pricing"
-                    className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-brand text-paper text-[10px] uppercase tracking-[0.3em] hover:bg-brand/90 transition-colors whitespace-nowrap"
+                    className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-brand text-on-brand text-[10px] uppercase tracking-[0.3em] hover:bg-brand/90 transition-colors whitespace-nowrap"
                   >
                     Upgrade to Pro
                   </a>
