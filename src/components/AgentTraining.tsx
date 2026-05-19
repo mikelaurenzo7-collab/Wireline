@@ -912,52 +912,54 @@ export default function AgentTraining() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="h-full flex items-center justify-center p-6"
+              className="h-full overflow-y-auto"
             >
-              <div className="max-w-[560px] w-full text-center space-y-6">
-                <div className="relative w-24 h-24 rounded-3xl glass border border-white/10 flex items-center justify-center mx-auto">
-                  <div
-                    className="absolute inset-0 rounded-3xl opacity-20 blur-xl"
-                    style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }}
-                  />
-                  <PlayCircle className="w-12 h-12 text-brand relative z-10" strokeWidth={1.25} />
-                </div>
-                <div>
-                  <h2 className="font-display italic lowercase text-4xl text-ink mb-2">
-                    mission sandbox
-                  </h2>
-                  <p className="text-muted/70 text-sm leading-relaxed max-w-md mx-auto">
-                    Validate neural directives and engagement patterns in a zero-risk isolated
-                    environment.
-                  </p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {[
-                    {
-                      label: "Voice Protocol",
-                      icon: Phone,
-                      desc: "Simulate high-latency voice relay exchanges",
-                    },
-                    {
-                      label: "Neural Relay",
-                      icon: Mail,
-                      desc: "Pre-calculate automated signal replies",
-                    },
-                  ].map((sim) => (
+              <div className="min-h-full flex items-center justify-center p-6">
+                <div className="max-w-[560px] w-full text-center space-y-6">
+                  <div className="relative w-20 h-20 rounded-3xl glass border border-white/10 flex items-center justify-center mx-auto">
                     <div
-                      key={sim.label}
-                      className="rounded-xl glass border border-white/8 border-dashed p-4 text-left opacity-50 cursor-not-allowed"
-                    >
-                      <sim.icon className="w-5 h-5 text-muted mb-2" />
-                      <h4 className="font-display italic lowercase text-base text-ink mb-1">
-                        {sim.label.toLowerCase()}
-                      </h4>
-                      <p className="text-[11px] text-muted/70 leading-relaxed">{sim.desc}</p>
-                      <div className="mt-3 text-[9px] uppercase tracking-[0.3em] text-muted/50">
-                        Dormant · Offline
+                      className="absolute inset-0 rounded-3xl opacity-20 blur-xl"
+                      style={{ background: "radial-gradient(circle, #0AC8D4, transparent)" }}
+                    />
+                    <PlayCircle className="w-10 h-10 text-brand relative z-10" strokeWidth={1.25} />
+                  </div>
+                  <div>
+                    <h2 className="font-display italic lowercase text-3xl text-ink mb-2">
+                      mission sandbox
+                    </h2>
+                    <p className="text-muted/70 text-sm leading-relaxed max-w-md mx-auto">
+                      Validate neural directives and engagement patterns in a zero-risk isolated
+                      environment.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[
+                      {
+                        label: "Voice Protocol",
+                        icon: Phone,
+                        desc: "Simulate high-latency voice relay exchanges",
+                      },
+                      {
+                        label: "Neural Relay",
+                        icon: Mail,
+                        desc: "Pre-calculate automated signal replies",
+                      },
+                    ].map((sim) => (
+                      <div
+                        key={sim.label}
+                        className="rounded-xl glass border border-white/8 border-dashed p-4 text-left opacity-50 cursor-not-allowed"
+                      >
+                        <sim.icon className="w-5 h-5 text-muted mb-2" />
+                        <h4 className="font-display italic lowercase text-base text-ink mb-1">
+                          {sim.label.toLowerCase()}
+                        </h4>
+                        <p className="text-[11px] text-muted/70 leading-relaxed">{sim.desc}</p>
+                        <div className="mt-3 text-[9px] uppercase tracking-[0.3em] text-muted/50">
+                          Dormant · Offline
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             </motion.div>

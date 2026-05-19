@@ -447,7 +447,7 @@ export default function AdminSettings() {
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className="h-full"
+                  className="h-full overflow-y-auto"
                 >
                   <BrandingPanel
                     settings={settings}
@@ -464,7 +464,7 @@ export default function AdminSettings() {
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className="h-full"
+                  className="h-full overflow-y-auto"
                 >
                   <CarrierPanel
                     settings={settings}
@@ -489,7 +489,7 @@ export default function AdminSettings() {
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className="h-full"
+                  className="h-full overflow-y-auto"
                 >
                   <SubscriptionPanel
                     settings={settings}
@@ -508,7 +508,7 @@ export default function AdminSettings() {
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className="h-full"
+                  className="h-full overflow-y-auto"
                 >
                   <TeamPanel
                     members={teamMembers}
@@ -524,7 +524,7 @@ export default function AdminSettings() {
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className="h-full"
+                  className="h-full overflow-y-auto"
                 >
                   <GrowthPanel
                     settings={settings}
@@ -541,7 +541,7 @@ export default function AdminSettings() {
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className="h-full"
+                  className="h-full overflow-y-auto"
                 >
                   <SystemPanel
                     claudeStatus={claudeStatus}
@@ -558,7 +558,7 @@ export default function AdminSettings() {
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className="h-full"
+                  className="h-full overflow-y-auto"
                 >
                   <KimiQualityPanel />
                 </motion.div>
@@ -570,7 +570,7 @@ export default function AdminSettings() {
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className="h-full"
+                  className="h-full overflow-y-auto"
                 >
                   <AuditActivityPanel />
                 </motion.div>

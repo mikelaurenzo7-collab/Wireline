@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useSyncExternalStore } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import {
@@ -17,10 +17,64 @@ import {
   BarChart3,
   Users,
   Zap,
+  X,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import WirelineMark from "./WirelineMark";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
+
+/**
+ * Quickstart dismissal — once the operator has finished the 4-step
+ * onboarding, they can hide the panel permanently. DashboardHome reads
+ * the same flag via useQuickstartDismissed() and skips rendering the
+ * containing Panel entirely when set, so the operator doesn't see an
+ * empty card after they've finished setup.
+ */
+const QUICKSTART_DISMISSED_KEY = "wireline:quickstart-dismissed";
+
+function readDismissed(): boolean {
+  try {
+    return localStorage.getItem(QUICKSTART_DISMISSED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function subscribeDismissed(listener: () => void): () => void {
+  const handler = (e: StorageEvent | Event) => {
+    if (
+      (e as StorageEvent).key === undefined ||
+      (e as StorageEvent).key === QUICKSTART_DISMISSED_KEY
+    ) {
+      listener();
+    }
+  };
+  window.addEventListener("storage", handler);
+  window.addEventListener("wireline:quickstart-dismissed", handler);
+  return () => {
+    window.removeEventListener("storage", handler);
+    window.removeEventListener("wireline:quickstart-dismissed", handler);
+  };
+}
+
+/**
+ * Reactive hook so DashboardHome re-renders the instant the user clicks
+ * "Hide" on AllSetCard — no page refresh needed.
+ */
+export function useQuickstartDismissed(): boolean {
+  return useSyncExternalStore(subscribeDismissed, readDismissed, () => false);
+}
+
+function dismissQuickstart() {
+  try {
+    localStorage.setItem(QUICKSTART_DISMISSED_KEY, "1");
+  } catch {
+    /* ignore */
+  }
+  // Fire a same-tab event so the useSyncExternalStore subscribers wake.
+  // (storage events only fire across tabs, not within the same tab.)
+  window.dispatchEvent(new Event("wireline:quickstart-dismissed"));
+}
 
 interface ProgressData {
   agents: number;
@@ -67,6 +121,7 @@ const STEPS = [
 export default function OnboardingQuickstart() {
   const [progress, setProgress] = useState<ProgressData | null>(null);
   const [loading, setLoading] = useState(true);
+  const dismissed = useQuickstartDismissed();
   // Tier drives whether we show the 4-step self-serve flow or a
   // white-glove onboarding card (Business / Enterprise tier). Without
   // this gate, a 500-seat call center buyer lands on the same setup
@@ -199,8 +254,11 @@ export default function OnboardingQuickstart() {
   const completionPct = Math.round((completedCount / STEPS.length) * 100);
 
   // When all 4 steps are complete, show a compact "you're all set" card.
+  // If the operator has explicitly dismissed it, render nothing at all —
+  // DashboardHome listens to the same flag and hides the containing Panel.
   if (completedCount === STEPS.length) {
-    return <AllSetCard />;
+    if (dismissed) return null;
+    return <AllSetCard onDismiss={dismissQuickstart} />;
   }
 
   // Find the first incomplete step so we can spotlight it.
@@ -463,7 +521,7 @@ const POWER_LINKS = [
   { to: "/agents", icon: Users, label: "Manage Agents", hint: "Edit & train" },
 ] as const;
 
-function AllSetCard() {
+function AllSetCard({ onDismiss }: { onDismiss: () => void }) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.97 }}
@@ -471,6 +529,17 @@ function AllSetCard() {
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
       className="relative h-full flex flex-col"
     >
+      {/* Dismiss — hides the panel permanently. Accessible via the X
+        in the top-right; the operator can still reach all four
+        destinations from the main top-bar nav after dismissing. */}
+      <button
+        type="button"
+        onClick={onDismiss}
+        aria-label="Hide quickstart panel"
+        className="absolute top-2 right-2 z-20 w-7 h-7 rounded-lg flex items-center justify-center text-muted/60 hover:text-ink hover:bg-black/5 transition-colors"
+      >
+        <X className="w-3.5 h-3.5" />
+      </button>
       {/* Aurora glow */}
       <div
         className="absolute -top-20 -right-20 w-64 h-64 rounded-full opacity-20 blur-3xl pointer-events-none"

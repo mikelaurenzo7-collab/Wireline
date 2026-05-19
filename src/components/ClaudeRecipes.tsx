@@ -25,6 +25,7 @@ import {
   AlertTriangle,
   Loader2,
   ArrowRight,
+  ArrowLeft,
   ShieldAlert,
   Compass,
   BarChart3,
@@ -273,13 +274,13 @@ function RecipeModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[120] flex items-center justify-center p-4 md:p-8"
+      className="fixed inset-0 z-[120] flex items-start justify-center overflow-y-auto p-4 pt-8 pb-8 md:items-center md:p-8"
     >
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-black/60 backdrop-blur-xl"
+        className="fixed inset-0 bg-black/60 backdrop-blur-xl"
         onClick={onClose}
       />
       <motion.div
@@ -287,7 +288,7 @@ function RecipeModal({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.96, y: 24 }}
         transition={{ type: "spring", damping: 26, stiffness: 220 }}
-        className="relative aurora-ring rounded-3xl w-full max-w-3xl max-h-[88vh] flex flex-col"
+        className="relative aurora-ring rounded-3xl w-full max-w-3xl md:max-h-[88vh] flex flex-col"
       >
         <div className="relative rounded-3xl glass-strong overflow-hidden flex flex-col flex-1 min-h-0">
           <div
@@ -295,31 +296,45 @@ function RecipeModal({
             style={{ background: `radial-gradient(circle, ${meta.accent}, transparent)` }}
           />
 
-          <div className="relative z-10 flex items-center justify-between px-7 py-5 border-b border-white/8">
-            <div className="flex items-center gap-4">
+          {/* Header — sticky so the Back / Close affordance stays in view
+            even when the operator scrolls inside a long form on a short
+            viewport (iPad portrait, phone, embedded webview). */}
+          <div className="sticky top-0 z-20 flex items-center justify-between gap-3 px-4 md:px-7 py-4 md:py-5 border-b border-white/10 glass-strong">
+            <button
+              onClick={onClose}
+              aria-label="Back to recipes"
+              className="shrink-0 inline-flex items-center gap-1.5 h-10 px-3 rounded-full glass border border-white/10 text-ink/70 hover:text-ink hover:border-brand/40 transition-all"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="text-[10px] uppercase tracking-[0.28em] font-medium">Back</span>
+            </button>
+            <div className="flex items-center gap-3 min-w-0 flex-1 justify-center md:justify-start md:ml-2">
               <div
-                className="w-11 h-11 rounded-2xl glass border border-white/10 flex items-center justify-center"
+                className="hidden md:flex w-11 h-11 rounded-2xl glass border border-white/10 items-center justify-center shrink-0"
                 style={{ color: meta.accent }}
               >
                 <meta.icon className="w-5 h-5" />
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="font-display italic text-2xl leading-none">{meta.title}</h2>
+              <div className="min-w-0 text-center md:text-left">
+                <div className="flex items-center gap-2 justify-center md:justify-start">
+                  <h2 className="font-display italic text-xl md:text-2xl leading-none truncate">
+                    {meta.title}
+                  </h2>
                   {meta.thinking && (
-                    <span className="px-2 py-0.5 rounded-full bg-brand/10 border border-brand/20 text-[9px] uppercase tracking-[0.25em] text-brand flex items-center gap-1">
+                    <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full bg-brand/10 border border-brand/20 text-[9px] uppercase tracking-[0.25em] text-brand items-center gap-1">
                       <Brain className="w-2.5 h-2.5" /> Adaptive
                     </span>
                   )}
                 </div>
-                <p className="text-[10px] uppercase tracking-[0.3em] text-muted mt-1">
+                <p className="hidden md:block text-[10px] uppercase tracking-[0.3em] text-muted mt-1 truncate">
                   {meta.tagline}
                 </p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="w-10 h-10 rounded-full glass border border-white/10 flex items-center justify-center text-ink/60 hover:text-ink hover:border-brand/40 transition-all"
+              aria-label="Close"
+              className="shrink-0 w-10 h-10 rounded-full glass border border-white/10 flex items-center justify-center text-ink/60 hover:text-ink hover:border-brand/40 transition-all"
             >
               <X className="w-4 h-4" />
             </button>

@@ -139,15 +139,15 @@ const EventRow = React.memo(
         <div className="p-4 flex items-center gap-4">
           <SeverityIcon severity={event.severity} />
           <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-5 gap-3">
-            <div className="md:col-span-2">
-              <p className="text-sm text-ink font-medium truncate">
+            <div className="md:col-span-2 min-w-0">
+              <p className="text-sm text-ink font-medium break-words leading-snug">
                 {event.event_type || event.action}
               </p>
-              <p className="text-xs text-muted truncate">{event.actor_email || "System"}</p>
+              <p className="text-xs text-muted truncate mt-0.5">{event.actor_email || "System"}</p>
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-xs text-muted">Resource</p>
-              <p className="text-sm text-ink truncate">{event.resource_id || "—"}</p>
+              <p className="text-sm text-ink break-all leading-snug">{event.resource_id || "—"}</p>
             </div>
             <div>
               <p className="text-xs text-muted">Time</p>
@@ -188,7 +188,7 @@ const EventRow = React.memo(
                       <p className="text-muted mb-1 flex items-center gap-1.5">
                         <User className="w-3 h-3" /> User Agent
                       </p>
-                      <p className="text-ink truncate">{event.user_agent}</p>
+                      <p className="text-ink break-all">{event.user_agent}</p>
                     </div>
                   )}
                   {event.provider && (

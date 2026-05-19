@@ -28,7 +28,7 @@ import FleetTaskBridge from "./FleetTaskBridge";
 import TriggerIntelligenceFeed from "./TriggerIntelligenceFeed";
 import DailyBrief from "./DailyBrief";
 import PerformanceBenchmarks from "./PerformanceBenchmarks";
-import OnboardingQuickstart from "./OnboardingQuickstart";
+import OnboardingQuickstart, { useQuickstartDismissed } from "./OnboardingQuickstart";
 import PageShell, { Panel, StatTile } from "./PageShell";
 import WidgetBoundary from "./WidgetBoundary";
 import { authFetch } from "../lib/api";
@@ -52,6 +52,7 @@ const WARM_LEAD_THRESHOLD = 60;
 
 export default function DashboardHome() {
   const { error: toastError } = useToast();
+  const quickstartDismissed = useQuickstartDismissed();
   const [isConnecting, setIsConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [selectedDialAgentId, setSelectedDialAgentId] = useState<string>("");
@@ -934,13 +935,15 @@ export default function DashboardHome() {
           </WidgetBoundary>
         </Panel>
       </div>
-      <div className="col-span-12 lg:col-span-5 h-full overflow-hidden">
-        <Panel title="Quickstart" hint="First-run" icon={Activity} scroll>
-          <WidgetBoundary label="Quickstart">
-            <OnboardingQuickstart />
-          </WidgetBoundary>
-        </Panel>
-      </div>
+      {!quickstartDismissed && (
+        <div className="col-span-12 lg:col-span-5 h-full overflow-hidden">
+          <Panel title="Quickstart" hint="First-run" icon={Activity} scroll>
+            <WidgetBoundary label="Quickstart">
+              <OnboardingQuickstart />
+            </WidgetBoundary>
+          </Panel>
+        </div>
+      )}
       <div className="col-span-12 h-full overflow-hidden">
         <Panel title="How am I doing?" hint="Performance · 30-day window" icon={TrendingUp} scroll>
           <WidgetBoundary label="Performance Benchmarks">
