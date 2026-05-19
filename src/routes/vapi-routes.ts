@@ -291,11 +291,17 @@ router.post("/api/vapi-webhook", async (req, res) => {
               callerName: caller_name,
               agentName: agentNameRow[0]?.name ?? undefined,
             });
+            // On failure, give the agent a SCRIPT it can read by mouth
+            // rather than "an error happened" — the caller still gets
+            // value (the URL), the agent stays honest about the
+            // delivery failure. Same anti-fabrication contract as
+            // the always-on adaptive core directive.
+            const signupUrl = `${(process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "")}/signup`;
             results.push({
               toolCallId: toolCall.id,
               result: result.ok
                 ? `Sign-up link sent to ${to_email}. Should arrive in under a minute.`
-                : `Could not send to ${to_email} (${result.error ?? "unknown error"}). Try a different address?`,
+                : `I couldn't send the email right now (transport temporarily down). Read the URL to the caller by mouth: ${signupUrl} — confirm they got it before ending the call.`,
             });
           }
         } catch (err: any) {

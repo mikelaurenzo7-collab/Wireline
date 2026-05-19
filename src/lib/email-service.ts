@@ -25,7 +25,7 @@ const DEFAULT_FROM = "Wireline <noreply@trywireline.com>";
 
 interface SendResult {
   ok: boolean;
-  provider: "resend" | "log-fallback";
+  provider: "resend" | "log-fallback" | "no-transport";
   id?: string;
   error?: string;
 }
@@ -171,15 +171,27 @@ export async function sendSignupLinkEmail(opts: {
     return await sendViaResend({ to: opts.to, subject, html, text });
   }
 
-  // Same dev/no-transport pattern as sendPasswordResetEmail.
+  // The showcase Vapi agents use this path on every demo call where
+  // a caller asks for a signup link. Unlike sendPasswordResetEmail
+  // (which has a legit dev/single-tenant log-fallback) — we MUST NOT
+  // return ok:true here when no transport is configured, because the
+  // agent treats ok:true as "tell the caller it was sent" and the
+  // caller waits for an email that never arrives. That's exactly the
+  // fabrication failure mode the agent moat is supposed to prevent.
+  //
+  // Fail loud in prod so the agent reads back the URL by mouth and
+  // ends the call honestly:
   log.warn(
-    "Signup-link email transport not configured (RESEND_API_KEY missing). " +
-      "Emitting URL to runtime log so support can deliver it manually.",
+    "send_signup_link called but RESEND_API_KEY is not set — failing loud so the agent doesn't lie about delivery.",
     {
       to: opts.to,
       signupUrl,
       agentName: opts.agentName,
     },
   );
-  return { ok: true, provider: "log-fallback" };
+  return {
+    ok: false,
+    provider: "no-transport",
+    error: "Email transport not configured (RESEND_API_KEY missing)",
+  };
 }
