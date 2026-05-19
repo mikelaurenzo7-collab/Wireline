@@ -917,7 +917,7 @@ function DedupePanel({
             <button
               onClick={onApply}
               disabled={applying || totalToDelete === 0}
-              className="h-10 px-4 rounded-lg bg-rose-500 text-paper text-[10px] uppercase tracking-[0.25em] flex items-center gap-2 disabled:opacity-40 hover:opacity-90"
+              className="h-10 px-4 rounded-lg bg-rose-500 text-on-brand text-[10px] uppercase tracking-[0.25em] flex items-center gap-2 disabled:opacity-40 hover:opacity-90"
             >
               {applying ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />

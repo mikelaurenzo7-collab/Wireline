@@ -484,7 +484,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
               <button
                 onClick={remove}
                 disabled={busy !== null}
-                className="px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] bg-rose-500 text-paper hover:bg-rose-500/80 transition-all"
+                className="px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] bg-rose-500 text-on-brand hover:bg-rose-500/80 transition-all"
               >
                 {busy === "delete" ? <Loader2 className="w-3 h-3 animate-spin" /> : "Confirm"}
               </button>
