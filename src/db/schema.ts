@@ -40,7 +40,12 @@ export const passwordResetTokens = pgTable("wireline_password_reset_tokens", {
 // 1. SETTINGS & BILLING
 export const settings = pgTable("wireline_settings", {
   id: text("id").primaryKey(),
-  userId: uuid("user_id").unique(),
+  // FK with cascade so deleting a user removes their settings row in
+  // the same transaction — no orphans, no manual cleanup. The unique
+  // constraint stays: one settings row per user.
+  userId: uuid("user_id")
+    .unique()
+    .references(() => users.id, { onDelete: "cascade" }),
   subscriptionStatus: text("subscription_status").default("active"),
   maxAgents: integer("max_agents").default(3),
   vapiPrivateKey: text("vapi_private_key"),
@@ -84,7 +89,9 @@ export const settings = pgTable("wireline_settings", {
 
 // 1.1 USER PREFERENCES
 export const userPreferences = pgTable("wireline_user_preferences", {
-  userId: uuid("user_id").primaryKey(),
+  userId: uuid("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
   tourCompleted: boolean("tour_completed").default(false),
   onboardingCompleted: boolean("onboarding_completed").default(false),
   helpEnabled: boolean("help_enabled").default(true),
@@ -96,7 +103,9 @@ export const userPreferences = pgTable("wireline_user_preferences", {
 
 // 1.2 SPEND BUDGETS
 export const spendBudgets = pgTable("wireline_spend_budgets", {
-  userId: uuid("user_id").primaryKey(),
+  userId: uuid("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
   monthlyLimitUsd: decimal("monthly_limit_usd", { precision: 12, scale: 2 }).default("0"),
   hardCap: boolean("hard_cap").default(false),
   warnThresholdPct: integer("warn_threshold_pct").default(80),

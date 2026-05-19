@@ -396,4 +396,81 @@ router.post(
   },
 );
 
+/**
+ * Add ON DELETE CASCADE FK constraints to user-scoped tables that
+ * previously had only a uuid column with no referential integrity.
+ * From audit: settings, user_preferences, spend_budgets used to
+ * become orphaned when the parent user row was deleted.
+ *
+ * Idempotent: each ADD CONSTRAINT is wrapped in a DO block that
+ * checks pg_constraint first, and orphan rows are deleted before
+ * adding the constraint so the migration doesn't fail mid-way if a
+ * tenant was previously hard-deleted out-of-band.
+ */
+router.post(
+  "/api/admin/migrate-user-fks",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const ownerEmail = process.env.OWNER_EMAIL;
+    if (!ownerEmail || req.user?.email !== ownerEmail) {
+      return res.status(403).json({ error: "Owner only." });
+    }
+
+    const targets = [
+      { table: "wireline_settings", constraint: "wireline_settings_user_id_fkey" },
+      {
+        table: "wireline_user_preferences",
+        constraint: "wireline_user_preferences_user_id_fkey",
+      },
+      { table: "wireline_spend_budgets", constraint: "wireline_spend_budgets_user_id_fkey" },
+    ];
+
+    const results: { table: string; orphans_removed: number; constraint_added: boolean }[] = [];
+
+    try {
+      for (const { table, constraint } of targets) {
+        // Step 1: delete orphaned rows so the FK addition can succeed.
+        // An orphan = a row whose user_id no longer exists in wireline_users.
+        const deletion = await drizzle.execute(
+          sql.raw(`
+          DELETE FROM ${table}
+          WHERE user_id IS NOT NULL
+            AND user_id NOT IN (SELECT id FROM wireline_users)
+          RETURNING user_id
+        `),
+        );
+        const orphansRemoved =
+          // node-postgres returns { rowCount }, pg-pool sometimes { rows }
+          (deletion as any)?.rowCount ?? (deletion as any)?.rows?.length ?? 0;
+
+        // Step 2: add the FK constraint if it isn't already there.
+        const before = await drizzle.execute(
+          sql.raw(`
+          SELECT 1 FROM pg_constraint WHERE conname = '${constraint}'
+        `),
+        );
+        const alreadyExists = ((before as any)?.rowCount ?? (before as any)?.rows?.length ?? 0) > 0;
+
+        if (!alreadyExists) {
+          await drizzle.execute(
+            sql.raw(`
+            ALTER TABLE ${table}
+            ADD CONSTRAINT ${constraint}
+            FOREIGN KEY (user_id) REFERENCES wireline_users(id) ON DELETE CASCADE
+          `),
+          );
+        }
+
+        results.push({ table, orphans_removed: orphansRemoved, constraint_added: !alreadyExists });
+      }
+
+      log.info("migrate-user-fks completed", { results });
+      res.json({ ok: true, results });
+    } catch (err: any) {
+      log.error("migrate-user-fks failed", { error: err?.message, results });
+      res.status(500).json({ error: err?.message || "Migration failed", results });
+    }
+  },
+);
+
 export default router;
