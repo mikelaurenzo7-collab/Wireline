@@ -1,27 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="630" gradientUnits="userSpaceOnUse">
-      <stop offset="0%"   stop-color="#F5F0E8"/>
-      <stop offset="100%" stop-color="#EAE3D3"/>
+      <stop offset="0%"   stop-color="#FAF9F5"/>
+      <stop offset="100%" stop-color="#EFEAE0"/>
     </linearGradient>
     <radialGradient id="glow1" cx="180" cy="120" r="380" gradientUnits="userSpaceOnUse">
-      <stop offset="0%"   stop-color="#0AC8D4" stop-opacity="0.18"/>
-      <stop offset="100%" stop-color="#0AC8D4" stop-opacity="0"/>
+      <stop offset="0%"   stop-color="#4F1E7B" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#4F1E7B" stop-opacity="0"/>
     </radialGradient>
     <radialGradient id="glow2" cx="1050" cy="540" r="420" gradientUnits="userSpaceOnUse">
-      <stop offset="0%"   stop-color="#0AC8D4" stop-opacity="0.14"/>
-      <stop offset="100%" stop-color="#0AC8D4" stop-opacity="0"/>
+      <stop offset="0%"   stop-color="#4F1E7B" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#4F1E7B" stop-opacity="0"/>
     </radialGradient>
   </defs>
 
-  <!-- Editorial cream background with two soft cyan glows -->
+  <!-- Editorial warm-paper background with two soft silky-purple glows -->
   <rect width="1200" height="630" fill="url(#bg)"/>
   <rect width="1200" height="630" fill="url(#glow1)"/>
   <rect width="1200" height="630" fill="url(#glow2)"/>
 
-  <!-- Brand mark — same canonical W as favicon -->
+  <!-- Brand mark — same canonical W as favicon, in silky purple -->
   <g transform="translate(80,80)">
-    <rect width="128" height="128" rx="28" fill="#0AC8D4"/>
+    <rect width="128" height="128" rx="28" fill="#4F1E7B"/>
     <path d="M 27.5 37.5 L 49 89 L 64 58.8 L 79 89 L 100.5 37.5"
           fill="none" stroke="#FFFFFF" stroke-width="13.75"
           stroke-linecap="round" stroke-linejoin="round"/>
@@ -36,7 +36,7 @@
         font-size="14" letter-spacing="8">AI VOICE + EMAIL AGENTS</text>
 
   <!-- Editorial hero -->
-  <text x="80" y="330" fill="#0AC8D4"
+  <text x="80" y="330" fill="#4F1E7B"
         font-family="Georgia, 'Times New Roman', serif"
         font-style="italic" font-size="76" font-weight="400">AI agents that</text>
   <text x="80" y="420" fill="#1C1917"
@@ -49,13 +49,13 @@
         font-size="22">Voice + email autonomous agents · Powered by Claude Opus 4.7</text>
 
   <!-- Footer hairline -->
-  <rect x="80" y="540" width="1040" height="1.5" fill="#0AC8D4" opacity="0.35"/>
+  <rect x="80" y="540" width="1040" height="1.5" fill="#4F1E7B" opacity="0.35"/>
 
   <!-- Footer chips -->
   <g font-family="Inter, system-ui, sans-serif" font-size="16" letter-spacing="4">
-    <text x="80"  y="585" fill="#0AC8D4">VOICE</text>
-    <text x="200" y="585" fill="#0AC8D4">EMAIL</text>
-    <text x="320" y="585" fill="#0AC8D4">INSIGHTS</text>
+    <text x="80"  y="585" fill="#4F1E7B">VOICE</text>
+    <text x="200" y="585" fill="#4F1E7B">EMAIL</text>
+    <text x="320" y="585" fill="#4F1E7B">INSIGHTS</text>
     <text x="490" y="585" fill="#10B981">TRIAGE</text>
     <text x="640" y="585" fill="#7C7469">trywireline.com</text>
   </g>

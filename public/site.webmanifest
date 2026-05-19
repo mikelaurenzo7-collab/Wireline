@@ -4,8 +4,8 @@
   "description": "AI voice and email agents for your business — powered by Claude.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#F5F0E8",
-  "theme_color": "#0AC8D4",
+  "background_color": "#FAF9F5",
+  "theme_color": "#4F1E7B",
   "icons": [
     {
       "src": "/favicon.svg",
