@@ -28,6 +28,10 @@ import {
   PhoneIncoming,
   MailCheck,
   Sparkles,
+  ShoppingBag,
+  Utensils,
+  Target,
+  FileText,
   type LucideIcon,
 } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";

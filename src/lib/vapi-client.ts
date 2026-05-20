@@ -423,19 +423,41 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
       },
       recordingEnabled: true,
       voice: (() => {
-        // ElevenLabs speed control (per-agent, 0.7–1.2). Stored as
-        // numeric → string via pg; coerce + clamp here so a corrupted
-        // value can't ship something Vapi/EL would reject. Only attach
-        // on 11labs providers and only when the value differs from the
-        // neutral default. Docs:
-        // https://elevenlabs.io/docs/eleven-agents/customization/voice/speed-control
+        // ElevenLabs voice config (per-agent). Three knob groups:
+        //   1. speed (0.7–1.2, default 1.0) — speaking rate.
+        //   2. fine-tuning (stability, similarityBoost, style,
+        //      useSpeakerBoost) — voice quality. Most impactful on
+        //      cloned voices.
+        // All stored as numeric → string via pg; coerce + clamp here so
+        // a corrupted value can't ship something Vapi/EL would reject.
+        // Only attached on 11labs providers — OpenAI's voice block
+        // ignores them and Vapi would reject the request if we sent
+        // them. Speed is omitted when at the neutral default to keep
+        // the payload tidy; fine-tuning params are always attached so
+        // the operator's slider value is authoritative.
+        //
+        // Docs:
+        //   speed:        https://elevenlabs.io/docs/eleven-agents/customization/voice/speed-control
+        //   fine-tuning:  https://elevenlabs.io/docs/api-reference/text-to-speech/convert#request.body.voice_settings
         const provider = agentConfig.voiceProviderOutbound || agentConfig.voiceProvider || "11labs";
         const raw = (agentConfig as any)?.voiceSpeed;
         const speed = raw == null ? 1.0 : Math.min(1.2, Math.max(0.7, Number(raw) || 1.0));
+        const clamp01 = (v: unknown, fallback: number): number => {
+          if (v == null) return fallback;
+          const n = Number(v);
+          if (!Number.isFinite(n)) return fallback;
+          return Math.min(1, Math.max(0, n));
+        };
+        const stability = clamp01((agentConfig as any)?.voiceStability, 0.5);
+        const similarityBoost = clamp01((agentConfig as any)?.voiceSimilarityBoost, 0.75);
+        const style = clamp01((agentConfig as any)?.voiceStyle, 0.0);
+        const rawSpeakerBoost = (agentConfig as any)?.voiceSpeakerBoost;
+        const useSpeakerBoost = rawSpeakerBoost == null ? true : Boolean(rawSpeakerBoost);
         return {
           provider,
           voiceId: agentConfig.voiceIdOutbound || agentConfig.voiceId || "bIHbv24MWmeRgasZH58o",
           ...(provider === "11labs" && speed !== 1.0 ? { speed } : {}),
+          ...(provider === "11labs" ? { stability, similarityBoost, style, useSpeakerBoost } : {}),
         };
       })(),
     },

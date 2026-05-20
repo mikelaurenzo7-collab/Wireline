@@ -32,6 +32,7 @@ import AgentTemplates from "./AgentTemplates";
 import AgentExportImport from "./AgentExportImport";
 import AgentBusinessProfile from "./AgentBusinessProfile";
 import AgentScorecard from "./AgentScorecard";
+import VoiceFineTuningPanel from "./VoiceFineTuningPanel";
 import {
   AGENT_TOOL_CATALOG,
   getRoleToolSet,
@@ -1264,6 +1265,53 @@ export default function FleetSettings() {
                                       <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none rotate-90" />
                                     </div>
                                   </div>
+
+                                  {/* Secondary voice for mid-call language swap.
+                                      Only meaningful when a primary voice is
+                                      already set. When configured, the Vapi
+                                      webhook listens for `language-change-
+                                      detected` events and hands the live call
+                                      off to a clone of this assistant running
+                                      the secondary voice. Caller hears "Sarah"
+                                      -> ~500ms dead air -> "Maria" the instant
+                                      they switch to Spanish. Pattern source:
+                                      https://elevenlabs.io/docs/eleven-agents/customization/voice/multi-voice-support */}
+                                  {selectedAgent.voice_id && (
+                                    <div className="space-y-1.5">
+                                      <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
+                                        Secondary voice (auto-swap on Spanish)
+                                      </label>
+                                      <div className="relative">
+                                        <select
+                                          value={(selectedAgent as any).secondary_voice_id || ""}
+                                          onChange={(e) => {
+                                            const val = e.target.value;
+                                            updateAgentMeta({
+                                              secondary_voice_id: val || null,
+                                            });
+                                          }}
+                                          className="w-full text-xs bg-black/5 border border-black/10 rounded-lg pl-2.5 pr-7 py-1.5 outline-none focus:border-brand/50 cursor-pointer appearance-none text-ink"
+                                        >
+                                          <option value="">None (single voice)</option>
+                                          <optgroup label="Premium voices">
+                                            {PREMIUM_VOICES.filter(
+                                              (v) => v.id !== selectedAgent.voice_id,
+                                            ).map((v) => (
+                                              <option key={v.id} value={v.id}>
+                                                {v.name}
+                                              </option>
+                                            ))}
+                                          </optgroup>
+                                        </select>
+                                        <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none rotate-90" />
+                                      </div>
+                                      <p className="text-[9px] text-muted/60 leading-relaxed">
+                                        Vapi fires this when a caller switches to a non-English
+                                        language. ~500ms of dead air during the handoff is the trade
+                                        vs no swap at all.
+                                      </p>
+                                    </div>
+                                  )}
 
                                   <div className="space-y-1.5">
                                     <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
