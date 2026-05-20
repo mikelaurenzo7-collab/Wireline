@@ -456,7 +456,7 @@ export async function runCompletionResilient(opts: CompletionOptions): Promise<{
   text: string;
   cacheRead: number;
   cacheCreate: number;
-  provider: "claude" | "gemini";
+  provider: "claude" | "openai";
 }> {
   const isTransient = (err: unknown): boolean => {
     const e = err as { status?: number; message?: string };
@@ -482,27 +482,37 @@ export async function runCompletionResilient(opts: CompletionOptions): Promise<{
     }
   }
 
-  // Gemini fallback path — only run if explicitly available.
-  if (process.env.GEMINI_API_KEY) {
+  // OpenAI fallback path — only run if explicitly available.
+  if (process.env.OPENAI_API_KEY) {
     try {
-      const { GoogleGenerativeAI } = await import("@google/generative-ai");
-      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-      const fallbackModel = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
       const prompt = `${opts.system}\n\n${opts.user}`;
-      const result = await fallbackModel.generateContent(prompt);
-      const text = result.response.text();
-      // Don't swallow the Claude error — log it for ops visibility.
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: process.env.OPENAI_FALLBACK_MODEL || "gpt-4.1-mini",
+          messages: [{ role: "user", content: prompt }],
+        }),
+      });
+      if (!response.ok) throw new Error(`OpenAI fallback failed (${response.status})`);
+      const data = (await response.json()) as {
+        choices?: Array<{ message?: { content?: string } }>;
+      };
+      const text = data.choices?.[0]?.message?.content || "";
       try {
         const { log } = await import("./server-context");
-        log.warn("Claude unavailable, served via Gemini fallback", {
+        log.warn("Claude unavailable, served via OpenAI fallback", {
           claude_error: (claudeErr as { message?: string })?.message,
         });
       } catch {
         /* ignore */
       }
-      return { text, cacheRead: 0, cacheCreate: 0, provider: "gemini" };
+      return { text, cacheRead: 0, cacheCreate: 0, provider: "openai" };
     } catch {
-      // Gemini also failed — throw the original Claude error so the
+      // OpenAI also failed — throw the original Claude error so the
       // caller's error handling sees the actual root cause, not the
       // secondary symptom.
     }

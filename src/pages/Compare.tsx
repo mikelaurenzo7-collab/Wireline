@@ -180,7 +180,7 @@ export default function Compare() {
       </div>
 
       {/* Top brand bar */}
-      <header className="relative z-10 px-6 lg:px-10 py-5 flex items-center justify-between">
+      <header className="relative z-10 px-4 sm:px-6 lg:px-10 xl:px-14 py-5 flex items-center justify-between gap-3">
         <Link to="/" className="flex items-center gap-2.5">
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center"
@@ -211,7 +211,7 @@ export default function Compare() {
       </header>
 
       {/* Hero */}
-      <section className="relative z-10 max-w-5xl mx-auto px-6 lg:px-10 pt-12 pb-12 sm:pt-16 sm:pb-16">
+      <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pt-12 pb-12 sm:pt-16 sm:pb-16">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -233,7 +233,7 @@ export default function Compare() {
       </section>
 
       {/* Matrix */}
-      <section className="relative z-10 max-w-6xl mx-auto px-6 lg:px-10 pb-16">
+      <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-20">
         {/* Mobile scroll affordance — the table is wider than 360-390px
             viewports by design (6 competitor columns need readable
             widths). Without this hint, mobile visitors think the table
@@ -325,7 +325,7 @@ export default function Compare() {
       </section>
 
       {/* When the competitor wins */}
-      <section className="relative z-10 max-w-4xl mx-auto px-6 lg:px-10 pb-16">
+      <section className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-16">
         <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-6 text-balance">
           When a competitor is the better pick.
         </h2>
@@ -380,7 +380,7 @@ export default function Compare() {
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-black/8 py-8 px-6 lg:px-10 max-w-5xl mx-auto">
+      <footer className="relative z-10 border-t border-black/8 py-8 px-4 sm:px-6 lg:px-10 xl:px-14 max-w-6xl mx-auto">
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[10px] text-muted/60">
           <Link to="/" className="hover:text-ink transition-colors">
             Wireline

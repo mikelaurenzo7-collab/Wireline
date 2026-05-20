@@ -137,8 +137,8 @@ router.post("/api/vapi-webhook", async (req, res) => {
     .limit(1);
 
   const subscriptionStatus = userSettings?.subscriptionStatus || "active";
-  const voiceLlmProvider = userSettings?.voiceLlmProvider || "google";
-  const voiceLlmModel = userSettings?.voiceLlmModel || "gemini-1.5-flash";
+  const voiceLlmProvider = userSettings?.voiceLlmProvider || "openai";
+  const voiceLlmModel = userSettings?.voiceLlmModel || "gpt-4.1-mini";
 
   if (subscriptionStatus !== "active") {
     if (message && message.type === "assistant-request") {
@@ -146,8 +146,8 @@ router.post("/api/vapi-webhook", async (req, res) => {
         assistant: {
           firstMessage: "The automated service for this line is suspended.",
           model: {
-            provider: "google",
-            model: "gemini-1.5-flash",
+            provider: "openai",
+            model: "gpt-4.1-mini",
             systemPrompt: "Explain suspension and end call.",
           },
         },
@@ -170,8 +170,8 @@ router.post("/api/vapi-webhook", async (req, res) => {
         assistant: {
           firstMessage: "I am having trouble connecting. Please try again.",
           model: {
-            provider: "google",
-            model: "gemini-1.5-flash",
+            provider: "openai",
+            model: "gpt-4.1-mini",
             systemPrompt: "Apologize and hang up.",
           },
         },
