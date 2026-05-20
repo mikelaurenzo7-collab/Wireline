@@ -717,7 +717,7 @@ export default function FleetSettings() {
           agent is selected so the detail editor gets the full viewport. */}
             <aside
               className={cn(
-                "w-full md:w-[420px] border-b md:border-b-0 md:border-r border-white/8 h-auto md:h-full flex flex-col shrink-0",
+                "w-full md:w-[350px] lg:w-[420px] border-b md:border-b-0 md:border-r border-white/8 h-auto md:h-full flex flex-col shrink-0",
                 selectedAgent && "hidden md:flex",
               )}
             >
@@ -2044,7 +2044,7 @@ export default function FleetSettings() {
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                           {/* Directives */}
-                          <section className="rounded-2xl glass border border-white/10 p-3 flex flex-col h-[560px]">
+                          <section className="rounded-2xl glass border border-white/10 p-3 flex flex-col min-h-[560px] md:h-[400px] max-h-[70vh]">
                             <header className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-white/8">
                               <div>
                                 <h3 className="font-display italic lowercase text-lg text-ink leading-none">
@@ -2169,7 +2169,7 @@ export default function FleetSettings() {
                             </div>
                           </section>
 
-                          <section className="rounded-2xl glass border border-white/10 p-3 flex flex-col h-[560px]">
+                          <section className="rounded-2xl glass border border-white/10 p-3 flex flex-col min-h-[560px] md:h-[400px] max-h-[70vh]">
                             <header className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-white/8">
                               <div>
                                 <h3 className="font-display italic lowercase text-lg text-ink leading-none">
