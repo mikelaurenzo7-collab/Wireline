@@ -79,7 +79,7 @@ export const WIRELINE_OBJECTIONS: readonly ObjectionEntry[] = Object.freeze([
     response_template:
       "I get it — the price tag stands out. But compare it to a part-time receptionist at twenty hours a week or an answering service charging per minute. We're typically a third of either, and we never call out sick.",
     follow_up_question:
-      "What are you spending right now on call handling, roughly? I can pencil out where you'd land with us.",
+      "What are you spending right now on call handling, roughly — and can I pencil out where you'd land with us?",
     rationale:
       "Grounded comparison vs. true alternatives (human FTE + answering services). No discount-leading — Sales has 10% authority if they need to use it later.",
   },
