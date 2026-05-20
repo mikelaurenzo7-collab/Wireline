@@ -27,26 +27,6 @@ const PROVIDER_META: Record<string, { label: string; color: string }> = {
   yahoo: { label: "Yahoo Mail", color: "text-purple-600" },
 };
 
-/**
- * Plan-tier required to access each integration class. Personal/Starter
- * see locked cards with upgrade CTA; Pro+ see the live connector. Keeps
- * the page honest about what's available + drives upgrade conversion
- * instead of letting low-tier customers click into silent failures.
- */
-const PLAN_RANK: Record<string, number> = {
-  personal: 0,
-  starter: 1,
-  pro: 2,
-  business: 3,
-  enterprise: 4,
-};
-
-function planMeetsRequirement(currentPlan: string | null, required: string): boolean {
-  const current = PLAN_RANK[currentPlan || "personal"] ?? 0;
-  const need = PLAN_RANK[required] ?? 0;
-  return current >= need;
-}
-
 export default function Integrations() {
   const { error: toastError, warning: toastWarning, success: toastSuccess } = useToast();
   const [confirmState, setConfirmState] = useState<ConfirmState>(CLOSED_CONFIRM);
@@ -54,10 +34,6 @@ export default function Integrations() {
   const [agents, setAgents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  // Subscription tier — drives the plan-gated UI on each connector card.
-  // Falls back to "personal" so locked cards render even before the
-  // billing/status round-trip completes.
-  const [planId, setPlanId] = useState<string | null>(null);
 
   const fetchAccounts = async () => {
     try {
@@ -84,25 +60,10 @@ export default function Integrations() {
     }
   };
 
-  // Fetch current plan tier so CRM / messaging connectors can render
-  // their gated state (locked + upsell, or live). Falls back to
-  // "personal" on error so we never accidentally expose Pro+ cards
-  // to a free user.
-  const fetchPlan = async () => {
-    try {
-      const r = await authFetch("/api/billing/status");
-      if (!r.ok) return;
-      const d = await r.json();
-      setPlanId(d.subscription?.plan_id || d.subscription?.plan || "personal");
-    } catch {
-      setPlanId("personal");
-    }
-  };
-
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      await Promise.all([fetchAccounts(), fetchAgents(), fetchPlan()]);
+      await Promise.all([fetchAccounts(), fetchAgents()]);
       setLoading(false);
     };
     init();
@@ -388,48 +349,12 @@ export default function Integrations() {
             )}
           </Panel>
 
-          {/* CRM & messaging — HubSpot, Salesforce, Slack — surfaced here
-              alongside email so operators find every external connector in
-              one place instead of having to dig into Admin → Integrations.
-              Plan-gated to Pro+ — Personal / Starter see an upgrade card
-              instead of the live connectors. */}
+          {/* CRM & messaging — HubSpot, Salesforce, Slack, Shopify.
+              Available on every plan: integrations make the agent more
+              capable for everyone, and they don't cannibalize the real
+              paid levers (agents / minutes / numbers). */}
           <div className="mt-3">
-            {planMeetsRequirement(planId, "pro") ? (
-              <CrmConnectionCard />
-            ) : (
-              <div className="rounded-2xl glass border border-white/10 p-4 relative overflow-hidden">
-                <div
-                  className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
-                  style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
-                />
-                <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                  <div
-                    className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ background: "#4F1E7B" }}
-                  >
-                    <Webhook className="w-5 h-5 text-on-brand" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[9px] uppercase tracking-[0.32em] text-brand mb-1">
-                      Pro plan or higher
-                    </p>
-                    <h3 className="font-display italic text-xl text-ink leading-tight">
-                      CRM &amp; messaging connectors
-                    </h3>
-                    <p className="text-sm text-muted/80 mt-1 leading-relaxed">
-                      HubSpot, Salesforce, Slack, and Shopify sync — keep call notes, deals, team
-                      alerts, and e-commerce orders in lockstep with every conversation.
-                    </p>
-                  </div>
-                  <a
-                    href="/pricing"
-                    className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-brand text-on-brand text-[10px] uppercase tracking-[0.3em] hover:bg-brand/90 transition-colors whitespace-nowrap"
-                  >
-                    Upgrade to Pro
-                  </a>
-                </div>
-              </div>
-            )}
+            <CrmConnectionCard />
           </div>
         </div>
       </PageShell>
