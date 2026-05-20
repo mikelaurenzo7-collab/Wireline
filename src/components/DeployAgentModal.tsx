@@ -128,9 +128,44 @@ export default function DeployAgentModal({
   const [voiceId, setVoiceId] = useState<string>(DEFAULT_VOICE_BY_GENDER.female);
   const [showVoiceList, setShowVoiceList] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
+  // Cloned voices fetched from /api/voices on mount. Hooks must
+  // declare before any conditional return — the `if (!template) return`
+  // below is conditional so this state has to land here.
+  const [clonedVoices, setClonedVoices] = useState<
+    Array<{ id: string; provider: string; name: string; gender: string }>
+  >([]);
 
   // Pin the page underneath while the deploy modal is open.
   useBodyScrollLock(open);
+
+  // Fetch tenant's cloned voices once when the modal mounts.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { authFetch } = await import("../lib/api");
+        const r = await authFetch("/api/voices");
+        if (!r.ok) return;
+        const data = await r.json();
+        const owned = (data.voices || [])
+          .filter((v: any) => v.owned_by_user)
+          .map((v: any) => ({
+            id: v.voice_id,
+            provider: "11labs",
+            name: `${v.name} (your clone)`,
+            // Cloned voices don't carry gender metadata — surface in
+            // both buckets so they're always reachable from the picker.
+            gender: "neutral",
+          }));
+        if (!cancelled) setClonedVoices(owned);
+      } catch {
+        /* graceful fallback — picker still works with PREMIUM_VOICES only */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Reset state whenever a new template is selected, autofocus the name field.
   useEffect(() => {
@@ -165,10 +200,10 @@ export default function DeployAgentModal({
   if (!template) return null;
 
   const isEmail = template.channel === "email";
-  const voicesForGender = PREMIUM_VOICES.filter(
-    (v) => v.gender === gender || v.gender === "neutral",
-  );
-  const selectedVoice = PREMIUM_VOICES.find((v) => v.id === voiceId);
+
+  const allVoices = [...clonedVoices, ...PREMIUM_VOICES];
+  const voicesForGender = allVoices.filter((v) => v.gender === gender || v.gender === "neutral");
+  const selectedVoice = allVoices.find((v) => v.id === voiceId);
   const trimmedName = name.trim();
   const canSubmit = trimmedName.length > 0 && trimmedName.length <= 80 && !deploying;
 
@@ -288,9 +323,9 @@ export default function DeployAgentModal({
                         active={gender === "female"}
                         label="Female"
                         sublabel={
-                          PREMIUM_VOICES.find(
-                            (v) => v.id === DEFAULT_VOICE_BY_GENDER.female,
-                          )?.name.split(" (")[0] || "Female default"
+                          allVoices
+                            .find((v) => v.id === DEFAULT_VOICE_BY_GENDER.female)
+                            ?.name.split(" (")[0] || "Female default"
                         }
                         icon={User2}
                         onClick={() => handleGenderChange("female")}
@@ -299,9 +334,9 @@ export default function DeployAgentModal({
                         active={gender === "male"}
                         label="Male"
                         sublabel={
-                          PREMIUM_VOICES.find(
-                            (v) => v.id === DEFAULT_VOICE_BY_GENDER.male,
-                          )?.name.split(" (")[0] || "Male default"
+                          allVoices
+                            .find((v) => v.id === DEFAULT_VOICE_BY_GENDER.male)
+                            ?.name.split(" (")[0] || "Male default"
                         }
                         icon={Users2}
                         onClick={() => handleGenderChange("male")}

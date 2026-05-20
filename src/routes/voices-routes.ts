@@ -28,6 +28,7 @@ import {
   listVoices as elListVoices,
   createInstantClone,
   deleteVoice as elDeleteVoice,
+  isolateVoice,
   elevenLabsConfigured,
   type ElevenLabsVoice,
 } from "../lib/elevenlabs-client";
@@ -194,10 +195,37 @@ router.post(
         });
       }
 
+      // Voice isolator pre-clean: strip background noise from the
+      // sample before sending to the clone endpoint. Operators record
+      // on phones with kids in the background; isolator gets us
+      // studio-quality input from a real-world one. Optional via
+      // `skip_isolation: true` in body (for ops who pre-cleaned
+      // their audio themselves). Falls back gracefully — if isolation
+      // fails, we use the original audio.
+      let cloneAudioBase64 = audioBase64;
+      let cloneMimeType: string | undefined =
+        typeof audioMimeType === "string" ? audioMimeType : undefined;
+      if (req.body?.skip_isolation !== true) {
+        try {
+          const isolated = await isolateVoice(audioBase64, cloneMimeType);
+          cloneAudioBase64 = Buffer.from(isolated).toString("base64");
+          cloneMimeType = "audio/mpeg"; // isolator returns MP3
+          log.info("voice clone — isolation succeeded", {
+            userId: req.user.id,
+            in_size: audioBase64.length,
+            out_size: cloneAudioBase64.length,
+          });
+        } catch (e) {
+          log.warn("voice isolation failed — proceeding with raw audio", {
+            error: getErrorMessage(e),
+          });
+        }
+      }
+
       const cloned = await createInstantClone({
         name: name.trim(),
-        audioBase64,
-        audioMimeType: typeof audioMimeType === "string" ? audioMimeType : undefined,
+        audioBase64: cloneAudioBase64,
+        audioMimeType: cloneMimeType,
         description: `Cloned by Wireline tenant ${req.user.id} on ${new Date().toISOString()}`,
       });
 

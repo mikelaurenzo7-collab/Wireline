@@ -8,26 +8,68 @@
  * can curl after each deploy. All statements use IF NOT EXISTS so re-
  * running is idempotent and safe.
  *
+ * Two ways to authorize a migration call:
+ *   1) Authenticated request from the OWNER_EMAIL user, OR
+ *   2) Pass `X-Migration-Token` header matching MIGRATION_TOKEN env var
+ *      (lets an operator/CI/owner-without-a-session run migrations
+ *      without an interactive sign-in).
+ *
+
  * Auth: requesting user's email must match OWNER_EMAIL env var. This is
  * NOT for self-serve schema changes — it's a deploy-time admin tool.
  */
 
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
+import crypto from "crypto";
 import { drizzle, log } from "../lib/server-context";
 import { sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import type { AuthenticatedRequest } from "../types/auth";
 
+/**
+ * Authorize a migration call via EITHER:
+ *   1. OWNER_EMAIL-matching authenticated user, OR
+ *   2. X-Migration-Token header matching MIGRATION_TOKEN env var
+ *      (constant-time compared to prevent timing leaks).
+ *
+ * Lets ops + CI run migrations without an interactive sign-in flow.
+ * Returns true if authorized, false (with res 403 sent) otherwise.
+ */
+function authorizeMigration(req: Request, res: Response): boolean {
+  const provided = req.headers["x-migration-token"] as string | undefined;
+  const expected = process.env.MIGRATION_TOKEN;
+  if (provided && expected && provided.length === expected.length) {
+    try {
+      if (crypto.timingSafeEqual(Buffer.from(provided), Buffer.from(expected))) {
+        return true;
+      }
+    } catch {
+      /* length mismatch — fall through to owner-email check */
+    }
+  }
+  const ownerEmail = process.env.OWNER_EMAIL;
+  const user = (req as AuthenticatedRequest).user;
+  if (ownerEmail && user?.email === ownerEmail) return true;
+  res.status(403).json({ error: "Owner only." });
+  return false;
+}
+
+// Permissive middleware — runs authenticateUser if a bearer token is
+// present (so req.user populates for the owner-email check), otherwise
+// skips auth (so the X-Migration-Token path works without a session).
+function optionalAuth(req: Request, res: Response, next: NextFunction) {
+  const hasBearer = (req.headers.authorization || "").startsWith("Bearer ");
+  if (!hasBearer) return next();
+  return (authenticateUser as any)(req, res, next);
+}
+
 const router = Router();
 
 router.post(
   "/api/admin/migrate-sms-tables",
-  authenticateUser,
+  optionalAuth,
   async (req: AuthenticatedRequest, res: Response) => {
-    const ownerEmail = process.env.OWNER_EMAIL;
-    if (!ownerEmail || req.user?.email !== ownerEmail) {
-      return res.status(403).json({ error: "Owner only." });
-    }
+    if (!authorizeMigration(req, res)) return;
 
     try {
       // SMS threads — one per (user, customer_number) pair
@@ -146,12 +188,9 @@ router.post(
  */
 router.post(
   "/api/admin/migrate-auth-and-agent-extras",
-  authenticateUser,
+  optionalAuth,
   async (req: AuthenticatedRequest, res: Response) => {
-    const ownerEmail = process.env.OWNER_EMAIL;
-    if (!ownerEmail || req.user?.email !== ownerEmail) {
-      return res.status(403).json({ error: "Owner only." });
-    }
+    if (!authorizeMigration(req, res)) return;
 
     try {
       await drizzle.execute(sql`
@@ -259,12 +298,9 @@ router.post(
  */
 router.post(
   "/api/admin/migrate-competitive-batch",
-  authenticateUser,
+  optionalAuth,
   async (req: AuthenticatedRequest, res: Response) => {
-    const ownerEmail = process.env.OWNER_EMAIL;
-    if (!ownerEmail || req.user?.email !== ownerEmail) {
-      return res.status(403).json({ error: "Owner only." });
-    }
+    if (!authorizeMigration(req, res)) return;
 
     try {
       await drizzle.execute(sql`
@@ -372,12 +408,9 @@ router.post(
  */
 router.post(
   "/api/admin/migrate-audit3",
-  authenticateUser,
+  optionalAuth,
   async (req: AuthenticatedRequest, res: Response) => {
-    const ownerEmail = process.env.OWNER_EMAIL;
-    if (!ownerEmail || req.user?.email !== ownerEmail) {
-      return res.status(403).json({ error: "Owner only." });
-    }
+    if (!authorizeMigration(req, res)) return;
     try {
       await drizzle.execute(sql`
         ALTER TABLE wireline_call_logs
@@ -467,12 +500,9 @@ router.post(
  */
 router.post(
   "/api/admin/migrate-user-fks",
-  authenticateUser,
+  optionalAuth,
   async (req: AuthenticatedRequest, res: Response) => {
-    const ownerEmail = process.env.OWNER_EMAIL;
-    if (!ownerEmail || req.user?.email !== ownerEmail) {
-      return res.status(403).json({ error: "Owner only." });
-    }
+    if (!authorizeMigration(req, res)) return;
 
     const targets = [
       { table: "wireline_settings", constraint: "wireline_settings_user_id_fkey" },
@@ -535,12 +565,9 @@ router.post(
 // per-agent overage subscription quantity. Idempotent.
 router.post(
   "/api/admin/migrate-extra-agents",
-  authenticateUser,
+  optionalAuth,
   async (req: AuthenticatedRequest, res: Response) => {
-    const ownerEmail = process.env.OWNER_EMAIL;
-    if (!ownerEmail || req.user?.email !== ownerEmail) {
-      return res.status(403).json({ error: "Owner only." });
-    }
+    if (!authorizeMigration(req, res)) return;
     try {
       await drizzle.execute(sql`
         ALTER TABLE wireline_settings
@@ -559,12 +586,9 @@ router.post(
 // Idempotent — IF NOT EXISTS on table + index.
 router.post(
   "/api/admin/migrate-cloned-voices",
-  authenticateUser,
+  optionalAuth,
   async (req: AuthenticatedRequest, res: Response) => {
-    const ownerEmail = process.env.OWNER_EMAIL;
-    if (!ownerEmail || req.user?.email !== ownerEmail) {
-      return res.status(403).json({ error: "Owner only." });
-    }
+    if (!authorizeMigration(req, res)) return;
     try {
       await drizzle.execute(sql`
         CREATE TABLE IF NOT EXISTS wireline_cloned_voices (
@@ -594,12 +618,9 @@ router.post(
 // Idempotent — safe to re-run. Owner-only.
 router.post(
   "/api/admin/migrate-agent-workspace",
-  authenticateUser,
+  optionalAuth,
   async (req: AuthenticatedRequest, res: Response) => {
-    const ownerEmail = process.env.OWNER_EMAIL;
-    if (!ownerEmail || req.user?.email !== ownerEmail) {
-      return res.status(403).json({ error: "Owner only." });
-    }
+    if (!authorizeMigration(req, res)) return;
     try {
       await drizzle.execute(sql`
         CREATE TABLE IF NOT EXISTS wireline_agent_conversation_messages (

@@ -177,3 +177,65 @@ function sampleFilename(mime?: string): string {
 export function elevenLabsConfigured(): boolean {
   return !!process.env.ELEVENLABS_API_KEY;
 }
+
+/**
+ * Voice Isolator — strip background noise from an audio sample before
+ * we send it to the clone endpoint. Game-changer for clone quality:
+ * the cleaner the input, the better the cloned voice. Operators record
+ * on phones / in cafes / with kids in the background; isolator gets
+ * us a studio-quality input from a real-world one.
+ *
+ * Docs: https://elevenlabs.io/docs/eleven-api/guides/cookbooks/voice-isolator
+ *
+ * Returns the cleaned audio as an ArrayBuffer (MP3). The caller can
+ * either re-encode + pass to createInstantClone(), or persist for
+ * later. ~$0.005 per call (cheap).
+ */
+export async function isolateVoice(audioBase64: string, mimeType?: string): Promise<ArrayBuffer> {
+  const bytes = Buffer.from(audioBase64, "base64");
+  const blob = new Blob([bytes], { type: mimeType || "audio/mpeg" });
+  const form = new FormData();
+  form.append("audio", blob, sampleFilename(mimeType));
+
+  const r = await fetch(`${BASE}/audio-isolation`, {
+    method: "POST",
+    headers: { "xi-api-key": apiKey() },
+    body: form,
+  });
+  if (!r.ok) {
+    const body = await r.text().catch(() => "");
+    throw new Error(`ElevenLabs isolate ${r.status}: ${body.slice(0, 200)}`);
+  }
+  return await r.arrayBuffer();
+}
+
+/**
+ * Speech-to-Text — re-transcribe a call recording with ElevenLabs's
+ * Scribe model. We already get Vapi-side transcripts but Scribe is
+ * a notch more accurate on accented English + noisy lines. Use for
+ * post-call QA or compliance review when Vapi's transcript looks
+ * questionable.
+ *
+ * Docs: https://elevenlabs.io/docs/eleven-api/guides/cookbooks/speech-to-text
+ *
+ * Returns the transcript text (single string). ~$0.40/hr of audio.
+ */
+export async function transcribeAudio(audioBase64: string, mimeType?: string): Promise<string> {
+  const bytes = Buffer.from(audioBase64, "base64");
+  const blob = new Blob([bytes], { type: mimeType || "audio/mpeg" });
+  const form = new FormData();
+  form.append("file", blob, sampleFilename(mimeType));
+  form.append("model_id", "scribe_v1");
+
+  const r = await fetch(`${BASE}/speech-to-text`, {
+    method: "POST",
+    headers: { "xi-api-key": apiKey() },
+    body: form,
+  });
+  if (!r.ok) {
+    const body = await r.text().catch(() => "");
+    throw new Error(`ElevenLabs STT ${r.status}: ${body.slice(0, 200)}`);
+  }
+  const data = (await r.json()) as { text?: string };
+  return data.text || "";
+}
