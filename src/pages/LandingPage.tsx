@@ -75,6 +75,21 @@ const VERTICALS = [
   { slug: "legal", label: "Law Firms", blurb: "Plaintiff · Family · Criminal · Business" },
   { slug: "real-estate", label: "Real Estate", blurb: "Brokerages · Teams · Independent Agents" },
   {
+    slug: "insurance",
+    label: "Insurance",
+    blurb: "Auto · Home · Commercial · Claims FNOL",
+  },
+  {
+    slug: "restaurants",
+    label: "Restaurants",
+    blurb: "Reservations · Takeout · Catering · Events",
+  },
+  {
+    slug: "sales",
+    label: "Sales / SDR",
+    blurb: "Outbound · Lead qualifying · Speed-to-lead",
+  },
+  {
     slug: "personal",
     label: "Personal use",
     blurb: "Debt negotiation · Appointments · Returns · Customer service",

@@ -62,8 +62,22 @@ function AppContent() {
       | "medical"
       | "legal"
       | "real-estate"
-      | "personal";
-    if (["home-services", "medical", "legal", "real-estate", "personal"].includes(slug)) {
+      | "personal"
+      | "insurance"
+      | "restaurants"
+      | "sales";
+    if (
+      [
+        "home-services",
+        "medical",
+        "legal",
+        "real-estate",
+        "personal",
+        "insurance",
+        "restaurants",
+        "sales",
+      ].includes(slug)
+    ) {
       return (
         <Suspense fallback={<div className="min-h-screen bg-paper" />}>
           <VerticalLanding slug={slug} />

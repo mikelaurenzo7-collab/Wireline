@@ -535,6 +535,71 @@ Today is ${currentDateTime}.
         ? { pronunciationDictionaryLocators: pronunciationDicts }
         : {}),
     },
+    // Explicit transcriber — Vapi defaults to Deepgram Nova-2 which is
+    // already best-in-class on noisy lines + accented English. Pinning
+    // the model explicitly (vs relying on Vapi defaults) protects us
+    // from silent upstream model swaps that could regress accuracy.
+    transcriber: {
+      provider: "deepgram",
+      model: "nova-2",
+      language: "en",
+      // smartFormat handles "two five five five" → "2555" automatically
+      // — critical for confirming phone numbers + appointment times.
+      smartFormat: true,
+    },
+    // Voicemail detection — Vapi's ML-based answering-machine detector.
+    // When triggered, the assistant skips its first message + can
+    // optionally leave a custom voicemail. Huge cost saver on outbound:
+    // we don't pay for 30 seconds of LLM tokens talking to a robot.
+    voicemailDetection: {
+      provider: "twilio",
+      voicemailDetectionTypes: ["machine_end_beep", "machine_end_silence"],
+      enabled: true,
+      machineDetectionTimeout: 15,
+    },
+    // Custom voicemail message — concise, branded, includes a callback
+    // hook so the contact can press 0 (handled via DTMF tool).
+    voicemailMessage:
+      "Hi, this is Wireline calling. Sorry we missed you — feel free to call us back at any time and we'll be happy to help. Thanks!",
+    // Always record so we can replay + retrain. Operator can disable per-
+    // agent if HIPAA mode is on.
+    recordingEnabled: true,
+    // Post-call analysis — Vapi runs these prompts against the
+    // transcript after the call ends + surfaces results in webhook.
+    // Better than the default generic summary: pulls out caller intent,
+    // outcome, and any commitments the agent made.
+    analysisPlan: {
+      summaryPrompt:
+        "Summarize this call in 2-3 sentences. Focus on: (1) what the caller wanted, (2) what the agent did, (3) any follow-up the agent committed to.",
+      structuredDataPrompt: "Extract structured data from this call.",
+      structuredDataSchema: {
+        type: "object",
+        properties: {
+          caller_intent: {
+            type: "string",
+            description:
+              "One of: book_appointment, ask_question, complaint, sales_inquiry, support, transfer_request, other",
+          },
+          outcome: {
+            type: "string",
+            description:
+              "One of: resolved, scheduled, transferred, voicemail, unresolved, callback_needed",
+          },
+          commitments: {
+            type: "array",
+            items: { type: "string" },
+            description:
+              "List of any commitments the agent made (e.g., 'will send invoice by 5pm', 'will call back tomorrow')",
+          },
+          sentiment: {
+            type: "string",
+            description: "One of: positive, neutral, negative, frustrated",
+          },
+        },
+      },
+      successEvaluationPrompt:
+        "Did the agent successfully address what the caller wanted? Reply with 'true' or 'false' only.",
+    },
     functions: buildRoleToolDefs(agentRole, enabledToolNames),
   };
 }

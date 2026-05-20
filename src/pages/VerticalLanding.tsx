@@ -37,7 +37,15 @@ import {
 import { PageMeta } from "../lib/page-meta";
 import WirelineMark from "../components/WirelineMark";
 
-export type VerticalKey = "home-services" | "medical" | "legal" | "real-estate" | "personal";
+export type VerticalKey =
+  | "home-services"
+  | "medical"
+  | "legal"
+  | "real-estate"
+  | "personal"
+  | "insurance"
+  | "restaurants"
+  | "sales";
 
 interface PainPoint {
   icon: LucideIcon;
@@ -387,6 +395,183 @@ const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         q: "What can't it do?",
         a: "Calls requiring identity verification beyond what you authorize (your bank's security questions, IRS interactions involving SSN, anything requiring legal in-person presence). Anything illegal or fraudulent. Calls to emergency services. The agent will tell you upfront if your request is out of scope.",
+      },
+    ],
+  },
+
+  insurance: {
+    slug: "insurance",
+    metaTitle: "Wireline for Insurance Agencies — AI Quote Intake + Renewal Follow-Up",
+    metaDescription:
+      "AI phone agent for insurance agencies: handles quote requests 24/7, captures FNOL (first notice of loss) details, runs renewal follow-up campaigns. Free 14-day trial.",
+    eyebrow: "For Insurance Agencies",
+    headline: "Every quote request answered. Every renewal followed up.",
+    subhead:
+      "An AI agent that picks up the new-quote call at 8pm, captures the right details for an accurate bind, and chases the unrenewed policy three times before it lapses.",
+    pains: [
+      {
+        icon: Phone,
+        title: "Quote intake without the wait",
+        body: "Caller wants an auto quote at 7:30pm? Agent qualifies vehicle, driver count, current carrier, expiration date — emails you a fully-filled intake by morning so you can bind first thing.",
+      },
+      {
+        icon: Clock,
+        title: "FNOL (first notice of loss) capture",
+        body: "After-hours claim calls don't have to go to voicemail. Agent captures policy #, date/time/location of loss, parties involved, injuries — texts you immediately if it's serious, emails the desk for routine.",
+      },
+      {
+        icon: MailCheck,
+        title: "Renewal follow-up campaigns",
+        body: "Policy lapse window starts 60 days out. Agent calls + emails on day 60, 30, 7. Books the renewal review. Catches the customer who would have walked to GEICO.",
+      },
+      {
+        icon: Shield,
+        title: "Carrier-line compliance hedges",
+        body: "Never quotes binding coverage rates ('I'll have your agent confirm the bind') or makes coverage promises. TCPA-clean every outbound call. State-specific disclosure scripts.",
+      },
+    ],
+    scriptPreview: `"Hi, this is Alex with [Your Agency] — I see you requested an auto quote. I'd love to get you accurate numbers fast. Can you tell me the year, make, and model of your primary vehicle, and how many drivers we'll be covering?"`,
+    statValue: "60-day",
+    statLabel:
+      "Renewal cadence catches the customer who would have lapsed to a competitor — before they even shopped around.",
+    primaryCta: { label: "Start 14-day free trial", href: "/signup?wedge=insurance" },
+    secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
+    trustLine:
+      "White-labeled — your insureds hear your agency name, not ours. Recordings + transcripts archived for audit compliance.",
+    faqs: [
+      {
+        q: "Will it actually bind a policy?",
+        a: "No — binding requires a licensed agent. Wireline gathers the quote intake, runs the underwriting pre-qual questions, and hands the bind-ready package to your producer. Saves 12-18 minutes per quote on data entry.",
+      },
+      {
+        q: "Can it handle commercial lines, not just personal?",
+        a: 'Yes. Configure agent personas per line of business: "Auto", "Home", "Commercial Auto", "GL/Business Owners", "Workers Comp". Each persona knows the right intake questions and which producer to hand the lead to.',
+      },
+      {
+        q: "What about claims?",
+        a: "FNOL intake mode captures the structured fields your carrier portals need (policy #, DOL, DOL location, parties, injuries, photos requested via SMS link). For complex losses the agent transfers live to your claims desk; for routine ones it emails the package + SMS-confirms the claim # with the insured.",
+      },
+      {
+        q: "How does it compare to a 24/7 answering service?",
+        a: "Most answering services charge $400-1,200/month + per-call fees and just take messages. Wireline starts at $49/month, qualifies the lead, books the renewal review, and emails you a producer-ready intake — not a 'caller said something about insurance' sticky note.",
+      },
+    ],
+  },
+
+  restaurants: {
+    slug: "restaurants",
+    metaTitle: "Wireline for Restaurants — AI Phone Host for Reservations + Takeout",
+    metaDescription:
+      "AI phone agent for restaurants, bars, and hospitality. Takes reservations, manages waitlists, captures takeout orders, handles allergen/special-request questions. Never miss a Saturday-night call again.",
+    eyebrow: "For Restaurants + Hospitality",
+    headline: "The phone rings during dinner rush. The agent picks up.",
+    subhead:
+      "An AI host that answers the reservation call when your floor team is buried, captures takeout orders accurately, and saves you the no-shows by SMS-confirming every booking 2 hours before.",
+    pains: [
+      {
+        icon: Calendar,
+        title: "Reservation taking without the hostess",
+        body: "Party size, name, time, special requests (anniversary, allergies, high chair). Books to Resy/OpenTable/Tock or your sheet. SMS confirms 2 hours before — drop the no-show rate from 18% to under 6%.",
+      },
+      {
+        icon: PhoneIncoming,
+        title: "Takeout orders done right",
+        body: "Reads back every item. Confirms substitutions. Captures pickup time. Texts the order to your KDS or prints to your kitchen. Caller's allergy questions go to a structured field your line cook actually sees.",
+      },
+      {
+        icon: Clock,
+        title: "After-hours + Sunday-closed days",
+        body: "Closed Mondays? Agent takes the catering inquiry that would have gone to your competitor. Forwards the high-value leads to your manager's cell in real-time.",
+      },
+      {
+        icon: MailCheck,
+        title: "Private-events + catering pipeline",
+        body: "Captures party size, date, dietary needs, budget range, contact info. Emails your events manager with a structured RFQ. Books a tasting visit if the agent's qualifier scores it as high-value.",
+      },
+    ],
+    scriptPreview: `"Hi, thanks for calling [Your Restaurant]! Were you hoping to make a reservation, place an order to pick up, or ask about a private event? I can take care of all three."`,
+    statValue: "Saturday 7pm",
+    statLabel:
+      "The hour your phone rings off the hook + your hostess can't get to it. Agent fields every call — books the booking, takes the takeout, sends you the events lead.",
+    primaryCta: { label: "Start 14-day free trial", href: "/signup?wedge=restaurants" },
+    secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
+    trustLine:
+      "Caller hears your restaurant's name + brand voice. We can clone your hostess's actual voice with consent — 60 seconds of sample audio.",
+    faqs: [
+      {
+        q: "Will it integrate with Resy / OpenTable / Tock?",
+        a: 'Yes — connects via the platform API to read availability and write reservations. Caller hears "I have 7pm or 8:15pm — which works?" using your real floor map, not an estimate. Free trial includes one platform; multi-platform on Pro.',
+      },
+      {
+        q: "Can it handle dietary restrictions + allergens correctly?",
+        a: "Yes. Allergens are captured as a structured field (not free-text) and flagged at the top of the kitchen ticket. The agent will refuse to make medical claims about ingredients — it confirms 'I'll note shellfish allergy and our manager will confirm before serving.' Compliance-safe.",
+      },
+      {
+        q: "What about private-event inquiries?",
+        a: 'Captures party size, date, food + bar preferences, budget range, and contact info. Auto-emails your events team with a structured RFQ. Optional: agent can offer a tasting visit if the inquiry scores above a "high-value" threshold you set.',
+      },
+      {
+        q: "How is this different from Yelp / Google booking widgets?",
+        a: "Those only capture web bookings. 70-80% of restaurant reservation traffic is still phone calls — especially for parties of 4+ and private events. Wireline answers the phone calls your widget can't catch.",
+      },
+    ],
+  },
+
+  sales: {
+    slug: "sales",
+    metaTitle: "Wireline for Sales Teams — AI SDR for Outbound + Inbound Lead Qualification",
+    metaDescription:
+      "AI sales development rep that runs outbound calling campaigns at scale, qualifies inbound leads in under 90 seconds, books meetings on your reps' calendars. Free 14-day trial.",
+    eyebrow: "For Sales + SDR Teams",
+    headline: "Your AI SDR works the list while your reps work the calls.",
+    subhead:
+      "An AI agent that calls 200 cold leads a day, qualifies the ones that pick up, and drops booked discovery calls straight into your reps' calendars — without the SDR-team payroll.",
+    pains: [
+      {
+        icon: Phone,
+        title: "Outbound calling at scale",
+        body: "Hand it a list of 1,000 prospects + your qualifier script. Agent dials, navigates gatekeepers, runs the BANT (budget/authority/need/timeline) qualifier, books the next-step meeting. Reps walk into qualified discovery calls.",
+      },
+      {
+        icon: Clock,
+        title: "Speed-to-lead under 60 seconds",
+        body: "Inbound demo request hits your form at 10:47pm. Agent calls at 10:47:30pm. Qualifies the lead, books the discovery call for your AE the next morning. Lead-to-conversation rate jumps 4-7x vs the next-day callback.",
+      },
+      {
+        icon: Calendar,
+        title: "Calendar-aware booking",
+        body: "Reads your reps' real Google/Outlook availability. Offers 2-3 specific slots. Books it. Sends calendar invites with prep materials. No back-and-forth scheduling email tennis.",
+      },
+      {
+        icon: Shield,
+        title: "TCPA-clean outbound",
+        body: "Compliance ledger logs every disclosure, opt-out, and DNC honor. State-by-state hour windows respected automatically. Never call the same number twice in 24h.",
+      },
+    ],
+    scriptPreview: `"Hi, this is Casey calling from [Your Company]. I saw you downloaded our [resource] last week — got 2 minutes to see if what we do is even a fit before I book any of your team's time?"`,
+    statValue: "200 / day",
+    statLabel:
+      "Calls one AI agent can make in a 9-hour workday. Run 5 in parallel = 1,000 dials. No bathroom breaks, no Mondays.",
+    primaryCta: { label: "Start 14-day free trial", href: "/signup?wedge=sales" },
+    secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
+    trustLine:
+      "Integrates with Salesforce, HubSpot, Pipedrive, Apollo. Outbound list management + CRM activity logging out of the box.",
+    faqs: [
+      {
+        q: "Won't prospects know it's AI?",
+        a: "Some will, some won't — the new generation of voice models pass naturally as human in 80%+ of calls. The bigger question: do prospects mind? Our data says no, as long as the conversation provides value. Agents are configured to gracefully confirm if asked directly.",
+      },
+      {
+        q: "How does it handle gatekeepers?",
+        a: 'Like a trained SDR: asks for the right person by name, offers a brief reason, asks for voicemail if blocked. The agent has a "gatekeeper navigation" mode that politely re-approaches up to 3 times before logging the lead as "gatekeeper-blocked" for your team to manually push past.',
+      },
+      {
+        q: "What about CRM logging?",
+        a: "Every call gets logged to your CRM in real time: contact, outcome (qualified / not qualified / no-answer / call-back), full transcript, recording link, BANT scores, next-step booked. Works with Salesforce, HubSpot, Pipedrive, Apollo. Custom CRMs via webhook.",
+      },
+      {
+        q: "How is this different from Apollo / Outreach AI features?",
+        a: "Those are email-first sequencers with AI assist. Wireline is voice-first: real human-sounding conversations at scale. The two complement each other — Apollo for the email side, Wireline for the dials. We integrate with both.",
       },
     ],
   },
