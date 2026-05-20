@@ -19,7 +19,6 @@ const OAuthComplete = lazy(() => import("./pages/OAuthComplete"));
 const VerticalLanding = lazy(() => import("./pages/VerticalLanding"));
 const Compare = lazy(() => import("./pages/Compare"));
 const About = lazy(() => import("./pages/About"));
-const LandingPage = lazy(() => import("./pages/LandingPage"));
 const Showcase = lazy(() => import("./pages/Showcase"));
 
 function AppContent() {
@@ -148,18 +147,12 @@ function AppContent() {
   }
 
   if (!user) {
-    // Unauthenticated home is the marketing landing page — dedicated
-    // surface, not crammed in with the auth form. AuthPortal is now
-    // the auth-only target reachable from explicit /signin or /signup
-    // CTAs, plus anyone deep-linking to a protected route falls back
-    // to AuthPortal so they can sign in then continue.
-    if (location.pathname === "/" || location.pathname === "") {
-      return (
-        <Suspense fallback={<div className="min-h-screen bg-paper" />}>
-          <LandingPage />
-        </Suspense>
-      );
-    }
+    // Unauthenticated home IS AuthPortal — the auth form on one side,
+    // the live demo-agent grid + value props on the other. Mike's
+    // call: kill the separate marketing LandingPage, the portal does
+    // both jobs (sell + sign in) on one screen. Any deep-link to a
+    // protected route also lands here so visitors sign in then
+    // continue.
     return <AuthPortal />;
   }
 

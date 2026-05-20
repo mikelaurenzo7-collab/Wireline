@@ -23,6 +23,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { PageMeta } from "../lib/page-meta";
 import IntegrationLogos from "./layout/IntegrationLogos";
 import WirelineMark from "./WirelineMark";
+import AuthPortalVoiceSamples from "./AuthPortalVoiceSamples";
 import {
   WIRELINE_CONTACT_AGENTS,
   WIRELINE_DEMO_AGENTS,
@@ -263,9 +264,8 @@ type AuthMode = "signin" | "signup" | "reset";
 export default function AuthPortal() {
   const { signIn } = useAuth();
   // Default mode matches the URL the user landed on. /signup → signup
-  // form, /signin or anything else → signin form. The LandingPage's
-  // "Start free trial" CTA points at /signup, so the form should be
-  // ready for them when they arrive.
+  // form, /signin or anything else (including "/") → signin form.
+  // AuthPortal is the public home page now, so "/" defaults to signin.
   const initialMode: AuthMode = (() => {
     if (typeof window === "undefined") return "signin";
     return window.location.pathname === "/signup" ? "signup" : "signin";
@@ -427,25 +427,31 @@ export default function AuthPortal() {
               <span className="text-ink/90">email follow-ups</span> across one fleet of AI agents —
               trained on your playbook, available 24/7, improving with every interaction.
             </p>
+            {/* Value props — honest capability statements, not fabricated
+              vanity metrics. The old "10M+ calls / $150M pipeline /
+              4.9 CSAT" trio was invented; replaced with claims that are
+              true on day one. LiveStatsTicker still shows the REAL
+              agents-online / calls-this-month counts when the platform
+              has data. */}
             <div className="flex items-center gap-5">
               <div className="flex flex-col">
-                <span className="font-display italic text-2xl text-ink">10M+</span>
+                <span className="font-display italic text-2xl text-ink">24/7</span>
                 <span className="text-[9px] uppercase tracking-[0.2em] text-muted/60">
-                  Calls Handled
+                  Always Answering
                 </span>
               </div>
               <div className="w-px h-6 bg-white/10" />
               <div className="flex flex-col">
-                <span className="font-display italic text-2xl text-ink">$150M+</span>
+                <span className="font-display italic text-2xl text-ink">&lt;10 min</span>
                 <span className="text-[9px] uppercase tracking-[0.2em] text-muted/60">
-                  Pipeline Gen
+                  Setup To First Call
                 </span>
               </div>
               <div className="w-px h-6 bg-white/10" />
               <div className="flex flex-col">
-                <span className="font-display italic text-2xl text-ink">4.9/5</span>
+                <span className="font-display italic text-2xl text-ink">Every</span>
                 <span className="text-[9px] uppercase tracking-[0.2em] text-muted/60">
-                  Avg CSAT
+                  Call Picked Up
                 </span>
               </div>
               <LiveStatsTicker />
@@ -465,25 +471,32 @@ export default function AuthPortal() {
             transition={{ delay: 0.15, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
             className="mb-6 flex-1"
           >
-            <a
-              href="tel:+16305811834"
-              className="flex items-center justify-between mb-4 bg-[#4F1E7B]/10 border border-[#4F1E7B]/30 rounded-xl p-3 hover:bg-[#4F1E7B]/20 transition-colors group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#4F1E7B] flex items-center justify-center shadow-[0_0_15px_rgba(79,30,123,0.3)]">
-                  <Phone className="w-4 h-4 text-on-brand" fill="currentColor" />
+            {/* Demo line + tap-to-play samples, side by side. Visitors
+              can either CALL the demo line or just TAP to hear what an
+              agent sounds like without dialing — lower-friction first
+              touch. */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+              <a
+                href="tel:+16305811834"
+                className="flex items-center justify-between bg-[#4F1E7B]/10 border border-[#4F1E7B]/30 rounded-xl p-3 hover:bg-[#4F1E7B]/20 transition-colors group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-[#4F1E7B] flex items-center justify-center shadow-[0_0_15px_rgba(79,30,123,0.3)] shrink-0">
+                    <Phone className="w-4 h-4 text-on-brand" fill="currentColor" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-[#4F1E7B] font-medium leading-tight">
+                      Call our demo line
+                    </p>
+                    <p className="font-display italic text-xl text-ink leading-tight mt-0.5">
+                      (630) 581-1834
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-[#4F1E7B] font-medium leading-tight">
-                    Call our demo line now
-                  </p>
-                  <p className="font-display italic text-xl text-ink leading-tight mt-0.5">
-                    (630) 581-1834
-                  </p>
-                </div>
-              </div>
-              <ArrowRight className="w-5 h-5 text-[#4F1E7B] group-hover:translate-x-1 transition-transform" />
-            </a>
+                <ArrowRight className="w-5 h-5 text-[#4F1E7B] group-hover:translate-x-1 transition-transform shrink-0" />
+              </a>
+              <AuthPortalVoiceSamples />
+            </div>
 
             <div className="flex items-center gap-2 mb-3">
               <span className="text-[9px] uppercase tracking-[0.4em] text-[#4F1E7B] font-medium">
@@ -528,7 +541,7 @@ export default function AuthPortal() {
               <div className="relative w-2 h-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 absolute inset-0 dot-online" />
               </div>
-              <span className="text-[9px] uppercase tracking-[0.38em]">99.9% Uptime</span>
+              <span className="text-[9px] uppercase tracking-[0.38em]">Carrier-Grade Infra</span>
             </div>
             <div className="h-3 w-px bg-white/10" />
             <Link

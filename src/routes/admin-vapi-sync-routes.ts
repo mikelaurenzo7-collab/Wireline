@@ -372,7 +372,7 @@ router.post(
       );
 
       log.info("Vapi knowledge sync completed", {
-        userId: req.user.id,
+        userId: req.user?.id || "migration-token",
         counts,
       });
 
