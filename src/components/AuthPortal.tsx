@@ -368,9 +368,9 @@ export default function AuthPortal() {
             : "Sign in to your Wireline operator console to manage your AI voice agents, call logs, and outbound campaigns."
         }
       />
-      <div className="h-screen flex relative overflow-hidden bg-[#FAF9F5]">
+      <div className="h-screen flex relative overflow-hidden bg-paper">
         {/* Global parchment backdrop matching Claude.ai */}
-        <div className="pointer-events-none fixed inset-0 z-0 bg-[#FAF9F5]" />
+        <div className="pointer-events-none fixed inset-0 z-0 bg-paper" />
         <div className="scanline" />
 
         {/* ── LEFT PANEL — brand showcase ───────────────────────────────────────

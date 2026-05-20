@@ -23,7 +23,7 @@
   --color-brand-2: #4F1E7B;        /* deprecated â€” alias of --color-brand */
   --color-brand-3: #4F1E7B;        /* deprecated â€” alias of --color-brand */
   --color-ink: #1C1917;            /* Warm near-black text */
-  --color-paper: #FAF9F5;          /* Claude signature warm paper base */
+  --color-paper: #EFE9DC;          /* warm tan / mocha off-white — consistent base */
   --color-muted: #7C7469;          /* Warm gray muted text */
   /* Pure white for text/icons rendered ON solid brand-color surfaces
    * (purple buttons, gradient pills, etc.). We can't use text-white
@@ -224,8 +224,8 @@
 @utility brutal-card {
   @apply relative overflow-hidden p-12 rounded-3xl border border-black/8;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.80), rgba(255, 255, 255, 0.55)),
-    rgba(245, 240, 232, 0.75);
+    linear-gradient(180deg, rgba(247, 242, 234, 0.80), rgba(245, 239, 229, 0.55)),
+    rgba(239, 233, 220, 0.75);
   backdrop-filter: blur(32px) saturate(140%);
   -webkit-backdrop-filter: blur(32px) saturate(140%);
   box-shadow:
@@ -337,13 +337,17 @@
  * white rgba(255,255,255,X). On signed-in pages dominated by glass
  * cards, that pushed the WHOLE viewport toward white and broke the
  * warm-terracotta brand feel that AuthPortal nails. Switched the
- * gradient stops to derive from --color-paper (#FAF9F5) so every
+ * gradient stops to derive from --color-paper (#EFE9DC) so every
  * glass surface inherits the same warm cream — auth'd console and
  * AuthPortal now read as the same brand canvas. */
+/* Glass panels derive from the warm-tan paper base (#EFE9DC → rgb
+ * 239,233,220) but sit a touch lighter so cards read as raised. Keep
+ * these in lockstep with --color-paper so the whole app stays one
+ * consistent warm tone — no white-vs-purple drift. */
 .glass {
   background:
-    linear-gradient(180deg, rgba(250, 249, 245, 0.78), rgba(250, 249, 245, 0.58)),
-    rgba(245, 240, 232, 0.6);
+    linear-gradient(180deg, rgba(246, 241, 232, 0.80), rgba(244, 238, 228, 0.62)),
+    rgba(239, 233, 220, 0.6);
   backdrop-filter: blur(16px) saturate(140%);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
   border: 1px solid rgba(0, 0, 0, 0.07);
@@ -351,8 +355,8 @@
 
 .glass-strong {
   background:
-    linear-gradient(180deg, rgba(250, 249, 245, 0.92), rgba(250, 249, 245, 0.78)),
-    rgba(245, 240, 232, 0.9);
+    linear-gradient(180deg, rgba(247, 242, 234, 0.94), rgba(245, 240, 230, 0.82)),
+    rgba(239, 233, 220, 0.9);
   backdrop-filter: blur(24px) saturate(160%);
   -webkit-backdrop-filter: blur(24px) saturate(160%);
   border: 1px solid rgba(0, 0, 0, 0.08);
@@ -496,10 +500,10 @@ select:focus {
 
 /* Elevated glass â€” one step above glass-strong, for modals / popovers */
 .glass-elevated {
-  /* Same warm-paper shift as .glass + .glass-strong (Mike feedback). */
+  /* Same warm-tan paper base as .glass + .glass-strong. */
   background:
-    linear-gradient(180deg, rgba(250, 249, 245, 0.97), rgba(250, 249, 245, 0.86)),
-    rgba(245, 240, 232, 0.98);
+    linear-gradient(180deg, rgba(248, 243, 235, 0.97), rgba(246, 241, 231, 0.86)),
+    rgba(239, 233, 220, 0.98);
   backdrop-filter: blur(56px) saturate(180%);
   -webkit-backdrop-filter: blur(56px) saturate(180%);
   border: 1px solid rgba(0, 0, 0, 0.10);

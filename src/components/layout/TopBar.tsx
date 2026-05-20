@@ -91,8 +91,8 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
     //             the mobile drawer rendered cream-on-cream and the nav was
     //             invisible (only the active item showed through).
     const isDrawer = variant === "drawer";
-    const activeBg = isDrawer ? "#4F1E7B" : "#FAF9F5";
-    const activeTextColor = isDrawer ? "#FAF9F5" : "#3B154C";
+    const activeBg = isDrawer ? "#4F1E7B" : "#EFE9DC";
+    const activeTextColor = isDrawer ? "#EFE9DC" : "#3B154C";
     return (
       <Link
         key={item.label}
@@ -111,7 +111,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
               : "text-ink/70 hover:text-ink hover:bg-black/5"
             : active
               ? "shadow-md shadow-[#3B154C]/10"
-              : "text-[#FAF9F5]/75 hover:text-[#FAF9F5] hover:bg-white/8 hover:shadow-sm",
+              : "text-[#EFE9DC]/75 hover:text-[#EFE9DC] hover:bg-white/8 hover:shadow-sm",
         )}
         style={active ? { color: activeTextColor } : undefined}
       >
@@ -142,7 +142,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
                 : "text-ink/55 group-hover:text-ink"
               : active
                 ? ""
-                : "text-[#FAF9F5]/60 group-hover:text-[#FAF9F5]",
+                : "text-[#EFE9DC]/60 group-hover:text-[#EFE9DC]",
           )}
           style={active ? { color: activeTextColor } : undefined}
           strokeWidth={active ? 2.5 : 1.75}
@@ -183,7 +183,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
     <>
       <header
         aria-label="Main navigation"
-        className="shrink-0 sticky top-0 z-50 bg-[#3B154C] border-b border-[#FAF9F5]/10 text-on-brand"
+        className="shrink-0 sticky top-0 z-50 bg-[#3B154C] border-b border-[#EFE9DC]/10 text-on-brand"
         style={{
           boxShadow: "0 8px 24px -16px rgba(79, 30, 123, 0.15)",
           paddingTop: "max(0px, env(safe-area-inset-top, 0))",
@@ -202,7 +202,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
               transition={{ type: "spring", stiffness: 400, damping: 20 }}
               className="relative w-7 h-7 rounded-xl flex items-center justify-center overflow-hidden shrink-0"
               style={{
-                background: "#FAF9F5",
+                background: "#EFE9DC",
                 boxShadow:
                   "0 4px 14px -4px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.22) inset",
               }}
@@ -210,7 +210,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
               <WirelineMark className="w-4 h-4 text-[#3B154C] relative z-10" strokeWidth={130} />
               <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent" />
             </motion.div>
-            <span className="brand-wordmark text-[16px] leading-none hidden sm:inline !text-[#FAF9F5] !filter-none">
+            <span className="brand-wordmark text-[16px] leading-none hidden sm:inline !text-[#EFE9DC] !filter-none">
               {branding.brand_name.toUpperCase()}
             </span>
           </Link>
@@ -221,7 +221,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
             {NAV_GROUPS.map((group, gIdx) => (
               <React.Fragment key={group.label}>
                 {gIdx > 0 && (
-                  <span aria-hidden="true" className="mx-1 h-5 w-px bg-white/12 shrink-0" />
+                  <span aria-hidden="true" className="mx-0.5 h-4 w-px bg-white/10 shrink-0" />
                 )}
                 {group.items
                   .filter((item) => !item.ownerOnly || user?.is_owner === true)
@@ -237,12 +237,12 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={onShowShortcuts}
-              className="hidden md:flex items-center gap-1.5 h-7 px-2 rounded-lg text-[#FAF9F5]/65 hover:text-[#FAF9F5] hover:bg-white/10 transition-colors"
+              className="hidden md:flex items-center gap-1.5 h-7 px-2 rounded-lg text-[#EFE9DC]/65 hover:text-[#EFE9DC] hover:bg-white/10 transition-colors"
               aria-label="Show keyboard shortcuts"
               title="Keyboard shortcuts"
             >
               <Keyboard className="w-4 h-4" />
-              <kbd className="text-[9px] bg-white/10 border border-white/15 px-1.5 py-0.5 rounded font-mono text-[#FAF9F5]/70">
+              <kbd className="text-[9px] bg-white/10 border border-white/15 px-1.5 py-0.5 rounded font-mono text-[#EFE9DC]/70">
                 ?
               </kbd>
             </button>
@@ -263,14 +263,14 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
               >
                 <div
                   className="w-6 h-6 rounded-full flex items-center justify-center text-[#3B154C] font-medium text-[10px]"
-                  style={{ background: "#FAF9F5" }}
+                  style={{ background: "#EFE9DC" }}
                   aria-hidden="true"
                 >
                   {user?.email?.slice(0, 1).toUpperCase() ?? "?"}
                 </div>
                 <ChevronDown
                   className={cn(
-                    "w-3 h-3 text-[#FAF9F5]/60 transition-transform",
+                    "w-3 h-3 text-[#EFE9DC]/60 transition-transform",
                     userMenuOpen && "rotate-180",
                   )}
                 />
@@ -341,7 +341,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
               className="lg:hidden w-10 h-10 rounded-lg flex items-center justify-center hover:bg-white/5 active:scale-95 transition-all"
               aria-label="Open navigation"
             >
-              <Menu className="w-5 h-5 text-[#FAF9F5]" />
+              <Menu className="w-5 h-5 text-[#EFE9DC]" />
             </button>
           </div>
         </div>
@@ -387,7 +387,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
                       background: "#4F1E7B",
                     }}
                   >
-                    <WirelineMark className="w-4 h-4 text-[#FAF9F5]" strokeWidth={130} />
+                    <WirelineMark className="w-4 h-4 text-[#EFE9DC]" strokeWidth={130} />
                   </div>
                   <span className="brand-wordmark text-[16px] leading-none">
                     {branding.brand_name.toUpperCase()}
