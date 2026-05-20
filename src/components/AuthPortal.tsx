@@ -472,13 +472,14 @@ export default function AuthPortal() {
             </div>
           </motion.div>
 
-          {/* All 10 demo agents in a single dense grid. Top 4 are the LIVE
-            Wireline customer-service team (sales, support, tech, demo
-            booking). Bottom 6 are vertical role-play demos (medical
-            intake, real-estate front desk, bill negotiator, etc.) that
-            answer Wireline questions too. Two labelled sub-sections so
-            visitors can tell which line will actually reach our team
-            vs. which line is a "watch the platform work" demo. */}
+          {/* All 10 agents in a single dense grid. The first 3 are the
+            LIVE Wireline customer-service team — full generalists that
+            run our own phone lines. The remaining 7 are vertical
+            role-play demos (medical intake, real-estate front desk,
+            insurance FNOL, etc.) that also answer Wireline questions.
+            Two labelled sub-sections so visitors can tell which line
+            reaches our team vs. which is a "watch the platform work"
+            demo. */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -486,8 +487,8 @@ export default function AuthPortal() {
             className="mb-6 flex-1"
           >
             {/* Call any agent — numbers shown as text so visitors can
-              dial from their phone. The 6 Wireline Team agents handle
-              real support; the 4 vertical agents are use-case demos. */}
+              dial from their phone. The Wireline Team agents handle
+              real support; the vertical agents are use-case demos. */}
             <div className="flex items-center gap-2 mb-2.5">
               <span className="text-[9px] uppercase tracking-[0.4em] text-[#4F1E7B] font-medium">
                 Wireline Team — call us
@@ -495,8 +496,8 @@ export default function AuthPortal() {
               <span className="flex-1 h-px bg-[#4F1E7B]/20" />
             </div>
             <p className="text-[11px] text-muted/70 mb-3 leading-relaxed">
-              Six AI agents run Wireline's own phone lines. Dial any number below to hear the
-              product live.
+              {WIRELINE_CONTACT_AGENTS.length === 3 ? "Three" : WIRELINE_CONTACT_AGENTS.length} AI
+              agents run Wireline's own phone lines. Dial any number below to hear the product live.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
               {WIRELINE_CONTACT_AGENTS.map((a) => (
@@ -581,7 +582,7 @@ export default function AuthPortal() {
               <span className="text-ink">customer conversation</span>
             </h2>
             <p className="text-[12px] text-muted/80 leading-relaxed mb-5">
-              Tap any number below to hear a Wireline agent live — no signup needed.
+              Dial any number below to hear a Wireline agent live — no signup needed.
             </p>
 
             {/* Wireline Team — the 6 real customer-service lines. */}

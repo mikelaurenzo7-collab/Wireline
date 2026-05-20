@@ -26,6 +26,10 @@ export function buildConnectSrcs(isDev: boolean = false): string {
     "https://login.microsoftonline.com",
     "https://graph.microsoft.com",
     "https://api.stripe.com",
+    // Plausible analytics beacons — the script loaded from plausible.io
+    // (see index.html) POSTs pageview/event data back to this origin.
+    // Without it every page logs a blocked-request CSP error.
+    "https://plausible.io",
   ];
   if (isDev) {
     // Vite HMR opens a WebSocket on a port it picks at startup. Allow the
@@ -52,11 +56,13 @@ export function buildCSP(isDev: boolean, nonce?: string, connectSrcs = "'self'")
   // In dev keep 'unsafe-inline' + 'unsafe-eval' for Vite HMR.
   // In prod, OAuth callback pages receive a per-request nonce so their one
   // inline postMessage script is allowed without 'unsafe-inline' being global.
+  // plausible.io is allowlisted in both modes so the analytics script in
+  // index.html loads instead of being blocked with a CSP console error.
   const scriptSrc = isDev
-    ? "'self' 'unsafe-inline' 'unsafe-eval'"
+    ? "'self' 'unsafe-inline' 'unsafe-eval' https://plausible.io"
     : nonce
-      ? `'self' 'nonce-${nonce}'`
-      : "'self'";
+      ? `'self' 'nonce-${nonce}' https://plausible.io`
+      : "'self' https://plausible.io";
 
   return [
     `default-src 'self'`,
