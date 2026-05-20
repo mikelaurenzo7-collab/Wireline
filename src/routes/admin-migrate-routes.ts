@@ -169,7 +169,7 @@ router.post(
         ON wireline_call_queues (vapi_number_id);
       `);
 
-      log.info("Master plan migration completed", { userId: req.user.id });
+      log.info("Master plan migration completed", { userId: req.user?.id || "migration-token" });
       return res.json({
         ok: true,
         message: "SMS + agent teams + call queues tables ensured.",
@@ -275,7 +275,9 @@ router.post(
         ON wireline_email_verification_tokens (expires_at);
       `);
 
-      log.info("Auth/agent extras migration completed", { userId: req.user.id });
+      log.info("Auth/agent extras migration completed", {
+        userId: req.user?.id || "migration-token",
+      });
       return res.json({
         ok: true,
         message:
@@ -387,7 +389,9 @@ router.post(
         ON wireline_supervisor_subscriptions (user_id);
       `);
 
-      log.info("Competitive batch migration completed", { userId: req.user.id });
+      log.info("Competitive batch migration completed", {
+        userId: req.user?.id || "migration-token",
+      });
       return res.json({
         ok: true,
         message:
@@ -466,7 +470,7 @@ router.post(
       `);
 
       log.info("Audit3 migration completed", {
-        userId: req.user.id,
+        userId: req.user?.id || "migration-token",
         backfilled: {
           call_logs: (r1 as any).rowCount ?? 0,
           outbound_leads: (r2 as any).rowCount ?? 0,
@@ -573,7 +577,7 @@ router.post(
         ALTER TABLE wireline_settings
           ADD COLUMN IF NOT EXISTS extra_agents INTEGER NOT NULL DEFAULT 0;
       `);
-      log.info("migrate-extra-agents completed", { userId: req.user.id });
+      log.info("migrate-extra-agents completed", { userId: req.user?.id || "migration-token" });
       res.json({ ok: true });
     } catch (err: any) {
       log.error("migrate-extra-agents failed", { error: err?.message });
@@ -605,7 +609,7 @@ router.post(
         CREATE INDEX IF NOT EXISTS idx_cloned_voices_user_created
           ON wireline_cloned_voices (user_id, created_at DESC);
       `);
-      log.info("migrate-cloned-voices completed", { userId: req.user.id });
+      log.info("migrate-cloned-voices completed", { userId: req.user?.id || "migration-token" });
       res.json({ ok: true });
     } catch (err: any) {
       log.error("migrate-cloned-voices failed", { error: err?.message });
@@ -636,7 +640,7 @@ router.post(
         CREATE INDEX IF NOT EXISTS idx_agent_conv_user_agent
           ON wireline_agent_conversation_messages (user_id, agent_id, created_at DESC);
       `);
-      log.info("migrate-agent-workspace completed", { userId: req.user.id });
+      log.info("migrate-agent-workspace completed", { userId: req.user?.id || "migration-token" });
       res.json({ ok: true });
     } catch (err: any) {
       log.error("migrate-agent-workspace failed", { error: err?.message });
