@@ -17,6 +17,7 @@ import { useBranding } from "../contexts/BrandingContext";
 import { BrandingPanel } from "./admin/BrandingPanel";
 import { CarrierPanel } from "./admin/CarrierPanel";
 import VoiceLibraryPanel from "./admin/VoiceLibraryPanel";
+import PronunciationDictionaryPanel from "./PronunciationDictionaryPanel";
 import { SubscriptionPanel } from "./admin/SubscriptionPanel";
 import { SystemPanel } from "./admin/SystemPanel";
 import { TeamPanel } from "./admin/TeamPanel";
@@ -85,6 +86,7 @@ export default function AdminSettings() {
     | "branding"
     | "carrier"
     | "voices"
+    | "pronunciation"
     | "subscription"
     | "team"
     | "flywheel"
@@ -95,6 +97,7 @@ export default function AdminSettings() {
     "branding",
     "carrier",
     "voices",
+    "pronunciation",
     "subscription",
     "team",
     "flywheel",
@@ -401,6 +404,7 @@ export default function AdminSettings() {
           "branding",
           "carrier",
           "voices",
+          "pronunciation",
           "subscription",
           "team",
           "flywheel",
@@ -426,17 +430,19 @@ export default function AdminSettings() {
               ? "Carrier"
               : t === "voices"
                 ? "Voices"
-                : t === "subscription"
-                  ? "Billing"
-                  : t === "team"
-                    ? "Team"
-                    : t === "flywheel"
-                      ? "Growth"
-                      : t === "system"
-                        ? "System"
-                        : t === "quality"
-                          ? "Quality"
-                          : "Activity"}
+                : t === "pronunciation"
+                  ? "Pronunciation"
+                  : t === "subscription"
+                    ? "Billing"
+                    : t === "team"
+                      ? "Team"
+                      : t === "flywheel"
+                        ? "Growth"
+                        : t === "system"
+                          ? "System"
+                          : t === "quality"
+                            ? "Quality"
+                            : "Activity"}
         </button>
       ))}
     </div>
@@ -522,6 +528,18 @@ export default function AdminSettings() {
                       className="h-full"
                     >
                       <VoiceLibraryPanel />
+                    </motion.div>
+                  )}
+
+                  {activeTab === "pronunciation" && (
+                    <motion.div
+                      key="pronunciation"
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="h-full"
+                    >
+                      <PronunciationDictionaryPanel />
                     </motion.div>
                   )}
 
