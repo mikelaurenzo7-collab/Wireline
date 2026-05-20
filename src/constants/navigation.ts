@@ -10,6 +10,7 @@ import {
   LayoutGrid,
   LifeBuoy,
   Kanban,
+  Crown,
 } from "lucide-react";
 
 export type NavItem = {
@@ -55,6 +56,7 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
         dataTour: "training",
         matches: ["/knowledge"],
       },
+      { label: "Founder", path: "/founder", icon: Crown },
     ],
   },
   {

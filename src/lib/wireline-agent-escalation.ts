@@ -55,11 +55,22 @@ export interface ConversationState {
    * if any. NULL when no refund has been discussed.
    */
   requestedRefundAmount: number | null;
-  /** Persona being used for the call ("reception" | "sales" | "support"). */
+  /** Persona being used for the call. */
   persona: WirelinePersonaId;
 }
 
-export type WirelinePersonaId = "reception" | "sales" | "support";
+/**
+ * The 6 Wireline staff roles. These are the founder's "employees" —
+ * the agents that answer Wireline's own lines + that Mike manages
+ * from the Founder's Dashboard.
+ */
+export type WirelinePersonaId =
+  | "reception"
+  | "sales"
+  | "support"
+  | "technical"
+  | "onboarding"
+  | "success";
 
 export type EscalationAction =
   | "transfer_to_owner"

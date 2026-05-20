@@ -27,6 +27,7 @@ const AuditLog = lazy(() => import("../components/AuditLog"));
 const CommandCenter = lazy(() => import("../pages/CommandCenter"));
 const HelpCenter = lazy(() => import("../components/HelpCenter"));
 const Pipeline = lazy(() => import("../components/Pipeline"));
+const FounderDashboard = lazy(() => import("../components/FounderDashboard"));
 
 export default function AppRoutes() {
   return (
@@ -62,6 +63,16 @@ export default function AppRoutes() {
               <PageTransition>
                 <ErrorBoundary>
                   <TriageInbox />
+                </ErrorBoundary>
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/founder"
+            element={
+              <PageTransition>
+                <ErrorBoundary>
+                  <FounderDashboard />
                 </ErrorBoundary>
               </PageTransition>
             }
