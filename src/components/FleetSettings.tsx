@@ -2161,7 +2161,7 @@ export default function FleetSettings() {
                             <header className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-white/8">
                               <div>
                                 <h3 className="font-display italic lowercase text-lg text-ink leading-none">
-                                  neural grounding
+                                  knowledge base
                                 </h3>
                                 <p className="text-[10px] uppercase tracking-[0.3em] text-muted/70 mt-0.5">
                                   Knowledge base

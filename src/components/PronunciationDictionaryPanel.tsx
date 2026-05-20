@@ -210,8 +210,8 @@ export default function PronunciationDictionaryPanel() {
         <div className="rounded-xl border border-amber-500/40 bg-amber-500/8 p-3 flex items-start gap-2.5">
           <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
           <p className="text-[12px] text-amber-700 leading-relaxed">
-            ElevenLabs isn't configured. The owner needs to set ELEVENLABS_API_KEY in environment
-            variables before dictionaries sync to playback.
+            Voice playback isn't connected yet. Pronunciation dictionaries will sync to your agents'
+            voices once it's set up.
           </p>
         </div>
       )}

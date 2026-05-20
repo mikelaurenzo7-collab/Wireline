@@ -9,7 +9,6 @@ import {
   Bot,
   ChevronDown,
   RotateCw,
-  Terminal,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { authFetch } from "../lib/api";
@@ -54,7 +53,6 @@ export default function Integrations() {
   const [accounts, setAccounts] = useState<any[]>([]);
   const [agents, setAgents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showTechnical, setShowTechnical] = useState(false);
   const [syncing, setSyncing] = useState(false);
   // Subscription tier — drives the plan-gated UI on each connector card.
   // Falls back to "personal" so locked cards render even before the
@@ -389,85 +387,6 @@ export default function Integrations() {
               </div>
             )}
           </Panel>
-
-          {/* OAuth diagnostics */}
-          <div className="shrink-0">
-            <button
-              onClick={() => setShowTechnical(!showTechnical)}
-              className="text-[10px] uppercase tracking-[0.4em] text-muted/70 hover:text-ink transition-colors flex items-center gap-2"
-            >
-              <Terminal className="w-3 h-3" />
-              {showTechnical ? "Hide" : "Show"} OAuth diagnostics
-              <ChevronDown
-                className={`w-3 h-3 transition-transform ${showTechnical ? "rotate-180" : ""}`}
-              />
-            </button>
-
-            <AnimatePresence>
-              {showTechnical && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="mt-3 overflow-hidden"
-                >
-                  <div className="rounded-2xl glass border border-white/8 p-3 space-y-3">
-                    {/* Google */}
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Webhook className="w-3.5 h-3.5 text-brand" />
-                        <h4 className="font-display italic lowercase text-sm text-ink">
-                          google oauth redirect uri
-                        </h4>
-                      </div>
-                      <code className="block w-full px-3 py-2 rounded-lg bg-black/40 border border-white/8 font-mono text-[11px] text-brand select-all break-all">
-                        {window.location.origin}/api/oauth/google/callback
-                      </code>
-                      <p className="text-[10px] text-muted/80 leading-relaxed">
-                        Add this to your Google Cloud Console → OAuth credentials → Authorized
-                        redirect URIs.
-                      </p>
-                    </div>
-
-                    {/* Microsoft */}
-                    <div className="space-y-2 pt-2 border-t border-white/8">
-                      <div className="flex items-center gap-2">
-                        <Webhook className="w-3.5 h-3.5 text-blue-600" />
-                        <h4 className="font-display italic lowercase text-sm text-ink">
-                          microsoft oauth redirect uri
-                        </h4>
-                      </div>
-                      <code className="block w-full px-3 py-2 rounded-lg bg-black/40 border border-black/10 font-mono text-[11px] text-blue-600 select-all break-all">
-                        {window.location.origin}/api/oauth/microsoft/callback
-                      </code>
-                      <p className="text-[10px] text-muted/80 leading-relaxed">
-                        Add this to Azure portal → App registrations → Authentication → Redirect
-                        URIs.
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 pt-2 border-t border-white/8">
-                      {[
-                        { label: "Encryption", value: "Bearer tokens over TLS 1.2+" },
-                        { label: "Rotation", value: "Auto-refresh before expiry" },
-                        { label: "Scopes", value: "read · send · modify" },
-                      ].map((item) => (
-                        <div
-                          key={item.label}
-                          className="rounded-lg glass border border-white/8 p-2.5"
-                        >
-                          <p className="text-[9px] uppercase tracking-[0.3em] text-brand mb-1">
-                            {item.label}
-                          </p>
-                          <p className="text-[10px] text-muted/80">{item.value}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
 
           {/* CRM & messaging — HubSpot, Salesforce, Slack — surfaced here
               alongside email so operators find every external connector in

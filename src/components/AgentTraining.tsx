@@ -467,7 +467,7 @@ export default function AgentTraining() {
                     </div>
                     <div>
                       <h3 className="font-display italic lowercase text-xl text-ink">
-                        neural identity
+                        personality
                       </h3>
                       <p className="text-[10px] uppercase tracking-[0.3em] text-muted/70">
                         Base behavioral heuristics and tone
@@ -857,11 +857,10 @@ export default function AgentTraining() {
                 </div>
                 <div>
                   <h2 className="font-display italic lowercase text-4xl text-ink mb-2">
-                    mission sandbox
+                    test call
                   </h2>
                   <p className="text-muted/70 text-sm leading-relaxed max-w-md mx-auto">
-                    Validate neural directives and engagement patterns in a zero-risk isolated
-                    environment.
+                    Test how your agent responds in a safe practice run before it takes real calls.
                   </p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
