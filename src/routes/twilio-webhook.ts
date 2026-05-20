@@ -310,4 +310,65 @@ router.post("/api/twilio-webhook/voicemail-complete", (req: Request, res: Respon
     .send(`<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>`);
 });
 
+/**
+ * SINGING RECEPTIONIST PRE-ROLL (Fun Demo)
+ *
+ * Twilio Voice webhook that plays the pre-baked ElevenLabs Music
+ * jingle (Mira's intro), then bridges the call to the Vapi-routed
+ * receptionist assistant. Wire this URL as the Voice webhook on the
+ * Twilio number that backs the showcase demo:
+ *   POST https://trywireline.com/api/twilio-webhook/singing-receptionist
+ *
+ * Why this layer exists:
+ *   Vapi's `firstMessage` is text-only — it can't play an MP3 before
+ *   the LLM starts speaking. To get a pre-roll jingle on a real
+ *   inbound call, we have to intercept at the carrier layer (Twilio)
+ *   with TwiML <Play>, then bridge the audio to Vapi via SIP.
+ *
+ * Configuration:
+ *   1. `node scripts/generate-jingle.mjs` writes the MP3 to
+ *      /public/sounds/wireline-jingle.mp3 (served at
+ *      /sounds/wireline-jingle.mp3 by Vite's static handler).
+ *      Or POST /api/admin/generate-jingle if you can't run it locally.
+ *   2. SINGING_VAPI_SIP_URI env var holds the Vapi SIP endpoint for
+ *      the showcase assistant (Vapi Dashboard → Phone Numbers → SIP
+ *      URI). Format: sip:<assistant-id>@sip.vapi.ai
+ *   3. In Twilio, set the Voice URL on the Singing Receptionist
+ *      number to POST this endpoint.
+ *
+ * If SINGING_VAPI_SIP_URI is unset (dev or pre-wire), we fall back
+ * to a graceful spoken message instead of leaving the caller in
+ * silence — Twilio numbers are real money + real customers.
+ */
+router.post("/api/twilio-webhook/singing-receptionist", (req: Request, res: Response) => {
+  const from = (req.body?.From as string | undefined) || "";
+  log.info("Singing receptionist demo line hit", { from: from.slice(0, 16) });
+
+  res.setHeader("Content-Type", "text/xml");
+
+  // Absolute URL for Twilio <Play> — Twilio's media fetcher needs a
+  // public origin. Falls back to the prod host when APP_URL isn't set.
+  const appBaseUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
+  const jingleUrl = `${appBaseUrl}/sounds/wireline-jingle.mp3`;
+  const sipUri = process.env.SINGING_VAPI_SIP_URI || "";
+
+  let twiml = `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n`;
+  twiml += `  <Play>${jingleUrl}</Play>\n`;
+  if (sipUri) {
+    // Bridge to Vapi via SIP. answerOnBridge defers Twilio's billing
+    // start until Vapi actually answers, so the caller isn't billed for
+    // the jingle-only window if Vapi's down. Caller hears:
+    //   jingle → Mira's "Haha sorry about that!" → conversation.
+    twiml += `  <Dial answerOnBridge="true"><Sip>${sipUri}</Sip></Dial>\n`;
+  } else {
+    // Dev / unconfigured fallback. Lets a curl smoke-test the route
+    // return clean TwiML even before Vapi is wired up.
+    twiml += `  <Say voice="Polly.Joanna-Neural">Haha, sorry about that. We like to have fun at Wireline sometimes. To finish setting up this demo, configure the SINGING_VAPI_SIP_URI environment variable. Goodbye.</Say>\n`;
+    twiml += `  <Hangup/>\n`;
+  }
+  twiml += `</Response>`;
+
+  return res.status(200).send(twiml);
+});
+
 export default router;

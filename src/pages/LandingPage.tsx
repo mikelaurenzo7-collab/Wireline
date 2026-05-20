@@ -40,6 +40,7 @@ import { PageMeta } from "../lib/page-meta";
 import WirelineMark from "../components/WirelineMark";
 import IntegrationLogos from "../components/layout/IntegrationLogos";
 import { WIRELINE_CONTACT_AGENTS, WIRELINE_DEMO_AGENTS } from "../data/contact-agents";
+import { SHOWCASE_AGENTS } from "../data/showcase-agents";
 
 const FEATURE_PILLARS = [
   {
@@ -470,6 +471,45 @@ export default function LandingPage() {
           would hear. The first four are our internal CS team; the next six are vertical role-plays
           so you can hear what the platform sounds like for your industry.
         </p>
+
+        {/*
+          Singing Receptionist callout — the playable fun demo. Sits
+          above the call-now grid because it's the one persona prospects
+          can audition without picking up the phone, and the surprise-
+          and-delight moment makes it the strongest "show, don't tell"
+          we have. Links to /showcase for the full in-browser player.
+        */}
+        {SHOWCASE_AGENTS[0] ? (
+          <Link
+            to="/showcase"
+            className="block mb-6 rounded-2xl glass border border-brand/30 p-5 hover:border-brand/60 hover:bg-white/4 transition-all group"
+          >
+            <div className="flex items-start gap-3">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: SHOWCASE_AGENTS[0].tint }}
+              >
+                <Sparkles className="w-4 h-4 text-on-brand" strokeWidth={2.5} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <p className="font-medium text-sm text-ink">{SHOWCASE_AGENTS[0].name}</p>
+                  <span className="text-[10px] uppercase tracking-[0.3em] text-brand/80 shrink-0">
+                    Fun demo
+                  </span>
+                </div>
+                <p className="text-[12px] text-muted/80 leading-snug mt-1">
+                  {SHOWCASE_AGENTS[0].tagline}{" "}
+                  <span className="text-brand inline-flex items-center gap-1">
+                    Press play on /showcase
+                    <ArrowRight className="w-3 h-3" />
+                  </span>
+                </p>
+              </div>
+            </div>
+          </Link>
+        ) : null}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {[...WIRELINE_CONTACT_AGENTS.slice(0, 4), ...WIRELINE_DEMO_AGENTS.slice(0, 6)].map(
             (agent) => (
