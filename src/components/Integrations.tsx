@@ -79,7 +79,15 @@ export default function Integrations() {
   }, []);
 
   const openOAuthPopup = (url: string) => {
-    const win = window.open(url, "oauth_popup", "width=600,height=700");
+    const width = Math.min(600, window.innerWidth * 0.9);
+    const height = Math.min(700, window.innerHeight * 0.8);
+    const left = (window.innerWidth - width) / 2;
+    const top = (window.innerHeight - height) / 2;
+    const win = window.open(
+      url,
+      "oauth_popup",
+      `width=${width},height=${height},left=${left},top=${top}`
+    );
     if (!win) toastWarning("Popup blocked", "Allow popups for this site to connect your account.");
   };
 

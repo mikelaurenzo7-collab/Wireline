@@ -531,7 +531,7 @@ function HeatmapView({ days }: { days: number }) {
           Calls by Hour × Weekday · {data.window_days}d
         </div>
         <div className="overflow-x-auto scrollbar-hide">
-          <table className="w-full min-w-[700px]">
+          <table className="w-full md:min-w-[700px]">
             <thead>
               <tr>
                 <th className="text-[9px] uppercase tracking-[0.3em] text-muted text-left pb-2 font-normal w-8"></th>

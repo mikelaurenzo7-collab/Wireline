@@ -81,7 +81,9 @@ export default function PageShell({
 
       {/* Tab strip */}
       {tabs && tabs.length > 0 && (
-        <div className="shrink-0 flex items-center gap-1 mb-2 overflow-x-auto scrollbar-hide">
+        <div className="shrink-0 flex items-center gap-1 mb-2 overflow-x-auto scrollbar-hide relative">
+          {/* Gradient fade indicator on mobile */}
+          <div className="md:hidden absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-paper to-transparent pointer-events-none z-10" />
           <div className="flex items-center gap-0.5 p-0.5 rounded-xl glass border border-black/8">
             {tabs.map((tab) => {
               const Icon = tab.icon;

@@ -92,7 +92,7 @@ export default function SupervisorCockpit() {
         </div>
       }
     >
-      <div className="h-full grid grid-cols-1 lg:grid-cols-3 gap-3 min-h-0">
+      <div className="h-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 min-h-0">
         {/* Live calls — biggest column */}
         <div className="lg:col-span-2">
           <Panel title="Active Calls" hint={`${calls.length} on the floor`} icon={Radio} scroll>

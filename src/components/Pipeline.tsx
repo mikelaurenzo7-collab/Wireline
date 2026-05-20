@@ -131,7 +131,7 @@ export default function Pipeline() {
                 // Still scrolls horizontally on narrower laptops via
                 // the parent overflow-x-auto, just with much less
                 // chance of triggering it on the operator's main viewport.
-                className="w-full md:min-w-[180px] md:flex-1 md:snap-start flex flex-col md:h-full max-h-80 md:max-h-none"
+                className="w-full md:min-w-[180px] md:flex-1 md:snap-start flex flex-col md:h-full max-h-[70vh] md:max-h-none"
               >
                 <Panel
                   title={stage.label}
