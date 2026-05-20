@@ -272,6 +272,65 @@ async function syncOneAgent(
           },
         },
       },
+      {
+        type: "function",
+        function: {
+          name: "create_account",
+          description:
+            "Sign the caller up for a Wireline account RIGHT NOW, on the call. Use when a caller says: 'sign me up', 'create my account', 'I want to get started', 'set me up'. This actually creates their account + emails them a link to set their password — their 14-day free trial starts immediately. " +
+            "MANDATORY EMAIL CONFIRMATION first: ask for the best email, read the FULL address back spelling anything ambiguous ('j-o-h-n at gmail dot com, correct?'), wait for an explicit yes. Only call this once they've confirmed.",
+          parameters: {
+            type: "object",
+            properties: {
+              to_email: {
+                type: "string",
+                description:
+                  "The caller's email — only pass after they've explicitly confirmed you read it back correctly. Valid RFC-5322 email.",
+              },
+              caller_name: {
+                type: "string",
+                description:
+                  "The caller's name, for their account profile + the welcome email. Optional.",
+              },
+              email_confirmed: {
+                type: "boolean",
+                description:
+                  "Set true ONLY after you read the address back and the caller confirmed it. False = the account will not be created.",
+              },
+            },
+            required: ["to_email"],
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "send_payment_link",
+          description:
+            "Email the caller a secure link to pay for + activate a Wireline plan. Use when a caller is ready to buy and asks to pay, or wants the checkout link. " +
+            "Confirm the email address out loud first (read it back, get an explicit yes), same as the other email tools.",
+          parameters: {
+            type: "object",
+            properties: {
+              to_email: {
+                type: "string",
+                description: "The caller's confirmed email address. Valid RFC-5322 email.",
+              },
+              plan: {
+                type: "string",
+                description:
+                  "Which plan they want, lowercase: 'personal', 'starter', 'pro', or 'business'. Optional — omit if they haven't picked one yet.",
+              },
+              email_confirmed: {
+                type: "boolean",
+                description:
+                  "True only after you read the address back and the caller confirmed it.",
+              },
+            },
+            required: ["to_email"],
+          },
+        },
+      },
     ];
 
     // Only include the voice block if we successfully fetched the

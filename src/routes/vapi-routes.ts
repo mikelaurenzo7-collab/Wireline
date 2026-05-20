@@ -340,6 +340,134 @@ router.post("/api/vapi-webhook", async (req, res) => {
         }
       }
 
+      // create_account — a Wireline employee signs a caller up by phone.
+      // Creates the account with a random password + emails a
+      // set-password link so the caller picks their own. Same
+      // confirm-the-email guardrail as send_signup_link.
+      if (toolCall.function.name === "create_account") {
+        try {
+          const { to_email, caller_name, email_confirmed } = toolCall.function.arguments as {
+            to_email?: string;
+            caller_name?: string;
+            email_confirmed?: boolean;
+          };
+          const looksLikeEmail =
+            typeof to_email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to_email);
+          if (!looksLikeEmail) {
+            results.push({
+              toolCallId: toolCall.id,
+              result:
+                "I couldn't parse that email. Ask the caller to spell it letter by letter, read it back, then try again.",
+            });
+          } else if (email_confirmed !== true) {
+            results.push({
+              toolCallId: toolCall.id,
+              result: `Before I create the account, read "${to_email}" back to the caller slowly, spelling anything ambiguous, and ask "is that correct?". Once they confirm, call create_account again with email_confirmed set to true.`,
+            });
+          } else {
+            const { authService } = await import("../lib/auth-service");
+            const { sendPasswordResetEmail } = await import("../lib/email-service");
+            const crypto = await import("crypto");
+            const tempPassword = crypto.randomBytes(24).toString("base64url");
+            try {
+              await authService.signUp(to_email, tempPassword, caller_name);
+            } catch (e: any) {
+              // Most likely the email already has an account.
+              if (
+                String(e?.message || "")
+                  .toLowerCase()
+                  .includes("exist")
+              ) {
+                results.push({
+                  toolCallId: toolCall.id,
+                  result: `Good news — ${to_email} already has a Wireline account. Tell the caller to sign in at trywireline.com, or offer to send a password reset link.`,
+                });
+                continue;
+              }
+              throw e;
+            }
+            // Issue a reset token so the caller sets their own password.
+            const reset = await authService.createPasswordResetToken(to_email);
+            const appUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
+            let emailed = false;
+            if (reset?.token) {
+              const r = await sendPasswordResetEmail({
+                to: to_email,
+                resetUrl: `${appUrl}/reset-password?token=${encodeURIComponent(reset.token)}`,
+                expiresAt: reset.expiresAt,
+              });
+              emailed = r.ok;
+            }
+            results.push({
+              toolCallId: toolCall.id,
+              result: emailed
+                ? `Account created for ${to_email}. I've emailed them a link to set their password — once they do, they can sign in and their 14-day free trial is already running. Confirm they got the email before ending the call.`
+                : `Account created for ${to_email}, but the welcome email didn't send. Tell the caller to go to trywireline.com, click "Forgot password", and set their password to get in. Their trial is already active.`,
+            });
+          }
+        } catch (err: any) {
+          log.error("create_account tool failed", { error: err?.message ?? String(err) });
+          results.push({
+            toolCallId: toolCall.id,
+            result:
+              "I hit a snag creating the account. Ask the caller to sign up themselves at trywireline.com/signup — it takes about a minute.",
+          });
+        }
+      }
+
+      // send_payment_link — emails the caller a checkout link for a
+      // specific plan so they can pay + activate without friction.
+      if (toolCall.function.name === "send_payment_link") {
+        try {
+          const { to_email, plan, email_confirmed } = toolCall.function.arguments as {
+            to_email?: string;
+            plan?: string;
+            email_confirmed?: boolean;
+          };
+          const looksLikeEmail =
+            typeof to_email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to_email);
+          if (!looksLikeEmail) {
+            results.push({
+              toolCallId: toolCall.id,
+              result:
+                "I couldn't parse that email. Ask the caller to spell it out, then try again.",
+            });
+          } else if (email_confirmed !== true) {
+            results.push({
+              toolCallId: toolCall.id,
+              result: `Read "${to_email}" back to the caller to confirm, then call send_payment_link again with email_confirmed set to true.`,
+            });
+          } else {
+            const { sendEmail } = await import("../lib/email-service");
+            const appUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
+            // Checkout link — the pricing page deep-links to Stripe
+            // checkout per plan once the caller is signed in.
+            const planParam = plan ? `?plan=${encodeURIComponent(plan)}` : "";
+            const payUrl = `${appUrl}/billing${planParam}`;
+            const planLabel = plan ? ` (${plan} plan)` : "";
+            const r = await sendEmail({
+              to: to_email,
+              subject: "Your Wireline payment link",
+              text: `Hi,\n\nHere's your secure link to activate your Wireline plan${planLabel}:\n\n${payUrl}\n\nAny questions, just call us back.\n\n— Wireline`,
+              html: `<p>Hi,</p><p>Here's your secure link to activate your Wireline plan${planLabel}:</p><p><a href="${payUrl}">${payUrl}</a></p><p>Any questions, just call us back.</p><p>— Wireline</p>`,
+            });
+            results.push({
+              toolCallId: toolCall.id,
+              result: r.ok
+                ? `Payment link sent to ${to_email}. It should land within a minute — confirm they got it.`
+                : `The email didn't go through. Read the link to the caller: ${payUrl}`,
+            });
+          }
+        } catch (err: any) {
+          log.error("send_payment_link tool failed", { error: err?.message ?? String(err) });
+          results.push({
+            toolCallId: toolCall.id,
+            result:
+              "Hit an error sending the payment link — ask the caller to visit trywireline.com/billing.",
+          });
+        }
+      }
+
       if (toolCall.function.name === "send_text_message") {
         try {
           const { to_number, channel, message_body } = toolCall.function.arguments;

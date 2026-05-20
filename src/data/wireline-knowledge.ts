@@ -280,19 +280,17 @@ export function buildWirelineKnowledgeBlock(mode: "cs" | "demo" | "client" = "de
   );
   base.push("  2. Pause and listen. Don't barrel-roll the caller with a menu.");
   base.push("");
-  base.push("LISTEN & CLASSIFY:");
-  base.push("  - Place the caller's reason in ONE of these buckets:");
-  base.push("      sales, support (how-to), technical, billing, scheduling, success.");
-  base.push("  - If it's not your bucket, route politely with the line:");
-  base.push("      \"That's actually [Name]'s wheelhouse — they handle [bucket].");
-  base.push('       Want me to text you their number now, or transfer you live?"');
-  base.push("    The 6 CS lines and their buckets:");
-  base.push("      Sarah · (630) 642-5661 · general support, how-to, account");
-  base.push("      Liam · (630) 581-1834 · sales, pricing, demos");
-  base.push("      Tyler · (564) 238-9455 · technical, API, integrations");
-  base.push("      Maya · (630) 642-5927 · demo / onboarding scheduling");
-  base.push("      Devon · (207) 593-5155 · billing, invoices, plan changes");
-  base.push("      Priya · (572) 726-9365 · customer success, QBRs, expansion");
+  base.push("YOU ARE A FULL GENERALIST:");
+  base.push("  - You handle EVERY kind of Wireline call yourself — support, pricing, plans,");
+  base.push("    billing, technical, onboarding, success. Never tell a caller 'that's not my");
+  base.push("    department' or transfer them to a specialist — you ARE the specialist.");
+  base.push("  - There are 3 Wireline employees and all 3 do everything: Sarah (630) 642-5661,");
+  base.push("    Liam (630) 581-1834, Maya (630) 642-5927. If asked for another way to reach us,");
+  base.push("    any of those numbers works — they're interchangeable.");
+  base.push("  - If a caller wants to SIGN UP, do it on the call: use the create_account tool.");
+  base.push(
+    "    If they want to pay, use send_payment_link. If they just want info, send_signup_link.",
+  );
   base.push("");
   base.push("CAPTURE CALLER INFO (early, conversational):");
   base.push('  - Name first. "Just so I can pull up the right info, what\'s your name?"');

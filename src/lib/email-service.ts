@@ -77,6 +77,24 @@ async function sendViaResend(args: {
   }
 }
 
+/**
+ * Generic transactional email send. Used by ad-hoc senders (e.g. the
+ * phone agent's send_payment_link tool) that don't have a dedicated
+ * templated helper. Returns ok:false if no transport is configured —
+ * callers must not claim delivery on a false result.
+ */
+export async function sendEmail(opts: {
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+}): Promise<SendResult> {
+  if (!process.env.RESEND_API_KEY) {
+    return { ok: false, provider: "no-transport", error: "RESEND_API_KEY not set" };
+  }
+  return await sendViaResend(opts);
+}
+
 export async function sendPasswordResetEmail(opts: PasswordResetEmailOpts): Promise<SendResult> {
   const expiresHuman = `${Math.max(1, Math.round((opts.expiresAt.getTime() - Date.now()) / 60_000))} min`;
 
