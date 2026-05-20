@@ -24,6 +24,8 @@ interface IntegrationState {
   meta: IntegrationStatus;
   shopify: IntegrationStatus;
   square: IntegrationStatus;
+  microsoft_teams: IntegrationStatus;
+  microsoft_excel: IntegrationStatus;
 }
 
 type ProviderKey = keyof IntegrationState;
@@ -95,6 +97,22 @@ const PROVIDERS: {
     color: "amber",
     logo: "SQ",
     group: "E-commerce",
+  },
+  {
+    key: "microsoft_teams",
+    label: "Microsoft Teams",
+    color: "indigo",
+    logo: "MT",
+    group: "Microsoft 365",
+    beta: true,
+  },
+  {
+    key: "microsoft_excel",
+    label: "Microsoft Excel",
+    color: "emerald",
+    logo: "XL",
+    group: "Microsoft 365",
+    beta: true,
   },
 ];
 

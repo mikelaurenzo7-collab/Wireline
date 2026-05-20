@@ -49,6 +49,7 @@ import {
   squareCheckInventory,
   squareCreatePaymentLink,
 } from "../lib/square-service";
+import { sendTeamsMessage, logToExcel } from "../lib/microsoft-graph-service";
 import { normalizeDncPhone } from "../lib/compliance";
 import { lookupTenantPhoneNumber, sendTenantMessage } from "../lib/twilio-service";
 import { resolveAgentTools } from "../lib/agent-capabilities";
@@ -684,6 +685,48 @@ router.post("/api/vapi-webhook", async (req, res) => {
           }
         } catch {
           results.push({ toolCallId: toolCall.id, result: "Slack notification error." });
+        }
+      }
+
+      if (toolCall.function.name === "send_teams_message") {
+        try {
+          const { message: teamsMsg } = toolCall.function.arguments || {};
+          if (agent?.user_id) {
+            const sent = await sendTeamsMessage({
+              userId: agent.user_id,
+              text: String(teamsMsg || ""),
+            });
+            results.push({
+              toolCallId: toolCall.id,
+              result: sent
+                ? "Microsoft Teams notification sent."
+                : "Microsoft Teams is not connected for this account.",
+            });
+          }
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Teams notification error." });
+        }
+      }
+
+      if (toolCall.function.name === "log_to_excel") {
+        try {
+          const { caller, outcome, details } = toolCall.function.arguments || {};
+          if (agent?.user_id) {
+            const ok = await logToExcel({
+              userId: agent.user_id,
+              caller: String(caller || "Unknown caller"),
+              outcome: String(outcome || ""),
+              details: String(details || ""),
+            });
+            results.push({
+              toolCallId: toolCall.id,
+              result: ok
+                ? "Logged to the Excel call log."
+                : "Microsoft Excel is not connected for this account.",
+            });
+          }
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Excel logging error." });
         }
       }
 

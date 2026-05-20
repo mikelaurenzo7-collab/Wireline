@@ -33,6 +33,8 @@ export const AGENT_TOOL_NAME_VALUES = [
   "square_lookup_customer",
   "square_check_inventory",
   "square_create_payment_link",
+  "send_teams_message",
+  "log_to_excel",
 ] as const;
 
 export type AgentToolName = (typeof AGENT_TOOL_NAME_VALUES)[number];
@@ -48,7 +50,9 @@ export type ToolIntegration =
   | "meta"
   | "gemini"
   | "shopify"
-  | "square";
+  | "square"
+  | "microsoft_teams"
+  | "microsoft_excel";
 
 export interface AgentToolCatalogEntry {
   name: AgentToolName;
@@ -300,6 +304,23 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
     group: "ecommerce",
     integration: "square",
   },
+  // Microsoft 365
+  {
+    name: "send_teams_message",
+    label: "Notify team via Microsoft Teams",
+    description:
+      "Posts a message to the operator's Microsoft Teams channel when something important happens on a call.",
+    group: "team",
+    integration: "microsoft_teams",
+  },
+  {
+    name: "log_to_excel",
+    label: "Log call to Excel",
+    description:
+      "Appends a row — caller, outcome, and details — to the operator's Wireline Call Log spreadsheet in OneDrive.",
+    group: "core",
+    integration: "microsoft_excel",
+  },
 ] as const;
 
 /** Tool names that require a connected Shopify store. */
@@ -340,10 +361,12 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "crm_log_call",
     "crm_create_opportunity",
     "send_slack_notification",
+    "send_teams_message",
     "generate_zoom_link",
     "send_contract",
     "enrich_lead",
     "gemini_ground",
+    "log_to_excel",
   ],
   customer_service: [
     "view_recent_interactions",
@@ -363,6 +386,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "crm_search_contacts",
     "crm_log_call",
     "send_slack_notification",
+    "send_teams_message",
     "gemini_ground",
     "shopify_lookup_order",
     "shopify_check_inventory",
@@ -374,6 +398,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "square_lookup_customer",
     "square_check_inventory",
     "square_create_payment_link",
+    "log_to_excel",
   ],
   // E-commerce support agents — handle online-store customer calls and
   // emails: order status, inventory, returns, address fixes. Shopify
@@ -390,6 +415,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "capture_customer_profile",
     "create_support_ticket",
     "send_slack_notification",
+    "send_teams_message",
     "gemini_ground",
     "shopify_lookup_order",
     "shopify_check_inventory",
@@ -401,6 +427,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "square_lookup_customer",
     "square_check_inventory",
     "square_create_payment_link",
+    "log_to_excel",
   ],
   scheduler: [
     "view_recent_interactions",
@@ -416,6 +443,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "schedule_callback",
     "capture_customer_profile",
     "send_slack_notification",
+    "send_teams_message",
     "generate_zoom_link",
     "crm_search_contacts",
   ],
@@ -478,6 +506,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "schedule_callback",
     "capture_customer_profile",
     "send_slack_notification",
+    "send_teams_message",
     "generate_zoom_link",
     "crm_search_contacts",
     "gemini_ground",

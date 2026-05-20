@@ -793,6 +793,45 @@ export const VAPI_TOOL_DEFS = {
       required: ["title", "amount_dollars"],
     },
   },
+  send_teams_message: {
+    name: "send_teams_message",
+    description:
+      "Notify the team via Microsoft Teams about an important call outcome — hot lead, booked meeting, escalation, or deal milestone. Only use when something noteworthy happened that the team should see immediately.",
+    parameters: {
+      type: "object",
+      properties: {
+        message: {
+          type: "string",
+          description: "A concise notification message for the team's Microsoft Teams channel.",
+        },
+      },
+      required: ["message"],
+    },
+  },
+  log_to_excel: {
+    name: "log_to_excel",
+    description:
+      "Append a row to the operator's Wireline Call Log spreadsheet in OneDrive — records the caller, the outcome, and a short detail. Use at the end of a call to keep a running log the operator can review in Excel.",
+    parameters: {
+      type: "object",
+      properties: {
+        caller: {
+          type: "string",
+          description: "The caller's name, or their phone number if no name was given.",
+        },
+        outcome: {
+          type: "string",
+          description:
+            "Short outcome label — e.g. 'Booked', 'Qualified lead', 'No answer', 'Escalated'.",
+        },
+        details: {
+          type: "string",
+          description: "One or two sentences summarizing what happened on the call.",
+        },
+      },
+      required: ["caller", "outcome", "details"],
+    },
+  },
 } as const;
 
 export type VapiToolName = keyof typeof VAPI_TOOL_DEFS;
