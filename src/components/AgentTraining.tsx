@@ -212,18 +212,10 @@ export default function AgentTraining() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <header className="shrink-0 px-4 md:px-6 pt-4 pb-3 sticky top-0 z-30 backdrop-blur-xl bg-paper/70 border-b border-white/8">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 max-w-[1400px] mx-auto w-full">
-          <div className="flex items-center gap-3 min-w-0">
-            <div>
-              <div className="text-[10px] uppercase tracking-[0.45em] text-brand/80 mb-1">
-                Studio · Training
-              </div>
-              <h1 className="font-display italic lowercase text-3xl md:text-4xl text-ink leading-none">
-                <span className="text-aurora">agent training</span>
-              </h1>
-            </div>
-          </div>
+      <header className="shrink-0 px-4 md:px-6 pt-3 pb-3 sticky top-0 z-30 backdrop-blur-xl bg-paper/70 border-b border-white/8">
+        {/* Page title removed per design direction — the left nav
+            already says "Training". The agent picker stays. */}
+        <div className="flex flex-col lg:flex-row justify-end items-start lg:items-center gap-3 max-w-[1400px] mx-auto w-full">
           <div className="flex items-center gap-2 w-full lg:w-auto">
             <Users className="w-3.5 h-3.5 text-brand shrink-0" />
             <span className="text-[10px] uppercase tracking-[0.3em] text-muted/70 hidden sm:inline">
