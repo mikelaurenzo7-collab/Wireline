@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import type { Page } from "@playwright/test";
 
 /**
  * Campaign Management E2E Tests
@@ -15,13 +16,19 @@ import { test, expect } from "@playwright/test";
 test.describe("Campaign Management Flows", () => {
   test.setTimeout(60000); // 60s timeout for campaign operations
 
+  const hasCredentials = () =>
+    Boolean(
+      (process.env.E2E_USER_EMAIL || process.env.E2E_TEST_EMAIL) &&
+        (process.env.E2E_USER_PASSWORD || process.env.E2E_TEST_PASSWORD),
+    );
+
   // Helper: Login with test credentials
   // Uses E2E_USER_EMAIL/E2E_USER_PASSWORD from Vercel env, falls back to E2E_TEST_* variants
-  const loginIfCredentials = async (page: any) => {
+  const loginIfCredentials = async (page: Page) => {
     const email = process.env.E2E_USER_EMAIL || process.env.E2E_TEST_EMAIL;
     const password = process.env.E2E_USER_PASSWORD || process.env.E2E_TEST_PASSWORD;
 
-    if (!email) {
+    if (!email || !password) {
       test.skip(true, "No E2E test credentials configured");
       return;
     }
@@ -49,7 +56,7 @@ test.describe("Campaign Management Flows", () => {
     const passwordInput = page
       .locator('[data-testid="password-input"], input[type="password"]')
       .first();
-    await passwordInput.fill(password || "");
+    await passwordInput.fill(password);
 
     // Click sign in button (use submit type for reliability)
     await page.locator('button[type="submit"]').click();
@@ -63,7 +70,10 @@ test.describe("Campaign Management Flows", () => {
     });
   };
 
-  test("outbound dialer page renders correctly", async ({ page }) => {
+  test("outbound dialer page renders correctly for authenticated users", async ({ page }) => {
+    test.skip(!hasCredentials(), "Requires authentication");
+
+    await loginIfCredentials(page);
     await page.goto("/outbound");
     await page.waitForLoadState("networkidle");
 
@@ -72,22 +82,22 @@ test.describe("Campaign Management Flows", () => {
     await expect(createBtn.or(page.getByText(/campaign/i))).toBeVisible({ timeout: 10000 });
   });
 
-  test("unauthenticated user is redirected to login", async ({ page }) => {
+  test("unauthenticated user sees AuthPortal on protected outbound route", async ({ page }) => {
     // Clear any existing auth state
     await page.context().clearCookies();
 
     await page.goto("/outbound");
     await page.waitForLoadState("networkidle");
 
-    // Should redirect to login or show auth-required state
-    await expect(page).toHaveURL(/login|auth|signin/, { timeout: 10000 });
+    // Protected deep-links keep their URL but render AuthPortal until sign-in.
+    await expect(page.locator("form").getByRole("button", { name: /^sign in$/i })).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(page.getByPlaceholder(/operator@company\.io/i)).toBeVisible();
   });
 
   test("create campaign modal opens and validates", async ({ page }) => {
-    test.skip(
-      !(process.env.E2E_USER_EMAIL || process.env.E2E_TEST_EMAIL),
-      "Requires authentication",
-    );
+    test.skip(!hasCredentials(), "Requires authentication");
 
     await loginIfCredentials(page);
 

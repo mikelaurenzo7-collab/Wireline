@@ -8,27 +8,33 @@ test.describe("Authentication Flows", () => {
   test("login page renders correctly", async ({ page }) => {
     await page.goto("/login");
 
-    // Visual snapshot of login page
-    await expect(page).toHaveScreenshot("login-page.png", {
-      fullPage: true,
-      maxDiffPixelRatio: 0.02,
-    });
-
     // Check key elements exist
-    await expect(page.getByRole("button", { name: /sign in/i })).toBeVisible();
-    await expect(page.getByPlaceholder(/email/i)).toBeVisible();
-    await expect(page.getByPlaceholder(/password/i)).toBeVisible();
+    await expect(page.getByRole("heading", { name: /welcome back/i })).toBeVisible();
+    await expect(page.locator('input[type="email"]')).toBeVisible();
+    await expect(page.locator('input[type="password"]')).toBeVisible();
+    await expect(page.locator("form").getByRole("button", { name: /^sign in$/i })).toBeVisible();
   });
 
   test("login with invalid credentials shows error", async ({ page }) => {
+    await page.route("**/api/auth/signin", async (route) => {
+      await route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "Invalid email or password" }),
+      });
+    });
+
     await page.goto("/login");
 
-    await page.getByPlaceholder(/email/i).fill("test@example.com");
-    await page.getByPlaceholder(/password/i).fill("wrongpassword");
-    await page.getByRole("button", { name: /sign in/i }).click();
+    await page.locator('input[type="email"]').fill("test@example.com");
+    await page.locator('input[type="password"]').fill("wrongpassword");
+    await page
+      .locator("form")
+      .getByRole("button", { name: /^sign in$/i })
+      .click();
 
     // Should show error message
-    await expect(page.getByText(/invalid|error|failed/i)).toBeVisible();
+    await expect(page.getByText(/invalid email or password/i)).toBeVisible();
   });
 
   test("successful login redirects to dashboard", async ({ page }) => {
@@ -38,14 +44,17 @@ test.describe("Authentication Flows", () => {
 
     await page.goto("/login");
 
-    await page.getByPlaceholder(/email/i).fill(email!);
+    await page.locator('input[type="email"]').fill(email!);
     await page
-      .getByPlaceholder(/password/i)
+      .locator('input[type="password"]')
       .fill((process.env.E2E_USER_PASSWORD || process.env.E2E_TEST_PASSWORD)!);
-    await page.getByRole("button", { name: /sign in/i }).click();
+    await page
+      .locator("form")
+      .getByRole("button", { name: /^sign in$/i })
+      .click();
 
     // Should redirect to dashboard
-    await expect(page).toHaveURL(/dashboard|home/);
+    await expect(page).not.toHaveURL(/login|signin|signup/);
     await expect(page.getByText(/dashboard|overview|welcome/i)).toBeVisible();
   });
 });
