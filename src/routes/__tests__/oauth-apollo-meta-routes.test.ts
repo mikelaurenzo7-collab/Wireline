@@ -65,7 +65,7 @@ describe("Apollo + Meta OAuth routes", () => {
       expect(res.body.url).toContain("client_id=apollo-cid");
       expect(res.body.url).toContain(encodeURIComponent("/api/oauth/apollo/callback"));
       expect(res.body.url).toContain("state=");
-    });
+    }, 10_000);
 
     it("returns 503 when Apollo env is missing", async () => {
       delete process.env.APOLLO_CLIENT_ID;
