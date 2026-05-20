@@ -184,7 +184,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-ink transition-colors"
+            className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-ink transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -391,7 +391,7 @@ function CalendarGrid({
               return { year: d.getFullYear(), month: d.getMonth() };
             })
           }
-          className="w-8 h-8 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-ink transition-colors"
+          className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-ink transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -405,7 +405,7 @@ function CalendarGrid({
               return { year: d.getFullYear(), month: d.getMonth() };
             })
           }
-          className="w-8 h-8 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-ink transition-colors"
+          className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-ink transition-colors"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
@@ -436,7 +436,7 @@ function CalendarGrid({
               <div
                 key={idx}
                 className={cn(
-                  "min-h-[80px] border-b border-r border-white/5 p-1.5",
+                  "min-h-[50px] sm:min-h-[60px] md:min-h-[80px] border-b border-r border-white/5 p-1.5",
                   cell.day ? "hover:bg-white/3 cursor-pointer" : "opacity-0 pointer-events-none",
                 )}
               >

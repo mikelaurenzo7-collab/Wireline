@@ -148,8 +148,8 @@ export default function CallLogs() {
             clears selectedCall to bring the list back. */}
             <div
               className={cn(
-                "col-span-12 lg:col-span-5 xl:col-span-4 h-full",
-                selectedCall && "hidden lg:block",
+                "col-span-12 md:col-span-6 lg:col-span-5 xl:col-span-4 h-full",
+                selectedCall && "hidden md:block",
               )}
             >
               <Panel
@@ -291,7 +291,7 @@ export default function CallLogs() {
             list takes the full viewport. */}
             <div
               className={cn(
-                "col-span-12 lg:col-span-7 xl:col-span-8 h-full",
+                "col-span-12 md:col-span-6 lg:col-span-7 xl:col-span-8 h-full",
                 !selectedCall && "hidden lg:block",
               )}
             >

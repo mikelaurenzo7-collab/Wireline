@@ -485,7 +485,7 @@ export default function DashboardHome() {
       {/* ── Main grid ────────────────────────────────────────── */}
       <div className="flex-1 min-h-0 grid grid-cols-12 gap-3">
         {/* Recent calls */}
-        <div className="col-span-12 lg:col-span-4 h-full">
+        <div className="col-span-12 md:col-span-6 lg:col-span-4 h-full">
           <Panel
             title="Recent Calls"
             hint="latest outcomes"
@@ -507,8 +507,8 @@ export default function DashboardHome() {
                   <Radio className="w-6 h-6 text-muted/40 animate-pulse" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-medium text-ink/60 mb-0.5">No calls yet</p>
-                  <p className="text-[9px] text-muted/50 leading-snug max-w-[160px]">
+                  <p className="text-[10px] sm:text-[11px] font-medium text-ink/60 mb-0.5">No calls yet</p>
+                  <p className="text-[9px] sm:text-[10px] text-muted/50 leading-snug max-w-[200px] sm:max-w-[160px]">
                     Make a test call above to start collecting call data
                   </p>
                 </div>
@@ -557,7 +557,7 @@ export default function DashboardHome() {
         </div>
 
         {/* Agent status */}
-        <div className="col-span-12 lg:col-span-4 h-full">
+        <div className="col-span-12 md:col-span-6 lg:col-span-4 h-full">
           <Panel title="Agent Status" hint="fleet · live" icon={Signal} accent="#4F1E7B">
             <div className="space-y-3 h-full">
               {/* Live call indicator */}
@@ -727,7 +727,7 @@ export default function DashboardHome() {
         </div>
 
         {/* Quick actions + chart */}
-        <div className="col-span-12 lg:col-span-4 h-full flex flex-col gap-3">
+        <div className="col-span-12 md:col-span-6 lg:col-span-4 h-full flex flex-col gap-3">
           {/* Quick actions */}
           <Panel title="Quick Launch" hint="one-click" icon={Zap} accent="#4F1E7B">
             <div className="space-y-2.5">
@@ -933,7 +933,7 @@ export default function DashboardHome() {
       <div
         className={cn(
           "col-span-12 h-full overflow-hidden",
-          onboardingComplete ? "" : "lg:col-span-7",
+          onboardingComplete ? "" : "md:col-span-12 lg:col-span-7",
         )}
       >
         <Panel title="Daily Brief" hint="AI Summary" icon={Sparkles} scroll>
@@ -943,7 +943,7 @@ export default function DashboardHome() {
         </Panel>
       </div>
       {!onboardingComplete && (
-        <div className="col-span-12 lg:col-span-5 h-full overflow-hidden">
+        <div className="col-span-12 md:col-span-12 lg:col-span-5 h-full overflow-hidden">
           <Panel title="Quickstart" hint="First-run" icon={Activity} scroll>
             <WidgetBoundary label="Quickstart">
               <OnboardingQuickstart onComplete={setOnboardingComplete} />
@@ -1046,7 +1046,7 @@ export default function DashboardHome() {
 
   const Fleet = (
     <div className="h-full grid grid-cols-12 gap-3">
-      <div className="col-span-12 lg:col-span-7 h-full">
+      <div className="col-span-12 md:col-span-12 lg:col-span-7 h-full">
         <Panel
           title="Hot Leads"
           hint={`${hotLeads.length} pending`}
@@ -1146,7 +1146,7 @@ export default function DashboardHome() {
         </Panel>
       </div>
 
-      <div className="col-span-12 lg:col-span-5 h-full grid grid-rows-2 gap-3">
+      <div className="col-span-12 md:col-span-12 lg:col-span-5 h-full grid grid-rows-2 gap-3">
         <Panel title="Active Calls" hint="WebSocket" icon={Signal} scroll flush>
           {activeSignals.length > 0 ? (
             <ul className="divide-y divide-white/5">
@@ -1191,7 +1191,7 @@ export default function DashboardHome() {
 
   const HistoryView = (
     <div className="h-full grid grid-cols-12 gap-3">
-      <div className="col-span-12 lg:col-span-8 h-full">
+      <div className="col-span-12 md:col-span-12 lg:col-span-8 h-full">
         <Panel
           title="Recent Calls"
           hint={`${recentLogs.length} captured`}
@@ -1260,7 +1260,7 @@ export default function DashboardHome() {
           )}
         </Panel>
       </div>
-      <div className="col-span-12 lg:col-span-4 h-full">
+      <div className="col-span-12 md:col-span-12 lg:col-span-4 h-full">
         <Panel title="Activity Feed" hint="Live activity" icon={Activity} scroll>
           <WidgetBoundary label="Activity Feed">
             <TriggerIntelligenceFeed activity={systemActivity} />

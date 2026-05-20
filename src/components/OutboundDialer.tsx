@@ -486,9 +486,9 @@ export default function OutboundDialer() {
           </span>
         </div>
       ) : (
-        <div className="h-full grid grid-cols-1 xl:grid-cols-12 gap-3 min-h-0">
+        <div className="h-full grid grid-cols-1 lg:grid-cols-12 gap-3 min-h-0">
           {/* Configuration */}
-          <div className="xl:col-span-5 min-h-0">
+          <div className="lg:col-span-5 min-h-0">
             <Panel
               title="Parameters"
               hint={mode === "single" ? "SINGLE CALL" : "BULK UPLOAD"}
@@ -741,7 +741,7 @@ export default function OutboundDialer() {
           </div>
 
           {/* Operations Queue */}
-          <div className="xl:col-span-7 min-h-0">
+          <div className="lg:col-span-7 min-h-0">
             <Panel
               title="Queue"
               hint={leadsTotal > 0 ? `${leads.length}/${leadsTotal}` : "QUEUE"}
@@ -893,9 +893,9 @@ export default function OutboundDialer() {
   );
 
   const campaignsTab = (
-    <div className="h-full grid grid-cols-1 xl:grid-cols-12 gap-3 min-h-0">
+    <div className="h-full grid grid-cols-1 lg:grid-cols-12 gap-3 min-h-0">
       {/* Campaign list */}
-      <div className="xl:col-span-5 min-h-0">
+      <div className="lg:col-span-5 min-h-0">
         <Panel
           title="Campaigns"
           hint={`${campaigns.length} total`}
@@ -998,7 +998,7 @@ export default function OutboundDialer() {
       </div>
 
       {/* Campaign detail */}
-      <div className="xl:col-span-7 min-h-0">
+      <div className="lg:col-span-7 min-h-0">
         {selectedCampaign ? (
           <Panel
             title={selectedCampaign.name}

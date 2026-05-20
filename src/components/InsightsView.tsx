@@ -531,7 +531,7 @@ function HeatmapView({ days }: { days: number }) {
           Calls by Hour × Weekday · {data.window_days}d
         </div>
         <div className="overflow-x-auto scrollbar-hide">
-          <table className="w-full min-w-[700px]">
+          <table className="w-full md:min-w-[700px]">
             <thead>
               <tr>
                 <th className="text-[9px] uppercase tracking-[0.3em] text-muted text-left pb-2 font-normal w-8"></th>
@@ -1056,7 +1056,7 @@ function AISpendView({ days }: { days: number }) {
                   <div className="text-[10px] uppercase tracking-[0.3em] text-muted mb-1">
                     Tokens (window)
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-xs">
                     <div>
                       Input{" "}
                       <span className="text-ink/80 font-mono ml-1">

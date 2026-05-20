@@ -152,7 +152,7 @@ export default function AppShell() {
 
         <div className="flex-1 relative flex flex-col min-h-0 overflow-hidden">
           <div className="flex-1 overflow-hidden relative z-10 min-h-0">
-            <div className="max-w-[1920px] mx-auto px-3 md:px-4 xl:px-5 pt-2 pb-3 flex flex-col h-full min-h-0">
+            <div className="max-w-[1920px] mx-auto px-3 md:px-4 lg:px-5 pt-3 md:pt-4 pb-3 md:pb-4 flex flex-col h-full min-h-0">
               <ErrorBoundary>
                 <AppRoutes />
               </ErrorBoundary>
