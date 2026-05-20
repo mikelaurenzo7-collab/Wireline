@@ -23,8 +23,8 @@ import { useAuth } from "../contexts/AuthContext";
 import { PageMeta } from "../lib/page-meta";
 import WirelineMark from "./WirelineMark";
 import {
-  WIRELINE_CONTACT_AGENTS,
-  WIRELINE_DEMO_AGENTS,
+  WIRELINE_DEMO_CONCIERGE_AGENT,
+  WIRELINE_FEATURED_TEAM_AGENT,
   type ContactAgent as AgentCard,
 } from "../data/contact-agents";
 
@@ -472,48 +472,28 @@ export default function AuthPortal() {
             </div>
           </motion.div>
 
-          {/* All 10 agents in a single dense grid. The first 3 are the
-            LIVE Wireline customer-service team — full generalists that
-            run our own phone lines. The remaining 7 are vertical
-            role-play demos (medical intake, real-estate front desk,
-            insurance FNOL, etc.) that also answer Wireline questions.
-            Two labelled sub-sections so visitors can tell which line
-            reaches our team vs. which is a "watch the platform work"
-            demo. */}
+          {/* Featured live lines only: one Wireline team specialist and
+            one demo concierge. The full catalog lives in Help/Showcase,
+            where it has room to breathe without odd empty grid slots. */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-            className="mb-6 flex-1"
+            className="mb-6"
           >
-            {/* Call any agent — numbers shown as text so visitors can
-              dial from their phone. The Wireline Team agents handle
-              real support; the vertical agents are use-case demos. */}
             <div className="flex items-center gap-2 mb-2.5">
               <span className="text-[9px] uppercase tracking-[0.4em] text-[#4F1E7B] font-medium">
-                Wireline Team — call us
+                Call Wireline live
               </span>
               <span className="flex-1 h-px bg-[#4F1E7B]/20" />
             </div>
             <p className="text-[11px] text-muted/70 mb-3 leading-relaxed">
-              {WIRELINE_CONTACT_AGENTS.length === 3 ? "Three" : WIRELINE_CONTACT_AGENTS.length} AI
-              agents run Wireline's own phone lines. Dial any number below to hear the product live.
+              Two clean ways to try it: talk to a Wireline specialist, or call Ria and choose the
+              demo role you want her to perform.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
-              {WIRELINE_CONTACT_AGENTS.map((a) => (
-                <AgentContactCard key={a.tel} agent={a} isDemo={false} />
-              ))}
-            </div>
-            <div className="flex items-center gap-2 mb-2.5">
-              <span className="text-[9px] uppercase tracking-[0.4em] text-muted/60">
-                Vertical Demos — hear an agent for your industry
-              </span>
-              <span className="flex-1 h-px bg-white/10" />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {WIRELINE_DEMO_AGENTS.map((a) => (
-                <AgentContactCard key={a.tel} agent={a} isDemo={true} />
-              ))}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-2">
+              <AgentContactCard agent={WIRELINE_FEATURED_TEAM_AGENT} isDemo={false} />
+              <AgentContactCard agent={WIRELINE_DEMO_CONCIERGE_AGENT} isDemo />
             </div>
           </motion.div>
 
@@ -582,33 +562,21 @@ export default function AuthPortal() {
               Dial any number below to hear a Wireline agent live — no signup needed.
             </p>
 
-            {/* Wireline Team — the 6 real customer-service lines. */}
+            {/* Featured live lines: one team specialist, one demo concierge. */}
             <div className="flex items-center gap-2 mb-2">
               <span className="text-[9px] uppercase tracking-[0.4em] text-[#4F1E7B] font-medium">
-                Wireline Team · call us
+                Try Wireline live
               </span>
               <span className="flex-1 h-px bg-[#4F1E7B]/15" />
             </div>
-            <div className="grid grid-cols-2 gap-2 mb-4">
-              {WIRELINE_CONTACT_AGENTS.map((a) => (
-                <AgentContactCard key={a.tel} agent={a} isDemo={false} />
-              ))}
+            <div className="grid grid-cols-1 gap-2">
+              <AgentContactCard agent={WIRELINE_FEATURED_TEAM_AGENT} isDemo={false} />
+              <AgentContactCard agent={WIRELINE_DEMO_CONCIERGE_AGENT} isDemo />
             </div>
-
-            {/* Section label */}
-            <div className="flex items-center gap-2 mt-4 mb-2">
-              <span className="text-[9px] uppercase tracking-[0.4em] text-muted/70 font-medium">
-                Vertical demos · {WIRELINE_DEMO_AGENTS.length} use-case roles
-              </span>
-              <span className="flex-1 h-px bg-[#4F1E7B]/15" />
-            </div>
-
-            {/* All 4 demo agents — 2-col grid stays readable down to 320px */}
-            <div className="grid grid-cols-2 gap-2">
-              {WIRELINE_DEMO_AGENTS.map((a) => (
-                <AgentContactCard key={a.tel} agent={a} isDemo />
-              ))}
-            </div>
+            <p className="mt-3 text-[11px] text-muted/70 leading-relaxed">
+              Ria asks which demo role you want, then acts accordingly. The full employee and demo
+              catalog is in Help and Showcase.
+            </p>
 
             {/* Subtle divider */}
             <div

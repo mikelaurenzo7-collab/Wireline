@@ -326,9 +326,9 @@ export default function AgentTraining() {
             },
             {
               id: "actions",
-              label: "Connected apps",
+              label: "Capabilities",
               icon: Blocks,
-              help: "Wire integrations the agent can use mid-call: calendar bookings, CRM lookups, payment links, SMS.",
+              help: "Control the actions and connected integrations this agent is allowed to use during live calls.",
             },
           ].map((tab) => (
             <button

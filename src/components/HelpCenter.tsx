@@ -85,7 +85,7 @@ export default function HelpCenter() {
     <PageShell
       eyebrow="Help · Support"
       title="Reach the Wireline team"
-      subtitle="6 live AI customer-service lines — pick the one that matches what you need. They route to each other when needed and escalate to a human."
+      subtitle={`${WIRELINE_CONTACT_AGENTS.length} Wireline team lines plus ${WIRELINE_DEMO_AGENTS.length} demo roles. Team lines handle real support; demos show what agents can do for specific businesses.`}
       actions={
         <>
           <a
@@ -110,8 +110,12 @@ export default function HelpCenter() {
       <div className="h-full overflow-y-auto pr-1">
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 pb-4">
           <div className="xl:col-span-2 space-y-4">
-            <Panel title="Customer Service · 6 live lines" hint="Tap to dial" icon={Phone}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <Panel
+              title={`Wireline team · ${WIRELINE_CONTACT_AGENTS.length} live lines`}
+              hint="Tap to dial"
+              icon={Phone}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3 gap-3">
                 {WIRELINE_CONTACT_AGENTS.map((a, i) => (
                   <motion.div
                     key={a.tel}
@@ -126,7 +130,7 @@ export default function HelpCenter() {
             </Panel>
 
             <Panel
-              title="Vertical demos · 4 role-play agents"
+              title={`Demo catalog · ${WIRELINE_DEMO_AGENTS.length} role-play agents`}
               hint="See what the platform can do"
               icon={Phone}
             >
@@ -136,8 +140,9 @@ export default function HelpCenter() {
                 ))}
               </div>
               <p className="text-[10px] text-muted/60 mt-3 leading-relaxed">
-                These demo agents role-play real business scenarios (medical intake, real-estate
-                front desk, etc.) and will also answer Wireline product questions when asked.
+                Ria is the concierge line: ask for a use case and she will role-play it. The other
+                demo lines are direct industry examples and will also answer Wireline product
+                questions when asked.
               </p>
             </Panel>
           </div>

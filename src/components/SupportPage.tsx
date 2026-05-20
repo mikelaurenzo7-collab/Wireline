@@ -4,7 +4,7 @@
  * Pre-launch trust signal: a "Support" link in the footer that leads
  * to nothing erodes confidence. This page gives every visitor a clear
  * triage path:
- *   1. Demo line — call (630) 581-1834, Liam picks up immediately
+ *   1. Wireline team line — Sarah picks up immediately
  *   2. Email — trywireline@yahoo.com with structured templates per
  *      issue type (faster resolution + better signal for us)
  *   3. In-app — if signed in, "Ask your agent" via per-agent Workspace
@@ -27,6 +27,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
+import { WIRELINE_FEATURED_TEAM_AGENT } from "../data/contact-agents";
 
 const ISSUE_TYPES = [
   { value: "billing", label: "Billing or refund" },
@@ -38,6 +39,7 @@ const ISSUE_TYPES = [
 ];
 
 export function SupportPage() {
+  const supportAgent = WIRELINE_FEATURED_TEAM_AGENT;
   const [issueType, setIssueType] = useState<string>("tech");
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
@@ -82,7 +84,7 @@ export function SupportPage() {
     <div className="min-h-screen bg-paper text-ink">
       <PageMeta
         title="Support — Wireline"
-        description="Get help with Wireline. Call (630) 581-1834 for instant agent triage, or open a ticket. Billing, technical, feature, agent-quality requests all in one place."
+        description={`Get help with Wireline. Call ${supportAgent.display} for instant agent triage, or open a ticket. Billing, technical, feature, agent-quality requests all in one place.`}
       />
       <div className="max-w-3xl mx-auto px-5 sm:px-6 py-10 sm:py-16">
         <Link
@@ -110,7 +112,7 @@ export function SupportPage() {
         {/* Fast triage */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-10">
           <a
-            href="tel:+16305811834"
+            href={`tel:${supportAgent.tel}`}
             className="rounded-2xl border border-black/10 p-4 hover:border-brand/40 hover:bg-black/[0.02] transition-all group"
           >
             <div className="w-9 h-9 rounded-lg bg-brand/10 flex items-center justify-center mb-3">
@@ -118,8 +120,8 @@ export function SupportPage() {
             </div>
             <p className="text-[12px] font-medium text-ink mb-1">Call us now</p>
             <p className="text-[11px] text-muted leading-relaxed">
-              (630) 581-1834 — our agent Liam picks up 24/7. Urgent issues get escalated to a human
-              within minutes.
+              {supportAgent.display} — {supportAgent.name} picks up 24/7. Urgent issues get
+              escalated to a human within minutes.
             </p>
           </a>
           <a
@@ -164,8 +166,8 @@ export function SupportPage() {
               <p className="font-display italic text-xl text-ink mb-2">Ticket received</p>
               <p className="text-[12px] text-muted leading-relaxed max-w-md mx-auto">
                 You'll hear from us within 1 business day at{" "}
-                <strong className="text-ink">{email}</strong>. If it's urgent, call (630) 581-1834 —
-                Liam will route it to a human immediately.
+                <strong className="text-ink">{email}</strong>. If it's urgent, call{" "}
+                {supportAgent.display}. {supportAgent.name} will route it to a human immediately.
               </p>
             </div>
           ) : (

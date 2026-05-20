@@ -58,7 +58,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
           }
         }
       } catch (err) {
-        if (active) toastError("Failed to load Action Engine configuration");
+        if (active) toastError("Failed to load capabilities");
       } finally {
         if (active) setIsLoading(false);
       }
@@ -91,7 +91,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
       if (!res.ok) throw new Error("Save failed");
 
       setSaveSuccess(true);
-      toastSuccess("Action Engine saved", "Agent capabilities updated.");
+      toastSuccess("Capabilities saved", "Agent action permissions updated.");
       setTimeout(() => setSaveSuccess(false), 2500);
     } catch (err) {
       toastError("Failed to save capabilities");
@@ -111,7 +111,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
       <div className="h-full flex items-center justify-center">
         <div className="flex flex-col items-center gap-4 text-brand">
           <Loader2 className="w-8 h-8 animate-spin" />
-          <span className="text-[10px] uppercase tracking-[0.3em]">Loading Action Engine...</span>
+          <span className="text-[10px] uppercase tracking-[0.3em]">Loading capabilities...</span>
         </div>
       </div>
     );
@@ -133,11 +133,11 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
         <div>
           <h3 className="font-display italic text-2xl text-ink flex items-center gap-3">
             <Blocks className="w-6 h-6 text-brand" />
-            Action Engine
+            Agent capabilities
           </h3>
           <p className="text-sm text-muted mt-1 max-w-2xl">
-            Empower your agent with autonomous capabilities. Select which integrations and actions
-            this agent is authorized to execute during a live interaction.
+            Choose the built-in actions and connected integrations this agent is authorized to use
+            during live calls and follow-ups.
           </p>
         </div>
 
@@ -153,7 +153,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
           ) : (
             <Save className="w-4 h-4" />
           )}
-          {saveSuccess ? "Saved" : "Save Capabilities"}
+          {saveSuccess ? "Saved" : "Save permissions"}
         </button>
       </div>
 
@@ -163,7 +163,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
             <div className="flex items-center gap-3">
               <div className="h-px bg-brand/30 w-8" />
               <h4 className="text-[10px] uppercase tracking-[0.3em] text-brand/80">
-                {group === "core" ? "Core Neural Actions" : `${group} Integrations`}
+                {group === "core" ? "Core actions" : `${group} integrations`}
               </h4>
               <div className="h-px bg-brand/10 flex-1" />
             </div>
