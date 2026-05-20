@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 
 interface HelpTooltipProps {
@@ -22,11 +22,31 @@ const PLACEMENT_INITIAL: Record<string, { y?: number; x?: number }> = {
   right: { x: -4 },
 };
 
+const TOOLTIP_HEIGHT_GUARD = 120;
+
 export function HelpTooltip({ content, title, placement = "top", children }: HelpTooltipProps) {
   const [visible, setVisible] = useState(false);
+  const [effectivePlacement, setEffectivePlacement] = useState(placement);
   const triggerRef = useRef<HTMLSpanElement>(null);
 
-  const initial = PLACEMENT_INITIAL[placement];
+  // Viewport-aware placement: when the requested placement is "top" but the
+  // trigger sits near the top edge (sticky headers, page tops), flip to
+  // "bottom" so the tooltip doesn't get clipped above the visible area.
+  // Mirror for "bottom" near the viewport bottom. This is the fix for the
+  // "tab popouts get cut off" bug.
+  useEffect(() => {
+    if (!visible || !triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    if (placement === "top" && rect.top < TOOLTIP_HEIGHT_GUARD) {
+      setEffectivePlacement("bottom");
+    } else if (placement === "bottom" && window.innerHeight - rect.bottom < TOOLTIP_HEIGHT_GUARD) {
+      setEffectivePlacement("top");
+    } else {
+      setEffectivePlacement(placement);
+    }
+  }, [visible, placement]);
+
+  const initial = PLACEMENT_INITIAL[effectivePlacement];
 
   return (
     <span
@@ -55,7 +75,7 @@ export function HelpTooltip({ content, title, placement = "top", children }: Hel
             animate={{ opacity: 1, scale: 1, y: 0, x: 0 }}
             exit={{ opacity: 0, scale: 0.92, ...initial }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className={`absolute z-[200] max-w-xs pointer-events-none ${PLACEMENT_CLASSES[placement]}`}
+            className={`absolute z-[200] max-w-xs pointer-events-none ${PLACEMENT_CLASSES[effectivePlacement]}`}
           >
             <div
               className="glass-elevated rounded-lg border px-3 py-2 shadow-xl"

@@ -1,8 +1,5 @@
 import { useState, useEffect } from "react";
 import {
-  Send,
-  Bot,
-  User,
   Loader2,
   Users,
   Database,
@@ -15,7 +12,6 @@ import {
   Plus,
   Pencil,
   Sparkles,
-  Terminal,
   ChevronDown,
   Zap,
   Target,
@@ -35,7 +31,6 @@ import { formatDate } from "../lib/safe-date";
 import SupervisedAgentTuner from "./SupervisedAgentTuner";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import { HelpTooltip } from "./HelpTooltip";
-import HubTabs, { TRAINING_HUB } from "./HubTabs";
 import AgentWorkspace from "./AgentWorkspace";
 import { useToast } from "../contexts/ToastContext";
 import AgentFlowComposer from "./AgentFlowComposer";
@@ -46,7 +41,7 @@ type Message = { role: "user" | "assistant"; content: string };
 export default function AgentTraining() {
   const { error: toastError } = useToast();
   const [activeTab, setActiveTab] = useState<
-    "admin" | "simulator" | "database" | "flow" | "actions" | "workspace"
+    "workspace" | "database" | "simulator" | "flow" | "actions"
   >("workspace");
   const [agents, setAgents] = useState<any[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState("default-agent");
@@ -252,115 +247,96 @@ export default function AgentTraining() {
           </div>
         </div>
 
-        {/* Claude Brain rail — recipes scoped to the selected agent */}
-        <div className="max-w-[1400px] mx-auto w-full mt-3">
-          <div className="relative aurora-ring rounded-2xl">
-            <div className="relative rounded-2xl glass p-3 flex flex-wrap items-center gap-2 overflow-hidden">
-              <div
-                className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-25 blur-3xl pointer-events-none"
-                style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
-              />
-              <div className="relative z-10 flex items-center gap-2 mr-1">
-                <div
-                  className="w-7 h-7 rounded-lg flex items-center justify-center"
-                  style={{ background: "#4F1E7B" }}
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-on-brand" strokeWidth={2.5} />
-                </div>
-                <div>
-                  <div className="text-[9px] uppercase tracking-[0.35em] text-brand">
-                    Wireline AI
-                  </div>
-                  <div className="text-[10px] text-ink/60">
-                    Wire intelligent recipes into this agent.
-                  </div>
-                </div>
-              </div>
-              <div className="relative z-10 flex flex-wrap items-center gap-1.5 ml-auto">
-                <ClaudeRecipeButton
-                  variant="ghost"
-                  recipe="agent-review"
-                  agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
-                  label="Performance Review"
-                />
-                <ClaudeRecipeButton
-                  variant="ghost"
-                  recipe="persona-clone"
-                  agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
-                  label="Clone Persona"
-                />
-                <ClaudeRecipeButton
-                  variant="ghost"
-                  recipe="knowledge-from-url"
-                  agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
-                  label="Ingest URL"
-                />
-                <ClaudeRecipeButton
-                  variant="ghost"
-                  recipe="knowledge-from-document"
-                  agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
-                  label="Ingest PDF"
-                />
-                <ClaudeRecipeButton
-                  variant="ghost"
-                  recipe="objection-drill"
-                  agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
-                  label="Objection Drills"
-                />
-                <ClaudeRecipeButton
-                  variant="ghost"
-                  recipe="call-playbook"
-                  agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
-                  label="Call Playbook"
-                />
-                <ClaudeRecipeButton
-                  variant="ghost"
-                  recipe="brief"
-                  agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
-                  label="Pre-Call Brief"
-                />
-              </div>
+        {/* AI assists — collapsed by default to declutter; expand to see recipe shortcuts */}
+        <details className="max-w-[1400px] mx-auto w-full mt-3 group">
+          <summary className="cursor-pointer list-none flex items-center gap-2 px-3 py-2 rounded-xl glass border border-white/10 hover:border-brand/30 transition-colors">
+            <div
+              className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
+              style={{ background: "#4F1E7B" }}
+            >
+              <Sparkles className="w-3 h-3 text-on-brand" strokeWidth={2.5} />
             </div>
+            <span className="text-[10px] uppercase tracking-[0.35em] text-brand">AI assists</span>
+            <span className="text-[11px] text-ink/60">— one-click recipes</span>
+            <ChevronDown className="ml-auto w-3.5 h-3.5 text-muted transition-transform group-open:rotate-180" />
+          </summary>
+          <div className="mt-2 p-3 rounded-xl glass border border-white/10 flex flex-wrap items-center gap-1.5">
+            <ClaudeRecipeButton
+              variant="ghost"
+              recipe="agent-review"
+              agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
+              label="Performance Review"
+            />
+            <ClaudeRecipeButton
+              variant="ghost"
+              recipe="persona-clone"
+              agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
+              label="Clone Persona"
+            />
+            <ClaudeRecipeButton
+              variant="ghost"
+              recipe="knowledge-from-url"
+              agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
+              label="Ingest URL"
+            />
+            <ClaudeRecipeButton
+              variant="ghost"
+              recipe="knowledge-from-document"
+              agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
+              label="Ingest PDF"
+            />
+            <ClaudeRecipeButton
+              variant="ghost"
+              recipe="objection-drill"
+              agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
+              label="Objection Drills"
+            />
+            <ClaudeRecipeButton
+              variant="ghost"
+              recipe="call-playbook"
+              agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
+              label="Call Playbook"
+            />
+            <ClaudeRecipeButton
+              variant="ghost"
+              recipe="brief"
+              agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
+              label="Pre-Call Brief"
+            />
           </div>
-        </div>
+        </details>
 
         <nav className="flex flex-wrap gap-1.5 max-w-[1400px] mx-auto w-full mt-3">
           {[
             {
-              id: "flow",
-              label: "Flow composer",
-              icon: Workflow,
-              help: "Define linear conversation stages and transitions for your agent",
-            },
-            {
-              id: "actions",
-              label: "Action engine",
-              icon: Blocks,
-              help: "Configure which integrations and tools this agent is authorized to use",
-            },
-            {
-              id: "admin",
-              label: "Neural relay",
+              id: "workspace",
+              label: "Coach",
               icon: MessageSquare,
-              help: "Configure directives and knowledge that shape your agent's behavior",
+              help: "Chat with your agent — coach it on new situations, give context, ask how recent calls went. The main place to teach.",
             },
             {
               id: "database",
-              label: "Directive registry",
+              label: "Knowledge",
               icon: Database,
-              help: "View and edit all training data stored for this agent",
-            },
-            {
-              id: "workspace",
-              label: "Workspace",
-              icon: MessageSquare,
-              help: "Ongoing private chat with this agent — coach, give context, ask how calls went",
+              help: "View and edit everything this agent has learned: personality, directives, knowledge entries, and uploaded files.",
             },
             {
               id: "simulator",
-              label: "Mission sandbox",
+              label: "Test call",
               icon: PlayCircle,
-              help: "Test your agent with simulated conversations",
+              help: "Run simulated conversations to see how your agent will respond before customers call.",
+            },
+            {
+              id: "flow",
+              label: "Conversation flow",
+              icon: Workflow,
+              help: "Define linear conversation stages and transitions (advanced — most agents work great without this).",
+            },
+            {
+              id: "actions",
+              label: "Connected apps",
+              icon: Blocks,
+              help: "Wire integrations the agent can use mid-call: calendar bookings, CRM lookups, payment links, SMS.",
             },
           ].map((tab) => (
             <button
@@ -385,12 +361,6 @@ export default function AgentTraining() {
         </nav>
       </header>
 
-      <div className="px-4 md:px-6 pt-3">
-        <div className="max-w-[1400px] mx-auto w-full">
-          <HubTabs tabs={TRAINING_HUB} label="Training sub-navigation" />
-        </div>
-      </div>
-
       <main className="flex-1 min-h-0 relative">
         <AnimatePresence mode="wait">
           {activeTab === "actions" && (
@@ -403,118 +373,6 @@ export default function AgentTraining() {
               className="absolute inset-0 overflow-y-auto"
             >
               <AgentActionEngine agentId={selectedAgentId} />
-            </motion.div>
-          )}
-
-          {activeTab === "admin" && (
-            <motion.div
-              key="admin"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="flex flex-col h-full"
-            >
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {messages.map((msg, i) => (
-                  <motion.div
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    key={i}
-                    className={cn("flex gap-3", msg.role === "user" ? "flex-row-reverse" : "")}
-                  >
-                    <div
-                      className={cn(
-                        "w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 transition-transform duration-300 hover:scale-110",
-                        msg.role === "user"
-                          ? "glass border-white/10 text-ink/70"
-                          : "glass border-brand/30 text-brand shadow-sm shadow-brand/20",
-                      )}
-                    >
-                      {msg.role === "user" ? (
-                        <User className="w-4 h-4" />
-                      ) : (
-                        <Bot className="w-4 h-4" />
-                      )}
-                    </div>
-                    <div
-                      className={cn(
-                        "max-w-[80%] p-3.5 rounded-2xl border text-[13px] leading-relaxed shadow-sm transition-all duration-300",
-                        msg.role === "user"
-                          ? "glass border-white/8 text-ink hover:border-white/20"
-                          : "bg-brand/8 border-brand/20 text-ink font-display italic hover:border-brand/40 shadow-brand/5",
-                      )}
-                      style={
-                        msg.role === "assistant"
-                          ? {
-                              boxShadow:
-                                "0 0 16px -4px rgba(79, 30, 123 ,0.15), 0 1px 0 rgba(255,255,255,0.4) inset",
-                            }
-                          : {
-                              boxShadow: "0 1px 0 rgba(255,255,255,0.6) inset",
-                            }
-                      }
-                    >
-                      {(msg.content ?? "").split("\n").map((line, lIdx) => (
-                        <p
-                          key={lIdx}
-                          className={cn(
-                            lIdx > 0 && "mt-1.5",
-                            (line.startsWith(">") || line.startsWith("**")) &&
-                              "text-brand neon-glow-teal font-semibold",
-                          )}
-                        >
-                          {line.replace(/^\*\*/g, "").replace(/^>\s?/, "")}
-                        </p>
-                      ))}
-                    </div>
-                  </motion.div>
-                ))}
-                {isLoading && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex gap-3"
-                  >
-                    <div className="w-9 h-9 rounded-xl glass border border-brand/30 text-brand flex items-center justify-center shrink-0">
-                      <Bot className="w-4 h-4" />
-                    </div>
-                    <div className="p-3 bg-brand/8 border border-brand/20 rounded-xl flex items-center gap-2.5">
-                      <Loader2 className="w-4 h-4 animate-spin text-brand" />
-                      <span className="text-[10px] uppercase tracking-[0.4em] text-brand">
-                        Extracting…
-                      </span>
-                    </div>
-                  </motion.div>
-                )}
-              </div>
-
-              {/* Input */}
-              <div className="shrink-0 p-3 border-t border-white/8">
-                <div className="flex items-center gap-2 glass border border-white/10 rounded-2xl px-3 py-1 focus-within:border-brand/30 transition-all">
-                  <Terminal className="w-3.5 h-3.5 text-muted/60 shrink-0" />
-                  <input
-                    type="text"
-                    className="flex-1 bg-transparent py-2.5 outline-none text-sm text-ink placeholder:text-muted/50"
-                    placeholder="Enter training protocols…"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                    disabled={isLoading}
-                  />
-                  <button
-                    onClick={handleSend}
-                    disabled={isLoading || !input.trim()}
-                    className="w-8 h-8 rounded-full bg-brand/15 border border-brand/40 text-brand flex items-center justify-center hover:bg-brand/25 disabled:opacity-40 transition-all shrink-0"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                <p className="mt-2 text-center text-[9px] uppercase tracking-[0.4em] text-muted/40">
-                  Encrypted uplink secure
-                </p>
-              </div>
             </motion.div>
           )}
 
