@@ -46,13 +46,14 @@ interface CrmConnection {
 // ────────────────────────────────────────────────────────────────────
 
 export function hsOAuthConfigured(): boolean {
-  return !!(
-    process.env.HUBSPOT_CLIENT_ID &&
-    process.env.HUBSPOT_CLIENT_SECRET
-  );
+  return !!(process.env.HUBSPOT_CLIENT_ID && process.env.HUBSPOT_CLIENT_SECRET);
 }
 
 const HUBSPOT_SCOPES = [
+  // `oauth` is HubSpot's always-required scope for OAuth apps — it
+  // MUST appear in the install URL's scope param or HubSpot rejects
+  // the install. The app's "Required scopes" config lists it.
+  "oauth",
   "crm.objects.contacts.read",
   "crm.objects.contacts.write",
   "crm.objects.deals.read",
@@ -70,7 +71,10 @@ export function getHubSpotAuthUrl(redirectUri: string, state: string): string {
   return `${HUBSPOT_AUTH}?${params.toString()}`;
 }
 
-export async function exchangeHubSpotCode(code: string, redirectUri: string): Promise<{
+export async function exchangeHubSpotCode(
+  code: string,
+  redirectUri: string,
+): Promise<{
   access_token: string;
   refresh_token: string;
   expires_in: number;
@@ -92,7 +96,7 @@ export async function exchangeHubSpotCode(code: string, redirectUri: string): Pr
     },
     15_000,
   );
-  const data = await r.json() as any;
+  const data = (await r.json()) as any;
   if (!r.ok || !data.access_token) {
     throw new Error(data.message || data.error || "HubSpot token exchange failed");
   }
@@ -103,7 +107,9 @@ export async function exchangeHubSpotCode(code: string, redirectUri: string): Pr
   };
 }
 
-async function refreshHubSpotToken(conn: CrmConnection): Promise<{ access_token: string; refresh_token: string; expires_at: number }> {
+async function refreshHubSpotToken(
+  conn: CrmConnection,
+): Promise<{ access_token: string; refresh_token: string; expires_at: number }> {
   const params = new URLSearchParams({
     grant_type: "refresh_token",
     client_id: process.env.HUBSPOT_CLIENT_ID!,
@@ -120,7 +126,7 @@ async function refreshHubSpotToken(conn: CrmConnection): Promise<{ access_token:
     },
     15_000,
   );
-  const data = await r.json() as any;
+  const data = (await r.json()) as any;
   if (!r.ok || !data.access_token) {
     throw new Error(data.message || "HubSpot token refresh failed");
   }
@@ -137,12 +143,14 @@ async function getConnection(userId: string): Promise<CrmConnection | null> {
       id: schema.crmConnections.id,
       accessToken: schema.crmConnections.accessToken,
       refreshToken: schema.crmConnections.refreshToken,
-      expiresAt: schema.crmConnections.expiresAt
+      expiresAt: schema.crmConnections.expiresAt,
     })
     .from(schema.crmConnections)
-    .where(and(eq(schema.crmConnections.userId, userId), eq(schema.crmConnections.provider, "hubspot")))
+    .where(
+      and(eq(schema.crmConnections.userId, userId), eq(schema.crmConnections.provider, "hubspot")),
+    )
     .limit(1);
-  
+
   return data || null;
 }
 
@@ -156,7 +164,8 @@ async function getValidToken(userId: string): Promise<string | null> {
 
   try {
     const updated = await refreshHubSpotToken(conn);
-    await drizzle.update(schema.crmConnections)
+    await drizzle
+      .update(schema.crmConnections)
       .set({
         accessToken: encryptSecret(updated.access_token),
         refreshToken: encryptSecret(updated.refresh_token),
@@ -205,7 +214,7 @@ export async function searchContacts(query: string, userId?: string): Promise<Hu
       15_000,
     );
     if (!res.ok) throw new Error(`HubSpot search error: ${res.status}`);
-    const data = await res.json() as any;
+    const data = (await res.json()) as any;
     return ((data.results || []) as any[]).map((r: any) => ({
       hs_id: r.id,
       first_name: r.properties?.firstname || "",
@@ -220,13 +229,16 @@ export async function searchContacts(query: string, userId?: string): Promise<Hu
   }
 }
 
-export async function createContact(params: {
-  first_name: string;
-  last_name: string;
-  email?: string;
-  phone?: string;
-  company?: string;
-}, userId?: string): Promise<string | null> {
+export async function createContact(
+  params: {
+    first_name: string;
+    last_name: string;
+    email?: string;
+    phone?: string;
+    company?: string;
+  },
+  userId?: string,
+): Promise<string | null> {
   const uid = userId || "";
   const token = await getValidToken(uid);
   if (!token) {
@@ -253,7 +265,7 @@ export async function createContact(params: {
       15_000,
     );
     if (!res.ok) throw new Error(`HubSpot contact create error: ${res.status}`);
-    const data = await res.json() as any;
+    const data = (await res.json()) as any;
     return data.id || null;
   } catch (err) {
     log.error("HubSpot contact create failed", { error: getErrorMessage(err) });
@@ -289,7 +301,7 @@ export async function logCall(entry: HubSpotCallLog, userId?: string): Promise<s
       15_000,
     );
     if (!res.ok) throw new Error(`HubSpot call log error: ${res.status}`);
-    const data = await res.json() as any;
+    const data = (await res.json()) as any;
     const callId = data.id;
 
     if (callId && entry.contact_id) {
@@ -307,13 +319,16 @@ export async function logCall(entry: HubSpotCallLog, userId?: string): Promise<s
   }
 }
 
-export async function createDeal(params: {
-  name: string;
-  stage?: string;
-  amount?: number;
-  contact_id?: string;
-  pipeline?: string;
-}, userId?: string): Promise<string | null> {
+export async function createDeal(
+  params: {
+    name: string;
+    stage?: string;
+    amount?: number;
+    contact_id?: string;
+    pipeline?: string;
+  },
+  userId?: string,
+): Promise<string | null> {
   const uid = userId || "";
   const token = await getValidToken(uid);
   if (!token) {
@@ -339,7 +354,7 @@ export async function createDeal(params: {
       15_000,
     );
     if (!res.ok) throw new Error(`HubSpot deal create error: ${res.status}`);
-    const data = await res.json() as any;
+    const data = (await res.json()) as any;
     const dealId = data.id;
 
     if (dealId && params.contact_id) {
@@ -358,9 +373,13 @@ export async function createDeal(params: {
 }
 
 export async function disconnectHubSpot(userId: string): Promise<void> {
-  await drizzle.delete(schema.crmConnections)
-    .where(and(eq(schema.crmConnections.userId, userId), eq(schema.crmConnections.provider, "hubspot")));
-  await drizzle.update(schema.settings)
+  await drizzle
+    .delete(schema.crmConnections)
+    .where(
+      and(eq(schema.crmConnections.userId, userId), eq(schema.crmConnections.provider, "hubspot")),
+    );
+  await drizzle
+    .update(schema.settings)
     .set({ crmType: null })
     .where(eq(schema.settings.userId, userId));
 }
