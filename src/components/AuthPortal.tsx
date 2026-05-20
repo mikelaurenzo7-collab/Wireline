@@ -195,7 +195,7 @@ function OAuthSignInButtons({ disabled }: { disabled?: boolean }) {
       </div>
       <div className="flex items-center gap-3" aria-hidden="true">
         <span className="flex-1 h-px bg-black/8" />
-        <span className="text-[9px] uppercase tracking-[0.4em] text-muted/60 font-medium">
+        <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.4em] text-muted/60 font-medium">
           or with email
         </span>
         <span className="flex-1 h-px bg-black/8" />
