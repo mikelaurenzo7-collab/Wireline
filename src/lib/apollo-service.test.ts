@@ -9,15 +9,18 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 describe("apollo-service.searchLeads", () => {
   const originalFetch = global.fetch;
   const originalEnv = process.env.APOLLO_API_KEY;
+  let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     process.env.APOLLO_API_KEY = "test-key-abc";
+    consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
   });
 
   afterEach(() => {
     global.fetch = originalFetch;
     if (originalEnv === undefined) delete process.env.APOLLO_API_KEY;
     else process.env.APOLLO_API_KEY = originalEnv;
+    consoleWarnSpy.mockRestore();
     vi.restoreAllMocks();
   });
 
@@ -71,7 +74,13 @@ describe("apollo-service.searchLeads", () => {
             state: "TX",
           },
           // Should be filtered out — no phone.
-          { first_name: "No", last_name: "Phone", email: "x@y", title: "x", organization: { name: "x" } },
+          {
+            first_name: "No",
+            last_name: "Phone",
+            email: "x@y",
+            title: "x",
+            organization: { name: "x" },
+          },
         ],
       }),
     }) as any;
