@@ -1312,4 +1312,55 @@ router.post(
   },
 );
 
+/**
+ * Email transport diagnostic. POST a `{ "to": "you@example.com" }` body
+ * (or omit it to send to OWNER_EMAIL) and this returns the RAW Resend
+ * response — status code + body — so we can see exactly why a send
+ * failed. The most common failure on a fresh Resend account is an
+ * unverified sending domain: Resend only lets you send from a domain
+ * you've added + verified via DNS. Until then `noreply@trywireline.com`
+ * is rejected.
+ */
+router.post("/api/admin/test-email", optionalAuth, async (req: Request, res: Response) => {
+  if (!authorizeMigration(req, res)) return;
+
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    return res.status(503).json({ ok: false, error: "RESEND_API_KEY not set in environment." });
+  }
+  const to = (req.body?.to as string) || process.env.OWNER_EMAIL || "";
+  if (!to) {
+    return res.status(400).json({ ok: false, error: "No `to` address and no OWNER_EMAIL set." });
+  }
+  const from = process.env.RESEND_FROM_EMAIL || "Wireline <noreply@trywireline.com>";
+
+  try {
+    const r = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
+      body: JSON.stringify({
+        from,
+        to: [to],
+        subject: "Wireline email transport test",
+        text: "If you received this, Resend is wired up correctly. — Wireline",
+      }),
+    });
+    const body = await r.text();
+    return res.json({
+      ok: r.ok,
+      resend_status: r.status,
+      resend_body: body.slice(0, 500),
+      from_used: from,
+      to,
+      diagnosis: r.ok
+        ? "Transport works."
+        : r.status === 403
+          ? "Likely the sending domain isn't verified in Resend. Add + verify trywireline.com under Resend → Domains, then set RESEND_FROM_EMAIL or keep the noreply@trywireline.com default."
+          : "See resend_body for the exact error.",
+    });
+  } catch (e: any) {
+    return res.status(500).json({ ok: false, error: e?.message || "fetch failed" });
+  }
+});
+
 export default router;
