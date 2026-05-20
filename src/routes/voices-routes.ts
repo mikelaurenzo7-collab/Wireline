@@ -16,7 +16,7 @@
  * (`consent_given: true`) — operator must confirm they have
  * permission to clone this voice. Logged for the record.
  */
-import { Router, type Response } from "express";
+import { Router, type Request, type Response } from "express";
 import { and, desc, eq } from "drizzle-orm";
 import rateLimit from "express-rate-limit";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -117,51 +117,40 @@ router.get("/api/voices", authenticateUser, async (req: AuthenticatedRequest, re
 });
 
 // GET /api/voices/:id/preview — proxy the ElevenLabs preview MP3.
-// Keeps the API key server-side, gives the browser a clean public URL.
-router.get(
-  "/api/voices/:id/preview",
-  authenticateUser,
-  async (req: AuthenticatedRequest, res: Response) => {
+// PUBLIC (no auth) so the home-page hero widget + the public Showcase
+// + the public Pricing page can all play voice samples without a
+// session. The preview URLs are already public on ElevenLabs's CDN;
+// we're just resolving voiceId → URL server-side to keep the API
+// key + voice-id catalog one layer removed from browser code.
+//
+// Cloned-voice previews (per-tenant) are NOT exposed here — they
+// require an authenticated session and live on the authed route
+// below. This endpoint only returns previews for premade voices.
+router.get("/api/voices/:id/preview", async (req: Request, res: Response) => {
+  try {
+    const voiceId = req.params.id;
+    if (!elevenLabsConfigured()) {
+      return res.status(503).json({ error: "Voice previews unavailable." });
+    }
     try {
-      const voiceId = req.params.id;
-      // Resolve the preview URL — either from our cloned-voices table
-      // (faster, cached) or from ElevenLabs in one round-trip.
-      let previewUrl: string | null = null;
-      const [own] = await drizzle
-        .select({ preview_url: schema.clonedVoices.previewUrl })
-        .from(schema.clonedVoices)
-        .where(
-          and(
-            eq(schema.clonedVoices.voiceId, voiceId),
-            eq(schema.clonedVoices.userId, req.user.id),
-          ),
-        )
-        .limit(1);
-      if (own?.preview_url) previewUrl = own.preview_url;
-
-      if (!previewUrl && elevenLabsConfigured()) {
-        try {
-          const { getVoice } = await import("../lib/elevenlabs-client");
-          const v = await getVoice(voiceId);
-          previewUrl = v.preview_url ?? null;
-        } catch (e) {
-          log.warn("voice preview lookup failed", { error: getErrorMessage(e), voiceId });
-        }
-      }
+      const { getVoice } = await import("../lib/elevenlabs-client");
+      const v = await getVoice(voiceId);
+      const previewUrl = v.preview_url ?? null;
       if (!previewUrl) {
-        return res.status(404).json({ error: "No preview available for this voice" });
+        return res.status(404).json({ error: "No preview available for this voice." });
       }
-
       // 302 redirect to the public preview URL — simpler than streaming
       // the MP3 through our server (saves bandwidth + cold-start cost).
-      // The preview URL itself is public on ElevenLabs's CDN.
       res.redirect(302, previewUrl);
     } catch (e) {
-      log.error("voice preview failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Preview failed" });
+      log.warn("voice preview lookup failed", { error: getErrorMessage(e), voiceId });
+      return res.status(404).json({ error: "Voice not found." });
     }
-  },
-);
+  } catch (e) {
+    log.error("voice preview failed", { error: getErrorMessage(e) });
+    res.status(500).json({ error: "Preview failed" });
+  }
+});
 
 // POST /api/voices/clone — instant clone from a single audio sample.
 router.post(

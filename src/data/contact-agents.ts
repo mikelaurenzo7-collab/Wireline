@@ -52,7 +52,8 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     role: "General Customer Support",
     scope:
       "First line for any Wireline question — answers, account help, how-to, troubleshooting basics. Routes specialized calls to the right teammate.",
-    firstMessage: "Hi, this is Sarah with Wireline support — how can I help you today?",
+    firstMessage:
+      "Hi, thanks for calling Wireline — this is Sarah. Who do I have the pleasure of speaking with?",
     handles: "general, how-to, account, password reset, navigation",
     tel: "+16306425661",
     display: "(630) 642-5661",
@@ -64,8 +65,7 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     role: "Sales & Plan Comparison",
     scope:
       "Pricing, plan comparison, ROI questions, enterprise quotes, custom demos. Owns the deal cycle.",
-    firstMessage:
-      "Hey, this is Liam over at Wireline sales — looking to size up a plan or compare us to something else? Happy to help.",
+    firstMessage: "Hey, thanks for calling Wireline — this is Liam. Who am I speaking with?",
     handles: "pricing, plans, demo, comparison, enterprise quote, ROI",
     tel: "+16305811834",
     display: "(630) 581-1834",
@@ -77,7 +77,7 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     role: "Technical Support",
     scope:
       "Integrations, webhooks, API, voice quality, CRM sync, knowledge ingestion, anything that needs a developer mindset.",
-    firstMessage: "Hi, Tyler here from Wireline technical support — what are we troubleshooting?",
+    firstMessage: "Hi, thanks for calling Wireline — Tyler here. Can I grab your name?",
     handles: "API, webhooks, integration, CRM sync, voice quality, audio, latency",
     tel: "+15642389455",
     display: "(564) 238-9455",
@@ -89,8 +89,7 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     role: "Book a Demo / Onboarding",
     scope:
       "Schedules white-glove onboarding for Business + Enterprise, custom training sessions, demo calls for prospects.",
-    firstMessage:
-      "Hi, this is Maya — I handle onboarding and demo scheduling at Wireline. What time zone are you in so I can find a slot that works?",
+    firstMessage: "Hi, thanks for calling Wireline — this is Maya. Who am I speaking with?",
     handles: "demo, onboarding, training, white glove, calendar, scheduling",
     tel: "+16306425927",
     display: "(630) 642-5927",
@@ -102,8 +101,7 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     role: "Billing & Account Management",
     scope:
       "Stripe issues, plan changes, refunds, usage overages, invoice questions, cancellations, downgrades.",
-    firstMessage:
-      "Hi, this is Devon from Wireline billing — got an invoice question or want to make a change to your plan?",
+    firstMessage: "Hi, thanks for calling Wireline — this is Devon. May I have your name?",
     handles: "billing, invoice, refund, plan change, downgrade, cancel, Stripe, overage",
     tel: "+12075935155",
     display: "(207) 593-5155",
@@ -116,7 +114,7 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     scope:
       "Proactive check-ins, quarterly business reviews, usage analysis, expansion ideas, best-practice coaching for existing accounts.",
     firstMessage:
-      "Hi, this is Priya from Wireline customer success — calling to see how the agents are performing and whether there's anything we can tune. Got a few minutes?",
+      "Hi, thanks for calling Wireline — this is Priya. Who do I have the pleasure of speaking with?",
     handles: "success, check-in, QBR, expansion, best practice, training, optimization",
     tel: "+15727269365",
     display: "(572) 726-9365",
@@ -133,8 +131,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<DemoAgent> = [
     role: "Healthcare-Style Demo",
     scope:
       "Role-plays a clinic front desk — greets patients, captures reason for visit, schedules appointments, handles insurance pre-check. Healthcare-style demo; not currently HIPAA-certified (BAA available on the Enterprise tier roadmap).",
-    firstMessage:
-      "Thanks for calling Wireline Medical, this is Marcus — are you booking an appointment or do you have a question about an existing one?",
+    firstMessage: "Thanks for calling Wireline Medical — this is Marcus. May I have your name?",
     handles: "medical, healthcare, clinic, patient intake",
     tel: "+16173134469",
     display: "(617) 313-4469",
@@ -146,8 +143,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<DemoAgent> = [
     role: "Real Estate Lead Capture (demo)",
     scope:
       "Role-plays a real-estate front desk — answers listing inquiries, qualifies buyer budget + timeline, books showings.",
-    firstMessage:
-      "Wireline Realty, this is Aisha — calling about a listing or looking to set up a showing?",
+    firstMessage: "Thanks for calling Wireline Realty — this is Aisha. Who am I speaking with?",
     handles: "real estate, realtor, listing, showing, buyer",
     tel: "+19733638874",
     display: "(973) 363-8874",
@@ -160,7 +156,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<DemoAgent> = [
     scope:
       "Role-plays a claims line — walks claimants through first-notice-of-loss, captures incident detail, opens the case file.",
     firstMessage:
-      "Wireline Insurance claims, this is Elena — are you reporting a new claim or following up on an existing one?",
+      "Thanks for calling Wireline Insurance — this is Elena. Can I start with your name?",
     handles: "insurance, claim, loss, FNOL",
     tel: "+19044601596",
     display: "(904) 460-1596",
@@ -172,8 +168,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<DemoAgent> = [
     role: "Outbound SDR (demo)",
     scope:
       "Role-plays a cold-call SDR — calls a lead from a CSV, qualifies fit, books discovery calls with closers, logs results to CRM.",
-    firstMessage:
-      "Hey, this is Jake calling from Wireline — quick one, do you handle customer calls at your company today?",
+    firstMessage: "Hey, thanks for calling Wireline — this is Jake. Who am I speaking with?",
     handles: "outbound, cold call, SDR, prospecting, qualification",
     tel: "+14692571581",
     display: "(469) 257-1581",

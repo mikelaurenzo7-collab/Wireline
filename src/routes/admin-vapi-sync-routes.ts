@@ -20,7 +20,8 @@
  * Auth: requesting user's email must match OWNER_EMAIL env var.
  */
 
-import { Router, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
+import crypto from "crypto";
 import { log } from "../lib/server-context";
 import { authenticateUser } from "../middleware/auth";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -92,10 +93,29 @@ function buildSystemPromptForAgent(agent: ContactAgent, kind: "cs" | "demo"): st
   // agents are demonstrably more dynamic than competitor demos.
   const vibe = buildVibeBlock(agent.defaultVibe);
 
+  // Call-opening protocol — uniform across every Wireline agent.
+  // Mike's directive: a warm greeting, get the caller's name, get the
+  // reason for the call. Nothing else up front — no pitching, no
+  // "got a few minutes" (that's an OUTBOUND opener and these are all
+  // INBOUND lines). The firstMessage already does the greeting + name
+  // ask; this protocol makes the agent ask the reason next + use the
+  // name naturally for the rest of the call.
+  const openingProtocol = [
+    "CALL OPENING PROTOCOL (follow exactly, every inbound call):",
+    "1. You already greeted the caller warmly and asked their name in your first message.",
+    '2. Once they give their name, acknowledge it warmly and use it: "Great to meet you, [name]."',
+    '3. Then ask ONE open question: "What can I help you with today?"',
+    '4. Do NOT pitch, do NOT say "do you have a few minutes", do NOT act like you called them. They called you.',
+    "5. From there, help them with their actual reason using your scope + the knowledge below.",
+  ].join("\n");
+
   return [
     heading,
     "",
     `You handle calls for these topics: ${agent.handles}.`,
+    "",
+    openingProtocol,
+    "",
     vibe,
     "",
     knowledge,
@@ -296,12 +316,31 @@ async function syncOneAgent(
   }
 }
 
+// Permissive middleware — only runs authenticateUser when a Bearer
+// token is present, so the X-Migration-Token path below works for
+// ops/CI without an interactive session.
+function syncOptionalAuth(req: Request, res: Response, next: NextFunction) {
+  const hasBearer = (req.headers.authorization || "").startsWith("Bearer ");
+  if (!hasBearer) return next();
+  return (authenticateUser as any)(req, res, next);
+}
+
 router.post(
   "/api/admin/sync-vapi-knowledge",
-  authenticateUser,
+  syncOptionalAuth,
   async (req: AuthenticatedRequest, res: Response) => {
+    // Authorize via owner-email session OR X-Migration-Token header.
+    const provided = req.headers["x-migration-token"] as string | undefined;
+    const expected = process.env.MIGRATION_TOKEN;
+    const tokenOk = !!(
+      provided &&
+      expected &&
+      provided.length === expected.length &&
+      crypto.timingSafeEqual(Buffer.from(provided), Buffer.from(expected))
+    );
     const ownerEmail = process.env.OWNER_EMAIL;
-    if (!ownerEmail || req.user?.email !== ownerEmail) {
+    const ownerOk = !!(ownerEmail && req.user?.email === ownerEmail);
+    if (!tokenOk && !ownerOk) {
       return res.status(403).json({ error: "Owner only." });
     }
     if (!process.env.VAPI_PRIVATE_KEY) {
