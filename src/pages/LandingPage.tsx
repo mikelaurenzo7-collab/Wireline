@@ -41,6 +41,7 @@ import WirelineMark from "../components/WirelineMark";
 import IntegrationLogos from "../components/layout/IntegrationLogos";
 import { WIRELINE_CONTACT_AGENTS, WIRELINE_DEMO_AGENTS } from "../data/contact-agents";
 import { SHOWCASE_AGENTS } from "../data/showcase-agents";
+import { AgentSampleHero } from "../components/AgentSampleHero";
 
 const FEATURE_PILLARS = [
   {
@@ -324,6 +325,7 @@ export default function LandingPage() {
               <Check className="w-3 h-3 text-emerald-500" /> Cancel anytime
             </li>
           </ul>
+          <AgentSampleHero />
         </motion.div>
       </section>
 

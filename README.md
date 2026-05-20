@@ -215,6 +215,72 @@ One voice per agent, three scripts. Operators pick the vibe in
 FleetSettings → Voice; tenants on the showcase line have it set per
 agent in `src/data/contact-agents.ts`.
 
+### Best-in-class call quality
+
+Every agent's Vapi assistant config (`src/lib/vapi-assistant-factory.ts`)
+ships with the full latency + quality stack:
+
+| Setting | Value | What it buys you |
+|---|---|---|
+| `responseDelaySeconds` | 0 | Agent starts speaking the instant the caller stops |
+| `numWordsToInterruptAssistant` | 2 | Caller can barge in after 2 words — no steamrolling |
+| `optimizeStreamingLatency` | 4 (max) | Fastest first-audio-out from ElevenLabs |
+| `transcriber` | Deepgram Nova-2 + smartFormat | Best-in-class STT, numbers/times/money read back right |
+| `voicemailDetection` | Twilio ML + 15s timeout | Skips dud LLM-talks-to-robot calls = real $$ saved |
+| `analysisPlan` | Structured extraction | Post-call: `caller_intent`, `outcome`, `commitments`, `sentiment`, `success` |
+| `voice.speed` | 0.7 – 1.2 per agent | Operator-tunable for elderly vs impatient callers |
+| `voice.stability/style/...` | Per-agent fine-tuning | Cloned voices dialed in to operator preference |
+| `pronunciationDictionaryLocators` | Per-tenant | HVAC → H-V-A-C, ACL → A-C-L (per vertical) |
+
+### ElevenLabs feature surface
+
+What we use from ElevenLabs's API today:
+
+- **Voice library + custom voices** (`/voices`, `/voices/add`) — every premade voice + tenant clones
+- **Voice Isolator** (`/audio-isolation`) — auto-cleans clone uploads (operators record on phones; isolator gets studio-quality input)
+- **Pronunciation Dictionaries** (`/pronunciation-dictionaries`) — per-tenant jargon control synced into Vapi
+- **Speech-to-Text** (`/speech-to-text`, Scribe model) — re-transcribe call recordings when Vapi STT is questionable
+- **Text-to-Speech streaming** (via Vapi runtime) — Flash v2.5 model, max-latency-optimized
+- **Webhooks** (`/api/webhooks/elevenlabs`) — HMAC-signed voice removal + transcription events
+
+Not used (deliberately): ElevenLabs Agents platform (Vapi handles call
+runtime better), Music API (requires paid plan), Voice Changer (no
+product fit), Dubbing (we're phone-only).
+
+### Marketing wedges — vertical landing pages
+
+`/for/<slug>` routes pull from a single `WEDGES` config in
+`src/pages/VerticalLanding.tsx`. Adding a vertical is a ~20-line entry
++ a route guard update.
+
+Live wedges: **home-services**, **medical**, **legal**, **real-estate**,
+**personal**, **insurance**, **restaurants**, **sales**. Each ships
+its own meta tags, hero copy, 4 pain points, sample script, stat band,
+FAQ, and CTA — but the product behind them is the horizontal platform.
+
+### Pricing + billing
+
+Plans live in `src/lib/plan-catalog.ts`. Each plan ships:
+- Flat monthly price (Stripe `STRIPE_*_PRICE_ID`)
+- Included voice minutes
+- Per-agent overage minute rate (Starter $0.20, Pro $0.18, Business $0.16)
+- Max agents + max numbers
+- Per-tenant feature flags (HIPAA mode, white-label, dedicated number)
+
+Stripe **metered billing** for voice-minute overage is wired but
+inert until `STRIPE_VOICE_OVERAGE_METER_EVENT_NAME` is set in the
+environment (lets us ship usage tracking + the UI ahead of operator
+Stripe setup). See the docstring on `emitVoiceMinuteOverageEvent`
+in `src/lib/stripe-helpers.ts` for the dashboard setup steps.
+
+### Phone numbers
+
+Vapi-managed by default (first 10 free, then $2/mo). Self-serve
+claim via `/api/phone-numbers/provision` from the operator UI;
+admin bulk-fill via `/api/admin/phone-numbers/fill-pool`. Trial
+accounts auto-get a number on signup. Twilio BYO porting works
+for customers who want to keep their existing number.
+
 ---
 
 ## Contributing
