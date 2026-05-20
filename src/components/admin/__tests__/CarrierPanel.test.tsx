@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
+import { beforeEach, describe, it, expect, vi } from "vitest";
 import { CarrierPanel } from "../CarrierPanel";
 
 // Mock child components
@@ -8,6 +8,13 @@ vi.mock("../../WebhooksManager", () => ({
 }));
 vi.mock("../../IntakeKeysManager", () => ({
   default: () => <div data-testid="intake-keys-manager">IntakeKeysManager</div>,
+}));
+vi.mock("../../PhoneNumberPicker", () => ({
+  default: ({ onClaim }: { onClaim?: (phoneNumber: string) => void }) => (
+    <button type="button" onClick={() => onClaim?.("+15557654321")}>
+      Claim test number
+    </button>
+  ),
 }));
 
 describe("CarrierPanel", () => {
@@ -23,6 +30,16 @@ describe("CarrierPanel", () => {
     twilio_sms_from_number: "",
     twilio_whatsapp_from_number: "",
     twilio_manager_alert_number: "",
+    subscription_status: "active",
+    max_agents: 3,
+    prospecting_enabled: false,
+    target_titles: [],
+    target_industries: [],
+    target_states: [],
+    target_employee_ranges: ["1,10", "11,50"],
+    brand_name: "",
+    brand_logo_url: "",
+    primary_color: "#4F1E7B",
   };
 
   const mockAgents = [
@@ -48,6 +65,10 @@ describe("CarrierPanel", () => {
     onDeleteNumber: vi.fn(),
     onUpdateNumberAgent: vi.fn(),
   };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   it("renders the carrier network and phone numbers sections", () => {
     render(<CarrierPanel {...defaultProps} />);
@@ -79,6 +100,32 @@ describe("CarrierPanel", () => {
     expect(defaultProps.onSyncNumbers).toHaveBeenCalled();
   });
 
+  it("syncs phone numbers after a pool number is claimed", () => {
+    render(<CarrierPanel {...defaultProps} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /claim test number/i }));
+
+    expect(defaultProps.onSyncNumbers).toHaveBeenCalled();
+  });
+
+  it("calls onUpdateNumberAgent when a line is assigned to a voice agent", () => {
+    render(<CarrierPanel {...defaultProps} />);
+
+    fireEvent.change(screen.getByLabelText(/Assign agent to \+15551234567/i), {
+      target: { value: "agent-2" },
+    });
+
+    expect(defaultProps.onUpdateNumberAgent).toHaveBeenCalledWith("1", "agent-2");
+  });
+
+  it("calls onDeleteNumber when a line delete button is clicked", () => {
+    render(<CarrierPanel {...defaultProps} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /delete \+15551234567/i }));
+
+    expect(defaultProps.onDeleteNumber).toHaveBeenCalledWith("1");
+  });
+
   it("calls onAddNumber when register button is clicked", () => {
     render(<CarrierPanel {...defaultProps} />);
 
@@ -95,5 +142,38 @@ describe("CarrierPanel", () => {
     fireEvent.click(registerBtn);
 
     expect(defaultProps.onAddNumber).toHaveBeenCalledWith("+1234567890", "vapi-new");
+  });
+
+  it("updates SMS sender and toggles outbound SMS settings", () => {
+    render(<CarrierPanel {...defaultProps} />);
+
+    fireEvent.click(screen.getByRole("button", { pressed: true }));
+    expect(defaultProps.onUpdateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({ twilio_messaging_enabled: false }),
+    );
+
+    fireEvent.change(screen.getByLabelText(/SMS sender number/i), {
+      target: { value: "+15550001111" },
+    });
+    expect(defaultProps.onUpdateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({ twilio_sms_from_number: "+15550001111" }),
+    );
+  });
+
+  it("reveals and updates manager alert number when operator alerts are enabled", () => {
+    render(
+      <CarrierPanel
+        {...defaultProps}
+        settings={{ ...mockSettings, twilio_manager_alerts_enabled: true }}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText(/Your phone number/i), {
+      target: { value: "+15559990000" },
+    });
+
+    expect(defaultProps.onUpdateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({ twilio_manager_alert_number: "+15559990000" }),
+    );
   });
 });

@@ -1,5 +1,5 @@
 // src/lib/audit-logger.test.ts
-import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from "vitest";
 import { AuditLogger } from "./audit-logger";
 
 // Type for chainable insert mock
@@ -12,8 +12,10 @@ describe("AuditLogger", () => {
   let mockDrizzle: any;
   let logger: AuditLogger;
   let insertChain: InsertChain;
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
+    consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     // Create chainable mock object for insert().values() pattern
     insertChain = {
       values: vi.fn(() => Promise.resolve({ success: true })),
@@ -24,6 +26,10 @@ describe("AuditLogger", () => {
     };
 
     logger = new AuditLogger(mockDrizzle);
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
   });
 
   it("should log auth events", async () => {

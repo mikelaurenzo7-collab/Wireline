@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Vapi webhook/tool payloads are vendor-defined JSON envelopes with route-specific shapes. */
 import express, { Request, Response } from "express";
 import type { AuthenticatedRequest } from "../types/auth";
 import * as claudeBrain from "../lib/claude-brain";
