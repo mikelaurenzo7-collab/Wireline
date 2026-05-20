@@ -82,9 +82,38 @@ router.get("/api/calls", authenticateUser, async (req: AuthenticatedRequest, res
 
     const count = Number(countResult.count);
 
+    // Optimized query: LEFT JOIN with agents to get agent name in a single query
+    // instead of N+1 pattern. The frontend can now display agent name without
+    // a separate lookup. This eliminates the need to fetch all agents separately
+    // and match them client-side.
     const calls = await drizzle
-      .select()
+      .select({
+        id: schema.callLogs.id,
+        userId: schema.callLogs.userId,
+        vapiCallId: schema.callLogs.vapiCallId,
+        agentId: schema.callLogs.agentId,
+        direction: schema.callLogs.direction,
+        customerNumber: schema.callLogs.customerNumber,
+        durationSeconds: schema.callLogs.durationSeconds,
+        cost: schema.callLogs.cost,
+        summary: schema.callLogs.summary,
+        transcript: schema.callLogs.transcript,
+        recordingUrl: schema.callLogs.recordingUrl,
+        leadScore: schema.callLogs.leadScore,
+        intentLabel: schema.callLogs.intentLabel,
+        sentiment: schema.callLogs.sentiment,
+        coachingNote: schema.callLogs.coachingNote,
+        qaScore: schema.callLogs.qaScore,
+        qaBreakdown: schema.callLogs.qaBreakdown,
+        outcomeTag: schema.callLogs.outcomeTag,
+        campaignSource: schema.callLogs.campaignSource,
+        demo: schema.callLogs.demo,
+        createdAt: schema.callLogs.createdAt,
+        // Include agent name from the JOIN
+        agentName: schema.agents.name,
+      })
       .from(schema.callLogs)
+      .leftJoin(schema.agents, eq(schema.callLogs.agentId, schema.agents.id))
       .where(eq(schema.callLogs.userId, req.user.id))
       .orderBy(desc(schema.callLogs.createdAt))
       .limit(limit)

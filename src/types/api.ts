@@ -26,6 +26,7 @@ export interface CallLog {
   id: string;
   vapi_call_id?: string;
   agent_id: string;
+  agent_name?: string | null; // Agent name from JOIN - optional for backwards compatibility
   user_id?: string;
   direction: "inbound" | "outbound";
   customer_number: string | null;
@@ -39,6 +40,8 @@ export interface CallLog {
   sentiment: "positive" | "neutral" | "negative" | null;
   coaching_note: string | null;
   qa_score?: number | null;
+  outcome_tag?: string | null;
+  campaign_source?: string | null;
   created_at: string;
 }
 
