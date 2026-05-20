@@ -30,7 +30,7 @@ import { google } from "googleapis";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
-import { generateToken } from "../lib/auth-service";
+import { generateToken, isOwnerEmail } from "../lib/auth-service";
 import { generateOAuthState, verifyOAuthState } from "../lib/oauth-helpers";
 
 const router = Router();
@@ -103,6 +103,10 @@ function bridgeRedirect(
     user_id: user.id,
     email: user.email,
     name: user.fullName ?? "",
+    // Carry the owner flag through the OAuth bridge — without this an
+    // owner who signs in via Google never gets is_owner set, and the
+    // Founder's Dashboard stays hidden from them.
+    is_owner: isOwnerEmail(user.email) ? "1" : "0",
   });
   return `${baseUrl}/auth/oauth-complete?${params.toString()}`;
 }

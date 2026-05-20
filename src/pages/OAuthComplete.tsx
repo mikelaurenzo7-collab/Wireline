@@ -55,6 +55,9 @@ export default function OAuthComplete() {
         id: userId,
         email,
         full_name: name || undefined,
+        // Server stamps "1" when the email matches OWNER_EMAIL — gates
+        // the Founder's Dashboard for owners who sign in via OAuth.
+        is_owner: params.get("is_owner") === "1",
       },
     });
     // Replace so a back button doesn't re-trigger the bridge.
