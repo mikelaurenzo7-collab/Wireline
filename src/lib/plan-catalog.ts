@@ -9,11 +9,21 @@
  * — not a monthly tax. Overage rates also drop with tier to make the
  * upgrade math obvious.
  *
- * Unit economics: variable cost per voice minute lands around $0.13
- * (Vapi infra + 11labs synthesis + Claude reasoning + Twilio per-call).
- * Plan limits + overage rates are still tuned to stay cash-positive at
- * full utilization. Pricing.tsx renders the same numbers; keep them
- * in sync.
+ * Unit economics: variable cost per voice minute lands around $0.128
+ * (Vapi $0.06 + 11labs $0.014 + Claude voice-mode $0.04 + Twilio $0.014).
+ *
+ * Overage rates set in 2026-05 to keep every tier ABOVE cost on
+ * overage minutes (prior rates of $0.12/$0.10/$0.08 on Pro/Business/
+ * Enterprise were losing money per overage minute). New schedule:
+ *   personal:   $0.20  (+36% margin)  — unchanged
+ *   starter:    $0.18  (+29% margin)  — bumped from $0.15
+ *   pro:        $0.15  (+15% margin)  — bumped from $0.12
+ *   business:   $0.13  (+2%  margin)  — bumped from $0.10
+ *   enterprise: $0.11  (~breakeven)   — bumped from $0.08, custom contracts cover
+ *
+ * Existing subscribers stay on their original Stripe Price IDs (Stripe
+ * grandfathers automatically) — only new signups see the new rates.
+ * Pricing.tsx renders these same numbers; keep in sync.
  */
 
 export type StripePlanId = "personal" | "starter" | "pro" | "business" | "enterprise";
@@ -85,7 +95,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     price_usd_monthly: 149,
     max_agents: 3,
     voice_minutes_monthly: 1_500,
-    overage_per_min_usd: 0.15,
+    overage_per_min_usd: 0.18,
     included_phone_numbers: 2,
     priceIdEnv: "STRIPE_STARTER_PRICE_ID",
     extra_agent_price_usd: 35,
@@ -97,7 +107,7 @@ export const STRIPE_PLANS: StripePlan[] = [
       "Outbound dialer (CSV + auto-dial)",
       "Live call monitor + sentiment",
       "Up to 5 team seats",
-      "Overage billed at $0.15 / min",
+      "Overage billed at $0.18 / min",
       "Add more agents: $35/each/month",
     ],
   },
@@ -107,7 +117,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     price_usd_monthly: 499,
     max_agents: 10,
     voice_minutes_monthly: 6_000,
-    overage_per_min_usd: 0.12,
+    overage_per_min_usd: 0.15,
     included_phone_numbers: 5,
     priceIdEnv: "STRIPE_PRO_PRICE_ID",
     extra_agent_price_usd: 30,
@@ -120,7 +130,7 @@ export const STRIPE_PLANS: StripePlan[] = [
       "Slack alerts on key events",
       "Up to 25 team seats",
       "Webhook + Action Engine",
-      "Overage billed at $0.12 / min",
+      "Overage billed at $0.15 / min",
       "Priority support",
       "Add more agents: $30/each/month",
     ],
@@ -131,7 +141,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     price_usd_monthly: 1_499,
     max_agents: 25,
     voice_minutes_monthly: 15_000,
-    overage_per_min_usd: 0.1,
+    overage_per_min_usd: 0.13,
     included_phone_numbers: 10,
     priceIdEnv: "STRIPE_BUSINESS_PRICE_ID",
     extra_agent_price_usd: 25,
@@ -144,7 +154,7 @@ export const STRIPE_PLANS: StripePlan[] = [
       "SSO + audit log export",
       "Up to 50 team seats",
       "Priority support · Slack channel",
-      "Overage billed at $0.10 / min",
+      "Overage billed at $0.13 / min",
       "Add more agents: $25/each/month (best per-agent rate)",
     ],
   },
@@ -154,7 +164,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     price_usd_monthly: 0, // contact sales
     max_agents: 100,
     voice_minutes_monthly: 50_000,
-    overage_per_min_usd: 0.08,
+    overage_per_min_usd: 0.11,
     included_phone_numbers: 25,
     priceIdEnv: "STRIPE_ENTERPRISE_PRICE_ID",
     features: [
