@@ -1397,8 +1397,11 @@ router.get("/api/admin/founder-stats", optionalAuth, async (req: Request, res: R
       drizzle.execute(
         sql`SELECT count(*)::int AS c FROM wireline_subscriptions WHERE status = 'active' AND plan IS NOT NULL`,
       ),
+      // Trials live in wireline_settings (subscription_status='trialing'
+      // with a future trial_ends_at) — NOT in wireline_subscriptions,
+      // which only gets a row once a Stripe customer exists.
       drizzle.execute(
-        sql`SELECT count(*)::int AS c FROM wireline_subscriptions WHERE status = 'trialing'`,
+        sql`SELECT count(*)::int AS c FROM wireline_settings WHERE subscription_status = 'trialing' AND (trial_ends_at IS NULL OR trial_ends_at > now())`,
       ),
       drizzle.execute(sql`SELECT count(*)::int AS c FROM wireline_agents`),
       drizzle.execute(sql`SELECT count(*)::int AS c FROM wireline_call_logs WHERE demo = false`),
