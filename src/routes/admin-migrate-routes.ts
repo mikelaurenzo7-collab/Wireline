@@ -29,6 +29,7 @@ import { authenticateUser } from "../middleware/auth";
 import type { AuthenticatedRequest } from "../types/auth";
 import { WIRELINE_PERSONAS } from "../lib/wireline-agent-personas";
 import type { WirelinePersonaId } from "../lib/wireline-agent-escalation";
+import { purgeAccount } from "../lib/account-deletion";
 
 /**
  * Authorize a migration call via EITHER:
@@ -1444,6 +1445,75 @@ router.get("/api/admin/founder-stats", optionalAuth, async (req: Request, res: R
   } catch (e: any) {
     log.error("founder-stats failed", { error: e?.message });
     return res.status(500).json({ ok: false, error: e?.message || "stats query failed" });
+  }
+});
+
+/**
+ * Purge demo / junk user accounts. Owner-gated. Deletes every user
+ * EXCEPT a keep-list: the platform owner (OWNER_EMAIL) and the QA
+ * test account (E2E_USER_EMAIL). Each non-kept user is run through
+ * the same purgeAccount() cascade used by self-serve account
+ * deletion, so all their tenant data goes too.
+ *
+ * Dry-run by default — pass `?confirm=true` to actually delete.
+ * This protects against an accidental call wiping the user table.
+ */
+router.post("/api/admin/purge-demo-users", optionalAuth, async (req: Request, res: Response) => {
+  if (!authorizeMigration(req, res)) return;
+  try {
+    const keepEmails = new Set(
+      [process.env.OWNER_EMAIL, process.env.E2E_USER_EMAIL]
+        .filter(Boolean)
+        .map((e) => (e as string).trim().toLowerCase()),
+    );
+    if (keepEmails.size === 0) {
+      return res
+        .status(400)
+        .json({ ok: false, error: "No keep-list — OWNER_EMAIL/E2E_USER_EMAIL not set. Aborting." });
+    }
+
+    const allUsers = await drizzle.execute(
+      sql`SELECT id, email FROM wireline_users ORDER BY created_at ASC`,
+    );
+    const rows = (allUsers as any).rows as Array<{ id: string; email: string }>;
+    const toPurge = rows.filter((u) => !keepEmails.has((u.email || "").trim().toLowerCase()));
+    const kept = rows.filter((u) => keepEmails.has((u.email || "").trim().toLowerCase()));
+
+    const confirm = req.query.confirm === "true";
+    if (!confirm) {
+      return res.json({
+        ok: true,
+        dry_run: true,
+        message: "Dry run — pass ?confirm=true to actually delete.",
+        would_keep: kept.map((u) => u.email),
+        would_purge_count: toPurge.length,
+        would_purge: toPurge.map((u) => u.email),
+      });
+    }
+
+    const purged: string[] = [];
+    const failed: Array<{ email: string; error: string }> = [];
+    for (const u of toPurge) {
+      const result = await purgeAccount(u.id, { db: drizzle, log });
+      if (result.ok) purged.push(u.email);
+      else failed.push({ email: u.email, error: result.error || "unknown" });
+    }
+    log.info("purge-demo-users completed", {
+      purged: purged.length,
+      failed: failed.length,
+      kept: kept.map((u) => u.email),
+    });
+    return res.json({
+      ok: true,
+      dry_run: false,
+      kept: kept.map((u) => u.email),
+      purged_count: purged.length,
+      purged,
+      failed,
+    });
+  } catch (e: any) {
+    log.error("purge-demo-users failed", { error: e?.message });
+    return res.status(500).json({ ok: false, error: e?.message || "purge failed" });
   }
 });
 
