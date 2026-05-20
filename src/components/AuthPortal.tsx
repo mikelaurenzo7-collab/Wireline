@@ -228,7 +228,7 @@ function AgentContactCard({ agent, isDemo }: { agent: AgentCard; isDemo?: boolea
           <div className="flex items-center gap-1.5 mb-1">
             <span
               className={cn(
-                "text-[8px] uppercase tracking-[0.16em] font-semibold px-1.5 py-0.5 rounded leading-none",
+                "shrink-0 whitespace-nowrap text-[8px] uppercase tracking-[0.16em] font-semibold px-1.5 py-0.5 rounded leading-none",
                 isDemo
                   ? "bg-white/8 text-muted/80 border border-white/10"
                   : "bg-[#4F1E7B]/15 text-[#4F1E7B] border border-[#4F1E7B]/30",
