@@ -234,20 +234,11 @@ export default function CommandCenter() {
   return (
     <PageTransition>
       <div className="max-w-[1600px] mx-auto space-y-2 pb-2">
-        {/* Elite Command Header — tightened so the onboarding card fits
-            above the fold on a 900px viewport. Title/subtitle/stats kept
-            but vertical density compressed ~40px without losing brand. */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 pb-3 border-b border-black/5">
-          <div className="space-y-0.5">
-            <h1 className="text-xl md:text-2xl font-black tracking-tighter text-ink">
-              Wireline OS
-            </h1>
-            <p className="text-[12px] text-muted/80 max-w-lg leading-snug">
-              Live calls, fleet status, and unit economics for your entire agent operation — one
-              screen, real time.
-            </p>
-          </div>
-
+        {/* Command header — the "Wireline OS" title + caption were
+            removed per design direction (the top nav already labels
+            this Home). The action button + live-stat tiles stay,
+            right-aligned. */}
+        <div className="flex flex-wrap items-center justify-end gap-3 pb-2">
           <div className="flex items-center gap-3">
             {/* Activate Growth — full button when the user has at least one
                 agent, disabled-stub when they don't. Stub still occupies the
