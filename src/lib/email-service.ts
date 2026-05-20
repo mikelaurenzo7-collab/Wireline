@@ -25,7 +25,7 @@ const DEFAULT_FROM = "Wireline <noreply@trywireline.com>";
 
 interface SendResult {
   ok: boolean;
-  provider: "resend" | "log-fallback";
+  provider: "resend" | "log-fallback" | "no-transport";
   id?: string;
   error?: string;
 }
@@ -77,6 +77,24 @@ async function sendViaResend(args: {
   }
 }
 
+/**
+ * Generic transactional email send. Used by ad-hoc senders (e.g. the
+ * phone agent's send_payment_link tool) that don't have a dedicated
+ * templated helper. Returns ok:false if no transport is configured —
+ * callers must not claim delivery on a false result.
+ */
+export async function sendEmail(opts: {
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+}): Promise<SendResult> {
+  if (!process.env.RESEND_API_KEY) {
+    return { ok: false, provider: "no-transport", error: "RESEND_API_KEY not set" };
+  }
+  return await sendViaResend(opts);
+}
+
 export async function sendPasswordResetEmail(opts: PasswordResetEmailOpts): Promise<SendResult> {
   const expiresHuman = `${Math.max(1, Math.round((opts.expiresAt.getTime() - Date.now()) / 60_000))} min`;
 
@@ -119,4 +137,137 @@ export async function sendPasswordResetEmail(opts: PasswordResetEmailOpts): Prom
     },
   );
   return { ok: true, provider: "log-fallback" };
+}
+
+/**
+ * Send a Wireline sign-up link via platform Resend. Used by the
+ * `send_signup_link` Vapi tool that the 10 showcase demo agents call
+ * when a caller asks for an email with the signup link.
+ *
+ * Distinct from sendEmail() in IntegrationService — that one routes
+ * through the TENANT's connected Google/Microsoft OAuth account.
+ * Showcase agents have no tenant; they use the platform Resend key.
+ *
+ *   to          recipient inbox (validated upstream as RFC-5322-shape)
+ *   callerName  optional; if provided, used in the greeting
+ *   agentName   the agent who's sending it (Sarah / Liam / Marcus / …)
+ */
+export async function sendSignupLinkEmail(opts: {
+  to: string;
+  callerName?: string;
+  agentName?: string;
+}): Promise<SendResult> {
+  const signupUrl = `${(process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "")}/signup`;
+  const greeting = opts.callerName ? `Hi ${opts.callerName.split(/\s+/)[0]},` : "Hi,";
+  const fromAgent = opts.agentName ? ` — ${opts.agentName}` : "";
+
+  const subject = "Your Wireline sign-up link";
+  const text = [
+    greeting,
+    "",
+    "Thanks for the call. Here's the link to start your 14-day Wireline trial — no credit card, dedicated phone number included, deploy your first AI agent in under 10 minutes:",
+    "",
+    signupUrl,
+    "",
+    "If you have any follow-up questions, just call back — same number you reached me on. Looking forward to hearing how the trial goes.",
+    "",
+    `— Wireline${fromAgent}`,
+  ].join("\n");
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #1a1a2e;">
+      <p style="margin: 0 0 16px; line-height: 1.55;">${greeting}</p>
+      <p style="margin: 0 0 16px; line-height: 1.55;">Thanks for the call. Here's the link to start your <strong>14-day Wireline trial</strong> — no credit card, dedicated phone number included, deploy your first AI agent in under 10 minutes.</p>
+      <p style="margin: 0 0 24px;"><a href="${signupUrl}" style="display: inline-block; background: #4F1E7B; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Start your trial</a></p>
+      <p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Or paste this link into your browser:<br><span style="word-break: break-all;">${signupUrl}</span></p>
+      <p style="margin: 24px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you have any follow-up questions, just call back — same number you reached me on.</p>
+      <p style="margin: 24px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">— Wireline${fromAgent}</p>
+    </div>
+  `;
+
+  if (process.env.RESEND_API_KEY) {
+    return await sendViaResend({ to: opts.to, subject, html, text });
+  }
+
+  // The showcase Vapi agents use this path on every demo call where
+  // a caller asks for a signup link. Unlike sendPasswordResetEmail
+  // (which has a legit dev/single-tenant log-fallback) — we MUST NOT
+  // return ok:true here when no transport is configured, because the
+  // agent treats ok:true as "tell the caller it was sent" and the
+  // caller waits for an email that never arrives. That's exactly the
+  // fabrication failure mode the agent moat is supposed to prevent.
+  //
+  // Fail loud in prod so the agent reads back the URL by mouth and
+  // ends the call honestly:
+  log.warn(
+    "send_signup_link called but RESEND_API_KEY is not set — failing loud so the agent doesn't lie about delivery.",
+    {
+      to: opts.to,
+      signupUrl,
+      agentName: opts.agentName,
+    },
+  );
+  return {
+    ok: false,
+    provider: "no-transport",
+    error: "Email transport not configured (RESEND_API_KEY missing)",
+  };
+}
+
+/**
+ * Send the email-verification link at signup (and on resend). Single-
+ * use token built by auth-service.startEmailVerification() and emailed
+ * here in plaintext. Mirrors sendPasswordResetEmail's structure +
+ * styling. Returns ok:false if no transport is configured — caller
+ * MUST NOT fabricate "sent" UX on a no-transport result; surface the
+ * failure cleanly to the user so they can retry once mail is up.
+ */
+export async function sendEmailVerification(opts: {
+  to: string;
+  verifyUrl: string;
+  fullName?: string | null;
+}): Promise<SendResult> {
+  const greeting = opts.fullName ? `Hi ${opts.fullName.split(/\s+/)[0]},` : "Hi,";
+
+  const subject = "Verify your Wireline email";
+  const text = [
+    greeting,
+    "",
+    "Welcome to Wireline. Click the link below to verify your email and unlock your 14-day trial:",
+    "",
+    opts.verifyUrl,
+    "",
+    "The link expires in 24 hours. If you didn't sign up, you can ignore this email.",
+    "",
+    "— Wireline",
+  ].join("\n");
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #1a1a2e;">
+      <p style="margin: 0 0 16px; line-height: 1.55;">${greeting}</p>
+      <p style="margin: 0 0 16px; line-height: 1.55;">Welcome to Wireline. Click the button below to verify your email and unlock your 14-day trial.</p>
+      <p style="margin: 0 0 24px;"><a href="${opts.verifyUrl}" style="display: inline-block; background: #4F1E7B; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Verify email</a></p>
+      <p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Or paste this link into your browser:<br><span style="word-break: break-all;">${opts.verifyUrl}</span></p>
+      <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">The link expires in 24 hours. If you didn't sign up, you can ignore this email.</p>
+    </div>
+  `;
+
+  if (process.env.RESEND_API_KEY) {
+    return await sendViaResend({ to: opts.to, subject, html, text });
+  }
+
+  // Same fail-loud pattern as sendSignupLinkEmail. We MUST NOT return
+  // ok:true here — the caller (signup endpoint) will tell the user
+  // "check your email" but no email actually goes out. Bad UX, worse
+  // brand. Better to surface the transport failure so the user can
+  // see "verification email transport down — try again in a few".
+  log.warn("sendEmailVerification called but RESEND_API_KEY is not set — failing loud.", {
+    to: opts.to,
+    verifyUrl: opts.verifyUrl,
+  });
+  return {
+    ok: false,
+    provider: "no-transport",
+    error: "Email transport not configured (RESEND_API_KEY missing)",
+  };
 }

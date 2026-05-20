@@ -9,23 +9,30 @@ export function validateStartupEnv() {
   // Required in production; warn in dev so local hacking still works.
   const prodRequired: [string, string | undefined][] = [
     ["INTERNAL_JWT_SECRET", process.env.INTERNAL_JWT_SECRET || process.env.SUPABASE_JWT_SECRET],
-    ["ANTHROPIC_API_KEY",   process.env.ANTHROPIC_API_KEY],
-    ["GEMINI_API_KEY",      process.env.GEMINI_API_KEY],
-    ["VAPI_PRIVATE_KEY",    process.env.VAPI_PRIVATE_KEY],
+    ["ANTHROPIC_API_KEY", process.env.ANTHROPIC_API_KEY],
+    ["GEMINI_API_KEY", process.env.GEMINI_API_KEY],
+    ["VAPI_PRIVATE_KEY", process.env.VAPI_PRIVATE_KEY],
     ["VAPI_WEBHOOK_SECRET", process.env.VAPI_WEBHOOK_SECRET],
-    ["OAUTH_STATE_SECRET",  process.env.OAUTH_STATE_SECRET],
+    ["OAUTH_STATE_SECRET", process.env.OAUTH_STATE_SECRET],
+    ["APP_URL", process.env.APP_URL],
+    // Stripe is wired into every billing route — without the secret
+    // key, /api/billing/* throws on first request rather than at boot.
+    ["STRIPE_SECRET_KEY", process.env.STRIPE_SECRET_KEY],
+    // Drizzle reads this at server-context init. Without it the app
+    // boots but every DB-touching route 500s instantly.
+    ["POSTGRES_URL", process.env.POSTGRES_URL],
   ];
 
   const missingProd = prodRequired.filter(([, v]) => !v).map(([k]) => k);
-  const missing     = IS_PROD ? missingProd : [];
+  const missing = IS_PROD ? missingProd : [];
 
   const recommended: string[] = [];
   if (!process.env.APP_URL) recommended.push("APP_URL");
-  
+
   if (IS_PROD && !process.env.CORS_ORIGINS && !process.env.APP_URL) {
     recommended.push("CORS_ORIGINS");
   }
-  
+
   if (!IS_PROD && missingProd.length) {
     log.warn("Prod-required env vars not set (dev mode — continuing)", { vars: missingProd });
   }
@@ -33,11 +40,12 @@ export function validateStartupEnv() {
   if (missing.length) {
     if (IS_PROD) {
       log.error("Missing required env vars. App may be unstable.", { missing });
+      throw new Error(`Missing required env vars: ${missing.join(", ")}`);
     } else {
       log.warn("Required env vars missing (dev mode — continuing with placeholders)", { missing });
     }
   }
-  
+
   if (recommended.length) {
     log.warn("Recommended env vars not set", { recommended });
   }

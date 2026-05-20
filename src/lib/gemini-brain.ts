@@ -2,8 +2,79 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 
-const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
+const genAI = process.env.GEMINI_API_KEY
+  ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+  : null;
 const model = genAI ? genAI.getGenerativeModel({ model: "gemini-1.5-flash" }) : null;
+
+/**
+ * Gemini grounded web search. The `googleSearchRetrieval` tool lets
+ * Gemini search the live web during generation and cite its sources.
+ * Used by the `gemini_ground` agent tool when an AI agent needs
+ * fresh public info that isn't in its knowledge base — competitor
+ * pricing, business hours, news, weather, regulations.
+ *
+ * Uses gemini-1.5-pro (not flash) because grounding requires a model
+ * with tool-use support and pro produces noticeably better citation
+ * weaving + summary fidelity for the cost difference. Falls back to
+ * a no-grounding flash call if pro errors out (rate limit, region
+ * unavailable), so the agent gets *some* answer rather than a hard
+ * fail mid-call.
+ */
+export async function groundedSearch(query: string): Promise<{
+  answer: string;
+  sources: { title?: string; uri?: string }[];
+  groundingMode: "pro_grounded" | "flash_fallback" | "unavailable";
+}> {
+  if (!genAI) {
+    return {
+      answer: "Grounded search is not configured.",
+      sources: [],
+      groundingMode: "unavailable",
+    };
+  }
+
+  try {
+    const groundedModel = genAI.getGenerativeModel({
+      model: "gemini-1.5-pro",
+      tools: [{ googleSearchRetrieval: {} } as any],
+    });
+    const result = await groundedModel.generateContent(query);
+    const response = result.response;
+    const text = response.text().trim();
+    const meta =
+      (response.candidates?.[0] as any)?.groundingMetadata ||
+      (response as any).groundingMetadata ||
+      {};
+    const chunks: any[] = meta.groundingChunks || meta.grounding_chunks || [];
+    const sources = chunks
+      .map((c: any) => c.web || c.retrievedContext || c)
+      .filter(Boolean)
+      .slice(0, 5)
+      .map((c: any) => ({ title: c.title, uri: c.uri || c.url }));
+    return { answer: text, sources, groundingMode: "pro_grounded" };
+  } catch (err) {
+    log.warn("Gemini grounded search failed; falling back to flash without grounding", {
+      error: getErrorMessage(err),
+    });
+    try {
+      if (!model) throw new Error("flash model unavailable");
+      const fallback = await model.generateContent(query);
+      return {
+        answer: fallback.response.text().trim(),
+        sources: [],
+        groundingMode: "flash_fallback",
+      };
+    } catch (err2) {
+      log.error("Gemini fallback also failed", { error: getErrorMessage(err2) });
+      return {
+        answer: "Unable to look that up right now. I'll make a note and follow up.",
+        sources: [],
+        groundingMode: "unavailable",
+      };
+    }
+  }
+}
 
 /**
  * High-speed analysis for live monitoring.
@@ -15,7 +86,12 @@ export async function analyzeLiveSentiment(transcript: string): Promise<{
   reason: string;
 }> {
   if (!model) {
-    return { sentiment: "neutral", urgency: 0, escalate: false, reason: "Gemini API key not configured" };
+    return {
+      sentiment: "neutral",
+      urgency: 0,
+      escalate: false,
+      reason: "Gemini API key not configured",
+    };
   }
 
   try {
@@ -40,10 +116,7 @@ export async function analyzeLiveSentiment(transcript: string): Promise<{
 /**
  * Full post-call enrichment via Gemini Flash.
  */
-export async function postCallAnalysis(params: {
-  transcript: string;
-  summary: string;
-}): Promise<{
+export async function postCallAnalysis(params: { transcript: string; summary: string }): Promise<{
   lead_score: number;
   intent_label: string;
   sentiment: string;
@@ -58,7 +131,7 @@ export async function postCallAnalysis(params: {
       intent_label: "unknown",
       sentiment: "neutral",
       lesson: "",
-      coaching_note: "Gemini API key not configured"
+      coaching_note: "Gemini API key not configured",
     };
   }
 
@@ -93,7 +166,7 @@ export async function postCallAnalysis(params: {
       intent_label: "none",
       sentiment: "neutral",
       lesson: "",
-      coaching_note: "Analysis failed"
+      coaching_note: "Analysis failed",
     };
   }
 }

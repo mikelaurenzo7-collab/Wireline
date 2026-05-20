@@ -30,14 +30,29 @@ import { google } from "googleapis";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
-import { generateToken } from "../lib/auth-service";
+import { generateToken, isOwnerEmail } from "../lib/auth-service";
 import { generateOAuthState, verifyOAuthState } from "../lib/oauth-helpers";
 
 const router = Router();
 
 // Minimal identity scopes — NOT mailbox-readable.
 const GOOGLE_SIGNIN_SCOPES = ["openid", "email", "profile"];
-const MICROSOFT_SIGNIN_SCOPES = ["openid", "email", "profile", "offline_access"];
+// Microsoft sign-in scopes. Standard OpenID Connect scopes alone
+// (openid, email, profile, offline_access) get us an id_token but
+// do NOT grant access to https://graph.microsoft.com/v1.0/me — the
+// endpoint our callback hits to read the user's email + display name.
+// Without User.Read, Graph returns 403 even though the user granted
+// consent.
+//
+// Two fixes considered:
+//   (A) keep Graph /me call, add User.Read → DONE (this line)
+//   (B) decode the OIDC id_token claims for email/name and skip Graph
+//       — cleaner long-term but a bigger code change.
+//
+// Going with (A) because it's a one-line fix and keeps the existing
+// callback shape working. If we later need claims-from-id-token (e.g.
+// for tenants that disable Graph access), revisit.
+const MICROSOFT_SIGNIN_SCOPES = ["openid", "email", "profile", "offline_access", "User.Read"];
 const YAHOO_SIGNIN_SCOPES = ["openid", "email", "profile"];
 
 function appOrigin(req: Request): string {
@@ -88,6 +103,10 @@ function bridgeRedirect(
     user_id: user.id,
     email: user.email,
     name: user.fullName ?? "",
+    // Carry the owner flag through the OAuth bridge — without this an
+    // owner who signs in via Google never gets is_owner set, and the
+    // Founder's Dashboard stays hidden from them.
+    is_owner: isOwnerEmail(user.email) ? "1" : "0",
   });
   return `${baseUrl}/auth/oauth-complete?${params.toString()}`;
 }

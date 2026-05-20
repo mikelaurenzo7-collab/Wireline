@@ -7,6 +7,7 @@ import AuroraBackdrop from "./AuroraBackdrop";
 import TopBar from "./TopBar";
 import RouteAccentStrip from "./RouteAccentStrip";
 import TrialBanner from "./TrialBanner";
+import EmailVerifyBanner from "./EmailVerifyBanner";
 import AppRoutes from "../../routes/AppRoutes";
 import { PAGE_TITLES } from "../../constants/navigation";
 import { useBranding } from "../../contexts/BrandingContext";
@@ -14,6 +15,7 @@ import { useBranding } from "../../contexts/BrandingContext";
 const CommandBar = lazy(() => import("../CommandBar"));
 const PersonaWizard = lazy(() => import("../PersonaWizard"));
 const ProductTour = lazy(() => import("../ProductTour"));
+const TrialGateModal = lazy(() => import("../TrialGateModal"));
 const KeyboardShortcuts = lazy(() => import("../KeyboardShortcuts"));
 
 export default function AppShell() {
@@ -130,6 +132,11 @@ export default function AppShell() {
           <CommandBar />
           <PersonaWizard />
           <ProductTour />
+          {/* Listens for the global trial-gate 402 event from authFetch
+              and renders the upgrade tier picker. Mounted once for the
+              lifetime of the shell so it works regardless of which page
+              fired the 402. */}
+          <TrialGateModal />
           {showShortcuts && (
             <KeyboardShortcuts open={showShortcuts} onClose={() => setShowShortcuts(false)} />
           )}
@@ -140,11 +147,12 @@ export default function AppShell() {
 
       <main className="flex-1 overflow-hidden relative flex flex-col z-10">
         <RouteAccentStrip />
+        <EmailVerifyBanner />
         <TrialBanner />
 
         <div className="flex-1 relative flex flex-col min-h-0 overflow-hidden">
           <div className="flex-1 overflow-hidden relative z-10 min-h-0">
-            <div className="max-w-[1920px] mx-auto px-2 md:px-4 lg:px-6 py-1 md:py-2 flex flex-col h-full min-h-0">
+            <div className="max-w-[1920px] mx-auto px-3 md:px-4 xl:px-5 pt-2 pb-3 flex flex-col h-full min-h-0">
               <ErrorBoundary>
                 <AppRoutes />
               </ErrorBoundary>

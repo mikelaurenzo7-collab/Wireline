@@ -14,7 +14,7 @@
  * back-button won't replay the OAuth token.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
@@ -25,8 +25,16 @@ export default function OAuthComplete() {
   const navigate = useNavigate();
   const location = useLocation();
   const [error, setError] = useState<string | null>(null);
+  // The handshake must run exactly once. signIn() updates AuthContext,
+  // which re-renders this component — without this guard the effect
+  // re-fires on every render and the page thrashes instead of
+  // redirecting (the "Completing sign-in… stuck forever" bug).
+  const handledRef = useRef(false);
 
   useEffect(() => {
+    if (handledRef.current) return;
+    handledRef.current = true;
+
     const params = new URLSearchParams(location.search);
     const errorParam = params.get("error");
     if (errorParam) {
@@ -47,6 +55,9 @@ export default function OAuthComplete() {
         id: userId,
         email,
         full_name: name || undefined,
+        // Server stamps "1" when the email matches OWNER_EMAIL — gates
+        // the Founder's Dashboard for owners who sign in via OAuth.
+        is_owner: params.get("is_owner") === "1",
       },
     });
     // Replace so a back button doesn't re-trigger the bridge.

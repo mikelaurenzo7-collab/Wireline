@@ -21,6 +21,15 @@ export const users = pgTable("wireline_users", {
   fullName: text("full_name"),
   avatarUrl: text("avatar_url"),
   isAdmin: boolean("is_admin").default(false),
+  /**
+   * Set when the user clicks the verification link we email them at
+   * signup. NULL means "unverified" — the trial gate refuses spend
+   * actions (outbound dial, new agent creation, Stripe checkout)
+   * until this is set. Existing users from before the verification
+   * gate shipped are backfilled to their createdAt (auto-verified)
+   * by the migration so they don't suddenly hit a paywall.
+   */
+  emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
@@ -37,18 +46,67 @@ export const passwordResetTokens = pgTable("wireline_password_reset_tokens", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
+/**
+ * Single-use email-verification tokens with 24-hour TTL. Same hashed-
+ * storage pattern as password-reset tokens. Owned by a user; the
+ * email-service generates the plaintext token, stores only the sha256,
+ * and emails the plaintext to the user. They click the link, we look
+ * up by hash, verify expiry + usedAt, then set users.emailVerifiedAt
+ * and mark the token as used.
+ *
+ * Resend is rate-limited (1 token per minute per user) at the route
+ * layer to prevent abuse.
+ */
+export const emailVerificationTokens = pgTable("wireline_email_verification_tokens", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull(),
+  tokenHash: text("token_hash").notNull().unique(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
 // 1. SETTINGS & BILLING
 export const settings = pgTable("wireline_settings", {
   id: text("id").primaryKey(),
-  userId: uuid("user_id").unique(),
+  // FK with cascade so deleting a user removes their settings row in
+  // the same transaction — no orphans, no manual cleanup. The unique
+  // constraint stays: one settings row per user.
+  userId: uuid("user_id")
+    .unique()
+    .references(() => users.id, { onDelete: "cascade" }),
   subscriptionStatus: text("subscription_status").default("active"),
+  /**
+   * Wall-clock end of the 14-day soft trial that fires at signup.
+   * NULL on grandfathered accounts created before the trial gate
+   * shipped — those tenants stay on "active" forever.
+   *
+   * When subscriptionStatus = "trialing" and now() > trialEndsAt,
+   * the daily sweep flips status to "trial_expired" and routes that
+   * cost real money (outbound dial, new agent creation) return 402
+   * with an upgrade payload.
+   */
+  trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
+  /**
+   * Outbound-call counter scoped to the trial window. Increments on
+   * every successful POST /api/outbound/dial + /bulk during
+   * subscriptionStatus = "trialing". Capped at 25 by the trial-gate
+   * middleware. Reset to 0 when status flips to "active" via Stripe.
+   */
+  trialOutboundCount: integer("trial_outbound_count").default(0),
   maxAgents: integer("max_agents").default(3),
+  // Additional agents purchased à la carte beyond the plan's included
+  // max_agents. When this is N, the operator can deploy
+  // (plan.max_agents + N) agents. Mutated only via the
+  // /api/billing/extra-agents endpoint which also adjusts the Stripe
+  // subscription item quantity for billing. Defaults to 0.
+  extraAgents: integer("extra_agents").default(0).notNull(),
   vapiPrivateKey: text("vapi_private_key"),
   vapiPhoneNumberId: text("vapi_phone_number_id"),
   retentionDays: integer("retention_days").default(365),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-  voiceLlmProvider: text("voice_llm_provider").default("google"),
-  voiceLlmModel: text("voice_llm_model").default("gemini-1.5-flash"),
+  voiceLlmProvider: text("voice_llm_provider").default("anthropic"),
+  voiceLlmModel: text("voice_llm_model").default("claude-sonnet-4-6"),
   dailyBriefEnabled: boolean("daily_brief_enabled").default(false).notNull(),
   dailyBriefSendAt: text("daily_brief_send_at").default("13:00").notNull(),
   dailyBriefRecipient: text("daily_brief_recipient"),
@@ -84,7 +142,9 @@ export const settings = pgTable("wireline_settings", {
 
 // 1.1 USER PREFERENCES
 export const userPreferences = pgTable("wireline_user_preferences", {
-  userId: uuid("user_id").primaryKey(),
+  userId: uuid("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
   tourCompleted: boolean("tour_completed").default(false),
   onboardingCompleted: boolean("onboarding_completed").default(false),
   helpEnabled: boolean("help_enabled").default(true),
@@ -96,7 +156,9 @@ export const userPreferences = pgTable("wireline_user_preferences", {
 
 // 1.2 SPEND BUDGETS
 export const spendBudgets = pgTable("wireline_spend_budgets", {
-  userId: uuid("user_id").primaryKey(),
+  userId: uuid("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
   monthlyLimitUsd: decimal("monthly_limit_usd", { precision: 12, scale: 2 }).default("0"),
   hardCap: boolean("hard_cap").default(false),
   warnThresholdPct: integer("warn_threshold_pct").default(80),
@@ -136,6 +198,27 @@ export const agents = pgTable(
     voiceId: text("voice_id"),
     voiceIdInbound: text("voice_id_inbound"),
     voiceIdOutbound: text("voice_id_outbound"),
+    /**
+     * Secondary voice for mid-call language swap. When set, the Vapi
+     * webhook listens for `language-change-detected` events and hands
+     * the live call off to a clone of this assistant with the secondary
+     * voiceId active — so the caller hears a native-sounding speaker
+     * the instant the transcriber flips from `en` to a non-English
+     * locale (typically Spanish for our customers).
+     *
+     * Optional. Only meaningful when a primary voiceId is already set.
+     * NULL → no swap; caller continues with the primary voice.
+     *
+     * Implementation notes (Vapi API surface, May 2026 docs):
+     *   - Vapi PATCH /call/{id} does NOT mutate voice config on a live
+     *     call (only `name` is mutable). We instead use the call-control
+     *     `handoff` payload to swap voices, which adds ~500ms of dead
+     *     air during the handoff but is the only seamless path Vapi
+     *     supports today.
+     *   - Pattern source: ElevenLabs multi-voice cookbook —
+     *     https://elevenlabs.io/docs/eleven-agents/customization/voice/multi-voice-support
+     */
+    secondaryVoiceId: text("secondary_voice_id"),
     voiceProvider: text("voice_provider").default("11labs"),
     firstMessage: text("first_message"),
     archetype: text("archetype").default("Receptionist"),
@@ -154,6 +237,18 @@ export const agents = pgTable(
     autoZoomLink: boolean("auto_zoom_link").default(false),
     businessHours: jsonb("business_hours"),
     timezone: text("timezone").default("UTC"),
+    /**
+     * Personality vibe layered on top of the agent's role + archetype.
+     * Drives a single short directive block injected into the system
+     * prompt at runtime. Defaults to "warm" — the trustworthy + warm
+     * receptionist tone every vertical can wear. Operators bump to
+     * "playful" for retail / agencies / SaaS where memorability beats
+     * formality, or to "authoritative" for medical / legal / financial
+     * intake where the caller needs to feel they're in capable hands.
+     * Voice (Adam · Deep) stays consistent across vibes — vibe shifts
+     * the SCRIPT, not the voice.
+     */
+    personalityVibe: text("personality_vibe").default("warm"),
     complianceMode: text("compliance_mode").default("standard"),
     disallowedTopics: text("disallowed_topics").array(),
     escalationKeywords: text("escalation_keywords").array(),
@@ -164,6 +259,49 @@ export const agents = pgTable(
     // Per-archetype silence tolerance for Vapi calls. NULL → factory uses
     // archetype default (Receptionist 5s, SDR 2s, etc.).
     silenceTimeoutSeconds: integer("silence_timeout_seconds"),
+    /**
+     * Per-agent ElevenLabs speaking rate multiplier. Range 0.7 – 1.2,
+     * default 1.0 (normal pace). Operators slow agents down for elderly
+     * customers (0.85) or speed them up for impatient callers (1.1).
+     * Surfaced as a slider in FleetSettings → Voice and wired into the
+     * Vapi assistant voice block as `voice.speed` when the provider is
+     * 11labs.
+     *
+     * Stored as numeric (Postgres `numeric`) for exact arithmetic; the
+     * voice factory coerces via Number() before passing to Vapi.
+     *
+     * Docs: https://elevenlabs.io/docs/eleven-agents/customization/voice/speed-control
+     */
+    voiceSpeed: decimal("voice_speed", { precision: 3, scale: 2 }).default("1.0"),
+    /**
+     * ElevenLabs voice fine-tuning — quality knobs operators with cloned
+     * voices need to dial in their exact sound. All four map 1:1 to the
+     * ElevenLabs voice settings payload Vapi forwards to ElevenLabs at
+     * synthesis time. Defaults match ElevenLabs's documented defaults so
+     * a NULL/missing row sounds identical to "no fine-tuning".
+     *
+     *   stability         (0..1, default 0.5)  — voice consistency. Low =
+     *                      expressive/emotional, high = monotone/consistent.
+     *   similarity_boost  (0..1, default 0.75) — how closely TTS hugs the
+     *                      source voice. Most impact on cloned voices.
+     *   style             (0..1, default 0.0)  — style exaggeration. >0
+     *                      adds latency but more character.
+     *   speaker_boost     (bool, default true) — boosts perceived loudness/
+     *                      presence; off for "intimate" voices.
+     *
+     * Surfaced as the Voice fine-tuning panel in FleetSettings → carrier
+     * signal parameters. Numerics stored as `numeric(3,2)` (returned as a
+     * string by pg) — the factory coerces + clamps to [0,1] before send.
+     *
+     * Docs: https://elevenlabs.io/docs/api-reference/text-to-speech/convert#request.body.voice_settings
+     */
+    voiceStability: decimal("voice_stability", { precision: 3, scale: 2 }).default("0.5"),
+    voiceSimilarityBoost: decimal("voice_similarity_boost", {
+      precision: 3,
+      scale: 2,
+    }).default("0.75"),
+    voiceStyle: decimal("voice_style", { precision: 3, scale: 2 }).default("0.0"),
+    voiceSpeakerBoost: boolean("voice_speaker_boost").default(true),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   (t) => ({
@@ -211,6 +349,98 @@ export const agentLessons = pgTable(
   },
   (t) => ({
     unq: unique().on(t.agentId, t.lesson),
+  }),
+);
+
+// Per-tenant cloned voices — voice_id is the ElevenLabs UUID, name
+// is the operator-given label, preview_url is the ElevenLabs-hosted
+// MP3 sample. Pluggable directly into Vapi assistant configs (Vapi
+// accepts any ElevenLabs voice_id when the API key on file has
+// access to it).
+export const clonedVoices = pgTable(
+  "wireline_cloned_voices",
+  {
+    voiceId: text("voice_id").primaryKey(),
+    userId: uuid("user_id").notNull(),
+    name: text("name").notNull(),
+    status: text("status").default("completed").notNull(), // 'processing' | 'completed' | 'failed'
+    previewUrl: text("preview_url"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    userCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_cloned_voices_user_created ON wireline_cloned_voices USING btree (user_id, created_at DESC)`,
+  }),
+);
+
+// Per-tenant pronunciation dictionaries for ElevenLabs TTS.
+// Operators in regulated verticals (medical, legal, real estate) need
+// industry jargon pronounced correctly — "HVAC" should say "H-V-A-C",
+// not "h-vack"; "ACL" should be spelled out; "deposition" might need
+// an IPA phoneme override. ElevenLabs exposes this via their
+// Pronunciation Dictionary API; once created, the returned
+// pronunciation_dictionary_id + version_id are stored here and
+// attached to Vapi assistants via voice.eleven_labs
+// .pronunciation_dictionary_locators on every assistant build.
+//
+// `entries` shape (jsonb array):
+//   [{ from: "HVAC",  to: "H-V-A-C",        kind: "alias" },
+//    { from: "ACL",   to: "ˈeɪ siː ɛl",     kind: "phoneme" }]
+// Validated route-side before we sync to ElevenLabs.
+//
+// `active` lets operators toggle a dictionary off without deleting it
+// (e.g. seasonal vocabularies, A/B testing legal vs medical jargon
+// across the same fleet).
+export const pronunciationDictionaries = pgTable(
+  "wireline_pronunciation_dictionaries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    name: text("name").notNull(),
+    entries: jsonb("entries")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    // ElevenLabs assigns these on every successful add-from-rules call.
+    // Null until the first successful sync — the row exists locally as
+    // a draft until then. Versioned because ElevenLabs treats every
+    // edit as a new version: we always store the latest.
+    elevenlabsDictionaryId: text("elevenlabs_dictionary_id"),
+    elevenlabsVersionId: text("elevenlabs_version_id"),
+    active: boolean("active").default(true).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    userIdx: sql`CREATE INDEX IF NOT EXISTS idx_pronunciation_dicts_user ON wireline_pronunciation_dictionaries USING btree (user_id, created_at DESC)`,
+  }),
+);
+
+// Per-agent operator chat thread. Persistent, ongoing — distinct from
+// /train which is structural agent configuration. Think of this as the
+// private DM channel the operator has with each AI agent: ongoing
+// direction, coaching, "how did the calls go this week?", file-attached
+// context. Memory is the thread itself plus the agent's flow + recent
+// call summaries injected as context at LLM time.
+//
+// One thread per (userId, agentId). When the operator sends, we store
+// a row with role="operator". Claude reads thread history + agent
+// config + recent calls, replies, and we store the reply with
+// role="agent". Soft-delete on agent delete via cascade.
+export const agentConversationMessages = pgTable(
+  "wireline_agent_conversation_messages",
+  {
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
+    userId: uuid("user_id").notNull(),
+    agentId: text("agent_id")
+      .references(() => agents.id, { onDelete: "cascade" })
+      .notNull(),
+    // role is one of "operator" | "agent" — DB-level CHECK constraint
+    // lives in the migration (this Drizzle version doesn't expose .$type()).
+    role: text("role").notNull(),
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    userAgentIdx: sql`CREATE INDEX IF NOT EXISTS idx_agent_conv_user_agent ON wireline_agent_conversation_messages USING btree (user_id, agent_id, created_at DESC)`,
   }),
 );
 

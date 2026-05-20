@@ -16,12 +16,13 @@ import { useBranding } from "../contexts/BrandingContext";
 // Modularized Panels
 import { BrandingPanel } from "./admin/BrandingPanel";
 import { CarrierPanel } from "./admin/CarrierPanel";
+import VoiceLibraryPanel from "./admin/VoiceLibraryPanel";
+import PronunciationDictionaryPanel from "./PronunciationDictionaryPanel";
 import { SubscriptionPanel } from "./admin/SubscriptionPanel";
 import { SystemPanel } from "./admin/SystemPanel";
 import { TeamPanel } from "./admin/TeamPanel";
 import { GrowthPanel } from "./admin/GrowthPanel";
 import { AuditActivityPanel } from "./admin/AuditActivityPanel";
-import { KimiQualityPanel } from "./admin/KimiQualityPanel";
 
 type ConfirmState = { open: boolean; title: string; message: string; onConfirm: () => void };
 const CLOSED_CONFIRM: ConfirmState = { open: false, title: "", message: "", onConfirm: () => {} };
@@ -36,8 +37,8 @@ export default function AdminSettings() {
     vapi_phone_inbound_agent_id: "",
     subscription_status: "active",
     max_agents: 3,
-    voice_llm_provider: "google",
-    voice_llm_model: "gemini-1.5-flash",
+    voice_llm_provider: "anthropic",
+    voice_llm_model: "claude-sonnet-4-6",
     twilio_messaging_enabled: false,
     twilio_lookup_enabled: false,
     twilio_manager_alerts_enabled: false,
@@ -80,16 +81,37 @@ export default function AdminSettings() {
   const [operationalSlos, setOperationalSlos] = useState<Record<string, unknown> | null>(null);
   const [integrationHealth, setIntegrationHealth] = useState<IntegrationHealthPayload | null>(null);
 
-  const [activeTab, setActiveTab] = useState<
+  type AdminTab =
     | "branding"
     | "carrier"
+    | "voices"
+    | "pronunciation"
     | "subscription"
     | "team"
     | "flywheel"
     | "system"
-    | "activity"
-    | "quality"
-  >("branding");
+    | "activity";
+  const VALID_TABS: AdminTab[] = [
+    "branding",
+    "carrier",
+    "voices",
+    "pronunciation",
+    "subscription",
+    "team",
+    "flywheel",
+    "system",
+    "activity",
+  ];
+  // Honor ?tab=<name> in the URL so deep links (e.g. the TrialBanner
+  // "Upgrade now" CTA pointing at /admin?tab=subscription) land on
+  // the correct tab instead of bouncing to the default. Falls back
+  // to "branding" for unknown or missing values.
+  const initialTab: AdminTab = (() => {
+    if (typeof window === "undefined") return "branding";
+    const qs = new URLSearchParams(window.location.search).get("tab");
+    return VALID_TABS.includes(qs as AdminTab) ? (qs as AdminTab) : "branding";
+  })();
+  const [activeTab, setActiveTab] = useState<AdminTab>(initialTab);
 
   const [carrierNumbers, setCarrierNumbers] = useState<any[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -203,8 +225,8 @@ export default function AdminSettings() {
           vapi_phone_inbound_agent_id: settingsRes.vapi_phone_inbound_agent_id || "",
           subscription_status: settingsRes.subscription_status || "active",
           max_agents: settingsRes.max_agents || 3,
-          voice_llm_provider: settingsRes.voice_llm_provider || "google",
-          voice_llm_model: settingsRes.voice_llm_model || "gemini-1.5-flash",
+          voice_llm_provider: settingsRes.voice_llm_provider || "anthropic",
+          voice_llm_model: settingsRes.voice_llm_model || "claude-sonnet-4-6",
           twilio_messaging_enabled: !!settingsRes.twilio_messaging_enabled,
           twilio_lookup_enabled: !!settingsRes.twilio_lookup_enabled,
           twilio_manager_alerts_enabled: !!settingsRes.twilio_manager_alerts_enabled,
@@ -370,16 +392,20 @@ export default function AdminSettings() {
   };
 
   const tabSwitcher = (
-    <div className="flex p-1 rounded-full glass border border-white/10" role="tablist">
+    <div
+      className="flex gap-0.5 p-0.5 rounded-xl glass border border-white/10 overflow-x-auto snap-x snap-mandatory scrollbar-hide max-w-full"
+      role="tablist"
+    >
       {(
         [
           "branding",
           "carrier",
+          "voices",
+          "pronunciation",
           "subscription",
           "team",
           "flywheel",
           "system",
-          "quality",
           "activity",
         ] as const
       ).map((t) => (
@@ -390,7 +416,7 @@ export default function AdminSettings() {
           aria-controls={`admin-panel-${t}`}
           onClick={() => setActiveTab(t)}
           className={cn(
-            "px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.25em] transition-colors",
+            "shrink-0 snap-start px-2.5 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.12em] transition-colors whitespace-nowrap",
             activeTab === t ? "bg-brand/20 text-brand" : "text-muted hover:text-ink",
           )}
         >
@@ -398,17 +424,19 @@ export default function AdminSettings() {
             ? "Branding"
             : t === "carrier"
               ? "Carrier"
-              : t === "subscription"
-                ? "Billing"
-                : t === "team"
-                  ? "Team"
-                  : t === "flywheel"
-                    ? "Growth"
-                    : t === "system"
-                      ? "System"
-                      : t === "quality"
-                        ? "Quality"
-                        : "Activity"}
+              : t === "voices"
+                ? "Voices"
+                : t === "pronunciation"
+                  ? "Pronunciation"
+                  : t === "subscription"
+                    ? "Billing"
+                    : t === "team"
+                      ? "Team"
+                      : t === "flywheel"
+                        ? "Growth"
+                        : t === "system"
+                          ? "System"
+                          : "Activity"}
         </button>
       ))}
     </div>
@@ -485,6 +513,30 @@ export default function AdminSettings() {
                     </motion.div>
                   )}
 
+                  {activeTab === "voices" && (
+                    <motion.div
+                      key="voices"
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="h-full"
+                    >
+                      <VoiceLibraryPanel />
+                    </motion.div>
+                  )}
+
+                  {activeTab === "pronunciation" && (
+                    <motion.div
+                      key="pronunciation"
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="h-full"
+                    >
+                      <PronunciationDictionaryPanel />
+                    </motion.div>
+                  )}
+
                   {activeTab === "subscription" && (
                     <motion.div
                       key="subscription"
@@ -551,18 +603,6 @@ export default function AdminSettings() {
                         operationalSlos={operationalSlos}
                         onOpenIntegrations={() => setActiveTab("system")}
                       />
-                    </motion.div>
-                  )}
-
-                  {activeTab === "quality" && (
-                    <motion.div
-                      key="quality"
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      className="h-full"
-                    >
-                      <KimiQualityPanel />
                     </motion.div>
                   )}
 

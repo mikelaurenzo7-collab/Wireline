@@ -3,11 +3,18 @@ import { describe, it, expect } from "vitest";
 import { computeAuditSummary, inputRateForModel, type AuditLogRow } from "./audit-summary";
 
 describe("inputRateForModel", () => {
-  it("should return 5 for unknown models", () => {
-    expect(inputRateForModel(null)).toBe(5);
-    expect(inputRateForModel(undefined)).toBe(5);
-    expect(inputRateForModel("gpt-4")).toBe(5);
-    expect(inputRateForModel("claude-opus")).toBe(5);
+  it("should conservatively price missing and unknown models at Opus rates", () => {
+    expect(inputRateForModel(null)).toBe(15);
+    expect(inputRateForModel(undefined)).toBe(15);
+    expect(inputRateForModel("unknown-future-model")).toBe(15);
+    expect(inputRateForModel("claude-opus")).toBe(15);
+  });
+
+  it("should price OpenAI and Gemini fallback models explicitly", () => {
+    expect(inputRateForModel("gpt-4o")).toBe(5);
+    expect(inputRateForModel("gpt-4-turbo")).toBe(10);
+    expect(inputRateForModel("gemini-1.5-flash")).toBe(0.075);
+    expect(inputRateForModel("gemini-1.5-pro")).toBe(1.25);
   });
 
   it("should return 1 for haiku models", () => {

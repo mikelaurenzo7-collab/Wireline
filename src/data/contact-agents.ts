@@ -2,11 +2,11 @@
  * Single source of truth for the 10 AI agents featured on the landing
  * page + in the in-app /help console.
  *
- * Layout (per Mike's call): 6 Wireline customer-service lines + 4
- * vertical demo agents. CS agents collectively cover every reason a
- * customer would call us — general support, sales, tech, billing,
- * scheduling, success — and route to each other when a call lands on
- * the wrong line.
+ * Layout (per Mike's call): 3 Wireline employees + 7 vertical demo
+ * agents. The 3 employees all run on (630) numbers for company
+ * uniformity — they ARE Wireline's customer-service team and route to
+ * each other when a call lands on the wrong line. The 7 demo agents
+ * each role-play one industry vertical Wireline sells into.
  *
  * Used in:
  *   1. AuthPortal landing page — public "talk to Wireline" CTAs
@@ -33,130 +33,176 @@ export type ContactAgent = {
   tel: string;
   display: string;
   tint: string;
+  /**
+   * Default personality vibe for this showcase agent. Used by
+   * /api/admin/sync-vapi-knowledge when pushing the system prompt
+   * to each Vapi assistant — the right vibe per agent role.
+   * "warm" for general CS / billing / success / tech (trustworthy
+   * default), "playful" for sales / onboarding / outbound /
+   * customer-facing-retail (memorable, differentiating),
+   * "authoritative" for healthcare / insurance / legal-style
+   * intake (gravity when it matters).
+   */
+  defaultVibe: "warm" | "playful" | "authoritative";
 };
+
+/**
+ * The 3 Wireline employees. All on (630) numbers for company
+ * uniformity. Each is a FULL GENERALIST — every employee can handle
+ * every kind of Wireline call: support, pricing, billing, technical,
+ * onboarding, success. They can also sign a caller up for a Wireline
+ * account on the spot. No call ever needs to be "transferred to the
+ * right department" — whoever picks up can do it all.
+ */
+const ALL_ENCOMPASSING_SCOPE =
+  "A complete Wireline specialist — handles every kind of call end to end: " +
+  "general support and how-to, account help, pricing and plan comparison, " +
+  "ROI questions, enterprise quotes, billing (invoices, refunds, plan changes, " +
+  "overages), technical questions (integrations, webhooks, API, voice quality, " +
+  "CRM sync), onboarding, and customer success. Can email a sign-up link, email " +
+  "a payment/checkout link, AND create a Wireline account for the caller right " +
+  "on the call if they want to sign up by phone. Never says 'let me transfer you " +
+  "to the right department' — every employee can do everything.";
+
+const ALL_ENCOMPASSING_HANDLES =
+  "general, how-to, account, pricing, plans, demo, billing, invoice, refund, " +
+  "signup, create account, payment link, API, webhooks, integration, voice quality, " +
+  "onboarding, training, success, troubleshooting, enterprise";
 
 export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
   {
     name: "Sarah",
-    role: "General Customer Support",
-    scope:
-      "First line for any Wireline question — answers, account help, how-to, troubleshooting basics. Routes specialized calls to the right teammate.",
-    firstMessage: "Hi, this is Sarah with Wireline support — how can I help you today?",
-    handles: "general, how-to, account, password reset, navigation",
+    role: "Wireline Specialist",
+    scope: ALL_ENCOMPASSING_SCOPE,
+    firstMessage:
+      "Hi, thanks for calling Wireline — this is Sarah. Who do I have the pleasure of speaking with?",
+    handles: ALL_ENCOMPASSING_HANDLES,
     tel: "+16306425661",
     display: "(630) 642-5661",
     tint: "#4F1E7B",
+    defaultVibe: "warm",
   },
   {
     name: "Liam",
-    role: "Sales & Plan Comparison",
-    scope:
-      "Pricing, plan comparison, ROI questions, enterprise quotes, custom demos. Owns the deal cycle.",
-    firstMessage:
-      "Hey, this is Liam over at Wireline sales — looking to size up a plan or compare us to something else? Happy to help.",
-    handles: "pricing, plans, demo, comparison, enterprise quote, ROI",
+    role: "Wireline Specialist",
+    scope: ALL_ENCOMPASSING_SCOPE,
+    firstMessage: "Hey, thanks for calling Wireline — this is Liam. Who am I speaking with?",
+    handles: ALL_ENCOMPASSING_HANDLES,
     tel: "+16305811834",
     display: "(630) 581-1834",
     tint: "#4F1E7B",
-  },
-  {
-    name: "Tyler",
-    role: "Technical Support",
-    scope:
-      "Integrations, webhooks, API, voice quality, CRM sync, knowledge ingestion, anything that needs a developer mindset.",
-    firstMessage: "Hi, Tyler here from Wireline technical support — what are we troubleshooting?",
-    handles: "API, webhooks, integration, CRM sync, voice quality, audio, latency",
-    tel: "+15642389455",
-    display: "(564) 238-9455",
-    tint: "#8b5cf6",
+    defaultVibe: "playful",
   },
   {
     name: "Maya",
-    role: "Book a Demo / Onboarding",
-    scope:
-      "Schedules white-glove onboarding for Business + Enterprise, custom training sessions, demo calls for prospects.",
-    firstMessage:
-      "Hi, this is Maya — I handle onboarding and demo scheduling at Wireline. What time zone are you in so I can find a slot that works?",
-    handles: "demo, onboarding, training, white glove, calendar, scheduling",
+    role: "Wireline Specialist",
+    scope: ALL_ENCOMPASSING_SCOPE,
+    firstMessage: "Hi, thanks for calling Wireline — this is Maya. Who am I speaking with?",
+    handles: ALL_ENCOMPASSING_HANDLES,
     tel: "+16306425927",
     display: "(630) 642-5927",
     tint: "#4F1E7B",
-  },
-  {
-    name: "Devon",
-    role: "Billing & Account Management",
-    scope:
-      "Stripe issues, plan changes, refunds, usage overages, invoice questions, cancellations, downgrades.",
-    firstMessage:
-      "Hi, this is Devon from Wireline billing — got an invoice question or want to make a change to your plan?",
-    handles: "billing, invoice, refund, plan change, downgrade, cancel, Stripe, overage",
-    tel: "+12075935155",
-    display: "(207) 593-5155",
-    tint: "#f43f5e",
-  },
-  {
-    name: "Priya",
-    role: "Customer Success",
-    scope:
-      "Proactive check-ins, quarterly business reviews, usage analysis, expansion ideas, best-practice coaching for existing accounts.",
-    firstMessage:
-      "Hi, this is Priya from Wireline customer success — calling to see how the agents are performing and whether there's anything we can tune. Got a few minutes?",
-    handles: "success, check-in, QBR, expansion, best practice, training, optimization",
-    tel: "+15727269365",
-    display: "(572) 726-9365",
-    tint: "#ec4899",
+    defaultVibe: "warm",
   },
 ];
 
 export type DemoAgent = ContactAgent;
 
+/**
+ * 7 vertical demo agents — each role-plays one industry Wireline
+ * sells into, so a prospect can call the line for their own vertical
+ * and hear exactly what their customers would experience.
+ */
 export const WIRELINE_DEMO_AGENTS: ReadonlyArray<DemoAgent> = [
   {
-    name: "Marcus",
-    role: "Healthcare-Style Demo",
+    name: "Ria",
+    role: "Home Services Demo",
     scope:
-      "Role-plays a clinic front desk — greets patients, captures reason for visit, schedules appointments, handles insurance pre-check. Healthcare-style demo; not currently HIPAA-certified (BAA available on the Enterprise tier roadmap).",
+      "Role-plays an HVAC / plumbing / electrical front desk — triages emergency vs routine, captures the job, books a service window, dispatches the on-call tech.",
     firstMessage:
-      "Thanks for calling Wireline Medical, this is Marcus — are you booking an appointment or do you have a question about an existing one?",
-    handles: "medical, healthcare, clinic, patient intake",
+      "Thanks for calling — this is Ria at the Wireline Home Services demo. Who am I speaking with?",
+    handles: "home services, HVAC, plumbing, electrical, dispatch, service call",
+    tel: "+15642389455",
+    display: "(564) 238-9455",
+    tint: "#f59e0b",
+    defaultVibe: "playful",
+  },
+  {
+    name: "Marcus",
+    role: "Medical Practice Demo",
+    scope:
+      "Role-plays a clinic front desk — greets patients, captures reason for visit, schedules appointments, handles insurance pre-check. Healthcare-style demo; not currently HIPAA-certified (BAA available on the Enterprise roadmap).",
+    firstMessage:
+      "Thanks for calling the Wireline Medical demo — this is Marcus. May I have your name?",
+    handles: "medical, healthcare, clinic, patient intake, appointment",
     tel: "+16173134469",
     display: "(617) 313-4469",
     tint: "#10B981",
+    defaultVibe: "authoritative",
+  },
+  {
+    name: "Diana",
+    role: "Law Firm Demo",
+    scope:
+      "Role-plays a law-firm intake line — runs the conflict check, captures matter type and urgency, books the consultation, takes a clean intake for the attorney.",
+    firstMessage:
+      "Thanks for calling the Wireline Legal demo — this is Diana. May I have your name?",
+    handles: "legal, law firm, intake, conflict check, consultation",
+    tel: "+15727269365",
+    display: "(572) 726-9365",
+    tint: "#8b5cf6",
+    defaultVibe: "authoritative",
   },
   {
     name: "Aisha",
-    role: "Real Estate Lead Capture (demo)",
+    role: "Real Estate Demo",
     scope:
-      "Role-plays a real-estate front desk — answers listing inquiries, qualifies buyer budget + timeline, books showings.",
+      "Role-plays a real-estate front desk — answers listing inquiries, qualifies buyer budget + timeline, books showings, captures seller leads.",
     firstMessage:
-      "Wireline Realty, this is Aisha — calling about a listing or looking to set up a showing?",
-    handles: "real estate, realtor, listing, showing, buyer",
+      "Thanks for calling the Wireline Realty demo — this is Aisha. Who am I speaking with?",
+    handles: "real estate, realtor, listing, showing, buyer, seller lead",
     tel: "+19733638874",
     display: "(973) 363-8874",
     tint: "#FFC07D",
+    defaultVibe: "playful",
   },
   {
     name: "Elena",
-    role: "Insurance Claims Intake (demo)",
+    role: "Insurance Demo",
     scope:
-      "Role-plays a claims line — walks claimants through first-notice-of-loss, captures incident detail, opens the case file.",
+      "Role-plays an insurance line — handles quote intake, walks claimants through first-notice-of-loss, captures incident detail, opens the case file.",
     firstMessage:
-      "Wireline Insurance claims, this is Elena — are you reporting a new claim or following up on an existing one?",
-    handles: "insurance, claim, loss, FNOL",
+      "Thanks for calling the Wireline Insurance demo — this is Elena. Can I start with your name?",
+    handles: "insurance, claim, loss, FNOL, quote, policy",
     tel: "+19044601596",
     display: "(904) 460-1596",
     tint: "#06b6d4",
+    defaultVibe: "authoritative",
+  },
+  {
+    name: "Nico",
+    role: "Restaurant Demo",
+    scope:
+      "Role-plays a restaurant phone host — takes reservations, captures takeout orders accurately, handles allergen questions, fields private-event inquiries.",
+    firstMessage:
+      "Thanks for calling the Wireline restaurant demo — this is Nico! Who am I speaking with?",
+    handles: "restaurant, reservation, takeout, catering, private event",
+    tel: "+12075935155",
+    display: "(207) 593-5155",
+    tint: "#f43f5e",
+    defaultVibe: "playful",
   },
   {
     name: "Jake",
-    role: "Outbound SDR (demo)",
+    role: "Outbound Sales / SDR Demo",
     scope:
-      "Role-plays a cold-call SDR — calls a lead from a CSV, qualifies fit, books discovery calls with closers, logs results to CRM.",
+      "Role-plays a cold-call SDR — calls a lead from a CSV, qualifies fit with a BANT pass, books discovery calls with closers, logs results to CRM.",
     firstMessage:
-      "Hey, this is Jake calling from Wireline — quick one, do you handle customer calls at your company today?",
-    handles: "outbound, cold call, SDR, prospecting, qualification",
+      "Hey, thanks for calling the Wireline SDR demo — this is Jake. Who am I speaking with?",
+    handles: "outbound, cold call, SDR, prospecting, qualification, BANT",
     tel: "+14692571581",
     display: "(469) 257-1581",
     tint: "#f59e0b",
+    defaultVibe: "playful",
   },
 ];

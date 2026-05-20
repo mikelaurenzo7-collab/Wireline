@@ -1,10 +1,12 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 
 export interface User {
   id: string;
   email: string;
   full_name?: string;
   role?: string;
+  /** True only for the platform owner (email matches OWNER_EMAIL). Gates the Founder's Dashboard. */
+  is_owner?: boolean;
 }
 
 export interface Session {
@@ -48,17 +50,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(false);
   }, []);
 
-  const signIn = (newSession: Session) => {
+  // Stable references — without useCallback these are recreated every
+  // render, which re-fires any effect that depends on them (notably
+  // the OAuth bridge page). Empty deps: setters are referentially
+  // stable, so these never need to change.
+  const signIn = useCallback((newSession: Session) => {
     localStorage.setItem("wireline_session", JSON.stringify(newSession));
     setSession(newSession);
     setUser(newSession.user);
-  };
+  }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     localStorage.removeItem("wireline_session");
     setSession(null);
     setUser(null);
-  };
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, session, loading, signOut, signIn }}>

@@ -9,7 +9,6 @@ import {
   Bot,
   ChevronDown,
   RotateCw,
-  Terminal,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { authFetch } from "../lib/api";
@@ -25,27 +24,8 @@ const CLOSED_CONFIRM: ConfirmState = { open: false, onConfirm: () => {} };
 const PROVIDER_META: Record<string, { label: string; color: string }> = {
   google: { label: "Google Workspace", color: "text-brand" },
   microsoft: { label: "Microsoft / Outlook", color: "text-blue-600" },
+  yahoo: { label: "Yahoo Mail", color: "text-purple-600" },
 };
-
-/**
- * Plan-tier required to access each integration class. Personal/Starter
- * see locked cards with upgrade CTA; Pro+ see the live connector. Keeps
- * the page honest about what's available + drives upgrade conversion
- * instead of letting low-tier customers click into silent failures.
- */
-const PLAN_RANK: Record<string, number> = {
-  personal: 0,
-  starter: 1,
-  pro: 2,
-  business: 3,
-  enterprise: 4,
-};
-
-function planMeetsRequirement(currentPlan: string | null, required: string): boolean {
-  const current = PLAN_RANK[currentPlan || "personal"] ?? 0;
-  const need = PLAN_RANK[required] ?? 0;
-  return current >= need;
-}
 
 export default function Integrations() {
   const { error: toastError, warning: toastWarning, success: toastSuccess } = useToast();
@@ -53,12 +33,7 @@ export default function Integrations() {
   const [accounts, setAccounts] = useState<any[]>([]);
   const [agents, setAgents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showTechnical, setShowTechnical] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  // Subscription tier — drives the plan-gated UI on each connector card.
-  // Falls back to "personal" so locked cards render even before the
-  // billing/status round-trip completes.
-  const [planId, setPlanId] = useState<string | null>(null);
 
   const fetchAccounts = async () => {
     try {
@@ -85,25 +60,10 @@ export default function Integrations() {
     }
   };
 
-  // Fetch current plan tier so CRM / messaging connectors can render
-  // their gated state (locked + upsell, or live). Falls back to
-  // "personal" on error so we never accidentally expose Pro+ cards
-  // to a free user.
-  const fetchPlan = async () => {
-    try {
-      const r = await authFetch("/api/billing/status");
-      if (!r.ok) return;
-      const d = await r.json();
-      setPlanId(d.subscription?.plan_id || d.subscription?.plan || "personal");
-    } catch {
-      setPlanId("personal");
-    }
-  };
-
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      await Promise.all([fetchAccounts(), fetchAgents(), fetchPlan()]);
+      await Promise.all([fetchAccounts(), fetchAgents()]);
       setLoading(false);
     };
     init();
@@ -144,6 +104,17 @@ export default function Integrations() {
         toastWarning("Popup blocked", "Allow popups for this site to connect your account.");
     } catch (e: any) {
       toastError("Outlook connection failed", e?.message || "Could not start Microsoft OAuth.");
+    }
+  };
+
+  const handleConnectYahoo = async () => {
+    try {
+      const res = await authFetch("/api/oauth/yahoo/url");
+      const { url, error } = await res.json();
+      if (error) throw new Error(error);
+      openOAuthPopup(url);
+    } catch (e: any) {
+      toastError("Yahoo Mail connection failed", e?.message || "Could not start Yahoo OAuth.");
     }
   };
 
@@ -234,13 +205,17 @@ export default function Integrations() {
         subtitle="Connect your CRM, calendar, inbox, carrier, and Slack — your agents act through them in real time."
         actions={syncAction}
       >
-        <div className="h-full flex flex-col gap-2 min-h-0">
+        {/* Scroll container — the page (email panel + CRM/Shopify
+            connectors) is taller than the viewport; PageShell's body
+            doesn't scroll, so this wrapper owns the scroll. */}
+        <div className="h-full overflow-y-auto panel-scroll flex flex-col gap-3 pb-4">
           <Panel
             title="email carriers"
             hint="GMAIL · OUTLOOK"
             icon={Mail}
             scroll
             flush
+            className="shrink-0 !h-auto max-h-[55vh]"
             actions={
               <div className="flex items-center gap-2">
                 <button
@@ -256,6 +231,13 @@ export default function Integrations() {
                 >
                   <Plus className="w-3 h-3" />
                   Outlook
+                </button>
+                <button
+                  onClick={handleConnectYahoo}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-500 text-[10px] uppercase tracking-[0.25em] hover:bg-purple-500/20 transition-colors"
+                >
+                  <Plus className="w-3 h-3" />
+                  Yahoo
                 </button>
               </div>
             }
@@ -277,10 +259,10 @@ export default function Integrations() {
                     no carriers linked
                   </h3>
                   <p className="text-[10px] uppercase tracking-[0.4em] text-muted/70 max-w-sm">
-                    Connect Gmail or Outlook to route inbound conversations to fleet agents.
+                    Connect Gmail, Outlook, or Yahoo to route inbound conversations to fleet agents.
                   </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap justify-center">
                   <button
                     onClick={handleConnectGmail}
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-colors"
@@ -292,6 +274,12 @@ export default function Integrations() {
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] uppercase tracking-[0.25em] hover:bg-blue-500/20 transition-colors"
                   >
                     <Plus className="w-3 h-3" /> Connect Outlook
+                  </button>
+                  <button
+                    onClick={handleConnectYahoo}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-500 text-[10px] uppercase tracking-[0.25em] hover:bg-purple-500/20 transition-colors"
+                  >
+                    <Plus className="w-3 h-3" /> Connect Yahoo
                   </button>
                 </div>
               </div>
@@ -365,127 +353,12 @@ export default function Integrations() {
             )}
           </Panel>
 
-          {/* OAuth diagnostics */}
-          <div className="shrink-0">
-            <button
-              onClick={() => setShowTechnical(!showTechnical)}
-              className="text-[10px] uppercase tracking-[0.4em] text-muted/70 hover:text-ink transition-colors flex items-center gap-2"
-            >
-              <Terminal className="w-3 h-3" />
-              {showTechnical ? "Hide" : "Show"} OAuth diagnostics
-              <ChevronDown
-                className={`w-3 h-3 transition-transform ${showTechnical ? "rotate-180" : ""}`}
-              />
-            </button>
-
-            <AnimatePresence>
-              {showTechnical && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="mt-3 overflow-hidden"
-                >
-                  <div className="rounded-2xl glass border border-white/8 p-3 space-y-3">
-                    {/* Google */}
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Webhook className="w-3.5 h-3.5 text-brand" />
-                        <h4 className="font-display italic lowercase text-sm text-ink">
-                          google oauth redirect uri
-                        </h4>
-                      </div>
-                      <code className="block w-full px-3 py-2 rounded-lg bg-black/40 border border-white/8 font-mono text-[11px] text-brand select-all break-all">
-                        {window.location.origin}/api/oauth/google/callback
-                      </code>
-                      <p className="text-[10px] text-muted/80 leading-relaxed">
-                        Add this to your Google Cloud Console → OAuth credentials → Authorized
-                        redirect URIs.
-                      </p>
-                    </div>
-
-                    {/* Microsoft */}
-                    <div className="space-y-2 pt-2 border-t border-white/8">
-                      <div className="flex items-center gap-2">
-                        <Webhook className="w-3.5 h-3.5 text-blue-600" />
-                        <h4 className="font-display italic lowercase text-sm text-ink">
-                          microsoft oauth redirect uri
-                        </h4>
-                      </div>
-                      <code className="block w-full px-3 py-2 rounded-lg bg-black/40 border border-black/10 font-mono text-[11px] text-blue-600 select-all break-all">
-                        {window.location.origin}/api/oauth/microsoft/callback
-                      </code>
-                      <p className="text-[10px] text-muted/80 leading-relaxed">
-                        Add this to Azure portal → App registrations → Authentication → Redirect
-                        URIs.
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 pt-2 border-t border-white/8">
-                      {[
-                        { label: "Encryption", value: "Bearer tokens over TLS 1.2+" },
-                        { label: "Rotation", value: "Auto-refresh before expiry" },
-                        { label: "Scopes", value: "read · send · modify" },
-                      ].map((item) => (
-                        <div
-                          key={item.label}
-                          className="rounded-lg glass border border-white/8 p-2.5"
-                        >
-                          <p className="text-[9px] uppercase tracking-[0.3em] text-brand mb-1">
-                            {item.label}
-                          </p>
-                          <p className="text-[10px] text-muted/80">{item.value}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* CRM & messaging — HubSpot, Salesforce, Slack — surfaced here
-              alongside email so operators find every external connector in
-              one place instead of having to dig into Admin → Integrations.
-              Plan-gated to Pro+ — Personal / Starter see an upgrade card
-              instead of the live connectors. */}
+          {/* CRM & messaging — HubSpot, Salesforce, Slack, Shopify.
+              Available on every plan: integrations make the agent more
+              capable for everyone, and they don't cannibalize the real
+              paid levers (agents / minutes / numbers). */}
           <div className="mt-3">
-            {planMeetsRequirement(planId, "pro") ? (
-              <CrmConnectionCard />
-            ) : (
-              <div className="rounded-2xl glass border border-white/10 p-4 relative overflow-hidden">
-                <div
-                  className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
-                  style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
-                />
-                <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                  <div
-                    className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ background: "#4F1E7B" }}
-                  >
-                    <Webhook className="w-5 h-5 text-paper" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[9px] uppercase tracking-[0.32em] text-brand mb-1">
-                      Pro plan or higher
-                    </p>
-                    <h3 className="font-display italic text-xl text-ink leading-tight">
-                      CRM &amp; messaging connectors
-                    </h3>
-                    <p className="text-sm text-muted/80 mt-1 leading-relaxed">
-                      HubSpot, Salesforce, and Slack sync — keep call notes, deals, and team alerts
-                      in lockstep with every conversation.
-                    </p>
-                  </div>
-                  <a
-                    href="/pricing"
-                    className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-brand text-paper text-[10px] uppercase tracking-[0.3em] hover:bg-brand/90 transition-colors whitespace-nowrap"
-                  >
-                    Upgrade to Pro
-                  </a>
-                </div>
-              </div>
-            )}
+            <CrmConnectionCard />
           </div>
         </div>
       </PageShell>

@@ -13,6 +13,13 @@ const DIAL_RATE_WINDOW_MS = 60_000;
 const DIAL_RATE_MAX = 30;
 const SIGNIN_RATE_WINDOW_MS = 15 * 60_000;
 const SIGNIN_RATE_MAX = 5;
+// Signup needs to be tighter than signin — a bot doesn't know any
+// existing emails so it can't be (email, IP)-keyed; just (IP). And
+// the cost of letting it through is concrete: Resend email quota,
+// trial DB rows, Stripe checkout entries. 3 per 15 min is enough for
+// real humans (typo + retry + correct) while killing volume bots.
+const SIGNUP_RATE_WINDOW_MS = 15 * 60_000;
+const SIGNUP_RATE_MAX = 3;
 // Forgot-password is rate-limited tighter than signin because each
 // triggered request mints a token + (when transport is wired) fires an
 // email — both have real-cost surface area. Keyed by both email and IP
@@ -113,6 +120,38 @@ export async function signinRateLimiter(req: any, res: any, next: any) {
     return res.status(429).json({
       error: "Too many sign-in attempts. Wait 15 minutes and try again.",
       code: "SIGNIN_RATE_LIMIT",
+    });
+  }
+  next();
+}
+
+/**
+ * Signup rate limiter — keyed by IP only (no email to bind against
+ * since the bot picks the email). 3 attempts per 15 minutes. A real
+ * human typos their email at most twice; bots probe in volume. The
+ * cost of letting bots through is real: Resend email quota, trial
+ * DB rows, Stripe checkout sessions, and PII exposure if leaked
+ * emails are real.
+ */
+export async function signupRateLimiter(req: any, res: any, next: any) {
+  const ip = req.ip || "anon";
+  const key = `signup:${ip}`;
+  const result = await rateLimit(key, {
+    bucket: "signup",
+    windowMs: SIGNUP_RATE_WINDOW_MS,
+    max: SIGNUP_RATE_MAX,
+  });
+  if (!result.allowed) {
+    void auditLogger
+      .logSecurity("rate_limit_exceeded", {
+        resource: "auth_signup",
+        ip: req.ip,
+      })
+      .catch(() => {});
+    res.setHeader("Retry-After", Math.ceil(SIGNUP_RATE_WINDOW_MS / 1000));
+    return res.status(429).json({
+      error: "Too many signup attempts. Wait 15 minutes and try again.",
+      code: "SIGNUP_RATE_LIMIT",
     });
   }
   next();

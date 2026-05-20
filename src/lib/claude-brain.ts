@@ -45,9 +45,22 @@ export const VAPI_PREMIUM_MODEL = "claude-opus-4-6";
 /**
  * The default model used by tenant-deployed voice agents created via
  * the agent-routes deploy path. Lower-cost tier for everyday tenant
- * agents; the 10 landing-page showcase agents use VAPI_PREMIUM_MODEL.
+ * agents; the 10 landing-page showcase agents use VAPI_SHOWCASE_MODEL.
  */
 export const VAPI_TENANT_DEFAULT_MODEL = CLAUDE_MODELS.SONNET;
+
+/**
+ * Model used by the 10 Wireline showcase + demo assistants. Tuned for
+ * SPEED on the public demo line: Sonnet's first-token latency is
+ * roughly half Opus's, and a 30-second receptionist conversation does
+ * not need Opus-grade reasoning to feel sharp. Vibe directives do the
+ * heavy lifting on tone; the model just needs to be fast and follow
+ * instructions. Premium tenants who want Opus on their OWN agents
+ * pick it explicitly in FleetSettings — the showcase choice is
+ * decoupled so we never sacrifice demo snappiness for marginal
+ * reasoning quality the caller cannot perceive on a phone call.
+ */
+export const VAPI_SHOWCASE_MODEL = CLAUDE_MODELS.SONNET;
 
 /** Task complexity tiers for automatic model selection */
 export type TaskComplexity = "simple" | "medium" | "complex";
@@ -57,6 +70,12 @@ export const MODEL_PRICING = {
   [CLAUDE_MODELS.HAIKU]: { input: 1, output: 5, cacheRead: 0.1, cacheWrite: 1.25 },
   [CLAUDE_MODELS.SONNET]: { input: 3, output: 15, cacheRead: 0.3, cacheWrite: 3.75 },
   [CLAUDE_MODELS.OPUS]: { input: 15, output: 75, cacheRead: 1.5, cacheWrite: 18.75 },
+  "claude-opus-4-6": { input: 15, output: 75, cacheRead: 1.5, cacheWrite: 18.75 },
+  "claude-3-5-sonnet-20241022": { input: 3, output: 15, cacheRead: 0.3, cacheWrite: 3.75 },
+  "gemini-1.5-flash": { input: 0.075, output: 0.3, cacheRead: 0, cacheWrite: 0 },
+  "gemini-1.5-pro": { input: 1.25, output: 5, cacheRead: 0, cacheWrite: 0 },
+  "gpt-4o": { input: 5, output: 15, cacheRead: 0, cacheWrite: 0 },
+  "gpt-4-turbo": { input: 10, output: 30, cacheRead: 0, cacheWrite: 0 },
 } as const;
 
 /**
@@ -433,9 +452,7 @@ export async function runCompletion(opts: CompletionOptions): Promise<{
  * Leave callers on raw `runCompletion` when the output must be Claude-
  * specific (high-stakes negotiation, complex tool-chain reasoning).
  */
-export async function runCompletionResilient(
-  opts: CompletionOptions,
-): Promise<{
+export async function runCompletionResilient(opts: CompletionOptions): Promise<{
   text: string;
   cacheRead: number;
   cacheCreate: number;

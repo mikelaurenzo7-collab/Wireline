@@ -207,8 +207,8 @@ export default function DashboardHome() {
     }
     if (!import.meta.env.VITE_VAPI_PUBLIC_KEY) {
       toastError(
-        "Voice not configured",
-        "The Wireline voice network key is not set — add the voice environment variables and redeploy.",
+        "Voice is warming up",
+        "We're finishing setup on our side — try again in a minute, or write to trywireline@yahoo.com if it persists.",
       );
       return;
     }

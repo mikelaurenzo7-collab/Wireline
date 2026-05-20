@@ -50,7 +50,10 @@ function fakeClaudeRateLimiter(_req: Request, _res: Response, next: NextFunction
  */
 function makeEnforceSpendCap(hardCap: boolean): Middleware {
   return (req: any, res: Response, next: NextFunction): void => {
-    if (!req?.user?.id) { next(); return; }
+    if (!req?.user?.id) {
+      next();
+      return;
+    }
     if (hardCap) {
       res.status(402).json({
         error: "Monthly Claude budget reached.",
@@ -124,10 +127,7 @@ async function request(
 //  four spend-capped endpoints.
 // ──────────────────────────────────────────────────────────
 
-function buildTestApp(opts: {
-  hardCap?: boolean;
-  dailyCap?: boolean;
-}) {
+function buildTestApp(opts: { hardCap?: boolean; dailyCap?: boolean }) {
   const app = express();
   app.use(express.json());
 
@@ -228,17 +228,23 @@ describe("Spend-cap middleware on Claude-backed routes (P0 audit fix)", () => {
     });
 
     it("GET /api/insights/failure-modes returns 200 for authenticated user", async () => {
-      const { status } = await request(server, "GET", "/api/insights/failure-modes", { userId: "user-1" });
+      const { status } = await request(server, "GET", "/api/insights/failure-modes", {
+        userId: "user-1",
+      });
       expect(status).toBe(200);
     });
 
     it("GET /api/insights/daily-brief returns 200 for authenticated user", async () => {
-      const { status } = await request(server, "GET", "/api/insights/daily-brief", { userId: "user-1" });
+      const { status } = await request(server, "GET", "/api/insights/daily-brief", {
+        userId: "user-1",
+      });
       expect(status).toBe(200);
     });
 
     it("POST /api/qa/score/:callId returns 200 for authenticated user", async () => {
-      const { status } = await request(server, "POST", "/api/qa/score/call-123", { userId: "user-1" });
+      const { status } = await request(server, "POST", "/api/qa/score/call-123", {
+        userId: "user-1",
+      });
       expect(status).toBe(200);
     });
   });
@@ -251,25 +257,33 @@ describe("Spend-cap middleware on Claude-backed routes (P0 audit fix)", () => {
     });
 
     it("GET /api/insights/topics returns 402 when hard cap is active", async () => {
-      const { status, body } = await request(server, "GET", "/api/insights/topics", { userId: "user-1" });
+      const { status, body } = await request(server, "GET", "/api/insights/topics", {
+        userId: "user-1",
+      });
       expect(status).toBe(402);
       expect(body.code).toBe("SPEND_LIMIT_EXCEEDED");
     });
 
     it("GET /api/insights/failure-modes returns 402 when hard cap is active", async () => {
-      const { status, body } = await request(server, "GET", "/api/insights/failure-modes", { userId: "user-1" });
+      const { status, body } = await request(server, "GET", "/api/insights/failure-modes", {
+        userId: "user-1",
+      });
       expect(status).toBe(402);
       expect(body.code).toBe("SPEND_LIMIT_EXCEEDED");
     });
 
     it("GET /api/insights/daily-brief returns 402 when hard cap is active", async () => {
-      const { status, body } = await request(server, "GET", "/api/insights/daily-brief", { userId: "user-1" });
+      const { status, body } = await request(server, "GET", "/api/insights/daily-brief", {
+        userId: "user-1",
+      });
       expect(status).toBe(402);
       expect(body.code).toBe("SPEND_LIMIT_EXCEEDED");
     });
 
     it("POST /api/qa/score/:callId returns 402 when hard cap is active", async () => {
-      const { status, body } = await request(server, "POST", "/api/qa/score/call-123", { userId: "user-1" });
+      const { status, body } = await request(server, "POST", "/api/qa/score/call-123", {
+        userId: "user-1",
+      });
       expect(status).toBe(402);
       expect(body.code).toBe("SPEND_LIMIT_EXCEEDED");
     });
@@ -283,25 +297,33 @@ describe("Spend-cap middleware on Claude-backed routes (P0 audit fix)", () => {
     });
 
     it("GET /api/insights/topics returns 402 when daily cap is active", async () => {
-      const { status, body } = await request(server, "GET", "/api/insights/topics", { userId: "user-1" });
+      const { status, body } = await request(server, "GET", "/api/insights/topics", {
+        userId: "user-1",
+      });
       expect(status).toBe(402);
       expect(body.code).toBe("DAILY_SPEND_LIMIT_EXCEEDED");
     });
 
     it("GET /api/insights/failure-modes returns 402 when daily cap is active", async () => {
-      const { status, body } = await request(server, "GET", "/api/insights/failure-modes", { userId: "user-1" });
+      const { status, body } = await request(server, "GET", "/api/insights/failure-modes", {
+        userId: "user-1",
+      });
       expect(status).toBe(402);
       expect(body.code).toBe("DAILY_SPEND_LIMIT_EXCEEDED");
     });
 
     it("GET /api/insights/daily-brief returns 402 when daily cap is active", async () => {
-      const { status, body } = await request(server, "GET", "/api/insights/daily-brief", { userId: "user-1" });
+      const { status, body } = await request(server, "GET", "/api/insights/daily-brief", {
+        userId: "user-1",
+      });
       expect(status).toBe(402);
       expect(body.code).toBe("DAILY_SPEND_LIMIT_EXCEEDED");
     });
 
     it("POST /api/qa/score/:callId returns 402 when daily cap is active", async () => {
-      const { status, body } = await request(server, "POST", "/api/qa/score/call-123", { userId: "user-1" });
+      const { status, body } = await request(server, "POST", "/api/qa/score/call-123", {
+        userId: "user-1",
+      });
       expect(status).toBe(402);
       expect(body.code).toBe("DAILY_SPEND_LIMIT_EXCEEDED");
     });
@@ -317,8 +339,11 @@ describe("CSP nonce-based script-src (P0 audit fix)", () => {
     const csp = buildCSP(false);
     const scriptSrcDir = csp.split("; ").find((d) => d.startsWith("script-src"));
     expect(scriptSrcDir).toBeDefined();
+    // The security invariant: no 'unsafe-inline' in production.
     expect(scriptSrcDir).not.toContain("'unsafe-inline'");
-    expect(scriptSrcDir).toBe("script-src 'self'");
+    // 'self' + the Plausible analytics origin (trusted, allowlisted) —
+    // not 'unsafe-inline', so the P0 invariant above still holds.
+    expect(scriptSrcDir).toBe("script-src 'self' https://plausible.io");
   });
 
   it("production CSP with nonce uses nonce directive instead of 'unsafe-inline' on script-src", () => {

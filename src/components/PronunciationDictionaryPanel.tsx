@@ -1,0 +1,473 @@
+/**
+ * Pronunciation Dictionary — operator-side jargon management surface.
+ *
+ * Lives under Admin → Pronunciation. Lets operators in regulated
+ * verticals (medical, legal, real estate) drive how the AI receptionist
+ * voices industry terms: "HVAC" → "H-V-A-C", "ACL" → "A-C-L"
+ * (not "ackle"), "deposition" → "dep-uh-zish-un".
+ *
+ * Two kinds of rules:
+ *   - alias    — re-spell the word ("HVAC" → "H-V-A-C")
+ *   - phoneme  — feed an IPA string for surgical control
+ *                (used for medical/legal terms)
+ *
+ * Each save POSTs to /api/pronunciation-dicts, which syncs to
+ * ElevenLabs and stamps the dictionary's EL ID + version on the
+ * row. The Vapi assistant factory reads active dictionaries when
+ * building per-call configs so playback applies them automatically.
+ */
+import React, { useEffect, useState } from "react";
+import { motion } from "motion/react";
+import { Loader2, Plus, Trash2, BookOpen, AlertTriangle, Save } from "lucide-react";
+import { authFetch } from "../lib/api";
+import { useToast } from "../contexts/ToastContext";
+import { cn } from "../lib/utils";
+
+interface DictEntry {
+  from: string;
+  to: string;
+  kind: "alias" | "phoneme";
+}
+
+interface PronunciationDict {
+  id: string;
+  name: string;
+  entries: DictEntry[];
+  active: boolean;
+  elevenlabsDictionaryId: string | null;
+  elevenlabsVersionId: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+function blankEntry(): DictEntry {
+  return { from: "", to: "", kind: "alias" };
+}
+
+export default function PronunciationDictionaryPanel() {
+  const { error: toastError, success: toastSuccess } = useToast();
+  const [dicts, setDicts] = useState<PronunciationDict[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [configured, setConfigured] = useState<boolean>(true);
+  const [savingId, setSavingId] = useState<string | null>(null);
+
+  // Inline create form
+  const [showCreate, setShowCreate] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newEntries, setNewEntries] = useState<DictEntry[]>([blankEntry()]);
+  const [creating, setCreating] = useState(false);
+
+  // Local drafts: keyed by dict id, lets the operator edit a row
+  // without an immediate save round-trip.
+  const [drafts, setDrafts] = useState<Record<string, DictEntry[]>>({});
+
+  async function loadDicts() {
+    setLoading(true);
+    try {
+      const r = await authFetch("/api/pronunciation-dicts");
+      if (!r.ok) throw new Error("Failed to load");
+      const data = await r.json();
+      const list: PronunciationDict[] = (data.dictionaries || []).map((d: any) => ({
+        id: d.id,
+        name: d.name,
+        entries: Array.isArray(d.entries) ? d.entries : [],
+        active: !!d.active,
+        elevenlabsDictionaryId: d.elevenlabsDictionaryId ?? null,
+        elevenlabsVersionId: d.elevenlabsVersionId ?? null,
+        createdAt: d.createdAt,
+        updatedAt: d.updatedAt,
+      }));
+      setDicts(list);
+      // Seed drafts from server entries so editing has a starting point.
+      const draftMap: Record<string, DictEntry[]> = {};
+      for (const d of list) draftMap[d.id] = d.entries.length ? d.entries : [blankEntry()];
+      setDrafts(draftMap);
+      setConfigured(data.configured !== false);
+    } catch {
+      toastError("Couldn't load pronunciation dictionaries");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadDicts();
+  }, []);
+
+  function updateDraftEntry(dictId: string, idx: number, patch: Partial<DictEntry>) {
+    setDrafts((prev) => {
+      const next = (prev[dictId] || []).map((e, i) => (i === idx ? { ...e, ...patch } : e));
+      return { ...prev, [dictId]: next };
+    });
+  }
+
+  function addDraftRow(dictId: string) {
+    setDrafts((prev) => ({
+      ...prev,
+      [dictId]: [...(prev[dictId] || []), blankEntry()],
+    }));
+  }
+
+  function removeDraftRow(dictId: string, idx: number) {
+    setDrafts((prev) => ({
+      ...prev,
+      [dictId]: (prev[dictId] || []).filter((_, i) => i !== idx),
+    }));
+  }
+
+  async function saveDict(dict: PronunciationDict) {
+    const entries = (drafts[dict.id] || []).filter((e) => e.from.trim() && e.to.trim());
+    setSavingId(dict.id);
+    try {
+      const r = await authFetch(`/api/pronunciation-dicts/${encodeURIComponent(dict.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entries }),
+      });
+      if (!r.ok) {
+        const data = await r.json().catch(() => ({}));
+        throw new Error(data.error || "Save failed");
+      }
+      toastSuccess("Saved", `${entries.length} ${entries.length === 1 ? "rule" : "rules"} synced`);
+      await loadDicts();
+    } catch (e: any) {
+      toastError("Save failed", e?.message || "Try again");
+    } finally {
+      setSavingId(null);
+    }
+  }
+
+  async function toggleActive(dict: PronunciationDict) {
+    try {
+      const r = await authFetch(`/api/pronunciation-dicts/${encodeURIComponent(dict.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active: !dict.active }),
+      });
+      if (!r.ok) throw new Error();
+      await loadDicts();
+    } catch {
+      toastError("Couldn't update");
+    }
+  }
+
+  async function deleteDict(dict: PronunciationDict) {
+    if (!confirm(`Delete "${dict.name}"? Agents using it will stop applying these rules.`)) {
+      return;
+    }
+    try {
+      const r = await authFetch(`/api/pronunciation-dicts/${encodeURIComponent(dict.id)}`, {
+        method: "DELETE",
+      });
+      if (!r.ok) throw new Error();
+      toastSuccess("Dictionary deleted");
+      await loadDicts();
+    } catch {
+      toastError("Delete failed");
+    }
+  }
+
+  async function createDict(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newName.trim()) {
+      toastError("Name required");
+      return;
+    }
+    const entries = newEntries.filter((r) => r.from.trim() && r.to.trim());
+    setCreating(true);
+    try {
+      const r = await authFetch("/api/pronunciation-dicts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newName.trim(), entries }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "Create failed");
+      toastSuccess("Dictionary created", `${entries.length} starter rules synced`);
+      setShowCreate(false);
+      setNewName("");
+      setNewEntries([blankEntry()]);
+      await loadDicts();
+    } catch (err: any) {
+      toastError("Create failed", err?.message || "Try again");
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  return (
+    <div className="h-full overflow-y-auto p-4 space-y-4 max-w-3xl mx-auto">
+      <div>
+        <h2 className="font-display italic text-2xl text-ink mb-1">Pronunciation</h2>
+        <p className="text-[12px] text-muted leading-relaxed">
+          Teach your agents to say industry jargon the way humans say it. "HVAC" reads as "H-V-A-C",
+          "ACL" gets spelled out, and you can use IPA phonemes for surgical control of medical or
+          legal terms. Active dictionaries apply to every call your agents take.
+        </p>
+      </div>
+
+      {!configured && (
+        <div className="rounded-xl border border-amber-500/40 bg-amber-500/8 p-3 flex items-start gap-2.5">
+          <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+          <p className="text-[12px] text-amber-700 leading-relaxed">
+            Voice playback isn't connected yet. Pronunciation dictionaries will sync to your agents'
+            voices once it's set up.
+          </p>
+        </div>
+      )}
+
+      {/* Create CTA / form */}
+      {!showCreate ? (
+        <button
+          onClick={() => setShowCreate(true)}
+          className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brand/30 bg-brand/5 hover:bg-brand/8 hover:border-brand/50 py-6 transition-colors"
+        >
+          <BookOpen className="w-5 h-5 text-brand" />
+          <span className="text-[13px] text-brand font-medium">New pronunciation dictionary</span>
+        </button>
+      ) : (
+        <form
+          onSubmit={createDict}
+          className="rounded-2xl border border-black/10 bg-paper p-5 space-y-4"
+        >
+          <div>
+            <h3 className="font-display italic text-lg text-ink">New dictionary</h3>
+            <p className="text-[11px] text-muted leading-relaxed mt-1">
+              Group rules by vertical, agent persona, or campaign. You can edit rules anytime.
+            </p>
+          </div>
+
+          <div>
+            <label
+              htmlFor="dict-name"
+              className="block text-[10px] uppercase tracking-[0.28em] text-muted mb-1.5"
+            >
+              Dictionary name
+            </label>
+            <input
+              id="dict-name"
+              type="text"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              required
+              minLength={1}
+              maxLength={80}
+              placeholder="e.g. HVAC service terms"
+              className="w-full rounded-lg border border-black/10 bg-paper px-3 py-2.5 text-[13px] text-ink outline-none focus:border-brand/40"
+            />
+          </div>
+
+          <EntryEditor
+            entries={newEntries}
+            onChange={setNewEntries}
+            onAddRow={() => setNewEntries((prev) => [...prev, blankEntry()])}
+            onRemoveRow={(idx) => setNewEntries((prev) => prev.filter((_, i) => i !== idx))}
+          />
+
+          <div className="flex items-center gap-2">
+            <button
+              type="submit"
+              disabled={creating || newName.trim().length < 1}
+              className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-brand text-on-brand px-4 py-2.5 text-[11px] uppercase tracking-[0.28em] hover:opacity-90 disabled:opacity-30 transition-opacity"
+            >
+              {creating ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Save className="w-3.5 h-3.5" />
+              )}
+              {creating ? "Creating…" : "Create dictionary"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowCreate(false);
+                setNewName("");
+                setNewEntries([blankEntry()]);
+              }}
+              disabled={creating}
+              className="px-4 py-2.5 rounded-full text-[11px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Dictionary list */}
+      <div className="space-y-2">
+        <p className="text-[10px] uppercase tracking-[0.3em] text-muted">
+          Your dictionaries · {dicts.length}
+        </p>
+        {loading ? (
+          <div className="rounded-xl border border-black/8 p-4 flex items-center gap-2 text-muted text-[12px]">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…
+          </div>
+        ) : dicts.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-black/15 p-6 text-center text-[12px] text-muted">
+            No dictionaries yet. Create your first one above.
+          </div>
+        ) : (
+          dicts.map((dict) => (
+            <motion.div
+              key={dict.id}
+              layout
+              className="rounded-xl border border-black/10 bg-paper p-4 space-y-3"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-medium text-ink truncate">{dict.name}</p>
+                  <p className="text-[9px] uppercase tracking-[0.22em] text-muted/70">
+                    {dict.entries.length} {dict.entries.length === 1 ? "rule" : "rules"}
+                    {dict.elevenlabsDictionaryId ? " · synced" : " · draft"}
+                  </p>
+                </div>
+                <label className="flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-muted cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={dict.active}
+                    onChange={() => toggleActive(dict)}
+                    className="w-3.5 h-3.5 accent-brand"
+                  />
+                  Active
+                </label>
+                <button
+                  onClick={() => deleteDict(dict)}
+                  className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-muted hover:text-rose-600 hover:bg-rose-500/8 transition-colors"
+                  aria-label={`Delete ${dict.name}`}
+                  title="Delete"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <EntryEditor
+                entries={drafts[dict.id] || []}
+                onChange={(next) => setDrafts((prev) => ({ ...prev, [dict.id]: next }))}
+                onAddRow={() => addDraftRow(dict.id)}
+                onRemoveRow={(idx) => removeDraftRow(dict.id, idx)}
+              />
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => saveDict(dict)}
+                  disabled={savingId === dict.id}
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-brand text-on-brand px-4 py-2 text-[10px] uppercase tracking-[0.28em] hover:opacity-90 disabled:opacity-30 transition-opacity"
+                >
+                  {savingId === dict.id ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Save className="w-3 h-3" />
+                  )}
+                  {savingId === dict.id ? "Saving…" : "Save rules"}
+                </button>
+              </div>
+            </motion.div>
+          ))
+        )}
+      </div>
+
+      <p className="text-[10px] text-muted/60 text-center mt-4 leading-relaxed">
+        Dictionaries sync to ElevenLabs and apply to every 11labs voice your agents use. Toggle
+        Active off to pause a dictionary without deleting it.
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Inline rules table — used by both the create form and the
+ * per-dictionary edit panel. Keeps the visual treatment identical
+ * across both surfaces so operators don't have to relearn the UI.
+ */
+interface EntryEditorProps {
+  entries: DictEntry[];
+  onChange: (next: DictEntry[]) => void;
+  onAddRow: () => void;
+  onRemoveRow: (idx: number) => void;
+}
+
+function EntryEditor({ entries, onChange, onAddRow, onRemoveRow }: EntryEditorProps) {
+  return (
+    <div className="space-y-2">
+      <div className="grid grid-cols-[1fr_1fr_84px_28px] gap-2 text-[9px] uppercase tracking-[0.22em] text-muted/70 px-1">
+        <span>Replace</span>
+        <span>With</span>
+        <span>Kind</span>
+        <span />
+      </div>
+      {entries.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-black/12 p-3 text-center text-[11px] text-muted">
+          No rules yet. Add a row below.
+        </div>
+      ) : (
+        entries.map((entry, idx) => (
+          <div key={idx} className="grid grid-cols-[1fr_1fr_84px_28px] gap-2 items-center">
+            <input
+              type="text"
+              value={entry.from}
+              onChange={(e) => {
+                const next = entries.map((e2, i) =>
+                  i === idx ? { ...e2, from: e.target.value } : e2,
+                );
+                onChange(next);
+              }}
+              placeholder={entry.kind === "phoneme" ? "ACL" : "HVAC"}
+              className="rounded-lg border border-black/10 bg-paper px-2.5 py-2 text-[12px] text-ink outline-none focus:border-brand/40"
+            />
+            <input
+              type="text"
+              value={entry.to}
+              onChange={(e) => {
+                const next = entries.map((e2, i) =>
+                  i === idx ? { ...e2, to: e.target.value } : e2,
+                );
+                onChange(next);
+              }}
+              placeholder={entry.kind === "phoneme" ? "ˈeɪ siː ɛl" : "H-V-A-C"}
+              className="rounded-lg border border-black/10 bg-paper px-2.5 py-2 text-[12px] text-ink outline-none focus:border-brand/40"
+            />
+            <select
+              value={entry.kind}
+              onChange={(e) => {
+                const next = entries.map((e2, i) =>
+                  i === idx
+                    ? {
+                        ...e2,
+                        kind: (e.target.value === "phoneme" ? "phoneme" : "alias") as
+                          | "alias"
+                          | "phoneme",
+                      }
+                    : e2,
+                );
+                onChange(next);
+              }}
+              className="rounded-lg border border-black/10 bg-paper px-2 py-2 text-[11px] text-ink outline-none focus:border-brand/40"
+            >
+              <option value="alias">Alias</option>
+              <option value="phoneme">IPA</option>
+            </select>
+            <button
+              type="button"
+              onClick={() => onRemoveRow(idx)}
+              className={cn(
+                "w-7 h-7 rounded-md flex items-center justify-center transition-colors",
+                "text-muted hover:text-rose-600 hover:bg-rose-500/8",
+              )}
+              aria-label="Remove rule"
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          </div>
+        ))
+      )}
+      <button
+        type="button"
+        onClick={onAddRow}
+        className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.28em] text-brand hover:opacity-80 transition-opacity"
+      >
+        <Plus className="w-3 h-3" />
+        Add row
+      </button>
+    </div>
+  );
+}

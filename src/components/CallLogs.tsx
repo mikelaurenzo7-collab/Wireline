@@ -101,14 +101,14 @@ export default function CallLogs() {
   };
 
   const actions = (
-    <div className="flex items-center gap-1.5">
-      <div className="relative">
+    <div className="flex w-full flex-wrap items-center justify-end gap-1.5 sm:w-auto">
+      <div className="relative min-w-0 flex-1 sm:flex-none">
         <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
         <input
           type="text"
           aria-label="Search calls"
           placeholder="Search signals…"
-          className="h-9 w-44 lg:w-60 pl-8 pr-3 rounded-full glass border border-black/10 text-[11px] text-ink placeholder:text-muted/60 focus:border-brand/40 focus:outline-none transition-all"
+          className="h-9 w-full sm:w-44 lg:w-60 pl-8 pr-3 rounded-full glass border border-black/10 text-[11px] text-ink placeholder:text-muted/60 focus:border-brand/40 focus:outline-none transition-all"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />

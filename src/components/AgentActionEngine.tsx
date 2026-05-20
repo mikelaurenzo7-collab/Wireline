@@ -199,7 +199,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
                           className={cn(
                             "w-5 h-5 rounded flex items-center justify-center border transition-colors",
                             isEnabled
-                              ? "bg-brand border-brand text-paper"
+                              ? "bg-brand border-brand text-on-brand"
                               : "bg-black/10 border-white/20 text-transparent",
                           )}
                         >

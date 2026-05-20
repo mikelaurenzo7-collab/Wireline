@@ -40,8 +40,15 @@ import { timeoutMiddleware } from "./src/middleware/timeout";
 
 // Routers
 import oauthRouter from "./src/routes/oauth-routes";
+import metaWebhookRouter from "./src/routes/meta-webhook-routes";
+import publicStatsRouter from "./src/routes/public-stats-routes";
 import vapiRouter from "./src/routes/vapi-routes";
 import agentRouter from "./src/routes/agent-routes";
+import agentWorkspaceRouter from "./src/routes/agent-workspace-routes";
+import supportRouter from "./src/routes/support-routes";
+import voicesRouter from "./src/routes/voices-routes";
+import pronunciationRouter from "./src/routes/pronunciation-routes";
+import elevenlabsWebhookRouter from "./src/routes/webhooks-elevenlabs-routes";
 import campaignRouter from "./src/routes/campaign-routes";
 import fleetRouter from "./src/routes/fleet-routes";
 import auditRouter from "./src/routes/audit-routes";
@@ -79,7 +86,6 @@ import emailRouter from "./src/routes/email-routes";
 import calendarRouter from "./src/routes/calendar-routes";
 import settingsRouter from "./src/routes/settings-routes";
 import teamRouter from "./src/routes/team-routes";
-import kimiRouter from "./src/routes/kimi-routes";
 import authRouter from "./src/routes/auth-routes";
 
 // Startup env validation
@@ -244,6 +250,11 @@ app.use(calendarRouter);
 app.use(settingsRouter);
 app.use(vapiRouter);
 app.use(agentRouter);
+app.use(agentWorkspaceRouter);
+app.use(supportRouter);
+app.use(voicesRouter);
+app.use(pronunciationRouter);
+app.use(elevenlabsWebhookRouter);
 app.use(campaignRouter);
 app.use(fleetRouter);
 app.use(auditRouter);
@@ -251,8 +262,9 @@ app.use(insightsRouter);
 app.use("/api/webhooks", webhookRouter);
 app.use(soc2Router);
 app.use(oauthRouter);
+app.use(metaWebhookRouter);
+app.use(publicStatsRouter);
 app.use(teamRouter);
-app.use("/api/kimi", kimiRouter);
 app.use(authRouter);
 
 // 404 API catch-all (Must be mounted after all valid API routes and before global error handler)

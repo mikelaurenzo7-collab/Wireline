@@ -1,7 +1,7 @@
 import express from "express";
 import { google } from "googleapis";
 import { randomUUID, createHmac, timingSafeEqual } from "node:crypto";
-import { drizzle, fetchWithTimeout } from "./server-context";
+import { drizzle, fetchWithTimeout, IS_PROD } from "./server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 import { encryptSecret, decryptSecret } from "./secret-vault";
@@ -13,23 +13,34 @@ import { verifySupabaseJwt } from "./auth-utils";
 // ────────────────────────────────────────────────────────────────────
 
 export const SCOPES = [
-  'https://www.googleapis.com/auth/userinfo.email',
-  'https://www.googleapis.com/auth/userinfo.profile',
-  'https://www.googleapis.com/auth/gmail.send',
-  'https://www.googleapis.com/auth/gmail.readonly',
-  'https://www.googleapis.com/auth/calendar.events',
-  'https://www.googleapis.com/auth/calendar.readonly',
-  'https://www.googleapis.com/auth/drive.readonly'
+  "https://www.googleapis.com/auth/userinfo.email",
+  "https://www.googleapis.com/auth/userinfo.profile",
+  "https://www.googleapis.com/auth/gmail.send",
+  "https://www.googleapis.com/auth/gmail.readonly",
+  "https://www.googleapis.com/auth/calendar.events",
+  "https://www.googleapis.com/auth/calendar.readonly",
+  "https://www.googleapis.com/auth/drive.readonly",
 ];
 
+function getAppOrigin(req: express.Request): string {
+  if (process.env.APP_URL) return new URL(process.env.APP_URL).origin;
+  if (IS_PROD) throw new Error("APP_URL is required for OAuth redirects in production");
+  return `${req.protocol}://${req.get("host")}`;
+}
+
+function getOAuthStateSecret(): string {
+  if (process.env.OAUTH_STATE_SECRET) return process.env.OAUTH_STATE_SECRET;
+  if (IS_PROD) throw new Error("OAUTH_STATE_SECRET is required in production");
+  return "wireline-dev-oauth-state-secret-at-least-32-bytes";
+}
+
 export function getGoogleOAuthClient(req: express.Request) {
-  const baseUrl = (process.env.APP_URL && new URL(process.env.APP_URL).origin)
-    || `${req.protocol}://${req.get('host')}`;
-    
+  const baseUrl = getAppOrigin(req);
+
   return new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    `${baseUrl}/api/oauth/google/callback`
+    `${baseUrl}/api/oauth/google/callback`,
   );
 }
 
@@ -40,7 +51,7 @@ export function buildOAuthClient() {
     // The redirect URI is only used for the initial code-to-token swap;
     // refreshes and direct API calls don't need it but the library
     // requires a placeholder or valid string.
-    "http://localhost:3000/api/oauth/google/callback"
+    "http://localhost:3000/api/oauth/google/callback",
   );
 }
 
@@ -58,8 +69,7 @@ export const MS_SCOPES = [
 ].join(" ");
 
 export function getMicrosoftRedirectUri(req: express.Request): string {
-  const baseUrl = (process.env.APP_URL && new URL(process.env.APP_URL).origin)
-    || `${req.protocol}://${req.get("host")}`;
+  const baseUrl = getAppOrigin(req);
   return `${baseUrl}/api/oauth/microsoft/callback`;
 }
 
@@ -69,18 +79,20 @@ export async function refreshMicrosoftToken(account: {
   refreshToken: string;
 }): Promise<{ access_token: string; expires_at: number }> {
   const params = new URLSearchParams({
-    client_id:     process.env.MICROSOFT_CLIENT_ID!,
+    client_id: process.env.MICROSOFT_CLIENT_ID!,
     client_secret: process.env.MICROSOFT_CLIENT_SECRET!,
-    grant_type:    "refresh_token",
+    grant_type: "refresh_token",
     refresh_token: decryptSecret(account.refreshToken),
-    scope:         MS_SCOPES,
+    scope: MS_SCOPES,
   });
-  const r = await fetch(
-    "https://login.microsoftonline.com/common/oauth2/v2.0/token",
-    { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: params.toString() }
-  );
-  const d = await r.json() as any;
-  if (!r.ok || !d.access_token) throw new Error(d.error_description || "Microsoft token refresh failed");
+  const r = await fetch("https://login.microsoftonline.com/common/oauth2/v2.0/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: params.toString(),
+  });
+  const d = (await r.json()) as any;
+  if (!r.ok || !d.access_token)
+    throw new Error(d.error_description || "Microsoft token refresh failed");
   return {
     access_token: d.access_token,
     expires_at: Date.now() + (d.expires_in || 3600) * 1000,
@@ -99,11 +111,12 @@ export async function getMicrosoftAccessToken(account: {
     return decryptSecret(account.accessToken);
   }
   const updated = await refreshMicrosoftToken(account);
-  await drizzle.update(schema.emailAccounts)
-    .set({ 
-      accessToken: encryptSecret(updated.access_token), 
+  await drizzle
+    .update(schema.emailAccounts)
+    .set({
+      accessToken: encryptSecret(updated.access_token),
       expiresAt: BigInt(updated.expires_at),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     })
     .where(eq(schema.emailAccounts.id, account.id));
   return updated.access_token;
@@ -136,7 +149,7 @@ export async function sendEmailViaMicrosoft(opts: {
     15_000,
   );
   if (!r.ok) {
-    const err = await r.json().catch(() => ({})) as any;
+    const err = (await r.json().catch(() => ({}))) as any;
     throw new Error(getErrorMessage(err) || `Microsoft Graph sendMail failed: ${r.status}`);
   }
   // Graph returns 202 with no body for sendMail — conversationId is unavailable
@@ -148,8 +161,6 @@ export async function sendEmailViaMicrosoft(opts: {
 //  Shared OAuth State signing
 // ────────────────────────────────────────────────────────────────────
 
-const OAUTH_STATE_SECRET = process.env.OAUTH_STATE_SECRET || process.env.STRIPE_WEBHOOK_SECRET || "wireline-placeholder-secret";
-
 /** Signed OAuth state may embed `userId` so browser callbacks can resolve the tenant without relying on cookies. */
 export interface VerifiedOAuthState {
   ok: boolean;
@@ -159,11 +170,9 @@ export interface VerifiedOAuthState {
 export function generateOAuthState(opts?: { userId?: string }): string {
   const nonce = randomUUID().replace(/-/g, "");
   const ts = Date.now().toString(36);
-  const uidPart = opts?.userId
-    ? Buffer.from(opts.userId, "utf8").toString("base64url")
-    : "";
+  const uidPart = opts?.userId ? Buffer.from(opts.userId, "utf8").toString("base64url") : "";
   const payload = uidPart ? `${nonce}.${ts}.${uidPart}` : `${nonce}.${ts}`;
-  const sig = createHmac("sha256", OAUTH_STATE_SECRET).update(payload).digest("base64url");
+  const sig = createHmac("sha256", getOAuthStateSecret()).update(payload).digest("base64url");
   return `${payload}.${sig}`;
 }
 
@@ -174,7 +183,9 @@ export function verifyOAuthState(state: string | undefined): VerifiedOAuthState 
     if (lastDot <= 0) return { ok: false };
     const payload = state.slice(0, lastDot);
     const sig = state.slice(lastDot + 1);
-    const expected = createHmac("sha256", OAUTH_STATE_SECRET).update(payload).digest("base64url");
+    const expected = createHmac("sha256", getOAuthStateSecret())
+      .update(payload)
+      .digest("base64url");
 
     const sigBuf = Buffer.from(sig);
     const expBuf = Buffer.from(expected);
@@ -204,10 +215,12 @@ export function verifyOAuthState(state: string | undefined): VerifiedOAuthState 
 
 export async function resolveUserIdFromOAuthSession(req: express.Request): Promise<string | null> {
   const authHeader = req.headers.authorization;
-  const cookieToken = (req as express.Request & { cookies?: Record<string, string> }).cookies?.["wireline_session"];
+  const cookieToken = (req as express.Request & { cookies?: Record<string, string> }).cookies?.[
+    "wireline_session"
+  ];
   const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : cookieToken;
   if (!bearerToken) return null;
-  
+
   const secret = process.env.INTERNAL_JWT_SECRET || process.env.SUPABASE_JWT_SECRET || "";
   const payload = await verifySupabaseJwt(bearerToken, secret);
   return payload?.sub ?? null;
@@ -220,13 +233,17 @@ export const MICROSOFT_CALENDAR_WRITE_SCOPE = "Calendars.ReadWrite";
  * Returns whether a previously granted Google OAuth scope string includes calendar event creation.
  * Used when stored `scopes` are persisted for an account; if scopes are unknown, operator should re-connect after scope upgrades.
  */
-export function googleGrantedScopesAllowCalendarWrite(scopeStr: string | null | undefined): boolean {
+export function googleGrantedScopesAllowCalendarWrite(
+  scopeStr: string | null | undefined,
+): boolean {
   if (!scopeStr?.trim()) return false;
   return scopeStr.includes("calendar.events");
 }
 
 /** Microsoft delegated scopes string must contain Calendars.ReadWrite for POST /me/events. */
-export function microsoftGrantedScopesAllowCalendarWrite(scopeStr: string | null | undefined): boolean {
+export function microsoftGrantedScopesAllowCalendarWrite(
+  scopeStr: string | null | undefined,
+): boolean {
   if (!scopeStr?.trim()) return false;
   return scopeStr.includes(MICROSOFT_CALENDAR_WRITE_SCOPE);
 }

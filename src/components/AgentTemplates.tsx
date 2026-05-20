@@ -208,7 +208,7 @@ const AGENT_TEMPLATES = [
       "Hi! I'm calling on behalf of [Company] — we'd love your feedback on your recent experience. This takes under 2 minutes.",
   },
   // === PERSONAL & LIFESTYLE ===
-  // For individuals on the Personal tier ($29/mo, 1 agent) — agents
+  // For individuals on the Personal tier ($49/mo, 1 agent) — agents
   // represent a single human rather than a business. Versatile concierge
   // by default plus three specialty sub-types for high-value individual
   // use cases (call screening, errand-running, bill negotiation).
@@ -565,17 +565,9 @@ export default function AgentTemplates() {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      {/* Top bar */}
+      {/* Top bar — page title removed per design direction; the left
+          nav already labels this "Templates". Search stays. */}
       <div className="px-4 py-3 border-b border-white/8 flex flex-col gap-3 shrink-0">
-        <div>
-          <div className="text-[10px] uppercase tracking-[0.45em] text-brand/80">
-            Fleet · Templates
-          </div>
-          <h2 className="font-display italic lowercase text-2xl text-ink leading-none mt-0.5">
-            agent gallery
-          </h2>
-        </div>
-
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted/60 pointer-events-none" />

@@ -1,8 +1,77 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Loader2, ArrowRight, User2, Users2 } from "lucide-react";
+import { X, Loader2, ArrowRight, User2, Users2, Play, Pause } from "lucide-react";
 import { cn } from "../lib/utils";
 import { PREMIUM_VOICES, DEFAULT_VOICE_BY_GENDER } from "./FleetSettings";
+import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
+
+/**
+ * Inline voice preview button — fetches /api/voices/:id/preview
+ * (which 302-redirects to the public ElevenLabs preview MP3) and
+ * plays it. Self-contained: handles its own audio ref + play state.
+ */
+function VoicePreviewButton({ voiceId, voiceName }: { voiceId: string; voiceName: string }) {
+  const [playing, setPlaying] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    // When the parent swaps voiceId, kill any in-flight playback so
+    // we don't have two voices overlapping.
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    setPlaying(false);
+  }, [voiceId]);
+
+  async function toggle() {
+    if (playing) {
+      audioRef.current?.pause();
+      setPlaying(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      const audio = new Audio(`/api/voices/${encodeURIComponent(voiceId)}/preview`);
+      audio.onended = () => setPlaying(false);
+      audio.onerror = () => {
+        setPlaying(false);
+        setLoading(false);
+      };
+      audioRef.current = audio;
+      await audio.play();
+      setPlaying(true);
+      if (typeof window !== "undefined" && (window as any).plausible) {
+        (window as any).plausible("DeployModalVoicePreviewClick", {
+          props: { voice: voiceName },
+        });
+      }
+    } catch {
+      setPlaying(false);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      disabled={loading}
+      className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.22em] text-brand hover:text-brand/80 transition-colors disabled:opacity-50"
+    >
+      {loading ? (
+        <Loader2 className="w-3 h-3 animate-spin" />
+      ) : playing ? (
+        <Pause className="w-3 h-3" />
+      ) : (
+        <Play className="w-3 h-3" />
+      )}
+      {playing ? "Stop preview" : "Hear this voice"}
+    </button>
+  );
+}
 
 export type DeployTemplate = {
   id: string;
@@ -59,6 +128,44 @@ export default function DeployAgentModal({
   const [voiceId, setVoiceId] = useState<string>(DEFAULT_VOICE_BY_GENDER.female);
   const [showVoiceList, setShowVoiceList] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
+  // Cloned voices fetched from /api/voices on mount. Hooks must
+  // declare before any conditional return — the `if (!template) return`
+  // below is conditional so this state has to land here.
+  const [clonedVoices, setClonedVoices] = useState<
+    Array<{ id: string; provider: string; name: string; gender: string }>
+  >([]);
+
+  // Pin the page underneath while the deploy modal is open.
+  useBodyScrollLock(open);
+
+  // Fetch tenant's cloned voices once when the modal mounts.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { authFetch } = await import("../lib/api");
+        const r = await authFetch("/api/voices");
+        if (!r.ok) return;
+        const data = await r.json();
+        const owned = (data.voices || [])
+          .filter((v: any) => v.owned_by_user)
+          .map((v: any) => ({
+            id: v.voice_id,
+            provider: "11labs",
+            name: `${v.name} (your clone)`,
+            // Cloned voices don't carry gender metadata — surface in
+            // both buckets so they're always reachable from the picker.
+            gender: "neutral",
+          }));
+        if (!cancelled) setClonedVoices(owned);
+      } catch {
+        /* graceful fallback — picker still works with PREMIUM_VOICES only */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Reset state whenever a new template is selected, autofocus the name field.
   useEffect(() => {
@@ -93,10 +200,10 @@ export default function DeployAgentModal({
   if (!template) return null;
 
   const isEmail = template.channel === "email";
-  const voicesForGender = PREMIUM_VOICES.filter(
-    (v) => v.gender === gender || v.gender === "neutral",
-  );
-  const selectedVoice = PREMIUM_VOICES.find((v) => v.id === voiceId);
+
+  const allVoices = [...clonedVoices, ...PREMIUM_VOICES];
+  const voicesForGender = allVoices.filter((v) => v.gender === gender || v.gender === "neutral");
+  const selectedVoice = allVoices.find((v) => v.id === voiceId);
   const trimmedName = name.trim();
   const canSubmit = trimmedName.length > 0 && trimmedName.length <= 80 && !deploying;
 
@@ -121,13 +228,19 @@ export default function DeployAgentModal({
             role="dialog"
             aria-label="Deploy agent"
             aria-modal="true"
-            initial={{ opacity: 0, y: 24, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 18, scale: 0.97 }}
-            transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed left-1/2 top-[50%] -translate-x-1/2 -translate-y-1/2 z-[81] w-[min(540px,calc(100vw-32px))]"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 24 }}
+            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+            // Bottom-sheet on mobile (anchored to bottom edge,
+            // full-width, rounded top), centered card on desktop.
+            // Matches ConfirmModal + TrialGateModal patterns so
+            // every dialog in the app feels like one family.
+            className="fixed z-[81]
+              left-0 right-0 bottom-0 w-full
+              sm:left-1/2 sm:bottom-auto sm:top-[50%] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:right-auto sm:w-[min(540px,calc(100vw-32px))]"
           >
-            <div className="relative rounded-3xl overflow-hidden glass-strong border border-white/12 shadow-2xl">
+            <div className="relative rounded-t-3xl sm:rounded-3xl overflow-hidden glass-strong border border-white/12 shadow-2xl">
               {/* Aurora glow */}
               <div
                 aria-hidden="true"
@@ -210,9 +323,9 @@ export default function DeployAgentModal({
                         active={gender === "female"}
                         label="Female"
                         sublabel={
-                          PREMIUM_VOICES.find(
-                            (v) => v.id === DEFAULT_VOICE_BY_GENDER.female,
-                          )?.name.split(" (")[0] || "Female default"
+                          allVoices
+                            .find((v) => v.id === DEFAULT_VOICE_BY_GENDER.female)
+                            ?.name.split(" (")[0] || "Female default"
                         }
                         icon={User2}
                         onClick={() => handleGenderChange("female")}
@@ -221,9 +334,9 @@ export default function DeployAgentModal({
                         active={gender === "male"}
                         label="Male"
                         sublabel={
-                          PREMIUM_VOICES.find(
-                            (v) => v.id === DEFAULT_VOICE_BY_GENDER.male,
-                          )?.name.split(" (")[0] || "Male default"
+                          allVoices
+                            .find((v) => v.id === DEFAULT_VOICE_BY_GENDER.male)
+                            ?.name.split(" (")[0] || "Male default"
                         }
                         icon={Users2}
                         onClick={() => handleGenderChange("male")}
@@ -269,9 +382,21 @@ export default function DeployAgentModal({
                     </AnimatePresence>
 
                     {selectedVoice && !showVoiceList && (
-                      <p className="text-[10px] text-muted/65">
-                        Picked: <span className="text-ink/75">{selectedVoice.name}</span>
-                      </p>
+                      <div className="space-y-1.5">
+                        <p className="text-[10px] text-muted/65">
+                          Picked: <span className="text-ink/75">{selectedVoice.name}</span>
+                        </p>
+                        {/* Real per-voice audio preview via the
+                            ElevenLabs-backed /api/voices/:id/preview
+                            route. Plays a public preview MP3 directly
+                            in the browser. Falls back gracefully if the
+                            voice has no preview (the audio's onerror
+                            handler logs + the button stays clickable). */}
+                        <VoicePreviewButton
+                          voiceId={selectedVoice.id}
+                          voiceName={selectedVoice.name}
+                        />
+                      </div>
                     )}
                   </div>
                 ) : (

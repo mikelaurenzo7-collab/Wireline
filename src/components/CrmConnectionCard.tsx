@@ -20,6 +20,12 @@ interface IntegrationState {
   hubspot: IntegrationStatus;
   slack: IntegrationStatus;
   zoom: IntegrationStatus;
+  apollo: IntegrationStatus;
+  meta: IntegrationStatus;
+  shopify: IntegrationStatus;
+  square: IntegrationStatus;
+  microsoft_teams: IntegrationStatus;
+  microsoft_excel: IntegrationStatus;
 }
 
 type ProviderKey = keyof IntegrationState;
@@ -30,7 +36,6 @@ const PROVIDERS: {
   color: string;
   logo: string;
   group: string;
-  envHint: string;
   beta?: boolean;
 }[] = [
   {
@@ -39,7 +44,6 @@ const PROVIDERS: {
     color: "sky",
     logo: "SF",
     group: "CRM",
-    envHint: "SALESFORCE_CLIENT_ID & SECRET",
     beta: true,
   },
   {
@@ -48,7 +52,6 @@ const PROVIDERS: {
     color: "orange",
     logo: "HS",
     group: "CRM",
-    envHint: "HUBSPOT_CLIENT_ID & SECRET",
     beta: true,
   },
   {
@@ -57,7 +60,6 @@ const PROVIDERS: {
     color: "purple",
     logo: "SL",
     group: "Team",
-    envHint: "SLACK_CLIENT_ID & SECRET",
   },
   {
     key: "zoom",
@@ -65,7 +67,51 @@ const PROVIDERS: {
     color: "blue",
     logo: "ZM",
     group: "Meetings",
-    envHint: "ZOOM_CLIENT_ID & SECRET",
+    beta: true,
+  },
+  {
+    key: "apollo",
+    label: "Apollo",
+    color: "indigo",
+    logo: "AP",
+    group: "Prospecting",
+  },
+  {
+    key: "meta",
+    label: "Meta (Lead Ads)",
+    color: "fuchsia",
+    logo: "M",
+    group: "Ads",
+    beta: true,
+  },
+  {
+    key: "shopify",
+    label: "Shopify",
+    color: "emerald",
+    logo: "SH",
+    group: "E-commerce",
+  },
+  {
+    key: "square",
+    label: "Square",
+    color: "amber",
+    logo: "SQ",
+    group: "E-commerce",
+  },
+  {
+    key: "microsoft_teams",
+    label: "Microsoft Teams",
+    color: "indigo",
+    logo: "MT",
+    group: "Microsoft 365",
+    beta: true,
+  },
+  {
+    key: "microsoft_excel",
+    label: "Microsoft Excel",
+    color: "emerald",
+    logo: "XL",
+    group: "Microsoft 365",
     beta: true,
   },
 ];
@@ -78,6 +124,11 @@ export default function CrmConnectionCard() {
     { id: string; name: string; is_private?: boolean }[]
   >([]);
   const [slackChannelsLoading, setSlackChannelsLoading] = useState(false);
+  // Shopify OAuth is per-store, so the operator must supply their
+  // myshopify domain before the Connect button can build the install
+  // URL. Held here until they click Connect.
+  const [shopDomain, setShopDomain] = useState("");
+  const [shopError, setShopError] = useState<string | null>(null);
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -128,10 +179,26 @@ export default function CrmConnectionCard() {
   }, [fetchStatus]);
 
   const connect = (provider: ProviderKey) => async () => {
+    // Shopify needs the merchant's myshopify domain appended as a
+    // query param so the per-store install URL can be built.
+    let endpoint = `/api/oauth/${provider}/url`;
+    if (provider === "shopify") {
+      const shop = shopDomain.trim().toLowerCase();
+      if (!/^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(shop)) {
+        setShopError("Enter a valid store domain, e.g. your-store.myshopify.com");
+        return;
+      }
+      setShopError(null);
+      endpoint += `?shop=${encodeURIComponent(shop)}`;
+    }
     setConnecting(provider);
     try {
-      const r = await authFetch(`/api/oauth/${provider}/url`);
+      const r = await authFetch(endpoint);
       if (!r.ok) {
+        if (provider === "shopify") {
+          const body = await r.json().catch(() => ({}));
+          setShopError(body?.error || "Could not start Shopify connect.");
+        }
         setConnecting(null);
         return;
       }
@@ -179,7 +246,7 @@ export default function CrmConnectionCard() {
               {group} Integrations
             </div>
             <AnimatePresence mode="popLayout">
-              {groupProviders.map(({ key, label, color, logo, envHint, beta }) => {
+              {groupProviders.map(({ key, label, color, logo, beta }) => {
                 const s = state[key];
                 if (!s) return null;
                 const isConnecting = connecting === key;
@@ -212,7 +279,7 @@ export default function CrmConnectionCard() {
                             {betaPill}
                           </div>
                           <div className="text-[9px] text-muted leading-snug mt-0.5">
-                            Not configured — set {envHint} in environment
+                            Finishing setup — write to trywireline@yahoo.com to enable
                           </div>
                         </div>
                       </div>
@@ -302,6 +369,32 @@ export default function CrmConnectionCard() {
                         )}
                       </div>
                     </div>
+                    {key === "shopify" && !s.connected && (
+                      <div className="mt-3 pt-3 border-t border-white/10 space-y-1.5">
+                        <div className="text-[9px] uppercase tracking-[0.25em] text-muted/90">
+                          Your store domain
+                        </div>
+                        <input
+                          type="text"
+                          value={shopDomain}
+                          onChange={(e) => {
+                            setShopDomain(e.target.value);
+                            if (shopError) setShopError(null);
+                          }}
+                          placeholder="your-store.myshopify.com"
+                          spellCheck={false}
+                          autoCapitalize="off"
+                          className="w-full text-[10px] rounded-lg bg-black/20 border border-white/10 px-2 py-1.5 text-ink placeholder:text-muted/50 outline-none focus:border-emerald-500/40"
+                        />
+                        {shopError ? (
+                          <p className="text-[9px] text-rose-500 leading-snug">{shopError}</p>
+                        ) : (
+                          <p className="text-[9px] text-muted/70 leading-snug">
+                            Enter your myshopify.com domain, then click Connect to authorize.
+                          </p>
+                        )}
+                      </div>
+                    )}
                     {key === "slack" && s.connected && (
                       <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
                         <div className="text-[9px] uppercase tracking-[0.25em] text-muted/90">

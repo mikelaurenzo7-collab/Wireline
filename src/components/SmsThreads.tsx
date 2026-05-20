@@ -181,7 +181,7 @@ export default function SmsThreads() {
                         </p>
                       </div>
                       {t.unread_count > 0 && (
-                        <span className="shrink-0 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full bg-brand text-paper text-[10px] font-bold">
+                        <span className="shrink-0 inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-brand text-on-brand text-[10px] font-bold">
                           {t.unread_count}
                         </span>
                       )}
@@ -261,7 +261,7 @@ export default function SmsThreads() {
                     onClick={handleSend}
                     disabled={sending || !reply.trim()}
                     aria-label="Send SMS reply"
-                    className="shrink-0 w-11 h-11 rounded-lg bg-brand text-paper hover:bg-brand/90 transition-colors flex items-center justify-center disabled:opacity-40"
+                    className="shrink-0 w-11 h-11 rounded-lg bg-brand text-on-brand hover:bg-brand/90 transition-colors flex items-center justify-center disabled:opacity-40"
                   >
                     {sending ? (
                       <Loader2 className="w-4 h-4 animate-spin" />

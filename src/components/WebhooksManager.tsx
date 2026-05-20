@@ -237,7 +237,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
                 <div
                   className={cn(
                     "shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center mt-0.5 transition-all",
-                    on ? "bg-brand border-brand text-paper" : "border-white/30",
+                    on ? "bg-brand border-brand text-on-brand" : "border-white/30",
                   )}
                 >
                   {on && <Check className="w-2.5 h-2.5" strokeWidth={4} />}
@@ -484,7 +484,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
               <button
                 onClick={remove}
                 disabled={busy !== null}
-                className="px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] bg-rose-500 text-paper hover:bg-rose-500/80 transition-all"
+                className="px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.3em] bg-rose-500 text-on-brand hover:bg-rose-500/80 transition-all"
               >
                 {busy === "delete" ? <Loader2 className="w-3 h-3 animate-spin" /> : "Confirm"}
               </button>

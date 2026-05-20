@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="index, follow" />
+    <title>Data Deletion — Wireline</title>
+    <meta
+      name="description"
+      content="How to delete your Wireline account and all associated personal data. Required by Meta App Review."
+    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href="https://trywireline.com/legal/data-deletion" />
+    <style>
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: #faf9f5;
+        color: #1a1408;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      .wrap {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 56px 24px 80px;
+      }
+      .back {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.25em;
+        color: #6b6358;
+        text-decoration: none;
+        margin-bottom: 40px;
+      }
+      .back:hover { color: #1a1408; }
+      .header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 6px;
+      }
+      .badge {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: #4f1e7b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        color: #faf9f5;
+      }
+      h1 {
+        font-size: 28px;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        margin: 0;
+      }
+      .updated {
+        font-size: 11px;
+        color: #6b6358;
+        margin: 6px 0 40px;
+      }
+      h2 {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 32px 0 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+      }
+      p, li { font-size: 14.5px; color: rgba(26, 20, 8, 0.85); }
+      ul { padding-left: 22px; }
+      ul li { margin: 4px 0; }
+      strong { color: #1a1408; }
+      a { color: #4f1e7b; }
+      .footer {
+        margin-top: 64px;
+        padding-top: 32px;
+        border-top: 1px solid rgba(0, 0, 0, 0.08);
+        font-size: 10px;
+        color: rgba(107, 99, 88, 0.7);
+      }
+      .footer a {
+        color: rgba(107, 99, 88, 0.85);
+        text-decoration: none;
+        margin-right: 16px;
+      }
+      .footer a:hover { color: #1a1408; }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <a href="/" class="back">← Back to app</a>
+
+      <div class="header">
+        <div class="badge" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+            <path d="M10 11v6M14 11v6"></path>
+            <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path>
+          </svg>
+        </div>
+        <h1>Data Deletion</h1>
+      </div>
+      <p class="updated">Last updated: May 19, 2026</p>
+
+      <h2>Delete your account from the app</h2>
+      <p>
+        The fastest path is to sign in and head to
+        <strong>Admin → Account → Delete Account</strong>. Confirm the deletion in the
+        modal and your account enters a 30-day soft-delete window. After that window,
+        every row tied to your user is purged from our database: call logs, recordings,
+        agent configurations, OAuth connections (Google, Microsoft, Yahoo, Apollo,
+        HubSpot, Salesforce, Slack, Zoom, Meta), email accounts, lead records, billing
+        history, audit trail. Hard delete is irreversible.
+      </p>
+
+      <h2>Don't have access to your account?</h2>
+      <p>
+        Email <strong>trywireline@yahoo.com</strong> from the address tied to the account
+        with the subject line <em>"Data deletion request"</em>. We verify the request out
+        of band (text or call to a phone number on file) and then run the same deletion
+        job manually. We confirm by email when the purge completes; SLA is 7 business
+        days.
+      </p>
+
+      <h2>What's deleted</h2>
+      <ul>
+        <li>User profile (email, name, password hash)</li>
+        <li>All agent configurations + uploaded knowledge documents</li>
+        <li>Call logs, transcripts, recordings, sentiment scores</li>
+        <li>Email threads, SMS threads, draft messages</li>
+        <li>OAuth connections + encrypted access tokens</li>
+        <li>Meta Lead Ads submissions ingested via webhook</li>
+        <li>Apollo lead enrichment cache scoped to your account</li>
+        <li>Billing history beyond what tax law requires us to retain</li>
+      </ul>
+
+      <h2>What's retained</h2>
+      <p>
+        Anonymized, aggregated metrics (total calls per day across all tenants, no
+        identifiers) used for capacity planning. Tax records required by US law
+        (invoices, payment receipts) for the statutory retention window. Audit log
+        entries with your user ID redacted to a stable hash for legitimate security
+        investigation purposes.
+      </p>
+
+      <h2>Questions</h2>
+      <p>
+        Reach us at <strong>trywireline@yahoo.com</strong> with any data deletion question
+        and we'll respond within 2 business days.
+      </p>
+
+      <div class="footer">
+        <a href="/privacy">Privacy Policy</a>
+        <a href="/terms">Terms of Service</a>
+        <a href="/">Back to app</a>
+      </div>
+    </main>
+  </body>
+</html>

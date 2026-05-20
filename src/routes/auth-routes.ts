@@ -1,8 +1,16 @@
 import { Router, Request, Response } from "express";
 import { authService } from "../lib/auth-service";
-import { log } from "../lib/server-context";
-import { signinRateLimiter, forgotPasswordRateLimiter } from "../middleware/rate-limit-middleware";
+import { log, drizzle } from "../lib/server-context";
+import * as schema from "../db/schema";
+import { eq } from "drizzle-orm";
+import {
+  signinRateLimiter,
+  signupRateLimiter,
+  forgotPasswordRateLimiter,
+} from "../middleware/rate-limit-middleware";
 import { sendPasswordResetEmail } from "../lib/email-service";
+import { authenticateUser } from "../middleware/auth";
+import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
 
@@ -35,7 +43,7 @@ router.post("/api/auth/signin", signinRateLimiter, async (req: Request, res: Res
  * POST /api/auth/signup
  * Register a new user and return a JWT.
  */
-router.post("/api/auth/signup", async (req: Request, res: Response) => {
+router.post("/api/auth/signup", signupRateLimiter, async (req: Request, res: Response) => {
   try {
     const { email, password, fullName } = req.body;
     if (!email || !password) {
@@ -43,6 +51,36 @@ router.post("/api/auth/signup", async (req: Request, res: Response) => {
     }
 
     const result = await authService.signUp(email, password, fullName);
+
+    // Mint + email the verification link. Best-effort: if the
+    // transport is down (no RESEND_API_KEY), signup still succeeds
+    // but the user lands with email_verified_at = NULL and the
+    // banner shows "Resend verification." No silent ok-lies. The
+    // user can still poke around the product; the trial gate blocks
+    // money-spending actions until verified.
+    try {
+      const { token } = await authService.createEmailVerificationToken(result.user.id);
+      const baseUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
+      const verifyUrl = `${baseUrl}/api/auth/verify-email/${encodeURIComponent(token)}`;
+      const { sendEmailVerification } = await import("../lib/email-service");
+      const emailRes = await sendEmailVerification({
+        to: email,
+        verifyUrl,
+        fullName: result.user.full_name,
+      });
+      if (!emailRes.ok) {
+        log.warn("Verification email not delivered (transport down) — user can resend", {
+          userId: result.user.id,
+          reason: emailRes.error,
+        });
+      }
+    } catch (verifyErr: any) {
+      log.error("verification email step failed (signup still succeeded)", {
+        userId: result.user.id,
+        error: verifyErr?.message ?? String(verifyErr),
+      });
+    }
+
     res.json(result);
   } catch (error: any) {
     if (error.code === "23505") {
@@ -53,6 +91,86 @@ router.post("/api/auth/signup", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+/**
+ * GET /api/auth/verify-email/:token
+ *
+ * Magic-link landing for the email-verification flow. The link in
+ * the email points here; we look up the token by sha256 hash,
+ * validate TTL + unused state, flip users.emailVerifiedAt, then
+ * redirect the browser to "/?verified=1" so the SPA can show a
+ * brief success toast.
+ */
+router.get("/api/auth/verify-email/:token", async (req: Request, res: Response) => {
+  const token = String(req.params.token || "");
+  try {
+    const user = await authService.completeEmailVerification(token);
+    const baseUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
+    if (!user) {
+      // Generic message — never leak which case (expired / used /
+      // bad hash) so an attacker can't enumerate tokens.
+      return res.redirect(`${baseUrl}/?verified=expired`);
+    }
+    log.info("Email verified", { userId: user.id });
+    return res.redirect(`${baseUrl}/?verified=1`);
+  } catch (err: any) {
+    log.error("verify-email endpoint failed", { error: err?.message ?? String(err) });
+    const baseUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
+    return res.redirect(`${baseUrl}/?verified=error`);
+  }
+});
+
+/**
+ * POST /api/auth/resend-verification
+ *
+ * Authenticated. Re-issues the verification link to the current
+ * user's email. Idempotent — old tokens stay valid until they
+ * expire, the new one is just an additional valid token. Returns
+ * { ok: true, sent: boolean }. `sent: false` means the transport
+ * is down (RESEND_API_KEY missing) — frontend should surface a
+ * fail-loud message, not a "check your inbox" toast.
+ */
+router.post(
+  "/api/auth/resend-verification",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      // Read current user (might already be verified — bail clean).
+      const [user] = await drizzle
+        .select({
+          id: schema.users.id,
+          email: schema.users.email,
+          fullName: schema.users.fullName,
+          emailVerifiedAt: schema.users.emailVerifiedAt,
+        })
+        .from(schema.users)
+        .where(eq(schema.users.id, req.user.id))
+        .limit(1);
+      if (!user) return res.status(404).json({ error: "User not found" });
+      if (user.emailVerifiedAt) {
+        return res.json({ ok: true, sent: false, reason: "already_verified" });
+      }
+
+      const { token } = await authService.createEmailVerificationToken(user.id);
+      const baseUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
+      const verifyUrl = `${baseUrl}/api/auth/verify-email/${encodeURIComponent(token)}`;
+      const { sendEmailVerification } = await import("../lib/email-service");
+      const result = await sendEmailVerification({
+        to: user.email,
+        verifyUrl,
+        fullName: user.fullName,
+      });
+      return res.json({
+        ok: true,
+        sent: result.ok,
+        ...(result.ok ? {} : { reason: "transport_unavailable" }),
+      });
+    } catch (err: any) {
+      log.error("resend-verification failed", { error: err?.message ?? String(err) });
+      return res.status(500).json({ error: "Resend failed" });
+    }
+  },
+);
 
 /**
  * POST /api/auth/signout

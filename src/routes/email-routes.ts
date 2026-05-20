@@ -6,6 +6,7 @@ import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
 import rateLimit from "express-rate-limit";
+import { IntegrationService } from "../lib/integrations";
 
 const router = Router();
 
@@ -221,6 +222,65 @@ router.post(
     } catch (e: any) {
       log.error("Failed to update thread read state", { error: getErrorMessage(e) });
       res.status(500).json({ error: "Failed to update thread read state" });
+    }
+  },
+);
+
+/**
+ * POST /api/emails/sync
+ *
+ * Pull the latest inbox messages from every connected mailbox
+ * (Gmail + Outlook today, Yahoo when XOAUTH2 IMAP ships) and
+ * upsert them into wireline_email_threads + wireline_email_messages.
+ * Used by the "Sync inbox" button in EmailInbox and by the action
+ * engine's triage flow. Idempotent via messageId.
+ *
+ * Body (optional): { limit?: number, sinceIso?: string }
+ */
+router.post(
+  "/api/emails/sync",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const { limit, sinceIso } = (req.body as { limit?: number; sinceIso?: string }) || {};
+    try {
+      const svc = new IntegrationService(req.user.id);
+      const messages = await svc.fetchInboxMessages({ limit, sinceIso });
+      let inserted = 0;
+      for (const m of messages) {
+        // Upsert by (userId, messageId) — first sync inserts, subsequent
+        // syncs no-op. The detailed thread/message UX is handled by the
+        // existing wireline_email_threads + wireline_email_messages
+        // tables that the legacy webhook already feeds.
+        try {
+          const threadId = m.threadId || m.messageId;
+          await drizzle
+            .insert(schema.emailThreads)
+            .values({
+              userId: req.user.id,
+              threadId,
+              subject: m.subject,
+              customerEmail: m.from,
+              summary: m.snippet,
+              lastMessageAt: m.receivedAt,
+            })
+            .onConflictDoNothing({ target: schema.emailThreads.threadId });
+          inserted++;
+        } catch (err: any) {
+          log.warn("Email sync upsert failed for one message", {
+            messageId: m.messageId,
+            error: err?.message,
+          });
+        }
+      }
+      res.json({
+        ok: true,
+        fetched: messages.length,
+        upserted: inserted,
+        providers: Array.from(new Set(messages.map((m) => m.provider))),
+      });
+    } catch (err) {
+      log.error("/api/emails/sync failed", { error: getErrorMessage(err) });
+      res.status(500).json({ error: "Inbox sync failed" });
     }
   },
 );

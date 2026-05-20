@@ -284,12 +284,20 @@ export default function StripeBillingCard() {
                 <div>
                   <h4 className="font-display italic lowercase text-2xl text-ink">{plan.name}</h4>
                   <div className="mt-1.5 flex items-baseline gap-1">
-                    <span className="font-display italic text-4xl text-ink">
-                      ${plan.price_usd_monthly}
-                    </span>
-                    <span className="text-[10px] uppercase tracking-[0.3em] text-muted/70">
-                      /mo
-                    </span>
+                    {plan.price_usd_monthly > 0 ? (
+                      <>
+                        <span className="font-display italic text-4xl text-ink">
+                          ${plan.price_usd_monthly.toLocaleString()}
+                        </span>
+                        <span className="text-[10px] uppercase tracking-[0.3em] text-muted/70">
+                          /mo
+                        </span>
+                      </>
+                    ) : (
+                      // price 0 == contact-sales tier (Enterprise) — never
+                      // render "$0/mo", which reads as free.
+                      <span className="font-display italic text-4xl text-ink">Custom</span>
+                    )}
                   </div>
                 </div>
                 <ul className="space-y-2 flex-1">

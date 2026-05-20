@@ -155,7 +155,21 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
         .from(schema.settings);
 
       if (tenants) {
+        // Idempotency: skip tenants that already have a pending or
+        // recently-completed purge_old_data job in the last 23 hours.
+        // Vercel may retry the same 2:00 UTC tick on transient failure;
+        // without this guard each retry would duplicate the per-tenant
+        // enqueue. 23h not 24h so the next day's sweep still fires even
+        // if today's ran a hair late.
+        const since = new Date(Date.now() - 23 * 60 * 60 * 1000);
+        const recent = await drizzle
+          .select({ userId: schema.jobs.userId })
+          .from(schema.jobs)
+          .where(and(eq(schema.jobs.type, "purge_old_data"), gte(schema.jobs.createdAt, since)));
+        const alreadyQueued = new Set((recent || []).map((r) => r.userId));
+
         for (const t of tenants) {
+          if (alreadyQueued.has(t.userId)) continue;
           await enqueue(drizzle, {
             userId: t.userId,
             type: "purge_old_data",
@@ -245,8 +259,18 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
         await fail(drizzle, job, getErrorMessage(sweepErr));
       }
     }
+    // Flip any trial accounts that have aged out of their 14-day
+    // window. Independent of job-queue processing, fires on every
+    // sweep tick. Idempotent — only updates rows where the flip is
+    // actually needed.
+    let trialsExpired = 0;
+    if (req._sweepMode === "cron" || !req._sweepMode) {
+      const { sweepExpiredTrials } = await import("../lib/trial-gate");
+      trialsExpired = await sweepExpiredTrials();
+    }
+
     const mode = req._sweepMode || "cron";
-    res.json({ processed, mode });
+    res.json({ processed, mode, trials_expired: trialsExpired });
     if (processed > 0) {
       void auditLogger
         .logJobSweep("completed", {

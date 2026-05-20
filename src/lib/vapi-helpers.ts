@@ -243,7 +243,10 @@ export const VAPI_TOOL_DEFS = {
   send_text_message: {
     name: "send_text_message",
     description:
-      "Sends an SMS or WhatsApp follow-up. Only use this when the customer explicitly asked for a text or has already consented to that channel. Good for links, confirmations, appointment details, or next steps.",
+      // "SMS" → "text message" because Vapi TTS reads "SMS" letter-by-letter
+      // (S-M-S) which sounds choppy on the call. "text message" reads
+      // naturally and is the term real callers use anyway.
+      "Sends a text message or WhatsApp follow-up. Only use this when the customer explicitly asked for a text or has already consented to that channel. Good for links, confirmations, appointment details, or next steps.",
     parameters: {
       type: "object",
       properties: {
@@ -601,6 +604,232 @@ export const VAPI_TOOL_DEFS = {
         },
       },
       required: [],
+    },
+  },
+  gemini_ground: {
+    name: "gemini_ground",
+    description:
+      "Looks up fresh public information via Gemini's grounded web search. Use ONLY when the caller asks something that isn't in your knowledge base AND requires current public info — competitor pricing, news headlines, today's weather, business hours, regulatory updates. Returns a concise grounded answer with citations. Do NOT use for internal customer data — that's what search_leads / crm_search_contacts / view_recent_interactions are for.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description:
+            "The search query. Phrase as a self-contained question — e.g. 'current AWS S3 standard storage pricing per GB' or 'restaurant Chicago Lou Malnati closing time Thursday'.",
+        },
+      },
+      required: ["query"],
+    },
+  },
+  shopify_lookup_order: {
+    name: "shopify_lookup_order",
+    description:
+      "Looks up a customer's Shopify order by order number or email. Returns the order status, payment status, fulfillment / tracking info, line items, and total. Use this when a caller asks 'where is my order' or about a recent purchase.",
+    parameters: {
+      type: "object",
+      properties: {
+        order_number: {
+          type: "string",
+          description: "The order number, e.g. '1001' or '#1001'. Ask the caller for this.",
+        },
+        email: {
+          type: "string",
+          description:
+            "The customer's email — use to find their most recent order when no order number is known.",
+        },
+      },
+      required: [],
+    },
+  },
+  shopify_check_inventory: {
+    name: "shopify_check_inventory",
+    description:
+      "Searches the Shopify store catalog for a product by name and returns its variants, prices, and live inventory (in-stock) levels. Use when a caller asks if something is in stock or about a price.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Product name or keyword to search for." },
+      },
+      required: ["query"],
+    },
+  },
+  shopify_lookup_customer: {
+    name: "shopify_lookup_customer",
+    description:
+      "Looks up a Shopify customer by email or phone and returns their profile plus recent order history. Use to recognize a returning customer or review what they've bought.",
+    parameters: {
+      type: "object",
+      properties: {
+        email: { type: "string", description: "The customer's email address." },
+        phone: {
+          type: "string",
+          description: "The customer's phone number. Leave blank to use the caller's number.",
+        },
+      },
+      required: [],
+    },
+  },
+  shopify_start_return: {
+    name: "shopify_start_return",
+    description:
+      "Opens a return request for a Shopify order. This STARTS the return only — it does NOT issue a refund; a team member reviews and approves any money back. Confirm the order and reason with the caller first.",
+    parameters: {
+      type: "object",
+      properties: {
+        order_id: {
+          type: "string",
+          description:
+            "The Shopify order ID (numeric). Get this from shopify_lookup_order first if you only have the order number.",
+        },
+        reason: {
+          type: "string",
+          description:
+            "Why the customer wants to return — e.g. 'wrong size', 'item defective', 'arrived late'.",
+        },
+      },
+      required: ["order_id", "reason"],
+    },
+  },
+  shopify_cancel_order: {
+    name: "shopify_cancel_order",
+    description:
+      "Cancels a Shopify order. Only do this when the caller explicitly asks to cancel and the order has not shipped. Confirm the order with them before cancelling.",
+    parameters: {
+      type: "object",
+      properties: {
+        order_id: {
+          type: "string",
+          description:
+            "The Shopify order ID (numeric). Get this from shopify_lookup_order if you only have the order number.",
+        },
+      },
+      required: ["order_id"],
+    },
+  },
+  shopify_update_address: {
+    name: "shopify_update_address",
+    description:
+      "Updates the shipping address on a Shopify order. Use when a caller realizes they entered the wrong address and the order has not yet shipped. Read the new address back to confirm before saving.",
+    parameters: {
+      type: "object",
+      properties: {
+        order_id: { type: "string", description: "The Shopify order ID (numeric)." },
+        address1: { type: "string", description: "Street address line 1." },
+        address2: { type: "string", description: "Street address line 2 (apt/suite)." },
+        city: { type: "string", description: "City." },
+        province: { type: "string", description: "State / province." },
+        zip: { type: "string", description: "ZIP / postal code." },
+        country: { type: "string", description: "Country." },
+        name: { type: "string", description: "Recipient name." },
+      },
+      required: ["order_id"],
+    },
+  },
+  square_lookup_order: {
+    name: "square_lookup_order",
+    description:
+      "Looks up a Square order by order ID or the customer's email address. Returns order status, line items, totals, and fulfillment state. Use when a caller asks about a purchase made through Square.",
+    parameters: {
+      type: "object",
+      properties: {
+        order_id: {
+          type: "string",
+          description: "The Square order ID. Ask the caller for this if they have it.",
+        },
+        email: {
+          type: "string",
+          description:
+            "The customer's email — use to find their most recent order when no order ID is known.",
+        },
+      },
+      required: [],
+    },
+  },
+  square_lookup_customer: {
+    name: "square_lookup_customer",
+    description:
+      "Finds a Square customer by email or phone and returns their profile and recent purchase history. Use to recognize a returning customer or review prior purchases.",
+    parameters: {
+      type: "object",
+      properties: {
+        email: { type: "string", description: "The customer's email address." },
+        phone: {
+          type: "string",
+          description: "The customer's phone number. Leave blank to use the caller's number.",
+        },
+      },
+      required: [],
+    },
+  },
+  square_check_inventory: {
+    name: "square_check_inventory",
+    description:
+      "Searches the Square item catalog for a product by name and returns its variants, prices, and live inventory levels. Use when a caller asks if something is available or what it costs.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Product name or keyword to search for." },
+      },
+      required: ["query"],
+    },
+  },
+  square_create_payment_link: {
+    name: "square_create_payment_link",
+    description:
+      "Generates a Square checkout payment link for a product or service. Only use this after confirming the item name and price with the caller. Send the link via SMS or email.",
+    parameters: {
+      type: "object",
+      properties: {
+        title: {
+          type: "string",
+          description: "Name of the product or service the payment is for.",
+        },
+        amount_dollars: {
+          type: "number",
+          description: "Amount to charge in dollars (e.g. 49.99).",
+        },
+      },
+      required: ["title", "amount_dollars"],
+    },
+  },
+  send_teams_message: {
+    name: "send_teams_message",
+    description:
+      "Notify the team via Microsoft Teams about an important call outcome — hot lead, booked meeting, escalation, or deal milestone. Only use when something noteworthy happened that the team should see immediately.",
+    parameters: {
+      type: "object",
+      properties: {
+        message: {
+          type: "string",
+          description: "A concise notification message for the team's Microsoft Teams channel.",
+        },
+      },
+      required: ["message"],
+    },
+  },
+  log_to_excel: {
+    name: "log_to_excel",
+    description:
+      "Append a row to the operator's Wireline Call Log spreadsheet in OneDrive — records the caller, the outcome, and a short detail. Use at the end of a call to keep a running log the operator can review in Excel.",
+    parameters: {
+      type: "object",
+      properties: {
+        caller: {
+          type: "string",
+          description: "The caller's name, or their phone number if no name was given.",
+        },
+        outcome: {
+          type: "string",
+          description:
+            "Short outcome label — e.g. 'Booked', 'Qualified lead', 'No answer', 'Escalated'.",
+        },
+        details: {
+          type: "string",
+          description: "One or two sentences summarizing what happened on the call.",
+        },
+      },
+      required: ["caller", "outcome", "details"],
     },
   },
 } as const;

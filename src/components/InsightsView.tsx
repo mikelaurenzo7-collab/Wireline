@@ -306,7 +306,7 @@ function AttributionView({ days }: { days: number }) {
 
   return (
     <div className="p-1 space-y-3">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-1">
         <Stat
           label="Tagged sources"
           value={rows.filter((r) => r.source !== "(untagged)").length}
@@ -424,7 +424,7 @@ function TopicsView() {
           const pct = (t.count / max) * 100;
           return (
             <motion.div
-              key={i}
+              key={t.label ?? t.topic ?? t.id ?? `topic-${i}`}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
@@ -731,7 +731,7 @@ function LeaderboardView({ days }: { days: number }) {
                 </h4>
                 <RolePill role={a.role} />
               </div>
-              <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
                 <Stat label="Calls" value={a.total_calls} />
                 <Stat label="Qualified" value={a.qualified} accent="#4F1E7B" />
                 <Stat label="Avg Score" value={a.avg_lead_score} />
@@ -816,7 +816,7 @@ function FailureModesView() {
       </div>
       {modes.map((m: any, i: number) => (
         <motion.div
-          key={i}
+          key={m.label ?? m.failure ?? m.id ?? `mode-${i}`}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: i * 0.05 }}
@@ -921,7 +921,7 @@ function AISpendView({ days }: { days: number }) {
       {callsHaveHappened && (
         <>
           {/* Headline cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <SpendStat
               label="Total Spend"
               value={formatMoney(totals?.cost, 2)}
@@ -976,7 +976,7 @@ function AISpendView({ days }: { days: number }) {
                           className="absolute inset-y-0 left-0 rounded-lg flex items-center px-3"
                           style={{ background: "#4F1E7B" }}
                         >
-                          <span className="text-[10px] font-mono text-paper font-medium">
+                          <span className="text-[10px] font-mono text-on-brand font-medium">
                             ${safeFixed(d.cost, 2)}
                           </span>
                         </motion.div>
@@ -1311,7 +1311,7 @@ function SpendBudgetCard() {
           <button
             onClick={save}
             disabled={saving}
-            className="h-11 px-5 rounded-xl bg-brand text-paper text-xs uppercase tracking-[0.25em] font-medium flex items-center gap-2 disabled:opacity-50 hover:opacity-90 transition-all"
+            className="h-11 px-5 rounded-xl bg-brand text-on-brand text-xs uppercase tracking-[0.25em] font-medium flex items-center gap-2 disabled:opacity-50 hover:opacity-90 transition-all"
           >
             {saving ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1560,7 +1560,7 @@ function QualityView({ days }: { days: number }) {
       </div>
 
       {/* Hero stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { label: "Scored Calls", value: data.count, accent: "#4F1E7B" },
           { label: "Average Score", value: `${data.avgScore}/100`, accent: qaColor(data.avgScore) },

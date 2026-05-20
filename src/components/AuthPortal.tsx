@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   ShieldCheck,
@@ -21,7 +21,6 @@ import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../contexts/AuthContext";
 import { PageMeta } from "../lib/page-meta";
-import IntegrationLogos from "./layout/IntegrationLogos";
 import WirelineMark from "./WirelineMark";
 import {
   WIRELINE_CONTACT_AGENTS,
@@ -62,6 +61,41 @@ const FEATURES = [
  * dance for them is a meaningful conversion lift. Buttons start the
  * server-side OAuth flow which round-trips back to /auth/oauth-complete.
  */
+/**
+ * Tiny live-stats pill that fetches /api/public/stats and renders
+ * a "Live: N agents online · M calls this month" caption next to
+ * the marketing stats strip. Hidden entirely below a credibility
+ * threshold — at <5 agents the live ticker would read as
+ * pre-revenue and tank trust. Once there are 5+ agents on the
+ * platform it surfaces automatically.
+ */
+function LiveStatsTicker() {
+  const [stats, setStats] = useState<{ agents_online: number; calls_this_month: number } | null>(
+    null,
+  );
+  useEffect(() => {
+    fetch("/api/public/stats")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => setStats(data))
+      .catch(() => {});
+  }, []);
+  const agentsOnline = Number(stats?.agents_online ?? 0);
+  if (agentsOnline < 5) return null;
+  return (
+    <>
+      <div className="w-px h-6 bg-white/10" />
+      <div className="flex flex-col">
+        <span className="font-display italic text-2xl text-ink">
+          {agentsOnline.toLocaleString()}
+        </span>
+        <span className="text-[9px] uppercase tracking-[0.2em] text-muted/60">
+          Agents on Wireline
+        </span>
+      </div>
+    </>
+  );
+}
+
 function OAuthSignInButtons({ disabled }: { disabled?: boolean }) {
   const [pending, setPending] = useState<"google" | "microsoft" | "yahoo" | null>(null);
   const start = async (provider: "google" | "microsoft" | "yahoo") => {
@@ -79,76 +113,85 @@ function OAuthSignInButtons({ disabled }: { disabled?: boolean }) {
       setPending(null);
     }
   };
+  // Per-provider visual: brand logo SVG + accent color. Renders as a
+  // compact equal-width tile (icon stacked above tiny label) — the row
+  // takes ~64px of vertical space total instead of the previous 3 × 44px
+  // = 132px+ stacking on mobile. Lets the integration logo strip and
+  // demo-agent grid above breathe instead of being crowded out.
+  const providers: Array<{
+    id: "google" | "microsoft" | "yahoo";
+    label: string;
+    icon: React.ReactNode;
+  }> = [
+    {
+      id: "google",
+      label: "Google",
+      icon: (
+        <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            fill="#4285F4"
+            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+          />
+          <path
+            fill="#34A853"
+            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+          />
+          <path
+            fill="#FBBC05"
+            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+          />
+          <path
+            fill="#EA4335"
+            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+          />
+        </svg>
+      ),
+    },
+    {
+      id: "microsoft",
+      label: "Microsoft",
+      icon: (
+        <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
+          <path fill="#F25022" d="M1 1h10v10H1z" />
+          <path fill="#7FBA00" d="M13 1h10v10H13z" />
+          <path fill="#00A4EF" d="M1 13h10v10H1z" />
+          <path fill="#FFB900" d="M13 13h10v10H13z" />
+        </svg>
+      ),
+    },
+    {
+      id: "yahoo",
+      label: "Yahoo",
+      icon: (
+        <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
+          <path fill="#6001D2" d="M3 6h4.6l3 6 3-6h4.6l-5.9 11.3V21H9.9v-3.7L3 6z" />
+          <circle cx="20" cy="13" r="2" fill="#6001D2" />
+        </svg>
+      ),
+    },
+  ];
+
   return (
     <div className="relative z-10 space-y-3 mb-5">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-        <button
-          type="button"
-          onClick={() => start("google")}
-          disabled={disabled || !!pending}
-          aria-label="Continue with Google"
-          className="h-11 inline-flex items-center justify-center gap-2.5 rounded-xl border border-black/12 bg-white text-ink text-[12px] font-medium hover:border-[#4F1E7B]/40 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-        >
-          {pending === "google" ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                fill="#4285F4"
-                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-              />
-              <path
-                fill="#34A853"
-                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-              />
-              <path
-                fill="#EA4335"
-                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-              />
-            </svg>
-          )}
-          <span>Continue with Google</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => start("microsoft")}
-          disabled={disabled || !!pending}
-          aria-label="Continue with Microsoft"
-          className="h-11 inline-flex items-center justify-center gap-2.5 rounded-xl border border-black/12 bg-white text-ink text-[12px] font-medium hover:border-[#4F1E7B]/40 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-        >
-          {pending === "microsoft" ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
-              <path fill="#F25022" d="M1 1h10v10H1z" />
-              <path fill="#7FBA00" d="M13 1h10v10H13z" />
-              <path fill="#00A4EF" d="M1 13h10v10H1z" />
-              <path fill="#FFB900" d="M13 13h10v10H13z" />
-            </svg>
-          )}
-          <span>Continue with Microsoft</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => start("yahoo")}
-          disabled={disabled || !!pending}
-          aria-label="Continue with Yahoo"
-          className="h-11 inline-flex items-center justify-center gap-2.5 rounded-xl border border-black/12 bg-white text-ink text-[12px] font-medium hover:border-[#4F1E7B]/40 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-        >
-          {pending === "yahoo" ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
-              <path fill="#6001D2" d="M3 6h4.6l3 6 3-6h4.6l-5.9 11.3V21H9.9v-3.7L3 6z" />
-              <circle cx="20" cy="13" r="2" fill="#6001D2" />
-            </svg>
-          )}
-          <span>Continue with Yahoo</span>
-        </button>
+      {/* OAuth row — on 360-390px the prior 3-col gap-2 squeezed each
+          tile to ~85px width with sub-44px touch comfort. Bumping gap
+          and slightly more vertical padding keeps the three providers
+          balanced AND iOS-tap-target compliant. */}
+      <div className="grid grid-cols-3 gap-3">
+        {providers.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            onClick={() => start(p.id)}
+            disabled={disabled || !!pending}
+            aria-label={`Continue with ${p.label}`}
+            title={`Continue with ${p.label}`}
+            className="min-h-[60px] py-3 inline-flex flex-col items-center justify-center gap-1.5 rounded-xl border border-black/10 bg-white/70 text-ink text-[10px] uppercase tracking-[0.18em] font-medium hover:border-[#4F1E7B]/40 hover:bg-white hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            {pending === p.id ? <Loader2 className="w-5 h-5 animate-spin" /> : p.icon}
+            <span>{p.label}</span>
+          </button>
+        ))}
       </div>
       <div className="flex items-center gap-3" aria-hidden="true">
         <span className="flex-1 h-px bg-black/8" />
@@ -161,12 +204,15 @@ function OAuthSignInButtons({ disabled }: { disabled?: boolean }) {
   );
 }
 
-function AgentCardLink({ agent, isDemo }: { agent: AgentCard; isDemo?: boolean }) {
+/**
+ * Agent contact card — display-only. Shows the agent's name, role, and
+ * dialable number as plain text. NOT a tel: link: on desktop a tel:
+ * href fires an "open in another app" prompt, which is jarring on a
+ * landing page. Visitors read the number and dial from their phone.
+ */
+function AgentContactCard({ agent, isDemo }: { agent: AgentCard; isDemo?: boolean }) {
   return (
-    <a
-      href={`tel:${agent.tel}`}
-      className="group relative block rounded-xl p-3 overflow-hidden border border-white/10 hover:border-white/20 hover:bg-white/5 transition-all duration-200 glass"
-    >
+    <div className="relative rounded-xl p-3 overflow-hidden border border-white/10 glass">
       <div className="flex items-start gap-3">
         <div
           className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-white/10"
@@ -178,19 +224,31 @@ function AgentCardLink({ agent, isDemo }: { agent: AgentCard; isDemo?: boolean }
             strokeWidth={2.4}
           />
         </div>
-        <div className="flex-1 min-w-0 pr-2">
-          <p className="text-[9px] uppercase tracking-[0.2em] text-muted/70 leading-none mb-1 truncate">
-            {isDemo ? "DEMO" : "LIVE"} · {agent.name}
-          </p>
-          <p className="font-display italic text-sm leading-snug text-ink/90 group-hover:text-ink transition-colors line-clamp-2 text-balance">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 mb-1">
+            <span
+              className={cn(
+                "shrink-0 whitespace-nowrap text-[8px] uppercase tracking-[0.16em] font-semibold px-1.5 py-0.5 rounded leading-none",
+                isDemo
+                  ? "bg-white/8 text-muted/80 border border-white/10"
+                  : "bg-[#4F1E7B]/15 text-[#4F1E7B] border border-[#4F1E7B]/30",
+              )}
+            >
+              {isDemo ? "Demo" : "Wireline Team"}
+            </span>
+            <span className="text-[9px] uppercase tracking-[0.18em] text-muted/70 truncate">
+              {agent.name}
+            </span>
+          </div>
+          <p className="font-display italic text-sm leading-snug text-ink/90 line-clamp-2 text-balance">
             {agent.role}
           </p>
-        </div>
-        <div className="shrink-0 flex items-center self-center justify-center w-6 h-6 rounded-full border border-white/5 group-hover:bg-white/10 transition-colors">
-          <ArrowRight className="w-3 h-3 text-ink/40 group-hover:text-ink group-hover:translate-x-0.5 transition-all" />
+          <p className="mt-1 font-mono text-[13px] tabular-nums text-ink select-all">
+            {agent.display}
+          </p>
         </div>
       </div>
-    </a>
+    </div>
   );
 }
 
@@ -219,7 +277,14 @@ type AuthMode = "signin" | "signup" | "reset";
 
 export default function AuthPortal() {
   const { signIn } = useAuth();
-  const [mode, setMode] = useState<AuthMode>("signin");
+  // Default mode matches the URL the user landed on. /signup → signup
+  // form, /signin or anything else (including "/") → signin form.
+  // AuthPortal is the public home page now, so "/" defaults to signin.
+  const initialMode: AuthMode = (() => {
+    if (typeof window === "undefined") return "signin";
+    return window.location.pathname === "/signup" ? "signup" : "signin";
+  })();
+  const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -304,9 +369,9 @@ export default function AuthPortal() {
             : "Sign in to your Wireline operator console to manage your AI voice agents, call logs, and outbound campaigns."
         }
       />
-      <div className="h-screen flex relative overflow-hidden bg-[#FAF9F5]">
+      <div className="h-screen flex relative overflow-hidden bg-paper">
         {/* Global parchment backdrop matching Claude.ai */}
-        <div className="pointer-events-none fixed inset-0 z-0 bg-[#FAF9F5]" />
+        <div className="pointer-events-none fixed inset-0 z-0 bg-paper" />
         <div className="scanline" />
 
         {/* ── LEFT PANEL — brand showcase ───────────────────────────────────────
@@ -340,7 +405,7 @@ export default function AuthPortal() {
                   "0 8px 24px -8px rgba(79,30,123,0.4), 0 0 0 1px rgba(255,255,255,0.22) inset",
               }}
             >
-              <WirelineMark className="w-4 h-4 text-[#FAF9F5]" strokeWidth={130} />
+              <WirelineMark className="w-4 h-4 text-on-brand" strokeWidth={130} />
             </div>
             <div>
               <span className="brand-wordmark text-xl leading-none !text-[#4F1E7B] !filter-none">
@@ -376,89 +441,81 @@ export default function AuthPortal() {
               <span className="text-ink/90">email follow-ups</span> across one fleet of AI agents —
               trained on your playbook, available 24/7, improving with every interaction.
             </p>
+            {/* Value props — honest capability statements, not fabricated
+              vanity metrics. The old "10M+ calls / $150M pipeline /
+              4.9 CSAT" trio was invented; replaced with claims that are
+              true on day one. LiveStatsTicker still shows the REAL
+              agents-online / calls-this-month counts when the platform
+              has data. */}
             <div className="flex items-center gap-5">
               <div className="flex flex-col">
-                <span className="font-display italic text-2xl text-ink">10M+</span>
+                <span className="font-display italic text-2xl text-ink">24/7</span>
                 <span className="text-[9px] uppercase tracking-[0.2em] text-muted/60">
-                  Calls Handled
+                  Always Answering
                 </span>
               </div>
               <div className="w-px h-6 bg-white/10" />
               <div className="flex flex-col">
-                <span className="font-display italic text-2xl text-ink">$150M+</span>
+                <span className="font-display italic text-2xl text-ink">&lt;10 min</span>
                 <span className="text-[9px] uppercase tracking-[0.2em] text-muted/60">
-                  Pipeline Gen
+                  Setup To First Call
                 </span>
               </div>
               <div className="w-px h-6 bg-white/10" />
               <div className="flex flex-col">
-                <span className="font-display italic text-2xl text-ink">4.9/5</span>
+                <span className="font-display italic text-2xl text-ink">Every</span>
                 <span className="text-[9px] uppercase tracking-[0.2em] text-muted/60">
-                  Avg CSAT
+                  Call Picked Up
                 </span>
               </div>
+              <LiveStatsTicker />
             </div>
           </motion.div>
 
-          {/* All 10 demo agents in a single dense grid. Top 4 are the LIVE
-            Wireline customer-service team (sales, support, tech, demo
-            booking). Bottom 6 are vertical role-play demos (medical
-            intake, real-estate front desk, bill negotiator, etc.) that
-            answer Wireline questions too. Two labelled sub-sections so
-            visitors can tell which line will actually reach our team
-            vs. which line is a "watch the platform work" demo. */}
+          {/* All 10 agents in a single dense grid. The first 3 are the
+            LIVE Wireline customer-service team — full generalists that
+            run our own phone lines. The remaining 7 are vertical
+            role-play demos (medical intake, real-estate front desk,
+            insurance FNOL, etc.) that also answer Wireline questions.
+            Two labelled sub-sections so visitors can tell which line
+            reaches our team vs. which is a "watch the platform work"
+            demo. */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
             className="mb-6 flex-1"
           >
-            <a
-              href="tel:+16305811834"
-              className="flex items-center justify-between mb-4 bg-[#4F1E7B]/10 border border-[#4F1E7B]/30 rounded-xl p-3 hover:bg-[#4F1E7B]/20 transition-colors group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#4F1E7B] flex items-center justify-center shadow-[0_0_15px_rgba(79,30,123,0.3)]">
-                  <Phone className="w-4 h-4 text-white" fill="currentColor" />
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-[#4F1E7B] font-medium leading-tight">
-                    Call our demo line now
-                  </p>
-                  <p className="font-display italic text-xl text-ink leading-tight mt-0.5">
-                    (630) 581-1834
-                  </p>
-                </div>
-              </div>
-              <ArrowRight className="w-5 h-5 text-[#4F1E7B] group-hover:translate-x-1 transition-transform" />
-            </a>
-
-            <div className="flex items-center gap-2 mb-3">
+            {/* Call any agent — numbers shown as text so visitors can
+              dial from their phone. The Wireline Team agents handle
+              real support; the vertical agents are use-case demos. */}
+            <div className="flex items-center gap-2 mb-2.5">
               <span className="text-[9px] uppercase tracking-[0.4em] text-[#4F1E7B] font-medium">
-                Wireline Team
+                Wireline Team — call us
               </span>
               <span className="flex-1 h-px bg-[#4F1E7B]/20" />
             </div>
+            <p className="text-[11px] text-muted/70 mb-3 leading-relaxed">
+              {WIRELINE_CONTACT_AGENTS.length === 3 ? "Three" : WIRELINE_CONTACT_AGENTS.length} AI
+              agents run Wireline's own phone lines. Dial any number below to hear the product live.
+            </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
               {WIRELINE_CONTACT_AGENTS.map((a) => (
-                <AgentCardLink key={a.tel} agent={a} isDemo={false} />
+                <AgentContactCard key={a.tel} agent={a} isDemo={false} />
               ))}
             </div>
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-2 mb-2.5">
               <span className="text-[9px] uppercase tracking-[0.4em] text-muted/60">
-                Vertical Role-Plays
+                Vertical Demos — hear an agent for your industry
               </span>
               <span className="flex-1 h-px bg-white/10" />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {WIRELINE_DEMO_AGENTS.map((a) => (
-                <AgentCardLink key={a.tel} agent={a} isDemo={true} />
+                <AgentContactCard key={a.tel} agent={a} isDemo={true} />
               ))}
             </div>
           </motion.div>
-
-          {/* Integration logo strip — trust signal showing the stack we run on */}
-          <IntegrationLogos />
 
           {/* Trust row */}
           <motion.div
@@ -476,7 +533,7 @@ export default function AuthPortal() {
               <div className="relative w-2 h-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 absolute inset-0 dot-online" />
               </div>
-              <span className="text-[9px] uppercase tracking-[0.38em]">99.9% Uptime</span>
+              <span className="text-[9px] uppercase tracking-[0.38em]">Carrier-Grade Infra</span>
             </div>
             <div className="h-3 w-px bg-white/10" />
             <Link
@@ -505,7 +562,7 @@ export default function AuthPortal() {
                   boxShadow: "0 8px 24px -8px rgba(79,30,123,0.4)",
                 }}
               >
-                <WirelineMark className="w-5 h-5 text-paper" strokeWidth={130} />
+                <WirelineMark className="w-5 h-5 text-on-brand" strokeWidth={130} />
               </div>
               <div>
                 <span className="brand-wordmark text-2xl leading-none !text-[#4F1E7B] !filter-none">
@@ -522,36 +579,26 @@ export default function AuthPortal() {
               <span className="text-ink">customer conversation</span>
             </h2>
             <p className="text-[12px] text-muted/80 leading-relaxed mb-5">
-              Tap any number below to hear a Wireline agent live — no signup needed.
+              Dial any number below to hear a Wireline agent live — no signup needed.
             </p>
 
-            {/* Primary CTA — call Wireline directly. Different from the
-              4 demos: this one reaches our actual customer-service team
-              (any of the 6 unified CS lines; Sarah is the first). */}
-            <a
-              href={`tel:${WIRELINE_CONTACT_AGENTS[0].tel}`}
-              className="flex items-center justify-between mb-3 bg-[#4F1E7B]/8 border border-[#4F1E7B]/30 rounded-xl p-3 hover:bg-[#4F1E7B]/14 transition-colors group"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-full bg-[#4F1E7B] flex items-center justify-center shadow-[0_0_15px_rgba(79,30,123,0.35)] shrink-0">
-                  <Phone className="w-4 h-4 text-white" fill="currentColor" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[9px] uppercase tracking-[0.28em] text-[#4F1E7B] font-medium leading-tight">
-                    Talk to Wireline
-                  </p>
-                  <p className="font-display italic text-lg text-ink leading-tight mt-0.5 truncate">
-                    {WIRELINE_CONTACT_AGENTS[0].display}
-                  </p>
-                </div>
-              </div>
-              <ArrowRight className="w-5 h-5 text-[#4F1E7B] shrink-0 group-hover:translate-x-1 transition-transform" />
-            </a>
+            {/* Wireline Team — the 6 real customer-service lines. */}
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-[9px] uppercase tracking-[0.4em] text-[#4F1E7B] font-medium">
+                Wireline Team · call us
+              </span>
+              <span className="flex-1 h-px bg-[#4F1E7B]/15" />
+            </div>
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              {WIRELINE_CONTACT_AGENTS.map((a) => (
+                <AgentContactCard key={a.tel} agent={a} isDemo={false} />
+              ))}
+            </div>
 
             {/* Section label */}
             <div className="flex items-center gap-2 mt-4 mb-2">
               <span className="text-[9px] uppercase tracking-[0.4em] text-muted/70 font-medium">
-                Live demo agents · {WIRELINE_DEMO_AGENTS.length} roles
+                Vertical demos · {WIRELINE_DEMO_AGENTS.length} use-case roles
               </span>
               <span className="flex-1 h-px bg-[#4F1E7B]/15" />
             </div>
@@ -559,7 +606,7 @@ export default function AuthPortal() {
             {/* All 4 demo agents — 2-col grid stays readable down to 320px */}
             <div className="grid grid-cols-2 gap-2">
               {WIRELINE_DEMO_AGENTS.map((a) => (
-                <AgentCardLink key={a.tel} agent={a} isDemo />
+                <AgentContactCard key={a.tel} agent={a} isDemo />
               ))}
             </div>
 
@@ -582,7 +629,7 @@ export default function AuthPortal() {
                 boxShadow: "0 16px 40px -10px rgba(79, 30, 123 ,0.55)",
               }}
             >
-              <WirelineMark className="w-8 h-8 text-paper" strokeWidth={120} />
+              <WirelineMark className="w-8 h-8 text-on-brand" strokeWidth={120} />
             </div>
             <h1 className="brand-wordmark text-5xl leading-none">WIRELINE</h1>
             <p className="text-[9px] uppercase tracking-[0.5em] text-muted">AI Voice Platform</p>
@@ -792,7 +839,7 @@ export default function AuthPortal() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full flex items-center justify-center gap-2 py-4 px-6 text-[12px] tracking-[0.3em] uppercase font-medium rounded-full cursor-pointer text-white bg-[#4F1E7B] hover:bg-[#6A25A3] active:translate-y-0 hover:-translate-y-[1px] transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
+                    className="w-full flex items-center justify-center gap-2 py-4 px-6 text-[12px] tracking-[0.3em] uppercase font-medium rounded-full cursor-pointer text-on-brand bg-[#4F1E7B] hover:bg-[#6A25A3] active:translate-y-0 hover:-translate-y-[1px] transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
                     style={{
                       boxShadow: "0 4px 12px -2px rgba(79,30,123,0.3)",
                     }}

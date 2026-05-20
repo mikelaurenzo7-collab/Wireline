@@ -22,6 +22,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
+import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 
 interface CommandItem {
   id: string;
@@ -37,6 +38,10 @@ export default function CommandBar() {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
+
+  // Pin the page underneath while the command palette is open so
+  // arrow-key navigation doesn't scroll the page beneath it.
+  useBodyScrollLock(isOpen);
   const navigate = useNavigate();
 
   const commands: CommandItem[] = [

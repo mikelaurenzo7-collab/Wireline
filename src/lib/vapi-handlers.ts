@@ -51,6 +51,15 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
   //    idempotency boundary for the whole handler — duplicate Vapi retries
   //    fail-fast here, and the rest of the pipeline (usage tracking, Stripe
   //    overage, webhooks) is gated on `insertedFresh` to avoid double-counting.
+  // Concurrency note: callLogs.vapiCallId has a UNIQUE index. Postgres
+  // serializes concurrent INSERTs to the same key via that index — one
+  // succeeds, the other throws 23505 unique_violation. So the duplicate-
+  // protection here is atomic even when the async-queue path AND the
+  // sync-fallback path (vapi-routes.ts:965) both fire `handleEndOfCallReport`
+  // for the same call (e.g., Vapi retried before the first handler returned
+  // success). No row-level SELECT FOR UPDATE needed — the unique index is
+  // the lock. `insertedFresh` only flips true when this INSERT genuinely
+  // wrote a new row, so post-call LLM analysis (line 84+) runs exactly once.
   let insertedFresh = false;
   let insertedCallLogId: bigint | null = null;
   try {
@@ -145,6 +154,40 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
       );
       const result = cap.result;
 
+      // QA score: agent-quality assessment (vs leadScore which is
+      // customer-intent). Derived from the analysis output so we don't
+      // burn another LLM round-trip per call. Surfaced on CallLogs as
+      // a colored score badge so operators see at a glance which calls
+      // need coaching review.
+      //
+      //   baseScore = 60 (neutral)
+      //   +20 if positive sentiment, -20 if negative
+      //   +10 if intent was high (agent moved the customer forward)
+      //   -10 if coaching_note flags a miss
+      //   clamp 0..100
+      const baseScore = 60;
+      const sentimentDelta =
+        result.sentiment === "positive" ? 20 : result.sentiment === "negative" ? -20 : 0;
+      const intentDelta = result.intent_label === "high" ? 10 : 0;
+      const coachingHint = (result.coaching_note || "").toLowerCase();
+      const missDelta = /\bmiss(ed|ing)?\b|\bshould have\b|\bdid not\b|\bfailed to\b/.test(
+        coachingHint,
+      )
+        ? -10
+        : 0;
+      const qaScore = Math.max(
+        0,
+        Math.min(100, baseScore + sentimentDelta + intentDelta + missDelta),
+      );
+      const qaBreakdown = {
+        base: baseScore,
+        sentiment_delta: sentimentDelta,
+        intent_delta: intentDelta,
+        miss_delta: missDelta,
+        rationale: result.coaching_note || "Routine call — no specific coaching note.",
+        scored_at: new Date().toISOString(),
+      };
+
       await drizzle
         .update(schema.callLogs)
         .set({
@@ -152,6 +195,8 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
           intentLabel: result.intent_label,
           sentiment: result.sentiment,
           coachingNote: result.coaching_note,
+          qaScore,
+          qaBreakdown,
         })
         .where(eq(schema.callLogs.vapiCallId, call?.id));
 
@@ -199,6 +244,24 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
       lead_score: score,
       customer_number: baseOutcome.customer_number,
     });
+    // Operator SMS alert — hot lead detected. Same opt-in plumbing
+    // as the escalation alerts. We only alert ≥80 (vs the webhook
+    // ≥70 threshold) so the SMS pager doesn't fire on borderline
+    // warm leads; the webhook is fine-grained, the SMS should be
+    // can't-miss only.
+    if (score >= 80) {
+      try {
+        const { NotificationService } = await import("./notifications");
+        const notif = new NotificationService(userId);
+        void notif.sendUrgentAlert({
+          title: "🔥 Hot lead",
+          message: `Score ${score} · ${baseOutcome.customer_number || "unknown caller"} · ${enrichment?.intent_label || "lead detected"}`,
+          callId: call?.id,
+        });
+      } catch {
+        /* best-effort */
+      }
+    }
   }
 
   const intent = (enrichment?.intent_label || "").toLowerCase();

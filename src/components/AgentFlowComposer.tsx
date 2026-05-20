@@ -1,5 +1,5 @@
 // AgentFlowComposer — neural-aligned linear stage progression editor.
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Plus,
   Trash2,
@@ -13,6 +13,7 @@ import {
   Copy,
   Sparkles,
   AlertTriangle,
+  MessageSquareQuote,
 } from "lucide-react";
 import { motion, AnimatePresence, Reorder } from "motion/react";
 import { cn } from "../lib/utils";
@@ -39,6 +40,69 @@ interface AgentFlowComposerProps {
  * not constraints. Templates compose into the same FlowStep[] shape the
  * editor saves, so picking a template just seeds the steps array.
  */
+/**
+ * Reusable snippets the operator can paste into a stage's instructions.
+ * Smaller-grained than FLOW_TEMPLATES (which seed an entire flow) —
+ * these are individual building blocks: an objection handler, a
+ * discovery question, a soft close. Click → append to active step.
+ */
+const FLOW_SNIPPETS: { id: string; label: string; category: string; text: string }[] = [
+  {
+    id: "objection-price",
+    category: "Objections",
+    label: "Price pushback",
+    text: "If the caller pushes back on price, ask one question to understand the comparison: 'What's the alternative you're weighing us against?' Then anchor on outcome value before discussing the number. NEVER lead with a discount.",
+  },
+  {
+    id: "objection-busy",
+    category: "Objections",
+    label: "Not a good time",
+    text: "If the caller says it's not a good time, ask: 'What time tomorrow works better — morning or afternoon?' Offer two specific windows. If still resistant, schedule a callback at their preferred time and confirm by SMS.",
+  },
+  {
+    id: "discovery-pain",
+    category: "Discovery",
+    label: "Pain-point question",
+    text: "Ask one open-ended question to surface the pain: 'Walk me through what's not working with [their current solution] today — where do you feel the friction most?' Listen for cost, time, or quality words; reflect back what you heard before proposing next steps.",
+  },
+  {
+    id: "discovery-budget",
+    category: "Discovery",
+    label: "Budget probe",
+    text: "Probe budget without asking directly. 'When companies your size solve this, they typically invest somewhere between $X and $Y per month — does that frame match what you've planned for?' Capture the response into customer_profile.",
+  },
+  {
+    id: "close-soft",
+    category: "Closing",
+    label: "Soft close to next step",
+    text: "Soft close: 'Based on what you shared, the natural next step is a 20-minute walkthrough with one of our specialists. I can book it for tomorrow morning or Thursday afternoon — which works?' Use book_appointment immediately on yes.",
+  },
+  {
+    id: "close-trial",
+    category: "Closing",
+    label: "Free-trial offer",
+    text: "Offer the 14-day free trial: 'No card needed, full access — you can see whether it fits your team and walk away if it doesn't.' Send the signup link via SMS while still on the call. Confirm receipt.",
+  },
+  {
+    id: "compliance-tcpa",
+    category: "Compliance",
+    label: "TCPA opt-out reminder",
+    text: "If the caller asks to be removed: thank them, confirm 'I'll add you to our Do Not Call list immediately,' then use add_to_dnc. Do not attempt to retain. End the call respectfully within 30 seconds.",
+  },
+  {
+    id: "compliance-payment",
+    category: "Compliance",
+    label: "Payment-promise line",
+    text: "When the caller commits to a payment date, repeat it back verbatim: 'Just to confirm — you're committing to pay $X by [date], correct?' Wait for explicit 'yes' before using log_payment_promise. Tell them they'll receive a confirmation SMS within 2 minutes.",
+  },
+  {
+    id: "transfer-frustrated",
+    category: "Escalation",
+    label: "Escalate angry caller",
+    text: "If sentiment turns negative or the caller raises voice: 'I hear you, and I want to make sure this gets handled by a human teammate right now.' Use escalate_to_human immediately. Do NOT try to defuse or re-pitch — escalate first, defuse later via the supervisor.",
+  },
+];
+
 const FLOW_TEMPLATES: Record<
   string,
   { label: string; description: string; steps: Omit<FlowStep, "id">[] }
@@ -185,8 +249,46 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
   const [steps, setSteps] = useState<FlowStep[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeStepId, setActiveStepId] = useState<string>("");
+  // Per-step Claude critique cache. Keyed by stepId so flipping
+  // between stages doesn't drop the critique you already pulled.
+  // Cleared on save (the critique might no longer apply).
+  const [stepCritiques, setStepCritiques] = useState<Record<string, string>>({});
+  const [coachingStepId, setCoachingStepId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [showSnippets, setShowSnippets] = useState(false);
+  // Dirty-tracking lets us warn on navigation + drive the autosave
+  // debounce. `lastSavedSnapshot` is the JSON the server has on file.
+  // Comparing the current `steps` JSON against this snapshot tells us
+  // whether the operator has unsaved work. Cleaner than a boolean
+  // because it correctly handles "operator edited then reverted" —
+  // those don't count as dirty.
+  const [lastSavedSnapshot, setLastSavedSnapshot] = useState<string>("");
+  const [autosaving, setAutosaving] = useState(false);
+  // Mobile-only panel toggle. On <xl viewports the steps list +
+  // editor panels would otherwise stack vertically — operator has
+  // to scroll past the full step list every time they click a row.
+  // We hide the inactive panel and surface a small tab toggle so
+  // mobile feels like a real two-pane app. Desktop ignores this
+  // state entirely (both panels show side-by-side).
+  const [mobilePanel, setMobilePanel] = useState<"steps" | "editor">("steps");
+
+  // Append a reusable snippet to the active step's instructions. If no
+  // step is active, append to the first step. Updates instructions
+  // (not transitions) — snippets are content blocks the LLM uses
+  // mid-stage.
+  const insertSnippet = (snippetText: string) => {
+    const targetId = activeStepId || steps[0]?.id;
+    if (!targetId) return;
+    setSteps((prev) =>
+      prev.map((s) => {
+        if (s.id !== targetId) return s;
+        const sep = s.instructions.trim().length ? "\n\n" : "";
+        return { ...s, instructions: `${s.instructions}${sep}${snippetText}` };
+      }),
+    );
+    setShowSnippets(false);
+  };
 
   useEffect(() => {
     let active = true;
@@ -200,6 +302,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
         if (data.flowConfig && Array.isArray(data.flowConfig)) {
           setSteps(data.flowConfig);
           setActiveStepId(data.flowConfig[0]?.id || "");
+          setLastSavedSnapshot(JSON.stringify(data.flowConfig));
         } else {
           // Default empty or starter state (only if null/undefined)
           const initialSteps = [
@@ -214,6 +317,11 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
           ];
           setSteps(initialSteps);
           setActiveStepId(initialSteps[0].id);
+          // Starter content is not "the server's view" — it's an
+          // unsaved local default. Snapshot stays empty so the
+          // operator's first edit (or just letting autosave fire)
+          // counts as dirty and gets pushed up.
+          setLastSavedSnapshot("");
         }
       } catch (err) {
         if (active) toastError("Failed to load agent flow configuration");
@@ -324,30 +432,98 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
     setSteps(steps.map((s) => (s.id === id ? { ...s, [field]: value } : s)));
   };
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    setSaveSuccess(false);
+  // Blocking validation: empty stage name, missing instructions on any
+  // step, or a non-terminal step with no transition condition. These
+  // make the saved flow useless at runtime because the LLM won't know
+  // when to advance — operator MUST fix before save lands.
+  const blockingIssues = useMemo(() => validationIssues.filter((i) => true), [validationIssues]);
 
-    try {
-      const res = await authFetch(`/api/agent-config/${agentId}/manual`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "flow",
-          content: steps,
-        }),
-      });
-      if (!res.ok) throw new Error("Save failed");
+  /**
+   * Persist the current step list. Pulled out as a callback so the
+   * autosave effect below can fire it without duplicating the POST.
+   * `silent` mode suppresses success toasts (used by autosave so the
+   * operator doesn't see a toast every 3 seconds of editing).
+   */
+  const saveFlow = useCallback(
+    async (silent = false): Promise<boolean> => {
+      if (blockingIssues.length > 0) {
+        if (!silent) {
+          toastError(
+            "Fix flow issues first",
+            `${blockingIssues.length} step${blockingIssues.length === 1 ? "" : "s"} need attention before save.`,
+          );
+        }
+        return false;
+      }
+      if (silent) setAutosaving(true);
+      else {
+        setIsSaving(true);
+        setSaveSuccess(false);
+      }
+      try {
+        const res = await authFetch(`/api/agent-config/${agentId}/manual`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "flow", content: steps }),
+        });
+        if (!res.ok) throw new Error("Save failed");
+        // Update the snapshot — the server now matches `steps`, so the
+        // dirty indicator goes quiet until the next edit.
+        setLastSavedSnapshot(JSON.stringify(steps));
+        if (!silent) {
+          setSaveSuccess(true);
+          toastSuccess("Flow configuration saved");
+          setTimeout(() => setSaveSuccess(false), 2500);
+        }
+        return true;
+      } catch (err) {
+        if (!silent) toastError("Failed to save flow configuration");
+        return false;
+      } finally {
+        if (silent) setAutosaving(false);
+        else setIsSaving(false);
+      }
+    },
+    [agentId, blockingIssues.length, steps, toastError, toastSuccess],
+  );
 
-      setSaveSuccess(true);
-      toastSuccess("Flow configuration saved");
-      setTimeout(() => setSaveSuccess(false), 2500);
-    } catch (err) {
-      toastError("Failed to save flow configuration");
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  const handleSave = () => saveFlow(false);
+
+  // Dirty-state computation. JSON-compare against the snapshot so
+  // "edit then undo back to identical" doesn't false-fire warnings.
+  const currentSnapshot = useMemo(() => JSON.stringify(steps), [steps]);
+  const isDirty = !isLoading && currentSnapshot !== lastSavedSnapshot;
+
+  // Autosave: 3-second idle debounce. Only fires when:
+  //   - the flow is dirty
+  //   - validation passes (no half-built flow gets pushed)
+  //   - we're not already mid-save
+  // Silent mode — no toast spam during normal editing flow.
+  useEffect(() => {
+    if (isLoading) return;
+    if (!isDirty) return;
+    if (blockingIssues.length > 0) return;
+    if (isSaving || autosaving) return;
+    const t = setTimeout(() => {
+      void saveFlow(true);
+    }, 3_000);
+    return () => clearTimeout(t);
+  }, [currentSnapshot, isDirty, isLoading, blockingIssues.length, isSaving, autosaving, saveFlow]);
+
+  // beforeunload warning when the operator tries to leave with
+  // unsaved edits. Browser-native dialog; chrome owns the copy.
+  // No-op when clean so we don't false-warn on every tab close.
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      // Modern browsers ignore the message but still show a dialog
+      // as long as returnValue is set or default is prevented.
+      e.returnValue = "You have unsaved flow changes. Leave anyway?";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
 
   if (isLoading) {
     return (
@@ -362,8 +538,41 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
 
   return (
     <div className="h-full flex flex-col xl:flex-row gap-4 p-4 lg:p-6 overflow-hidden">
+      {/* Mobile-only panel toggle (hidden on xl+ where both panes
+          are visible side-by-side). Sticky tab pill that switches
+          between the Steps list and the Editor. Highlights the
+          active panel + shows the step count for context. */}
+      <div className="xl:hidden flex items-center gap-1 p-1 rounded-xl glass border border-white/10 self-start">
+        <button
+          type="button"
+          onClick={() => setMobilePanel("steps")}
+          className={cn(
+            "px-3 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.2em] font-medium transition-all",
+            mobilePanel === "steps" ? "bg-brand text-on-brand" : "text-muted hover:text-ink",
+          )}
+        >
+          Steps · {steps.length}
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobilePanel("editor")}
+          className={cn(
+            "px-3 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.2em] font-medium transition-all",
+            mobilePanel === "editor" ? "bg-brand text-on-brand" : "text-muted hover:text-ink",
+          )}
+        >
+          Editor
+        </button>
+      </div>
+
       {/* Left Column: Linear Visualizer / List */}
-      <div className="w-full xl:w-1/3 flex flex-col gap-3 min-h-0">
+      <div
+        className={cn(
+          "w-full xl:w-1/3 flex flex-col gap-3 min-h-0",
+          // On <xl, hide when the editor pane is active. xl+ always shows both.
+          mobilePanel === "editor" ? "hidden xl:flex" : "flex",
+        )}
+      >
         <div className="glass border border-white/10 rounded-2xl p-4 shrink-0 space-y-3">
           <div className="flex items-center justify-between">
             <div>
@@ -404,6 +613,49 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Snippet drawer — paste building-block prose into the active
+              stage's instructions. Smaller-grained than templates: an
+              objection handler, a discovery question, a compliance line.
+              Groups by category so operators can scan for the pattern
+              they need. */}
+          <div className="pt-3 border-t border-white/8 space-y-2">
+            <button
+              type="button"
+              onClick={() => setShowSnippets((v) => !v)}
+              className="w-full flex items-center justify-between gap-2 text-[9px] uppercase tracking-[0.32em] text-muted/70 hover:text-ink transition-colors"
+            >
+              <span className="flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3 text-brand" />
+                Insert a snippet
+              </span>
+              <span className="text-muted/50">{showSnippets ? "−" : "+"}</span>
+            </button>
+            {showSnippets && (
+              <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                {Array.from(new Set(FLOW_SNIPPETS.map((s) => s.category))).map((cat) => (
+                  <div key={cat} className="space-y-1">
+                    <div className="text-[8px] uppercase tracking-[0.4em] text-brand/70">{cat}</div>
+                    {FLOW_SNIPPETS.filter((s) => s.category === cat).map((snip) => (
+                      <button
+                        key={snip.id}
+                        type="button"
+                        onClick={() => insertSnippet(snip.text)}
+                        title={snip.text}
+                        className="w-full text-left rounded-lg glass border border-white/8 px-2.5 py-1.5 text-[10px] text-ink/85 hover:border-brand/40 hover:text-brand transition-colors"
+                      >
+                        {snip.label}
+                      </button>
+                    ))}
+                  </div>
+                ))}
+                <p className="text-[9px] text-muted/55 leading-relaxed pt-2 border-t border-white/8">
+                  Adds the snippet to the currently selected stage's instructions. Edit after
+                  pasting.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -446,7 +698,14 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                     )}
 
                     <div
-                      onClick={() => setActiveStepId(step.id)}
+                      onClick={() => {
+                        setActiveStepId(step.id);
+                        // On mobile, clicking a step should jump
+                        // straight into the editor pane instead of
+                        // leaving the operator stuck on the list.
+                        // Desktop ignores this (both panes visible).
+                        setMobilePanel("editor");
+                      }}
                       className={cn(
                         "relative z-10 flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer group",
                         activeStepId === step.id
@@ -462,7 +721,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                         className={cn(
                           "w-6 h-6 rounded-full flex items-center justify-center shrink-0 border text-[10px] font-mono",
                           activeStepId === step.id
-                            ? "bg-brand text-paper border-brand"
+                            ? "bg-brand text-on-brand border-brand"
                             : "bg-black/20 text-muted border-white/20",
                         )}
                       >
@@ -511,7 +770,13 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
       </div>
 
       {/* Right Column: Stage Editor */}
-      <div className="w-full xl:w-2/3 flex flex-col min-h-0">
+      <div
+        className={cn(
+          "w-full xl:w-2/3 flex flex-col min-h-0",
+          // Hide editor on mobile when steps tab is active. xl+ ignores.
+          mobilePanel === "steps" ? "hidden xl:flex" : "flex",
+        )}
+      >
         <div className="flex-1 glass border border-white/10 rounded-2xl flex flex-col overflow-hidden">
           {activeStep ? (
             <div className="flex-1 flex flex-col h-full overflow-y-auto scrollbar-hide">
@@ -559,6 +824,25 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                     </span>
                   </label>
 
+                  {/* Dirty / autosave indicator — sits to the left of
+                      the Save button so the operator sees state at a
+                      glance. Three states:
+                        autosaving   → "Saving…" with spinner
+                        dirty        → "Unsaved" amber chip
+                        clean        → silent (no chip)
+                      We deliberately don't show "Saved ✓" here — the
+                      Save button itself already does that. */}
+                  {autosaving ? (
+                    <span className="inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.25em] text-muted">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Saving
+                    </span>
+                  ) : isDirty ? (
+                    <span className="inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.25em] text-amber-600">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                      Unsaved
+                    </span>
+                  ) : null}
                   <button
                     onClick={handleSave}
                     disabled={isSaving}
@@ -595,6 +879,103 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                     placeholder="e.g. You are now qualifying the lead. Ask about their budget and timeline. Do not mention specific pricing yet."
                     className="w-full h-40 bg-black/10 border border-white/10 rounded-xl p-4 text-sm text-ink leading-relaxed resize-none focus:outline-none focus:border-brand/40 transition-colors placeholder:text-muted/30"
                   />
+                  {/* Pacing / length hints — operators tend to write
+                      either too terse ("be friendly") or too verbose
+                      (paragraphs). Surfacing word count + estimated
+                      read-aloud time + a soft cap keeps stages in the
+                      sweet spot. ~150 words / 60 sec is plenty for
+                      most stages; over that and the agent starts to
+                      monologue. */}
+                  {(() => {
+                    const words = activeStep.instructions
+                      .trim()
+                      .split(/\s+/)
+                      .filter(Boolean).length;
+                    // ~155 words per minute average TTS rate at
+                    // Vapi's default speed; ~12 words ≈ 5 seconds.
+                    const seconds = Math.max(0, Math.round((words / 155) * 60));
+                    const tooLong = words > 200;
+                    const tooShort = words > 0 && words < 8;
+                    return (
+                      <div className="flex items-center justify-between text-[10px] text-muted/60 -mt-1 px-1">
+                        <span
+                          className={cn(tooLong && "text-amber-500", tooShort && "text-rose-500")}
+                        >
+                          {words === 0
+                            ? "Write what the agent should say in this stage"
+                            : `${words} word${words === 1 ? "" : "s"} · ~${seconds}s read-aloud`}
+                          {tooLong && " · too long for one stage, consider splitting"}
+                          {tooShort && " · too vague, agent will need more guidance"}
+                        </span>
+                        {words > 0 && <span className="text-muted/40">target 30–150 words</span>}
+                      </div>
+                    );
+                  })()}
+                  {/* Per-step Claude critique — operator clicks the
+                      button, we POST the stage to /api/claude/coach-step,
+                      Claude returns 4-5 bullets covering clarity / edge
+                      cases / transition / tone / suggested rewrite.
+                      Result is cached per stepId until next save. */}
+                  <div className="space-y-2 pt-2">
+                    <button
+                      type="button"
+                      disabled={
+                        coachingStepId === activeStep.id ||
+                        activeStep.instructions.trim().length < 10
+                      }
+                      onClick={async () => {
+                        setCoachingStepId(activeStep.id);
+                        try {
+                          const r = await authFetch("/api/claude/coach-step", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              name: activeStep.name,
+                              instructions: activeStep.instructions,
+                              transitionCondition: activeStep.transitionCondition,
+                              isEndNode: activeStep.isEndNode,
+                            }),
+                          });
+                          const data = await r.json();
+                          if (r.ok && data.critique) {
+                            setStepCritiques((prev) => ({
+                              ...prev,
+                              [activeStep.id]: data.critique,
+                            }));
+                            if (typeof window !== "undefined" && (window as any).plausible) {
+                              (window as any).plausible("StepCoachUsed");
+                            }
+                          } else {
+                            toastError("Coach unavailable", data.error || "Try again in a moment");
+                          }
+                        } catch {
+                          toastError("Coach failed", "Couldn't reach Wireline AI — try again");
+                        } finally {
+                          setCoachingStepId(null);
+                        }
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full glass border border-brand/30 text-[10px] uppercase tracking-[0.22em] text-brand hover:bg-brand/8 transition-all disabled:opacity-40"
+                    >
+                      {coachingStepId === activeStep.id ? (
+                        <>
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          Wireline AI is reviewing…
+                        </>
+                      ) : (
+                        <>
+                          <MessageSquareQuote className="w-3 h-3" />
+                          {stepCritiques[activeStep.id]
+                            ? "Re-coach this stage"
+                            : "Ask Wireline AI to coach this stage"}
+                        </>
+                      )}
+                    </button>
+                    {stepCritiques[activeStep.id] && (
+                      <div className="rounded-xl glass border border-brand/15 p-3 text-[12px] text-ink/85 leading-relaxed whitespace-pre-wrap">
+                        {stepCritiques[activeStep.id]}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="h-px bg-white/5 w-full" />

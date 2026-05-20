@@ -48,11 +48,11 @@ const STEPS = [
   },
   {
     id: "number",
-    title: "Connect a phone number",
-    body: "Hook up a phone number so callers can reach your agent 24/7. Bring your own or get a new one.",
+    title: "Your phone number is live",
+    body: "Every Wireline plan includes a dedicated voice number — no Twilio bill, no separate setup. It's already provisioned for you and routed to your agent.",
     icon: Phone,
     accent: "#4F1E7B",
-    badge: "1 minute",
+    badge: "Auto",
   },
   {
     id: "call",
@@ -74,7 +74,7 @@ export default function OnboardingQuickstart({
   // Tier drives whether we show the 4-step self-serve flow or a
   // white-glove onboarding card (Business / Enterprise tier). Without
   // this gate, a 500-seat call center buyer lands on the same setup
-  // screen as a $29 solo operator — sets the wrong expectations.
+  // screen as a $49 solo operator — sets the wrong expectations.
   const [planId, setPlanId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -160,7 +160,7 @@ export default function OnboardingQuickstart({
             <div className="flex flex-col gap-2 shrink-0 w-full md:w-auto">
               <a
                 href="tel:+16306425927"
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-brand text-paper text-[11px] uppercase tracking-[0.3em] hover:bg-brand/90 transition-colors"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.3em] hover:bg-brand/90 transition-colors"
               >
                 <Phone className="w-3.5 h-3.5" />
                 Call Maya — (630) 642-5927

@@ -445,7 +445,7 @@ function CalendarGrid({
                     <div
                       className={cn(
                         "w-6 h-6 rounded-full flex items-center justify-center mb-1 text-[11px] ml-auto",
-                        isToday ? "bg-brand text-paper font-bold" : "text-muted/70",
+                        isToday ? "bg-brand text-on-brand font-bold" : "text-muted/70",
                       )}
                     >
                       {cell.day}
@@ -576,6 +576,7 @@ export default function AppointmentsView() {
     <div className="flex items-center gap-2">
       <div className="flex p-1 rounded-full glass border border-white/10">
         <button
+          aria-label="List view"
           onClick={() => setViewMode("list")}
           className={cn(
             "w-8 h-8 rounded-full flex items-center justify-center transition-colors",
@@ -585,6 +586,7 @@ export default function AppointmentsView() {
           <LayoutList className="w-3.5 h-3.5" />
         </button>
         <button
+          aria-label="Calendar view"
           onClick={() => setViewMode("calendar")}
           className={cn(
             "w-8 h-8 rounded-full flex items-center justify-center transition-colors",
@@ -845,10 +847,17 @@ function AppointmentRow({
             <AnimatePresence>
               {showStatusMenu && (
                 <motion.div
-                  initial={{ opacity: 0, y: -4 }}
+                  initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  className="absolute right-0 top-full mt-1 z-20 w-36 rounded-xl glass-strong border border-white/15 shadow-2xl overflow-hidden"
+                  exit={{ opacity: 0, y: 4 }}
+                  // Open UPWARD (`bottom-full mb-1`) instead of downward
+                  // (`top-full mt-1`). The Appointments scroll container
+                  // has `overflow-y-auto` which clips ANY child whose
+                  // top-half overflow extends past it — so a downward
+                  // menu on the bottom row gets cut off mid-list. Open
+                  // up and the menu always renders inside the scroll
+                  // viewport regardless of row position.
+                  className="absolute right-0 bottom-full mb-1 z-20 w-36 rounded-xl glass-strong border border-white/15 shadow-2xl overflow-hidden"
                 >
                   {Object.keys(STATUS_META).map((s) => (
                     <button

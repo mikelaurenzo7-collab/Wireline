@@ -146,7 +146,7 @@ export default function IntakeKeysManager() {
               className="w-10 h-10 rounded-xl flex items-center justify-center"
               style={{ background: "#4F1E7B" }}
             >
-              <Inbox className="w-5 h-5 text-paper" />
+              <Inbox className="w-5 h-5 text-on-brand" />
             </div>
             <div>
               <div className="text-[10px] uppercase tracking-[0.4em] text-brand-2">
@@ -282,7 +282,7 @@ export default function IntakeKeysManager() {
                     className={cn(
                       "shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center mt-0.5",
                       autoDial && defaultAgentId
-                        ? "bg-brand-2 border-brand-2 text-paper"
+                        ? "bg-brand-2 border-brand-2 text-on-brand"
                         : "border-white/30",
                     )}
                   >
@@ -306,7 +306,7 @@ export default function IntakeKeysManager() {
                   <button
                     onClick={create}
                     disabled={creating || !name.trim()}
-                    className="h-11 px-5 rounded-xl bg-brand text-paper text-xs uppercase tracking-[0.25em] font-medium flex items-center gap-2 disabled:opacity-50 hover:opacity-90 transition-all"
+                    className="h-11 px-5 rounded-xl bg-brand text-on-brand text-xs uppercase tracking-[0.25em] font-medium flex items-center gap-2 disabled:opacity-50 hover:opacity-90 transition-all"
                   >
                     {creating ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />

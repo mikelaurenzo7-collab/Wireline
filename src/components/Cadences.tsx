@@ -235,7 +235,7 @@ export default function Cadences() {
         </div>
         <button
           onClick={() => setShowBuilder(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand text-paper text-[11px] uppercase tracking-[0.28em] hover:bg-brand/90 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.28em] hover:bg-brand/90 transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
           New sequence
@@ -459,7 +459,7 @@ export default function Cadences() {
               <button
                 onClick={save}
                 disabled={saving}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand text-paper text-[11px] uppercase tracking-[0.28em] hover:bg-brand/90 transition-colors disabled:opacity-60"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand text-on-brand text-[11px] uppercase tracking-[0.28em] hover:bg-brand/90 transition-colors disabled:opacity-60"
               >
                 {saving ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />

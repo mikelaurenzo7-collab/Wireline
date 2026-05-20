@@ -52,6 +52,71 @@ function combineSignals(...signals: AbortSignal[]): AbortSignal {
   return controller.signal;
 }
 
+/**
+ * Codes the trial gate (src/lib/trial-gate.ts) returns inside a 402
+ * response body. authFetch detects these and emits a window event so
+ * any mounted upgrade modal can pop without each caller having to
+ * handle the 402 manually.
+ */
+const TRIAL_GATE_CODES = new Set([
+  "TRIAL_EXPIRED",
+  "TRIAL_LIMIT_HIT",
+  "SUBSCRIPTION_REQUIRED",
+  "EMAIL_UNVERIFIED",
+]);
+
+/**
+ * Custom event name. Listened to by <TrialGateModal/> mounted in the
+ * AppShell. Exported so tests + other listeners can subscribe.
+ */
+export const TRIAL_GATE_EVENT = "wireline:trial-gate-block";
+
+export interface TrialGateBlockDetail {
+  code: "TRIAL_EXPIRED" | "TRIAL_LIMIT_HIT" | "SUBSCRIPTION_REQUIRED" | "EMAIL_UNVERIFIED";
+  error: string;
+  /** Present on TRIAL_LIMIT_HIT */
+  limit?: number;
+  current?: number;
+  /** Present on TRIAL_LIMIT_HIT during the trial window */
+  days_left?: number | null;
+  /** Present on TRIAL_EXPIRED */
+  trial_ended_at?: string | null;
+}
+
+/**
+ * Best-effort 402 sniffer. Clones the response so the caller can still
+ * read the body normally. Silently no-ops in non-browser contexts (SSR,
+ * test runners without `window`).
+ */
+async function maybeDispatchTrialGateEvent(response: Response): Promise<void> {
+  if (response.status !== 402) return;
+  if (typeof window === "undefined") return;
+  try {
+    const cloned = response.clone();
+    const body = (await cloned.json()) as Record<string, any>;
+    const code = typeof body?.code === "string" ? body.code : "";
+    if (!TRIAL_GATE_CODES.has(code)) return;
+    const detail: TrialGateBlockDetail = {
+      code: code as TrialGateBlockDetail["code"],
+      error: String(body?.error || "Trial gate hit"),
+      limit: typeof body?.limit === "number" ? body.limit : undefined,
+      current: typeof body?.current === "number" ? body.current : undefined,
+      days_left:
+        typeof body?.days_left === "number" || body?.days_left === null
+          ? body.days_left
+          : undefined,
+      trial_ended_at:
+        typeof body?.trial_ended_at === "string" || body?.trial_ended_at === null
+          ? body.trial_ended_at
+          : undefined,
+    };
+    window.dispatchEvent(new CustomEvent<TrialGateBlockDetail>(TRIAL_GATE_EVENT, { detail }));
+  } catch {
+    // Body wasn't JSON, or parsing failed — caller probably didn't get
+    // a trial-gate 402 anyway. Skip.
+  }
+}
+
 export async function authFetch(url: string, options: RequestInit = {}) {
   // AuthContext stores session as "wireline_session" with { access_token, user }
   const sessionJson = localStorage.getItem("wireline_session");
@@ -80,7 +145,12 @@ export async function authFetch(url: string, options: RequestInit = {}) {
     ? combineSignals(options.signal, timeoutCtrl.signal)
     : timeoutCtrl.signal;
   try {
-    return await fetch(url, { ...options, headers, signal });
+    const response = await fetch(url, { ...options, headers, signal });
+    // Fire-and-forget global trial-gate detection. Never await — the
+    // caller's contract is "I get a Response back immediately." The
+    // modal listener handles whatever the event carries.
+    void maybeDispatchTrialGateEvent(response);
+    return response;
   } finally {
     clearTimeout(timer);
   }

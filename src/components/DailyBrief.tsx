@@ -99,7 +99,7 @@ export default function DailyBrief() {
             className="w-14 h-14 rounded-2xl flex items-center justify-center"
             style={{ background: "#4F1E7B" }}
           >
-            <Brain className="w-7 h-7 text-paper" />
+            <Brain className="w-7 h-7 text-on-brand" />
           </div>
           <div className="flex-1">
             <h3 className="font-display italic text-2xl text-ink leading-tight">
@@ -523,7 +523,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
               className={cn(
                 "shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center mt-0.5",
                 enabled && gmailConnected
-                  ? "bg-brand-2 border-brand-2 text-paper"
+                  ? "bg-brand-2 border-brand-2 text-on-brand"
                   : "border-white/30",
               )}
             >
@@ -612,7 +612,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
               <button
                 onClick={save}
                 disabled={saving}
-                className="h-10 px-4 rounded-lg bg-brand text-paper text-[11px] uppercase tracking-[0.25em] flex items-center gap-2 disabled:opacity-50 hover:opacity-90"
+                className="h-10 px-4 rounded-lg bg-brand text-on-brand text-[11px] uppercase tracking-[0.25em] flex items-center gap-2 disabled:opacity-50 hover:opacity-90"
               >
                 {saving ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />

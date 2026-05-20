@@ -9,8 +9,8 @@
 
     <!-- Primary meta — keywords-rich for B2B SaaS / AI agents search intent -->
     <title>Wireline — AI Voice &amp; Email Agents for Every Business · Call 24/7</title>
-    <meta name="description" content="Deploy AI voice + email agents on real phone numbers in under 10 minutes. Wireline handles inbound calls, qualifies leads, books appointments, sends SMS follow-ups, and syncs with HubSpot, Salesforce, Gmail, and Outlook. Powered by Claude. Try a live demo agent now — no signup required." />
-    <meta name="keywords" content="AI voice agent, AI receptionist, AI phone agent, voice AI for business, AI customer service, automated phone answering, AI SDR, AI appointment booking, AI sales agent, virtual receptionist, voice AI SaaS, Vapi alternative, business phone AI, 24/7 AI call handling" />
+    <meta name="description" content="Deploy AI voice + email agents on real phone numbers in under 10 minutes. Wireline handles inbound calls, qualifies leads, books appointments, sends SMS follow-ups, and syncs with HubSpot, Salesforce, Gmail, and Outlook. Try a live demo agent now — no signup required." />
+    <meta name="keywords" content="AI voice agent, AI receptionist, AI phone agent, voice AI for business, AI customer service, automated phone answering, AI SDR, AI appointment booking, AI sales agent, virtual receptionist, voice AI SaaS, business phone AI, 24/7 AI call handling" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
     <meta name="googlebot" content="index, follow, max-image-preview:large" />
     <meta name="author" content="Wireline" />
@@ -21,12 +21,25 @@
          Keeping this in sync with the served domain prevents SEO juice fragmentation. -->
     <link rel="canonical" href="https://trywireline.com/" />
 
+    <!-- Plausible Analytics — privacy-first, no cookies, GDPR-clean
+         out of the box. defer keeps it off the critical render path;
+         data-domain matches whatever's configured in the Plausible
+         dashboard. Sign up at plausible.io, add `trywireline.com`,
+         done. If we ever switch hosts (self-host, fly.io, PostHog),
+         just swap src + leave the existing custom events firing. -->
+    <script defer data-domain="trywireline.com" src="https://plausible.io/js/script.tagged-events.js"></script>
+    <!-- Custom event helper. Calling plausible('SignupComplete') from
+         anywhere in the app fires a tagged event so we can see funnel
+         steps in the dashboard. Falls through silently if Plausible
+         is blocked (some users have privacy extensions on). -->
+    <script>window.plausible = window.plausible || function() { (window.plausible.q = window.plausible.q || []).push(arguments) }</script>
+
     <!-- Open Graph — how the site appears when shared on LinkedIn, Slack, FB, iMessage, etc. -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://trywireline.com/" />
     <meta property="og:site_name" content="Wireline" />
     <meta property="og:title" content="Wireline — AI Voice &amp; Email Agents for Every Business" />
-    <meta property="og:description" content="Deploy AI voice + email agents on real phone numbers in under 10 minutes. Call (630) 581-1834 right now to hear Liam answer in real time. Powered by Claude." />
+    <meta property="og:description" content="Deploy AI voice + email agents on real phone numbers in under 10 minutes. Call (630) 581-1834 right now to hear Liam answer in real time. " />
     <meta property="og:image" content="https://trywireline.com/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -38,7 +51,7 @@
     <meta name="twitter:site" content="@wirelineapp" />
     <meta name="twitter:creator" content="@wirelineapp" />
     <meta name="twitter:title" content="Wireline — AI Voice &amp; Email Agents · Try Live Now" />
-    <meta name="twitter:description" content="AI agents on real phone numbers. Call (630) 581-1834 to hear it answer. Setup in 10 min. Powered by Claude." />
+    <meta name="twitter:description" content="AI agents on real phone numbers. Call (630) 581-1834 to hear it answer. Setup in 10 min. " />
     <meta name="twitter:image" content="https://trywireline.com/og-image.png" />
     <meta name="twitter:image:alt" content="Wireline AI voice agents" />
 
@@ -55,7 +68,7 @@
             "name": "Wireline",
             "url": "https://trywireline.com/",
             "logo": "https://trywireline.com/wireline-connected-app-logo.png",
-            "description": "AI voice and email agents that deploy on real phone numbers for businesses. Powered by Claude.",
+            "description": "AI voice and email agents that deploy on real phone numbers for businesses. ",
             "sameAs": [
               "https://twitter.com/wirelineapp"
             ],
@@ -85,10 +98,10 @@
             "url": "https://trywireline.com/",
             "description": "Deploy AI voice and email agents on real phone numbers. Handle inbound calls, qualify leads, book appointments, and sync with your CRM — all in under 10 minutes.",
             "offers": [
-              { "@type": "Offer", "name": "Personal", "price": "29", "priceCurrency": "USD", "billingDuration": "P1M" },
-              { "@type": "Offer", "name": "Starter", "price": "99", "priceCurrency": "USD", "billingDuration": "P1M" },
-              { "@type": "Offer", "name": "Pro", "price": "399", "priceCurrency": "USD", "billingDuration": "P1M" },
-              { "@type": "Offer", "name": "Business", "price": "999", "priceCurrency": "USD", "billingDuration": "P1M" }
+              { "@type": "Offer", "name": "Personal", "price": "49", "priceCurrency": "USD", "billingDuration": "P1M" },
+              { "@type": "Offer", "name": "Starter", "price": "149", "priceCurrency": "USD", "billingDuration": "P1M" },
+              { "@type": "Offer", "name": "Pro", "price": "499", "priceCurrency": "USD", "billingDuration": "P1M" },
+              { "@type": "Offer", "name": "Business", "price": "1499", "priceCurrency": "USD", "billingDuration": "P1M" }
             ],
             "publisher": { "@id": "https://trywireline.com/#organization" }
           },

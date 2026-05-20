@@ -6,6 +6,8 @@ import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import { parseFormData } from "../lib/form-validators";
 import { OutboundBulkSchema } from "../lib/form-validators";
+import { enforceSpendCap, enforce24hSpendCap } from "../lib/spend-guards";
+import { enforceTrialOutboundCap } from "../lib/trial-gate";
 import { isDncBlocked } from "../lib/compliance";
 import { evaluateOutboundConsent } from "../lib/tcpa-consent";
 import { quotaRejectionHeaders } from "../lib/tenant-quotas";
@@ -122,6 +124,14 @@ router.delete(
 router.post(
   "/api/outbound/dial",
   authenticateUser,
+  // Trial gate FIRST so the upgrade-required path takes priority
+  // over the generic spend-cap path. Trial-expired tenants see a
+  // pick-a-plan modal; tenants over their monthly hard-cap see the
+  // standard spend-limit message. Both are 402 but with distinct
+  // code values for the frontend.
+  enforceTrialOutboundCap,
+  enforce24hSpendCap,
+  enforceSpendCap,
   dialRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -211,6 +221,13 @@ router.post(
 router.post(
   "/api/outbound/bulk",
   authenticateUser,
+  // Same gate stack as /api/outbound/dial. Trial gate FIRST so the
+  // upgrade-required code path takes priority. Bulk is the single
+  // highest-risk surface for runaway spend — a CSV with 1k rows
+  // triggers 1k Vapi calls without the trial gate.
+  enforceTrialOutboundCap,
+  enforce24hSpendCap,
+  enforceSpendCap,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const validation = parseFormData(OutboundBulkSchema, {

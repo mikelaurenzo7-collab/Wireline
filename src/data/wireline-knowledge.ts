@@ -41,9 +41,9 @@ export const WIRELINE_PLANS = [
     includes: [
       "3 AI agents",
       "3 phone numbers",
-      "1,500 voice minutes/mo (overage $0.15/min)",
+      "1,500 voice minutes/mo (overage $0.18/min)",
       "CRM sync (HubSpot or Salesforce)",
-      "Two-way SMS",
+      "Two-way texting",
     ],
   },
   {
@@ -54,7 +54,7 @@ export const WIRELINE_PLANS = [
     includes: [
       "10 AI agents",
       "10 phone numbers",
-      "6,000 voice minutes/mo (overage $0.12/min)",
+      "6,000 voice minutes/mo (overage $0.15/min)",
       "All CRM integrations (HubSpot, Salesforce, Pipedrive, Apollo)",
       "Slack handoff for human escalations",
       "Custom playbooks + knowledge ingestion",
@@ -67,9 +67,9 @@ export const WIRELINE_PLANS = [
     includes: [
       "25 AI agents",
       "25 phone numbers",
-      "15,000 voice minutes/mo (overage $0.10/min)",
+      "15,000 voice minutes/mo (overage $0.13/min)",
       "Supervisor cockpit with live call monitor",
-      "Team-level routing + per-team SMS sender",
+      "Team-level routing + per-team text-message sender",
       "DocuSign + custom integrations",
       "SSO + audit log",
       "Dedicated onboarding call",
@@ -86,19 +86,6 @@ export const WIRELINE_PLANS = [
       "Custom SLA",
       "Custom data residency",
       "Quarterly business review",
-    ],
-  },
-  {
-    name: "Call Center",
-    price: "Custom · 100+ seats",
-    bestFor: "Operators replacing or augmenting a traditional outsourced call center.",
-    includes: [
-      "Everything in Enterprise",
-      "Supervisor cockpit with team-level filters",
-      "Call queues with overflow routing",
-      "Per-team SMS sender numbers",
-      "SLA dashboard",
-      "Dedicated CSM + 24/7 priority support",
     ],
   },
 ] as const;
@@ -120,7 +107,7 @@ export const WIRELINE_FEATURES = [
       "Agents triage your inbox, reply on-brand, follow up, and escalate the ones you need to see personally.",
   },
   {
-    title: "Two-way SMS",
+    title: "Two-way texting",
     blurb:
       "Agents text customers and reply in-thread when customers text back. TCPA-clean with STOP/UNSUBSCRIBE handling.",
   },
@@ -177,11 +164,11 @@ export const WIRELINE_COMPLIANCE_STATUS = {
  * just clarify what each does best.
  */
 export const WIRELINE_COMPETITOR_NOTES = {
-  Air: "Cheaper if you only need outbound voice. We win when you need two-way SMS + email + supervisor cockpit in one console.",
+  Air: "Cheaper if you only need outbound voice. We win when you need two-way texting + email + supervisor cockpit in one console.",
   Synthflow:
     "Strong workflow builder. We're stronger on the ops side — supervisor cockpit, call queues, audit trail.",
   Bland:
-    "Great voice quality. We add the surrounding console — SMS threads, email inbox, CRM sync, autonomy controls.",
+    "Great voice quality. We add the surrounding console — text threads, email inbox, CRM sync, autonomy controls.",
   CallRail:
     "Call tracking + attribution with AI bolted on. We're the agent layer itself — your agents handle the call, not just track it.",
   Twilio:
@@ -217,7 +204,7 @@ export function buildWirelineKnowledgeBlock(mode: "cs" | "demo" | "client" = "de
   const base = [
     "## WIRELINE KNOWLEDGE — answer Wireline product questions using this.",
     "",
-    `Wireline (${WIRELINE_URL}) is an AI voice + email + SMS platform.`,
+    `Wireline (${WIRELINE_URL}) is an AI voice + email + texting platform.`,
     WIRELINE_ONE_LINER,
     "",
     "PRICING TIERS:",
@@ -257,7 +244,7 @@ export function buildWirelineKnowledgeBlock(mode: "cs" | "demo" | "client" = "de
     base.push("WHEN A CALLER ASKS ABOUT WIRELINE:");
     base.push("  - Answer the question concisely from the knowledge above.");
     base.push(
-      "  - For pricing questions: name the tier that fits their use case (don't list all 6).",
+      "  - For pricing questions: name the tier that fits their use case (don't list all 5).",
     );
     base.push(
       `  - To talk to a human or book a demo: invite them to call Maya at (630) 642-5927 or email ${WIRELINE_SUPPORT_EMAIL}.`,
@@ -280,19 +267,17 @@ export function buildWirelineKnowledgeBlock(mode: "cs" | "demo" | "client" = "de
   );
   base.push("  2. Pause and listen. Don't barrel-roll the caller with a menu.");
   base.push("");
-  base.push("LISTEN & CLASSIFY:");
-  base.push("  - Place the caller's reason in ONE of these buckets:");
-  base.push("      sales, support (how-to), technical, billing, scheduling, success.");
-  base.push("  - If it's not your bucket, route politely with the line:");
-  base.push("      \"That's actually [Name]'s wheelhouse — they handle [bucket].");
-  base.push('       Want me to text you their number now, or transfer you live?"');
-  base.push("    The 6 CS lines and their buckets:");
-  base.push("      Sarah · (630) 642-5661 · general support, how-to, account");
-  base.push("      Liam · (630) 581-1834 · sales, pricing, demos");
-  base.push("      Tyler · (564) 238-9455 · technical, API, integrations");
-  base.push("      Maya · (630) 642-5927 · demo / onboarding scheduling");
-  base.push("      Devon · (207) 593-5155 · billing, invoices, plan changes");
-  base.push("      Priya · (572) 726-9365 · customer success, QBRs, expansion");
+  base.push("YOU ARE A FULL GENERALIST:");
+  base.push("  - You handle EVERY kind of Wireline call yourself — support, pricing, plans,");
+  base.push("    billing, technical, onboarding, success. Never tell a caller 'that's not my");
+  base.push("    department' or transfer them to a specialist — you ARE the specialist.");
+  base.push("  - There are 3 Wireline employees and all 3 do everything: Sarah (630) 642-5661,");
+  base.push("    Liam (630) 581-1834, Maya (630) 642-5927. If asked for another way to reach us,");
+  base.push("    any of those numbers works — they're interchangeable.");
+  base.push("  - If a caller wants to SIGN UP, do it on the call: use the create_account tool.");
+  base.push(
+    "    If they want to pay, use send_payment_link. If they just want info, send_signup_link.",
+  );
   base.push("");
   base.push("CAPTURE CALLER INFO (early, conversational):");
   base.push('  - Name first. "Just so I can pull up the right info, what\'s your name?"');

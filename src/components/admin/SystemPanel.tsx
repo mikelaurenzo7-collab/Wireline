@@ -5,9 +5,6 @@ import {
   Activity,
   Globe,
   Cpu,
-  AlertTriangle,
-  CheckCircle2,
-  Terminal,
   HardDrive,
   Network,
   Gauge,
@@ -52,8 +49,8 @@ export function SystemPanel({
   };
 
   return (
-    <div className="h-full grid grid-cols-1 xl:grid-cols-3 gap-3 min-h-0 overflow-y-auto scrollbar-hide pb-6">
-      <div className="xl:col-span-2 space-y-3">
+    <div className="h-full min-h-0 overflow-y-auto scrollbar-hide pb-6">
+      <div className="space-y-3">
         <Panel title="Platform Health" hint="SYSTEM TELEMETRY" icon={Activity} scroll>
           <div className="space-y-8">
             {/* Real-time Status Grid */}
@@ -286,63 +283,6 @@ export function SystemPanel({
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </Panel>
-      </div>
-
-      <div className="space-y-3">
-        <Panel title="Command Output" hint="AUDIT FEED" icon={Terminal} scroll>
-          <div className="space-y-4">
-            <div className="bg-black/40 rounded-2xl border border-white/10 p-5 font-mono text-[10px] space-y-3 min-h-[400px]">
-              <div className="text-brand flex items-center gap-2">
-                <span className="opacity-50">#</span> system_init --verbose
-              </div>
-              <div className="text-muted/60 leading-relaxed">
-                [08:42:01] Bootstrapping Wireline OS v1.4.2...
-                <br />
-                [08:42:02] Initializing LLM mesh (Anthropic + Gemini)...
-                <br />
-                [08:42:04] Verifying carrier interconnects...
-                <br />
-                [08:42:05] Loading cognitive shards for 28 agents...
-                <br />
-                [08:42:07] <span className="text-emerald-500">READY</span> - All systems
-                operational.
-                <br />
-              </div>
-              <div className="pt-4 space-y-2">
-                <p className="text-ink font-bold uppercase tracking-widest text-[9px]">
-                  Active Directives
-                </p>
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-2 text-muted">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                    <span>Enforce RLS on all mutations</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                    <span>Capture PII in secure vault only</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                    <span>Log all admin role transitions</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-5 rounded-2xl glass border border-brand/20 bg-brand/5 space-y-4">
-              <p className="text-[9px] uppercase tracking-widest text-brand font-black">
-                Security Advisory
-              </p>
-              <p className="text-[11px] text-ink leading-relaxed">
-                "Ensure your <span className="text-brand font-bold">VAPI_WEBHOOK_SECRET</span> is
-                rotated every 90 days to maintain SOC 2 compliance."
-              </p>
-              <button className="text-[9px] uppercase tracking-widest text-muted hover:text-brand transition-colors font-bold">
-                View Compliance Manual →
-              </button>
             </div>
           </div>
         </Panel>

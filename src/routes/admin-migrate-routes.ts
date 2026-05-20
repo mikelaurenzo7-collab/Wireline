@@ -8,26 +8,73 @@
  * can curl after each deploy. All statements use IF NOT EXISTS so re-
  * running is idempotent and safe.
  *
+ * Two ways to authorize a migration call:
+ *   1) Authenticated request from the OWNER_EMAIL user, OR
+ *   2) Pass `X-Migration-Token` header matching MIGRATION_TOKEN env var
+ *      (lets an operator/CI/owner-without-a-session run migrations
+ *      without an interactive sign-in).
+ *
+
  * Auth: requesting user's email must match OWNER_EMAIL env var. This is
  * NOT for self-serve schema changes — it's a deploy-time admin tool.
  */
 
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
+import crypto from "crypto";
 import { drizzle, log } from "../lib/server-context";
+import * as schema from "../db/schema";
+import { eq, and } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import type { AuthenticatedRequest } from "../types/auth";
+import { WIRELINE_PERSONAS } from "../lib/wireline-agent-personas";
+import type { WirelinePersonaId } from "../lib/wireline-agent-escalation";
+import { purgeAccount } from "../lib/account-deletion";
+
+/**
+ * Authorize a migration call via EITHER:
+ *   1. OWNER_EMAIL-matching authenticated user, OR
+ *   2. X-Migration-Token header matching MIGRATION_TOKEN env var
+ *      (constant-time compared to prevent timing leaks).
+ *
+ * Lets ops + CI run migrations without an interactive sign-in flow.
+ * Returns true if authorized, false (with res 403 sent) otherwise.
+ */
+function authorizeMigration(req: Request, res: Response): boolean {
+  const provided = req.headers["x-migration-token"] as string | undefined;
+  const expected = process.env.MIGRATION_TOKEN;
+  if (provided && expected && provided.length === expected.length) {
+    try {
+      if (crypto.timingSafeEqual(Buffer.from(provided), Buffer.from(expected))) {
+        return true;
+      }
+    } catch {
+      /* length mismatch — fall through to owner-email check */
+    }
+  }
+  const ownerEmail = process.env.OWNER_EMAIL;
+  const user = (req as AuthenticatedRequest).user;
+  if (ownerEmail && user?.email === ownerEmail) return true;
+  res.status(403).json({ error: "Owner only." });
+  return false;
+}
+
+// Permissive middleware — runs authenticateUser if a bearer token is
+// present (so req.user populates for the owner-email check), otherwise
+// skips auth (so the X-Migration-Token path works without a session).
+function optionalAuth(req: Request, res: Response, next: NextFunction) {
+  const hasBearer = (req.headers.authorization || "").startsWith("Bearer ");
+  if (!hasBearer) return next();
+  return (authenticateUser as any)(req, res, next);
+}
 
 const router = Router();
 
 router.post(
   "/api/admin/migrate-sms-tables",
-  authenticateUser,
+  optionalAuth,
   async (req: AuthenticatedRequest, res: Response) => {
-    const ownerEmail = process.env.OWNER_EMAIL;
-    if (!ownerEmail || req.user?.email !== ownerEmail) {
-      return res.status(403).json({ error: "Owner only." });
-    }
+    if (!authorizeMigration(req, res)) return;
 
     try {
       // SMS threads — one per (user, customer_number) pair
@@ -127,7 +174,7 @@ router.post(
         ON wireline_call_queues (vapi_number_id);
       `);
 
-      log.info("Master plan migration completed", { userId: req.user.id });
+      log.info("Master plan migration completed", { userId: req.user?.id || "migration-token" });
       return res.json({
         ok: true,
         message: "SMS + agent teams + call queues tables ensured.",
@@ -146,12 +193,9 @@ router.post(
  */
 router.post(
   "/api/admin/migrate-auth-and-agent-extras",
-  authenticateUser,
+  optionalAuth,
   async (req: AuthenticatedRequest, res: Response) => {
-    const ownerEmail = process.env.OWNER_EMAIL;
-    if (!ownerEmail || req.user?.email !== ownerEmail) {
-      return res.status(403).json({ error: "Owner only." });
-    }
+    if (!authorizeMigration(req, res)) return;
 
     try {
       await drizzle.execute(sql`
@@ -179,10 +223,70 @@ router.post(
         ADD COLUMN IF NOT EXISTS silence_timeout_seconds integer;
       `);
 
-      log.info("Auth/agent extras migration completed", { userId: req.user.id });
+      // Personality vibe — the agent moat. "warm" (default), "playful",
+      // "authoritative". Idempotent — existing rows pick up "warm" via
+      // the column default; new rows the same. Operators bump per-agent
+      // in FleetSettings.
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_agents
+        ADD COLUMN IF NOT EXISTS personality_vibe text DEFAULT 'warm';
+      `);
+
+      // Trial-gate columns on settings. trialEndsAt = wall-clock end
+      // of the 14-day soft trial; trialOutboundCount = call-counter
+      // capped at 25 during trial. Existing tenants stay grandfathered
+      // (subscriptionStatus = 'active', trialEndsAt = NULL) and never
+      // hit a paywall. Brand-new signups land in 'trialing' state via
+      // startTrialForUser() in auth-service.ts.
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_settings
+        ADD COLUMN IF NOT EXISTS trial_ends_at timestamptz;
+      `);
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_settings
+        ADD COLUMN IF NOT EXISTS trial_outbound_count integer DEFAULT 0;
+      `);
+
+      // Email-verification gate. emailVerifiedAt on users + a token
+      // table for the magic-link flow. Existing pre-gate users are
+      // backfilled to their createdAt (auto-verified) so they don't
+      // suddenly get blocked. New signups land NULL → must click
+      // the link before they can dial or create more agents.
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_users
+        ADD COLUMN IF NOT EXISTS email_verified_at timestamptz;
+      `);
+      await drizzle.execute(sql`
+        UPDATE wireline_users
+        SET email_verified_at = created_at
+        WHERE email_verified_at IS NULL;
+      `);
+      await drizzle.execute(sql`
+        CREATE TABLE IF NOT EXISTS wireline_email_verification_tokens (
+          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          user_id uuid NOT NULL,
+          token_hash text NOT NULL UNIQUE,
+          expires_at timestamptz NOT NULL,
+          used_at timestamptz,
+          created_at timestamptz DEFAULT now()
+        );
+      `);
+      await drizzle.execute(sql`
+        CREATE INDEX IF NOT EXISTS idx_email_verification_tokens_user_id
+        ON wireline_email_verification_tokens (user_id);
+      `);
+      await drizzle.execute(sql`
+        CREATE INDEX IF NOT EXISTS idx_email_verification_tokens_expires
+        ON wireline_email_verification_tokens (expires_at);
+      `);
+
+      log.info("Auth/agent extras migration completed", {
+        userId: req.user?.id || "migration-token",
+      });
       return res.json({
         ok: true,
-        message: "wireline_password_reset_tokens + agents.silence_timeout_seconds ensured.",
+        message:
+          "wireline_password_reset_tokens + agents.silence_timeout_seconds + agents.personality_vibe + settings.trial_ends_at + settings.trial_outbound_count ensured.",
       });
     } catch (e: any) {
       log.error("Auth/agent migration failed", { error: e?.message });
@@ -201,12 +305,9 @@ router.post(
  */
 router.post(
   "/api/admin/migrate-competitive-batch",
-  authenticateUser,
+  optionalAuth,
   async (req: AuthenticatedRequest, res: Response) => {
-    const ownerEmail = process.env.OWNER_EMAIL;
-    if (!ownerEmail || req.user?.email !== ownerEmail) {
-      return res.status(403).json({ error: "Owner only." });
-    }
+    if (!authorizeMigration(req, res)) return;
 
     try {
       await drizzle.execute(sql`
@@ -293,7 +394,9 @@ router.post(
         ON wireline_supervisor_subscriptions (user_id);
       `);
 
-      log.info("Competitive batch migration completed", { userId: req.user.id });
+      log.info("Competitive batch migration completed", {
+        userId: req.user?.id || "migration-token",
+      });
       return res.json({
         ok: true,
         message:
@@ -314,12 +417,9 @@ router.post(
  */
 router.post(
   "/api/admin/migrate-audit3",
-  authenticateUser,
+  optionalAuth,
   async (req: AuthenticatedRequest, res: Response) => {
-    const ownerEmail = process.env.OWNER_EMAIL;
-    if (!ownerEmail || req.user?.email !== ownerEmail) {
-      return res.status(403).json({ error: "Owner only." });
-    }
+    if (!authorizeMigration(req, res)) return;
     try {
       await drizzle.execute(sql`
         ALTER TABLE wireline_call_logs
@@ -375,7 +475,7 @@ router.post(
       `);
 
       log.info("Audit3 migration completed", {
-        userId: req.user.id,
+        userId: req.user?.id || "migration-token",
         backfilled: {
           call_logs: (r1 as any).rowCount ?? 0,
           outbound_leads: (r2 as any).rowCount ?? 0,
@@ -395,5 +495,1026 @@ router.post(
     }
   },
 );
+
+/**
+ * Add ON DELETE CASCADE FK constraints to user-scoped tables that
+ * previously had only a uuid column with no referential integrity.
+ * From audit: settings, user_preferences, spend_budgets used to
+ * become orphaned when the parent user row was deleted.
+ *
+ * Idempotent: each ADD CONSTRAINT is wrapped in a DO block that
+ * checks pg_constraint first, and orphan rows are deleted before
+ * adding the constraint so the migration doesn't fail mid-way if a
+ * tenant was previously hard-deleted out-of-band.
+ */
+router.post(
+  "/api/admin/migrate-user-fks",
+  optionalAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!authorizeMigration(req, res)) return;
+
+    const targets = [
+      { table: "wireline_settings", constraint: "wireline_settings_user_id_fkey" },
+      {
+        table: "wireline_user_preferences",
+        constraint: "wireline_user_preferences_user_id_fkey",
+      },
+      { table: "wireline_spend_budgets", constraint: "wireline_spend_budgets_user_id_fkey" },
+    ];
+
+    const results: { table: string; orphans_removed: number; constraint_added: boolean }[] = [];
+
+    try {
+      for (const { table, constraint } of targets) {
+        // Step 1: delete orphaned rows so the FK addition can succeed.
+        // An orphan = a row whose user_id no longer exists in wireline_users.
+        const deletion = await drizzle.execute(
+          sql.raw(`
+          DELETE FROM ${table}
+          WHERE user_id IS NOT NULL
+            AND user_id NOT IN (SELECT id FROM wireline_users)
+          RETURNING user_id
+        `),
+        );
+        const orphansRemoved =
+          // node-postgres returns { rowCount }, pg-pool sometimes { rows }
+          (deletion as any)?.rowCount ?? (deletion as any)?.rows?.length ?? 0;
+
+        // Step 2: add the FK constraint if it isn't already there.
+        const before = await drizzle.execute(
+          sql.raw(`
+          SELECT 1 FROM pg_constraint WHERE conname = '${constraint}'
+        `),
+        );
+        const alreadyExists = ((before as any)?.rowCount ?? (before as any)?.rows?.length ?? 0) > 0;
+
+        if (!alreadyExists) {
+          await drizzle.execute(
+            sql.raw(`
+            ALTER TABLE ${table}
+            ADD CONSTRAINT ${constraint}
+            FOREIGN KEY (user_id) REFERENCES wireline_users(id) ON DELETE CASCADE
+          `),
+          );
+        }
+
+        results.push({ table, orphans_removed: orphansRemoved, constraint_added: !alreadyExists });
+      }
+
+      log.info("migrate-user-fks completed", { results });
+      res.json({ ok: true, results });
+    } catch (err: any) {
+      log.error("migrate-user-fks failed", { error: err?.message, results });
+      res.status(500).json({ error: err?.message || "Migration failed", results });
+    }
+  },
+);
+
+// Adds extra_agents column to wireline_settings for the
+// per-agent overage subscription quantity. Idempotent.
+router.post(
+  "/api/admin/migrate-extra-agents",
+  optionalAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!authorizeMigration(req, res)) return;
+    try {
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_settings
+          ADD COLUMN IF NOT EXISTS extra_agents INTEGER NOT NULL DEFAULT 0;
+      `);
+      log.info("migrate-extra-agents completed", { userId: req.user?.id || "migration-token" });
+      res.json({ ok: true });
+    } catch (err: any) {
+      log.error("migrate-extra-agents failed", { error: err?.message });
+      res.status(500).json({ error: err?.message || "Migration failed" });
+    }
+  },
+);
+
+// Per-tenant cloned-voice catalog (ElevenLabs voice IDs).
+// Idempotent — IF NOT EXISTS on table + index.
+router.post(
+  "/api/admin/migrate-cloned-voices",
+  optionalAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!authorizeMigration(req, res)) return;
+    try {
+      await drizzle.execute(sql`
+        CREATE TABLE IF NOT EXISTS wireline_cloned_voices (
+          voice_id    TEXT PRIMARY KEY,
+          user_id     UUID NOT NULL,
+          name        TEXT NOT NULL,
+          status      TEXT NOT NULL DEFAULT 'completed'
+                      CHECK (status IN ('processing', 'completed', 'failed')),
+          preview_url TEXT,
+          created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+      `);
+      await drizzle.execute(sql`
+        CREATE INDEX IF NOT EXISTS idx_cloned_voices_user_created
+          ON wireline_cloned_voices (user_id, created_at DESC);
+      `);
+      log.info("migrate-cloned-voices completed", { userId: req.user?.id || "migration-token" });
+      res.json({ ok: true });
+    } catch (err: any) {
+      log.error("migrate-cloned-voices failed", { error: err?.message });
+      res.status(500).json({ error: err?.message || "Migration failed" });
+    }
+  },
+);
+
+// Per-agent operator-chat workspace table.
+// Idempotent — safe to re-run. Owner-only.
+router.post(
+  "/api/admin/migrate-agent-workspace",
+  optionalAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!authorizeMigration(req, res)) return;
+    try {
+      await drizzle.execute(sql`
+        CREATE TABLE IF NOT EXISTS wireline_agent_conversation_messages (
+          id          BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+          user_id     UUID NOT NULL,
+          agent_id    TEXT NOT NULL REFERENCES wireline_agents(id) ON DELETE CASCADE,
+          role        TEXT NOT NULL CHECK (role IN ('operator', 'agent')),
+          content     TEXT NOT NULL,
+          created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+      `);
+      await drizzle.execute(sql`
+        CREATE INDEX IF NOT EXISTS idx_agent_conv_user_agent
+          ON wireline_agent_conversation_messages (user_id, agent_id, created_at DESC);
+      `);
+      log.info("migrate-agent-workspace completed", { userId: req.user?.id || "migration-token" });
+      res.json({ ok: true });
+    } catch (err: any) {
+      log.error("migrate-agent-workspace failed", { error: err?.message });
+      res.status(500).json({ error: err?.message || "Migration failed" });
+    }
+  },
+);
+
+// Per-tenant pronunciation dictionaries for ElevenLabs TTS.
+// Idempotent — safe to re-run. Owner-only. Stores the local jargon
+// rules + the ElevenLabs IDs we get back after sync so the Vapi
+// assistant builder can attach pronunciation_dictionary_locators
+// to every call.
+router.post(
+  "/api/admin/migrate-pronunciation-dicts",
+  optionalAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!authorizeMigration(req, res)) return;
+    try {
+      await drizzle.execute(sql`
+        CREATE TABLE IF NOT EXISTS wireline_pronunciation_dictionaries (
+          id                        UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          user_id                   UUID NOT NULL,
+          name                      TEXT NOT NULL,
+          entries                   JSONB NOT NULL DEFAULT '[]'::jsonb,
+          elevenlabs_dictionary_id  TEXT,
+          elevenlabs_version_id     TEXT,
+          active                    BOOLEAN NOT NULL DEFAULT TRUE,
+          created_at                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          updated_at                TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+      `);
+      await drizzle.execute(sql`
+        CREATE INDEX IF NOT EXISTS idx_pronunciation_dicts_user
+          ON wireline_pronunciation_dictionaries (user_id, created_at DESC);
+      `);
+      log.info("migrate-pronunciation-dicts completed", {
+        userId: req.user?.id || "migration-token",
+      });
+      res.json({ ok: true, message: "wireline_pronunciation_dictionaries ensured." });
+    } catch (err: any) {
+      log.error("migrate-pronunciation-dicts failed", { error: err?.message });
+      res.status(500).json({ error: err?.message || "Migration failed" });
+    }
+  },
+);
+
+// Per-agent ElevenLabs speed control. Adds a numeric `voice_speed`
+// column to wireline_agents with the ElevenLabs-supported range
+// (0.7 – 1.2) and a default of 1.0 (normal pace). Idempotent — re-run
+// after each deploy is safe. Operators can then dial each agent's
+// speaking rate via the slider in FleetSettings → Voice.
+//
+// Docs: https://elevenlabs.io/docs/eleven-agents/customization/voice/speed-control
+router.post(
+  "/api/admin/migrate-voice-speed",
+  optionalAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!authorizeMigration(req, res)) return;
+    try {
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_agents
+          ADD COLUMN IF NOT EXISTS voice_speed NUMERIC(3, 2) DEFAULT 1.0;
+      `);
+      // Backfill any rows that landed with NULL before the default kicked
+      // in (defensive — IF NOT EXISTS skips this if the column already
+      // exists with NULL values from a previous partial run).
+      await drizzle.execute(sql`
+        UPDATE wireline_agents SET voice_speed = 1.0 WHERE voice_speed IS NULL;
+      `);
+      log.info("migrate-voice-speed completed", {
+        userId: req.user?.id || "migration-token",
+      });
+      res.json({ ok: true, message: "wireline_agents.voice_speed ensured (default 1.0)." });
+    } catch (err: any) {
+      log.error("migrate-voice-speed failed", { error: err?.message });
+      res.status(500).json({ error: err?.message || "Migration failed" });
+    }
+  },
+);
+
+// Per-agent secondary voice for mid-call language swap. Adds a nullable
+// `secondary_voice_id` column to wireline_agents. When set, the Vapi
+// webhook listens for `language-change-detected` events and hands the
+// live call off to a clone of the assistant configured with this
+// secondary voice — so a caller switching from English to Spanish hears
+// "Maria" instead of "Sarah" without ever hitting hold music.
+//
+// Idempotent — safe to re-run after each deploy. Owner-only (gated by
+// authorizeMigration). Does NOT auto-run; ops must curl this endpoint
+// once per environment after deploy.
+//
+// Docs / pattern source:
+//   https://elevenlabs.io/docs/eleven-agents/customization/voice/multi-voice-support
+router.post(
+  "/api/admin/migrate-secondary-voice",
+  optionalAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!authorizeMigration(req, res)) return;
+    try {
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_agents
+          ADD COLUMN IF NOT EXISTS secondary_voice_id TEXT;
+      `);
+      log.info("migrate-secondary-voice completed", {
+        userId: req.user?.id || "migration-token",
+      });
+      res.json({
+        ok: true,
+        message: "wireline_agents.secondary_voice_id ensured (nullable text).",
+      });
+    } catch (err: any) {
+      log.error("migrate-secondary-voice failed", { error: err?.message });
+      res.status(500).json({ error: err?.message || "Migration failed" });
+    }
+  },
+);
+
+/**
+ * Generate a fresh multi-speaker dialogue MP3 via ElevenLabs's
+ * Text-to-Dialogue API and persist it to `public/sounds/<name>.mp3`
+ * so the marketing landing page can embed it as a demo sample. The
+ * route returns the public URL the operator can paste into the
+ * marketing component.
+ *
+ * Owner-gated via the same `authorizeMigration` helper used by the
+ * one-shot DDL endpoints — same set of trusted callers (OWNER_EMAIL
+ * session OR X-Migration-Token header). Mike will curl this directly
+ * to refresh the landing-page audio when launching a new vertical.
+ *
+ * Body: { name: string, lines: [{ voice_id: string, text: string }] }
+ *
+ * Docs: https://elevenlabs.io/docs/eleven-api/guides/cookbooks/text-to-dialogue
+ */
+router.post(
+  "/api/admin/generate-dialogue-sample",
+  optionalAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!authorizeMigration(req, res)) return;
+
+    const { name, lines } = (req.body || {}) as {
+      name?: unknown;
+      lines?: unknown;
+    };
+
+    if (typeof name !== "string" || !/^[a-zA-Z0-9_-]{1,64}$/.test(name)) {
+      return res.status(400).json({
+        error: "name must be 1-64 chars matching [a-zA-Z0-9_-]+",
+      });
+    }
+    if (!Array.isArray(lines) || lines.length === 0) {
+      return res.status(400).json({ error: "lines must be a non-empty array" });
+    }
+    const safeLines: { voice_id: string; text: string }[] = [];
+    for (const raw of lines) {
+      if (!raw || typeof raw !== "object") {
+        return res.status(400).json({ error: "each line must be an object" });
+      }
+      const voice_id = (raw as any).voice_id;
+      const text = (raw as any).text;
+      if (typeof voice_id !== "string" || !voice_id) {
+        return res.status(400).json({ error: "line.voice_id required" });
+      }
+      if (typeof text !== "string" || !text.trim()) {
+        return res.status(400).json({ error: "line.text required" });
+      }
+      safeLines.push({ voice_id, text });
+    }
+
+    try {
+      const { composeDialogue, elevenLabsConfigured } = await import("../lib/elevenlabs-client");
+      if (!elevenLabsConfigured()) {
+        return res.status(500).json({ error: "ELEVENLABS_API_KEY not set" });
+      }
+
+      const audio = await composeDialogue({ inputs: safeLines });
+
+      // Persist under public/sounds/<name>.mp3 — Vite serves /public at
+      // the site root, so the marketing page references /sounds/<n>.mp3.
+      // We resolve relative to cwd which is the repo root for both
+      // local dev and the Vercel build/serve.
+      const path = await import("path");
+      const fs = await import("fs/promises");
+      const dir = path.join(process.cwd(), "public", "sounds");
+      await fs.mkdir(dir, { recursive: true });
+      const outPath = path.join(dir, `${name}.mp3`);
+      await fs.writeFile(outPath, Buffer.from(audio));
+
+      const url = `/sounds/${name}.mp3`;
+      log.info("generate-dialogue-sample completed", {
+        userId: req.user?.id || "migration-token",
+        name,
+        bytes: audio.byteLength,
+      });
+      return res.json({ ok: true, url, bytes: audio.byteLength });
+    } catch (err: any) {
+      log.error("generate-dialogue-sample failed", { error: err?.message });
+      return res.status(500).json({ error: err?.message || "Dialogue generation failed" });
+    }
+  },
+);
+
+/**
+ * Generate the Singing Receptionist jingle via the ElevenLabs Music
+ * API and persist it to `public/sounds/wireline-jingle.mp3`. Powers
+ * the marquee "fun" demo on /showcase (Mira). Same owner gating as
+ * the other generate-* endpoints — OWNER_EMAIL session OR the
+ * X-Migration-Token header.
+ *
+ * Body (all optional):
+ *   {
+ *     "prompt"?: string,            // override the default jingle prompt
+ *     "music_length_ms"?: number,   // default 8000
+ *     "filename"?: string           // default "wireline-jingle"
+ *   }
+ *
+ * Vercel's serverless filesystem is ephemeral — the MP3 written
+ * here survives until the deploy is rebuilt. For a permanent fix
+ * the operator should ALSO run `node scripts/generate-jingle.mjs`
+ * locally + commit the resulting file. This endpoint exists so
+ * Mike can refresh the jingle on prod without redeploying, and
+ * so people without the ELEVENLABS_API_KEY locally can still
+ * trigger generation via a curl against the live deploy.
+ *
+ * Docs: https://elevenlabs.io/docs/eleven-api/guides/cookbooks/music
+ */
+router.post(
+  "/api/admin/generate-jingle",
+  optionalAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!authorizeMigration(req, res)) return;
+
+    const body = (req.body || {}) as {
+      prompt?: unknown;
+      music_length_ms?: unknown;
+      filename?: unknown;
+    };
+
+    const prompt =
+      typeof body.prompt === "string" && body.prompt.trim()
+        ? body.prompt.trim()
+        : "Upbeat playful jingle, female voice singing 'Welcome to Wireline, your phones are alive! Call us anytime, day or night!' — pop style, 8 seconds.";
+    const lengthMs =
+      typeof body.music_length_ms === "number" &&
+      body.music_length_ms >= 3000 &&
+      body.music_length_ms <= 600000
+        ? body.music_length_ms
+        : 8000;
+    const filename =
+      typeof body.filename === "string" && /^[a-zA-Z0-9_-]{1,64}$/.test(body.filename)
+        ? body.filename
+        : "wireline-jingle";
+
+    try {
+      const { composeMusic, elevenLabsConfigured } = await import("../lib/elevenlabs-client");
+      if (!elevenLabsConfigured()) {
+        return res.status(500).json({ error: "ELEVENLABS_API_KEY not set" });
+      }
+
+      const audio = await composeMusic({ prompt, musicLengthMs: lengthMs });
+
+      const path = await import("path");
+      const fs = await import("fs/promises");
+      const dir = path.join(process.cwd(), "public", "sounds");
+      await fs.mkdir(dir, { recursive: true });
+      const outPath = path.join(dir, `${filename}.mp3`);
+      await fs.writeFile(outPath, Buffer.from(audio));
+
+      const url = `/sounds/${filename}.mp3`;
+      log.info("generate-jingle completed", {
+        userId: req.user?.id || "migration-token",
+        filename,
+        bytes: audio.byteLength,
+        lengthMs,
+      });
+      return res.json({ ok: true, url, bytes: audio.byteLength, lengthMs });
+    } catch (err: any) {
+      log.error("generate-jingle failed", { error: err?.message });
+      return res.status(500).json({ error: err?.message || "Jingle generation failed" });
+    }
+  },
+);
+
+// Per-agent ElevenLabs voice fine-tuning parameters. Adds four
+// columns that map 1:1 to the ElevenLabs voice_settings payload:
+//   * voice_stability         (numeric, default 0.5)
+//   * voice_similarity_boost  (numeric, default 0.75)
+//   * voice_style             (numeric, default 0.0)
+//   * voice_speaker_boost     (boolean, default true)
+//
+// Operators with cloned voices need these to dial in their exact
+// sound. Idempotent — every column uses `ADD COLUMN IF NOT EXISTS`
+// so re-running after each deploy is safe. We also backfill rows
+// that landed before the defaults kicked in (defensive — partial
+// rollouts can leave NULLs behind that the IF-NOT-EXISTS guard
+// happily skips on the second run).
+//
+// Defaults match ElevenLabs's documented defaults exactly so a
+// freshly-migrated row sounds identical to "no fine-tuning at all"
+// and the operator is free to leave the sliders untouched.
+//
+// Docs: https://elevenlabs.io/docs/api-reference/text-to-speech/convert#request.body.voice_settings
+router.post(
+  "/api/admin/migrate-voice-quality-params",
+  optionalAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!authorizeMigration(req, res)) return;
+    try {
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_agents
+          ADD COLUMN IF NOT EXISTS voice_stability NUMERIC(3, 2) DEFAULT 0.5;
+      `);
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_agents
+          ADD COLUMN IF NOT EXISTS voice_similarity_boost NUMERIC(3, 2) DEFAULT 0.75;
+      `);
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_agents
+          ADD COLUMN IF NOT EXISTS voice_style NUMERIC(3, 2) DEFAULT 0.0;
+      `);
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_agents
+          ADD COLUMN IF NOT EXISTS voice_speaker_boost BOOLEAN DEFAULT TRUE;
+      `);
+      // Backfill rows that pre-existed the columns (their values would
+      // be NULL until UPDATE-ed because PG only applies DEFAULT on
+      // INSERT, not on ADD COLUMN with existing rows when the table is
+      // large enough to skip the rewrite). Safe and idempotent.
+      await drizzle.execute(sql`
+        UPDATE wireline_agents SET voice_stability = 0.5 WHERE voice_stability IS NULL;
+      `);
+      await drizzle.execute(sql`
+        UPDATE wireline_agents SET voice_similarity_boost = 0.75 WHERE voice_similarity_boost IS NULL;
+      `);
+      await drizzle.execute(sql`
+        UPDATE wireline_agents SET voice_style = 0.0 WHERE voice_style IS NULL;
+      `);
+      await drizzle.execute(sql`
+        UPDATE wireline_agents SET voice_speaker_boost = TRUE WHERE voice_speaker_boost IS NULL;
+      `);
+      log.info("migrate-voice-quality-params completed", {
+        userId: req.user?.id || "migration-token",
+      });
+      res.json({
+        ok: true,
+        message:
+          "wireline_agents fine-tuning columns ensured (stability=0.5, similarity_boost=0.75, style=0.0, speaker_boost=true).",
+      });
+    } catch (err: any) {
+      log.error("migrate-voice-quality-params failed", { error: err?.message });
+      res.status(500).json({ error: err?.message || "Migration failed" });
+    }
+  },
+);
+
+/**
+ * Generate the brand sound-effect library via ElevenLabs's Sound
+ * Effects API and persist the MP3s under `public/sounds/`. Owns the
+ * platform's sonic identity: hold music for the failover/IVR path,
+ * a transfer chime before warm hand-offs, an end-call sting, and a
+ * small UI notification bell. Mike curls this endpoint after each
+ * voice-design pass; assets ship in-tree so the CDN serves them
+ * with no extra round-trip.
+ *
+ * Idempotent: existing files are skipped unless `?force=true` is
+ * passed. Failures on individual sounds don't abort the batch — the
+ * response lists per-file status so the operator can retry only
+ * what didn't land.
+ *
+ * Auth: same `optionalAuth` + `authorizeMigration` pair the DDL
+ * endpoints above use (OWNER_EMAIL session OR X-Migration-Token).
+ * NEVER runs automatically — Mike triggers it himself.
+ *
+ * Docs: https://elevenlabs.io/docs/eleven-api/guides/cookbooks/sound-effects
+ */
+const BRAND_SOUND_SPECS: Array<{
+  filename: string;
+  text: string;
+  durationSeconds: number;
+  promptInfluence?: number;
+}> = [
+  {
+    filename: "wireline-hold-music.mp3",
+    text: "soft warm ambient lounge music, light piano, gentle, professional, on-hold music for a business phone line",
+    durationSeconds: 22, // ElevenLabs caps single sound-gen at 22s; the caller of the asset loops it client-side for a 30s feel.
+    promptInfluence: 0.25, // Slightly looser — gives the model room to breathe musically.
+  },
+  {
+    filename: "wireline-transfer-chime.mp3",
+    text: "soft pleasant two-note chime, ascending, professional handoff signal",
+    durationSeconds: 1.5,
+    promptInfluence: 0.4, // Tighter — short cues need to stay on-brief.
+  },
+  {
+    filename: "wireline-end-sting.mp3",
+    text: "subtle warm three-note outro, professional sign-off",
+    durationSeconds: 1.2,
+    promptInfluence: 0.4,
+  },
+  {
+    filename: "wireline-bell-notification.mp3",
+    text: "small bright chime, single note, friendly alert",
+    durationSeconds: 0.8,
+    promptInfluence: 0.4,
+  },
+];
+
+router.post(
+  "/api/admin/generate-brand-sounds",
+  optionalAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!authorizeMigration(req, res)) return;
+
+    const force = String(req.query.force || "").toLowerCase() === "true";
+
+    try {
+      const { generateSoundEffect, elevenLabsConfigured } = await import(
+        "../lib/elevenlabs-client"
+      );
+      if (!elevenLabsConfigured()) {
+        return res.status(500).json({ error: "ELEVENLABS_API_KEY not set" });
+      }
+
+      const path = await import("path");
+      const fs = await import("fs/promises");
+      const dir = path.join(process.cwd(), "public", "sounds");
+      await fs.mkdir(dir, { recursive: true });
+
+      const results: Array<{
+        filename: string;
+        url: string;
+        status: "generated" | "skipped" | "failed";
+        bytes?: number;
+        error?: string;
+      }> = [];
+
+      for (const spec of BRAND_SOUND_SPECS) {
+        const outPath = path.join(dir, spec.filename);
+        const url = `/sounds/${spec.filename}`;
+
+        // Idempotent — skip if the file already exists unless force=true.
+        // Lets Mike re-run safely on a deploy that only needs the missing
+        // ones (e.g. an earlier batch partially failed).
+        if (!force) {
+          try {
+            await fs.access(outPath);
+            results.push({ filename: spec.filename, url, status: "skipped" });
+            continue;
+          } catch {
+            /* file doesn't exist — fall through and generate */
+          }
+        }
+
+        try {
+          const audio = await generateSoundEffect({
+            text: spec.text,
+            durationSeconds: spec.durationSeconds,
+            promptInfluence: spec.promptInfluence,
+          });
+          await fs.writeFile(outPath, Buffer.from(audio));
+          results.push({
+            filename: spec.filename,
+            url,
+            status: "generated",
+            bytes: audio.byteLength,
+          });
+        } catch (e: any) {
+          // Don't abort the batch — the operator may want partial success
+          // and retry the failed ones independently. Failed files log as
+          // warnings; the response status code reflects the partial result.
+          log.warn("brand sound generation failed for one file", {
+            filename: spec.filename,
+            error: e?.message,
+          });
+          results.push({
+            filename: spec.filename,
+            url,
+            status: "failed",
+            error: e?.message || String(e),
+          });
+        }
+      }
+
+      log.info("generate-brand-sounds completed", {
+        userId: req.user?.id || "migration-token",
+        force,
+        results: results.map((r) => ({ f: r.filename, s: r.status })),
+      });
+
+      const failed = results.filter((r) => r.status === "failed").length;
+      // 207 Multi-Status when some succeeded + some failed; 200 on clean
+      // (all generated or all skipped). Caller can branch on the ok flag.
+      return res.status(failed > 0 ? 207 : 200).json({
+        ok: failed === 0,
+        force,
+        results,
+      });
+    } catch (err: any) {
+      log.error("generate-brand-sounds failed", { error: err?.message });
+      return res.status(500).json({ error: err?.message || "Brand sound generation failed" });
+    }
+  },
+);
+
+/**
+ * One-shot provisioning endpoint for Wireline's own customer-facing
+ * AI agents (Reception / Sales / Support — Mira, Casey, Alex).
+ *
+ * Purpose: dogfooding. Mike runs the AI receptionist product on his
+ * OWN main number so callers experience the platform first-hand. This
+ * endpoint upserts the three internal agents into wireline_agents with
+ * the `wireline_internal: true` flag stamped into business_variables —
+ * the assistant factory keys off that flag to layer in the persona
+ * system prompt + first-message + voice from
+ * src/lib/wireline-agent-personas.ts.
+ *
+ * Idempotent: if an agent for a persona already exists for the
+ * platform owner (matching by `wireline_persona_id` in
+ * business_variables), we update its fields; otherwise we insert.
+ * Re-running is safe + cheap.
+ *
+ * Owner resolution: we look up the user with email = OWNER_EMAIL env
+ * var. If no such user exists, we return 412 (precondition failed) —
+ * Mike's account must exist before we provision the dogfood agents
+ * (otherwise we'd create orphaned rows).
+ *
+ * Auth: same `optionalAuth` + `authorizeMigration` pair as every other
+ * endpoint in this file (OWNER_EMAIL session OR X-Migration-Token).
+ *
+ * Response: returns the resolved agent IDs per persona so the caller
+ * can wire them into the Vapi inbound-number routing table next.
+ */
+router.post(
+  "/api/admin/provision-wireline-agents",
+  optionalAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!authorizeMigration(req, res)) return;
+
+    const ownerEmail = process.env.OWNER_EMAIL;
+    if (!ownerEmail) {
+      return res.status(412).json({
+        error: "OWNER_EMAIL env var is not set. Cannot provision Wireline agents without an owner.",
+      });
+    }
+
+    // Look up the owner user row — we need their UUID to stamp
+    // user_id on the agents. We query the wireline_users table that
+    // the auth layer populates after first sign-in.
+    let ownerUserId: string | null = null;
+    try {
+      const [ownerRow] = await drizzle
+        .select({ id: schema.users.id })
+        .from(schema.users)
+        .where(eq(schema.users.email, ownerEmail))
+        .limit(1);
+      ownerUserId = ownerRow?.id || null;
+    } catch (e: any) {
+      log.error("provision-wireline-agents owner lookup failed", { error: e?.message });
+      return res.status(500).json({ error: "Owner lookup failed: " + e?.message });
+    }
+
+    if (!ownerUserId) {
+      return res.status(412).json({
+        error: `No user with email ${ownerEmail} exists yet. Sign in once via the app, then re-run this endpoint.`,
+      });
+    }
+
+    const provisioned: Array<{
+      persona: WirelinePersonaId;
+      agent_id: string;
+      action: "created" | "updated";
+    }> = [];
+
+    // Wireline-internal persona overlay flags. Stored in
+    // business_variables so we don't have to add a dedicated column to
+    // wireline_agents — the column is already JSONB + the assistant
+    // factory keys off these specific shapes.
+    for (const persona of Object.values(WIRELINE_PERSONAS)) {
+      try {
+        // Look for an existing internal agent with this persona id by
+        // scanning the owner's agents + matching business_variables.
+        // Drizzle's jsonb predicates are awkward — we do a small select
+        // + JS filter rather than a clever SQL predicate that risks
+        // diverging from how the assistant factory reads the same field.
+        const existingRows = await drizzle
+          .select()
+          .from(schema.agents)
+          .where(eq(schema.agents.userId, ownerUserId));
+        const existing = existingRows.find((row) => {
+          const bv = (row.businessVariables || {}) as Record<string, unknown>;
+          return bv.wireline_internal === true && bv.wireline_persona_id === persona.id;
+        });
+
+        const businessVariables = {
+          wireline_internal: true,
+          wireline_persona_id: persona.id,
+          provisioned_at: new Date().toISOString(),
+        };
+
+        if (existing) {
+          await drizzle
+            .update(schema.agents)
+            .set({
+              name: persona.name,
+              role: persona.role,
+              voiceId: persona.voiceId,
+              voiceProvider: "11labs",
+              firstMessage: persona.firstMessage,
+              businessVariables,
+              // We deliberately do NOT touch operator-tuned fields here
+              // (voiceSpeed, voiceStability, etc.) — re-running the
+              // endpoint shouldn't trample those if Mike has tuned them.
+            })
+            .where(eq(schema.agents.id, existing.id));
+          provisioned.push({ persona: persona.id, agent_id: existing.id, action: "updated" });
+        } else {
+          // Deterministic ID: `wireline-${persona.id}` so the row is
+          // easy to find by hand + safe to reference from other
+          // migrations. Also makes the inbound-number → agent-id
+          // mapping that Mike configures in Vapi predictable.
+          const agentId = `wireline-${persona.id}`;
+          await drizzle.insert(schema.agents).values({
+            id: agentId,
+            userId: ownerUserId,
+            name: persona.name,
+            role: persona.role,
+            voiceId: persona.voiceId,
+            voiceProvider: "11labs",
+            firstMessage: persona.firstMessage,
+            archetype: "Receptionist",
+            channel: "voice",
+            businessVariables,
+          });
+          provisioned.push({ persona: persona.id, agent_id: agentId, action: "created" });
+        }
+      } catch (e: any) {
+        log.error("provision-wireline-agents persona upsert failed", {
+          persona: persona.id,
+          error: e?.message,
+        });
+        return res.status(500).json({
+          error: `Failed provisioning persona ${persona.id}: ${e?.message}`,
+          provisioned,
+        });
+      }
+    }
+
+    log.info("provision-wireline-agents completed", {
+      ownerEmail,
+      ownerUserId,
+      provisioned,
+    });
+
+    return res.json({
+      ok: true,
+      owner_email: ownerEmail,
+      owner_user_id: ownerUserId,
+      agents: provisioned,
+      next_steps: [
+        "Configure Vapi inbound phone number to point at each agent via the assistant-id mapping.",
+        "Set OWN_PHONE env var to the inbound number so the escalation engine knows where to transfer.",
+        "Test by calling the main Wireline number — caller should reach Mira (Reception) first.",
+      ],
+    });
+  },
+);
+
+/**
+ * Email transport diagnostic. POST a `{ "to": "you@example.com" }` body
+ * (or omit it to send to OWNER_EMAIL) and this returns the RAW Resend
+ * response — status code + body — so we can see exactly why a send
+ * failed. The most common failure on a fresh Resend account is an
+ * unverified sending domain: Resend only lets you send from a domain
+ * you've added + verified via DNS. Until then `noreply@trywireline.com`
+ * is rejected.
+ */
+router.post("/api/admin/test-email", optionalAuth, async (req: Request, res: Response) => {
+  if (!authorizeMigration(req, res)) return;
+
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    return res.status(503).json({ ok: false, error: "RESEND_API_KEY not set in environment." });
+  }
+  const to = (req.body?.to as string) || process.env.OWNER_EMAIL || "";
+  if (!to) {
+    return res.status(400).json({ ok: false, error: "No `to` address and no OWNER_EMAIL set." });
+  }
+  const from = process.env.RESEND_FROM_EMAIL || "Wireline <noreply@trywireline.com>";
+
+  try {
+    const r = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
+      body: JSON.stringify({
+        from,
+        to: [to],
+        subject: "Wireline email transport test",
+        text: "If you received this, Resend is wired up correctly. — Wireline",
+      }),
+    });
+    const body = await r.text();
+    return res.json({
+      ok: r.ok,
+      resend_status: r.status,
+      resend_body: body.slice(0, 500),
+      from_used: from,
+      to,
+      diagnosis: r.ok
+        ? "Transport works."
+        : r.status === 403
+          ? "Likely the sending domain isn't verified in Resend. Add + verify trywireline.com under Resend → Domains, then set RESEND_FROM_EMAIL or keep the noreply@trywireline.com default."
+          : "See resend_body for the exact error.",
+    });
+  } catch (e: any) {
+    return res.status(500).json({ ok: false, error: e?.message || "fetch failed" });
+  }
+});
+
+/**
+ * Founder's Dashboard stats. Owner-gated (authorizeMigration accepts
+ * the owner's session or the migration token). Returns the platform-
+ * wide numbers Mike wants at a glance — user counts, revenue signal,
+ * call volume, and error/warning counts from the audit log.
+ */
+router.get("/api/admin/founder-stats", optionalAuth, async (req: Request, res: Response) => {
+  if (!authorizeMigration(req, res)) return;
+  try {
+    const num = (v: unknown) => Number(v ?? 0);
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const since24h = new Date(Date.now() - 24 * 60 * 60_000);
+    const since7d = new Date(Date.now() - 7 * 24 * 60 * 60_000);
+
+    const [
+      totalUsers,
+      newUsers7d,
+      payingUsers,
+      trialUsers,
+      agentCount,
+      callsTotal,
+      callsToday,
+      calls7d,
+      errors24h,
+      warnings24h,
+    ] = await Promise.all([
+      drizzle.execute(sql`SELECT count(*)::int AS c FROM wireline_users`),
+      drizzle.execute(
+        sql`SELECT count(*)::int AS c FROM wireline_users WHERE created_at >= ${since7d.toISOString()}`,
+      ),
+      drizzle.execute(
+        sql`SELECT count(*)::int AS c FROM wireline_subscriptions WHERE status = 'active' AND plan IS NOT NULL`,
+      ),
+      // Trials live in wireline_settings (subscription_status='trialing'
+      // with a future trial_ends_at) — NOT in wireline_subscriptions,
+      // which only gets a row once a Stripe customer exists.
+      drizzle.execute(
+        sql`SELECT count(*)::int AS c FROM wireline_settings WHERE subscription_status = 'trialing' AND (trial_ends_at IS NULL OR trial_ends_at > now())`,
+      ),
+      drizzle.execute(sql`SELECT count(*)::int AS c FROM wireline_agents`),
+      drizzle.execute(sql`SELECT count(*)::int AS c FROM wireline_call_logs WHERE demo = false`),
+      drizzle.execute(
+        sql`SELECT count(*)::int AS c FROM wireline_call_logs WHERE demo = false AND created_at >= ${startOfToday.toISOString()}`,
+      ),
+      drizzle.execute(
+        sql`SELECT count(*)::int AS c FROM wireline_call_logs WHERE demo = false AND created_at >= ${since7d.toISOString()}`,
+      ),
+      drizzle.execute(
+        sql`SELECT count(*)::int AS c FROM wireline_audit_log WHERE severity = 'error' AND created_at >= ${since24h.toISOString()}`,
+      ),
+      drizzle.execute(
+        sql`SELECT count(*)::int AS c FROM wireline_audit_log WHERE severity = 'warning' AND created_at >= ${since24h.toISOString()}`,
+      ),
+    ]);
+
+    const row = (r: any) => num(r?.rows?.[0]?.c);
+
+    return res.json({
+      ok: true,
+      generated_at: new Date().toISOString(),
+      users: {
+        total: row(totalUsers),
+        paying: row(payingUsers),
+        trialing: row(trialUsers),
+        new_last_7d: row(newUsers7d),
+      },
+      agents: { total: row(agentCount) },
+      calls: {
+        total: row(callsTotal),
+        today: row(callsToday),
+        last_7d: row(calls7d),
+      },
+      health: {
+        errors_24h: row(errors24h),
+        warnings_24h: row(warnings24h),
+      },
+    });
+  } catch (e: any) {
+    log.error("founder-stats failed", { error: e?.message });
+    return res.status(500).json({ ok: false, error: e?.message || "stats query failed" });
+  }
+});
+
+/**
+ * Purge demo / junk user accounts. Owner-gated. Deletes every user
+ * EXCEPT a keep-list: the platform owner (OWNER_EMAIL) and the QA
+ * test account (E2E_USER_EMAIL). Each non-kept user is run through
+ * the same purgeAccount() cascade used by self-serve account
+ * deletion, so all their tenant data goes too.
+ *
+ * Dry-run by default — pass `?confirm=true` to actually delete.
+ * This protects against an accidental call wiping the user table.
+ */
+router.post("/api/admin/purge-demo-users", optionalAuth, async (req: Request, res: Response) => {
+  if (!authorizeMigration(req, res)) return;
+  try {
+    const keepEmails = new Set(
+      [process.env.OWNER_EMAIL, process.env.E2E_USER_EMAIL]
+        .filter(Boolean)
+        .map((e) => (e as string).trim().toLowerCase()),
+    );
+    if (keepEmails.size === 0) {
+      return res
+        .status(400)
+        .json({ ok: false, error: "No keep-list — OWNER_EMAIL/E2E_USER_EMAIL not set. Aborting." });
+    }
+
+    const allUsers = await drizzle.execute(
+      sql`SELECT id, email FROM wireline_users ORDER BY created_at ASC`,
+    );
+    const rows = (allUsers as any).rows as Array<{ id: string; email: string }>;
+    const toPurge = rows.filter((u) => !keepEmails.has((u.email || "").trim().toLowerCase()));
+    const kept = rows.filter((u) => keepEmails.has((u.email || "").trim().toLowerCase()));
+
+    const confirm = req.query.confirm === "true";
+    if (!confirm) {
+      return res.json({
+        ok: true,
+        dry_run: true,
+        message: "Dry run — pass ?confirm=true to actually delete.",
+        would_keep: kept.map((u) => u.email),
+        would_purge_count: toPurge.length,
+        would_purge: toPurge.map((u) => u.email),
+      });
+    }
+
+    const purged: string[] = [];
+    const failed: Array<{ email: string; error: string }> = [];
+    for (const u of toPurge) {
+      const result = await purgeAccount(u.id, { db: drizzle, log });
+      if (result.ok) purged.push(u.email);
+      else failed.push({ email: u.email, error: result.error || "unknown" });
+    }
+    log.info("purge-demo-users completed", {
+      purged: purged.length,
+      failed: failed.length,
+      kept: kept.map((u) => u.email),
+    });
+    return res.json({
+      ok: true,
+      dry_run: false,
+      kept: kept.map((u) => u.email),
+      purged_count: purged.length,
+      purged,
+      failed,
+    });
+  } catch (e: any) {
+    log.error("purge-demo-users failed", { error: e?.message });
+    return res.status(500).json({ ok: false, error: e?.message || "purge failed" });
+  }
+});
 
 export default router;

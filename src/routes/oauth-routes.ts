@@ -43,6 +43,44 @@ import {
   exchangeZoomCode,
   disconnectZoom,
 } from "../lib/zoom-service";
+import {
+  apolloOAuthConfigured,
+  getApolloAuthUrl,
+  exchangeApolloCode,
+  getApolloUserInfo,
+  disconnectApollo,
+} from "../lib/apollo-service";
+import {
+  metaOAuthConfigured,
+  getMetaAuthUrl,
+  exchangeMetaCode,
+  getMetaUserInfo,
+  subscribePageToLeadgen,
+  disconnectMeta,
+} from "../lib/meta-service";
+import {
+  shopifyOAuthConfigured,
+  getShopifyAuthUrl,
+  exchangeShopifyCode,
+  verifyShopifyHmac,
+  normalizeShopDomain,
+  disconnectShopify,
+} from "../lib/shopify-service";
+import {
+  squareOAuthConfigured,
+  getSquareAuthUrl,
+  exchangeSquareCode,
+  disconnectSquare,
+} from "../lib/square-service";
+import {
+  microsoftGraphConfigured,
+  getTeamsAuthUrl,
+  getExcelAuthUrl,
+  exchangeMicrosoftGraphCode,
+  getMicrosoftAccountEmail,
+  disconnectMicrosoftGraph,
+  type MsGraphProvider,
+} from "../lib/microsoft-graph-service";
 import { computeIntegrationHealth } from "../lib/integration-health";
 
 const router = express.Router();
@@ -57,11 +95,9 @@ router.get(
   authenticateUser,
   (req: express.Request, res: express.Response) => {
     if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-      return res
-        .status(500)
-        .json({
-          error: "Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET in environment variables.",
-        });
+      return res.status(500).json({
+        error: "Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET in environment variables.",
+      });
     }
 
     const uid = req.user?.id as string | undefined;
@@ -355,6 +391,178 @@ router.get(
 );
 
 // ────────────────────────────────────────────────────────────────────
+//  Yahoo Mailbox OAuth — mail-r/mail-w scopes
+//
+//  Distinct from /api/auth/yahoo/* (sign-in, openid+email+profile only).
+//  This flow is auth-gated: the operator must already be signed in
+//  before they can connect their Yahoo Mail account. We store the
+//  tokens in wireline_email_accounts with provider='yahoo'. Actual
+//  IMAP/SMTP polling + sending lands in a future phase — having the
+//  OAuth tokens persisted is the precondition for that wiring.
+//
+//  Yahoo Mail uses XOAUTH2 over IMAP (imap.mail.yahoo.com:993) +
+//  SMTP (smtp.mail.yahoo.com:465). The same access_token we store
+//  here is what those clients will use as the SASL credential.
+// ────────────────────────────────────────────────────────────────────
+
+const YAHOO_MAIL_SCOPES = ["openid", "email", "profile", "mail-r", "mail-w"].join(" ");
+
+router.get(
+  "/api/oauth/yahoo/url",
+  oauthRateLimiter,
+  authenticateUser,
+  (req: express.Request, res: express.Response) => {
+    if (!process.env.YAHOO_CLIENT_ID || !process.env.YAHOO_CLIENT_SECRET) {
+      return res.status(503).json({ error: "Yahoo mailbox integration is finishing setup." });
+    }
+    const baseUrl =
+      (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+      `${req.protocol}://${req.get("host")}`;
+    const redirectUri = `${baseUrl}/api/oauth/yahoo/callback`;
+    const uid = req.user?.id as string | undefined;
+    const params = new URLSearchParams({
+      client_id: process.env.YAHOO_CLIENT_ID,
+      response_type: "code",
+      redirect_uri: redirectUri,
+      scope: YAHOO_MAIL_SCOPES,
+      state: generateOAuthState(uid ? { userId: uid } : undefined),
+      prompt: "login",
+    });
+    res.json({ url: `https://api.login.yahoo.com/oauth2/request_auth?${params.toString()}` });
+  },
+);
+
+router.get(
+  "/api/oauth/yahoo/callback",
+  oauthRateLimiter,
+  async (req: express.Request, res: express.Response) => {
+    const { code, state, error, error_description } = req.query;
+    if (error) {
+      log.warn("Yahoo Mail OAuth error from provider", { error, error_description });
+      return res.status(400).send(`Yahoo OAuth error: ${error_description}`);
+    }
+    const vs = verifyOAuthState(state as string | undefined);
+    if (!vs.ok) {
+      return res
+        .status(400)
+        .send("Invalid or expired OAuth state. Please restart the connect flow.");
+    }
+    if (!code || typeof code !== "string") {
+      return res.status(400).send("No code provided by Yahoo.");
+    }
+    try {
+      const baseUrl =
+        (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+        `${req.protocol}://${req.get("host")}`;
+      const redirectUri = `${baseUrl}/api/oauth/yahoo/callback`;
+      const basic = Buffer.from(
+        `${process.env.YAHOO_CLIENT_ID}:${process.env.YAHOO_CLIENT_SECRET}`,
+      ).toString("base64");
+
+      const tokenRes = await fetch("https://api.login.yahoo.com/oauth2/get_token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          Authorization: `Basic ${basic}`,
+        },
+        body: new URLSearchParams({
+          grant_type: "authorization_code",
+          code,
+          redirect_uri: redirectUri,
+        }),
+      });
+      if (!tokenRes.ok) {
+        const body = await tokenRes.text();
+        throw new Error(`Yahoo token exchange failed (${tokenRes.status}): ${body.slice(0, 200)}`);
+      }
+      const tokens = (await tokenRes.json()) as {
+        access_token?: string;
+        refresh_token?: string;
+        expires_in?: number;
+      };
+      if (!tokens.access_token) throw new Error("no access_token in Yahoo response");
+
+      const userId = vs.userId ?? (await resolveUserIdFromOAuthSession(req));
+      if (!userId) {
+        return res.status(401).send("Could not identify user. Please reconnect from the app.");
+      }
+
+      const meRes = await fetch("https://api.login.yahoo.com/openid/v1/userinfo", {
+        headers: { Authorization: `Bearer ${tokens.access_token}` },
+      });
+      if (!meRes.ok) throw new Error(`Yahoo userinfo failed (${meRes.status})`);
+      const me = (await meRes.json()) as { email?: string };
+      const emailAddress = me.email;
+      if (!emailAddress) throw new Error("Yahoo did not return an email address");
+
+      const accessTokenY = encryptSecret(tokens.access_token);
+      const refreshTokenY = tokens.refresh_token ? encryptSecret(tokens.refresh_token) : null;
+      const expiresAtY = Date.now() + (tokens.expires_in ?? 3600) * 1000;
+
+      await drizzle
+        .insert(schema.emailAccounts)
+        .values({
+          userId,
+          emailAddress,
+          provider: "yahoo",
+          accessToken: accessTokenY,
+          refreshToken: refreshTokenY,
+          expiresAt: BigInt(expiresAtY),
+          oauthGrantedScopes: YAHOO_MAIL_SCOPES,
+        })
+        .onConflictDoUpdate({
+          target: schema.emailAccounts.emailAddress,
+          set: {
+            userId,
+            provider: "yahoo",
+            accessToken: accessTokenY,
+            refreshToken: refreshTokenY,
+            expiresAt: BigInt(expiresAtY),
+            oauthGrantedScopes: YAHOO_MAIL_SCOPES,
+          },
+        });
+
+      const targetOrigin =
+        (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+        `${req.protocol}://${req.get("host")}`;
+      const cspNonce = generateCspNonce();
+      res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, cspNonce));
+      res.send(`
+      <html><body><script nonce="${cspNonce}">
+        if (window.opener) {
+          window.opener.postMessage({ type: 'EMAIL_OAUTH_SUCCESS', provider: 'yahoo', email: ${JSON.stringify(emailAddress)} }, ${JSON.stringify(targetOrigin)});
+          window.close();
+        } else { window.location.href = '/'; }
+      </script><p>Yahoo Mail connected. You can close this window.</p></body></html>
+    `);
+    } catch (e: any) {
+      log.error("Yahoo Mail OAuth callback failed", { error: e?.message || String(e) });
+      res.status(500).send("Yahoo authentication failed. Please try again.");
+    }
+  },
+);
+
+router.post(
+  "/api/oauth/yahoo/disconnect",
+  authenticateUser,
+  async (req: express.Request, res: express.Response) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    try {
+      await drizzle
+        .delete(schema.emailAccounts)
+        .where(
+          and(eq(schema.emailAccounts.userId, userId), eq(schema.emailAccounts.provider, "yahoo")),
+        );
+      res.json({ ok: true });
+    } catch (e: any) {
+      log.error("Yahoo disconnect failed", { error: e?.message });
+      res.status(500).json({ error: "Failed to disconnect Yahoo Mail" });
+    }
+  },
+);
+
+// ────────────────────────────────────────────────────────────────────
 //  Salesforce OAuth
 // ────────────────────────────────────────────────────────────────────
 
@@ -364,12 +572,9 @@ router.get(
   authenticateUser,
   (req: express.Request, res: express.Response) => {
     if (!sfOAuthConfigured()) {
-      return res
-        .status(500)
-        .json({
-          error:
-            "Missing SALESFORCE_CLIENT_ID or SALESFORCE_CLIENT_SECRET in environment variables.",
-        });
+      return res.status(500).json({
+        error: "Missing SALESFORCE_CLIENT_ID or SALESFORCE_CLIENT_SECRET in environment variables.",
+      });
     }
 
     const baseUrl =
@@ -506,11 +711,9 @@ router.get(
   authenticateUser,
   (req: express.Request, res: express.Response) => {
     if (!hsOAuthConfigured()) {
-      return res
-        .status(500)
-        .json({
-          error: "Missing HUBSPOT_CLIENT_ID or HUBSPOT_CLIENT_SECRET in environment variables.",
-        });
+      return res.status(500).json({
+        error: "Missing HUBSPOT_CLIENT_ID or HUBSPOT_CLIENT_SECRET in environment variables.",
+      });
     }
 
     const baseUrl =
@@ -641,6 +844,739 @@ router.post(
 );
 
 // ────────────────────────────────────────────────────────────────────
+//  Apollo OAuth
+// ────────────────────────────────────────────────────────────────────
+
+router.get(
+  "/api/oauth/apollo/url",
+  oauthRateLimiter,
+  authenticateUser,
+  (req: express.Request, res: express.Response) => {
+    if (!apolloOAuthConfigured()) {
+      return res
+        .status(503)
+        .json({ error: "Apollo integration is finishing setup. Try again shortly." });
+    }
+    const baseUrl =
+      (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+      `${req.protocol}://${req.get("host")}`;
+    const redirectUri = `${baseUrl}/api/oauth/apollo/callback`;
+    const uid = req.user?.id as string | undefined;
+    const authUrl = getApolloAuthUrl(
+      redirectUri,
+      generateOAuthState(uid ? { userId: uid } : undefined),
+    );
+    res.json({ url: authUrl });
+  },
+);
+
+router.get(
+  "/api/oauth/apollo/callback",
+  oauthRateLimiter,
+  async (req: express.Request, res: express.Response) => {
+    const { code, state, error, error_description } = req.query;
+    if (error) {
+      log.warn("Apollo OAuth error from provider", { error, error_description });
+      return res.status(400).send(`Apollo OAuth error: ${error_description}`);
+    }
+    const vs = verifyOAuthState(state as string | undefined);
+    if (!vs.ok) {
+      return res
+        .status(400)
+        .send("Invalid or expired OAuth state. Please restart the sign-in flow.");
+    }
+    if (!code || typeof code !== "string") {
+      return res.status(400).send("No code provided by Apollo.");
+    }
+    try {
+      const baseUrl =
+        (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+        `${req.protocol}://${req.get("host")}`;
+      const redirectUri = `${baseUrl}/api/oauth/apollo/callback`;
+      const tokens = await exchangeApolloCode(code, redirectUri);
+
+      const userId: string | null = vs.userId ?? (await resolveUserIdFromOAuthSession(req));
+      if (!userId) {
+        return res.status(401).send("Could not identify user. Please reconnect from the app.");
+      }
+
+      const info = await getApolloUserInfo(tokens.access_token);
+      const accessTokenA = encryptSecret(tokens.access_token);
+      const refreshTokenA = tokens.refresh_token ? encryptSecret(tokens.refresh_token) : null;
+      const expiresAtA = new Date(Date.now() + tokens.expires_in * 1000);
+
+      await drizzle
+        .insert(schema.crmConnections)
+        .values({
+          userId,
+          provider: "apollo",
+          accessToken: accessTokenA,
+          refreshToken: refreshTokenA,
+          expiresAt: expiresAtA,
+          connectedEmail: info?.email || info?.team || null,
+        })
+        .onConflictDoUpdate({
+          target: [schema.crmConnections.userId, schema.crmConnections.provider],
+          set: {
+            accessToken: accessTokenA,
+            refreshToken: refreshTokenA,
+            expiresAt: expiresAtA,
+            connectedEmail: info?.email || info?.team || null,
+            updatedAt: new Date(),
+            active: true,
+          },
+        });
+
+      const targetOrigin =
+        (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+        `${req.protocol}://${req.get("host")}`;
+      const cspNonce = generateCspNonce();
+      res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, cspNonce));
+      res.send(`
+      <html><body><script nonce="${cspNonce}">
+        if (window.opener) {
+          window.opener.postMessage({ type: 'CRM_OAUTH_SUCCESS', provider: 'apollo' }, ${JSON.stringify(targetOrigin)});
+          window.close();
+        } else { window.location.href = '/'; }
+      </script><p>Apollo connected successfully. You can close this window.</p></body></html>
+    `);
+    } catch (e: any) {
+      log.error("Apollo OAuth callback failed", { error: e?.message || String(e) });
+      res.status(500).send("Apollo authentication failed. Please try again.");
+    }
+  },
+);
+
+router.post(
+  "/api/oauth/apollo/disconnect",
+  authenticateUser,
+  async (req: express.Request, res: express.Response) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    try {
+      await disconnectApollo(userId);
+      res.json({ ok: true });
+    } catch (e: any) {
+      log.error("Apollo disconnect failed", { error: e?.message });
+      res.status(500).json({ error: "Failed to disconnect Apollo" });
+    }
+  },
+);
+
+// ────────────────────────────────────────────────────────────────────
+//  Meta OAuth (placeholder — connect button shows, data flows are
+//  future work). Routes return 503 until META_APP_ID + META_APP_SECRET
+//  land in env. When configured, the OAuth dance + token storage work
+//  end-to-end; the Lead Ads webhook + CAPI export ship in a later
+//  phase, at which point the stored token is already there to use.
+// ────────────────────────────────────────────────────────────────────
+
+router.get(
+  "/api/oauth/meta/url",
+  oauthRateLimiter,
+  authenticateUser,
+  (req: express.Request, res: express.Response) => {
+    if (!metaOAuthConfigured()) {
+      return res
+        .status(503)
+        .json({ error: "Meta integration is finishing setup. Try again shortly." });
+    }
+    const baseUrl =
+      (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+      `${req.protocol}://${req.get("host")}`;
+    const redirectUri = `${baseUrl}/api/oauth/meta/callback`;
+    const uid = req.user?.id as string | undefined;
+    const authUrl = getMetaAuthUrl(
+      redirectUri,
+      generateOAuthState(uid ? { userId: uid } : undefined),
+    );
+    res.json({ url: authUrl });
+  },
+);
+
+router.get(
+  "/api/oauth/meta/callback",
+  oauthRateLimiter,
+  async (req: express.Request, res: express.Response) => {
+    const { code, state, error, error_description } = req.query;
+    if (error) {
+      log.warn("Meta OAuth error from provider", { error, error_description });
+      return res.status(400).send(`Meta OAuth error: ${error_description}`);
+    }
+    const vs = verifyOAuthState(state as string | undefined);
+    if (!vs.ok) {
+      return res
+        .status(400)
+        .send("Invalid or expired OAuth state. Please restart the sign-in flow.");
+    }
+    if (!code || typeof code !== "string") {
+      return res.status(400).send("No code provided by Meta.");
+    }
+    try {
+      const baseUrl =
+        (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+        `${req.protocol}://${req.get("host")}`;
+      const redirectUri = `${baseUrl}/api/oauth/meta/callback`;
+      const tokens = await exchangeMetaCode(code, redirectUri);
+
+      const userId: string | null = vs.userId ?? (await resolveUserIdFromOAuthSession(req));
+      if (!userId) {
+        return res.status(401).send("Could not identify user. Please reconnect from the app.");
+      }
+
+      const info = await getMetaUserInfo(tokens.access_token);
+      const accessTokenM = encryptSecret(tokens.access_token);
+      const expiresAtM = tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000) : null;
+
+      // Pull the pages the user manages so the Lead Ads webhook can
+      // route incoming events to this tenant. The /me/accounts call
+      // returns each page's own access_token (needed to subscribe
+      // that page to leadgen events). We use a quick refetch with
+      // access_token in the field selector to keep both calls under
+      // a single roundtrip cost.
+      const pageRows = await fetch(
+        `https://graph.facebook.com/v18.0/me/accounts?fields=id,name,access_token&access_token=${encodeURIComponent(tokens.access_token)}`,
+      )
+        .then((r) => (r.ok ? r.json() : { data: [] }))
+        .catch(() => ({ data: [] }));
+      const pages: { id: string; name: string; access_token?: string }[] = pageRows.data || [];
+      const pageIds = pages.map((p) => p.id);
+
+      // Best-effort: subscribe every managed page to leadgen events.
+      // Failures don't block the OAuth flow — operator can re-trigger
+      // later via a reconnect.
+      await Promise.all(
+        pages.map((p) =>
+          p.access_token
+            ? subscribePageToLeadgen(p.id, p.access_token).catch(() => false)
+            : Promise.resolve(false),
+        ),
+      );
+
+      const metaMetadata = {
+        page_ids: pageIds,
+        page_names: pages.map((p) => p.name),
+        // Stored so the Data Deletion Callback can map an incoming
+        // revocation event (signed_request.user_id) back to this
+        // tenant. Without this, the callback can ack Meta but can't
+        // disconnect the right account.
+        facebook_user_id: info?.id || null,
+      };
+
+      await drizzle
+        .insert(schema.crmConnections)
+        .values({
+          userId,
+          provider: "meta",
+          accessToken: accessTokenM,
+          expiresAt: expiresAtM,
+          connectedEmail: info?.email || info?.name || null,
+          metadata: metaMetadata,
+        })
+        .onConflictDoUpdate({
+          target: [schema.crmConnections.userId, schema.crmConnections.provider],
+          set: {
+            accessToken: accessTokenM,
+            expiresAt: expiresAtM,
+            connectedEmail: info?.email || info?.name || null,
+            metadata: metaMetadata,
+            updatedAt: new Date(),
+            active: true,
+          },
+        });
+
+      const targetOrigin =
+        (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+        `${req.protocol}://${req.get("host")}`;
+      const cspNonce = generateCspNonce();
+      res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, cspNonce));
+      res.send(`
+      <html><body><script nonce="${cspNonce}">
+        if (window.opener) {
+          window.opener.postMessage({ type: 'CRM_OAUTH_SUCCESS', provider: 'meta' }, ${JSON.stringify(targetOrigin)});
+          window.close();
+        } else { window.location.href = '/'; }
+      </script><p>Meta connected successfully. You can close this window.</p></body></html>
+    `);
+    } catch (e: any) {
+      log.error("Meta OAuth callback failed", { error: e?.message || String(e) });
+      res.status(500).send("Meta authentication failed. Please try again.");
+    }
+  },
+);
+
+router.post(
+  "/api/oauth/meta/disconnect",
+  authenticateUser,
+  async (req: express.Request, res: express.Response) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    try {
+      await disconnectMeta(userId);
+      res.json({ ok: true });
+    } catch (e: any) {
+      log.error("Meta disconnect failed", { error: e?.message });
+      res.status(500).json({ error: "Failed to disconnect Meta" });
+    }
+  },
+);
+
+// ────────────────────────────────────────────────────────────────────
+//  Shopify OAuth — PER-STORE.
+//
+//  Unlike the other connectors, Shopify OAuth is scoped to a single
+//  merchant store. The /url endpoint takes a `shop` query param (the
+//  merchant's `{store}.myshopify.com` domain), which is strictly
+//  validated against `normalizeShopDomain` before it is ever placed in
+//  a URL — an unvalidated shop is an open-redirect / SSRF vector.
+//
+//  The callback additionally verifies the HMAC signature Shopify
+//  attaches to the query string (HMAC-SHA256 over the sorted params
+//  minus `hmac`, keyed by the client secret). Shopify access tokens
+//  do NOT expire, so there is no refresh logic.
+//
+//  The store's myshopify domain is persisted on `instanceUrl` (as the
+//  full origin) and in `metadata.shop` so shopify-service can rebuild
+//  the per-store API base on every call.
+// ────────────────────────────────────────────────────────────────────
+
+router.get(
+  "/api/oauth/shopify/url",
+  oauthRateLimiter,
+  authenticateUser,
+  (req: express.Request, res: express.Response) => {
+    if (!shopifyOAuthConfigured()) {
+      return res.status(500).json({
+        error: "Missing SHOPIFY_CLIENT_ID or SHOPIFY_CLIENT_SECRET in environment variables.",
+      });
+    }
+
+    // The merchant's myshopify domain. Validate STRICTLY — reject
+    // anything that isn't exactly `{store}.myshopify.com` so the
+    // authorize URL can never be pointed at an attacker host.
+    const shop = normalizeShopDomain(req.query.shop);
+    if (!shop) {
+      return res.status(400).json({
+        error: "A valid Shopify store domain is required (e.g. your-store.myshopify.com).",
+      });
+    }
+
+    const baseUrl =
+      (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+      `${req.protocol}://${req.get("host")}`;
+    const redirectUri = `${baseUrl}/api/oauth/shopify/callback`;
+    const uid = req.user?.id as string | undefined;
+    try {
+      const authUrl = getShopifyAuthUrl(
+        shop,
+        redirectUri,
+        generateOAuthState(uid ? { userId: uid } : undefined),
+      );
+      res.json({ url: authUrl });
+    } catch (e: any) {
+      res.status(400).json({ error: e?.message || "Invalid Shopify store domain." });
+    }
+  },
+);
+
+router.get(
+  "/api/oauth/shopify/callback",
+  oauthRateLimiter,
+  async (req: express.Request, res: express.Response) => {
+    const { code, state, shop, error } = req.query;
+    if (error) {
+      log.warn("Shopify OAuth error from provider", { error });
+      return res.status(400).send(`Shopify OAuth error: ${error}`);
+    }
+
+    // Verify the HMAC signature BEFORE trusting any other query value —
+    // this proves the callback genuinely came from Shopify.
+    const clientSecret = process.env.SHOPIFY_CLIENT_SECRET;
+    if (!clientSecret || !verifyShopifyHmac(req.query as Record<string, unknown>, clientSecret)) {
+      log.warn("Shopify OAuth callback HMAC verification failed");
+      return res
+        .status(400)
+        .send("Shopify request verification failed. Please restart the connect flow.");
+    }
+
+    const vs = verifyOAuthState(state as string | undefined);
+    if (!vs.ok) {
+      return res
+        .status(400)
+        .send("Invalid or expired OAuth state. Please restart the connect flow.");
+    }
+    if (!code || typeof code !== "string") {
+      return res.status(400).send("No code provided by Shopify.");
+    }
+    const shopDomain = normalizeShopDomain(shop);
+    if (!shopDomain) {
+      return res.status(400).send("Shopify returned an invalid store domain.");
+    }
+
+    try {
+      const tokens = await exchangeShopifyCode(shopDomain, code);
+
+      const userId: string | null = vs.userId ?? (await resolveUserIdFromOAuthSession(req));
+      if (!userId) {
+        return res.status(401).send("Could not identify user. Please reconnect from the app.");
+      }
+
+      // Shopify tokens never expire — no expiresAt, no refresh token.
+      // Store the shop domain on instanceUrl (full origin, so the
+      // status card's "open" link works) AND in metadata.shop so
+      // shopify-service can resolve the per-store API base.
+      const accessTokenShopify = encryptSecret(tokens.access_token);
+      const instanceUrlShopify = `https://${tokens.shop}`;
+      const shopifyMetadata = { shop: tokens.shop, scope: tokens.scope };
+
+      await drizzle
+        .insert(schema.crmConnections)
+        .values({
+          userId,
+          provider: "shopify",
+          instanceUrl: instanceUrlShopify,
+          accessToken: accessTokenShopify,
+          connectedEmail: tokens.shop,
+          metadata: shopifyMetadata,
+        })
+        .onConflictDoUpdate({
+          target: [schema.crmConnections.userId, schema.crmConnections.provider],
+          set: {
+            instanceUrl: instanceUrlShopify,
+            accessToken: accessTokenShopify,
+            connectedEmail: tokens.shop,
+            metadata: shopifyMetadata,
+            updatedAt: new Date(),
+            active: true,
+          },
+        });
+
+      const targetOrigin =
+        (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+        `${req.protocol}://${req.get("host")}`;
+      const cspNonce = generateCspNonce();
+      res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, cspNonce));
+      res.send(`
+      <html><body><script nonce="${cspNonce}">
+        if (window.opener) {
+          window.opener.postMessage({ type: 'CRM_OAUTH_SUCCESS', provider: 'shopify' }, ${JSON.stringify(targetOrigin)});
+          window.close();
+        } else { window.location.href = '/'; }
+      </script><p>Shopify connected successfully. You can close this window.</p></body></html>
+    `);
+    } catch (e: any) {
+      log.error("Shopify OAuth callback failed", { error: e?.message || String(e) });
+      res.status(500).send("Shopify authentication failed. Please try again.");
+    }
+  },
+);
+
+router.post(
+  "/api/oauth/shopify/disconnect",
+  authenticateUser,
+  async (req: express.Request, res: express.Response) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    try {
+      await disconnectShopify(userId);
+      res.json({ ok: true });
+    } catch (e: any) {
+      log.error("Shopify disconnect failed", { error: e?.message });
+      res.status(500).json({ error: "Failed to disconnect Shopify" });
+    }
+  },
+);
+
+// ────────────────────────────────────────────────────────────────────
+//  Square OAuth
+//
+//  Square uses standard authorization_code flow. Tokens expire in 30
+//  days; the service layer auto-refreshes when < 7 days remain.
+//  The registered redirect URL is /api/ecommerce/oauth/callback to
+//  match what Mike registered in the Square Developer Dashboard.
+// ────────────────────────────────────────────────────────────────────
+
+router.get(
+  "/api/oauth/square/url",
+  oauthRateLimiter,
+  authenticateUser,
+  (req: express.Request, res: express.Response) => {
+    if (!squareOAuthConfigured()) {
+      return res.status(500).json({
+        error:
+          "Missing SQUARE_APPLICATION_ID or SQUARE_APPLICATION_SECRET in environment variables.",
+      });
+    }
+    const baseUrl =
+      (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+      `${req.protocol}://${req.get("host")}`;
+    const redirectUri = `${baseUrl}/api/ecommerce/oauth/callback`;
+    const uid = req.user?.id as string | undefined;
+    const authUrl = getSquareAuthUrl(
+      redirectUri,
+      generateOAuthState(uid ? { userId: uid } : undefined),
+    );
+    res.json({ url: authUrl });
+  },
+);
+
+router.get("/api/ecommerce/oauth/callback", async (req: express.Request, res: express.Response) => {
+  const { code, state, error: oauthError } = req.query as Record<string, string | undefined>;
+
+  if (oauthError) {
+    return res.status(400).send(`Square authorization denied: ${oauthError}`);
+  }
+  if (!state) {
+    return res.status(400).send("Missing OAuth state. Please restart the connect flow.");
+  }
+  const vs = verifyOAuthState(state as string | undefined);
+  if (!vs.ok) {
+    return res.status(400).send("Invalid or expired OAuth state. Please restart the connect flow.");
+  }
+  if (!code || typeof code !== "string") {
+    return res.status(400).send("No authorization code provided by Square.");
+  }
+
+  try {
+    const baseUrl =
+      (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+      `${req.protocol}://${req.get("host")}`;
+    const redirectUri = `${baseUrl}/api/ecommerce/oauth/callback`;
+
+    const tokens = await exchangeSquareCode(code, redirectUri);
+
+    const userId: string | null = vs.userId ?? (await resolveUserIdFromOAuthSession(req));
+    if (!userId) {
+      return res.status(401).send("Could not identify user. Please reconnect from the app.");
+    }
+
+    await drizzle
+      .insert(schema.crmConnections)
+      .values({
+        userId,
+        provider: "square",
+        accessToken: encryptSecret(tokens.access_token),
+        refreshToken: encryptSecret(tokens.refresh_token),
+        expiresAt: new Date(tokens.expires_at),
+        connectedEmail: tokens.merchant_id,
+        metadata: { merchant_id: tokens.merchant_id },
+      })
+      .onConflictDoUpdate({
+        target: [schema.crmConnections.userId, schema.crmConnections.provider],
+        set: {
+          accessToken: encryptSecret(tokens.access_token),
+          refreshToken: encryptSecret(tokens.refresh_token),
+          expiresAt: new Date(tokens.expires_at),
+          connectedEmail: tokens.merchant_id,
+          metadata: { merchant_id: tokens.merchant_id },
+          updatedAt: new Date(),
+          active: true,
+        },
+      });
+
+    const targetOrigin =
+      (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+      `${req.protocol}://${req.get("host")}`;
+    const cspNonce = generateCspNonce();
+    res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, cspNonce));
+    res.send(`
+      <html><body><script nonce="${cspNonce}">
+        if (window.opener) {
+          window.opener.postMessage({ type: 'CRM_OAUTH_SUCCESS', provider: 'square' }, ${JSON.stringify(targetOrigin)});
+          window.close();
+        } else { window.location.href = '/'; }
+      </script><p>Square connected successfully. You can close this window.</p></body></html>
+    `);
+  } catch (e: any) {
+    log.error("Square OAuth callback failed", { error: e?.message || String(e) });
+    res.status(500).send("Square authentication failed. Please try again.");
+  }
+});
+
+router.post(
+  "/api/oauth/square/disconnect",
+  authenticateUser,
+  async (req: express.Request, res: express.Response) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    try {
+      await disconnectSquare(userId);
+      res.json({ ok: true });
+    } catch (e: any) {
+      log.error("Square disconnect failed", { error: e?.message });
+      res.status(500).json({ error: "Failed to disconnect Square" });
+    }
+  },
+);
+
+// ────────────────────────────────────────────────────────────────────
+//  Microsoft Graph — Teams + Excel
+//
+//  Two independent, least-privilege connections, kept separate from the
+//  Outlook mail/calendar flow above. Each stores its own crmConnections
+//  row (provider 'microsoft_teams' / 'microsoft_excel') and requests
+//  only the Graph scopes that integration needs.
+// ────────────────────────────────────────────────────────────────────
+
+function msGraphRedirectUri(req: express.Request, provider: MsGraphProvider): string {
+  const baseUrl =
+    (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+    `${req.protocol}://${req.get("host")}`;
+  return `${baseUrl}/api/oauth/${provider}/callback`;
+}
+
+function buildMsGraphUrlRoute(provider: MsGraphProvider) {
+  return (req: express.Request, res: express.Response) => {
+    if (!microsoftGraphConfigured()) {
+      return res
+        .status(500)
+        .json({ error: "Missing MICROSOFT_CLIENT_ID or MICROSOFT_CLIENT_SECRET" });
+    }
+    const uid = req.user?.id as string | undefined;
+    const redirectUri = msGraphRedirectUri(req, provider);
+    const state = generateOAuthState(uid ? { userId: uid } : undefined);
+    const url =
+      provider === "microsoft_teams"
+        ? getTeamsAuthUrl(redirectUri, state)
+        : getExcelAuthUrl(redirectUri, state);
+    res.json({ url });
+  };
+}
+
+async function handleMsGraphCallback(
+  provider: MsGraphProvider,
+  req: express.Request,
+  res: express.Response,
+) {
+  const { code, state, error, error_description } = req.query;
+  if (error) {
+    log.warn("Microsoft Graph OAuth error from provider", { provider, error, error_description });
+    return res.status(400).send(`Microsoft OAuth error: ${error_description || error}`);
+  }
+  const vs = verifyOAuthState(state as string | undefined);
+  if (!vs.ok) {
+    return res.status(400).send("Invalid or expired OAuth state. Please restart the connect flow.");
+  }
+  if (!code || typeof code !== "string") {
+    return res.status(400).send("No authorization code provided by Microsoft.");
+  }
+
+  try {
+    const redirectUri = msGraphRedirectUri(req, provider);
+    const tokens = await exchangeMicrosoftGraphCode(code, redirectUri);
+
+    const userId: string | null = vs.userId ?? (await resolveUserIdFromOAuthSession(req));
+    if (!userId) {
+      return res.status(401).send("Could not identify user. Please reconnect from the app.");
+    }
+
+    const email = await getMicrosoftAccountEmail(tokens.access_token);
+    const accessTokenEnc = encryptSecret(tokens.access_token);
+    const refreshTokenEnc = tokens.refresh_token ? encryptSecret(tokens.refresh_token) : null;
+    const expiresAt = new Date(Date.now() + (tokens.expires_in || 3600) * 1000);
+
+    await drizzle
+      .insert(schema.crmConnections)
+      .values({
+        userId,
+        provider,
+        accessToken: accessTokenEnc,
+        refreshToken: refreshTokenEnc,
+        expiresAt,
+        connectedEmail: email,
+        metadata: { scope: tokens.scope || "" },
+      })
+      .onConflictDoUpdate({
+        target: [schema.crmConnections.userId, schema.crmConnections.provider],
+        set: {
+          accessToken: accessTokenEnc,
+          refreshToken: refreshTokenEnc,
+          expiresAt,
+          connectedEmail: email,
+          metadata: { scope: tokens.scope || "" },
+          updatedAt: new Date(),
+          active: true,
+        },
+      });
+
+    const targetOrigin =
+      (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+      `${req.protocol}://${req.get("host")}`;
+    const cspNonce = generateCspNonce();
+    res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, cspNonce));
+    const label = provider === "microsoft_teams" ? "Microsoft Teams" : "Microsoft Excel";
+    res.send(`
+      <html><body><script nonce="${cspNonce}">
+        if (window.opener) {
+          window.opener.postMessage({ type: 'CRM_OAUTH_SUCCESS', provider: ${JSON.stringify(provider)} }, ${JSON.stringify(targetOrigin)});
+          window.close();
+        } else { window.location.href = '/'; }
+      </script><p>${label} connected successfully. You can close this window.</p></body></html>
+    `);
+  } catch (e: any) {
+    log.error("Microsoft Graph OAuth callback failed", {
+      provider,
+      error: e?.message || String(e),
+    });
+    res.status(500).send("Microsoft authentication failed. Please try again.");
+  }
+}
+
+router.get(
+  "/api/oauth/microsoft_teams/url",
+  oauthRateLimiter,
+  authenticateUser,
+  buildMsGraphUrlRoute("microsoft_teams"),
+);
+
+router.get("/api/oauth/microsoft_teams/callback", (req, res) =>
+  handleMsGraphCallback("microsoft_teams", req, res),
+);
+
+router.post(
+  "/api/oauth/microsoft_teams/disconnect",
+  authenticateUser,
+  async (req: express.Request, res: express.Response) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    try {
+      await disconnectMicrosoftGraph(userId, "microsoft_teams");
+      res.json({ ok: true });
+    } catch (e: any) {
+      log.error("Microsoft Teams disconnect failed", { error: e?.message });
+      res.status(500).json({ error: "Failed to disconnect Microsoft Teams" });
+    }
+  },
+);
+
+router.get(
+  "/api/oauth/microsoft_excel/url",
+  oauthRateLimiter,
+  authenticateUser,
+  buildMsGraphUrlRoute("microsoft_excel"),
+);
+
+router.get("/api/oauth/microsoft_excel/callback", (req, res) =>
+  handleMsGraphCallback("microsoft_excel", req, res),
+);
+
+router.post(
+  "/api/oauth/microsoft_excel/disconnect",
+  authenticateUser,
+  async (req: express.Request, res: express.Response) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    try {
+      await disconnectMicrosoftGraph(userId, "microsoft_excel");
+      res.json({ ok: true });
+    } catch (e: any) {
+      log.error("Microsoft Excel disconnect failed", { error: e?.message });
+      res.status(500).json({ error: "Failed to disconnect Microsoft Excel" });
+    }
+  },
+);
+
+// ────────────────────────────────────────────────────────────────────
 //  CRM Connection Status (shared endpoint)
 // ────────────────────────────────────────────────────────────────────
 
@@ -673,6 +1609,12 @@ router.get(
       const hsConn = findBy("hubspot");
       const slackConn = findBy("slack");
       const zoomConn = findBy("zoom");
+      const apolloConn = findBy("apollo");
+      const metaConn = findBy("meta");
+      const shopifyConn = findBy("shopify");
+      const squareConn = findBy("square");
+      const teamsConn = findBy("microsoft_teams");
+      const excelConn = findBy("microsoft_excel");
 
       res.json({
         salesforce: sfConn
@@ -709,6 +1651,49 @@ router.get(
               connected_at: zoomConn.createdAt,
             }
           : { connected: false, configured: zoomOAuthConfigured() },
+        apollo: apolloConn
+          ? {
+              connected: true,
+              email: apolloConn.connectedEmail,
+              connected_at: apolloConn.createdAt,
+            }
+          : { connected: false, configured: apolloOAuthConfigured() },
+        meta: metaConn
+          ? {
+              connected: true,
+              email: metaConn.connectedEmail,
+              connected_at: metaConn.createdAt,
+            }
+          : { connected: false, configured: metaOAuthConfigured() },
+        shopify: shopifyConn
+          ? {
+              connected: true,
+              email: shopifyConn.connectedEmail,
+              instance_url: shopifyConn.instanceUrl,
+              connected_at: shopifyConn.createdAt,
+            }
+          : { connected: false, configured: shopifyOAuthConfigured() },
+        square: squareConn
+          ? {
+              connected: true,
+              email: squareConn.connectedEmail,
+              connected_at: squareConn.createdAt,
+            }
+          : { connected: false, configured: squareOAuthConfigured() },
+        microsoft_teams: teamsConn
+          ? {
+              connected: true,
+              email: teamsConn.connectedEmail,
+              connected_at: teamsConn.createdAt,
+            }
+          : { connected: false, configured: microsoftGraphConfigured() },
+        microsoft_excel: excelConn
+          ? {
+              connected: true,
+              email: excelConn.connectedEmail,
+              connected_at: excelConn.createdAt,
+            }
+          : { connected: false, configured: microsoftGraphConfigured() },
       });
     } catch (e: any) {
       log.error("CRM status check failed", { error: e?.message });
@@ -727,11 +1712,9 @@ router.get(
   authenticateUser,
   (req: express.Request, res: express.Response) => {
     if (!slackOAuthConfigured()) {
-      return res
-        .status(500)
-        .json({
-          error: "Missing SLACK_CLIENT_ID or SLACK_CLIENT_SECRET in environment variables.",
-        });
+      return res.status(500).json({
+        error: "Missing SLACK_CLIENT_ID or SLACK_CLIENT_SECRET in environment variables.",
+      });
     }
     const baseUrl =
       (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||

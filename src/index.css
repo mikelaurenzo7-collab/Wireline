@@ -23,8 +23,15 @@
   --color-brand-2: #4F1E7B;        /* deprecated â€” alias of --color-brand */
   --color-brand-3: #4F1E7B;        /* deprecated â€” alias of --color-brand */
   --color-ink: #1C1917;            /* Warm near-black text */
-  --color-paper: #FAF9F5;          /* Claude signature warm paper base */
+  --color-paper: #EFE9DC;          /* warm tan / mocha off-white — consistent base */
   --color-muted: #7C7469;          /* Warm gray muted text */
+  /* Pure white for text/icons rendered ON solid brand-color surfaces
+   * (purple buttons, gradient pills, etc.). We can't use text-white
+   * for these because --color-white is intentionally remapped to a
+   * dark warm value so border-white/* and bg-white/* utilities
+   * produce subtle dark tints on the cream background. Anything that
+   * sits ON the brand-color surface uses --color-on-brand instead. */
+  --color-on-brand: #FFFFFF;
 
   /* Tailwind base palette overrides
      --color-white drives border-white/*, bg-white/* etc.
@@ -60,11 +67,39 @@
 @layer base {
   html {
     color-scheme: light;
+    /* iOS auto-resizes text in landscape rotation by default — pin to 100%
+     * so our type scale stays consistent across orientations. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   body {
     @apply font-sans bg-paper text-ink selection:bg-brand/20 selection:text-ink antialiased overflow-x-hidden;
     background: var(--color-paper);
+    /* iOS Safari paints a translucent blue rectangle over any tap. We
+     * have our own hover/active states (motion + scale) — kill the
+     * default flash so taps feel like a native app. */
+    -webkit-tap-highlight-color: transparent;
+    /* Overscroll bounce on the body root scrolls a blank gap into view
+     * on iOS. Contain it. */
+    overscroll-behavior-y: none;
+  }
+
+  /* iOS Safari zooms the viewport when a form field has font-size < 16px.
+   * Forcing 16px on every input/textarea/select prevents that zoom
+   * disruption — the rendered visual size stays whatever the component
+   * sets via Tailwind, but the underlying font-size satisfies iOS. */
+  input,
+  textarea,
+  select {
+    font-size: max(16px, 1em);
+  }
+  @media (min-width: 768px) {
+    input,
+    textarea,
+    select {
+      font-size: inherit;
+    }
   }
 
   body::before {
@@ -79,19 +114,35 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display tracking-tight font-normal;
-    letter-spacing: -0.01em;
+    @apply font-display font-normal;
+    letter-spacing: 0;
   }
 
-  /* Hide scrollbar for Chrome, Safari and Opera */
+  /* `.scrollbar-hide` used to fully hide scrollbars across the app.
+     That looked clean but stripped the affordance — users on shorter
+     viewports had no cue that content extended past the fold.
+     Mike on a ThinkPad couldn't tell Train page had more below.
+     New behavior: render a SLIM (5px), brand-tinted scrollbar that
+     only takes visual weight when overflow exists. Aesthetic stays
+     minimal; cue returns. The class name stays so we don't have to
+     touch 20+ component files. */
   .scrollbar-hide::-webkit-scrollbar {
-    display: none;
+    width: 5px;
+    height: 5px;
   }
-
-  /* Hide scrollbar for IE, Edge and Firefox */
+  .scrollbar-hide::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-hide::-webkit-scrollbar-thumb {
+    background: rgba(79, 30, 123, 0.18);
+    border-radius: 999px;
+  }
+  .scrollbar-hide::-webkit-scrollbar-thumb:hover {
+    background: rgba(79, 30, 123, 0.42);
+  }
   .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(79, 30, 123, 0.18) transparent;
   }
 
   ::-webkit-scrollbar {
@@ -130,7 +181,7 @@
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  AURORA UTILITIES  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 @utility brutal-border {
-  @apply border border-black/8 rounded-2xl;
+  @apply border border-black/8 rounded-xl;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.70) inset,
     0 0 0 1px rgba(79, 30, 123, 0.05),
@@ -139,7 +190,7 @@
 }
 
 @utility brutal-border-lg {
-  @apply border border-black/9 rounded-3xl;
+  @apply border border-black/9 rounded-2xl;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.70) inset,
     0 0 0 1px rgba(79, 30, 123, 0.06),
@@ -148,7 +199,7 @@
 }
 
 @utility brutal-btn {
-  @apply relative inline-flex items-center justify-center gap-3 px-9 py-4 font-medium tracking-[0.18em] uppercase text-xs rounded-full transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:grayscale disabled:pointer-events-none overflow-hidden;
+  @apply relative inline-flex items-center justify-center gap-2 px-5 py-2.5 font-medium tracking-[0.10em] uppercase text-[11px] rounded-xl transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:grayscale disabled:pointer-events-none overflow-hidden;
   color: #FAF8F4;
   background: #4F1E7B;
   box-shadow:
@@ -171,10 +222,10 @@
 }
 
 @utility brutal-card {
-  @apply relative overflow-hidden p-12 rounded-3xl border border-black/8;
+  @apply relative overflow-hidden p-6 md:p-8 rounded-2xl border border-black/8;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.80), rgba(255, 255, 255, 0.55)),
-    rgba(245, 240, 232, 0.75);
+    linear-gradient(180deg, rgba(247, 242, 234, 0.80), rgba(245, 239, 229, 0.55)),
+    rgba(239, 233, 220, 0.75);
   backdrop-filter: blur(32px) saturate(140%);
   -webkit-backdrop-filter: blur(32px) saturate(140%);
   box-shadow:
@@ -235,7 +286,7 @@
 
 .brand-wordmark {
   @apply font-display uppercase font-normal;
-  letter-spacing: 0.14em;
+  letter-spacing: 0;
   text-rendering: geometricPrecision;
   color: #4F1E7B;
   filter: drop-shadow(0 0 10px rgba(79, 30, 123, 0.18));
@@ -265,17 +316,38 @@
   pointer-events: none;
   z-index: 1;
 }
+/* Mobile: the aurora ring becomes near-invisible. The point of the
+ * ring is a subtle premium accent on desktop hover states — on a
+ * 390px phone screen it just adds a vibrating purple seam around
+ * every card. Drop opacity drastically below the md breakpoint. */
+@media (max-width: 767px) {
+  .aurora-ring::before {
+    background: rgba(79, 30, 123, 0.18);
+  }
+}
 
 /* Glass surface helper â€” cream translucent.
  * Performance note: hundreds of elements get .glass applied, each with
  * a backdrop-filter blur. blur(28px) was the GPU bottleneck on lower-end
  * laptops â€” paint cost was driving 60â†’30fps on /home and /agents. Cut to
  * 16px (still visually rich, just less expensive) and respect reduced
- * motion by dropping the blur entirely when requested. */
+ * motion by dropping the blur entirely when requested.
+ *
+ * Color note (Mike feedback): the top gradient used to be near-pure
+ * white rgba(255,255,255,X). On signed-in pages dominated by glass
+ * cards, that pushed the WHOLE viewport toward white and broke the
+ * warm-terracotta brand feel that AuthPortal nails. Switched the
+ * gradient stops to derive from --color-paper (#EFE9DC) so every
+ * glass surface inherits the same warm cream — auth'd console and
+ * AuthPortal now read as the same brand canvas. */
+/* Glass panels derive from the warm-tan paper base (#EFE9DC → rgb
+ * 239,233,220) but sit a touch lighter so cards read as raised. Keep
+ * these in lockstep with --color-paper so the whole app stays one
+ * consistent warm tone — no white-vs-purple drift. */
 .glass {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.52)),
-    rgba(245, 240, 232, 0.6);
+    linear-gradient(180deg, rgba(246, 241, 232, 0.80), rgba(244, 238, 228, 0.62)),
+    rgba(239, 233, 220, 0.6);
   backdrop-filter: blur(16px) saturate(140%);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
   border: 1px solid rgba(0, 0, 0, 0.07);
@@ -283,8 +355,8 @@
 
 .glass-strong {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.74)),
-    rgba(245, 240, 232, 0.9);
+    linear-gradient(180deg, rgba(247, 242, 234, 0.94), rgba(245, 240, 230, 0.82)),
+    rgba(239, 233, 220, 0.9);
   backdrop-filter: blur(24px) saturate(160%);
   -webkit-backdrop-filter: blur(24px) saturate(160%);
   border: 1px solid rgba(0, 0, 0, 0.08);
@@ -428,9 +500,10 @@ select:focus {
 
 /* Elevated glass â€” one step above glass-strong, for modals / popovers */
 .glass-elevated {
+  /* Same warm-tan paper base as .glass + .glass-strong. */
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.84)),
-    rgba(245, 240, 232, 0.98);
+    linear-gradient(180deg, rgba(248, 243, 235, 0.97), rgba(246, 241, 231, 0.86)),
+    rgba(239, 233, 220, 0.98);
   backdrop-filter: blur(56px) saturate(180%);
   -webkit-backdrop-filter: blur(56px) saturate(180%);
   border: 1px solid rgba(0, 0, 0, 0.10);

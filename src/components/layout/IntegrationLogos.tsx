@@ -23,8 +23,11 @@ type LogoDef = {
   scale?: number;
 };
 
-// The AI/voice partners that build the agent's voice + brain. Shown as
-// the "Powered by" row — top of the strip — for trust signaling.
+// Infrastructure + AI/voice partners that the platform runs on.
+// Shown as the "Powered by" row — top of the strip — for trust
+// signaling. Supabase + Vercel moved here from "Integrates with"
+// because they're the runtime / data layer, not customer-facing
+// connectors.
 const POWERED_BY: LogoDef[] = [
   {
     name: "Anthropic",
@@ -66,6 +69,49 @@ const POWERED_BY: LogoDef[] = [
       </svg>
     ),
     scale: 0.95,
+  },
+  {
+    name: "Google",
+    svg: (
+      <svg viewBox="0 0 256 262" aria-label="Google">
+        <path
+          fill="currentColor"
+          opacity="0.75"
+          d="M255.9 133.5c0-10.6-1-18.1-3-25.9H130.5v46.9h71.8c-1.4 11.7-9.2 29.4-26.5 41.2l-.2 1.6 38.4 29.8 2.6.3c24.5-22.6 38.6-56 38.6-93.9"
+        />
+        <path
+          fill="currentColor"
+          d="M130.5 261.1c35 0 64.4-11.5 85.8-31.4l-40.9-31.7c-10.9 7.6-25.6 13-44.9 13a78 78 0 0 1-73.7-53.9l-1.5.1-39.9 30.9-.5 1.4c21.3 42.4 65.1 71.6 115.6 71.6"
+        />
+        <path
+          fill="currentColor"
+          opacity="0.5"
+          d="M56.8 157a78 78 0 0 1-4.2-25c0-8.7 1.5-17.1 4-25l-.1-1.7-40.4-31.4-1.3.6a131 131 0 0 0-14 57.5 131 131 0 0 0 14 57.5l41.9-32.5"
+        />
+        <path
+          fill="currentColor"
+          d="M130.5 53.4c25 0 41.8 10.8 51.4 19.8l37.5-36.6C196.4 14.1 165.5 0 130.5 0 80 0 36.2 29.2 14.9 71.6l41.8 32.4a78.4 78.4 0 0 1 73.8-50.6"
+        />
+      </svg>
+    ),
+    scale: 0.95,
+  },
+  {
+    name: "Supabase",
+    svg: (
+      <svg viewBox="0 0 109 113" fill="currentColor" aria-label="Supabase">
+        <path d="M63.7 110.3c-2.8 3.6-8.7 1.6-8.6-3l1-69h47c8.6 0 13.3 9.8 8 16.5l-47.4 55.5Z" />
+        <path d="M45.3 2.6c2.9-3.6 8.7-1.6 8.7 3l-.4 69H7.1c-8.5 0-13.3-9.8-8-16.5L45.3 2.6Z" />
+      </svg>
+    ),
+  },
+  {
+    name: "Vercel",
+    svg: (
+      <svg viewBox="0 0 226 200" fill="currentColor" aria-label="Vercel">
+        <path d="M113 0 226 200H0Z" />
+      </svg>
+    ),
   },
 ];
 
@@ -134,27 +180,71 @@ const INTEGRATIONS: LogoDef[] = [
     ),
   },
   {
+    name: "Yahoo",
+    svg: (
+      <svg viewBox="0 0 100 100" fill="currentColor" aria-label="Yahoo">
+        <path d="M11 28h13l8 21 8-21h13L37 65v17H24V65L11 28Zm56 0h13l-9 28-4-12 5-16h-5Zm-7 33a7 7 0 1 1 0 14 7 7 0 0 1 0-14Z" />
+      </svg>
+    ),
+    scale: 0.95,
+  },
+  {
+    name: "HubSpot",
+    svg: (
+      <svg viewBox="0 0 32 32" fill="currentColor" aria-label="HubSpot">
+        <path d="M23 10.6V6.4a2.4 2.4 0 1 0-3.2 0v4.2a8 8 0 0 0-3.6 1.3L5.8 4.1l.4-1.3a3 3 0 1 0-2.2 1.4l9.6 7.5a8 8 0 1 0 12.4 4 8 8 0 0 0-3-5Zm-1.6 12.4a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9Z" />
+      </svg>
+    ),
+  },
+  {
+    name: "Salesforce",
+    svg: (
+      <svg viewBox="0 0 100 70" fill="currentColor" aria-label="Salesforce">
+        <path d="M42 14a16 16 0 0 1 28 6 13 13 0 0 1 19 14 14 14 0 0 1-9 13 14 14 0 0 1-26 4 16 16 0 0 1-25-3 12 12 0 0 1-2-23 16 16 0 0 1 15-11Z" />
+      </svg>
+    ),
+    scale: 1.05,
+  },
+  {
+    name: "Zoom",
+    svg: (
+      <svg viewBox="0 0 48 24" fill="currentColor" aria-label="Zoom">
+        <text
+          x="0"
+          y="20"
+          fontFamily="ui-sans-serif, system-ui, -apple-system"
+          fontSize="20"
+          fontWeight="700"
+          letterSpacing="-0.5"
+        >
+          zoom
+        </text>
+      </svg>
+    ),
+  },
+  {
+    name: "Apollo",
+    svg: (
+      <svg viewBox="0 0 60 24" fill="currentColor" aria-label="Apollo">
+        <text
+          x="0"
+          y="18"
+          fontFamily="ui-sans-serif, system-ui, -apple-system"
+          fontSize="16"
+          fontWeight="700"
+          letterSpacing="-0.5"
+        >
+          apollo
+        </text>
+      </svg>
+    ),
+    scale: 0.95,
+  },
+  {
     name: "Meta",
     svg: (
       <svg viewBox="0 0 36 24" fill="currentColor" aria-label="Meta">
         <path d="M20.3 12c0-3.7 1.7-6.2 3.8-6.2 1.9 0 3.4 1.9 3.7 5l-1.8.4c-.2-1.9-.9-3-1.9-3-1 0-1.7 1.3-1.7 3.8 0 2.4.7 3.8 1.7 3.8.9 0 1.5-.8 1.9-2.6l1.8.4c-.5 3.4-1.8 4.6-3.7 4.6-2.1 0-3.8-2.5-3.8-6.2Zm-9.2 0c0 3.7 1.7 6.2 3.8 6.2 1.9 0 3.4-1.9 3.7-5l-1.8-.4c-.2 1.9-.9 3-1.9 3-1 0-1.7-1.3-1.7-3.8 0-2.4.7-3.8 1.7-3.8.9 0 1.5.8 1.9 2.6l1.8-.4c-.5-3.4-1.8-4.6-3.7-4.6-2.1 0-3.8 2.5-3.8 6.2Zm-7.5 6h2.2L7.3 8.2 9.9 18h2.2L8.7 6h-2.6Zm26.2-12c-3.4 0-4.8 4.3-4.8 6 0 2 1.4 6 4.8 6 3.5 0 4.8-4 4.8-6 0-1.7-1.3-6-4.8-6Z" />
-      </svg>
-    ),
-  },
-  {
-    name: "Supabase",
-    svg: (
-      <svg viewBox="0 0 109 113" fill="currentColor" aria-label="Supabase">
-        <path d="M63.7 110.3c-2.8 3.6-8.7 1.6-8.6-3l1-69h47c8.6 0 13.3 9.8 8 16.5l-47.4 55.5Z" />
-        <path d="M45.3 2.6c2.9-3.6 8.7-1.6 8.7 3l-.4 69H7.1c-8.5 0-13.3-9.8-8-16.5L45.3 2.6Z" />
-      </svg>
-    ),
-  },
-  {
-    name: "Vercel",
-    svg: (
-      <svg viewBox="0 0 226 200" fill="currentColor" aria-label="Vercel">
-        <path d="M113 0 226 200H0Z" />
       </svg>
     ),
   },
@@ -185,26 +275,22 @@ function LogoRow({ logos, height = 18 }: { logos: LogoDef[]; height?: number }) 
 }
 
 export default function IntegrationLogos() {
+  // The "Powered by" row was removed — it exposed the AI/voice vendors
+  // (Anthropic / Vapi / ElevenLabs), which undercuts the Wireline brand
+  // and hands competitors the stack. Only the customer-facing
+  // "Integrates with" row remains.
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.45, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-      className="mt-10 pt-8 border-t border-white/8 space-y-5"
-      aria-label="Wireline is powered by and integrates with"
+      className="mt-10 pt-8 border-t border-white/8"
+      aria-label="Wireline integrations"
     >
-      <div>
-        <p className="text-[8px] uppercase tracking-[0.5em] text-brand/70 mb-3 text-center">
-          Powered by
-        </p>
-        <LogoRow logos={POWERED_BY} height={22} />
-      </div>
-      <div className="pt-1">
-        <p className="text-[8px] uppercase tracking-[0.5em] text-muted/55 mb-3 text-center">
-          Integrates with
-        </p>
-        <LogoRow logos={INTEGRATIONS} height={16} />
-      </div>
+      <p className="text-[8px] uppercase tracking-[0.5em] text-muted/55 mb-3 text-center">
+        Integrates with
+      </p>
+      <LogoRow logos={INTEGRATIONS} height={16} />
     </motion.div>
   );
 }

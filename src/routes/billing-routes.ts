@@ -31,7 +31,17 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
     // express.raw populated req.body as a Buffer
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err: any) {
-    log.warn("Stripe webhook signature verification failed", { error: getErrorMessage(err) });
+    // Include ip + signature prefix so abuse patterns (probing, replay)
+    // are detectable from log aggregation. Full signature isn't logged
+    // since it's a HMAC of the body — bounded leak risk if logs are
+    // shared with third-party SIEMs, and the prefix is enough to
+    // correlate repeated rejections from the same attacker.
+    log.warn("Stripe webhook signature verification failed", {
+      error: getErrorMessage(err),
+      ip: req.ip,
+      sig_prefix: typeof sig === "string" ? sig.slice(0, 12) : null,
+      ts: Date.now(),
+    });
     return res.status(400).json({ error: "Webhook signature verification failed." });
   }
 
@@ -335,11 +345,80 @@ router.get(
       }
       const hasCustomer = customerState === "present";
 
+      // Trial state lives on wireline_settings (separate from Stripe
+      // subscription state above). New tenants land here directly via
+      // authService.signUp → startTrialForUser. Stripe-converted
+      // tenants stay in 'active' here forever; the subscription block
+      // above is the source of truth for paid state. The two blocks
+      // are intentionally independent so the modal and banner can
+      // surface trial countdown / soft-cap warnings BEFORE any
+      // subscription exists.
+      const [settingsRow] = await drizzle
+        .select({
+          status: schema.settings.subscriptionStatus,
+          trialEndsAt: schema.settings.trialEndsAt,
+          trialOutboundCount: schema.settings.trialOutboundCount,
+        })
+        .from(schema.settings)
+        .where(eq(schema.settings.userId, req.user.id))
+        .limit(1);
+
+      let trial: {
+        status: string;
+        days_left: number | null;
+        ends_at: string | null;
+        outbound_used: number;
+        outbound_cap: number;
+        agents_cap: number;
+        agents_used: number;
+      } | null = null;
+      if (settingsRow?.status === "trialing" || settingsRow?.status === "trial_expired") {
+        const { TRIAL_MAX_AGENTS, TRIAL_MAX_OUTBOUND } = await import("../lib/trial-gate");
+        const endsAt = settingsRow.trialEndsAt as Date | string | null | undefined;
+        const endsDate = endsAt instanceof Date ? endsAt : endsAt ? new Date(endsAt as any) : null;
+        const daysLeft = endsDate
+          ? Math.max(0, Math.ceil((endsDate.getTime() - Date.now()) / 86_400_000))
+          : null;
+        // Lazy-expire mirroring the trial-gate middleware: if endsAt
+        // is in the past but the sweep hasn't flipped status yet, show
+        // expired here so the banner / modal copy agrees with reality.
+        const effectiveStatus =
+          settingsRow.status === "trialing" && endsDate && endsDate.getTime() < Date.now()
+            ? "trial_expired"
+            : settingsRow.status;
+        trial = {
+          status: effectiveStatus,
+          days_left: daysLeft,
+          ends_at: endsDate ? endsDate.toISOString() : null,
+          outbound_used: settingsRow.trialOutboundCount ?? 0,
+          outbound_cap: TRIAL_MAX_OUTBOUND,
+          agents_cap: TRIAL_MAX_AGENTS,
+          agents_used: agentCount,
+        };
+      }
+
+      // Email-verification state — surfaces to EmailVerifyBanner so
+      // it can show/hide without a separate /api/me call.
+      let emailVerified = true;
+      try {
+        const [u] = await drizzle
+          .select({ verifiedAt: schema.users.emailVerifiedAt })
+          .from(schema.users)
+          .where(eq(schema.users.id, req.user.id))
+          .limit(1);
+        emailVerified = !!u?.verifiedAt;
+      } catch {
+        // Fail-open in the banner: if the DB lookup hiccups, assume
+        // verified so we don't false-flag a real user.
+        emailVerified = true;
+      }
+
       res.json({
         stripe_configured: stripeAvailable(),
         agent_count: agentCount ?? 0,
         phone_lines_used: phoneLineCount ?? 0,
         phone_lines_included: entitlementSlots,
+        email_verified: emailVerified,
         subscription: sub
           ? {
               plan: sub.plan,
@@ -354,6 +433,7 @@ router.get(
               updated_at: sub.updatedAt,
             }
           : null,
+        trial,
       });
     } catch (e: any) {
       log.error("Failed to load status", { error: getErrorMessage(e) });
@@ -619,6 +699,153 @@ router.post(
       }
 
       res.status(500).json({ error: "Portal failed" });
+    }
+  },
+);
+
+/**
+ * Per-agent overage purchase — GET reports current count + per-tier price,
+ * POST adjusts the count up or down. Adjusts the Stripe subscription item
+ * quantity in lockstep with the DB column.
+ *
+ * Operator flow:
+ *   1. Pricing page promises "add extra agents at $X/each"
+ *   2. Admin → Billing surfaces the current count + price + add/remove buttons
+ *   3. Posting here updates `extra_agents` column + Stripe subscription item
+ *   4. Agent deploy gate reads (plan.max_agents + extra_agents) as the cap
+ *
+ * Required env setup (per tier): STRIPE_<TIER>_EXTRA_AGENT_PRICE_ID set
+ * to a Price ID with recurring.usage_type = "licensed" and amount equal
+ * to extra_agent_price_usd × 100 cents. Without it, the endpoint returns
+ * a clear "extra-agent billing not configured for your tier" error.
+ */
+router.get(
+  "/billing/extra-agents",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const [settingsRow] = await drizzle
+        .select({
+          plan_id: schema.settings.planId,
+          extra_agents: schema.settings.extraAgents,
+        })
+        .from(schema.settings)
+        .where(eq(schema.settings.userId, req.user!.id))
+        .limit(1);
+      const plan = planById(settingsRow?.plan_id || "personal");
+      res.json({
+        plan_id: plan?.id || "personal",
+        plan_name: plan?.name || "Personal",
+        included_agents: plan?.max_agents ?? 1,
+        extra_agents: settingsRow?.extra_agents ?? 0,
+        extra_agent_price_usd: plan?.extra_agent_price_usd ?? null,
+        configured: !!plan?.extraAgentPriceIdEnv && !!process.env[plan.extraAgentPriceIdEnv],
+      });
+    } catch (err) {
+      log.error("/billing/extra-agents GET failed", { error: getErrorMessage(err) });
+      res.status(500).json({ error: "Failed to load extra-agent state" });
+    }
+  },
+);
+
+router.post(
+  "/billing/extra-agents",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const raw = req.body?.count;
+      const target = Number(raw);
+      if (!Number.isInteger(target) || target < 0 || target > 100) {
+        return res.status(400).json({ error: "count must be an integer 0-100" });
+      }
+
+      // Look up the tenant's current settings + subscription.
+      const [settingsRow] = await drizzle
+        .select({
+          plan_id: schema.settings.planId,
+          extra_agents: schema.settings.extraAgents,
+        })
+        .from(schema.settings)
+        .where(eq(schema.settings.userId, req.user!.id))
+        .limit(1);
+      const plan = planById(settingsRow?.plan_id || "personal");
+      if (!plan) return res.status(400).json({ error: "Plan not found" });
+
+      const priceIdEnv = plan.extraAgentPriceIdEnv;
+      const priceId = priceIdEnv ? process.env[priceIdEnv] : undefined;
+      if (!priceIdEnv || !priceId) {
+        return res.status(503).json({
+          error: `Extra-agent billing not configured for the ${plan.name} tier. Owner needs to set ${priceIdEnv || "STRIPE_<TIER>_EXTRA_AGENT_PRICE_ID"} in environment variables and link it to a Stripe Price.`,
+        });
+      }
+
+      // If Stripe is configured, adjust the subscription item quantity
+      // to match. If not configured (dev), just persist the DB column.
+      if (stripeAvailable() && target > 0) {
+        const [subRow] = await drizzle
+          .select({ stripe_subscription_id: schema.subscriptions.stripeSubscriptionId })
+          .from(schema.subscriptions)
+          .where(eq(schema.subscriptions.userId, req.user!.id))
+          .limit(1);
+        const subscriptionId = subRow?.stripe_subscription_id;
+        if (!subscriptionId) {
+          return res.status(400).json({
+            error:
+              "No active subscription found. Upgrade to a paid plan first to purchase extra agents.",
+          });
+        }
+        try {
+          // Find existing extra-agent line item (if any).
+          const sub = await stripe.subscriptions.retrieve(subscriptionId);
+          const existing = sub.items.data.find((i) => i.price?.id === priceId);
+          if (existing) {
+            if (target === 0) {
+              await stripe.subscriptionItems.del(existing.id);
+            } else {
+              await stripe.subscriptionItems.update(existing.id, { quantity: target });
+            }
+          } else if (target > 0) {
+            await stripe.subscriptionItems.create({
+              subscription: subscriptionId,
+              price: priceId,
+              quantity: target,
+            });
+          }
+        } catch (e) {
+          log.error("Stripe subscription item adjust failed", {
+            error: getErrorMessage(e),
+            userId: req.user!.id,
+          });
+          return res.status(502).json({
+            error: "Couldn't update Stripe subscription. Try again or contact support.",
+          });
+        }
+      }
+
+      // Persist the DB column.
+      await drizzle
+        .update(schema.settings)
+        .set({ extraAgents: target })
+        .where(eq(schema.settings.userId, req.user!.id));
+
+      // Audit log so the change is queryable later. Uses
+      // subscription_updated as the closest existing event type since
+      // this is technically a subscription-item quantity change.
+      void auditLogger
+        .logBilling("subscription_updated", {
+          userId: req.user!.id,
+          metadata: { reason: "extra_agents_changed", target, plan_id: plan.id },
+        })
+        .catch(() => {});
+
+      res.json({
+        ok: true,
+        extra_agents: target,
+        agents_total: (plan.max_agents || 1) + target,
+      });
+    } catch (err) {
+      log.error("/billing/extra-agents POST failed", { error: getErrorMessage(err) });
+      res.status(500).json({ error: "Failed to update extra agents" });
     }
   },
 );

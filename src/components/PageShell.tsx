@@ -65,59 +65,24 @@ export default function PageShell({
 
   return (
     <div className="h-full w-full flex flex-col overflow-hidden">
-      {/* Header */}
-      <motion.header
-        initial={{ y: -10, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="shrink-0 pb-1 sm:pb-1 mb-1"
-      >
-        {/* eyebrow + actions row — stacks on mobile so action buttons
-            don't get squeezed against the title or fall off-canvas. */}
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-1">
-          <div className="min-w-0 flex-1">
-            {eyebrow && (
-              <div className="flex items-center gap-2 mb-2 sm:mb-2.5">
-                <span className="hero-accent-line shrink-0" />
-                <p className="text-[9px] uppercase tracking-[0.52em] text-muted/70 truncate">
-                  {eyebrow}
-                </p>
-              </div>
-            )}
-            <h1
-              className="font-display italic leading-[0.88] tracking-tight text-ink truncate"
-              // Smaller floor on phones; the original 2rem was too tall to
-              // share a line with mobile-header buttons on narrow screens.
-              style={{ fontSize: "clamp(1.2rem, 3vw, 1.8rem)" }}
-            >
-              <span className="text-aurora">{title}</span>
-            </h1>
-            {subtitle && (
-              <p className="text-[11px] text-muted/70 mt-2 sm:mt-2.5 max-w-2xl leading-relaxed line-clamp-2 sm:truncate">
-                {subtitle}
-              </p>
-            )}
-          </div>
-
-          {actions && (
-            <div className="shrink-0 flex flex-wrap items-center gap-2 sm:pt-1">{actions}</div>
-          )}
-        </div>
-
-        {/* Gradient separator line */}
-        <div
-          className="h-px"
-          style={{
-            background:
-              "linear-gradient(90deg, rgba(79, 30, 123 ,0.20) 0%, rgba(79, 30, 123 ,0.15) 40%, rgba(79, 30, 123 ,0.10) 70%, transparent 100%)",
-          }}
-        />
-      </motion.header>
+      {/* Page-title block intentionally removed (per design direction):
+          the left nav already labels the page, so an in-page eyebrow +
+          big title + caption was redundant chrome that pushed real
+          content down. `title` / `subtitle` / `eyebrow` props are kept
+          on the interface for the document <title> + callers, but no
+          longer rendered. Only the actions row survives — and only when
+          a page actually supplies actions, so pages without them get
+          their content flush to the top. */}
+      {actions && (
+        <header className="shrink-0 mb-2 flex flex-wrap items-center justify-end gap-2">
+          {actions}
+        </header>
+      )}
 
       {/* Tab strip */}
       {tabs && tabs.length > 0 && (
         <div className="shrink-0 flex items-center gap-1 mb-2 overflow-x-auto scrollbar-hide">
-          <div className="flex items-center gap-1 p-1 rounded-2xl glass border border-black/8">
+          <div className="flex items-center gap-0.5 p-0.5 rounded-xl glass border border-black/8">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const active = tab.id === activeId;
@@ -127,18 +92,19 @@ export default function PageShell({
                   onClick={() => setActiveId(tab.id)}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "relative shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all text-[10px] uppercase tracking-[0.22em] font-medium",
-                    active ? "text-white" : "text-muted hover:text-ink hover:bg-black/5",
+                    "relative shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-[10px] uppercase tracking-[0.12em] font-medium",
+                    active ? "text-on-brand" : "text-muted hover:text-ink hover:bg-black/5",
                   )}
                 >
                   {active && (
                     <motion.div
                       layoutId="tab-active-bg"
-                      className="absolute inset-0 rounded-xl"
+                      className="absolute inset-0 rounded-lg"
                       style={{
                         background: "#4F1E7B",
                         boxShadow:
                           "0 3px 12px -6px rgba(79, 30, 123 ,0.50), 0 0 0 1px rgba(255,255,255,0.18) inset",
+                        willChange: "transform, background-color",
                       }}
                       transition={{ type: "spring", stiffness: 420, damping: 36 }}
                     />
@@ -150,7 +116,7 @@ export default function PageShell({
                       <span
                         className={cn(
                           "ml-0.5 px-1.5 py-px rounded-full text-[8px] font-mono leading-none",
-                          active ? "bg-white/20 text-white" : "bg-black/8 text-muted",
+                          active ? "bg-white/20 text-on-brand" : "bg-black/8 text-muted",
                         )}
                       >
                         {tab.badge}
@@ -220,7 +186,7 @@ export function Panel({
   return (
     <section
       className={cn(
-        "relative rounded-2xl glass border border-black/8 flex flex-col h-full min-h-0 overflow-hidden",
+        "relative rounded-xl glass border border-black/8 flex flex-col h-full min-h-0 overflow-hidden",
         className,
       )}
       style={{
@@ -255,7 +221,7 @@ export function Panel({
               <h3 className="font-display italic text-base text-ink leading-tight">{title}</h3>
             )}
             {hint && (
-              <span className="text-[9px] uppercase tracking-[0.30em] text-muted/60 ml-1">
+              <span className="text-[9px] uppercase tracking-[0.14em] text-muted/60 ml-1">
                 {hint}
               </span>
             )}
@@ -307,7 +273,7 @@ export function StatTile({
 }) {
   const trendPositive = trend && trend.value >= 0;
   return (
-    <div className="relative rounded-2xl glass border border-black/8 p-5 overflow-hidden card-interactive">
+    <div className="relative rounded-xl glass border border-black/8 p-4 overflow-hidden card-interactive">
       {/* Ambient glow */}
       <div
         className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-25 blur-3xl pointer-events-none"
@@ -320,8 +286,8 @@ export function StatTile({
       />
 
       <div className="relative">
-        <div className="flex items-start justify-between mb-3">
-          <p className="text-[9px] uppercase tracking-[0.38em] text-muted font-medium leading-none">
+        <div className="flex items-start justify-between mb-2.5">
+          <p className="text-[9px] uppercase tracking-[0.18em] text-muted font-medium leading-none">
             {label}
           </p>
           {Icon && (
@@ -337,13 +303,13 @@ export function StatTile({
           )}
         </div>
 
-        <div className="font-display italic text-2xl md:text-3xl text-ink leading-none tracking-tight truncate mb-2">
+        <div className="font-display italic text-2xl text-ink leading-none truncate mb-2">
           {value}
         </div>
 
         <div className="flex items-center gap-2">
           {sub && (
-            <p className="text-[9px] uppercase tracking-[0.28em] text-muted truncate flex-1">
+            <p className="text-[9px] uppercase tracking-[0.16em] text-muted truncate flex-1">
               {sub}
             </p>
           )}

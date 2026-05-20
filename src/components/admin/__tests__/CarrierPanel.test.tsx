@@ -14,8 +14,8 @@ describe("CarrierPanel", () => {
   const mockSettings = {
     vapi_phone_number_id: "test-id",
     vapi_phone_inbound_agent_id: "agent-1",
-    voice_llm_provider: "google",
-    voice_llm_model: "gemini-1.5-flash",
+    voice_llm_provider: "anthropic",
+    voice_llm_model: "claude-sonnet-4-6",
     twilio_messaging_enabled: true,
     twilio_lookup_enabled: false,
     twilio_manager_alerts_enabled: false,

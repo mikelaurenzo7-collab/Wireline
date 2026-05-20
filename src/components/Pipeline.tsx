@@ -103,8 +103,14 @@ export default function Pipeline() {
         </button>
       }
     >
-      <div className="h-full overflow-x-auto overflow-y-hidden pb-1">
-        <div className="flex gap-3 h-full pr-3">
+      {/* Mobile: vertical stack of columns (no horizontal scroll trap).
+       *  Tablet+: horizontal kanban with scroll-snap so dragging a card
+       *  between columns is still natural.
+       *  Each column collapses height on mobile (max-h-72 with internal
+       *  scroll) so the operator can scan every stage without scrolling
+       *  through the entire app shell. */}
+      <div className="h-full overflow-y-auto md:overflow-x-auto md:overflow-y-hidden pb-1">
+        <div className="flex flex-col md:flex-row gap-3 h-auto md:h-full pr-0 md:pr-3 md:snap-x md:snap-mandatory">
           {STAGES.map((stage) => {
             const leads = board[stage.id] || [];
             return (
@@ -119,7 +125,13 @@ export default function Pipeline() {
                   const id = e.dataTransfer.getData("text/plain");
                   if (id) moveLead(id, stage.id);
                 }}
-                className="min-w-[180px] flex-1 flex flex-col h-full"
+                // min-w-[180px] (was 200) so 6 columns + gaps fit
+                // comfortably at 1280px ThinkPad widths without the
+                // rightmost stage getting clipped at the page edge.
+                // Still scrolls horizontally on narrower laptops via
+                // the parent overflow-x-auto, just with much less
+                // chance of triggering it on the operator's main viewport.
+                className="w-full md:min-w-[180px] md:flex-1 md:snap-start flex flex-col md:h-full max-h-80 md:max-h-none"
               >
                 <Panel
                   title={stage.label}

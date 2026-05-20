@@ -45,6 +45,7 @@ const TIERS: Tier[] = [
       "Call logs + transcripts + sentiment",
       "Web dashboard, no team seats",
       "Overage at $0.20 / min — rarely triggered",
+      "Add extra agents at $39/each",
     ],
     notIncluded: ["Outbound campaigns", "Slack alerts", "Multi-user team"],
   },
@@ -63,7 +64,8 @@ const TIERS: Tier[] = [
       "Outbound dialer (CSV upload, auto-dial)",
       "Live call monitor",
       "Up to 5 team seats",
-      "Overage at $0.15 / min — only if you exceed",
+      "Overage at $0.18 / min — only if you exceed",
+      "Add extra agents at $35/each",
     ],
   },
   {
@@ -84,7 +86,8 @@ const TIERS: Tier[] = [
       "Up to 25 team seats",
       "Advanced insights + funnel analysis",
       "Webhook + Action Engine",
-      "Overage at $0.12 / min — best per-minute rate before Business",
+      "Overage at $0.15 / min — best per-minute rate before Business",
+      "Add extra agents at $30/each",
     ],
   },
   {
@@ -103,43 +106,28 @@ const TIERS: Tier[] = [
       "Up to 50 team seats",
       "Everything in Pro",
       "Priority support · Slack channel",
-      "Overage at $0.10 / min — lowest on platform outside Enterprise",
+      "Overage at $0.13 / min — lowest on platform outside Enterprise",
+      "Add extra agents at $25/each",
     ],
   },
   {
     id: "enterprise",
-    name: "Enterprise",
+    name: "Enterprise & Call Center",
     price: "Custom",
     cadence: "",
-    blurb: "Custom volume, dedicated CSM, SLA-backed uptime.",
+    blurb: "Multi-team operators, 100+ seats, SLA-backed. Built for the largest deployments.",
     cta: "Talk to sales",
-    ctaHref: "mailto:trywireline@yahoo.com?subject=Enterprise%20inquiry",
+    ctaHref: "mailto:trywireline@yahoo.com?subject=Enterprise%20%2F%20Call%20Center%20inquiry",
     features: [
-      "Unlimited agents + minutes",
-      "Unlimited mailboxes + seats",
-      "SAML SSO + advanced compliance",
-      "99.95% SLA + dedicated CSM",
-      "BYO Twilio / RingCentral / 8x8",
-      "Custom integrations + private model deployment",
-      "Net-30 invoicing",
-    ],
-  },
-  {
-    id: "callcenter",
-    name: "Call Center",
-    price: "Custom",
-    cadence: "",
-    blurb: "100+ seats, supervisor cockpit, team routing.",
-    cta: "Talk to call-center sales",
-    ctaHref: "mailto:trywireline@yahoo.com?subject=Call%20Center%20inquiry",
-    features: [
+      "Unlimited agents, minutes, mailboxes, and seats",
       "100+ AI agent seats with team-based routing",
       "Supervisor cockpit — live floor monitoring + listen-in",
       "Call queues with SLA timers + overflow rules",
-      "Per-team SMS sender + manager escalation routing",
       "Real-time sentiment + QA scoring on every call",
-      "Dedicated CSM + 24×7 ops paging",
-      "BYO carrier (Twilio / RingCentral / 8x8 / sip trunk)",
+      "SAML SSO + audit + advanced compliance",
+      "BYO carrier (any SIP-compatible provider)",
+      "Custom integrations + private model deployment",
+      "Dedicated CSM, 99.95% SLA, 24×7 ops paging",
       "Custom MSA + Net-30 invoicing",
     ],
   },
@@ -157,7 +145,7 @@ export default function Pricing() {
     <div className="min-h-screen relative">
       <PageMeta
         title="Plans & Pricing"
-        description="Wireline pricing plans from $29/month Personal to Enterprise custom. Every plan includes AI voice agents, real-time call logs, sentiment scoring, and the Wireline Demo Line. 14-day free trial, no credit card required."
+        description="Wireline pricing plans from $49/month Personal to Enterprise custom. Every plan includes AI voice agents, real-time call logs, sentiment scoring, and the Wireline Demo Line. 14-day free trial, no credit card required."
       />
       {/* Aurora backdrop — toned down so the tier cards win the eye.
           Previously 60vw at 0.18 opacity dominated the hero on 1366×768
@@ -236,9 +224,46 @@ export default function Pricing() {
           className="text-muted/80 text-base max-w-xl mx-auto"
         >
           Every plan includes the dashboard, real-time call logs, sentiment scoring, and the
-          Wireline Demo Line for testing. Pick the agent + minute volume you need today; upgrade or
-          downgrade any time.
+          Wireline Demo Line for testing. Pick the agent + minute volume you need today; add more
+          agents à la carte if you outgrow your tier — no forced upgrade to the next bracket.
         </motion.p>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.22, duration: 0.6 }}
+          className="text-[11px] uppercase tracking-[0.3em] text-brand/85 mt-5 mb-1"
+        >
+          Built for every service business
+        </motion.p>
+        {/* Industry strip — every wedge page lives at /for/<slug>; this row
+            also acts as a directory for visitors who land on /pricing
+            without industry context. Keeps the platform positioning loud
+            (any vertical works) while still surfacing the wedge URLs that
+            DMs use for narrow outbound. */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.28, duration: 0.6 }}
+          className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[10px] uppercase tracking-[0.28em] text-muted/70"
+        >
+          <Link to="/for/home-services" className="hover:text-brand transition-colors">
+            Home Services
+          </Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/for/medical" className="hover:text-brand transition-colors">
+            Medical
+          </Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/for/legal" className="hover:text-brand transition-colors">
+            Legal
+          </Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/for/real-estate" className="hover:text-brand transition-colors">
+            Real Estate
+          </Link>
+          <span aria-hidden="true">·</span>
+          <span className="text-muted/55">+ every other vertical</span>
+        </motion.div>
       </section>
 
       {/* Why Wireline — moat strip above the tier grid. Each card frames a
@@ -295,7 +320,11 @@ export default function Pricing() {
 
       {/* Tier grid */}
       <section className="relative z-10 px-4 sm:px-6 lg:px-10 max-w-7xl mx-auto pb-16">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        {/* Tier grid scales 1 → 2 → 3 → 5. Skipping the previous
+            sm:grid-cols-2 jump because 360-390px in 2-col mode forced
+            ~160px tier cards that were unreadable. Now: single column
+            until md (768px), then 3 across, 5 on wide desktop. */}
+        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4">
           {TIERS.map((tier, i) => (
             <motion.div
               key={tier.id}
@@ -357,9 +386,9 @@ export default function Pricing() {
                 )}
                 <a
                   href={tier.ctaHref}
-                  className={`group block w-full text-center py-3 rounded-xl text-[11px] uppercase tracking-[0.32em] font-medium transition-all mb-6 ${
+                  className={`group block w-full text-center py-3.5 rounded-xl text-[11px] uppercase tracking-[0.32em] font-medium transition-all mb-6 ${
                     tier.highlight
-                      ? "text-paper hover:opacity-90"
+                      ? "text-on-brand hover:opacity-90"
                       : "border border-white/15 text-ink hover:border-white/30 hover:bg-white/5"
                   }`}
                   style={

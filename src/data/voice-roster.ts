@@ -38,17 +38,20 @@ export type VoiceRosterEntry = {
  * on the first dashboard load.
  */
 export const VOICE_ROSTER: ReadonlyArray<VoiceRosterEntry> = [
-  // Existing platform default — kept first so legacy agents that read
-  // PLATFORM_DEFAULT_VOICE_ID stay consistent on their first call.
-  { voiceId: "bIHbv24MWmeRgasZH58o", label: "Wireline Default", vibe: "warm-female" },
+  // Platform default — Adam · Deep (warm-male). Broad fit across the
+  // service-business verticals we wedge into.
+  { voiceId: "pNInz6obpgDQGcFmaJgB", label: "Adam · Deep (Wireline Default)", vibe: "warm-male" },
   // ElevenLabs documented starter voices — verified against the public
   // voice library. Labels match ElevenLabs' canonical display names so
   // FleetSettings + analytics show the operator the same name the
   // ElevenLabs dashboard does.
+  { voiceId: "VR6AewLTigWG4xSOukaG", label: "Arnold · Crisp", vibe: "crisp-male" },
   { voiceId: "21m00Tcm4TlvDq8ikWAM", label: "Rachel · Warm", vibe: "warm-female" },
   { voiceId: "EXAVITQu4vr4xnSDxMaL", label: "Sarah · Gentle", vibe: "energetic-female" },
-  { voiceId: "pNInz6obpgDQGcFmaJgB", label: "Adam · Deep", vibe: "warm-male" },
-  { voiceId: "VR6AewLTigWG4xSOukaG", label: "Arnold · Crisp", vibe: "crisp-male" },
+  // Legacy default — kept registered so any agent created before the
+  // platform-default swap still resolves to a labeled voice in
+  // FleetSettings instead of an opaque ID.
+  { voiceId: "bIHbv24MWmeRgasZH58o", label: "Legacy Default · Warm Female", vibe: "warm-female" },
 ];
 
 /**

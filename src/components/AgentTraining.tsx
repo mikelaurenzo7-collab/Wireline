@@ -1,8 +1,5 @@
 import { useState, useEffect } from "react";
 import {
-  Send,
-  Bot,
-  User,
   Loader2,
   Users,
   Database,
@@ -15,7 +12,6 @@ import {
   Plus,
   Pencil,
   Sparkles,
-  Terminal,
   ChevronDown,
   Zap,
   Target,
@@ -35,7 +31,7 @@ import { formatDate } from "../lib/safe-date";
 import SupervisedAgentTuner from "./SupervisedAgentTuner";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import { HelpTooltip } from "./HelpTooltip";
-import HubTabs, { TRAINING_HUB } from "./HubTabs";
+import AgentWorkspace from "./AgentWorkspace";
 import { useToast } from "../contexts/ToastContext";
 import AgentFlowComposer from "./AgentFlowComposer";
 import AgentActionEngine from "./AgentActionEngine";
@@ -45,8 +41,8 @@ type Message = { role: "user" | "assistant"; content: string };
 export default function AgentTraining() {
   const { error: toastError } = useToast();
   const [activeTab, setActiveTab] = useState<
-    "admin" | "simulator" | "database" | "flow" | "actions"
-  >("flow");
+    "workspace" | "database" | "simulator" | "flow" | "actions"
+  >("workspace");
   const [agents, setAgents] = useState<any[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState("default-agent");
   const [messages, setMessages] = useState<Message[]>([
@@ -216,21 +212,13 @@ export default function AgentTraining() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <header className="shrink-0 px-4 md:px-6 pt-4 pb-3 sticky top-0 z-30 backdrop-blur-xl bg-paper/70 border-b border-white/8">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 max-w-[1400px] mx-auto w-full">
-          <div className="flex items-center gap-3 min-w-0">
-            <div>
-              <div className="text-[10px] uppercase tracking-[0.45em] text-brand/80 mb-1">
-                Studio · Training
-              </div>
-              <h1 className="font-display italic lowercase text-3xl md:text-4xl text-ink leading-none">
-                <span className="text-aurora">agent training</span>
-              </h1>
-            </div>
-          </div>
+      <header className="shrink-0 px-3 md:px-4 py-2 sticky top-0 z-30 backdrop-blur-xl bg-paper/70 border-b border-white/8">
+        {/* Page title removed per design direction — the left nav
+            already says "Training". The agent picker stays. */}
+        <div className="flex flex-col lg:flex-row justify-end items-start lg:items-center gap-2 max-w-[1400px] mx-auto w-full">
           <div className="flex items-center gap-2 w-full lg:w-auto">
             <Users className="w-3.5 h-3.5 text-brand shrink-0" />
-            <span className="text-[10px] uppercase tracking-[0.3em] text-muted/70 hidden sm:inline">
+            <span className="text-[10px] uppercase tracking-[0.14em] text-muted/70 hidden sm:inline">
               Agent
             </span>
             <div className="relative flex-1 lg:flex-none lg:min-w-[260px]">
@@ -251,116 +239,103 @@ export default function AgentTraining() {
           </div>
         </div>
 
-        {/* Claude Brain rail — recipes scoped to the selected agent */}
-        <div className="max-w-[1400px] mx-auto w-full mt-3">
-          <div className="relative aurora-ring rounded-2xl">
-            <div className="relative rounded-2xl glass p-3 flex flex-wrap items-center gap-2 overflow-hidden">
-              <div
-                className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-25 blur-3xl pointer-events-none"
-                style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
-              />
-              <div className="relative z-10 flex items-center gap-2 mr-1">
-                <div
-                  className="w-7 h-7 rounded-lg flex items-center justify-center"
-                  style={{ background: "#4F1E7B" }}
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-paper" strokeWidth={2.5} />
-                </div>
-                <div>
-                  <div className="text-[9px] uppercase tracking-[0.35em] text-brand">
-                    Wireline AI
-                  </div>
-                  <div className="text-[10px] text-ink/60">
-                    Wire intelligent recipes into this agent.
-                  </div>
-                </div>
-              </div>
-              <div className="relative z-10 flex flex-wrap items-center gap-1.5 ml-auto">
-                <ClaudeRecipeButton
-                  variant="ghost"
-                  recipe="agent-review"
-                  agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
-                  label="Performance Review"
-                />
-                <ClaudeRecipeButton
-                  variant="ghost"
-                  recipe="persona-clone"
-                  agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
-                  label="Clone Persona"
-                />
-                <ClaudeRecipeButton
-                  variant="ghost"
-                  recipe="knowledge-from-url"
-                  agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
-                  label="Ingest URL"
-                />
-                <ClaudeRecipeButton
-                  variant="ghost"
-                  recipe="knowledge-from-document"
-                  agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
-                  label="Ingest PDF"
-                />
-                <ClaudeRecipeButton
-                  variant="ghost"
-                  recipe="objection-drill"
-                  agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
-                  label="Objection Drills"
-                />
-                <ClaudeRecipeButton
-                  variant="ghost"
-                  recipe="call-playbook"
-                  agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
-                  label="Call Playbook"
-                />
-                <ClaudeRecipeButton
-                  variant="ghost"
-                  recipe="brief"
-                  agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
-                  label="Pre-Call Brief"
-                />
-              </div>
+        {/* AI assists — collapsed by default to declutter; expand to see recipe shortcuts */}
+        <details className="max-w-[1400px] mx-auto w-full mt-2 group">
+          <summary className="cursor-pointer list-none flex items-center gap-2 px-3 py-1.5 rounded-xl glass border border-white/10 hover:border-brand/30 transition-colors">
+            <div
+              className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
+              style={{ background: "#4F1E7B" }}
+            >
+              <Sparkles className="w-3 h-3 text-on-brand" strokeWidth={2.5} />
             </div>
+            <span className="text-[10px] uppercase tracking-[0.14em] text-brand">AI assists</span>
+            <span className="text-[11px] text-ink/60">— one-click recipes</span>
+            <ChevronDown className="ml-auto w-3.5 h-3.5 text-muted transition-transform group-open:rotate-180" />
+          </summary>
+          <div className="mt-2 p-3 rounded-xl glass border border-white/10 flex flex-wrap items-center gap-1.5">
+            <ClaudeRecipeButton
+              variant="ghost"
+              recipe="agent-review"
+              agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
+              label="Performance Review"
+            />
+            <ClaudeRecipeButton
+              variant="ghost"
+              recipe="persona-clone"
+              agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
+              label="Clone Persona"
+            />
+            <ClaudeRecipeButton
+              variant="ghost"
+              recipe="knowledge-from-url"
+              agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
+              label="Ingest URL"
+            />
+            <ClaudeRecipeButton
+              variant="ghost"
+              recipe="knowledge-from-document"
+              agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
+              label="Ingest PDF"
+            />
+            <ClaudeRecipeButton
+              variant="ghost"
+              recipe="objection-drill"
+              agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
+              label="Objection Drills"
+            />
+            <ClaudeRecipeButton
+              variant="ghost"
+              recipe="call-playbook"
+              agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
+              label="Call Playbook"
+            />
+            <ClaudeRecipeButton
+              variant="ghost"
+              recipe="brief"
+              agentId={selectedAgentId !== "default-agent" ? selectedAgentId : undefined}
+              label="Pre-Call Brief"
+            />
           </div>
-        </div>
+        </details>
 
-        <nav className="flex flex-wrap gap-1.5 max-w-[1400px] mx-auto w-full mt-3">
+        <nav className="flex flex-wrap gap-1.5 max-w-[1400px] mx-auto w-full mt-2">
           {[
             {
-              id: "flow",
-              label: "Flow composer",
-              icon: Workflow,
-              help: "Define linear conversation stages and transitions for your agent",
-            },
-            {
-              id: "actions",
-              label: "Action engine",
-              icon: Blocks,
-              help: "Configure which integrations and tools this agent is authorized to use",
-            },
-            {
-              id: "admin",
-              label: "Neural relay",
+              id: "workspace",
+              label: "Coach",
               icon: MessageSquare,
-              help: "Configure directives and knowledge that shape your agent's behavior",
+              help: "Chat with your agent — coach it on new situations, give context, ask how recent calls went. The main place to teach.",
             },
             {
               id: "database",
-              label: "Directive registry",
+              label: "Knowledge",
               icon: Database,
-              help: "View and edit all training data stored for this agent",
+              help: "View and edit everything this agent has learned: personality, directives, knowledge entries, and uploaded files.",
             },
             {
               id: "simulator",
-              label: "Mission sandbox",
+              label: "Test call",
               icon: PlayCircle,
-              help: "Test your agent with simulated conversations",
+              help: "Run simulated conversations to see how your agent will respond before customers call.",
+            },
+            {
+              id: "flow",
+              label: "Conversation flow",
+              icon: Workflow,
+              help: "Define linear conversation stages and transitions (advanced — most agents work great without this).",
+            },
+            {
+              id: "actions",
+              label: "Connected apps",
+              icon: Blocks,
+              help: "Wire integrations the agent can use mid-call: calendar bookings, CRM lookups, payment links, SMS.",
             },
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
               className={cn(
-                "px-3 py-1.5 rounded-full border text-[10px] uppercase tracking-[0.25em] flex items-center gap-1.5 transition-colors",
+                "px-2.5 py-1.5 rounded-lg border text-[10px] uppercase tracking-[0.12em] flex items-center gap-1.5 transition-colors",
                 activeTab === tab.id
                   ? "bg-brand/15 border-brand/40 text-brand"
                   : "glass border-white/10 text-muted hover:border-white/20 hover:text-ink",
@@ -378,12 +353,6 @@ export default function AgentTraining() {
         </nav>
       </header>
 
-      <div className="px-4 md:px-6 pt-3">
-        <div className="max-w-[1400px] mx-auto w-full">
-          <HubTabs tabs={TRAINING_HUB} label="Training sub-navigation" />
-        </div>
-      </div>
-
       <main className="flex-1 min-h-0 relative">
         <AnimatePresence mode="wait">
           {activeTab === "actions" && (
@@ -393,121 +362,9 @@ export default function AgentTraining() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute inset-0 overflow-y-auto scrollbar-hide"
+              className="absolute inset-0 overflow-y-auto"
             >
               <AgentActionEngine agentId={selectedAgentId} />
-            </motion.div>
-          )}
-
-          {activeTab === "admin" && (
-            <motion.div
-              key="admin"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="flex flex-col h-full"
-            >
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-hide">
-                {messages.map((msg, i) => (
-                  <motion.div
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    key={i}
-                    className={cn("flex gap-3", msg.role === "user" ? "flex-row-reverse" : "")}
-                  >
-                    <div
-                      className={cn(
-                        "w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 transition-transform duration-300 hover:scale-110",
-                        msg.role === "user"
-                          ? "glass border-white/10 text-ink/70"
-                          : "glass border-brand/30 text-brand shadow-sm shadow-brand/20",
-                      )}
-                    >
-                      {msg.role === "user" ? (
-                        <User className="w-4 h-4" />
-                      ) : (
-                        <Bot className="w-4 h-4" />
-                      )}
-                    </div>
-                    <div
-                      className={cn(
-                        "max-w-[80%] p-3.5 rounded-2xl border text-[13px] leading-relaxed shadow-sm transition-all duration-300",
-                        msg.role === "user"
-                          ? "glass border-white/8 text-ink hover:border-white/20"
-                          : "bg-brand/8 border-brand/20 text-ink font-display italic hover:border-brand/40 shadow-brand/5",
-                      )}
-                      style={
-                        msg.role === "assistant"
-                          ? {
-                              boxShadow:
-                                "0 0 16px -4px rgba(79, 30, 123 ,0.15), 0 1px 0 rgba(255,255,255,0.4) inset",
-                            }
-                          : {
-                              boxShadow: "0 1px 0 rgba(255,255,255,0.6) inset",
-                            }
-                      }
-                    >
-                      {(msg.content ?? "").split("\n").map((line, lIdx) => (
-                        <p
-                          key={lIdx}
-                          className={cn(
-                            lIdx > 0 && "mt-1.5",
-                            (line.startsWith(">") || line.startsWith("**")) &&
-                              "text-brand neon-glow-teal font-semibold",
-                          )}
-                        >
-                          {line.replace(/^\*\*/g, "").replace(/^>\s?/, "")}
-                        </p>
-                      ))}
-                    </div>
-                  </motion.div>
-                ))}
-                {isLoading && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex gap-3"
-                  >
-                    <div className="w-9 h-9 rounded-xl glass border border-brand/30 text-brand flex items-center justify-center shrink-0">
-                      <Bot className="w-4 h-4" />
-                    </div>
-                    <div className="p-3 bg-brand/8 border border-brand/20 rounded-xl flex items-center gap-2.5">
-                      <Loader2 className="w-4 h-4 animate-spin text-brand" />
-                      <span className="text-[10px] uppercase tracking-[0.4em] text-brand">
-                        Extracting…
-                      </span>
-                    </div>
-                  </motion.div>
-                )}
-              </div>
-
-              {/* Input */}
-              <div className="shrink-0 p-3 border-t border-white/8">
-                <div className="flex items-center gap-2 glass border border-white/10 rounded-2xl px-3 py-1 focus-within:border-brand/30 transition-all">
-                  <Terminal className="w-3.5 h-3.5 text-muted/60 shrink-0" />
-                  <input
-                    type="text"
-                    className="flex-1 bg-transparent py-2.5 outline-none text-sm text-ink placeholder:text-muted/50"
-                    placeholder="Enter training protocols…"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                    disabled={isLoading}
-                  />
-                  <button
-                    onClick={handleSend}
-                    disabled={isLoading || !input.trim()}
-                    className="w-8 h-8 rounded-full bg-brand/15 border border-brand/40 text-brand flex items-center justify-center hover:bg-brand/25 disabled:opacity-40 transition-all shrink-0"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                <p className="mt-2 text-center text-[9px] uppercase tracking-[0.4em] text-muted/40">
-                  Encrypted uplink secure
-                </p>
-              </div>
             </motion.div>
           )}
 
@@ -518,7 +375,7 @@ export default function AgentTraining() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="h-full overflow-y-auto scrollbar-hide p-4 space-y-4"
+              className="h-full overflow-y-auto p-4 space-y-4"
             >
               {selectedAgentId !== "default-agent" && (
                 <SupervisedAgentTuner agentId={selectedAgentId} />
@@ -536,21 +393,21 @@ export default function AgentTraining() {
                         analysis engine
                       </h3>
                       <p className="text-[10px] uppercase tracking-[0.3em] text-muted/70">
-                        Autonomous pattern optimization
+                        Find improvement opportunities from your calls
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={handleOptimize}
                     disabled={isOptimizing}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-brand/40 bg-brand/8 text-brand text-[10px] uppercase tracking-[0.28em] hover:bg-brand/15 transition-all disabled:opacity-50"
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-brand/40 bg-brand/8 text-brand text-[10px] uppercase tracking-[0.12em] hover:bg-brand/15 transition-all disabled:opacity-50"
                   >
                     {isOptimizing ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     ) : (
                       <Activity className="w-3.5 h-3.5" />
                     )}
-                    {isOptimizing ? "Analyzing…" : "Initiate analysis"}
+                    {isOptimizing ? "Analyzing…" : "Analyze calls"}
                   </button>
                 </div>
                 {optSuggestions && (
@@ -562,7 +419,7 @@ export default function AgentTraining() {
                   >
                     <div className="rounded-xl bg-black/20 border border-white/8 p-4">
                       <h4 className="text-[10px] uppercase tracking-[0.3em] text-muted/70 mb-2">
-                        Intelligence narrative
+                        Analysis
                       </h4>
                       <p className="font-display italic text-lg text-ink leading-snug">
                         "{optSuggestions.analysis}"
@@ -580,9 +437,9 @@ export default function AgentTraining() {
                               <p className="text-sm text-ink/90 leading-relaxed">"{s}"</p>
                               <button
                                 onClick={() => applySuggestion(s)}
-                                className="w-full h-8 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-all"
+                                className="w-full h-8 rounded-lg bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.12em] hover:bg-brand/25 transition-all"
                               >
-                                Deploy directive
+                                Apply
                               </button>
                             </motion.div>
                           ))
@@ -610,7 +467,7 @@ export default function AgentTraining() {
                     </div>
                     <div>
                       <h3 className="font-display italic lowercase text-xl text-ink">
-                        neural identity
+                        personality
                       </h3>
                       <p className="text-[10px] uppercase tracking-[0.3em] text-muted/70">
                         Base behavioral heuristics and tone
@@ -624,23 +481,23 @@ export default function AgentTraining() {
                           setEditingPersonality(false);
                           setPersonalityDraft(personality);
                         }}
-                        className="h-8 px-3 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-muted hover:text-ink transition-colors"
+                        className="h-8 px-3 rounded-lg glass border border-white/10 text-[10px] uppercase tracking-[0.12em] text-muted hover:text-ink transition-colors"
                       >
                         Cancel
                       </button>
                       <button
                         onClick={() => saveManualEntry("personality", personalityDraft)}
-                        className="h-8 px-3 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-all"
+                        className="h-8 px-3 rounded-lg bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.12em] hover:bg-brand/25 transition-all"
                       >
-                        Sync profile
+                        Save
                       </button>
                     </div>
                   ) : (
                     <button
                       onClick={() => setEditingPersonality(true)}
-                      className="h-8 px-3 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-muted/80 hover:text-ink flex items-center gap-1.5 transition-all"
+                      className="h-8 px-3 rounded-lg glass border border-white/10 text-[10px] uppercase tracking-[0.12em] text-muted/80 hover:text-ink flex items-center gap-1.5 transition-all"
                     >
-                      <Pencil className="w-3 h-3" /> Reconfigure
+                      <Pencil className="w-3 h-3" /> Edit
                     </button>
                   )}
                 </div>
@@ -659,7 +516,8 @@ export default function AgentTraining() {
                           `"${personality}"`
                         ) : (
                           <span className="text-muted/60 not-italic text-base">
-                            No core identity defined. Node uninitialized.
+                            No personality set yet — click Edit to describe how your agent should
+                            speak and behave.
                           </span>
                         )}
                       </p>
@@ -670,26 +528,27 @@ export default function AgentTraining() {
 
               {/* Directives + Knowledge */}
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                {/* Logic Registry */}
+                {/* Rules */}
                 <section className="rounded-2xl glass border border-white/10 p-3 flex flex-col">
                   <header className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-white/8">
                     <div>
                       <h3 className="font-display italic lowercase text-lg text-ink leading-none">
-                        logic registry
+                        rules
                       </h3>
                       <p className="text-[10px] uppercase tracking-[0.3em] text-muted/70 mt-0.5">
-                        Hard constraints
+                        Lines your agent never crosses
                       </p>
                     </div>
-                    <span className="px-1.5 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-500 text-[9px] uppercase tracking-[0.25em] leading-none">
-                      Inviolable
+                    <span className="px-1.5 py-0.5 rounded-md bg-rose-500/15 border border-rose-500/30 text-rose-500 text-[9px] uppercase tracking-[0.12em] leading-none">
+                      Always-on
                     </span>
                   </header>
                   <div className="space-y-2 mb-3">
                     <AnimatePresence mode="popLayout">
                       {directives.length === 0 ? (
-                        <div className="py-8 text-center text-[10px] uppercase tracking-[0.4em] text-muted/60">
-                          Registry dormant
+                        <div className="py-8 text-center text-muted/70 text-[11px] leading-relaxed px-4">
+                          No rules yet — add one below to set hard limits your agent always
+                          respects.
                         </div>
                       ) : (
                         directives.map((d) => (
@@ -715,7 +574,7 @@ export default function AgentTraining() {
                                 <div className="flex justify-end gap-1.5">
                                   <button
                                     onClick={() => setEditingDirective(null)}
-                                    className="px-2.5 py-1 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-muted hover:text-ink"
+                                    className="px-2.5 py-1 rounded-lg glass border border-white/10 text-[10px] uppercase tracking-[0.12em] text-muted hover:text-ink"
                                   >
                                     Cancel
                                   </button>
@@ -724,7 +583,7 @@ export default function AgentTraining() {
                                       saveManualEntry("directive", editingDirective.content, d.id)
                                     }
                                     disabled={isSavingEntry}
-                                    className="px-2.5 py-1 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 disabled:opacity-50"
+                                    className="px-2.5 py-1 rounded-lg bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.12em] hover:bg-brand/25 disabled:opacity-50"
                                   >
                                     {isSavingEntry ? "Saving…" : "Save"}
                                   </button>
@@ -775,7 +634,7 @@ export default function AgentTraining() {
                         onKeyDown={(e) =>
                           e.key === "Enter" && saveManualEntry("directive", newDirective)
                         }
-                        placeholder="Inject new operational directive…"
+                        placeholder="e.g. Never discuss competitor pricing"
                         className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-rose-400/50 text-ink placeholder:text-muted/50"
                       />
                       <button
@@ -800,7 +659,7 @@ export default function AgentTraining() {
                         Knowledge base
                       </p>
                     </div>
-                    <span className="px-1.5 py-0.5 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-600 text-[9px] uppercase tracking-[0.25em] leading-none">
+                    <span className="px-1.5 py-0.5 rounded-md bg-blue-500/15 border border-blue-500/30 text-blue-600 text-[9px] uppercase tracking-[0.12em] leading-none">
                       Factual
                     </span>
                   </header>
@@ -835,7 +694,7 @@ export default function AgentTraining() {
                                 <div className="flex justify-end gap-1.5">
                                   <button
                                     onClick={() => setEditingKnowledge(null)}
-                                    className="px-2.5 py-1 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-muted hover:text-ink"
+                                    className="px-2.5 py-1 rounded-lg glass border border-white/10 text-[10px] uppercase tracking-[0.12em] text-muted hover:text-ink"
                                   >
                                     Cancel
                                   </button>
@@ -844,7 +703,7 @@ export default function AgentTraining() {
                                       saveManualEntry("knowledge", editingKnowledge.content, k.id)
                                     }
                                     disabled={isSavingEntry}
-                                    className="px-2.5 py-1 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 disabled:opacity-50"
+                                    className="px-2.5 py-1 rounded-lg bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.12em] hover:bg-brand/25 disabled:opacity-50"
                                   >
                                     {isSavingEntry ? "Saving…" : "Save"}
                                   </button>
@@ -890,7 +749,7 @@ export default function AgentTraining() {
                         onKeyDown={(e) =>
                           e.key === "Enter" && saveManualEntry("knowledge", newKnowledge)
                         }
-                        placeholder="Sync new intelligence data…"
+                        placeholder="e.g. Our return policy is 30 days, no questions"
                         className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-blue-400/50 text-ink placeholder:text-muted/50"
                       />
                       <button
@@ -917,7 +776,7 @@ export default function AgentTraining() {
                       className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
                       style={{ background: "#4F1E7B" }}
                     >
-                      <Sparkles className="w-3.5 h-3.5 text-paper" strokeWidth={2.5} />
+                      <Sparkles className="w-3.5 h-3.5 text-on-brand" strokeWidth={2.5} />
                     </div>
                     <div>
                       <h3 className="font-display italic lowercase text-lg text-ink leading-none">
@@ -935,7 +794,7 @@ export default function AgentTraining() {
                         className="rounded-xl bg-emerald-500/8 border border-emerald-500/20 p-3"
                       >
                         <div className="text-[9px] uppercase tracking-[0.3em] text-emerald-500 mb-2 flex items-center gap-1.5">
-                          <Sparkles className="w-3 h-3" /> Heuristic update detected
+                          <Sparkles className="w-3 h-3" /> Pattern learned from calls
                         </div>
                         <p className="text-sm text-ink/90 leading-relaxed">{lesson.lesson}</p>
                         <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/8">
@@ -965,6 +824,22 @@ export default function AgentTraining() {
             </motion.div>
           )}
 
+          {activeTab === "workspace" && (
+            <motion.div
+              key="workspace"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute inset-0"
+            >
+              <AgentWorkspace
+                agentId={selectedAgentId}
+                agentName={agents.find((a) => a.id === selectedAgentId)?.name || "your agent"}
+              />
+            </motion.div>
+          )}
+
           {activeTab === "simulator" && (
             <motion.div
               key="simulator"
@@ -972,52 +847,54 @@ export default function AgentTraining() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="h-full flex items-center justify-center p-6"
+              className="h-full overflow-y-auto"
             >
-              <div className="max-w-[560px] w-full text-center space-y-6">
-                <div className="relative w-24 h-24 rounded-3xl glass border border-white/10 flex items-center justify-center mx-auto">
-                  <div
-                    className="absolute inset-0 rounded-3xl opacity-20 blur-xl"
-                    style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
-                  />
-                  <PlayCircle className="w-12 h-12 text-brand relative z-10" strokeWidth={1.25} />
-                </div>
-                <div>
-                  <h2 className="font-display italic lowercase text-4xl text-ink mb-2">
-                    mission sandbox
-                  </h2>
-                  <p className="text-muted/70 text-sm leading-relaxed max-w-md mx-auto">
-                    Validate neural directives and engagement patterns in a zero-risk isolated
-                    environment.
-                  </p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {[
-                    {
-                      label: "Voice Protocol",
-                      icon: Phone,
-                      desc: "Simulate high-latency voice relay exchanges",
-                    },
-                    {
-                      label: "Neural Relay",
-                      icon: Mail,
-                      desc: "Pre-calculate automated signal replies",
-                    },
-                  ].map((sim) => (
+              <div className="min-h-full flex items-center justify-center p-6">
+                <div className="max-w-[560px] w-full text-center space-y-6">
+                  <div className="relative w-20 h-20 rounded-2xl glass border border-white/10 flex items-center justify-center mx-auto">
                     <div
-                      key={sim.label}
-                      className="rounded-xl glass border border-white/8 border-dashed p-4 text-left opacity-50 cursor-not-allowed"
-                    >
-                      <sim.icon className="w-5 h-5 text-muted mb-2" />
-                      <h4 className="font-display italic lowercase text-base text-ink mb-1">
-                        {sim.label.toLowerCase()}
-                      </h4>
-                      <p className="text-[11px] text-muted/70 leading-relaxed">{sim.desc}</p>
-                      <div className="mt-3 text-[9px] uppercase tracking-[0.3em] text-muted/50">
-                        Dormant · Offline
+                      className="absolute inset-0 rounded-2xl opacity-20 blur-xl"
+                      style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
+                    />
+                    <PlayCircle className="w-10 h-10 text-brand relative z-10" strokeWidth={1.25} />
+                  </div>
+                  <div>
+                    <h2 className="font-display italic lowercase text-4xl text-ink mb-2">
+                      test call
+                    </h2>
+                    <p className="text-muted/70 text-sm leading-relaxed max-w-md mx-auto">
+                      Test how your agent responds in a safe practice run before it takes real
+                      calls.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[
+                      {
+                        label: "Phone call",
+                        icon: Phone,
+                        desc: "Hear exactly how your agent handles real caller scenarios before you go live.",
+                      },
+                      {
+                        label: "Email",
+                        icon: Mail,
+                        desc: "Preview how your agent drafts email replies before any send.",
+                      },
+                    ].map((sim) => (
+                      <div
+                        key={sim.label}
+                        className="rounded-xl glass border border-white/8 border-dashed p-4 text-left opacity-50 cursor-not-allowed"
+                      >
+                        <sim.icon className="w-5 h-5 text-muted mb-2" />
+                        <h4 className="font-display italic lowercase text-base text-ink mb-1">
+                          {sim.label.toLowerCase()}
+                        </h4>
+                        <p className="text-[11px] text-muted/70 leading-relaxed">{sim.desc}</p>
+                        <div className="mt-3 text-[9px] uppercase tracking-[0.3em] text-muted/50">
+                          Coming soon
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             </motion.div>

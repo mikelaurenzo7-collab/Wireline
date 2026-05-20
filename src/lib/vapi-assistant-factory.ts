@@ -16,6 +16,8 @@ import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "./agent-runt
 import { buildCustomerIntelBlock } from "./customer-intel";
 import { resolveAgentTools } from "./agent-capabilities";
 import { VAPI_TENANT_DEFAULT_MODEL } from "./claude-brain";
+import { getWirelinePersona } from "./wireline-agent-personas";
+import type { WirelinePersonaId } from "./wireline-agent-escalation";
 
 const DEFAULT_AGENT_ROLE = "customer_service";
 
@@ -52,6 +54,7 @@ export async function buildVapiAssistant({
     pastCallHistory,
     capturedProfileRow,
     callerLeadRow,
+    pronunciationDicts,
   ] = await Promise.all([
     drizzle
       .select()
@@ -76,11 +79,41 @@ export async function buildVapiAssistant({
       .where(eq(schema.personality.agentId, webhookAgentId))
       .limit(1)
       .then((r) => r[0] || null),
+    // Lesson injection — QA-filtered. Previously took the latest 5
+    // lessons regardless of source-call quality, which meant a bad
+    // call's "lesson" got equal weight as a great call's. Now we
+    // LEFT JOIN call_logs and prefer lessons sourced from calls
+    // with qa_score >= 70 (4-star equivalent) and a positive
+    // outcome intent (booked / qualified > info > escalated).
+    //
+    // Lessons with no source call attached (e.g. operator-injected
+    // playbook lessons or adaptive_tuning syntheses) pass through
+    // unfiltered — we trust those by default since they didn't come
+    // from a regrettable call.
     drizzle
       .select({ lesson: schema.agentLessons.lesson })
       .from(schema.agentLessons)
-      .where(eq(schema.agentLessons.agentId, webhookAgentId))
-      .orderBy(desc(schema.agentLessons.createdAt))
+      .leftJoin(schema.callLogs, eq(schema.agentLessons.sourceCallId, schema.callLogs.id))
+      .where(
+        and(
+          eq(schema.agentLessons.agentId, webhookAgentId),
+          // Either no source call (synthetic / operator lesson),
+          // OR a source call with qa_score >= 70.
+          sql`(${schema.agentLessons.sourceCallId} IS NULL OR ${schema.callLogs.qaScore} >= 70)`,
+        ),
+      )
+      .orderBy(
+        // Ranked: outcome quality first, then recency. "booked" +
+        // "qualified" intents lift to the top; "escalated" drops.
+        sql`CASE
+          WHEN ${schema.callLogs.intentLabel} = 'booked' THEN 0
+          WHEN ${schema.callLogs.intentLabel} = 'qualified' THEN 1
+          WHEN ${schema.callLogs.intentLabel} = 'info' THEN 2
+          WHEN ${schema.callLogs.intentLabel} = 'escalated' THEN 3
+          ELSE 4
+        END`,
+        desc(schema.agentLessons.createdAt),
+      )
       .limit(MAX_RUNTIME_LESSONS),
     safeCallerPhone
       ? drizzle
@@ -138,22 +171,71 @@ export async function buildVapiAssistant({
           .limit(1)
           .then((r) => r[0] || null)
       : Promise.resolve(null),
+    // Tenant's active pronunciation dictionaries — attached to the
+    // 11labs voice config below so industry jargon (HVAC, ACL,
+    // deposition) is pronounced correctly. Only dictionaries that
+    // have been successfully synced to ElevenLabs (non-null IDs) and
+    // are flagged active by the operator are included.
+    //
+    // Failure-tolerant: if the table is missing on this environment
+    // (migrate-pronunciation-dicts hasn't been run yet) or the query
+    // errors, we treat it as an empty list and the assistant still
+    // builds without dictionaries — pronunciation just falls back to
+    // the platform default.
+    userId
+      ? drizzle
+          .select({
+            dictionaryId: schema.pronunciationDictionaries.elevenlabsDictionaryId,
+            versionId: schema.pronunciationDictionaries.elevenlabsVersionId,
+          })
+          .from(schema.pronunciationDictionaries)
+          .where(
+            and(
+              eq(schema.pronunciationDictionaries.userId, userId),
+              eq(schema.pronunciationDictionaries.active, true),
+            ),
+          )
+          .then((rows) =>
+            rows
+              .filter((r) => r.dictionaryId && r.versionId)
+              .map((r) => ({
+                pronunciation_dictionary_id: r.dictionaryId as string,
+                version_id: r.versionId as string,
+              })),
+          )
+          .catch((e) => {
+            log.warn("pronunciation dict load failed — skipping", {
+              error: e?.message,
+              userId,
+            });
+            return [] as Array<{
+              pronunciation_dictionary_id: string;
+              version_id: string;
+            }>;
+          })
+      : Promise.resolve([] as Array<{ pronunciation_dictionary_id: string; version_id: string }>),
   ]);
 
   let flowConfigBlock = "";
-  if (agentConfigRow?.flowConfig && Array.isArray(agentConfigRow.flowConfig) && agentConfigRow.flowConfig.length > 0) {
+  if (
+    agentConfigRow?.flowConfig &&
+    Array.isArray(agentConfigRow.flowConfig) &&
+    agentConfigRow.flowConfig.length > 0
+  ) {
     const steps = agentConfigRow.flowConfig;
-    let formattedSteps = steps.map((s: any, i: number) => {
-      let stepStr = `[STAGE ${i + 1}: ${s.name}]\n- INSTRUCTIONS: ${s.instructions}`;
-      if (s.transitionCondition && !s.isEndNode) {
-        stepStr += `\n- TRANSITION CRITERIA: Proceed to stage ${i + 2} only when: ${s.transitionCondition}`;
-      }
-      if (s.isEndNode) {
-        stepStr += `\n- END NODE: Gracefully end the call after completing these instructions.`;
-      }
-      return stepStr;
-    }).join("\n\n");
-    
+    let formattedSteps = steps
+      .map((s: any, i: number) => {
+        let stepStr = `[STAGE ${i + 1}: ${s.name}]\n- INSTRUCTIONS: ${s.instructions}`;
+        if (s.transitionCondition && !s.isEndNode) {
+          stepStr += `\n- TRANSITION CRITERIA: Proceed to stage ${i + 2} only when: ${s.transitionCondition}`;
+        }
+        if (s.isEndNode) {
+          stepStr += `\n- END NODE: Gracefully end the call after completing these instructions.`;
+        }
+        return stepStr;
+      })
+      .join("\n\n");
+
     flowConfigBlock = `\n## CRITICAL CONVERSATION FLOW (MANDATORY)\nYou must progress through the following stages strictly in order. Do not skip stages unless explicitly forced by the caller. Start at STAGE 1.\n\n${formattedSteps}\n`;
   }
 
@@ -166,6 +248,27 @@ export async function buildVapiAssistant({
     .join("\n");
 
   const callerProfile = buildCallerProfileBlock(pastCallHistory || [], false);
+
+  /**
+   * Sentiment-driven vibe shift — caller-history continuity.
+   * If the LAST call with this same caller ended on a negative
+   * sentiment note, inject an empathy directive ahead of the
+   * normal vibe block. The agent will be SOFTER on this call:
+   * no playfulness, acknowledge the prior issue, lead with
+   * "I see we spoke before — how can I make this right?"
+   *
+   * Doesn't override the operator's chosen vibe entirely — it
+   * sits as a one-call override layer. On the call AFTER this
+   * one (assuming sentiment recovers), the agent returns to
+   * the configured vibe.
+   *
+   * Pure additive — emits empty string when no signal exists.
+   */
+  let sentimentShift = "";
+  const lastCall = (pastCallHistory || [])[0] as { sentiment?: string | null } | undefined;
+  if (lastCall?.sentiment === "negative") {
+    sentimentShift = `\n## CALLER CONTINUITY — TONE OVERRIDE\nThis caller's PREVIOUS call ended on a negative note. Drop ALL playfulness on this call, regardless of your configured vibe. Open by acknowledging you remember them ("I see we connected before — how can I make this right?") and lead with empathy + speed. No jokes. No filler. If they reopen the prior issue, take it seriously immediately. Recovery is the only goal for the first 60 seconds; everything else is secondary.\n`;
+  }
 
   const rawProfileDesc = capturedProfileRow?.description || "";
   const customerIntelBlock = buildCustomerIntelBlock(rawProfileDesc, false);
@@ -213,19 +316,62 @@ export async function buildVapiAssistant({
 
   const roleProtocol = ROLE_SPECIFIC_PROTOCOLS[agentRole] || "";
 
-const systemPrompt = `
+  /**
+   * Wireline-internal persona overlay.
+   *
+   * When this agent's `business_variables.wireline_internal` is true, it
+   * means it's one of OUR own customer-facing agents (the ones answering
+   * Mike's OWN_PHONE — Reception / Sales / Support). For those, we layer
+   * the typed, declarative persona system prompt + first-message defined
+   * in `wireline-agent-personas.ts` ON TOP of the normal tenant config.
+   *
+   * Critical: this is GATED. If a tenant agent doesn't carry the flag,
+   * everything below behaves identically to before this patch — we are
+   * additive, never destructive. The persona overlay only fires for
+   * agents Mike has explicitly marked as platform-internal via the
+   * /api/admin/provision-wireline-agents endpoint.
+   *
+   * The escalation rule engine + objection playbook are referenced
+   * inside the persona's system prompt, so the LLM has the full
+   * Wireline guardrails inline without us bloating every tenant
+   * agent's prompt with them.
+   */
+  const bizVars = (agentConfigRow?.businessVariables || {}) as Record<string, unknown>;
+  const isWirelineInternal = bizVars.wireline_internal === true;
+  const wirelinePersonaId = (bizVars.wireline_persona_id as WirelinePersonaId | undefined) || null;
+  const wirelinePersona =
+    isWirelineInternal && wirelinePersonaId ? getWirelinePersona(wirelinePersonaId) : null;
+
+  const baseSystemPrompt = `
 ## IDENTITY & MISSION
 You are ${agentConfigRow?.name || "Wireline Agent"}, a ${agentRole.replace(/_/g, " ")} specialist.
 
 ${callerProfile}
 ${customerIntelBlock}
-
+${sentimentShift}
 ${archetypeRules}
 ${leadContext}
 ${roleProtocol}
 ${flowConfigBlock}
 Today is ${currentDateTime}.
   `;
+
+  // If a Wireline persona overlay applies, replace the base identity
+  // block with the persona's full voice-optimized prompt. We still
+  // append the dynamic blocks (caller profile, customer intel, sentiment
+  // shift, lead context, current time) so personalization survives.
+  const systemPrompt = wirelinePersona
+    ? `${wirelinePersona.systemPrompt}
+
+## CALL-SPECIFIC CONTEXT
+${callerProfile}
+${customerIntelBlock}
+${sentimentShift}
+${leadContext}
+${flowConfigBlock}
+Today is ${currentDateTime}.
+  `
+    : baseSystemPrompt;
 
   const runtimeProfile: AgentRuntimeProfile = {
     timezone: agentConfigRow?.timezone,
@@ -236,24 +382,48 @@ Today is ${currentDateTime}.
     business_variables: agentConfigRow?.businessVariables,
     out_of_hours_message: agentConfigRow?.outOfHoursMessage,
     kpi_focus: agentConfigRow?.kpiFocus,
+    personality_vibe: (agentConfigRow as any)?.personalityVibe,
   };
   const runtime = buildAgentRuntimeContext(systemPrompt, runtimeProfile);
+  // First-message resolution order:
+  //   1. Out-of-hours override (always wins — caller hears the OOH msg)
+  //   2. Operator-set firstMessage on the agent row
+  //   3. Wireline persona overlay's first_message (if persona attached)
+  //   4. Bare "Hello!" fallback
+  // This means an operator who overrides firstMessage on an internal
+  // agent ALSO wins over the persona default — useful for seasonal
+  // greetings ("Happy holidays from Wireline!") without rewriting the
+  // persona definition.
   const firstMessage =
     !runtime.inHours && runtime.outOfHoursMessage
       ? runtime.outOfHoursMessage
-      : agentConfigRow?.firstMessage || "Hello!";
+      : agentConfigRow?.firstMessage || wirelinePersona?.firstMessage || "Hello!";
 
   // Honor the operator's configured voice. Before this fix, every customer
   // assistant got Liam's default voice regardless of what they set in Fleet
   // Settings — silent override of their config. Direction-specific override:
   // voiceIdOutbound for outbound dial, voiceIdInbound for inbound, voiceId as
   // the shared fallback, and the platform default only if nothing is set.
-  const PLATFORM_DEFAULT_VOICE_ID = "bIHbv24MWmeRgasZH58o";
+  // Platform default voice — 11labs "Adam · Deep" (warm-male). Broad
+  // fit across home services / medical / legal / real estate / SaaS.
+  // Operators can override via FleetSettings → Voice per-agent.
+  // History: prior default was bIHbv24MWmeRgasZH58o (warm-female).
+  // Switched after live A/B feedback that warm-male voices read as
+  // more trustworthy + authoritative on B2B service calls.
+  const PLATFORM_DEFAULT_VOICE_ID = "pNInz6obpgDQGcFmaJgB";
   const directionalVoiceId = isOutbound
     ? agentConfigRow?.voiceIdOutbound
     : agentConfigRow?.voiceIdInbound;
+  // Voice resolution order (mirrors firstMessage logic above):
+  //   1. Directional override (operator set inbound/outbound voice)
+  //   2. Operator's agent-row voiceId
+  //   3. Wireline persona overlay's voice_id (if persona attached)
+  //   4. Platform default (Adam · Deep)
   const resolvedVoiceId =
-    directionalVoiceId || agentConfigRow?.voiceId || PLATFORM_DEFAULT_VOICE_ID;
+    directionalVoiceId ||
+    agentConfigRow?.voiceId ||
+    wirelinePersona?.voiceId ||
+    PLATFORM_DEFAULT_VOICE_ID;
   const resolvedVoiceProvider = agentConfigRow?.voiceProvider || "11labs";
 
   // Per-archetype silence timeout. Outbound SDRs need short patience (caller
@@ -270,15 +440,112 @@ Today is ${currentDateTime}.
   const silenceTimeoutSeconds =
     (agentConfigRow as any)?.silenceTimeoutSeconds ?? archetypeSilenceDefault[archetype] ?? 5;
 
+  // ElevenLabs speed control — operator-set per-agent multiplier in
+  // FleetSettings → Voice. The DB column is `numeric(3,2)` which Postgres
+  // returns as a string via pg; coerce to Number and clamp to the
+  // documented ElevenLabs range (0.7 – 1.2) so a corrupted row can't
+  // ship a value Vapi/EL would reject. Only attach when the provider
+  // is 11labs — OpenAI's voice block doesn't take a `speed` param and
+  // including it would make Vapi reject the request.
+  //
+  // Docs: https://elevenlabs.io/docs/eleven-agents/customization/voice/speed-control
+  const rawVoiceSpeed = (agentConfigRow as any)?.voiceSpeed;
+  const parsedVoiceSpeed =
+    rawVoiceSpeed == null ? 1.0 : Math.min(1.2, Math.max(0.7, Number(rawVoiceSpeed) || 1.0));
+
+  // ElevenLabs voice fine-tuning quality params. Operator-set per-agent
+  // in FleetSettings → Voice fine-tuning. Mirrors the four knobs in EL's
+  // `voice_settings`: stability, similarity_boost, style, use_speaker_boost.
+  // Stored as numeric(3,2) in PG (pg returns as string) so we coerce +
+  // clamp to [0,1] before passing to Vapi. NULL is treated as "use EL
+  // defaults" — we still pass them through so the operator's UI value
+  // is authoritative.
+  //
+  // Only attached when provider is 11labs; OpenAI's voice block ignores
+  // these and Vapi would reject the request if we sent them.
+  //
+  // Vapi field names are camelCase per their assistant schema:
+  // https://docs.vapi.ai/api-reference/assistants/create
+  //
+  // Docs (ElevenLabs):
+  // https://elevenlabs.io/docs/api-reference/text-to-speech/convert#request.body.voice_settings
+  const clamp01 = (v: unknown, fallback: number): number => {
+    if (v == null) return fallback;
+    const n = Number(v);
+    if (!Number.isFinite(n)) return fallback;
+    return Math.min(1, Math.max(0, n));
+  };
+  const parsedStability = clamp01((agentConfigRow as any)?.voiceStability, 0.5);
+  const parsedSimilarityBoost = clamp01((agentConfigRow as any)?.voiceSimilarityBoost, 0.75);
+  const parsedStyle = clamp01((agentConfigRow as any)?.voiceStyle, 0.0);
+  // PG returns boolean as JS boolean — but a `null` (column missing
+  // pre-migration) defaults to EL's spec'd true.
+  const rawSpeakerBoost = (agentConfigRow as any)?.voiceSpeakerBoost;
+  const parsedSpeakerBoost = rawSpeakerBoost == null ? true : Boolean(rawSpeakerBoost);
+
   // Deduplicate and resolve fallback models based on what the primary model is
-  const defaultFallbacks = ["gpt-4o", "claude-3-5-sonnet-20241022", "gemini-1.5-pro", "gpt-4-turbo"];
-  const resolvedFallbacks = defaultFallbacks.filter(m => m !== voiceLlmModel).slice(0, 3);
+  const defaultFallbacks = [
+    "gpt-4o",
+    "claude-3-5-sonnet-20241022",
+    "gemini-1.5-pro",
+    "gpt-4-turbo",
+  ];
+  const resolvedFallbacks = defaultFallbacks.filter((m) => m !== voiceLlmModel).slice(0, 3);
+
+  // Brand sign-off — Vapi speaks `endCallMessage` via the configured TTS
+  // when the assistant terminates the call (e.g. caller says goodbye, or
+  // the assistant's flow hits an end node). We can't inject the brand
+  // sting MP3 here directly — Vapi's `endCallMessage` field is a string,
+  // not a media URL — so the operator's chosen TTS voice speaks this
+  // phrase. The matching audio file (public/sounds/wireline-end-sting.mp3)
+  // is available for any non-Vapi path that CAN play media (e.g. the
+  // post-call digest player in the dashboard, the marketing demo, etc.).
+  // Operator override lives in agentConfigRow.endCallMessage when set.
+  const endCallMessage =
+    (agentConfigRow as any)?.endCallMessage ||
+    wirelinePersona?.endCallMessage ||
+    "Thanks for calling. Have a great rest of your day.";
+
+  // Pre-transfer cue — same constraint as above: Vapi speaks
+  // `transferPlan.message` via TTS, not as an audio URL. The matching
+  // chime MP3 is in public/sounds/wireline-transfer-chime.mp3 and is
+  // wired into the Twilio failover webhook's <Play> verb (where audio
+  // URLs work natively). For Vapi-runtime transfers we ship a short
+  // spoken phrase + use warm-transfer-say-message so the destination
+  // hears the brand greeting; the caller hears the assistant's transfer
+  // sentence before being bridged.
+  const transferMessage = "Connecting you now. One moment.";
 
   return {
     name: agentConfigRow?.name || "Wireline Agent",
     firstMessage: firstMessage,
     serverUrlSecret: VAPI_WEBHOOK_SECRET,
     silenceTimeoutSeconds,
+    // Brand voice — what the assistant says on graceful call end.
+    endCallMessage,
+    // Default transfer plan applied to every transferCall tool invocation.
+    // Mode is warm-transfer-say-message so the destination party hears
+    // our handoff phrase before the customer is bridged. Vapi's
+    // transferDestinationNumber is set by the tool call at runtime —
+    // we only fix the message + mode here.
+    transferPlan: {
+      mode: "warm-transfer-say-message",
+      message: transferMessage,
+    },
+    // Latency tuning — these collectively shave ~600-900ms off the
+    // perceived "agent felt slow" gap. Three knobs:
+    //   1. responseDelaySeconds: 0 — Vapi waits this long after the
+    //      caller stops talking before starting to speak. Default is
+    //      ~0.4s, which lets the LLM stream first-token. With 11labs
+    //      streaming on the TTS side we can go straight to 0.
+    //   2. numWordsToInterruptAssistant: 2 — caller can barge in after
+    //      saying just 2 words. Default 3 felt like the agent was
+    //      steamrolling.
+    //   3. backgroundDenoisingEnabled: false — adds latency to the
+    //      audio pipeline; usually unnecessary on modern handsets.
+    responseDelaySeconds: 0,
+    numWordsToInterruptAssistant: 2,
+    backgroundDenoisingEnabled: false,
     model: {
       provider: voiceLlmProvider,
       model: voiceLlmModel,
@@ -289,6 +556,113 @@ Today is ${currentDateTime}.
     voice: {
       provider: resolvedVoiceProvider,
       voiceId: resolvedVoiceId,
+      // 11labs-specific streaming optimization. 4 is the max — slight
+      // quality trade for fastest first-audio-out. Most call quality
+      // differences are imperceptible vs the latency win.
+      optimizeStreamingLatency: 4,
+      // ElevenLabs speed control (operator-set, 0.7–1.2). Vapi forwards
+      // this to ElevenLabs as `voice.eleven_labs.speed`. Only attach
+      // when the resolved provider is 11labs and the value differs from
+      // the neutral default so we don't bloat every assistant payload
+      // with a no-op. Slower for elderly customers (~0.85), faster for
+      // impatient callers (~1.1).
+      ...(resolvedVoiceProvider === "11labs" && parsedVoiceSpeed !== 1.0
+        ? { speed: parsedVoiceSpeed }
+        : {}),
+      // ElevenLabs voice fine-tuning quality params. Operator-set per-
+      // agent — most impactful on cloned voices where the source
+      // recording quality dictates how much room there is to tune.
+      // Always passed when provider is 11labs (even at defaults) so
+      // the operator's UI value is authoritative — otherwise EL would
+      // apply ITS defaults and diverge from what the slider shows.
+      // Map our snake_case schema → Vapi's camelCase voice schema:
+      //   stability             → stability
+      //   similarity_boost      → similarityBoost
+      //   style                 → style
+      //   speaker_boost         → useSpeakerBoost
+      ...(resolvedVoiceProvider === "11labs"
+        ? {
+            stability: parsedStability,
+            similarityBoost: parsedSimilarityBoost,
+            style: parsedStyle,
+            useSpeakerBoost: parsedSpeakerBoost,
+          }
+        : {}),
+      // Per-tenant pronunciation dictionaries — only valid when the
+      // resolved provider is 11labs (Vapi ignores them for other TTS
+      // providers and would warn). Vapi forwards these to ElevenLabs
+      // as `voice.eleven_labs.pronunciation_dictionary_locators` at
+      // synthesis time. Empty array stays absent from the config so
+      // we don't bloat the assistant payload for tenants who haven't
+      // configured any dictionaries.
+      ...(pronunciationDicts.length > 0 && resolvedVoiceProvider === "11labs"
+        ? { pronunciationDictionaryLocators: pronunciationDicts }
+        : {}),
+    },
+    // Explicit transcriber — Vapi defaults to Deepgram Nova-2 which is
+    // already best-in-class on noisy lines + accented English. Pinning
+    // the model explicitly (vs relying on Vapi defaults) protects us
+    // from silent upstream model swaps that could regress accuracy.
+    transcriber: {
+      provider: "deepgram",
+      model: "nova-2",
+      language: "en",
+      // smartFormat handles "two five five five" → "2555" automatically
+      // — critical for confirming phone numbers + appointment times.
+      smartFormat: true,
+    },
+    // Voicemail detection — Vapi's ML-based answering-machine detector.
+    // When triggered, the assistant skips its first message + can
+    // optionally leave a custom voicemail. Huge cost saver on outbound:
+    // we don't pay for 30 seconds of LLM tokens talking to a robot.
+    voicemailDetection: {
+      provider: "twilio",
+      voicemailDetectionTypes: ["machine_end_beep", "machine_end_silence"],
+      enabled: true,
+      machineDetectionTimeout: 15,
+    },
+    // Custom voicemail message — concise, branded, includes a callback
+    // hook so the contact can press 0 (handled via DTMF tool).
+    voicemailMessage:
+      "Hi, this is Wireline calling. Sorry we missed you — feel free to call us back at any time and we'll be happy to help. Thanks!",
+    // Always record so we can replay + retrain. Operator can disable per-
+    // agent if HIPAA mode is on.
+    recordingEnabled: true,
+    // Post-call analysis — Vapi runs these prompts against the
+    // transcript after the call ends + surfaces results in webhook.
+    // Better than the default generic summary: pulls out caller intent,
+    // outcome, and any commitments the agent made.
+    analysisPlan: {
+      summaryPrompt:
+        "Summarize this call in 2-3 sentences. Focus on: (1) what the caller wanted, (2) what the agent did, (3) any follow-up the agent committed to.",
+      structuredDataPrompt: "Extract structured data from this call.",
+      structuredDataSchema: {
+        type: "object",
+        properties: {
+          caller_intent: {
+            type: "string",
+            description:
+              "One of: book_appointment, ask_question, complaint, sales_inquiry, support, transfer_request, other",
+          },
+          outcome: {
+            type: "string",
+            description:
+              "One of: resolved, scheduled, transferred, voicemail, unresolved, callback_needed",
+          },
+          commitments: {
+            type: "array",
+            items: { type: "string" },
+            description:
+              "List of any commitments the agent made (e.g., 'will send invoice by 5pm', 'will call back tomorrow')",
+          },
+          sentiment: {
+            type: "string",
+            description: "One of: positive, neutral, negative, frustrated",
+          },
+        },
+      },
+      successEvaluationPrompt:
+        "Did the agent successfully address what the caller wanted? Reply with 'true' or 'false' only.",
     },
     functions: buildRoleToolDefs(agentRole, enabledToolNames),
   };

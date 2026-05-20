@@ -35,6 +35,21 @@ import { CRMService } from "../lib/crm-service";
 import { createMeeting as createZoomMeeting } from "../lib/zoom-service";
 import { NotificationService } from "../lib/notifications";
 import { postMessage as slackPostMessage, getDefaultChannel } from "../lib/slack-service";
+import {
+  lookupOrder as shopifyLookupOrder,
+  searchProducts as shopifySearchProducts,
+  lookupCustomer as shopifyLookupCustomer,
+  startReturn as shopifyStartReturn,
+  cancelOrder as shopifyCancelOrder,
+  updateOrderShippingAddress as shopifyUpdateAddress,
+} from "../lib/shopify-service";
+import {
+  squareLookupOrder,
+  squareLookupCustomer,
+  squareCheckInventory,
+  squareCreatePaymentLink,
+} from "../lib/square-service";
+import { sendTeamsMessage, logToExcel } from "../lib/microsoft-graph-service";
 import { normalizeDncPhone } from "../lib/compliance";
 import { lookupTenantPhoneNumber, sendTenantMessage } from "../lib/twilio-service";
 import { resolveAgentTools } from "../lib/agent-capabilities";
@@ -49,6 +64,17 @@ import {
 import { handleEndOfCallReport } from "../lib/vapi-handlers";
 import { buildVapiAssistant } from "../lib/vapi-assistant-factory";
 import { shouldQueueWebhook } from "../lib/vapi-webhook-queue";
+import {
+  performMidCallVoiceSwap,
+  shouldSwapForCall,
+  clearSwapDedupe,
+  logSwapAttempt,
+} from "../lib/vapi-voice-swap";
+import {
+  handleCreateAccount,
+  handleSendPaymentLink,
+  handleSendSignupLink,
+} from "../lib/vapi-tool-handlers";
 
 // The extraction from server.ts is now complete. The Gemini post-call lesson
 // extraction, TCPA consent ledger writer, and webhook dispatch are fully
@@ -74,7 +100,14 @@ router.post("/api/vapi-webhook", async (req, res) => {
       _warnedAboutVapiSecret = true;
     }
   } else if (!timingSafeEq(provided, VAPI_WEBHOOK_SECRET)) {
-    log.warn("Rejected Vapi webhook with bad/missing signature");
+    // Include ip + signature prefix for abuse pattern detection
+    // (volume probing, replay attacks). Bounded leak — the prefix
+    // alone is not enough to reconstruct the secret.
+    log.warn("Rejected Vapi webhook with bad/missing signature", {
+      ip: req.ip,
+      sig_prefix: provided ? provided.slice(0, 8) : null,
+      ts: Date.now(),
+    });
     return res.status(401).json({ error: "Invalid webhook signature." });
   }
 
@@ -259,6 +292,61 @@ router.post("/api/vapi-webhook", async (req, res) => {
         }
       }
 
+      // Platform-Resend signup-link tool — the showcase + demo agents
+      // (Sarah, Liam, Marcus, etc.) call this when a caller asks for a
+      // Wireline trial signup link. Distinct from `send_email` above,
+      // which routes through the TENANT'S connected Google/Microsoft
+      // OAuth account — showcase agents have no tenant so they need a
+      // platform-level transport. Closes the "agent promised an email
+      // but never sent it" gap Mike caught on the demo line.
+      //
+      // Core branch logic lives in src/lib/vapi-tool-handlers.ts so it
+      // can be unit-tested with mocked transports — the route stays a
+      // thin adapter (look up the agent name, inject deps).
+      if (toolCall.function.name === "send_signup_link") {
+        const { sendSignupLinkEmail } = await import("../lib/email-service");
+        const agentNameRow = await drizzle
+          .select({ name: schema.agents.name })
+          .from(schema.agents)
+          .where(eq(schema.agents.id, webhookAgentId))
+          .limit(1);
+        const { result } = await handleSendSignupLink(toolCall.function.arguments, {
+          sendSignupLinkEmail,
+          agentName: agentNameRow[0]?.name ?? undefined,
+          log,
+        });
+        results.push({ toolCallId: toolCall.id, result });
+      }
+
+      // create_account — a Wireline employee signs a caller up by phone.
+      // Creates the account with a random password + emails a
+      // set-password link so the caller picks their own. Same
+      // confirm-the-email guardrail as send_signup_link.
+      if (toolCall.function.name === "create_account") {
+        const { authService } = await import("../lib/auth-service");
+        const { sendPasswordResetEmail } = await import("../lib/email-service");
+        const crypto = await import("crypto");
+        const { result } = await handleCreateAccount(toolCall.function.arguments, {
+          signUp: (email, password, fullName) => authService.signUp(email, password, fullName),
+          createPasswordResetToken: (email) => authService.createPasswordResetToken(email),
+          sendPasswordResetEmail,
+          randomPassword: () => crypto.randomBytes(24).toString("base64url"),
+          log,
+        });
+        results.push({ toolCallId: toolCall.id, result });
+      }
+
+      // send_payment_link — emails the caller a checkout link for a
+      // specific plan so they can pay + activate without friction.
+      if (toolCall.function.name === "send_payment_link") {
+        const { sendEmail } = await import("../lib/email-service");
+        const { result } = await handleSendPaymentLink(toolCall.function.arguments, {
+          sendEmail,
+          log,
+        });
+        results.push({ toolCallId: toolCall.id, result });
+      }
+
       if (toolCall.function.name === "send_text_message") {
         try {
           const { to_number, channel, message_body } = toolCall.function.arguments;
@@ -417,6 +505,21 @@ router.post("/api/vapi-webhook", async (req, res) => {
                 `📅 *Appointment booked*\n${title}\n${new Date(startTime).toLocaleString()} → ${new Date(endTime).toLocaleString()}`,
               );
             }
+            // Operator SMS alert — positive event. Fires only when the
+            // operator opted in (twilio_manager_alerts_enabled = true
+            // + twilio_manager_alert_number set). Keeps the operator
+            // in the loop on wins, not just escalations.
+            try {
+              const { NotificationService } = await import("../lib/notifications");
+              const notif = new NotificationService(agent.user_id);
+              void notif.sendUrgentAlert({
+                title: "📅 Meeting booked",
+                message: `${customer_name} · ${service_type} · ${new Date(startTime).toLocaleString()}`,
+                callId: (message.call as { id?: string } | undefined)?.id,
+              });
+            } catch {
+              /* best-effort; never block the tool response */
+            }
           }
           results.push({
             toolCallId: toolCall.id,
@@ -451,7 +554,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
         try {
           const { phone_number } = toolCall.function.arguments;
           const { enrichLead } = await import("../lib/apollo-service");
-          const profile = await enrichLead(phone_number);
+          const profile = await enrichLead(phone_number, agent?.user_id);
           if (profile) {
             results.push({
               toolCallId: toolCall.id,
@@ -465,6 +568,35 @@ router.post("/api/vapi-webhook", async (req, res) => {
         }
       }
 
+      if (toolCall.function.name === "gemini_ground") {
+        try {
+          const { query } = toolCall.function.arguments || {};
+          if (!query || typeof query !== "string") {
+            results.push({
+              toolCallId: toolCall.id,
+              result: "Missing search query.",
+            });
+          } else {
+            const { groundedSearch } = await import("../lib/gemini-brain");
+            const grounded = await groundedSearch(query);
+            const sourceTail =
+              grounded.sources.length > 0
+                ? ` (sources: ${grounded.sources
+                    .slice(0, 3)
+                    .map((s) => s.title || s.uri || "")
+                    .filter(Boolean)
+                    .join("; ")})`
+                : "";
+            results.push({
+              toolCallId: toolCall.id,
+              result: grounded.answer + sourceTail,
+            });
+          }
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Grounded search error." });
+        }
+      }
+
       // CRM Handlers
       if (toolCall.function.name === "crm_search_contacts") {
         try {
@@ -473,7 +605,10 @@ router.post("/api/vapi-webhook", async (req, res) => {
           const { contacts } = await service.searchContacts(query);
           results.push({
             toolCallId: toolCall.id,
-            result: contacts && contacts.length > 0 ? `Found CRM contacts: ${JSON.stringify(contacts)}` : "No contacts found or CRM not connected.",
+            result:
+              contacts && contacts.length > 0
+                ? `Found CRM contacts: ${JSON.stringify(contacts)}`
+                : "No contacts found or CRM not connected.",
           });
         } catch {
           results.push({ toolCallId: toolCall.id, result: "CRM search error." });
@@ -516,7 +651,9 @@ router.post("/api/vapi-webhook", async (req, res) => {
           });
           results.push({
             toolCallId: toolCall.id,
-            result: success ? "Opportunity created successfully in CRM." : "Failed to create opportunity.",
+            result: success
+              ? "Opportunity created successfully in CRM."
+              : "Failed to create opportunity.",
           });
         } catch {
           results.push({ toolCallId: toolCall.id, result: "CRM opportunity error." });
@@ -530,14 +667,66 @@ router.post("/api/vapi-webhook", async (req, res) => {
           if (agent?.user_id) {
             const slackCh = await getDefaultChannel(agent.user_id);
             if (slackCh) {
-              await slackPostMessage(agent.user_id, slackCh, `🤖 *Agent Notification*\n${slackMsg}`);
-              results.push({ toolCallId: toolCall.id, result: "Slack notification sent successfully." });
+              await slackPostMessage(
+                agent.user_id,
+                slackCh,
+                `🤖 *Agent Notification*\n${slackMsg}`,
+              );
+              results.push({
+                toolCallId: toolCall.id,
+                result: "Slack notification sent successfully.",
+              });
             } else {
-              results.push({ toolCallId: toolCall.id, result: "Slack integration not configured." });
+              results.push({
+                toolCallId: toolCall.id,
+                result: "Slack integration not configured.",
+              });
             }
           }
         } catch {
           results.push({ toolCallId: toolCall.id, result: "Slack notification error." });
+        }
+      }
+
+      if (toolCall.function.name === "send_teams_message") {
+        try {
+          const { message: teamsMsg } = toolCall.function.arguments || {};
+          if (agent?.user_id) {
+            const sent = await sendTeamsMessage({
+              userId: agent.user_id,
+              text: String(teamsMsg || ""),
+            });
+            results.push({
+              toolCallId: toolCall.id,
+              result: sent
+                ? "Microsoft Teams notification sent."
+                : "Microsoft Teams is not connected for this account.",
+            });
+          }
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Teams notification error." });
+        }
+      }
+
+      if (toolCall.function.name === "log_to_excel") {
+        try {
+          const { caller, outcome, details } = toolCall.function.arguments || {};
+          if (agent?.user_id) {
+            const ok = await logToExcel({
+              userId: agent.user_id,
+              caller: String(caller || "Unknown caller"),
+              outcome: String(outcome || ""),
+              details: String(details || ""),
+            });
+            results.push({
+              toolCallId: toolCall.id,
+              result: ok
+                ? "Logged to the Excel call log."
+                : "Microsoft Excel is not connected for this account.",
+            });
+          }
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Excel logging error." });
         }
       }
 
@@ -552,7 +741,9 @@ router.post("/api/vapi-webhook", async (req, res) => {
           });
           results.push({
             toolCallId: toolCall.id,
-            result: zoomMeeting ? `Zoom meeting created: ${zoomMeeting.join_url}` : "Failed to create Zoom meeting.",
+            result: zoomMeeting
+              ? `Zoom meeting created: ${zoomMeeting.join_url}`
+              : "Failed to create Zoom meeting.",
           });
         } catch {
           results.push({ toolCallId: toolCall.id, result: "Zoom error." });
@@ -567,7 +758,10 @@ router.post("/api/vapi-webhook", async (req, res) => {
             action: "payment_promise",
             metadata: { amount_promised, payment_date, payment_method },
           });
-          results.push({ toolCallId: toolCall.id, result: "Payment promise legally recorded in compliance ledger." });
+          results.push({
+            toolCallId: toolCall.id,
+            result: "Payment promise legally recorded in compliance ledger.",
+          });
         } catch {
           results.push({ toolCallId: toolCall.id, result: "Failed to record payment promise." });
         }
@@ -582,21 +776,27 @@ router.post("/api/vapi-webhook", async (req, res) => {
               userId: agent?.user_id,
               agentId: webhookAgentId,
               taskType: "ticket",
-              description: `[${severity.toUpperCase()}] ${issue_summary} (Codes: ${error_codes || 'None'})`,
+              description: `[${severity.toUpperCase()}] ${issue_summary} (Codes: ${error_codes || "None"})`,
               priority: severity === "critical" ? "high" : severity === "high" ? "high" : "medium",
               status: "pending",
               sourceType: "phone_call",
               targetChannel: "manual",
             })
             .returning({ id: schema.fleetTasks.id });
-          results.push({ toolCallId: toolCall.id, result: `Support ticket #${task.id.split("-")[0]} created.` });
+          results.push({
+            toolCallId: toolCall.id,
+            result: `Support ticket #${task.id.split("-")[0]} created.`,
+          });
         } catch {
           results.push({ toolCallId: toolCall.id, result: "Failed to create support ticket." });
         }
       }
 
       if (toolCall.function.name === "leave_voicemail") {
-        results.push({ toolCallId: toolCall.id, result: "Voicemail recorded. Please say goodbye and end the call now." });
+        results.push({
+          toolCallId: toolCall.id,
+          result: "Voicemail recorded. Please say goodbye and end the call now.",
+        });
       }
 
       if (toolCall.function.name === "schedule_callback") {
@@ -613,7 +813,10 @@ router.post("/api/vapi-webhook", async (req, res) => {
             targetChannel: "manual",
             createdAt: new Date(),
           });
-          results.push({ toolCallId: toolCall.id, result: `Callback securely scheduled for ${callback_datetime}.` });
+          results.push({
+            toolCallId: toolCall.id,
+            result: `Callback securely scheduled for ${callback_datetime}.`,
+          });
         } catch {
           results.push({ toolCallId: toolCall.id, result: "Failed to schedule callback." });
         }
@@ -632,7 +835,10 @@ router.post("/api/vapi-webhook", async (req, res) => {
             targetChannel: "manual",
             createdAt: new Date(),
           });
-          results.push({ toolCallId: toolCall.id, result: "Customer profile structured and saved." });
+          results.push({
+            toolCallId: toolCall.id,
+            result: "Customer profile structured and saved.",
+          });
         } catch {
           results.push({ toolCallId: toolCall.id, result: "Failed to capture profile." });
         }
@@ -649,7 +855,11 @@ router.post("/api/vapi-webhook", async (req, res) => {
               callId: (payload.call as any)?.id || "unknown",
             });
           }
-          results.push({ toolCallId: toolCall.id, result: "Escalation signal sent to human supervisors. If you can transfer the call, do it now, otherwise apologize and say a human will call back." });
+          results.push({
+            toolCallId: toolCall.id,
+            result:
+              "Escalation signal sent to human supervisors. If you can transfer the call, do it now, otherwise apologize and say a human will call back.",
+          });
         } catch {
           results.push({ toolCallId: toolCall.id, result: "Failed to send escalation signal." });
         }
@@ -673,22 +883,317 @@ router.post("/api/vapi-webhook", async (req, res) => {
               .where(
                 and(
                   eq(schema.callLogs.customerNumber, safePhone),
-                  eq(schema.callLogs.userId, agent.user_id)
-                )
+                  eq(schema.callLogs.userId, agent.user_id),
+                ),
               )
               .orderBy(sql`${schema.callLogs.createdAt} DESC`)
               .limit(3);
             if (pastCalls.length > 0) {
-              const summaries = pastCalls.map((c) => `- ${c.createdAt?.toISOString()}: [${c.intentLabel}] ${c.summary}`).join("\\n");
-              results.push({ toolCallId: toolCall.id, result: `Past 3 interactions:\n${summaries}` });
+              const summaries = pastCalls
+                .map((c) => `- ${c.createdAt?.toISOString()}: [${c.intentLabel}] ${c.summary}`)
+                .join("\\n");
+              results.push({
+                toolCallId: toolCall.id,
+                result: `Past 3 interactions:\n${summaries}`,
+              });
             } else {
-              results.push({ toolCallId: toolCall.id, result: "No recent interactions found for this caller." });
+              results.push({
+                toolCallId: toolCall.id,
+                result: "No recent interactions found for this caller.",
+              });
             }
           } else {
             results.push({ toolCallId: toolCall.id, result: "Could not identify caller number." });
           }
         } catch {
           results.push({ toolCallId: toolCall.id, result: "Failed to load recent interactions." });
+        }
+      }
+
+      // ──────────────────────────────────────────────────────────────
+      //  Shopify e-commerce handlers — order/inventory/customer
+      //  lookups + return/cancel/address actions for online stores.
+      //  Each calls the matching shopify-service function; the service
+      //  returns a graceful no-op when no Shopify store is connected,
+      //  so these never throw on an un-connected tenant.
+      // ──────────────────────────────────────────────────────────────
+      if (toolCall.function.name === "shopify_lookup_order") {
+        try {
+          const { order_number, email } = toolCall.function.arguments || {};
+          const order = await shopifyLookupOrder({
+            orderNumber: order_number,
+            email,
+            userId: agent?.user_id,
+          });
+          if (!order) {
+            results.push({
+              toolCallId: toolCall.id,
+              result:
+                "I couldn't find an order matching that. Double-check the order number or the email on the order.",
+            });
+          } else {
+            const trackingLine =
+              order.tracking.length > 0 && order.tracking[0].number
+                ? ` Tracking: ${order.tracking[0].company || "carrier"} ${order.tracking[0].number}.`
+                : " No tracking number yet.";
+            const itemList = order.line_items.map((li) => `${li.quantity}x ${li.title}`).join(", ");
+            results.push({
+              toolCallId: toolCall.id,
+              result: `Order ${order.name}: ${order.fulfillment_status}, payment ${order.financial_status}, total ${order.total} ${order.currency}.${trackingLine} Items: ${itemList}. [data: ${JSON.stringify(order)}]`,
+            });
+          }
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Order lookup error." });
+        }
+      }
+
+      if (toolCall.function.name === "shopify_check_inventory") {
+        try {
+          const { query } = toolCall.function.arguments || {};
+          const products = await shopifySearchProducts({
+            query: String(query || ""),
+            userId: agent?.user_id,
+          });
+          if (products.length === 0) {
+            results.push({
+              toolCallId: toolCall.id,
+              result: "I couldn't find a product matching that in the store catalog.",
+            });
+          } else {
+            const summary = products
+              .slice(0, 5)
+              .map((p) => {
+                const v = p.variants
+                  .map(
+                    (vr) =>
+                      `${vr.title} — $${vr.price}, ${vr.inventory_quantity > 0 ? `${vr.inventory_quantity} in stock` : "out of stock"}`,
+                  )
+                  .join("; ");
+                return `${p.title}: ${v}`;
+              })
+              .join(" | ");
+            results.push({
+              toolCallId: toolCall.id,
+              result: `Found ${products.length} product(s). ${summary} [data: ${JSON.stringify(products)}]`,
+            });
+          }
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Inventory check error." });
+        }
+      }
+
+      if (toolCall.function.name === "shopify_lookup_customer") {
+        try {
+          const { email, phone } = toolCall.function.arguments || {};
+          const fallbackNumber =
+            (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
+            (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
+          const customer = await shopifyLookupCustomer({
+            email,
+            phone: phone || fallbackNumber,
+            userId: agent?.user_id,
+          });
+          if (!customer) {
+            results.push({
+              toolCallId: toolCall.id,
+              result: "I couldn't find a customer record matching that email or phone number.",
+            });
+          } else {
+            const recent = customer.recent_orders
+              .map((o) => `${o.name} (${o.financial_status}, ${o.total})`)
+              .join(", ");
+            results.push({
+              toolCallId: toolCall.id,
+              result: `Customer ${customer.first_name} ${customer.last_name}: ${customer.orders_count} order(s), ${customer.total_spent} lifetime. Recent: ${recent || "none"}. [data: ${JSON.stringify(customer)}]`,
+            });
+          }
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Customer lookup error." });
+        }
+      }
+
+      if (toolCall.function.name === "shopify_start_return") {
+        try {
+          const { order_id, reason } = toolCall.function.arguments || {};
+          if (!order_id) {
+            results.push({
+              toolCallId: toolCall.id,
+              result: "I need the order ID to start a return. Look up the order first.",
+            });
+          } else {
+            const outcome = await shopifyStartReturn({
+              orderId: String(order_id),
+              reason: String(reason || "customer request"),
+              userId: agent?.user_id,
+            });
+            results.push({ toolCallId: toolCall.id, result: outcome.message });
+          }
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Return request error." });
+        }
+      }
+
+      if (toolCall.function.name === "shopify_cancel_order") {
+        try {
+          const { order_id } = toolCall.function.arguments || {};
+          if (!order_id) {
+            results.push({
+              toolCallId: toolCall.id,
+              result: "I need the order ID to cancel an order. Look up the order first.",
+            });
+          } else {
+            const outcome = await shopifyCancelOrder({
+              orderId: String(order_id),
+              userId: agent?.user_id,
+            });
+            results.push({ toolCallId: toolCall.id, result: outcome.message });
+          }
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Order cancel error." });
+        }
+      }
+
+      if (toolCall.function.name === "shopify_update_address") {
+        try {
+          const args = toolCall.function.arguments || {};
+          if (!args.order_id) {
+            results.push({
+              toolCallId: toolCall.id,
+              result: "I need the order ID to update the shipping address.",
+            });
+          } else {
+            const outcome = await shopifyUpdateAddress({
+              orderId: String(args.order_id),
+              address: {
+                address1: args.address1,
+                address2: args.address2,
+                city: args.city,
+                province: args.province,
+                zip: args.zip,
+                country: args.country,
+                name: args.name,
+              },
+              userId: agent?.user_id,
+            });
+            results.push({ toolCallId: toolCall.id, result: outcome.message });
+          }
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Address update error." });
+        }
+      }
+
+      // ──────────────────────────────────────────────────────────────
+      //  Square e-commerce handlers — order/customer/inventory lookups
+      //  and payment-link creation for Square merchants.
+      // ──────────────────────────────────────────────────────────────
+      if (toolCall.function.name === "square_lookup_order") {
+        try {
+          const { order_id, email } = toolCall.function.arguments || {};
+          const order = await squareLookupOrder({
+            orderId: order_id,
+            email,
+            userId: agent?.user_id,
+          });
+          if (!order) {
+            results.push({
+              toolCallId: toolCall.id,
+              result:
+                "I couldn't find a Square order matching that. Double-check the order ID or the email on the account.",
+            });
+          } else {
+            const itemList = order.lineItems.map((li) => `${li.quantity}x ${li.name}`).join(", ");
+            results.push({
+              toolCallId: toolCall.id,
+              result: `Order ${order.displayId || order.id}: state ${order.state}, total ${order.total}. Items: ${itemList}. [data: ${JSON.stringify(order)}]`,
+            });
+          }
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Square order lookup error." });
+        }
+      }
+
+      if (toolCall.function.name === "square_lookup_customer") {
+        try {
+          const { email, phone } = toolCall.function.arguments || {};
+          const fallbackNumber =
+            (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
+            (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
+          const customer = await squareLookupCustomer({
+            email,
+            phone: phone || fallbackNumber,
+            userId: agent?.user_id,
+          });
+          if (!customer) {
+            results.push({
+              toolCallId: toolCall.id,
+              result: "I couldn't find a Square customer matching that email or phone number.",
+            });
+          } else {
+            results.push({
+              toolCallId: toolCall.id,
+              result: `Customer ${customer.firstName} ${customer.lastName} (${customer.email ?? "no email"}): member since ${customer.createdAt.split("T")[0]}. [data: ${JSON.stringify(customer)}]`,
+            });
+          }
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Square customer lookup error." });
+        }
+      }
+
+      if (toolCall.function.name === "square_check_inventory") {
+        try {
+          const { query } = toolCall.function.arguments || {};
+          const items = await squareCheckInventory({
+            query: String(query || ""),
+            userId: agent?.user_id,
+          });
+          if (items.length === 0) {
+            results.push({
+              toolCallId: toolCall.id,
+              result: "I couldn't find a Square catalog item matching that.",
+            });
+          } else {
+            const summary = items
+              .slice(0, 5)
+              .map((item) => {
+                const inStock = item.variations.some((v) => (v.stockCount ?? 0) > 0);
+                return `${item.name}: ${item.variations.map((v) => `${v.name} ${v.price}`).join(", ")} — ${inStock ? "in stock" : "out of stock"}`;
+              })
+              .join(" | ");
+            results.push({
+              toolCallId: toolCall.id,
+              result: `Found ${items.length} item(s). ${summary} [data: ${JSON.stringify(items)}]`,
+            });
+          }
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Square inventory check error." });
+        }
+      }
+
+      if (toolCall.function.name === "square_create_payment_link") {
+        try {
+          const { title, amount_dollars } = toolCall.function.arguments || {};
+          if (!title || amount_dollars == null) {
+            results.push({
+              toolCallId: toolCall.id,
+              result: "I need a title and amount to create a payment link.",
+            });
+          } else {
+            const link = await squareCreatePaymentLink({
+              title: String(title),
+              amountCents: Math.round(Number(amount_dollars) * 100),
+              userId: agent?.user_id,
+            });
+            if (!link.ok || !link.url) {
+              results.push({ toolCallId: toolCall.id, result: link.message });
+            } else {
+              results.push({
+                toolCallId: toolCall.id,
+                result: `Payment link created: ${link.url} — $${amount_dollars} for ${title}. Share this with the customer to complete payment. [data: ${JSON.stringify(link)}]`,
+              });
+            }
+          }
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Square payment link creation error." });
         }
       }
     }
@@ -809,7 +1314,82 @@ router.post("/api/vapi-webhook", async (req, res) => {
     }
   }
 
+  // Mid-call voice swap on detected non-English language. Vapi's
+  // transcriber emits a dedicated `language-change-detected` event the
+  // moment a caller switches to e.g. Spanish. We look up the operator's
+  // configured secondary voice for this agent and hand the call off to
+  // a clone of the assistant running that voice — caller hears "Sarah"
+  // (English) → ~500ms of dead air → "Maria" (Spanish), no hold music.
+  //
+  // Why a handoff and not a config patch: Vapi's PATCH /call/{id}
+  // endpoint only mutates the call display name (May 2026 docs); the
+  // voice block on the running assistant is immutable mid-call. The
+  // live-call control channel exposes a `handoff` message type that
+  // DOES accept a fresh voice override — that's the path we use.
+  //
+  // Pattern source: ElevenLabs multi-voice cookbook —
+  //   https://elevenlabs.io/docs/eleven-agents/customization/voice/multi-voice-support
+  //
+  // Trade-offs documented in src/lib/vapi-voice-swap.ts:1-30.
+  if (message && message.type === "language-change-detected") {
+    const langCode = (message as { language?: string }).language || "";
+    const callObj = (payload.call as Record<string, any> | undefined) || {};
+    const callId = (callObj.id as string | undefined) || "";
+
+    // English back to English is a no-op (the transcriber sometimes
+    // flickers when the caller code-switches mid-sentence). We only
+    // swap on a NON-English detected language.
+    if (callId && langCode && langCode !== "en") {
+      // Dedupe — Vapi re-emits the same language-change event on
+      // noisy transcripts; a second handoff would re-fire the same
+      // ~500ms dead-air gap for nothing.
+      if (shouldSwapForCall(callId, langCode)) {
+        try {
+          const [agentRow] = await drizzle
+            .select({
+              secondaryVoiceId: schema.agents.secondaryVoiceId,
+              voiceProvider: schema.agents.voiceProvider,
+            })
+            .from(schema.agents)
+            .where(eq(schema.agents.id, webhookAgentId))
+            .limit(1);
+
+          if (agentRow?.secondaryVoiceId) {
+            const result = await performMidCallVoiceSwap({
+              call: callObj as any,
+              detectedLanguage: langCode,
+              secondaryVoiceId: agentRow.secondaryVoiceId,
+              voiceProvider: agentRow.voiceProvider || "11labs",
+            });
+            logSwapAttempt(callId, webhookAgentId, langCode, result);
+          } else {
+            // No secondary voice configured — log so ops can see the
+            // operator hasn't set one up yet.
+            log.info("Vapi language-change detected but no secondary voice set", {
+              callId,
+              agentId: webhookAgentId,
+              language: langCode,
+            });
+          }
+        } catch (e: any) {
+          log.warn("Vapi mid-call voice swap lookup failed", {
+            callId,
+            agentId: webhookAgentId,
+            language: langCode,
+            error: getErrorMessage(e),
+          });
+        }
+      }
+    }
+    return res.json({ received: true });
+  }
+
   if (message && message.type === "end-of-call-report") {
+    // Clear the per-call voice-swap dedupe entries — keeps the
+    // in-memory dedupe set bounded across thousands of calls.
+    const endCallId = (message.call as { id?: string } | undefined)?.id;
+    if (endCallId) clearSwapDedupe(endCallId);
+
     // Queue for async processing to prevent Vapi timeout/retries
     // End-of-call processing can take 10-30s (AI analysis, webhook dispatch)
     try {
