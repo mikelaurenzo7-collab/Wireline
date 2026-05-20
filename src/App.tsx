@@ -20,6 +20,7 @@ const VerticalLanding = lazy(() => import("./pages/VerticalLanding"));
 const Compare = lazy(() => import("./pages/Compare"));
 const About = lazy(() => import("./pages/About"));
 const LandingPage = lazy(() => import("./pages/LandingPage"));
+const Showcase = lazy(() => import("./pages/Showcase"));
 
 function AppContent() {
   const { user } = useAuth();
@@ -88,6 +89,16 @@ function AppContent() {
     return (
       <Suspense fallback={<div className="min-h-screen bg-paper" />}>
         <About />
+      </Suspense>
+    );
+  }
+  // /showcase — playable agent templates (singing receptionist + future
+  // fun demos). Renders BEFORE the auth guard so anonymous prospects
+  // can audition personas without signing in.
+  if (location.pathname === "/showcase") {
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-paper" />}>
+        <Showcase />
       </Suspense>
     );
   }

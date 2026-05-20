@@ -430,11 +430,44 @@ Today is ${currentDateTime}.
   ];
   const resolvedFallbacks = defaultFallbacks.filter((m) => m !== voiceLlmModel).slice(0, 3);
 
+  // Brand sign-off — Vapi speaks `endCallMessage` via the configured TTS
+  // when the assistant terminates the call (e.g. caller says goodbye, or
+  // the assistant's flow hits an end node). We can't inject the brand
+  // sting MP3 here directly — Vapi's `endCallMessage` field is a string,
+  // not a media URL — so the operator's chosen TTS voice speaks this
+  // phrase. The matching audio file (public/sounds/wireline-end-sting.mp3)
+  // is available for any non-Vapi path that CAN play media (e.g. the
+  // post-call digest player in the dashboard, the marketing demo, etc.).
+  // Operator override lives in agentConfigRow.endCallMessage when set.
+  const endCallMessage =
+    (agentConfigRow as any)?.endCallMessage || "Thanks for calling. Have a great rest of your day.";
+
+  // Pre-transfer cue — same constraint as above: Vapi speaks
+  // `transferPlan.message` via TTS, not as an audio URL. The matching
+  // chime MP3 is in public/sounds/wireline-transfer-chime.mp3 and is
+  // wired into the Twilio failover webhook's <Play> verb (where audio
+  // URLs work natively). For Vapi-runtime transfers we ship a short
+  // spoken phrase + use warm-transfer-say-message so the destination
+  // hears the brand greeting; the caller hears the assistant's transfer
+  // sentence before being bridged.
+  const transferMessage = "Connecting you now. One moment.";
+
   return {
     name: agentConfigRow?.name || "Wireline Agent",
     firstMessage: firstMessage,
     serverUrlSecret: VAPI_WEBHOOK_SECRET,
     silenceTimeoutSeconds,
+    // Brand voice — what the assistant says on graceful call end.
+    endCallMessage,
+    // Default transfer plan applied to every transferCall tool invocation.
+    // Mode is warm-transfer-say-message so the destination party hears
+    // our handoff phrase before the customer is bridged. Vapi's
+    // transferDestinationNumber is set by the tool call at runtime —
+    // we only fix the message + mode here.
+    transferPlan: {
+      mode: "warm-transfer-say-message",
+      message: transferMessage,
+    },
     // Latency tuning — these collectively shave ~600-900ms off the
     // perceived "agent felt slow" gap. Three knobs:
     //   1. responseDelaySeconds: 0 — Vapi waits this long after the
