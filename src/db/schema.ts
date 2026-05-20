@@ -349,6 +349,7 @@ export const agentLessons = pgTable(
   },
   (t) => ({
     unq: unique().on(t.agentId, t.lesson),
+    agentCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_agent_lessons_agent_created ON wireline_agent_lessons USING btree (agent_id, created_at DESC)`,
   }),
 );
 
@@ -469,6 +470,8 @@ export const appointments = pgTable(
     userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_appointments_user_id ON wireline_appointments USING btree (user_id)`,
     userCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_appointments_user_created ON wireline_appointments USING btree (user_id, created_at)`,
     createdAtIdx: sql`CREATE INDEX IF NOT EXISTS idx_appointments_created_at ON wireline_appointments USING btree (created_at)`,
+    statusIdx: sql`CREATE INDEX IF NOT EXISTS idx_appointments_status ON wireline_appointments USING btree (status)`,
+    userStatusIdx: sql`CREATE INDEX IF NOT EXISTS idx_appointments_user_status ON wireline_appointments USING btree (user_id, status)`,
   }),
 );
 
@@ -511,6 +514,8 @@ export const callLogs = pgTable(
     userCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_user_created ON wireline_call_logs USING btree (user_id, created_at)`,
     agentIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_agent_id ON wireline_call_logs USING btree (agent_id)`,
     createdAtIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_created_at ON wireline_call_logs USING btree (created_at)`,
+    userOutcomeIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_user_outcome ON wireline_call_logs USING btree (user_id, outcome_tag) WHERE outcome_tag IS NOT NULL`,
+    userCampaignIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_user_campaign ON wireline_call_logs USING btree (user_id, campaign_source) WHERE campaign_source IS NOT NULL`,
   }),
 );
 
@@ -607,15 +612,22 @@ export const emailThreads = pgTable(
   }),
 );
 
-export const emailMessages = pgTable("wireline_email_messages", {
-  id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
-  userId: uuid("user_id"),
-  threadId: uuid("thread_id").references(() => emailThreads.id, { onDelete: "cascade" }),
-  googleMessageId: text("google_message_id").unique(),
-  role: text("role"), // 'user' or 'ai'
-  content: text("content"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-});
+export const emailMessages = pgTable(
+  "wireline_email_messages",
+  {
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
+    userId: uuid("user_id"),
+    threadId: uuid("thread_id").references(() => emailThreads.id, { onDelete: "cascade" }),
+    googleMessageId: text("google_message_id").unique(),
+    role: text("role"), // 'user' or 'ai'
+    content: text("content"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    threadIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_email_messages_thread_id ON wireline_email_messages USING btree (thread_id)`,
+    threadCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_email_messages_thread_created ON wireline_email_messages USING btree (thread_id, created_at DESC)`,
+  }),
+);
 
 // 3.1b SMS THREADS + MESSAGES — two-way text conversations.
 // Mirrors the email_threads/email_messages shape so the SmsThreads UI
@@ -837,17 +849,24 @@ export const fleetTasks = pgTable(
 );
 
 // 3.3 NETWORK LINKS (PHONE NUMBERS)
-export const phoneNumbers = pgTable("wireline_phone_numbers", {
-  id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
-  userId: uuid("user_id"),
-  phoneNumber: text("phone_number").unique().notNull(),
-  vapiNumberId: text("vapi_number_id"),
-  agentId: text("agent_id").references(() => agents.id),
-  // Marketing-campaign label so /insights can break down "calls from X ad".
-  // Free-form ("Google Ads — Spring '26", "LinkedIn — Founder Pitch", etc.).
-  campaignLabel: text("campaign_label"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-});
+export const phoneNumbers = pgTable(
+  "wireline_phone_numbers",
+  {
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
+    userId: uuid("user_id"),
+    phoneNumber: text("phone_number").unique().notNull(),
+    vapiNumberId: text("vapi_number_id"),
+    agentId: text("agent_id").references(() => agents.id),
+    // Marketing-campaign label so /insights can break down "calls from X ad".
+    // Free-form ("Google Ads — Spring '26", "LinkedIn — Founder Pitch", etc.).
+    campaignLabel: text("campaign_label"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_phone_numbers_user_id ON wireline_phone_numbers USING btree (user_id)`,
+    agentIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_phone_numbers_agent_id ON wireline_phone_numbers USING btree (agent_id)`,
+  }),
+);
 
 // 3.4 OUTBOUND SIGNAL (LEADS & CAMPAIGNS)
 export const outboundCampaigns = pgTable(
@@ -868,6 +887,8 @@ export const outboundCampaigns = pgTable(
   (t) => ({
     userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_campaigns_user_id ON wireline_outbound_campaigns USING btree (user_id)`,
     userCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_campaigns_user_created ON wireline_outbound_campaigns USING btree (user_id, created_at)`,
+    statusIdx: sql`CREATE INDEX IF NOT EXISTS idx_campaigns_status ON wireline_outbound_campaigns USING btree (status)`,
+    agentIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_campaigns_agent_id ON wireline_outbound_campaigns USING btree (agent_id)`,
   }),
 );
 
@@ -935,6 +956,8 @@ export const outboundLeads = pgTable(
     userStatusIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_user_status ON wireline_outbound_leads USING btree (user_id, status)`,
     callbackIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_callback_scheduled_at ON wireline_outbound_leads USING btree (user_id, callback_scheduled_at) WHERE callback_scheduled_at IS NOT NULL`,
     createdAtIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_created_at ON wireline_outbound_leads USING btree (created_at)`,
+    userCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_user_created ON wireline_outbound_leads USING btree (user_id, created_at DESC)`,
+    statusNextAttemptIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_status_next_attempt ON wireline_outbound_leads USING btree (status, callback_scheduled_at) WHERE status IN ('Pending', 'Retry')`,
   }),
 );
 
@@ -1026,36 +1049,53 @@ export const webhooks = pgTable("wireline_webhooks", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
-export const webhookDeliveries = pgTable("wireline_webhook_deliveries", {
-  id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
-  userId: uuid("user_id").notNull(),
-  webhookId: uuid("webhook_id")
-    .notNull()
-    .references(() => webhooks.id, { onDelete: "cascade" }),
-  event: text("event").notNull(),
-  payload: jsonb("payload").notNull(),
-  attempts: integer("attempts").notNull().default(0),
-  maxAttempts: integer("max_attempts").notNull().default(5),
-  status: text("status").notNull().default("pending"),
-  lastStatusCode: integer("last_status_code"),
-  lastError: text("last_error"),
-  nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).defaultNow(),
-  deliveredAt: timestamp("delivered_at", { withTimezone: true }),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-});
+export const webhookDeliveries = pgTable(
+  "wireline_webhook_deliveries",
+  {
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
+    userId: uuid("user_id").notNull(),
+    webhookId: uuid("webhook_id")
+      .notNull()
+      .references(() => webhooks.id, { onDelete: "cascade" }),
+    event: text("event").notNull(),
+    payload: jsonb("payload").notNull(),
+    attempts: integer("attempts").notNull().default(0),
+    maxAttempts: integer("max_attempts").notNull().default(5),
+    status: text("status").notNull().default("pending"),
+    lastStatusCode: integer("last_status_code"),
+    lastError: text("last_error"),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).defaultNow(),
+    deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_user_id ON wireline_webhook_deliveries USING btree (user_id)`,
+    webhookIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_webhook_id ON wireline_webhook_deliveries USING btree (webhook_id)`,
+    statusIdx: sql`CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_status ON wireline_webhook_deliveries USING btree (status)`,
+    nextAttemptIdx: sql`CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_next_attempt ON wireline_webhook_deliveries USING btree (next_attempt_at) WHERE status = 'pending'`,
+  }),
+);
 
 // 4.2 COMPLIANCE (DNC LIST)
-export const dncList = pgTable("wireline_dnc_list", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id").notNull(),
-  phone: text("phone").notNull(),
-  phoneRaw: text("phone_raw"),
-  reason: text("reason"),
-  source: text("source").default("manual"),
-  // True when the row was inserted by /api/admin/seed-demo-account.
-  demo: boolean("demo").default(false).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-});
+export const dncList = pgTable(
+  "wireline_dnc_list",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    phone: text("phone").notNull(),
+    phoneRaw: text("phone_raw"),
+    reason: text("reason"),
+    source: text("source").default("manual"),
+    // True when the row was inserted by /api/admin/seed-demo-account.
+    demo: boolean("demo").default(false).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_dnc_list_user_id ON wireline_dnc_list USING btree (user_id)`,
+    phoneIdx: sql`CREATE INDEX IF NOT EXISTS idx_dnc_list_phone ON wireline_dnc_list USING btree (phone)`,
+    userPhoneIdx: sql`CREATE INDEX IF NOT EXISTS idx_dnc_list_user_phone ON wireline_dnc_list USING btree (user_id, phone)`,
+  }),
+);
 
 // 4.2.1 CONSENT LOG (COMPLIANCE LEDGER)
 export const consentLog = pgTable("wireline_consent_log", {
