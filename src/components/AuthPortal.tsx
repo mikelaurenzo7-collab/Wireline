@@ -79,13 +79,14 @@ function LiveStatsTicker() {
       .then((data) => setStats(data))
       .catch(() => {});
   }, []);
-  if (!stats || stats.agents_online < 5) return null;
+  const agentsOnline = Number(stats?.agents_online ?? 0);
+  if (agentsOnline < 5) return null;
   return (
     <>
       <div className="w-px h-6 bg-white/10" />
       <div className="flex flex-col">
         <span className="font-display italic text-2xl text-ink">
-          {stats.agents_online.toLocaleString()}
+          {agentsOnline.toLocaleString()}
         </span>
         <span className="text-[9px] uppercase tracking-[0.2em] text-muted/60">
           Agents on Wireline

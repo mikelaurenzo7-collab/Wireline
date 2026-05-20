@@ -212,13 +212,13 @@ export default function AgentTraining() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <header className="shrink-0 px-4 md:px-6 pt-3 pb-3 sticky top-0 z-30 backdrop-blur-xl bg-paper/70 border-b border-white/8">
+      <header className="shrink-0 px-3 md:px-4 py-2 sticky top-0 z-30 backdrop-blur-xl bg-paper/70 border-b border-white/8">
         {/* Page title removed per design direction — the left nav
             already says "Training". The agent picker stays. */}
-        <div className="flex flex-col lg:flex-row justify-end items-start lg:items-center gap-3 max-w-[1400px] mx-auto w-full">
+        <div className="flex flex-col lg:flex-row justify-end items-start lg:items-center gap-2 max-w-[1400px] mx-auto w-full">
           <div className="flex items-center gap-2 w-full lg:w-auto">
             <Users className="w-3.5 h-3.5 text-brand shrink-0" />
-            <span className="text-[10px] uppercase tracking-[0.3em] text-muted/70 hidden sm:inline">
+            <span className="text-[10px] uppercase tracking-[0.14em] text-muted/70 hidden sm:inline">
               Agent
             </span>
             <div className="relative flex-1 lg:flex-none lg:min-w-[260px]">
@@ -240,15 +240,15 @@ export default function AgentTraining() {
         </div>
 
         {/* AI assists — collapsed by default to declutter; expand to see recipe shortcuts */}
-        <details className="max-w-[1400px] mx-auto w-full mt-3 group">
-          <summary className="cursor-pointer list-none flex items-center gap-2 px-3 py-2 rounded-xl glass border border-white/10 hover:border-brand/30 transition-colors">
+        <details className="max-w-[1400px] mx-auto w-full mt-2 group">
+          <summary className="cursor-pointer list-none flex items-center gap-2 px-3 py-1.5 rounded-xl glass border border-white/10 hover:border-brand/30 transition-colors">
             <div
               className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
               style={{ background: "#4F1E7B" }}
             >
               <Sparkles className="w-3 h-3 text-on-brand" strokeWidth={2.5} />
             </div>
-            <span className="text-[10px] uppercase tracking-[0.35em] text-brand">AI assists</span>
+            <span className="text-[10px] uppercase tracking-[0.14em] text-brand">AI assists</span>
             <span className="text-[11px] text-ink/60">— one-click recipes</span>
             <ChevronDown className="ml-auto w-3.5 h-3.5 text-muted transition-transform group-open:rotate-180" />
           </summary>
@@ -298,7 +298,7 @@ export default function AgentTraining() {
           </div>
         </details>
 
-        <nav className="flex flex-wrap gap-1.5 max-w-[1400px] mx-auto w-full mt-3">
+        <nav className="flex flex-wrap gap-1.5 max-w-[1400px] mx-auto w-full mt-2">
           {[
             {
               id: "workspace",
@@ -335,7 +335,7 @@ export default function AgentTraining() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
               className={cn(
-                "px-3 py-1.5 rounded-full border text-[10px] uppercase tracking-[0.25em] flex items-center gap-1.5 transition-colors",
+                "px-2.5 py-1.5 rounded-lg border text-[10px] uppercase tracking-[0.12em] flex items-center gap-1.5 transition-colors",
                 activeTab === tab.id
                   ? "bg-brand/15 border-brand/40 text-brand"
                   : "glass border-white/10 text-muted hover:border-white/20 hover:text-ink",
@@ -400,7 +400,7 @@ export default function AgentTraining() {
                   <button
                     onClick={handleOptimize}
                     disabled={isOptimizing}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-brand/40 bg-brand/8 text-brand text-[10px] uppercase tracking-[0.28em] hover:bg-brand/15 transition-all disabled:opacity-50"
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-brand/40 bg-brand/8 text-brand text-[10px] uppercase tracking-[0.12em] hover:bg-brand/15 transition-all disabled:opacity-50"
                   >
                     {isOptimizing ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -437,7 +437,7 @@ export default function AgentTraining() {
                               <p className="text-sm text-ink/90 leading-relaxed">"{s}"</p>
                               <button
                                 onClick={() => applySuggestion(s)}
-                                className="w-full h-8 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-all"
+                                className="w-full h-8 rounded-lg bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.12em] hover:bg-brand/25 transition-all"
                               >
                                 Apply
                               </button>
@@ -481,13 +481,13 @@ export default function AgentTraining() {
                           setEditingPersonality(false);
                           setPersonalityDraft(personality);
                         }}
-                        className="h-8 px-3 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-muted hover:text-ink transition-colors"
+                        className="h-8 px-3 rounded-lg glass border border-white/10 text-[10px] uppercase tracking-[0.12em] text-muted hover:text-ink transition-colors"
                       >
                         Cancel
                       </button>
                       <button
                         onClick={() => saveManualEntry("personality", personalityDraft)}
-                        className="h-8 px-3 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-all"
+                        className="h-8 px-3 rounded-lg bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.12em] hover:bg-brand/25 transition-all"
                       >
                         Save
                       </button>
@@ -495,7 +495,7 @@ export default function AgentTraining() {
                   ) : (
                     <button
                       onClick={() => setEditingPersonality(true)}
-                      className="h-8 px-3 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-muted/80 hover:text-ink flex items-center gap-1.5 transition-all"
+                      className="h-8 px-3 rounded-lg glass border border-white/10 text-[10px] uppercase tracking-[0.12em] text-muted/80 hover:text-ink flex items-center gap-1.5 transition-all"
                     >
                       <Pencil className="w-3 h-3" /> Edit
                     </button>
@@ -539,7 +539,7 @@ export default function AgentTraining() {
                         Lines your agent never crosses
                       </p>
                     </div>
-                    <span className="px-1.5 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-500 text-[9px] uppercase tracking-[0.25em] leading-none">
+                    <span className="px-1.5 py-0.5 rounded-md bg-rose-500/15 border border-rose-500/30 text-rose-500 text-[9px] uppercase tracking-[0.12em] leading-none">
                       Always-on
                     </span>
                   </header>
@@ -574,7 +574,7 @@ export default function AgentTraining() {
                                 <div className="flex justify-end gap-1.5">
                                   <button
                                     onClick={() => setEditingDirective(null)}
-                                    className="px-2.5 py-1 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-muted hover:text-ink"
+                                    className="px-2.5 py-1 rounded-lg glass border border-white/10 text-[10px] uppercase tracking-[0.12em] text-muted hover:text-ink"
                                   >
                                     Cancel
                                   </button>
@@ -583,7 +583,7 @@ export default function AgentTraining() {
                                       saveManualEntry("directive", editingDirective.content, d.id)
                                     }
                                     disabled={isSavingEntry}
-                                    className="px-2.5 py-1 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 disabled:opacity-50"
+                                    className="px-2.5 py-1 rounded-lg bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.12em] hover:bg-brand/25 disabled:opacity-50"
                                   >
                                     {isSavingEntry ? "Saving…" : "Save"}
                                   </button>
@@ -659,7 +659,7 @@ export default function AgentTraining() {
                         Knowledge base
                       </p>
                     </div>
-                    <span className="px-1.5 py-0.5 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-600 text-[9px] uppercase tracking-[0.25em] leading-none">
+                    <span className="px-1.5 py-0.5 rounded-md bg-blue-500/15 border border-blue-500/30 text-blue-600 text-[9px] uppercase tracking-[0.12em] leading-none">
                       Factual
                     </span>
                   </header>
@@ -694,7 +694,7 @@ export default function AgentTraining() {
                                 <div className="flex justify-end gap-1.5">
                                   <button
                                     onClick={() => setEditingKnowledge(null)}
-                                    className="px-2.5 py-1 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-muted hover:text-ink"
+                                    className="px-2.5 py-1 rounded-lg glass border border-white/10 text-[10px] uppercase tracking-[0.12em] text-muted hover:text-ink"
                                   >
                                     Cancel
                                   </button>
@@ -703,7 +703,7 @@ export default function AgentTraining() {
                                       saveManualEntry("knowledge", editingKnowledge.content, k.id)
                                     }
                                     disabled={isSavingEntry}
-                                    className="px-2.5 py-1 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 disabled:opacity-50"
+                                    className="px-2.5 py-1 rounded-lg bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.12em] hover:bg-brand/25 disabled:opacity-50"
                                   >
                                     {isSavingEntry ? "Saving…" : "Save"}
                                   </button>
@@ -851,12 +851,12 @@ export default function AgentTraining() {
             >
               <div className="min-h-full flex items-center justify-center p-6">
                 <div className="max-w-[560px] w-full text-center space-y-6">
-                  <div className="relative w-24 h-24 rounded-3xl glass border border-white/10 flex items-center justify-center mx-auto">
+                  <div className="relative w-20 h-20 rounded-2xl glass border border-white/10 flex items-center justify-center mx-auto">
                     <div
-                      className="absolute inset-0 rounded-3xl opacity-20 blur-xl"
+                      className="absolute inset-0 rounded-2xl opacity-20 blur-xl"
                       style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
                     />
-                    <PlayCircle className="w-12 h-12 text-brand relative z-10" strokeWidth={1.25} />
+                    <PlayCircle className="w-10 h-10 text-brand relative z-10" strokeWidth={1.25} />
                   </div>
                   <div>
                     <h2 className="font-display italic lowercase text-4xl text-ink mb-2">

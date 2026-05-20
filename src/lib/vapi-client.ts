@@ -22,6 +22,7 @@ import {
 import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "./agent-runtime";
 import { buildCustomerIntelBlock } from "./customer-intel";
 import { DEFAULT_AGENT_ROLE } from "./agent-constants";
+import { VAPI_TENANT_DEFAULT_MODEL } from "./claude-brain";
 
 // Retry configuration for transient failures
 const MAX_RETRIES = 3;
@@ -289,8 +290,8 @@ export async function placeOutboundCall(opts: {
   const { rules: archetypeRules, temp: llmTemp } = getArchetypeConfig(archetype);
   const ambientNoiseActive = agentConfig.ambientNoise && agentConfig.ambientNoise !== "off";
   const roleProtocol = ROLE_SPECIFIC_PROTOCOLS[outboundAgentRole] || "";
-  const voiceLlmProvider = settings?.voiceLlmProvider || "google";
-  const voiceLlmModel = settings?.voiceLlmModel || "gemini-1.5-flash";
+  const voiceLlmProvider = settings?.voiceLlmProvider || "anthropic";
+  const voiceLlmModel = settings?.voiceLlmModel || VAPI_TENANT_DEFAULT_MODEL;
 
   const systemPrompt = `
 ## IDENTITY & OUTBOUND MISSION

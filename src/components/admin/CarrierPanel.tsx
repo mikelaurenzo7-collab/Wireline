@@ -194,7 +194,7 @@ export function CarrierPanel({
                       },
                       {
                         v: "anthropic",
-                        label: "Claude 3.5 (Premium)",
+                        label: "Claude Sonnet (Premium)",
                         sub: "RECOMMENDED",
                         desc: "Advanced reasoning, objection handling, and steering.",
                       },
@@ -207,7 +207,7 @@ export function CarrierPanel({
                             ...settings,
                             voice_llm_provider: p.v,
                             voice_llm_model:
-                              p.v === "google" ? "gemini-1.5-flash" : "claude-3-5-sonnet-20241022",
+                              p.v === "google" ? "gemini-1.5-flash" : "claude-sonnet-4-6",
                           })
                         }
                         className={cn(

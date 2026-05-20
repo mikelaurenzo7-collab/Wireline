@@ -14,6 +14,7 @@ export function validateStartupEnv() {
     ["VAPI_PRIVATE_KEY", process.env.VAPI_PRIVATE_KEY],
     ["VAPI_WEBHOOK_SECRET", process.env.VAPI_WEBHOOK_SECRET],
     ["OAUTH_STATE_SECRET", process.env.OAUTH_STATE_SECRET],
+    ["APP_URL", process.env.APP_URL],
     // Stripe is wired into every billing route — without the secret
     // key, /api/billing/* throws on first request rather than at boot.
     ["STRIPE_SECRET_KEY", process.env.STRIPE_SECRET_KEY],
@@ -39,6 +40,7 @@ export function validateStartupEnv() {
   if (missing.length) {
     if (IS_PROD) {
       log.error("Missing required env vars. App may be unstable.", { missing });
+      throw new Error(`Missing required env vars: ${missing.join(", ")}`);
     } else {
       log.warn("Required env vars missing (dev mode — continuing with placeholders)", { missing });
     }

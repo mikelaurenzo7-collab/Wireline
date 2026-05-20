@@ -32,9 +32,22 @@ export interface AuditLogRow {
   created_at?: string | null;
 }
 
-export interface ByDayBucket  { day: string;    calls: number; cost: number; }
-export interface ByActionBucket { action: string; calls: number; cost: number; avg_latency_ms: number; }
-export interface ByModelBucket { model: string;  calls: number; cost: number; }
+export interface ByDayBucket {
+  day: string;
+  calls: number;
+  cost: number;
+}
+export interface ByActionBucket {
+  action: string;
+  calls: number;
+  cost: number;
+  avg_latency_ms: number;
+}
+export interface ByModelBucket {
+  model: string;
+  calls: number;
+  cost: number;
+}
 
 export interface AuditSummary {
   window_days: number;
@@ -49,9 +62,9 @@ export interface AuditSummary {
     avg_cost_per_call: number;
     avg_latency: number;
   };
-  by_day:    ByDayBucket[];
+  by_day: ByDayBucket[];
   by_action: ByActionBucket[];
-  by_model:  ByModelBucket[];
+  by_model: ByModelBucket[];
 }
 
 const num = (n: unknown): number => {
@@ -61,10 +74,23 @@ const num = (n: unknown): number => {
 };
 
 export function inputRateForModel(model: string | null | undefined): number {
-  if (!model) return 5;
+  if (!model) return 15;
+  const exactRates: Record<string, number> = {
+    "claude-haiku-4-5": 1,
+    "claude-sonnet-4-6": 3,
+    "claude-opus-4-7": 15,
+    "claude-opus-4-6": 15,
+    "claude-3-5-sonnet-20241022": 3,
+    "gemini-1.5-flash": 0.075,
+    "gemini-1.5-pro": 1.25,
+    "gpt-4o": 5,
+    "gpt-4-turbo": 10,
+  };
+  if (exactRates[model] !== undefined) return exactRates[model];
   if (model.includes("haiku")) return 1;
   if (model.includes("sonnet")) return 3;
-  return 5;
+  if (model.includes("opus")) return 15;
+  return 15;
 }
 
 const round4 = (n: number) => Number(n.toFixed(4));
@@ -79,10 +105,10 @@ export function computeAuditSummary(input: {
   const totals = all.reduce(
     (acc, r) => {
       acc.calls += 1;
-      acc.cost         += num(r.costUsd ?? r.cost_usd);
-      acc.input        += num(r.inputTokens ?? r.input_tokens);
-      acc.output       += num(r.outputTokens ?? r.output_tokens);
-      acc.cache_read   += num(r.cacheReadTokens ?? r.cache_read_tokens);
+      acc.cost += num(r.costUsd ?? r.cost_usd);
+      acc.input += num(r.inputTokens ?? r.input_tokens);
+      acc.output += num(r.outputTokens ?? r.output_tokens);
+      acc.cache_read += num(r.cacheReadTokens ?? r.cache_read_tokens);
       acc.cache_create += num(r.cacheCreateTokens ?? r.cache_create_tokens);
       return acc;
     },
@@ -97,28 +123,36 @@ export function computeAuditSummary(input: {
   const byDayMap = new Map<string, ByDayBucket>();
   for (const r of all) {
     const dateVal = r.createdAt ?? r.created_at;
-    const day = typeof dateVal === 'string' ? dateVal.slice(0, 10) : (dateVal instanceof Date ? dateVal.toISOString().slice(0, 10) : "");
+    const day =
+      typeof dateVal === "string"
+        ? dateVal.slice(0, 10)
+        : dateVal instanceof Date
+          ? dateVal.toISOString().slice(0, 10)
+          : "";
     if (!day) continue;
     const b = byDayMap.get(day) ?? { day, calls: 0, cost: 0 };
     b.calls += 1;
-    b.cost  += num(r.costUsd ?? r.cost_usd);
+    b.cost += num(r.costUsd ?? r.cost_usd);
     byDayMap.set(day, b);
   }
   const by_day = Array.from(byDayMap.values())
     .sort((a, b) => a.day.localeCompare(b.day))
-    .map(d => ({ ...d, cost: round4(d.cost) }));
+    .map((d) => ({ ...d, cost: round4(d.cost) }));
 
-  const byActionMap = new Map<string, { action: string; calls: number; cost: number; latencySum: number }>();
+  const byActionMap = new Map<
+    string,
+    { action: string; calls: number; cost: number; latencySum: number }
+  >();
   for (const r of all) {
     const action = r.action || "unknown";
     const a = byActionMap.get(action) ?? { action, calls: 0, cost: 0, latencySum: 0 };
-    a.calls      += 1;
-    a.cost       += num(r.costUsd ?? r.cost_usd);
+    a.calls += 1;
+    a.cost += num(r.costUsd ?? r.cost_usd);
     a.latencySum += num(r.latencyMs ?? r.latency_ms);
     byActionMap.set(action, a);
   }
   const by_action: ByActionBucket[] = Array.from(byActionMap.values())
-    .map(a => ({
+    .map((a) => ({
       action: a.action,
       calls: a.calls,
       cost: round4(a.cost),
@@ -131,11 +165,11 @@ export function computeAuditSummary(input: {
     const model = r.model || "unknown";
     const m = byModelMap.get(model) ?? { model, calls: 0, cost: 0 };
     m.calls += 1;
-    m.cost  += num(r.costUsd ?? r.cost_usd);
+    m.cost += num(r.costUsd ?? r.cost_usd);
     byModelMap.set(model, m);
   }
   const by_model = Array.from(byModelMap.values())
-    .map(m => ({ ...m, cost: round4(m.cost) }))
+    .map((m) => ({ ...m, cost: round4(m.cost) }))
     .sort((x, y) => y.cost - x.cost);
 
   const totalLatency = all.reduce((s, r) => s + num(r.latencyMs ?? r.latency_ms), 0);
@@ -144,10 +178,10 @@ export function computeAuditSummary(input: {
     window_days: windowDays,
     totals: {
       ...totals,
-      cost:               round4(totals.cost),
-      cache_savings_usd:  round4(cacheSavings),
-      avg_cost_per_call:  totals.calls ? round4(totals.cost / totals.calls) : 0,
-      avg_latency:        totals.calls ? Math.round(totalLatency / totals.calls) : 0,
+      cost: round4(totals.cost),
+      cache_savings_usd: round4(cacheSavings),
+      avg_cost_per_call: totals.calls ? round4(totals.cost / totals.calls) : 0,
+      avg_latency: totals.calls ? Math.round(totalLatency / totals.calls) : 0,
     },
     by_day,
     by_action,

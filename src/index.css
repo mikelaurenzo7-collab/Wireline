@@ -114,8 +114,8 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display tracking-tight font-normal;
-    letter-spacing: -0.01em;
+    @apply font-display font-normal;
+    letter-spacing: 0;
   }
 
   /* `.scrollbar-hide` used to fully hide scrollbars across the app.
@@ -181,7 +181,7 @@
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  AURORA UTILITIES  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 @utility brutal-border {
-  @apply border border-black/8 rounded-2xl;
+  @apply border border-black/8 rounded-xl;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.70) inset,
     0 0 0 1px rgba(79, 30, 123, 0.05),
@@ -190,7 +190,7 @@
 }
 
 @utility brutal-border-lg {
-  @apply border border-black/9 rounded-3xl;
+  @apply border border-black/9 rounded-2xl;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.70) inset,
     0 0 0 1px rgba(79, 30, 123, 0.06),
@@ -199,7 +199,7 @@
 }
 
 @utility brutal-btn {
-  @apply relative inline-flex items-center justify-center gap-3 px-9 py-4 font-medium tracking-[0.18em] uppercase text-xs rounded-full transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:grayscale disabled:pointer-events-none overflow-hidden;
+  @apply relative inline-flex items-center justify-center gap-2 px-5 py-2.5 font-medium tracking-[0.10em] uppercase text-[11px] rounded-xl transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:grayscale disabled:pointer-events-none overflow-hidden;
   color: #FAF8F4;
   background: #4F1E7B;
   box-shadow:
@@ -222,7 +222,7 @@
 }
 
 @utility brutal-card {
-  @apply relative overflow-hidden p-12 rounded-3xl border border-black/8;
+  @apply relative overflow-hidden p-6 md:p-8 rounded-2xl border border-black/8;
   background:
     linear-gradient(180deg, rgba(247, 242, 234, 0.80), rgba(245, 239, 229, 0.55)),
     rgba(239, 233, 220, 0.75);
@@ -286,7 +286,7 @@
 
 .brand-wordmark {
   @apply font-display uppercase font-normal;
-  letter-spacing: 0.14em;
+  letter-spacing: 0;
   text-rendering: geometricPrecision;
   color: #4F1E7B;
   filter: drop-shadow(0 0 10px rgba(79, 30, 123, 0.18));

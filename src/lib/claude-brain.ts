@@ -70,6 +70,12 @@ export const MODEL_PRICING = {
   [CLAUDE_MODELS.HAIKU]: { input: 1, output: 5, cacheRead: 0.1, cacheWrite: 1.25 },
   [CLAUDE_MODELS.SONNET]: { input: 3, output: 15, cacheRead: 0.3, cacheWrite: 3.75 },
   [CLAUDE_MODELS.OPUS]: { input: 15, output: 75, cacheRead: 1.5, cacheWrite: 18.75 },
+  "claude-opus-4-6": { input: 15, output: 75, cacheRead: 1.5, cacheWrite: 18.75 },
+  "claude-3-5-sonnet-20241022": { input: 3, output: 15, cacheRead: 0.3, cacheWrite: 3.75 },
+  "gemini-1.5-flash": { input: 0.075, output: 0.3, cacheRead: 0, cacheWrite: 0 },
+  "gemini-1.5-pro": { input: 1.25, output: 5, cacheRead: 0, cacheWrite: 0 },
+  "gpt-4o": { input: 5, output: 15, cacheRead: 0, cacheWrite: 0 },
+  "gpt-4-turbo": { input: 10, output: 30, cacheRead: 0, cacheWrite: 0 },
 } as const;
 
 /**

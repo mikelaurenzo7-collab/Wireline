@@ -600,13 +600,25 @@ export default function FleetSettings() {
   const [isDeletingAgent, setIsDeletingAgent] = useState<string | null>(null);
   const [agentStats, setAgentStats] = useState<Record<string, any>>({});
 
+  const normalizeAgentPerformance = (data: any) => ({
+    callCount: Number(data?.callCount ?? 0),
+    totalMinutes: Number(data?.totalMinutes ?? 0),
+    avgScore: Number(data?.avgScore ?? 0),
+    sentiment: {
+      positive: Number(data?.sentiment?.positive ?? 0),
+      neutral: Number(data?.sentiment?.neutral ?? 0),
+      negative: Number(data?.sentiment?.negative ?? 0),
+    },
+    sparkline: Array.isArray(data?.sparkline) ? data.sparkline : [],
+  });
+
   const fetchAgentPerformance = async (id: string, force = false) => {
     if (agentStats[id] && !force) return; // already loaded; use force=true to refresh
     try {
       const r = await authFetch(`/api/agents/${id}/performance`);
       if (r.ok) {
         const data = await r.json();
-        setAgentStats((prev) => ({ ...prev, [id]: data }));
+        setAgentStats((prev) => ({ ...prev, [id]: normalizeAgentPerformance(data) }));
       }
     } catch {
       /* non-critical */

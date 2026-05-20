@@ -189,8 +189,8 @@ export default function Showcase() {
         />
       </div>
 
-      <header className="relative z-10 px-6 lg:px-10 py-5 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2.5">
+      <header className="relative z-10 px-4 sm:px-6 lg:px-10 py-5 flex items-center justify-between gap-3">
+        <Link to="/" className="flex items-center gap-2.5 min-w-0">
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center"
             style={{
@@ -203,28 +203,28 @@ export default function Showcase() {
           </div>
           <span className="font-display italic text-xl text-ink">Wireline</span>
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <Link
             to="/pricing"
-            className="text-[11px] uppercase tracking-[0.3em] text-muted/70 hover:text-ink transition-colors"
+            className="hidden sm:inline text-[11px] uppercase tracking-[0.3em] text-muted/70 hover:text-ink transition-colors"
           >
             Pricing
           </Link>
           <Link
             to="/compare"
-            className="text-[11px] uppercase tracking-[0.3em] text-muted/70 hover:text-ink transition-colors"
+            className="hidden sm:inline text-[11px] uppercase tracking-[0.3em] text-muted/70 hover:text-ink transition-colors"
           >
             Compare
           </Link>
           <Link
             to="/about"
-            className="text-[11px] uppercase tracking-[0.3em] text-muted/70 hover:text-ink transition-colors"
+            className="hidden md:inline text-[11px] uppercase tracking-[0.3em] text-muted/70 hover:text-ink transition-colors"
           >
             About
           </Link>
           <Link
             to="/"
-            className="px-4 py-2 rounded-full bg-brand text-on-brand text-[11px] uppercase tracking-[0.28em] hover:opacity-90 transition-opacity"
+            className="shrink-0 px-3 sm:px-4 py-2 rounded-full bg-brand text-on-brand text-[10px] sm:text-[11px] uppercase tracking-[0.16em] sm:tracking-[0.28em] hover:opacity-90 transition-opacity"
           >
             Start free trial
           </Link>

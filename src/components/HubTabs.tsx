@@ -28,11 +28,11 @@ export default function HubTabs({ tabs, label, className }: HubTabsProps) {
     <nav
       aria-label={label || "Section navigation"}
       className={cn(
-        "shrink-0 mb-4 flex items-center gap-1 overflow-x-auto scrollbar-hide",
+        "shrink-0 mb-3 flex items-center gap-1 overflow-x-auto scrollbar-hide",
         className,
       )}
     >
-      <div className="flex items-center gap-1 p-1 rounded-2xl glass border border-black/8">
+      <div className="flex items-center gap-0.5 p-0.5 rounded-xl glass border border-black/8">
         {tabs.map((t) => {
           const Icon = t.icon;
           const active = pathname === t.path || pathname.startsWith(`${t.path}/`);
@@ -42,8 +42,8 @@ export default function HubTabs({ tabs, label, className }: HubTabsProps) {
               to={t.path}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "relative shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all text-[10px] uppercase tracking-[0.22em] font-medium",
-                active ? "text-white" : "text-muted hover:text-ink hover:bg-black/5",
+                "relative shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-[10px] uppercase tracking-[0.12em] font-medium",
+                active ? "text-on-brand" : "text-muted hover:text-ink hover:bg-black/5",
               )}
               style={
                 active

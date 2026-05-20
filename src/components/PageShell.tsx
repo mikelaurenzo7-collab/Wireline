@@ -82,7 +82,7 @@ export default function PageShell({
       {/* Tab strip */}
       {tabs && tabs.length > 0 && (
         <div className="shrink-0 flex items-center gap-1 mb-2 overflow-x-auto scrollbar-hide">
-          <div className="flex items-center gap-1 p-1 rounded-2xl glass border border-black/8">
+          <div className="flex items-center gap-0.5 p-0.5 rounded-xl glass border border-black/8">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const active = tab.id === activeId;
@@ -92,14 +92,14 @@ export default function PageShell({
                   onClick={() => setActiveId(tab.id)}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "relative shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all text-[10px] uppercase tracking-[0.22em] font-medium",
-                    active ? "text-white" : "text-muted hover:text-ink hover:bg-black/5",
+                    "relative shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-[10px] uppercase tracking-[0.12em] font-medium",
+                    active ? "text-on-brand" : "text-muted hover:text-ink hover:bg-black/5",
                   )}
                 >
                   {active && (
                     <motion.div
                       layoutId="tab-active-bg"
-                      className="absolute inset-0 rounded-xl"
+                      className="absolute inset-0 rounded-lg"
                       style={{
                         background: "#4F1E7B",
                         boxShadow:
@@ -116,7 +116,7 @@ export default function PageShell({
                       <span
                         className={cn(
                           "ml-0.5 px-1.5 py-px rounded-full text-[8px] font-mono leading-none",
-                          active ? "bg-white/20 text-white" : "bg-black/8 text-muted",
+                          active ? "bg-white/20 text-on-brand" : "bg-black/8 text-muted",
                         )}
                       >
                         {tab.badge}
@@ -186,7 +186,7 @@ export function Panel({
   return (
     <section
       className={cn(
-        "relative rounded-2xl glass border border-black/8 flex flex-col h-full min-h-0 overflow-hidden",
+        "relative rounded-xl glass border border-black/8 flex flex-col h-full min-h-0 overflow-hidden",
         className,
       )}
       style={{
@@ -221,7 +221,7 @@ export function Panel({
               <h3 className="font-display italic text-base text-ink leading-tight">{title}</h3>
             )}
             {hint && (
-              <span className="text-[9px] uppercase tracking-[0.30em] text-muted/60 ml-1">
+              <span className="text-[9px] uppercase tracking-[0.14em] text-muted/60 ml-1">
                 {hint}
               </span>
             )}
@@ -273,7 +273,7 @@ export function StatTile({
 }) {
   const trendPositive = trend && trend.value >= 0;
   return (
-    <div className="relative rounded-2xl glass border border-black/8 p-5 overflow-hidden card-interactive">
+    <div className="relative rounded-xl glass border border-black/8 p-4 overflow-hidden card-interactive">
       {/* Ambient glow */}
       <div
         className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-25 blur-3xl pointer-events-none"
@@ -286,8 +286,8 @@ export function StatTile({
       />
 
       <div className="relative">
-        <div className="flex items-start justify-between mb-3">
-          <p className="text-[9px] uppercase tracking-[0.38em] text-muted font-medium leading-none">
+        <div className="flex items-start justify-between mb-2.5">
+          <p className="text-[9px] uppercase tracking-[0.18em] text-muted font-medium leading-none">
             {label}
           </p>
           {Icon && (
@@ -303,13 +303,13 @@ export function StatTile({
           )}
         </div>
 
-        <div className="font-display italic text-2xl md:text-3xl text-ink leading-none tracking-tight truncate mb-2">
+        <div className="font-display italic text-2xl text-ink leading-none truncate mb-2">
           {value}
         </div>
 
         <div className="flex items-center gap-2">
           {sub && (
-            <p className="text-[9px] uppercase tracking-[0.28em] text-muted truncate flex-1">
+            <p className="text-[9px] uppercase tracking-[0.16em] text-muted truncate flex-1">
               {sub}
             </p>
           )}

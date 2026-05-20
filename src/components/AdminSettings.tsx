@@ -37,8 +37,8 @@ export default function AdminSettings() {
     vapi_phone_inbound_agent_id: "",
     subscription_status: "active",
     max_agents: 3,
-    voice_llm_provider: "google",
-    voice_llm_model: "gemini-1.5-flash",
+    voice_llm_provider: "anthropic",
+    voice_llm_model: "claude-sonnet-4-6",
     twilio_messaging_enabled: false,
     twilio_lookup_enabled: false,
     twilio_manager_alerts_enabled: false,
@@ -225,8 +225,8 @@ export default function AdminSettings() {
           vapi_phone_inbound_agent_id: settingsRes.vapi_phone_inbound_agent_id || "",
           subscription_status: settingsRes.subscription_status || "active",
           max_agents: settingsRes.max_agents || 3,
-          voice_llm_provider: settingsRes.voice_llm_provider || "google",
-          voice_llm_model: settingsRes.voice_llm_model || "gemini-1.5-flash",
+          voice_llm_provider: settingsRes.voice_llm_provider || "anthropic",
+          voice_llm_model: settingsRes.voice_llm_model || "claude-sonnet-4-6",
           twilio_messaging_enabled: !!settingsRes.twilio_messaging_enabled,
           twilio_lookup_enabled: !!settingsRes.twilio_lookup_enabled,
           twilio_manager_alerts_enabled: !!settingsRes.twilio_manager_alerts_enabled,
@@ -393,7 +393,7 @@ export default function AdminSettings() {
 
   const tabSwitcher = (
     <div
-      className="flex p-1 rounded-full glass border border-white/10 overflow-x-auto snap-x snap-mandatory scrollbar-hide max-w-full"
+      className="flex gap-0.5 p-0.5 rounded-xl glass border border-white/10 overflow-x-auto snap-x snap-mandatory scrollbar-hide max-w-full"
       role="tablist"
     >
       {(
@@ -416,7 +416,7 @@ export default function AdminSettings() {
           aria-controls={`admin-panel-${t}`}
           onClick={() => setActiveTab(t)}
           className={cn(
-            "shrink-0 snap-start px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.25em] transition-colors whitespace-nowrap",
+            "shrink-0 snap-start px-2.5 py-1.5 rounded-lg text-[10px] uppercase tracking-[0.12em] transition-colors whitespace-nowrap",
             activeTab === t ? "bg-brand/20 text-brand" : "text-muted hover:text-ink",
           )}
         >

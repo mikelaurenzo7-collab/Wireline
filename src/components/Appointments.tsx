@@ -576,6 +576,7 @@ export default function AppointmentsView() {
     <div className="flex items-center gap-2">
       <div className="flex p-1 rounded-full glass border border-white/10">
         <button
+          aria-label="List view"
           onClick={() => setViewMode("list")}
           className={cn(
             "w-8 h-8 rounded-full flex items-center justify-center transition-colors",
@@ -585,6 +586,7 @@ export default function AppointmentsView() {
           <LayoutList className="w-3.5 h-3.5" />
         </button>
         <button
+          aria-label="Calendar view"
           onClick={() => setViewMode("calendar")}
           className={cn(
             "w-8 h-8 rounded-full flex items-center justify-center transition-colors",

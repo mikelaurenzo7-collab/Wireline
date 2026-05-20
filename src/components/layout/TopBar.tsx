@@ -104,7 +104,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
         aria-label={`Go to ${item.label}`}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "group relative flex items-center gap-1.5 h-8 px-3 rounded-xl transition-all text-[12px] font-medium tracking-wide shrink-0",
+          "group relative flex items-center gap-1.5 h-8 px-2.5 min-[1380px]:px-3 rounded-lg transition-all text-[12px] font-medium shrink-0",
           isDrawer
             ? active
               ? "shadow-md shadow-[#4F1E7B]/20"
@@ -118,7 +118,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
         {active && (
           <motion.div
             layoutId={isDrawer ? "drawernav-active" : "topnav-active"}
-            className="absolute inset-0 rounded-xl"
+            className="absolute inset-0 rounded-lg"
             transition={{ type: "spring", stiffness: 420, damping: 36 }}
             style={{
               background: activeBg,
@@ -154,7 +154,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
               // renders at lg+ (mobile uses the drawer), so the label is
               // always visible whenever this row is on screen.
               "relative z-10 whitespace-nowrap transition-all duration-300",
-              "inline",
+              isDrawer ? "inline" : "hidden min-[1380px]:inline",
               active ? "font-semibold" : "font-normal",
             )}
             style={active ? { color: activeTextColor } : undefined}
@@ -189,7 +189,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
           paddingTop: "max(0px, env(safe-area-inset-top, 0))",
         }}
       >
-        <div className="h-11 flex items-center gap-2 px-2 md:px-3 lg:px-4">
+        <div className="h-11 flex items-center gap-2 px-3 lg:px-4">
           {/* Logo / Brand */}
           <Link
             to="/"
@@ -200,7 +200,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
               whileHover={{ rotate: 8, scale: 1.06 }}
               whileTap={{ scale: 0.96 }}
               transition={{ type: "spring", stiffness: 400, damping: 20 }}
-              className="relative w-7 h-7 rounded-xl flex items-center justify-center overflow-hidden shrink-0"
+              className="relative w-7 h-7 rounded-lg flex items-center justify-center overflow-hidden shrink-0"
               style={{
                 background: "#EFE9DC",
                 boxShadow:
@@ -210,14 +210,14 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
               <WirelineMark className="w-4 h-4 text-[#3B154C] relative z-10" strokeWidth={130} />
               <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent" />
             </motion.div>
-            <span className="brand-wordmark text-[16px] leading-none hidden sm:inline !text-[#EFE9DC] !filter-none">
+            <span className="brand-wordmark text-[15px] leading-none hidden sm:inline !text-[#EFE9DC] !filter-none">
               {branding.brand_name.toUpperCase()}
             </span>
           </Link>
 
           {/* Desktop nav — grouped, with subtle dividers between groups.
               Keep flex-none so nav doesn't grow into the right cluster's space. */}
-          <nav className="hidden lg:flex items-center gap-1 ml-3 shrink-0">
+          <nav className="hidden lg:flex items-center gap-0.5 ml-3 shrink-0">
             {NAV_GROUPS.map((group, gIdx) => (
               <React.Fragment key={group.label}>
                 {gIdx > 0 && (
@@ -288,7 +288,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
                   >
                     {/* Email header */}
                     <div className="px-4 py-3 border-b border-black/8">
-                      <p className="text-[10px] uppercase tracking-[0.22em] text-muted mb-1">
+                      <p className="text-[10px] uppercase tracking-[0.12em] text-muted mb-1">
                         Signed in as
                       </p>
                       <p className="text-[12px] font-medium text-ink truncate">
@@ -420,7 +420,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
               <div className="pt-3 mt-3 border-t border-black/8 space-y-2">
                 <div className="flex items-center gap-2 rounded-lg border border-black/8 glass px-2 py-2">
                   <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white font-medium text-sm"
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-on-brand font-medium text-sm"
                     style={{ background: "#4F1E7B" }}
                   >
                     {user?.email?.slice(0, 1).toUpperCase() ?? "?"}
@@ -429,7 +429,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
                     <p className="text-[12px] font-medium text-ink truncate leading-none mb-0.5">
                       {user?.email?.split("@")[0]}
                     </p>
-                    <p className="text-[9px] tracking-[0.28em] uppercase text-muted truncate">
+                    <p className="text-[9px] tracking-[0.12em] uppercase text-muted truncate">
                       {user?.email?.split("@")[1]}
                     </p>
                   </div>
