@@ -417,8 +417,8 @@ export default function Integrations() {
                       CRM &amp; messaging connectors
                     </h3>
                     <p className="text-sm text-muted/80 mt-1 leading-relaxed">
-                      HubSpot, Salesforce, and Slack sync — keep call notes, deals, and team alerts
-                      in lockstep with every conversation.
+                      HubSpot, Salesforce, Slack, and Shopify sync — keep call notes, deals, team
+                      alerts, and e-commerce orders in lockstep with every conversation.
                     </p>
                   </div>
                   <a

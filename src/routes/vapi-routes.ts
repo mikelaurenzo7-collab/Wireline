@@ -35,6 +35,14 @@ import { CRMService } from "../lib/crm-service";
 import { createMeeting as createZoomMeeting } from "../lib/zoom-service";
 import { NotificationService } from "../lib/notifications";
 import { postMessage as slackPostMessage, getDefaultChannel } from "../lib/slack-service";
+import {
+  lookupOrder as shopifyLookupOrder,
+  searchProducts as shopifySearchProducts,
+  lookupCustomer as shopifyLookupCustomer,
+  startReturn as shopifyStartReturn,
+  cancelOrder as shopifyCancelOrder,
+  updateOrderShippingAddress as shopifyUpdateAddress,
+} from "../lib/shopify-service";
 import { normalizeDncPhone } from "../lib/compliance";
 import { lookupTenantPhoneNumber, sendTenantMessage } from "../lib/twilio-service";
 import { resolveAgentTools } from "../lib/agent-capabilities";
@@ -850,6 +858,178 @@ router.post("/api/vapi-webhook", async (req, res) => {
           }
         } catch {
           results.push({ toolCallId: toolCall.id, result: "Failed to load recent interactions." });
+        }
+      }
+
+      // ──────────────────────────────────────────────────────────────
+      //  Shopify e-commerce handlers — order/inventory/customer
+      //  lookups + return/cancel/address actions for online stores.
+      //  Each calls the matching shopify-service function; the service
+      //  returns a graceful no-op when no Shopify store is connected,
+      //  so these never throw on an un-connected tenant.
+      // ──────────────────────────────────────────────────────────────
+      if (toolCall.function.name === "shopify_lookup_order") {
+        try {
+          const { order_number, email } = toolCall.function.arguments || {};
+          const order = await shopifyLookupOrder({
+            orderNumber: order_number,
+            email,
+            userId: agent?.user_id,
+          });
+          if (!order) {
+            results.push({
+              toolCallId: toolCall.id,
+              result:
+                "I couldn't find an order matching that. Double-check the order number or the email on the order.",
+            });
+          } else {
+            const trackingLine =
+              order.tracking.length > 0 && order.tracking[0].number
+                ? ` Tracking: ${order.tracking[0].company || "carrier"} ${order.tracking[0].number}.`
+                : " No tracking number yet.";
+            const itemList = order.line_items.map((li) => `${li.quantity}x ${li.title}`).join(", ");
+            results.push({
+              toolCallId: toolCall.id,
+              result: `Order ${order.name}: ${order.fulfillment_status}, payment ${order.financial_status}, total ${order.total} ${order.currency}.${trackingLine} Items: ${itemList}. [data: ${JSON.stringify(order)}]`,
+            });
+          }
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Order lookup error." });
+        }
+      }
+
+      if (toolCall.function.name === "shopify_check_inventory") {
+        try {
+          const { query } = toolCall.function.arguments || {};
+          const products = await shopifySearchProducts({
+            query: String(query || ""),
+            userId: agent?.user_id,
+          });
+          if (products.length === 0) {
+            results.push({
+              toolCallId: toolCall.id,
+              result: "I couldn't find a product matching that in the store catalog.",
+            });
+          } else {
+            const summary = products
+              .slice(0, 5)
+              .map((p) => {
+                const v = p.variants
+                  .map(
+                    (vr) =>
+                      `${vr.title} — $${vr.price}, ${vr.inventory_quantity > 0 ? `${vr.inventory_quantity} in stock` : "out of stock"}`,
+                  )
+                  .join("; ");
+                return `${p.title}: ${v}`;
+              })
+              .join(" | ");
+            results.push({
+              toolCallId: toolCall.id,
+              result: `Found ${products.length} product(s). ${summary} [data: ${JSON.stringify(products)}]`,
+            });
+          }
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Inventory check error." });
+        }
+      }
+
+      if (toolCall.function.name === "shopify_lookup_customer") {
+        try {
+          const { email, phone } = toolCall.function.arguments || {};
+          const fallbackNumber =
+            (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
+            (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
+          const customer = await shopifyLookupCustomer({
+            email,
+            phone: phone || fallbackNumber,
+            userId: agent?.user_id,
+          });
+          if (!customer) {
+            results.push({
+              toolCallId: toolCall.id,
+              result: "I couldn't find a customer record matching that email or phone number.",
+            });
+          } else {
+            const recent = customer.recent_orders
+              .map((o) => `${o.name} (${o.financial_status}, ${o.total})`)
+              .join(", ");
+            results.push({
+              toolCallId: toolCall.id,
+              result: `Customer ${customer.first_name} ${customer.last_name}: ${customer.orders_count} order(s), ${customer.total_spent} lifetime. Recent: ${recent || "none"}. [data: ${JSON.stringify(customer)}]`,
+            });
+          }
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Customer lookup error." });
+        }
+      }
+
+      if (toolCall.function.name === "shopify_start_return") {
+        try {
+          const { order_id, reason } = toolCall.function.arguments || {};
+          if (!order_id) {
+            results.push({
+              toolCallId: toolCall.id,
+              result: "I need the order ID to start a return. Look up the order first.",
+            });
+          } else {
+            const outcome = await shopifyStartReturn({
+              orderId: String(order_id),
+              reason: String(reason || "customer request"),
+              userId: agent?.user_id,
+            });
+            results.push({ toolCallId: toolCall.id, result: outcome.message });
+          }
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Return request error." });
+        }
+      }
+
+      if (toolCall.function.name === "shopify_cancel_order") {
+        try {
+          const { order_id } = toolCall.function.arguments || {};
+          if (!order_id) {
+            results.push({
+              toolCallId: toolCall.id,
+              result: "I need the order ID to cancel an order. Look up the order first.",
+            });
+          } else {
+            const outcome = await shopifyCancelOrder({
+              orderId: String(order_id),
+              userId: agent?.user_id,
+            });
+            results.push({ toolCallId: toolCall.id, result: outcome.message });
+          }
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Order cancel error." });
+        }
+      }
+
+      if (toolCall.function.name === "shopify_update_address") {
+        try {
+          const args = toolCall.function.arguments || {};
+          if (!args.order_id) {
+            results.push({
+              toolCallId: toolCall.id,
+              result: "I need the order ID to update the shipping address.",
+            });
+          } else {
+            const outcome = await shopifyUpdateAddress({
+              orderId: String(args.order_id),
+              address: {
+                address1: args.address1,
+                address2: args.address2,
+                city: args.city,
+                province: args.province,
+                zip: args.zip,
+                country: args.country,
+                name: args.name,
+              },
+              userId: agent?.user_id,
+            });
+            results.push({ toolCallId: toolCall.id, result: outcome.message });
+          }
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Address update error." });
         }
       }
     }

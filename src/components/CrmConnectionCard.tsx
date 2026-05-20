@@ -22,6 +22,7 @@ interface IntegrationState {
   zoom: IntegrationStatus;
   apollo: IntegrationStatus;
   meta: IntegrationStatus;
+  shopify: IntegrationStatus;
 }
 
 type ProviderKey = keyof IntegrationState;
@@ -80,6 +81,13 @@ const PROVIDERS: {
     group: "Ads",
     beta: true,
   },
+  {
+    key: "shopify",
+    label: "Shopify",
+    color: "emerald",
+    logo: "SH",
+    group: "E-commerce",
+  },
 ];
 
 export default function CrmConnectionCard() {
@@ -90,6 +98,11 @@ export default function CrmConnectionCard() {
     { id: string; name: string; is_private?: boolean }[]
   >([]);
   const [slackChannelsLoading, setSlackChannelsLoading] = useState(false);
+  // Shopify OAuth is per-store, so the operator must supply their
+  // myshopify domain before the Connect button can build the install
+  // URL. Held here until they click Connect.
+  const [shopDomain, setShopDomain] = useState("");
+  const [shopError, setShopError] = useState<string | null>(null);
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -140,10 +153,26 @@ export default function CrmConnectionCard() {
   }, [fetchStatus]);
 
   const connect = (provider: ProviderKey) => async () => {
+    // Shopify needs the merchant's myshopify domain appended as a
+    // query param so the per-store install URL can be built.
+    let endpoint = `/api/oauth/${provider}/url`;
+    if (provider === "shopify") {
+      const shop = shopDomain.trim().toLowerCase();
+      if (!/^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(shop)) {
+        setShopError("Enter a valid store domain, e.g. your-store.myshopify.com");
+        return;
+      }
+      setShopError(null);
+      endpoint += `?shop=${encodeURIComponent(shop)}`;
+    }
     setConnecting(provider);
     try {
-      const r = await authFetch(`/api/oauth/${provider}/url`);
+      const r = await authFetch(endpoint);
       if (!r.ok) {
+        if (provider === "shopify") {
+          const body = await r.json().catch(() => ({}));
+          setShopError(body?.error || "Could not start Shopify connect.");
+        }
         setConnecting(null);
         return;
       }
@@ -314,6 +343,32 @@ export default function CrmConnectionCard() {
                         )}
                       </div>
                     </div>
+                    {key === "shopify" && !s.connected && (
+                      <div className="mt-3 pt-3 border-t border-white/10 space-y-1.5">
+                        <div className="text-[9px] uppercase tracking-[0.25em] text-muted/90">
+                          Your store domain
+                        </div>
+                        <input
+                          type="text"
+                          value={shopDomain}
+                          onChange={(e) => {
+                            setShopDomain(e.target.value);
+                            if (shopError) setShopError(null);
+                          }}
+                          placeholder="your-store.myshopify.com"
+                          spellCheck={false}
+                          autoCapitalize="off"
+                          className="w-full text-[10px] rounded-lg bg-black/20 border border-white/10 px-2 py-1.5 text-ink placeholder:text-muted/50 outline-none focus:border-emerald-500/40"
+                        />
+                        {shopError ? (
+                          <p className="text-[9px] text-rose-500 leading-snug">{shopError}</p>
+                        ) : (
+                          <p className="text-[9px] text-muted/70 leading-snug">
+                            Enter your myshopify.com domain, then click Connect to authorize.
+                          </p>
+                        )}
+                      </div>
+                    )}
                     {key === "slack" && s.connected && (
                       <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
                         <div className="text-[9px] uppercase tracking-[0.25em] text-muted/90">
