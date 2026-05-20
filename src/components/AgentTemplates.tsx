@@ -208,7 +208,7 @@ const AGENT_TEMPLATES = [
       "Hi! I'm calling on behalf of [Company] — we'd love your feedback on your recent experience. This takes under 2 minutes.",
   },
   // === PERSONAL & LIFESTYLE ===
-  // For individuals on the Personal tier ($29/mo, 1 agent) — agents
+  // For individuals on the Personal tier ($49/mo, 1 agent) — agents
   // represent a single human rather than a business. Versatile concierge
   // by default plus three specialty sub-types for high-value individual
   // use cases (call screening, errand-running, bill negotiation).

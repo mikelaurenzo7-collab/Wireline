@@ -74,7 +74,7 @@ export default function OnboardingQuickstart({
   // Tier drives whether we show the 4-step self-serve flow or a
   // white-glove onboarding card (Business / Enterprise tier). Without
   // this gate, a 500-seat call center buyer lands on the same setup
-  // screen as a $29 solo operator — sets the wrong expectations.
+  // screen as a $49 solo operator — sets the wrong expectations.
   const [planId, setPlanId] = useState<string | null>(null);
 
   useEffect(() => {

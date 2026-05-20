@@ -41,7 +41,7 @@ export const WIRELINE_PLANS = [
     includes: [
       "3 AI agents",
       "3 phone numbers",
-      "1,500 voice minutes/mo (overage $0.15/min)",
+      "1,500 voice minutes/mo (overage $0.18/min)",
       "CRM sync (HubSpot or Salesforce)",
       "Two-way texting",
     ],
@@ -54,7 +54,7 @@ export const WIRELINE_PLANS = [
     includes: [
       "10 AI agents",
       "10 phone numbers",
-      "6,000 voice minutes/mo (overage $0.12/min)",
+      "6,000 voice minutes/mo (overage $0.15/min)",
       "All CRM integrations (HubSpot, Salesforce, Pipedrive, Apollo)",
       "Slack handoff for human escalations",
       "Custom playbooks + knowledge ingestion",
@@ -67,7 +67,7 @@ export const WIRELINE_PLANS = [
     includes: [
       "25 AI agents",
       "25 phone numbers",
-      "15,000 voice minutes/mo (overage $0.10/min)",
+      "15,000 voice minutes/mo (overage $0.13/min)",
       "Supervisor cockpit with live call monitor",
       "Team-level routing + per-team text-message sender",
       "DocuSign + custom integrations",
@@ -244,7 +244,7 @@ export function buildWirelineKnowledgeBlock(mode: "cs" | "demo" | "client" = "de
     base.push("WHEN A CALLER ASKS ABOUT WIRELINE:");
     base.push("  - Answer the question concisely from the knowledge above.");
     base.push(
-      "  - For pricing questions: name the tier that fits their use case (don't list all 6).",
+      "  - For pricing questions: name the tier that fits their use case (don't list all 5).",
     );
     base.push(
       `  - To talk to a human or book a demo: invite them to call Maya at (630) 642-5927 or email ${WIRELINE_SUPPORT_EMAIL}.`,
