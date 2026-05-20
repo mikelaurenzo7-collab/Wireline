@@ -16,6 +16,8 @@ import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "./agent-runt
 import { buildCustomerIntelBlock } from "./customer-intel";
 import { resolveAgentTools } from "./agent-capabilities";
 import { VAPI_TENANT_DEFAULT_MODEL } from "./claude-brain";
+import { getWirelinePersona } from "./wireline-agent-personas";
+import type { WirelinePersonaId } from "./wireline-agent-escalation";
 
 const DEFAULT_AGENT_ROLE = "customer_service";
 
@@ -314,7 +316,33 @@ export async function buildVapiAssistant({
 
   const roleProtocol = ROLE_SPECIFIC_PROTOCOLS[agentRole] || "";
 
-  const systemPrompt = `
+  /**
+   * Wireline-internal persona overlay.
+   *
+   * When this agent's `business_variables.wireline_internal` is true, it
+   * means it's one of OUR own customer-facing agents (the ones answering
+   * Mike's OWN_PHONE — Reception / Sales / Support). For those, we layer
+   * the typed, declarative persona system prompt + first-message defined
+   * in `wireline-agent-personas.ts` ON TOP of the normal tenant config.
+   *
+   * Critical: this is GATED. If a tenant agent doesn't carry the flag,
+   * everything below behaves identically to before this patch — we are
+   * additive, never destructive. The persona overlay only fires for
+   * agents Mike has explicitly marked as platform-internal via the
+   * /api/admin/provision-wireline-agents endpoint.
+   *
+   * The escalation rule engine + objection playbook are referenced
+   * inside the persona's system prompt, so the LLM has the full
+   * Wireline guardrails inline without us bloating every tenant
+   * agent's prompt with them.
+   */
+  const bizVars = (agentConfigRow?.businessVariables || {}) as Record<string, unknown>;
+  const isWirelineInternal = bizVars.wireline_internal === true;
+  const wirelinePersonaId = (bizVars.wireline_persona_id as WirelinePersonaId | undefined) || null;
+  const wirelinePersona =
+    isWirelineInternal && wirelinePersonaId ? getWirelinePersona(wirelinePersonaId) : null;
+
+  const baseSystemPrompt = `
 ## IDENTITY & MISSION
 You are ${agentConfigRow?.name || "Wireline Agent"}, a ${agentRole.replace(/_/g, " ")} specialist.
 
@@ -328,6 +356,23 @@ ${flowConfigBlock}
 Today is ${currentDateTime}.
   `;
 
+  // If a Wireline persona overlay applies, replace the base identity
+  // block with the persona's full voice-optimized prompt. We still
+  // append the dynamic blocks (caller profile, customer intel, sentiment
+  // shift, lead context, current time) so personalization survives.
+  const systemPrompt = wirelinePersona
+    ? `${wirelinePersona.systemPrompt}
+
+## CALL-SPECIFIC CONTEXT
+${callerProfile}
+${customerIntelBlock}
+${sentimentShift}
+${leadContext}
+${flowConfigBlock}
+Today is ${currentDateTime}.
+  `
+    : baseSystemPrompt;
+
   const runtimeProfile: AgentRuntimeProfile = {
     timezone: agentConfigRow?.timezone,
     business_hours: agentConfigRow?.businessHours,
@@ -340,10 +385,19 @@ Today is ${currentDateTime}.
     personality_vibe: (agentConfigRow as any)?.personalityVibe,
   };
   const runtime = buildAgentRuntimeContext(systemPrompt, runtimeProfile);
+  // First-message resolution order:
+  //   1. Out-of-hours override (always wins — caller hears the OOH msg)
+  //   2. Operator-set firstMessage on the agent row
+  //   3. Wireline persona overlay's first_message (if persona attached)
+  //   4. Bare "Hello!" fallback
+  // This means an operator who overrides firstMessage on an internal
+  // agent ALSO wins over the persona default — useful for seasonal
+  // greetings ("Happy holidays from Wireline!") without rewriting the
+  // persona definition.
   const firstMessage =
     !runtime.inHours && runtime.outOfHoursMessage
       ? runtime.outOfHoursMessage
-      : agentConfigRow?.firstMessage || "Hello!";
+      : agentConfigRow?.firstMessage || wirelinePersona?.firstMessage || "Hello!";
 
   // Honor the operator's configured voice. Before this fix, every customer
   // assistant got Liam's default voice regardless of what they set in Fleet
@@ -360,8 +414,16 @@ Today is ${currentDateTime}.
   const directionalVoiceId = isOutbound
     ? agentConfigRow?.voiceIdOutbound
     : agentConfigRow?.voiceIdInbound;
+  // Voice resolution order (mirrors firstMessage logic above):
+  //   1. Directional override (operator set inbound/outbound voice)
+  //   2. Operator's agent-row voiceId
+  //   3. Wireline persona overlay's voice_id (if persona attached)
+  //   4. Platform default (Adam · Deep)
   const resolvedVoiceId =
-    directionalVoiceId || agentConfigRow?.voiceId || PLATFORM_DEFAULT_VOICE_ID;
+    directionalVoiceId ||
+    agentConfigRow?.voiceId ||
+    wirelinePersona?.voiceId ||
+    PLATFORM_DEFAULT_VOICE_ID;
   const resolvedVoiceProvider = agentConfigRow?.voiceProvider || "11labs";
 
   // Per-archetype silence timeout. Outbound SDRs need short patience (caller
@@ -440,7 +502,9 @@ Today is ${currentDateTime}.
   // post-call digest player in the dashboard, the marketing demo, etc.).
   // Operator override lives in agentConfigRow.endCallMessage when set.
   const endCallMessage =
-    (agentConfigRow as any)?.endCallMessage || "Thanks for calling. Have a great rest of your day.";
+    (agentConfigRow as any)?.endCallMessage ||
+    wirelinePersona?.endCallMessage ||
+    "Thanks for calling. Have a great rest of your day.";
 
   // Pre-transfer cue — same constraint as above: Vapi speaks
   // `transferPlan.message` via TTS, not as an audio URL. The matching

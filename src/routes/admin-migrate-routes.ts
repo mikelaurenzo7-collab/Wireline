@@ -22,9 +22,13 @@
 import { Router, Request, Response, NextFunction } from "express";
 import crypto from "crypto";
 import { drizzle, log } from "../lib/server-context";
+import * as schema from "../db/schema";
+import { eq, and } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import type { AuthenticatedRequest } from "../types/auth";
+import { WIRELINE_PERSONAS } from "../lib/wireline-agent-personas";
+import type { WirelinePersonaId } from "../lib/wireline-agent-escalation";
 
 /**
  * Authorize a migration call via EITHER:
@@ -1142,6 +1146,169 @@ router.post(
       log.error("generate-brand-sounds failed", { error: err?.message });
       return res.status(500).json({ error: err?.message || "Brand sound generation failed" });
     }
+  },
+);
+
+/**
+ * One-shot provisioning endpoint for Wireline's own customer-facing
+ * AI agents (Reception / Sales / Support — Mira, Casey, Alex).
+ *
+ * Purpose: dogfooding. Mike runs the AI receptionist product on his
+ * OWN main number so callers experience the platform first-hand. This
+ * endpoint upserts the three internal agents into wireline_agents with
+ * the `wireline_internal: true` flag stamped into business_variables —
+ * the assistant factory keys off that flag to layer in the persona
+ * system prompt + first-message + voice from
+ * src/lib/wireline-agent-personas.ts.
+ *
+ * Idempotent: if an agent for a persona already exists for the
+ * platform owner (matching by `wireline_persona_id` in
+ * business_variables), we update its fields; otherwise we insert.
+ * Re-running is safe + cheap.
+ *
+ * Owner resolution: we look up the user with email = OWNER_EMAIL env
+ * var. If no such user exists, we return 412 (precondition failed) —
+ * Mike's account must exist before we provision the dogfood agents
+ * (otherwise we'd create orphaned rows).
+ *
+ * Auth: same `optionalAuth` + `authorizeMigration` pair as every other
+ * endpoint in this file (OWNER_EMAIL session OR X-Migration-Token).
+ *
+ * Response: returns the resolved agent IDs per persona so the caller
+ * can wire them into the Vapi inbound-number routing table next.
+ */
+router.post(
+  "/api/admin/provision-wireline-agents",
+  optionalAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!authorizeMigration(req, res)) return;
+
+    const ownerEmail = process.env.OWNER_EMAIL;
+    if (!ownerEmail) {
+      return res.status(412).json({
+        error: "OWNER_EMAIL env var is not set. Cannot provision Wireline agents without an owner.",
+      });
+    }
+
+    // Look up the owner user row — we need their UUID to stamp
+    // user_id on the agents. We query the wireline_users table that
+    // the auth layer populates after first sign-in.
+    let ownerUserId: string | null = null;
+    try {
+      const [ownerRow] = await drizzle
+        .select({ id: schema.users.id })
+        .from(schema.users)
+        .where(eq(schema.users.email, ownerEmail))
+        .limit(1);
+      ownerUserId = ownerRow?.id || null;
+    } catch (e: any) {
+      log.error("provision-wireline-agents owner lookup failed", { error: e?.message });
+      return res.status(500).json({ error: "Owner lookup failed: " + e?.message });
+    }
+
+    if (!ownerUserId) {
+      return res.status(412).json({
+        error: `No user with email ${ownerEmail} exists yet. Sign in once via the app, then re-run this endpoint.`,
+      });
+    }
+
+    const provisioned: Array<{
+      persona: WirelinePersonaId;
+      agent_id: string;
+      action: "created" | "updated";
+    }> = [];
+
+    // Wireline-internal persona overlay flags. Stored in
+    // business_variables so we don't have to add a dedicated column to
+    // wireline_agents — the column is already JSONB + the assistant
+    // factory keys off these specific shapes.
+    for (const persona of Object.values(WIRELINE_PERSONAS)) {
+      try {
+        // Look for an existing internal agent with this persona id by
+        // scanning the owner's agents + matching business_variables.
+        // Drizzle's jsonb predicates are awkward — we do a small select
+        // + JS filter rather than a clever SQL predicate that risks
+        // diverging from how the assistant factory reads the same field.
+        const existingRows = await drizzle
+          .select()
+          .from(schema.agents)
+          .where(eq(schema.agents.userId, ownerUserId));
+        const existing = existingRows.find((row) => {
+          const bv = (row.businessVariables || {}) as Record<string, unknown>;
+          return bv.wireline_internal === true && bv.wireline_persona_id === persona.id;
+        });
+
+        const businessVariables = {
+          wireline_internal: true,
+          wireline_persona_id: persona.id,
+          provisioned_at: new Date().toISOString(),
+        };
+
+        if (existing) {
+          await drizzle
+            .update(schema.agents)
+            .set({
+              name: persona.name,
+              role: persona.role,
+              voiceId: persona.voiceId,
+              voiceProvider: "11labs",
+              firstMessage: persona.firstMessage,
+              businessVariables,
+              // We deliberately do NOT touch operator-tuned fields here
+              // (voiceSpeed, voiceStability, etc.) — re-running the
+              // endpoint shouldn't trample those if Mike has tuned them.
+            })
+            .where(eq(schema.agents.id, existing.id));
+          provisioned.push({ persona: persona.id, agent_id: existing.id, action: "updated" });
+        } else {
+          // Deterministic ID: `wireline-${persona.id}` so the row is
+          // easy to find by hand + safe to reference from other
+          // migrations. Also makes the inbound-number → agent-id
+          // mapping that Mike configures in Vapi predictable.
+          const agentId = `wireline-${persona.id}`;
+          await drizzle.insert(schema.agents).values({
+            id: agentId,
+            userId: ownerUserId,
+            name: persona.name,
+            role: persona.role,
+            voiceId: persona.voiceId,
+            voiceProvider: "11labs",
+            firstMessage: persona.firstMessage,
+            archetype: "Receptionist",
+            channel: "voice",
+            businessVariables,
+          });
+          provisioned.push({ persona: persona.id, agent_id: agentId, action: "created" });
+        }
+      } catch (e: any) {
+        log.error("provision-wireline-agents persona upsert failed", {
+          persona: persona.id,
+          error: e?.message,
+        });
+        return res.status(500).json({
+          error: `Failed provisioning persona ${persona.id}: ${e?.message}`,
+          provisioned,
+        });
+      }
+    }
+
+    log.info("provision-wireline-agents completed", {
+      ownerEmail,
+      ownerUserId,
+      provisioned,
+    });
+
+    return res.json({
+      ok: true,
+      owner_email: ownerEmail,
+      owner_user_id: ownerUserId,
+      agents: provisioned,
+      next_steps: [
+        "Configure Vapi inbound phone number to point at each agent via the assistant-id mapping.",
+        "Set OWN_PHONE env var to the inbound number so the escalation engine knows where to transfer.",
+        "Test by calling the main Wireline number — caller should reach Mira (Reception) first.",
+      ],
+    });
   },
 );
 
