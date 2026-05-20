@@ -7,6 +7,7 @@ import { eq } from "drizzle-orm";
 import { encryptSecret, decryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
 import { verifySupabaseJwt } from "./auth-utils";
+import { getInternalJwtSecret } from "./internal-jwt-secret";
 
 // ────────────────────────────────────────────────────────────────────
 //  Google OAuth Constants & Helpers
@@ -221,7 +222,7 @@ export async function resolveUserIdFromOAuthSession(req: express.Request): Promi
   const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : cookieToken;
   if (!bearerToken) return null;
 
-  const secret = process.env.INTERNAL_JWT_SECRET || process.env.SUPABASE_JWT_SECRET || "";
+  const secret = getInternalJwtSecret() || "";
   const payload = await verifySupabaseJwt(bearerToken, secret);
   return payload?.sub ?? null;
 }

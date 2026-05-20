@@ -2,18 +2,9 @@ import { randomBytes, scryptSync, createHmac, timingSafeEqual, createHash } from
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { and, eq, gte, isNull } from "drizzle-orm";
+import { requireInternalJwtSecret } from "./internal-jwt-secret";
 
-// Use INTERNAL_JWT_SECRET (preferred) or fall back to SUPABASE_JWT_SECRET for backward compatibility
-const SECRET = process.env.INTERNAL_JWT_SECRET || process.env.SUPABASE_JWT_SECRET;
-
-// Enforce JWT secret configuration - no weak fallbacks for production security
-if (!SECRET) {
-  throw new Error(
-    "JWT_SECRET_NOT_CONFIGURED: INTERNAL_JWT_SECRET or SUPABASE_JWT_SECRET must be set. " +
-      "In development, use a secure random string (at least 32 characters). " +
-      "In production, this is a critical security requirement.",
-  );
-}
+const SECRET = requireInternalJwtSecret();
 
 // Validate minimum secret length for security
 if (SECRET.length < 32) {
