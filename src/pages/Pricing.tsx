@@ -170,7 +170,7 @@ export default function Pricing() {
       </div>
 
       {/* Top brand bar (minimal — public page, no app nav) */}
-      <header className="relative z-10 px-6 lg:px-10 py-5 flex items-center justify-between">
+      <header className="relative z-10 px-4 sm:px-6 lg:px-10 xl:px-14 py-5 flex items-center justify-between gap-3">
         <Link to="/" className="flex items-center gap-2.5">
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center"
@@ -193,7 +193,7 @@ export default function Pricing() {
       </header>
 
       {/* Hero */}
-      <section className="relative z-10 px-6 lg:px-10 pt-4 pb-8 max-w-5xl mx-auto text-center">
+      <section className="relative z-10 px-4 sm:px-6 lg:px-10 xl:px-14 pt-4 sm:pt-6 pb-10 max-w-6xl mx-auto text-center">
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}

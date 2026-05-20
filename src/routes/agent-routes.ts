@@ -21,7 +21,6 @@ import { ROLE_PERSONALITY_TEMPLATES, DEFAULT_AGENT_ROLE } from "../lib/agent-con
 import { composeAgentPersonality } from "../lib/template-overlays";
 import { pickRotatedVoiceId } from "../data/voice-roster";
 import * as claudeBrain from "../lib/claude-brain";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { computeAgentPerformance, emptyAgentPerformance } from "../lib/agent-performance";
 import { computeScorecard, type CallLogRow } from "../lib/agent-scorecard";
 import { enforceTrialAgentCap } from "../lib/trial-gate";
@@ -30,7 +29,6 @@ import { normalizeEnabledTools } from "../lib/agent-capabilities";
 import { claudeErr } from "../lib/claude-response-helpers";
 
 const router = Router();
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "placeholder_gemini_key");
 
 router.get("/api/agents", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
@@ -538,18 +536,28 @@ Categorize them as:
 Respond ONLY in strict, valid JSON format (no markdown):
 {"directives":[{"content":"...","priority":5}],"knowledge":[{"content":"..."}],"personality":""}`;
 
-        const model = genAI.getGenerativeModel({
-          model: "gemini-1.5-flash",
-          generationConfig: { responseMimeType: "application/json" },
+        const r = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env.OPENAI_API_KEY || ""}`,
+          },
+          body: JSON.stringify({
+            model: process.env.OPENAI_EXTRACTION_MODEL || "gpt-4.1-mini",
+            temperature: 0.1,
+            response_format: { type: "json_object" },
+            messages: [{ role: "user", content: prompt }],
+          }),
         });
-        const geminiRes = await model.generateContent(prompt);
-        const geminiRaw = JSON.parse(geminiRes.response.text() || "{}");
-        const geminiResult = GeminiAgentExtractionSchema.safeParse(geminiRaw);
-        if (geminiResult.success) {
-          parsed = geminiResult.data;
+        if (!r.ok) throw new Error(`OpenAI extraction fallback failed (${r.status})`);
+        const data = (await r.json()) as { choices?: Array<{ message?: { content?: string } }> };
+        const raw = JSON.parse(data.choices?.[0]?.message?.content || "{}");
+        const openaiResult = GeminiAgentExtractionSchema.safeParse(raw);
+        if (openaiResult.success) {
+          parsed = openaiResult.data;
         } else {
-          log.warn("Gemini agent extraction response did not match expected schema", {
-            issues: geminiResult.error.issues,
+          log.warn("OpenAI extraction response did not match expected schema", {
+            issues: openaiResult.error.issues,
           });
           parsed = {
             directives: [],
@@ -558,7 +566,7 @@ Respond ONLY in strict, valid JSON format (no markdown):
           };
         }
       } catch (err) {
-        log.error("Gemini extraction fallback failed", { error: getErrorMessage(err) });
+        log.error("OpenAI extraction fallback failed", { error: getErrorMessage(err) });
       }
     }
 
@@ -1049,13 +1057,13 @@ router.post(
             full_review: review,
           });
         } catch (err) {
-          log.error("Claude optimize failed; falling back to Gemini", {
+          log.error("Claude optimize failed; falling back to OpenAI", {
             error: getErrorMessage(err),
           });
         }
       }
 
-      // Legacy Gemini fallback
+      // OpenAI fallback
       const prompt = `
         AGENT ID: ${id}
         MISSION LOGS (LAST 10):
@@ -1064,14 +1072,24 @@ router.post(
         TASK: Analyze performance and suggest exactly 3 new tactical directives to improve the agent.
         FORMAT: JSON { "suggestions": string[], "analysis": string }
       `;
-
-      const model = genAI.getGenerativeModel({
-        model: "gemini-1.5-pro",
-        generationConfig: { responseMimeType: "application/json" },
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY || ""}`,
+        },
+        body: JSON.stringify({
+          model: process.env.OPENAI_OPTIMIZER_MODEL || "gpt-4.1-mini",
+          temperature: 0.2,
+          response_format: { type: "json_object" },
+          messages: [{ role: "user", content: prompt }],
+        }),
       });
-
-      const result = await model.generateContent(prompt);
-      const aiText = result.response.text();
+      if (!response.ok) return res.status(502).json({ error: "Optimizer fallback failed." });
+      const data = (await response.json()) as {
+        choices?: Array<{ message?: { content?: string } }>;
+      };
+      const aiText = data.choices?.[0]?.message?.content || "{}";
       let parsed: any = {};
       try {
         parsed = JSON.parse(aiText || "{}");

@@ -23,8 +23,8 @@ import { useAuth } from "../contexts/AuthContext";
 import { PageMeta } from "../lib/page-meta";
 import WirelineMark from "./WirelineMark";
 import {
-  WIRELINE_DEMO_CONCIERGE_AGENT,
-  WIRELINE_FEATURED_TEAM_AGENT,
+  WIRELINE_CONTACT_AGENTS,
+  WIRELINE_DEMO_AGENTS,
   type ContactAgent as AgentCard,
 } from "../data/contact-agents";
 
@@ -380,7 +380,7 @@ export default function AuthPortal() {
            Without this, the left column at lg+ widths grows to ~1020px,
            making the Sign In button on the right scroll-required even
            though it's anchored to the top of its column. */}
-        <div className="hidden lg:flex lg:w-[54%] xl:w-[56%] flex-col relative z-10 p-6 xl:p-8 h-screen overflow-y-auto scrollbar-hide">
+        <div className="hidden lg:flex lg:w-[58%] xl:w-[60%] 2xl:w-[62%] flex-col relative z-10 p-6 xl:p-8 2xl:p-10 h-screen overflow-y-auto scrollbar-hide">
           {/* Decorative vertical line on right edge */}
           <div
             className="absolute top-0 right-0 w-px h-full"
@@ -422,7 +422,7 @@ export default function AuthPortal() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-            className="mb-8"
+            className="mb-6 xl:mb-8"
           >
             <div className="flex items-center gap-2 mb-3">
               <span className="hero-accent-line" style={{ background: "#4F1E7B" }} />
@@ -430,12 +430,12 @@ export default function AuthPortal() {
                 One fleet, every channel
               </span>
             </div>
-            <h2 className="font-display italic text-4xl xl:text-5xl leading-[1.0] xl:leading-[0.92] tracking-tight mb-4 text-balance">
+            <h2 className="font-display italic text-4xl xl:text-5xl 2xl:text-6xl leading-[1.0] xl:leading-[0.92] tracking-tight mb-4 text-balance">
               <span className="text-[#4F1E7B]">AI agents for every</span>
               <br />
               <span className="text-ink">customer conversation</span>
             </h2>
-            <p className="text-[13px] text-muted/80 leading-relaxed max-w-md mb-5">
+            <p className="text-[13px] xl:text-sm text-muted/80 leading-relaxed max-w-xl mb-5">
               Wireline runs your <span className="text-ink/90">inbound support</span>,{" "}
               <span className="text-ink/90">outbound sales</span>, and{" "}
               <span className="text-ink/90">email follow-ups</span> across one fleet of AI agents —
@@ -472,9 +472,7 @@ export default function AuthPortal() {
             </div>
           </motion.div>
 
-          {/* Featured live lines only: one Wireline team specialist and
-            one demo concierge. The full catalog lives in Help/Showcase,
-            where it has room to breathe without odd empty grid slots. */}
+          {/* Live call directory — grouped by Wireline team + vertical demos. */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -483,17 +481,35 @@ export default function AuthPortal() {
           >
             <div className="flex items-center gap-2 mb-2.5">
               <span className="text-[9px] uppercase tracking-[0.4em] text-[#4F1E7B] font-medium">
-                Call Wireline live
+                Live Agent Directory
               </span>
               <span className="flex-1 h-px bg-[#4F1E7B]/20" />
             </div>
             <p className="text-[11px] text-muted/70 mb-3 leading-relaxed">
-              Two clean ways to try it: talk to a Wireline specialist, or call Ria and choose the
-              demo role you want her to perform.
+              Call any line below right now. Wireline specialists are grouped first, then vertical
+              demo agents so every slot is filled with no dead space.
             </p>
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-2">
-              <AgentContactCard agent={WIRELINE_FEATURED_TEAM_AGENT} isDemo={false} />
-              <AgentContactCard agent={WIRELINE_DEMO_CONCIERGE_AGENT} isDemo />
+            <div className="space-y-3">
+              <div>
+                <p className="mb-2 text-[9px] uppercase tracking-[0.32em] text-[#4F1E7B]/80 font-semibold">
+                  Wireline agents
+                </p>
+                <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-2.5">
+                  {WIRELINE_CONTACT_AGENTS.map((agent) => (
+                    <AgentContactCard key={agent.tel} agent={agent} isDemo={false} />
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="mb-2 text-[9px] uppercase tracking-[0.32em] text-amber-600/90 font-semibold">
+                  Demo agents
+                </p>
+                <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-2.5">
+                  {WIRELINE_DEMO_AGENTS.map((agent) => (
+                    <AgentContactCard key={agent.tel} agent={agent} isDemo />
+                  ))}
+                </div>
+              </div>
             </div>
           </motion.div>
 
@@ -531,7 +547,7 @@ export default function AuthPortal() {
            Previously `justify-center` pushed the form to ~440px from the top
            of an 800px viewport, putting the Sign In button at ~875px —
            below the fold. */}
-        <div className="flex-1 flex flex-col items-center relative z-10 py-4 px-6 md:py-6 md:px-10 overflow-y-auto">
+        <div className="flex-1 flex flex-col items-center relative z-10 py-4 px-6 md:py-6 md:px-10 xl:px-12 overflow-y-auto">
           <div className="lg:hidden w-full max-w-md mb-6 pt-4">
             {/* Logo + wordmark row */}
             <div className="flex items-center gap-3 mb-5">
@@ -562,20 +578,38 @@ export default function AuthPortal() {
               Dial any number below to hear a Wireline agent live — no signup needed.
             </p>
 
-            {/* Featured live lines: one team specialist, one demo concierge. */}
+            {/* Grouped live lines: Wireline team + all demo agents. */}
             <div className="flex items-center gap-2 mb-2">
               <span className="text-[9px] uppercase tracking-[0.4em] text-[#4F1E7B] font-medium">
-                Try Wireline live
+                Live Agent Directory
               </span>
               <span className="flex-1 h-px bg-[#4F1E7B]/15" />
             </div>
-            <div className="grid grid-cols-1 gap-2">
-              <AgentContactCard agent={WIRELINE_FEATURED_TEAM_AGENT} isDemo={false} />
-              <AgentContactCard agent={WIRELINE_DEMO_CONCIERGE_AGENT} isDemo />
+            <div className="space-y-3">
+              <div>
+                <p className="mb-2 text-[9px] uppercase tracking-[0.32em] text-[#4F1E7B]/80 font-semibold">
+                  Wireline agents
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {WIRELINE_CONTACT_AGENTS.map((agent) => (
+                    <AgentContactCard key={agent.tel} agent={agent} isDemo={false} />
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="mb-2 text-[9px] uppercase tracking-[0.32em] text-amber-600/90 font-semibold">
+                  Demo agents
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {WIRELINE_DEMO_AGENTS.map((agent) => (
+                    <AgentContactCard key={agent.tel} agent={agent} isDemo />
+                  ))}
+                </div>
+              </div>
             </div>
             <p className="mt-3 text-[11px] text-muted/70 leading-relaxed">
-              Ria asks which demo role you want, then acts accordingly. The full employee and demo
-              catalog is in Help and Showcase.
+              Demo account: sign in with the shared test credentials your admin provides for guided
+              walkthroughs.
             </p>
 
             {/* Subtle divider */}

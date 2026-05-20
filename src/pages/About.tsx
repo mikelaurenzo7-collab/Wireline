@@ -60,7 +60,7 @@ export default function About() {
         />
       </div>
 
-      <header className="relative z-10 px-6 lg:px-10 py-5 flex items-center justify-between">
+      <header className="relative z-10 px-4 sm:px-6 lg:px-10 xl:px-14 py-5 flex items-center justify-between gap-3">
         <Link to="/" className="flex items-center gap-2.5">
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center"
@@ -97,7 +97,7 @@ export default function About() {
       </header>
 
       {/* Hero */}
-      <section className="relative z-10 max-w-4xl mx-auto px-6 lg:px-10 pt-12 pb-16 sm:pt-20 sm:pb-20">
+      <section className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pt-12 pb-16 sm:pt-20 sm:pb-20">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -119,7 +119,7 @@ export default function About() {
       </section>
 
       {/* Founder card */}
-      <section className="relative z-10 max-w-4xl mx-auto px-6 lg:px-10 pb-16">
+      <section className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-16">
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
@@ -164,7 +164,7 @@ export default function About() {
       </section>
 
       {/* Operating principles */}
-      <section className="relative z-10 max-w-4xl mx-auto px-6 lg:px-10 pb-16">
+      <section className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-16">
         <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-8">
           How Wireline operates
         </h2>
@@ -194,7 +194,7 @@ export default function About() {
       </section>
 
       {/* Infra moat / backed by */}
-      <section className="relative z-10 max-w-4xl mx-auto px-6 lg:px-10 pb-16">
+      <section className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-16">
         <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-3">The infra moat</h2>
         <p className="text-sm sm:text-base text-ink/75 leading-relaxed mb-6 max-w-2xl">
           Wireline is built on the strongest infra layer money can buy. Every paying customer
@@ -230,7 +230,7 @@ export default function About() {
         </div>
       </section>
 
-      <footer className="relative z-10 border-t border-black/8 py-8 px-6 lg:px-10 max-w-5xl mx-auto">
+      <footer className="relative z-10 border-t border-black/8 py-8 px-4 sm:px-6 lg:px-10 xl:px-14 max-w-6xl mx-auto">
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[10px] text-muted/60">
           <Link to="/" className="hover:text-ink transition-colors">
             Wireline
