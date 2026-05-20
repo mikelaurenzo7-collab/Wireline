@@ -224,7 +224,9 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
             {NAV_GROUPS.map((group, gIdx) => (
               <React.Fragment key={group.label}>
                 {gIdx > 0 && <span aria-hidden="true" className="mx-1 h-5 w-px bg-white/12" />}
-                {group.items.map((item) => renderNavItem(item))}
+                {group.items
+                  .filter((item) => !item.ownerOnly || user?.is_owner === true)
+                  .map((item) => renderNavItem(item))}
               </React.Fragment>
             ))}
           </nav>
@@ -411,7 +413,9 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
                       {group.label}
                     </div>
                     <div className="space-y-0.5">
-                      {group.items.map((item) => renderNavItem(item, { variant: "drawer" }))}
+                      {group.items
+                        .filter((item) => !item.ownerOnly || user?.is_owner === true)
+                        .map((item) => renderNavItem(item, { variant: "drawer" }))}
                     </div>
                   </div>
                 ))}

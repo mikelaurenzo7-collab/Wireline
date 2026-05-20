@@ -5,6 +5,8 @@ export interface User {
   email: string;
   full_name?: string;
   role?: string;
+  /** True only for the platform owner (email matches OWNER_EMAIL). Gates the Founder's Dashboard. */
+  is_owner?: boolean;
 }
 
 export interface Session {

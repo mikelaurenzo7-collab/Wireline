@@ -15,6 +15,7 @@ import {
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
+import { useAuth } from "../contexts/AuthContext";
 import AgentWorkspace from "./AgentWorkspace";
 
 /**
@@ -34,6 +35,15 @@ import AgentWorkspace from "./AgentWorkspace";
  */
 
 type StaffRole = "reception" | "sales" | "support" | "technical" | "onboarding" | "success";
+
+interface FounderStats {
+  ok: boolean;
+  generated_at: string;
+  users: { total: number; paying: number; trialing: number; new_last_7d: number };
+  agents: { total: number };
+  calls: { total: number; today: number; last_7d: number };
+  health: { errors_24h: number; warnings_24h: number };
+}
 
 interface StaffMember {
   role: StaffRole;
@@ -102,15 +112,47 @@ const STAFF: StaffMember[] = [
   },
 ];
 
+const STAT_TONES: Record<string, string> = {
+  brand: "text-brand",
+  ink: "text-ink",
+  emerald: "text-emerald-500",
+  rose: "text-rose-500",
+  amber: "text-amber-500",
+};
+
+function StatTile({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: keyof typeof STAT_TONES;
+}) {
+  return (
+    <div className="rounded-xl glass border border-white/10 px-3 py-2.5">
+      <div className={cn("text-xl font-display tabular-nums leading-none", STAT_TONES[tone])}>
+        {value.toLocaleString()}
+      </div>
+      <div className="text-[9px] uppercase tracking-[0.18em] text-muted/70 mt-1.5">{label}</div>
+    </div>
+  );
+}
+
 export default function FounderDashboard() {
   const { error: toastError, success: toastSuccess } = useToast();
+  const { user } = useAuth();
   const [selected, setSelected] = useState<StaffMember | null>(null);
   const [provisionedIds, setProvisionedIds] = useState<Set<string> | null>(null);
   const [broadcast, setBroadcast] = useState("");
   const [broadcasting, setBroadcasting] = useState(false);
+  const [stats, setStats] = useState<FounderStats | null>(null);
 
-  // Resolve which of the 6 staff agents actually exist in the DB.
+  // Resolve which of the 6 staff agents actually exist in the DB,
+  // and pull the platform-wide stats. Both no-op for non-owners
+  // (the page itself is owner-gated below).
   useEffect(() => {
+    if (!user?.is_owner) return;
     authFetch("/api/agents")
       .then((r) => r.json())
       .then((d) => {
@@ -118,7 +160,15 @@ export default function FounderDashboard() {
         setProvisionedIds(ids);
       })
       .catch(() => setProvisionedIds(new Set()));
-  }, []);
+    authFetch("/api/admin/founder-stats")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.ok) setStats(d as FounderStats);
+      })
+      .catch(() => {
+        /* stats are best-effort — the roster still works without them */
+      });
+  }, [user?.is_owner]);
 
   const allProvisioned =
     provisionedIds !== null && STAFF.every((s) => provisionedIds.has(s.agentId));
@@ -154,6 +204,25 @@ export default function FounderDashboard() {
       toastError("Partial send", `${ok} of ${STAFF.length} staff received it. Retry the rest.`);
     }
   };
+
+  // Owner-only surface. Non-owners (team members, customers who somehow
+  // land on /founder) get a clean access wall — never the staff roster
+  // or the platform stats.
+  if (user && user.is_owner !== true) {
+    return (
+      <div className="h-full flex items-center justify-center p-8">
+        <div className="text-center max-w-sm">
+          <div className="w-12 h-12 rounded-2xl glass border border-white/10 flex items-center justify-center text-brand mx-auto mb-4">
+            <Users2 className="w-5 h-5" />
+          </div>
+          <h2 className="font-display italic text-2xl text-ink mb-2">Owner only</h2>
+          <p className="text-[13px] text-muted/80 leading-relaxed">
+            The Founder's Dashboard is restricted to the Wireline platform owner.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (selected) {
     return (
@@ -192,6 +261,37 @@ export default function FounderDashboard() {
             every conversation — or send the whole team a directive at once.
           </p>
         </div>
+
+        {/* Platform stats */}
+        {stats && (
+          <div className="mb-6">
+            <div className="text-[10px] uppercase tracking-[0.3em] text-muted/70 mb-2">
+              Platform · live
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
+              <StatTile label="Paying" value={stats.users.paying} tone="brand" />
+              <StatTile label="Trialing" value={stats.users.trialing} tone="brand" />
+              <StatTile label="Total users" value={stats.users.total} tone="ink" />
+              <StatTile label="New (7d)" value={stats.users.new_last_7d} tone="emerald" />
+              <StatTile label="Calls today" value={stats.calls.today} tone="ink" />
+              <StatTile
+                label="Errors (24h)"
+                value={stats.health.errors_24h}
+                tone={stats.health.errors_24h > 0 ? "rose" : "emerald"}
+              />
+              <StatTile
+                label="Warnings (24h)"
+                value={stats.health.warnings_24h}
+                tone={stats.health.warnings_24h > 0 ? "amber" : "emerald"}
+              />
+            </div>
+            <div className="mt-2 text-[10px] text-muted/55">
+              {stats.calls.total.toLocaleString()} calls all-time ·{" "}
+              {stats.calls.last_7d.toLocaleString()} in the last 7 days ·{" "}
+              {stats.agents.total.toLocaleString()} agents across all tenants
+            </div>
+          </div>
+        )}
 
         {/* Provisioning banner */}
         {provisionedIds !== null && !allProvisioned && (

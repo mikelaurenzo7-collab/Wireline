@@ -41,6 +41,17 @@ export function verifyPassword(password: string, storedHash: string): boolean {
 }
 
 /**
+ * True when the email matches the platform owner (OWNER_EMAIL env).
+ * Case-insensitive + trimmed. Drives owner-only surfaces like the
+ * Founder's Dashboard.
+ */
+export function isOwnerEmail(email: string | null | undefined): boolean {
+  const owner = (process.env.OWNER_EMAIL || "").trim().toLowerCase();
+  if (!owner || !email) return false;
+  return email.trim().toLowerCase() === owner;
+}
+
+/**
  * Generate a JWT for a user.
  * This is a lightweight implementation to avoid external dependencies.
  */
@@ -93,6 +104,7 @@ export const authService = {
         id: user.id,
         email: user.email,
         full_name: user.fullName,
+        is_owner: isOwnerEmail(user.email),
       },
       token: generateToken({ id: user.id, email: user.email }),
     };
@@ -122,6 +134,7 @@ export const authService = {
           id: user.id,
           email: user.email,
           full_name: user.fullName,
+          is_owner: isOwnerEmail(user.email),
         },
         token: generateToken({ id: user.id, email: user.email }),
       };
@@ -275,6 +288,7 @@ export const authService = {
         id: user.id,
         email: user.email,
         full_name: user.fullName,
+        is_owner: isOwnerEmail(user.email),
       },
       token: generateToken({ id: user.id, email: user.email }),
     };

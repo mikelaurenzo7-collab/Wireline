@@ -1363,4 +1363,85 @@ router.post("/api/admin/test-email", optionalAuth, async (req: Request, res: Res
   }
 });
 
+/**
+ * Founder's Dashboard stats. Owner-gated (authorizeMigration accepts
+ * the owner's session or the migration token). Returns the platform-
+ * wide numbers Mike wants at a glance — user counts, revenue signal,
+ * call volume, and error/warning counts from the audit log.
+ */
+router.get("/api/admin/founder-stats", optionalAuth, async (req: Request, res: Response) => {
+  if (!authorizeMigration(req, res)) return;
+  try {
+    const num = (v: unknown) => Number(v ?? 0);
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const since24h = new Date(Date.now() - 24 * 60 * 60_000);
+    const since7d = new Date(Date.now() - 7 * 24 * 60 * 60_000);
+
+    const [
+      totalUsers,
+      newUsers7d,
+      payingUsers,
+      trialUsers,
+      agentCount,
+      callsTotal,
+      callsToday,
+      calls7d,
+      errors24h,
+      warnings24h,
+    ] = await Promise.all([
+      drizzle.execute(sql`SELECT count(*)::int AS c FROM wireline_users`),
+      drizzle.execute(
+        sql`SELECT count(*)::int AS c FROM wireline_users WHERE created_at >= ${since7d.toISOString()}`,
+      ),
+      drizzle.execute(
+        sql`SELECT count(*)::int AS c FROM wireline_subscriptions WHERE status = 'active' AND plan IS NOT NULL`,
+      ),
+      drizzle.execute(
+        sql`SELECT count(*)::int AS c FROM wireline_subscriptions WHERE status = 'trialing'`,
+      ),
+      drizzle.execute(sql`SELECT count(*)::int AS c FROM wireline_agents`),
+      drizzle.execute(sql`SELECT count(*)::int AS c FROM wireline_call_logs WHERE demo = false`),
+      drizzle.execute(
+        sql`SELECT count(*)::int AS c FROM wireline_call_logs WHERE demo = false AND created_at >= ${startOfToday.toISOString()}`,
+      ),
+      drizzle.execute(
+        sql`SELECT count(*)::int AS c FROM wireline_call_logs WHERE demo = false AND created_at >= ${since7d.toISOString()}`,
+      ),
+      drizzle.execute(
+        sql`SELECT count(*)::int AS c FROM wireline_audit_log WHERE severity = 'error' AND created_at >= ${since24h.toISOString()}`,
+      ),
+      drizzle.execute(
+        sql`SELECT count(*)::int AS c FROM wireline_audit_log WHERE severity = 'warning' AND created_at >= ${since24h.toISOString()}`,
+      ),
+    ]);
+
+    const row = (r: any) => num(r?.rows?.[0]?.c);
+
+    return res.json({
+      ok: true,
+      generated_at: new Date().toISOString(),
+      users: {
+        total: row(totalUsers),
+        paying: row(payingUsers),
+        trialing: row(trialUsers),
+        new_last_7d: row(newUsers7d),
+      },
+      agents: { total: row(agentCount) },
+      calls: {
+        total: row(callsTotal),
+        today: row(callsToday),
+        last_7d: row(calls7d),
+      },
+      health: {
+        errors_24h: row(errors24h),
+        warnings_24h: row(warnings24h),
+      },
+    });
+  } catch (e: any) {
+    log.error("founder-stats failed", { error: e?.message });
+    return res.status(500).json({ ok: false, error: e?.message || "stats query failed" });
+  }
+});
+
 export default router;

@@ -24,6 +24,8 @@ export type NavItem = {
   badge?: number;
   dataTour?: string;
   matches?: string[];
+  /** When true, the item only renders for the platform owner. */
+  ownerOnly?: boolean;
 };
 
 // Consolidated horizontal nav. Command Center + Dashboard merged into a single
@@ -56,7 +58,7 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
         dataTour: "training",
         matches: ["/knowledge"],
       },
-      { label: "Founder", path: "/founder", icon: Crown },
+      { label: "Founder", path: "/founder", icon: Crown, ownerOnly: true },
     ],
   },
   {
