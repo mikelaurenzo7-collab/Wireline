@@ -430,4 +430,23 @@ describe("evaluateEscalation — safety", () => {
     // Sanity: regex over 25k chars must stay <50ms on any modern box
     expect(elapsed).toBeLessThan(200);
   });
+
+  it("treats a state where property access throws as ai_handles (catches a bad-trigger throw)", () => {
+    // Force the runtime into the catch block by handing it a Proxy
+    // that throws on EVERY get. Real callers shouldn't pass this, but
+    // the call path must NOT crash mid-call — the catch block in
+    // evaluateEscalation is the safety net for an upstream typo or
+    // schema drift. We assert it still returns a valid decision.
+    const exploding = new Proxy(createInitialState("support"), {
+      get() {
+        throw new Error("synthetic-explosion-for-safety-test");
+      },
+    });
+    const d = evaluateEscalation(exploding as ConversationState);
+    expect(d).toBeDefined();
+    // Every trigger should crash → none fires → we fall through to the
+    // ai_handles default. Exactly the "never crash mid-call" guarantee.
+    expect(d.action).toBe("ai_handles");
+    expect(d.rule_id).toBeNull();
+  });
 });
