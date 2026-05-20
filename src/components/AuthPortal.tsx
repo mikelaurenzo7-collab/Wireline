@@ -23,7 +23,6 @@ import { useAuth } from "../contexts/AuthContext";
 import { PageMeta } from "../lib/page-meta";
 import IntegrationLogos from "./layout/IntegrationLogos";
 import WirelineMark from "./WirelineMark";
-import AuthPortalVoiceSamples from "./AuthPortalVoiceSamples";
 import {
   WIRELINE_CONTACT_AGENTS,
   WIRELINE_DEMO_AGENTS,
@@ -205,12 +204,15 @@ function OAuthSignInButtons({ disabled }: { disabled?: boolean }) {
   );
 }
 
-function AgentCardLink({ agent, isDemo }: { agent: AgentCard; isDemo?: boolean }) {
+/**
+ * Agent contact card — display-only. Shows the agent's name, role, and
+ * dialable number as plain text. NOT a tel: link: on desktop a tel:
+ * href fires an "open in another app" prompt, which is jarring on a
+ * landing page. Visitors read the number and dial from their phone.
+ */
+function AgentContactCard({ agent, isDemo }: { agent: AgentCard; isDemo?: boolean }) {
   return (
-    <a
-      href={`tel:${agent.tel}`}
-      className="group relative block rounded-xl p-3 overflow-hidden border border-white/10 hover:border-white/20 hover:bg-white/5 transition-all duration-200 glass"
-    >
+    <div className="relative rounded-xl p-3 overflow-hidden border border-white/10 glass">
       <div className="flex items-start gap-3">
         <div
           className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-white/10"
@@ -222,19 +224,31 @@ function AgentCardLink({ agent, isDemo }: { agent: AgentCard; isDemo?: boolean }
             strokeWidth={2.4}
           />
         </div>
-        <div className="flex-1 min-w-0 pr-2">
-          <p className="text-[9px] uppercase tracking-[0.2em] text-muted/70 leading-none mb-1 truncate">
-            {isDemo ? "DEMO" : "LIVE"} · {agent.name}
-          </p>
-          <p className="font-display italic text-sm leading-snug text-ink/90 group-hover:text-ink transition-colors line-clamp-2 text-balance">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 mb-1">
+            <span
+              className={cn(
+                "text-[8px] uppercase tracking-[0.16em] font-semibold px-1.5 py-0.5 rounded leading-none",
+                isDemo
+                  ? "bg-white/8 text-muted/80 border border-white/10"
+                  : "bg-[#4F1E7B]/15 text-[#4F1E7B] border border-[#4F1E7B]/30",
+              )}
+            >
+              {isDemo ? "Demo" : "Wireline Team"}
+            </span>
+            <span className="text-[9px] uppercase tracking-[0.18em] text-muted/70 truncate">
+              {agent.name}
+            </span>
+          </div>
+          <p className="font-display italic text-sm leading-snug text-ink/90 line-clamp-2 text-balance">
             {agent.role}
           </p>
-        </div>
-        <div className="shrink-0 flex items-center self-center justify-center w-6 h-6 rounded-full border border-white/5 group-hover:bg-white/10 transition-colors">
-          <ArrowRight className="w-3 h-3 text-ink/40 group-hover:text-ink group-hover:translate-x-0.5 transition-all" />
+          <p className="mt-1 font-mono text-[13px] tabular-nums text-ink select-all">
+            {agent.display}
+          </p>
         </div>
       </div>
-    </a>
+    </div>
   );
 }
 
@@ -471,53 +485,33 @@ export default function AuthPortal() {
             transition={{ delay: 0.15, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
             className="mb-6 flex-1"
           >
-            {/* Demo line + tap-to-play samples, side by side. Visitors
-              can either CALL the demo line or just TAP to hear what an
-              agent sounds like without dialing — lower-friction first
-              touch. */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
-              <a
-                href="tel:+16305811834"
-                className="flex items-center justify-between bg-[#4F1E7B]/10 border border-[#4F1E7B]/30 rounded-xl p-3 hover:bg-[#4F1E7B]/20 transition-colors group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-[#4F1E7B] flex items-center justify-center shadow-[0_0_15px_rgba(79,30,123,0.3)] shrink-0">
-                    <Phone className="w-4 h-4 text-on-brand" fill="currentColor" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-[#4F1E7B] font-medium leading-tight">
-                      Call our demo line
-                    </p>
-                    <p className="font-display italic text-xl text-ink leading-tight mt-0.5">
-                      (630) 581-1834
-                    </p>
-                  </div>
-                </div>
-                <ArrowRight className="w-5 h-5 text-[#4F1E7B] group-hover:translate-x-1 transition-transform shrink-0" />
-              </a>
-              <AuthPortalVoiceSamples />
-            </div>
-
-            <div className="flex items-center gap-2 mb-3">
+            {/* Call any agent — numbers shown as text so visitors can
+              dial from their phone. The 6 Wireline Team agents handle
+              real support; the 4 vertical agents are use-case demos. */}
+            <div className="flex items-center gap-2 mb-2.5">
               <span className="text-[9px] uppercase tracking-[0.4em] text-[#4F1E7B] font-medium">
-                Wireline Team
+                Wireline Team — call us
               </span>
               <span className="flex-1 h-px bg-[#4F1E7B]/20" />
             </div>
+            <p className="text-[11px] text-muted/70 mb-3 leading-relaxed">
+              Six AI agents run Wireline's own phone lines. Dial any number below to hear the
+              product live.
+            </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
               {WIRELINE_CONTACT_AGENTS.map((a) => (
-                <AgentCardLink key={a.tel} agent={a} isDemo={false} />
+                <AgentContactCard key={a.tel} agent={a} isDemo={false} />
               ))}
             </div>
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-2 mb-2.5">
               <span className="text-[9px] uppercase tracking-[0.4em] text-muted/60">
-                Vertical Role-Plays
+                Vertical Demos — hear an agent for your industry
               </span>
               <span className="flex-1 h-px bg-white/10" />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {WIRELINE_DEMO_AGENTS.map((a) => (
-                <AgentCardLink key={a.tel} agent={a} isDemo={true} />
+                <AgentContactCard key={a.tel} agent={a} isDemo={true} />
               ))}
             </div>
           </motion.div>
@@ -590,33 +584,23 @@ export default function AuthPortal() {
               Tap any number below to hear a Wireline agent live — no signup needed.
             </p>
 
-            {/* Primary CTA — call Wireline directly. Different from the
-              4 demos: this one reaches our actual customer-service team
-              (any of the 6 unified CS lines; Sarah is the first). */}
-            <a
-              href={`tel:${WIRELINE_CONTACT_AGENTS[0].tel}`}
-              className="flex items-center justify-between mb-3 bg-[#4F1E7B]/8 border border-[#4F1E7B]/30 rounded-xl p-3 hover:bg-[#4F1E7B]/14 transition-colors group"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-full bg-[#4F1E7B] flex items-center justify-center shadow-[0_0_15px_rgba(79,30,123,0.35)] shrink-0">
-                  <Phone className="w-4 h-4 text-on-brand" fill="currentColor" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[9px] uppercase tracking-[0.28em] text-[#4F1E7B] font-medium leading-tight">
-                    Talk to Wireline
-                  </p>
-                  <p className="font-display italic text-lg text-ink leading-tight mt-0.5 truncate">
-                    {WIRELINE_CONTACT_AGENTS[0].display}
-                  </p>
-                </div>
-              </div>
-              <ArrowRight className="w-5 h-5 text-[#4F1E7B] shrink-0 group-hover:translate-x-1 transition-transform" />
-            </a>
+            {/* Wireline Team — the 6 real customer-service lines. */}
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-[9px] uppercase tracking-[0.4em] text-[#4F1E7B] font-medium">
+                Wireline Team · call us
+              </span>
+              <span className="flex-1 h-px bg-[#4F1E7B]/15" />
+            </div>
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              {WIRELINE_CONTACT_AGENTS.map((a) => (
+                <AgentContactCard key={a.tel} agent={a} isDemo={false} />
+              ))}
+            </div>
 
             {/* Section label */}
             <div className="flex items-center gap-2 mt-4 mb-2">
               <span className="text-[9px] uppercase tracking-[0.4em] text-muted/70 font-medium">
-                Live demo agents · {WIRELINE_DEMO_AGENTS.length} roles
+                Vertical demos · {WIRELINE_DEMO_AGENTS.length} use-case roles
               </span>
               <span className="flex-1 h-px bg-[#4F1E7B]/15" />
             </div>
@@ -624,7 +608,7 @@ export default function AuthPortal() {
             {/* All 4 demo agents — 2-col grid stays readable down to 320px */}
             <div className="grid grid-cols-2 gap-2">
               {WIRELINE_DEMO_AGENTS.map((a) => (
-                <AgentCardLink key={a.tel} agent={a} isDemo />
+                <AgentContactCard key={a.tel} agent={a} isDemo />
               ))}
             </div>
 
