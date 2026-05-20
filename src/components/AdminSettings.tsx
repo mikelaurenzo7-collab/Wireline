@@ -23,7 +23,6 @@ import { SystemPanel } from "./admin/SystemPanel";
 import { TeamPanel } from "./admin/TeamPanel";
 import { GrowthPanel } from "./admin/GrowthPanel";
 import { AuditActivityPanel } from "./admin/AuditActivityPanel";
-import { KimiQualityPanel } from "./admin/KimiQualityPanel";
 
 type ConfirmState = { open: boolean; title: string; message: string; onConfirm: () => void };
 const CLOSED_CONFIRM: ConfirmState = { open: false, title: "", message: "", onConfirm: () => {} };
@@ -91,8 +90,7 @@ export default function AdminSettings() {
     | "team"
     | "flywheel"
     | "system"
-    | "activity"
-    | "quality";
+    | "activity";
   const VALID_TABS: AdminTab[] = [
     "branding",
     "carrier",
@@ -103,7 +101,6 @@ export default function AdminSettings() {
     "flywheel",
     "system",
     "activity",
-    "quality",
   ];
   // Honor ?tab=<name> in the URL so deep links (e.g. the TrialBanner
   // "Upgrade now" CTA pointing at /admin?tab=subscription) land on
@@ -409,7 +406,6 @@ export default function AdminSettings() {
           "team",
           "flywheel",
           "system",
-          "quality",
           "activity",
         ] as const
       ).map((t) => (
@@ -440,9 +436,7 @@ export default function AdminSettings() {
                         ? "Growth"
                         : t === "system"
                           ? "System"
-                          : t === "quality"
-                            ? "Quality"
-                            : "Activity"}
+                          : "Activity"}
         </button>
       ))}
     </div>
@@ -609,18 +603,6 @@ export default function AdminSettings() {
                         operationalSlos={operationalSlos}
                         onOpenIntegrations={() => setActiveTab("system")}
                       />
-                    </motion.div>
-                  )}
-
-                  {activeTab === "quality" && (
-                    <motion.div
-                      key="quality"
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      className="h-full"
-                    >
-                      <KimiQualityPanel />
                     </motion.div>
                   )}
 
