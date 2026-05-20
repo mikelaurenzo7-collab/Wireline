@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../../contexts/AuthContext";
 import { authFetch } from "../../lib/api";
 import { cn } from "../../lib/utils";
-import SystemStatusBadge from "../SystemStatusBadge";
 import { NAV_GROUPS, type NavItem } from "../../constants/navigation";
 import { useBranding } from "../../contexts/BrandingContext";
 
@@ -105,7 +104,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
         aria-label={`Go to ${item.label}`}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "group relative flex items-center gap-2 h-8 px-3.5 rounded-xl transition-all text-[12px] font-medium tracking-wide",
+          "group relative flex items-center gap-1.5 h-8 px-2.5 rounded-xl transition-all text-[12px] font-medium tracking-wide shrink-0",
           isDrawer
             ? active
               ? "shadow-md shadow-[#4F1E7B]/20"
@@ -151,13 +150,11 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
         {withLabel && (
           <span
             className={cn(
-              // Hide labels at all laptop widths (<2xl = <1536px).
-              // ThinkPad 1366, MacBook Air 1440 — all icon-only.
-              // 1536px+ desktops get the labels back. Icons keep their
-              // hover tooltip via title attribute. Drawer variant always
-              // shows the label.
+              // Desktop nav shows real text labels; the top-bar nav only
+              // renders at lg+ (mobile uses the drawer), so the label is
+              // always visible whenever this row is on screen.
               "relative z-10 whitespace-nowrap transition-all duration-300",
-              isDrawer ? "inline" : "hidden 2xl:inline",
+              "inline",
               active ? "font-semibold" : "font-normal",
             )}
             style={active ? { color: activeTextColor } : undefined}
@@ -220,10 +217,12 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
 
           {/* Desktop nav — grouped, with subtle dividers between groups.
               Keep flex-none so nav doesn't grow into the right cluster's space. */}
-          <nav className="hidden lg:flex items-center gap-1 ml-3 shrink-0">
+          <nav className="hidden lg:flex items-center gap-0.5 ml-3 min-w-0 overflow-x-auto scrollbar-hide">
             {NAV_GROUPS.map((group, gIdx) => (
               <React.Fragment key={group.label}>
-                {gIdx > 0 && <span aria-hidden="true" className="mx-1 h-5 w-px bg-white/12" />}
+                {gIdx > 0 && (
+                  <span aria-hidden="true" className="mx-0.5 h-5 w-px bg-white/12 shrink-0" />
+                )}
                 {group.items
                   .filter((item) => !item.ownerOnly || user?.is_owner === true)
                   .map((item) => renderNavItem(item))}
@@ -236,9 +235,6 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
 
           {/* Right cluster */}
           <div className="flex items-center gap-2 shrink-0">
-            <div className="hidden md:block">
-              <SystemStatusBadge />
-            </div>
             <button
               onClick={onShowShortcuts}
               className="hidden md:flex items-center gap-1.5 h-7 px-2 rounded-lg text-[#FAF9F5]/65 hover:text-[#FAF9F5] hover:bg-white/10 transition-colors"
@@ -422,7 +418,6 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
               </nav>
 
               <div className="pt-3 mt-3 border-t border-black/8 space-y-2">
-                <SystemStatusBadge />
                 <div className="flex items-center gap-2 rounded-lg border border-black/8 glass px-2 py-2">
                   <div
                     className="w-8 h-8 rounded-full flex items-center justify-center text-white font-medium text-sm"
