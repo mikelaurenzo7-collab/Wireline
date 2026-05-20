@@ -104,7 +104,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
         aria-label={`Go to ${item.label}`}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "group relative flex items-center gap-1.5 h-8 px-2.5 rounded-xl transition-all text-[12px] font-medium tracking-wide shrink-0",
+          "group relative flex items-center gap-1.5 h-8 px-3 rounded-xl transition-all text-[12px] font-medium tracking-wide shrink-0",
           isDrawer
             ? active
               ? "shadow-md shadow-[#4F1E7B]/20"
@@ -217,11 +217,11 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
 
           {/* Desktop nav — grouped, with subtle dividers between groups.
               Keep flex-none so nav doesn't grow into the right cluster's space. */}
-          <nav className="hidden lg:flex items-center gap-0.5 ml-3 min-w-0 overflow-x-auto scrollbar-hide">
+          <nav className="hidden lg:flex items-center gap-1 ml-3 shrink-0">
             {NAV_GROUPS.map((group, gIdx) => (
               <React.Fragment key={group.label}>
                 {gIdx > 0 && (
-                  <span aria-hidden="true" className="mx-0.5 h-5 w-px bg-white/12 shrink-0" />
+                  <span aria-hidden="true" className="mx-1 h-5 w-px bg-white/12 shrink-0" />
                 )}
                 {group.items
                   .filter((item) => !item.ownerOnly || user?.is_owner === true)

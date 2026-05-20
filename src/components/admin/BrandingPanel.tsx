@@ -1,5 +1,5 @@
 import React from "react";
-import { Bot, Zap, CheckCircle2, Save, Loader2 } from "lucide-react";
+import { Bot, Zap, Save, Loader2 } from "lucide-react";
 
 interface BrandingPanelProps {
   settings: any;
@@ -121,18 +121,6 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
             </button>
           </div>
         )}
-      </div>
-
-      <div className="p-6 rounded-2xl glass border border-white/10">
-        <h3 className="text-[9px] uppercase tracking-[0.4em] text-muted mb-4">
-          White-Label Status
-        </h3>
-        <div className="flex items-center gap-3 p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
-          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-          <p className="text-xs text-ink/80">
-            Enterprise white-labeling is active for this organization.
-          </p>
-        </div>
       </div>
     </div>
   );
