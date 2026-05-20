@@ -104,7 +104,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
         aria-label={`Go to ${item.label}`}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "group relative flex items-center gap-1.5 h-8 px-2.5 min-[1380px]:px-3 rounded-lg transition-all text-[12px] font-medium shrink-0",
+          "group relative flex items-center gap-1.5 h-8 px-2.5 lg:px-3 rounded-lg transition-all text-[11px] sm:text-[12px] font-medium shrink-0",
           isDrawer
             ? active
               ? "shadow-md shadow-[#4F1E7B]/20"
@@ -154,7 +154,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
               // renders at lg+ (mobile uses the drawer), so the label is
               // always visible whenever this row is on screen.
               "relative z-10 whitespace-nowrap transition-all duration-300",
-              isDrawer ? "inline" : "hidden min-[1380px]:inline",
+              isDrawer ? "inline" : "hidden lg:inline",
               active ? "font-semibold" : "font-normal",
             )}
             style={active ? { color: activeTextColor } : undefined}
@@ -210,7 +210,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
               <WirelineMark className="w-4 h-4 text-[#3B154C] relative z-10" strokeWidth={130} />
               <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent" />
             </motion.div>
-            <span className="brand-wordmark text-[15px] leading-none hidden sm:inline !text-[#EFE9DC] !filter-none">
+            <span className="brand-wordmark text-[15px] sm:text-[16px] leading-none hidden sm:inline !text-[#EFE9DC] !filter-none">
               {branding.brand_name.toUpperCase()}
             </span>
           </Link>
@@ -284,7 +284,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
                     transition={{ duration: 0.14, ease: [0.16, 1, 0.3, 1] }}
                     role="menu"
                     aria-label="Account menu"
-                    className="absolute right-0 top-full mt-2 w-64 rounded-xl glass-strong border border-black/8 shadow-xl overflow-hidden z-50"
+                    className="absolute right-0 top-full mt-2 w-full sm:w-64 md:w-72 max-w-[90vw] rounded-xl glass-strong border border-black/8 shadow-xl overflow-hidden z-50"
                   >
                     {/* Email header */}
                     <div className="px-4 py-3 border-b border-black/8">
@@ -338,7 +338,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
             {/* Mobile hamburger */}
             <button
               onClick={() => setMobileOpen(true)}
-              className="lg:hidden w-10 h-10 rounded-lg flex items-center justify-center hover:bg-white/5 active:scale-95 transition-all"
+              className="lg:hidden w-11 h-11 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center hover:bg-white/5 active:scale-95 transition-all"
               aria-label="Open navigation"
             >
               <Menu className="w-5 h-5 text-[#EFE9DC]" />

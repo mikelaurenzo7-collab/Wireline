@@ -186,7 +186,7 @@ function OAuthSignInButtons({ disabled }: { disabled?: boolean }) {
             disabled={disabled || !!pending}
             aria-label={`Continue with ${p.label}`}
             title={`Continue with ${p.label}`}
-            className="min-h-[60px] py-3 inline-flex flex-col items-center justify-center gap-1.5 rounded-xl border border-black/10 bg-white/70 text-ink text-[10px] uppercase tracking-[0.18em] font-medium hover:border-[#4F1E7B]/40 hover:bg-white hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="min-h-[56px] sm:min-h-[60px] py-3 inline-flex flex-col items-center justify-center gap-1.5 rounded-xl border border-black/10 bg-white/70 text-ink text-[10px] sm:text-[11px] uppercase tracking-[0.18em] font-medium hover:border-[#4F1E7B]/40 hover:bg-white hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             {pending === p.id ? <Loader2 className="w-5 h-5 animate-spin" /> : p.icon}
             <span>{p.label}</span>
@@ -380,7 +380,7 @@ export default function AuthPortal() {
            Without this, the left column at lg+ widths grows to ~1020px,
            making the Sign In button on the right scroll-required even
            though it's anchored to the top of its column. */}
-        <div className="hidden lg:flex lg:w-[58%] xl:w-[60%] 2xl:w-[62%] flex-col relative z-10 p-6 xl:p-8 2xl:p-10 h-screen overflow-y-auto scrollbar-hide">
+        <div className="hidden lg:flex lg:w-[58%] xl:w-[60%] 2xl:w-[62%] flex-col relative z-10 p-5 md:p-6 lg:p-7 xl:p-8 2xl:p-10 h-screen overflow-y-auto scrollbar-hide">
           {/* Decorative vertical line on right edge */}
           <div
             className="absolute top-0 right-0 w-px h-full"
@@ -395,7 +395,7 @@ export default function AuthPortal() {
             initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="flex items-center gap-3 mb-8"
+            className="flex items-center gap-3 mb-6 xl:mb-8"
           >
             <div
               className="relative w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
@@ -547,7 +547,7 @@ export default function AuthPortal() {
            Previously `justify-center` pushed the form to ~440px from the top
            of an 800px viewport, putting the Sign In button at ~875px —
            below the fold. */}
-        <div className="flex-1 flex flex-col items-center relative z-10 py-4 px-6 md:py-6 md:px-10 xl:px-12 overflow-y-auto">
+        <div className="flex-1 flex flex-col items-center relative z-10 py-4 sm:py-5 md:py-6 px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 overflow-y-auto">
           <div className="lg:hidden w-full max-w-md mb-6 pt-4">
             {/* Logo + wordmark row */}
             <div className="flex items-center gap-3 mb-5">
@@ -570,7 +570,7 @@ export default function AuthPortal() {
               </div>
             </div>
             {/* Hero copy */}
-            <h2 className="font-display italic text-2xl sm:text-3xl leading-snug tracking-tight mb-3 text-balance">
+            <h2 className="font-display italic text-xl sm:text-2xl md:text-3xl leading-snug tracking-tight mb-3 text-balance">
               <span className="text-[#4F1E7B]">AI agents for every</span>{" "}
               <span className="text-ink">customer conversation</span>
             </h2>
