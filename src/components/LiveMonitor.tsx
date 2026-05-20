@@ -320,7 +320,7 @@ export default function LiveMonitor() {
           })()}
 
           {/* Stat row */}
-          <div className="shrink-0 grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div className="shrink-0 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2">
             <StatTile
               label="Active Calls"
               value={activeCount}
@@ -352,9 +352,9 @@ export default function LiveMonitor() {
           </div>
 
           {/* Main grid */}
-          <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-12 gap-2">
+          <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-2">
             {/* Active calls panel */}
-            <div className="xl:col-span-5 h-full">
+            <div className="lg:col-span-5 h-full">
               <Panel
                 title="Active Calls"
                 hint={activeCount > 0 ? `${activeCount} live` : "idle"}
@@ -393,7 +393,7 @@ export default function LiveMonitor() {
                       </div>
                       <div className="space-y-1.5">
                         <h3 className="font-display italic lowercase text-2xl text-ink/70">Idle</h3>
-                        <p className="text-[9px] uppercase tracking-[0.4em] text-muted/50 max-w-[180px]">
+                        <p className="text-[9px] sm:text-[10px] uppercase tracking-[0.4em] text-muted/50 max-w-[240px] sm:max-w-[180px]">
                           No active calls right now
                         </p>
                       </div>
@@ -447,7 +447,7 @@ export default function LiveMonitor() {
             </div>
 
             {/* Activity feed */}
-            <div className="xl:col-span-7 h-full">
+            <div className="lg:col-span-7 h-full">
               <Panel title="Recent Activity" hint="Fleet events" icon={Activity} scroll flush>
                 <AnimatePresence mode="popLayout">
                   {activity.length === 0 ? (

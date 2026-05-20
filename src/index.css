@@ -113,6 +113,17 @@
     mix-blend-mode: multiply;
   }
 
+  /* Mobile text size adjustments for better readability
+     on small screens. Increases 9px→11px and 10px→12px. */
+  @media (max-width: 640px) {
+    .text-\[9px\] {
+      font-size: 11px !important;
+    }
+    .text-\[10px\] {
+      font-size: 12px !important;
+    }
+  }
+
   h1, h2, h3, h4, h5, h6 {
     @apply font-display font-normal;
     letter-spacing: 0;

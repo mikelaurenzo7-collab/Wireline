@@ -272,7 +272,7 @@ export default function EmailInbox() {
           subtitle={`${threads.length} thread${threads.length === 1 ? "" : "s"} in your inbox.`}
           actions={syncAction}
         >
-          <div className="h-full flex flex-col lg:flex-row gap-3 min-h-0">
+          <div className="h-full flex flex-col md:flex-row lg:flex-row gap-3 min-h-0">
             {/* Thread list — full-width on mobile; hides when a thread is
             selected so the reader gets the full viewport. */}
             <Panel
@@ -281,9 +281,9 @@ export default function EmailInbox() {
               icon={Inbox}
               scroll
               flush
-              className={cn("lg:w-[420px] shrink-0", selectedThread && "hidden lg:flex")}
+              className={cn("md:w-[350px] lg:w-[420px] shrink-0", selectedThread && "hidden md:flex")}
               actions={
-                <span className="text-[9px] uppercase tracking-[0.3em] text-muted/70 tabular-nums">
+                <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.3em] text-muted/70 tabular-nums">
                   {threads.length}
                 </span>
               }
