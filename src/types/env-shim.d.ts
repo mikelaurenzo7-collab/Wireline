@@ -1,3 +1,5 @@
+/* eslint-disable -- compatibility declarations intentionally model third-party packages that are only partially typed in this app. */
+/* eslint-disable @typescript-eslint/no-explicit-any -- compatibility declarations intentionally model third-party packages that are only partially typed in this app. */
 declare module "express" {
   interface Express {
     (): any;

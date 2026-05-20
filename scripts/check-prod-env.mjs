@@ -14,48 +14,86 @@
 //   2 — missing recommended vars and PRODUCTION_CHECK=1 (CI hardening)
 
 const required = [
-  ["VITE_SUPABASE_URL",         "Supabase project URL — frontend + backend"],
-  ["VITE_SUPABASE_ANON_KEY",    "Supabase anon key — frontend client"],
-  ["SUPABASE_SERVICE_ROLE_KEY", "Supabase service role — backend privileged ops"],
-  ["OAUTH_STATE_SECRET",        "HMAC secret for OAuth CSRF state tokens — required in prod; dev falls back to STRIPE_WEBHOOK_SECRET"],
+  ["VITE_SUPABASE_URL", "Supabase project URL — frontend + backend", process.env.VITE_SUPABASE_URL],
+  [
+    "VITE_SUPABASE_ANON_KEY",
+    "Supabase anon key — frontend client",
+    process.env.VITE_SUPABASE_ANON_KEY,
+  ],
+  [
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "Supabase service role — backend privileged ops",
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+  ],
+  [
+    "INTERNAL_JWT_SECRET",
+    "Session JWT signing — canonical Wireline session secret (legacy alias: SUPABASE_JWT_SECRET)",
+    process.env.INTERNAL_JWT_SECRET || process.env.SUPABASE_JWT_SECRET,
+  ],
+  [
+    "OAUTH_STATE_SECRET",
+    "HMAC secret for OAuth CSRF state tokens — required in prod; dev falls back to STRIPE_WEBHOOK_SECRET",
+    process.env.OAUTH_STATE_SECRET,
+  ],
 ];
 
 const recommended = [
-  ["INTERNAL_JWT_SECRET",       "Session JWT signing — required in prod by validateStartupEnv (alias: SUPABASE_JWT_SECRET)"],
-  ["POSTGRES_URL",              "Drizzle / server Postgres — Supabase pooler URI; required for API routes using the ORM"],
-  ["ANTHROPIC_API_KEY",         "Claude — required for /api/claude/* recipes"],
-  ["VITE_VAPI_PUBLIC_KEY",      "Vapi — required for browser-side test calls from the dashboard"],
-  ["VAPI_PRIVATE_KEY",          "Vapi — required for outbound/inbound voice agents"],
-  ["VAPI_WEBHOOK_SECRET",       "Vapi webhook auth — REJECTS webhooks in prod when unset"],
-  ["APP_URL",                   "Canonical URL — required for OAuth redirects + email links"],
-  ["CORS_ORIGINS",              "CORS allowlist — required in prod or browser API calls fail"],
-  ["STRIPE_SECRET_KEY",         "Stripe — billing endpoints return 503 when unset"],
-  ["STRIPE_WEBHOOK_SECRET",     "Stripe webhook signature verification"],
-  ["STRIPE_STARTER_PRICE_ID",   "Stripe price ID for the Starter plan"],
-  ["STRIPE_PRO_PRICE_ID",       "Stripe price ID for the Pro plan"],
-  ["STRIPE_ENTERPRISE_PRICE_ID","Stripe price ID for the Enterprise plan"],
-  ["WIRELINE_DATA_KEY",         "AES-256-GCM key for encrypting webhook secrets at rest — webhooks with signing secrets fail when unset"],
-  ["CRON_SECRET",               "Bearer token for cron job authentication — scheduled jobs fail when unset"],
+  [
+    "POSTGRES_URL",
+    "Drizzle / server Postgres — Supabase pooler URI; required for API routes using the ORM",
+  ],
+  ["ANTHROPIC_API_KEY", "Claude — required for /api/claude/* recipes"],
+  ["VITE_VAPI_PUBLIC_KEY", "Vapi — required for browser-side test calls from the dashboard"],
+  ["VAPI_PRIVATE_KEY", "Vapi — required for outbound/inbound voice agents"],
+  ["VAPI_WEBHOOK_SECRET", "Vapi webhook auth — REJECTS webhooks in prod when unset"],
+  ["APP_URL", "Canonical URL — required for OAuth redirects + email links"],
+  ["CORS_ORIGINS", "CORS allowlist — required in prod or browser API calls fail"],
+  ["STRIPE_SECRET_KEY", "Stripe — billing endpoints return 503 when unset"],
+  ["STRIPE_WEBHOOK_SECRET", "Stripe webhook signature verification"],
+  ["STRIPE_STARTER_PRICE_ID", "Stripe price ID for the Starter plan"],
+  ["STRIPE_PRO_PRICE_ID", "Stripe price ID for the Pro plan"],
+  ["STRIPE_ENTERPRISE_PRICE_ID", "Stripe price ID for the Enterprise plan"],
+  [
+    "WIRELINE_DATA_KEY",
+    "AES-256-GCM key for encrypting webhook secrets at rest — webhooks with signing secrets fail when unset",
+  ],
+  ["CRON_SECRET", "Bearer token for cron job authentication — scheduled jobs fail when unset"],
 ];
 
 const optional = [
-  ["GEMINI_API_KEY",           "Gemini fallback for legacy paths"],
-  ["GOOGLE_CLIENT_ID",         "Gmail OAuth — disables email integration when unset"],
-  ["GOOGLE_CLIENT_SECRET",     "Gmail OAuth"],
-  ["MICROSOFT_CLIENT_ID",      "Outlook OAuth"],
-  ["MICROSOFT_CLIENT_SECRET",  "Outlook OAuth"],
-  ["SENTRY_DSN",               "Backend error monitoring"],
-  ["VITE_SENTRY_DSN",          "Frontend error monitoring"],
-  ["UPSTASH_REDIS_REST_URL",   "Distributed rate-limit store (in-memory fallback otherwise)"],
+  ["GEMINI_API_KEY", "Gemini fallback for legacy paths"],
+  ["GOOGLE_CLIENT_ID", "Gmail OAuth — disables email integration when unset"],
+  ["GOOGLE_CLIENT_SECRET", "Gmail OAuth"],
+  ["MICROSOFT_CLIENT_ID", "Outlook OAuth"],
+  ["MICROSOFT_CLIENT_SECRET", "Outlook OAuth"],
+  ["SENTRY_DSN", "Backend error monitoring"],
+  ["VITE_SENTRY_DSN", "Frontend error monitoring"],
+  ["UPSTASH_REDIS_REST_URL", "Distributed rate-limit store (in-memory fallback otherwise)"],
   ["UPSTASH_REDIS_REST_TOKEN", "Upstash Redis token"],
-  ["CLAUDE_MONTHLY_BUDGET_USD","Monthly Claude spend cap in USD (default $50; 1 % daily safety valve)"],
+  [
+    "CLAUDE_MONTHLY_BUDGET_USD",
+    "Monthly Claude spend cap in USD (default $50; 1 % daily safety valve)",
+  ],
 ];
 
-const missing = (vars) => vars.filter(([k]) => !process.env[k]);
+const jwtSecretConflict =
+  process.env.INTERNAL_JWT_SECRET &&
+  process.env.SUPABASE_JWT_SECRET &&
+  process.env.INTERNAL_JWT_SECRET !== process.env.SUPABASE_JWT_SECRET;
 
-const missingRequired    = missing(required);
+const missing = (vars) => vars.filter(([k, _d, value]) => !(value ?? process.env[k]));
+
+const missingRequired = jwtSecretConflict
+  ? [
+      [
+        "INTERNAL_JWT_SECRET / SUPABASE_JWT_SECRET",
+        "Both are set but differ. Keep INTERNAL_JWT_SECRET as canonical; remove SUPABASE_JWT_SECRET after confirming sessions no longer depend on it.",
+      ],
+      ...missing(required),
+    ]
+  : missing(required);
 const missingRecommended = missing(recommended);
-const missingOptional    = missing(optional);
+const missingOptional = missing(optional);
 
 const banner = (s) => `\n${"━".repeat(64)}\n  ${s}\n${"━".repeat(64)}`;
 

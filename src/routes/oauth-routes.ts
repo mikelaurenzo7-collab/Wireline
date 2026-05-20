@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- OAuth provider responses include provider-specific extension fields. */
 import express, { Request, Response } from "express";
 import type { AuthenticatedRequest } from "../types/auth";
 import { google } from "googleapis";

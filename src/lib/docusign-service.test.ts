@@ -14,7 +14,7 @@ const ENV_KEYS = [
 ];
 
 function snapshotEnv() {
-  return Object.fromEntries(ENV_KEYS.map(k => [k, process.env[k]]));
+  return Object.fromEntries(ENV_KEYS.map((k) => [k, process.env[k]]));
 }
 function restoreEnv(snap: Record<string, string | undefined>) {
   for (const k of ENV_KEYS) {
@@ -26,9 +26,13 @@ function restoreEnv(snap: Record<string, string | undefined>) {
 describe("docusign-service.sendContract", () => {
   const originalFetch = global.fetch;
   let envSnap: Record<string, string | undefined>;
+  let consoleLogSpy: ReturnType<typeof vi.spyOn>;
+  let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     envSnap = snapshotEnv();
+    consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     // Module-scoped constants (DOCUSIGN_ACCOUNT_ID, DOCUSIGN_BASE_URI) are
     // captured at first import — reset so each test gets fresh ones.
     vi.resetModules();
@@ -37,6 +41,8 @@ describe("docusign-service.sendContract", () => {
   afterEach(() => {
     global.fetch = originalFetch;
     restoreEnv(envSnap);
+    consoleLogSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
     vi.restoreAllMocks();
   });
 

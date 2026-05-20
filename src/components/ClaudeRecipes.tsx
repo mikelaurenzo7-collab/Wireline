@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- recipe payloads bridge several legacy agent APIs that still return loosely typed JSON. */
 /**
  * Claude Recipes — inline buttons + modal drawer.
  *

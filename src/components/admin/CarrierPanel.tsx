@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { useState } from "react";
+import { motion } from "motion/react";
 import {
   Cpu,
   Phone,
@@ -18,13 +18,13 @@ import PhoneNumberPicker from "../PhoneNumberPicker";
 import { cn } from "../../lib/utils";
 
 interface CarrierPanelProps {
-  settings: any;
-  agents: any[];
-  phoneNumbers: any[];
-  carrierNumbers: any[];
+  settings: CarrierSettings;
+  agents: CarrierAgent[];
+  phoneNumbers: PhoneNumber[];
+  carrierNumbers: CarrierNumber[];
   isSaving: boolean;
   isSyncing: boolean;
-  onUpdateSettings: (s: any) => void;
+  onUpdateSettings: (s: CarrierSettings) => void;
   onSaveSettings: () => void;
   onSyncNumbers: () => void;
   onAddNumber: (number: string, vapiId: string) => void;
@@ -32,11 +32,51 @@ interface CarrierPanelProps {
   onUpdateNumberAgent: (id: string | number, agent_id: string) => void;
 }
 
+interface CarrierSettings {
+  vapi_phone_number_id: string;
+  vapi_phone_inbound_agent_id: string;
+  subscription_status: string;
+  max_agents: number;
+  voice_llm_provider: string;
+  voice_llm_model: string;
+  twilio_messaging_enabled: boolean;
+  twilio_lookup_enabled: boolean;
+  twilio_manager_alerts_enabled: boolean;
+  twilio_messaging_service_sid: string;
+  twilio_sms_from_number: string;
+  twilio_whatsapp_from_number: string;
+  twilio_manager_alert_number: string;
+  prospecting_enabled: boolean;
+  target_titles: string[];
+  target_industries: string[];
+  target_states: string[];
+  target_employee_ranges: string[];
+  brand_name: string;
+  brand_logo_url: string;
+  primary_color: string;
+  byoc_enabled?: boolean;
+}
+
+interface CarrierAgent {
+  id: string;
+  name: string;
+  channel?: string | null;
+}
+
+interface PhoneNumber {
+  id: string | number;
+  phone_number: string;
+  vapi_number_id?: string | null;
+  agent_id?: string | null;
+  campaign_label?: string | null;
+}
+
+type CarrierNumber = Record<string, unknown>;
+
 export function CarrierPanel({
   settings,
   agents,
   phoneNumbers,
-  carrierNumbers,
   isSaving,
   isSyncing,
   onUpdateSettings,
@@ -48,6 +88,7 @@ export function CarrierPanel({
 }: CarrierPanelProps) {
   const [newNumber, setNewNumber] = useState("");
   const [newNumberVapiId, setNewNumberVapiId] = useState("");
+  const hasBrowserVoiceKey = Boolean(import.meta.env?.VITE_VAPI_PUBLIC_KEY);
 
   const handleSync = async () => {
     // In a real scenario, this would call an API or the prop
@@ -55,12 +96,6 @@ export function CarrierPanel({
     // For local UI state, we might need a way to get the synced numbers back
     // but here we follow the existing pattern in AdminSettings
   };
-
-  const providerDocsUrl =
-    {
-      google: "https://ai.google.dev/gemini-api/docs/models",
-      anthropic: "https://docs.anthropic.com/en/docs/about-claude/models/overview",
-    }[settings.voice_llm_provider] ?? "https://ai.google.dev/gemini-api/docs/models";
 
   return (
     <div className="h-full grid grid-cols-1 xl:grid-cols-2 gap-3 min-h-0 overflow-y-auto panel-scroll pb-4">
@@ -82,7 +117,7 @@ export function CarrierPanel({
             <div
               className={cn(
                 "rounded-xl border p-3 space-y-1.5",
-                (import.meta as any).env?.VITE_VAPI_PUBLIC_KEY
+                hasBrowserVoiceKey
                   ? "bg-emerald-500/10 border-emerald-500/30"
                   : "bg-rose-500/10 border-rose-500/30",
               )}
@@ -91,9 +126,7 @@ export function CarrierPanel({
                 <span
                   className={cn(
                     "w-1.5 h-1.5 rounded-full animate-pulse",
-                    (import.meta as any).env?.VITE_VAPI_PUBLIC_KEY
-                      ? "bg-emerald-500"
-                      : "bg-rose-500",
+                    hasBrowserVoiceKey ? "bg-emerald-500" : "bg-rose-500",
                   )}
                 />
                 <p className="text-[9px] uppercase tracking-[0.3em] text-ink/80">
@@ -103,12 +136,10 @@ export function CarrierPanel({
               <p
                 className={cn(
                   "text-[9px] uppercase tracking-[0.3em]",
-                  (import.meta as any).env?.VITE_VAPI_PUBLIC_KEY
-                    ? "text-emerald-500"
-                    : "text-rose-500",
+                  hasBrowserVoiceKey ? "text-emerald-500" : "text-rose-500",
                 )}
               >
-                {(import.meta as any).env?.VITE_VAPI_PUBLIC_KEY ? "Connected" : "Missing"}
+                {hasBrowserVoiceKey ? "Connected" : "Missing"}
               </p>
             </div>
           </div>
@@ -353,6 +384,8 @@ export function CarrierPanel({
                       <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none rotate-90" />
                     </div>
                     <button
+                      type="button"
+                      aria-label={`Delete ${pt.phone_number}`}
                       onClick={() => onDeleteNumber(pt.id)}
                       className="w-7 h-7 rounded-full glass border border-white/10 flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30 transition-all"
                     >

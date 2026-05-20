@@ -52,9 +52,9 @@ describe("WebhookDeliverySchema", () => {
   });
 
   it("strict mode rejects unknown fields to catch upstream schema drift", () => {
-    expect(
-      WebhookDeliverySchema.safeParse({ ...valid, unexpected_field: "x" }).success,
-    ).toBe(false);
+    expect(WebhookDeliverySchema.safeParse({ ...valid, unexpected_field: "x" }).success).toBe(
+      false,
+    );
   });
 
   it("accepts each enum status value", () => {
@@ -160,7 +160,10 @@ describe("validateResponse", () => {
   });
 
   it("throws a helpful Error containing the first issue's message", () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     expect(() => validateResponse(APIErrorSchema, {})).toThrow(/Invalid response/);
+    expect(consoleSpy).toHaveBeenCalledOnce();
+    consoleSpy.mockRestore();
   });
 
   it("rethrows non-Zod errors as-is", () => {

@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { buildPlaywrightWebServerEnv } from "./scripts/playwright-env";
 
 /**
  * Playwright E2E configuration for Wireline
@@ -35,6 +36,7 @@ export default defineConfig({
   ],
   webServer: {
     command: "npm run dev",
+    env: buildPlaywrightWebServerEnv(),
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,

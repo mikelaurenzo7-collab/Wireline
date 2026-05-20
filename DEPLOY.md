@@ -26,11 +26,11 @@ Both production aliases (`trywireline.com`, `wireline-chi.vercel.app`,
 All env vars live in Vercel project settings:
 https://vercel.com/revaluate/wireline/settings/environment-variables
 
-| Scope | What it covers |
-|---|---|
-| **Production** | The 3 prod aliases above |
-| **Preview** | Every branch PR — auto-deployed preview URLs |
-| **Development** | Local `vercel dev` runs (rarely used here) |
+| Scope           | What it covers                               |
+| --------------- | -------------------------------------------- |
+| **Production**  | The 3 prod aliases above                     |
+| **Preview**     | Every branch PR — auto-deployed preview URLs |
+| **Development** | Local `vercel dev` runs (rarely used here)   |
 
 When adding a new var, **check all 3 boxes** in the Vercel UI so it
 applies everywhere. The CLI version (`vercel env add`) requires a
@@ -38,20 +38,28 @@ specific branch for Preview which is awkward — prefer the UI.
 
 ### Var inventory (key ones)
 
-| Var | Why it exists |
-|---|---|
-| `APP_URL` | Base URL for OAuth callbacks, Stripe webhooks, Vapi assistant config |
-| `CORS_ORIGINS` | Allowed origins for cross-origin API requests |
-| `POSTGRES_URL` | Supabase Postgres connection |
-| `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` | Frontend Supabase client |
-| `JWT_SECRET` | Session token signing |
-| `VAPI_PRIVATE_KEY` | Server-side Vapi API calls |
-| `VITE_VAPI_PUBLIC_KEY` | In-browser Vapi widget |
-| `VAPI_WEBHOOK_SECRET` | Auth on `/api/vapi-webhook` and `/api/escalate` |
-| `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` | Outbound SMS, inbound webhook |
-| `OWNER_PHONE` / `OWNER_EMAIL` / `PLATFORM_SMS_FROM` | Escalation routing (where agent escalations go) |
-| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | Billing |
-| `ANTHROPIC_API_KEY` | Claude API for agent reasoning |
+| Var                                                 | Why it exists                                                                               |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `APP_URL`                                           | Base URL for OAuth callbacks, Stripe webhooks, Vapi assistant config                        |
+| `CORS_ORIGINS`                                      | Allowed origins for cross-origin API requests                                               |
+| `POSTGRES_URL`                                      | Supabase Postgres connection                                                                |
+| `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`      | Frontend Supabase client                                                                    |
+| `INTERNAL_JWT_SECRET`                               | Wireline session JWT signing. Canonical name; `SUPABASE_JWT_SECRET` is only a legacy alias. |
+| `VAPI_PRIVATE_KEY`                                  | Server-side Vapi API calls                                                                  |
+| `VITE_VAPI_PUBLIC_KEY`                              | In-browser Vapi widget                                                                      |
+| `VAPI_WEBHOOK_SECRET`                               | Auth on `/api/vapi-webhook` and `/api/escalate`                                             |
+| `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN`          | Outbound SMS, inbound webhook                                                               |
+| `OWNER_PHONE` / `OWNER_EMAIL` / `PLATFORM_SMS_FROM` | Escalation routing (where agent escalations go)                                             |
+| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`       | Billing                                                                                     |
+| `ANTHROPIC_API_KEY`                                 | Claude API for agent reasoning                                                              |
+
+### Internal JWT secret cleanup
+
+Keep exactly one canonical session-signing secret in Vercel: `INTERNAL_JWT_SECRET`.
+If `SUPABASE_JWT_SECRET` also exists, delete it only after confirming it is either
+identical to `INTERNAL_JWT_SECRET` or after intentionally rotating sessions. If both
+names are set to different values, production startup/checks fail because one part
+of the app could sign tokens that another part rejects.
 
 ---
 
@@ -61,6 +69,7 @@ Phone numbers live in the Vapi dashboard
 (https://dashboard.vapi.ai → Phone Numbers). Currently 10 numbers:
 
 **4 customer-service lines (real Wireline support):**
+
 - Sarah — Customer Support — (630) 642-5661
 - Liam — Sales & Demos — (630) 581-1834
 - Tyler — Technical Support — (564) 238-9455
@@ -70,6 +79,7 @@ Each has the `escalate_to_human` tool wired to
 `https://trywireline.com/api/escalate` with the shared webhook secret.
 
 **6 vertical demos (proof of platform breadth):**
+
 - Marcus · Medical Office Intake · (617) 313-4469
 - Aisha · Real Estate Lead Capture · (973) 363-8874
 - Devon · Bill Negotiator · (207) 593-5155
@@ -99,21 +109,21 @@ All three point at the same active production deployment.
 
 **Vapi calls hang up with "public webhook signature" error**
 → `VAPI_WEBHOOK_SECRET` in Vercel doesn't match the `server.secret`
-   on the phone number / tool config in Vapi. Rotate both sides.
+on the phone number / tool config in Vapi. Rotate both sides.
 
 **OAuth redirect mismatch (Google / Microsoft)**
 → Google Cloud Console: add `https://trywireline.com` to JavaScript
-   origins AND `https://trywireline.com/api/oauth/google/callback`
-   to redirect URIs. Same pattern for Microsoft (Azure AD).
+origins AND `https://trywireline.com/api/oauth/google/callback`
+to redirect URIs. Same pattern for Microsoft (Azure AD).
 
 **Stripe webhook fails**
 → Stripe Dashboard → Webhooks → confirm endpoint URL is
-   `https://trywireline.com/api/billing/stripe-webhook`.
+`https://trywireline.com/api/billing/stripe-webhook`.
 
 **Preview build fails author-email check**
 → Already mitigated. If it returns: set
-   `git config user.email "<your GitHub noreply email>"`
-   in this repo.
+`git config user.email "<your GitHub noreply email>"`
+in this repo.
 
 ---
 

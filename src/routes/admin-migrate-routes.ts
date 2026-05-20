@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- admin migration routes normalize heterogeneous legacy rows during one-off backfills. */
 /**
  * One-shot DDL migration endpoint for the SMS threads/messages tables.
  *

@@ -1,4 +1,5 @@
 import { log, IS_PROD } from "./server-context";
+import { getInternalJwtSecret } from "./internal-jwt-secret";
 
 /**
  * Startup env validation — fail fast in production rather than
@@ -6,9 +7,11 @@ import { log, IS_PROD } from "./server-context";
  * secrets.
  */
 export function validateStartupEnv() {
+  const jwtSecret = getInternalJwtSecret();
+
   // Required in production; warn in dev so local hacking still works.
   const prodRequired: [string, string | undefined][] = [
-    ["INTERNAL_JWT_SECRET", process.env.INTERNAL_JWT_SECRET || process.env.SUPABASE_JWT_SECRET],
+    ["INTERNAL_JWT_SECRET", jwtSecret],
     ["ANTHROPIC_API_KEY", process.env.ANTHROPIC_API_KEY],
     ["GEMINI_API_KEY", process.env.GEMINI_API_KEY],
     ["VAPI_PRIVATE_KEY", process.env.VAPI_PRIVATE_KEY],
