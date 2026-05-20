@@ -393,7 +393,7 @@ export default function AgentTraining() {
                         analysis engine
                       </h3>
                       <p className="text-[10px] uppercase tracking-[0.3em] text-muted/70">
-                        Autonomous pattern optimization
+                        Find improvement opportunities from your calls
                       </p>
                     </div>
                   </div>
@@ -407,7 +407,7 @@ export default function AgentTraining() {
                     ) : (
                       <Activity className="w-3.5 h-3.5" />
                     )}
-                    {isOptimizing ? "Analyzing…" : "Initiate analysis"}
+                    {isOptimizing ? "Analyzing…" : "Analyze calls"}
                   </button>
                 </div>
                 {optSuggestions && (
@@ -419,7 +419,7 @@ export default function AgentTraining() {
                   >
                     <div className="rounded-xl bg-black/20 border border-white/8 p-4">
                       <h4 className="text-[10px] uppercase tracking-[0.3em] text-muted/70 mb-2">
-                        Intelligence narrative
+                        Analysis
                       </h4>
                       <p className="font-display italic text-lg text-ink leading-snug">
                         "{optSuggestions.analysis}"
@@ -439,7 +439,7 @@ export default function AgentTraining() {
                                 onClick={() => applySuggestion(s)}
                                 className="w-full h-8 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-all"
                               >
-                                Deploy directive
+                                Apply
                               </button>
                             </motion.div>
                           ))
@@ -489,7 +489,7 @@ export default function AgentTraining() {
                         onClick={() => saveManualEntry("personality", personalityDraft)}
                         className="h-8 px-3 rounded-full bg-brand/15 border border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 transition-all"
                       >
-                        Sync profile
+                        Save
                       </button>
                     </div>
                   ) : (
@@ -497,7 +497,7 @@ export default function AgentTraining() {
                       onClick={() => setEditingPersonality(true)}
                       className="h-8 px-3 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-muted/80 hover:text-ink flex items-center gap-1.5 transition-all"
                     >
-                      <Pencil className="w-3 h-3" /> Reconfigure
+                      <Pencil className="w-3 h-3" /> Edit
                     </button>
                   )}
                 </div>
@@ -516,7 +516,8 @@ export default function AgentTraining() {
                           `"${personality}"`
                         ) : (
                           <span className="text-muted/60 not-italic text-base">
-                            No core identity defined. Node uninitialized.
+                            No personality set yet — click Edit to describe how your agent should
+                            speak and behave.
                           </span>
                         )}
                       </p>
@@ -527,26 +528,27 @@ export default function AgentTraining() {
 
               {/* Directives + Knowledge */}
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                {/* Logic Registry */}
+                {/* Rules */}
                 <section className="rounded-2xl glass border border-white/10 p-3 flex flex-col">
                   <header className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-white/8">
                     <div>
                       <h3 className="font-display italic lowercase text-lg text-ink leading-none">
-                        logic registry
+                        rules
                       </h3>
                       <p className="text-[10px] uppercase tracking-[0.3em] text-muted/70 mt-0.5">
-                        Hard constraints
+                        Lines your agent never crosses
                       </p>
                     </div>
                     <span className="px-1.5 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-500 text-[9px] uppercase tracking-[0.25em] leading-none">
-                      Inviolable
+                      Always-on
                     </span>
                   </header>
                   <div className="space-y-2 mb-3">
                     <AnimatePresence mode="popLayout">
                       {directives.length === 0 ? (
-                        <div className="py-8 text-center text-[10px] uppercase tracking-[0.4em] text-muted/60">
-                          Registry dormant
+                        <div className="py-8 text-center text-muted/70 text-[11px] leading-relaxed px-4">
+                          No rules yet — add one below to set hard limits your agent always
+                          respects.
                         </div>
                       ) : (
                         directives.map((d) => (
@@ -632,7 +634,7 @@ export default function AgentTraining() {
                         onKeyDown={(e) =>
                           e.key === "Enter" && saveManualEntry("directive", newDirective)
                         }
-                        placeholder="Inject new operational directive…"
+                        placeholder="e.g. Never discuss competitor pricing"
                         className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-rose-400/50 text-ink placeholder:text-muted/50"
                       />
                       <button
@@ -747,7 +749,7 @@ export default function AgentTraining() {
                         onKeyDown={(e) =>
                           e.key === "Enter" && saveManualEntry("knowledge", newKnowledge)
                         }
-                        placeholder="Sync new intelligence data…"
+                        placeholder="e.g. Our return policy is 30 days, no questions"
                         className="flex-1 text-sm bg-black/5 border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-blue-400/50 text-ink placeholder:text-muted/50"
                       />
                       <button
@@ -792,7 +794,7 @@ export default function AgentTraining() {
                         className="rounded-xl bg-emerald-500/8 border border-emerald-500/20 p-3"
                       >
                         <div className="text-[9px] uppercase tracking-[0.3em] text-emerald-500 mb-2 flex items-center gap-1.5">
-                          <Sparkles className="w-3 h-3" /> Heuristic update detected
+                          <Sparkles className="w-3 h-3" /> Pattern learned from calls
                         </div>
                         <p className="text-sm text-ink/90 leading-relaxed">{lesson.lesson}</p>
                         <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/8">
@@ -845,51 +847,54 @@ export default function AgentTraining() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="h-full flex items-center justify-center p-6"
+              className="h-full overflow-y-auto"
             >
-              <div className="max-w-[560px] w-full text-center space-y-6">
-                <div className="relative w-24 h-24 rounded-3xl glass border border-white/10 flex items-center justify-center mx-auto">
-                  <div
-                    className="absolute inset-0 rounded-3xl opacity-20 blur-xl"
-                    style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
-                  />
-                  <PlayCircle className="w-12 h-12 text-brand relative z-10" strokeWidth={1.25} />
-                </div>
-                <div>
-                  <h2 className="font-display italic lowercase text-4xl text-ink mb-2">
-                    test call
-                  </h2>
-                  <p className="text-muted/70 text-sm leading-relaxed max-w-md mx-auto">
-                    Test how your agent responds in a safe practice run before it takes real calls.
-                  </p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {[
-                    {
-                      label: "Voice Protocol",
-                      icon: Phone,
-                      desc: "Simulate high-latency voice relay exchanges",
-                    },
-                    {
-                      label: "Neural Relay",
-                      icon: Mail,
-                      desc: "Pre-calculate automated signal replies",
-                    },
-                  ].map((sim) => (
+              <div className="min-h-full flex items-center justify-center p-6">
+                <div className="max-w-[560px] w-full text-center space-y-6">
+                  <div className="relative w-24 h-24 rounded-3xl glass border border-white/10 flex items-center justify-center mx-auto">
                     <div
-                      key={sim.label}
-                      className="rounded-xl glass border border-white/8 border-dashed p-4 text-left opacity-50 cursor-not-allowed"
-                    >
-                      <sim.icon className="w-5 h-5 text-muted mb-2" />
-                      <h4 className="font-display italic lowercase text-base text-ink mb-1">
-                        {sim.label.toLowerCase()}
-                      </h4>
-                      <p className="text-[11px] text-muted/70 leading-relaxed">{sim.desc}</p>
-                      <div className="mt-3 text-[9px] uppercase tracking-[0.3em] text-muted/50">
-                        Dormant · Offline
+                      className="absolute inset-0 rounded-3xl opacity-20 blur-xl"
+                      style={{ background: "radial-gradient(circle, #4F1E7B, transparent)" }}
+                    />
+                    <PlayCircle className="w-12 h-12 text-brand relative z-10" strokeWidth={1.25} />
+                  </div>
+                  <div>
+                    <h2 className="font-display italic lowercase text-4xl text-ink mb-2">
+                      test call
+                    </h2>
+                    <p className="text-muted/70 text-sm leading-relaxed max-w-md mx-auto">
+                      Test how your agent responds in a safe practice run before it takes real
+                      calls.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[
+                      {
+                        label: "Phone call",
+                        icon: Phone,
+                        desc: "Hear exactly how your agent handles real caller scenarios before you go live.",
+                      },
+                      {
+                        label: "Email",
+                        icon: Mail,
+                        desc: "Preview how your agent drafts email replies before any send.",
+                      },
+                    ].map((sim) => (
+                      <div
+                        key={sim.label}
+                        className="rounded-xl glass border border-white/8 border-dashed p-4 text-left opacity-50 cursor-not-allowed"
+                      >
+                        <sim.icon className="w-5 h-5 text-muted mb-2" />
+                        <h4 className="font-display italic lowercase text-base text-ink mb-1">
+                          {sim.label.toLowerCase()}
+                        </h4>
+                        <p className="text-[11px] text-muted/70 leading-relaxed">{sim.desc}</p>
+                        <div className="mt-3 text-[9px] uppercase tracking-[0.3em] text-muted/50">
+                          Coming soon
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             </motion.div>

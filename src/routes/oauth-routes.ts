@@ -66,6 +66,12 @@ import {
   normalizeShopDomain,
   disconnectShopify,
 } from "../lib/shopify-service";
+import {
+  squareOAuthConfigured,
+  getSquareAuthUrl,
+  exchangeSquareCode,
+  disconnectSquare,
+} from "../lib/square-service";
 import { computeIntegrationHealth } from "../lib/integration-health";
 
 const router = express.Router();
@@ -1273,6 +1279,128 @@ router.post(
 );
 
 // ────────────────────────────────────────────────────────────────────
+//  Square OAuth
+//
+//  Square uses standard authorization_code flow. Tokens expire in 30
+//  days; the service layer auto-refreshes when < 7 days remain.
+//  The registered redirect URL is /api/ecommerce/oauth/callback to
+//  match what Mike registered in the Square Developer Dashboard.
+// ────────────────────────────────────────────────────────────────────
+
+router.get(
+  "/api/oauth/square/url",
+  oauthRateLimiter,
+  authenticateUser,
+  (req: express.Request, res: express.Response) => {
+    if (!squareOAuthConfigured()) {
+      return res.status(500).json({
+        error:
+          "Missing SQUARE_APPLICATION_ID or SQUARE_APPLICATION_SECRET in environment variables.",
+      });
+    }
+    const baseUrl =
+      (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+      `${req.protocol}://${req.get("host")}`;
+    const redirectUri = `${baseUrl}/api/ecommerce/oauth/callback`;
+    const uid = req.user?.id as string | undefined;
+    const authUrl = getSquareAuthUrl(
+      redirectUri,
+      generateOAuthState(uid ? { userId: uid } : undefined),
+    );
+    res.json({ url: authUrl });
+  },
+);
+
+router.get("/api/ecommerce/oauth/callback", async (req: express.Request, res: express.Response) => {
+  const { code, state, error: oauthError } = req.query as Record<string, string | undefined>;
+
+  if (oauthError) {
+    return res.status(400).send(`Square authorization denied: ${oauthError}`);
+  }
+  if (!state) {
+    return res.status(400).send("Missing OAuth state. Please restart the connect flow.");
+  }
+  const vs = verifyOAuthState(state);
+  if (!vs) {
+    return res.status(400).send("Invalid or expired OAuth state. Please restart the connect flow.");
+  }
+  if (!code || typeof code !== "string") {
+    return res.status(400).send("No authorization code provided by Square.");
+  }
+
+  try {
+    const baseUrl =
+      (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+      `${req.protocol}://${req.get("host")}`;
+    const redirectUri = `${baseUrl}/api/ecommerce/oauth/callback`;
+
+    const tokens = await exchangeSquareCode(code, redirectUri);
+
+    const userId: string | null = vs.userId ?? (await resolveUserIdFromOAuthSession(req));
+    if (!userId) {
+      return res.status(401).send("Could not identify user. Please reconnect from the app.");
+    }
+
+    await drizzle
+      .insert(schema.crmConnections)
+      .values({
+        userId,
+        provider: "square",
+        accessToken: encryptSecret(tokens.access_token),
+        refreshToken: encryptSecret(tokens.refresh_token),
+        expiresAt: new Date(tokens.expires_at),
+        connectedEmail: tokens.merchant_id,
+        metadata: { merchant_id: tokens.merchant_id },
+      })
+      .onConflictDoUpdate({
+        target: [schema.crmConnections.userId, schema.crmConnections.provider],
+        set: {
+          accessToken: encryptSecret(tokens.access_token),
+          refreshToken: encryptSecret(tokens.refresh_token),
+          expiresAt: new Date(tokens.expires_at),
+          connectedEmail: tokens.merchant_id,
+          metadata: { merchant_id: tokens.merchant_id },
+          updatedAt: new Date(),
+          active: true,
+        },
+      });
+
+    const targetOrigin =
+      (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
+      `${req.protocol}://${req.get("host")}`;
+    const cspNonce = generateCspNonce();
+    res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, cspNonce));
+    res.send(`
+      <html><body><script nonce="${cspNonce}">
+        if (window.opener) {
+          window.opener.postMessage({ type: 'CRM_OAUTH_SUCCESS', provider: 'square' }, ${JSON.stringify(targetOrigin)});
+          window.close();
+        } else { window.location.href = '/'; }
+      </script><p>Square connected successfully. You can close this window.</p></body></html>
+    `);
+  } catch (e: any) {
+    log.error("Square OAuth callback failed", { error: e?.message || String(e) });
+    res.status(500).send("Square authentication failed. Please try again.");
+  }
+});
+
+router.post(
+  "/api/oauth/square/disconnect",
+  authenticateUser,
+  async (req: express.Request, res: express.Response) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    try {
+      await disconnectSquare(userId);
+      res.json({ ok: true });
+    } catch (e: any) {
+      log.error("Square disconnect failed", { error: e?.message });
+      res.status(500).json({ error: "Failed to disconnect Square" });
+    }
+  },
+);
+
+// ────────────────────────────────────────────────────────────────────
 //  CRM Connection Status (shared endpoint)
 // ────────────────────────────────────────────────────────────────────
 
@@ -1308,6 +1436,7 @@ router.get(
       const apolloConn = findBy("apollo");
       const metaConn = findBy("meta");
       const shopifyConn = findBy("shopify");
+      const squareConn = findBy("square");
 
       res.json({
         salesforce: sfConn
@@ -1366,6 +1495,13 @@ router.get(
               connected_at: shopifyConn.createdAt,
             }
           : { connected: false, configured: shopifyOAuthConfigured() },
+        square: squareConn
+          ? {
+              connected: true,
+              email: squareConn.connectedEmail,
+              connected_at: squareConn.createdAt,
+            }
+          : { connected: false, configured: squareOAuthConfigured() },
       });
     } catch (e: any) {
       log.error("CRM status check failed", { error: e?.message });

@@ -32,6 +32,7 @@ interface AgentWorkspaceProps {
 
 export default function AgentWorkspace({ agentId, agentName = "agent" }: AgentWorkspaceProps) {
   const { error: toastError, success: toastSuccess } = useToast();
+  const isSharedView = !agentId || agentId === "default-agent";
   const [messages, setMessages] = useState<WorkspaceMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -42,7 +43,7 @@ export default function AgentWorkspace({ agentId, agentName = "agent" }: AgentWo
   const [isUploading, setIsUploading] = useState(false);
 
   const loadMessages = useCallback(async () => {
-    if (!agentId) return;
+    if (!agentId || isSharedView) return;
     setIsLoading(true);
     try {
       const r = await authFetch(`/api/agents/${encodeURIComponent(agentId)}/workspace/messages`);
@@ -167,6 +168,21 @@ export default function AgentWorkspace({ agentId, agentName = "agent" }: AgentWo
       send();
     }
   };
+
+  if (isSharedView) {
+    return (
+      <div className="flex flex-col h-full min-h-0 items-center justify-center py-16 text-center px-6">
+        <div className="w-12 h-12 rounded-2xl bg-brand/10 flex items-center justify-center mb-4 mx-auto">
+          <MessageSquare className="w-5 h-5 text-brand" />
+        </div>
+        <h3 className="font-display italic text-xl text-ink mb-2">Select an agent above</h3>
+        <p className="text-[12px] text-muted leading-relaxed max-w-xs">
+          Each agent has its own private workspace. Pick one from the dropdown to open its chat
+          thread.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full min-h-0">

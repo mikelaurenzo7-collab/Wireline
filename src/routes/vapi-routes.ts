@@ -43,6 +43,12 @@ import {
   cancelOrder as shopifyCancelOrder,
   updateOrderShippingAddress as shopifyUpdateAddress,
 } from "../lib/shopify-service";
+import {
+  squareLookupOrder,
+  squareLookupCustomer,
+  squareCheckInventory,
+  squareCreatePaymentLink,
+} from "../lib/square-service";
 import { normalizeDncPhone } from "../lib/compliance";
 import { lookupTenantPhoneNumber, sendTenantMessage } from "../lib/twilio-service";
 import { resolveAgentTools } from "../lib/agent-capabilities";
@@ -1030,6 +1036,121 @@ router.post("/api/vapi-webhook", async (req, res) => {
           }
         } catch {
           results.push({ toolCallId: toolCall.id, result: "Address update error." });
+        }
+      }
+
+      // ──────────────────────────────────────────────────────────────
+      //  Square e-commerce handlers — order/customer/inventory lookups
+      //  and payment-link creation for Square merchants.
+      // ──────────────────────────────────────────────────────────────
+      if (toolCall.function.name === "square_lookup_order") {
+        try {
+          const { order_id, email } = toolCall.function.arguments || {};
+          const order = await squareLookupOrder({
+            orderId: order_id,
+            email,
+            userId: agent?.user_id,
+          });
+          if (!order) {
+            results.push({
+              toolCallId: toolCall.id,
+              result:
+                "I couldn't find a Square order matching that. Double-check the order ID or the email on the account.",
+            });
+          } else {
+            const itemList = order.lineItems.map((li) => `${li.quantity}x ${li.name}`).join(", ");
+            results.push({
+              toolCallId: toolCall.id,
+              result: `Order ${order.displayId || order.id}: state ${order.state}, total ${order.total}. Items: ${itemList}. [data: ${JSON.stringify(order)}]`,
+            });
+          }
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Square order lookup error." });
+        }
+      }
+
+      if (toolCall.function.name === "square_lookup_customer") {
+        try {
+          const { email, phone } = toolCall.function.arguments || {};
+          const fallbackNumber =
+            (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
+            (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
+          const customer = await squareLookupCustomer({
+            email,
+            phone: phone || fallbackNumber,
+            userId: agent?.user_id,
+          });
+          if (!customer) {
+            results.push({
+              toolCallId: toolCall.id,
+              result: "I couldn't find a Square customer matching that email or phone number.",
+            });
+          } else {
+            results.push({
+              toolCallId: toolCall.id,
+              result: `Customer ${customer.firstName} ${customer.lastName} (${customer.email ?? "no email"}): member since ${customer.createdAt.split("T")[0]}. [data: ${JSON.stringify(customer)}]`,
+            });
+          }
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Square customer lookup error." });
+        }
+      }
+
+      if (toolCall.function.name === "square_check_inventory") {
+        try {
+          const { query } = toolCall.function.arguments || {};
+          const items = await squareCheckInventory({
+            query: String(query || ""),
+            userId: agent?.user_id,
+          });
+          if (items.length === 0) {
+            results.push({
+              toolCallId: toolCall.id,
+              result: "I couldn't find a Square catalog item matching that.",
+            });
+          } else {
+            const summary = items
+              .slice(0, 5)
+              .map((item) => {
+                const inStock = item.variations.some((v) => (v.stockCount ?? 0) > 0);
+                return `${item.name}: ${item.variations.map((v) => `${v.name} ${v.price}`).join(", ")} — ${inStock ? "in stock" : "out of stock"}`;
+              })
+              .join(" | ");
+            results.push({
+              toolCallId: toolCall.id,
+              result: `Found ${items.length} item(s). ${summary} [data: ${JSON.stringify(items)}]`,
+            });
+          }
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Square inventory check error." });
+        }
+      }
+
+      if (toolCall.function.name === "square_create_payment_link") {
+        try {
+          const { title, amount_dollars } = toolCall.function.arguments || {};
+          if (!title || amount_dollars == null) {
+            results.push({
+              toolCallId: toolCall.id,
+              result: "I need a title and amount to create a payment link.",
+            });
+          } else {
+            const link = await squareCreatePaymentLink({
+              title: String(title),
+              amountCents: Math.round(Number(amount_dollars) * 100),
+              userId: agent?.user_id,
+            });
+            if (!link.ok || !link.url) {
+              results.push({ toolCallId: toolCall.id, result: link.message });
+            } else {
+              results.push({
+                toolCallId: toolCall.id,
+                result: `Payment link created: ${link.url} — $${amount_dollars} for ${title}. Share this with the customer to complete payment. [data: ${JSON.stringify(link)}]`,
+              });
+            }
+          }
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Square payment link creation error." });
         }
       }
     }

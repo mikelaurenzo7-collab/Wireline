@@ -23,6 +23,7 @@ interface IntegrationState {
   apollo: IntegrationStatus;
   meta: IntegrationStatus;
   shopify: IntegrationStatus;
+  square: IntegrationStatus;
 }
 
 type ProviderKey = keyof IntegrationState;
@@ -86,6 +87,13 @@ const PROVIDERS: {
     label: "Shopify",
     color: "emerald",
     logo: "SH",
+    group: "E-commerce",
+  },
+  {
+    key: "square",
+    label: "Square",
+    color: "amber",
+    logo: "SQ",
     group: "E-commerce",
   },
 ];

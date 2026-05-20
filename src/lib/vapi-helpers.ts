@@ -726,6 +726,73 @@ export const VAPI_TOOL_DEFS = {
       required: ["order_id"],
     },
   },
+  square_lookup_order: {
+    name: "square_lookup_order",
+    description:
+      "Looks up a Square order by order ID or the customer's email address. Returns order status, line items, totals, and fulfillment state. Use when a caller asks about a purchase made through Square.",
+    parameters: {
+      type: "object",
+      properties: {
+        order_id: {
+          type: "string",
+          description: "The Square order ID. Ask the caller for this if they have it.",
+        },
+        email: {
+          type: "string",
+          description:
+            "The customer's email — use to find their most recent order when no order ID is known.",
+        },
+      },
+      required: [],
+    },
+  },
+  square_lookup_customer: {
+    name: "square_lookup_customer",
+    description:
+      "Finds a Square customer by email or phone and returns their profile and recent purchase history. Use to recognize a returning customer or review prior purchases.",
+    parameters: {
+      type: "object",
+      properties: {
+        email: { type: "string", description: "The customer's email address." },
+        phone: {
+          type: "string",
+          description: "The customer's phone number. Leave blank to use the caller's number.",
+        },
+      },
+      required: [],
+    },
+  },
+  square_check_inventory: {
+    name: "square_check_inventory",
+    description:
+      "Searches the Square item catalog for a product by name and returns its variants, prices, and live inventory levels. Use when a caller asks if something is available or what it costs.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Product name or keyword to search for." },
+      },
+      required: ["query"],
+    },
+  },
+  square_create_payment_link: {
+    name: "square_create_payment_link",
+    description:
+      "Generates a Square checkout payment link for a product or service. Only use this after confirming the item name and price with the caller. Send the link via SMS or email.",
+    parameters: {
+      type: "object",
+      properties: {
+        title: {
+          type: "string",
+          description: "Name of the product or service the payment is for.",
+        },
+        amount_dollars: {
+          type: "number",
+          description: "Amount to charge in dollars (e.g. 49.99).",
+        },
+      },
+      required: ["title", "amount_dollars"],
+    },
+  },
 } as const;
 
 export type VapiToolName = keyof typeof VAPI_TOOL_DEFS;

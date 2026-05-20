@@ -29,6 +29,10 @@ export const AGENT_TOOL_NAME_VALUES = [
   "shopify_start_return",
   "shopify_cancel_order",
   "shopify_update_address",
+  "square_lookup_order",
+  "square_lookup_customer",
+  "square_check_inventory",
+  "square_create_payment_link",
 ] as const;
 
 export type AgentToolName = (typeof AGENT_TOOL_NAME_VALUES)[number];
@@ -43,7 +47,8 @@ export type ToolIntegration =
   | "apollo"
   | "meta"
   | "gemini"
-  | "shopify";
+  | "shopify"
+  | "square";
 
 export interface AgentToolCatalogEntry {
   name: AgentToolName;
@@ -264,6 +269,37 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
     group: "ecommerce",
     integration: "shopify",
   },
+  // E-commerce — Square
+  {
+    name: "square_lookup_order",
+    label: "Look up Square order",
+    description:
+      "Finds a Square order by order ID or customer email — returns status, items, and totals.",
+    group: "ecommerce",
+    integration: "square",
+  },
+  {
+    name: "square_lookup_customer",
+    label: "Look up Square customer",
+    description: "Finds a Square customer by email or phone with their purchase history.",
+    group: "ecommerce",
+    integration: "square",
+  },
+  {
+    name: "square_check_inventory",
+    label: "Check Square inventory",
+    description: "Searches the Square catalog for products and returns live stock and pricing.",
+    group: "ecommerce",
+    integration: "square",
+  },
+  {
+    name: "square_create_payment_link",
+    label: "Create Square payment link",
+    description:
+      "Generates a Square checkout link for a product or service. Send via SMS or email after confirming with the caller.",
+    group: "ecommerce",
+    integration: "square",
+  },
 ] as const;
 
 /** Tool names that require a connected Shopify store. */
@@ -274,6 +310,14 @@ export const SHOPIFY_TOOL_NAMES: readonly AgentToolName[] = [
   "shopify_start_return",
   "shopify_cancel_order",
   "shopify_update_address",
+];
+
+/** Tool names that require a connected Square account. */
+export const SQUARE_TOOL_NAMES: readonly AgentToolName[] = [
+  "square_lookup_order",
+  "square_lookup_customer",
+  "square_check_inventory",
+  "square_create_payment_link",
 ];
 
 export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
@@ -326,10 +370,14 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "shopify_start_return",
     "shopify_cancel_order",
     "shopify_update_address",
+    "square_lookup_order",
+    "square_lookup_customer",
+    "square_check_inventory",
+    "square_create_payment_link",
   ],
   // E-commerce support agents — handle online-store customer calls and
   // emails: order status, inventory, returns, address fixes. Shopify
-  // tools are the core of this role.
+  // and Square tools are the core of this role.
   ecommerce: [
     "view_recent_interactions",
     "escalate_to_human",
@@ -349,6 +397,10 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "shopify_start_return",
     "shopify_cancel_order",
     "shopify_update_address",
+    "square_lookup_order",
+    "square_lookup_customer",
+    "square_check_inventory",
+    "square_create_payment_link",
   ],
   scheduler: [
     "view_recent_interactions",
