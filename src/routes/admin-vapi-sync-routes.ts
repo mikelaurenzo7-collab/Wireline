@@ -243,14 +243,24 @@ async function syncOneAgent(
         function: {
           name: "send_signup_link",
           description:
-            "Send the caller a Wireline 14-day trial sign-up link via email. Use this immediately when a caller says any of: 'send me the link', 'email me the signup', 'text me details', 'how do I try this', 'can I get more info'. Capture the email by asking 'What's the best email?' if you don't have it. Confirm the address back to the caller before sending. ALWAYS use this tool — never claim to send anything by mouth without invoking it.",
+            "Send the caller a Wireline 14-day trial sign-up link via email. Use when a caller says: 'send me the link', 'email me the signup', 'how do I try this', 'can I get more info'. " +
+            "MANDATORY EMAIL CONFIRMATION before you call this tool: (1) ask 'What's the best email for that?', " +
+            "(2) read the FULL address back slowly, spelling out anything ambiguous — e.g. 'that's j-o-h-n at gmail dot com, correct?', " +
+            "(3) wait for an explicit 'yes' / 'correct'. If they correct you, read it back AGAIN and re-confirm. " +
+            "Only call this tool once the caller has explicitly confirmed the spelling. Never send to an unconfirmed address. " +
+            "Never claim an email was sent without invoking this tool.",
           parameters: {
             type: "object",
             properties: {
               to_email: {
                 type: "string",
                 description:
-                  "The caller's email address, parsed from the conversation. Must be a valid RFC-5322 email (foo@bar.com). If the caller spelled it letter-by-letter, reconstruct it before passing.",
+                  "The caller's email address — ONLY pass this after the caller has explicitly confirmed you read it back correctly. Must be a valid RFC-5322 email (foo@bar.com). If the caller spelled it letter-by-letter, reconstruct it, read it back, and confirm before passing.",
+              },
+              email_confirmed: {
+                type: "boolean",
+                description:
+                  "Set true ONLY after you read the address back to the caller and they explicitly confirmed it. If you have not confirmed, set false and the link will not be sent.",
               },
               caller_name: {
                 type: "string",

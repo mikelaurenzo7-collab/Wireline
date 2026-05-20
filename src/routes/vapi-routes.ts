@@ -281,16 +281,27 @@ router.post("/api/vapi-webhook", async (req, res) => {
       // but never sent it" gap Mike caught on the demo line.
       if (toolCall.function.name === "send_signup_link") {
         try {
-          const { to_email, caller_name } = toolCall.function.arguments as {
+          const { to_email, caller_name, email_confirmed } = toolCall.function.arguments as {
             to_email?: string;
             caller_name?: string;
+            email_confirmed?: boolean;
           };
           const looksLikeEmail =
             typeof to_email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to_email);
           if (!looksLikeEmail) {
             results.push({
               toolCallId: toolCall.id,
-              result: "I couldn't parse the email — could you spell it out, letter by letter?",
+              result:
+                "I couldn't parse that email. Ask the caller to spell it out letter by letter, then read it back to confirm before trying again.",
+            });
+          } else if (email_confirmed !== true) {
+            // Server-side guardrail: never send to an address the agent
+            // didn't explicitly confirm with the caller. If the model
+            // skipped the read-back, bounce it back here with a script
+            // so the caller never gets a link at a mis-heard address.
+            results.push({
+              toolCallId: toolCall.id,
+              result: `Before I send this, confirm the address out loud: read "${to_email}" back to the caller slowly, spelling anything ambiguous, and ask "is that correct?". Once they confirm, call send_signup_link again with email_confirmed set to true.`,
             });
           } else {
             const { sendSignupLinkEmail } = await import("../lib/email-service");
