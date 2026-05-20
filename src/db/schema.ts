@@ -198,6 +198,27 @@ export const agents = pgTable(
     voiceId: text("voice_id"),
     voiceIdInbound: text("voice_id_inbound"),
     voiceIdOutbound: text("voice_id_outbound"),
+    /**
+     * Secondary voice for mid-call language swap. When set, the Vapi
+     * webhook listens for `language-change-detected` events and hands
+     * the live call off to a clone of this assistant with the secondary
+     * voiceId active — so the caller hears a native-sounding speaker
+     * the instant the transcriber flips from `en` to a non-English
+     * locale (typically Spanish for our customers).
+     *
+     * Optional. Only meaningful when a primary voiceId is already set.
+     * NULL → no swap; caller continues with the primary voice.
+     *
+     * Implementation notes (Vapi API surface, May 2026 docs):
+     *   - Vapi PATCH /call/{id} does NOT mutate voice config on a live
+     *     call (only `name` is mutable). We instead use the call-control
+     *     `handoff` payload to swap voices, which adds ~500ms of dead
+     *     air during the handoff but is the only seamless path Vapi
+     *     supports today.
+     *   - Pattern source: ElevenLabs multi-voice cookbook —
+     *     https://elevenlabs.io/docs/eleven-agents/customization/voice/multi-voice-support
+     */
+    secondaryVoiceId: text("secondary_voice_id"),
     voiceProvider: text("voice_provider").default("11labs"),
     firstMessage: text("first_message"),
     archetype: text("archetype").default("Receptionist"),
@@ -252,6 +273,35 @@ export const agents = pgTable(
      * Docs: https://elevenlabs.io/docs/eleven-agents/customization/voice/speed-control
      */
     voiceSpeed: decimal("voice_speed", { precision: 3, scale: 2 }).default("1.0"),
+    /**
+     * ElevenLabs voice fine-tuning — quality knobs operators with cloned
+     * voices need to dial in their exact sound. All four map 1:1 to the
+     * ElevenLabs voice settings payload Vapi forwards to ElevenLabs at
+     * synthesis time. Defaults match ElevenLabs's documented defaults so
+     * a NULL/missing row sounds identical to "no fine-tuning".
+     *
+     *   stability         (0..1, default 0.5)  — voice consistency. Low =
+     *                      expressive/emotional, high = monotone/consistent.
+     *   similarity_boost  (0..1, default 0.75) — how closely TTS hugs the
+     *                      source voice. Most impact on cloned voices.
+     *   style             (0..1, default 0.0)  — style exaggeration. >0
+     *                      adds latency but more character.
+     *   speaker_boost     (bool, default true) — boosts perceived loudness/
+     *                      presence; off for "intimate" voices.
+     *
+     * Surfaced as the Voice fine-tuning panel in FleetSettings → carrier
+     * signal parameters. Numerics stored as `numeric(3,2)` (returned as a
+     * string by pg) — the factory coerces + clamps to [0,1] before send.
+     *
+     * Docs: https://elevenlabs.io/docs/api-reference/text-to-speech/convert#request.body.voice_settings
+     */
+    voiceStability: decimal("voice_stability", { precision: 3, scale: 2 }).default("0.5"),
+    voiceSimilarityBoost: decimal("voice_similarity_boost", {
+      precision: 3,
+      scale: 2,
+    }).default("0.75"),
+    voiceStyle: decimal("voice_style", { precision: 3, scale: 2 }).default("0.0"),
+    voiceSpeakerBoost: boolean("voice_speaker_boost").default(true),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   (t) => ({

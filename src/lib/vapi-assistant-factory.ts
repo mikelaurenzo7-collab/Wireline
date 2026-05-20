@@ -391,6 +391,36 @@ Today is ${currentDateTime}.
   const parsedVoiceSpeed =
     rawVoiceSpeed == null ? 1.0 : Math.min(1.2, Math.max(0.7, Number(rawVoiceSpeed) || 1.0));
 
+  // ElevenLabs voice fine-tuning quality params. Operator-set per-agent
+  // in FleetSettings → Voice fine-tuning. Mirrors the four knobs in EL's
+  // `voice_settings`: stability, similarity_boost, style, use_speaker_boost.
+  // Stored as numeric(3,2) in PG (pg returns as string) so we coerce +
+  // clamp to [0,1] before passing to Vapi. NULL is treated as "use EL
+  // defaults" — we still pass them through so the operator's UI value
+  // is authoritative.
+  //
+  // Only attached when provider is 11labs; OpenAI's voice block ignores
+  // these and Vapi would reject the request if we sent them.
+  //
+  // Vapi field names are camelCase per their assistant schema:
+  // https://docs.vapi.ai/api-reference/assistants/create
+  //
+  // Docs (ElevenLabs):
+  // https://elevenlabs.io/docs/api-reference/text-to-speech/convert#request.body.voice_settings
+  const clamp01 = (v: unknown, fallback: number): number => {
+    if (v == null) return fallback;
+    const n = Number(v);
+    if (!Number.isFinite(n)) return fallback;
+    return Math.min(1, Math.max(0, n));
+  };
+  const parsedStability = clamp01((agentConfigRow as any)?.voiceStability, 0.5);
+  const parsedSimilarityBoost = clamp01((agentConfigRow as any)?.voiceSimilarityBoost, 0.75);
+  const parsedStyle = clamp01((agentConfigRow as any)?.voiceStyle, 0.0);
+  // PG returns boolean as JS boolean — but a `null` (column missing
+  // pre-migration) defaults to EL's spec'd true.
+  const rawSpeakerBoost = (agentConfigRow as any)?.voiceSpeakerBoost;
+  const parsedSpeakerBoost = rawSpeakerBoost == null ? true : Boolean(rawSpeakerBoost);
+
   // Deduplicate and resolve fallback models based on what the primary model is
   const defaultFallbacks = [
     "gpt-4o",
@@ -441,6 +471,25 @@ Today is ${currentDateTime}.
       // impatient callers (~1.1).
       ...(resolvedVoiceProvider === "11labs" && parsedVoiceSpeed !== 1.0
         ? { speed: parsedVoiceSpeed }
+        : {}),
+      // ElevenLabs voice fine-tuning quality params. Operator-set per-
+      // agent — most impactful on cloned voices where the source
+      // recording quality dictates how much room there is to tune.
+      // Always passed when provider is 11labs (even at defaults) so
+      // the operator's UI value is authoritative — otherwise EL would
+      // apply ITS defaults and diverge from what the slider shows.
+      // Map our snake_case schema → Vapi's camelCase voice schema:
+      //   stability             → stability
+      //   similarity_boost      → similarityBoost
+      //   style                 → style
+      //   speaker_boost         → useSpeakerBoost
+      ...(resolvedVoiceProvider === "11labs"
+        ? {
+            stability: parsedStability,
+            similarityBoost: parsedSimilarityBoost,
+            style: parsedStyle,
+            useSpeakerBoost: parsedSpeakerBoost,
+          }
         : {}),
       // Per-tenant pronunciation dictionaries — only valid when the
       // resolved provider is 11labs (Vapi ignores them for other TTS

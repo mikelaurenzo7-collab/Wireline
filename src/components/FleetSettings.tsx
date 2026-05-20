@@ -1352,7 +1352,64 @@ export default function FleetSettings() {
                                       <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none rotate-90" />
                                     </div>
                                   </div>
+
+                                  {/* ElevenLabs speed control — per-agent slider.
+                                      Slow (0.7) for elderly customers, fast (1.2)
+                                      for impatient callers. Default 1.0 = normal.
+                                      Only meaningful on 11labs voices; UI stays
+                                      visible regardless so operators can dial in
+                                      the value before switching providers. Docs:
+                                      https://elevenlabs.io/docs/eleven-agents/customization/voice/speed-control */}
+                                  <div className="space-y-1.5">
+                                    <div className="flex items-center justify-between">
+                                      <label className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
+                                        Speaking rate
+                                      </label>
+                                      <span className="text-[10px] font-medium tabular-nums text-ink">
+                                        {Number((selectedAgent as any).voice_speed ?? 1.0).toFixed(
+                                          2,
+                                        )}
+                                        ×
+                                      </span>
+                                    </div>
+                                    <input
+                                      type="range"
+                                      min={0.7}
+                                      max={1.2}
+                                      step={0.05}
+                                      value={Number((selectedAgent as any).voice_speed ?? 1.0)}
+                                      onChange={(e) =>
+                                        updateAgentMeta({
+                                          voice_speed: Number(e.target.value).toFixed(2),
+                                        })
+                                      }
+                                      className="w-full accent-brand cursor-pointer"
+                                      aria-label="ElevenLabs speaking rate"
+                                    />
+                                    <p className="text-[9px] text-muted/60 leading-relaxed">
+                                      0.7 = slower (elderly callers). 1.2 = faster (impatient
+                                      callers). ElevenLabs voices only.
+                                    </p>
+                                  </div>
                                 </div>
+
+                                {/* Voice fine-tuning — ElevenLabs quality knobs.
+                                    Operators with cloned voices use these to dial
+                                    in their exact sound. Hidden behind a "Show
+                                    advanced" toggle because the defaults are
+                                    sane (they match ElevenLabs's own defaults)
+                                    and most operators never need to touch them.
+                                    Auto-saves on slider release (onPointerUp +
+                                    onMouseUp + onTouchEnd) — local optimistic
+                                    state during the drag means the UI feels
+                                    snappy without spamming the API per pixel. */}
+                                <VoiceFineTuningPanel
+                                  agent={selectedAgent}
+                                  onLocalChange={(patch) =>
+                                    setSelectedAgent({ ...selectedAgent, ...patch })
+                                  }
+                                  onCommit={(patch) => updateAgentMeta(patch)}
+                                />
 
                                 <div className="space-y-1.5">
                                   <div className="flex items-center justify-between">

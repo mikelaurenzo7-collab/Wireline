@@ -422,6 +422,69 @@ export async function generateSoundEffect(args: {
 }
 
 /**
+ * Music compose — generate a short song / jingle from a text prompt.
+ *
+ * Powers the "Singing Receptionist" demo on /showcase: a pre-baked
+ * MP3 plays the moment the prospect clicks Play, then the regular
+ * agent "catches itself" in its firstMessage. The same helper can
+ * render tenant-specific branded jingles (hold music, voicemail
+ * outros) so it lives next to composeDialogue + generateSoundEffect
+ * rather than being inlined in the route layer.
+ *
+ * Docs: https://elevenlabs.io/docs/eleven-api/guides/cookbooks/music
+ * API:  POST /v1/music?output_format=...
+ *
+ * Response is binary audio (MP3 by default) — NOT async polling.
+ * The endpoint blocks until the song is rendered (typically 5-15s
+ * for an 8-second clip), then streams the bytes. We return an
+ * ArrayBuffer so the caller can either persist to disk (one-time
+ * pre-bake) or stream straight to the browser.
+ *
+ * Pricing roughly $0.02/sec at the time of writing; an 8s jingle
+ * ≈ $0.16. Pre-bake once + serve from /public/sounds so we never
+ * pay per call. The admin endpoint /api/admin/generate-jingle wraps
+ * this for owner-gated regeneration on the live deploy.
+ */
+export async function composeMusic(args: {
+  prompt: string;
+  /** Length in ms. ElevenLabs allows 3000-600000. Default 8000 — matches our jingle target. */
+  musicLengthMs?: number;
+  /** Default music_v1 — the only generally-available music model right now. */
+  modelId?: string;
+  /** Output codec. Default mp3_44100_128 (telephony-safe + good fidelity). */
+  outputFormat?: "mp3_44100_128" | "mp3_44100_192" | "pcm_44100";
+  /** Pin generation for reproducibility — handy when iterating on a jingle. */
+  seed?: number;
+  /** Force purely instrumental output (no lyrics). Default false — we WANT vocals. */
+  forceInstrumental?: boolean;
+}): Promise<ArrayBuffer> {
+  const outputFormat = args.outputFormat || "mp3_44100_128";
+  const url = `${BASE}/music?output_format=${encodeURIComponent(outputFormat)}`;
+  const body: Record<string, unknown> = {
+    prompt: args.prompt,
+    music_length_ms: args.musicLengthMs ?? 8000,
+    model_id: args.modelId || "music_v1",
+  };
+  if (typeof args.seed === "number") body.seed = args.seed;
+  if (args.forceInstrumental) body.force_instrumental = true;
+
+  const r = await fetch(url, {
+    method: "POST",
+    headers: {
+      "xi-api-key": apiKey(),
+      "Content-Type": "application/json",
+      Accept: "audio/mpeg",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) {
+    const errText = await r.text().catch(() => "");
+    throw new Error(`ElevenLabs music compose ${r.status}: ${errText.slice(0, 300)}`);
+  }
+  return await r.arrayBuffer();
+}
+
+/**
  * Speech-to-Text — re-transcribe a call recording with ElevenLabs's
  * Scribe model. We already get Vapi-side transcripts but Scribe is
  * a notch more accurate on accented English + noisy lines. Use for

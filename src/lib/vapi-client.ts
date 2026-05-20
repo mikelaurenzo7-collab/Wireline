@@ -422,10 +422,22 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
         functions: buildRoleToolDefs(outboundAgentRole),
       },
       recordingEnabled: true,
-      voice: {
-        provider: agentConfig.voiceProviderOutbound || agentConfig.voiceProvider || "11labs",
-        voiceId: agentConfig.voiceIdOutbound || agentConfig.voiceId || "bIHbv24MWmeRgasZH58o",
-      },
+      voice: (() => {
+        // ElevenLabs speed control (per-agent, 0.7–1.2). Stored as
+        // numeric → string via pg; coerce + clamp here so a corrupted
+        // value can't ship something Vapi/EL would reject. Only attach
+        // on 11labs providers and only when the value differs from the
+        // neutral default. Docs:
+        // https://elevenlabs.io/docs/eleven-agents/customization/voice/speed-control
+        const provider = agentConfig.voiceProviderOutbound || agentConfig.voiceProvider || "11labs";
+        const raw = (agentConfig as any)?.voiceSpeed;
+        const speed = raw == null ? 1.0 : Math.min(1.2, Math.max(0.7, Number(raw) || 1.0));
+        return {
+          provider,
+          voiceId: agentConfig.voiceIdOutbound || agentConfig.voiceId || "bIHbv24MWmeRgasZH58o",
+          ...(provider === "11labs" && speed !== 1.0 ? { speed } : {}),
+        };
+      })(),
     },
   };
 

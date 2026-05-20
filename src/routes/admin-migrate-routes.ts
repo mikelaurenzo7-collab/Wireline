@@ -722,6 +722,43 @@ router.post(
   },
 );
 
+// Per-agent secondary voice for mid-call language swap. Adds a nullable
+// `secondary_voice_id` column to wireline_agents. When set, the Vapi
+// webhook listens for `language-change-detected` events and hands the
+// live call off to a clone of the assistant configured with this
+// secondary voice — so a caller switching from English to Spanish hears
+// "Maria" instead of "Sarah" without ever hitting hold music.
+//
+// Idempotent — safe to re-run after each deploy. Owner-only (gated by
+// authorizeMigration). Does NOT auto-run; ops must curl this endpoint
+// once per environment after deploy.
+//
+// Docs / pattern source:
+//   https://elevenlabs.io/docs/eleven-agents/customization/voice/multi-voice-support
+router.post(
+  "/api/admin/migrate-secondary-voice",
+  optionalAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!authorizeMigration(req, res)) return;
+    try {
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_agents
+          ADD COLUMN IF NOT EXISTS secondary_voice_id TEXT;
+      `);
+      log.info("migrate-secondary-voice completed", {
+        userId: req.user?.id || "migration-token",
+      });
+      res.json({
+        ok: true,
+        message: "wireline_agents.secondary_voice_id ensured (nullable text).",
+      });
+    } catch (err: any) {
+      log.error("migrate-secondary-voice failed", { error: err?.message });
+      res.status(500).json({ error: err?.message || "Migration failed" });
+    }
+  },
+);
+
 /**
  * Generate a fresh multi-speaker dialogue MP3 via ElevenLabs's
  * Text-to-Dialogue API and persist it to `public/sounds/<name>.mp3`
@@ -802,6 +839,308 @@ router.post(
     } catch (err: any) {
       log.error("generate-dialogue-sample failed", { error: err?.message });
       return res.status(500).json({ error: err?.message || "Dialogue generation failed" });
+    }
+  },
+);
+
+/**
+ * Generate the Singing Receptionist jingle via the ElevenLabs Music
+ * API and persist it to `public/sounds/wireline-jingle.mp3`. Powers
+ * the marquee "fun" demo on /showcase (Mira). Same owner gating as
+ * the other generate-* endpoints — OWNER_EMAIL session OR the
+ * X-Migration-Token header.
+ *
+ * Body (all optional):
+ *   {
+ *     "prompt"?: string,            // override the default jingle prompt
+ *     "music_length_ms"?: number,   // default 8000
+ *     "filename"?: string           // default "wireline-jingle"
+ *   }
+ *
+ * Vercel's serverless filesystem is ephemeral — the MP3 written
+ * here survives until the deploy is rebuilt. For a permanent fix
+ * the operator should ALSO run `node scripts/generate-jingle.mjs`
+ * locally + commit the resulting file. This endpoint exists so
+ * Mike can refresh the jingle on prod without redeploying, and
+ * so people without the ELEVENLABS_API_KEY locally can still
+ * trigger generation via a curl against the live deploy.
+ *
+ * Docs: https://elevenlabs.io/docs/eleven-api/guides/cookbooks/music
+ */
+router.post(
+  "/api/admin/generate-jingle",
+  optionalAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!authorizeMigration(req, res)) return;
+
+    const body = (req.body || {}) as {
+      prompt?: unknown;
+      music_length_ms?: unknown;
+      filename?: unknown;
+    };
+
+    const prompt =
+      typeof body.prompt === "string" && body.prompt.trim()
+        ? body.prompt.trim()
+        : "Upbeat playful jingle, female voice singing 'Welcome to Wireline, your phones are alive! Call us anytime, day or night!' — pop style, 8 seconds.";
+    const lengthMs =
+      typeof body.music_length_ms === "number" &&
+      body.music_length_ms >= 3000 &&
+      body.music_length_ms <= 600000
+        ? body.music_length_ms
+        : 8000;
+    const filename =
+      typeof body.filename === "string" && /^[a-zA-Z0-9_-]{1,64}$/.test(body.filename)
+        ? body.filename
+        : "wireline-jingle";
+
+    try {
+      const { composeMusic, elevenLabsConfigured } = await import("../lib/elevenlabs-client");
+      if (!elevenLabsConfigured()) {
+        return res.status(500).json({ error: "ELEVENLABS_API_KEY not set" });
+      }
+
+      const audio = await composeMusic({ prompt, musicLengthMs: lengthMs });
+
+      const path = await import("path");
+      const fs = await import("fs/promises");
+      const dir = path.join(process.cwd(), "public", "sounds");
+      await fs.mkdir(dir, { recursive: true });
+      const outPath = path.join(dir, `${filename}.mp3`);
+      await fs.writeFile(outPath, Buffer.from(audio));
+
+      const url = `/sounds/${filename}.mp3`;
+      log.info("generate-jingle completed", {
+        userId: req.user?.id || "migration-token",
+        filename,
+        bytes: audio.byteLength,
+        lengthMs,
+      });
+      return res.json({ ok: true, url, bytes: audio.byteLength, lengthMs });
+    } catch (err: any) {
+      log.error("generate-jingle failed", { error: err?.message });
+      return res.status(500).json({ error: err?.message || "Jingle generation failed" });
+    }
+  },
+);
+
+// Per-agent ElevenLabs voice fine-tuning parameters. Adds four
+// columns that map 1:1 to the ElevenLabs voice_settings payload:
+//   * voice_stability         (numeric, default 0.5)
+//   * voice_similarity_boost  (numeric, default 0.75)
+//   * voice_style             (numeric, default 0.0)
+//   * voice_speaker_boost     (boolean, default true)
+//
+// Operators with cloned voices need these to dial in their exact
+// sound. Idempotent — every column uses `ADD COLUMN IF NOT EXISTS`
+// so re-running after each deploy is safe. We also backfill rows
+// that landed before the defaults kicked in (defensive — partial
+// rollouts can leave NULLs behind that the IF-NOT-EXISTS guard
+// happily skips on the second run).
+//
+// Defaults match ElevenLabs's documented defaults exactly so a
+// freshly-migrated row sounds identical to "no fine-tuning at all"
+// and the operator is free to leave the sliders untouched.
+//
+// Docs: https://elevenlabs.io/docs/api-reference/text-to-speech/convert#request.body.voice_settings
+router.post(
+  "/api/admin/migrate-voice-quality-params",
+  optionalAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!authorizeMigration(req, res)) return;
+    try {
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_agents
+          ADD COLUMN IF NOT EXISTS voice_stability NUMERIC(3, 2) DEFAULT 0.5;
+      `);
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_agents
+          ADD COLUMN IF NOT EXISTS voice_similarity_boost NUMERIC(3, 2) DEFAULT 0.75;
+      `);
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_agents
+          ADD COLUMN IF NOT EXISTS voice_style NUMERIC(3, 2) DEFAULT 0.0;
+      `);
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_agents
+          ADD COLUMN IF NOT EXISTS voice_speaker_boost BOOLEAN DEFAULT TRUE;
+      `);
+      // Backfill rows that pre-existed the columns (their values would
+      // be NULL until UPDATE-ed because PG only applies DEFAULT on
+      // INSERT, not on ADD COLUMN with existing rows when the table is
+      // large enough to skip the rewrite). Safe and idempotent.
+      await drizzle.execute(sql`
+        UPDATE wireline_agents SET voice_stability = 0.5 WHERE voice_stability IS NULL;
+      `);
+      await drizzle.execute(sql`
+        UPDATE wireline_agents SET voice_similarity_boost = 0.75 WHERE voice_similarity_boost IS NULL;
+      `);
+      await drizzle.execute(sql`
+        UPDATE wireline_agents SET voice_style = 0.0 WHERE voice_style IS NULL;
+      `);
+      await drizzle.execute(sql`
+        UPDATE wireline_agents SET voice_speaker_boost = TRUE WHERE voice_speaker_boost IS NULL;
+      `);
+      log.info("migrate-voice-quality-params completed", {
+        userId: req.user?.id || "migration-token",
+      });
+      res.json({
+        ok: true,
+        message:
+          "wireline_agents fine-tuning columns ensured (stability=0.5, similarity_boost=0.75, style=0.0, speaker_boost=true).",
+      });
+    } catch (err: any) {
+      log.error("migrate-voice-quality-params failed", { error: err?.message });
+      res.status(500).json({ error: err?.message || "Migration failed" });
+    }
+  },
+);
+
+/**
+ * Generate the brand sound-effect library via ElevenLabs's Sound
+ * Effects API and persist the MP3s under `public/sounds/`. Owns the
+ * platform's sonic identity: hold music for the failover/IVR path,
+ * a transfer chime before warm hand-offs, an end-call sting, and a
+ * small UI notification bell. Mike curls this endpoint after each
+ * voice-design pass; assets ship in-tree so the CDN serves them
+ * with no extra round-trip.
+ *
+ * Idempotent: existing files are skipped unless `?force=true` is
+ * passed. Failures on individual sounds don't abort the batch — the
+ * response lists per-file status so the operator can retry only
+ * what didn't land.
+ *
+ * Auth: same `optionalAuth` + `authorizeMigration` pair the DDL
+ * endpoints above use (OWNER_EMAIL session OR X-Migration-Token).
+ * NEVER runs automatically — Mike triggers it himself.
+ *
+ * Docs: https://elevenlabs.io/docs/eleven-api/guides/cookbooks/sound-effects
+ */
+const BRAND_SOUND_SPECS: Array<{
+  filename: string;
+  text: string;
+  durationSeconds: number;
+  promptInfluence?: number;
+}> = [
+  {
+    filename: "wireline-hold-music.mp3",
+    text: "soft warm ambient lounge music, light piano, gentle, professional, on-hold music for a business phone line",
+    durationSeconds: 22, // ElevenLabs caps single sound-gen at 22s; the caller of the asset loops it client-side for a 30s feel.
+    promptInfluence: 0.25, // Slightly looser — gives the model room to breathe musically.
+  },
+  {
+    filename: "wireline-transfer-chime.mp3",
+    text: "soft pleasant two-note chime, ascending, professional handoff signal",
+    durationSeconds: 1.5,
+    promptInfluence: 0.4, // Tighter — short cues need to stay on-brief.
+  },
+  {
+    filename: "wireline-end-sting.mp3",
+    text: "subtle warm three-note outro, professional sign-off",
+    durationSeconds: 1.2,
+    promptInfluence: 0.4,
+  },
+  {
+    filename: "wireline-bell-notification.mp3",
+    text: "small bright chime, single note, friendly alert",
+    durationSeconds: 0.8,
+    promptInfluence: 0.4,
+  },
+];
+
+router.post(
+  "/api/admin/generate-brand-sounds",
+  optionalAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!authorizeMigration(req, res)) return;
+
+    const force = String(req.query.force || "").toLowerCase() === "true";
+
+    try {
+      const { generateSoundEffect, elevenLabsConfigured } = await import(
+        "../lib/elevenlabs-client"
+      );
+      if (!elevenLabsConfigured()) {
+        return res.status(500).json({ error: "ELEVENLABS_API_KEY not set" });
+      }
+
+      const path = await import("path");
+      const fs = await import("fs/promises");
+      const dir = path.join(process.cwd(), "public", "sounds");
+      await fs.mkdir(dir, { recursive: true });
+
+      const results: Array<{
+        filename: string;
+        url: string;
+        status: "generated" | "skipped" | "failed";
+        bytes?: number;
+        error?: string;
+      }> = [];
+
+      for (const spec of BRAND_SOUND_SPECS) {
+        const outPath = path.join(dir, spec.filename);
+        const url = `/sounds/${spec.filename}`;
+
+        // Idempotent — skip if the file already exists unless force=true.
+        // Lets Mike re-run safely on a deploy that only needs the missing
+        // ones (e.g. an earlier batch partially failed).
+        if (!force) {
+          try {
+            await fs.access(outPath);
+            results.push({ filename: spec.filename, url, status: "skipped" });
+            continue;
+          } catch {
+            /* file doesn't exist — fall through and generate */
+          }
+        }
+
+        try {
+          const audio = await generateSoundEffect({
+            text: spec.text,
+            durationSeconds: spec.durationSeconds,
+            promptInfluence: spec.promptInfluence,
+          });
+          await fs.writeFile(outPath, Buffer.from(audio));
+          results.push({
+            filename: spec.filename,
+            url,
+            status: "generated",
+            bytes: audio.byteLength,
+          });
+        } catch (e: any) {
+          // Don't abort the batch — the operator may want partial success
+          // and retry the failed ones independently. Failed files log as
+          // warnings; the response status code reflects the partial result.
+          log.warn("brand sound generation failed for one file", {
+            filename: spec.filename,
+            error: e?.message,
+          });
+          results.push({
+            filename: spec.filename,
+            url,
+            status: "failed",
+            error: e?.message || String(e),
+          });
+        }
+      }
+
+      log.info("generate-brand-sounds completed", {
+        userId: req.user?.id || "migration-token",
+        force,
+        results: results.map((r) => ({ f: r.filename, s: r.status })),
+      });
+
+      const failed = results.filter((r) => r.status === "failed").length;
+      // 207 Multi-Status when some succeeded + some failed; 200 on clean
+      // (all generated or all skipped). Caller can branch on the ok flag.
+      return res.status(failed > 0 ? 207 : 200).json({
+        ok: failed === 0,
+        force,
+        results,
+      });
+    } catch (err: any) {
+      log.error("generate-brand-sounds failed", { error: err?.message });
+      return res.status(500).json({ error: err?.message || "Brand sound generation failed" });
     }
   },
 );

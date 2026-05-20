@@ -274,8 +274,23 @@ router.post("/api/twilio-webhook/voice-fallback", async (req: Request, res: Resp
   let twiml = `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n`;
   twiml += `  <Say voice="Polly.Matthew-Neural">Hello, you have reached our AI assistant line. We are currently experiencing an unexpectedly high volume of calls and our cognitive systems are temporarily offline.</Say>\n`;
 
+  // Absolute URL to the brand transfer chime — Twilio's <Play> needs a
+  // full URL because it fetches the media file itself. Falls back to the
+  // canonical prod host when APP_URL isn't set (e.g. on a fresh deploy
+  // before env was populated). If the asset doesn't exist on this
+  // deploy (i.e. owner hasn't curled generate-brand-sounds yet), Twilio
+  // will skip it gracefully and continue to the next verb — no caller
+  // disruption.
+  const appBaseUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
+  const transferChimeUrl = `${appBaseUrl}/sounds/wireline-transfer-chime.mp3`;
+
   if (fallbackNumber) {
     twiml += `  <Say voice="Polly.Matthew-Neural">Please hold while we transfer you to an available team member.</Say>\n`;
+    // Brand transfer chime — only plays on the failover path (Vapi
+    // down). Vapi's own transfer flow can't inject MP3s; see
+    // vapi-assistant-factory.ts for the spoken-message workaround used
+    // during normal-runtime transfers.
+    twiml += `  <Play>${transferChimeUrl}</Play>\n`;
     twiml += `  <Dial>${fallbackNumber}</Dial>\n`;
   } else {
     twiml += `  <Say voice="Polly.Matthew-Neural">Please leave your name, number, and a brief message, and a human agent will return your call as soon as possible. Thank you.</Say>\n`;
