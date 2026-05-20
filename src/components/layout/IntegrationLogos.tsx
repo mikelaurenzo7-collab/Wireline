@@ -275,26 +275,22 @@ function LogoRow({ logos, height = 18 }: { logos: LogoDef[]; height?: number }) 
 }
 
 export default function IntegrationLogos() {
+  // The "Powered by" row was removed — it exposed the AI/voice vendors
+  // (Anthropic / Vapi / ElevenLabs), which undercuts the Wireline brand
+  // and hands competitors the stack. Only the customer-facing
+  // "Integrates with" row remains.
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.45, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-      className="mt-10 pt-8 border-t border-white/8 space-y-5"
-      aria-label="Wireline is powered by and integrates with"
+      className="mt-10 pt-8 border-t border-white/8"
+      aria-label="Wireline integrations"
     >
-      <div>
-        <p className="text-[8px] uppercase tracking-[0.5em] text-brand/70 mb-3 text-center">
-          Powered by
-        </p>
-        <LogoRow logos={POWERED_BY} height={22} />
-      </div>
-      <div className="pt-1">
-        <p className="text-[8px] uppercase tracking-[0.5em] text-muted/55 mb-3 text-center">
-          Integrates with
-        </p>
-        <LogoRow logos={INTEGRATIONS} height={16} />
-      </div>
+      <p className="text-[8px] uppercase tracking-[0.5em] text-muted/55 mb-3 text-center">
+        Integrates with
+      </p>
+      <LogoRow logos={INTEGRATIONS} height={16} />
     </motion.div>
   );
 }

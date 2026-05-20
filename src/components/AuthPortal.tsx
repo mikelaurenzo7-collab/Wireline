@@ -21,7 +21,6 @@ import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../contexts/AuthContext";
 import { PageMeta } from "../lib/page-meta";
-import IntegrationLogos from "./layout/IntegrationLogos";
 import WirelineMark from "./WirelineMark";
 import {
   WIRELINE_CONTACT_AGENTS,
@@ -516,9 +515,6 @@ export default function AuthPortal() {
               ))}
             </div>
           </motion.div>
-
-          {/* Integration logo strip — trust signal showing the stack we run on */}
-          <IntegrationLogos />
 
           {/* Trust row */}
           <motion.div
