@@ -47,11 +47,31 @@ router.get("/api/voices", authenticateUser, async (req: AuthenticatedRequest, re
   try {
     // Always include the user's own cloned voices from our DB
     // (single source of truth for "what this tenant owns").
-    const ownClones = await drizzle
-      .select()
-      .from(schema.clonedVoices)
-      .where(eq(schema.clonedVoices.userId, req.user.id))
-      .orderBy(desc(schema.clonedVoices.createdAt));
+    // Graceful fallback: if the table doesn't exist yet (migration
+    // hasn't been run on this environment), treat as empty list so
+    // the ElevenLabs catalog still loads.
+    let ownClones: Array<{ voiceId: string; name: string; previewUrl: string | null }> = [];
+    try {
+      const rows = await drizzle
+        .select({
+          voiceId: schema.clonedVoices.voiceId,
+          name: schema.clonedVoices.name,
+          previewUrl: schema.clonedVoices.previewUrl,
+        })
+        .from(schema.clonedVoices)
+        .where(eq(schema.clonedVoices.userId, req.user.id))
+        .orderBy(desc(schema.clonedVoices.createdAt));
+      ownClones = rows;
+    } catch (e: any) {
+      // 42P01 = undefined_table in Postgres. Surface a clear log line
+      // so the operator knows to run /api/admin/migrate-cloned-voices
+      // but don't break the catalog response.
+      if (e?.code === "42P01" || /does not exist/i.test(e?.message || "")) {
+        log.warn("wireline_cloned_voices table missing — run migrate-cloned-voices");
+      } else {
+        throw e;
+      }
+    }
 
     // Hit ElevenLabs only if configured. If not, return the cloned
     // rows alone — UI gracefully shows just user's clones.
