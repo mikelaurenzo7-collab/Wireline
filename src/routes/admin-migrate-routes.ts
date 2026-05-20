@@ -649,4 +649,161 @@ router.post(
   },
 );
 
+// Per-tenant pronunciation dictionaries for ElevenLabs TTS.
+// Idempotent — safe to re-run. Owner-only. Stores the local jargon
+// rules + the ElevenLabs IDs we get back after sync so the Vapi
+// assistant builder can attach pronunciation_dictionary_locators
+// to every call.
+router.post(
+  "/api/admin/migrate-pronunciation-dicts",
+  optionalAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!authorizeMigration(req, res)) return;
+    try {
+      await drizzle.execute(sql`
+        CREATE TABLE IF NOT EXISTS wireline_pronunciation_dictionaries (
+          id                        UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          user_id                   UUID NOT NULL,
+          name                      TEXT NOT NULL,
+          entries                   JSONB NOT NULL DEFAULT '[]'::jsonb,
+          elevenlabs_dictionary_id  TEXT,
+          elevenlabs_version_id     TEXT,
+          active                    BOOLEAN NOT NULL DEFAULT TRUE,
+          created_at                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          updated_at                TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+      `);
+      await drizzle.execute(sql`
+        CREATE INDEX IF NOT EXISTS idx_pronunciation_dicts_user
+          ON wireline_pronunciation_dictionaries (user_id, created_at DESC);
+      `);
+      log.info("migrate-pronunciation-dicts completed", {
+        userId: req.user?.id || "migration-token",
+      });
+      res.json({ ok: true, message: "wireline_pronunciation_dictionaries ensured." });
+    } catch (err: any) {
+      log.error("migrate-pronunciation-dicts failed", { error: err?.message });
+      res.status(500).json({ error: err?.message || "Migration failed" });
+    }
+  },
+);
+
+// Per-agent ElevenLabs speed control. Adds a numeric `voice_speed`
+// column to wireline_agents with the ElevenLabs-supported range
+// (0.7 – 1.2) and a default of 1.0 (normal pace). Idempotent — re-run
+// after each deploy is safe. Operators can then dial each agent's
+// speaking rate via the slider in FleetSettings → Voice.
+//
+// Docs: https://elevenlabs.io/docs/eleven-agents/customization/voice/speed-control
+router.post(
+  "/api/admin/migrate-voice-speed",
+  optionalAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!authorizeMigration(req, res)) return;
+    try {
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_agents
+          ADD COLUMN IF NOT EXISTS voice_speed NUMERIC(3, 2) DEFAULT 1.0;
+      `);
+      // Backfill any rows that landed with NULL before the default kicked
+      // in (defensive — IF NOT EXISTS skips this if the column already
+      // exists with NULL values from a previous partial run).
+      await drizzle.execute(sql`
+        UPDATE wireline_agents SET voice_speed = 1.0 WHERE voice_speed IS NULL;
+      `);
+      log.info("migrate-voice-speed completed", {
+        userId: req.user?.id || "migration-token",
+      });
+      res.json({ ok: true, message: "wireline_agents.voice_speed ensured (default 1.0)." });
+    } catch (err: any) {
+      log.error("migrate-voice-speed failed", { error: err?.message });
+      res.status(500).json({ error: err?.message || "Migration failed" });
+    }
+  },
+);
+
+/**
+ * Generate a fresh multi-speaker dialogue MP3 via ElevenLabs's
+ * Text-to-Dialogue API and persist it to `public/sounds/<name>.mp3`
+ * so the marketing landing page can embed it as a demo sample. The
+ * route returns the public URL the operator can paste into the
+ * marketing component.
+ *
+ * Owner-gated via the same `authorizeMigration` helper used by the
+ * one-shot DDL endpoints — same set of trusted callers (OWNER_EMAIL
+ * session OR X-Migration-Token header). Mike will curl this directly
+ * to refresh the landing-page audio when launching a new vertical.
+ *
+ * Body: { name: string, lines: [{ voice_id: string, text: string }] }
+ *
+ * Docs: https://elevenlabs.io/docs/eleven-api/guides/cookbooks/text-to-dialogue
+ */
+router.post(
+  "/api/admin/generate-dialogue-sample",
+  optionalAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!authorizeMigration(req, res)) return;
+
+    const { name, lines } = (req.body || {}) as {
+      name?: unknown;
+      lines?: unknown;
+    };
+
+    if (typeof name !== "string" || !/^[a-zA-Z0-9_-]{1,64}$/.test(name)) {
+      return res.status(400).json({
+        error: "name must be 1-64 chars matching [a-zA-Z0-9_-]+",
+      });
+    }
+    if (!Array.isArray(lines) || lines.length === 0) {
+      return res.status(400).json({ error: "lines must be a non-empty array" });
+    }
+    const safeLines: { voice_id: string; text: string }[] = [];
+    for (const raw of lines) {
+      if (!raw || typeof raw !== "object") {
+        return res.status(400).json({ error: "each line must be an object" });
+      }
+      const voice_id = (raw as any).voice_id;
+      const text = (raw as any).text;
+      if (typeof voice_id !== "string" || !voice_id) {
+        return res.status(400).json({ error: "line.voice_id required" });
+      }
+      if (typeof text !== "string" || !text.trim()) {
+        return res.status(400).json({ error: "line.text required" });
+      }
+      safeLines.push({ voice_id, text });
+    }
+
+    try {
+      const { composeDialogue, elevenLabsConfigured } = await import("../lib/elevenlabs-client");
+      if (!elevenLabsConfigured()) {
+        return res.status(500).json({ error: "ELEVENLABS_API_KEY not set" });
+      }
+
+      const audio = await composeDialogue({ inputs: safeLines });
+
+      // Persist under public/sounds/<name>.mp3 — Vite serves /public at
+      // the site root, so the marketing page references /sounds/<n>.mp3.
+      // We resolve relative to cwd which is the repo root for both
+      // local dev and the Vercel build/serve.
+      const path = await import("path");
+      const fs = await import("fs/promises");
+      const dir = path.join(process.cwd(), "public", "sounds");
+      await fs.mkdir(dir, { recursive: true });
+      const outPath = path.join(dir, `${name}.mp3`);
+      await fs.writeFile(outPath, Buffer.from(audio));
+
+      const url = `/sounds/${name}.mp3`;
+      log.info("generate-dialogue-sample completed", {
+        userId: req.user?.id || "migration-token",
+        name,
+        bytes: audio.byteLength,
+      });
+      return res.json({ ok: true, url, bytes: audio.byteLength });
+    } catch (err: any) {
+      log.error("generate-dialogue-sample failed", { error: err?.message });
+      return res.status(500).json({ error: err?.message || "Dialogue generation failed" });
+    }
+  },
+);
+
 export default router;

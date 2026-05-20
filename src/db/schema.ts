@@ -238,6 +238,20 @@ export const agents = pgTable(
     // Per-archetype silence tolerance for Vapi calls. NULL → factory uses
     // archetype default (Receptionist 5s, SDR 2s, etc.).
     silenceTimeoutSeconds: integer("silence_timeout_seconds"),
+    /**
+     * Per-agent ElevenLabs speaking rate multiplier. Range 0.7 – 1.2,
+     * default 1.0 (normal pace). Operators slow agents down for elderly
+     * customers (0.85) or speed them up for impatient callers (1.1).
+     * Surfaced as a slider in FleetSettings → Voice and wired into the
+     * Vapi assistant voice block as `voice.speed` when the provider is
+     * 11labs.
+     *
+     * Stored as numeric (Postgres `numeric`) for exact arithmetic; the
+     * voice factory coerces via Number() before passing to Vapi.
+     *
+     * Docs: https://elevenlabs.io/docs/eleven-agents/customization/voice/speed-control
+     */
+    voiceSpeed: decimal("voice_speed", { precision: 3, scale: 2 }).default("1.0"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   (t) => ({
@@ -305,6 +319,48 @@ export const clonedVoices = pgTable(
   },
   (t) => ({
     userCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_cloned_voices_user_created ON wireline_cloned_voices USING btree (user_id, created_at DESC)`,
+  }),
+);
+
+// Per-tenant pronunciation dictionaries for ElevenLabs TTS.
+// Operators in regulated verticals (medical, legal, real estate) need
+// industry jargon pronounced correctly — "HVAC" should say "H-V-A-C",
+// not "h-vack"; "ACL" should be spelled out; "deposition" might need
+// an IPA phoneme override. ElevenLabs exposes this via their
+// Pronunciation Dictionary API; once created, the returned
+// pronunciation_dictionary_id + version_id are stored here and
+// attached to Vapi assistants via voice.eleven_labs
+// .pronunciation_dictionary_locators on every assistant build.
+//
+// `entries` shape (jsonb array):
+//   [{ from: "HVAC",  to: "H-V-A-C",        kind: "alias" },
+//    { from: "ACL",   to: "ˈeɪ siː ɛl",     kind: "phoneme" }]
+// Validated route-side before we sync to ElevenLabs.
+//
+// `active` lets operators toggle a dictionary off without deleting it
+// (e.g. seasonal vocabularies, A/B testing legal vs medical jargon
+// across the same fleet).
+export const pronunciationDictionaries = pgTable(
+  "wireline_pronunciation_dictionaries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    name: text("name").notNull(),
+    entries: jsonb("entries")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    // ElevenLabs assigns these on every successful add-from-rules call.
+    // Null until the first successful sync — the row exists locally as
+    // a draft until then. Versioned because ElevenLabs treats every
+    // edit as a new version: we always store the latest.
+    elevenlabsDictionaryId: text("elevenlabs_dictionary_id"),
+    elevenlabsVersionId: text("elevenlabs_version_id"),
+    active: boolean("active").default(true).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    userIdx: sql`CREATE INDEX IF NOT EXISTS idx_pronunciation_dicts_user ON wireline_pronunciation_dictionaries USING btree (user_id, created_at DESC)`,
   }),
 );
 

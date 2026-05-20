@@ -210,6 +210,218 @@ export async function isolateVoice(audioBase64: string, mimeType?: string): Prom
 }
 
 /**
+ * Pronunciation Dictionary rule shape that the ElevenLabs API expects.
+ * "alias" replaces one written form with another spelled-out form
+ * ("HVAC" → "H-V-A-C"). "phoneme" replaces the source with an IPA
+ * phoneme string ("ACL" → "ˈeɪ siː ɛl"), giving operators in
+ * regulated verticals (medical / legal) precise control over how
+ * jargon is voiced.
+ *
+ * Docs: https://elevenlabs.io/docs/api-reference/pronunciation-dictionary
+ */
+export interface PronunciationRule {
+  string_to_replace: string;
+  type: "alias" | "phoneme";
+  /** For alias rules. */
+  alias?: string;
+  /** For phoneme rules — IPA by default. */
+  phoneme?: string;
+  /** Only relevant for phoneme rules; ElevenLabs defaults to "ipa". */
+  alphabet?: "ipa" | "cmu-arpabet";
+}
+
+export interface PronunciationDictionaryResult {
+  /** ElevenLabs's stable ID for the dictionary. */
+  id: string;
+  /** Latest version_id — every edit produces a new version on EL's side. */
+  version_id: string;
+  name?: string;
+}
+
+/**
+ * Create a pronunciation dictionary on ElevenLabs from a list of rules.
+ * The dictionary is account-scoped (any voice on this API key can use
+ * it). We then attach the resulting (dictionary_id, version_id) pair
+ * to Vapi assistants via voice.eleven_labs.pronunciation_dictionary_locators
+ * so it applies during call playback.
+ *
+ * Docs:
+ *   https://elevenlabs.io/docs/eleven-agents/customization/voice/pronunciation-dictionary
+ *   https://elevenlabs.io/docs/api-reference/pronunciation-dictionary/add-from-rules
+ */
+export async function createPronunciationDictionary(args: {
+  name: string;
+  rules: PronunciationRule[];
+  description?: string;
+}): Promise<PronunciationDictionaryResult> {
+  const body: Record<string, unknown> = {
+    name: args.name,
+    rules: args.rules,
+  };
+  if (args.description) body.description = args.description;
+
+  const r = await fetch(`${BASE}/pronunciation-dictionaries/add-from-rules`, {
+    method: "POST",
+    headers: {
+      "xi-api-key": apiKey(),
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) {
+    const text = await r.text().catch(() => "");
+    throw new Error(`ElevenLabs createPronunciationDictionary ${r.status}: ${text.slice(0, 200)}`);
+  }
+  const data = (await r.json()) as {
+    id: string;
+    version_id: string;
+    name?: string;
+  };
+  return { id: data.id, version_id: data.version_id, name: data.name };
+}
+
+/**
+ * Add (append) more rules to an existing dictionary. ElevenLabs treats
+ * every add as a new version — the returned version_id replaces what
+ * we had stored. We use this for incremental edits when the operator
+ * doesn't want to recreate the whole dictionary.
+ *
+ * Note: ElevenLabs has no "replace all rules" endpoint. For full
+ * replacement semantics, delete + recreate via createPronunciationDictionary.
+ */
+export async function addRulesToPronunciationDictionary(args: {
+  dictionaryId: string;
+  rules: PronunciationRule[];
+}): Promise<PronunciationDictionaryResult> {
+  const r = await fetch(
+    `${BASE}/pronunciation-dictionaries/${encodeURIComponent(args.dictionaryId)}/add-rules`,
+    {
+      method: "POST",
+      headers: {
+        "xi-api-key": apiKey(),
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ rules: args.rules }),
+    },
+  );
+  if (!r.ok) {
+    const text = await r.text().catch(() => "");
+    throw new Error(`ElevenLabs addRules ${r.status}: ${text.slice(0, 200)}`);
+  }
+  const data = (await r.json()) as { id: string; version_id: string; name?: string };
+  return { id: data.id, version_id: data.version_id, name: data.name };
+}
+
+/**
+ * Delete an ElevenLabs-side dictionary. 404s are swallowed: an
+ * already-gone dictionary is the desired terminal state. Used when
+ * we recreate a dictionary on edit (no "replace" endpoint exists).
+ */
+export async function deletePronunciationDictionary(dictionaryId: string): Promise<void> {
+  const r = await fetch(`${BASE}/pronunciation-dictionaries/${encodeURIComponent(dictionaryId)}`, {
+    method: "DELETE",
+    headers: { "xi-api-key": apiKey() },
+  });
+  if (!r.ok && r.status !== 404) {
+    const text = await r.text().catch(() => "");
+    throw new Error(`ElevenLabs deletePronunciationDictionary ${r.status}: ${text.slice(0, 200)}`);
+  }
+}
+
+/**
+ * Text-to-Dialogue — generate a multi-speaker conversational audio
+ * clip from an ordered list of (voice_id, text) pairs. ElevenLabs's
+ * dialogue model stitches the lines into a single MP3 with natural
+ * turn-taking + prosody (pauses between speakers, conversational
+ * intonation), which is far better than rendering each line via
+ * `generateSample` and concatenating manually.
+ *
+ * Used by the marketing landing-page demo audio: Mike curls the
+ * owner-gated `/api/admin/generate-dialogue-sample` endpoint to refresh
+ * the embedded sample whenever we change voices or scripts.
+ *
+ * Docs: https://elevenlabs.io/docs/eleven-api/guides/cookbooks/text-to-dialogue
+ *
+ * Returns the audio bytes as ArrayBuffer (audio/mpeg).
+ */
+export async function composeDialogue(args: {
+  inputs: { voice_id: string; text: string }[];
+  modelId?: string;
+}): Promise<ArrayBuffer> {
+  if (!args.inputs?.length) {
+    throw new Error("composeDialogue: at least one line required");
+  }
+  const r = await fetch(`${BASE}/text-to-dialogue`, {
+    method: "POST",
+    headers: {
+      "xi-api-key": apiKey(),
+      "Content-Type": "application/json",
+      Accept: "audio/mpeg",
+    },
+    body: JSON.stringify({
+      inputs: args.inputs,
+      model_id: args.modelId || "eleven_v3",
+    }),
+  });
+  if (!r.ok) {
+    const body = await r.text().catch(() => "");
+    throw new Error(`ElevenLabs text-to-dialogue ${r.status}: ${body.slice(0, 200)}`);
+  }
+  return await r.arrayBuffer();
+}
+
+/**
+ * Sound Effects — generate a short MP3 from a text prompt (think
+ * "soft warm ambient lounge piano" or "two-note ascending chime").
+ * Powers the brand audio library under /public/sounds/: hold music,
+ * transfer chime, end-call sting, notification bell. Mike refreshes
+ * the set via the owner-gated `/api/admin/generate-brand-sounds`
+ * endpoint so the platform owns its sonic identity rather than
+ * leaning on generic stock cues.
+ *
+ * `duration_seconds` is optional (1–22 sec range; ElevenLabs picks
+ * a sensible length when omitted). `prompt_influence` (0–1) trades
+ * variety for prompt-fidelity; we default to 0.3 because the docs
+ * recommend it as the sweet spot for naturalistic results.
+ *
+ * Docs: https://elevenlabs.io/docs/eleven-api/guides/cookbooks/sound-effects
+ *
+ * Returns MP3 audio as ArrayBuffer. ~$0.08 per generation.
+ */
+export async function generateSoundEffect(args: {
+  text: string;
+  durationSeconds?: number;
+  promptInfluence?: number;
+}): Promise<ArrayBuffer> {
+  if (!args.text?.trim()) {
+    throw new Error("generateSoundEffect: text prompt required");
+  }
+  const body: Record<string, unknown> = {
+    text: args.text,
+    prompt_influence: typeof args.promptInfluence === "number" ? args.promptInfluence : 0.3,
+  };
+  if (typeof args.durationSeconds === "number") {
+    body.duration_seconds = args.durationSeconds;
+  }
+  const r = await fetch(`${BASE}/sound-generation`, {
+    method: "POST",
+    headers: {
+      "xi-api-key": apiKey(),
+      "Content-Type": "application/json",
+      Accept: "audio/mpeg",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) {
+    const errBody = await r.text().catch(() => "");
+    throw new Error(`ElevenLabs sound-generation ${r.status}: ${errBody.slice(0, 200)}`);
+  }
+  return await r.arrayBuffer();
+}
+
+/**
  * Speech-to-Text — re-transcribe a call recording with ElevenLabs's
  * Scribe model. We already get Vapi-side transcripts but Scribe is
  * a notch more accurate on accented English + noisy lines. Use for

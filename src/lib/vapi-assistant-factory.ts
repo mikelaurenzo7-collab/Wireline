@@ -52,6 +52,7 @@ export async function buildVapiAssistant({
     pastCallHistory,
     capturedProfileRow,
     callerLeadRow,
+    pronunciationDicts,
   ] = await Promise.all([
     drizzle
       .select()
@@ -168,6 +169,49 @@ export async function buildVapiAssistant({
           .limit(1)
           .then((r) => r[0] || null)
       : Promise.resolve(null),
+    // Tenant's active pronunciation dictionaries — attached to the
+    // 11labs voice config below so industry jargon (HVAC, ACL,
+    // deposition) is pronounced correctly. Only dictionaries that
+    // have been successfully synced to ElevenLabs (non-null IDs) and
+    // are flagged active by the operator are included.
+    //
+    // Failure-tolerant: if the table is missing on this environment
+    // (migrate-pronunciation-dicts hasn't been run yet) or the query
+    // errors, we treat it as an empty list and the assistant still
+    // builds without dictionaries — pronunciation just falls back to
+    // the platform default.
+    userId
+      ? drizzle
+          .select({
+            dictionaryId: schema.pronunciationDictionaries.elevenlabsDictionaryId,
+            versionId: schema.pronunciationDictionaries.elevenlabsVersionId,
+          })
+          .from(schema.pronunciationDictionaries)
+          .where(
+            and(
+              eq(schema.pronunciationDictionaries.userId, userId),
+              eq(schema.pronunciationDictionaries.active, true),
+            ),
+          )
+          .then((rows) =>
+            rows
+              .filter((r) => r.dictionaryId && r.versionId)
+              .map((r) => ({
+                pronunciation_dictionary_id: r.dictionaryId as string,
+                version_id: r.versionId as string,
+              })),
+          )
+          .catch((e) => {
+            log.warn("pronunciation dict load failed — skipping", {
+              error: e?.message,
+              userId,
+            });
+            return [] as Array<{
+              pronunciation_dictionary_id: string;
+              version_id: string;
+            }>;
+          })
+      : Promise.resolve([] as Array<{ pronunciation_dictionary_id: string; version_id: string }>),
   ]);
 
   let flowConfigBlock = "";
@@ -334,6 +378,19 @@ Today is ${currentDateTime}.
   const silenceTimeoutSeconds =
     (agentConfigRow as any)?.silenceTimeoutSeconds ?? archetypeSilenceDefault[archetype] ?? 5;
 
+  // ElevenLabs speed control — operator-set per-agent multiplier in
+  // FleetSettings → Voice. The DB column is `numeric(3,2)` which Postgres
+  // returns as a string via pg; coerce to Number and clamp to the
+  // documented ElevenLabs range (0.7 – 1.2) so a corrupted row can't
+  // ship a value Vapi/EL would reject. Only attach when the provider
+  // is 11labs — OpenAI's voice block doesn't take a `speed` param and
+  // including it would make Vapi reject the request.
+  //
+  // Docs: https://elevenlabs.io/docs/eleven-agents/customization/voice/speed-control
+  const rawVoiceSpeed = (agentConfigRow as any)?.voiceSpeed;
+  const parsedVoiceSpeed =
+    rawVoiceSpeed == null ? 1.0 : Math.min(1.2, Math.max(0.7, Number(rawVoiceSpeed) || 1.0));
+
   // Deduplicate and resolve fallback models based on what the primary model is
   const defaultFallbacks = [
     "gpt-4o",
@@ -376,6 +433,25 @@ Today is ${currentDateTime}.
       // quality trade for fastest first-audio-out. Most call quality
       // differences are imperceptible vs the latency win.
       optimizeStreamingLatency: 4,
+      // ElevenLabs speed control (operator-set, 0.7–1.2). Vapi forwards
+      // this to ElevenLabs as `voice.eleven_labs.speed`. Only attach
+      // when the resolved provider is 11labs and the value differs from
+      // the neutral default so we don't bloat every assistant payload
+      // with a no-op. Slower for elderly customers (~0.85), faster for
+      // impatient callers (~1.1).
+      ...(resolvedVoiceProvider === "11labs" && parsedVoiceSpeed !== 1.0
+        ? { speed: parsedVoiceSpeed }
+        : {}),
+      // Per-tenant pronunciation dictionaries — only valid when the
+      // resolved provider is 11labs (Vapi ignores them for other TTS
+      // providers and would warn). Vapi forwards these to ElevenLabs
+      // as `voice.eleven_labs.pronunciation_dictionary_locators` at
+      // synthesis time. Empty array stays absent from the config so
+      // we don't bloat the assistant payload for tenants who haven't
+      // configured any dictionaries.
+      ...(pronunciationDicts.length > 0 && resolvedVoiceProvider === "11labs"
+        ? { pronunciationDictionaryLocators: pronunciationDicts }
+        : {}),
     },
     functions: buildRoleToolDefs(agentRole, enabledToolNames),
   };
