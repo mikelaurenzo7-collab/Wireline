@@ -88,19 +88,6 @@ export const WIRELINE_PLANS = [
       "Quarterly business review",
     ],
   },
-  {
-    name: "Call Center",
-    price: "Custom · 100+ seats",
-    bestFor: "Operators replacing or augmenting a traditional outsourced call center.",
-    includes: [
-      "Everything in Enterprise",
-      "Supervisor cockpit with team-level filters",
-      "Call queues with overflow routing",
-      "Per-team text-message sender numbers",
-      "SLA dashboard",
-      "Dedicated CSM + 24/7 priority support",
-    ],
-  },
 ] as const;
 
 export const WIRELINE_FEATURES = [
