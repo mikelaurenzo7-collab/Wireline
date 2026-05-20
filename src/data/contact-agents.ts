@@ -116,12 +116,13 @@ export type DemoAgent = ContactAgent;
 export const WIRELINE_DEMO_AGENTS: ReadonlyArray<DemoAgent> = [
   {
     name: "Ria",
-    role: "Home Services Demo",
+    role: "Demo Concierge",
     scope:
-      "Role-plays an HVAC / plumbing / electrical front desk — triages emergency vs routine, captures the job, books a service window, dispatches the on-call tech.",
+      "Asks which Wireline demo the caller wants to hear, then role-plays that agent live: home services, medical, legal, real estate, insurance, restaurant, or outbound sales.",
     firstMessage:
-      "Thanks for calling — this is Ria at the Wireline Home Services demo. Who am I speaking with?",
-    handles: "home services, HVAC, plumbing, electrical, dispatch, service call",
+      "Thanks for calling Wireline — this is Ria, your demo concierge. Which kind of agent would you like to hear: home services, medical, legal, real estate, insurance, restaurant, or outbound sales?",
+    handles:
+      "demo concierge, choose demo, home services, HVAC, plumbing, electrical, medical, legal, real estate, insurance, restaurant, outbound, SDR",
     tel: "+15642389455",
     display: "(564) 238-9455",
     tint: "#f59e0b",
@@ -206,3 +207,6 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<DemoAgent> = [
     defaultVibe: "playful",
   },
 ];
+
+export const WIRELINE_FEATURED_TEAM_AGENT = WIRELINE_CONTACT_AGENTS[0]!;
+export const WIRELINE_DEMO_CONCIERGE_AGENT = WIRELINE_DEMO_AGENTS[0]!;

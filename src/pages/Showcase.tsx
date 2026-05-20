@@ -28,6 +28,11 @@ import { motion } from "motion/react";
 import { ArrowRight, Phone, Play, Pause, Sparkles, Volume2 } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import WirelineMark from "../components/WirelineMark";
+import {
+  WIRELINE_CONTACT_AGENTS,
+  WIRELINE_DEMO_AGENTS,
+  type ContactAgent,
+} from "../data/contact-agents";
 import { SHOWCASE_AGENTS, type ShowcaseAgent } from "../data/showcase-agents";
 
 /**
@@ -161,6 +166,34 @@ function ShowcaseCard({ agent }: { agent: ShowcaseAgent }) {
   );
 }
 
+function PhoneLineCard({ agent, label }: { agent: ContactAgent; label: string }) {
+  return (
+    <a
+      href={`tel:${agent.tel}`}
+      className="group rounded-2xl border border-black/10 bg-white/35 p-4 transition-all hover:border-brand/40 hover:bg-white/55"
+    >
+      <div className="flex items-start gap-3">
+        <div
+          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+          style={{ background: `${agent.tint}1f`, color: agent.tint }}
+        >
+          <Phone className="w-4 h-4" strokeWidth={2.3} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[9px] uppercase tracking-[0.24em] text-muted/70 mb-1">
+            {label} · {agent.name}
+          </p>
+          <p className="font-display italic text-lg leading-tight text-ink line-clamp-2">
+            {agent.role}
+          </p>
+          <p className="mt-1 font-mono text-[12px] text-ink/75">{agent.display}</p>
+        </div>
+        <ArrowRight className="w-4 h-4 text-ink/35 group-hover:text-ink group-hover:translate-x-0.5 transition-all shrink-0 mt-1" />
+      </div>
+    </a>
+  );
+}
+
 export default function Showcase() {
   return (
     <div className="min-h-screen relative bg-paper text-ink">
@@ -264,6 +297,37 @@ export default function Showcase() {
           {SHOWCASE_AGENTS.map((agent) => (
             <ShowcaseCard key={agent.tel} agent={agent} />
           ))}
+        </div>
+      </section>
+
+      <section className="relative z-10 max-w-4xl mx-auto px-6 lg:px-10 pb-20">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-[10px] uppercase tracking-[0.32em] text-brand font-medium">
+                Wireline team
+              </span>
+              <span className="h-px flex-1 bg-brand/20" />
+            </div>
+            <div className="grid grid-cols-1 gap-3">
+              {WIRELINE_CONTACT_AGENTS.map((agent) => (
+                <PhoneLineCard key={agent.tel} agent={agent} label="Team" />
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-[10px] uppercase tracking-[0.32em] text-muted/70 font-medium">
+                Demo agents
+              </span>
+              <span className="h-px flex-1 bg-black/10" />
+            </div>
+            <div className="grid grid-cols-1 gap-3">
+              {WIRELINE_DEMO_AGENTS.map((agent) => (
+                <PhoneLineCard key={agent.tel} agent={agent} label="Demo" />
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 

@@ -40,7 +40,7 @@ const insightsTabs = [
   "AI Spend",
   "Quality",
 ];
-const trainingTabs = ["Coach", "Knowledge", "Test call", "Conversation flow", "Connected apps"];
+const trainingTabs = ["Coach", "Knowledge", "Test call", "Conversation flow", "Capabilities"];
 
 const publicTargets = [
   { name: "public-auth", route: "/" },
@@ -445,6 +445,11 @@ async function seedVisualState(context, authenticated) {
 async function stabilize(page) {
   await page.waitForLoadState("domcontentloaded");
   await page.waitForSelector("body", { state: "attached", timeout: 8_000 });
+  await page
+    .waitForFunction(() => !document.querySelector('[aria-busy="true"] .skeleton-shimmer'), {
+      timeout: 8_000,
+    })
+    .catch(() => {});
   await page.waitForTimeout(350);
 }
 
