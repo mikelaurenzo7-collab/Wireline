@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "motion/react";
 import {
@@ -22,6 +22,7 @@ import { cn } from "../lib/utils";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import { formatDate, formatDateTime } from "../lib/safe-date";
 import { formatMoney, safeFixed, formatPhone } from "../lib/safe-number";
+import { ResponsiveContainer, AreaChart, Area } from "recharts";
 
 interface ContactData {
   number: string;
@@ -54,6 +55,26 @@ interface ContactData {
   }>;
   leads: any[];
   appointments: any[];
+}
+
+function computeSparkBuckets(
+  events: ContactData["timeline"],
+  key: "calls" | "minutes",
+  numBuckets = 6,
+): { v: number }[] {
+  if (!events.length) return [];
+  const now = Date.now();
+  const oldest = new Date(events[events.length - 1].ts).getTime();
+  const span = Math.max(now - oldest, 1);
+  const bucketSize = span / numBuckets;
+  const buckets = Array.from({ length: numBuckets }, () => ({ v: 0 }));
+  events.forEach((e) => {
+    const t = new Date(e.ts).getTime();
+    const idx = Math.min(numBuckets - 1, Math.floor((t - oldest) / bucketSize));
+    if (key === "calls") buckets[idx].v += 1;
+    else buckets[idx].v += Math.round((e.duration_seconds || 0) / 60);
+  });
+  return buckets;
 }
 
 export default function ContactProfile() {
@@ -89,6 +110,15 @@ export default function ContactProfile() {
       controller.abort();
     };
   }, [number]);
+
+  const callSpark = useMemo(
+    () => computeSparkBuckets(data?.timeline || [], "calls"),
+    [data?.timeline],
+  );
+  const minuteSpark = useMemo(
+    () => computeSparkBuckets(data?.timeline || [], "minutes"),
+    [data?.timeline],
+  );
 
   if (loading)
     return (
@@ -185,12 +215,14 @@ export default function ContactProfile() {
           value={String(data.stats.total_calls)}
           icon={Phone}
           accent="#4F1E7B"
+          sparkData={callSpark.length >= 2 ? callSpark : undefined}
         />
         <StatCard
           label="Minutes"
           value={String(data.stats.total_minutes)}
           icon={Clock}
           accent="#4F1E7B"
+          sparkData={minuteSpark.length >= 2 ? minuteSpark : undefined}
         />
         <StatCard
           label="Avg Score"
@@ -250,11 +282,13 @@ function StatCard({
   value,
   icon: Icon,
   accent,
+  sparkData,
 }: {
   label: string;
   value: string;
   icon: any;
   accent: string;
+  sparkData?: { v: number }[];
 }) {
   return (
     <div className="relative aurora-ring rounded-2xl">
@@ -269,6 +303,29 @@ function StatCard({
             <Icon className="w-4 h-4" style={{ color: accent }} />
           </div>
           <p className="font-display italic text-4xl text-ink leading-none">{value}</p>
+          {sparkData && (
+            <div className="mt-2 -mx-1">
+              <ResponsiveContainer width="100%" height={24}>
+                <AreaChart data={sparkData} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id={`sg-${label}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={accent} stopOpacity={0.35} />
+                      <stop offset="100%" stopColor={accent} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <Area
+                    type="monotone"
+                    dataKey="v"
+                    stroke={accent}
+                    strokeWidth={1.5}
+                    fill={`url(#sg-${label})`}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
       </div>
     </div>

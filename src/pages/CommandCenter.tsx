@@ -395,16 +395,19 @@ export default function CommandCenter() {
                     </div>
                   ) : (
                     <div className="flex items-center gap-8">
-                      <div className="w-1/2 h-[120px]">
+                      <div className="w-1/2 h-[150px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
                               data={sentimentData}
                               innerRadius={50}
-                              outerRadius={75}
+                              outerRadius={80}
                               paddingAngle={5}
                               dataKey="value"
                               stroke="none"
+                              isAnimationActive={true}
+                              animationBegin={200}
+                              animationDuration={800}
                             >
                               {sentimentData.map((entry) => (
                                 <Cell key={entry.name} fill={entry.color} />

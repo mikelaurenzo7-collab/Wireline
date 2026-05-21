@@ -238,12 +238,12 @@ export default function CallLogs() {
                               {/* Lead score badge */}
                               <span
                                 className={cn(
-                                  "shrink-0 px-1.5 py-0 rounded-full text-[8px] font-mono leading-tight",
+                                  "shrink-0 px-1.5 py-0 rounded-full text-[8px] font-mono leading-tight border",
                                   (call.lead_score || 0) >= 80
-                                    ? "bg-rose-500/15 text-rose-500 border border-rose-500/25"
+                                    ? "bg-emerald-500/12 text-emerald-600 border-emerald-500/20"
                                     : (call.lead_score || 0) >= 50
-                                      ? "bg-brand/12 text-brand border border-brand/20"
-                                      : "bg-black/[0.06] text-muted/60",
+                                      ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                                      : "bg-black/[0.06] text-muted/60 border-transparent",
                                 )}
                               >
                                 {call.lead_score || 0}
@@ -381,12 +381,19 @@ function CallDetail({
     .filter((l: string) => l.trim() !== "");
 
   const QA_DIMS = [
-    { key: "greeting", label: "Opening", color: "#4F1E7B" },
-    { key: "discovery", label: "Discovery", color: "#4F1E7B" },
-    { key: "solution", label: "Solution", color: "#4F1E7B" },
-    { key: "objection", label: "Objections", color: "#10B981" },
-    { key: "closing", label: "Closing", color: "#FFD166" },
+    { key: "greeting", label: "Opening" },
+    { key: "discovery", label: "Discovery" },
+    { key: "solution", label: "Solution" },
+    { key: "objection", label: "Objections" },
+    { key: "closing", label: "Closing" },
   ];
+
+  const qaDimColor = (val: number) => {
+    const pct = val / 20;
+    if (pct >= 0.8) return "linear-gradient(90deg, #10B981, #34D399)";
+    if (pct >= 0.6) return "linear-gradient(90deg, #F59E0B, #FCD34D)";
+    return "linear-gradient(90deg, #E8466A, #F87171)";
+  };
 
   const qaColor = (score: number) =>
     score >= 90
@@ -570,7 +577,7 @@ function CallDetail({
                       </div>
                     </div>
                     <div className="space-y-2 mb-3">
-                      {QA_DIMS.map(({ key, label, color }) => {
+                      {QA_DIMS.map(({ key, label }) => {
                         const val = qaBreakdown[key] ?? 0;
                         return (
                           <div key={key} className="flex items-center gap-2">
@@ -583,7 +590,7 @@ function CallDetail({
                                 animate={{ width: `${(val / 20) * 100}%` }}
                                 transition={{ duration: 0.8, ease: "easeOut" }}
                                 className="h-full rounded-full"
-                                style={{ background: color }}
+                                style={{ background: qaDimColor(val) }}
                               />
                             </div>
                             <span className="text-[9px] font-mono text-ink w-8 text-right shrink-0">

@@ -269,21 +269,38 @@ function HotLeads({ items }: { items: HotLead[] }) {
           key={c.id}
           className="group px-4 py-3.5 flex items-center gap-3 hover:bg-white/3 transition-all"
         >
-          <div
-            className="shrink-0 w-11 h-11 rounded-xl flex flex-col items-center justify-center"
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(79, 30, 123 ,0.25), rgba(79, 30, 123 ,0.20))",
-              border: "1px solid rgba(79, 30, 123 ,0.30)",
-              boxShadow: "0 0 16px rgba(79, 30, 123 ,0.20)",
-            }}
-          >
-            <span className="font-display italic text-lg text-ink leading-none">
-              {c.lead_score}
-            </span>
-            <span className="text-[7px] uppercase tracking-[0.3em] text-brand-3/70 mt-0.5">
-              score
-            </span>
+          <div className="shrink-0 w-11 h-11 flex items-center justify-center text-ink">
+            <svg width="44" height="44" viewBox="0 0 44 44">
+              <circle
+                r="16"
+                cx="22"
+                cy="22"
+                fill="none"
+                stroke="rgba(0,0,0,0.08)"
+                strokeWidth="4"
+              />
+              <circle
+                r="16"
+                cx="22"
+                cy="22"
+                fill="none"
+                stroke={c.lead_score >= 80 ? "#10B981" : c.lead_score >= 60 ? "#F59E0B" : "#E8466A"}
+                strokeWidth="4"
+                strokeDasharray={`${(c.lead_score / 100) * 100.53} 100.53`}
+                strokeLinecap="round"
+                transform="rotate(-90 22 22)"
+              />
+              <text
+                x="22"
+                y="26"
+                textAnchor="middle"
+                fontSize="11"
+                fontWeight="700"
+                fill="currentColor"
+              >
+                {c.lead_score}
+              </text>
+            </svg>
           </div>
 
           <div className="min-w-0 flex-1">
@@ -347,11 +364,44 @@ function ComplianceList({ items }: { items: FleetTask[] }) {
   return (
     <ul className="divide-y divide-white/5">
       {items.map((t) => (
-        <li key={t.id} className="px-4 py-3 flex items-start gap-3 bg-rose-500/3">
-          <ShieldAlert className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+        <li
+          key={t.id}
+          className={cn(
+            "relative px-4 py-3 flex items-start gap-3",
+            t.priority === "high"
+              ? "bg-rose-500/8 border-l-2 border-rose-500/50"
+              : t.priority === "medium"
+                ? "bg-amber-500/6 border-l-2 border-amber-500/30"
+                : "bg-rose-500/3",
+          )}
+        >
+          <ShieldAlert
+            className={cn(
+              "w-4 h-4 shrink-0 mt-0.5",
+              t.priority === "high"
+                ? "text-rose-500"
+                : t.priority === "medium"
+                  ? "text-amber-500"
+                  : "text-rose-400",
+            )}
+          />
           <div className="flex-1 min-w-0">
-            <div className="text-[8px] uppercase tracking-[0.28em] text-rose-500 mb-0.5">
-              Compliance · {t.priority}
+            <div
+              className={cn(
+                "text-[8px] uppercase tracking-[0.28em] mb-0.5 flex items-center justify-between",
+                t.priority === "high"
+                  ? "text-rose-500"
+                  : t.priority === "medium"
+                    ? "text-amber-500"
+                    : "text-rose-400",
+              )}
+            >
+              <span>Compliance · {t.priority}</span>
+              {t.priority === "high" && (
+                <span className="text-[8px] font-bold text-rose-400 uppercase tracking-widest animate-pulse">
+                  URGENT
+                </span>
+              )}
             </div>
             <p className="text-[12px] text-ink/90 leading-snug">{t.description}</p>
             <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-1">

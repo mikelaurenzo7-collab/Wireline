@@ -161,7 +161,7 @@ export default function Pipeline() {
                           e.dataTransfer.setData("text/plain", String(lead.id));
                         }}
                         onDragEnd={() => setDraggingId(null)}
-                        className={`group rounded-xl p-3 cursor-grab active:cursor-grabbing border card-interactive-premium transition-all duration-300 ${
+                        className={`group relative rounded-xl p-3 cursor-grab active:cursor-grabbing border card-interactive-premium transition-all duration-300 overflow-hidden ${
                           draggingId === String(lead.id)
                             ? "border-brand/60 opacity-40 shadow-xl shadow-brand/10 scale-95"
                             : "border-black/5 hover:border-brand/20 hover:shadow-lg hover:shadow-brand/5"
@@ -170,6 +170,20 @@ export default function Pipeline() {
                           background: `linear-gradient(135deg, ${stage.tint}0f, transparent 75%)`,
                         }}
                       >
+                        {/* Attempts-based left urgency strip */}
+                        <div
+                          className="absolute left-0 top-0 bottom-0 w-0.5 rounded-l-xl"
+                          style={{
+                            background:
+                              !lead.attempts || lead.attempts === 0
+                                ? "rgba(255,255,255,0.06)"
+                                : lead.attempts <= 2
+                                  ? "#4F1E7B"
+                                  : lead.attempts <= 4
+                                    ? "#F59E0B"
+                                    : "#E8466A",
+                          }}
+                        />
                         <p className="text-[12px] font-semibold text-ink truncate flex items-center gap-1.5">
                           {lead.customerName || "(no name)"}
                           {lead.demo && (
