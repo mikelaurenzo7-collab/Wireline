@@ -29,6 +29,7 @@
     "e2e:golden": "node scripts/e2e-golden-paths.mjs",
     "assets": "node scripts/render-image-assets.mjs",
     "check-prod-env": "node scripts/check-prod-env.mjs",
+    "loop:tick": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-wireline-loop.ps1",
     "oauth:redirects": "node scripts/print-oauth-redirects.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
