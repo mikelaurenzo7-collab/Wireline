@@ -552,12 +552,35 @@ select {
     font-size: 16px;
   }
 
-  /* iOS App Store 44pt minimum tap target — coarse pointer = touch device.
-     data-no-min-touch opts out for decorative inline elements (badges, etc.) */
-  button:not([data-no-min-touch]),
-  [role="button"]:not([data-no-min-touch]),
-  a:not([data-no-min-touch]) {
+  /* iOS App Store 44pt tap target — enforce only on primary navigation and
+     standalone action surfaces, NOT on dense in-panel icon buttons (those
+     get data-no-min-touch). This avoids inflating glass card action rows. */
+  nav a,
+  nav button,
+  [role="navigation"] a,
+  [role="navigation"] button {
     min-height: 44px;
+  }
+
+  /* Eliminate 300ms click-delay on all interactive elements. Modern iOS
+     Safari no longer adds this delay with viewport-fit=cover, but belt-and-
+     suspenders for older devices still in the field. */
+  button,
+  [role="button"],
+  a,
+  input,
+  select,
+  textarea {
+    touch-action: manipulation;
+  }
+
+  /* Prevent iOS text-selection "loupe" from firing on taps inside buttons
+     and nav links, which looks wrong and feels non-native. */
+  button,
+  [role="button"],
+  nav a {
+    -webkit-user-select: none;
+    user-select: none;
   }
 }
 
@@ -744,12 +767,14 @@ select:focus {
   @apply overflow-y-auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(79, 30, 123, 0.20) transparent;
-  /* Momentum scrolling on iOS Safari — without this, lists scroll at a
-     fixed rate that feels laggy compared to native apps */
+  /* Momentum scrolling on iOS Safari */
   -webkit-overflow-scrolling: touch;
-  /* Contain overscroll so bouncing the list doesn't propagate to the
-     parent surface (AppShell body / browser chrome) */
+  /* Contain overscroll — rubber-bands within the panel only, not the page.
+     Also prevents the URL bar from reappearing mid-scroll on Safari. */
   overscroll-behavior: contain;
+  /* Declare vertical scroll axis so the browser dispatches touch events
+     immediately without waiting to resolve horizontal gesture ambiguity. */
+  touch-action: pan-y;
 }
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  ADDITIONAL ANIMATIONS  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */

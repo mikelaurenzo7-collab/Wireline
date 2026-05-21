@@ -4,36 +4,40 @@ import { Menu, X, Keyboard, LogOut, Settings, CreditCard, ChevronDown } from "lu
 import WirelineMark from "../WirelineMark";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../../contexts/AuthContext";
-import { authFetch } from "../../lib/api";
 import { cn } from "../../lib/utils";
 import { NAV_GROUPS, type NavItem } from "../../constants/navigation";
 import { useBranding } from "../../contexts/BrandingContext";
 
-export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => void }) {
+interface Props {
+  onShowShortcuts: () => void;
+  /** Controlled by AppShell so BottomNavBar's "More" can also open it. */
+  drawerOpen: boolean;
+  onDrawerChange: (open: boolean) => void;
+  /** Badge counts shared from AppShell (single polling source). */
+  navBadges: Record<string, number>;
+}
+
+export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, navBadges }: Props) {
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { branding } = useBranding();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  // Avatar-menu open state — replaces the always-visible user pill +
-  // logout icon that ate ~190px of TopBar width and pushed itself
-  // off-screen on narrower laptop viewports (≤1300px ThinkPads).
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
-  // Close the menu on outside click + Escape.
+
+  // Close avatar dropdown on outside click or Escape.
   useEffect(() => {
     if (!userMenuOpen) return;
-    const onClick = (e: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+    const onDown = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node))
         setUserMenuOpen(false);
-      }
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setUserMenuOpen(false);
     };
-    document.addEventListener("mousedown", onClick);
+    document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown", onKey);
     return () => {
-      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("mousedown", onDown);
       document.removeEventListener("keydown", onKey);
     };
   }, [userMenuOpen]);
@@ -46,33 +50,6 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
     );
   };
 
-  const [navBadges, setNavBadges] = useState<Record<string, number>>({});
-  useEffect(() => {
-    let cancelled = false;
-    const fetchCounts = async () => {
-      try {
-        const r = await authFetch("/api/nav-counts");
-        if (!cancelled && r.ok) {
-          const d = await r.json();
-          setNavBadges(d as Record<string, number>);
-        }
-      } catch {
-        /* non-critical */
-      }
-    };
-    fetchCounts();
-    const interval = setInterval(fetchCounts, 120_000);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, []);
-
-  // Close mobile menu on route change
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [location.pathname]);
-
   const renderNavItem = (
     item: NavItem,
     opts: { withLabel?: boolean; variant?: "topbar" | "drawer" } = {},
@@ -83,13 +60,6 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
       (item.matches?.reduce((sum, m) => sum + (navBadges[m] ?? 0), 0) ?? 0);
     const withLabel = opts.withLabel ?? true;
     const variant = opts.variant ?? "topbar";
-    // Color tokens shift entirely between contexts:
-    //   topbar  → dark silky-purple bar; inactive text is cream, active sits
-    //             on a cream pill with dark-purple text.
-    //   drawer  → cream-paper sheet; inactive text is dark ink, active sits
-    //             on a silky-purple pill with cream text. Without this split
-    //             the mobile drawer rendered cream-on-cream and the nav was
-    //             invisible (only the active item showed through).
     const isDrawer = variant === "drawer";
     const activeBg = isDrawer ? "#4F1E7B" : "#EFE9DC";
     const activeTextColor = isDrawer ? "#EFE9DC" : "#3B154C";
@@ -98,8 +68,6 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
         key={item.label}
         to={item.path}
         {...(item.dataTour ? { "data-tour": item.dataTour } : {})}
-        // title gives icon-only hover tooltip at <xl viewports where
-        // the visible text label is hidden via responsive utility.
         title={isDrawer ? undefined : item.label}
         aria-label={`Go to ${item.label}`}
         aria-current={active ? "page" : undefined}
@@ -126,10 +94,6 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
               boxShadow: isDrawer
                 ? "0 6px 18px -6px rgba(79,30,123,0.45), 0 0 0 1px rgba(255,255,255,0.18) inset"
                 : "0 4px 14px -4px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.2) inset",
-              // GPU-promote so the layoutId pill cross-fades smoothly
-              // between nav buttons on route change. Without this,
-              // some lower-spec laptops show ~50ms of layout-thrash
-              // when the layout animation kicks in.
               willChange: "transform, background-color",
             }}
           />
@@ -151,9 +115,6 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
         {withLabel && (
           <span
             className={cn(
-              // Desktop nav shows real text labels; the top-bar nav only
-              // renders at lg+ (mobile uses the drawer), so the label is
-              // always visible whenever this row is on screen.
               "relative z-10 whitespace-nowrap transition-all duration-300",
               isDrawer ? "inline" : "hidden lg:inline",
               active ? "font-semibold" : "font-normal",
@@ -187,7 +148,11 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
         className="shrink-0 sticky top-0 z-50 bg-[#3B154C] border-b border-[#EFE9DC]/10 text-on-brand"
         style={{
           boxShadow: "0 8px 24px -16px rgba(79, 30, 123, 0.15)",
+          /* Top safe area: notch / Dynamic Island on iPhone.
+             Left/right safe areas: landscape iPhone notch coverage. */
           paddingTop: "max(0px, env(safe-area-inset-top, 0))",
+          paddingLeft: "env(safe-area-inset-left)",
+          paddingRight: "env(safe-area-inset-right)",
         }}
       >
         <div className="h-11 flex items-center gap-2 px-3 lg:px-4">
@@ -216,8 +181,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
             </span>
           </Link>
 
-          {/* Desktop nav — grouped, with subtle dividers between groups.
-              Keep flex-none so nav doesn't grow into the right cluster's space. */}
+          {/* Desktop nav — visible at lg+ only */}
           <nav className="hidden lg:flex items-center gap-0.5 ml-3 shrink-0">
             {NAV_GROUPS.map((group, gIdx) => (
               <React.Fragment key={group.label}>
@@ -231,11 +195,11 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
             ))}
           </nav>
 
-          {/* Flex spacer pushes the right cluster to the edge */}
           <div className="flex-1" />
 
           {/* Right cluster */}
           <div className="flex items-center gap-2 shrink-0">
+            {/* Keyboard shortcut hint — desktop only */}
             <button
               onClick={onShowShortcuts}
               className="hidden md:flex items-center gap-1.5 h-7 px-2 rounded-lg text-[#EFE9DC]/65 hover:text-[#EFE9DC] hover:bg-white/10 transition-colors"
@@ -248,22 +212,22 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
               </kbd>
             </button>
 
-            {/* Avatar dropdown — single compact button (~36px) replaces
-                the prior 190px-wide user pill that was getting pushed
-                off-screen on ≤1300px laptop viewports. Click reveals
-                a popover with email + Settings + Billing + Sign out.
-                Standard SaaS UX pattern (Linear / Notion / Stripe). */}
-            <div ref={userMenuRef} className="hidden md:block relative">
+            {/* Avatar / account dropdown — visible on ALL viewports now.
+                On mobile this replaces the sign-out that was buried in the
+                drawer; tap the avatar to access Billing, Settings, Sign out.
+                Taller py-2 (mobile) / py-1 (desktop) for iOS 44pt target. */}
+            <div ref={userMenuRef} className="relative">
               <button
                 onClick={() => setUserMenuOpen((v) => !v)}
-                className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 transition-colors px-1.5 py-1"
+                className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 transition-colors px-1.5 py-2.5 md:py-1"
                 aria-label="Account menu"
                 aria-expanded={userMenuOpen}
                 aria-haspopup="menu"
                 title={user?.email || "Account"}
+                data-no-min-touch
               >
                 <div
-                  className="w-6 h-6 rounded-full flex items-center justify-center text-[#3B154C] font-medium text-[10px]"
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-[#3B154C] font-medium text-[10px] shrink-0"
                   style={{ background: "#EFE9DC" }}
                   aria-hidden="true"
                 >
@@ -287,7 +251,6 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
                     aria-label="Account menu"
                     className="absolute right-0 top-full mt-2 w-full sm:w-64 md:w-72 max-w-[90vw] rounded-xl glass-strong border border-black/8 shadow-xl overflow-hidden z-50"
                   >
-                    {/* Email header */}
                     <div className="px-4 py-3 border-b border-black/8">
                       <p className="text-[10px] uppercase tracking-[0.12em] text-muted mb-1">
                         Signed in as
@@ -296,12 +259,11 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
                         {user?.email || "—"}
                       </p>
                     </div>
-                    {/* Menu items */}
                     <div className="py-1">
                       <Link
                         to="/admin?tab=subscription"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2 text-[12px] text-ink/80 hover:bg-black/[0.04] hover:text-ink transition-colors"
+                        className="flex items-center gap-2.5 px-4 py-3 md:py-2 text-[12px] text-ink/80 hover:bg-black/[0.04] hover:text-ink transition-colors"
                         role="menuitem"
                       >
                         <CreditCard className="w-3.5 h-3.5 text-muted" />
@@ -310,21 +272,20 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
                       <Link
                         to="/admin"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2 text-[12px] text-ink/80 hover:bg-black/[0.04] hover:text-ink transition-colors"
+                        className="flex items-center gap-2.5 px-4 py-3 md:py-2 text-[12px] text-ink/80 hover:bg-black/[0.04] hover:text-ink transition-colors"
                         role="menuitem"
                       >
                         <Settings className="w-3.5 h-3.5 text-muted" />
                         Settings
                       </Link>
                     </div>
-                    {/* Sign out */}
                     <div className="border-t border-black/8 py-1">
                       <button
                         onClick={() => {
                           setUserMenuOpen(false);
                           signOut();
                         }}
-                        className="w-full flex items-center gap-2.5 px-4 py-2 text-[12px] text-rose-600 hover:bg-rose-500/8 transition-colors"
+                        className="w-full flex items-center gap-2.5 px-4 py-3 md:py-2 text-[12px] text-rose-600 hover:bg-rose-500/8 transition-colors"
                         role="menuitem"
                       >
                         <LogOut className="w-3.5 h-3.5" />
@@ -336,10 +297,12 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
               </AnimatePresence>
             </div>
 
-            {/* Mobile hamburger */}
+            {/* Hamburger — tablet only (md → lg). On mobile (< md) the
+                BottomNavBar "More" tab handles drawer opening, so this
+                button is hidden. On desktop (lg+) the inline nav renders. */}
             <button
-              onClick={() => setMobileOpen(true)}
-              className="lg:hidden w-11 h-11 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center hover:bg-white/5 active:scale-95 transition-all"
+              onClick={() => onDrawerChange(true)}
+              className="hidden md:flex lg:hidden w-10 h-10 rounded-lg items-center justify-center hover:bg-white/5 active:scale-95 transition-all"
               aria-label="Open navigation"
             >
               <Menu className="w-5 h-5 text-[#EFE9DC]" />
@@ -348,16 +311,16 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
         </div>
       </header>
 
-      {/* Mobile drawer */}
+      {/* Slide-in nav drawer — tablet + mobile (lg:hidden) */}
       <AnimatePresence>
-        {mobileOpen && (
+        {drawerOpen && (
           <>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 bg-black/70 backdrop-blur-xl z-[80] lg:hidden"
-              onClick={() => setMobileOpen(false)}
+              onClick={() => onDrawerChange(false)}
               aria-hidden="true"
             />
             <motion.aside
@@ -367,26 +330,21 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
               transition={{ type: "spring", stiffness: 360, damping: 32 }}
               className="fixed top-0 bottom-0 left-0 w-[min(21rem,calc(100vw-0.75rem))] z-[85] glass-strong border-r border-black/8 flex flex-col p-4 lg:hidden"
               style={{
-                /* Push the drawer content below the iOS notch / Dynamic
-                 * Island so the logo + close button don't disappear
-                 * under the cutout on iPhone X+. Bottom inset is for
-                 * iPhone home-bar clearance. */
                 paddingTop: "max(1rem, env(safe-area-inset-top))",
                 paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
+                paddingLeft: "max(1rem, env(safe-area-inset-left))",
               }}
               aria-label="Main navigation"
             >
               <div className="flex items-center justify-between mb-4">
                 <Link
                   to="/"
-                  onClick={() => setMobileOpen(false)}
+                  onClick={() => onDrawerChange(false)}
                   className="flex items-center gap-2.5"
                 >
                   <div
                     className="w-9 h-9 rounded-xl flex items-center justify-center"
-                    style={{
-                      background: "#4F1E7B",
-                    }}
+                    style={{ background: "#4F1E7B" }}
                   >
                     <WirelineMark className="w-4 h-4 text-[#EFE9DC]" strokeWidth={130} />
                   </div>
@@ -394,9 +352,10 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
                     {branding.brand_name.toUpperCase()}
                   </span>
                 </Link>
+                {/* 44pt close button */}
                 <button
-                  onClick={() => setMobileOpen(false)}
-                  className="w-11 h-11 rounded-lg flex items-center justify-center text-ink/60 hover:text-ink hover:bg-white/5 transition-colors"
+                  onClick={() => onDrawerChange(false)}
+                  className="w-11 h-11 rounded-lg flex items-center justify-center text-ink/60 hover:text-ink hover:bg-black/5 transition-colors"
                   aria-label="Close navigation"
                 >
                   <X className="w-4 h-4" />
@@ -421,7 +380,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
               <div className="pt-3 mt-3 border-t border-black/8 space-y-2">
                 <div className="flex items-center gap-2 rounded-lg border border-black/8 glass px-2 py-2">
                   <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-on-brand font-medium text-sm"
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-on-brand font-medium text-sm shrink-0"
                     style={{ background: "#4F1E7B" }}
                   >
                     {user?.email?.slice(0, 1).toUpperCase() ?? "?"}

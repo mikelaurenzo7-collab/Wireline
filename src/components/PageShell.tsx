@@ -237,8 +237,14 @@ export default function PageShell({
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", stiffness: 360, damping: 32 }}
-              className="fixed bottom-0 left-0 right-0 z-[201] glass-strong rounded-t-2xl border-t border-black/8 md:hidden"
+              className="fixed bottom-0 left-0 right-0 z-[201] glass-strong rounded-t-2xl border-t border-black/8 md:hidden select-none"
               style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+              drag="y"
+              dragConstraints={{ top: 0 }}
+              dragElastic={{ top: 0, bottom: 0.35 }}
+              onDragEnd={(_, { offset, velocity }) => {
+                if (offset.y > 80 || velocity.y > 400) setMobileActionsOpen(false);
+              }}
               role="dialog"
               aria-label="Page actions"
               aria-modal="true"
@@ -252,7 +258,7 @@ export default function PageShell({
                 <p className="text-[10px] uppercase tracking-[0.3em] text-muted">Actions</p>
                 <button
                   onClick={() => setMobileActionsOpen(false)}
-                  className="w-9 h-9 rounded-lg flex items-center justify-center text-ink/40 hover:text-ink hover:bg-black/5 transition-colors"
+                  className="w-11 h-11 rounded-lg flex items-center justify-center text-ink/40 hover:text-ink hover:bg-black/5 transition-colors"
                   aria-label="Close actions"
                 >
                   <X className="w-4 h-4" />
