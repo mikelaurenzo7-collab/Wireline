@@ -1,4 +1,4 @@
-import React, { ReactNode, useState } from "react";
+import React, { ReactNode, useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { MoreHorizontal, X } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -69,6 +69,8 @@ export default function PageShell({
     defaultTab ?? (tabs && tabs.length > 0 ? tabs[0].id : ""),
   );
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
+  // Tracks start point of a horizontal swipe to switch tabs on touch devices.
+  const tabSwipe = useRef<{ x: number; y: number } | null>(null);
   const activeTab = tabs?.find((t) => t.id === activeId) ?? tabs?.[0];
 
   return (
@@ -201,7 +203,25 @@ export default function PageShell({
       )}
 
       {/* ── Body — bounded, never scrolls itself ───────────────────────── */}
-      <div className={cn("flex-1 min-h-0 overflow-hidden", bodyClassName)}>
+      <div
+        className={cn("flex-1 min-h-0 overflow-hidden", bodyClassName)}
+        onPointerDown={(e) => {
+          if (e.pointerType !== "touch" || !tabs || tabs.length < 2) return;
+          tabSwipe.current = { x: e.clientX, y: e.clientY };
+        }}
+        onPointerUp={(e) => {
+          if (!tabSwipe.current || !tabs || tabs.length < 2) return;
+          const dx = e.clientX - tabSwipe.current.x;
+          const dy = Math.abs(e.clientY - tabSwipe.current.y);
+          tabSwipe.current = null;
+          // Require ≥60px horizontal, <20px vertical — deliberate swipe only.
+          if (Math.abs(dx) < 60 || dy > 20) return;
+          const idx = tabs.findIndex((t) => t.id === activeId);
+          if (dx < 0 && idx < tabs.length - 1) setActiveId(tabs[idx + 1].id);
+          else if (dx > 0 && idx > 0) setActiveId(tabs[idx - 1].id);
+        }}
+        onPointerCancel={() => { tabSwipe.current = null; }}
+      >
         {tabs && activeTab ? (
           <motion.div
             key={activeTab.id}

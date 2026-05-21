@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from "react";
+import React, { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { authFetch } from "../../lib/api";
@@ -24,6 +24,8 @@ export default function AppShell() {
   const [showShortcuts, setShowShortcuts] = useState(false);
   // Lifted from TopBar so BottomNavBar can also open the nav drawer.
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // Tracks the start point of a left-edge swipe gesture.
+  const edgeSwipe = useRef<{ x: number; y: number } | null>(null);
   // Lifted from TopBar so both TopBar desktop nav and BottomNavBar share
   // the same badge data from a single polling source.
   const [navBadges, setNavBadges] = useState<Record<string, number>>({});
@@ -176,6 +178,35 @@ export default function AppShell() {
           )}
         </Suspense>
       </ErrorBoundary>
+
+      {/* Left-edge swipe zone — 20px invisible strip that detects the iOS
+          "swipe from left to open drawer" gesture. Only active on touch
+          (md:hidden in BottomNavBar breakpoint), and only when the drawer
+          is already closed. Uses pointer capture so the gesture tracks
+          even if the pointer drifts off the strip. */}
+      {!drawerOpen && (
+        <div
+          className="md:hidden fixed top-0 left-0 bottom-0 w-5 z-[55]"
+          aria-hidden="true"
+          style={{ touchAction: "pan-y" }}
+          onPointerDown={(e) => {
+            edgeSwipe.current = { x: e.clientX, y: e.clientY };
+            (e.currentTarget as Element).setPointerCapture(e.pointerId);
+          }}
+          onPointerMove={(e) => {
+            if (!edgeSwipe.current) return;
+            const dx = e.clientX - edgeSwipe.current.x;
+            const dy = Math.abs(e.clientY - edgeSwipe.current.y);
+            // Open when rightward movement > 48px AND more horizontal than vertical.
+            if (dx > 48 && dy < dx * 0.55) {
+              setDrawerOpen(true);
+              edgeSwipe.current = null;
+            }
+          }}
+          onPointerUp={() => { edgeSwipe.current = null; }}
+          onPointerCancel={() => { edgeSwipe.current = null; }}
+        />
+      )}
 
       <TopBar
         onShowShortcuts={() => setShowShortcuts(true)}

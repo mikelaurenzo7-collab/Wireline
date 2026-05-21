@@ -84,6 +84,9 @@
      * have our own hover/active states (motion + scale) — kill the
      * default flash so taps feel like a native app. */
     -webkit-tap-highlight-color: transparent;
+    /* Prevent the iOS long-press callout (Save Image / Open in …) from
+     * appearing on SVGs and images used as UI chrome. */
+    -webkit-touch-callout: none;
     /* Overscroll bounce on the body root scrolls a blank gap into view
      * on iOS. Contain it. */
     overscroll-behavior-y: none;
@@ -436,6 +439,18 @@
   .glass-strong {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+  }
+}
+
+/* Backdrop-filter fallback for iOS < 15 and very old Android Chrome.
+ * These browsers don't support backdrop-filter — raise the background
+ * opacity so glass panels remain opaque and legible without the blur. */
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .glass {
+    background: rgba(244, 238, 228, 0.97);
+  }
+  .glass-strong {
+    background: rgba(246, 241, 233, 0.99);
   }
 }
 
