@@ -1,10 +1,12 @@
-import React, { useState, useEffect, lazy, Suspense } from "react";
+import React, { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { authFetch } from "../../lib/api";
 import WirelineMark from "../WirelineMark";
 import ErrorBoundary from "../ErrorBoundary";
 import AuroraBackdrop from "./AuroraBackdrop";
 import TopBar from "./TopBar";
+import BottomNavBar from "./BottomNavBar";
 import RouteAccentStrip from "./RouteAccentStrip";
 import TrialBanner from "./TrialBanner";
 import EmailVerifyBanner from "./EmailVerifyBanner";
@@ -20,10 +22,45 @@ const KeyboardShortcuts = lazy(() => import("../KeyboardShortcuts"));
 
 export default function AppShell() {
   const [showShortcuts, setShowShortcuts] = useState(false);
+  // Lifted from TopBar so BottomNavBar can also open the nav drawer.
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  // Tracks the start point of a left-edge swipe gesture.
+  const edgeSwipe = useRef<{ x: number; y: number } | null>(null);
+  // Lifted from TopBar so both TopBar desktop nav and BottomNavBar share
+  // the same badge data from a single polling source.
+  const [navBadges, setNavBadges] = useState<Record<string, number>>({});
   const { user, loading } = useAuth();
   const { branding } = useBranding();
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Poll nav badge counts every 2 minutes — only when authenticated.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    const fetchCounts = async () => {
+      try {
+        const r = await authFetch("/api/nav-counts");
+        if (!cancelled && r.ok) {
+          const d = await r.json();
+          setNavBadges(d as Record<string, number>);
+        }
+      } catch {
+        /* non-critical — stale counts are acceptable */
+      }
+    };
+    fetchCounts();
+    const interval = setInterval(fetchCounts, 120_000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [user]);
+
+  // Close the nav drawer on every route change.
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     if (!user) return;
@@ -143,7 +180,42 @@ export default function AppShell() {
         </Suspense>
       </ErrorBoundary>
 
-      <TopBar onShowShortcuts={() => setShowShortcuts(true)} />
+      {/* Left-edge swipe zone — 20px invisible strip that detects the iOS
+          "swipe from left to open drawer" gesture. Always rendered (never
+          conditionally unmounted) so pointer capture is never released
+          mid-gesture. pointer-events:none disables it while the drawer is
+          open. z-45 keeps it below TopBar (z-50). */}
+      <div
+        className="md:hidden fixed top-0 left-0 bottom-0 w-5 z-[45]"
+        aria-hidden="true"
+        style={{
+          touchAction: "pan-y",
+          pointerEvents: drawerOpen ? "none" : "auto",
+        }}
+        onPointerDown={(e) => {
+          edgeSwipe.current = { x: e.clientX, y: e.clientY };
+          (e.currentTarget as Element).setPointerCapture(e.pointerId);
+        }}
+        onPointerMove={(e) => {
+          if (!edgeSwipe.current) return;
+          const dx = e.clientX - edgeSwipe.current.x;
+          const dy = Math.abs(e.clientY - edgeSwipe.current.y);
+          // Open when rightward movement > 48px AND more horizontal than vertical.
+          if (dx > 48 && dy < dx * 0.55) {
+            setDrawerOpen(true);
+            edgeSwipe.current = null;
+          }
+        }}
+        onPointerUp={() => { edgeSwipe.current = null; }}
+        onPointerCancel={() => { edgeSwipe.current = null; }}
+      />
+
+      <TopBar
+        onShowShortcuts={() => setShowShortcuts(true)}
+        drawerOpen={drawerOpen}
+        onDrawerChange={setDrawerOpen}
+        navBadges={navBadges}
+      />
 
       <main className="flex-1 overflow-hidden relative flex flex-col z-10">
         <RouteAccentStrip />
@@ -152,14 +224,26 @@ export default function AppShell() {
 
         <div className="flex-1 relative flex flex-col min-h-0 overflow-hidden">
           <div className="flex-1 overflow-hidden relative z-10 min-h-0">
-            <div className="max-w-[1920px] mx-auto px-3 md:px-4 lg:px-5 pt-3 md:pt-4 pb-3 md:pb-4 flex flex-col h-full min-h-0">
+            <div className="max-w-[1920px] mx-auto px-0 md:px-4 lg:px-5 pt-1 md:pt-4 pb-0 md:pb-4 flex flex-col h-full min-h-0">
               <ErrorBoundary>
                 <AppRoutes />
               </ErrorBoundary>
             </div>
           </div>
+
+          {/* Spacer for the fixed BottomNavBar — reserves exactly the bar
+              height + home indicator clearance so the last row of content
+              is never obscured on mobile. Invisible on md+. */}
+          <div
+            className="md:hidden shrink-0"
+            aria-hidden="true"
+            style={{ height: "calc(49px + env(safe-area-inset-bottom))" }}
+          />
         </div>
       </main>
+
+      {/* iOS-style fixed bottom navigation — primary 4 destinations + More */}
+      <BottomNavBar onOpenMenu={() => setDrawerOpen(true)} badges={navBadges} />
     </div>
   );
 }

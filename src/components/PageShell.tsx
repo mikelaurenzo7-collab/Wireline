@@ -1,5 +1,6 @@
-import React, { ReactNode, useState } from "react";
-import { motion } from "motion/react";
+import React, { ReactNode, useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { MoreHorizontal, X } from "lucide-react";
 import { cn } from "../lib/utils";
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -11,6 +12,12 @@ import { cn } from "../lib/utils";
      • optional tab bar splits content into sub-views,
      • a single bounded scroll region is allowed inside Panel children
        (the only place a scrollbar may legitimately appear).
+
+   Mobile layout (< md):
+     • Actions row is hidden — an ⋯ button in the tab strip opens a
+       bottom sheet instead. No chrome floats above the content panel.
+     • Tab strip is a flat scrollable row (no glass pill wrapper) so it
+       flows flush into the Panel below — one visual unit.
 
    Use it like:
 
@@ -61,29 +68,62 @@ export default function PageShell({
   const [activeId, setActiveId] = useState<string>(
     defaultTab ?? (tabs && tabs.length > 0 ? tabs[0].id : ""),
   );
+  const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
+  // Tracks start point of a horizontal swipe to switch tabs on touch devices.
+  const tabSwipe = useRef<{ x: number; y: number } | null>(null);
+  // Ref for focus trap inside the bottom sheet dialog.
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const activeTab = tabs?.find((t) => t.id === activeId) ?? tabs?.[0];
+
+  // M4 — Escape key closes the bottom sheet.
+  useEffect(() => {
+    if (!mobileActionsOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.preventDefault(); setMobileActionsOpen(false); }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [mobileActionsOpen]);
+
+  // C5 — Focus trap: when sheet opens, move focus to close button; on Tab/Shift+Tab
+  // cycle within the sheet so keyboard users can't reach content behind it.
+  useEffect(() => {
+    if (!mobileActionsOpen) return;
+    // Move initial focus to the close button.
+    closeButtonRef.current?.focus();
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== "Tab" || !sheetRef.current) return;
+      const focusable = Array.from(
+        sheetRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => !el.hasAttribute("disabled") && el.offsetParent !== null);
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    };
+    window.addEventListener("keydown", handleTab);
+    return () => window.removeEventListener("keydown", handleTab);
+  }, [mobileActionsOpen]);
 
   return (
     <div className="h-full w-full flex flex-col overflow-hidden">
-      {/* Page-title block intentionally removed (per design direction):
-          the left nav already labels the page, so an in-page eyebrow +
-          big title + caption was redundant chrome that pushed real
-          content down. `title` / `subtitle` / `eyebrow` props are kept
-          on the interface for the document <title> + callers, but no
-          longer rendered. Only the actions row survives — and only when
-          a page actually supplies actions, so pages without them get
-          their content flush to the top. */}
+      {/* ── Desktop actions row (hidden on mobile) ─────────────────────── */}
       {actions && (
-        <header className="shrink-0 mb-2 flex flex-wrap items-center justify-end gap-2">
+        <header className="shrink-0 mb-2 hidden md:flex flex-wrap items-center justify-end gap-2">
           {actions}
         </header>
       )}
 
-      {/* Tab strip */}
+      {/* ── Desktop tab strip (hidden on mobile) ───────────────────────── */}
       {tabs && tabs.length > 0 && (
-        <div className="shrink-0 flex items-center gap-1 mb-2 overflow-x-auto overscroll-x-contain scrollbar-hide relative">
-          {/* Gradient fade indicator on mobile */}
-          <div className="md:hidden absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-paper to-transparent pointer-events-none z-10" />
+        <div className="shrink-0 md:mb-2 hidden md:flex items-center gap-1 overflow-x-auto scrollbar-hide relative">
           <div className="flex items-center gap-0.5 p-0.5 rounded-xl glass border border-black/8">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -132,8 +172,106 @@ export default function PageShell({
         </div>
       )}
 
-      {/* Body — bounded, never scrolls itself */}
-      <div className={cn("flex-1 min-h-0 overflow-hidden", bodyClassName)}>
+      {/* ── Mobile: flat tab strip row + ⋯ actions button ──────────────── */}
+      {tabs && tabs.length > 0 && (
+        <div className="md:hidden shrink-0 flex items-center border-b border-black/8 relative">
+          {/* Gradient fade-right to hint scrollable overflow */}
+          <div
+            className="absolute top-0 bottom-0 w-8 bg-gradient-to-l from-paper to-transparent pointer-events-none z-10"
+            style={{ right: actions ? "44px" : "0" }}
+          />
+          {/* Scrollable flat tab list — WAI-ARIA Tabs pattern */}
+          <div
+            role="tablist"
+            className="flex-1 flex items-center overflow-x-auto scrollbar-hide"
+          >
+            {tabs.map((tab, i) => {
+              const Icon = tab.icon;
+              const active = tab.id === activeId;
+              return (
+                <button
+                  key={tab.id}
+                  role="tab"
+                  aria-selected={active}
+                  tabIndex={active ? 0 : -1}
+                  onClick={() => setActiveId(tab.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "ArrowRight") setActiveId(tabs[(i + 1) % tabs.length].id);
+                    else if (e.key === "ArrowLeft") setActiveId(tabs[(i - 1 + tabs.length) % tabs.length].id);
+                  }}
+                  className={cn(
+                    "relative shrink-0 inline-flex items-center gap-1.5 px-3 h-11 transition-all text-[10px] uppercase tracking-[0.12em] font-medium whitespace-nowrap",
+                    active
+                      ? "text-brand border-b-2 border-brand"
+                      : "text-muted border-b-2 border-transparent hover:text-ink",
+                  )}
+                >
+                  <span className="flex items-center gap-1.5">
+                    {Icon && <Icon className="w-3 h-3" />}
+                    {tab.label}
+                    {tab.badge != null && tab.badge !== 0 && (
+                      <span
+                        className={cn(
+                          "ml-0.5 px-1.5 py-px rounded-full text-[8px] font-mono leading-none",
+                          active ? "bg-brand/15 text-brand" : "bg-black/8 text-muted",
+                        )}
+                      >
+                        {tab.badge}
+                      </span>
+                    )}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          {/* Page-actions overflow button */}
+          {actions && (
+            <button
+              onClick={() => setMobileActionsOpen(true)}
+              aria-label="Page actions"
+              className="shrink-0 w-11 h-11 flex items-center justify-center text-muted hover:text-ink hover:bg-black/5 transition-colors border-l border-black/8"
+            >
+              <MoreHorizontal className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ── Mobile: no-tabs case — ⋯ button when actions exist ─────────── */}
+      {!tabs && actions && (
+        <div className="md:hidden shrink-0 flex items-center justify-end border-b border-black/8">
+          <button
+            onClick={() => setMobileActionsOpen(true)}
+            aria-label="Page actions"
+            className="w-11 h-11 flex items-center justify-center text-muted hover:text-ink hover:bg-black/5 transition-colors"
+          >
+            <MoreHorizontal className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+
+      {/* ── Body — bounded, never scrolls itself ───────────────────────── */}
+      <div
+        className={cn("flex-1 min-h-0 overflow-hidden", bodyClassName)}
+        onPointerDown={(e) => {
+          // N4: don't initiate swipe when the actions sheet is open.
+          if (mobileActionsOpen) return;
+          if (e.pointerType !== "touch" || !tabs || tabs.length < 2) return;
+          tabSwipe.current = { x: e.clientX, y: e.clientY };
+        }}
+        onPointerUp={(e) => {
+          if (!tabSwipe.current || !tabs || tabs.length < 2) return;
+          const dx = e.clientX - tabSwipe.current.x;
+          const dy = Math.abs(e.clientY - tabSwipe.current.y);
+          tabSwipe.current = null;
+          // Require ≥60px horizontal, <20px vertical — deliberate swipe only.
+          if (Math.abs(dx) < 60 || dy > 20) return;
+          const idx = tabs.findIndex((t) => t.id === activeId);
+          if (dx < 0 && idx < tabs.length - 1) setActiveId(tabs[idx + 1].id);
+          else if (dx > 0 && idx > 0) setActiveId(tabs[idx - 1].id);
+        }}
+        onPointerCancel={() => { tabSwipe.current = null; }}
+      >
         {tabs && activeTab ? (
           <motion.div
             key={activeTab.id}
@@ -148,6 +286,62 @@ export default function PageShell({
           children
         )}
       </div>
+
+      {/* ── Mobile actions bottom sheet ─────────────────────────────────── */}
+      <AnimatePresence>
+        {mobileActionsOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] md:hidden"
+              onClick={() => setMobileActionsOpen(false)}
+              aria-hidden="true"
+            />
+            {/* Sheet */}
+            <motion.div
+              ref={sheetRef}
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", stiffness: 360, damping: 32 }}
+              className="fixed bottom-0 left-0 right-0 z-[201] glass-strong rounded-t-2xl border-t border-black/8 md:hidden select-none"
+              style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+              drag="y"
+              dragConstraints={{ top: 0 }}
+              dragElastic={{ top: 0, bottom: 0.35 }}
+              onDragEnd={(_, { offset, velocity }) => {
+                if (offset.y > 80 || velocity.y > 400) setMobileActionsOpen(false);
+              }}
+              role="dialog"
+              aria-label="Page actions"
+              aria-modal="true"
+            >
+              {/* Grab handle */}
+              <div className="flex justify-center pt-3 pb-2">
+                <div className="w-9 h-1 rounded-full bg-ink/15" aria-hidden="true" />
+              </div>
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 pb-3">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-muted">Actions</p>
+                <button
+                  ref={closeButtonRef}
+                  onClick={() => setMobileActionsOpen(false)}
+                  className="w-11 h-11 rounded-lg flex items-center justify-center text-ink/40 hover:text-ink hover:bg-black/5 transition-colors"
+                  aria-label="Close actions"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              {/* Actions content — stacks vertically in sheet */}
+              <div className="px-4 pb-2 flex flex-col gap-2">{actions}</div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

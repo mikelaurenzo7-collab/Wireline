@@ -6,10 +6,11 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone", "browser"],
+  "display_override": ["standalone", "minimal-ui", "browser"],
   "orientation": "any",
-  "background_color": "#FAF9F5",
   "theme_color": "#4F1E7B",
+  "background_color": "#EFE9DC",
+  "lang": "en-US",
   "categories": ["business", "productivity", "communications"],
   "icons": [
     {
@@ -36,5 +37,29 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "Triage",
+      "short_name": "Triage",
+      "description": "Open hot leads and compliance inbox",
+      "url": "/triage",
+      "icons": [{ "src": "/wireline-icon-512.png", "sizes": "512x512" }]
+    },
+    {
+      "name": "Call Logs",
+      "short_name": "Calls",
+      "description": "View recorded calls and agent responses",
+      "url": "/logs",
+      "icons": [{ "src": "/wireline-icon-512.png", "sizes": "512x512" }]
+    },
+    {
+      "name": "Agents",
+      "short_name": "Agents",
+      "description": "Manage your AI agents",
+      "url": "/agents",
+      "icons": [{ "src": "/wireline-icon-512.png", "sizes": "512x512" }]
+    }
+  ],
+  "prefer_related_applications": false
 }

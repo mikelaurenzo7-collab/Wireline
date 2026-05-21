@@ -37,6 +37,11 @@ export const AGENT_TOOL_NAME_VALUES = [
   "square_create_payment_link",
   "send_teams_message",
   "log_to_excel",
+  "meta_submit_lead",
+  "crm_create_contact",
+  "crm_update_deal_stage",
+  "shopify_apply_discount",
+  "square_send_invoice",
 ] as const;
 
 export type AgentToolName = (typeof AGENT_TOOL_NAME_VALUES)[number];
@@ -339,6 +344,46 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
     group: "core",
     integration: "microsoft_excel",
   },
+  // Meta CAPI
+  {
+    name: "meta_submit_lead",
+    label: "Submit lead to Meta",
+    description:
+      "Fires a server-side Conversions API event so qualified leads are attributed back to the Meta ad campaign that drove the call.",
+    group: "core",
+    integration: "meta",
+  },
+  // CRM extended
+  {
+    name: "crm_create_contact",
+    label: "Create CRM contact",
+    description: "Creates a new contact record in Salesforce or HubSpot from caller data captured during the call.",
+    group: "crm",
+    integration: "crm",
+  },
+  {
+    name: "crm_update_deal_stage",
+    label: "Update deal stage",
+    description: "Moves an existing deal or opportunity to the next pipeline stage based on the call outcome.",
+    group: "crm",
+    integration: "crm",
+  },
+  // Shopify extended
+  {
+    name: "shopify_apply_discount",
+    label: "Apply Shopify discount",
+    description: "Applies a discount code or generates a one-time offer code on a draft order during the call.",
+    group: "ecommerce",
+    integration: "shopify",
+  },
+  // Square extended
+  {
+    name: "square_send_invoice",
+    label: "Send Square invoice",
+    description: "Creates and sends a Square invoice directly to the customer's email or phone number.",
+    group: "ecommerce",
+    integration: "square",
+  },
 ] as const;
 
 /** Tool names that require a connected Shopify store. */
@@ -351,6 +396,7 @@ export const SHOPIFY_TOOL_NAMES: readonly AgentToolName[] = [
   "shopify_update_address",
   "shopify_create_draft_order",
   "shopify_add_order_note",
+  "shopify_apply_discount",
 ];
 
 /** Tool names that require a connected Square account. */
@@ -359,6 +405,7 @@ export const SQUARE_TOOL_NAMES: readonly AgentToolName[] = [
   "square_lookup_customer",
   "square_check_inventory",
   "square_create_payment_link",
+  "square_send_invoice",
 ];
 
 export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
@@ -380,11 +427,14 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "crm_search_contacts",
     "crm_log_call",
     "crm_create_opportunity",
+    "crm_create_contact",
+    "crm_update_deal_stage",
     "send_slack_notification",
     "send_teams_message",
     "generate_zoom_link",
     "send_contract",
     "enrich_lead",
+    "meta_submit_lead",
     "gemini_ground",
     "log_to_excel",
   ],
@@ -416,10 +466,12 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "shopify_update_address",
     "shopify_create_draft_order",
     "shopify_add_order_note",
+    "shopify_apply_discount",
     "square_lookup_order",
     "square_lookup_customer",
     "square_check_inventory",
     "square_create_payment_link",
+    "square_send_invoice",
     "log_to_excel",
   ],
   // E-commerce support agents — handle online-store customer calls and
@@ -447,10 +499,12 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "shopify_update_address",
     "shopify_create_draft_order",
     "shopify_add_order_note",
+    "shopify_apply_discount",
     "square_lookup_order",
     "square_lookup_customer",
     "square_check_inventory",
     "square_create_payment_link",
+    "square_send_invoice",
     "log_to_excel",
   ],
   scheduler: [
@@ -532,10 +586,13 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "crm_search_contacts",
     "crm_log_call",
     "crm_create_opportunity",
+    "crm_create_contact",
+    "crm_update_deal_stage",
     "send_slack_notification",
     "send_teams_message",
     "generate_zoom_link",
     "enrich_lead",
+    "meta_submit_lead",
     "gemini_ground",
     "log_to_excel",
   ],
@@ -577,9 +634,11 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "send_slack_notification",
     "send_teams_message",
     "enrich_lead",
+    "meta_submit_lead",
     "gemini_ground",
     "crm_search_contacts",
     "crm_log_call",
+    "crm_create_contact",
     "log_to_excel",
   ],
 };

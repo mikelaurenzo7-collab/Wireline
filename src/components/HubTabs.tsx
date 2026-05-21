@@ -28,7 +28,7 @@ export default function HubTabs({ tabs, label, className }: HubTabsProps) {
     <nav
       aria-label={label || "Section navigation"}
       className={cn(
-        "shrink-0 mb-3 flex items-center gap-1 overflow-x-auto scrollbar-hide",
+        "shrink-0 mb-0 md:mb-3 flex items-center gap-1 overflow-x-auto scrollbar-hide",
         className,
       )}
     >

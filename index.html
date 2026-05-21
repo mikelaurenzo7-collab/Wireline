@@ -7,6 +7,15 @@
          to keep tap targets out of the cutouts). -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
+    <!-- Prevent iOS Safari from auto-linking phone numbers, emails, and dates.
+         CRITICAL for this app — call logs contain thousands of phone numbers
+         that should never be rendered as tappable tel: links.
+         Each property is in its own tag for maximum compatibility. -->
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="format-detection" content="email=no" />
+    <meta name="format-detection" content="date=no" />
+    <meta name="format-detection" content="address=no" />
+
     <!-- Primary meta — keywords-rich for B2B SaaS / AI agents search intent -->
     <title>Wireline — AI Voice &amp; Email Agents for Every Business · Call 24/7</title>
     <meta name="description" content="Deploy AI voice + email agents on real phone numbers in under 10 minutes. Wireline handles inbound calls, qualifies leads, books appointments, sends SMS follow-ups, and syncs with HubSpot, Salesforce, Gmail, and Outlook. Try a live demo agent now — no signup required." />
@@ -133,7 +142,12 @@
 
     <!-- Favicons &amp; PWA -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- apple-touch-icon: iOS ignores the sizes attribute and uses the largest
+         file it finds. The bare (no sizes) entry is the canonical default iOS
+         will pick. Using the 1024px source — iOS applies its own rounded rect
+         mask at the correct resolution. A 180px asset should be generated and
+         referenced here once available. -->
+    <link rel="apple-touch-icon" href="/wireline-icon-1024.png" />
     <link rel="manifest" href="/site.webmanifest" />
 
     <!-- Buffer polyfill: removed. The previous inline script was a no-op
