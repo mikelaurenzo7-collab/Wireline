@@ -356,7 +356,20 @@ function AttributionView({ days }: { days: number }) {
                   <td className="px-3 py-2.5 text-right tabular-nums text-brand">
                     {Number(r.qualified) || 0}
                   </td>
-                  <td className="px-3 py-2.5 text-right tabular-nums text-ink/85">{conv}%</td>
+                  <td className="px-3 py-2.5 text-right">
+                    <span
+                      className={cn(
+                        "inline-block px-1.5 py-0.5 rounded-full text-[10px] font-medium tabular-nums border",
+                        Number(conv) >= 30
+                          ? "bg-emerald-500/15 text-emerald-600 border-emerald-500/25"
+                          : Number(conv) >= 15
+                            ? "bg-amber-500/12 text-amber-600 border-amber-500/20"
+                            : "bg-rose-500/10 text-rose-500 border-rose-500/20",
+                      )}
+                    >
+                      {conv}%
+                    </span>
+                  </td>
                 </tr>
               );
             })}
@@ -713,14 +726,30 @@ function LeaderboardView({ days }: { days: number }) {
             </div>
 
             {/* Rank badge */}
-            <div
-              className="shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center font-display italic text-2xl border border-white/10"
-              style={rs.gradient ? { background: rs.gradient } : undefined}
-            >
-              {i === 0 ? (
-                <Trophy className={`w-5 h-5 ${rs.textClass}`} />
-              ) : (
-                <span className={rs.textClass}>{i + 1}</span>
+            <div className="shrink-0 flex flex-col items-center gap-0.5">
+              <div
+                className="w-12 h-12 rounded-2xl flex items-center justify-center font-display italic text-2xl border border-white/10"
+                style={rs.gradient ? { background: rs.gradient } : undefined}
+              >
+                {i === 0 ? (
+                  <Trophy className={`w-5 h-5 ${rs.textClass}`} />
+                ) : (
+                  <span className={rs.textClass}>{i + 1}</span>
+                )}
+              </div>
+              {a.rank_delta != null && (
+                <span
+                  className={cn(
+                    "text-[8px] font-bold tabular-nums leading-none",
+                    a.rank_delta > 0
+                      ? "text-emerald-500"
+                      : a.rank_delta < 0
+                        ? "text-rose-500"
+                        : "text-muted/50",
+                  )}
+                >
+                  {a.rank_delta > 0 ? `+${a.rank_delta}` : a.rank_delta === 0 ? "—" : a.rank_delta}
+                </span>
               )}
             </div>
 

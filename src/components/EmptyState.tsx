@@ -36,45 +36,65 @@ export default function EmptyState({
         className,
       )}
     >
-      <div
-        className="w-16 h-16 rounded-2xl flex items-center justify-center"
-        style={{ background: `${accent}15`, border: `1px solid ${accent}30` }}
+      <motion.div
+        initial={{ scale: 0.85, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 260, damping: 20 }}
       >
-        <Icon className="w-7 h-7" style={{ color: accent }} strokeWidth={1.5} />
-      </div>
+        <motion.div
+          animate={{ y: [0, -3, 0] }}
+          transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
+          className="w-16 h-16 rounded-2xl flex items-center justify-center"
+          style={{ background: `${accent}15`, border: `1px solid ${accent}30` }}
+        >
+          <Icon className="w-7 h-7" style={{ color: accent }} strokeWidth={1.5} />
+        </motion.div>
+      </motion.div>
       <div className="max-w-xs">
         <h3 className="font-display italic text-2xl text-ink mb-2">{title}</h3>
         <p className="text-xs text-muted leading-relaxed">{description}</p>
       </div>
       {actions.length > 0 && (
         <div className="flex flex-wrap gap-3 justify-center mt-1">
-          {actions.map((action) =>
+          {actions.map((action, i) =>
             action.to ? (
-              <Link
+              <motion.div
                 key={action.label}
-                to={action.to}
-                className={cn(
-                  "px-4 py-2 rounded-full text-[11px] uppercase tracking-[0.25em] transition-all",
-                  action.primary
-                    ? "brutal-btn !py-2"
-                    : "glass border border-white/10 text-muted hover:text-ink hover:border-brand/30",
-                )}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 + i * 0.08 }}
               >
-                {action.label}
-              </Link>
+                <Link
+                  to={action.to}
+                  className={cn(
+                    "px-4 py-2 rounded-full text-[11px] uppercase tracking-[0.25em] transition-all",
+                    action.primary
+                      ? "brutal-btn !py-2"
+                      : "glass border border-white/10 text-muted hover:text-ink hover:border-brand/30",
+                  )}
+                >
+                  {action.label}
+                </Link>
+              </motion.div>
             ) : (
-              <button
+              <motion.div
                 key={action.label}
-                onClick={action.onClick}
-                className={cn(
-                  "px-4 py-2 rounded-full text-[11px] uppercase tracking-[0.25em] transition-all",
-                  action.primary
-                    ? "brutal-btn !py-2"
-                    : "glass border border-white/10 text-muted hover:text-ink hover:border-brand/30",
-                )}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 + i * 0.08 }}
               >
-                {action.label}
-              </button>
+                <button
+                  onClick={action.onClick}
+                  className={cn(
+                    "px-4 py-2 rounded-full text-[11px] uppercase tracking-[0.25em] transition-all",
+                    action.primary
+                      ? "brutal-btn !py-2"
+                      : "glass border border-white/10 text-muted hover:text-ink hover:border-brand/30",
+                  )}
+                >
+                  {action.label}
+                </button>
+              </motion.div>
             ),
           )}
         </div>
