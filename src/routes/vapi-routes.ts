@@ -821,7 +821,12 @@ router.post("/api/vapi-webhook", async (req, res) => {
             });
             void slackPostAgentNotification(
               agent.user_id,
-              "Appointment booked: " + title + "\n" + new Date(startTime).toLocaleString() + " → " + new Date(endTime).toLocaleString(),
+              "Appointment booked: " +
+                title +
+                "\n" +
+                new Date(startTime).toLocaleString() +
+                " → " +
+                new Date(endTime).toLocaleString(),
               { agentName: agentVoiceName, caller: customer_name, outcome: "booked" },
             );
             // Operator SMS alert — positive event. Fires only when the
@@ -982,7 +987,11 @@ router.post("/api/vapi-webhook", async (req, res) => {
       // Notification Handlers
       if (toolCall.function.name === "send_slack_notification") {
         try {
-          const { message: slackMsg, outcome: slackOutcome, urgency } = toolCall.function.arguments || {};
+          const {
+            message: slackMsg,
+            outcome: slackOutcome,
+            urgency,
+          } = toolCall.function.arguments || {};
           if (agent?.user_id) {
             const callerNumber =
               (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
@@ -1408,7 +1417,6 @@ router.post("/api/vapi-webhook", async (req, res) => {
           results.push({ toolCallId: toolCall.id, result: "Address update error." });
         }
       }
-
 
       if (toolCall.function.name === "shopify_create_draft_order") {
         try {

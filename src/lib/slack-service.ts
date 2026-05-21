@@ -36,12 +36,7 @@ export function slackOAuthConfigured(): boolean {
   return !!(process.env.SLACK_CLIENT_ID && process.env.SLACK_CLIENT_SECRET);
 }
 
-const SLACK_SCOPES = [
-  "chat:write",
-  "channels:read",
-  "groups:read",
-  "team:read",
-].join(",");
+const SLACK_SCOPES = ["chat:write", "channels:read", "groups:read", "team:read"].join(",");
 
 export function getSlackAuthUrl(redirectUri: string, state: string): string {
   const params = new URLSearchParams({
@@ -53,7 +48,10 @@ export function getSlackAuthUrl(redirectUri: string, state: string): string {
   return `${SLACK_AUTH_URL}?${params.toString()}`;
 }
 
-export async function exchangeSlackCode(code: string, redirectUri: string): Promise<{
+export async function exchangeSlackCode(
+  code: string,
+  redirectUri: string,
+): Promise<{
   access_token: string;
   team: { id: string; name: string };
   bot_user_id: string;
@@ -74,7 +72,7 @@ export async function exchangeSlackCode(code: string, redirectUri: string): Prom
     },
     15_000,
   );
-  const data = await r.json() as any;
+  const data = (await r.json()) as any;
   if (!data.ok) {
     throw new Error(data.error || "Slack token exchange failed");
   }
@@ -94,12 +92,14 @@ async function getConnection(userId: string): Promise<SlackConnection | null> {
     .select({
       id: schema.crmConnections.id,
       accessToken: schema.crmConnections.accessToken,
-      metadata: schema.crmConnections.metadata
+      metadata: schema.crmConnections.metadata,
     })
     .from(schema.crmConnections)
-    .where(and(eq(schema.crmConnections.userId, userId), eq(schema.crmConnections.provider, "slack")))
+    .where(
+      and(eq(schema.crmConnections.userId, userId), eq(schema.crmConnections.provider, "slack")),
+    )
     .limit(1);
-  
+
   return data || null;
 }
 
@@ -123,7 +123,7 @@ export async function listChannels(userId: string): Promise<SlackChannel[]> {
       { headers: { Authorization: `Bearer ${token}` } },
       15_000,
     );
-    const data = await r.json() as any;
+    const data = (await r.json()) as any;
     if (!data.ok) {
       log.warn("Slack channels list failed", { error: data.error });
       return [];
@@ -138,7 +138,6 @@ export async function listChannels(userId: string): Promise<SlackChannel[]> {
     return [];
   }
 }
-
 
 export type SlackNotifyContext = {
   agentName?: string;
@@ -166,7 +165,9 @@ export async function bootstrapDefaultChannel(userId: string): Promise<string | 
 
 function buildSlackBlocks(text: string, ctx?: SlackNotifyContext): unknown[] {
   const header =
-    ctx?.urgency === "high" ? ":rotating_light: *Wireline — urgent*" : ":robot_face: *Wireline agent*";
+    ctx?.urgency === "high"
+      ? ":rotating_light: *Wireline — urgent*"
+      : ":robot_face: *Wireline agent*";
   const fields: string[] = [];
   if (ctx?.agentName) fields.push("*Agent:* " + ctx.agentName);
   if (ctx?.caller) fields.push("*Caller:* " + ctx.caller);
@@ -198,7 +199,12 @@ export async function postAgentNotification(
   return postMessage(userId, channel, fallback, buildSlackBlocks(message, ctx));
 }
 
-export async function postMessage(userId: string, channel: string, text: string, blocks?: any[]): Promise<boolean> {
+export async function postMessage(
+  userId: string,
+  channel: string,
+  text: string,
+  blocks?: any[],
+): Promise<boolean> {
   const token = await getToken(userId);
   if (!token) {
     log.warn("Slack not connected — skipping message");
@@ -221,7 +227,7 @@ export async function postMessage(userId: string, channel: string, text: string,
       },
       10_000,
     );
-    const data = await r.json() as any;
+    const data = (await r.json()) as any;
     if (!data.ok) {
       log.warn("Slack postMessage failed", { error: data.error, channel });
       return false;
@@ -254,12 +260,16 @@ export async function setDefaultChannel(userId: string, channelId: string): Prom
   if (!conn) return;
   const meta = (conn.metadata || {}) as any;
   meta.default_channel = channelId;
-  await drizzle.update(schema.crmConnections)
+  await drizzle
+    .update(schema.crmConnections)
     .set({ metadata: meta, updatedAt: new Date() })
     .where(eq(schema.crmConnections.id, conn.id));
 }
 
 export async function disconnectSlack(userId: string): Promise<void> {
-  await drizzle.delete(schema.crmConnections)
-    .where(and(eq(schema.crmConnections.userId, userId), eq(schema.crmConnections.provider, "slack")));
+  await drizzle
+    .delete(schema.crmConnections)
+    .where(
+      and(eq(schema.crmConnections.userId, userId), eq(schema.crmConnections.provider, "slack")),
+    );
 }

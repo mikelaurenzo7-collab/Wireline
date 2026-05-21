@@ -276,7 +276,6 @@ async function resolveTeamsTarget(
   return { teamId: team.id, channelId: channel.id };
 }
 
-
 function buildTeamsHtml(params: {
   text: string;
   context?: { agentName?: string; caller?: string; outcome?: string };

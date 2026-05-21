@@ -742,7 +742,10 @@ export const VAPI_TOOL_DEFS = {
     parameters: {
       type: "object",
       properties: {
-        variant_id: { type: "string", description: "Product variant ID from shopify_check_inventory (preferred)." },
+        variant_id: {
+          type: "string",
+          description: "Product variant ID from shopify_check_inventory (preferred).",
+        },
         product_title: { type: "string", description: "Custom line title if no variant_id." },
         price: { type: "string", description: "Unit price for a custom line (e.g. 29.99)." },
         quantity: { type: "number", description: "Quantity to order." },

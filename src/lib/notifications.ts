@@ -19,10 +19,7 @@ export class NotificationService {
   }): Promise<void> {
     log.info("Sending urgent alert", { userId: this.userId, ...params });
 
-    await Promise.allSettled([
-      this.sendToSlack(params),
-      this.sendViaSMS(params)
-    ]);
+    await Promise.allSettled([this.sendToSlack(params), this.sendViaSMS(params)]);
   }
 
   private async sendToSlack(params: {
@@ -55,17 +52,15 @@ export class NotificationService {
               type: "section",
               text: {
                 type: "mrkdwn",
-                text: `*🚨 URGENT ALERT: ${params.title}*\n${params.message}`
-              }
+                text: `*🚨 URGENT ALERT: ${params.title}*\n${params.message}`,
+              },
             },
             {
               type: "context",
-              elements: [
-                { type: "mrkdwn", text: `*Call ID:* ${params.callId || "N/A"}` }
-              ]
-            }
-          ]
-        })
+              elements: [{ type: "mrkdwn", text: `*Call ID:* ${params.callId || "N/A"}` }],
+            },
+          ],
+        }),
       });
     } catch (err) {
       log.error("Slack notification failed", { error: getErrorMessage(err) });

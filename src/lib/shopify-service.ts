@@ -746,7 +746,6 @@ export async function createDraftOrder(params: {
   }
 }
 
-
 /**
  * Append an internal note on an order (merchant-visible in Shopify admin).
  */
