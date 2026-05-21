@@ -65,7 +65,7 @@ export default function OAuthComplete() {
   }, [location.search, signIn, navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-paper px-4">
+    <div className="min-h-dvh flex items-center justify-center bg-paper px-4">
       <div className="w-full max-w-sm rounded-3xl glass-strong border border-white/10 p-8 text-center space-y-5">
         <div className="flex justify-center">
           <WirelineMark className="w-12 h-12 rounded-2xl" />

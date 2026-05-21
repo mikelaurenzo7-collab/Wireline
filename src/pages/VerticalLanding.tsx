@@ -590,7 +590,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
   if (!cfg) return null;
 
   return (
-    <div className="min-h-screen relative bg-paper text-ink">
+    <div className="min-h-dvh relative bg-paper text-ink">
       <PageMeta title={cfg.metaTitle} description={cfg.metaDescription} />
 
       {/* Aurora backdrop — toned down. The wedge pages compete with

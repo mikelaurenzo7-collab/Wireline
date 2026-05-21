@@ -78,7 +78,7 @@ function AppContent() {
       ].includes(slug)
     ) {
       return (
-        <Suspense fallback={<div className="min-h-screen bg-paper" />}>
+        <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
           <VerticalLanding slug={slug} />
         </Suspense>
       );
@@ -86,21 +86,21 @@ function AppContent() {
   }
   if (location.pathname === "/pricing") {
     return (
-      <Suspense fallback={<div className="min-h-screen" />}>
+      <Suspense fallback={<div className="min-h-dvh" />}>
         <Pricing />
       </Suspense>
     );
   }
   if (location.pathname === "/compare") {
     return (
-      <Suspense fallback={<div className="min-h-screen bg-paper" />}>
+      <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
         <Compare />
       </Suspense>
     );
   }
   if (location.pathname === "/about") {
     return (
-      <Suspense fallback={<div className="min-h-screen bg-paper" />}>
+      <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
         <About />
       </Suspense>
     );
@@ -110,7 +110,7 @@ function AppContent() {
   // can audition personas without signing in.
   if (location.pathname === "/showcase") {
     return (
-      <Suspense fallback={<div className="min-h-screen bg-paper" />}>
+      <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
         <Showcase />
       </Suspense>
     );
@@ -119,7 +119,7 @@ function AppContent() {
   // render BEFORE the auth guard below so a signed-out user can use it.
   if (location.pathname === "/reset-password") {
     return (
-      <Suspense fallback={<div className="min-h-screen" />}>
+      <Suspense fallback={<div className="min-h-dvh" />}>
         <ResetPassword />
       </Suspense>
     );
@@ -130,7 +130,7 @@ function AppContent() {
   // user can complete the handshake.
   if (location.pathname === "/auth/oauth-complete") {
     return (
-      <Suspense fallback={<div className="min-h-screen" />}>
+      <Suspense fallback={<div className="min-h-dvh" />}>
         <OAuthComplete />
       </Suspense>
     );
@@ -140,7 +140,7 @@ function AppContent() {
   // instead of bouncing into the sign-in form.
   if (location.pathname === "/not-found" || location.pathname === "/404") {
     return (
-      <div className="min-h-screen relative bg-paper">
+      <div className="min-h-dvh relative bg-paper">
         <NotFound mode="public" />
       </div>
     );

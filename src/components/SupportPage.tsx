@@ -81,7 +81,7 @@ export function SupportPage() {
   };
 
   return (
-    <div className="min-h-screen bg-paper text-ink">
+    <div className="min-h-dvh bg-paper text-ink">
       <PageMeta
         title="Support — Wireline"
         description={`Get help with Wireline. Call ${supportAgent.display} for instant agent triage, or open a ticket. Billing, technical, feature, agent-quality requests all in one place.`}

@@ -34,7 +34,7 @@ const PRINCIPLES = [
 
 export default function About() {
   return (
-    <div className="min-h-screen relative bg-paper text-ink">
+    <div className="min-h-dvh relative bg-paper text-ink">
       <PageMeta
         title="About Wireline — Built by an Operator, for Operators"
         description="Wireline is a solo-founder voice-AI platform built by Mike Laurenzo. Mission, principles, and the infra stack that powers every customer call."
