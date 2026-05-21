@@ -39,6 +39,7 @@ import {
   resolveAgentTools,
   type AgentToolName,
 } from "../lib/agent-capabilities";
+import AgentIntegrationCanvas from "./AgentIntegrationCanvas";
 
 /** Tiny SVG sparkline — renders a 7-value array as a smooth path. */
 function Sparkline({
@@ -1575,233 +1576,19 @@ export default function FleetSettings() {
                               </div>
                             )}
 
+                            <AgentIntegrationCanvas
+                              agentName={selectedAgent.name}
+                              agentRole={selectedAgent.role}
+                              selectedToolNames={selectedToolNames}
+                              roleDefaultTools={roleDefaultTools}
+                              usingRoleDefaults={usingRoleDefaults}
+                              integrationStatus={integrationStatus}
+                              onToggleIntegrationGroup={toggleIntegrationGroup}
+                              onToggleTool={toggleAgentTool}
+                              onResetToDefaults={resetAgentToolsToRoleDefaults}
+                            />
+
                             <div className="rounded-xl glass border border-white/8 p-3 space-y-3">
-                              <div className="flex items-center justify-between gap-3 pb-2 border-b border-white/8">
-                                <div className="flex items-center gap-2">
-                                  <Sparkles className="w-3.5 h-3.5 text-brand" />
-                                  <div>
-                                    <h3 className="font-display italic lowercase text-base text-ink">
-                                      agent capabilities
-                                    </h3>
-                                    <p className="text-[10px] text-muted/70 leading-relaxed">
-                                      Decide exactly which actions this agent can take live on
-                                      calls.
-                                    </p>
-                                  </div>
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={resetAgentToolsToRoleDefaults}
-                                  disabled={usingRoleDefaults}
-                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-ink/80 hover:border-brand/40 hover:text-brand transition-colors disabled:opacity-40"
-                                >
-                                  <RefreshCw className="w-2.5 h-2.5" />
-                                  Role defaults
-                                </button>
-                              </div>
-
-                              <div className="flex flex-wrap gap-2 text-[10px]">
-                                <span
-                                  className={cn(
-                                    "px-2 py-1 rounded-full border uppercase tracking-[0.22em]",
-                                    usingRoleDefaults
-                                      ? "bg-brand/10 border-brand/30 text-brand"
-                                      : "bg-white/5 border-white/10 text-muted/80",
-                                  )}
-                                >
-                                  {usingRoleDefaults ? "Using role defaults" : "Custom override"}
-                                </span>
-                                <span className="px-2 py-1 rounded-full border border-white/10 bg-white/5 text-muted/80 uppercase tracking-[0.22em]">
-                                  {selectedToolNames.length} tools enabled
-                                </span>
-                              </div>
-
-                              <p className="text-[10px] text-muted/70 leading-relaxed">
-                                Voice calls stay on your Wireline phone number. Text follow-ups and
-                                number checks run through your Wireline messaging network.
-                              </p>
-
-                              {/* ── Required integrations summary ──
-                                    Surfaces which third-party services this agent
-                                    depends on based on the currently-enabled tools.
-                                    Green chip = connected and ready. Amber chip
-                                    with "Connect →" link = the agent has tools
-                                    that require this integration but it's not
-                                    connected yet, so those tools will silently
-                                    no-op until the operator connects it. */}
-                              {(() => {
-                                const requiredIntegrations = new Set<string>();
-                                for (const toolName of selectedToolNames) {
-                                  const def = AGENT_TOOL_CATALOG.find((t) => t.name === toolName);
-                                  if (def?.integration) requiredIntegrations.add(def.integration);
-                                }
-                                if (requiredIntegrations.size === 0) return null;
-
-                                // Map our internal integration keys to the
-                                // /api/oauth/crm/status response keys. "calendar"
-                                // is satisfied by either Google or Microsoft;
-                                // "crm" by either HubSpot or Salesforce; "twilio"
-                                // is always-on for paid tenants (we own the
-                                // carrier relationship).
-                                const checkConnected = (key: string): boolean => {
-                                  if (!integrationStatus) return false;
-                                  if (key === "twilio") return true;
-                                  if (key === "calendar") {
-                                    return !!(
-                                      integrationStatus.google?.connected ||
-                                      integrationStatus.microsoft?.connected
-                                    );
-                                  }
-                                  if (key === "crm") {
-                                    return !!(
-                                      integrationStatus.hubspot?.connected ||
-                                      integrationStatus.salesforce?.connected
-                                    );
-                                  }
-                                  if (key === "gemini") {
-                                    // Gemini grounding uses platform key
-                                    // (operator-owned); always available.
-                                    return true;
-                                  }
-                                  return !!integrationStatus[key]?.connected;
-                                };
-                                const labelFor = (k: string) =>
-                                  ({
-                                    twilio: "Messaging (Twilio)",
-                                    calendar: "Calendar",
-                                    crm: "CRM",
-                                    slack: "Slack",
-                                    zoom: "Zoom",
-                                    docusign: "DocuSign",
-                                    apollo: "Apollo",
-                                    meta: "Meta",
-                                    gemini: "Gemini grounding",
-                                  })[k] || k;
-
-                                // List of every integration available
-                                // (not just the ones currently in use) so
-                                // the operator sees the full menu and can
-                                // expand the agent's scope in one click.
-                                const allIntegrationKeys = [
-                                  "calendar",
-                                  "crm",
-                                  "slack",
-                                  "zoom",
-                                  "docusign",
-                                  "apollo",
-                                  "meta",
-                                  "twilio",
-                                  "gemini",
-                                ];
-
-                                return (
-                                  <div className="rounded-lg border border-white/8 bg-white/3 p-3 space-y-3">
-                                    <div className="flex items-center justify-between">
-                                      <div className="text-[9px] uppercase tracking-[0.3em] text-brand/70">
-                                        Integration scope
-                                      </div>
-                                      <div className="text-[9px] text-muted/60">
-                                        Toggle whole integrations for this agent
-                                      </div>
-                                    </div>
-
-                                    {/* Per-integration master toggles —
-                                          one row per integration. Connected
-                                          state on the left, group toggle on
-                                          the right. Flipping the toggle
-                                          enables/disables every tool tied
-                                          to that integration in one click. */}
-                                    <div className="space-y-1.5">
-                                      {allIntegrationKeys.map((key) => {
-                                        const toolsInGroup = AGENT_TOOL_CATALOG.filter(
-                                          (t) => t.integration === key,
-                                        );
-                                        if (toolsInGroup.length === 0) return null;
-                                        const enabledInGroup = toolsInGroup.filter((t) =>
-                                          selectedToolNames.includes(t.name),
-                                        ).length;
-                                        const allEnabled = enabledInGroup === toolsInGroup.length;
-                                        const someEnabled = enabledInGroup > 0 && !allEnabled;
-                                        const connected = checkConnected(key);
-                                        return (
-                                          <div
-                                            key={key}
-                                            className="flex items-center justify-between gap-3 rounded-lg border border-white/8 bg-black/10 px-2.5 py-1.5"
-                                          >
-                                            <div className="flex items-center gap-2 min-w-0">
-                                              <span
-                                                className={cn(
-                                                  "w-1.5 h-1.5 rounded-full shrink-0",
-                                                  connected ? "bg-emerald-500" : "bg-amber-500",
-                                                )}
-                                                title={
-                                                  connected
-                                                    ? "Connected"
-                                                    : "Not connected — connect first or this agent's tools will silently no-op"
-                                                }
-                                              />
-                                              <span className="text-[11px] text-ink truncate">
-                                                {labelFor(key)}
-                                              </span>
-                                              {!connected && (
-                                                <a
-                                                  href="/integrations"
-                                                  className="text-[9px] underline underline-offset-2 text-amber-700 hover:text-amber-900 shrink-0"
-                                                >
-                                                  Connect →
-                                                </a>
-                                              )}
-                                              <span className="text-[9px] text-muted/60 shrink-0">
-                                                {enabledInGroup}/{toolsInGroup.length} tools
-                                              </span>
-                                            </div>
-                                            <button
-                                              type="button"
-                                              onClick={() =>
-                                                toggleIntegrationGroup(key, !allEnabled)
-                                              }
-                                              className={cn(
-                                                "w-9 h-5 rounded-full border flex items-center px-0.5 transition-colors shrink-0",
-                                                allEnabled
-                                                  ? "bg-brand/25 border-brand/40"
-                                                  : someEnabled
-                                                    ? "bg-amber-500/20 border-amber-500/40"
-                                                    : "bg-white/5 border-white/12",
-                                              )}
-                                              title={
-                                                allEnabled
-                                                  ? "All tools in this integration are enabled — click to disable all"
-                                                  : someEnabled
-                                                    ? "Some tools enabled — click to enable all"
-                                                    : "Click to enable this entire integration"
-                                              }
-                                            >
-                                              <motion.div
-                                                animate={{
-                                                  x: allEnabled ? 16 : someEnabled ? 8 : 0,
-                                                }}
-                                                className={cn(
-                                                  "w-4 h-4 rounded-full",
-                                                  allEnabled
-                                                    ? "bg-brand"
-                                                    : someEnabled
-                                                      ? "bg-amber-500"
-                                                      : "bg-muted/60",
-                                                )}
-                                              />
-                                            </button>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                    <p className="text-[9px] text-muted/60 leading-relaxed pt-1 border-t border-white/8">
-                                      Tip — fine-grained per-tool toggles for each integration are
-                                      in the tool grid below.
-                                    </p>
-                                  </div>
-                                );
-                              })()}
-
                               {/* ── Channel & Autonomy Controls ── */}
                               <div className="rounded-lg border border-white/8 bg-white/3 p-3 space-y-3">
                                 <div className="text-[9px] uppercase tracking-[0.3em] text-brand/70">
@@ -1872,86 +1659,6 @@ export default function FleetSettings() {
                                 </p>
                               </div>
 
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                {AGENT_TOOL_CATALOG.map((tool) => {
-                                  const enabled = selectedToolNames.includes(tool.name);
-                                  const roleDefault = roleDefaultTools.includes(tool.name);
-                                  const badgeLabel = ((): string | null => {
-                                    switch (tool.integration) {
-                                      case "twilio":
-                                        return "Messaging";
-                                      case "calendar":
-                                        return "Calendar";
-                                      case "crm":
-                                        return "CRM";
-                                      case "slack":
-                                        return "Slack";
-                                      case "zoom":
-                                        return "Zoom";
-                                      case "docusign":
-                                        return "DocuSign";
-                                      case "apollo":
-                                        return "Apollo";
-                                      case "meta":
-                                        return "Meta";
-                                      case "gemini":
-                                        return "Gemini";
-                                      default:
-                                        return null;
-                                    }
-                                  })();
-                                  return (
-                                    <button
-                                      key={tool.name}
-                                      type="button"
-                                      onClick={() => toggleAgentTool(tool.name)}
-                                      className={cn(
-                                        "text-left rounded-xl border p-3 transition-all",
-                                        enabled
-                                          ? "bg-brand/10 border-brand/35"
-                                          : "bg-black/10 border-white/8 hover:border-white/20",
-                                      )}
-                                    >
-                                      <div className="flex items-start gap-3">
-                                        <div
-                                          className={cn(
-                                            "mt-0.5 w-9 h-5 rounded-full border flex items-center px-0.5 transition-colors",
-                                            enabled
-                                              ? "bg-brand/25 border-brand/40"
-                                              : "bg-white/5 border-white/12",
-                                          )}
-                                        >
-                                          <motion.div
-                                            animate={{ x: enabled ? 16 : 0 }}
-                                            className={cn(
-                                              "w-4 h-4 rounded-full",
-                                              enabled ? "bg-brand" : "bg-muted/60",
-                                            )}
-                                          />
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                          <div className="flex flex-wrap items-center gap-1.5">
-                                            <span className="text-sm text-ink">{tool.label}</span>
-                                            {badgeLabel && (
-                                              <span className="text-[8px] uppercase tracking-[0.22em] px-1.5 py-0.5 rounded-full border border-violet-500/30 bg-violet-500/10 text-violet-600">
-                                                {badgeLabel}
-                                              </span>
-                                            )}
-                                            {roleDefault && (
-                                              <span className="text-[8px] uppercase tracking-[0.22em] px-1.5 py-0.5 rounded-full border border-white/10 bg-white/5 text-muted/80">
-                                                Default
-                                              </span>
-                                            )}
-                                          </div>
-                                          <p className="text-[10px] text-muted/75 leading-relaxed mt-1">
-                                            {tool.description}
-                                          </p>
-                                        </div>
-                                      </div>
-                                    </button>
-                                  );
-                                })}
-                              </div>
                             </div>
                           </div>
                         </header>

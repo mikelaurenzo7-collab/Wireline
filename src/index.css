@@ -928,6 +928,17 @@ select:focus {
   box-shadow: 0 0 10px rgba(79, 30, 123, 0.45);
 }
 
+/* AgentIntegrationCanvas — flowing data-line effect on active SVG lines */
+@keyframes integration-flow {
+  to { stroke-dashoffset: -7; }
+}
+
+/* AgentIntegrationCanvas — pulsing outer ring on the center agent node */
+@keyframes agent-pulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0; transform: scale(1.6); }
+}
+
 /* Animated Neural Synapse connection pulses */
 @keyframes synapse-glow {
   0%, 100% { opacity: 0.2; transform: scale(0.95); filter: drop-shadow(0 0 0 transparent); }
