@@ -939,6 +939,24 @@ select:focus {
   50% { opacity: 0; transform: scale(1.6); }
 }
 
+/* AgentIntegrationCanvas — SMS preview typing dots */
+@keyframes typing-dot-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.35; }
+  30% { transform: translateY(-3px); opacity: 1; }
+}
+
+/* AgentIntegrationCanvas — fade-up reveal for animated preview card elements */
+@keyframes appear-up {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* AgentIntegrationCanvas — shimmer sweep for active integration nodes */
+@keyframes node-shimmer {
+  0%   { background-position: -100% 0; }
+  100% { background-position: 200% 0; }
+}
+
 /* Animated Neural Synapse connection pulses */
 @keyframes synapse-glow {
   0%, 100% { opacity: 0.2; transform: scale(0.95); filter: drop-shadow(0 0 0 transparent); }
