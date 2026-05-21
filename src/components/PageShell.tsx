@@ -1,4 +1,4 @@
-import React, { ReactNode, useState, useRef } from "react";
+import React, { ReactNode, useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { MoreHorizontal, X } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -71,7 +71,46 @@ export default function PageShell({
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
   // Tracks start point of a horizontal swipe to switch tabs on touch devices.
   const tabSwipe = useRef<{ x: number; y: number } | null>(null);
+  // Ref for focus trap inside the bottom sheet dialog.
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const activeTab = tabs?.find((t) => t.id === activeId) ?? tabs?.[0];
+
+  // M4 — Escape key closes the bottom sheet.
+  useEffect(() => {
+    if (!mobileActionsOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.preventDefault(); setMobileActionsOpen(false); }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [mobileActionsOpen]);
+
+  // C5 — Focus trap: when sheet opens, move focus to close button; on Tab/Shift+Tab
+  // cycle within the sheet so keyboard users can't reach content behind it.
+  useEffect(() => {
+    if (!mobileActionsOpen) return;
+    // Move initial focus to the close button.
+    closeButtonRef.current?.focus();
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== "Tab" || !sheetRef.current) return;
+      const focusable = Array.from(
+        sheetRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => !el.hasAttribute("disabled") && el.offsetParent !== null);
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    };
+    window.addEventListener("keydown", handleTab);
+    return () => window.removeEventListener("keydown", handleTab);
+  }, [mobileActionsOpen]);
 
   return (
     <div className="h-full w-full flex flex-col overflow-hidden">
@@ -141,16 +180,25 @@ export default function PageShell({
             className="absolute top-0 bottom-0 w-8 bg-gradient-to-l from-paper to-transparent pointer-events-none z-10"
             style={{ right: actions ? "44px" : "0" }}
           />
-          {/* Scrollable flat tab list */}
-          <div className="flex-1 flex items-center overflow-x-auto scrollbar-hide">
-            {tabs.map((tab) => {
+          {/* Scrollable flat tab list — WAI-ARIA Tabs pattern */}
+          <div
+            role="tablist"
+            className="flex-1 flex items-center overflow-x-auto scrollbar-hide"
+          >
+            {tabs.map((tab, i) => {
               const Icon = tab.icon;
               const active = tab.id === activeId;
               return (
                 <button
                   key={tab.id}
+                  role="tab"
+                  aria-selected={active}
+                  tabIndex={active ? 0 : -1}
                   onClick={() => setActiveId(tab.id)}
-                  aria-current={active ? "page" : undefined}
+                  onKeyDown={(e) => {
+                    if (e.key === "ArrowRight") setActiveId(tabs[(i + 1) % tabs.length].id);
+                    else if (e.key === "ArrowLeft") setActiveId(tabs[(i - 1 + tabs.length) % tabs.length].id);
+                  }}
                   className={cn(
                     "relative shrink-0 inline-flex items-center gap-1.5 px-3 h-11 transition-all text-[10px] uppercase tracking-[0.12em] font-medium whitespace-nowrap",
                     active
@@ -206,6 +254,8 @@ export default function PageShell({
       <div
         className={cn("flex-1 min-h-0 overflow-hidden", bodyClassName)}
         onPointerDown={(e) => {
+          // N4: don't initiate swipe when the actions sheet is open.
+          if (mobileActionsOpen) return;
           if (e.pointerType !== "touch" || !tabs || tabs.length < 2) return;
           tabSwipe.current = { x: e.clientX, y: e.clientY };
         }}
@@ -253,6 +303,7 @@ export default function PageShell({
             />
             {/* Sheet */}
             <motion.div
+              ref={sheetRef}
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
@@ -277,6 +328,7 @@ export default function PageShell({
               <div className="flex items-center justify-between px-4 pb-3">
                 <p className="text-[10px] uppercase tracking-[0.3em] text-muted">Actions</p>
                 <button
+                  ref={closeButtonRef}
                   onClick={() => setMobileActionsOpen(false)}
                   className="w-11 h-11 rounded-lg flex items-center justify-center text-ink/40 hover:text-ink hover:bg-black/5 transition-colors"
                   aria-label="Close actions"

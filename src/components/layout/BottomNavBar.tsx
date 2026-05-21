@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutGrid, Inbox, Radio, Users, Menu } from "lucide-react";
+import { LayoutGrid, Inbox, Radio, Users, Menu, type LucideIcon } from "lucide-react";
 
 /* ── iOS-style primary bottom navigation bar ──────────────────────────────
    Visible only on mobile (md:hidden on outer). Matches Apple HIG:
@@ -12,13 +12,21 @@ import { LayoutGrid, Inbox, Radio, Users, Menu } from "lucide-react";
    • Translucent purple background (blurs content beneath)
    ────────────────────────────────────────────────────────────────────────── */
 
-const PRIMARY_TABS = [
+interface NavTab {
+  readonly label: string;
+  readonly path: string;
+  readonly icon: LucideIcon;
+  readonly matches?: readonly string[];
+  readonly badgePaths: readonly string[];
+}
+
+const PRIMARY_TABS: readonly NavTab[] = [
   {
     label: "Home",
     path: "/",
     icon: LayoutGrid,
     matches: ["/dashboard", "/command", "/live", "/founder"],
-    badgePaths: [] as string[],
+    badgePaths: [],
   },
   {
     label: "Triage",
@@ -39,7 +47,7 @@ const PRIMARY_TABS = [
     icon: Users,
     badgePaths: ["/agents"],
   },
-] as const;
+];
 
 interface Props {
   onOpenMenu: () => void;
@@ -49,14 +57,14 @@ interface Props {
 export default function BottomNavBar({ onOpenMenu, badges = {} }: Props) {
   const { pathname } = useLocation();
 
-  const isActive = (tab: (typeof PRIMARY_TABS)[number]) => {
+  const isActive = (tab: NavTab) => {
     if (pathname === tab.path) return true;
-    return (tab as { matches?: readonly string[] }).matches?.some(
+    return tab.matches?.some(
       (m) => pathname === m || pathname.startsWith(`${m}/`),
     ) ?? false;
   };
 
-  const getBadge = (tab: (typeof PRIMARY_TABS)[number]) =>
+  const getBadge = (tab: NavTab) =>
     tab.badgePaths.reduce((sum, p) => sum + (badges[p] ?? 0), 0);
 
   return (
@@ -91,7 +99,7 @@ export default function BottomNavBar({ onOpenMenu, badges = {} }: Props) {
             /* data-no-min-touch: this element has its own explicit min-h-[49px]
                so the global coarse-pointer min-height rule should not apply. */
             data-no-min-touch
-            aria-label={tab.label}
+            aria-label={badge > 0 ? `${tab.label}, ${badge} unread` : tab.label}
             aria-current={active ? "page" : undefined}
             className="relative flex-1 flex flex-col items-center justify-center gap-0.5 py-2 min-h-[49px] select-none transition-opacity duration-75 active:opacity-50"
             style={{ touchAction: "manipulation" }}
@@ -109,7 +117,7 @@ export default function BottomNavBar({ onOpenMenu, badges = {} }: Props) {
               />
               {badge > 0 && (
                 <span
-                  aria-label={`${badge} item${badge === 1 ? "" : "s"}`}
+                  aria-hidden="true"
                   className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full text-[9px] font-mono leading-none flex items-center justify-center text-white select-none"
                   style={{ background: "#E8466A" }}
                 >

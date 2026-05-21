@@ -84,9 +84,6 @@
      * have our own hover/active states (motion + scale) — kill the
      * default flash so taps feel like a native app. */
     -webkit-tap-highlight-color: transparent;
-    /* Prevent the iOS long-press callout (Save Image / Open in …) from
-     * appearing on SVGs and images used as UI chrome. */
-    -webkit-touch-callout: none;
     /* Overscroll bounce on the body root scrolls a blank gap into view
      * on iOS. Contain it. */
     overscroll-behavior-y: none;
@@ -445,7 +442,7 @@
 /* Backdrop-filter fallback for iOS < 15 and very old Android Chrome.
  * These browsers don't support backdrop-filter — raise the background
  * opacity so glass panels remain opaque and legible without the blur. */
-@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+@supports not (-webkit-backdrop-filter: blur(1px)) {
   .glass {
     background: rgba(244, 238, 228, 0.97);
   }
@@ -583,9 +580,7 @@ select {
   button,
   [role="button"],
   a,
-  input,
-  select,
-  textarea {
+  select {
     touch-action: manipulation;
   }
 
@@ -597,6 +592,17 @@ select {
     -webkit-user-select: none;
     user-select: none;
   }
+}
+
+/* Suppress iOS long-press callout on UI chrome only — NOT on data text like
+   phone numbers in call logs where the copy/call popover is intentional. */
+button,
+[role="button"],
+[role="tab"],
+nav a,
+[role="navigation"] a,
+label {
+  -webkit-touch-callout: none;
 }
 
 input:focus,
@@ -777,19 +783,16 @@ select:focus {
   @apply text-[9px] uppercase tracking-[0.4em] text-muted font-medium;
 }
 
-/* Scrollable panel content — iOS momentum + overscroll containment */
+/* Scrollable panel content — overscroll containment */
 .panel-scroll {
   @apply overflow-y-auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(79, 30, 123, 0.20) transparent;
-  /* Momentum scrolling on iOS Safari */
-  -webkit-overflow-scrolling: touch;
   /* Contain overscroll — rubber-bands within the panel only, not the page.
-     Also prevents the URL bar from reappearing mid-scroll on Safari. */
+     Also prevents the URL bar from reappearing mid-scroll on Safari.
+     NOTE: touch-action intentionally omitted — pan-y would block horizontal
+     scroll inside data tables; iOS 13+ has momentum scrolling by default. */
   overscroll-behavior: contain;
-  /* Declare vertical scroll axis so the browser dispatches touch events
-     immediately without waiting to resolve horizontal gesture ambiguity. */
-  touch-action: pan-y;
 }
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  ADDITIONAL ANIMATIONS  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */

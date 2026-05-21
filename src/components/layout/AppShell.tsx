@@ -34,8 +34,9 @@ export default function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Poll nav badge counts every 2 minutes.
+  // Poll nav badge counts every 2 minutes — only when authenticated.
   useEffect(() => {
+    if (!user) return;
     let cancelled = false;
     const fetchCounts = async () => {
       try {
@@ -54,7 +55,7 @@ export default function AppShell() {
       cancelled = true;
       clearInterval(interval);
     };
-  }, []);
+  }, [user]);
 
   // Close the nav drawer on every route change.
   useEffect(() => {
@@ -180,33 +181,34 @@ export default function AppShell() {
       </ErrorBoundary>
 
       {/* Left-edge swipe zone — 20px invisible strip that detects the iOS
-          "swipe from left to open drawer" gesture. Only active on touch
-          (md:hidden in BottomNavBar breakpoint), and only when the drawer
-          is already closed. Uses pointer capture so the gesture tracks
-          even if the pointer drifts off the strip. */}
-      {!drawerOpen && (
-        <div
-          className="md:hidden fixed top-0 left-0 bottom-0 w-5 z-[55]"
-          aria-hidden="true"
-          style={{ touchAction: "pan-y" }}
-          onPointerDown={(e) => {
-            edgeSwipe.current = { x: e.clientX, y: e.clientY };
-            (e.currentTarget as Element).setPointerCapture(e.pointerId);
-          }}
-          onPointerMove={(e) => {
-            if (!edgeSwipe.current) return;
-            const dx = e.clientX - edgeSwipe.current.x;
-            const dy = Math.abs(e.clientY - edgeSwipe.current.y);
-            // Open when rightward movement > 48px AND more horizontal than vertical.
-            if (dx > 48 && dy < dx * 0.55) {
-              setDrawerOpen(true);
-              edgeSwipe.current = null;
-            }
-          }}
-          onPointerUp={() => { edgeSwipe.current = null; }}
-          onPointerCancel={() => { edgeSwipe.current = null; }}
-        />
-      )}
+          "swipe from left to open drawer" gesture. Always rendered (never
+          conditionally unmounted) so pointer capture is never released
+          mid-gesture. pointer-events:none disables it while the drawer is
+          open. z-45 keeps it below TopBar (z-50). */}
+      <div
+        className="md:hidden fixed top-0 left-0 bottom-0 w-5 z-[45]"
+        aria-hidden="true"
+        style={{
+          touchAction: "pan-y",
+          pointerEvents: drawerOpen ? "none" : "auto",
+        }}
+        onPointerDown={(e) => {
+          edgeSwipe.current = { x: e.clientX, y: e.clientY };
+          (e.currentTarget as Element).setPointerCapture(e.pointerId);
+        }}
+        onPointerMove={(e) => {
+          if (!edgeSwipe.current) return;
+          const dx = e.clientX - edgeSwipe.current.x;
+          const dy = Math.abs(e.clientY - edgeSwipe.current.y);
+          // Open when rightward movement > 48px AND more horizontal than vertical.
+          if (dx > 48 && dy < dx * 0.55) {
+            setDrawerOpen(true);
+            edgeSwipe.current = null;
+          }
+        }}
+        onPointerUp={() => { edgeSwipe.current = null; }}
+        onPointerCancel={() => { edgeSwipe.current = null; }}
+      />
 
       <TopBar
         onShowShortcuts={() => setShowShortcuts(true)}

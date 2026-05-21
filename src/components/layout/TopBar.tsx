@@ -219,12 +219,11 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
             <div ref={userMenuRef} className="relative">
               <button
                 onClick={() => setUserMenuOpen((v) => !v)}
-                className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 transition-colors px-1.5 py-2.5 md:py-1"
+                className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 transition-colors px-1.5 py-2.5 md:py-1 min-h-[44px]"
                 aria-label="Account menu"
                 aria-expanded={userMenuOpen}
                 aria-haspopup="menu"
                 title={user?.email || "Account"}
-                data-no-min-touch
               >
                 <div
                   className="w-6 h-6 rounded-full flex items-center justify-center text-[#3B154C] font-medium text-[10px] shrink-0"
@@ -249,7 +248,7 @@ export default function TopBar({ onShowShortcuts, drawerOpen, onDrawerChange, na
                     transition={{ duration: 0.14, ease: [0.16, 1, 0.3, 1] }}
                     role="menu"
                     aria-label="Account menu"
-                    className="absolute right-0 top-full mt-2 w-full sm:w-64 md:w-72 max-w-[90vw] rounded-xl glass-strong border border-black/8 shadow-xl overflow-hidden z-50"
+                    className="absolute right-0 top-full mt-2 min-w-[240px] w-64 md:w-72 max-w-[90vw] rounded-xl glass-strong border border-black/8 shadow-xl overflow-hidden z-50"
                   >
                     <div className="px-4 py-3 border-b border-black/8">
                       <p className="text-[10px] uppercase tracking-[0.12em] text-muted mb-1">
