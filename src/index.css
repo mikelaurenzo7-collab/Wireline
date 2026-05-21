@@ -551,6 +551,14 @@ select {
   select {
     font-size: 16px;
   }
+
+  /* iOS App Store 44pt minimum tap target — coarse pointer = touch device.
+     data-no-min-touch opts out for decorative inline elements (badges, etc.) */
+  button:not([data-no-min-touch]),
+  [role="button"]:not([data-no-min-touch]),
+  a:not([data-no-min-touch]) {
+    min-height: 44px;
+  }
 }
 
 input:focus,
@@ -731,11 +739,17 @@ select:focus {
   @apply text-[9px] uppercase tracking-[0.4em] text-muted font-medium;
 }
 
-/* Scrollable panel content (already have scrollbar styles but this pairs well) */
+/* Scrollable panel content — iOS momentum + overscroll containment */
 .panel-scroll {
   @apply overflow-y-auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(79, 30, 123, 0.20) transparent;
+  /* Momentum scrolling on iOS Safari — without this, lists scroll at a
+     fixed rate that feels laggy compared to native apps */
+  -webkit-overflow-scrolling: touch;
+  /* Contain overscroll so bouncing the list doesn't propagate to the
+     parent surface (AppShell body / browser chrome) */
+  overscroll-behavior: contain;
 }
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  ADDITIONAL ANIMATIONS  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */

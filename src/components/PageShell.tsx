@@ -1,5 +1,6 @@
 import React, { ReactNode, useState } from "react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
+import { MoreHorizontal, X } from "lucide-react";
 import { cn } from "../lib/utils";
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -11,6 +12,12 @@ import { cn } from "../lib/utils";
      • optional tab bar splits content into sub-views,
      • a single bounded scroll region is allowed inside Panel children
        (the only place a scrollbar may legitimately appear).
+
+   Mobile layout (< md):
+     • Actions row is hidden — an ⋯ button in the tab strip opens a
+       bottom sheet instead. No chrome floats above the content panel.
+     • Tab strip is a flat scrollable row (no glass pill wrapper) so it
+       flows flush into the Panel below — one visual unit.
 
    Use it like:
 
@@ -61,29 +68,21 @@ export default function PageShell({
   const [activeId, setActiveId] = useState<string>(
     defaultTab ?? (tabs && tabs.length > 0 ? tabs[0].id : ""),
   );
+  const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
   const activeTab = tabs?.find((t) => t.id === activeId) ?? tabs?.[0];
 
   return (
     <div className="h-full w-full flex flex-col overflow-hidden">
-      {/* Page-title block intentionally removed (per design direction):
-          the left nav already labels the page, so an in-page eyebrow +
-          big title + caption was redundant chrome that pushed real
-          content down. `title` / `subtitle` / `eyebrow` props are kept
-          on the interface for the document <title> + callers, but no
-          longer rendered. Only the actions row survives — and only when
-          a page actually supplies actions, so pages without them get
-          their content flush to the top. */}
+      {/* ── Desktop actions row (hidden on mobile) ─────────────────────── */}
       {actions && (
-        <header className="shrink-0 mb-2 flex flex-wrap items-center justify-end gap-2">
+        <header className="shrink-0 mb-2 hidden md:flex flex-wrap items-center justify-end gap-2">
           {actions}
         </header>
       )}
 
-      {/* Tab strip */}
+      {/* ── Desktop tab strip (hidden on mobile) ───────────────────────── */}
       {tabs && tabs.length > 0 && (
-        <div className="shrink-0 flex items-center gap-1 mb-2 overflow-x-auto overscroll-x-contain scrollbar-hide relative">
-          {/* Gradient fade indicator on mobile */}
-          <div className="md:hidden absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-paper to-transparent pointer-events-none z-10" />
+        <div className="shrink-0 md:mb-2 hidden md:flex items-center gap-1 overflow-x-auto scrollbar-hide relative">
           <div className="flex items-center gap-0.5 p-0.5 rounded-xl glass border border-black/8">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -132,7 +131,76 @@ export default function PageShell({
         </div>
       )}
 
-      {/* Body — bounded, never scrolls itself */}
+      {/* ── Mobile: flat tab strip row + ⋯ actions button ──────────────── */}
+      {tabs && tabs.length > 0 && (
+        <div className="md:hidden shrink-0 flex items-center border-b border-black/8 relative">
+          {/* Gradient fade-right to hint scrollable overflow */}
+          <div
+            className="absolute top-0 bottom-0 w-8 bg-gradient-to-l from-paper to-transparent pointer-events-none z-10"
+            style={{ right: actions ? "44px" : "0" }}
+          />
+          {/* Scrollable flat tab list */}
+          <div className="flex-1 flex items-center overflow-x-auto scrollbar-hide">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const active = tab.id === activeId;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveId(tab.id)}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "relative shrink-0 inline-flex items-center gap-1.5 px-3 h-11 transition-all text-[10px] uppercase tracking-[0.12em] font-medium whitespace-nowrap",
+                    active
+                      ? "text-brand border-b-2 border-brand"
+                      : "text-muted border-b-2 border-transparent hover:text-ink",
+                  )}
+                >
+                  <span className="flex items-center gap-1.5">
+                    {Icon && <Icon className="w-3 h-3" />}
+                    {tab.label}
+                    {tab.badge != null && tab.badge !== 0 && (
+                      <span
+                        className={cn(
+                          "ml-0.5 px-1.5 py-px rounded-full text-[8px] font-mono leading-none",
+                          active ? "bg-brand/15 text-brand" : "bg-black/8 text-muted",
+                        )}
+                      >
+                        {tab.badge}
+                      </span>
+                    )}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          {/* Page-actions overflow button */}
+          {actions && (
+            <button
+              onClick={() => setMobileActionsOpen(true)}
+              aria-label="Page actions"
+              className="shrink-0 w-11 h-11 flex items-center justify-center text-muted hover:text-ink hover:bg-black/5 transition-colors border-l border-black/8"
+            >
+              <MoreHorizontal className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ── Mobile: no-tabs case — ⋯ button when actions exist ─────────── */}
+      {!tabs && actions && (
+        <div className="md:hidden shrink-0 flex items-center justify-end border-b border-black/8">
+          <button
+            onClick={() => setMobileActionsOpen(true)}
+            aria-label="Page actions"
+            className="w-11 h-11 flex items-center justify-center text-muted hover:text-ink hover:bg-black/5 transition-colors"
+          >
+            <MoreHorizontal className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+
+      {/* ── Body — bounded, never scrolls itself ───────────────────────── */}
       <div className={cn("flex-1 min-h-0 overflow-hidden", bodyClassName)}>
         {tabs && activeTab ? (
           <motion.div
@@ -148,6 +216,54 @@ export default function PageShell({
           children
         )}
       </div>
+
+      {/* ── Mobile actions bottom sheet ─────────────────────────────────── */}
+      <AnimatePresence>
+        {mobileActionsOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] md:hidden"
+              onClick={() => setMobileActionsOpen(false)}
+              aria-hidden="true"
+            />
+            {/* Sheet */}
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", stiffness: 360, damping: 32 }}
+              className="fixed bottom-0 left-0 right-0 z-[201] glass-strong rounded-t-2xl border-t border-black/8 md:hidden"
+              style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+              role="dialog"
+              aria-label="Page actions"
+              aria-modal="true"
+            >
+              {/* Grab handle */}
+              <div className="flex justify-center pt-3 pb-2">
+                <div className="w-9 h-1 rounded-full bg-ink/15" aria-hidden="true" />
+              </div>
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 pb-3">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-muted">Actions</p>
+                <button
+                  onClick={() => setMobileActionsOpen(false)}
+                  className="w-9 h-9 rounded-lg flex items-center justify-center text-ink/40 hover:text-ink hover:bg-black/5 transition-colors"
+                  aria-label="Close actions"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              {/* Actions content — stacks vertically in sheet */}
+              <div className="px-4 pb-2 flex flex-col gap-2">{actions}</div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
