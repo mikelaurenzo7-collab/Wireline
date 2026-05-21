@@ -139,8 +139,8 @@ export default function TrialGateModal() {
       // Stripe-hosted checkout redirect. Full navigation, not a popup,
       // so the success/cancel URLs return the user to the right place.
       window.location.href = checkoutUrl;
-    } catch (e: any) {
-      setError(e?.message || "Network error opening checkout.");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Network error opening checkout.");
       setPending(null);
     }
   }

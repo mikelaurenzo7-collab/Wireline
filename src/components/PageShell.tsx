@@ -49,9 +49,9 @@ interface PageShellProps {
 }
 
 export default function PageShell({
-  title,
-  subtitle,
-  eyebrow,
+  title: _title,
+  subtitle: _subtitle,
+  eyebrow: _eyebrow,
   actions,
   tabs,
   children,
