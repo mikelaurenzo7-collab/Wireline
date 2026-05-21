@@ -323,7 +323,7 @@ async function startServer() {
     log.info(`Server running on http://localhost:${PORT}`);
   });
 
-  const GRACE_MS = 15_000;
+  const GRACE_MS = 45_000;
   let shuttingDown = false;
   const shutdown = (signal: string) => {
     if (shuttingDown) return;

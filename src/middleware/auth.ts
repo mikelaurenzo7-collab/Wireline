@@ -3,7 +3,7 @@ import type { User } from "../types/auth";
 import { log, auditLogger } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { verifySupabaseJwt as verifyInternalJwt } from "../lib/auth-utils";
-import { getInternalJwtSecret } from "../lib/internal-jwt-secret";
+import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
 
 /**
  * Express Request with an attached sovereign User.
@@ -30,7 +30,7 @@ export async function authenticateUser(req: Request, res: Response, next: NextFu
     return res.status(401).json({ error: "No authorization token provided" });
   }
 
-  const secret = getInternalJwtSecret() || "";
+  const secret = requireInternalJwtSecret();
   const payload = await verifyInternalJwt(token, secret);
 
   if (!payload) {
