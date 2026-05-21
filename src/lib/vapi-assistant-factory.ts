@@ -15,7 +15,11 @@ import {
 import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "./agent-runtime";
 import { buildCustomerIntelBlock } from "./customer-intel";
 import { resolveAgentTools } from "./agent-capabilities";
-import { VAPI_TENANT_DEFAULT_MODEL } from "./claude-brain";
+import {
+  VAPI_TENANT_DEFAULT_MODEL,
+  VAPI_TENANT_DEFAULT_PROVIDER,
+  resolveVapiVoiceModelSelection,
+} from "./claude-brain";
 import { getWirelinePersona } from "./wireline-agent-personas";
 import type { WirelinePersonaId } from "./wireline-agent-escalation";
 
@@ -294,12 +298,12 @@ export async function buildVapiAssistant({
   }
 
   const agentRole = agentConfigRow?.role || DEFAULT_AGENT_ROLE;
-  // Default brain: VAPI_TENANT_DEFAULT_MODEL (Sonnet, currently). Smarter
-  // than Gemini Flash for objection handling + multi-turn CS work, half
-  // the cost of Opus. Operators can override per-tenant via
-  // settings.voice_llm_*. Source of truth: claude-brain.ts.
-  const voiceLlmProvider = userSettings?.voice_llm_provider || "anthropic";
-  const voiceLlmModel = userSettings?.voice_llm_model || VAPI_TENANT_DEFAULT_MODEL;
+  const voiceSelection = resolveVapiVoiceModelSelection({
+    provider: userSettings?.voice_llm_provider || VAPI_TENANT_DEFAULT_PROVIDER,
+    model: userSettings?.voice_llm_model || VAPI_TENANT_DEFAULT_MODEL,
+  });
+  const voiceLlmProvider = voiceSelection.provider;
+  const voiceLlmModel = voiceSelection.model;
 
   const enabledToolNames = resolveAgentTools(agentRole, agentConfigRow?.enabledTools)
     .filter(
@@ -483,15 +487,6 @@ Today is ${currentDateTime}.
   const rawSpeakerBoost = (agentConfigRow as any)?.voiceSpeakerBoost;
   const parsedSpeakerBoost = rawSpeakerBoost == null ? true : Boolean(rawSpeakerBoost);
 
-  // Deduplicate and resolve fallback models based on what the primary model is
-  const defaultFallbacks = [
-    "gpt-4o",
-    "claude-3-5-sonnet-20241022",
-    "gemini-1.5-pro",
-    "gpt-4-turbo",
-  ];
-  const resolvedFallbacks = defaultFallbacks.filter((m) => m !== voiceLlmModel).slice(0, 3);
-
   // Brand sign-off — Vapi speaks `endCallMessage` via the configured TTS
   // when the assistant terminates the call (e.g. caller says goodbye, or
   // the assistant's flow hits an end node). We can't inject the brand
@@ -549,7 +544,9 @@ Today is ${currentDateTime}.
     model: {
       provider: voiceLlmProvider,
       model: voiceLlmModel,
-      fallbackModels: resolvedFallbacks,
+      ...(voiceSelection.fallbackModels?.length
+        ? { fallbackModels: voiceSelection.fallbackModels }
+        : {}),
       systemPrompt: runtime.prompt,
       temperature: llmTemp,
     },

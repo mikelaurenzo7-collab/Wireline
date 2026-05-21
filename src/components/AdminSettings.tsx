@@ -37,8 +37,8 @@ export default function AdminSettings() {
     vapi_phone_inbound_agent_id: "",
     subscription_status: "active",
     max_agents: 3,
-    voice_llm_provider: "anthropic",
-    voice_llm_model: "claude-sonnet-4-6",
+    voice_llm_provider: "google",
+    voice_llm_model: "gemini-3-flash-preview",
     twilio_messaging_enabled: false,
     twilio_lookup_enabled: false,
     twilio_manager_alerts_enabled: false,
@@ -119,6 +119,7 @@ export default function AdminSettings() {
   const providerDocsUrl =
     {
       google: "https://ai.google.dev/gemini-api/docs/models",
+      openai: "https://platform.openai.com/docs/models",
       anthropic: "https://docs.anthropic.com/en/docs/about-claude/models/overview",
     }[settings.voice_llm_provider] ?? "https://ai.google.dev/gemini-api/docs/models";
 
@@ -225,8 +226,8 @@ export default function AdminSettings() {
           vapi_phone_inbound_agent_id: settingsRes.vapi_phone_inbound_agent_id || "",
           subscription_status: settingsRes.subscription_status || "active",
           max_agents: settingsRes.max_agents || 3,
-          voice_llm_provider: settingsRes.voice_llm_provider || "anthropic",
-          voice_llm_model: settingsRes.voice_llm_model || "claude-sonnet-4-6",
+          voice_llm_provider: settingsRes.voice_llm_provider || "google",
+          voice_llm_model: settingsRes.voice_llm_model || "gemini-3-flash-preview",
           twilio_messaging_enabled: !!settingsRes.twilio_messaging_enabled,
           twilio_lookup_enabled: !!settingsRes.twilio_lookup_enabled,
           twilio_manager_alerts_enabled: !!settingsRes.twilio_manager_alerts_enabled,

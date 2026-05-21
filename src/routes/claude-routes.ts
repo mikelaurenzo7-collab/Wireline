@@ -1083,7 +1083,7 @@ Critique this stage.`;
     const result = await claudeBrain.runCompletion({
       system,
       user,
-      complexity: "medium",
+      complexity: "complex",
       maxTokens: 500,
     });
     res.json({ critique: result.text });

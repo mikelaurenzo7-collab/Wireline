@@ -55,6 +55,9 @@ const FEATURES = [
   },
 ];
 
+const AUTH_PORTAL_WIRELINE_AGENTS = WIRELINE_CONTACT_AGENTS.slice(0, -1);
+const AUTH_PORTAL_DEMO_AGENTS = WIRELINE_DEMO_AGENTS.slice(0, -1);
+
 /**
  * Sign-in / sign-up shortcut row. Most business users have a Google
  * or Microsoft identity already; skipping the email-and-password
@@ -495,7 +498,7 @@ export default function AuthPortal() {
                   Wireline agents
                 </p>
                 <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-2.5">
-                  {WIRELINE_CONTACT_AGENTS.map((agent) => (
+                  {AUTH_PORTAL_WIRELINE_AGENTS.map((agent) => (
                     <AgentContactCard key={agent.tel} agent={agent} isDemo={false} />
                   ))}
                 </div>
@@ -505,7 +508,7 @@ export default function AuthPortal() {
                   Demo agents
                 </p>
                 <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-2.5">
-                  {WIRELINE_DEMO_AGENTS.map((agent) => (
+                  {AUTH_PORTAL_DEMO_AGENTS.map((agent) => (
                     <AgentContactCard key={agent.tel} agent={agent} isDemo />
                   ))}
                 </div>
@@ -591,7 +594,7 @@ export default function AuthPortal() {
                   Wireline agents
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {WIRELINE_CONTACT_AGENTS.map((agent) => (
+                  {AUTH_PORTAL_WIRELINE_AGENTS.map((agent) => (
                     <AgentContactCard key={agent.tel} agent={agent} isDemo={false} />
                   ))}
                 </div>
@@ -601,7 +604,7 @@ export default function AuthPortal() {
                   Demo agents
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {WIRELINE_DEMO_AGENTS.map((agent) => (
+                  {AUTH_PORTAL_DEMO_AGENTS.map((agent) => (
                     <AgentContactCard key={agent.tel} agent={agent} isDemo />
                   ))}
                 </div>

@@ -517,7 +517,7 @@ router.post(
       }
     }
 
-    // ── Gemini fallback ───────────────────────────────────────────────
+    // ── OpenAI fallback ───────────────────────────────────────────────
     const noDataExtracted =
       !parsed.directives.length && !parsed.knowledge.length && !parsed.personality;
     if (noDataExtracted) {
@@ -543,7 +543,7 @@ Respond ONLY in strict, valid JSON format (no markdown):
             Authorization: `Bearer ${process.env.OPENAI_API_KEY || ""}`,
           },
           body: JSON.stringify({
-            model: process.env.OPENAI_EXTRACTION_MODEL || "gpt-4.1-mini",
+            model: process.env.OPENAI_EXTRACTION_MODEL || "gpt-4o",
             temperature: 0.1,
             response_format: { type: "json_object" },
             messages: [{ role: "user", content: prompt }],
@@ -1079,7 +1079,7 @@ router.post(
           Authorization: `Bearer ${process.env.OPENAI_API_KEY || ""}`,
         },
         body: JSON.stringify({
-          model: process.env.OPENAI_OPTIMIZER_MODEL || "gpt-4.1-mini",
+          model: process.env.OPENAI_OPTIMIZER_MODEL || "gpt-4o",
           temperature: 0.2,
           response_format: { type: "json_object" },
           messages: [{ role: "user", content: prompt }],

@@ -15,6 +15,8 @@ describe("inputRateForModel", () => {
     expect(inputRateForModel("gpt-4-turbo")).toBe(10);
     expect(inputRateForModel("gemini-1.5-flash")).toBe(0.075);
     expect(inputRateForModel("gemini-1.5-pro")).toBe(1.25);
+    expect(inputRateForModel("gemini-3-flash-preview")).toBe(0.3);
+    expect(inputRateForModel("gemini-2.5-flash")).toBe(0.3);
   });
 
   it("should return 1 for haiku models", () => {

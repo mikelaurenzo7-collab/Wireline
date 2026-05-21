@@ -21,19 +21,24 @@ export async function syncGoogleDriveToKnowledge(userId: string, agentId: string
       id: schema.emailAccounts.id,
       accessToken: schema.emailAccounts.accessToken,
       refreshToken: schema.emailAccounts.refreshToken,
-      expiresAt: schema.emailAccounts.expiresAt
+      expiresAt: schema.emailAccounts.expiresAt,
     })
     .from(schema.emailAccounts)
-    .where(and(eq(schema.emailAccounts.userId, userId), eq(schema.emailAccounts.provider, "google")))
+    .where(
+      and(eq(schema.emailAccounts.userId, userId), eq(schema.emailAccounts.provider, "google")),
+    )
     .limit(1);
 
   if (!account) {
-    return { status: "no_accounts", message: "No Google account connected. Connect via Settings → Integrations." };
+    return {
+      status: "no_accounts",
+      message: "No Google account connected. Connect via Settings → Integrations.",
+    };
   }
 
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET
+    process.env.GOOGLE_CLIENT_SECRET,
   );
 
   oauth2Client.setCredentials({
@@ -45,17 +50,22 @@ export async function syncGoogleDriveToKnowledge(userId: string, agentId: string
   // Persist refreshed tokens automatically
   oauth2Client.on("tokens", async (tokens) => {
     if (!tokens.access_token) return;
-    const update: any = { accessToken: encryptSecret(tokens.access_token), expiresAt: tokens.expiry_date ? BigInt(tokens.expiry_date) : null, updatedAt: new Date() };
+    const update: any = {
+      accessToken: encryptSecret(tokens.access_token),
+      expiresAt: tokens.expiry_date ? BigInt(tokens.expiry_date) : null,
+      updatedAt: new Date(),
+    };
     if (tokens.refresh_token) update.refreshToken = encryptSecret(tokens.refresh_token);
-    
-    await drizzle.update(schema.emailAccounts)
+
+    await drizzle
+      .update(schema.emailAccounts)
       .set(update)
       .where(eq(schema.emailAccounts.id, account.id));
   });
 
   const drive = google.drive({ version: "v3", auth: oauth2Client });
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const gemini = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const gemini = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   // Fetch the 10 most recently modified Google Docs + plain text files
   const listResponse = await drive.files.list({
@@ -74,10 +84,16 @@ export async function syncGoogleDriveToKnowledge(userId: string, agentId: string
     let textContent = "";
     try {
       if (file.mimeType === "application/vnd.google-apps.document") {
-        const res = await drive.files.export({ fileId: file.id, mimeType: "text/plain" }, { responseType: "text" });
+        const res = await drive.files.export(
+          { fileId: file.id, mimeType: "text/plain" },
+          { responseType: "text" },
+        );
         textContent = res.data as unknown as string;
       } else {
-        const res = await drive.files.get({ fileId: file.id, alt: "media" }, { responseType: "text" });
+        const res = await drive.files.get(
+          { fileId: file.id, alt: "media" },
+          { responseType: "text" },
+        );
         textContent = res.data as unknown as string;
       }
     } catch {
@@ -116,18 +132,21 @@ ${textContent.substring(0, 15000)}`;
           userId: userId,
           agentId: agentId,
           content: cleanContent,
-          priority: 5
+          priority: 5,
         });
       } else {
-        await drizzle.insert(schema.agentLessons).values({
-          userId: userId,
-          agentId: agentId,
-          lesson: cleanContent,
-          source: `Google Drive: ${file.name}`,
-        }).onConflictDoUpdate({
-          target: [schema.agentLessons.agentId, schema.agentLessons.lesson],
-          set: { updatedAt: new Date() }
-        });
+        await drizzle
+          .insert(schema.agentLessons)
+          .values({
+            userId: userId,
+            agentId: agentId,
+            lesson: cleanContent,
+            source: `Google Drive: ${file.name}`,
+          })
+          .onConflictDoUpdate({
+            target: [schema.agentLessons.agentId, schema.agentLessons.lesson],
+            set: { updatedAt: new Date() },
+          });
       }
       ingestedCount++;
     }

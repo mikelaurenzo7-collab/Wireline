@@ -16,9 +16,11 @@ import {
   WIRELINE_DEMO_AGENTS,
   type ContactAgent,
 } from "../src/data/contact-agents";
-import { buildWirelineKnowledgeBlock } from "../src/data/wireline-knowledge";
-import { buildVibeBlock } from "../src/lib/personality-vibes";
-import { VAPI_SHOWCASE_MODEL } from "../src/lib/claude-brain";
+import { VAPI_OPENAI_FALLBACK_MODEL } from "../src/lib/claude-brain";
+import {
+  buildShowcaseAssistantPayload,
+  buildShowcaseSystemPrompt,
+} from "../src/lib/showcase-assistant";
 
 const VAPI_KEY = process.env.VAPI_PRIVATE_KEY;
 if (!VAPI_KEY) {
@@ -26,29 +28,44 @@ if (!VAPI_KEY) {
   process.exit(1);
 }
 
-const PRODUCTION_WEBHOOK_URL = "https://trywireline.com/api/vapi-webhook";
-
 function sanitize(tel: string): string {
   return "+" + String(tel).replace(/[^0-9]/g, "");
 }
 
-function buildSystemPromptForAgent(agent: ContactAgent, kind: "cs" | "demo"): string {
-  const knowledge = buildWirelineKnowledgeBlock(kind);
-  const heading =
-    kind === "cs"
-      ? `You are ${agent.name}, a Wireline customer-service agent. Your scope: ${agent.scope}`
-      : `You are ${agent.name}, a Wireline demo agent role-playing: ${agent.role}. Scope: ${agent.scope}. When the caller asks about Wireline (the platform you're built on), answer using the WIRELINE KNOWLEDGE block below.`;
+async function patchAssistantWithOpenAiFallback(
+  assistantId: string,
+  payload: Record<string, any>,
+) {
+  const patch = async (body: Record<string, any>) =>
+    fetch(`https://api.vapi.ai/assistant/${assistantId}`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${VAPI_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
 
-  const vibe = buildVibeBlock(agent.defaultVibe);
+  let response = await patch(payload);
+  if (!response.ok && payload?.model?.provider === "google") {
+    const errorText = await response.text().catch(() => "");
+    console.log(
+      `  WARN fallback to GPT-4o for ${assistantId.slice(0, 8)} — ${errorText.slice(0, 120)}`,
+    );
 
-  return [
-    heading,
-    "",
-    `You handle calls for these topics: ${agent.handles}.`,
-    vibe,
-    "",
-    knowledge,
-  ].join("\n");
+    const fallbackPayload = {
+      ...payload,
+      model: {
+        ...payload.model,
+        provider: "openai",
+        model: VAPI_OPENAI_FALLBACK_MODEL,
+      },
+    };
+    delete fallbackPayload.model.fallbackModels;
+    response = await patch(fallbackPayload);
+  }
+
+  return response;
 }
 
 async function main() {
@@ -90,7 +107,7 @@ async function main() {
       continue;
     }
 
-    const systemPrompt = buildSystemPromptForAgent(a, kind);
+    const systemPrompt = buildShowcaseSystemPrompt(a, kind);
     if (systemPrompt.length > 30_000) {
       console.log(
         `  FAIL ${a.name.padEnd(8)} (${a.display}) — prompt ${systemPrompt.length}c exceeds 30k cap`,
@@ -98,102 +115,11 @@ async function main() {
       failed++;
       continue;
     }
-
-    // Preserve the per-assistant voiceId (Sarah ≠ Liam ≠ Marcus).
-    // Vapi PATCH replaces sub-objects wholesale, so we must GET first.
-    let existingVoiceId: string | undefined;
-    try {
-      const cur = await fetch(`https://api.vapi.ai/assistant/${assistantId}`, {
-        headers: { Authorization: `Bearer ${VAPI_KEY}` },
-      });
-      if (cur.ok) {
-        const curJson = (await cur.json()) as Record<string, any>;
-        existingVoiceId = curJson?.voice?.voiceId;
-      }
-    } catch {
-      // If GET fails, leave voice out of payload — existing config persists.
-    }
-
-    const payload: Record<string, any> = {
-      firstMessage: a.firstMessage,
-      model: {
-        provider: "anthropic",
-        // Sonnet on the showcase line — half the first-token latency
-        // of Opus, plenty smart for vibe-directed receptionist work.
-        model: VAPI_SHOWCASE_MODEL,
-        messages: [{ role: "system", content: systemPrompt }],
-      },
-      serverUrl: PRODUCTION_WEBHOOK_URL,
-      // Full latency-knob suite. Total perceived reply-delay shaved
-      // vs. Vapi defaults: ~675ms (model + endpointing +
-      // startSpeakingPlan + optimizeStreamingLatency).
-      responseDelaySeconds: 0,
-      numWordsToInterruptAssistant: 2,
-      backgroundDenoisingEnabled: false,
-      // Kill Vapi's default "office" ambient track. We'd rather sound
-      // like a clean studio line than fake a call-center we're not in.
-      backgroundSound: "off",
-      startSpeakingPlan: {
-        waitSeconds: 0.1,
-        smartEndpointingPlan: { provider: "livekit", waitFunction: "20 + 8000 * x" },
-      },
-      transcriber: {
-        provider: "deepgram",
-        model: "nova-3",
-        language: "en",
-        endpointing: 50,
-      },
-    };
-
-    // Same tool list as the in-product sync route (kept in lockstep).
-    // Showcase agents need the platform-Resend signup-link tool so
-    // they can actually deliver the email the caller asks for —
-    // tenant-scoped tools (send_email via OAuth, search_leads, etc.)
-    // require a tenant context the showcase agents don't have.
-    (payload.model as Record<string, any>).tools = [
-      {
-        type: "function",
-        function: {
-          name: "send_signup_link",
-          description:
-            "Send the caller a Wireline 14-day trial sign-up link via email. Use this immediately when a caller says any of: 'send me the link', 'email me the signup', 'text me details', 'how do I try this', 'can I get more info'. Capture the email by asking 'What's the best email?' if you don't have it. Confirm the address back to the caller before sending. ALWAYS use this tool — never claim to send anything by mouth without invoking it.",
-          parameters: {
-            type: "object",
-            properties: {
-              to_email: {
-                type: "string",
-                description:
-                  "The caller's email address, parsed from the conversation. Must be a valid RFC-5322 email (foo@bar.com). If the caller spelled it letter-by-letter, reconstruct it before passing.",
-              },
-              caller_name: {
-                type: "string",
-                description:
-                  "The caller's first name if you have it (used in the email greeting). Optional — pass undefined if you didn't catch it.",
-              },
-            },
-            required: ["to_email"],
-          },
-        },
-      },
-    ];
-
-    if (existingVoiceId) {
-      payload.voice = {
-        provider: "11labs",
-        voiceId: existingVoiceId,
-        model: "eleven_flash_v2_5",
-        optimizeStreamingLatency: 4,
-      };
-    }
-
-    const r = await fetch(`https://api.vapi.ai/assistant/${assistantId}`, {
-      method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${VAPI_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
+    const payload = buildShowcaseAssistantPayload(a, kind, {
+      serverUrlSecret: process.env.VAPI_WEBHOOK_SECRET,
     });
+
+    const r = await patchAssistantWithOpenAiFallback(assistantId, payload);
 
     if (!r.ok) {
       const errText = await r.text().catch(() => "");

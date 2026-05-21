@@ -11,6 +11,7 @@ import { sendTenantMessage } from "./twilio-service";
 import { postMessage as slackPostMessage, getDefaultChannel } from "./slack-service";
 import { resolveAgentTools } from "./agent-capabilities";
 import { sendMetaConversion } from "./meta-service";
+import { superviseClientCommunication } from "./claude-brain";
 
 /**
  * The Action Engine is responsible for executing tasks extracted by the AI
@@ -88,10 +89,36 @@ export async function executeAction(
       const service = new IntegrationService(userId);
       switch (action.type) {
         case "send_email": {
-          const emailOk = await service.sendEmail({
-            to: action.payload.to,
+          const reviewed = await superviseClientCommunication({
+            channel: "email",
+            agentName: action.agentId,
+            source: "action_engine",
+            purpose: action.reasoning || "autonomous follow-up",
+            recipient: action.payload.to,
             subject: action.payload.subject,
             body: action.payload.body,
+            context: `Autonomy mode: ${autonomy}. Source type: ${context.sourceType}.`,
+          });
+          if (!reviewed.approved) {
+            return await handleSendEmail(
+              userId,
+              {
+                ...action,
+                payload: {
+                  ...action.payload,
+                  subject: reviewed.subject || action.payload.subject,
+                  body: reviewed.body,
+                },
+                reasoning:
+                  `${action.reasoning || ""}\nSupervisor note: ${reviewed.rationale}`.trim(),
+              },
+              context,
+            );
+          }
+          const emailOk = await service.sendEmail({
+            to: action.payload.to,
+            subject: reviewed.subject || action.payload.subject,
+            body: reviewed.body,
           });
           return { success: emailOk };
         }
@@ -265,9 +292,31 @@ async function handleSendTextMessage(
     return { success: false, error: gate.reason };
   }
 
+  const reviewed = await superviseClientCommunication({
+    channel: "sms",
+    agentName: action.agentId,
+    source: "action_engine",
+    purpose: action.reasoning || "autonomous follow-up",
+    recipient: action.payload.to,
+    body: action.payload.body,
+    context: `Requested channel: ${action.payload.channel === "whatsapp" ? "whatsapp" : "sms"}.`,
+  });
+  if (!reviewed.approved) {
+    return await handleDraftSendTextMessage(
+      userId,
+      {
+        ...action,
+        payload: { ...action.payload, body: reviewed.body },
+        reasoning: `${action.reasoning || ""}\nSupervisor note: ${reviewed.rationale}`.trim(),
+      },
+      context,
+      reviewed.rationale,
+    );
+  }
+
   const outcome = await sendTenantMessage(userId, {
     to: action.payload.to,
-    body: action.payload.body,
+    body: reviewed.body,
     channel: action.payload.channel === "whatsapp" ? "whatsapp" : "sms",
   });
 

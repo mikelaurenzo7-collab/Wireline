@@ -22,7 +22,12 @@ import {
 import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "./agent-runtime";
 import { buildCustomerIntelBlock } from "./customer-intel";
 import { DEFAULT_AGENT_ROLE } from "./agent-constants";
-import { VAPI_TENANT_DEFAULT_MODEL } from "./claude-brain";
+import {
+  VAPI_OPENAI_FALLBACK_MODEL,
+  VAPI_TENANT_DEFAULT_MODEL,
+  VAPI_TENANT_DEFAULT_PROVIDER,
+  resolveVapiVoiceModelSelection,
+} from "./claude-brain";
 
 // Retry configuration for transient failures
 const MAX_RETRIES = 3;
@@ -290,8 +295,12 @@ export async function placeOutboundCall(opts: {
   const { rules: archetypeRules, temp: llmTemp } = getArchetypeConfig(archetype);
   const ambientNoiseActive = agentConfig.ambientNoise && agentConfig.ambientNoise !== "off";
   const roleProtocol = ROLE_SPECIFIC_PROTOCOLS[outboundAgentRole] || "";
-  const voiceLlmProvider = settings?.voiceLlmProvider || "anthropic";
-  const voiceLlmModel = settings?.voiceLlmModel || VAPI_TENANT_DEFAULT_MODEL;
+  const voiceSelection = resolveVapiVoiceModelSelection({
+    provider: settings?.voiceLlmProvider || VAPI_TENANT_DEFAULT_PROVIDER,
+    model: settings?.voiceLlmModel || VAPI_TENANT_DEFAULT_MODEL,
+  });
+  const voiceLlmProvider = voiceSelection.provider;
+  const voiceLlmModel = voiceSelection.model;
 
   const systemPrompt = `
 ## IDENTITY & OUTBOUND MISSION
@@ -412,12 +421,29 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
           customerName,
         ),
       backgroundSound: agentConfig.ambientNoise || "off",
+      responseDelaySeconds: 0,
+      numWordsToInterruptAssistant: 2,
+      backgroundDenoisingEnabled: false,
+      startSpeakingPlan: {
+        waitSeconds: 0.05,
+        smartEndpointingPlan: { provider: "livekit", waitFunction: "10 + 5000 * x" },
+      },
+      transcriber: {
+        provider: "deepgram",
+        model: "nova-2",
+        language: "en",
+        smartFormat: true,
+        endpointing: 40,
+      },
       ...(outboundServerUrl && { serverUrl: outboundServerUrl }),
       serverUrlSecret: process.env.VAPI_WEBHOOK_SECRET,
       serverMessages: ["tool-calls", "status-update", "conversation-update", "end-of-call-report"],
       model: {
         provider: voiceLlmProvider,
         model: voiceLlmModel,
+        ...(voiceSelection.fallbackModels?.length
+          ? { fallbackModels: voiceSelection.fallbackModels }
+          : {}),
         systemPrompt: finalSystemPrompt,
         temperature: llmTemp,
         functions: buildRoleToolDefs(outboundAgentRole),
@@ -465,7 +491,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
   };
 
   try {
-    const vapiResponse = await fetchWithRetry(
+    let vapiResponse = await fetchWithRetry(
       "https://api.vapi.ai/call/phone",
       {
         method: "POST",
@@ -478,6 +504,44 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
       20_000,
       "Vapi placeOutboundCall",
     );
+
+    if (!vapiResponse.ok && voiceSelection.provider === "google") {
+      const geminiErrorBody = await vapiResponse.text();
+      log.warn("Vapi rejected Gemini outbound model; retrying with OpenAI fallback", {
+        userId,
+        agentId,
+        customerNumber,
+        model: voiceSelection.model,
+        error: geminiErrorBody.slice(0, 500),
+      });
+
+      const fallbackPayload = {
+        ...vapiPayload,
+        assistant: {
+          ...vapiPayload.assistant,
+          model: {
+            ...vapiPayload.assistant.model,
+            provider: "openai",
+            model: VAPI_OPENAI_FALLBACK_MODEL,
+          },
+        },
+      } as any;
+      delete fallbackPayload.assistant.model.fallbackModels;
+
+      vapiResponse = await fetchWithRetry(
+        "https://api.vapi.ai/call/phone",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${vapiSecret}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(fallbackPayload),
+        },
+        20_000,
+        "Vapi placeOutboundCall OpenAI fallback",
+      );
+    }
 
     if (!vapiResponse.ok) {
       const errBody = await vapiResponse.text();

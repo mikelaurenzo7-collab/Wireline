@@ -32,35 +32,119 @@ export const CLAUDE_MODELS = {
   OPUS: "claude-opus-4-7",
 } as const;
 
-/**
- * The model identifier Vapi accepts in its assistant allowlist for the
- * voice-agent runtime. Vapi's allowlist lags the Anthropic SDK by a
- * release, so the in-app brain (claude-opus-4-7) and the voice-agent
- * brain (claude-opus-4-6) are intentionally different. Surfaced on
- * /api/health/internal so operators + monitoring know which runtime
- * uses which version.
- */
-export const VAPI_PREMIUM_MODEL = "claude-opus-4-6";
+export const OPENAI_MODELS = {
+  GPT_4O: "gpt-4o",
+} as const;
+
+export const GEMINI_MODELS = {
+  FLASH_3_PREVIEW: "gemini-3-flash-preview",
+  FLASH_2_5: "gemini-2.5-flash",
+} as const;
+
+export const VAPI_TENANT_DEFAULT_PROVIDER = "google" as const;
+export const VAPI_SHOWCASE_PROVIDER = "google" as const;
+export const VAPI_OPENAI_FALLBACK_MODEL = OPENAI_MODELS.GPT_4O;
+// Vapi rejects cross-provider fallbackModels on Google assistants, so this list
+// is only attached to OpenAI payloads we construct ourselves.
+export const VAPI_DEFAULT_FALLBACK_MODELS = [VAPI_OPENAI_FALLBACK_MODEL] as const;
 
 /**
- * The default model used by tenant-deployed voice agents created via
- * the agent-routes deploy path. Lower-cost tier for everyday tenant
- * agents; the 10 landing-page showcase agents use VAPI_SHOWCASE_MODEL.
+ * Primary realtime model for the Vapi voice runtime.
+ * Claude remains the supervisory/written-communication layer, while
+ * live phone turns now run on Gemini 3 Flash Preview first.
  */
-export const VAPI_TENANT_DEFAULT_MODEL = CLAUDE_MODELS.SONNET;
+export const VAPI_PREMIUM_MODEL = GEMINI_MODELS.FLASH_3_PREVIEW;
 
 /**
- * Model used by the 10 Wireline showcase + demo assistants. Tuned for
- * SPEED on the public demo line: Sonnet's first-token latency is
- * roughly half Opus's, and a 30-second receptionist conversation does
- * not need Opus-grade reasoning to feel sharp. Vibe directives do the
- * heavy lifting on tone; the model just needs to be fast and follow
- * instructions. Premium tenants who want Opus on their OWN agents
- * pick it explicitly in FleetSettings — the showcase choice is
- * decoupled so we never sacrifice demo snappiness for marginal
- * reasoning quality the caller cannot perceive on a phone call.
+ * Default tenant voice model for deployed phone agents.
  */
-export const VAPI_SHOWCASE_MODEL = CLAUDE_MODELS.SONNET;
+export const VAPI_TENANT_DEFAULT_MODEL = GEMINI_MODELS.FLASH_3_PREVIEW;
+
+/**
+ * Model used by the Wireline showcase + demo assistants.
+ * The public line shares the same Gemini 3 Flash Preview primary
+ * runtime as tenant voice agents for consistent voice behavior.
+ */
+export const VAPI_SHOWCASE_MODEL = GEMINI_MODELS.FLASH_3_PREVIEW;
+
+const GEMINI_FLASH_LATEST_ALIASES = new Set([
+  GEMINI_MODELS.FLASH_3_PREVIEW,
+  "gemini-3-flash",
+  "gemini-2.5-flash-latest",
+  "gemini-flash-latest",
+]);
+
+export interface VapiVoiceModelSelection {
+  provider: "google" | "openai";
+  model: string;
+  fallbackModels?: string[];
+}
+
+export function resolveVapiVoiceModelSelection(input?: {
+  provider?: string | null;
+  model?: string | null;
+}): VapiVoiceModelSelection {
+  const requestedProvider = String(input?.provider || "").toLowerCase();
+  const requestedModel = String(input?.model || "").trim();
+  const requestedModelLower = requestedModel.toLowerCase();
+  const anthroVoiceRequested =
+    requestedProvider === "anthropic" ||
+    requestedModelLower.includes("claude") ||
+    requestedModelLower.includes("sonnet") ||
+    requestedModelLower.includes("opus");
+
+  if (anthroVoiceRequested) {
+    return {
+      provider: VAPI_TENANT_DEFAULT_PROVIDER,
+      model: VAPI_TENANT_DEFAULT_MODEL,
+    };
+  }
+
+  if (requestedProvider === "google" || requestedModelLower.includes("gemini")) {
+    const normalizedGoogleModel =
+      !requestedModel || !requestedModelLower.includes("gemini")
+        ? VAPI_TENANT_DEFAULT_MODEL
+        : GEMINI_FLASH_LATEST_ALIASES.has(requestedModelLower)
+          ? GEMINI_MODELS.FLASH_3_PREVIEW
+          : requestedModel;
+    return {
+      provider: "google",
+      model: normalizedGoogleModel,
+    };
+  }
+
+  if (
+    requestedProvider === "openai" ||
+    requestedModelLower.startsWith("gpt") ||
+    requestedModelLower.startsWith("o1") ||
+    requestedModelLower.startsWith("o3") ||
+    requestedModelLower.startsWith("o4") ||
+    requestedModelLower.startsWith("chatgpt")
+  ) {
+    const normalizedOpenAiModel =
+      requestedModel &&
+      (requestedModelLower.startsWith("gpt") ||
+        requestedModelLower.startsWith("o1") ||
+        requestedModelLower.startsWith("o3") ||
+        requestedModelLower.startsWith("o4") ||
+        requestedModelLower.startsWith("chatgpt"))
+        ? requestedModel
+        : VAPI_OPENAI_FALLBACK_MODEL;
+    const fallbackModels = [...VAPI_DEFAULT_FALLBACK_MODELS]
+      .filter((model) => model !== normalizedOpenAiModel)
+      .slice(0, 3);
+    return {
+      provider: "openai",
+      model: normalizedOpenAiModel,
+      ...(fallbackModels.length ? { fallbackModels } : {}),
+    };
+  }
+
+  return {
+    provider: VAPI_TENANT_DEFAULT_PROVIDER,
+    model: VAPI_TENANT_DEFAULT_MODEL,
+  };
+}
 
 /** Task complexity tiers for automatic model selection */
 export type TaskComplexity = "simple" | "medium" | "complex";
@@ -74,6 +158,8 @@ export const MODEL_PRICING = {
   "claude-3-5-sonnet-20241022": { input: 3, output: 15, cacheRead: 0.3, cacheWrite: 3.75 },
   "gemini-1.5-flash": { input: 0.075, output: 0.3, cacheRead: 0, cacheWrite: 0 },
   "gemini-1.5-pro": { input: 1.25, output: 5, cacheRead: 0, cacheWrite: 0 },
+  "gemini-3-flash-preview": { input: 0.3, output: 2.5, cacheRead: 0, cacheWrite: 0 },
+  "gemini-2.5-flash": { input: 0.3, output: 2.5, cacheRead: 0, cacheWrite: 0 },
   "gpt-4o": { input: 5, output: 15, cacheRead: 0, cacheWrite: 0 },
   "gpt-4-turbo": { input: 10, output: 30, cacheRead: 0, cacheWrite: 0 },
 } as const;
@@ -493,7 +579,7 @@ export async function runCompletionResilient(opts: CompletionOptions): Promise<{
           Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
         },
         body: JSON.stringify({
-          model: process.env.OPENAI_FALLBACK_MODEL || "gpt-4.1-mini",
+          model: process.env.OPENAI_FALLBACK_MODEL || OPENAI_MODELS.GPT_4O,
           messages: [{ role: "user", content: prompt }],
         }),
       });
@@ -1692,6 +1778,35 @@ export const TOOLS = {
   } as ToolSchema,
 } as const;
 
+const CLIENT_COMMUNICATION_SUPERVISOR_TOOL: ToolSchema = {
+  name: "review_client_communication",
+  description:
+    "Review and, when needed, rewrite a client-bound email or text message before it is sent. Preserve accuracy, avoid fabricated commitments, and calibrate urgency.",
+  input_schema: {
+    type: "object",
+    properties: {
+      approved: {
+        type: "boolean",
+        description: "Whether the message is safe and appropriate to send now.",
+      },
+      subject: {
+        type: "string",
+        description: "Final subject line for emails. Use an empty string for SMS or WhatsApp.",
+      },
+      body: {
+        type: "string",
+        description: "Final plain-text body to send to the client.",
+      },
+      rationale: {
+        type: "string",
+        description: "Short explanation of what changed or why the send was blocked.",
+      },
+    },
+    required: ["approved", "subject", "body", "rationale"],
+    additionalProperties: false,
+  },
+};
+
 /* ────────────────────────────────────────────────────────────────────────
  *  Convenience wrappers — one per recipe.
  * ──────────────────────────────────────────────────────────────────── */
@@ -2014,7 +2129,7 @@ Output the email body only — no subject, no signature.`;
     user,
     cacheSystem: true,
     maxTokens: 2048,
-    complexity: "medium",
+    complexity: "complex",
   });
 
   const body = input.agentSignature
@@ -2134,7 +2249,7 @@ Coach this conversation now.`;
     tool: TOOLS.coach,
     deepThink: false,
     maxTokens: 2048,
-    complexity: "medium",
+    complexity: "complex",
   });
 }
 
@@ -2428,9 +2543,7 @@ ${input.knowledgeBase.length ? input.knowledgeBase.map((k) => `- ${k}`).join("\n
   let bookedRef: string | undefined;
   let safety = 8;
 
-  // Smart-reply is structured email drafting + tool use; Sonnet handles it
-  // well at ~5x lower cost than Opus.
-  const model = selectModelForTask("medium");
+  const model = selectModelForTask("complex");
 
   while (safety-- > 0) {
     const body: Anthropic.MessageCreateParams = {
@@ -2514,6 +2627,120 @@ export async function scoreIntent(input: { subject?: string; body: string }) {
     maxTokens: 512,
     complexity: "simple",
   });
+}
+
+export interface ClientCommunicationReviewInput {
+  channel: "email" | "sms";
+  agentName?: string;
+  source: "voice_tool" | "action_engine" | "cadence" | "email_agent" | "other";
+  purpose?: string;
+  recipient?: string;
+  subject?: string;
+  body: string;
+  context?: string;
+}
+
+export interface ClientCommunicationReviewResult {
+  approved: boolean;
+  subject: string;
+  body: string;
+  rationale: string;
+  supervisedBy: "opus" | "fallback";
+}
+
+export async function superviseClientCommunication(
+  input: ClientCommunicationReviewInput,
+): Promise<ClientCommunicationReviewResult> {
+  const originalSubject = input.subject?.trim() || "";
+  const originalBody = input.body.trim();
+
+  if (!originalBody) {
+    return {
+      approved: false,
+      subject: originalSubject,
+      body: originalBody,
+      rationale: "Message body was empty.",
+      supervisedBy: "fallback",
+    };
+  }
+
+  if (!isClaudeAvailable()) {
+    return {
+      approved: true,
+      subject: originalSubject,
+      body: originalBody,
+      rationale: "Claude supervisor unavailable; sent original copy.",
+      supervisedBy: "fallback",
+    };
+  }
+
+  const system = `You are Wireline's boss model. A faster subordinate model drafted a client-facing ${input.channel === "email" ? "email" : "text message"}, and you must review it before it is sent.
+
+Rules:
+- Preserve verified facts. Never invent prices, policies, timelines, or commitments.
+- Reduce urgency unless the context clearly requires urgency.
+- Keep the message plain text and human.
+- For email: concise, direct, professional.
+- For text: concise, natural, safe to send on a phone.
+- If the draft is risky, misleading, or too vague to send, set approved=false and rewrite it into the safest truthful version.`;
+
+  const user = `Channel: ${input.channel}
+Source: ${input.source}
+Agent: ${input.agentName || "Wireline Agent"}
+Recipient: ${input.recipient || "unknown"}
+Purpose: ${input.purpose || "general follow-up"}
+${input.context ? `Context: ${input.context}` : ""}
+
+Original subject:
+${originalSubject || "(none)"}
+
+Original body:
+${originalBody}
+
+Review this message now.`;
+
+  try {
+    const reviewed = await runStructured<{
+      approved: boolean;
+      subject: string;
+      body: string;
+      rationale: string;
+    }>({
+      system,
+      user,
+      tool: CLIENT_COMMUNICATION_SUPERVISOR_TOOL,
+      deepThink: true,
+      maxTokens: 1400,
+      complexity: "complex",
+    });
+
+    return {
+      approved: reviewed.approved,
+      subject: input.channel === "email" ? reviewed.subject.trim() || originalSubject : "",
+      body: reviewed.body.trim() || originalBody,
+      rationale: reviewed.rationale,
+      supervisedBy: "opus",
+    };
+  } catch (error) {
+    try {
+      const { log } = await import("./server-context");
+      log.warn("Client communication supervision failed; sending original copy", {
+        error: (error as { message?: string })?.message,
+        channel: input.channel,
+        source: input.source,
+      });
+    } catch {
+      /* ignore */
+    }
+
+    return {
+      approved: true,
+      subject: originalSubject,
+      body: originalBody,
+      rationale: "Supervisor failed; sent original copy.",
+      supervisedBy: "fallback",
+    };
+  }
 }
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -2837,7 +3064,7 @@ Deliver 3 quick-reply options using the deliver_quick_replies tool.`;
     tool: TOOLS.quickReplies,
     cacheSystem: true,
     maxTokens: 1024,
-    complexity: "simple",
+    complexity: "complex",
   });
 }
 

@@ -219,15 +219,15 @@ export function CarrierPanel({
                     {[
                       {
                         v: "google",
-                        label: "Gemini 1.5 (Standard)",
-                        sub: "FAST",
-                        desc: "Lowest latency for high-volume queues.",
+                        label: "Gemini 3 Flash Preview",
+                        sub: "PRIMARY",
+                        desc: "Primary live-call model for the fastest Gemini voice stack Vapi currently supports.",
                       },
                       {
-                        v: "anthropic",
-                        label: "Claude Sonnet (Premium)",
-                        sub: "RECOMMENDED",
-                        desc: "Advanced reasoning, objection handling, and steering.",
+                        v: "openai",
+                        label: "OpenAI GPT-4o",
+                        sub: "FALLBACK",
+                        desc: "Recovery model used when Wireline has to fall back from the Google voice path.",
                       },
                     ].map((p) => (
                       <button
@@ -237,8 +237,7 @@ export function CarrierPanel({
                           onUpdateSettings({
                             ...settings,
                             voice_llm_provider: p.v,
-                            voice_llm_model:
-                              p.v === "google" ? "gemini-1.5-flash" : "claude-sonnet-4-6",
+                            voice_llm_model: p.v === "google" ? "gemini-3-flash-preview" : "gpt-4o",
                           })
                         }
                         className={cn(

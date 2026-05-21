@@ -4,7 +4,7 @@ import type { AuthenticatedRequest } from "../types/auth";
 import * as claudeBrain from "../lib/claude-brain";
 import { drizzle, log, IS_PROD, auditLogger, fetchWithTimeout } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, sql, or, ilike, not, inArray } from "drizzle-orm";
+import { eq, and, sql, or, ilike, not, inArray, asc } from "drizzle-orm";
 import {
   timingSafeEq,
   VAPI_WEBHOOK_SECRET,
@@ -76,6 +76,10 @@ import {
   handleSendPaymentLink,
   handleSendSignupLink,
 } from "../lib/vapi-tool-handlers";
+import {
+  buildShowcaseAssistantPayload,
+  findShowcaseAgentByPayload,
+} from "../lib/showcase-assistant";
 
 // The extraction from server.ts is now complete. The Gemini post-call lesson
 // extraction, TCPA consent ledger writer, and webhook dispatch are fully
@@ -84,6 +88,243 @@ import {
 const router = express.Router();
 let _warnedAboutVapiSecret = false;
 const DEFAULT_AGENT_ROLE = "customer_service";
+
+type ShowcaseCallContext = {
+  callId: string;
+  callerName: string | null;
+  callerNumber: string | null;
+  dialedNumber: string | null;
+};
+
+function extractShowcaseCallContext(
+  payload: Record<string, unknown>,
+  message?: Record<string, any>,
+): ShowcaseCallContext {
+  const call = ((payload.call as Record<string, any> | undefined) ||
+    (message?.call as Record<string, any> | undefined) ||
+    {}) as Record<string, any>;
+  const rawDialedNumber =
+    typeof call.phoneNumber === "string" ? call.phoneNumber : call.phoneNumber?.number;
+
+  return {
+    callId:
+      (typeof call.id === "string" && call.id) ||
+      `showcase-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    callerName:
+      typeof call.customer?.name === "string" && call.customer.name.trim()
+        ? call.customer.name.trim()
+        : null,
+    callerNumber: sanitizePhone(call.customer?.number) || null,
+    dialedNumber: sanitizePhone(rawDialedNumber) || rawDialedNumber || null,
+  };
+}
+
+function normalizeTaskPriority(priority: unknown): "low" | "medium" | "high" {
+  return priority === "low" || priority === "high" ? priority : "medium";
+}
+
+async function resolveShowcaseOwnerUserId(): Promise<string | null> {
+  const ownerEmail = process.env.OWNER_EMAIL?.trim().toLowerCase();
+  if (ownerEmail) {
+    const [owner] = await drizzle
+      .select({ id: schema.users.id })
+      .from(schema.users)
+      .where(sql`lower(${schema.users.email}) = ${ownerEmail}`)
+      .limit(1);
+    if (owner?.id) return owner.id;
+  }
+
+  const [admin] = await drizzle
+    .select({ id: schema.users.id })
+    .from(schema.users)
+    .where(eq(schema.users.isAdmin, true))
+    .orderBy(asc(schema.users.createdAt))
+    .limit(1);
+
+  return admin?.id ?? null;
+}
+
+async function queueShowcaseTask(args: {
+  ownerUserId: string | null;
+  taskType: string;
+  description: string;
+  priority: "low" | "medium" | "high";
+  callContext: ShowcaseCallContext;
+  showcaseAgentName: string;
+  extraCustomerInfo?: Record<string, unknown>;
+}): Promise<boolean> {
+  if (!args.ownerUserId) return false;
+
+  await drizzle.insert(schema.fleetTasks).values({
+    userId: args.ownerUserId,
+    taskType: args.taskType,
+    description: args.description,
+    priority: args.priority,
+    status: "pending",
+    sourceType: "showcase_call",
+    sourceId: args.callContext.callId,
+    targetChannel: "manual",
+    customerInfo: {
+      showcaseAgent: args.showcaseAgentName,
+      callerName: args.callContext.callerName,
+      callerNumber: args.callContext.callerNumber,
+      dialedNumber: args.callContext.dialedNumber,
+      ...(args.extraCustomerInfo || {}),
+    },
+  });
+
+  return true;
+}
+
+async function handleShowcaseToolCalls(args: {
+  payload: Record<string, unknown>;
+  message: Record<string, any>;
+  showcaseAgentName: string;
+}) {
+  const toolCalls = Array.isArray(args.message.toolCalls) ? args.message.toolCalls : [];
+  const callContext = extractShowcaseCallContext(args.payload, args.message);
+  const ownerUserId = await resolveShowcaseOwnerUserId();
+  const results: Array<{ toolCallId: string; result: string }> = [];
+
+  for (const toolCall of toolCalls) {
+    const toolName = toolCall?.function?.name;
+    const toolArgs = (toolCall?.function?.arguments || {}) as Record<string, any>;
+
+    if (toolName === "send_signup_link") {
+      const { sendSignupLinkEmail } = await import("../lib/email-service");
+      const { result } = await handleSendSignupLink(toolArgs, {
+        sendSignupLinkEmail,
+        agentName: args.showcaseAgentName,
+        log,
+      });
+      results.push({ toolCallId: toolCall.id, result });
+      continue;
+    }
+
+    if (toolName === "create_account") {
+      const { authService } = await import("../lib/auth-service");
+      const { sendPasswordResetEmail } = await import("../lib/email-service");
+      const crypto = await import("crypto");
+      const { result } = await handleCreateAccount(toolArgs, {
+        signUp: (email, password, fullName) => authService.signUp(email, password, fullName),
+        createPasswordResetToken: (email) => authService.createPasswordResetToken(email),
+        sendPasswordResetEmail,
+        randomPassword: () => crypto.randomBytes(24).toString("base64url"),
+        log,
+      });
+      results.push({ toolCallId: toolCall.id, result });
+      continue;
+    }
+
+    if (toolName === "send_payment_link") {
+      const { sendEmail } = await import("../lib/email-service");
+      const { result } = await handleSendPaymentLink(toolArgs, {
+        sendEmail,
+        log,
+      });
+      results.push({ toolCallId: toolCall.id, result });
+      continue;
+    }
+
+    if (toolName === "schedule_callback") {
+      const callbackDatetime = String(toolArgs.callback_datetime || "").trim();
+      const notes = String(toolArgs.notes || "Caller asked for a callback.").trim();
+      const queued = await queueShowcaseTask({
+        ownerUserId,
+        taskType: "showcase_callback",
+        description: `[Showcase callback] ${args.showcaseAgentName}: ${notes}`,
+        priority: "high",
+        callContext,
+        showcaseAgentName: args.showcaseAgentName,
+        extraCustomerInfo: { callbackDatetime },
+      }).catch(() => false);
+
+      results.push({
+        toolCallId: toolCall.id,
+        result: queued
+          ? `Callback queued for human follow-up at ${callbackDatetime || "the requested time"}.`
+          : "I captured the callback request, but the handoff queue is unavailable right now.",
+      });
+      continue;
+    }
+
+    if (toolName === "escalate_to_human") {
+      const reason = String(toolArgs.reason || "Caller requested a human follow-up.").trim();
+      const queued = await queueShowcaseTask({
+        ownerUserId,
+        taskType: "human_escalation",
+        description: `[Showcase escalation] ${args.showcaseAgentName}: ${reason}`,
+        priority: "high",
+        callContext,
+        showcaseAgentName: args.showcaseAgentName,
+        extraCustomerInfo: { reason },
+      }).catch(() => false);
+
+      results.push({
+        toolCallId: toolCall.id,
+        result: queued
+          ? "Human follow-up queued. Let the caller know the team will reach out."
+          : "I noted the escalation, but the follow-up queue is unavailable right now.",
+      });
+      continue;
+    }
+
+    if (toolName === "create_fleet_task") {
+      const description = String(toolArgs.description || "Public-line follow-up requested.").trim();
+      const queued = await queueShowcaseTask({
+        ownerUserId,
+        taskType: "showcase_follow_up",
+        description: `[Showcase follow-up] ${args.showcaseAgentName}: ${description}`,
+        priority: normalizeTaskPriority(toolArgs.priority),
+        callContext,
+        showcaseAgentName: args.showcaseAgentName,
+      }).catch(() => false);
+
+      results.push({
+        toolCallId: toolCall.id,
+        result: queued
+          ? "Follow-up task queued for the team."
+          : "I captured the follow-up request, but the task queue is unavailable right now.",
+      });
+      continue;
+    }
+
+    if (toolName === "capture_customer_profile") {
+      const queued = await queueShowcaseTask({
+        ownerUserId,
+        taskType: "showcase_profile",
+        description: `[Showcase profile] ${args.showcaseAgentName}: structured caller notes captured.`,
+        priority: "medium",
+        callContext,
+        showcaseAgentName: args.showcaseAgentName,
+        extraCustomerInfo: { profile: toolArgs },
+      }).catch(() => false);
+
+      results.push({
+        toolCallId: toolCall.id,
+        result: queued
+          ? "Caller context captured for human follow-up."
+          : "I captured the caller context, but the follow-up queue is unavailable right now.",
+      });
+      continue;
+    }
+
+    if (toolName === "view_recent_interactions") {
+      results.push({
+        toolCallId: toolCall.id,
+        result: "No prior call history is stored for this public showcase line.",
+      });
+      continue;
+    }
+
+    results.push({
+      toolCallId: toolCall.id,
+      result: `Tool ${String(toolName || "unknown")} is not available on Wireline's public showcase lines.`,
+    });
+  }
+
+  return results;
+}
 
 router.post("/api/vapi-webhook", async (req, res) => {
   const provided =
@@ -113,6 +354,39 @@ router.post("/api/vapi-webhook", async (req, res) => {
   }
 
   const payload = req.body as Record<string, unknown>;
+  const message = payload.message as Record<string, any> | undefined;
+  const showcaseRoute = findShowcaseAgentByPayload(payload);
+
+  if (showcaseRoute && message?.type === "assistant-request") {
+    return res.json({
+      assistant: buildShowcaseAssistantPayload(showcaseRoute.agent, showcaseRoute.kind, {
+        serverUrlSecret: process.env.VAPI_WEBHOOK_SECRET,
+      }),
+    });
+  }
+
+  if (showcaseRoute && message?.type === "tool-calls") {
+    const results = await handleShowcaseToolCalls({
+      payload,
+      message,
+      showcaseAgentName: showcaseRoute.agent.name,
+    });
+    return res.json({ results });
+  }
+
+  if (
+    showcaseRoute &&
+    message &&
+    [
+      "status-update",
+      "conversation-update",
+      "language-change-detected",
+      "end-of-call-report",
+    ].includes(message.type)
+  ) {
+    return res.json({ received: true });
+  }
+
   const queryAgentId = typeof req.query.agentId === "string" ? req.query.agentId : undefined;
   const routed = await resolveVapiWebhookAgent({ payload, queryAgentId });
   if (!routed.ok) {
@@ -123,7 +397,6 @@ router.post("/api/vapi-webhook", async (req, res) => {
 
   const webhookAgentId = routed.webhookAgentId;
   const agent = { id: webhookAgentId, user_id: routed.agentUserId };
-  const message = payload.message as Record<string, any> | undefined;
 
   const [userSettings] = await drizzle
     .select({
@@ -138,8 +411,9 @@ router.post("/api/vapi-webhook", async (req, res) => {
     .limit(1);
 
   const subscriptionStatus = userSettings?.subscriptionStatus || "active";
-  const voiceLlmProvider = userSettings?.voiceLlmProvider || "openai";
-  const voiceLlmModel = userSettings?.voiceLlmModel || "gpt-4.1-mini";
+  const voiceLlmProvider =
+    userSettings?.voiceLlmProvider || claudeBrain.VAPI_TENANT_DEFAULT_PROVIDER;
+  const voiceLlmModel = userSettings?.voiceLlmModel || claudeBrain.VAPI_TENANT_DEFAULT_MODEL;
 
   if (subscriptionStatus !== "active") {
     if (message && message.type === "assistant-request") {
@@ -148,7 +422,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
           firstMessage: "The automated service for this line is suspended.",
           model: {
             provider: "openai",
-            model: "gpt-4.1-mini",
+            model: claudeBrain.VAPI_OPENAI_FALLBACK_MODEL,
             systemPrompt: "Explain suspension and end call.",
           },
         },
@@ -172,7 +446,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
           firstMessage: "I am having trouble connecting. Please try again.",
           model: {
             provider: "openai",
-            model: "gpt-4.1-mini",
+            model: claudeBrain.VAPI_OPENAI_FALLBACK_MODEL,
             systemPrompt: "Apologize and hang up.",
           },
         },
@@ -282,8 +556,30 @@ router.post("/api/vapi-webhook", async (req, res) => {
       if (toolCall.function.name === "send_email") {
         try {
           const { to_email, subject, body } = toolCall.function.arguments;
+          const reviewed = await claudeBrain.superviseClientCommunication({
+            channel: "email",
+            agentName: webhookAgentId,
+            source: "voice_tool",
+            purpose: "client follow-up requested during a live call",
+            recipient: to_email,
+            subject,
+            body,
+            context:
+              "Outbound email generated from a Vapi tool call during a customer conversation.",
+          });
+          if (!reviewed.approved) {
+            results.push({
+              toolCallId: toolCall.id,
+              result: `Email held for review: ${reviewed.rationale}`,
+            });
+            continue;
+          }
           const service = new IntegrationService(agent?.user_id);
-          const success = await service.sendEmail({ to: to_email, subject, body });
+          const success = await service.sendEmail({
+            to: to_email,
+            subject: reviewed.subject || subject,
+            body: reviewed.body,
+          });
           results.push({
             toolCallId: toolCall.id,
             result: success ? "Email sent." : "Failed to send email.",
@@ -362,9 +658,25 @@ router.post("/api/vapi-webhook", async (req, res) => {
               result: "No destination number was available for that message.",
             });
           } else {
+            const reviewed = await claudeBrain.superviseClientCommunication({
+              channel: "sms",
+              agentName: webhookAgentId,
+              source: "voice_tool",
+              purpose: "client text follow-up requested during a live call",
+              recipient: targetNumber,
+              body: message_body,
+              context: `Requested channel: ${channel === "whatsapp" ? "whatsapp" : "sms"}.`,
+            });
+            if (!reviewed.approved) {
+              results.push({
+                toolCallId: toolCall.id,
+                result: `Text message held for review: ${reviewed.rationale}`,
+              });
+              continue;
+            }
             const outcome = await sendTenantMessage(agent?.user_id, {
               to: targetNumber,
-              body: message_body,
+              body: reviewed.body,
               channel: channel === "whatsapp" ? "whatsapp" : "sms",
             });
             results.push({

@@ -21,6 +21,9 @@ export const WIRELINE_TAGLINE = "AI agents for every customer conversation";
 export const WIRELINE_ONE_LINER =
   "Wireline runs your inbound support, outbound sales, and email follow-ups across one fleet of AI agents — trained on your playbook, available 24/7, and improving with every interaction.";
 
+export const WIRELINE_VOICE_STACK =
+  "Live voice calls run on Gemini 3 Flash Preview. When Wireline has to recover from a Vapi model provisioning failure, it falls back to GPT-4o. Claude remains the coaching and written-review layer, not the live phone runtime.";
+
 export const WIRELINE_PLANS = [
   {
     name: "Personal",
@@ -224,6 +227,8 @@ export function buildWirelineKnowledgeBlock(mode: "cs" | "demo" | "client" = "de
     "COMPETITIVE POSITIONING — honest 1-line framings:",
     competitorLines,
     "",
+    `VOICE MODEL STACK: ${WIRELINE_VOICE_STACK}`,
+    "",
   ];
 
   if (mode === "client") {
@@ -291,13 +296,16 @@ export function buildWirelineKnowledgeBlock(mode: "cs" | "demo" | "client" = "de
   );
   base.push("");
   base.push("ACTIONS YOU CAN TAKE:");
-  base.push("  - book_calendar_event — if the caller wants a meeting, demo, or callback.");
-  base.push("  - send_email — recap, confirmation, or follow-up notes.");
-  base.push("  - send_text_message — text the caller a link, number, or doc.");
+  base.push("  - create_account — if the caller wants to sign up right now on the phone.");
+  base.push("  - send_payment_link — if the caller is ready to buy or wants the checkout link.");
+  base.push("  - send_signup_link — if the caller wants trial info or a signup link by email.");
+  base.push("  - schedule_callback — if they are busy and give you a specific callback time.");
+  base.push("  - create_fleet_task — if a human needs to follow up after the call.");
   base.push(
-    "  - escalate_to_human — page Mike or the on-call human for anything you can't resolve.",
+    "  - escalate_to_human — page Mike or the on-call human for anything urgent or high-risk.",
   );
-  base.push("  - capture_lead — log a new opportunity into the CRM.");
+  base.push("  - view_recent_interactions — pull continuity on returning callers.");
+  base.push("  - capture_customer_profile — save pain points, budget, urgency, and next steps.");
   base.push("");
   base.push("CLOSE EVERY CALL WITH:");
   base.push(

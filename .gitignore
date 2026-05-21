@@ -18,3 +18,4 @@ test-results/
 e2e/screenshots/*.png
 !e2e/screenshots/.gitkeep
 .vercel
+.env*.local

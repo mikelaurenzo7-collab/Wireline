@@ -5,7 +5,7 @@ import { getErrorMessage } from "./server-utils";
 const genAI = process.env.GEMINI_API_KEY
   ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
   : null;
-const model = genAI ? genAI.getGenerativeModel({ model: "gemini-1.5-flash" }) : null;
+const model = genAI ? genAI.getGenerativeModel({ model: "gemini-2.5-flash" }) : null;
 
 /**
  * Gemini grounded web search. The `googleSearchRetrieval` tool lets
@@ -14,12 +14,8 @@ const model = genAI ? genAI.getGenerativeModel({ model: "gemini-1.5-flash" }) : 
  * fresh public info that isn't in its knowledge base — competitor
  * pricing, business hours, news, weather, regulations.
  *
- * Uses gemini-1.5-pro (not flash) because grounding requires a model
- * with tool-use support and pro produces noticeably better citation
- * weaving + summary fidelity for the cost difference. Falls back to
- * a no-grounding flash call if pro errors out (rate limit, region
- * unavailable), so the agent gets *some* answer rather than a hard
- * fail mid-call.
+ * Uses Gemini 2.5 Flash for live grounding/fallback so the fallback
+ * family stays aligned with the voice runtime stack.
  */
 export async function groundedSearch(query: string): Promise<{
   answer: string;
@@ -36,7 +32,7 @@ export async function groundedSearch(query: string): Promise<{
 
   try {
     const groundedModel = genAI.getGenerativeModel({
-      model: "gemini-1.5-pro",
+      model: "gemini-2.5-flash",
       tools: [{ googleSearchRetrieval: {} } as any],
     });
     const result = await groundedModel.generateContent(query);

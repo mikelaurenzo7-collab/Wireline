@@ -28,6 +28,8 @@ export type ContactAgent = {
   scope: string;
   /** First-message template the agent opens calls with — keep it short, warm, scope-clear. */
   firstMessage: string;
+  /** Public showcase lines are pinned to a specific ElevenLabs voice so syncs cannot drift. */
+  voiceId?: string;
   /** Comma-joined list of bucket labels this agent should handle. Used by routing logic in the CS playbook. */
   handles: string;
   tel: string;
@@ -76,6 +78,7 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     scope: ALL_ENCOMPASSING_SCOPE,
     firstMessage:
       "Hi, thanks for calling Wireline — this is Sarah. Who do I have the pleasure of speaking with?",
+    voiceId: "EXAVITQu4vr4xnSDxMaL",
     handles: ALL_ENCOMPASSING_HANDLES,
     tel: "+16306425661",
     display: "(630) 642-5661",
@@ -92,12 +95,14 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     display: "(630) 581-1834",
     tint: "#4F1E7B",
     defaultVibe: "playful",
+    voiceId: "TX3LPaxmHKxFdv7VOQHJ",
   },
   {
     name: "Maya",
     role: "Wireline Specialist",
     scope: ALL_ENCOMPASSING_SCOPE,
     firstMessage: "Hi, thanks for calling Wireline — this is Maya. Who am I speaking with?",
+    voiceId: "XB0fDUnXU5powFXDhCwa",
     handles: ALL_ENCOMPASSING_HANDLES,
     tel: "+16306425927",
     display: "(630) 642-5927",
@@ -121,6 +126,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<DemoAgent> = [
       "Asks which Wireline demo the caller wants to hear, then role-plays that agent live: home services, medical, legal, real estate, insurance, restaurant, or outbound sales.",
     firstMessage:
       "Thanks for calling Wireline — this is Ria, your demo concierge. Which kind of agent would you like to hear: home services, medical, legal, real estate, insurance, restaurant, or outbound sales?",
+    voiceId: "TxGEqnHWrfWFTfGW9XjX",
     handles:
       "demo concierge, choose demo, home services, HVAC, plumbing, electrical, medical, legal, real estate, insurance, restaurant, outbound, SDR",
     tel: "+15642389455",
@@ -135,6 +141,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<DemoAgent> = [
       "Role-plays a clinic front desk — greets patients, captures reason for visit, schedules appointments, handles insurance pre-check. Healthcare-style demo; not currently HIPAA-certified (BAA available on the Enterprise roadmap).",
     firstMessage:
       "Thanks for calling the Wireline Medical demo — this is Marcus. May I have your name?",
+    voiceId: "pNInz6obpgDQGcFmaJgB",
     handles: "medical, healthcare, clinic, patient intake, appointment",
     tel: "+16173134469",
     display: "(617) 313-4469",
@@ -148,6 +155,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<DemoAgent> = [
       "Role-plays a law-firm intake line — runs the conflict check, captures matter type and urgency, books the consultation, takes a clean intake for the attorney.",
     firstMessage:
       "Thanks for calling the Wireline Legal demo — this is Diana. May I have your name?",
+    voiceId: "XB0fDUnXU5powFXDhCwa",
     handles: "legal, law firm, intake, conflict check, consultation",
     tel: "+15727269365",
     display: "(572) 726-9365",
@@ -161,6 +169,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<DemoAgent> = [
       "Role-plays a real-estate front desk — answers listing inquiries, qualifies buyer budget + timeline, books showings, captures seller leads.",
     firstMessage:
       "Thanks for calling the Wireline Realty demo — this is Aisha. Who am I speaking with?",
+    voiceId: "21m00Tcm4TlvDq8ikWAM",
     handles: "real estate, realtor, listing, showing, buyer, seller lead",
     tel: "+19733638874",
     display: "(973) 363-8874",
@@ -174,6 +183,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<DemoAgent> = [
       "Role-plays an insurance line — handles quote intake, walks claimants through first-notice-of-loss, captures incident detail, opens the case file.",
     firstMessage:
       "Thanks for calling the Wireline Insurance demo — this is Elena. Can I start with your name?",
+    voiceId: "bIHbv24MWmeRgasZH58o",
     handles: "insurance, claim, loss, FNOL, quote, policy",
     tel: "+19044601596",
     display: "(904) 460-1596",
@@ -187,6 +197,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<DemoAgent> = [
       "Role-plays a restaurant phone host — takes reservations, captures takeout orders accurately, handles allergen questions, fields private-event inquiries.",
     firstMessage:
       "Thanks for calling the Wireline restaurant demo — this is Nico! Who am I speaking with?",
+    voiceId: "pNInz6obpgDQGcFmaJgB",
     handles: "restaurant, reservation, takeout, catering, private event",
     tel: "+12075935155",
     display: "(207) 593-5155",
@@ -200,6 +211,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<DemoAgent> = [
       "Role-plays a cold-call SDR — calls a lead from a CSV, qualifies fit with a BANT pass, books discovery calls with closers, logs results to CRM.",
     firstMessage:
       "Hey, thanks for calling the Wireline SDR demo — this is Jake. Who am I speaking with?",
+    voiceId: "yoZ06aMxZJJ28mfd3POQ",
     handles: "outbound, cold call, SDR, prospecting, qualification, BANT",
     tel: "+14692571581",
     display: "(469) 257-1581",
