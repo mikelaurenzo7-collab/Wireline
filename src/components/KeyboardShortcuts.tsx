@@ -105,13 +105,16 @@ export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsPr
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 12 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-x-4 top-[10%] z-[91] mx-auto max-w-2xl"
+            className="fixed inset-x-3 sm:inset-x-4 bottom-0 sm:bottom-auto sm:top-[10%] z-[91] mx-auto max-w-2xl"
+            style={{
+              paddingBottom: "env(safe-area-inset-bottom, 0)",
+            }}
             ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-label="Keyboard shortcuts"
           >
-            <div className="glass-strong rounded-2xl border border-white/12 overflow-hidden">
+            <div className="glass-strong rounded-t-2xl sm:rounded-2xl border border-white/12 overflow-hidden max-h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-1rem)] overflow-y-auto overscroll-contain">
               {/* Header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-white/8">
                 <div className="flex items-center gap-3">
@@ -132,7 +135,7 @@ export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsPr
                   ref={closeRef}
                   onClick={onClose}
                   aria-label="Close keyboard shortcuts"
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-ink/50 hover:text-ink hover:bg-white/8 border border-white/8 hover:border-white/20 transition-all"
+                  className="w-11 h-11 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-ink/50 hover:text-ink hover:bg-white/8 border border-white/8 hover:border-white/20 transition-all"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>

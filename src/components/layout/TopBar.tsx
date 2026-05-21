@@ -104,7 +104,8 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
         aria-label={`Go to ${item.label}`}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "group relative flex items-center gap-1.5 h-8 px-2.5 lg:px-3 rounded-lg transition-all text-[11px] sm:text-[12px] font-medium shrink-0",
+          "group relative flex items-center gap-1.5 px-2.5 lg:px-3 rounded-lg transition-all text-[11px] sm:text-[12px] font-medium shrink-0",
+          isDrawer ? "min-h-11" : "h-8",
           isDrawer
             ? active
               ? "shadow-md shadow-[#4F1E7B]/20"
@@ -364,7 +365,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", stiffness: 360, damping: 32 }}
-              className="fixed top-0 bottom-0 left-0 w-[280px] z-[85] glass-strong border-r border-black/8 flex flex-col p-4 lg:hidden"
+              className="fixed top-0 bottom-0 left-0 w-[min(21rem,calc(100vw-0.75rem))] z-[85] glass-strong border-r border-black/8 flex flex-col p-4 lg:hidden"
               style={{
                 /* Push the drawer content below the iOS notch / Dynamic
                  * Island so the logo + close button don't disappear
@@ -395,14 +396,14 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
                 </Link>
                 <button
                   onClick={() => setMobileOpen(false)}
-                  className="w-9 h-9 rounded-lg flex items-center justify-center text-ink/60 hover:text-ink hover:bg-white/5 transition-colors"
+                  className="w-11 h-11 rounded-lg flex items-center justify-center text-ink/60 hover:text-ink hover:bg-white/5 transition-colors"
                   aria-label="Close navigation"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <nav className="flex-1 min-h-0 overflow-y-auto space-y-3">
+              <nav className="flex-1 min-h-0 overflow-y-auto overscroll-contain space-y-3">
                 {NAV_GROUPS.map((group) => (
                   <div key={group.label}>
                     <div className="px-2 mb-1 text-[8px] font-semibold uppercase tracking-[0.42em] text-muted/55">
@@ -436,7 +437,7 @@ export default function TopBar({ onShowShortcuts }: { onShowShortcuts: () => voi
                   <button
                     onClick={() => signOut()}
                     aria-label="Sign out"
-                    className="w-8 h-8 rounded-md flex items-center justify-center text-ink/40 hover:text-rose-600 hover:bg-rose-500/8 border border-black/7 hover:border-rose-500/35 transition-colors"
+                    className="w-11 h-11 rounded-md flex items-center justify-center text-ink/40 hover:text-rose-600 hover:bg-rose-500/8 border border-black/7 hover:border-rose-500/35 transition-colors"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                   </button>

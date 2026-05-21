@@ -153,7 +153,11 @@ export default function TrialGateModal() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:px-4 sm:py-6 bg-black/55 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center px-0 sm:px-4 sm:py-6 bg-black/55 backdrop-blur-sm"
+          style={{
+            paddingTop: "env(safe-area-inset-top, 0)",
+            paddingBottom: "env(safe-area-inset-bottom, 0)",
+          }}
           role="dialog"
           aria-modal="true"
           aria-labelledby="trial-gate-title"
@@ -167,12 +171,12 @@ export default function TrialGateModal() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 24 }}
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-            className="relative w-full max-w-3xl rounded-t-3xl sm:rounded-3xl bg-paper border border-black/10 shadow-2xl overflow-hidden"
+            className="relative w-full max-w-3xl rounded-t-3xl sm:rounded-3xl bg-paper border border-black/10 shadow-2xl overflow-y-auto overscroll-contain max-h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-0.75rem)]"
           >
             <button
               onClick={() => setDetail(null)}
               aria-label="Close"
-              className="absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center text-muted hover:text-ink hover:bg-black/5 transition-colors z-10"
+              className="absolute top-4 right-4 w-11 h-11 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-muted hover:text-ink hover:bg-black/5 transition-colors z-10"
             >
               <X className="w-4 h-4" />
             </button>
