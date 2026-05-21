@@ -62,6 +62,15 @@ const APOLLO_TOKEN = "https://app.apollo.io/api/v1/oauth/token";
 //  OAuth Configuration
 // ────────────────────────────────────────────────────────────────────
 
+/** Platform can run prospecting via the shared APOLLO_API_KEY (no per-tenant OAuth). */
+export function apolloPlatformConfigured(): boolean {
+  return (
+    !!process.env.APOLLO_API_KEY?.trim() ||
+    !!(process.env.APOLLO_CLIENT_ID && process.env.APOLLO_CLIENT_SECRET)
+  );
+}
+
+/** True when Admin → Integrations can start the Apollo OAuth popup (per-tenant workspace). */
 export function apolloOAuthConfigured(): boolean {
   return !!(process.env.APOLLO_CLIENT_ID && process.env.APOLLO_CLIENT_SECRET);
 }

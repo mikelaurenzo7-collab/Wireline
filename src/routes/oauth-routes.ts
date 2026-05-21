@@ -47,6 +47,7 @@ import {
 } from "../lib/zoom-service";
 import {
   apolloOAuthConfigured,
+  apolloPlatformConfigured,
   getApolloAuthUrl,
   exchangeApolloCode,
   getApolloUserInfo,
@@ -81,6 +82,9 @@ import {
   exchangeMicrosoftGraphCode,
   getMicrosoftAccountEmail,
   disconnectMicrosoftGraph,
+  listTeamsNotifyTargets,
+  setTeamsNotifyTarget,
+  bootstrapTeamsNotifyTarget,
   type MsGraphProvider,
 } from "../lib/microsoft-graph-service";
 import { computeIntegrationHealth } from "../lib/integration-health";
@@ -1507,6 +1511,10 @@ async function handleMsGraphCallback(
         },
       });
 
+    if (provider === "microsoft_teams") {
+      void bootstrapTeamsNotifyTarget(userId).catch(() => {});
+    }
+
     const targetOrigin =
       (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
       `${req.protocol}://${req.get("host")}`;
@@ -1553,6 +1561,43 @@ router.post(
     } catch (e: any) {
       log.error("Microsoft Teams disconnect failed", { error: e?.message });
       res.status(500).json({ error: "Failed to disconnect Microsoft Teams" });
+    }
+  },
+);
+
+router.get(
+  "/api/oauth/microsoft_teams/channels",
+  authenticateUser,
+  async (req: express.Request, res: express.Response) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    try {
+      const channels = await listTeamsNotifyTargets(userId);
+      res.json({ channels });
+    } catch {
+      res.status(500).json({ error: "Failed to list Teams channels" });
+    }
+  },
+);
+
+router.post(
+  "/api/oauth/microsoft_teams/notify-target",
+  authenticateUser,
+  async (req: express.Request, res: express.Response) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    const { team_id, channel_id, team_name, channel_name } = req.body || {};
+    if (!team_id || !channel_id) {
+      return res.status(400).json({ error: "team_id and channel_id required" });
+    }
+    try {
+      await setTeamsNotifyTarget(userId, String(team_id), String(channel_id), {
+        team_name: team_name ? String(team_name) : undefined,
+        channel_name: channel_name ? String(channel_name) : undefined,
+      });
+      res.json({ ok: true });
+    } catch {
+      res.status(500).json({ error: "Failed to set Teams notify target" });
     }
   },
 );
@@ -1664,8 +1709,15 @@ router.get(
               connected: true,
               email: apolloConn.connectedEmail,
               connected_at: apolloConn.createdAt,
+              platform_active: apolloPlatformConfigured(),
+              oauth_connect_available: apolloOAuthConfigured(),
             }
-          : { connected: false, configured: apolloOAuthConfigured() },
+          : {
+              connected: false,
+              configured: apolloPlatformConfigured(),
+              platform_active: apolloPlatformConfigured(),
+              oauth_connect_available: apolloOAuthConfigured(),
+            },
         meta: metaConn
           ? {
               connected: true,
@@ -1693,6 +1745,12 @@ router.get(
               connected: true,
               email: teamsConn.connectedEmail,
               connected_at: teamsConn.createdAt,
+              team_id: (teamsConn.metadata as { team_id?: string } | null)?.team_id ?? null,
+              channel_id:
+                (teamsConn.metadata as { channel_id?: string } | null)?.channel_id ?? null,
+              team_name: (teamsConn.metadata as { team_name?: string } | null)?.team_name ?? null,
+              channel_name:
+                (teamsConn.metadata as { channel_name?: string } | null)?.channel_name ?? null,
             }
           : { connected: false, configured: microsoftGraphConfigured() },
         microsoft_excel: excelConn
@@ -1797,6 +1855,8 @@ router.get(
             active: true,
           },
         });
+
+      void bootstrapDefaultChannel(userId).catch(() => {});
 
       const targetOrigin =
         (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||

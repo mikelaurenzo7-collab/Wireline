@@ -20,6 +20,7 @@
  * UI and docs. Do not re-sort alphabetically — group ordering matters.
  */
 import * as claudeBrain from "./claude-brain";
+import { apolloPlatformConfigured } from "./apollo-service";
 import { microsoftGraphConfigured } from "./microsoft-graph-service";
 import { slackOAuthConfigured } from "./slack-service";
 
@@ -156,9 +157,9 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
     description: "Autonomous lead prospecting for the `prospect_leads` action type.",
     group: "actions",
     required: false,
-    envVars: ["APOLLO_API_KEY"],
+    envVars: ["APOLLO_API_KEY", "APOLLO_CLIENT_ID", "APOLLO_CLIENT_SECRET"],
     fallback:
-      "Without it, searchLeads()/enrichLead() return empty and the prospecting recipe is a no-op.",
+      "Set APOLLO_API_KEY for platform prospecting, and/or APOLLO_CLIENT_ID + APOLLO_CLIENT_SECRET for per-tenant OAuth in Admin.",
     docsUrl: "https://app.apollo.io/#/settings/integrations/api",
   },
   {
@@ -266,12 +267,12 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
     id: "meta",
     label: "Meta (Facebook + Instagram Ads)",
     description:
-      "Planned: route Meta Lead Ad submissions into the outbound dialer + export CAPI conversions. Env vars are reserved in Vercel; the webhook + CAPI handlers are not yet built.",
+      "OAuth + Lead Ads webhook ingest + Conversions API (Schedule/Lead events). Connect in Admin → Integrations; set META_PIXEL_ID + META_CAPI_ACCESS_TOKEN for attribution.",
     group: "actions",
     required: false,
     envVars: ["META_APP_ID", "META_APP_SECRET"],
     fallback:
-      "Not wired in code yet — META_APP_ID / META_APP_SECRET are reserved but the Lead Ads webhook + CAPI conversion endpoints have not been implemented. Track in Craft → Roadmap.",
+      "Without META_APP_ID/SECRET the Connect button is hidden. CAPI also needs META_PIXEL_ID and META_CAPI_ACCESS_TOKEN on the platform deployment.",
     docsUrl: "https://developers.facebook.com/apps",
   },
 
@@ -356,6 +357,8 @@ function evaluateStatus(d: IntegrationDescriptor): IntegrationStatus {
       const haveOAuth = envIsPresent("HUBSPOT_CLIENT_ID") && envIsPresent("HUBSPOT_CLIENT_SECRET");
       return haveOAuth ? "configured" : "missing";
     }
+    case "apollo":
+      return apolloPlatformConfigured() ? "configured" : "missing";
     case "upstash-redis": {
       const have =
         envIsPresent("UPSTASH_REDIS_REST_URL") && envIsPresent("UPSTASH_REDIS_REST_TOKEN");
@@ -398,7 +401,7 @@ export function getHealthCapabilities() {
     google_oauth: envIsPresent("GOOGLE_CLIENT_ID"),
     microsoft_oauth: envIsPresent("MICROSOFT_CLIENT_ID"),
     stripe: envIsPresent("STRIPE_SECRET_KEY"),
-    apollo: envIsPresent("APOLLO_API_KEY"),
+    apollo: apolloPlatformConfigured(),
     docusign:
       envIsPresent("DOCUSIGN_ACCOUNT_ID") &&
       (envIsPresent("DOCUSIGN_JWT_TOKEN") || envIsPresent("DOCUSIGN_ACCESS_TOKEN")),

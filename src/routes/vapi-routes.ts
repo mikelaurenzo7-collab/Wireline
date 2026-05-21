@@ -464,1123 +464,1204 @@ router.post("/api/vapi-webhook", async (req, res) => {
   }
 
   if (message && message.type === "tool-calls") {
-    const results = [];
-    for (const toolCall of message.toolCalls) {
-      if (toolCall.function.name === "create_fleet_task") {
-        try {
-          const { description, priority } = toolCall.function.arguments;
-          const [task] = await drizzle
-            .insert(schema.fleetTasks)
-            .values({
-              userId: agent?.user_id,
-              agentId: webhookAgentId,
-              taskType: "follow_up",
-              description,
-              priority: priority || "medium",
-              status: "pending",
-              sourceType: "phone_call",
-              sourceId:
-                (message.call as { id?: string } | undefined)?.id ||
-                (payload.call as { id?: string } | undefined)?.id ||
-                "in-call",
-              targetChannel: "manual",
-            })
-            .returning({ id: schema.fleetTasks.id });
+    const { withVapiToolTimeout } = await import("../lib/vapi-tool-results");
+    const toolCallRows = await Promise.all(
+      message.toolCalls.map((toolCall) =>
+        withVapiToolTimeout(
+          (async () => {
+            const pushResults: { toolCallId: string; result: string }[] = [];
+            const push = (row: { toolCallId: string; result: string }) => {
+              pushResults.push(row);
+            };
+            if (toolCall.function.name === "create_fleet_task") {
+              try {
+                const { description, priority } = toolCall.function.arguments;
+                const [task] = await drizzle
+                  .insert(schema.fleetTasks)
+                  .values({
+                    userId: agent?.user_id,
+                    agentId: webhookAgentId,
+                    taskType: "follow_up",
+                    description,
+                    priority: priority || "medium",
+                    status: "pending",
+                    sourceType: "phone_call",
+                    sourceId:
+                      (message.call as { id?: string } | undefined)?.id ||
+                      (payload.call as { id?: string } | undefined)?.id ||
+                      "in-call",
+                    targetChannel: "manual",
+                  })
+                  .returning({ id: schema.fleetTasks.id });
 
-          results.push({
-            toolCallId: toolCall.id,
-            result: `Task ${task.id.split("-")[0]} created.`,
-          });
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Failed to create task." });
-        }
-      }
-
-      if (toolCall.function.name === "search_leads") {
-        try {
-          const { query } = toolCall.function.arguments;
-          const safeQuery = String(query || "")
-            .replace(/[^A-Za-z0-9 @.\-+]/g, "")
-            .slice(0, 80);
-          const leads = await drizzle
-            .select({
-              name: schema.outboundLeads.customerName,
-              status: schema.outboundLeads.status,
-              customerNumber: schema.outboundLeads.customerNumber,
-              context: schema.outboundLeads.context,
-            })
-            .from(schema.outboundLeads)
-            .where(
-              and(
-                eq(schema.outboundLeads.userId, agent?.user_id),
-                or(
-                  ilike(schema.outboundLeads.customerName, `%${safeQuery}%`),
-                  ilike(schema.outboundLeads.customerNumber, `%${safeQuery}%`),
-                ),
-              ),
-            )
-            .limit(3);
-
-          if (leads && leads.length > 0) {
-            const summaries = leads.map(
-              (l) => `${l.name} (${l.status}) | Phone: ${l.customerNumber || "N/A"}`,
-            );
-            results.push({
-              toolCallId: toolCall.id,
-              result: `Found records:\n${summaries.join("\n")}`,
-            });
-          } else {
-            results.push({ toolCallId: toolCall.id, result: "No matching records found." });
-          }
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Search failed." });
-        }
-      }
-
-      if (toolCall.function.name === "update_lead_status") {
-        try {
-          const { status, notes } = toolCall.function.arguments;
-          const customerPhone =
-            (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
-            (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
-          if (customerPhone) {
-            const safePhone = sanitizePhone(customerPhone);
-            await drizzle
-              .update(schema.outboundLeads)
-              .set({ status, context: notes || "", lastCalledAt: new Date() })
-              .where(
-                and(
-                  eq(schema.outboundLeads.userId, agent?.user_id),
-                  ilike(schema.outboundLeads.customerNumber, `%${safePhone}%`),
-                  not(inArray(schema.outboundLeads.status, PRESERVED_LEAD_STATUSES)),
-                ),
-              );
-          }
-          results.push({ toolCallId: toolCall.id, result: `Lead status updated to '${status}'.` });
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Update failed." });
-        }
-      }
-
-      if (toolCall.function.name === "send_email") {
-        try {
-          const { to_email, subject, body } = toolCall.function.arguments;
-          const reviewed = await claudeBrain.superviseClientCommunication({
-            channel: "email",
-            agentName: webhookAgentId,
-            source: "voice_tool",
-            purpose: "client follow-up requested during a live call",
-            recipient: to_email,
-            subject,
-            body,
-            context:
-              "Outbound email generated from a Vapi tool call during a customer conversation.",
-          });
-          if (!reviewed.approved) {
-            results.push({
-              toolCallId: toolCall.id,
-              result: `Email held for review: ${reviewed.rationale}`,
-            });
-            continue;
-          }
-          const service = new IntegrationService(agent?.user_id);
-          const success = await service.sendEmail({
-            to: to_email,
-            subject: reviewed.subject || subject,
-            body: reviewed.body,
-          });
-          results.push({
-            toolCallId: toolCall.id,
-            result: success ? "Email sent." : "Failed to send email.",
-          });
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Email error." });
-        }
-      }
-
-      // Platform-Resend signup-link tool — the showcase + demo agents
-      // (Sarah, Liam, Marcus, etc.) call this when a caller asks for a
-      // Wireline trial signup link. Distinct from `send_email` above,
-      // which routes through the TENANT'S connected Google/Microsoft
-      // OAuth account — showcase agents have no tenant so they need a
-      // platform-level transport. Closes the "agent promised an email
-      // but never sent it" gap Mike caught on the demo line.
-      //
-      // Core branch logic lives in src/lib/vapi-tool-handlers.ts so it
-      // can be unit-tested with mocked transports — the route stays a
-      // thin adapter (look up the agent name, inject deps).
-      if (toolCall.function.name === "send_signup_link") {
-        const { sendSignupLinkEmail } = await import("../lib/email-service");
-        const agentNameRow = await drizzle
-          .select({ name: schema.agents.name })
-          .from(schema.agents)
-          .where(eq(schema.agents.id, webhookAgentId))
-          .limit(1);
-        const { result } = await handleSendSignupLink(toolCall.function.arguments, {
-          sendSignupLinkEmail,
-          agentName: agentNameRow[0]?.name ?? undefined,
-          log,
-        });
-        results.push({ toolCallId: toolCall.id, result });
-      }
-
-      // create_account — a Wireline employee signs a caller up by phone.
-      // Creates the account with a random password + emails a
-      // set-password link so the caller picks their own. Same
-      // confirm-the-email guardrail as send_signup_link.
-      if (toolCall.function.name === "create_account") {
-        const { authService } = await import("../lib/auth-service");
-        const { sendPasswordResetEmail } = await import("../lib/email-service");
-        const crypto = await import("crypto");
-        const { result } = await handleCreateAccount(toolCall.function.arguments, {
-          signUp: (email, password, fullName) => authService.signUp(email, password, fullName),
-          createPasswordResetToken: (email) => authService.createPasswordResetToken(email),
-          sendPasswordResetEmail,
-          randomPassword: () => crypto.randomBytes(24).toString("base64url"),
-          log,
-        });
-        results.push({ toolCallId: toolCall.id, result });
-      }
-
-      // send_payment_link — emails the caller a checkout link for a
-      // specific plan so they can pay + activate without friction.
-      if (toolCall.function.name === "send_payment_link") {
-        const { sendEmail } = await import("../lib/email-service");
-        const { result } = await handleSendPaymentLink(toolCall.function.arguments, {
-          sendEmail,
-          log,
-        });
-        results.push({ toolCallId: toolCall.id, result });
-      }
-
-      if (toolCall.function.name === "send_text_message") {
-        try {
-          const { to_number, channel, message_body } = toolCall.function.arguments;
-          const fallbackNumber =
-            (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
-            (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
-          const targetNumber = sanitizePhone(to_number || fallbackNumber);
-
-          if (!targetNumber) {
-            results.push({
-              toolCallId: toolCall.id,
-              result: "No destination number was available for that message.",
-            });
-          } else {
-            const reviewed = await claudeBrain.superviseClientCommunication({
-              channel: "sms",
-              agentName: webhookAgentId,
-              source: "voice_tool",
-              purpose: "client text follow-up requested during a live call",
-              recipient: targetNumber,
-              body: message_body,
-              context: `Requested channel: ${channel === "whatsapp" ? "whatsapp" : "sms"}.`,
-            });
-            if (!reviewed.approved) {
-              results.push({
-                toolCallId: toolCall.id,
-                result: `Text message held for review: ${reviewed.rationale}`,
-              });
-              continue;
+                push({
+                  toolCallId: toolCall.id,
+                  result: `Task ${task.id.split("-")[0]} created.`,
+                });
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Failed to create task." });
+              }
             }
-            const outcome = await sendTenantMessage(agent?.user_id, {
-              to: targetNumber,
-              body: reviewed.body,
-              channel: channel === "whatsapp" ? "whatsapp" : "sms",
-            });
-            results.push({
-              toolCallId: toolCall.id,
-              result: outcome.ok
-                ? `${outcome.channel === "whatsapp" ? "WhatsApp" : "SMS"} sent to ${targetNumber}.`
-                : outcome.reason || "Message send failed.",
-            });
-          }
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Text message error." });
-        }
-      }
 
-      if (toolCall.function.name === "lookup_phone_number") {
-        try {
-          const fallbackNumber =
-            (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
-            (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
-          const targetNumber = sanitizePhone(
-            toolCall.function.arguments?.phone_number || fallbackNumber,
-          );
-
-          if (!targetNumber) {
-            results.push({
-              toolCallId: toolCall.id,
-              result: "No phone number was available to validate.",
-            });
-          } else {
-            const lookup = await lookupTenantPhoneNumber(agent?.user_id, targetNumber);
-            results.push({
-              toolCallId: toolCall.id,
-              result: lookup.ok
-                ? `Lookup for ${lookup.phoneNumber || targetNumber}: valid=${lookup.valid ? "yes" : "no"}, line_type=${lookup.lineType || "unknown"}, carrier=${lookup.carrierName || "unknown"}.`
-                : lookup.reason || "Phone lookup failed.",
-            });
-          }
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Phone lookup error." });
-        }
-      }
-
-      if (toolCall.function.name === "add_to_dnc") {
-        try {
-          const fallbackNumber =
-            (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
-            (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
-          const rawPhone = String(
-            toolCall.function.arguments?.phone_number || fallbackNumber || "",
-          );
-          const normalizedPhone = normalizeDncPhone(rawPhone);
-
-          if (!normalizedPhone) {
-            results.push({
-              toolCallId: toolCall.id,
-              result: "No valid phone number was available to suppress.",
-            });
-          } else {
-            await drizzle
-              .insert(schema.dncList)
-              .values({
-                userId: agent?.user_id,
-                phone: normalizedPhone,
-                phoneRaw: rawPhone,
-                reason: toolCall.function.arguments?.reason || "agent opt-out",
-                source: "agent_tool",
-              })
-              .onConflictDoNothing({ target: [schema.dncList.userId, schema.dncList.phone] });
-
-            void auditLogger
-              .logDnc("added", {
-                userId: agent?.user_id,
-                count: 1,
-                metadata: {
-                  phone: rawPhone,
-                  source: "agent_tool",
-                  reason: toolCall.function.arguments?.reason || null,
-                },
-              })
-              .catch(() => {});
-
-            // Real-time termination for the current call if it's the same number
-            const { SentinelService } = await import("../services/sentinel");
-            const sentinel = new SentinelService();
-            void sentinel.terminateActiveCallsForNumber(normalizedPhone).catch(() => {});
-
-            results.push({
-              toolCallId: toolCall.id,
-              result: `${rawPhone || normalizedPhone} is now on the Do Not Call list.`,
-            });
-          }
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "DNC update failed." });
-        }
-      }
-
-      if (toolCall.function.name === "check_calendar_availability") {
-        try {
-          const { date } = toolCall.function.arguments;
-          const service = new IntegrationService(agent?.user_id);
-          const result = await service.checkAvailability(date);
-          results.push({ toolCallId: toolCall.id, result });
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Calendar check failed." });
-        }
-      }
-
-      if (toolCall.function.name === "book_appointment") {
-        try {
-          const { date, time, customer_name, service_type } = toolCall.function.arguments;
-          const service = new IntegrationService(agent?.user_id);
-
-          // Simple date/time parsing for now.
-          const startTime = new Date(`${date} ${time}`).toISOString();
-          const endTime = new Date(new Date(startTime).getTime() + 60 * 60 * 1000).toISOString();
-          const title = `${service_type} for ${customer_name}`;
-
-          const success = await service.bookAppointment({
-            title,
-            description: `Booked via Wireline AI Agent`,
-            startTime,
-            endTime,
-            agentId: agent?.id,
-          });
-          if (success && agent?.user_id) {
-            void dispatchWebhook(agent.user_id, "appointment.booked", {
-              agent_id: agent.id,
-              title,
-              start_time: startTime,
-              end_time: endTime,
-              customer_name,
-              service_type,
-            });
-            void slackPostAgentNotification(
-              agent.user_id,
-              "Appointment booked: " +
-                title +
-                "\n" +
-                new Date(startTime).toLocaleString() +
-                " → " +
-                new Date(endTime).toLocaleString(),
-              { agentName: agentVoiceName, caller: customer_name, outcome: "booked" },
-            );
-            // Operator SMS alert — positive event. Fires only when the
-            // operator opted in (twilio_manager_alerts_enabled = true
-            // + twilio_manager_alert_number set). Keeps the operator
-            // in the loop on wins, not just escalations.
-            try {
-              const { NotificationService } = await import("../lib/notifications");
-              const notif = new NotificationService(agent.user_id);
-              void notif.sendUrgentAlert({
-                title: "📅 Meeting booked",
-                message: `${customer_name} · ${service_type} · ${new Date(startTime).toLocaleString()}`,
-                callId: (message.call as { id?: string } | undefined)?.id,
-              });
-            } catch {
-              /* best-effort; never block the tool response */
-            }
-          }
-          results.push({
-            toolCallId: toolCall.id,
-            result: success ? "Appointment booked." : "Booking failed.",
-          });
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Booking error." });
-        }
-      }
-
-      if (toolCall.function.name === "send_contract") {
-        try {
-          const { recipient_name, recipient_email, template_id } = toolCall.function.arguments;
-          const { sendContract } = await import("../lib/docusign-service");
-          const result = await sendContract({
-            recipientName: recipient_name,
-            recipientEmail: recipient_email,
-            templateId: template_id,
-          });
-          results.push({
-            toolCallId: toolCall.id,
-            result: result
-              ? `Contract sent. Envelope ID: ${result.envelopeId}`
-              : "DocuSign not configured.",
-          });
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Contract sending error." });
-        }
-      }
-
-      if (toolCall.function.name === "enrich_lead") {
-        try {
-          const { phone_number } = toolCall.function.arguments;
-          const { enrichLead } = await import("../lib/apollo-service");
-          const profile = await enrichLead(phone_number, agent?.user_id);
-          if (profile) {
-            results.push({
-              toolCallId: toolCall.id,
-              result: `Lead found: ${profile.first_name} ${profile.last_name}, ${profile.title} at ${profile.company}`,
-            });
-          } else {
-            results.push({ toolCallId: toolCall.id, result: "No matching lead profile found." });
-          }
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Lead enrichment error." });
-        }
-      }
-
-      if (toolCall.function.name === "gemini_ground") {
-        try {
-          const { query } = toolCall.function.arguments || {};
-          if (!query || typeof query !== "string") {
-            results.push({
-              toolCallId: toolCall.id,
-              result: "Missing search query.",
-            });
-          } else {
-            const { groundedSearch } = await import("../lib/gemini-brain");
-            const grounded = await groundedSearch(query);
-            const sourceTail =
-              grounded.sources.length > 0
-                ? ` (sources: ${grounded.sources
-                    .slice(0, 3)
-                    .map((s) => s.title || s.uri || "")
-                    .filter(Boolean)
-                    .join("; ")})`
-                : "";
-            results.push({
-              toolCallId: toolCall.id,
-              result: grounded.answer + sourceTail,
-            });
-          }
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Grounded search error." });
-        }
-      }
-
-      // CRM Handlers
-      if (toolCall.function.name === "crm_search_contacts") {
-        try {
-          const { query } = toolCall.function.arguments;
-          const service = new CRMService(agent.user_id);
-          const { contacts } = await service.searchContacts(query);
-          results.push({
-            toolCallId: toolCall.id,
-            result:
-              contacts && contacts.length > 0
-                ? `Found CRM contacts: ${JSON.stringify(contacts)}`
-                : "No contacts found or CRM not connected.",
-          });
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "CRM search error." });
-        }
-      }
-
-      if (toolCall.function.name === "crm_log_call") {
-        try {
-          const { contact_id, subject, notes } = toolCall.function.arguments;
-          const service = new CRMService(agent.user_id);
-          const fallbackNumber =
-            (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
-            (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
-          const success = await service.logCall({
-            crmType: "auto",
-            subject,
-            description: notes || "Call logged automatically by agent.",
-            to_number: fallbackNumber || "",
-            contact_id,
-          });
-          results.push({
-            toolCallId: toolCall.id,
-            result: success ? "Call logged to CRM successfully." : "Failed to log call to CRM.",
-          });
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "CRM logging error." });
-        }
-      }
-
-      if (toolCall.function.name === "crm_create_opportunity") {
-        try {
-          const { name, contact_id, stage, amount } = toolCall.function.arguments;
-          const service = new CRMService(agent.user_id);
-          const success = await service.createOpportunity({
-            crmType: "auto",
-            name,
-            contact_id,
-            stage,
-            amount: amount ? Number(amount) : undefined,
-          });
-          results.push({
-            toolCallId: toolCall.id,
-            result: success
-              ? "Opportunity created successfully in CRM."
-              : "Failed to create opportunity.",
-          });
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "CRM opportunity error." });
-        }
-      }
-
-      // Notification Handlers
-      if (toolCall.function.name === "send_slack_notification") {
-        try {
-          const {
-            message: slackMsg,
-            outcome: slackOutcome,
-            urgency,
-          } = toolCall.function.arguments || {};
-          if (agent?.user_id) {
-            const callerNumber =
-              (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
-              (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
-            const callId = (payload.call as { id?: string } | undefined)?.id;
-            const sent = await slackPostAgentNotification(agent.user_id, String(slackMsg || ""), {
-              agentName: agentVoiceName,
-              caller: callerNumber,
-              outcome: slackOutcome ? String(slackOutcome) : undefined,
-              urgency: urgency === "high" ? "high" : "normal",
-              callId: callId ? String(callId) : undefined,
-            });
-            results.push({
-              toolCallId: toolCall.id,
-              result: sent
-                ? "Slack notification sent successfully."
-                : "Slack is connected but no notify channel is set. Open Admin → Integrations → Slack and pick a channel.",
-            });
-          }
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Slack notification error." });
-        }
-      }
-
-      if (toolCall.function.name === "send_teams_message") {
-        try {
-          const { message: teamsMsg, outcome: teamsOutcome } = toolCall.function.arguments || {};
-          if (agent?.user_id) {
-            const callerNumber =
-              (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
-              (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
-            const sent = await sendTeamsMessage({
-              userId: agent.user_id,
-              text: String(teamsMsg || ""),
-              context: {
-                agentName: agentVoiceName,
-                caller: callerNumber || undefined,
-                outcome: teamsOutcome ? String(teamsOutcome) : undefined,
-              },
-            });
-            results.push({
-              toolCallId: toolCall.id,
-              result: sent
-                ? "Microsoft Teams notification sent."
-                : "Microsoft Teams is not connected for this account.",
-            });
-          }
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Teams notification error." });
-        }
-      }
-
-      if (toolCall.function.name === "log_to_excel") {
-        try {
-          const { caller, outcome, details } = toolCall.function.arguments || {};
-          if (agent?.user_id) {
-            const ok = await logToExcel({
-              userId: agent.user_id,
-              caller: String(caller || "Unknown caller"),
-              outcome: String(outcome || ""),
-              details: String(details || ""),
-            });
-            results.push({
-              toolCallId: toolCall.id,
-              result: ok
-                ? "Logged to the Excel call log."
-                : "Microsoft Excel is not connected for this account.",
-            });
-          }
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Excel logging error." });
-        }
-      }
-
-      // Workflow Handlers
-      if (toolCall.function.name === "generate_zoom_link") {
-        try {
-          const { topic, start_time, duration } = toolCall.function.arguments;
-          const zoomMeeting = await createZoomMeeting(agent.user_id, {
-            topic,
-            startTime: start_time,
-            duration: duration ? Number(duration) : undefined,
-          });
-          results.push({
-            toolCallId: toolCall.id,
-            result: zoomMeeting
-              ? `Zoom meeting created: ${zoomMeeting.join_url}`
-              : "Failed to create Zoom meeting.",
-          });
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Zoom error." });
-        }
-      }
-
-      if (toolCall.function.name === "log_payment_promise") {
-        try {
-          const { amount_promised, payment_date, payment_method } = toolCall.function.arguments;
-          await drizzle.insert(schema.auditLog).values({
-            userId: agent.user_id,
-            action: "payment_promise",
-            metadata: { amount_promised, payment_date, payment_method },
-          });
-          results.push({
-            toolCallId: toolCall.id,
-            result: "Payment promise legally recorded in compliance ledger.",
-          });
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Failed to record payment promise." });
-        }
-      }
-
-      if (toolCall.function.name === "create_support_ticket") {
-        try {
-          const { issue_summary, error_codes, severity } = toolCall.function.arguments;
-          const [task] = await drizzle
-            .insert(schema.fleetTasks)
-            .values({
-              userId: agent?.user_id,
-              agentId: webhookAgentId,
-              taskType: "ticket",
-              description: `[${severity.toUpperCase()}] ${issue_summary} (Codes: ${error_codes || "None"})`,
-              priority: severity === "critical" ? "high" : severity === "high" ? "high" : "medium",
-              status: "pending",
-              sourceType: "phone_call",
-              targetChannel: "manual",
-            })
-            .returning({ id: schema.fleetTasks.id });
-          results.push({
-            toolCallId: toolCall.id,
-            result: `Support ticket #${task.id.split("-")[0]} created.`,
-          });
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Failed to create support ticket." });
-        }
-      }
-
-      if (toolCall.function.name === "leave_voicemail") {
-        results.push({
-          toolCallId: toolCall.id,
-          result: "Voicemail recorded. Please say goodbye and end the call now.",
-        });
-      }
-
-      if (toolCall.function.name === "schedule_callback") {
-        try {
-          const { callback_datetime, notes } = toolCall.function.arguments;
-          await drizzle.insert(schema.fleetTasks).values({
-            userId: agent?.user_id,
-            agentId: webhookAgentId,
-            taskType: "callback",
-            description: `Scheduled Callback: ${notes}`,
-            priority: "high",
-            status: "pending",
-            sourceType: "phone_call",
-            targetChannel: "manual",
-            createdAt: new Date(),
-          });
-          results.push({
-            toolCallId: toolCall.id,
-            result: `Callback securely scheduled for ${callback_datetime}.`,
-          });
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Failed to schedule callback." });
-        }
-      }
-
-      if (toolCall.function.name === "capture_customer_profile") {
-        try {
-          await drizzle.insert(schema.fleetTasks).values({
-            userId: agent?.user_id,
-            agentId: webhookAgentId,
-            taskType: "customer_profile_captured",
-            description: JSON.stringify(toolCall.function.arguments),
-            priority: "medium",
-            status: "completed",
-            sourceType: "phone_call",
-            targetChannel: "manual",
-            createdAt: new Date(),
-          });
-          results.push({
-            toolCallId: toolCall.id,
-            result: "Customer profile structured and saved.",
-          });
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Failed to capture profile." });
-        }
-      }
-
-      if (toolCall.function.name === "escalate_to_human") {
-        try {
-          const { reason } = toolCall.function.arguments;
-          if (agent?.user_id) {
-            const notifier = new NotificationService(agent.user_id);
-            await notifier.sendUrgentAlert({
-              title: "Agent Escalate to Human",
-              message: `Agent ${agentVoiceName || "unknown"} — Reason: ${reason}`,
-              callId: (payload.call as any)?.id || "unknown",
-            });
-          }
-          results.push({
-            toolCallId: toolCall.id,
-            result:
-              "Escalation signal sent to human supervisors. If you can transfer the call, do it now, otherwise apologize and say a human will call back.",
-          });
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Failed to send escalation signal." });
-        }
-      }
-
-      if (toolCall.function.name === "view_recent_interactions") {
-        try {
-          const fallbackNumber =
-            (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
-            (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
-          if (fallbackNumber && agent?.user_id) {
-            const safePhone = sanitizePhone(fallbackNumber);
-            const pastCalls = await drizzle
-              .select({
-                summary: schema.callLogs.summary,
-                intentLabel: schema.callLogs.intentLabel,
-                sentiment: schema.callLogs.sentiment,
-                createdAt: schema.callLogs.createdAt,
-              })
-              .from(schema.callLogs)
-              .where(
-                and(
-                  eq(schema.callLogs.customerNumber, safePhone),
-                  eq(schema.callLogs.userId, agent.user_id),
-                ),
-              )
-              .orderBy(sql`${schema.callLogs.createdAt} DESC`)
-              .limit(3);
-            if (pastCalls.length > 0) {
-              const summaries = pastCalls
-                .map((c) => `- ${c.createdAt?.toISOString()}: [${c.intentLabel}] ${c.summary}`)
-                .join("\\n");
-              results.push({
-                toolCallId: toolCall.id,
-                result: `Past 3 interactions:\n${summaries}`,
-              });
-            } else {
-              results.push({
-                toolCallId: toolCall.id,
-                result: "No recent interactions found for this caller.",
-              });
-            }
-          } else {
-            results.push({ toolCallId: toolCall.id, result: "Could not identify caller number." });
-          }
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Failed to load recent interactions." });
-        }
-      }
-
-      // ──────────────────────────────────────────────────────────────
-      //  Shopify e-commerce handlers — order/inventory/customer
-      //  lookups + return/cancel/address actions for online stores.
-      //  Each calls the matching shopify-service function; the service
-      //  returns a graceful no-op when no Shopify store is connected,
-      //  so these never throw on an un-connected tenant.
-      // ──────────────────────────────────────────────────────────────
-      if (toolCall.function.name === "shopify_lookup_order") {
-        try {
-          const { order_number, email } = toolCall.function.arguments || {};
-          const order = await shopifyLookupOrder({
-            orderNumber: order_number,
-            email,
-            userId: agent?.user_id,
-          });
-          if (!order) {
-            results.push({
-              toolCallId: toolCall.id,
-              result:
-                "I couldn't find an order matching that. Double-check the order number or the email on the order.",
-            });
-          } else {
-            const trackingLine =
-              order.tracking.length > 0 && order.tracking[0].number
-                ? ` Tracking: ${order.tracking[0].company || "carrier"} ${order.tracking[0].number}.`
-                : " No tracking number yet.";
-            const itemList = order.line_items.map((li) => `${li.quantity}x ${li.title}`).join(", ");
-            results.push({
-              toolCallId: toolCall.id,
-              result: `Order ${order.name}: ${order.fulfillment_status}, payment ${order.financial_status}, total ${order.total} ${order.currency}.${trackingLine} Items: ${itemList}. [data: ${JSON.stringify(order)}]`,
-            });
-          }
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Order lookup error." });
-        }
-      }
-
-      if (toolCall.function.name === "shopify_check_inventory") {
-        try {
-          const { query } = toolCall.function.arguments || {};
-          const products = await shopifySearchProducts({
-            query: String(query || ""),
-            userId: agent?.user_id,
-          });
-          if (products.length === 0) {
-            results.push({
-              toolCallId: toolCall.id,
-              result: "I couldn't find a product matching that in the store catalog.",
-            });
-          } else {
-            const summary = products
-              .slice(0, 5)
-              .map((p) => {
-                const v = p.variants
-                  .map(
-                    (vr) =>
-                      `${vr.title} — $${vr.price}, ${vr.inventory_quantity > 0 ? `${vr.inventory_quantity} in stock` : "out of stock"}`,
+            if (toolCall.function.name === "search_leads") {
+              try {
+                const { query } = toolCall.function.arguments;
+                const safeQuery = String(query || "")
+                  .replace(/[^A-Za-z0-9 @.\-+]/g, "")
+                  .slice(0, 80);
+                const leads = await drizzle
+                  .select({
+                    name: schema.outboundLeads.customerName,
+                    status: schema.outboundLeads.status,
+                    customerNumber: schema.outboundLeads.customerNumber,
+                    context: schema.outboundLeads.context,
+                  })
+                  .from(schema.outboundLeads)
+                  .where(
+                    and(
+                      eq(schema.outboundLeads.userId, agent?.user_id),
+                      or(
+                        ilike(schema.outboundLeads.customerName, `%${safeQuery}%`),
+                        ilike(schema.outboundLeads.customerNumber, `%${safeQuery}%`),
+                      ),
+                    ),
                   )
-                  .join("; ");
-                return `${p.title}: ${v}`;
-              })
-              .join(" | ");
-            results.push({
-              toolCallId: toolCall.id,
-              result: `Found ${products.length} product(s). ${summary} [data: ${JSON.stringify(products)}]`,
-            });
-          }
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Inventory check error." });
-        }
-      }
+                  .limit(3);
 
-      if (toolCall.function.name === "shopify_lookup_customer") {
-        try {
-          const { email, phone } = toolCall.function.arguments || {};
-          const fallbackNumber =
-            (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
-            (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
-          const customer = await shopifyLookupCustomer({
-            email,
-            phone: phone || fallbackNumber,
-            userId: agent?.user_id,
-          });
-          if (!customer) {
-            results.push({
-              toolCallId: toolCall.id,
-              result: "I couldn't find a customer record matching that email or phone number.",
-            });
-          } else {
-            const recent = customer.recent_orders
-              .map((o) => `${o.name} (${o.financial_status}, ${o.total})`)
-              .join(", ");
-            results.push({
-              toolCallId: toolCall.id,
-              result: `Customer ${customer.first_name} ${customer.last_name}: ${customer.orders_count} order(s), ${customer.total_spent} lifetime. Recent: ${recent || "none"}. [data: ${JSON.stringify(customer)}]`,
-            });
-          }
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Customer lookup error." });
-        }
-      }
-
-      if (toolCall.function.name === "shopify_start_return") {
-        try {
-          const { order_id, reason } = toolCall.function.arguments || {};
-          if (!order_id) {
-            results.push({
-              toolCallId: toolCall.id,
-              result: "I need the order ID to start a return. Look up the order first.",
-            });
-          } else {
-            const outcome = await shopifyStartReturn({
-              orderId: String(order_id),
-              reason: String(reason || "customer request"),
-              userId: agent?.user_id,
-            });
-            results.push({ toolCallId: toolCall.id, result: outcome.message });
-          }
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Return request error." });
-        }
-      }
-
-      if (toolCall.function.name === "shopify_cancel_order") {
-        try {
-          const { order_id } = toolCall.function.arguments || {};
-          if (!order_id) {
-            results.push({
-              toolCallId: toolCall.id,
-              result: "I need the order ID to cancel an order. Look up the order first.",
-            });
-          } else {
-            const outcome = await shopifyCancelOrder({
-              orderId: String(order_id),
-              userId: agent?.user_id,
-            });
-            results.push({ toolCallId: toolCall.id, result: outcome.message });
-          }
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Order cancel error." });
-        }
-      }
-
-      if (toolCall.function.name === "shopify_update_address") {
-        try {
-          const args = toolCall.function.arguments || {};
-          if (!args.order_id) {
-            results.push({
-              toolCallId: toolCall.id,
-              result: "I need the order ID to update the shipping address.",
-            });
-          } else {
-            const outcome = await shopifyUpdateAddress({
-              orderId: String(args.order_id),
-              address: {
-                address1: args.address1,
-                address2: args.address2,
-                city: args.city,
-                province: args.province,
-                zip: args.zip,
-                country: args.country,
-                name: args.name,
-              },
-              userId: agent?.user_id,
-            });
-            results.push({ toolCallId: toolCall.id, result: outcome.message });
-          }
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Address update error." });
-        }
-      }
-
-      if (toolCall.function.name === "shopify_create_draft_order") {
-        try {
-          const args = toolCall.function.arguments || {};
-          const qty = Number(args.quantity) || 1;
-          const outcome = await shopifyCreateDraftOrder({
-            lineItems: [
-              args.variant_id
-                ? { variantId: String(args.variant_id), quantity: qty }
-                : {
-                    title: String(args.product_title || "Phone order item"),
-                    price: String(args.price || "0.00"),
-                    quantity: qty,
-                  },
-            ],
-            customer: args.customer_email
-              ? {
-                  email: String(args.customer_email),
-                  first_name: args.customer_first_name,
-                  last_name: args.customer_last_name,
+                if (leads && leads.length > 0) {
+                  const summaries = leads.map(
+                    (l) => `${l.name} (${l.status}) | Phone: ${l.customerNumber || "N/A"}`,
+                  );
+                  push({
+                    toolCallId: toolCall.id,
+                    result: `Found records:\n${summaries.join("\n")}`,
+                  });
+                } else {
+                  push({ toolCallId: toolCall.id, result: "No matching records found." });
                 }
-              : undefined,
-            userId: agent?.user_id,
-          });
-          const link = outcome.invoiceUrl ? ` Payment link: ${outcome.invoiceUrl}` : "";
-          results.push({ toolCallId: toolCall.id, result: `${outcome.message}${link}` });
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Draft order error." });
-        }
-      }
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Search failed." });
+              }
+            }
 
-      if (toolCall.function.name === "shopify_add_order_note") {
-        try {
-          const { order_id, note } = toolCall.function.arguments || {};
-          if (!order_id) {
-            results.push({ toolCallId: toolCall.id, result: "I need the order ID to add a note." });
-          } else {
-            const outcome = await shopifyAddOrderNote({
-              orderId: String(order_id),
-              note: String(note || ""),
-              userId: agent?.user_id,
-            });
-            results.push({ toolCallId: toolCall.id, result: outcome.message });
-          }
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Order note error." });
-        }
-      }
+            if (toolCall.function.name === "update_lead_status") {
+              try {
+                const { status, notes } = toolCall.function.arguments;
+                const customerPhone =
+                  (payload.call as { customer?: { number?: string } } | undefined)?.customer
+                    ?.number ||
+                  (message.call as { customer?: { number?: string } } | undefined)?.customer
+                    ?.number;
+                if (customerPhone) {
+                  const safePhone = sanitizePhone(customerPhone);
+                  await drizzle
+                    .update(schema.outboundLeads)
+                    .set({ status, context: notes || "", lastCalledAt: new Date() })
+                    .where(
+                      and(
+                        eq(schema.outboundLeads.userId, agent?.user_id),
+                        ilike(schema.outboundLeads.customerNumber, `%${safePhone}%`),
+                        not(inArray(schema.outboundLeads.status, PRESERVED_LEAD_STATUSES)),
+                      ),
+                    );
+                }
+                push({ toolCallId: toolCall.id, result: `Lead status updated to '${status}'.` });
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Update failed." });
+              }
+            }
 
-      // ──────────────────────────────────────────────────────────────
-      //  Square e-commerce handlers — order/customer/inventory lookups
-      //  and payment-link creation for Square merchants.
-      // ──────────────────────────────────────────────────────────────
-      if (toolCall.function.name === "square_lookup_order") {
-        try {
-          const { order_id, email } = toolCall.function.arguments || {};
-          const order = await squareLookupOrder({
-            orderId: order_id,
-            email,
-            userId: agent?.user_id,
-          });
-          if (!order) {
-            results.push({
-              toolCallId: toolCall.id,
-              result:
-                "I couldn't find a Square order matching that. Double-check the order ID or the email on the account.",
-            });
-          } else {
-            const itemList = order.lineItems.map((li) => `${li.quantity}x ${li.name}`).join(", ");
-            results.push({
-              toolCallId: toolCall.id,
-              result: `Order ${order.displayId || order.id}: state ${order.state}, total ${order.total}. Items: ${itemList}. [data: ${JSON.stringify(order)}]`,
-            });
-          }
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Square order lookup error." });
-        }
-      }
+            if (toolCall.function.name === "send_email") {
+              try {
+                const { to_email, subject, body } = toolCall.function.arguments;
+                const reviewed = await claudeBrain.superviseClientCommunication({
+                  channel: "email",
+                  agentName: webhookAgentId,
+                  source: "voice_tool",
+                  purpose: "client follow-up requested during a live call",
+                  recipient: to_email,
+                  subject,
+                  body,
+                  context:
+                    "Outbound email generated from a Vapi tool call during a customer conversation.",
+                });
+                if (!reviewed.approved) {
+                  push({
+                    toolCallId: toolCall.id,
+                    result: `Email held for review: ${reviewed.rationale}`,
+                  });
+                  return (
+                    pushResults[pushResults.length - 1] ?? {
+                      toolCallId: toolCall.id,
+                      result:
+                        "That action isn't available on this line right now. Help the caller another way.",
+                    }
+                  );
+                }
+                const service = new IntegrationService(agent?.user_id);
+                const success = await service.sendEmail({
+                  to: to_email,
+                  subject: reviewed.subject || subject,
+                  body: reviewed.body,
+                });
+                push({
+                  toolCallId: toolCall.id,
+                  result: success ? "Email sent." : "Failed to send email.",
+                });
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Email error." });
+              }
+            }
 
-      if (toolCall.function.name === "square_lookup_customer") {
-        try {
-          const { email, phone } = toolCall.function.arguments || {};
-          const fallbackNumber =
-            (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
-            (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
-          const customer = await squareLookupCustomer({
-            email,
-            phone: phone || fallbackNumber,
-            userId: agent?.user_id,
-          });
-          if (!customer) {
-            results.push({
-              toolCallId: toolCall.id,
-              result: "I couldn't find a Square customer matching that email or phone number.",
-            });
-          } else {
-            results.push({
-              toolCallId: toolCall.id,
-              result: `Customer ${customer.firstName} ${customer.lastName} (${customer.email ?? "no email"}): member since ${customer.createdAt.split("T")[0]}. [data: ${JSON.stringify(customer)}]`,
-            });
-          }
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Square customer lookup error." });
-        }
-      }
+            // Platform-Resend signup-link tool — the showcase + demo agents
+            // (Sarah, Liam, Marcus, etc.) call this when a caller asks for a
+            // Wireline trial signup link. Distinct from `send_email` above,
+            // which routes through the TENANT'S connected Google/Microsoft
+            // OAuth account — showcase agents have no tenant so they need a
+            // platform-level transport. Closes the "agent promised an email
+            // but never sent it" gap Mike caught on the demo line.
+            //
+            // Core branch logic lives in src/lib/vapi-tool-handlers.ts so it
+            // can be unit-tested with mocked transports — the route stays a
+            // thin adapter (look up the agent name, inject deps).
+            if (toolCall.function.name === "send_signup_link") {
+              const { sendSignupLinkEmail } = await import("../lib/email-service");
+              const agentNameRow = await drizzle
+                .select({ name: schema.agents.name })
+                .from(schema.agents)
+                .where(eq(schema.agents.id, webhookAgentId))
+                .limit(1);
+              const { result } = await handleSendSignupLink(toolCall.function.arguments, {
+                sendSignupLinkEmail,
+                agentName: agentNameRow[0]?.name ?? undefined,
+                log,
+              });
+              push({ toolCallId: toolCall.id, result });
+            }
 
-      if (toolCall.function.name === "square_check_inventory") {
-        try {
-          const { query } = toolCall.function.arguments || {};
-          const items = await squareCheckInventory({
-            query: String(query || ""),
-            userId: agent?.user_id,
-          });
-          if (items.length === 0) {
-            results.push({
-              toolCallId: toolCall.id,
-              result: "I couldn't find a Square catalog item matching that.",
-            });
-          } else {
-            const summary = items
-              .slice(0, 5)
-              .map((item) => {
-                const inStock = item.variations.some((v) => (v.stockCount ?? 0) > 0);
-                return `${item.name}: ${item.variations.map((v) => `${v.name} ${v.price}`).join(", ")} — ${inStock ? "in stock" : "out of stock"}`;
-              })
-              .join(" | ");
-            results.push({
-              toolCallId: toolCall.id,
-              result: `Found ${items.length} item(s). ${summary} [data: ${JSON.stringify(items)}]`,
-            });
-          }
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Square inventory check error." });
-        }
-      }
+            // create_account — a Wireline employee signs a caller up by phone.
+            // Creates the account with a random password + emails a
+            // set-password link so the caller picks their own. Same
+            // confirm-the-email guardrail as send_signup_link.
+            if (toolCall.function.name === "create_account") {
+              const { authService } = await import("../lib/auth-service");
+              const { sendPasswordResetEmail } = await import("../lib/email-service");
+              const crypto = await import("crypto");
+              const { result } = await handleCreateAccount(toolCall.function.arguments, {
+                signUp: (email, password, fullName) =>
+                  authService.signUp(email, password, fullName),
+                createPasswordResetToken: (email) => authService.createPasswordResetToken(email),
+                sendPasswordResetEmail,
+                randomPassword: () => crypto.randomBytes(24).toString("base64url"),
+                log,
+              });
+              push({ toolCallId: toolCall.id, result });
+            }
 
-      if (toolCall.function.name === "square_create_payment_link") {
-        try {
-          const { title, amount_dollars } = toolCall.function.arguments || {};
-          if (!title || amount_dollars == null) {
-            results.push({
-              toolCallId: toolCall.id,
-              result: "I need a title and amount to create a payment link.",
-            });
-          } else {
-            const link = await squareCreatePaymentLink({
-              title: String(title),
-              amountCents: Math.round(Number(amount_dollars) * 100),
-              userId: agent?.user_id,
-            });
-            if (!link.ok || !link.url) {
-              results.push({ toolCallId: toolCall.id, result: link.message });
-            } else {
-              results.push({
+            // send_payment_link — emails the caller a checkout link for a
+            // specific plan so they can pay + activate without friction.
+            if (toolCall.function.name === "send_payment_link") {
+              const { sendEmail } = await import("../lib/email-service");
+              const { result } = await handleSendPaymentLink(toolCall.function.arguments, {
+                sendEmail,
+                log,
+              });
+              push({ toolCallId: toolCall.id, result });
+            }
+
+            if (toolCall.function.name === "send_text_message") {
+              try {
+                const { to_number, channel, message_body } = toolCall.function.arguments;
+                const fallbackNumber =
+                  (payload.call as { customer?: { number?: string } } | undefined)?.customer
+                    ?.number ||
+                  (message.call as { customer?: { number?: string } } | undefined)?.customer
+                    ?.number;
+                const targetNumber = sanitizePhone(to_number || fallbackNumber);
+
+                if (!targetNumber) {
+                  push({
+                    toolCallId: toolCall.id,
+                    result: "No destination number was available for that message.",
+                  });
+                } else {
+                  const reviewed = await claudeBrain.superviseClientCommunication({
+                    channel: "sms",
+                    agentName: webhookAgentId,
+                    source: "voice_tool",
+                    purpose: "client text follow-up requested during a live call",
+                    recipient: targetNumber,
+                    body: message_body,
+                    context: `Requested channel: ${channel === "whatsapp" ? "whatsapp" : "sms"}.`,
+                  });
+                  if (!reviewed.approved) {
+                    push({
+                      toolCallId: toolCall.id,
+                      result: `Text message held for review: ${reviewed.rationale}`,
+                    });
+                    return (
+                      pushResults[pushResults.length - 1] ?? {
+                        toolCallId: toolCall.id,
+                        result:
+                          "That action isn't available on this line right now. Help the caller another way.",
+                      }
+                    );
+                  }
+                  const outcome = await sendTenantMessage(agent?.user_id, {
+                    to: targetNumber,
+                    body: reviewed.body,
+                    channel: channel === "whatsapp" ? "whatsapp" : "sms",
+                  });
+                  push({
+                    toolCallId: toolCall.id,
+                    result: outcome.ok
+                      ? `${outcome.channel === "whatsapp" ? "WhatsApp" : "SMS"} sent to ${targetNumber}.`
+                      : outcome.reason || "Message send failed.",
+                  });
+                }
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Text message error." });
+              }
+            }
+
+            if (toolCall.function.name === "lookup_phone_number") {
+              try {
+                const fallbackNumber =
+                  (payload.call as { customer?: { number?: string } } | undefined)?.customer
+                    ?.number ||
+                  (message.call as { customer?: { number?: string } } | undefined)?.customer
+                    ?.number;
+                const targetNumber = sanitizePhone(
+                  toolCall.function.arguments?.phone_number || fallbackNumber,
+                );
+
+                if (!targetNumber) {
+                  push({
+                    toolCallId: toolCall.id,
+                    result: "No phone number was available to validate.",
+                  });
+                } else {
+                  const lookup = await lookupTenantPhoneNumber(agent?.user_id, targetNumber);
+                  push({
+                    toolCallId: toolCall.id,
+                    result: lookup.ok
+                      ? `Lookup for ${lookup.phoneNumber || targetNumber}: valid=${lookup.valid ? "yes" : "no"}, line_type=${lookup.lineType || "unknown"}, carrier=${lookup.carrierName || "unknown"}.`
+                      : lookup.reason || "Phone lookup failed.",
+                  });
+                }
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Phone lookup error." });
+              }
+            }
+
+            if (toolCall.function.name === "add_to_dnc") {
+              try {
+                const fallbackNumber =
+                  (payload.call as { customer?: { number?: string } } | undefined)?.customer
+                    ?.number ||
+                  (message.call as { customer?: { number?: string } } | undefined)?.customer
+                    ?.number;
+                const rawPhone = String(
+                  toolCall.function.arguments?.phone_number || fallbackNumber || "",
+                );
+                const normalizedPhone = normalizeDncPhone(rawPhone);
+
+                if (!normalizedPhone) {
+                  push({
+                    toolCallId: toolCall.id,
+                    result: "No valid phone number was available to suppress.",
+                  });
+                } else {
+                  await drizzle
+                    .insert(schema.dncList)
+                    .values({
+                      userId: agent?.user_id,
+                      phone: normalizedPhone,
+                      phoneRaw: rawPhone,
+                      reason: toolCall.function.arguments?.reason || "agent opt-out",
+                      source: "agent_tool",
+                    })
+                    .onConflictDoNothing({ target: [schema.dncList.userId, schema.dncList.phone] });
+
+                  void auditLogger
+                    .logDnc("added", {
+                      userId: agent?.user_id,
+                      count: 1,
+                      metadata: {
+                        phone: rawPhone,
+                        source: "agent_tool",
+                        reason: toolCall.function.arguments?.reason || null,
+                      },
+                    })
+                    .catch(() => {});
+
+                  // Real-time termination for the current call if it's the same number
+                  const { SentinelService } = await import("../services/sentinel");
+                  const sentinel = new SentinelService();
+                  void sentinel.terminateActiveCallsForNumber(normalizedPhone).catch(() => {});
+
+                  push({
+                    toolCallId: toolCall.id,
+                    result: `${rawPhone || normalizedPhone} is now on the Do Not Call list.`,
+                  });
+                }
+              } catch {
+                push({ toolCallId: toolCall.id, result: "DNC update failed." });
+              }
+            }
+
+            if (toolCall.function.name === "check_calendar_availability") {
+              try {
+                const { date } = toolCall.function.arguments;
+                const service = new IntegrationService(agent?.user_id);
+                const result = await service.checkAvailability(date);
+                push({ toolCallId: toolCall.id, result });
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Calendar check failed." });
+              }
+            }
+
+            if (toolCall.function.name === "book_appointment") {
+              try {
+                const { date, time, customer_name, service_type } = toolCall.function.arguments;
+                const service = new IntegrationService(agent?.user_id);
+
+                // Simple date/time parsing for now.
+                const startTime = new Date(`${date} ${time}`).toISOString();
+                const endTime = new Date(
+                  new Date(startTime).getTime() + 60 * 60 * 1000,
+                ).toISOString();
+                const title = `${service_type} for ${customer_name}`;
+
+                const success = await service.bookAppointment({
+                  title,
+                  description: `Booked via Wireline AI Agent`,
+                  startTime,
+                  endTime,
+                  agentId: agent?.id,
+                });
+                if (success && agent?.user_id) {
+                  void dispatchWebhook(agent.user_id, "appointment.booked", {
+                    agent_id: agent.id,
+                    title,
+                    start_time: startTime,
+                    end_time: endTime,
+                    customer_name,
+                    service_type,
+                  });
+                  void slackPostAgentNotification(
+                    agent.user_id,
+                    "Appointment booked: " +
+                      title +
+                      "\n" +
+                      new Date(startTime).toLocaleString() +
+                      " → " +
+                      new Date(endTime).toLocaleString(),
+                    { agentName: agentVoiceName, caller: customer_name, outcome: "booked" },
+                  );
+                  // Operator SMS alert — positive event. Fires only when the
+                  // operator opted in (twilio_manager_alerts_enabled = true
+                  // + twilio_manager_alert_number set). Keeps the operator
+                  // in the loop on wins, not just escalations.
+                  try {
+                    const { NotificationService } = await import("../lib/notifications");
+                    const notif = new NotificationService(agent.user_id);
+                    void notif.sendWinAlert({
+                      title: "Meeting booked",
+                      message: `${customer_name} · ${service_type} · ${new Date(startTime).toLocaleString()}`,
+                      callId: (message.call as { id?: string } | undefined)?.id,
+                      agentName: agentVoiceName,
+                      caller: customer_name,
+                      outcome: "booked",
+                    });
+                  } catch {
+                    /* best-effort; never block the tool response */
+                  }
+                }
+                push({
+                  toolCallId: toolCall.id,
+                  result: success ? "Appointment booked." : "Booking failed.",
+                });
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Booking error." });
+              }
+            }
+
+            if (toolCall.function.name === "send_contract") {
+              try {
+                const { recipient_name, recipient_email, template_id } =
+                  toolCall.function.arguments;
+                const { sendContract } = await import("../lib/docusign-service");
+                const result = await sendContract({
+                  recipientName: recipient_name,
+                  recipientEmail: recipient_email,
+                  templateId: template_id,
+                });
+                push({
+                  toolCallId: toolCall.id,
+                  result: result
+                    ? `Contract sent. Envelope ID: ${result.envelopeId}`
+                    : "DocuSign not configured.",
+                });
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Contract sending error." });
+              }
+            }
+
+            if (toolCall.function.name === "enrich_lead") {
+              try {
+                const { phone_number } = toolCall.function.arguments;
+                const { enrichLead } = await import("../lib/apollo-service");
+                const profile = await enrichLead(phone_number, agent?.user_id);
+                if (profile) {
+                  push({
+                    toolCallId: toolCall.id,
+                    result: `Lead found: ${profile.first_name} ${profile.last_name}, ${profile.title} at ${profile.company}`,
+                  });
+                } else {
+                  push({ toolCallId: toolCall.id, result: "No matching lead profile found." });
+                }
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Lead enrichment error." });
+              }
+            }
+
+            if (toolCall.function.name === "gemini_ground") {
+              try {
+                const { query } = toolCall.function.arguments || {};
+                if (!query || typeof query !== "string") {
+                  push({
+                    toolCallId: toolCall.id,
+                    result: "Missing search query.",
+                  });
+                } else {
+                  const { groundedSearch } = await import("../lib/gemini-brain");
+                  const grounded = await groundedSearch(query);
+                  const sourceTail =
+                    grounded.sources.length > 0
+                      ? ` (sources: ${grounded.sources
+                          .slice(0, 3)
+                          .map((s) => s.title || s.uri || "")
+                          .filter(Boolean)
+                          .join("; ")})`
+                      : "";
+                  push({
+                    toolCallId: toolCall.id,
+                    result: grounded.answer + sourceTail,
+                  });
+                }
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Grounded search error." });
+              }
+            }
+
+            // CRM Handlers
+            if (toolCall.function.name === "crm_search_contacts") {
+              try {
+                const { query } = toolCall.function.arguments;
+                const service = new CRMService(agent.user_id);
+                const { contacts } = await service.searchContacts(query);
+                push({
+                  toolCallId: toolCall.id,
+                  result:
+                    contacts && contacts.length > 0
+                      ? `Found CRM contacts: ${JSON.stringify(contacts)}`
+                      : "No contacts found or CRM not connected.",
+                });
+              } catch {
+                push({ toolCallId: toolCall.id, result: "CRM search error." });
+              }
+            }
+
+            if (toolCall.function.name === "crm_log_call") {
+              try {
+                const { contact_id, subject, notes } = toolCall.function.arguments;
+                const service = new CRMService(agent.user_id);
+                const fallbackNumber =
+                  (payload.call as { customer?: { number?: string } } | undefined)?.customer
+                    ?.number ||
+                  (message.call as { customer?: { number?: string } } | undefined)?.customer
+                    ?.number;
+                const success = await service.logCall({
+                  crmType: "auto",
+                  subject,
+                  description: notes || "Call logged automatically by agent.",
+                  to_number: fallbackNumber || "",
+                  contact_id,
+                });
+                push({
+                  toolCallId: toolCall.id,
+                  result: success
+                    ? "Call logged to CRM successfully."
+                    : "Failed to log call to CRM.",
+                });
+              } catch {
+                push({ toolCallId: toolCall.id, result: "CRM logging error." });
+              }
+            }
+
+            if (toolCall.function.name === "crm_create_opportunity") {
+              try {
+                const { name, contact_id, stage, amount } = toolCall.function.arguments;
+                const service = new CRMService(agent.user_id);
+                const success = await service.createOpportunity({
+                  crmType: "auto",
+                  name,
+                  contact_id,
+                  stage,
+                  amount: amount ? Number(amount) : undefined,
+                });
+                push({
+                  toolCallId: toolCall.id,
+                  result: success
+                    ? "Opportunity created successfully in CRM."
+                    : "Failed to create opportunity.",
+                });
+              } catch {
+                push({ toolCallId: toolCall.id, result: "CRM opportunity error." });
+              }
+            }
+
+            // Notification Handlers
+            if (toolCall.function.name === "send_slack_notification") {
+              try {
+                const {
+                  message: slackMsg,
+                  outcome: slackOutcome,
+                  urgency,
+                } = toolCall.function.arguments || {};
+                if (agent?.user_id) {
+                  const callerNumber =
+                    (payload.call as { customer?: { number?: string } } | undefined)?.customer
+                      ?.number ||
+                    (message.call as { customer?: { number?: string } } | undefined)?.customer
+                      ?.number;
+                  const callId = (payload.call as { id?: string } | undefined)?.id;
+                  const sent = await slackPostAgentNotification(
+                    agent.user_id,
+                    String(slackMsg || ""),
+                    {
+                      agentName: agentVoiceName,
+                      caller: callerNumber,
+                      outcome: slackOutcome ? String(slackOutcome) : undefined,
+                      urgency: urgency === "high" ? "high" : "normal",
+                      callId: callId ? String(callId) : undefined,
+                    },
+                  );
+                  push({
+                    toolCallId: toolCall.id,
+                    result: sent
+                      ? "Slack notification sent successfully."
+                      : "Slack is connected but no notify channel is set. Open Admin → Integrations → Slack and pick a channel.",
+                  });
+                }
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Slack notification error." });
+              }
+            }
+
+            if (toolCall.function.name === "send_teams_message") {
+              try {
+                const { message: teamsMsg, outcome: teamsOutcome } =
+                  toolCall.function.arguments || {};
+                if (agent?.user_id) {
+                  const callerNumber =
+                    (payload.call as { customer?: { number?: string } } | undefined)?.customer
+                      ?.number ||
+                    (message.call as { customer?: { number?: string } } | undefined)?.customer
+                      ?.number;
+                  const sent = await sendTeamsMessage({
+                    userId: agent.user_id,
+                    text: String(teamsMsg || ""),
+                    context: {
+                      agentName: agentVoiceName,
+                      caller: callerNumber || undefined,
+                      outcome: teamsOutcome ? String(teamsOutcome) : undefined,
+                    },
+                  });
+                  push({
+                    toolCallId: toolCall.id,
+                    result: sent
+                      ? "Microsoft Teams notification sent."
+                      : "Microsoft Teams is not connected for this account.",
+                  });
+                }
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Teams notification error." });
+              }
+            }
+
+            if (toolCall.function.name === "log_to_excel") {
+              try {
+                const { caller, outcome, details } = toolCall.function.arguments || {};
+                if (agent?.user_id) {
+                  const ok = await logToExcel({
+                    userId: agent.user_id,
+                    caller: String(caller || "Unknown caller"),
+                    outcome: String(outcome || ""),
+                    details: String(details || ""),
+                  });
+                  push({
+                    toolCallId: toolCall.id,
+                    result: ok
+                      ? "Logged to the Excel call log."
+                      : "Microsoft Excel is not connected for this account.",
+                  });
+                }
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Excel logging error." });
+              }
+            }
+
+            // Workflow Handlers
+            if (toolCall.function.name === "generate_zoom_link") {
+              try {
+                const { topic, start_time, duration } = toolCall.function.arguments;
+                const zoomMeeting = await createZoomMeeting(agent.user_id, {
+                  topic,
+                  startTime: start_time,
+                  duration: duration ? Number(duration) : undefined,
+                });
+                push({
+                  toolCallId: toolCall.id,
+                  result: zoomMeeting
+                    ? `Zoom meeting created: ${zoomMeeting.join_url}`
+                    : "Failed to create Zoom meeting.",
+                });
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Zoom error." });
+              }
+            }
+
+            if (toolCall.function.name === "log_payment_promise") {
+              try {
+                const { amount_promised, payment_date, payment_method } =
+                  toolCall.function.arguments;
+                await drizzle.insert(schema.auditLog).values({
+                  userId: agent.user_id,
+                  action: "payment_promise",
+                  metadata: { amount_promised, payment_date, payment_method },
+                });
+                push({
+                  toolCallId: toolCall.id,
+                  result: "Payment promise legally recorded in compliance ledger.",
+                });
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Failed to record payment promise." });
+              }
+            }
+
+            if (toolCall.function.name === "create_support_ticket") {
+              try {
+                const { issue_summary, error_codes, severity } = toolCall.function.arguments;
+                const [task] = await drizzle
+                  .insert(schema.fleetTasks)
+                  .values({
+                    userId: agent?.user_id,
+                    agentId: webhookAgentId,
+                    taskType: "ticket",
+                    description: `[${severity.toUpperCase()}] ${issue_summary} (Codes: ${error_codes || "None"})`,
+                    priority:
+                      severity === "critical" ? "high" : severity === "high" ? "high" : "medium",
+                    status: "pending",
+                    sourceType: "phone_call",
+                    targetChannel: "manual",
+                  })
+                  .returning({ id: schema.fleetTasks.id });
+                push({
+                  toolCallId: toolCall.id,
+                  result: `Support ticket #${task.id.split("-")[0]} created.`,
+                });
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Failed to create support ticket." });
+              }
+            }
+
+            if (toolCall.function.name === "leave_voicemail") {
+              push({
                 toolCallId: toolCall.id,
-                result: `Payment link created: ${link.url} — $${amount_dollars} for ${title}. Share this with the customer to complete payment. [data: ${JSON.stringify(link)}]`,
+                result: "Voicemail recorded. Please say goodbye and end the call now.",
               });
             }
-          }
-        } catch {
-          results.push({ toolCallId: toolCall.id, result: "Square payment link creation error." });
-        }
-      }
-    }
+
+            if (toolCall.function.name === "schedule_callback") {
+              try {
+                const { callback_datetime, notes } = toolCall.function.arguments;
+                await drizzle.insert(schema.fleetTasks).values({
+                  userId: agent?.user_id,
+                  agentId: webhookAgentId,
+                  taskType: "callback",
+                  description: `Scheduled Callback: ${notes}`,
+                  priority: "high",
+                  status: "pending",
+                  sourceType: "phone_call",
+                  targetChannel: "manual",
+                  createdAt: new Date(),
+                });
+                push({
+                  toolCallId: toolCall.id,
+                  result: `Callback securely scheduled for ${callback_datetime}.`,
+                });
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Failed to schedule callback." });
+              }
+            }
+
+            if (toolCall.function.name === "capture_customer_profile") {
+              try {
+                await drizzle.insert(schema.fleetTasks).values({
+                  userId: agent?.user_id,
+                  agentId: webhookAgentId,
+                  taskType: "customer_profile_captured",
+                  description: JSON.stringify(toolCall.function.arguments),
+                  priority: "medium",
+                  status: "completed",
+                  sourceType: "phone_call",
+                  targetChannel: "manual",
+                  createdAt: new Date(),
+                });
+                push({
+                  toolCallId: toolCall.id,
+                  result: "Customer profile structured and saved.",
+                });
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Failed to capture profile." });
+              }
+            }
+
+            if (toolCall.function.name === "escalate_to_human") {
+              try {
+                const { reason } = toolCall.function.arguments;
+                if (agent?.user_id) {
+                  const notifier = new NotificationService(agent.user_id);
+                  await notifier.sendUrgentAlert({
+                    title: "Agent Escalate to Human",
+                    message: `Agent ${agentVoiceName || "unknown"} — Reason: ${reason}`,
+                    callId: (payload.call as any)?.id || "unknown",
+                  });
+                }
+                push({
+                  toolCallId: toolCall.id,
+                  result:
+                    "Escalation signal sent to human supervisors. If you can transfer the call, do it now, otherwise apologize and say a human will call back.",
+                });
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Failed to send escalation signal." });
+              }
+            }
+
+            if (toolCall.function.name === "view_recent_interactions") {
+              try {
+                const fallbackNumber =
+                  (payload.call as { customer?: { number?: string } } | undefined)?.customer
+                    ?.number ||
+                  (message.call as { customer?: { number?: string } } | undefined)?.customer
+                    ?.number;
+                if (fallbackNumber && agent?.user_id) {
+                  const safePhone = sanitizePhone(fallbackNumber);
+                  const pastCalls = await drizzle
+                    .select({
+                      summary: schema.callLogs.summary,
+                      intentLabel: schema.callLogs.intentLabel,
+                      sentiment: schema.callLogs.sentiment,
+                      createdAt: schema.callLogs.createdAt,
+                    })
+                    .from(schema.callLogs)
+                    .where(
+                      and(
+                        eq(schema.callLogs.customerNumber, safePhone),
+                        eq(schema.callLogs.userId, agent.user_id),
+                      ),
+                    )
+                    .orderBy(sql`${schema.callLogs.createdAt} DESC`)
+                    .limit(3);
+                  if (pastCalls.length > 0) {
+                    const summaries = pastCalls
+                      .map(
+                        (c) => `- ${c.createdAt?.toISOString()}: [${c.intentLabel}] ${c.summary}`,
+                      )
+                      .join("\\n");
+                    push({
+                      toolCallId: toolCall.id,
+                      result: `Past 3 interactions:\n${summaries}`,
+                    });
+                  } else {
+                    push({
+                      toolCallId: toolCall.id,
+                      result: "No recent interactions found for this caller.",
+                    });
+                  }
+                } else {
+                  push({ toolCallId: toolCall.id, result: "Could not identify caller number." });
+                }
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Failed to load recent interactions." });
+              }
+            }
+
+            // ──────────────────────────────────────────────────────────────
+            //  Shopify e-commerce handlers — order/inventory/customer
+            //  lookups + return/cancel/address actions for online stores.
+            //  Each calls the matching shopify-service function; the service
+            //  returns a graceful no-op when no Shopify store is connected,
+            //  so these never throw on an un-connected tenant.
+            // ──────────────────────────────────────────────────────────────
+            if (toolCall.function.name === "shopify_lookup_order") {
+              try {
+                const { order_number, email } = toolCall.function.arguments || {};
+                const order = await shopifyLookupOrder({
+                  orderNumber: order_number,
+                  email,
+                  userId: agent?.user_id,
+                });
+                if (!order) {
+                  push({
+                    toolCallId: toolCall.id,
+                    result:
+                      "I couldn't find an order matching that. Double-check the order number or the email on the order.",
+                  });
+                } else {
+                  const trackingLine =
+                    order.tracking.length > 0 && order.tracking[0].number
+                      ? ` Tracking: ${order.tracking[0].company || "carrier"} ${order.tracking[0].number}.`
+                      : " No tracking number yet.";
+                  const itemList = order.line_items
+                    .map((li) => `${li.quantity}x ${li.title}`)
+                    .join(", ");
+                  push({
+                    toolCallId: toolCall.id,
+                    result: `Order ${order.name}: ${order.fulfillment_status}, payment ${order.financial_status}, total ${order.total} ${order.currency}.${trackingLine} Items: ${itemList}. [data: ${JSON.stringify(order)}]`,
+                  });
+                }
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Order lookup error." });
+              }
+            }
+
+            if (toolCall.function.name === "shopify_check_inventory") {
+              try {
+                const { query } = toolCall.function.arguments || {};
+                const products = await shopifySearchProducts({
+                  query: String(query || ""),
+                  userId: agent?.user_id,
+                });
+                if (products.length === 0) {
+                  push({
+                    toolCallId: toolCall.id,
+                    result: "I couldn't find a product matching that in the store catalog.",
+                  });
+                } else {
+                  const summary = products
+                    .slice(0, 5)
+                    .map((p) => {
+                      const v = p.variants
+                        .map(
+                          (vr) =>
+                            `${vr.title} — $${vr.price}, ${vr.inventory_quantity > 0 ? `${vr.inventory_quantity} in stock` : "out of stock"}`,
+                        )
+                        .join("; ");
+                      return `${p.title}: ${v}`;
+                    })
+                    .join(" | ");
+                  push({
+                    toolCallId: toolCall.id,
+                    result: `Found ${products.length} product(s). ${summary} [data: ${JSON.stringify(products)}]`,
+                  });
+                }
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Inventory check error." });
+              }
+            }
+
+            if (toolCall.function.name === "shopify_lookup_customer") {
+              try {
+                const { email, phone } = toolCall.function.arguments || {};
+                const fallbackNumber =
+                  (payload.call as { customer?: { number?: string } } | undefined)?.customer
+                    ?.number ||
+                  (message.call as { customer?: { number?: string } } | undefined)?.customer
+                    ?.number;
+                const customer = await shopifyLookupCustomer({
+                  email,
+                  phone: phone || fallbackNumber,
+                  userId: agent?.user_id,
+                });
+                if (!customer) {
+                  push({
+                    toolCallId: toolCall.id,
+                    result:
+                      "I couldn't find a customer record matching that email or phone number.",
+                  });
+                } else {
+                  const recent = customer.recent_orders
+                    .map((o) => `${o.name} (${o.financial_status}, ${o.total})`)
+                    .join(", ");
+                  push({
+                    toolCallId: toolCall.id,
+                    result: `Customer ${customer.first_name} ${customer.last_name}: ${customer.orders_count} order(s), ${customer.total_spent} lifetime. Recent: ${recent || "none"}. [data: ${JSON.stringify(customer)}]`,
+                  });
+                }
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Customer lookup error." });
+              }
+            }
+
+            if (toolCall.function.name === "shopify_start_return") {
+              try {
+                const { order_id, reason } = toolCall.function.arguments || {};
+                if (!order_id) {
+                  push({
+                    toolCallId: toolCall.id,
+                    result: "I need the order ID to start a return. Look up the order first.",
+                  });
+                } else {
+                  const outcome = await shopifyStartReturn({
+                    orderId: String(order_id),
+                    reason: String(reason || "customer request"),
+                    userId: agent?.user_id,
+                  });
+                  push({ toolCallId: toolCall.id, result: outcome.message });
+                }
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Return request error." });
+              }
+            }
+
+            if (toolCall.function.name === "shopify_cancel_order") {
+              try {
+                const { order_id } = toolCall.function.arguments || {};
+                if (!order_id) {
+                  push({
+                    toolCallId: toolCall.id,
+                    result: "I need the order ID to cancel an order. Look up the order first.",
+                  });
+                } else {
+                  const outcome = await shopifyCancelOrder({
+                    orderId: String(order_id),
+                    userId: agent?.user_id,
+                  });
+                  push({ toolCallId: toolCall.id, result: outcome.message });
+                }
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Order cancel error." });
+              }
+            }
+
+            if (toolCall.function.name === "shopify_update_address") {
+              try {
+                const args = toolCall.function.arguments || {};
+                if (!args.order_id) {
+                  push({
+                    toolCallId: toolCall.id,
+                    result: "I need the order ID to update the shipping address.",
+                  });
+                } else {
+                  const outcome = await shopifyUpdateAddress({
+                    orderId: String(args.order_id),
+                    address: {
+                      address1: args.address1,
+                      address2: args.address2,
+                      city: args.city,
+                      province: args.province,
+                      zip: args.zip,
+                      country: args.country,
+                      name: args.name,
+                    },
+                    userId: agent?.user_id,
+                  });
+                  push({ toolCallId: toolCall.id, result: outcome.message });
+                }
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Address update error." });
+              }
+            }
+
+            if (toolCall.function.name === "shopify_create_draft_order") {
+              try {
+                const args = toolCall.function.arguments || {};
+                const qty = Number(args.quantity) || 1;
+                const outcome = await shopifyCreateDraftOrder({
+                  lineItems: [
+                    args.variant_id
+                      ? { variantId: String(args.variant_id), quantity: qty }
+                      : {
+                          title: String(args.product_title || "Phone order item"),
+                          price: String(args.price || "0.00"),
+                          quantity: qty,
+                        },
+                  ],
+                  customer: args.customer_email
+                    ? {
+                        email: String(args.customer_email),
+                        first_name: args.customer_first_name,
+                        last_name: args.customer_last_name,
+                      }
+                    : undefined,
+                  userId: agent?.user_id,
+                });
+                const link = outcome.invoiceUrl ? ` Payment link: ${outcome.invoiceUrl}` : "";
+                push({ toolCallId: toolCall.id, result: `${outcome.message}${link}` });
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Draft order error." });
+              }
+            }
+
+            if (toolCall.function.name === "shopify_add_order_note") {
+              try {
+                const { order_id, note } = toolCall.function.arguments || {};
+                if (!order_id) {
+                  push({ toolCallId: toolCall.id, result: "I need the order ID to add a note." });
+                } else {
+                  const outcome = await shopifyAddOrderNote({
+                    orderId: String(order_id),
+                    note: String(note || ""),
+                    userId: agent?.user_id,
+                  });
+                  push({ toolCallId: toolCall.id, result: outcome.message });
+                }
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Order note error." });
+              }
+            }
+
+            // ──────────────────────────────────────────────────────────────
+            //  Square e-commerce handlers — order/customer/inventory lookups
+            //  and payment-link creation for Square merchants.
+            // ──────────────────────────────────────────────────────────────
+            if (toolCall.function.name === "square_lookup_order") {
+              try {
+                const { order_id, email } = toolCall.function.arguments || {};
+                const order = await squareLookupOrder({
+                  orderId: order_id,
+                  email,
+                  userId: agent?.user_id,
+                });
+                if (!order) {
+                  push({
+                    toolCallId: toolCall.id,
+                    result:
+                      "I couldn't find a Square order matching that. Double-check the order ID or the email on the account.",
+                  });
+                } else {
+                  const itemList = order.lineItems
+                    .map((li) => `${li.quantity}x ${li.name}`)
+                    .join(", ");
+                  push({
+                    toolCallId: toolCall.id,
+                    result: `Order ${order.displayId || order.id}: state ${order.state}, total ${order.total}. Items: ${itemList}. [data: ${JSON.stringify(order)}]`,
+                  });
+                }
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Square order lookup error." });
+              }
+            }
+
+            if (toolCall.function.name === "square_lookup_customer") {
+              try {
+                const { email, phone } = toolCall.function.arguments || {};
+                const fallbackNumber =
+                  (payload.call as { customer?: { number?: string } } | undefined)?.customer
+                    ?.number ||
+                  (message.call as { customer?: { number?: string } } | undefined)?.customer
+                    ?.number;
+                const customer = await squareLookupCustomer({
+                  email,
+                  phone: phone || fallbackNumber,
+                  userId: agent?.user_id,
+                });
+                if (!customer) {
+                  push({
+                    toolCallId: toolCall.id,
+                    result:
+                      "I couldn't find a Square customer matching that email or phone number.",
+                  });
+                } else {
+                  push({
+                    toolCallId: toolCall.id,
+                    result: `Customer ${customer.firstName} ${customer.lastName} (${customer.email ?? "no email"}): member since ${customer.createdAt.split("T")[0]}. [data: ${JSON.stringify(customer)}]`,
+                  });
+                }
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Square customer lookup error." });
+              }
+            }
+
+            if (toolCall.function.name === "square_check_inventory") {
+              try {
+                const { query } = toolCall.function.arguments || {};
+                const items = await squareCheckInventory({
+                  query: String(query || ""),
+                  userId: agent?.user_id,
+                });
+                if (items.length === 0) {
+                  push({
+                    toolCallId: toolCall.id,
+                    result: "I couldn't find a Square catalog item matching that.",
+                  });
+                } else {
+                  const summary = items
+                    .slice(0, 5)
+                    .map((item) => {
+                      const inStock = item.variations.some((v) => (v.stockCount ?? 0) > 0);
+                      return `${item.name}: ${item.variations.map((v) => `${v.name} ${v.price}`).join(", ")} — ${inStock ? "in stock" : "out of stock"}`;
+                    })
+                    .join(" | ");
+                  push({
+                    toolCallId: toolCall.id,
+                    result: `Found ${items.length} item(s). ${summary} [data: ${JSON.stringify(items)}]`,
+                  });
+                }
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Square inventory check error." });
+              }
+            }
+
+            if (toolCall.function.name === "square_create_payment_link") {
+              try {
+                const { title, amount_dollars } = toolCall.function.arguments || {};
+                if (!title || amount_dollars == null) {
+                  push({
+                    toolCallId: toolCall.id,
+                    result: "I need a title and amount to create a payment link.",
+                  });
+                } else {
+                  const link = await squareCreatePaymentLink({
+                    title: String(title),
+                    amountCents: Math.round(Number(amount_dollars) * 100),
+                    userId: agent?.user_id,
+                  });
+                  if (!link.ok || !link.url) {
+                    push({ toolCallId: toolCall.id, result: link.message });
+                  } else {
+                    push({
+                      toolCallId: toolCall.id,
+                      result: `Payment link created: ${link.url} — $${amount_dollars} for ${title}. Share this with the customer to complete payment. [data: ${JSON.stringify(link)}]`,
+                    });
+                  }
+                }
+              } catch {
+                push({ toolCallId: toolCall.id, result: "Square payment link creation error." });
+              }
+            }
+            return (
+              pushResults[pushResults.length - 1] ?? {
+                toolCallId: toolCall.id,
+                result:
+                  "That action isn't available on this line right now. Help the caller another way.",
+              }
+            );
+          })().catch((err) => ({
+            toolCallId: toolCall.id,
+            result:
+              (err as Error)?.message === "VAPI_TOOL_TIMEOUT"
+                ? "That is taking longer than expected. Apologize briefly and offer to follow up by email or text."
+                : "Something went wrong running that action. Continue the conversation and try another approach.",
+          })),
+        ),
+      ),
+    );
+    const { finalizeVapiToolBatch } = await import("../lib/vapi-tool-results");
+    const results = finalizeVapiToolBatch(message.toolCalls, toolCallRows);
     return res.json({ results });
   }
 

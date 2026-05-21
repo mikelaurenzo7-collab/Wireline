@@ -9,6 +9,32 @@ export class NotificationService {
   constructor(private userId: string) {}
 
   /**
+   * Positive call outcome — Slack (normal) only; no urgent SMS unless operator opted in elsewhere.
+   */
+  async sendWinAlert(params: {
+    title: string;
+    message: string;
+    callId?: string;
+    agentName?: string;
+    caller?: string;
+    outcome?: string;
+  }): Promise<void> {
+    log.info("Sending win alert", { userId: this.userId, ...params });
+    try {
+      const { postAgentNotification } = await import("./slack-service");
+      await postAgentNotification(this.userId, `${params.title}: ${params.message}`, {
+        urgency: "normal",
+        callId: params.callId,
+        agentName: params.agentName,
+        caller: params.caller,
+        outcome: params.outcome ?? "booked",
+      });
+    } catch (err) {
+      log.error("Win Slack notification failed", { error: getErrorMessage(err) });
+    }
+  }
+
+  /**
    * Send an urgent alert to the manager (Slack + SMS).
    */
   async sendUrgentAlert(params: {

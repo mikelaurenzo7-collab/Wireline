@@ -2645,7 +2645,7 @@ export interface ClientCommunicationReviewResult {
   subject: string;
   body: string;
   rationale: string;
-  supervisedBy: "opus" | "fallback";
+  supervisedBy: "opus" | "haiku" | "fallback";
 }
 
 export async function superviseClientCommunication(
@@ -2674,7 +2674,10 @@ export async function superviseClientCommunication(
     };
   }
 
-  const system = `You are Wireline's boss model. A faster subordinate model drafted a client-facing ${input.channel === "email" ? "email" : "text message"}, and you must review it before it is sent.
+  const voiceHotPath = input.source === "voice_tool";
+  const system = voiceHotPath
+    ? `You are a fast compliance reviewer for live phone calls. A voice agent drafted a ${input.channel === "email" ? "email" : "text"} to send after the call. Approve if truthful and safe; reject and rewrite if risky. No adaptive thinking — decide in one pass. Plain text only.`
+    : `You are Wireline's boss model. A faster subordinate model drafted a client-facing ${input.channel === "email" ? "email" : "text message"}, and you must review it before it is sent.
 
 Rules:
 - Preserve verified facts. Never invent prices, policies, timelines, or commitments.
@@ -2709,9 +2712,9 @@ Review this message now.`;
       system,
       user,
       tool: CLIENT_COMMUNICATION_SUPERVISOR_TOOL,
-      deepThink: true,
-      maxTokens: 1400,
-      complexity: "complex",
+      deepThink: !voiceHotPath,
+      maxTokens: voiceHotPath ? 400 : 1400,
+      complexity: voiceHotPath ? "simple" : "complex",
     });
 
     return {
@@ -2719,7 +2722,7 @@ Review this message now.`;
       subject: input.channel === "email" ? reviewed.subject.trim() || originalSubject : "",
       body: reviewed.body.trim() || originalBody,
       rationale: reviewed.rationale,
-      supervisedBy: "opus",
+      supervisedBy: voiceHotPath ? "haiku" : "opus",
     };
   } catch (error) {
     try {

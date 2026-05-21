@@ -9,12 +9,12 @@ import {
   buildCallerProfileBlock,
   OUTBOUND_ARCHETYPE_BY_ROLE,
   getArchetypeConfig,
-  buildRoleToolDefs,
+  buildRoleToolDefsForTenant,
   VAPI_WEBHOOK_SECRET,
 } from "./vapi-helpers";
 import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "./agent-runtime";
 import { buildCustomerIntelBlock } from "./customer-intel";
-import { resolveAgentTools } from "./agent-capabilities";
+import { getVoiceLatencyProfile } from "./voice-agent-profile";
 import {
   VAPI_TENANT_DEFAULT_MODEL,
   VAPI_TENANT_DEFAULT_PROVIDER,
@@ -305,14 +305,6 @@ export async function buildVapiAssistant({
   const voiceLlmProvider = voiceSelection.provider;
   const voiceLlmModel = voiceSelection.model;
 
-  const enabledToolNames = resolveAgentTools(agentRole, agentConfigRow?.enabledTools)
-    .filter(
-      (toolName) => toolName !== "send_text_message" || !!userSettings?.twilio_messaging_enabled,
-    )
-    .filter(
-      (toolName) => toolName !== "lookup_phone_number" || !!userSettings?.twilio_lookup_enabled,
-    );
-
   const archetype = isOutbound
     ? OUTBOUND_ARCHETYPE_BY_ROLE[agentRole] || "The Closer"
     : agentConfigRow?.archetype || "Receptionist";
@@ -433,16 +425,14 @@ Today is ${currentDateTime}.
   // Per-archetype silence timeout. Outbound SDRs need short patience (caller
   // dodging); CS agents need longer (caller thinking). Operator can override
   // per-agent via FleetSettings → Advanced.
-  const archetypeSilenceDefault: Record<string, number> = {
-    "The Closer": 2,
-    "The Hunter": 2,
-    "The Negotiator": 3,
-    "The Collector": 3,
-    Scheduler: 4,
-    Receptionist: 5,
-  };
+  const voiceLatency = getVoiceLatencyProfile({
+    aiTier: userSettings?.aiTier,
+    archetype,
+    role: agentRole,
+    isOutbound,
+  });
   const silenceTimeoutSeconds =
-    (agentConfigRow as any)?.silenceTimeoutSeconds ?? archetypeSilenceDefault[archetype] ?? 5;
+    (agentConfigRow as any)?.silenceTimeoutSeconds ?? voiceLatency.silenceTimeoutSeconds;
 
   // ElevenLabs speed control — operator-set per-agent multiplier in
   // FleetSettings → Voice. The DB column is `numeric(3,2)` which Postgres
@@ -538,8 +528,8 @@ Today is ${currentDateTime}.
     //      steamrolling.
     //   3. backgroundDenoisingEnabled: false — adds latency to the
     //      audio pipeline; usually unnecessary on modern handsets.
-    responseDelaySeconds: 0,
-    numWordsToInterruptAssistant: 2,
+    responseDelaySeconds: voiceLatency.responseDelaySeconds,
+    numWordsToInterruptAssistant: voiceLatency.numWordsToInterruptAssistant,
     backgroundDenoisingEnabled: false,
     model: {
       provider: voiceLlmProvider,
@@ -556,7 +546,7 @@ Today is ${currentDateTime}.
       // 11labs-specific streaming optimization. 4 is the max — slight
       // quality trade for fastest first-audio-out. Most call quality
       // differences are imperceptible vs the latency win.
-      optimizeStreamingLatency: 4,
+      optimizeStreamingLatency: voiceLatency.optimizeStreamingLatency,
       // ElevenLabs speed control (operator-set, 0.7–1.2). Vapi forwards
       // this to ElevenLabs as `voice.eleven_labs.speed`. Only attach
       // when the resolved provider is 11labs and the value differs from
@@ -661,6 +651,15 @@ Today is ${currentDateTime}.
       successEvaluationPrompt:
         "Did the agent successfully address what the caller wanted? Reply with 'true' or 'false' only.",
     },
-    functions: buildRoleToolDefs(agentRole, enabledToolNames),
+    functions: await buildRoleToolDefsForTenant(
+      agentRole,
+      agentConfigRow?.enabledTools,
+      userId,
+      userSettings?.aiTier,
+      {
+        twilioMessaging: !!userSettings?.twilioMessagingEnabled,
+        twilioLookup: !!userSettings?.twilioLookupEnabled,
+      },
+    ),
   };
 }

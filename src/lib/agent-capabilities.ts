@@ -485,6 +485,9 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "leave_voicemail",
     "schedule_callback",
     "capture_customer_profile",
+    "send_slack_notification",
+    "send_teams_message",
+    "log_to_excel",
   ],
   technical_support: [
     "view_recent_interactions",
@@ -500,6 +503,16 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "leave_voicemail",
     "schedule_callback",
     "capture_customer_profile",
+    "send_slack_notification",
+    "send_teams_message",
+    "gemini_ground",
+    "crm_search_contacts",
+    "crm_log_call",
+    "shopify_lookup_order",
+    "shopify_lookup_customer",
+    "square_lookup_order",
+    "square_lookup_customer",
+    "log_to_excel",
   ],
   lead_qualifier: [
     "view_recent_interactions",
@@ -514,6 +527,17 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "leave_voicemail",
     "schedule_callback",
     "capture_customer_profile",
+    "check_calendar_availability",
+    "book_appointment",
+    "crm_search_contacts",
+    "crm_log_call",
+    "crm_create_opportunity",
+    "send_slack_notification",
+    "send_teams_message",
+    "generate_zoom_link",
+    "enrich_lead",
+    "gemini_ground",
+    "log_to_excel",
   ],
   receptionist: [
     "view_recent_interactions",
@@ -548,8 +572,50 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "leave_voicemail",
     "schedule_callback",
     "capture_customer_profile",
+    "check_calendar_availability",
+    "book_appointment",
+    "send_slack_notification",
+    "send_teams_message",
+    "enrich_lead",
+    "gemini_ground",
+    "crm_search_contacts",
+    "crm_log_call",
+    "log_to_excel",
   ],
 };
+
+/** Extra tools unlocked by subscription tier (settings.ai_tier). */
+const PLAN_TOOL_UNLOCKS: Record<string, readonly AgentToolName[]> = {
+  starter: [],
+  personal: [],
+  pro: ["enrich_lead", "gemini_ground", "send_contract"],
+  business: ["enrich_lead", "gemini_ground", "send_contract", "log_to_excel"],
+  enterprise: [
+    "enrich_lead",
+    "gemini_ground",
+    "send_contract",
+    "log_to_excel",
+    "send_slack_notification",
+    "send_teams_message",
+  ],
+};
+
+export function applyPlanToolUnlocks(
+  tools: readonly AgentToolName[],
+  aiTier?: string | null,
+): AgentToolName[] {
+  const tier = String(aiTier || "starter").toLowerCase();
+  const extras = PLAN_TOOL_UNLOCKS[tier] ?? [];
+  const seen = new Set<AgentToolName>(tools);
+  const out = [...tools];
+  for (const name of extras) {
+    if (!seen.has(name)) {
+      seen.add(name);
+      out.push(name);
+    }
+  }
+  return out;
+}
 
 const AGENT_TOOL_SET = new Set<string>(AGENT_TOOL_NAME_VALUES);
 

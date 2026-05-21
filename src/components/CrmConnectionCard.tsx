@@ -7,12 +7,21 @@ import { authFetch } from "../lib/api";
 interface IntegrationStatus {
   connected: boolean;
   configured?: boolean;
+  /** Apollo: platform APOLLO_API_KEY and/or OAuth app credentials on Vercel */
+  platform_active?: boolean;
+  /** Apollo: Admin can open OAuth popup (CLIENT_ID + SECRET) */
+  oauth_connect_available?: boolean;
   email?: string;
   team?: string;
   instance_url?: string;
   connected_at?: string;
   /** Slack: selected default channel for agent notifications */
   default_channel_id?: string | null;
+  /** Microsoft Teams notify target */
+  team_id?: string | null;
+  channel_id?: string | null;
+  team_name?: string | null;
+  channel_name?: string | null;
 }
 
 interface IntegrationState {
@@ -124,6 +133,10 @@ export default function CrmConnectionCard() {
     { id: string; name: string; is_private?: boolean }[]
   >([]);
   const [slackChannelsLoading, setSlackChannelsLoading] = useState(false);
+  const [teamsTargets, setTeamsTargets] = useState<
+    { team_id: string; team_name: string; channel_id: string; channel_name: string }[]
+  >([]);
+  const [teamsTargetsLoading, setTeamsTargetsLoading] = useState(false);
   // Shopify OAuth is per-store, so the operator must supply their
   // myshopify domain before the Connect button can build the install
   // URL. Held here until they click Connect.
@@ -166,6 +179,29 @@ export default function CrmConnectionCard() {
       cancelled = true;
     };
   }, [state?.slack?.connected]);
+
+  useEffect(() => {
+    if (!state?.microsoft_teams?.connected) {
+      setTeamsTargets([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      setTeamsTargetsLoading(true);
+      try {
+        const r = await authFetch("/api/oauth/microsoft_teams/channels");
+        if (r.ok && !cancelled) {
+          const d = await r.json();
+          setTeamsTargets(d.channels || []);
+        }
+      } finally {
+        if (!cancelled) setTeamsTargetsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [state?.microsoft_teams?.connected]);
 
   useEffect(() => {
     const handler = (e: MessageEvent) => {
@@ -260,32 +296,11 @@ export default function CrmConnectionCard() {
                   </span>
                 ) : null;
 
-                if (!s.connected && !s.configured) {
-                  return (
-                    <motion.div
-                      key={key}
-                      layout
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="rounded-xl glass border border-white/8 p-4"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-bold text-muted">
-                          {logo}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <div className="text-[11px] font-semibold text-ink">{label}</div>
-                            {betaPill}
-                          </div>
-                          <div className="text-[9px] text-muted leading-snug mt-0.5">
-                            Finishing setup — write to trywireline@yahoo.com to enable
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                }
+                const platformReady = s.configured !== false;
+                const oauthConnectAvailable =
+                  key !== "apollo" || s.oauth_connect_available !== false;
+                const apolloPlatformOnly =
+                  key === "apollo" && platformReady && !oauthConnectAvailable && !s.connected;
 
                 return (
                   <motion.div
@@ -323,7 +338,13 @@ export default function CrmConnectionCard() {
                           </div>
                         ) : (
                           <div className="text-[9px] text-muted leading-snug mt-0.5">
-                            Ready to connect — click to authorize
+                            {apolloPlatformOnly
+                              ? "Platform Apollo API active — optional: connect your workspace below"
+                              : platformReady && oauthConnectAvailable
+                                ? "Ready to connect — click to authorize"
+                                : platformReady
+                                  ? "Platform configured"
+                                  : "Platform OAuth credentials are not set on this deployment"}
                           </div>
                         )}
                       </div>
@@ -349,7 +370,7 @@ export default function CrmConnectionCard() {
                               <Unlink className="w-3.5 h-3.5" />
                             </button>
                           </div>
-                        ) : (
+                        ) : platformReady && oauthConnectAvailable ? (
                           <button
                             onClick={connect(key)}
                             disabled={isConnecting}
@@ -366,6 +387,8 @@ export default function CrmConnectionCard() {
                             )}
                             Connect
                           </button>
+                        ) : (
+                          <span className="text-[9px] text-muted px-2">Unavailable</span>
                         )}
                       </div>
                     </div>
@@ -432,6 +455,62 @@ export default function CrmConnectionCard() {
                           After OAuth we auto-pick #general when possible. Agents post bookings and
                           alerts here — change anytime.
                         </p>
+                      </div>
+                    )}
+                    {key === "microsoft_teams" && s.connected && (
+                      <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
+                        <div className="text-[9px] uppercase tracking-[0.25em] text-muted/90">
+                          Notify team & channel
+                        </div>
+                        {teamsTargetsLoading ? (
+                          <div className="flex items-center gap-2 text-[10px] text-muted">
+                            <Loader2 className="w-3 h-3 animate-spin" /> Loading teams…
+                          </div>
+                        ) : (
+                          <select
+                            className="w-full text-[10px] rounded-lg bg-black/20 border border-white/10 px-2 py-1.5 text-ink"
+                            value={s.team_id && s.channel_id ? `${s.team_id}:${s.channel_id}` : ""}
+                            onChange={async (e) => {
+                              const raw = e.target.value;
+                              if (!raw) return;
+                              const [team_id, channel_id] = raw.split(":");
+                              const pick = teamsTargets.find(
+                                (t) => t.team_id === team_id && t.channel_id === channel_id,
+                              );
+                              await authFetch("/api/oauth/microsoft_teams/notify-target", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  team_id,
+                                  channel_id,
+                                  team_name: pick?.team_name,
+                                  channel_name: pick?.channel_name,
+                                }),
+                              });
+                              fetchStatus();
+                            }}
+                          >
+                            <option value="">Select team channel…</option>
+                            {teamsTargets.map((t) => (
+                              <option
+                                key={`${t.team_id}:${t.channel_id}`}
+                                value={`${t.team_id}:${t.channel_id}`}
+                              >
+                                {t.team_name} / {t.channel_name}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                        {s.team_name && s.channel_name ? (
+                          <p className="text-[9px] text-muted/70 leading-snug">
+                            Current: {s.team_name} → {s.channel_name}
+                          </p>
+                        ) : (
+                          <p className="text-[9px] text-muted/70 leading-snug">
+                            Pick where call alerts post. Without a selection we use your first team
+                            channel.
+                          </p>
+                        )}
                       </div>
                     )}
                   </motion.div>

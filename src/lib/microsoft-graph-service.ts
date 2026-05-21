@@ -43,6 +43,13 @@ export const MS_EXCEL_SCOPES = [
 
 export type MsGraphProvider = "microsoft_teams" | "microsoft_excel";
 
+export interface TeamsChannelOption {
+  team_id: string;
+  team_name: string;
+  channel_id: string;
+  channel_name: string;
+}
+
 export function microsoftGraphConfigured(): boolean {
   return !!(process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET);
 }
@@ -237,6 +244,83 @@ async function patchMetadata(connId: string, patch: Record<string, unknown>): Pr
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/** List teams + channels the operator can post to (for Admin channel picker). */
+export async function listTeamsNotifyTargets(userId: string): Promise<TeamsChannelOption[]> {
+  const token = await getAccessToken(userId, "microsoft_teams");
+  if (!token) return [];
+
+  try {
+    const teamsRes = await fetchWithTimeout(
+      `${GRAPH}/me/joinedTeams`,
+      { headers: { Authorization: `Bearer ${token}` } },
+      15_000,
+    );
+    const teamsData = (await teamsRes.json()) as {
+      value?: { id: string; displayName: string }[];
+    };
+    const teams = teamsData.value || [];
+    const out: TeamsChannelOption[] = [];
+
+    for (const team of teams.slice(0, 12)) {
+      const chRes = await fetchWithTimeout(
+        `${GRAPH}/teams/${team.id}/channels`,
+        { headers: { Authorization: `Bearer ${token}` } },
+        10_000,
+      );
+      if (!chRes.ok) continue;
+      const chData = (await chRes.json()) as {
+        value?: { id: string; displayName: string }[];
+      };
+      for (const ch of (chData.value || []).slice(0, 25)) {
+        out.push({
+          team_id: team.id,
+          team_name: team.displayName,
+          channel_id: ch.id,
+          channel_name: ch.displayName,
+        });
+      }
+    }
+    return out;
+  } catch (err) {
+    log.error("Microsoft Teams list targets failed", { error: getErrorMessage(err) });
+    return [];
+  }
+}
+
+export async function setTeamsNotifyTarget(
+  userId: string,
+  teamId: string,
+  channelId: string,
+  labels?: { team_name?: string; channel_name?: string },
+): Promise<void> {
+  const conn = await getConnection(userId, "microsoft_teams");
+  if (!conn) return;
+  await patchMetadata(conn.id, {
+    team_id: teamId,
+    channel_id: channelId,
+    team_name: labels?.team_name,
+    channel_name: labels?.channel_name,
+  });
+}
+
+/** After Teams OAuth, cache the first team/channel when none is selected yet. */
+export async function bootstrapTeamsNotifyTarget(userId: string): Promise<boolean> {
+  const conn = await getConnection(userId, "microsoft_teams");
+  if (!conn) return false;
+  const meta = conn.metadata as Record<string, unknown>;
+  if (meta.team_id && meta.channel_id) return true;
+
+  const targets = await listTeamsNotifyTargets(userId);
+  const first = targets[0];
+  if (!first) return false;
+
+  await setTeamsNotifyTarget(userId, first.team_id, first.channel_id, {
+    team_name: first.team_name,
+    channel_name: first.channel_name,
+  });
+  return true;
 }
 
 /** Resolve (and cache) the operator's default team + channel. */

@@ -64,6 +64,28 @@ describe("integrations registry", () => {
     expect(supabase?.envVars.map((entry) => entry.name)).toContain("SUPABASE_SERVICE_ROLE_KEY");
   });
 
+  it("marks Apollo configured when APOLLO_API_KEY is present", async () => {
+    process.env.APOLLO_API_KEY = "apollo-platform-key";
+    delete process.env.APOLLO_CLIENT_ID;
+    delete process.env.APOLLO_CLIENT_SECRET;
+
+    const { getIntegrationsStatus } = await import("./integrations-registry");
+    const apollo = getIntegrationsStatus().find((entry) => entry.id === "apollo");
+
+    expect(apollo?.status).toBe("configured");
+  });
+
+  it("marks Apollo configured when OAuth client credentials are present", async () => {
+    delete process.env.APOLLO_API_KEY;
+    process.env.APOLLO_CLIENT_ID = "apollo-client";
+    process.env.APOLLO_CLIENT_SECRET = "apollo-secret";
+
+    const { getIntegrationsStatus } = await import("./integrations-registry");
+    const apollo = getIntegrationsStatus().find((entry) => entry.id === "apollo");
+
+    expect(apollo?.status).toBe("configured");
+  });
+
   it("marks Twilio configured when SID and auth token are present", async () => {
     process.env.TWILIO_ACCOUNT_SID = "AC123";
     process.env.TWILIO_AUTH_TOKEN = "twilio-token";

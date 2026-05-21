@@ -15,18 +15,14 @@ import {
   PhoneOutgoing,
   MailCheck,
   Radio,
-  Phone,
 } from "lucide-react";
+import { AuthDemoDirectory } from "./auth/AuthDemoDirectory";
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../contexts/AuthContext";
 import { PageMeta } from "../lib/page-meta";
 import WirelineMark from "./WirelineMark";
-import {
-  WIRELINE_CONTACT_AGENTS,
-  WIRELINE_DEMO_AGENTS,
-  type ContactAgent as AgentCard,
-} from "../data/contact-agents";
+import { WIRELINE_CONTACT_AGENTS, WIRELINE_DEMO_AGENTS } from "../data/contact-agents";
 
 const FEATURES = [
   {
@@ -207,54 +203,6 @@ function OAuthSignInButtons({ disabled }: { disabled?: boolean }) {
   );
 }
 
-/**
- * Agent contact card — display-only. Shows the agent's name, role, and
- * dialable number as plain text. NOT a tel: link: on desktop a tel:
- * href fires an "open in another app" prompt, which is jarring on a
- * landing page. Visitors read the number and dial from their phone.
- */
-function AgentContactCard({ agent, isDemo }: { agent: AgentCard; isDemo?: boolean }) {
-  return (
-    <div className="relative rounded-xl p-3 overflow-hidden border border-white/10 glass">
-      <div className="flex items-start gap-3">
-        <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-white/10"
-          style={{ background: isDemo ? "rgba(255,255,255,0.03)" : `${agent.tint}1a` }}
-        >
-          <Phone
-            className="w-3.5 h-3.5"
-            style={{ color: isDemo ? "#a1a1aa" : agent.tint }}
-            strokeWidth={2.4}
-          />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 mb-1">
-            <span
-              className={cn(
-                "shrink-0 whitespace-nowrap text-[8px] uppercase tracking-[0.16em] font-semibold px-1.5 py-0.5 rounded leading-none",
-                isDemo
-                  ? "bg-white/8 text-muted/80 border border-white/10"
-                  : "bg-[#4F1E7B]/15 text-[#4F1E7B] border border-[#4F1E7B]/30",
-              )}
-            >
-              {isDemo ? "Demo" : "Wireline Team"}
-            </span>
-            <span className="text-[9px] uppercase tracking-[0.18em] text-muted/70 truncate">
-              {agent.name}
-            </span>
-          </div>
-          <p className="font-display italic text-sm leading-snug text-ink/90 line-clamp-2 text-balance">
-            {agent.role}
-          </p>
-          <p className="mt-1 font-mono text-[13px] tabular-nums text-ink select-all">
-            {agent.display}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 type PasswordStrength = { score: 0 | 1 | 2 | 3 | 4; label: string; color: string };
 
 function getPasswordStrength(pw: string): PasswordStrength {
@@ -383,7 +331,7 @@ export default function AuthPortal() {
            Without this, the left column at lg+ widths grows to ~1020px,
            making the Sign In button on the right scroll-required even
            though it's anchored to the top of its column. */}
-        <div className="hidden lg:flex lg:w-[58%] xl:w-[60%] 2xl:w-[62%] flex-col relative z-10 p-5 md:p-6 lg:p-7 xl:p-8 2xl:p-10 h-screen overflow-y-auto scrollbar-hide">
+        <div className="hidden lg:flex lg:w-[52%] xl:w-[54%] flex-col relative z-10 p-6 lg:p-8 xl:p-10 h-screen overflow-y-auto scrollbar-hide">
           {/* Decorative vertical line on right edge */}
           <div
             className="absolute top-0 right-0 w-px h-full"
@@ -475,46 +423,38 @@ export default function AuthPortal() {
             </div>
           </motion.div>
 
-          {/* Live call directory — grouped by Wireline team + vertical demos. */}
+          {/* Product pillars — compact grid; demos live in collapsible directory below. */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-            className="mb-6"
+            className="mb-8"
           >
-            <div className="flex items-center gap-2 mb-2.5">
-              <span className="text-[9px] uppercase tracking-[0.4em] text-[#4F1E7B] font-medium">
-                Live Agent Directory
-              </span>
-              <span className="flex-1 h-px bg-[#4F1E7B]/20" />
-            </div>
-            <p className="text-[11px] text-muted/70 mb-3 leading-relaxed">
-              Call any line below right now. Wireline specialists are grouped first, then vertical
-              demo agents so every slot is filled with no dead space.
-            </p>
-            <div className="space-y-3">
-              <div>
-                <p className="mb-2 text-[9px] uppercase tracking-[0.32em] text-[#4F1E7B]/80 font-semibold">
-                  Wireline agents
-                </p>
-                <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-2.5">
-                  {AUTH_PORTAL_WIRELINE_AGENTS.map((agent) => (
-                    <AgentContactCard key={agent.tel} agent={agent} isDemo={false} />
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="mb-2 text-[9px] uppercase tracking-[0.32em] text-amber-600/90 font-semibold">
-                  Demo agents
-                </p>
-                <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-2.5">
-                  {AUTH_PORTAL_DEMO_AGENTS.map((agent) => (
-                    <AgentContactCard key={agent.tel} agent={agent} isDemo />
-                  ))}
-                </div>
-              </div>
+            <div className="grid grid-cols-2 gap-3">
+              {FEATURES.map((f) => {
+                const Icon = f.icon;
+                return (
+                  <div
+                    key={f.title}
+                    className="rounded-xl p-3.5 border border-black/5 bg-[#FAF8F5]/80"
+                  >
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center mb-2 border border-black/5 bg-[#4F1E7B]/10 text-[#4F1E7B]">
+                      <Icon className="w-3.5 h-3.5" />
+                    </div>
+                    <p className="text-[11px] font-medium text-ink mb-0.5">{f.title}</p>
+                    <p className="text-[10px] text-muted/70 leading-snug">{f.desc}</p>
+                  </div>
+                );
+              })}
             </div>
           </motion.div>
+
+          <AuthDemoDirectory
+            wirelineAgents={AUTH_PORTAL_WIRELINE_AGENTS}
+            demoAgents={AUTH_PORTAL_DEMO_AGENTS}
+            defaultExpanded={false}
+            className="mb-6"
+          />
 
           {/* Trust row */}
           <motion.div
@@ -550,8 +490,8 @@ export default function AuthPortal() {
            Previously `justify-center` pushed the form to ~440px from the top
            of an 800px viewport, putting the Sign In button at ~875px —
            below the fold. */}
-        <div className="flex-1 flex flex-col items-center relative z-10 py-4 sm:py-5 md:py-6 px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 overflow-y-auto">
-          <div className="lg:hidden w-full max-w-md mb-6 pt-4">
+        <div className="flex-1 lg:sticky lg:top-0 lg:h-screen flex flex-col items-center justify-start relative z-10 py-6 sm:py-8 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 overflow-y-auto">
+          <div className="lg:hidden w-full max-w-md mb-5 pt-2">
             {/* Logo + wordmark row */}
             <div className="flex items-center gap-3 mb-5">
               <div
@@ -577,52 +517,9 @@ export default function AuthPortal() {
               <span className="text-[#4F1E7B]">AI agents for every</span>{" "}
               <span className="text-ink">customer conversation</span>
             </h2>
-            <p className="text-[12px] text-muted/80 leading-relaxed mb-5">
-              Dial any number below to hear a Wireline agent live — no signup needed.
+            <p className="text-[12px] text-muted/80 leading-relaxed">
+              Sign in below — try live demo lines anytime after the form.
             </p>
-
-            {/* Grouped live lines: Wireline team + all demo agents. */}
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-[9px] uppercase tracking-[0.4em] text-[#4F1E7B] font-medium">
-                Live Agent Directory
-              </span>
-              <span className="flex-1 h-px bg-[#4F1E7B]/15" />
-            </div>
-            <div className="space-y-3">
-              <div>
-                <p className="mb-2 text-[9px] uppercase tracking-[0.32em] text-[#4F1E7B]/80 font-semibold">
-                  Wireline agents
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {AUTH_PORTAL_WIRELINE_AGENTS.map((agent) => (
-                    <AgentContactCard key={agent.tel} agent={agent} isDemo={false} />
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="mb-2 text-[9px] uppercase tracking-[0.32em] text-amber-600/90 font-semibold">
-                  Demo agents
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {AUTH_PORTAL_DEMO_AGENTS.map((agent) => (
-                    <AgentContactCard key={agent.tel} agent={agent} isDemo />
-                  ))}
-                </div>
-              </div>
-            </div>
-            <p className="mt-3 text-[11px] text-muted/70 leading-relaxed">
-              Demo account: sign in with the shared test credentials your admin provides for guided
-              walkthroughs.
-            </p>
-
-            {/* Subtle divider */}
-            <div
-              className="mt-6 h-px w-full"
-              style={{
-                background:
-                  "linear-gradient(to right, transparent, rgba(79,30,123,0.25), rgba(79,30,123,0.25), transparent)",
-              }}
-            />
           </div>
 
           {/* Mobile logo — retained for the form-card width reference, hidden visually below hero */}
@@ -648,9 +545,9 @@ export default function AuthPortal() {
           >
             {/* Form card */}
             <div className="relative rounded-3xl border border-black/8 bg-[#FAF8F5] shadow-lg overflow-hidden">
-              <div className="relative p-6 md:p-8">
+              <div className="relative p-7 md:p-9 lg:p-10">
                 {/* Header */}
-                <div className="relative z-10 mb-8">
+                <div className="relative z-10 mb-9">
                   <h2 className="font-display italic text-3xl text-ink leading-tight mb-1">
                     {isReset ? "Reset password" : isSignUp ? "Create account" : "Welcome back"}
                   </h2>
@@ -873,39 +770,15 @@ export default function AuthPortal() {
               </div>
             </div>
 
-            {/* Feature pillars — moved here from the left brand panel so they
-              fill the white space under the sign-in card and reinforce
-              value-props at the moment of conversion (the user is right
-              next to the Sign In button when they read these). */}
-            <div className="grid grid-cols-2 gap-3 mt-5">
-              {FEATURES.map((f, i) => {
-                const Icon = f.icon;
-                return (
-                  <motion.div
-                    key={f.title}
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{
-                      delay: 0.2 + i * 0.08,
-                      duration: 0.5,
-                      ease: [0.16, 1, 0.3, 1],
-                    }}
-                    className="relative rounded-xl p-3 border border-black/5 bg-[#FAF8F5] overflow-hidden"
-                  >
-                    <div className="w-7 h-7 rounded-lg flex items-center justify-center mb-2 border border-black/5 bg-[#4F1E7B]/10 text-[#4F1E7B]">
-                      <Icon className="w-3.5 h-3.5" />
-                    </div>
-                    <p className="text-[11px] font-medium text-ink mb-0.5 leading-tight">
-                      {f.title}
-                    </p>
-                    <p className="text-[10px] text-muted/70 leading-snug">{f.desc}</p>
-                  </motion.div>
-                );
-              })}
-            </div>
+            <AuthDemoDirectory
+              wirelineAgents={AUTH_PORTAL_WIRELINE_AGENTS}
+              demoAgents={AUTH_PORTAL_DEMO_AGENTS}
+              defaultExpanded={false}
+              className="mt-6 lg:hidden"
+            />
 
             {/* Footer */}
-            <div className="mt-5 flex items-center justify-center gap-4">
+            <div className="mt-6 flex items-center justify-center gap-4">
               <ShieldCheck className="w-3 h-3 text-muted/40" />
               <span className="text-[9px] uppercase tracking-[0.42em] text-muted/50">
                 TLS Encrypted · Secured Internal Infrastructure

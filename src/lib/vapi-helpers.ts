@@ -1,6 +1,10 @@
 import { timingSafeEqual } from "node:crypto";
 import { IS_PROD } from "./server-context";
-import { resolveAgentTools } from "./agent-capabilities";
+import { applyPlanToolUnlocks, resolveAgentTools, type AgentToolName } from "./agent-capabilities";
+import {
+  filterToolsByTenantConnections,
+  loadTenantIntegrationConnections,
+} from "./tenant-integration-connections";
 
 export const VAPI_WEBHOOK_SECRET =
   process.env.VAPI_WEBHOOK_SECRET || (IS_PROD ? "" : "wireline-secret-key");
@@ -894,9 +898,33 @@ export const ROLE_SPECIFIC_PROTOCOLS: Record<string, string> = {
     "Be methodical. Use search_leads to find their product version or history. If you cannot solve it, use create_support_ticket to escalate to engineering.",
   scheduler:
     "Your goal is a confirmed appointment. ALWAYS check_calendar_availability before suggesting a time. Use send_email to send the calendar invite immediately after booking, and use send_text_message only if the customer asked for a text confirmation.",
+  lead_qualifier:
+    "Qualify fast: budget, timeline, authority, need. Use enrich_lead when you have a company or email. Book a demo with book_appointment when qualified; notify the team on Slack or Teams for hot leads.",
+  marketing:
+    "Capture campaign interest and next steps. Use enrich_lead for unknown companies; log outcomes with update_lead_status. Offer book_appointment for demos or nurture with send_email.",
 };
 
 export function buildRoleToolDefs(role: string, enabledTools?: unknown): object[] {
   const toolNames = resolveAgentTools(role, enabledTools) as VapiToolName[];
+  return toolNames.map((name) => VAPI_TOOL_DEFS[name]).filter(Boolean);
+}
+
+/** Connection-aware tool list for live assistants — omits tools the tenant has not OAuth'd. */
+export async function buildRoleToolDefsForTenant(
+  role: string,
+  enabledTools: unknown,
+  userId: string,
+  aiTier?: string | null,
+  tenantFlags?: { twilioMessaging?: boolean; twilioLookup?: boolean },
+): Promise<object[]> {
+  let resolved = applyPlanToolUnlocks(resolveAgentTools(role, enabledTools), aiTier);
+  if (!tenantFlags?.twilioMessaging) {
+    resolved = resolved.filter((n) => n !== "send_text_message");
+  }
+  if (!tenantFlags?.twilioLookup) {
+    resolved = resolved.filter((n) => n !== "lookup_phone_number");
+  }
+  const conn = await loadTenantIntegrationConnections(userId);
+  const toolNames = filterToolsByTenantConnections(resolved, conn) as VapiToolName[];
   return toolNames.map((name) => VAPI_TOOL_DEFS[name]).filter(Boolean);
 }
