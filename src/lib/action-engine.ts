@@ -8,7 +8,7 @@ import { CRMService } from "./crm-service";
 import { sendContract } from "./docusign-service";
 import { searchLeads } from "./apollo-service";
 import { sendTenantMessage } from "./twilio-service";
-import { postMessage as slackPostMessage, getDefaultChannel } from "./slack-service";
+import { postAgentNotification, getDefaultChannel } from "./slack-service";
 import { resolveAgentTools } from "./agent-capabilities";
 import { sendMetaConversion } from "./meta-service";
 import { superviseClientCommunication } from "./claude-brain";
@@ -637,6 +637,9 @@ async function handleNotifySlack(userId: string, action: ActionItem): Promise<Ac
   }
   const text =
     action.payload.message || action.reasoning || "Notification from your Wireline agent";
-  const ok = await slackPostMessage(userId, channel, text);
+  const ok = await postAgentNotification(userId, text, {
+    outcome: typeof action.payload.outcome === "string" ? action.payload.outcome : undefined,
+    urgency: action.payload.urgency === "high" ? "high" : "normal",
+  });
   return { success: ok, error: ok ? undefined : "Slack message delivery failed" };
 }

@@ -29,6 +29,8 @@ export const AGENT_TOOL_NAME_VALUES = [
   "shopify_start_return",
   "shopify_cancel_order",
   "shopify_update_address",
+  "shopify_create_draft_order",
+  "shopify_add_order_note",
   "square_lookup_order",
   "square_lookup_customer",
   "square_check_inventory",
@@ -273,6 +275,22 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
     group: "ecommerce",
     integration: "shopify",
   },
+  {
+    name: "shopify_create_draft_order",
+    label: "Create Shopify draft order",
+    description:
+      "Builds a phone-order draft in Shopify and returns an invoice/payment link the customer can use to pay.",
+    group: "ecommerce",
+    integration: "shopify",
+  },
+  {
+    name: "shopify_add_order_note",
+    label: "Add Shopify order note",
+    description:
+      "Adds an internal note on an order for the merchant team (call summary, special instructions).",
+    group: "ecommerce",
+    integration: "shopify",
+  },
   // E-commerce — Square
   {
     name: "square_lookup_order",
@@ -331,6 +349,8 @@ export const SHOPIFY_TOOL_NAMES: readonly AgentToolName[] = [
   "shopify_start_return",
   "shopify_cancel_order",
   "shopify_update_address",
+  "shopify_create_draft_order",
+  "shopify_add_order_note",
 ];
 
 /** Tool names that require a connected Square account. */
@@ -394,6 +414,8 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "shopify_start_return",
     "shopify_cancel_order",
     "shopify_update_address",
+    "shopify_create_draft_order",
+    "shopify_add_order_note",
     "square_lookup_order",
     "square_lookup_customer",
     "square_check_inventory",
@@ -423,6 +445,8 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "shopify_start_return",
     "shopify_cancel_order",
     "shopify_update_address",
+    "shopify_create_draft_order",
+    "shopify_add_order_note",
     "square_lookup_order",
     "square_lookup_customer",
     "square_check_inventory",

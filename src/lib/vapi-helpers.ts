@@ -516,6 +516,15 @@ export const VAPI_TOOL_DEFS = {
           type: "string",
           description: "A concise notification message for the team Slack channel.",
         },
+        outcome: {
+          type: "string",
+          description: "Optional short outcome label (escalated, booked, refund, etc.).",
+        },
+        urgency: {
+          type: "string",
+          enum: ["normal", "high"],
+          description: "Use high for escalations or revenue-critical moments.",
+        },
       },
       required: ["message"],
     },
@@ -726,6 +735,37 @@ export const VAPI_TOOL_DEFS = {
       required: ["order_id"],
     },
   },
+  shopify_create_draft_order: {
+    name: "shopify_create_draft_order",
+    description:
+      "Creates a Shopify draft order for a phone sale and returns a payment/invoice link. Use when the caller wants to buy now but did not check out online. Confirm line items and quantity first.",
+    parameters: {
+      type: "object",
+      properties: {
+        variant_id: { type: "string", description: "Product variant ID from shopify_check_inventory (preferred)." },
+        product_title: { type: "string", description: "Custom line title if no variant_id." },
+        price: { type: "string", description: "Unit price for a custom line (e.g. 29.99)." },
+        quantity: { type: "number", description: "Quantity to order." },
+        customer_email: { type: "string", description: "Customer email for the invoice." },
+        customer_first_name: { type: "string", description: "Customer first name." },
+        customer_last_name: { type: "string", description: "Customer last name." },
+      },
+      required: ["quantity"],
+    },
+  },
+  shopify_add_order_note: {
+    name: "shopify_add_order_note",
+    description:
+      "Adds an internal note on a Shopify order for the merchant team (call summary, VIP flag, special handling). Use after resolving an issue so staff see context in admin.",
+    parameters: {
+      type: "object",
+      properties: {
+        order_id: { type: "string", description: "Shopify order ID from shopify_lookup_order." },
+        note: { type: "string", description: "Short note for the merchant (plain text)." },
+      },
+      required: ["order_id", "note"],
+    },
+  },
   square_lookup_order: {
     name: "square_lookup_order",
     description:
@@ -803,6 +843,10 @@ export const VAPI_TOOL_DEFS = {
         message: {
           type: "string",
           description: "A concise notification message for the team's Microsoft Teams channel.",
+        },
+        outcome: {
+          type: "string",
+          description: "Optional short outcome label (escalated, booked, refund, etc.).",
         },
       },
       required: ["message"],

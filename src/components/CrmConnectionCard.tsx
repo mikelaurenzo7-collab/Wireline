@@ -429,7 +429,7 @@ export default function CrmConnectionCard() {
                           </select>
                         )}
                         <p className="text-[9px] text-muted/70 leading-snug">
-                          Voice agents post booking confirmations here when this channel is set.
+                          After OAuth we auto-pick #general when possible. Agents post bookings and alerts here — change anytime.
                         </p>
                       </div>
                     )}

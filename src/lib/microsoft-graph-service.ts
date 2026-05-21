@@ -276,7 +276,25 @@ async function resolveTeamsTarget(
   return { teamId: team.id, channelId: channel.id };
 }
 
-export async function sendTeamsMessage(params: { userId: string; text: string }): Promise<boolean> {
+
+function buildTeamsHtml(params: {
+  text: string;
+  context?: { agentName?: string; caller?: string; outcome?: string };
+}): string {
+  const lines: string[] = ["<strong>Wireline</strong>"];
+  const ctx = params.context;
+  if (ctx?.agentName) lines.push(`Agent: ${escapeHtml(ctx.agentName)}`);
+  if (ctx?.caller) lines.push(`Caller: ${escapeHtml(ctx.caller)}`);
+  if (ctx?.outcome) lines.push(`Outcome: ${escapeHtml(ctx.outcome)}`);
+  lines.push(escapeHtml(params.text));
+  return lines.join("<br>");
+}
+
+export async function sendTeamsMessage(params: {
+  userId: string;
+  text: string;
+  context?: { agentName?: string; caller?: string; outcome?: string };
+}): Promise<boolean> {
   const token = await getAccessToken(params.userId, "microsoft_teams");
   if (!token) {
     log.warn("Microsoft Teams not connected — skipping message");
@@ -299,7 +317,7 @@ export async function sendTeamsMessage(params: { userId: string; text: string })
         body: JSON.stringify({
           body: {
             contentType: "html",
-            content: `<strong>Wireline agent</strong><br>${escapeHtml(params.text)}`,
+            content: buildTeamsHtml(params),
           },
         }),
       },

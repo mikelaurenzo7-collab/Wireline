@@ -139,6 +139,65 @@ export async function listChannels(userId: string): Promise<SlackChannel[]> {
   }
 }
 
+
+export type SlackNotifyContext = {
+  agentName?: string;
+  caller?: string;
+  outcome?: string;
+  urgency?: "normal" | "high";
+  callId?: string;
+};
+
+export function pickDefaultChannelId(channels: SlackChannel[]): string | null {
+  const general = channels.find((c) => c.name === "general");
+  if (general) return general.id;
+  const pub = channels.find((c) => !c.is_private);
+  return pub?.id ?? channels[0]?.id ?? null;
+}
+
+export async function bootstrapDefaultChannel(userId: string): Promise<string | null> {
+  const existing = await getDefaultChannel(userId);
+  if (existing) return existing;
+  const channels = await listChannels(userId);
+  const pick = pickDefaultChannelId(channels);
+  if (pick) await setDefaultChannel(userId, pick);
+  return pick;
+}
+
+function buildSlackBlocks(text: string, ctx?: SlackNotifyContext): unknown[] {
+  const header =
+    ctx?.urgency === "high" ? ":rotating_light: *Wireline — urgent*" : ":robot_face: *Wireline agent*";
+  const fields: string[] = [];
+  if (ctx?.agentName) fields.push("*Agent:* " + ctx.agentName);
+  if (ctx?.caller) fields.push("*Caller:* " + ctx.caller);
+  if (ctx?.outcome) fields.push("*Outcome:* " + ctx.outcome);
+  if (ctx?.callId) fields.push("*Call:* `" + ctx.callId + "`");
+  const blocks: unknown[] = [
+    { type: "section", text: { type: "mrkdwn", text: header + "\n" + text } },
+  ];
+  if (fields.length) {
+    blocks.push({
+      type: "context",
+      elements: [{ type: "mrkdwn", text: fields.join("  ·  ") }],
+    });
+  }
+  return blocks;
+}
+
+export async function postAgentNotification(
+  userId: string,
+  message: string,
+  ctx?: SlackNotifyContext,
+): Promise<boolean> {
+  const channel = (await getDefaultChannel(userId)) || (await bootstrapDefaultChannel(userId));
+  if (!channel) {
+    log.warn("Slack: no default channel — connect Slack and pick a channel in Admin");
+    return false;
+  }
+  const fallback = ctx?.urgency === "high" ? "🚨 " + message : message;
+  return postMessage(userId, channel, fallback, buildSlackBlocks(message, ctx));
+}
+
 export async function postMessage(userId: string, channel: string, text: string, blocks?: any[]): Promise<boolean> {
   const token = await getToken(userId);
   if (!token) {

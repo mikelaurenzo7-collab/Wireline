@@ -37,6 +37,7 @@ import {
   disconnectSlack,
   listChannels as listSlackChannels,
   setDefaultChannel as setSlackDefaultChannel,
+  bootstrapDefaultChannel,
 } from "../lib/slack-service";
 import {
   zoomOAuthConfigured,
@@ -927,6 +928,12 @@ router.get(
             active: true,
           },
         });
+
+      try {
+        await bootstrapDefaultChannel(userId);
+      } catch (e: any) {
+        log.warn("Slack default channel bootstrap failed", { error: e?.message });
+      }
 
       const targetOrigin =
         (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||

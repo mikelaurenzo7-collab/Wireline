@@ -25,7 +25,22 @@ export class NotificationService {
     ]);
   }
 
-  private async sendToSlack(params: any): Promise<void> {
+  private async sendToSlack(params: {
+    title: string;
+    message: string;
+    callId?: string;
+  }): Promise<void> {
+    try {
+      const { postAgentNotification } = await import("./slack-service");
+      const ok = await postAgentNotification(this.userId, params.title + ": " + params.message, {
+        urgency: "high",
+        callId: params.callId,
+      });
+      if (ok) return;
+    } catch (err) {
+      log.error("Slack OAuth notification failed", { error: getErrorMessage(err) });
+    }
+
     const webhookUrl = process.env.SLACK_MANAGEMENT_WEBHOOK;
     if (!webhookUrl) return;
 

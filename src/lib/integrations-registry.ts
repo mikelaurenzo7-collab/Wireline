@@ -20,6 +20,8 @@
  * UI and docs. Do not re-sort alphabetically — group ordering matters.
  */
 import * as claudeBrain from "./claude-brain";
+import { microsoftGraphConfigured } from "./microsoft-graph-service";
+import { slackOAuthConfigured } from "./slack-service";
 
 export type IntegrationStatus = "configured" | "missing" | "fallback";
 
@@ -132,7 +134,16 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
     description: "Subscription billing, plan gating, and Customer Portal.",
     group: "billing",
     required: false,
-    envVars: ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"],
+    envVars: [
+      "STRIPE_SECRET_KEY",
+      "STRIPE_WEBHOOK_SECRET",
+      "STRIPE_PERSONAL_PRICE_ID",
+      "STRIPE_STARTER_PRICE_ID",
+      "STRIPE_PRO_PRICE_ID",
+      "STRIPE_BUSINESS_PRICE_ID",
+      "STRIPE_ENTERPRISE_PRICE_ID",
+      "STRIPE_VOICE_OVERAGE_METER_EVENT_NAME",
+    ],
     fallback:
       "Without it, /api/billing/* returns 503 and the legacy subscription_status simulator handles plan gating.",
     docsUrl: "https://dashboard.stripe.com/apikeys",
@@ -201,7 +212,7 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
     required: false,
     envVars: ["SLACK_CLIENT_ID", "SLACK_CLIENT_SECRET"],
     fallback:
-      "Operators connect via Admin → Integrations → Slack. Without CLIENT_ID/SECRET the 'Connect Slack' button is hidden.",
+      "Set SLACK_CLIENT_ID/SECRET once on Vercel. Tenants only click Connect in Admin → Integrations (OAuth).",
     docsUrl: "https://api.slack.com/apps",
   },
   {
@@ -214,6 +225,42 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
     fallback:
       "Operators connect via Admin → Integrations → Zoom. Without CLIENT_ID/SECRET the 'Connect Zoom' button is hidden.",
     docsUrl: "https://marketplace.zoom.us/develop/create",
+  },
+  {
+    id: "shopify",
+    label: "Shopify",
+    description:
+      "Per-store OAuth — voice agents can look up orders/customers, check inventory, start returns, cancel unshipped orders, fix addresses, create draft orders, and add merchant notes.",
+    group: "actions",
+    required: false,
+    envVars: ["SHOPIFY_CLIENT_ID", "SHOPIFY_CLIENT_SECRET"],
+    fallback:
+      "Operators connect a myshopify.com store in Admin → Integrations. Without CLIENT_ID/SECRET the Connect Shopify button is hidden.",
+    docsUrl: "https://shopify.dev/docs/apps/build/authentication-authorization",
+  },
+  {
+    id: "microsoft-teams",
+    label: "Microsoft Teams",
+    description:
+      "Posts call alerts to the operator's default Teams channel via Microsoft Graph (separate OAuth from Outlook mail).",
+    group: "actions",
+    required: false,
+    envVars: ["MICROSOFT_CLIENT_ID", "MICROSOFT_CLIENT_SECRET"],
+    fallback:
+      "Uses the same Azure app as Outlook. Operators connect Teams in Admin → Integrations → Microsoft Teams.",
+    docsUrl: "https://learn.microsoft.com/en-us/graph/api/channel-post-messages",
+  },
+  {
+    id: "microsoft-excel",
+    label: "Microsoft Excel (OneDrive)",
+    description:
+      "Appends call rows to a managed Wireline Call Log workbook in the operator's OneDrive.",
+    group: "actions",
+    required: false,
+    envVars: ["MICROSOFT_CLIENT_ID", "MICROSOFT_CLIENT_SECRET"],
+    fallback:
+      "Uses the same Azure app registration. Operators connect Excel logging in Admin → Integrations.",
+    docsUrl: "https://learn.microsoft.com/en-us/graph/api/table-post-rows",
   },
   {
     id: "meta",
@@ -360,6 +407,10 @@ export function getHealthCapabilities() {
     twilio: envIsPresent("TWILIO_ACCOUNT_SID") && envIsPresent("TWILIO_AUTH_TOKEN"),
     upstash: envIsPresent("UPSTASH_REDIS_REST_URL") && envIsPresent("UPSTASH_REDIS_REST_TOKEN"),
     secret_vault: envIsPresent("WIRELINE_DATA_KEY"),
+    shopify: envIsPresent("SHOPIFY_CLIENT_ID") && envIsPresent("SHOPIFY_CLIENT_SECRET"),
+    microsoft_teams: microsoftGraphConfigured(),
+    microsoft_excel: microsoftGraphConfigured(),
+    slack: slackOAuthConfigured(),
     meta: envIsPresent("META_APP_ID") && envIsPresent("META_APP_SECRET"),
   };
 }

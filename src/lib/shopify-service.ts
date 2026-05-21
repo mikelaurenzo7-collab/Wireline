@@ -746,6 +746,41 @@ export async function createDraftOrder(params: {
   }
 }
 
+
+/**
+ * Append an internal note on an order (merchant-visible in Shopify admin).
+ */
+export async function addOrderNote(params: {
+  orderId: string;
+  note: string;
+  userId: string;
+}): Promise<{ ok: boolean; message: string }> {
+  const client = await getStoreClient(params.userId);
+  if (!client) {
+    return { ok: false, message: "Shopify is not connected." };
+  }
+  const note = String(params.note || "").trim();
+  if (!note) return { ok: false, message: "Note text is required." };
+  try {
+    const res = await fetchWithTimeout(
+      `${client.apiBase}/orders/${params.orderId}.json`,
+      {
+        method: "PUT",
+        headers: shopifyHeaders(client.token),
+        body: JSON.stringify({ order: { id: Number(params.orderId), note } }),
+      },
+      15_000,
+    );
+    if (!res.ok) {
+      const data = (await res.json().catch(() => ({}))) as { errors?: unknown };
+      throw new Error(typeof data.errors === "string" ? data.errors : `Note error: ${res.status}`);
+    }
+    return { ok: true, message: "Order note saved for the merchant team." };
+  } catch (err) {
+    log.error("Shopify add order note failed", { error: getErrorMessage(err) });
+    return { ok: false, message: "Could not save the order note." };
+  }
+}
 /** Remove the Shopify connection for a tenant. */
 export async function disconnectShopify(userId: string): Promise<void> {
   await drizzle

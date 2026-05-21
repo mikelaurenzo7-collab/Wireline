@@ -35,7 +35,7 @@ import { IntegrationService } from "../lib/integrations";
 import { CRMService } from "../lib/crm-service";
 import { createMeeting as createZoomMeeting } from "../lib/zoom-service";
 import { NotificationService } from "../lib/notifications";
-import { postMessage as slackPostMessage, getDefaultChannel } from "../lib/slack-service";
+import { postAgentNotification as slackPostAgentNotification } from "../lib/slack-service";
 import {
   lookupOrder as shopifyLookupOrder,
   searchProducts as shopifySearchProducts,
@@ -43,6 +43,8 @@ import {
   startReturn as shopifyStartReturn,
   cancelOrder as shopifyCancelOrder,
   updateOrderShippingAddress as shopifyUpdateAddress,
+  createDraftOrder as shopifyCreateDraftOrder,
+  addOrderNote as shopifyAddOrderNote,
 } from "../lib/shopify-service";
 import {
   squareLookupOrder,
@@ -397,6 +399,13 @@ router.post("/api/vapi-webhook", async (req, res) => {
 
   const webhookAgentId = routed.webhookAgentId;
   const agent = { id: webhookAgentId, user_id: routed.agentUserId };
+
+  const [agentVoiceRow] = await drizzle
+    .select({ name: schema.agents.name })
+    .from(schema.agents)
+    .where(eq(schema.agents.id, webhookAgentId))
+    .limit(1);
+  const agentVoiceName = agentVoiceRow?.name ?? undefined;
 
   const [userSettings] = await drizzle
     .select({
@@ -810,14 +819,11 @@ router.post("/api/vapi-webhook", async (req, res) => {
               customer_name,
               service_type,
             });
-            const slackCh = await getDefaultChannel(agent.user_id);
-            if (slackCh) {
-              void slackPostMessage(
-                agent.user_id,
-                slackCh,
-                `📅 *Appointment booked*\n${title}\n${new Date(startTime).toLocaleString()} → ${new Date(endTime).toLocaleString()}`,
-              );
-            }
+            void slackPostAgentNotification(
+              agent.user_id,
+              "Appointment booked: " + title + "\n" + new Date(startTime).toLocaleString() + " → " + new Date(endTime).toLocaleString(),
+              { agentName: agentVoiceName, caller: customer_name, outcome: "booked" },
+            );
             // Operator SMS alert — positive event. Fires only when the
             // operator opted in (twilio_manager_alerts_enabled = true
             // + twilio_manager_alert_number set). Keeps the operator
@@ -976,25 +982,25 @@ router.post("/api/vapi-webhook", async (req, res) => {
       // Notification Handlers
       if (toolCall.function.name === "send_slack_notification") {
         try {
-          const { message: slackMsg } = toolCall.function.arguments;
+          const { message: slackMsg, outcome: slackOutcome, urgency } = toolCall.function.arguments || {};
           if (agent?.user_id) {
-            const slackCh = await getDefaultChannel(agent.user_id);
-            if (slackCh) {
-              await slackPostMessage(
-                agent.user_id,
-                slackCh,
-                `🤖 *Agent Notification*\n${slackMsg}`,
-              );
-              results.push({
-                toolCallId: toolCall.id,
-                result: "Slack notification sent successfully.",
-              });
-            } else {
-              results.push({
-                toolCallId: toolCall.id,
-                result: "Slack integration not configured.",
-              });
-            }
+            const callerNumber =
+              (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
+              (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
+            const callId = (payload.call as { id?: string } | undefined)?.id;
+            const sent = await slackPostAgentNotification(agent.user_id, String(slackMsg || ""), {
+              agentName: agentVoiceName,
+              caller: callerNumber,
+              outcome: slackOutcome ? String(slackOutcome) : undefined,
+              urgency: urgency === "high" ? "high" : "normal",
+              callId: callId ? String(callId) : undefined,
+            });
+            results.push({
+              toolCallId: toolCall.id,
+              result: sent
+                ? "Slack notification sent successfully."
+                : "Slack is connected but no notify channel is set. Open Admin → Integrations → Slack and pick a channel.",
+            });
           }
         } catch {
           results.push({ toolCallId: toolCall.id, result: "Slack notification error." });
@@ -1003,11 +1009,19 @@ router.post("/api/vapi-webhook", async (req, res) => {
 
       if (toolCall.function.name === "send_teams_message") {
         try {
-          const { message: teamsMsg } = toolCall.function.arguments || {};
+          const { message: teamsMsg, outcome: teamsOutcome } = toolCall.function.arguments || {};
           if (agent?.user_id) {
+            const callerNumber =
+              (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
+              (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
             const sent = await sendTeamsMessage({
               userId: agent.user_id,
               text: String(teamsMsg || ""),
+              context: {
+                agentName: agentVoiceName,
+                caller: callerNumber || undefined,
+                outcome: teamsOutcome ? String(teamsOutcome) : undefined,
+              },
             });
             results.push({
               toolCallId: toolCall.id,
@@ -1164,7 +1178,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
             const notifier = new NotificationService(agent.user_id);
             await notifier.sendUrgentAlert({
               title: "Agent Escalate to Human",
-              message: `Reason: ${reason}`,
+              message: `Agent ${agentVoiceName || "unknown"} — Reason: ${reason}`,
               callId: (payload.call as any)?.id || "unknown",
             });
           }
@@ -1392,6 +1406,55 @@ router.post("/api/vapi-webhook", async (req, res) => {
           }
         } catch {
           results.push({ toolCallId: toolCall.id, result: "Address update error." });
+        }
+      }
+
+
+      if (toolCall.function.name === "shopify_create_draft_order") {
+        try {
+          const args = toolCall.function.arguments || {};
+          const qty = Number(args.quantity) || 1;
+          const outcome = await shopifyCreateDraftOrder({
+            lineItems: [
+              args.variant_id
+                ? { variantId: String(args.variant_id), quantity: qty }
+                : {
+                    title: String(args.product_title || "Phone order item"),
+                    price: String(args.price || "0.00"),
+                    quantity: qty,
+                  },
+            ],
+            customer: args.customer_email
+              ? {
+                  email: String(args.customer_email),
+                  first_name: args.customer_first_name,
+                  last_name: args.customer_last_name,
+                }
+              : undefined,
+            userId: agent?.user_id,
+          });
+          const link = outcome.invoiceUrl ? ` Payment link: ${outcome.invoiceUrl}` : "";
+          results.push({ toolCallId: toolCall.id, result: `${outcome.message}${link}` });
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Draft order error." });
+        }
+      }
+
+      if (toolCall.function.name === "shopify_add_order_note") {
+        try {
+          const { order_id, note } = toolCall.function.arguments || {};
+          if (!order_id) {
+            results.push({ toolCallId: toolCall.id, result: "I need the order ID to add a note." });
+          } else {
+            const outcome = await shopifyAddOrderNote({
+              orderId: String(order_id),
+              note: String(note || ""),
+              userId: agent?.user_id,
+            });
+            results.push({ toolCallId: toolCall.id, result: outcome.message });
+          }
+        } catch {
+          results.push({ toolCallId: toolCall.id, result: "Order note error." });
         }
       }
 
