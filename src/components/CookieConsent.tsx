@@ -93,7 +93,7 @@ export default function CookieConsent() {
               type="button"
               onClick={dismiss}
               aria-label="Dismiss cookie notice"
-              className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center hover:bg-black/8 transition-colors text-muted hover:text-ink"
+              className="shrink-0 w-11 h-11 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center hover:bg-black/8 transition-colors text-muted hover:text-ink"
             >
               <X className="w-4 h-4" />
             </button>

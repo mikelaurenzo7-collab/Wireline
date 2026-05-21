@@ -49,9 +49,9 @@ interface PageShellProps {
 }
 
 export default function PageShell({
-  title,
-  subtitle,
-  eyebrow,
+  title: _title,
+  subtitle: _subtitle,
+  eyebrow: _eyebrow,
   actions,
   tabs,
   children,
@@ -81,7 +81,7 @@ export default function PageShell({
 
       {/* Tab strip */}
       {tabs && tabs.length > 0 && (
-        <div className="shrink-0 flex items-center gap-1 mb-2 overflow-x-auto scrollbar-hide relative">
+        <div className="shrink-0 flex items-center gap-1 mb-2 overflow-x-auto overscroll-x-contain scrollbar-hide relative">
           {/* Gradient fade indicator on mobile */}
           <div className="md:hidden absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-paper to-transparent pointer-events-none z-10" />
           <div className="flex items-center gap-0.5 p-0.5 rounded-xl glass border border-black/8">
@@ -94,7 +94,7 @@ export default function PageShell({
                   onClick={() => setActiveId(tab.id)}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "relative shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-[10px] uppercase tracking-[0.12em] font-medium",
+                    "relative shrink-0 inline-flex min-h-11 sm:min-h-10 items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-[10px] uppercase tracking-[0.12em] font-medium",
                     active ? "text-on-brand" : "text-muted hover:text-ink hover:bg-black/5",
                   )}
                 >
@@ -246,7 +246,9 @@ export function Panel({
       <div
         className={cn(
           "flex-1 min-h-0",
-          scroll ? "overflow-y-auto panel-scroll" : "overflow-hidden",
+          scroll
+            ? "overflow-y-auto overscroll-contain scroll-pb-6 panel-scroll"
+            : "overflow-hidden",
           !flush && "p-3",
           bodyClassName,
         )}
