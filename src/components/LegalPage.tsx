@@ -17,7 +17,7 @@ function LegalLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-paper text-ink">
+    <div className="min-h-dvh bg-paper text-ink">
       <div className="max-w-3xl mx-auto px-5 sm:px-6 py-10 sm:py-16">
         <Link
           to="/"

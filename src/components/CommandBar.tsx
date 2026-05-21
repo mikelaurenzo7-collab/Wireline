@@ -232,7 +232,10 @@ export default function CommandBar() {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-[12vh] px-4">
+        <div
+          className="fixed inset-0 z-[9999] flex items-start justify-center px-4"
+          style={{ paddingTop: "max(1rem, calc(env(safe-area-inset-top, 0px) + 8dvh))" }}
+        >
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -282,7 +285,7 @@ export default function CommandBar() {
             </div>
 
             {/* Results */}
-            <div className="relative z-10 glass-strong rounded-b-2xl max-h-[60vh] sm:max-h-[420px] overflow-y-auto">
+            <div className="relative z-10 glass-strong rounded-b-2xl max-h-[60dvh] sm:max-h-[420px] overflow-y-auto">
               {filteredCommands.length > 0 ? (
                 <div className="py-2">
                   {["Navigation", "Actions"].map((category) => {

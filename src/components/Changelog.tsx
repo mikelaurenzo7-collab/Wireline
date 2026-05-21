@@ -122,7 +122,7 @@ const ENTRIES: Entry[] = [
 
 export function ChangelogPage() {
   return (
-    <div className="min-h-screen bg-paper text-ink">
+    <div className="min-h-dvh bg-paper text-ink">
       <PageMeta
         title="Changelog — Wireline"
         description="Wireline's deploy history. Features, fixes, polish, infra — what shipped, when, and why."

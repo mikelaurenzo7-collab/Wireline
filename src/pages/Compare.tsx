@@ -153,7 +153,7 @@ export default function Compare() {
     ROWS.reduce((n, r) => n + (r[key] === true ? 1 : r[key] === "partial" ? 0.5 : 0), 0);
 
   return (
-    <div className="min-h-screen relative bg-paper text-ink">
+    <div className="min-h-dvh relative bg-paper text-ink">
       <PageMeta
         title="Wireline vs Air / Synthflow / Bland / Vapi / Retell — Feature Comparison"
         description="Side-by-side comparison of Wireline against the leading AI voice agent platforms. Wireline is the only horizontal platform with voice + email + SMS, supervisor cockpit, frontier reasoning, and bundled phone numbers."

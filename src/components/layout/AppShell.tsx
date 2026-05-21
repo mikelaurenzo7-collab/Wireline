@@ -81,7 +81,7 @@ export default function AppShell() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-12 text-center relative overflow-hidden">
+      <div className="min-h-dvh flex flex-col items-center justify-center p-12 text-center relative overflow-hidden">
         <AuroraBackdrop />
         <div className="scanline" />
 
@@ -123,7 +123,7 @@ export default function AppShell() {
   }
 
   return (
-    <div className="flex flex-col h-screen text-ink font-sans overflow-hidden relative">
+    <div className="flex flex-col min-h-dvh text-ink font-sans overflow-hidden relative">
       <AuroraBackdrop />
       <div className="scanline" />
 

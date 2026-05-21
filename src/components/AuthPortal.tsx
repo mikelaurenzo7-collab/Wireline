@@ -320,18 +320,18 @@ export default function AuthPortal() {
             : "Sign in to your Wireline operator console to manage your AI voice agents, call logs, and outbound campaigns."
         }
       />
-      <div className="h-screen flex relative overflow-hidden bg-paper">
+      <div className="min-h-dvh flex relative overflow-hidden bg-paper">
         {/* Global parchment backdrop matching Claude.ai */}
         <div className="pointer-events-none fixed inset-0 z-0 bg-paper" />
         <div className="scanline" />
 
         {/* ── LEFT PANEL — brand showcase ───────────────────────────────────────
-           h-screen + overflow-y-auto so the agent showcase + integration
-           strip don't push the whole layout taller than the viewport.
-           Without this, the left column at lg+ widths grows to ~1020px,
-           making the Sign In button on the right scroll-required even
+           min-h-dvh + overflow-y-auto so the agent showcase + integration
+            strip don't push the whole layout taller than the viewport.
+            Without this, the left column at lg+ widths grows to ~1020px,
+            making the Sign In button on the right scroll-required even
            though it's anchored to the top of its column. */}
-        <div className="hidden lg:flex lg:w-[52%] xl:w-[54%] flex-col relative z-10 p-6 lg:p-8 xl:p-10 h-screen overflow-y-auto scrollbar-hide">
+        <div className="hidden lg:flex lg:w-[52%] xl:w-[54%] flex-col relative z-10 p-6 lg:p-8 xl:p-10 lg:min-h-dvh overflow-y-auto scrollbar-hide">
           {/* Decorative vertical line on right edge */}
           <div
             className="absolute top-0 right-0 w-px h-full"
@@ -490,7 +490,7 @@ export default function AuthPortal() {
            Previously `justify-center` pushed the form to ~440px from the top
            of an 800px viewport, putting the Sign In button at ~875px —
            below the fold. */}
-        <div className="flex-1 lg:sticky lg:top-0 lg:h-screen flex flex-col items-center justify-start relative z-10 py-6 sm:py-8 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 overflow-y-auto">
+        <div className="flex-1 lg:sticky lg:top-0 lg:min-h-dvh flex flex-col items-center justify-start relative z-10 py-6 sm:py-8 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 overflow-y-auto">
           <div className="lg:hidden w-full max-w-md mb-5 pt-2">
             {/* Logo + wordmark row */}
             <div className="flex items-center gap-3 mb-5">

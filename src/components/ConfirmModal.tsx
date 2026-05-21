@@ -117,7 +117,7 @@ export default function ConfirmModal({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 100 }}
             transition={{ type: "spring", damping: 30, stiffness: 280 }}
-            className="relative w-full max-w-md sm:max-w-sm aurora-ring rounded-t-2xl sm:rounded-2xl z-10"
+            className="relative w-full max-w-md sm:max-w-sm aurora-ring rounded-t-2xl sm:rounded-2xl z-10 max-h-[calc(100dvh-1rem)] overflow-y-auto overscroll-contain"
           >
             <div className="relative rounded-t-2xl sm:rounded-2xl glass-strong p-6 overflow-hidden">
               {/* iOS-style sheet grabber — only visible on mobile, gives

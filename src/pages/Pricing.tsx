@@ -142,7 +142,7 @@ const VALUE_BULLETS = [
 
 export default function Pricing() {
   return (
-    <div className="min-h-screen relative">
+    <div className="min-h-dvh relative">
       <PageMeta
         title="Plans & Pricing"
         description="Wireline pricing plans from $49/month Personal to Enterprise custom. Every plan includes AI voice agents, real-time call logs, sentiment scoring, and the Wireline Demo Line. 14-day free trial, no credit card required."

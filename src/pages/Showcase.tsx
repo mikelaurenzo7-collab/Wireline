@@ -196,7 +196,7 @@ function PhoneLineCard({ agent, label }: { agent: ContactAgent; label: string })
 
 export default function Showcase() {
   return (
-    <div className="min-h-screen relative bg-paper text-ink">
+    <div className="min-h-dvh relative bg-paper text-ink">
       <PageMeta
         title="Showcase — Playable AI Agent Templates · Wireline"
         description="Audition Wireline's voice agents in your browser before signing up. The marquee fun demo: a singing receptionist who sings the moment you connect, then catches herself with a normal greeting."
