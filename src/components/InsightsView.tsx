@@ -1486,10 +1486,17 @@ function QualityView({ days }: { days: number }) {
   const fetchStats = useCallback(() => {
     setLoading(true);
     authFetch(`/api/qa/stats?days=${days}`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
       .then(setData)
+      .catch((e: unknown) => {
+        if ((e as any)?.name !== "AbortError")
+          toastError("QA stats unavailable", "Could not load quality data. Please refresh.");
+      })
       .finally(() => setLoading(false));
-  }, [days]);
+  }, [days, toastError]);
 
   useEffect(() => {
     fetchStats();

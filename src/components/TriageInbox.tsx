@@ -78,13 +78,18 @@ interface TriageData {
 export default function TriageInbox() {
   const [data, setData] = useState<TriageData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchErr, setFetchErr] = useState<string | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
+    setFetchErr(null);
     try {
       const r = await authFetch("/api/triage");
       const d = await r.json();
+      if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
       setData(d);
+    } catch (e: any) {
+      if (e?.name !== "AbortError") setFetchErr(e instanceof Error ? e.message : "Failed to load");
     } finally {
       setLoading(false);
     }
@@ -107,6 +112,16 @@ export default function TriageInbox() {
         <div className="h-full flex flex-col items-center justify-center gap-2">
           <Loader2 className="w-6 h-6 animate-spin text-brand" />
           <p className="text-[9px] uppercase tracking-[0.4em] text-muted">Scanning the fleet</p>
+        </div>
+      ) : fetchErr ? (
+        <div className="h-full flex flex-col items-center justify-center gap-3 px-6 text-center">
+          <p className="text-[10px] uppercase tracking-[0.35em] text-rose-500">{fetchErr}</p>
+          <button
+            onClick={fetchData}
+            className="text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand transition-colors"
+          >
+            Retry
+          </button>
         </div>
       ) : totalAttention === 0 ? (
         <EmptyState

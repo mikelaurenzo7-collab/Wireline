@@ -41,7 +41,9 @@ function makeRequest(userId: string | null) {
 
 async function runMw(mw: any, req: any, res: any): Promise<boolean> {
   let nextCalled = false;
-  await mw(req, res, () => { nextCalled = true; });
+  await mw(req, res, () => {
+    nextCalled = true;
+  });
   return nextCalled;
 }
 
@@ -52,7 +54,7 @@ describe("requirePermission", () => {
 
   it("allows owner to use any permission", async () => {
     const db = makeMockDb("owner");
-    const { requirePermission } = createRbacMiddleware({ db });
+    const { requirePermission } = createRbacMiddleware({ drizzle: db });
     const res = makeResponse();
     const next = await runMw(requirePermission("quotas.override"), makeRequest("user-123"), res);
     expect(next).toBe(true);
@@ -60,7 +62,7 @@ describe("requirePermission", () => {
 
   it("allows admin for quotas.override", async () => {
     const db = makeMockDb("admin");
-    const { requirePermission } = createRbacMiddleware({ db });
+    const { requirePermission } = createRbacMiddleware({ drizzle: db });
     const res = makeResponse();
     const next = await runMw(requirePermission("quotas.override"), makeRequest("user-123"), res);
     expect(next).toBe(true);
@@ -74,14 +76,14 @@ describe("requirePermission", () => {
         audited.push({ action, params });
       },
     };
-    const { requirePermission } = createRbacMiddleware({ db, auditLogger });
+    const { requirePermission } = createRbacMiddleware({ drizzle: db, auditLogger });
     const res = makeResponse();
     const next = await runMw(requirePermission("quotas.override"), makeRequest("user-123"), res);
     expect(next).toBe(false);
     expect(res.captured.status).toBe(403);
     expect(res.captured.body.code).toBe("FORBIDDEN");
     // Audit log captures the refused privilege use (deferred via void).
-    await new Promise(r => setTimeout(r, 0));
+    await new Promise((r) => setTimeout(r, 0));
     expect(audited).toHaveLength(1);
     expect(audited[0].action).toBe("unauthorized_access");
     expect(audited[0].params.resource).toBe("quotas.override");
@@ -90,7 +92,7 @@ describe("requirePermission", () => {
 
   it("blocks viewer from quotas.override", async () => {
     const db = makeMockDb("viewer");
-    const { requirePermission } = createRbacMiddleware({ db });
+    const { requirePermission } = createRbacMiddleware({ drizzle: db });
     const res = makeResponse();
     const next = await runMw(requirePermission("quotas.override"), makeRequest("user-123"), res);
     expect(next).toBe(false);
@@ -99,7 +101,7 @@ describe("requirePermission", () => {
 
   it("blocks auditor from quotas.override", async () => {
     const db = makeMockDb("auditor");
-    const { requirePermission } = createRbacMiddleware({ db });
+    const { requirePermission } = createRbacMiddleware({ drizzle: db });
     const res = makeResponse();
     const next = await runMw(requirePermission("quotas.override"), makeRequest("user-123"), res);
     expect(next).toBe(false);
@@ -108,7 +110,7 @@ describe("requirePermission", () => {
 
   it("treats missing team-member row as owner (single-tenant default)", async () => {
     const db = makeMockDb(null);
-    const { requirePermission } = createRbacMiddleware({ db });
+    const { requirePermission } = createRbacMiddleware({ drizzle: db });
     const res = makeResponse();
     const next = await runMw(requirePermission("quotas.override"), makeRequest("user-123"), res);
     expect(next).toBe(true);
@@ -116,7 +118,7 @@ describe("requirePermission", () => {
 
   it("returns 401 when authenticateUser was skipped (no req.user)", async () => {
     const db = makeMockDb(null);
-    const { requirePermission } = createRbacMiddleware({ db });
+    const { requirePermission } = createRbacMiddleware({ drizzle: db });
     const res = makeResponse();
     const next = await runMw(requirePermission("quotas.override"), makeRequest(null), res);
     expect(next).toBe(false);
@@ -132,7 +134,7 @@ describe("requireRole", () => {
 
   it("admin satisfies requireRole('admin')", async () => {
     const db = makeMockDb("admin");
-    const { requireRole } = createRbacMiddleware({ db });
+    const { requireRole } = createRbacMiddleware({ drizzle: db });
     const res = makeResponse();
     const next = await runMw(requireRole("admin"), makeRequest("user-123"), res);
     expect(next).toBe(true);
@@ -140,11 +142,10 @@ describe("requireRole", () => {
 
   it("operator does NOT satisfy requireRole('admin')", async () => {
     const db = makeMockDb("operator");
-    const { requireRole } = createRbacMiddleware({ db });
+    const { requireRole } = createRbacMiddleware({ drizzle: db });
     const res = makeResponse();
     const next = await runMw(requireRole("admin"), makeRequest("user-123"), res);
     expect(next).toBe(false);
     expect(res.captured.status).toBe(403);
   });
 });
-

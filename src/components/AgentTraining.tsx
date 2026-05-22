@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Loader2,
   Users,
@@ -6,7 +6,6 @@ import {
   PlayCircle,
   MessageSquare,
   Trash2,
-  Mail,
   Phone,
   Activity,
   Plus,
@@ -23,6 +22,8 @@ import {
   Settings,
   Shield,
   Blocks,
+  PhoneCall,
+  PhoneOff,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
@@ -38,11 +39,22 @@ import AgentActionEngine from "./AgentActionEngine";
 
 type Message = { role: "user" | "assistant"; content: string };
 
+type VapiInstance = {
+  on: (event: string, cb: () => void) => void;
+  removeAllListeners: (event: string) => void;
+  start: (assistant: unknown) => Promise<unknown>;
+  stop: () => void;
+};
+
 export default function AgentTraining() {
   const { error: toastError } = useToast();
   const [activeTab, setActiveTab] = useState<
     "workspace" | "database" | "simulator" | "flow" | "actions"
   >("workspace");
+  const [simConnecting, setSimConnecting] = useState(false);
+  const [simConnected, setSimConnected] = useState(false);
+  const simVapiRef = useRef<VapiInstance | null>(null);
+  const simMountedRef = useRef(true);
   const [agents, setAgents] = useState<any[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState("default-agent");
   const [messages, setMessages] = useState<Message[]>([
@@ -74,13 +86,77 @@ export default function AgentTraining() {
   const [optSuggestions, setOptSuggestions] = useState<any>(null);
 
   useEffect(() => {
+    simMountedRef.current = true;
     authFetch("/api/agents")
       .then((res) => res.json())
       .then((data) => {
         setAgents(data.agents || []);
       });
     fetchKnowledge();
+    return () => {
+      simMountedRef.current = false;
+      if (simVapiRef.current) {
+        simVapiRef.current.removeAllListeners("call-start");
+        simVapiRef.current.removeAllListeners("call-end");
+        try {
+          simVapiRef.current.stop();
+        } catch {
+          /* not in a call */
+        }
+      }
+    };
   }, [selectedAgentId]);
+
+  const startTestCall = async () => {
+    if (simConnected) {
+      simVapiRef.current?.stop();
+      return;
+    }
+    if (!import.meta.env.VITE_VAPI_PUBLIC_KEY) {
+      toastError("Voice not configured", "Browser voice key is not set. Contact support.");
+      return;
+    }
+    setSimConnecting(true);
+    try {
+      if (!simVapiRef.current) {
+        const { default: Vapi } = await import("@vapi-ai/web");
+        if (!simMountedRef.current) return;
+        const v = new Vapi(import.meta.env.VITE_VAPI_PUBLIC_KEY) as unknown as VapiInstance;
+        v.on("call-start", () => {
+          if (simMountedRef.current) {
+            setSimConnecting(false);
+            setSimConnected(true);
+          }
+        });
+        v.on("call-end", () => {
+          if (simMountedRef.current) {
+            setSimConnecting(false);
+            setSimConnected(false);
+          }
+        });
+        simVapiRef.current = v;
+      }
+      if (!simMountedRef.current) return;
+      const res = await authFetch(`/api/vapi-webhook?agentId=${selectedAgentId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: { type: "assistant-request" } }),
+      });
+      if (!simMountedRef.current) return;
+      const data = await res.json();
+      if (data.assistant) {
+        await simVapiRef.current!.start(data.assistant);
+      } else {
+        toastError("Agent not ready", data.error || "Could not load voice config for this agent.");
+        setSimConnecting(false);
+      }
+    } catch (e: any) {
+      if (simMountedRef.current) {
+        setSimConnecting(false);
+        toastError("Call failed", e?.message || "Could not start test call.");
+      }
+    }
+  };
 
   const fetchKnowledge = async () => {
     try {
@@ -867,33 +943,47 @@ export default function AgentTraining() {
                       calls.
                     </p>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {[
-                      {
-                        label: "Phone call",
-                        icon: Phone,
-                        desc: "Hear exactly how your agent handles real caller scenarios before you go live.",
-                      },
-                      {
-                        label: "Email",
-                        icon: Mail,
-                        desc: "Preview how your agent drafts email replies before any send.",
-                      },
-                    ].map((sim) => (
-                      <div
-                        key={sim.label}
-                        className="rounded-xl glass border border-white/8 border-dashed p-4 text-left opacity-50 cursor-not-allowed"
-                      >
-                        <sim.icon className="w-5 h-5 text-muted mb-2" />
-                        <h4 className="font-display italic lowercase text-base text-ink mb-1">
-                          {sim.label.toLowerCase()}
-                        </h4>
-                        <p className="text-[11px] text-muted/70 leading-relaxed">{sim.desc}</p>
-                        <div className="mt-3 text-[9px] uppercase tracking-[0.3em] text-muted/50">
-                          Coming soon
-                        </div>
+                  <div className="rounded-xl glass border border-white/10 p-5 text-left space-y-4 max-w-sm mx-auto w-full">
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-brand" />
+                      <h4 className="font-display italic lowercase text-base text-ink">
+                        voice call
+                      </h4>
+                    </div>
+                    <p className="text-[11px] text-muted/70 leading-relaxed">
+                      Speak directly with your agent through your browser microphone. Tests the
+                      exact voice and persona your callers will hear.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={startTestCall}
+                      disabled={simConnecting}
+                      className={cn(
+                        "w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-[11px] uppercase tracking-[0.3em] transition-all disabled:opacity-50",
+                        simConnected
+                          ? "bg-rose-500/15 border border-rose-500/40 text-rose-500 hover:bg-rose-500/25"
+                          : "bg-brand/15 border border-brand/40 text-brand hover:bg-brand/25",
+                      )}
+                    >
+                      {simConnecting ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : simConnected ? (
+                        <PhoneOff className="w-3.5 h-3.5" />
+                      ) : (
+                        <PhoneCall className="w-3.5 h-3.5" />
+                      )}
+                      {simConnecting
+                        ? "Connecting…"
+                        : simConnected
+                          ? "End call"
+                          : "Start voice test"}
+                    </button>
+                    {simConnected && (
+                      <div className="flex items-center justify-center gap-1.5 text-[9px] uppercase tracking-[0.3em] text-emerald-500">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        Live — speak now
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
               </div>

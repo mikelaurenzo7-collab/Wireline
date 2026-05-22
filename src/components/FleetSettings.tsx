@@ -1319,7 +1319,7 @@ export default function FleetSettings() {
                                         <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none rotate-90" />
                                       </div>
                                       <p className="text-[9px] text-muted/60 leading-relaxed">
-                                        Vapi fires this when a caller switches to a non-English
+                                        Automatically fires when a caller switches to a non-English
                                         language. ~500ms of dead air during the handoff is the trade
                                         vs no swap at all.
                                       </p>
@@ -1658,7 +1658,6 @@ export default function FleetSettings() {
                                   Draft Only always requires operator sign-off.
                                 </p>
                               </div>
-
                             </div>
                           </div>
                         </header>

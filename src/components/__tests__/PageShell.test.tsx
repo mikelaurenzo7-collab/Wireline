@@ -32,8 +32,9 @@ describe("PageShell", () => {
       { id: "b", label: "Beta", content: <div>Beta content</div> },
     ];
     render(<PageShell title="Tabbed" tabs={tabs} />);
-    expect(screen.getByText("Alpha")).toBeInTheDocument();
-    expect(screen.getByText("Beta")).toBeInTheDocument();
+    // Desktop + mobile strips both render — each label appears twice.
+    expect(screen.getAllByText("Alpha").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Beta").length).toBeGreaterThan(0);
   });
 
   it("shows the first tab's content by default", () => {
@@ -52,7 +53,8 @@ describe("PageShell", () => {
       { id: "b", label: "Beta", content: <div>Beta content</div> },
     ];
     render(<PageShell title="Tabbed" tabs={tabs} />);
-    fireEvent.click(screen.getByText("Beta"));
+    // Click first occurrence of "Beta" (desktop strip renders first).
+    fireEvent.click(screen.getAllByText("Beta")[0]);
     expect(screen.getByText("Beta content")).toBeInTheDocument();
     expect(screen.queryByText("Alpha content")).not.toBeInTheDocument();
   });
@@ -75,7 +77,8 @@ describe("PageShell", () => {
   it("shows tab badge when provided", () => {
     const tabs = [{ id: "a", label: "Inbox", badge: 5, content: <div>content</div> }];
     render(<PageShell title="Test" tabs={tabs} />);
-    expect(screen.getByText("5")).toBeInTheDocument();
+    // Badge appears in both desktop + mobile strips.
+    expect(screen.getAllByText("5").length).toBeGreaterThan(0);
   });
 });
 

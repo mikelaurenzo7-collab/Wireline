@@ -61,8 +61,12 @@ export default function CallLogs() {
       setOffset(currentOffset + (data.calls?.length || 0));
     } catch (e) {
       console.error("Failed to fetch calls:", e);
-      if (!append)
-        toastError("Call logs unavailable", "Could not load call history. Please refresh.");
+      toastError(
+        "Call logs unavailable",
+        append
+          ? "Could not load more calls. Please try again."
+          : "Could not load call history. Please refresh.",
+      );
     } finally {
       if (!append) setLoading(false);
       else setLoadingMore(false);

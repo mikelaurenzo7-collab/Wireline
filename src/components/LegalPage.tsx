@@ -86,7 +86,7 @@ export function PrivacyPolicy() {
     <LegalLayout title="Privacy Policy" icon={Shield}>
       <PageMeta
         title="Privacy Policy"
-        description="Wireline's privacy policy — how we collect, use, and protect your data. Sub-processors: Supabase, Vapi, Anthropic, Stripe, and Vercel. Last updated May 9, 2026."
+        description="Wireline's privacy policy — how we collect, use, and protect your data. Sub-processors: Supabase, Anthropic, Stripe, and Vercel. Last updated May 9, 2026."
       />
 
       <Section title="1. Who We Are">
@@ -109,8 +109,8 @@ export function PrivacyPolicy() {
         </p>
         <p>
           <strong>Call data</strong> — Phone numbers, call recordings, transcripts, summaries, and
-          metadata for calls handled by your agents. Voice calls are routed through Vapi (vapi.ai);
-          transcripts are stored in our database.
+          metadata for calls handled by your agents. Voice calls are routed through Wireline's voice
+          infrastructure; transcripts are stored in our database.
         </p>
         <p>
           <strong>Email data</strong> — If you connect a Gmail or Microsoft account, we access email
@@ -129,8 +129,8 @@ export function PrivacyPolicy() {
       <Section title="3. How We Use Your Data">
         <p>
           We use collected data to: provide and operate the Wireline platform; process AI requests
-          via Anthropic's Claude API; route and log voice calls via Vapi; send scheduled email
-          briefs via your linked Gmail/Outlook account; and bill you via Stripe.
+          via Anthropic's Claude API; route and log voice calls via our voice network; send
+          scheduled email briefs via your linked Gmail/Outlook account; and bill you via Stripe.
         </p>
         <p>
           We do <strong>not</strong> sell or share your personal information with third parties for
@@ -146,7 +146,7 @@ export function PrivacyPolicy() {
             <strong>Supabase</strong> (supabase.com) — Database, authentication, and file storage
           </li>
           <li>
-            <strong>Vapi</strong> (vapi.ai) — Voice AI infrastructure and call routing
+            <strong>Voice AI Infrastructure</strong> — Real-time voice processing and call routing
           </li>
           <li>
             <strong>Anthropic</strong> (anthropic.com) — AI model inference (Claude)
