@@ -735,7 +735,7 @@ function CallDetail({
                       href={call.recording_url}
                       download
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-colors"
                     >
                       <Download className="w-3 h-3" /> Download

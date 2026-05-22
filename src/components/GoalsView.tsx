@@ -149,7 +149,7 @@ function GoalEditor({
             if (e.key === "Enter" && valid && !saving) onSave(Math.round(parsed), label);
             if (e.key === "Escape") onCancel();
           }}
-          className="mt-1 w-full h-10 px-3 rounded-lg glass border border-black/10 text-ink text-sm tabular-nums focus:outline-none focus:border-brand/40"
+          className="mt-1 w-full h-11 px-3 rounded-lg glass border border-black/10 text-ink text-sm tabular-nums focus:outline-none focus:border-brand/40"
         />
       </label>
 
@@ -165,7 +165,7 @@ function GoalEditor({
             if (e.key === "Enter" && valid && !saving) onSave(Math.round(parsed), label);
             if (e.key === "Escape") onCancel();
           }}
-          className="mt-1 w-full h-10 px-3 rounded-lg glass border border-black/10 text-ink text-sm focus:outline-none focus:border-brand/40"
+          className="mt-1 w-full h-11 px-3 rounded-lg glass border border-black/10 text-ink text-sm focus:outline-none focus:border-brand/40"
         />
       </label>
 
@@ -177,7 +177,7 @@ function GoalEditor({
         <button
           onClick={() => valid && onSave(Math.round(parsed), label)}
           disabled={!valid || saving}
-          className="flex-1 h-9 rounded-lg text-on-brand text-[11px] uppercase tracking-[0.14em] font-medium flex items-center justify-center gap-1.5 disabled:opacity-40 transition-opacity"
+          className="flex-1 h-11 rounded-lg text-on-brand text-[11px] uppercase tracking-[0.14em] font-medium flex items-center justify-center gap-1.5 disabled:opacity-40 transition-opacity"
           style={{ background: "#4F1E7B" }}
         >
           {saving ? (
@@ -190,7 +190,7 @@ function GoalEditor({
         <button
           onClick={onCancel}
           disabled={saving}
-          className="h-9 px-3 rounded-lg glass border border-black/10 text-muted text-[11px] uppercase tracking-[0.14em] hover:text-ink transition-colors"
+          className="h-11 px-3 rounded-lg glass border border-black/10 text-muted text-[11px] uppercase tracking-[0.14em] hover:text-ink transition-colors"
         >
           Cancel
         </button>
@@ -348,7 +348,7 @@ function EmptyMetricCard({
       </p>
       <button
         onClick={onCreate}
-        className="mt-auto h-9 rounded-lg glass border border-black/10 text-brand text-[11px] uppercase tracking-[0.14em] font-medium flex items-center justify-center gap-1.5 hover:bg-brand/5 transition-colors"
+        className="mt-auto h-11 rounded-lg glass border border-black/10 text-brand text-[11px] uppercase tracking-[0.14em] font-medium flex items-center justify-center gap-1.5 hover:bg-brand/5 transition-colors"
       >
         <Plus className="w-3.5 h-3.5" />
         Set a target

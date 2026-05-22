@@ -185,6 +185,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
           </div>
           <button
             onClick={onClose}
+            aria-label="Close"
             className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-ink transition-colors"
           >
             <X className="w-4 h-4" />
@@ -881,6 +882,7 @@ function AppointmentRow({
           <button
             onClick={onEdit}
             title="Edit"
+            aria-label="Edit appointment"
             className="w-7 h-7 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-ink hover:border-white/25 transition-all"
           >
             <Pencil className="w-3.5 h-3.5" />
@@ -889,6 +891,7 @@ function AppointmentRow({
             onClick={onDelete}
             disabled={deleting}
             title="Remove"
+            aria-label="Remove appointment"
             className="w-7 h-7 rounded-lg glass border border-white/10 flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/30 transition-all disabled:opacity-50"
           >
             {deleting ? (
