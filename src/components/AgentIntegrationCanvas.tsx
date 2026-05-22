@@ -27,6 +27,8 @@ import {
   type AgentToolName,
   type ToolIntegration,
 } from "../lib/agent-capabilities";
+import { getIntegrationPlaybook } from "../lib/integration-playbooks";
+import IntegrationCapabilityPanel from "./IntegrationCapabilityPanel";
 
 // ── Animated Preview Cards ────────────────────────────────────────────────────
 
@@ -1096,7 +1098,7 @@ export default function AgentIntegrationCanvas({
   });
 
   const activeIntegration = INTEGRATION_META.find((m) => m.key === activeKey) ?? null;
-  const activeTools = AGENT_TOOL_CATALOG.filter((t) => t.integration === activeKey);
+  const activePlaybook = activeKey ? getIntegrationPlaybook(activeKey) : undefined;
 
   const getEnabledCount = (key: ToolIntegration) =>
     AGENT_TOOL_CATALOG.filter((t) => t.integration === key && selectedToolNames.includes(t.name))
@@ -1113,8 +1115,9 @@ export default function AgentIntegrationCanvas({
           <Sparkles className="w-3.5 h-3.5 text-brand" />
           <div>
             <h3 className="font-display italic lowercase text-base text-ink">agent capabilities</h3>
-            <p className="text-[10px] text-muted/70 leading-relaxed">
-              Tap any integration to preview what {agentName || "this agent"} can do with it
+            <p className="text-[10px] text-muted/70 leading-relaxed text-pretty">
+              Each connection maps to caller moments — what {agentName || "this agent"} does when
+              customers ask.
             </p>
           </div>
         </div>
@@ -1510,8 +1513,8 @@ export default function AgentIntegrationCanvas({
                   </div>
                   <div>
                     <div className="text-sm font-semibold text-ink">{activeIntegration.label}</div>
-                    <div className="text-[10px] text-muted/70 leading-relaxed">
-                      {activeIntegration.tagline}
+                    <div className="text-[10px] text-muted/70 leading-relaxed text-pretty">
+                      {activePlaybook?.orbitHint ?? activeIntegration.tagline}
                     </div>
                   </div>
                 </div>
@@ -1558,6 +1561,15 @@ export default function AgentIntegrationCanvas({
                 </div>
               </div>
 
+              <IntegrationCapabilityPanel
+                integration={activeKey}
+                accentColor={activeIntegration.color}
+                connected={resolveConnected(activeKey, integrationStatus)}
+                enabledTools={selectedToolNames}
+                onToggleTool={onToggleTool}
+                onToggleIntegrationGroup={onToggleIntegrationGroup}
+              />
+
               {/* Preview card */}
               <activeIntegration.PreviewCard />
 
@@ -1601,86 +1613,6 @@ export default function AgentIntegrationCanvas({
                   </div>
                 </div>
               )}
-
-              {/* Tool toggles */}
-              <div className="space-y-1.5">
-                <div className="text-[9px] uppercase tracking-[0.3em] text-muted/60 pb-1">
-                  Tools
-                </div>
-                {activeTools.map((tool) => {
-                  const enabled = selectedToolNames.includes(tool.name);
-                  const isDefault = roleDefaultTools.includes(tool.name);
-                  return (
-                    <button
-                      key={tool.name}
-                      type="button"
-                      onClick={() => onToggleTool(tool.name)}
-                      className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg border transition-all text-left"
-                      style={{
-                        borderColor: enabled
-                          ? `${activeIntegration.color}35`
-                          : "rgba(255,255,255,0.07)",
-                        background: enabled ? `${activeIntegration.color}0c` : "rgba(0,0,0,0.12)",
-                      }}
-                    >
-                      {/* Mini toggle */}
-                      <div
-                        className="w-8 h-4 rounded-full border flex items-center px-0.5 shrink-0 transition-colors"
-                        style={{
-                          borderColor: enabled
-                            ? `${activeIntegration.color}55`
-                            : "rgba(255,255,255,0.13)",
-                          background: enabled ? `${activeIntegration.color}22` : "rgba(0,0,0,0.2)",
-                        }}
-                      >
-                        <motion.div
-                          animate={{ x: enabled ? 14 : 0 }}
-                          transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                          className="w-3 h-3 rounded-full"
-                          style={{
-                            background: enabled
-                              ? activeIntegration.color
-                              : "rgba(255,255,255,0.35)",
-                          }}
-                        />
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="text-xs text-ink font-medium">{tool.label}</span>
-                          {isDefault && (
-                            <span className="text-[7px] uppercase tracking-[0.22em] px-1.5 py-0.5 rounded-full border border-white/10 bg-white/5 text-muted/70">
-                              Default
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[10px] text-muted/65 leading-relaxed mt-0.5">
-                          {tool.description}
-                        </p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Enable / disable all */}
-              <button
-                type="button"
-                onClick={() => {
-                  const allOn = activeTools.every((t) => selectedToolNames.includes(t.name));
-                  onToggleIntegrationGroup(activeKey, !allOn);
-                }}
-                className="w-full py-2 rounded-lg text-[10px] font-medium border transition-all"
-                style={{
-                  borderColor: `${activeIntegration.color}28`,
-                  color: activeIntegration.color,
-                  background: `${activeIntegration.color}08`,
-                }}
-              >
-                {activeTools.every((t) => selectedToolNames.includes(t.name))
-                  ? `Disable all ${activeIntegration.label} tools`
-                  : `Enable all ${activeIntegration.label} tools`}
-              </button>
             </div>
           </motion.div>
         )}

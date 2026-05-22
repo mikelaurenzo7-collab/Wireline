@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { Link2, Unlink, Loader2, ExternalLink, CheckCircle2 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
+import { toolIntegrationForProvider, PROVIDER_ACCENT } from "../lib/integration-playbooks";
+import IntegrationCapabilityPanel from "./IntegrationCapabilityPanel";
 
 interface IntegrationStatus {
   connected: boolean;
@@ -480,6 +482,23 @@ export default function CrmConnectionCard() {
                           )}
                         </div>
                       </div>
+                      {s.connected &&
+                        (() => {
+                          const toolInt = toolIntegrationForProvider(key);
+                          if (!toolInt) return null;
+                          return (
+                            <div className="mt-3 pt-3 border-t border-black/8">
+                              <IntegrationCapabilityPanel
+                                integration={toolInt}
+                                accentColor={PROVIDER_ACCENT[key] ?? "#4F1E7B"}
+                                connected
+                                enabledTools={[]}
+                                compact
+                              />
+                            </div>
+                          );
+                        })()}
+
                       {key === "shopify" && !s.connected && (
                         <div className="mt-3 pt-3 border-t border-white/10 space-y-1.5">
                           <div className="text-[9px] uppercase tracking-[0.25em] text-muted/90">
