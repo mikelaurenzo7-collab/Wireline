@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
 import { Router, Response } from "express";
 import { authenticateUser } from "../middleware/auth";
 import { soc2RateLimit } from "../middleware/api-rate-limits";
@@ -63,7 +64,8 @@ router.get(
         frameworks: [
           {
             id: "SOC2_CC6",
-            summary: "Logical access — RBAC enforced via wireline_team_members + requirePermission middleware.",
+            summary:
+              "Logical access — RBAC enforced via wireline_team_members + requirePermission middleware.",
           },
           {
             id: "SOC2_CC7",
@@ -72,7 +74,8 @@ router.get(
           },
           {
             id: "SOC2_CC8",
-            summary: "Change management — configuration mutations emit wireline_audit_log rows with actor context.",
+            summary:
+              "Change management — configuration mutations emit wireline_audit_log rows with actor context.",
           },
         ],
         rbac_snapshot: {

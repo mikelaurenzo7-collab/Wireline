@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- third-party API responses are vendor-defined JSON envelopes that don't ship with types. */
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";

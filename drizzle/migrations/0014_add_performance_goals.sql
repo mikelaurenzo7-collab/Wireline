@@ -26,3 +26,9 @@ CREATE TABLE IF NOT EXISTS wireline_goals (
 
 CREATE INDEX IF NOT EXISTS idx_goals_user
   ON wireline_goals (user_id);
+
+-- Match the RLS posture of every other wireline_* table. The server
+-- connection bypasses RLS (table queries are tenant-scoped in route
+-- handlers via req.user.id); enabling RLS here closes the consistency
+-- gap so a misused anon key can't reach this table.
+ALTER TABLE wireline_goals ENABLE ROW LEVEL SECURITY;

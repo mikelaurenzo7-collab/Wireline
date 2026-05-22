@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- third-party API responses are vendor-defined JSON envelopes that don't ship with types. */
 import { drizzle, log, fetchWithTimeout } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
@@ -48,13 +49,16 @@ export function getZoomAuthUrl(redirectUri: string, state: string): string {
   return `${ZOOM_AUTH_URL}?${params.toString()}`;
 }
 
-export async function exchangeZoomCode(code: string, redirectUri: string): Promise<{
+export async function exchangeZoomCode(
+  code: string,
+  redirectUri: string,
+): Promise<{
   access_token: string;
   refresh_token: string;
   expires_in: number;
 }> {
   const basicAuth = Buffer.from(
-    `${process.env.ZOOM_CLIENT_ID}:${process.env.ZOOM_CLIENT_SECRET}`
+    `${process.env.ZOOM_CLIENT_ID}:${process.env.ZOOM_CLIENT_SECRET}`,
   ).toString("base64");
 
   const params = new URLSearchParams({
@@ -75,7 +79,7 @@ export async function exchangeZoomCode(code: string, redirectUri: string): Promi
     },
     15_000,
   );
-  const data = await r.json() as any;
+  const data = (await r.json()) as any;
   if (!r.ok || !data.access_token) {
     throw new Error(data.reason || data.error || "Zoom token exchange failed");
   }
@@ -86,9 +90,11 @@ export async function exchangeZoomCode(code: string, redirectUri: string): Promi
   };
 }
 
-async function refreshZoomToken(conn: ZoomConnection): Promise<{ access_token: string; refresh_token: string; expires_at: number }> {
+async function refreshZoomToken(
+  conn: ZoomConnection,
+): Promise<{ access_token: string; refresh_token: string; expires_at: number }> {
   const basicAuth = Buffer.from(
-    `${process.env.ZOOM_CLIENT_ID}:${process.env.ZOOM_CLIENT_SECRET}`
+    `${process.env.ZOOM_CLIENT_ID}:${process.env.ZOOM_CLIENT_SECRET}`,
   ).toString("base64");
 
   const params = new URLSearchParams({
@@ -108,7 +114,7 @@ async function refreshZoomToken(conn: ZoomConnection): Promise<{ access_token: s
     },
     15_000,
   );
-  const data = await r.json() as any;
+  const data = (await r.json()) as any;
   if (!r.ok || !data.access_token) {
     throw new Error(data.reason || "Zoom token refresh failed");
   }
@@ -129,13 +135,12 @@ async function getConnection(userId: string): Promise<ZoomConnection | null> {
       id: schema.crmConnections.id,
       access_token: schema.crmConnections.accessToken,
       refresh_token: schema.crmConnections.refreshToken,
-      expires_at: schema.crmConnections.expiresAt
+      expires_at: schema.crmConnections.expiresAt,
     })
     .from(schema.crmConnections)
-    .where(and(
-      eq(schema.crmConnections.userId, userId),
-      eq(schema.crmConnections.provider, "zoom")
-    ))
+    .where(
+      and(eq(schema.crmConnections.userId, userId), eq(schema.crmConnections.provider, "zoom")),
+    )
     .limit(1);
 
   if (!data) return null;
@@ -158,7 +163,8 @@ async function getValidToken(userId: string): Promise<string | null> {
 
   try {
     const updated = await refreshZoomToken(conn);
-    await drizzle.update(schema.crmConnections)
+    await drizzle
+      .update(schema.crmConnections)
       .set({
         accessToken: encryptSecret(updated.access_token),
         refreshToken: encryptSecret(updated.refresh_token),
@@ -177,11 +183,14 @@ async function getValidToken(userId: string): Promise<string | null> {
 //  Zoom API Operations
 // ────────────────────────────────────────────────────────────────────
 
-export async function createMeeting(userId: string, params: {
-  topic: string;
-  startTime: string;
-  duration?: number;
-}): Promise<ZoomMeeting | null> {
+export async function createMeeting(
+  userId: string,
+  params: {
+    topic: string;
+    startTime: string;
+    duration?: number;
+  },
+): Promise<ZoomMeeting | null> {
   const token = await getValidToken(userId);
   if (!token) {
     log.warn("Zoom not connected — skipping meeting creation");
@@ -213,7 +222,7 @@ export async function createMeeting(userId: string, params: {
       },
       15_000,
     );
-    const data = await r.json() as any;
+    const data = (await r.json()) as any;
     if (!r.ok) {
       log.warn("Zoom createMeeting failed", { status: r.status, error: data.message });
       return null;
@@ -231,9 +240,9 @@ export async function createMeeting(userId: string, params: {
 }
 
 export async function disconnectZoom(userId: string): Promise<void> {
-  await drizzle.delete(schema.crmConnections)
-    .where(and(
-      eq(schema.crmConnections.userId, userId),
-      eq(schema.crmConnections.provider, "zoom")
-    ));
+  await drizzle
+    .delete(schema.crmConnections)
+    .where(
+      and(eq(schema.crmConnections.userId, userId), eq(schema.crmConnections.provider, "zoom")),
+    );
 }

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- third-party API responses are vendor-defined JSON envelopes that don't ship with types. */
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";

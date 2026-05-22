@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- aggregate stats and dashboard rows draw from heterogeneous queries. */
 import { Router, Response, type Request } from "express";
 import { timingSafeEqual as cryptoTimingSafeEqual } from "node:crypto";
 import { log, drizzle } from "../lib/server-context";

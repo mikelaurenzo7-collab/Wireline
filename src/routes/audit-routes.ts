@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- audit metadata is stored as Postgres jsonb and varies by event type. */
 import { Router, Response } from "express";
 import { drizzle, log, auditLogger } from "../lib/server-context";
 import * as schema from "../db/schema";

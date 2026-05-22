@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 /**
  * Voice Library — operator-side clone management surface.
  *
@@ -60,6 +61,7 @@ export default function VoiceLibraryPanel() {
     return () => {
       if (audioRef.current) audioRef.current.pause();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time fetch on mount
   }, []);
 
   function playPreview(voice: ClonedVoice) {

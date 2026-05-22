@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- vendor webhook payloads are JSON envelopes with provider-specific shapes. */
 import express, { Response } from "express";
 import { log, auditLogger, requirePermission, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";

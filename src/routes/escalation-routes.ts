@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- LLM responses and dynamic call analyses include freeform JSON content. */
 /**
  * Customer-service escalation endpoint.
  *

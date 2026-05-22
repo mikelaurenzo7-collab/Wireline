@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 // Pure server-side utilities — extracted from server.ts so they can be
 // unit-tested without spinning up the Express app. All functions here
 // must be deterministic and side-effect-free.

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 // GDPR account-deletion helpers.
 //
 // `purgeAccount` performs the irreversible hard-delete cascade across every

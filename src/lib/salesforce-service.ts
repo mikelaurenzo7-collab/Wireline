@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- third-party API responses are vendor-defined JSON envelopes that don't ship with types. */
 import { drizzle, log, fetchWithTimeout } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
@@ -43,10 +44,7 @@ interface CrmConnection {
 // ────────────────────────────────────────────────────────────────────
 
 export function sfOAuthConfigured(): boolean {
-  return !!(
-    process.env.SALESFORCE_CLIENT_ID &&
-    process.env.SALESFORCE_CLIENT_SECRET
-  );
+  return !!(process.env.SALESFORCE_CLIENT_ID && process.env.SALESFORCE_CLIENT_SECRET);
 }
 
 export function getSalesforceAuthUrl(redirectUri: string, state: string): string {
@@ -62,7 +60,10 @@ export function getSalesforceAuthUrl(redirectUri: string, state: string): string
   return `${loginUrl}/services/oauth2/authorize?${params.toString()}`;
 }
 
-export async function exchangeSalesforceCode(code: string, redirectUri: string): Promise<{
+export async function exchangeSalesforceCode(
+  code: string,
+  redirectUri: string,
+): Promise<{
   access_token: string;
   refresh_token: string;
   instance_url: string;
@@ -87,7 +88,7 @@ export async function exchangeSalesforceCode(code: string, redirectUri: string):
     },
     15_000,
   );
-  const data = await r.json() as any;
+  const data = (await r.json()) as any;
   if (!r.ok || !data.access_token) {
     throw new Error(data.error_description || data.error || "Salesforce token exchange failed");
   }
@@ -100,7 +101,9 @@ export async function exchangeSalesforceCode(code: string, redirectUri: string):
   };
 }
 
-async function refreshSalesforceToken(conn: CrmConnection): Promise<{ access_token: string; expires_at: number }> {
+async function refreshSalesforceToken(
+  conn: CrmConnection,
+): Promise<{ access_token: string; expires_at: number }> {
   const loginUrl = process.env.SALESFORCE_LOGIN_URL || "https://login.salesforce.com";
   const params = new URLSearchParams({
     grant_type: "refresh_token",
@@ -118,7 +121,7 @@ async function refreshSalesforceToken(conn: CrmConnection): Promise<{ access_tok
     },
     15_000,
   );
-  const data = await r.json() as any;
+  const data = (await r.json()) as any;
   if (!r.ok || !data.access_token) {
     throw new Error(data.error_description || "Salesforce token refresh failed");
   }
@@ -135,16 +138,23 @@ async function getConnection(userId: string): Promise<CrmConnection | null> {
       instanceUrl: schema.crmConnections.instanceUrl,
       accessToken: schema.crmConnections.accessToken,
       refreshToken: schema.crmConnections.refreshToken,
-      expiresAt: schema.crmConnections.expiresAt
+      expiresAt: schema.crmConnections.expiresAt,
     })
     .from(schema.crmConnections)
-    .where(and(eq(schema.crmConnections.userId, userId), eq(schema.crmConnections.provider, "salesforce")))
+    .where(
+      and(
+        eq(schema.crmConnections.userId, userId),
+        eq(schema.crmConnections.provider, "salesforce"),
+      ),
+    )
     .limit(1);
-  
+
   return data || null;
 }
 
-async function getValidToken(userId: string): Promise<{ token: string; instanceUrl: string } | null> {
+async function getValidToken(
+  userId: string,
+): Promise<{ token: string; instanceUrl: string } | null> {
   const conn = await getConnection(userId);
   if (!conn) return null;
 
@@ -154,7 +164,8 @@ async function getValidToken(userId: string): Promise<{ token: string; instanceU
 
   try {
     const updated = await refreshSalesforceToken(conn);
-    await drizzle.update(schema.crmConnections)
+    await drizzle
+      .update(schema.crmConnections)
       .set({
         accessToken: encryptSecret(updated.access_token),
         expiresAt: updated.expires_at,
@@ -191,7 +202,7 @@ export async function searchContacts(query: string, userId?: string): Promise<Sa
       15_000,
     );
     if (!res.ok) throw new Error(`Salesforce SOQL error: ${res.status}`);
-    const data = await res.json() as any;
+    const data = (await res.json()) as any;
     return ((data.records || []) as any[]).map((r: any) => ({
       sf_id: r.Id,
       first_name: r.FirstName || "",
@@ -239,7 +250,7 @@ export async function logCall(entry: SalesforceCallLog, userId?: string): Promis
       15_000,
     );
     if (!res.ok) throw new Error(`Salesforce Task create error: ${res.status}`);
-    const data = await res.json() as any;
+    const data = (await res.json()) as any;
     return data.id || null;
   } catch (err) {
     log.error("Salesforce call log failed", { error: getErrorMessage(err) });
@@ -247,13 +258,16 @@ export async function logCall(entry: SalesforceCallLog, userId?: string): Promis
   }
 }
 
-export async function createOpportunity(params: {
-  name: string;
-  contact_id?: string;
-  stage?: string;
-  amount?: number;
-  close_date?: string;
-}, userId?: string): Promise<string | null> {
+export async function createOpportunity(
+  params: {
+    name: string;
+    contact_id?: string;
+    stage?: string;
+    amount?: number;
+    close_date?: string;
+  },
+  userId?: string,
+): Promise<string | null> {
   const uid = userId || "";
   const creds = await getValidToken(uid);
   if (!creds) {
@@ -265,7 +279,8 @@ export async function createOpportunity(params: {
     const body: Record<string, unknown> = {
       Name: params.name,
       StageName: params.stage || "Prospecting",
-      CloseDate: params.close_date || new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10),
+      CloseDate:
+        params.close_date || new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10),
     };
     if (params.amount) body.Amount = params.amount;
     if (params.contact_id) body.WhoId = params.contact_id; // For Opportunity, WhoId is used for Contact relation
@@ -283,7 +298,7 @@ export async function createOpportunity(params: {
       15_000,
     );
     if (!res.ok) throw new Error(`Salesforce Opportunity create error: ${res.status}`);
-    const data = await res.json() as any;
+    const data = (await res.json()) as any;
     return data.id || null;
   } catch (err) {
     log.error("Salesforce opportunity create failed", { error: getErrorMessage(err) });
@@ -292,9 +307,16 @@ export async function createOpportunity(params: {
 }
 
 export async function disconnectSalesforce(userId: string): Promise<void> {
-  await drizzle.delete(schema.crmConnections)
-    .where(and(eq(schema.crmConnections.userId, userId), eq(schema.crmConnections.provider, "salesforce")));
-  await drizzle.update(schema.settings)
+  await drizzle
+    .delete(schema.crmConnections)
+    .where(
+      and(
+        eq(schema.crmConnections.userId, userId),
+        eq(schema.crmConnections.provider, "salesforce"),
+      ),
+    );
+  await drizzle
+    .update(schema.settings)
     .set({ crmType: null })
     .where(eq(schema.settings.userId, userId));
 }

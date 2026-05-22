@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useState, useEffect, useCallback, KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
   Search,

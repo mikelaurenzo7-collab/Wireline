@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- third-party API responses are vendor-defined JSON envelopes that don't ship with types. */
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 
@@ -78,12 +79,14 @@ export async function sendContract(params: SendContractParams): Promise<DocuSign
           roleName: "Client",
           name: params.recipientName,
           email: params.recipientEmail,
-          tabs: params.prefillFields ? {
-            textTabs: Object.entries(params.prefillFields).map(([tabLabel, value]) => ({
-              tabLabel,
-              value,
-            })),
-          } : undefined,
+          tabs: params.prefillFields
+            ? {
+                textTabs: Object.entries(params.prefillFields).map(([tabLabel, value]) => ({
+                  tabLabel,
+                  value,
+                })),
+              }
+            : undefined,
         },
       ];
       delete envelopeBody.recipients;

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 /**
  * src/lib/spend-guards.ts
  *
@@ -52,28 +53,43 @@ export function clearBudgetCache(userId: string) {
   budgetCache.delete(userId);
 }
 
-export async function getBudgetSnapshot(userId: string, bypassCache: boolean = false): Promise<BudgetSnapshot> {
+export async function getBudgetSnapshot(
+  userId: string,
+  bypassCache: boolean = false,
+): Promise<BudgetSnapshot> {
   const period = currentPeriod();
   const cached = budgetCache.get(userId);
-  if (!bypassCache && cached && cached.period === period && Date.now() - cached.fetchedAt < BUDGET_CACHE_TTL_MS) {
+  if (
+    !bypassCache &&
+    cached &&
+    cached.period === period &&
+    Date.now() - cached.fetchedAt < BUDGET_CACHE_TTL_MS
+  ) {
     return cached;
   }
 
   const [budgetRow, logRows] = await Promise.all([
-    drizzle.select({
-      monthlyLimitUsd: schema.spendBudgets.monthlyLimitUsd,
-      hardCap: schema.spendBudgets.hardCap,
-      warnThresholdPct: schema.spendBudgets.warnThresholdPct,
-      enabled: schema.spendBudgets.enabled
-    })
-    .from(schema.spendBudgets)
-    .where(eq(schema.spendBudgets.userId, userId))
-    .limit(1)
-    .then(rows => rows[0] || null),
+    drizzle
+      .select({
+        monthlyLimitUsd: schema.spendBudgets.monthlyLimitUsd,
+        hardCap: schema.spendBudgets.hardCap,
+        warnThresholdPct: schema.spendBudgets.warnThresholdPct,
+        enabled: schema.spendBudgets.enabled,
+      })
+      .from(schema.spendBudgets)
+      .where(eq(schema.spendBudgets.userId, userId))
+      .limit(1)
+      .then((rows) => rows[0] || null),
 
-    drizzle.select({ costUsd: schema.auditLog.costUsd })
+    drizzle
+      .select({ costUsd: schema.auditLog.costUsd })
       .from(schema.auditLog)
-      .where(and(eq(schema.auditLog.userId, userId), gte(schema.auditLog.createdAt, periodStartIso(period)))),
+      .where(
+        and(
+          eq(schema.auditLog.userId, userId),
+          gte(schema.auditLog.createdAt, periodStartIso(period)),
+        ),
+      ),
   ]);
 
   const mtdCost = (logRows || []).reduce((s: number, r: any) => s + Number(r.costUsd || 0), 0);
@@ -170,7 +186,13 @@ export async function enforceSpendCap(req: any, res: any, next: any) {
   try {
     const snap = await getBudgetSnapshot(req.user.id);
     const b = snap.budget;
-    if (b && b.enabled && b.hard_cap && b.monthly_limit_usd > 0 && snap.mtdCost >= b.monthly_limit_usd) {
+    if (
+      b &&
+      b.enabled &&
+      b.hard_cap &&
+      b.monthly_limit_usd > 0 &&
+      snap.mtdCost >= b.monthly_limit_usd
+    ) {
       return res.status(402).json({
         error: `Monthly Claude budget reached ($${b.monthly_limit_usd.toFixed(2)}). Disable hard cap or raise the limit in Insights → AI Spend.`,
         code: "SPEND_LIMIT_EXCEEDED",

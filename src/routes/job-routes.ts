@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- task and job payloads are stored as Postgres jsonb. */
 import { Router, Response, NextFunction } from "express";
 import { timingSafeEqual as cryptoTimingSafeEqual } from "node:crypto";
 import { log, auditLogger, drizzle } from "../lib/server-context";

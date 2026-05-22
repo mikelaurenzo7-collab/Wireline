@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
@@ -131,6 +132,7 @@ export default function AdminSettings() {
     fetchOperationalSlos();
     fetchIntegrationHealth();
     fetchTeam();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time data load on mount
   }, []);
 
   const fetchTeam = async () => {

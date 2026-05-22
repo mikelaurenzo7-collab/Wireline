@@ -755,7 +755,7 @@ function KnowledgeFromUrlForm({
 
   useEffect(() => {
     if (!agentId && agents[0]) setAgentId(agents[0].id);
-  }, [agents]);
+  }, [agents, agentId]);
 
   const run = async () => {
     setLoading(true);
@@ -1185,7 +1185,7 @@ function BriefForm({
 
   useEffect(() => {
     if (!agentId && agents[0]) setAgentId(agents[0].id);
-  }, [agents]);
+  }, [agents, agentId]);
 
   const run = async () => {
     setLoading(true);
@@ -1645,7 +1645,7 @@ function ObjectionDrillForm({
 
   useEffect(() => {
     if (!agentId && agents[0]) setAgentId(agents[0].id);
-  }, [agents]);
+  }, [agents, agentId]);
 
   const run = async () => {
     setLoading(true);
@@ -2223,7 +2223,7 @@ function AgentReviewForm({
 
   useEffect(() => {
     if (!agentId && agents[0]) setAgentId(agents[0].id);
-  }, [agents]);
+  }, [agents, agentId]);
 
   const run = async () => {
     setLoading(true);
@@ -2418,7 +2418,7 @@ function KnowledgeFromDocumentForm({
 
   useEffect(() => {
     if (!agentId && agents[0]) setAgentId(agents[0].id);
-  }, [agents]);
+  }, [agents, agentId]);
 
   const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -2717,7 +2717,7 @@ function CallPlaybookForm({
 
   useEffect(() => {
     if (!agentId && agents[0]) setAgentId(agents[0].id);
-  }, [agents]);
+  }, [agents, agentId]);
 
   const run = async () => {
     setLoading(true);

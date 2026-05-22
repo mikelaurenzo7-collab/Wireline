@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- job and webhook payloads are stored as Postgres jsonb. */
 // Postgres-backed durable job queue.
 //
 // Why Postgres (not BullMQ / SQS / Inngest)?

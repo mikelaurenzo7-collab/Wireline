@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Express middleware operates on heterogeneous request/response shapes. */
 import type { Request, Response, NextFunction } from "express";
 import type { User } from "../types/auth";
 import { log, auditLogger } from "../lib/server-context";

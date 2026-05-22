@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 /**
  * Auto-provisions a Wireline voice number for a tenant from our own
  * Twilio account. Customers never see a Twilio bill — the number is

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- tenant configuration columns and aggregated drizzle rows have shapes that vary by route. */
 /**
  * Multi-touch outbound cadence routes.
  *

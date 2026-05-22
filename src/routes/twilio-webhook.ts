@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- vendor webhook payloads are JSON envelopes with provider-specific shapes. */
 /**
  * Twilio inbound SMS webhook.
  *

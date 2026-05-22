@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- LLM responses and dynamic call analyses include freeform JSON content. */
 import { Router, Response } from "express";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";

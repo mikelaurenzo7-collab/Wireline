@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React, { useState, useEffect } from "react";
 import {
   PhoneIncoming,
@@ -75,6 +76,7 @@ export default function CallLogs() {
 
   useEffect(() => {
     fetchCalls(0, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time fetch on mount
   }, []);
 
   // Auto-select first call on initial load only — preserve user deselection.

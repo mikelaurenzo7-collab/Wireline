@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useState, useRef } from "react";
 import { Download, Upload, CheckCircle2, Loader2 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
@@ -74,7 +75,7 @@ export default function AgentExportImport({ agentId, agentName }: Props) {
       setImported(data.imported);
       toastSuccess(
         "Config imported",
-        `${data.imported?.directives ?? 0} directives + ${data.imported?.knowledge ?? 0} knowledge items merged.`
+        `${data.imported?.directives ?? 0} directives + ${data.imported?.knowledge ?? 0} knowledge items merged.`,
       );
     } catch (err: any) {
       toastError("Import failed", err?.message || "Invalid file format.");
@@ -93,25 +94,27 @@ export default function AgentExportImport({ agentId, agentName }: Props) {
         className="h-8 px-3 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-ink/60 hover:text-brand hover:border-brand/30 transition-all flex items-center gap-1.5 disabled:opacity-40"
         title="Export agent config as JSON"
       >
-        {isExporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+        {isExporting ? (
+          <Loader2 className="w-3 h-3 animate-spin" />
+        ) : (
+          <Download className="w-3 h-3" />
+        )}
         Export
       </button>
 
       {/* Import */}
-      <input
-        ref={fileRef}
-        type="file"
-        accept=".json"
-        className="hidden"
-        onChange={handleImport}
-      />
+      <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
       <button
         onClick={() => fileRef.current?.click()}
         disabled={isImporting}
         className="h-8 px-3 rounded-full glass border border-white/10 text-[10px] uppercase tracking-[0.25em] text-ink/60 hover:text-brand hover:border-brand/30 transition-all flex items-center gap-1.5 disabled:opacity-40"
         title="Import agent config from JSON"
       >
-        {isImporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+        {isImporting ? (
+          <Loader2 className="w-3 h-3 animate-spin" />
+        ) : (
+          <Upload className="w-3 h-3" />
+        )}
         Import
       </button>
 

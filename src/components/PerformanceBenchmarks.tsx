@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ChevronDown, ChevronUp, TrendingUp } from "lucide-react";

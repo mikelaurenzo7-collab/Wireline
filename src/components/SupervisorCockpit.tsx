@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { Radio, Users, PhoneCall, ShieldAlert, Loader2, Activity, Headphones } from "lucide-react";

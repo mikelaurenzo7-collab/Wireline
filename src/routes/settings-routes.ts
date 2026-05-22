@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- tenant configuration columns and aggregated drizzle rows have shapes that vary by route. */
 import { Router, Response } from "express";
 import type { AuthenticatedRequest } from "../types/auth";
 import { drizzle, log, auditLogger } from "../lib/server-context";

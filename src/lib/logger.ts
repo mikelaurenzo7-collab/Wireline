@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 /* eslint-disable no-console -- logger.ts IS the console sink; emitLog must call console.* directly. */
 export const IS_PROD =
   typeof process !== "undefined"

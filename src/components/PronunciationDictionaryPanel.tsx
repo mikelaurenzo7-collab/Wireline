@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 /**
  * Pronunciation Dictionary — operator-side jargon management surface.
  *
@@ -92,6 +93,7 @@ export default function PronunciationDictionaryPanel() {
 
   useEffect(() => {
     void loadDicts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time fetch on mount
   }, []);
 
   function addDraftRow(dictId: string) {
