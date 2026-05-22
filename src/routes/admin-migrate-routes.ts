@@ -1518,4 +1518,42 @@ router.post("/api/admin/purge-demo-users", optionalAuth, async (req: Request, re
   }
 });
 
+/**
+ * Auth-gated DDL endpoint for the performance-goals table (migration
+ * 0014). Idempotent: CREATE TABLE / CREATE INDEX IF NOT EXISTS so
+ * re-running after each deploy is safe.
+ */
+router.post(
+  "/api/admin/migrate-goals",
+  optionalAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!authorizeMigration(req, res)) return;
+
+    try {
+      await drizzle.execute(sql`
+        CREATE TABLE IF NOT EXISTS wireline_goals (
+          id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          user_id    uuid NOT NULL,
+          metric     text NOT NULL,
+          target     integer NOT NULL CHECK (target > 0),
+          label      text,
+          created_at timestamptz NOT NULL DEFAULT now(),
+          updated_at timestamptz NOT NULL DEFAULT now(),
+          CONSTRAINT wireline_goals_user_id_metric_key UNIQUE (user_id, metric)
+        );
+      `);
+      await drizzle.execute(sql`
+        CREATE INDEX IF NOT EXISTS idx_goals_user
+        ON wireline_goals (user_id);
+      `);
+
+      log.info("migrate-goals completed", { userId: req.user?.id || "migration-token" });
+      return res.json({ ok: true, message: "Performance goals table ensured." });
+    } catch (e: any) {
+      log.error("migrate-goals failed", { error: e?.message });
+      return res.status(500).json({ error: e?.message || "Migration failed" });
+    }
+  },
+);
+
 export default router;

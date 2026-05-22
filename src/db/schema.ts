@@ -1271,6 +1271,37 @@ export const leadDossiers = pgTable(
   }),
 );
 
+// 4.9 PERFORMANCE GOALS
+//
+// Operator-set monthly fleet targets — e.g. "book 40 appointments this
+// month". One row per (user_id, metric); POST /api/goals upserts on that
+// pair. Nothing about progress is stored here: the /api/goals route
+// computes the live actual from call logs + appointments scoped to the
+// current calendar month every read, so a goal is always measured against
+// fresh data. `metric` is one of the GoalMetric ids in src/lib/goals.ts
+// (calls_handled | appointments_booked | qualified_leads | voice_minutes).
+export const goals = pgTable(
+  "wireline_goals",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    metric: text("metric").notNull(),
+    // Monthly target — always a positive integer (validated route-side).
+    target: integer("target").notNull(),
+    // Optional operator label shown above the goal card.
+    label: text("label"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    // One goal per metric per tenant — the POST upsert conflict target.
+    userMetricUniq: unique("wireline_goals_user_id_metric_key").on(t.userId, t.metric),
+    userIdx: sql`CREATE INDEX IF NOT EXISTS idx_goals_user ON wireline_goals USING btree (user_id)`,
+  }),
+);
+
+export type Goal = typeof goals.$inferSelect;
+
 // Relations
 export const agentRelations = relations(agents, ({ many }) => ({
   callLogs: many(callLogs),
