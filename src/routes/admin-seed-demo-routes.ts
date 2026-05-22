@@ -31,7 +31,7 @@ import {
 
 const router = Router();
 
-const DEFAULT_DEMO_EMAIL = "qa-final-2026@wireline.app";
+const DEFAULT_DEMO_EMAIL = "composer.demo@trywireline.com";
 
 interface SeedReport {
   table: string;

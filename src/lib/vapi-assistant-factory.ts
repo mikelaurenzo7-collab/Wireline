@@ -5,6 +5,10 @@ import {
   sanitizePhone,
   KNOWLEDGE_GAP_PREFIX,
   MAX_RUNTIME_LESSONS,
+  MAX_RUNTIME_DIRECTIVES,
+  MAX_RUNTIME_KNOWLEDGE,
+  clampRuntimePrompt,
+  truncateRuntimeSnippet,
   ROLE_SPECIFIC_PROTOCOLS,
   buildCallerProfileBlock,
   OUTBOUND_ARCHETYPE_BY_ROLE,
@@ -71,12 +75,13 @@ export async function buildVapiAssistant({
       .from(schema.directives)
       .where(eq(schema.directives.agentId, webhookAgentId))
       .orderBy(desc(schema.directives.priority))
-      .limit(500),
+      .limit(MAX_RUNTIME_DIRECTIVES),
     drizzle
       .select()
       .from(schema.knowledge)
       .where(eq(schema.knowledge.agentId, webhookAgentId))
-      .limit(500),
+      .orderBy(desc(schema.knowledge.createdAt))
+      .limit(MAX_RUNTIME_KNOWLEDGE),
     drizzle
       .select()
       .from(schema.personality)
@@ -243,13 +248,36 @@ export async function buildVapiAssistant({
     flowConfigBlock = `\n## CRITICAL CONVERSATION FLOW (MANDATORY)\nYou must progress through the following stages strictly in order. Do not skip stages unless explicitly forced by the caller. Start at STAGE 1.\n\n${formattedSteps}\n`;
   }
 
-  const _lessons = (lessonsData || [])
-    .filter(
-      (l: { lesson?: string | null }) =>
-        l.lesson && typeof l.lesson === "string" && !l.lesson.startsWith(KNOWLEDGE_GAP_PREFIX),
-    )
-    .map((l: { lesson?: string | null }) => l.lesson)
-    .join("\n");
+  const lessonsBlock = (() => {
+    const lines = (lessonsData || [])
+      .filter(
+        (l: { lesson?: string | null }) =>
+          l.lesson && typeof l.lesson === "string" && !l.lesson.startsWith(KNOWLEDGE_GAP_PREFIX),
+      )
+      .map((l: { lesson?: string | null }) => truncateRuntimeSnippet(l.lesson as string));
+    if (lines.length === 0) return "";
+    return `\n## RECENT LESSONS (from high-quality calls)\n${lines.map((t) => `- ${t}`).join("\n")}\n`;
+  })();
+
+  const directivesBlock = (() => {
+    const lines = (directivesData || [])
+      .map((d: { content?: string | null }) => truncateRuntimeSnippet(d.content || ""))
+      .filter(Boolean);
+    if (lines.length === 0) return "";
+    return `\n## OPERATOR DIRECTIVES (priority order)\n${lines.map((t) => `- ${t}`).join("\n")}\n`;
+  })();
+
+  const knowledgeBlock = (() => {
+    const lines = (knowledgeData || [])
+      .map((k: { content?: string | null }) => truncateRuntimeSnippet(k.content || ""))
+      .filter(Boolean);
+    if (lines.length === 0) return "";
+    return `\n## KNOWLEDGE BASE\n${lines.map((t) => `- ${t}`).join("\n")}\n`;
+  })();
+
+  const personalityBlock = personalityRow?.content?.trim()
+    ? `\n## PERSONALITY\n${truncateRuntimeSnippet(personalityRow.content)}\n`
+    : "";
 
   const callerProfile = buildCallerProfileBlock(pastCallHistory || [], false);
 
@@ -349,6 +377,10 @@ ${archetypeRules}
 ${leadContext}
 ${roleProtocol}
 ${flowConfigBlock}
+${personalityBlock}
+${directivesBlock}
+${knowledgeBlock}
+${lessonsBlock}
 Today is ${currentDateTime}.
   `;
 
@@ -365,6 +397,10 @@ ${customerIntelBlock}
 ${sentimentShift}
 ${leadContext}
 ${flowConfigBlock}
+${personalityBlock}
+${directivesBlock}
+${knowledgeBlock}
+${lessonsBlock}
 Today is ${currentDateTime}.
   `
     : baseSystemPrompt;
@@ -380,7 +416,7 @@ Today is ${currentDateTime}.
     kpi_focus: agentConfigRow?.kpiFocus,
     personality_vibe: (agentConfigRow as any)?.personalityVibe,
   };
-  const runtime = buildAgentRuntimeContext(systemPrompt, runtimeProfile);
+  const runtime = buildAgentRuntimeContext(clampRuntimePrompt(systemPrompt), runtimeProfile);
   // First-message resolution order:
   //   1. Out-of-hours override (always wins — caller hears the OOH msg)
   //   2. Operator-set firstMessage on the agent row
@@ -537,7 +573,7 @@ Today is ${currentDateTime}.
       ...(voiceSelection.fallbackModels?.length
         ? { fallbackModels: voiceSelection.fallbackModels }
         : {}),
-      systemPrompt: runtime.prompt,
+      systemPrompt: clampRuntimePrompt(runtime.prompt),
       temperature: llmTemp,
     },
     voice: {

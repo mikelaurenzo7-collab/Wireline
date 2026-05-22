@@ -490,8 +490,8 @@ export default function AuthPortal() {
            Previously `justify-center` pushed the form to ~440px from the top
            of an 800px viewport, putting the Sign In button at ~875px —
            below the fold. */}
-        <div className="flex-1 lg:sticky lg:top-0 lg:min-h-dvh flex flex-col items-center justify-start relative z-10 py-6 sm:py-8 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 overflow-y-auto">
-          <div className="lg:hidden w-full max-w-md mb-5 pt-2">
+        <div className="flex-1 lg:sticky lg:top-0 lg:min-h-dvh flex flex-col items-center justify-start relative z-10 py-5 sm:py-8 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 overflow-y-auto">
+          <div className="lg:hidden w-full max-w-md mb-4 pt-1">
             {/* Logo + wordmark row */}
             <div className="flex items-center gap-3 mb-5">
               <div
@@ -544,8 +544,14 @@ export default function AuthPortal() {
             className="w-full max-w-md"
           >
             {/* Form card */}
-            <div className="relative rounded-3xl border border-black/8 bg-[#FAF8F5] shadow-lg overflow-hidden">
-              <div className="relative p-7 md:p-9 lg:p-10">
+            <div
+              className="relative rounded-2xl sm:rounded-3xl border border-black/8 bg-[#FAF8F5] overflow-hidden"
+              style={{
+                boxShadow:
+                  "0 1px 0 rgba(255,255,255,0.9) inset, 0 20px 50px -24px rgba(79, 30, 123, 0.22), 0 8px 24px -12px rgba(0,0,0,0.12)",
+              }}
+            >
+              <div className="relative p-6 sm:p-7 md:p-9 lg:p-10">
                 {/* Header */}
                 <div className="relative z-10 mb-9">
                   <h2 className="font-display italic text-3xl text-ink leading-tight mb-1">

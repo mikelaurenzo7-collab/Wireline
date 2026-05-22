@@ -14,10 +14,9 @@ import { cn } from "../lib/utils";
        (the only place a scrollbar may legitimately appear).
 
    Mobile layout (< md):
-     • Actions row is hidden — an ⋯ button in the tab strip opens a
-       bottom sheet instead. No chrome floats above the content panel.
-     • Tab strip is a flat scrollable row (no glass pill wrapper) so it
-       flows flush into the Panel below — one visual unit.
+     • Actions row is hidden — an ⋯ button opens a bottom sheet.
+     • Tab strip uses a segmented control (tab-toggle-surface) for a
+       native iOS feel; panels use panel-mobile-surface for one stack.
 
    Use it like:
 
@@ -56,15 +55,16 @@ interface PageShellProps {
 }
 
 export default function PageShell({
-  title: _title,
-  subtitle: _subtitle,
-  eyebrow: _eyebrow,
+  title,
+  subtitle,
+  eyebrow,
   actions,
   tabs,
   children,
   defaultTab,
   bodyClassName,
 }: PageShellProps) {
+  const showPageHeader = Boolean(title || subtitle || eyebrow);
   const [activeId, setActiveId] = useState<string>(
     defaultTab ?? (tabs && tabs.length > 0 ? tabs[0].id : ""),
   );
@@ -80,7 +80,10 @@ export default function PageShell({
   useEffect(() => {
     if (!mobileActionsOpen) return;
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { e.preventDefault(); setMobileActionsOpen(false); }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setMobileActionsOpen(false);
+      }
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
@@ -103,9 +106,15 @@ export default function PageShell({
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
       if (e.shiftKey) {
-        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
       } else {
-        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     };
     window.addEventListener("keydown", handleTab);
@@ -113,12 +122,45 @@ export default function PageShell({
   }, [mobileActionsOpen]);
 
   return (
-    <div className="h-full w-full flex flex-col overflow-hidden">
-      {/* ── Desktop actions row (hidden on mobile) ─────────────────────── */}
-      {actions && (
-        <header className="shrink-0 mb-2 hidden md:flex flex-wrap items-center justify-end gap-2">
-          {actions}
+    <div
+      className={cn(
+        "h-full w-full flex flex-col overflow-hidden",
+        tabs &&
+          tabs.length > 0 &&
+          "mobile-route-stack max-md:flex max-md:flex-col max-md:gap-2 max-md:min-h-0",
+      )}
+    >
+      {/* ── Page header — every route gets editorial hierarchy ─────────── */}
+      {showPageHeader && (
+        <header className="shrink-0 mb-2 md:mb-3 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+          <div className="min-w-0">
+            {eyebrow && (
+              <p className="text-[9px] uppercase tracking-[0.38em] text-brand/80 font-medium mb-1">
+                {eyebrow}
+              </p>
+            )}
+            {title && (
+              <h1 className="page-title-aurora font-display italic text-xl sm:text-2xl md:text-[1.65rem] leading-tight tracking-tight text-balance">
+                {title}
+              </h1>
+            )}
+            {subtitle && (
+              <p className="mt-1.5 text-[11px] sm:text-xs text-muted/80 leading-relaxed max-w-2xl text-pretty">
+                {subtitle}
+              </p>
+            )}
+          </div>
+          {actions && (
+            <div className="hidden md:flex flex-wrap items-center justify-end gap-2 shrink-0">
+              {actions}
+            </div>
+          )}
         </header>
+      )}
+
+      {/* Mobile-only actions row when no tabs (tabs bundle ⋯ separately) */}
+      {actions && !tabs?.length && (
+        <div className="md:hidden shrink-0 flex justify-end mb-1">{actions}</div>
       )}
 
       {/* ── Desktop tab strip (hidden on mobile) ───────────────────────── */}
@@ -172,18 +214,12 @@ export default function PageShell({
         </div>
       )}
 
-      {/* ── Mobile: flat tab strip row + ⋯ actions button ──────────────── */}
+      {/* ── Mobile: segmented tab strip + ⋯ actions ───────────────────── */}
       {tabs && tabs.length > 0 && (
-        <div className="md:hidden shrink-0 flex items-center border-b border-black/8 relative">
-          {/* Gradient fade-right to hint scrollable overflow */}
-          <div
-            className="absolute top-0 bottom-0 w-8 bg-gradient-to-l from-paper to-transparent pointer-events-none z-10"
-            style={{ right: actions ? "44px" : "0" }}
-          />
-          {/* Scrollable flat tab list — WAI-ARIA Tabs pattern */}
+        <div className="md:hidden shrink-0 flex items-center gap-2 min-h-0">
           <div
             role="tablist"
-            className="flex-1 flex items-center overflow-x-auto scrollbar-hide"
+            className="tab-toggle-surface flex-1 min-w-0 flex items-center gap-0.5 overflow-x-auto scrollbar-hide py-0.5"
           >
             {tabs.map((tab, i) => {
               const Icon = tab.icon;
@@ -197,23 +233,34 @@ export default function PageShell({
                   onClick={() => setActiveId(tab.id)}
                   onKeyDown={(e) => {
                     if (e.key === "ArrowRight") setActiveId(tabs[(i + 1) % tabs.length].id);
-                    else if (e.key === "ArrowLeft") setActiveId(tabs[(i - 1 + tabs.length) % tabs.length].id);
+                    else if (e.key === "ArrowLeft")
+                      setActiveId(tabs[(i - 1 + tabs.length) % tabs.length].id);
                   }}
                   className={cn(
-                    "relative shrink-0 inline-flex items-center gap-1.5 px-3 h-11 transition-all text-[10px] uppercase tracking-[0.12em] font-medium whitespace-nowrap",
-                    active
-                      ? "text-brand border-b-2 border-brand"
-                      : "text-muted border-b-2 border-transparent hover:text-ink",
+                    "relative shrink-0 inline-flex min-h-10 items-center gap-1.5 px-3 py-2 rounded-xl transition-all text-[10px] uppercase tracking-[0.12em] font-medium whitespace-nowrap",
+                    active ? "text-on-brand" : "text-muted",
                   )}
                 >
-                  <span className="flex items-center gap-1.5">
+                  {active && (
+                    <motion.div
+                      layoutId="mobile-tab-active-bg"
+                      className="absolute inset-0 rounded-xl"
+                      style={{
+                        background: "#4F1E7B",
+                        boxShadow:
+                          "0 3px 12px -6px rgba(79, 30, 123, 0.45), 0 0 0 1px rgba(255,255,255,0.16) inset",
+                      }}
+                      transition={{ type: "spring", stiffness: 420, damping: 36 }}
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center gap-1.5">
                     {Icon && <Icon className="w-3 h-3" />}
                     {tab.label}
                     {tab.badge != null && tab.badge !== 0 && (
                       <span
                         className={cn(
                           "ml-0.5 px-1.5 py-px rounded-full text-[8px] font-mono leading-none",
-                          active ? "bg-brand/15 text-brand" : "bg-black/8 text-muted",
+                          active ? "bg-white/20 text-on-brand" : "bg-black/8 text-muted",
                         )}
                       >
                         {tab.badge}
@@ -224,12 +271,12 @@ export default function PageShell({
               );
             })}
           </div>
-          {/* Page-actions overflow button */}
           {actions && (
             <button
               onClick={() => setMobileActionsOpen(true)}
               aria-label="Page actions"
-              className="shrink-0 w-11 h-11 flex items-center justify-center text-muted hover:text-ink hover:bg-black/5 transition-colors border-l border-black/8"
+              data-no-min-touch
+              className="shrink-0 w-11 h-11 rounded-xl flex items-center justify-center text-muted border border-black/8 bg-black/4 active:bg-black/8 transition-colors"
             >
               <MoreHorizontal className="w-5 h-5" />
             </button>
@@ -270,14 +317,16 @@ export default function PageShell({
           if (dx < 0 && idx < tabs.length - 1) setActiveId(tabs[idx + 1].id);
           else if (dx > 0 && idx > 0) setActiveId(tabs[idx - 1].id);
         }}
-        onPointerCancel={() => { tabSwipe.current = null; }}
+        onPointerCancel={() => {
+          tabSwipe.current = null;
+        }}
       >
         {tabs && activeTab ? (
           <motion.div
             key={activeTab.id}
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
             className="h-full w-full"
           >
             {activeTab.content}
@@ -308,8 +357,12 @@ export default function PageShell({
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", stiffness: 360, damping: 32 }}
-              className="fixed bottom-0 left-0 right-0 z-[201] glass-strong rounded-t-2xl border-t border-black/8 md:hidden select-none"
-              style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+              className="fixed bottom-0 left-0 right-0 z-[201] glass-elevated rounded-t-[1.35rem] border-t border-black/10 md:hidden select-none"
+              style={{
+                paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
+                boxShadow:
+                  "0 -24px 48px -20px rgba(30, 0, 48, 0.35), 0 1px 0 rgba(255,255,255,0.75) inset",
+              }}
               drag="y"
               dragConstraints={{ top: 0 }}
               dragElastic={{ top: 0, bottom: 0.35 }}
@@ -322,7 +375,11 @@ export default function PageShell({
             >
               {/* Grab handle */}
               <div className="flex justify-center pt-3 pb-2">
-                <div className="w-9 h-1 rounded-full bg-ink/15" aria-hidden="true" />
+                <div
+                  className="w-10 h-1 rounded-full"
+                  style={{ background: "rgba(79, 30, 123, 0.28)" }}
+                  aria-hidden="true"
+                />
               </div>
               {/* Header */}
               <div className="flex items-center justify-between px-4 pb-3">
@@ -383,6 +440,7 @@ export function Panel({
     <section
       className={cn(
         "relative rounded-xl glass border border-black/8 flex flex-col h-full min-h-0 overflow-hidden",
+        "panel-mobile-surface",
         className,
       )}
       style={{
@@ -399,7 +457,7 @@ export function Panel({
       )}
 
       {(title || actions) && (
-        <header className="relative shrink-0 px-3 py-2 flex items-center justify-between gap-3 flex-wrap">
+        <header className="relative shrink-0 px-3 py-2.5 max-md:px-4 max-md:py-3 flex items-center justify-between gap-3 flex-wrap">
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 min-w-0">
             {Icon && (
               <div
@@ -443,7 +501,7 @@ export function Panel({
           scroll
             ? "overflow-y-auto overscroll-contain scroll-pb-6 panel-scroll"
             : "overflow-hidden",
-          !flush && "p-3",
+          !flush && "p-3 max-md:p-4",
           bodyClassName,
         )}
       >
@@ -471,7 +529,7 @@ export function StatTile({
 }) {
   const trendPositive = trend && trend.value >= 0;
   return (
-    <div className="relative rounded-xl glass border border-black/8 p-4 overflow-hidden card-interactive">
+    <div className="stat-tile-mobile relative rounded-xl glass border border-black/8 p-4 max-md:p-5 overflow-hidden card-interactive">
       {/* Ambient glow */}
       <div
         className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-25 blur-3xl pointer-events-none"
@@ -501,7 +559,7 @@ export function StatTile({
           )}
         </div>
 
-        <div className="font-display italic text-2xl text-ink leading-none truncate mb-2">
+        <div className="metric-value font-display italic text-2xl max-md:text-[1.75rem] text-ink leading-none truncate mb-2">
           {value}
         </div>
 

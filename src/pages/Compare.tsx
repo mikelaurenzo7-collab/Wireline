@@ -130,6 +130,50 @@ const ROWS: Row[] = [
     vapi: false,
     retell: false,
   },
+  {
+    feature: "Operator console (not just an API)",
+    detail:
+      "Triage, fleet, integrations, compliance ledger, and supervisor cockpit ship as one product. No separate admin UI to build.",
+    wireline: true,
+    air: "partial",
+    synthflow: "partial",
+    bland: "partial",
+    vapi: false,
+    retell: "partial",
+  },
+  {
+    feature: "Live-call latency controls",
+    detail:
+      "Capped parallel tool execution, trimmed assistant context, and tuned response delay so agents feel snappy on real PSTN lines — not just lab demos.",
+    wireline: true,
+    air: "partial",
+    synthflow: false,
+    bland: "partial",
+    vapi: "partial",
+    retell: "partial",
+  },
+  {
+    feature: "Post-call enrichment (intent, commitments, QA)",
+    detail:
+      "Structured extraction after every call feeds triage, coaching, and the knowledge-gap queue — not a generic one-line summary.",
+    wireline: true,
+    air: false,
+    synthflow: "partial",
+    bland: "partial",
+    vapi: "partial",
+    retell: "partial",
+  },
+  {
+    feature: "Roll-your-own Vapi stack",
+    detail:
+      "You compose webhooks, CRM glue, compliance, and UI yourself on top of raw voice primitives. Lowest abstraction if you have a platform team.",
+    wireline: false,
+    air: false,
+    synthflow: false,
+    bland: false,
+    vapi: true,
+    retell: false,
+  },
 ];
 
 function CellGlyph({ value }: { value: Cell }) {
@@ -143,9 +187,9 @@ const COMPETITORS: { key: keyof Omit<Row, "feature" | "detail">; label: string; 
     { key: "wireline", label: "Wireline" },
     { key: "air", label: "Air", note: "Cheaper for pure outbound" },
     { key: "synthflow", label: "Synthflow" },
-    { key: "bland", label: "Bland" },
-    { key: "vapi", label: "Vapi (direct)", note: "Lower abstraction for devs" },
-    { key: "retell", label: "Retell" },
+    { key: "bland", label: "Bland", note: "Voice API + light UI" },
+    { key: "vapi", label: "Vapi (DIY)", note: "Primitives you assemble" },
+    { key: "retell", label: "Retell", note: "Strong voice dev UX" },
   ];
 
 export default function Compare() {
@@ -224,10 +268,11 @@ export default function Compare() {
             Honest scoring vs every voice-AI platform.
           </h1>
           <p className="text-base sm:text-lg text-ink/75 max-w-2xl leading-relaxed">
-            Wireline is the only horizontal platform that runs voice + SMS + email in one console
-            with supervisor cockpit, frontier reasoning, white-label numbers, and a real TCPA
-            ledger. Competitors win on niches — Air is cheaper for pure outbound, Vapi gives
-            developers lower-level control. Here's the full picture.
+            Wireline is the horizontal platform that runs voice + SMS + email in one console with
+            supervisor cockpit, frontier reasoning, white-label numbers, and a real TCPA ledger.
+            Bland and Retell are excellent if you mainly want a voice API with a thin dashboard;
+            Vapi (direct) wins when you are building your own product on primitives. Air still wins
+            on pure outbound price. Here's the full picture.
           </p>
         </motion.div>
       </section>
@@ -342,12 +387,34 @@ export default function Compare() {
           </div>
           <div className="rounded-2xl glass border border-white/10 p-5">
             <p className="text-[10px] uppercase tracking-[0.3em] text-amber-600 mb-2 font-medium">
-              Pick Vapi (direct) if
+              Pick Bland if
+            </p>
+            <p className="text-sm text-ink/85 leading-relaxed">
+              Your team wants a straightforward voice API with quick path-to-demo and you will wire
+              CRM + compliance yourself. Bland is strong on call placement and developer docs; it is
+              not a full operator console with TCPA ledger, email agents, or supervisor take-over.
+            </p>
+          </div>
+          <div className="rounded-2xl glass border border-white/10 p-5">
+            <p className="text-[10px] uppercase tracking-[0.3em] text-amber-600 mb-2 font-medium">
+              Pick Retell if
+            </p>
+            <p className="text-sm text-ink/85 leading-relaxed">
+              You are shipping a voice-first product and want polished SDKs, latency tuning, and
+              agent builder UX without building a marketing console. Retell does not bundle
+              multi-channel inbox, white-label numbers, or horizontal compliance the way Wireline
+              does.
+            </p>
+          </div>
+          <div className="rounded-2xl glass border border-white/10 p-5">
+            <p className="text-[10px] uppercase tracking-[0.3em] text-amber-600 mb-2 font-medium">
+              Pick Vapi (DIY) if
             </p>
             <p className="text-sm text-ink/85 leading-relaxed">
               You're a developer building your own voice-agent product on top of an infra layer.
-              Vapi gives you primitives; Wireline IS the product. Use Vapi if you want to compose
-              your own — use Wireline if you want a working platform.
+              Vapi gives you primitives; Wireline <em>is</em> the product. Use Vapi if you want to
+              compose webhooks, auth, billing, and UI — use Wireline if you want a working platform
+              on day one.
             </p>
           </div>
         </div>

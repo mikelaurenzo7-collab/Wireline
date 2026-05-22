@@ -72,7 +72,7 @@ export function AuthDemoDirectory({
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center justify-between gap-3 rounded-xl border border-[#4F1E7B]/20 bg-[#4F1E7B]/5 px-3 py-2.5 text-left transition-colors hover:bg-[#4F1E7B]/10"
+        className="w-full flex items-center justify-between gap-3 rounded-xl border border-[#4F1E7B]/20 bg-[#4F1E7B]/5 px-3.5 py-3 min-h-[48px] text-left transition-colors hover:bg-[#4F1E7B]/10 active:bg-[#4F1E7B]/14"
         aria-expanded={expanded}
       >
         <div>

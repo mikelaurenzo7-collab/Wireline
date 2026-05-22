@@ -40,6 +40,7 @@
     "e2e:ui": "playwright test --ui",
     "e2e:update": "playwright test --update-snapshots",
     "qa:design-screenshots": "node scripts/design-qa-screenshots.mjs",
+    "qa:design-showcase": "node scripts/design-showcase.mjs",
     "prepare": "husky"
   },
   "lint-staged": {

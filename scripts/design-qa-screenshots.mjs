@@ -290,7 +290,20 @@ function mockApi(pathname, searchParams, method) {
   }
   if (pathname === "/api/health/slos") return json({ targets: [], error_budget: 99.9 });
   if (pathname === "/api/oauth/integration-health") return json({ reasons: [] });
-  if (pathname === "/api/oauth/crm/status") return json({ connected: false, provider: null });
+  if (pathname === "/api/oauth/crm/status") {
+    return json({
+      salesforce: { connected: true, email: "ops@acme.com", connected_at: now },
+      hubspot: { connected: false, configured: true },
+      slack: { connected: true, team: "Wireline Ops", connected_at: now },
+      zoom: { connected: false, configured: true },
+      apollo: { connected: false, configured: true, platform_active: true, oauth_connect_available: true },
+      meta: { connected: false, configured: false },
+      shopify: { connected: false, configured: true },
+      square: { connected: false, configured: true },
+      microsoft_teams: { connected: true, team_name: "Revenue", channel_name: "alerts", connected_at: now },
+      microsoft_excel: { connected: false, configured: true },
+    });
+  }
   if (pathname === "/api/fleet/presence") {
     return json({
       signals: [

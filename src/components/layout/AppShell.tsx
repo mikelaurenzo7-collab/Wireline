@@ -206,8 +206,12 @@ export default function AppShell() {
             edgeSwipe.current = null;
           }
         }}
-        onPointerUp={() => { edgeSwipe.current = null; }}
-        onPointerCancel={() => { edgeSwipe.current = null; }}
+        onPointerUp={() => {
+          edgeSwipe.current = null;
+        }}
+        onPointerCancel={() => {
+          edgeSwipe.current = null;
+        }}
       />
 
       <TopBar
@@ -224,7 +228,7 @@ export default function AppShell() {
 
         <div className="flex-1 relative flex flex-col min-h-0 overflow-hidden">
           <div className="flex-1 overflow-hidden relative z-10 min-h-0">
-            <div className="max-w-[1920px] mx-auto px-0 md:px-4 lg:px-5 pt-1 md:pt-4 pb-0 md:pb-4 flex flex-col h-full min-h-0">
+            <div className="max-w-[1920px] mx-auto px-3 md:px-4 lg:px-5 pt-2 md:pt-4 pb-0 md:pb-4 flex flex-col h-full min-h-0 mobile-page-canvas">
               <ErrorBoundary>
                 <AppRoutes />
               </ErrorBoundary>

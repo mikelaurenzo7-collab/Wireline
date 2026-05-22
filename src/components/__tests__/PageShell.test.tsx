@@ -3,18 +3,11 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import PageShell, { Panel, StatTile } from "../PageShell";
 
 describe("PageShell", () => {
-  it("does not paint the in-page title/subtitle block (removed per design)", () => {
-    // The eyebrow + title + caption header was removed — the left nav
-    // labels the page. The props are still accepted (callers + doc
-    // title) but must not render as visible page chrome.
-    render(<PageShell title="Voice Archive" subtitle="All recorded calls" />);
-    expect(screen.queryByText("Voice Archive")).not.toBeInTheDocument();
-    expect(screen.queryByText("All recorded calls")).not.toBeInTheDocument();
-  });
-
-  it("does not paint the eyebrow", () => {
-    render(<PageShell title="Insights" eyebrow="Signal · Analytics" />);
-    expect(screen.queryByText("Signal · Analytics")).not.toBeInTheDocument();
+  it("renders editorial page header (title, subtitle, eyebrow)", () => {
+    render(<PageShell title="Voice Archive" subtitle="All recorded calls" eyebrow="Signal" />);
+    expect(screen.getByRole("heading", { name: "Voice Archive" })).toBeInTheDocument();
+    expect(screen.getByText("All recorded calls")).toBeInTheDocument();
+    expect(screen.getByText("Signal")).toBeInTheDocument();
   });
 
   it("renders children when no tabs are provided", () => {

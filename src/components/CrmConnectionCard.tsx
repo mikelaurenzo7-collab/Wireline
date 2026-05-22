@@ -39,6 +39,61 @@ interface IntegrationState {
 
 type ProviderKey = keyof IntegrationState;
 
+/** Tailwind cannot compile dynamic `border-${color}-500` — explicit maps only. */
+const PROVIDER_STYLES: Record<
+  string,
+  { card: string; icon: string; check: string; connect: string }
+> = {
+  sky: {
+    card: "border-sky-500/30 bg-sky-500/5",
+    icon: "bg-sky-500/15 border-sky-500/30 text-sky-700",
+    check: "text-sky-600",
+    connect: "bg-sky-500/15 border-sky-500/30 text-sky-700 hover:bg-sky-500/20",
+  },
+  orange: {
+    card: "border-orange-500/30 bg-orange-500/5",
+    icon: "bg-orange-500/15 border-orange-500/30 text-orange-700",
+    check: "text-orange-600",
+    connect: "bg-orange-500/15 border-orange-500/30 text-orange-700 hover:bg-orange-500/20",
+  },
+  purple: {
+    card: "border-violet-500/30 bg-violet-500/5",
+    icon: "bg-violet-500/15 border-violet-500/30 text-violet-700",
+    check: "text-violet-600",
+    connect: "bg-violet-500/15 border-violet-500/30 text-violet-700 hover:bg-violet-500/20",
+  },
+  blue: {
+    card: "border-blue-500/30 bg-blue-500/5",
+    icon: "bg-blue-500/15 border-blue-500/30 text-blue-700",
+    check: "text-blue-600",
+    connect: "bg-blue-500/15 border-blue-500/30 text-blue-700 hover:bg-blue-500/20",
+  },
+  indigo: {
+    card: "border-indigo-500/30 bg-indigo-500/5",
+    icon: "bg-indigo-500/15 border-indigo-500/30 text-indigo-700",
+    check: "text-indigo-600",
+    connect: "bg-indigo-500/15 border-indigo-500/30 text-indigo-700 hover:bg-indigo-500/20",
+  },
+  fuchsia: {
+    card: "border-fuchsia-500/30 bg-fuchsia-500/5",
+    icon: "bg-fuchsia-500/15 border-fuchsia-500/30 text-fuchsia-700",
+    check: "text-fuchsia-600",
+    connect: "bg-fuchsia-500/15 border-fuchsia-500/30 text-fuchsia-700 hover:bg-fuchsia-500/20",
+  },
+  emerald: {
+    card: "border-emerald-500/30 bg-emerald-500/5",
+    icon: "bg-emerald-500/15 border-emerald-500/30 text-emerald-700",
+    check: "text-emerald-600",
+    connect: "bg-emerald-500/15 border-emerald-500/30 text-emerald-700 hover:bg-emerald-500/20",
+  },
+  amber: {
+    card: "border-amber-500/30 bg-amber-500/5",
+    icon: "bg-amber-500/15 border-amber-500/30 text-amber-700",
+    check: "text-amber-600",
+    connect: "bg-amber-500/15 border-amber-500/30 text-amber-700 hover:bg-amber-500/20",
+  },
+};
+
 const PROVIDERS: {
   key: ProviderKey;
   label: string;
@@ -271,9 +326,28 @@ export default function CrmConnectionCard() {
   if (!state) return null;
 
   const groups = [...new Set(PROVIDERS.map((p) => p.group))];
+  const connectedCount = PROVIDERS.filter((p) => state[p.key]?.connected).length;
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl glass border border-black/8 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-[9px] uppercase tracking-[0.35em] text-brand font-semibold">
+            Connected stack
+          </p>
+          <p className="text-[11px] text-muted/80 mt-0.5">
+            {connectedCount} of {PROVIDERS.length} integrations active — agents unlock tools per
+            connection.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="chip-brand">{connectedCount} live</span>
+          <span className="text-[9px] uppercase tracking-[0.28em] text-muted/70">
+            {PROVIDERS.length - connectedCount} available
+          </span>
+        </div>
+      </div>
+
       {groups.map((group) => {
         const groupProviders = PROVIDERS.filter((p) => p.group === group);
         return (
@@ -281,242 +355,247 @@ export default function CrmConnectionCard() {
             <div className="text-[9px] uppercase tracking-[0.3em] text-brand/70">
               {group} Integrations
             </div>
-            <AnimatePresence mode="popLayout">
-              {groupProviders.map(({ key, label, color, logo, beta }) => {
-                const s = state[key];
-                if (!s) return null;
-                const isConnecting = connecting === key;
-                const detail = s.email || s.team || "";
-                const betaPill = beta ? (
-                  <span
-                    className="ml-1 text-[8px] uppercase tracking-[0.22em] px-1.5 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/40 text-amber-600 leading-none"
-                    title="OAuth is live; agent actions (auto-log calls, push deals) are in active development."
-                  >
-                    Beta
-                  </span>
-                ) : null;
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+              <AnimatePresence mode="popLayout">
+                {groupProviders.map(({ key, label, color, logo, beta }) => {
+                  const styles = PROVIDER_STYLES[color] ?? PROVIDER_STYLES.indigo;
+                  const s = state[key];
+                  if (!s) return null;
+                  const isConnecting = connecting === key;
+                  const detail = s.email || s.team || "";
+                  const betaPill = beta ? (
+                    <span
+                      className="ml-1 text-[8px] uppercase tracking-[0.22em] px-1.5 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/40 text-amber-600 leading-none"
+                      title="OAuth is live; agent actions (auto-log calls, push deals) are in active development."
+                    >
+                      Beta
+                    </span>
+                  ) : null;
 
-                const platformReady = s.configured !== false;
-                const oauthConnectAvailable =
-                  key !== "apollo" || s.oauth_connect_available !== false;
-                const apolloPlatformOnly =
-                  key === "apollo" && platformReady && !oauthConnectAvailable && !s.connected;
+                  const platformReady = s.configured !== false;
+                  const oauthConnectAvailable =
+                    key !== "apollo" || s.oauth_connect_available !== false;
+                  const apolloPlatformOnly =
+                    key === "apollo" && platformReady && !oauthConnectAvailable && !s.connected;
 
-                return (
-                  <motion.div
-                    key={key}
-                    layout
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={cn(
-                      "rounded-xl glass border p-4",
-                      s.connected ? `border-${color}-500/30 bg-${color}-500/5` : "border-white/8",
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={cn(
-                          "w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold border",
-                          s.connected
-                            ? `bg-${color}-500/15 border-${color}-500/30 text-${color}-600`
-                            : "bg-white/5 border-white/10 text-muted",
-                        )}
-                      >
-                        {logo}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <div className="text-[11px] font-semibold text-ink">{label}</div>
-                          {s.connected && <CheckCircle2 className={`w-3 h-3 text-${color}-600`} />}
-                          {betaPill}
+                  return (
+                    <motion.div
+                      key={key}
+                      layout
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={cn(
+                        "rounded-xl glass border p-4 h-full flex flex-col",
+                        s.connected ? styles.card : "border-black/8",
+                      )}
+                    >
+                      <div className="flex items-start gap-3 flex-1">
+                        <div
+                          className={cn(
+                            "w-9 h-9 rounded-lg flex items-center justify-center text-[10px] font-bold border shrink-0",
+                            s.connected ? styles.icon : "bg-black/4 border-black/10 text-muted",
+                          )}
+                        >
+                          {logo}
                         </div>
-                        {s.connected ? (
-                          <div className="text-[9px] text-muted leading-snug mt-0.5 truncate">
-                            {detail && <span>{detail} · </span>}
-                            Connected{" "}
-                            {s.connected_at ? new Date(s.connected_at).toLocaleDateString() : ""}
-                          </div>
-                        ) : (
-                          <div className="text-[9px] text-muted leading-snug mt-0.5">
-                            {apolloPlatformOnly
-                              ? "Platform Apollo API active — optional: connect your workspace below"
-                              : platformReady && oauthConnectAvailable
-                                ? "Ready to connect — click to authorize"
-                                : platformReady
-                                  ? "Platform configured"
-                                  : "Platform OAuth credentials are not set on this deployment"}
-                          </div>
-                        )}
-                      </div>
-                      <div className="shrink-0">
-                        {s.connected ? (
-                          <div className="flex items-center gap-2">
-                            {s.instance_url && (
-                              <a
-                                href={s.instance_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-1.5 rounded-lg hover:bg-white/10 text-muted hover:text-ink transition-colors"
-                                title={`Open ${label}`}
-                              >
-                                <ExternalLink className="w-3.5 h-3.5" />
-                              </a>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <div className="text-[11px] font-semibold text-ink">{label}</div>
+                            {s.connected && (
+                              <CheckCircle2 className={cn("w-3 h-3", styles.check)} />
                             )}
+                            {betaPill}
+                          </div>
+                          {s.connected ? (
+                            <div className="text-[9px] text-muted leading-snug mt-0.5 truncate">
+                              {detail && <span>{detail} · </span>}
+                              Connected{" "}
+                              {s.connected_at ? new Date(s.connected_at).toLocaleDateString() : ""}
+                            </div>
+                          ) : (
+                            <div className="text-[9px] text-muted leading-snug mt-0.5">
+                              {apolloPlatformOnly
+                                ? "Platform Apollo API active — optional: connect your workspace below"
+                                : platformReady && oauthConnectAvailable
+                                  ? "Ready to connect — click to authorize"
+                                  : platformReady
+                                    ? "Platform configured"
+                                    : "Platform OAuth credentials are not set on this deployment"}
+                            </div>
+                          )}
+                        </div>
+                        <div className="shrink-0">
+                          {s.connected ? (
+                            <div className="flex items-center gap-2">
+                              {s.instance_url && (
+                                <a
+                                  href={s.instance_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-1.5 rounded-lg hover:bg-white/10 text-muted hover:text-ink transition-colors"
+                                  title={`Open ${label}`}
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                </a>
+                              )}
+                              <button
+                                onClick={disconnect(key)}
+                                className="p-1.5 rounded-lg hover:bg-rose-500/10 text-muted hover:text-rose-500 transition-colors"
+                                title="Disconnect"
+                              >
+                                <Unlink className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ) : platformReady && oauthConnectAvailable ? (
                             <button
-                              onClick={disconnect(key)}
-                              className="p-1.5 rounded-lg hover:bg-rose-500/10 text-muted hover:text-rose-500 transition-colors"
-                              title="Disconnect"
+                              onClick={connect(key)}
+                              disabled={isConnecting}
+                              className={cn(
+                                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-medium transition-all",
+                                "bg-brand/15 border border-brand/30 text-brand hover:bg-brand/25",
+                                isConnecting && "opacity-60 pointer-events-none",
+                              )}
                             >
-                              <Unlink className="w-3.5 h-3.5" />
+                              {isConnecting ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Link2 className="w-3 h-3" />
+                              )}
+                              Connect
                             </button>
-                          </div>
-                        ) : platformReady && oauthConnectAvailable ? (
-                          <button
-                            onClick={connect(key)}
-                            disabled={isConnecting}
-                            className={cn(
-                              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-medium transition-all",
-                              "bg-brand/15 border border-brand/30 text-brand hover:bg-brand/25",
-                              isConnecting && "opacity-60 pointer-events-none",
-                            )}
-                          >
-                            {isConnecting ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                            ) : (
-                              <Link2 className="w-3 h-3" />
-                            )}
-                            Connect
-                          </button>
-                        ) : (
-                          <span className="text-[9px] text-muted px-2">Unavailable</span>
-                        )}
-                      </div>
-                    </div>
-                    {key === "shopify" && !s.connected && (
-                      <div className="mt-3 pt-3 border-t border-white/10 space-y-1.5">
-                        <div className="text-[9px] uppercase tracking-[0.25em] text-muted/90">
-                          Your store domain
+                          ) : (
+                            <span className="text-[9px] text-muted px-2">Unavailable</span>
+                          )}
                         </div>
-                        <input
-                          type="text"
-                          value={shopDomain}
-                          onChange={(e) => {
-                            setShopDomain(e.target.value);
-                            if (shopError) setShopError(null);
-                          }}
-                          placeholder="your-store.myshopify.com"
-                          spellCheck={false}
-                          autoCapitalize="off"
-                          className="w-full text-[10px] rounded-lg bg-black/20 border border-white/10 px-2 py-1.5 text-ink placeholder:text-muted/50 outline-none focus:border-emerald-500/40"
-                        />
-                        {shopError ? (
-                          <p className="text-[9px] text-rose-500 leading-snug">{shopError}</p>
-                        ) : (
-                          <p className="text-[9px] text-muted/70 leading-snug">
-                            Enter your myshopify.com domain, then click Connect to authorize.
-                          </p>
-                        )}
                       </div>
-                    )}
-                    {key === "slack" && s.connected && (
-                      <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
-                        <div className="text-[9px] uppercase tracking-[0.25em] text-muted/90">
-                          Default notify channel
-                        </div>
-                        {slackChannelsLoading ? (
-                          <div className="flex items-center gap-2 text-[10px] text-muted">
-                            <Loader2 className="w-3 h-3 animate-spin" /> Loading channels…
+                      {key === "shopify" && !s.connected && (
+                        <div className="mt-3 pt-3 border-t border-white/10 space-y-1.5">
+                          <div className="text-[9px] uppercase tracking-[0.25em] text-muted/90">
+                            Your store domain
                           </div>
-                        ) : (
-                          <select
-                            className="w-full text-[10px] rounded-lg bg-black/20 border border-white/10 px-2 py-1.5 text-ink"
-                            value={s.default_channel_id || ""}
-                            onChange={async (e) => {
-                              const channel_id = e.target.value;
-                              if (!channel_id) return;
-                              await authFetch("/api/oauth/slack/default-channel", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ channel_id }),
-                              });
-                              fetchStatus();
+                          <input
+                            type="text"
+                            value={shopDomain}
+                            onChange={(e) => {
+                              setShopDomain(e.target.value);
+                              if (shopError) setShopError(null);
                             }}
-                          >
-                            <option value="">Select channel…</option>
-                            {slackChannels.map((ch) => (
-                              <option key={ch.id} value={ch.id}>
-                                {ch.is_private ? "Private: " : "# "}
-                                {ch.name}
-                              </option>
-                            ))}
-                          </select>
-                        )}
-                        <p className="text-[9px] text-muted/70 leading-snug">
-                          After OAuth we auto-pick #general when possible. Agents post bookings and
-                          alerts here — change anytime.
-                        </p>
-                      </div>
-                    )}
-                    {key === "microsoft_teams" && s.connected && (
-                      <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
-                        <div className="text-[9px] uppercase tracking-[0.25em] text-muted/90">
-                          Notify team & channel
+                            placeholder="your-store.myshopify.com"
+                            spellCheck={false}
+                            autoCapitalize="off"
+                            className="w-full text-[10px] rounded-lg bg-black/20 border border-white/10 px-2 py-1.5 text-ink placeholder:text-muted/50 outline-none focus:border-emerald-500/40"
+                          />
+                          {shopError ? (
+                            <p className="text-[9px] text-rose-500 leading-snug">{shopError}</p>
+                          ) : (
+                            <p className="text-[9px] text-muted/70 leading-snug">
+                              Enter your myshopify.com domain, then click Connect to authorize.
+                            </p>
+                          )}
                         </div>
-                        {teamsTargetsLoading ? (
-                          <div className="flex items-center gap-2 text-[10px] text-muted">
-                            <Loader2 className="w-3 h-3 animate-spin" /> Loading teams…
+                      )}
+                      {key === "slack" && s.connected && (
+                        <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
+                          <div className="text-[9px] uppercase tracking-[0.25em] text-muted/90">
+                            Default notify channel
                           </div>
-                        ) : (
-                          <select
-                            className="w-full text-[10px] rounded-lg bg-black/20 border border-white/10 px-2 py-1.5 text-ink"
-                            value={s.team_id && s.channel_id ? `${s.team_id}:${s.channel_id}` : ""}
-                            onChange={async (e) => {
-                              const raw = e.target.value;
-                              if (!raw) return;
-                              const [team_id, channel_id] = raw.split(":");
-                              const pick = teamsTargets.find(
-                                (t) => t.team_id === team_id && t.channel_id === channel_id,
-                              );
-                              await authFetch("/api/oauth/microsoft_teams/notify-target", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({
-                                  team_id,
-                                  channel_id,
-                                  team_name: pick?.team_name,
-                                  channel_name: pick?.channel_name,
-                                }),
-                              });
-                              fetchStatus();
-                            }}
-                          >
-                            <option value="">Select team channel…</option>
-                            {teamsTargets.map((t) => (
-                              <option
-                                key={`${t.team_id}:${t.channel_id}`}
-                                value={`${t.team_id}:${t.channel_id}`}
-                              >
-                                {t.team_name} / {t.channel_name}
-                              </option>
-                            ))}
-                          </select>
-                        )}
-                        {s.team_name && s.channel_name ? (
+                          {slackChannelsLoading ? (
+                            <div className="flex items-center gap-2 text-[10px] text-muted">
+                              <Loader2 className="w-3 h-3 animate-spin" /> Loading channels…
+                            </div>
+                          ) : (
+                            <select
+                              className="w-full text-[10px] rounded-lg bg-black/20 border border-white/10 px-2 py-1.5 text-ink"
+                              value={s.default_channel_id || ""}
+                              onChange={async (e) => {
+                                const channel_id = e.target.value;
+                                if (!channel_id) return;
+                                await authFetch("/api/oauth/slack/default-channel", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ channel_id }),
+                                });
+                                fetchStatus();
+                              }}
+                            >
+                              <option value="">Select channel…</option>
+                              {slackChannels.map((ch) => (
+                                <option key={ch.id} value={ch.id}>
+                                  {ch.is_private ? "Private: " : "# "}
+                                  {ch.name}
+                                </option>
+                              ))}
+                            </select>
+                          )}
                           <p className="text-[9px] text-muted/70 leading-snug">
-                            Current: {s.team_name} → {s.channel_name}
+                            After OAuth we auto-pick #general when possible. Agents post bookings
+                            and alerts here — change anytime.
                           </p>
-                        ) : (
-                          <p className="text-[9px] text-muted/70 leading-snug">
-                            Pick where call alerts post. Without a selection we use your first team
-                            channel.
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
+                        </div>
+                      )}
+                      {key === "microsoft_teams" && s.connected && (
+                        <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
+                          <div className="text-[9px] uppercase tracking-[0.25em] text-muted/90">
+                            Notify team & channel
+                          </div>
+                          {teamsTargetsLoading ? (
+                            <div className="flex items-center gap-2 text-[10px] text-muted">
+                              <Loader2 className="w-3 h-3 animate-spin" /> Loading teams…
+                            </div>
+                          ) : (
+                            <select
+                              className="w-full text-[10px] rounded-lg bg-black/20 border border-white/10 px-2 py-1.5 text-ink"
+                              value={
+                                s.team_id && s.channel_id ? `${s.team_id}:${s.channel_id}` : ""
+                              }
+                              onChange={async (e) => {
+                                const raw = e.target.value;
+                                if (!raw) return;
+                                const [team_id, channel_id] = raw.split(":");
+                                const pick = teamsTargets.find(
+                                  (t) => t.team_id === team_id && t.channel_id === channel_id,
+                                );
+                                await authFetch("/api/oauth/microsoft_teams/notify-target", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                    team_id,
+                                    channel_id,
+                                    team_name: pick?.team_name,
+                                    channel_name: pick?.channel_name,
+                                  }),
+                                });
+                                fetchStatus();
+                              }}
+                            >
+                              <option value="">Select team channel…</option>
+                              {teamsTargets.map((t) => (
+                                <option
+                                  key={`${t.team_id}:${t.channel_id}`}
+                                  value={`${t.team_id}:${t.channel_id}`}
+                                >
+                                  {t.team_name} / {t.channel_name}
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                          {s.team_name && s.channel_name ? (
+                            <p className="text-[9px] text-muted/70 leading-snug">
+                              Current: {s.team_name} → {s.channel_name}
+                            </p>
+                          ) : (
+                            <p className="text-[9px] text-muted/70 leading-snug">
+                              Pick where call alerts post. Without a selection we use your first
+                              team channel.
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
           </div>
         );
       })}

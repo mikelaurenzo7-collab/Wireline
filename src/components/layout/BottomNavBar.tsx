@@ -59,13 +59,10 @@ export default function BottomNavBar({ onOpenMenu, badges = {} }: Props) {
 
   const isActive = (tab: NavTab) => {
     if (pathname === tab.path) return true;
-    return tab.matches?.some(
-      (m) => pathname === m || pathname.startsWith(`${m}/`),
-    ) ?? false;
+    return tab.matches?.some((m) => pathname === m || pathname.startsWith(`${m}/`)) ?? false;
   };
 
-  const getBadge = (tab: NavTab) =>
-    tab.badgePaths.reduce((sum, p) => sum + (badges[p] ?? 0), 0);
+  const getBadge = (tab: NavTab) => tab.badgePaths.reduce((sum, p) => sum + (badges[p] ?? 0), 0);
 
   return (
     <nav
@@ -104,8 +101,18 @@ export default function BottomNavBar({ onOpenMenu, badges = {} }: Props) {
             className="relative flex-1 flex flex-col items-center justify-center gap-0.5 py-2 min-h-[49px] select-none transition-opacity duration-75 active:opacity-50"
             style={{ touchAction: "manipulation" }}
           >
+            {active && (
+              <span
+                aria-hidden="true"
+                className="absolute inset-x-2 top-1 bottom-5 rounded-2xl pointer-events-none"
+                style={{
+                  background: "rgba(239, 233, 220, 0.14)",
+                  boxShadow: "0 0 0 1px rgba(239, 233, 220, 0.12) inset",
+                }}
+              />
+            )}
             {/* Icon + badge container */}
-            <div className="relative flex items-center justify-center w-8 h-6">
+            <div className="relative z-[1] flex items-center justify-center w-8 h-6">
               <Icon
                 className="transition-all duration-150"
                 style={{
@@ -128,20 +135,11 @@ export default function BottomNavBar({ onOpenMenu, badges = {} }: Props) {
 
             {/* Label */}
             <span
-              className="text-[10px] font-medium tracking-[0.01em] transition-colors duration-150 leading-none"
+              className="relative z-[1] text-[10px] font-medium tracking-[0.01em] transition-colors duration-150 leading-none"
               style={{ color: active ? "#EFE9DC" : "rgba(239,233,220,0.42)" }}
             >
               {tab.label}
             </span>
-
-            {/* Active pill indicator — iOS 17+ style thin bar above label */}
-            {active && (
-              <span
-                aria-hidden="true"
-                className="absolute top-0 left-1/2 -translate-x-1/2 w-5 h-[3px] rounded-full"
-                style={{ background: "rgba(239,233,220,0.70)" }}
-              />
-            )}
           </Link>
         );
       })}

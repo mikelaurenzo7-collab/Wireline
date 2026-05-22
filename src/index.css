@@ -945,6 +945,86 @@ select:focus {
   30% { transform: translateY(-3px); opacity: 1; }
 }
 
+/* ─── Mobile-first polish (signed-in shell + auth) ───────────────────────
+ * Purposeful touch refinements: readable type, native-feeling tabs, panels
+ * that read as one surface with the tab bar, and no hover-lift on phones. */
+
+@media (min-width: 1024px) {
+  .mobile-page-canvas {
+    padding-top: 0.25rem;
+  }
+}
+
+@media (max-width: 767px) {
+  /* Lighter glass on phones — skip expensive blur, keep warm cream opacity. */
+  .glass {
+    background: rgba(246, 241, 232, 0.94);
+    backdrop-filter: blur(10px) saturate(130%);
+    -webkit-backdrop-filter: blur(10px) saturate(130%);
+    border-color: rgba(0, 0, 0, 0.06);
+  }
+
+  .glass-strong,
+  .glass-elevated {
+    background: rgba(248, 243, 235, 0.98);
+    backdrop-filter: blur(14px) saturate(150%);
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
+  }
+
+  /* Hover lift reads as jitter on touch — keep shadow, drop translate. */
+  .card-interactive:hover,
+  .card-interactive-premium:hover {
+    transform: none;
+  }
+
+  .brutal-btn:hover {
+    transform: none;
+  }
+
+  /* Page canvas gutter — pairs with AppShell px-3 */
+  .mobile-page-canvas {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  /* Unified tab + panel stack on mobile routes */
+  .mobile-route-stack {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    gap: 0.5rem;
+  }
+
+  .mobile-route-stack .panel-mobile-surface {
+    border-radius: 1.125rem 1.125rem 0 0;
+    border-bottom: none;
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.85) inset,
+      0 -1px 0 rgba(0, 0, 0, 0.04),
+      0 12px 40px -16px rgba(0, 0, 0, 0.12),
+      0 4px 16px -6px rgba(79, 30, 123, 0.08);
+  }
+
+  .panel-scroll {
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  .stat-tile-mobile .metric-value,
+  .stat-tile-mobile .font-display {
+    font-size: 1.75rem;
+    line-height: 1;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .card-interactive:active {
+    transform: scale(0.985);
+    transition-duration: 80ms;
+  }
+}
+
 /* AgentIntegrationCanvas — fade-up reveal for animated preview card elements */
 @keyframes appear-up {
   from { opacity: 0; transform: translateY(5px); }

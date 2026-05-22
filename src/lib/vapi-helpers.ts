@@ -22,7 +22,22 @@ export function sanitizePhone(phone: string | undefined | null): string {
 
 export const KNOWLEDGE_GAP_PREFIX = "[KNOWLEDGE GAP]";
 export const MAX_RUNTIME_LESSONS = 5;
+export const MAX_RUNTIME_DIRECTIVES = 24;
+export const MAX_RUNTIME_KNOWLEDGE = 18;
+export const MAX_RUNTIME_PROMPT_CHARS = 18_000;
+export const MAX_RUNTIME_SNIPPET_CHARS = 360;
 export const MAX_CONTEXT_PREVIEW_LENGTH = 200;
+
+export function truncateRuntimeSnippet(text: string, max = MAX_RUNTIME_SNIPPET_CHARS): string {
+  const t = (text || "").trim();
+  if (t.length <= max) return t;
+  return `${t.slice(0, max)}…`;
+}
+
+export function clampRuntimePrompt(text: string, max = MAX_RUNTIME_PROMPT_CHARS): string {
+  if (text.length <= max) return text;
+  return `${text.slice(0, max)}\n\n[Context trimmed for voice latency — use tools for account-specific detail.]`;
+}
 
 /**
  * Sticky lead statuses that the in-call `update_lead_status` tool must not

@@ -216,9 +216,9 @@ export default function Integrations() {
         {/* Scroll container — the page (email panel + CRM/Shopify
             connectors) is taller than the viewport; PageShell's body
             doesn't scroll, so this wrapper owns the scroll. */}
-        <div className="h-full overflow-y-auto panel-scroll flex flex-col gap-3 pb-4">
+        <div className="h-full overflow-y-auto panel-scroll flex flex-col gap-3 pb-4 max-md:pb-6">
           <Panel
-            title="email carriers"
+            title="Email carriers"
             hint="GMAIL · OUTLOOK"
             icon={Mail}
             scroll

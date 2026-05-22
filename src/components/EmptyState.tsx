@@ -32,7 +32,7 @@ export default function EmptyState({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "flex flex-col items-center justify-center gap-5 py-16 px-6 text-center",
+        "flex flex-col items-center justify-center gap-5 py-12 sm:py-16 px-5 sm:px-6 text-center",
         className,
       )}
     >
@@ -51,8 +51,10 @@ export default function EmptyState({
         </motion.div>
       </motion.div>
       <div className="max-w-xs">
-        <h3 className="font-display italic text-2xl text-ink mb-2">{title}</h3>
-        <p className="text-xs text-muted leading-relaxed">{description}</p>
+        <h3 className="font-display italic text-xl sm:text-2xl text-ink mb-2 text-balance">
+          {title}
+        </h3>
+        <p className="text-[12px] sm:text-xs text-muted leading-relaxed">{description}</p>
       </div>
       {actions.length > 0 && (
         <div className="flex flex-wrap gap-3 justify-center mt-1">
