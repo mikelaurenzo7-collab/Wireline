@@ -123,7 +123,7 @@ export function SystemPanel({
                   Last Evaluation:{" "}
                   {operationalSlos?.evaluated_at
                     ? new Date(operationalSlos.evaluated_at).toLocaleTimeString()
-                    : "..."}
+                    : "—"}
                 </span>
               </div>
 

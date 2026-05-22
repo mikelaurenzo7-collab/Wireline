@@ -86,7 +86,7 @@ export default function Integrations() {
     const win = window.open(
       url,
       "oauth_popup",
-      `width=${width},height=${height},left=${left},top=${top}`
+      `width=${width},height=${height},left=${left},top=${top}`,
     );
     if (!win) toastWarning("Popup blocked", "Allow popups for this site to connect your account.");
   };
@@ -314,9 +314,18 @@ export default function Integrations() {
                             {acc.email_address}
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-[9px] uppercase tracking-[0.3em]">
-                              <CheckCircle2 className="w-2.5 h-2.5" /> Synced
-                            </span>
+                            {acc.provider === "yahoo" ? (
+                              <span
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-500 text-[9px] uppercase tracking-[0.3em]"
+                                title="Yahoo inbox sync is coming soon — OAuth connection is stored"
+                              >
+                                Connected · Inbox soon
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-[9px] uppercase tracking-[0.3em]">
+                                <CheckCircle2 className="w-2.5 h-2.5" /> Synced
+                              </span>
+                            )}
                             <span
                               className={`text-[9px] uppercase tracking-[0.3em] font-mono ${meta.color}`}
                             >
