@@ -222,3 +222,6 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<DemoAgent> = [
 
 export const WIRELINE_FEATURED_TEAM_AGENT = WIRELINE_CONTACT_AGENTS[0]!;
 export const WIRELINE_DEMO_CONCIERGE_AGENT = WIRELINE_DEMO_AGENTS[0]!;
+
+/** Fully seeded marketing console on trywireline.com (see docs/DEMO_ACCOUNT.md). */
+export const MARKETING_SHOWCASE_EMAIL = "composer.demo@trywireline.com";

@@ -289,7 +289,10 @@ export default function Compare() {
           <span aria-hidden="true">→</span>
         </p>
         <div className="overflow-x-auto rounded-3xl glass border border-white/12 snap-x snap-mandatory scroll-smooth scrollbar-hide">
-          <table className="w-full min-w-[720px]">
+          <table className="w-full min-w-[720px]" aria-describedby="compare-legend">
+            <caption className="sr-only">
+              Feature comparison of Wireline versus Air, Synthflow, Bland, Vapi direct, and Retell
+            </caption>
             <thead>
               <tr className="border-b border-white/10">
                 <th className="text-left p-4 pl-6 text-[10px] uppercase tracking-[0.3em] text-muted/70 font-medium w-64">
@@ -358,8 +361,8 @@ export default function Compare() {
             </tbody>
           </table>
         </div>
-        <p className="text-[10px] text-muted/55 mt-3 leading-relaxed">
-          <Check className="w-3 h-3 text-emerald-500 inline-block mr-1" /> fully shipped
+        <p id="compare-legend" className="text-[10px] text-muted/55 mt-3 leading-relaxed">
+          <Check className="w-3 h-3 text-emerald-500 inline-block mr-1" aria-hidden /> fully shipped
           &nbsp;·&nbsp;
           <Minus className="w-3 h-3 text-amber-500 inline-block mr-1" /> partial / limited
           &nbsp;·&nbsp;

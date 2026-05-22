@@ -11,7 +11,7 @@ Wireline is not a demo. It is a **full-stack voice operations platform**: Vapi v
 
 **Conviction thesis:** Operators do not buy “a voice bot.” They buy **answered calls + booked revenue + CRM truth + team alerts** with zero Frankenstein integrations. Wireline’s moat is **one console for every conversation channel** with agents that **act** (calendar, email, CRM, Slack, Teams, Shopify) — not just talk.
 
-**Gap to immaculate:** Page chrome was under-using `PageShell` titles (fixed this pass), integration cards used dynamic Tailwind classes (fixed), Vercel preview vs production promote discipline, and continuous visual QA across 3 viewports.
+**Gap to immaculate:** Remaining wins are Insights latency dashboard, E2E golden paths in CI, and enterprise SSO — core operator UX, voice latency caps, compare page, and marketing demo seed are in production as of `7f256b8`+.
 
 ---
 
@@ -96,10 +96,16 @@ Wireline is not a demo. It is a **full-stack voice operations platform**: Vapi v
 ## Quick wins (this session)
 
 - PageShell editorial headers (desktop + mobile).
-- CRM integration card color tokens + responsive grid.
+- CRM integration card color tokens + responsive grid + manual refresh.
 - Integration hub connection summary strip.
 - Mobile/desktop CSS polish (glass, tabs, bottom nav).
 - Design showcase screenshots script + mocks.
+- Voice: max 3 parallel tool calls, 18k prompt cap, directive/knowledge injection.
+- Compare: 13-row honest matrix + Bland/Retell/Vapi DIY positioning.
+- Marketing demo `composer.demo@trywireline.com` seeded (24 calls, 18 leads, 8 appts, 6 KB).
+- Auth portal one-click marketing email fill.
+- Vitest: `vapi-tool-results.test.ts`, `vapi-prompt-budget.test.ts`.
+- Vercel promote script uses `/v1/.../promote` (v10 422 on staged builds).
 
 ---
 

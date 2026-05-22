@@ -13,7 +13,7 @@ vi.mock("../AuthContext", () => ({
     register: mockRegister,
     requestPasswordReset: mockRequestReset,
     user: null,
-    loading: false
+    loading: false,
   }),
 }));
 
@@ -29,6 +29,14 @@ describe("AuthPortal — password reset flow", () => {
   it("shows 'Forgot?' link in sign-in mode", () => {
     render(<AuthPortal />);
     expect(screen.getByText("Forgot?")).toBeInTheDocument();
+  });
+
+  it("offers marketing showcase email fill on sign-in", () => {
+    render(<AuthPortal />);
+    fireEvent.click(screen.getByRole("button", { name: /Use composer\.demo@trywireline\.com/i }));
+    expect(screen.getByPlaceholderText("operator@company.io")).toHaveValue(
+      "composer.demo@trywireline.com",
+    );
   });
 
   it("hides 'Forgot?' link in sign-up mode", () => {

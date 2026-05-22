@@ -22,7 +22,11 @@ import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../contexts/AuthContext";
 import { PageMeta } from "../lib/page-meta";
 import WirelineMark from "./WirelineMark";
-import { WIRELINE_CONTACT_AGENTS, WIRELINE_DEMO_AGENTS } from "../data/contact-agents";
+import {
+  WIRELINE_CONTACT_AGENTS,
+  WIRELINE_DEMO_AGENTS,
+  MARKETING_SHOWCASE_EMAIL,
+} from "../data/contact-agents";
 
 const FEATURES = [
   {
@@ -607,6 +611,30 @@ export default function AuthPortal() {
                   else. The buttons hide for the password-reset mode
                   since OAuth doesn't apply there. */}
                 {!isReset && <OAuthSignInButtons disabled={loading} />}
+
+                {!isReset && !isSignUp && (
+                  <div className="relative z-10 mb-4 rounded-xl border border-[#4F1E7B]/20 bg-[#4F1E7B]/5 px-3.5 py-3">
+                    <p className="text-[9px] uppercase tracking-[0.32em] text-[#4F1E7B] font-semibold mb-1">
+                      Marketing console preview
+                    </p>
+                    <p className="text-[10px] text-muted/75 leading-relaxed mb-2">
+                      Fully loaded triage, fleet, integrations, and call history — use your showcase
+                      invite password from ops.
+                    </p>
+                    <button
+                      type="button"
+                      disabled={loading}
+                      onClick={() => {
+                        setEmail(MARKETING_SHOWCASE_EMAIL);
+                        setError(null);
+                        setMessage(null);
+                      }}
+                      className="text-[10px] uppercase tracking-[0.28em] text-brand font-medium hover:opacity-80 transition-opacity disabled:opacity-50"
+                    >
+                      Use {MARKETING_SHOWCASE_EMAIL}
+                    </button>
+                  </div>
+                )}
 
                 <form onSubmit={handleAuth} className="relative z-10 space-y-4">
                   {/* Email */}

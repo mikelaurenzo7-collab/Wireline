@@ -340,11 +340,23 @@ export default function CrmConnectionCard() {
             connection.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
           <span className="chip-brand">{connectedCount} live</span>
           <span className="text-[9px] uppercase tracking-[0.28em] text-muted/70">
             {PROVIDERS.length - connectedCount} available
           </span>
+          <button
+            type="button"
+            onClick={() => {
+              setLoading(true);
+              void fetchStatus();
+            }}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-black/10 text-[9px] uppercase tracking-[0.26em] text-muted hover:text-ink hover:border-brand/30 transition-colors"
+            aria-label="Refresh integration status"
+          >
+            <Loader2 className="w-3 h-3" />
+            Refresh
+          </button>
         </div>
       </div>
 

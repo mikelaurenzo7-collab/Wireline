@@ -8,7 +8,8 @@
  * If deploymentId is omitted, defaults to the latest READY deployment from `main`
  * (requires VERCEL_TOKEN; uses Vercel REST API).
  *
- * API: POST https://api.vercel.com/v10/projects/{projectId}/promote/{deploymentId}?teamId=...
+ * API: POST https://api.vercel.com/v1/projects/{projectId}/promote/{deploymentId}?teamId=...
+ * (v10 promote returns 422 for staged main builds on this project.)
  */
 const TEAM_ID = "team_ssX7cPECdHvXGFHSOuS9iXos";
 const PROJECT_ID = "prj_mCjWa69TtFye8z11u8bSaWwO41f2";
@@ -71,7 +72,7 @@ async function main() {
     console.log("Using latest main deployment:", deploymentId);
   }
 
-  const promotePath = `/v10/projects/${encodeURIComponent(PROJECT_ID)}/promote/${encodeURIComponent(deploymentId)}`;
+  const promotePath = `/v1/projects/${encodeURIComponent(PROJECT_ID)}/promote/${encodeURIComponent(deploymentId)}`;
   const result = await vercelFetch(promotePath, { method: "POST" });
   console.log("Promote response:", JSON.stringify(result, null, 2));
   console.log("\nProduction domains for this project should now target:", deploymentId);
