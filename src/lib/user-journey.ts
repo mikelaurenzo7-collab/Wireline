@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 import { drizzle } from "./server-context";
 import { eq } from "drizzle-orm";
 import { userPreferences, onboardingProgress } from "../db/schema";

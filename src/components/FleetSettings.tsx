@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useState, useEffect, useRef } from "react";
 import {
   Plus,
@@ -384,6 +385,7 @@ export default function FleetSettings() {
 
   useEffect(() => {
     fetchAgents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time fetch on mount
   }, []);
 
   useEffect(() => {
@@ -391,6 +393,7 @@ export default function FleetSettings() {
       fetchAgentConfig(selectedAgent.id);
       fetchAgentPerformance(selectedAgent.id);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally re-keyed on selected agent id
   }, [selectedAgent?.id]);
 
   const fetchAgentConfig = async (id: string) => {

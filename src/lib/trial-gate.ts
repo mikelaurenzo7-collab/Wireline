@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 /**
  * Trial gate — the soft 14-day onboarding window + the hard 402 wall
  * at day 15. Mounted on every route that COSTS real money to serve

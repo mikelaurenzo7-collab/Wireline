@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
 /**
  * GET /api/public/stats — aggregated, no-PII counters for the
  * public AuthPortal trust band. Returns numbers like "X agents

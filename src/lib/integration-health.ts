@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
@@ -22,12 +23,18 @@ export async function computeIntegrationHealth(userId: string): Promise<Integrat
   const reasons: string[] = [];
 
   const emails = await drizzle
-    .select({ provider: schema.emailAccounts.provider, oauthGrantedScopes: schema.emailAccounts.oauthGrantedScopes })
+    .select({
+      provider: schema.emailAccounts.provider,
+      oauthGrantedScopes: schema.emailAccounts.oauthGrantedScopes,
+    })
     .from(schema.emailAccounts)
     .where(eq(schema.emailAccounts.userId, userId));
 
   const cals = await drizzle
-    .select({ provider: schema.calendarAccounts.provider, oauthGrantedScopes: schema.calendarAccounts.oauthGrantedScopes })
+    .select({
+      provider: schema.calendarAccounts.provider,
+      oauthGrantedScopes: schema.calendarAccounts.oauthGrantedScopes,
+    })
     .from(schema.calendarAccounts)
     .where(eq(schema.calendarAccounts.userId, userId));
 

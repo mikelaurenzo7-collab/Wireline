@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
 import express, { Request, Response, NextFunction } from "express";
 import { drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";

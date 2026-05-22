@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { MessageSquare, Send, Loader2, RefreshCw, Inbox, Phone } from "lucide-react";
@@ -76,11 +77,13 @@ export default function SmsThreads() {
 
   useEffect(() => {
     fetchThreads();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time fetch on mount
   }, []);
 
   useEffect(() => {
     if (activeId) fetchMessages(activeId);
     else setMessages([]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally re-keyed on active thread id
   }, [activeId]);
 
   // Auto-scroll to newest message on open + after send.

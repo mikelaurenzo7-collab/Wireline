@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- shared context values bridge typed and untyped sub-systems. */
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { authFetch } from "../lib/api";
 import { useAuth } from "./AuthContext";

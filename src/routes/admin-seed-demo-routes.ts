@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
 /**
  * Owner-only endpoint that seeds the marketing/demo account with rich
  * showcase data so the founder's wife (and other marketing folks) can

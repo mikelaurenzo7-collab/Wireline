@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 // AgentScorecard — outcome-aligned per-agent reporting card.
 //
 // Hits GET /api/agents/:id/scorecard?days=N which returns the metric

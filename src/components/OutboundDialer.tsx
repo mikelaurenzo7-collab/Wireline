@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React, { useState, useEffect, useRef } from "react";
 import {
   Loader2,
@@ -104,6 +105,7 @@ export default function OutboundDialer() {
     fetchData();
     fetchCampaigns();
     fetchCallbacks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time fetch on mount
   }, []);
 
   // Live-poll lead statuses when a running campaign is selected.
@@ -114,6 +116,7 @@ export default function OutboundDialer() {
       fetchCampaigns(); // refresh dialed_count / connected_count on list too
     }, 10_000);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally re-keyed on campaign id + status
   }, [selectedCampaign?.id, selectedCampaign?.status]);
 
   const fetchCampaignAnalytics = async (id: string) => {

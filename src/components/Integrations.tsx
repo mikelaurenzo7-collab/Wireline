@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useState, useEffect } from "react";
 import {
   Mail,
@@ -75,6 +76,7 @@ export default function Integrations() {
     };
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time listener setup on mount
   }, []);
 
   const openOAuthPopup = (url: string) => {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 /**
  * ElevenLabs voice fine-tuning sliders — surfaced inside the carrier
  * signal parameters card in FleetSettings. Four knobs that map 1:1

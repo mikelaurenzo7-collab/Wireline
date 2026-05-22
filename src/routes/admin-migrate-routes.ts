@@ -1546,6 +1546,10 @@ router.post(
         CREATE INDEX IF NOT EXISTS idx_goals_user
         ON wireline_goals (user_id);
       `);
+      // Match the RLS posture of every other wireline_* table. Idempotent.
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_goals ENABLE ROW LEVEL SECURITY;
+      `);
 
       log.info("migrate-goals completed", { userId: req.user?.id || "migration-token" });
       return res.json({ ok: true, message: "Performance goals table ensured." });

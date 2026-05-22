@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- task and job payloads are stored as Postgres jsonb. */
 import { Router, Response } from "express";
 
 import { log, drizzle } from "../lib/server-context";

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 // Per-tenant quotas — daily/monthly hard caps on the dimensions
 // that translate directly to vendor cost or shared-resource pressure.
 //

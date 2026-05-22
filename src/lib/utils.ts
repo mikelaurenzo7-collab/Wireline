@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -36,6 +37,6 @@ export function isAbortError(e: any): boolean {
  */
 export function logFetchError(label: string, e: any): void {
   if (isAbortError(e)) return;
-   
+
   console.error(label, e);
 }

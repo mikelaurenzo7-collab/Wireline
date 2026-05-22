@@ -81,6 +81,10 @@ export default function DashboardHome() {
 
   useEffect(() => {
     mountedRef.current = true;
+    // Capture the ref's Set up-front so the cleanup function works against
+    // the same instance that was current when the effect ran (silences the
+    // exhaustive-deps "ref value may have changed" warning).
+    const callEndTimers = callEndTimersRef.current;
     fetchStats();
     fetchActiveSignals();
     fetchHighPriorityTasks();
@@ -117,9 +121,10 @@ export default function DashboardHome() {
           /* not in a call, fine */
         }
       }
-      callEndTimersRef.current.forEach(clearTimeout);
-      callEndTimersRef.current.clear();
+      callEndTimers.forEach(clearTimeout);
+      callEndTimers.clear();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time mount load
   }, []);
 
   // Lazy-load + memoize the Vapi instance. The dynamic import keeps
@@ -507,7 +512,9 @@ export default function DashboardHome() {
                   <Radio className="w-6 h-6 text-muted/40 animate-pulse" />
                 </div>
                 <div>
-                  <p className="text-[10px] sm:text-[11px] font-medium text-ink/60 mb-0.5">No calls yet</p>
+                  <p className="text-[10px] sm:text-[11px] font-medium text-ink/60 mb-0.5">
+                    No calls yet
+                  </p>
                   <p className="text-[9px] sm:text-[10px] text-muted/50 leading-snug max-w-[200px] sm:max-w-[160px]">
                     Make a test call above to start collecting call data
                   </p>

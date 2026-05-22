@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -302,7 +303,7 @@ export default function AuditLog() {
     };
 
     fetchData();
-  }, [timeRange, selectedSeverities, selectedCategories]);
+  }, [timeRange, selectedSeverities, selectedCategories, toastError]);
 
   // Filtered events (search)
   const filteredEvents = useMemo(() => {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Express middleware operates on heterogeneous request/response shapes. */
 import { SentryEvents } from "../lib/sentry-events";
 
 /**
@@ -12,7 +13,10 @@ export function performanceMonitoring(slowThresholdMs: number = 2000) {
       const duration = Date.now() - start;
 
       // Track slow operations for critical endpoints
-      if (duration > slowThresholdMs && /api\/(claude|emails|campaigns|knowledge|agents)/.test(req.path)) {
+      if (
+        duration > slowThresholdMs &&
+        /api\/(claude|emails|campaigns|knowledge|agents)/.test(req.path)
+      ) {
         SentryEvents.slowOperation({
           operation: `${req.method} ${req.path}`,
           duration_ms: duration,

@@ -55,7 +55,7 @@ export default function AgentWorkspace({ agentId, agentName = "agent" }: AgentWo
     } finally {
       setIsLoading(false);
     }
-  }, [agentId, toastError]);
+  }, [agentId, toastError, isSharedView]);
 
   useEffect(() => {
     loadMessages();

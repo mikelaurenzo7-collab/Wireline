@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- third-party API responses are vendor-defined JSON envelopes that don't ship with types. */
 import { timingSafeEqual } from "node:crypto";
 import { IS_PROD } from "./server-context";
 import { applyPlanToolUnlocks, resolveAgentTools } from "./agent-capabilities";

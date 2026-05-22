@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { log } from "./server-context";
 
@@ -20,10 +21,7 @@ export interface JwtPayload {
  * Verifies a Supabase JWT locally using the HMAC secret.
  * This avoids a round-trip to the Supabase API and removes the need for the SDK.
  */
-export async function verifySupabaseJwt(
-  token: string,
-  secret: string
-): Promise<JwtPayload | null> {
+export async function verifySupabaseJwt(token: string, secret: string): Promise<JwtPayload | null> {
   try {
     const [headerB64, payloadB64, signatureB64] = token.split(".");
     if (!headerB64 || !payloadB64 || !signatureB64) return null;

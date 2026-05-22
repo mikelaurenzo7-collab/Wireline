@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- aggregate stats and dashboard rows draw from heterogeneous queries. */
 import { Router, Response } from "express";
 
 import { drizzle } from "../lib/server-context";

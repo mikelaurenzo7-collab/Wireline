@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Express middleware operates on heterogeneous request/response shapes. */
 // RBAC enforcement middleware backed by `wireline_team_members`.
 //
 // The role hierarchy + permission map live in `src/lib/soc2-controls.ts`.

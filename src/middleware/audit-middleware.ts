@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Express middleware operates on heterogeneous request/response shapes. */
 /**
  * src/middleware/audit-middleware.ts
  *
@@ -37,15 +38,17 @@ export async function persistClaudeAuditRecords(opts: {
     outputTokens: r.output_tokens,
     cacheReadTokens: r.cache_read_tokens,
     cacheCreateTokens: r.cache_create_tokens,
-    costUsd: String(claudeBrain.estimateCost(
-      {
-        input_tokens: r.input_tokens,
-        output_tokens: r.output_tokens,
-        cache_read_input_tokens: r.cache_read_tokens,
-        cache_creation_input_tokens: r.cache_create_tokens,
-      },
-      r.model,
-    )),
+    costUsd: String(
+      claudeBrain.estimateCost(
+        {
+          input_tokens: r.input_tokens,
+          output_tokens: r.output_tokens,
+          cache_read_input_tokens: r.cache_read_tokens,
+          cache_creation_input_tokens: r.cache_create_tokens,
+        },
+        r.model,
+      ),
+    ),
     latencyMs: r.latency_ms,
     metadata: { ...(opts.requestMeta || {}) },
   }));
@@ -57,11 +60,15 @@ export async function persistClaudeAuditRecords(opts: {
     log.error("Audit insert failed", { error: getErrorMessage(err) });
     return;
   }
-  
+
   const tokenDelta = opts.records.reduce((sum, r) => sum + r.input_tokens + r.output_tokens, 0);
   if (tokenDelta > 0) {
     try {
-      const decision = await quotaTracker.checkAndIncrement(opts.userId, "claude_tokens_daily", tokenDelta);
+      const decision = await quotaTracker.checkAndIncrement(
+        opts.userId,
+        "claude_tokens_daily",
+        tokenDelta,
+      );
       if (!decision.allowed) {
         log.warn("Claude token quota exceeded after call — usage may exceed plan cap", {
           user_id: opts.userId,
@@ -70,7 +77,10 @@ export async function persistClaudeAuditRecords(opts: {
         });
       }
     } catch (err: any) {
-      log.warn("Claude token quota increment failed", { user_id: opts.userId, error: getErrorMessage(err) });
+      log.warn("Claude token quota increment failed", {
+        user_id: opts.userId,
+        error: getErrorMessage(err),
+      });
     }
   }
   recordDailySpend(deltaUsd);
@@ -92,7 +102,9 @@ export function withAudit(actionPrefix: string) {
         action: actionPrefix ? `${actionPrefix}.${subpath}` : subpath,
         records: ctx.records,
         requestMeta: { method: req.method, path: req.path },
-      }).catch((err: unknown) => log.error("Audit persist exception", { error: getErrorMessage(err) }));
+      }).catch((err: unknown) =>
+        log.error("Audit persist exception", { error: getErrorMessage(err) }),
+      );
     });
     claudeBrain.runInAuditContext(ctx, () => next());
   };

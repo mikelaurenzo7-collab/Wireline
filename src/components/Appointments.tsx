@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -517,6 +518,7 @@ export default function AppointmentsView() {
 
   useEffect(() => {
     fetchAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time fetch on mount
   }, []);
 
   const handleSaved = (appt: Appointment) => {

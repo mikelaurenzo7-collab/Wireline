@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
 /**
  * Sales pipeline endpoint — exposes outbound leads grouped by
  * pipeline_stage for the /pipeline Kanban view.

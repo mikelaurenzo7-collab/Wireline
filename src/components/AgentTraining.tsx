@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useState, useEffect, useRef } from "react";
 import {
   Loader2,
@@ -90,6 +91,7 @@ export default function AgentTraining() {
         }
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-syncs on agent switch by design
   }, [selectedAgentId]);
 
   const startTestCall = async () => {

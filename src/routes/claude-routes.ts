@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- LLM responses and dynamic call analyses include freeform JSON content. */
 import express, { Response } from "express";
 import type { AuthenticatedRequest } from "../types/auth";
 import { drizzle } from "../lib/server-context";

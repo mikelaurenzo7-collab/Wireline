@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 // AgentFlowComposer — neural-aligned linear stage progression editor.
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {

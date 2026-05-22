@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Brain, ArrowUpCircle, Trash2, CheckCircle2, Zap, Terminal, Loader2 } from "lucide-react";
@@ -44,7 +45,7 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
       cancelled = true;
       controller.abort();
     };
-  }, [agentId]);
+  }, [agentId, toastError]);
 
   const promoteToDirective = async (lesson: Lesson) => {
     setIsPromoting(lesson.id);

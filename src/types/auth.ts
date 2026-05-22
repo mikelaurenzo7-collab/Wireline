@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- shared type shims bridge untyped third-party modules. */
 import type { Request } from "express";
 import { AccessRole } from "../lib/soc2-controls";
 
