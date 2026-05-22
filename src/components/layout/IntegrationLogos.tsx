@@ -2,10 +2,8 @@ import React from "react";
 import { motion } from "motion/react";
 
 /**
- * Compact monochrome SVG logos for partners + integrations we ship.
- * Rendered as a two-row strip on the AuthPortal:
- *   Row 1 — "Powered by": the AI/voice partners (Anthropic, Vapi, ElevenLabs)
- *   Row 2 — "Integrates with": the customer's stack (Google, MS, Stripe, etc.)
+ * Compact monochrome SVG logos for integrations we ship.
+ * Rendered as a strip on the AuthPortal showing customer-facing connectors.
  *
  * All logos render in `currentColor` so they inherit the muted text color
  * and don't fight the aurora background. They lighten on hover.
@@ -22,98 +20,6 @@ type LogoDef = {
   /** Some marks are visually heavier; let the component re-weight per logo. */
   scale?: number;
 };
-
-// Infrastructure + AI/voice partners that the platform runs on.
-// Shown as the "Powered by" row — top of the strip — for trust
-// signaling. Supabase + Vercel moved here from "Integrates with"
-// because they're the runtime / data layer, not customer-facing
-// connectors.
-const POWERED_BY: LogoDef[] = [
-  {
-    name: "Anthropic",
-    svg: (
-      <svg viewBox="0 0 256 176" fill="currentColor" aria-label="Anthropic">
-        <path d="M147.42 0h44.34l63.5 176h-44.34l-12.99-37.07h-65.5L119.43 176H75.09Zm-2.49 105.07h36.81l-18.4-52.45ZM0 176 63.5 0h44.34l-63.5 176Z" />
-      </svg>
-    ),
-  },
-  {
-    name: "Vapi",
-    svg: (
-      <svg viewBox="0 0 120 24" fill="currentColor" aria-label="Vapi">
-        {/* Wordmark glyph: bar-and-V combo for Vapi voice infra */}
-        <rect x="0" y="4" width="3" height="16" rx="1" />
-        <rect x="6" y="8" width="3" height="12" rx="1" />
-        <rect x="12" y="2" width="3" height="20" rx="1" />
-        <rect x="18" y="6" width="3" height="14" rx="1" />
-        <text
-          x="28"
-          y="18"
-          fontFamily="ui-sans-serif, system-ui, -apple-system"
-          fontSize="16"
-          fontWeight="700"
-          letterSpacing="-0.5"
-        >
-          vapi
-        </text>
-      </svg>
-    ),
-    scale: 0.95,
-  },
-  {
-    name: "ElevenLabs",
-    svg: (
-      <svg viewBox="0 0 100 100" fill="currentColor" aria-label="ElevenLabs">
-        <rect x="22" y="12" width="22" height="76" rx="2" />
-        <rect x="56" y="12" width="22" height="76" rx="2" />
-      </svg>
-    ),
-    scale: 0.95,
-  },
-  {
-    name: "Google",
-    svg: (
-      <svg viewBox="0 0 256 262" aria-label="Google">
-        <path
-          fill="currentColor"
-          opacity="0.75"
-          d="M255.9 133.5c0-10.6-1-18.1-3-25.9H130.5v46.9h71.8c-1.4 11.7-9.2 29.4-26.5 41.2l-.2 1.6 38.4 29.8 2.6.3c24.5-22.6 38.6-56 38.6-93.9"
-        />
-        <path
-          fill="currentColor"
-          d="M130.5 261.1c35 0 64.4-11.5 85.8-31.4l-40.9-31.7c-10.9 7.6-25.6 13-44.9 13a78 78 0 0 1-73.7-53.9l-1.5.1-39.9 30.9-.5 1.4c21.3 42.4 65.1 71.6 115.6 71.6"
-        />
-        <path
-          fill="currentColor"
-          opacity="0.5"
-          d="M56.8 157a78 78 0 0 1-4.2-25c0-8.7 1.5-17.1 4-25l-.1-1.7-40.4-31.4-1.3.6a131 131 0 0 0-14 57.5 131 131 0 0 0 14 57.5l41.9-32.5"
-        />
-        <path
-          fill="currentColor"
-          d="M130.5 53.4c25 0 41.8 10.8 51.4 19.8l37.5-36.6C196.4 14.1 165.5 0 130.5 0 80 0 36.2 29.2 14.9 71.6l41.8 32.4a78.4 78.4 0 0 1 73.8-50.6"
-        />
-      </svg>
-    ),
-    scale: 0.95,
-  },
-  {
-    name: "Supabase",
-    svg: (
-      <svg viewBox="0 0 109 113" fill="currentColor" aria-label="Supabase">
-        <path d="M63.7 110.3c-2.8 3.6-8.7 1.6-8.6-3l1-69h47c8.6 0 13.3 9.8 8 16.5l-47.4 55.5Z" />
-        <path d="M45.3 2.6c2.9-3.6 8.7-1.6 8.7 3l-.4 69H7.1c-8.5 0-13.3-9.8-8-16.5L45.3 2.6Z" />
-      </svg>
-    ),
-  },
-  {
-    name: "Vercel",
-    svg: (
-      <svg viewBox="0 0 226 200" fill="currentColor" aria-label="Vercel">
-        <path d="M113 0 226 200H0Z" />
-      </svg>
-    ),
-  },
-];
 
 const INTEGRATIONS: LogoDef[] = [
   {
@@ -275,10 +181,7 @@ function LogoRow({ logos, height = 18 }: { logos: LogoDef[]; height?: number }) 
 }
 
 export default function IntegrationLogos() {
-  // The "Powered by" row was removed — it exposed the AI/voice vendors
-  // (Anthropic / Vapi / ElevenLabs), which undercuts the Wireline brand
-  // and hands competitors the stack. Only the customer-facing
-  // "Integrates with" row remains.
+  // Only the customer-facing "Integrates with" row is shown.
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}

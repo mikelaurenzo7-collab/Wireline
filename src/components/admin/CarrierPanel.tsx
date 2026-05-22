@@ -221,7 +221,7 @@ export function CarrierPanel({
                         v: "google",
                         label: "Gemini 3 Flash Preview",
                         sub: "PRIMARY",
-                        desc: "Primary live-call model for the fastest Gemini voice stack Vapi currently supports.",
+                        desc: "Primary live-call model for the fastest Gemini voice stack our voice platform currently supports.",
                       },
                       {
                         v: "openai",
